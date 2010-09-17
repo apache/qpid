@@ -64,7 +64,10 @@ final class TopicExchangeMBean extends AbstractExchangeMBean<TopicExchange>
         for(Map.Entry<String, List<String>> entry : bindingData.entrySet())
         {
             Object[] bindingItemValues = {entry.getKey(), entry.getValue().toArray(new String[entry.getValue().size()]) };
-            CompositeData bindingCompositeData = new CompositeDataSupport(_bindingDataType, COMPOSITE_ITEM_NAMES, bindingItemValues);
+            CompositeData bindingCompositeData =
+                    new CompositeDataSupport(_bindingDataType,
+                            COMPOSITE_ITEM_NAMES.toArray(new String[COMPOSITE_ITEM_NAMES.size()]), 
+                            bindingItemValues);
             bindingList.put(bindingCompositeData);
         }
 

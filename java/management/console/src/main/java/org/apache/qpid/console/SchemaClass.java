@@ -26,8 +26,8 @@ import org.apache.qpid.transport.codec.*;
 
 public class SchemaClass
 {
-    public static int CLASS_KIND_EVENT = 2;
-    public static int CLASS_KIND_TABLE = 1;
+    public static final int CLASS_KIND_EVENT = 2;
+    public static final int CLASS_KIND_TABLE = 1;
     public ArrayList<SchemaArgument> arguments = new ArrayList<SchemaArgument>();
     private ClassKey classKey;
     private int kind;

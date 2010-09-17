@@ -21,6 +21,9 @@
 package org.apache.qpid.management.common.mbeans;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 import javax.management.JMException;
 import javax.management.MBeanOperationInfo;
@@ -41,15 +44,22 @@ public interface ManagedExchange
     
     //TabularType and contained CompositeType key/description info for DIRECT/TOPIC/FANOUT exchanges.
     //For compatibility reasons, DONT MODIFY the existing key values if expanding the set. 
-    String[] COMPOSITE_ITEM_NAMES = {"Binding Key", "Queue Names"};
-    String[] COMPOSITE_ITEM_DESCRIPTIONS = {"Binding Key", "Queue Names"};
-    String[] TABULAR_UNIQUE_INDEX = {COMPOSITE_ITEM_NAMES[0]};
+    String BINDING_KEY = "Binding Key";
+    String QUEUE_NAMES = "Queue Names";
+
+    List<String> COMPOSITE_ITEM_NAMES = Collections.unmodifiableList(Arrays.asList(BINDING_KEY, QUEUE_NAMES));
+    List<String> COMPOSITE_ITEM_DESCRIPTIONS = Collections.unmodifiableList(Arrays.asList(BINDING_KEY, QUEUE_NAMES));
+    String[] TABULAR_UNIQUE_INDEX = {BINDING_KEY};
 
     //TabularType and contained CompositeType key/description info for HEADERS exchange only.
     //For compatibility reasons, DONT MODIFY the existing key values if expanding the set. 
-    String[] HEADERS_COMPOSITE_ITEM_NAMES = new String[]{"Binding No", "Queue  Name", "Queue Bindings"};
-    String[] HEADERS_COMPOSITE_ITEM_DESC = new String[]{"Binding No", "Queue  Name", "Queue Bindings"};
-    String[] HEADERS_TABULAR_UNIQUE_INDEX = new String[]{HEADERS_COMPOSITE_ITEM_NAMES[0]};
+    String BINDING_NUMBER = "Binding No";
+    String QUEUE_NAME = "Queue  Name";
+    String QUEUE_BINDINGS = "Queue Bindings";
+
+    String[] HEADERS_COMPOSITE_ITEM_NAMES = new String[]{BINDING_NUMBER, QUEUE_NAME, QUEUE_BINDINGS};
+    String[] HEADERS_COMPOSITE_ITEM_DESC = new String[]{BINDING_NUMBER, QUEUE_NAME, QUEUE_BINDINGS};
+    String[] HEADERS_TABULAR_UNIQUE_INDEX = new String[]{BINDING_NUMBER};
 
     /**
      * Returns the name of the managed exchange.

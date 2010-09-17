@@ -895,7 +895,7 @@ public class AttributesTabControl extends TabControl
         }
     }
     
-    private class DisposeListenerImpl implements DisposeListener
+    private static class DisposeListenerImpl implements DisposeListener
     {
         public void widgetDisposed(DisposeEvent e)
         {
@@ -908,7 +908,7 @@ public class AttributesTabControl extends TabControl
      * @author Bhupendra Bhardwaj
      *
      */
-    private class ViewerSorterImpl extends ViewerSorter
+    private static class ViewerSorterImpl extends ViewerSorter
     {
         public int compare(Viewer viewer, Object o1, Object o2) 
         {

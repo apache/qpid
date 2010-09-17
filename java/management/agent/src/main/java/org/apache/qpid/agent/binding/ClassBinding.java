@@ -42,7 +42,7 @@ import org.apache.qpid.transport.codec.Encoder;
  */
 public class ClassBinding implements TypeBinding
 {
-    private static Log log = LogFactory.getLog(ClassBinding.class);
+    private static final Log log = LogFactory.getLog(ClassBinding.class);
 
     private static enum MethodType
     {
@@ -131,7 +131,6 @@ public class ClassBinding implements TypeBinding
             }
             // Look at the superclass, if it is also a
             // QMF object then stop.
-            Class superType = cls.getSuperclass();
             if (!this.hasQMFSupertype(cls))
             {
                 for (Method m : this.getMethods(cls.getSuperclass()))

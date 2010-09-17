@@ -167,7 +167,7 @@ public class DestinationURLTest extends TestCase
         try
         {
 
-            AMQBindingURL dest = new AMQBindingURL(url);
+            new AMQBindingURL(url);
         }
         catch(URISyntaxException e)
         {

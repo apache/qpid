@@ -404,9 +404,8 @@ public class ConnectionOperationsTabControl extends TabControl
     /**
      * Label Provider class for the table viewer
      */
-    private class LabelProviderImpl extends LabelProvider implements ITableLabelProvider
+    private static class LabelProviderImpl extends LabelProvider implements ITableLabelProvider
     {
-        @Override
         public String getColumnText(Object element, int columnIndex)
         {
             switch (columnIndex)
@@ -426,7 +425,6 @@ public class ConnectionOperationsTabControl extends TabControl
             }
         }
         
-        @Override
         public Image getColumnImage(Object element, int columnIndex)
         {
             return null;

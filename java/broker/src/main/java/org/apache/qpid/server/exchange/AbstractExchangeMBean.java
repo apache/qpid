@@ -71,7 +71,8 @@ public abstract class AbstractExchangeMBean<T extends AbstractExchange> extends 
         _bindingItemTypes[0] = SimpleType.STRING;
         _bindingItemTypes[1] = new ArrayType(1, SimpleType.STRING);
         _bindingDataType = new CompositeType("Exchange Binding", "Binding key and Queue names",
-                COMPOSITE_ITEM_NAMES, COMPOSITE_ITEM_DESCRIPTIONS, _bindingItemTypes);
+                COMPOSITE_ITEM_NAMES.toArray(new String[COMPOSITE_ITEM_NAMES.size()]),
+                COMPOSITE_ITEM_DESCRIPTIONS.toArray(new String[COMPOSITE_ITEM_DESCRIPTIONS.size()]), _bindingItemTypes);
         _bindinglistDataType = new TabularType("Exchange Bindings", "Exchange Bindings for " + getName(),
                                                _bindingDataType, TABULAR_UNIQUE_INDEX);
     }
