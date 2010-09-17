@@ -92,8 +92,8 @@ public class ExchangeOperationsTabControl extends TabControl
     private ManagedExchange _emb;
     private ApiVersion _ApiVersion;
     
-    static final String BINDING_KEY = ManagedExchange.COMPOSITE_ITEM_NAMES[0];
-    static final String QUEUES = ManagedExchange.COMPOSITE_ITEM_NAMES[1];
+    static final String BINDING_KEY = ManagedExchange.BINDING_KEY;
+    static final String QUEUES = ManagedExchange.QUEUE_NAMES;
     
     public ExchangeOperationsTabControl(TabFolder tabFolder, JMXManagedObject mbean, MBeanServerConnection mbsc)
     {
@@ -356,7 +356,7 @@ public class ExchangeOperationsTabControl extends TabControl
     /**
      * Content Provider class for the table viewer
      */
-    private class ContentProviderImpl implements IStructuredContentProvider
+    private static class ContentProviderImpl implements IStructuredContentProvider
     {
     	String type;
     	
@@ -394,7 +394,7 @@ public class ExchangeOperationsTabControl extends TabControl
     /**
      * Label Provider class for the routing key table viewer
      */
-    private class LabelProviderImpl extends LabelProvider implements ITableLabelProvider
+    private static class LabelProviderImpl extends LabelProvider implements ITableLabelProvider
     {
     	String type;
     	
@@ -403,7 +403,6 @@ public class ExchangeOperationsTabControl extends TabControl
     		this.type = type;
     	}
     	
-        @Override
         public String getColumnText(Object element, int columnIndex)
         {
         	if(type.equals(BINDING_KEY)) //binding num and queue name table
@@ -428,7 +427,6 @@ public class ExchangeOperationsTabControl extends TabControl
         	}
         }
         
-        @Override
         public Image getColumnImage(Object element, int columnIndex)
         {
             return null;
@@ -439,7 +437,7 @@ public class ExchangeOperationsTabControl extends TabControl
      * Sorter class for the table viewer.
      *
      */
-    public class TableSorter extends ViewerSorter
+    public static class TableSorter extends ViewerSorter
     {
         private int column;
         private static final int ASCENDING = 0;

@@ -372,7 +372,7 @@ public class HeadersExchangeOperationsTabControl extends TabControl
     /**
      * Label Provider class for the routing key table viewer
      */
-    private class LabelProviderImpl extends LabelProvider implements ITableLabelProvider
+    private static class LabelProviderImpl extends LabelProvider implements ITableLabelProvider
     {
     	String type;
     	
@@ -380,8 +380,7 @@ public class HeadersExchangeOperationsTabControl extends TabControl
     	{
     		this.type = type;
     	}
-    	
-        @Override
+
         public String getColumnText(Object element, int columnIndex)
         {
         	if(type.equals(BINDING_NUM)) //binding num and queue name table
@@ -408,7 +407,6 @@ public class HeadersExchangeOperationsTabControl extends TabControl
         	}
         }
         
-        @Override
         public Image getColumnImage(Object element, int columnIndex)
         {
             return null;

@@ -57,7 +57,7 @@ public class BindingContext
         @Override
         public boolean equals(Object obj)
         {
-            return ((obj.getClass() == Key.class)
+            return (obj instanceof Key
                     && (((Key) obj).packageName.equals(packageName)) && (((Key) obj).className
                     .equals(className)));
         }

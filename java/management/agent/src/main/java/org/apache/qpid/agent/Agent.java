@@ -79,7 +79,7 @@ public class Agent implements MessageListener
     protected Map<Long, ManagedObject> objects = new Hashtable<Long, ManagedObject>();
     protected long bbank;
     protected long abank;
-    protected static Log log = LogFactory.getLog(Agent.class);
+    protected static final Log log = LogFactory.getLog(Agent.class);
     protected volatile boolean inside = false;
     protected ClassLoader classLoader = null;
 
@@ -491,7 +491,6 @@ public class Agent implements MessageListener
         try
         {
             byte[] buf = new byte[1024];
-            byte[] body = new byte[1024];
             BytesMessage msg = session.createBytesMessage();
             ByteBuffer slice = enc.segment();
             while (slice.hasRemaining())

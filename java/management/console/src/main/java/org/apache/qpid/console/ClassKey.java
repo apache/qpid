@@ -27,7 +27,7 @@ import org.slf4j.LoggerFactory;
 
 public class ClassKey
 {
-    private static Logger log = LoggerFactory.getLogger(ClassKey.class);
+    private static final Logger log = LoggerFactory.getLogger(ClassKey.class);
     private String packageName;
     private String className;
     private long[] hash = new long[4];
@@ -79,7 +79,7 @@ public class ClassKey
     @Override
     public boolean equals(Object obj)
     {
-        if (obj.getClass().equals(this.getClass()))
+        if(obj instanceof ClassKey && obj.getClass().equals(this.getClass()))
         {
             ClassKey other = (ClassKey) obj;
             return (other.getKeyString().equals(this.getKeyString()));

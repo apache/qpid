@@ -56,7 +56,7 @@ public class Broker implements MessageListener
     }
 
     private static Logger log = LoggerFactory.getLogger(Broker.class);
-    public static int SYNC_TIME = 60000;
+    public static final int SYNC_TIME = 60000;
     // JMS Stuff
     private javax.jms.Session session;
     boolean sessionTransacted = false;
@@ -132,7 +132,6 @@ public class Broker implements MessageListener
         try
         {
             byte[] buf = new byte[1024];
-            byte[] body = new byte[1024];
             BBEncoder bbenc = (BBEncoder) enc;
             BytesMessage msg = session.createBytesMessage();
             ByteBuffer slice = bbenc.buffer();

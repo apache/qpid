@@ -58,7 +58,9 @@ final class FanoutExchangeMBean extends AbstractExchangeMBean<FanoutExchange>
         }
 
         Object[] bindingItemValues = {BINDING_KEY_SUBSTITUTE, queueNames.toArray(new String[0])};
-        CompositeData bindingData = new CompositeDataSupport(_bindingDataType, COMPOSITE_ITEM_NAMES, bindingItemValues);
+        CompositeData bindingData = new CompositeDataSupport(_bindingDataType,
+                COMPOSITE_ITEM_NAMES.toArray(new String[COMPOSITE_ITEM_NAMES.size()]), 
+                bindingItemValues);
         bindingList.put(bindingData);
 
         return bindingList;
