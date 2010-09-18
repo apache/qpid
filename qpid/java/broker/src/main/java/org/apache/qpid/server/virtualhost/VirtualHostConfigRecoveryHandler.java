@@ -219,18 +219,20 @@ public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHa
         _actions = new ArrayList<ProcessAction>();
         try
         {
-            QueueRegistry queueRegistry = _virtualHost.getQueueRegistry();
             Exchange exchange = _virtualHost.getExchangeRegistry().getExchange(exchangeName);
-            AMQQueue queue = queueRegistry.getQueue(new AMQShortString(queueName));
+            if (exchange == null)
+            {
+                _logger.error("Unknown exchange: " + exchangeName + ", cannot bind queue : " + queueName);
+                return;
+            }
+            
+            AMQQueue queue = _virtualHost.getQueueRegistry().getQueue(new AMQShortString(queueName));
             if (queue == null)
             {
-                _logger.error("Unknown queue: " + queueName + " cannot be bound to exchange: "
-                    + exchange.getNameShortString());
+                _logger.error("Unknown queue: " + queueName + ", cannot be bound to exchange: " + exchangeName);
             }
             else
             {
-
-
                 FieldTable argumentsFT = null;
                 if(buf != null)
                 {
@@ -249,7 +251,6 @@ public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHa
 
                     bf.restoreBinding(bindingKey, queue, exchange, argumentMap);
                 }
-
             }
         }
         catch (AMQException e)
