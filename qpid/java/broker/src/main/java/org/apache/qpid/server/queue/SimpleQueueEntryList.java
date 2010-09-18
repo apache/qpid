@@ -45,7 +45,9 @@ public class SimpleQueueEntryList implements QueueEntryList
                 _nextUpdater =
             AtomicReferenceFieldUpdater.newUpdater
             (QueueEntryImpl.class, QueueEntryImpl.class, "_next");
-    private AtomicLong _deletes = new AtomicLong(0L);
+
+    private AtomicLong _scavenges = new AtomicLong(0L);
+    private final long _scavengeCount = Integer.getInteger("qpid.queue.scavenge_count", 50);
 
 
     public SimpleQueueEntryList(AMQQueue queue)
@@ -55,69 +57,30 @@ public class SimpleQueueEntryList implements QueueEntryList
         _tail = _head;
     }
 
-    
-
     void advanceHead()
     {
-        _deletes.incrementAndGet();
-        QueueEntryImpl head = _head.nextNode();
-        while(head._next != null && head.isDeleted())
-        {
+        QueueEntryImpl next = _head.nextNode();
+        QueueEntryImpl newNext = _head.getNext();
 
-            final QueueEntryImpl newhead = head.nextNode();
-            if(newhead != null)
+        if (next == newNext)
+        {
+            if (_scavenges.incrementAndGet() > _scavengeCount)
             {
-                if(_nextUpdater.compareAndSet(_head,head, newhead))
-                {
-                    _deletes.decrementAndGet();
-                }
+                _scavenges.set(0L);
+                scavenge();
             }
-            head = _head.nextNode();
-        }
-
-        if(_deletes.get() > 1000L)
-        {
-            _deletes.set(0L);
-            scavenge();
         }
     }
 
     void scavenge()
     {
-        QueueEntryImpl root = _head;
-        QueueEntryImpl next = root.nextNode();
+        QueueEntryImpl next = _head.getNext();
 
-        do
+        while (next != null)
         {
-
-
-            while(next._next != null && next.isDeleted())
-            {
-
-                final QueueEntryImpl newhead = next.nextNode();
-                if(newhead != null)
-                {
-                    _nextUpdater.compareAndSet(root,next, newhead);
-                }
-                next = root.nextNode();
-            }
-            if(next._next != null)
-            {
-                if(!next.isDeleted())
-                {
-                    root = next;
-                    next = root.nextNode();
-                }
-            }
-            else
-            {
-                break;
-            }
-
-        } while (next != null && next._next != null);
-
+            next = next.getNext();
+        }
     }
-
 
 
     public AMQQueue getQueue()
