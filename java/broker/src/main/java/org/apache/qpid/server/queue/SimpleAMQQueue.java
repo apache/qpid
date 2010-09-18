@@ -1114,6 +1114,10 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         {
             throw new IllegalArgumentException("Queue '" + queueName + "' is not registered with the virtualhost.");
         }
+        else if (toQueue == this)
+        {
+            throw new IllegalArgumentException("The destination queue cant be the same as the source queue");
+        }
 
         List<QueueEntry> entries = getMessagesOnTheQueue(new QueueEntryFilter()
         {
@@ -1187,6 +1191,10 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         if (toQueue == null)
         {
             throw new IllegalArgumentException("Queue '" + queueName + "' is not registered with the virtualhost.");
+        }
+        else if (toQueue == this)
+        {
+            throw new IllegalArgumentException("The destination queue cant be the same as the source queue");
         }
 
         List<QueueEntry> entries = getMessagesOnTheQueue(new QueueEntryFilter()
