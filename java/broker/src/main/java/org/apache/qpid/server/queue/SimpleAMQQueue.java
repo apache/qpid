@@ -1106,11 +1106,14 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
     public void moveMessagesToAnotherQueue(final long fromMessageId,
                                            final long toMessageId,
                                            String queueName,
-                                           ServerTransaction txn)
+                                           ServerTransaction txn) throws IllegalArgumentException
     {
 
         final AMQQueue toQueue = getVirtualHost().getQueueRegistry().getQueue(new AMQShortString(queueName));
-
+        if (toQueue == null)
+        {
+            throw new IllegalArgumentException("Queue '" + queueName + "' is not registered with the virtualhost.");
+        }
 
         List<QueueEntry> entries = getMessagesOnTheQueue(new QueueEntryFilter()
         {
@@ -1178,9 +1181,13 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
     public void copyMessagesToAnotherQueue(final long fromMessageId,
                                            final long toMessageId,
                                            String queueName,
-                                           final ServerTransaction txn)
+                                           final ServerTransaction txn) throws IllegalArgumentException
     {
         final AMQQueue toQueue = getVirtualHost().getQueueRegistry().getQueue(new AMQShortString(queueName));
+        if (toQueue == null)
+        {
+            throw new IllegalArgumentException("Queue '" + queueName + "' is not registered with the virtualhost.");
+        }
 
         List<QueueEntry> entries = getMessagesOnTheQueue(new QueueEntryFilter()
         {
