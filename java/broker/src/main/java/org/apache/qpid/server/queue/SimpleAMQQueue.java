@@ -1357,13 +1357,14 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
     // TODO list all thrown exceptions
     public int delete() throws AMQSecurityException, AMQException
     {
+        // Check access
+        if (!_virtualHost.getSecurityManager().authoriseDelete(this))
+        {
+            throw new AMQSecurityException("Permission denied: " + getName());
+        }
+        
         if (!_deleted.getAndSet(true))
         {
-            // Check access
-            if (!_virtualHost.getSecurityManager().authoriseDelete(this))
-            {
-                throw new AMQSecurityException("Permission denied: " + getName());
-            }
 
             for (Binding b : getBindings())
             {
