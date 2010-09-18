@@ -128,6 +128,6 @@ public interface ManagedExchange
                     description="Removes an exchange binding from the Queue",
                     impact= MBeanOperationInfo.ACTION)
     void removeBinding(@MBeanOperationParameter(name= ManagedQueue.TYPE, description="Queue name") String queueName,
-                       @MBeanOperationParameter(name="Binding", description="New binding")String binding)
+                       @MBeanOperationParameter(name="Binding", description="Binding key")String binding)
             throws IOException, JMException;
 }

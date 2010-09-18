@@ -20,8 +20,12 @@
  */
 package org.apache.qpid.management.ui.views.exchange;
 
+import static org.apache.qpid.management.common.mbeans.ManagedExchange.BINDING_KEY;
+import static org.apache.qpid.management.common.mbeans.ManagedExchange.QUEUE_NAMES;
 import static org.apache.qpid.management.ui.Constants.EXCHANGE_TYPE;
-import static org.apache.qpid.management.ui.Constants.DEFAULT_EXCHANGE_TYPE_VALUES;
+import static org.apache.qpid.management.ui.Constants.DIRECT_EXCHANGE;
+import static org.apache.qpid.management.ui.Constants.FANOUT_EXCHANGE;
+import static org.apache.qpid.management.ui.Constants.TOPIC_EXCHANGE;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -91,9 +95,6 @@ public class ExchangeOperationsTabControl extends TabControl
     private TabularDataSupport _bindings = null;
     private ManagedExchange _emb;
     private ApiVersion _ApiVersion;
-    
-    static final String BINDING_KEY = ManagedExchange.BINDING_KEY;
-    static final String QUEUES = ManagedExchange.QUEUE_NAMES;
     
     public ExchangeOperationsTabControl(TabFolder tabFolder, JMXManagedObject mbean, MBeanServerConnection mbsc)
     {
@@ -248,7 +249,7 @@ public class ExchangeOperationsTabControl extends TabControl
         _queuesTable.setLayoutData(data);
         
         _queuesTableViewer = new TableViewer(_queuesTable);
-        final TableSorter queuesTableSorter = new TableSorter(QUEUES);
+        final TableSorter queuesTableSorter = new TableSorter(QUEUE_NAMES);
         
         titles = new String[]{"Queue Names"};
         bounds = new int[]{225};
@@ -286,8 +287,8 @@ public class ExchangeOperationsTabControl extends TabControl
 
         }
         
-        _queuesTableViewer.setContentProvider(new ContentProviderImpl(QUEUES));
-        _queuesTableViewer.setLabelProvider(new LabelProviderImpl(QUEUES));
+        _queuesTableViewer.setContentProvider(new ContentProviderImpl(QUEUE_NAMES));
+        _queuesTableViewer.setLabelProvider(new LabelProviderImpl(QUEUE_NAMES));
         _queuesTableViewer.setSorter(queuesTableSorter);
         _queuesTable.setSortColumn(_queuesTable.getColumn(0));
         _queuesTable.setSortDirection(SWT.UP);
@@ -327,7 +328,36 @@ public class ExchangeOperationsTabControl extends TabControl
                 createNewBinding(createBindingButton.getShell());
             }
         });
-        
+
+        if(_ApiVersion.greaterThanOrEqualTo(1, 9)
+           && (isDirectExchange() ||isTopicExchange()))
+        {
+            final Button removeBindingButton = _toolkit.createButton(buttonsComposite, "Delete ...", SWT.PUSH);
+            removeBindingButton.setEnabled(false);
+            removeBindingButton.addSelectionListener(new SelectionAdapter()
+            {
+                public void widgetSelected(SelectionEvent e)
+                {
+                    removeBinding(removeBindingButton.getShell());
+                }
+            });
+
+            _queuesTableViewer.addSelectionChangedListener(new ISelectionChangedListener(){
+                public void selectionChanged(SelectionChangedEvent evt)
+                {
+                    int selectionIndex = _queuesTable.getSelectionIndex();
+
+                    if (selectionIndex != -1)
+                    {
+                        removeBindingButton.setEnabled(true);
+                    }
+                    else
+                    {
+                        removeBindingButton.setEnabled(false);
+                    }
+                }
+            });
+        }
     }
 
     private void updateQueuesTable()
@@ -338,7 +368,7 @@ public class ExchangeOperationsTabControl extends TabControl
         {
             final CompositeData selectedMsg = (CompositeData)_keysTable.getItem(selectionIndex).getData();
 
-            String[] queues = (String[]) selectedMsg.get(QUEUES);
+            String[] queues = (String[]) selectedMsg.get(QUEUE_NAMES);
             _queuesTableViewer.setInput(queues);
         }
         else
@@ -349,8 +379,17 @@ public class ExchangeOperationsTabControl extends TabControl
     
     private boolean isFanoutExchange()
     {
-        return _mbean.getProperty(EXCHANGE_TYPE).equalsIgnoreCase(DEFAULT_EXCHANGE_TYPE_VALUES[1]);
-
+        return _mbean.getProperty(EXCHANGE_TYPE).equalsIgnoreCase(FANOUT_EXCHANGE);
+    }
+    
+    private boolean isDirectExchange()
+    {
+        return _mbean.getProperty(EXCHANGE_TYPE).equalsIgnoreCase(DIRECT_EXCHANGE);
+    }
+    
+    private boolean isTopicExchange()
+    {
+        return _mbean.getProperty(EXCHANGE_TYPE).equalsIgnoreCase(TOPIC_EXCHANGE);
     }
     
     /**
@@ -604,6 +643,50 @@ public class ExchangeOperationsTabControl extends TabControl
         ViewUtility.centerChildInParentShell(parent, shell);
         
         shell.open();
+    }
+    
+    private void removeBinding(Shell parent)
+    {
+        int selectionIndex = _keysTable.getSelectionIndex();
+        if (selectionIndex == -1)
+        {
+            return;
+        }
+        
+        final CompositeData selectedBindingRecord = (CompositeData)_keysTable.getItem(selectionIndex).getData();
+
+        final String bindingKey = (String) selectedBindingRecord.get(BINDING_KEY);
+        
+        selectionIndex = _queuesTable.getSelectionIndex();
+        if (selectionIndex == -1)
+        {
+            return;
+        }
+        
+        final String queueName = (String)_queuesTable.getItem(selectionIndex).getData();
+        
+        
+        int response = ViewUtility.popupOkCancelConfirmationMessage("Delete Binding",
+                "Delete the following binding?\n\n" +
+                "Binding Key: " + bindingKey + "\n" + 
+                "Queue: " + queueName + "\n" + 
+                "Exchange: " + _mbean.getName());
+
+        if (response == SWT.OK)
+        {
+            try
+            {
+                _emb.removeBinding(queueName, bindingKey);
+                ViewUtility.operationResultFeedback(null, "Removed Binding", null);
+            }
+            catch (Exception e)
+            {
+                ViewUtility.operationFailedStatusBarMessage("Error removing Binding");
+                MBeanUtility.handleException(_mbean, e);
+            }
+
+            refresh(_mbean);
+        }
     }
     
     private void openMBean(Table table)
