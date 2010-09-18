@@ -137,7 +137,7 @@ public abstract class AbstractExchangeMBean<T extends AbstractExchange> extends 
         AMQQueue queue = vhost.getQueueRegistry().getQueue(new AMQShortString(queueName));
         if (queue == null)
         {
-            throw new JMException("Queue \"" + queueName + "\" is not registered with the exchange.");
+            throw new JMException("Queue \"" + queueName + "\" is not registered with the virtualhost.");
         }
 
         CurrentActor.set(new ManagementActor(_logActor.getRootMessageLogger()));
@@ -164,7 +164,7 @@ public abstract class AbstractExchangeMBean<T extends AbstractExchange> extends 
         AMQQueue queue = vhost.getQueueRegistry().getQueue(new AMQShortString(queueName));
         if (queue == null)
         {
-            throw new JMException("Queue \"" + queueName + "\" is not registered with the exchange.");
+            throw new JMException("Queue \"" + queueName + "\" is not registered with the virtualhost.");
         }
 
         CurrentActor.set(new ManagementActor(_logActor.getRootMessageLogger()));

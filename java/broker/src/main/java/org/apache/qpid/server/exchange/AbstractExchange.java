@@ -91,14 +91,6 @@ public abstract class AbstractExchange implements Exchange, Managable
     private final AtomicLong _routedMessageSize = new AtomicLong();
 
     private final CopyOnWriteArrayList<Exchange.BindingListener> _listeners = new CopyOnWriteArrayList<Exchange.BindingListener>();
-/*
-=======
-        public ExchangeMBean() throws NotCompliantMBeanException
-        {
-            super(ManagedExchange.class, ManagedExchange.TYPE);
-        }
->>>>>>> .r902547
-*/
 
     //TODO : persist creation time
     private long _createTime = System.currentTimeMillis();
