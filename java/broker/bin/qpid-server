@@ -22,6 +22,11 @@ if [ -z "$QPID_HOME" ]; then
     export QPID_HOME=`cd $WHEREAMI/../ && pwd`
 fi
 
+if [ -z "$QPID_WORK" ]; then
+    echo "Setting QPID_WORK to $HOME as default"
+    QPID_WORK=$HOME
+fi
+
 # Set classpath to include Qpid jar with all required jars in manifest
 QPID_LIBS=$QPID_HOME/lib/qpid-all.jar:$QPID_HOME/lib/bdbstore-launch.jar
 
@@ -34,5 +39,12 @@ export JAVA=java \
        QPID_RUN_LOG=2 
 
 QPID_OPTS="$QPID_OPTS -Damqj.read_write_pool_size=32 -DQPID_LOG_APPEND=$QPID_LOG_APPEND"
+
+# Echo the PID to file. Since qpid-run is sourced and uses exec to
+# launch the broker, this will give the brokers PID.
+if [ -z "$QPID_PID_FILENAME" ]; then
+    export QPID_PID_FILENAME="qpid-server.pid"
+fi
+echo $$ > ${QPID_WORK}/${QPID_PID_FILENAME}
 
 . ${QPID_HOME}/bin/qpid-run org.apache.qpid.server.Main "$@"
