@@ -221,7 +221,7 @@ public class OperationTabControl extends TabControl
         
         // Customised parameter widgets        
         if (_mbean.isExchange() &&
-            DEFAULT_EXCHANGE_TYPE_VALUES[2].equals(_mbean.getProperty(EXCHANGE_TYPE)) &&
+            HEADERS_EXCHANGE.equals(_mbean.getProperty(EXCHANGE_TYPE)) &&
             _opData.getName().equalsIgnoreCase(OPERATION_CREATE_BINDING))
         {                                  
             customCreateNewBinding(); 
@@ -274,7 +274,7 @@ public class OperationTabControl extends TabControl
             }
             else if (param.getName().equals(EXCHANGE_TYPE))
             {
-                items = DEFAULT_EXCHANGE_TYPE_VALUES;
+                items = DEFAULT_EXCHANGE_TYPE_VALUES.toArray(new String[DEFAULT_EXCHANGE_TYPE_VALUES.size()]);
             }
             else if (isUserListParameter(param))
             {
@@ -783,7 +783,7 @@ public class OperationTabControl extends TabControl
     /**
      * Listener class for the operation parameters widget
      */
-    private class ParameterSelectionListener extends SelectionAdapter
+    private static class ParameterSelectionListener extends SelectionAdapter
     {
         public void widgetSelected(SelectionEvent e)
         {
@@ -813,7 +813,7 @@ public class OperationTabControl extends TabControl
     /**
      * Listener class for boolean parameter widgets
      */
-    private class BooleanSelectionListener extends SelectionAdapter
+    private static class BooleanSelectionListener extends SelectionAdapter
     {
         public void widgetSelected(SelectionEvent e)
         {
@@ -835,7 +835,7 @@ public class OperationTabControl extends TabControl
     /**
      * Listener class for the operation parameter value widget (Text field)
      */
-    private class KeyListenerImpl extends KeyAdapter
+    private static class KeyListenerImpl extends KeyAdapter
     {
         public void keyReleased(KeyEvent e) 
         {
@@ -892,7 +892,7 @@ public class OperationTabControl extends TabControl
     /**
      * Listener class for verifying the user input with parameter type
      */
-    private class VerifyListenerImpl implements VerifyListener
+    private static class VerifyListenerImpl implements VerifyListener
     {
         public void verifyText(VerifyEvent event)
         {

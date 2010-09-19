@@ -115,7 +115,6 @@ public class NavigationView extends ViewPart
 
         // layout the tree viewer below the label field, to cover the area
         GridData layoutData = new GridData();
-        layoutData = new GridData();
         layoutData.grabExcessHorizontalSpace = true;
         layoutData.grabExcessVerticalSpace = true;
         layoutData.horizontalAlignment = GridData.FILL;
@@ -903,7 +902,7 @@ public class NavigationView extends ViewPart
      */
     private void addConfiguredItems(List<String> items, List<ManagedBean> mbeans)
     {
-        if ((items == null) || (items.isEmpty() | (mbeans == null)) || mbeans.isEmpty())
+        if ((items == null) || (items.isEmpty() || (mbeans == null)) || mbeans.isEmpty())
         {
             return;
         }
@@ -1097,7 +1096,7 @@ public class NavigationView extends ViewPart
     /**
      * Content provider class for the tree viewer
      */
-    private class ContentProviderImpl implements ITreeContentProvider
+    private static class ContentProviderImpl implements ITreeContentProvider
     {
         public Object[] getElements(Object parent)
         {
@@ -1233,7 +1232,7 @@ public class NavigationView extends ViewPart
         }
     } // End of LabelProviderImpl
 
-    private class ViewerSorterImpl extends ViewerSorter
+    private static class ViewerSorterImpl extends ViewerSorter
     {
         public int category(Object element)
         {
@@ -1271,8 +1270,10 @@ public class NavigationView extends ViewPart
                 {
                     Thread.sleep(2000);
                 }
-                catch (Exception ex)
-                { }
+                catch (InterruptedException ex)
+                {
+                    //ignore
+                }
 
             } // end of while loop
         } // end of run method.

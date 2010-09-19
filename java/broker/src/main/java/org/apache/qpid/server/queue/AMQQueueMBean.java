@@ -128,7 +128,8 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
         _msgContentAttributeTypes[2] = SimpleType.STRING; // For Encoding
         _msgContentAttributeTypes[3] = new ArrayType(1, SimpleType.BYTE); // For message content
         _msgContentType = new CompositeType("Message Content", "AMQ Message Content",
-                    VIEW_MSG_CONTENT_COMPOSITE_ITEM_NAMES, VIEW_MSG_CONTENT_COMPOSITE_ITEM_DESCRIPTIONS,
+                    VIEW_MSG_CONTENT_COMPOSITE_ITEM_NAMES_DESC.toArray(new String[VIEW_MSG_CONTENT_COMPOSITE_ITEM_NAMES_DESC.size()]),
+                    VIEW_MSG_CONTENT_COMPOSITE_ITEM_NAMES_DESC.toArray(new String[VIEW_MSG_CONTENT_COMPOSITE_ITEM_NAMES_DESC.size()]),
                     _msgContentAttributeTypes);
 
         _msgAttributeTypes[0] = SimpleType.LONG; // For message id
@@ -137,10 +138,11 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
         _msgAttributeTypes[3] = SimpleType.BOOLEAN; // For redelivered
         _msgAttributeTypes[4] = SimpleType.LONG; // For queue position
 
-        _messageDataType = new CompositeType("Message", "AMQ Message", VIEW_MSGS_COMPOSITE_ITEM_NAMES,
-                                VIEW_MSGS_COMPOSITE_ITEM_DESCRIPTIONS, _msgAttributeTypes);
+        _messageDataType = new CompositeType("Message", "AMQ Message", 
+                VIEW_MSGS_COMPOSITE_ITEM_NAMES_DESC.toArray(new String[VIEW_MSGS_COMPOSITE_ITEM_NAMES_DESC.size()]),
+                VIEW_MSGS_COMPOSITE_ITEM_NAMES_DESC.toArray(new String[VIEW_MSGS_COMPOSITE_ITEM_NAMES_DESC.size()]), _msgAttributeTypes);
         _messagelistDataType = new TabularType("Messages", "List of messages", _messageDataType,
-                                                VIEW_MSGS_TABULAR_UNIQUE_INDEX);
+                                                VIEW_MSGS_TABULAR_UNIQUE_INDEX.toArray(new String[VIEW_MSGS_TABULAR_UNIQUE_INDEX.size()]));
     }
 
     public String getObjectInstanceName()
@@ -410,7 +412,9 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
 
         Object[] itemValues = { msgId, mimeType, encoding, msgContent.toArray(new Byte[0]) };
 
-        return new CompositeDataSupport(_msgContentType, VIEW_MSG_CONTENT_COMPOSITE_ITEM_NAMES, itemValues);
+        return new CompositeDataSupport(_msgContentType,
+                VIEW_MSG_CONTENT_COMPOSITE_ITEM_NAMES_DESC.toArray(
+                        new String[VIEW_MSG_CONTENT_COMPOSITE_ITEM_NAMES_DESC.size()]), itemValues);
 
     }
 
@@ -456,16 +460,17 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
                 long position = startPosition + i;
                 final QueueEntry queueEntry = list.get(i);
                 ServerMessage serverMsg = queueEntry.getMessage();
+                
+                String[] headerAttributes = null;
+                Object[] itemValues = null;
+                
                 if(serverMsg instanceof AMQMessage)
                 {
                     AMQMessage msg = (AMQMessage) serverMsg;
                     ContentHeaderBody headerBody = msg.getContentHeaderBody();
                     // Create header attributes list
-                    String[] headerAttributes = getMessageHeaderProperties(headerBody);
-                    Object[] itemValues = {msg.getMessageId(), headerAttributes, headerBody.bodySize, queueEntry.isRedelivered(), position};
-                    CompositeData messageData = new CompositeDataSupport(_messageDataType, VIEW_MSGS_COMPOSITE_ITEM_NAMES, itemValues);
-                    _messageList.put(messageData);
-
+                    headerAttributes = getMessageHeaderProperties(headerBody);
+                    itemValues = new Object[]{msg.getMessageId(), headerAttributes, headerBody.bodySize, queueEntry.isRedelivered(), position};
                 }
                 else if(serverMsg instanceof MessageTransferMessage)
                 {
@@ -473,19 +478,19 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
                     MessageTransferMessage msg = (MessageTransferMessage) serverMsg;
 
                     // Create header attributes list
-                    String[] headerAttributes = getMessageTransferMessageHeaderProps(msg);
-                    Object[] itemValues = {msg.getMessageNumber(), headerAttributes, msg.getSize(), queueEntry.isRedelivered(), position};
-                    CompositeData messageData = new CompositeDataSupport(_messageDataType, VIEW_MSGS_COMPOSITE_ITEM_NAMES, itemValues);
-                    _messageList.put(messageData);
+                    headerAttributes = getMessageTransferMessageHeaderProps(msg);
+                    itemValues = new Object[]{msg.getMessageNumber(), headerAttributes, msg.getSize(), queueEntry.isRedelivered(), position};
                 }
                 else
                 {
                     //unknown message
-                    String[] headerAttributes = new String[]{"N/A"};
-                    Object[] itemValues = { serverMsg.getMessageNumber(), headerAttributes, serverMsg.getSize(), queueEntry.isRedelivered(), position};
-                    CompositeData messageData = new CompositeDataSupport(_messageDataType, VIEW_MSGS_COMPOSITE_ITEM_NAMES, itemValues);
-                    _messageList.put(messageData);
+                    headerAttributes = new String[]{"N/A"};
+                    itemValues = new Object[]{serverMsg.getMessageNumber(), headerAttributes, serverMsg.getSize(), queueEntry.isRedelivered(), position};
                 }
+                
+                CompositeData messageData = new CompositeDataSupport(_messageDataType, 
+                        VIEW_MSGS_COMPOSITE_ITEM_NAMES_DESC.toArray(new String[VIEW_MSGS_COMPOSITE_ITEM_NAMES_DESC.size()]), itemValues);
+                _messageList.put(messageData);
             }
         }
         catch (AMQException e)

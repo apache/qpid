@@ -295,7 +295,7 @@ public abstract class MBeanTypeTabControl extends TabControl
     /**
      * Content Provider class for the table viewer
      */
-    private class ContentProviderImpl  implements IStructuredContentProvider
+    private static class ContentProviderImpl  implements IStructuredContentProvider
     {
         
         public void inputChanged(Viewer v, Object oldInput, Object newInput)
@@ -342,7 +342,7 @@ public abstract class MBeanTypeTabControl extends TabControl
      * Sorter class for the table viewer.
      *
      */
-    private class TableSorter extends ViewerSorter
+    private static class TableSorter extends ViewerSorter
     {
         private int column;
         private static final int ASCENDING = 0;

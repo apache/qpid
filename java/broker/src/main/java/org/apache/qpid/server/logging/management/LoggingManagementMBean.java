@@ -95,10 +95,13 @@ public class LoggingManagementMBean extends AMQManagedObject implements LoggingM
             OpenType[] loggerLevelItemTypes = new OpenType[]{SimpleType.STRING, SimpleType.STRING};
 
             _loggerLevelCompositeType = new CompositeType("LoggerLevelList", "Logger Level Data", 
-                                                         COMPOSITE_ITEM_NAMES, COMPOSITE_ITEM_DESCRIPTIONS, loggerLevelItemTypes);
+                                                         COMPOSITE_ITEM_NAMES.toArray(new String[COMPOSITE_ITEM_NAMES.size()]),
+                                                         COMPOSITE_ITEM_DESCRIPTIONS.toArray(new String[COMPOSITE_ITEM_DESCRIPTIONS.size()]),
+                                                         loggerLevelItemTypes);
 
             _loggerLevelTabularType = new TabularType("LoggerLevel", "List of loggers with levels",
-                                                       _loggerLevelCompositeType, TABULAR_UNIQUE_INDEX);
+                                                       _loggerLevelCompositeType, 
+                                                       TABULAR_UNIQUE_INDEX.toArray(new String[TABULAR_UNIQUE_INDEX.size()]));
         }
         catch (OpenDataException e)
         {
@@ -198,7 +201,8 @@ public class LoggingManagementMBean extends AMQManagedObject implements LoggingM
                 level = logger.getEffectiveLevel().toString();
 
                 Object[] itemData = {loggerName, level};
-                CompositeData loggerData = new CompositeDataSupport(_loggerLevelCompositeType, COMPOSITE_ITEM_NAMES, itemData);
+                CompositeData loggerData = new CompositeDataSupport(_loggerLevelCompositeType, 
+                        COMPOSITE_ITEM_NAMES.toArray(new String[COMPOSITE_ITEM_NAMES.size()]), itemData);
                 loggerLevelList.put(loggerData);
             }
         }
@@ -536,7 +540,8 @@ public class LoggingManagementMBean extends AMQManagedObject implements LoggingM
                 try
                 {
                     Object[] itemData = {loggerName, level.toUpperCase()};
-                    CompositeData loggerData = new CompositeDataSupport(_loggerLevelCompositeType, COMPOSITE_ITEM_NAMES, itemData);
+                    CompositeData loggerData = new CompositeDataSupport(_loggerLevelCompositeType, 
+                            COMPOSITE_ITEM_NAMES.toArray(new String[COMPOSITE_ITEM_NAMES.size()]), itemData);
                     loggerLevelList.put(loggerData);
                 }
                 catch (OpenDataException e)

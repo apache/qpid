@@ -104,7 +104,7 @@ public class ApiVersion
 
     public String toString()
     {
-        return new String("major=" + major + ",minor=" + minor);
+        return "major=" + major + ",minor=" + minor;
     }
 
 }

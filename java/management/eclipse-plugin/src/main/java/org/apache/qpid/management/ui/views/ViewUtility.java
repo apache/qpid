@@ -490,7 +490,7 @@ public class ViewUtility
             //create a text to display the hexadecimal views of object messages, it takes more space than ascii view as 
             //a hex uses 2 chars and 1 space, while ascii only uses 1 char and 1 space.
             final Text hexText = toolkit.createText(localComposite,
-                    new String(displayByteFormat(localComposite, byteArray, startContentSize * 2, thisEncoding, "<<", true)),
+                    displayByteFormat(localComposite, byteArray, startContentSize * 2, thisEncoding, "<<", true),
                     SWT.READ_ONLY | SWT.MULTI | SWT.WRAP | SWT.V_SCROLL | SWT.BORDER);
             GridData gridData = new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1);
             gridData.widthHint = 144; //set to 222 if not using any fonts
@@ -498,7 +498,7 @@ public class ViewUtility
             hexText.setLayoutData(gridData);
 
             final Text asciiText = toolkit.createText(localComposite,
-                    new String(displayByteFormat(localComposite, byteArray, startContentSize * 2, thisEncoding, "<<", false)),
+                    displayByteFormat(localComposite, byteArray, startContentSize * 2, thisEncoding, "<<", false),
                     SWT.READ_ONLY | SWT.MULTI | SWT.WRAP | SWT.V_SCROLL | SWT.BORDER);
 
 

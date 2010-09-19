@@ -34,14 +34,14 @@ public class Activator extends AbstractUIPlugin
 	public static final String PLUGIN_ID = "org.apache.qpid.management.ui";
 
 	// The shared instance
-	private static Activator plugin;
-	
+	private static final Activator PLUGIN = new Activator();
+
 	/**
 	 * The constructor
 	 */
 	public Activator()
     {
-		plugin = this;
+		
 	}
 
 	/*
@@ -57,7 +57,6 @@ public class Activator extends AbstractUIPlugin
 	 */
 	public void stop(BundleContext context) throws Exception
     {
-		plugin = null;
 		super.stop(context);
 	}
 
@@ -68,7 +67,7 @@ public class Activator extends AbstractUIPlugin
 	 */
 	public static Activator getDefault()
     {
-		return plugin;
+		return PLUGIN;
 	}
 
 	/**

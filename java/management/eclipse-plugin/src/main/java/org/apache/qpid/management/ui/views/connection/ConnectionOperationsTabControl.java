@@ -20,6 +20,12 @@
  */
 package org.apache.qpid.management.ui.views.connection;
 
+import static org.apache.qpid.management.common.mbeans.ManagedConnection.CHAN_ID;
+import static org.apache.qpid.management.common.mbeans.ManagedConnection.DEFAULT_QUEUE;
+import static org.apache.qpid.management.common.mbeans.ManagedConnection.FLOW_BLOCKED;
+import static org.apache.qpid.management.common.mbeans.ManagedConnection.TRANSACTIONAL;
+import static org.apache.qpid.management.common.mbeans.ManagedConnection.UNACKED_COUNT;
+
 import java.util.Collection;
 
 import javax.management.MBeanServerConnection;
@@ -81,12 +87,6 @@ public class ConnectionOperationsTabControl extends TabControl
     private TabularDataSupport _channels = null;
     private ManagedConnection _cmb;
     private ApiVersion _ApiVersion;
-    
-    static final String CHAN_ID = ManagedConnection.COMPOSITE_ITEM_NAMES[0];
-    static final String TRANSACTIONAL = ManagedConnection.COMPOSITE_ITEM_NAMES[1];
-    static final String DEFAULT_QUEUE = ManagedConnection.COMPOSITE_ITEM_NAMES[2];
-    static final String UNACKED_COUNT = ManagedConnection.COMPOSITE_ITEM_NAMES[3];
-    static final String FLOW_BLOCKED = ManagedConnection.COMPOSITE_ITEM_NAMES[4];
     
     public ConnectionOperationsTabControl(TabFolder tabFolder, JMXManagedObject mbean, MBeanServerConnection mbsc)
     {
@@ -380,7 +380,7 @@ public class ConnectionOperationsTabControl extends TabControl
     /**
      * Content Provider class for the table viewer
      */
-    private class ContentProviderImpl  implements IStructuredContentProvider
+    private static class ContentProviderImpl  implements IStructuredContentProvider
     {
         
         public void inputChanged(Viewer v, Object oldInput, Object newInput)
@@ -436,7 +436,7 @@ public class ConnectionOperationsTabControl extends TabControl
      * Sorter class for the table viewer.
      *
      */
-    public class TableSorter extends ViewerSorter
+    public static class TableSorter extends ViewerSorter
     {
         private int column;
         private static final int ASCENDING = 0;

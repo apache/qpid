@@ -21,6 +21,9 @@
 package org.apache.qpid.management.common.mbeans;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 import org.apache.qpid.management.common.mbeans.annotations.MBeanAttribute;
 import org.apache.qpid.management.common.mbeans.annotations.MBeanOperation;
@@ -38,10 +41,12 @@ public interface LoggingManagement
     String TYPE = "LoggingManagement";
     
     //TabularType and contained CompositeType key/description information
-    //For compatibility reasons, DONT MODIFY the existing key values if expanding the set. 
-    String[] COMPOSITE_ITEM_NAMES = {"LoggerName", "Level"};
-    String[] COMPOSITE_ITEM_DESCRIPTIONS = {"Name of the logger", "Level of the logger"};
-    String[] TABULAR_UNIQUE_INDEX = {COMPOSITE_ITEM_NAMES[0]};
+    //For compatibility reasons, DONT MODIFY the existing key values if expanding the set.
+    String LOGGER_NAME = "LoggerName";
+    String LOGGER_LEVEL = "Level";
+    List<String> COMPOSITE_ITEM_NAMES = Collections.unmodifiableList(Arrays.asList(LOGGER_NAME, LOGGER_LEVEL));
+    List<String> COMPOSITE_ITEM_DESCRIPTIONS = Collections.unmodifiableList(Arrays.asList("Name of the logger", "Level of the logger"));
+    List<String> TABULAR_UNIQUE_INDEX = Collections.unmodifiableList(Arrays.asList(LOGGER_NAME));
     
     /**
      * Attribute to represent the log4j xml configuration file's LogWatch interval.

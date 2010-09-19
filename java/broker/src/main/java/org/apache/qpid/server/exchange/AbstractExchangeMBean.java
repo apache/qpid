@@ -74,7 +74,7 @@ public abstract class AbstractExchangeMBean<T extends AbstractExchange> extends 
                 COMPOSITE_ITEM_NAMES.toArray(new String[COMPOSITE_ITEM_NAMES.size()]),
                 COMPOSITE_ITEM_DESCRIPTIONS.toArray(new String[COMPOSITE_ITEM_DESCRIPTIONS.size()]), _bindingItemTypes);
         _bindinglistDataType = new TabularType("Exchange Bindings", "Exchange Bindings for " + getName(),
-                                               _bindingDataType, TABULAR_UNIQUE_INDEX);
+                                               _bindingDataType, TABULAR_UNIQUE_INDEX.toArray(new String[TABULAR_UNIQUE_INDEX.size()]));
     }
 
     public ManagedObject getParentObject()

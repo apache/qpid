@@ -118,9 +118,9 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
     private static void init() throws OpenDataException
     {
         _channelType =
-            new CompositeType("Channel", "Channel Details", COMPOSITE_ITEM_NAMES, COMPOSITE_ITEM_DESCRIPTIONS,
-                _channelAttributeTypes);
-        _channelsType = new TabularType("Channels", "Channels", _channelType, TABULAR_UNIQUE_INDEX);
+            new CompositeType("Channel", "Channel Details", COMPOSITE_ITEM_NAMES_DESC.toArray(new String[COMPOSITE_ITEM_NAMES_DESC.size()]),
+                    COMPOSITE_ITEM_NAMES_DESC.toArray(new String[COMPOSITE_ITEM_NAMES_DESC.size()]), _channelAttributeTypes);
+        _channelsType = new TabularType("Channels", "Channels", _channelType, TABULAR_UNIQUE_INDEX.toArray(new String[TABULAR_UNIQUE_INDEX.size()]));
     }
 
     public String getClientId()
@@ -256,7 +256,8 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
                     channel.getUnacknowledgedMessageMap().size(), channel.getBlocking()
                 };
 
-            CompositeData channelData = new CompositeDataSupport(_channelType, COMPOSITE_ITEM_NAMES, itemValues);
+            CompositeData channelData = new CompositeDataSupport(_channelType, 
+                    COMPOSITE_ITEM_NAMES_DESC.toArray(new String[COMPOSITE_ITEM_NAMES_DESC.size()]), itemValues);
             channelsList.put(channelData);
         }
 

@@ -379,7 +379,7 @@ public class VHostTabControl extends TabControl
     /**
      * Content Provider class for the table viewer
      */
-    private class ContentProviderImpl  implements IStructuredContentProvider
+    private static class ContentProviderImpl  implements IStructuredContentProvider
     {
         
         public void inputChanged(Viewer v, Object oldInput, Object newInput)
@@ -402,7 +402,7 @@ public class VHostTabControl extends TabControl
     /**
      * Label Provider class for the table viewer
      */
-    private class LabelProviderImpl extends LabelProvider implements ITableLabelProvider
+    private static class LabelProviderImpl extends LabelProvider implements ITableLabelProvider
     {
         @Override
         public String getColumnText(Object element, int columnIndex)
@@ -428,7 +428,7 @@ public class VHostTabControl extends TabControl
      * Sorter class for the table viewer.
      *
      */
-    public class TableSorter extends ViewerSorter
+    public static class TableSorter extends ViewerSorter
     {
         private int column;
         private static final int ASCENDING = 0;
@@ -614,12 +614,12 @@ public class VHostTabControl extends TabControl
             }
             catch (IOException e1)
             {
-                exchangeTypes = DEFAULT_EXCHANGE_TYPE_VALUES;
+                exchangeTypes = DEFAULT_EXCHANGE_TYPE_VALUES.toArray(new String[DEFAULT_EXCHANGE_TYPE_VALUES.size()]);
             }
         }
         else //use the fallback defaults.
         {
-            exchangeTypes = DEFAULT_EXCHANGE_TYPE_VALUES;
+            exchangeTypes = DEFAULT_EXCHANGE_TYPE_VALUES.toArray(new String[DEFAULT_EXCHANGE_TYPE_VALUES.size()]);
         }
 
         _toolkit.createLabel(typeComposite,"Type:").setBackground(shell.getBackground());

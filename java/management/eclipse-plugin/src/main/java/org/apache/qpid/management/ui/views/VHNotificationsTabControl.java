@@ -76,7 +76,7 @@ public class VHNotificationsTabControl extends TabControl
     private static final String COLUMN_TIME = "TimeStamp";
     private static final String COLUMN_TYPE  = "Type";
     private static final String COLUMN_MSG  = "Notification Message";
-    protected static final String[] _tableTitles = new String [] {
+    private static final String[] TABLE_TITLES = new String [] {
             COLUMN_OBJ,
             COLUMN_SEQ,
             COLUMN_TIME,
@@ -174,23 +174,23 @@ public class VHNotificationsTabControl extends TabControl
         _table.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
         
         TableColumn column = new TableColumn(_table, SWT.NONE);
-        column.setText(_tableTitles[0]);
+        column.setText(TABLE_TITLES[0]);
         column.setWidth(100);
         
         column = new TableColumn(_table, SWT.NONE);
-        column.setText(_tableTitles[1]);
+        column.setText(TABLE_TITLES[1]);
         column.setWidth(100); 
 
         column = new TableColumn(_table, SWT.NONE);
-        column.setText(_tableTitles[2]);
+        column.setText(TABLE_TITLES[2]);
         column.setWidth(130);
         
         column = new TableColumn(_table, SWT.NONE);
-        column.setText(_tableTitles[3]);
+        column.setText(TABLE_TITLES[3]);
         column.setWidth(100);
         
         column = new TableColumn(_table, SWT.NONE);
-        column.setText(_tableTitles[4]);
+        column.setText(TABLE_TITLES[4]);
         column.setWidth(500);
         
         _table.setHeaderVisible(true);
@@ -207,7 +207,7 @@ public class VHNotificationsTabControl extends TabControl
         _tableViewer.setUseHashlookup(true);
         _tableViewer.setContentProvider(new ContentProviderImpl());
         _tableViewer.setLabelProvider(new LabelProviderImpl());
-        _tableViewer.setColumnProperties(_tableTitles);
+        _tableViewer.setColumnProperties(TABLE_TITLES);
         
         addTableListeners();
     }
@@ -322,7 +322,10 @@ public class VHNotificationsTabControl extends TabControl
         }
         public Object[] getElements(Object parent) 
         {
-            return _notifications.toArray(new NotificationObject[0]);
+            synchronized(VHNotificationsTabControl.this)
+            {
+                return _notifications.toArray(new NotificationObject[0]);
+            }
         }
         public void addNotification(NotificationObject notification)
         {
@@ -338,7 +341,7 @@ public class VHNotificationsTabControl extends TabControl
     /**
      * Label provider for the table viewer
      */
-    protected class LabelProviderImpl implements ITableLabelProvider
+    protected static class LabelProviderImpl implements ITableLabelProvider
     {
         List<ILabelProviderListener> listeners = new ArrayList<ILabelProviderListener>();       
         public void addListener(ILabelProviderListener listener)

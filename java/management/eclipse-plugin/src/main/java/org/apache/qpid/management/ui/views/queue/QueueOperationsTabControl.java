@@ -20,6 +20,11 @@
  */
 package org.apache.qpid.management.ui.views.queue;
 
+import static org.apache.qpid.management.common.mbeans.ManagedQueue.MSG_AMQ_ID;
+import static org.apache.qpid.management.common.mbeans.ManagedQueue.MSG_HEADER;
+import static org.apache.qpid.management.common.mbeans.ManagedQueue.MSG_QUEUE_POS;
+import static org.apache.qpid.management.common.mbeans.ManagedQueue.MSG_REDELIVERED;
+import static org.apache.qpid.management.common.mbeans.ManagedQueue.MSG_SIZE;
 import static org.apache.qpid.management.ui.Constants.CONSOLE_IMAGE;
 import static org.apache.qpid.management.ui.Constants.RESULT;
 
@@ -104,12 +109,6 @@ public class QueueOperationsTabControl extends TabControl
     
     private Button _previousButton;
     private Button _nextButton;
-    
-    private static final String MSG_AMQ_ID = ManagedQueue.VIEW_MSGS_COMPOSITE_ITEM_NAMES[0];
-    private static final String MSG_HEADER = ManagedQueue.VIEW_MSGS_COMPOSITE_ITEM_NAMES[1];
-    private static final String MSG_SIZE = ManagedQueue.VIEW_MSGS_COMPOSITE_ITEM_NAMES[2];
-    private static final String MSG_REDELIVERED = ManagedQueue.VIEW_MSGS_COMPOSITE_ITEM_NAMES[3];
-    private static final String MSG_QUEUE_POS = ManagedQueue.VIEW_MSGS_COMPOSITE_ITEM_NAMES[4];
     
     public QueueOperationsTabControl(TabFolder tabFolder, JMXManagedObject mbean, MBeanServerConnection mbsc)
     {
@@ -651,7 +650,7 @@ public class QueueOperationsTabControl extends TabControl
     /**
      * Content Provider class for the table viewer
      */
-    private class ContentProviderImpl  implements IStructuredContentProvider
+    private static class ContentProviderImpl  implements IStructuredContentProvider
     {
         
         public void inputChanged(Viewer v, Object oldInput, Object newInput)
@@ -703,7 +702,7 @@ public class QueueOperationsTabControl extends TabControl
      * Sorter class for the table viewer.
      *
      */
-    public class TableSorter extends ViewerSorter
+    public static class TableSorter extends ViewerSorter
     {
         private int column;
         private static final int ASCENDING = 0;
@@ -1079,7 +1078,7 @@ public class QueueOperationsTabControl extends TabControl
     
     private String getRangesString(ArrayList<Long> starts, ArrayList<Long> ends)
     {
-        String idRangesString = new String("");
+        String idRangesString = "";
 
         for(int i=0 ; i < starts.size() ; i++)
         {

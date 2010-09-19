@@ -45,14 +45,20 @@ public interface ManagedQueue
     //TabularType and contained CompositeType key/description information for message list
     //For compatibility reasons, DONT MODIFY the existing key values if expanding the set. 
     //"Queue Position" added in Qpid JMX API 1.3
-    String[] VIEW_MSGS_COMPOSITE_ITEM_NAMES = {"AMQ MessageId", "Header", "Size(bytes)", "Redelivered", "Queue Position"};
-    String[] VIEW_MSGS_COMPOSITE_ITEM_DESCRIPTIONS = {"AMQ MessageId", "Header", "Size(bytes)", "Redelivered", "Queue Position"};
-    String[] VIEW_MSGS_TABULAR_UNIQUE_INDEX = {VIEW_MSGS_COMPOSITE_ITEM_NAMES[0]};
-
+    String MSG_AMQ_ID = "AMQ MessageId";
+    String MSG_HEADER = "Header";
+    String MSG_SIZE = "Size(bytes)";
+    String MSG_REDELIVERED = "Redelivered";
+    String MSG_QUEUE_POS = "Queue Position";
+    List<String> VIEW_MSGS_COMPOSITE_ITEM_NAMES_DESC = Collections.unmodifiableList(Arrays.asList(MSG_AMQ_ID, MSG_HEADER, MSG_SIZE, MSG_REDELIVERED, MSG_QUEUE_POS));
+    List<String> VIEW_MSGS_TABULAR_UNIQUE_INDEX = Collections.unmodifiableList(Arrays.asList(MSG_QUEUE_POS));
+  
     //CompositeType key/description information for message content
-    //For compatibility reasons, DONT MODIFY the existing key values if expanding the set. 
-    String[] VIEW_MSG_CONTENT_COMPOSITE_ITEM_NAMES = { "AMQ MessageId", "MimeType", "Encoding", "Content" };
-    String[] VIEW_MSG_CONTENT_COMPOSITE_ITEM_DESCRIPTIONS = { "AMQ MessageId", "MimeType", "Encoding", "Content" };
+    //For compatibility reasons, DONT MODIFY the existing key values if expanding the set.
+    String MIME = "MimeType";
+    String ENCODING = "Encoding";
+    String CONTENT = "Content";
+    List<String> VIEW_MSG_CONTENT_COMPOSITE_ITEM_NAMES_DESC = Collections.unmodifiableList(Arrays.asList(MSG_AMQ_ID, MIME, ENCODING, CONTENT));
     
     //Individual attribute name constants
     static final String ATTR_NAME = "Name";
