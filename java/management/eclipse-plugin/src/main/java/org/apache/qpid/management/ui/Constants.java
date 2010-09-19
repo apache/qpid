@@ -20,6 +20,10 @@
  */
 package org.apache.qpid.management.ui;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
 /**
  * Contains constants for the application
  * @author Bhupendra Bhardwaj
@@ -83,9 +87,10 @@ public class Constants
     public final static String FANOUT_EXCHANGE = "fanout";
     public final static String HEADERS_EXCHANGE = "headers";
     public final static String TOPIC_EXCHANGE = "topic";
-    public final static String[] DEFAULT_EXCHANGE_TYPE_VALUES = {DIRECT_EXCHANGE, FANOUT_EXCHANGE, HEADERS_EXCHANGE, TOPIC_EXCHANGE};
-    public final static String[] BOOLEAN_TYPE_VALUES = {"false", "true"};
-    public final static String[] ATTRIBUTE_TABLE_TITLES = {"Attribute Name", "Value"};  
+    public final static List<String> DEFAULT_EXCHANGE_TYPE_VALUES = Collections.unmodifiableList(
+            Arrays.asList(DIRECT_EXCHANGE, FANOUT_EXCHANGE, HEADERS_EXCHANGE, TOPIC_EXCHANGE));
+    public final static List<String> ATTRIBUTE_TABLE_TITLES = Collections.unmodifiableList(
+            Arrays.asList("Attribute Name", "Value"));  
     
     public final static String ACTION_ADDSERVER = "New Connection";
     public final static String ACTION_RECONNECT = "Reconnect";

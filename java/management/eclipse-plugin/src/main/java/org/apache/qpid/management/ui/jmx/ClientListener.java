@@ -43,18 +43,20 @@ public class ClientListener implements NotificationListener
     
     public void handleNotification(Notification notification, Object handback)
     {
-        ObjectName objName = null;
-        String     type = notification.getType();
+        String type = notification.getType();
         
-        if (MBeanServerNotification.REGISTRATION_NOTIFICATION.equals(type))
+        if(notification instanceof MBeanServerNotification)
         {
-            objName = ((MBeanServerNotification)notification).getMBeanName();
-            getServerRegistry().registerManagedObject(objName);
-        }
-        else if (MBeanServerNotification.UNREGISTRATION_NOTIFICATION.equals(type))
-        {
-            objName = ((MBeanServerNotification)notification).getMBeanName();
-            getServerRegistry().unregisterManagedObject(objName);
+            ObjectName objName = ((MBeanServerNotification)notification).getMBeanName();
+            
+            if (MBeanServerNotification.REGISTRATION_NOTIFICATION.equals(type))
+            {
+                getServerRegistry().registerManagedObject(objName);
+            }
+            else if (MBeanServerNotification.UNREGISTRATION_NOTIFICATION.equals(type))
+            {
+                getServerRegistry().unregisterManagedObject(objName);
+            }
         }
         else if (JMXConnectionNotification.FAILED.equals(type))
         {

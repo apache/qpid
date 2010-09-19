@@ -327,7 +327,7 @@ public class MBeanUtility
                     }
                     else
                     {
-                        attributeValues.add(new String("-"));
+                        attributeValues.add("-");
                     }
                 }
                 
@@ -417,7 +417,7 @@ public class MBeanUtility
                 throw new ManagementConsoleException("Entered value is too big for \"" +
                                                      ViewUtility.getDisplayText(attribute.getName()) + "\"");
             }
-            newValue = new Long(Long.parseLong(value));
+            newValue = Long.parseLong(value);
         }
         else if (attribute.getDataType().equals(Integer.class.getName()))
         {
@@ -425,7 +425,7 @@ public class MBeanUtility
             {
                 throw new ManagementConsoleException("Entered value is too big for " + attribute.getName());
             }
-            newValue = new Integer(Integer.parseInt(value));
+            newValue = Integer.parseInt(value);
         }
         else if (attribute.getDataType().equals(Boolean.class.getName()))
         {
@@ -434,7 +434,7 @@ public class MBeanUtility
                 throw new ManagementConsoleException("Entered value was not true or false");
             }
 
-            newValue = new Boolean(Boolean.valueOf(value)); 
+            newValue = Boolean.valueOf(value); 
         }
         
         mbsc.setAttribute(jmxbean.getObjectName(), new Attribute(attribute.getName(), newValue));           

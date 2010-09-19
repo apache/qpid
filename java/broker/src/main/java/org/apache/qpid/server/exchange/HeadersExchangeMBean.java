@@ -56,9 +56,10 @@ final class HeadersExchangeMBean extends AbstractExchangeMBean<HeadersExchange>
         _bindingItemTypes[1] = SimpleType.STRING;
         _bindingItemTypes[2] = new ArrayType(1, SimpleType.STRING);
         _bindingDataType = new CompositeType("Exchange Binding", "Queue name and header bindings",
-                HEADERS_COMPOSITE_ITEM_NAMES, HEADERS_COMPOSITE_ITEM_DESC, _bindingItemTypes);
+                HEADERS_COMPOSITE_ITEM_NAMES.toArray(new String[HEADERS_COMPOSITE_ITEM_NAMES.size()]), 
+                HEADERS_COMPOSITE_ITEM_DESC.toArray(new String[HEADERS_COMPOSITE_ITEM_DESC.size()]), _bindingItemTypes);
         _bindinglistDataType = new TabularType("Exchange Bindings", "List of exchange bindings for " + getName(),
-                                               _bindingDataType, HEADERS_TABULAR_UNIQUE_INDEX);
+                                               _bindingDataType, HEADERS_TABULAR_UNIQUE_INDEX.toArray(new String[HEADERS_TABULAR_UNIQUE_INDEX.size()]));
     }
 
     public TabularData bindings() throws OpenDataException
@@ -85,7 +86,8 @@ final class HeadersExchangeMBean extends AbstractExchangeMBean<HeadersExchange>
 
 
             Object[] bindingItemValues = {count++, queueName, mappingList.toArray(new String[0])};
-            CompositeData bindingData = new CompositeDataSupport(_bindingDataType, HEADERS_COMPOSITE_ITEM_NAMES, bindingItemValues);
+            CompositeData bindingData = new CompositeDataSupport(_bindingDataType, 
+                    HEADERS_COMPOSITE_ITEM_NAMES.toArray(new String[HEADERS_COMPOSITE_ITEM_NAMES.size()]), bindingItemValues);
             bindingList.put(bindingData);
         }
 

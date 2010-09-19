@@ -49,17 +49,17 @@ public interface ManagedExchange
 
     List<String> COMPOSITE_ITEM_NAMES = Collections.unmodifiableList(Arrays.asList(BINDING_KEY, QUEUE_NAMES));
     List<String> COMPOSITE_ITEM_DESCRIPTIONS = Collections.unmodifiableList(Arrays.asList(BINDING_KEY, QUEUE_NAMES));
-    String[] TABULAR_UNIQUE_INDEX = {BINDING_KEY};
+    List<String> TABULAR_UNIQUE_INDEX = Collections.unmodifiableList(Arrays.asList(BINDING_KEY));
 
     //TabularType and contained CompositeType key/description info for HEADERS exchange only.
     //For compatibility reasons, DONT MODIFY the existing key values if expanding the set. 
-    String BINDING_NUMBER = "Binding No";
-    String QUEUE_NAME = "Queue  Name";
-    String QUEUE_BINDINGS = "Queue Bindings";
+    String HDR_BINDING_NUMBER = "Binding No";
+    String HDR_QUEUE_NAME = "Queue  Name";
+    String HDR_QUEUE_BINDINGS = "Queue Bindings";
 
-    String[] HEADERS_COMPOSITE_ITEM_NAMES = new String[]{BINDING_NUMBER, QUEUE_NAME, QUEUE_BINDINGS};
-    String[] HEADERS_COMPOSITE_ITEM_DESC = new String[]{BINDING_NUMBER, QUEUE_NAME, QUEUE_BINDINGS};
-    String[] HEADERS_TABULAR_UNIQUE_INDEX = new String[]{BINDING_NUMBER};
+    List<String> HEADERS_COMPOSITE_ITEM_NAMES = Collections.unmodifiableList(Arrays.asList(HDR_BINDING_NUMBER, HDR_QUEUE_NAME, HDR_QUEUE_BINDINGS));
+    List<String> HEADERS_COMPOSITE_ITEM_DESC = Collections.unmodifiableList(Arrays.asList(HDR_BINDING_NUMBER, HDR_QUEUE_NAME, HDR_QUEUE_BINDINGS));
+    List<String> HEADERS_TABULAR_UNIQUE_INDEX = Collections.unmodifiableList(Arrays.asList(HDR_BINDING_NUMBER));
 
     /**
      * Returns the name of the managed exchange.

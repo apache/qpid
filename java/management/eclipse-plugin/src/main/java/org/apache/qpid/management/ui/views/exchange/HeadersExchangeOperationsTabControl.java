@@ -20,6 +20,10 @@
  */
 package org.apache.qpid.management.ui.views.exchange;
 
+import static org.apache.qpid.management.common.mbeans.ManagedExchange.HDR_BINDING_NUMBER;
+import static org.apache.qpid.management.common.mbeans.ManagedExchange.HDR_QUEUE_BINDINGS;
+import static org.apache.qpid.management.common.mbeans.ManagedExchange.HDR_QUEUE_NAME;
+
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -89,10 +93,6 @@ public class HeadersExchangeOperationsTabControl extends TabControl
             
     private TabularDataSupport _bindings = null;
     private ManagedExchange _emb;
-    
-    static final String BINDING_NUM = ManagedExchange.HEADERS_COMPOSITE_ITEM_NAMES[0];
-    static final String QUEUE_NAME = ManagedExchange.HEADERS_COMPOSITE_ITEM_NAMES[1];
-    static final String HEADER_BINDINGS = ManagedExchange.HEADERS_COMPOSITE_ITEM_NAMES[2];
     
     public HeadersExchangeOperationsTabControl(TabFolder tabFolder, JMXManagedObject mbean, MBeanServerConnection mbsc)
     {
@@ -182,7 +182,7 @@ public class HeadersExchangeOperationsTabControl extends TabControl
         _bindingNumberTable.setLayoutData(data);
         
         _bindingNumberTableViewer = new TableViewer(_bindingNumberTable);
-        final TableSorter tableSorter = new TableSorter(BINDING_NUM);
+        final TableSorter tableSorter = new TableSorter(HDR_BINDING_NUMBER);
         
         String[] titles = {"Binding Number", "Queue Name"};
         int[] bounds = {135, 175};
@@ -220,8 +220,8 @@ public class HeadersExchangeOperationsTabControl extends TabControl
 
         }
         
-        _bindingNumberTableViewer.setContentProvider(new ContentProviderImpl(BINDING_NUM));
-        _bindingNumberTableViewer.setLabelProvider(new LabelProviderImpl(BINDING_NUM));
+        _bindingNumberTableViewer.setContentProvider(new ContentProviderImpl(HDR_BINDING_NUMBER));
+        _bindingNumberTableViewer.setLabelProvider(new LabelProviderImpl(HDR_BINDING_NUMBER));
         _bindingNumberTableViewer.setSorter(tableSorter);
         _bindingNumberTable.setSortColumn(_bindingNumberTable.getColumn(0));
         _bindingNumberTable.setSortDirection(SWT.UP);
@@ -236,7 +236,7 @@ public class HeadersExchangeOperationsTabControl extends TabControl
         _headersTable.setLayoutData(data);
         
         _headersTableViewer = new TableViewer(_headersTable);
-        final TableSorter queuesTableSorter = new TableSorter(HEADER_BINDINGS);
+        final TableSorter queuesTableSorter = new TableSorter(HDR_QUEUE_BINDINGS);
         
         titles = new String[]{"Header Bindings"};
         bounds = new int[]{225};
@@ -274,8 +274,8 @@ public class HeadersExchangeOperationsTabControl extends TabControl
 
         }
         
-        _headersTableViewer.setContentProvider(new ContentProviderImpl(HEADER_BINDINGS));
-        _headersTableViewer.setLabelProvider(new LabelProviderImpl(HEADER_BINDINGS));
+        _headersTableViewer.setContentProvider(new ContentProviderImpl(HDR_QUEUE_BINDINGS));
+        _headersTableViewer.setLabelProvider(new LabelProviderImpl(HDR_QUEUE_BINDINGS));
         _headersTableViewer.setSorter(queuesTableSorter);
         _headersTable.setSortColumn(_headersTable.getColumn(0));
         _headersTable.setSortDirection(SWT.UP);
@@ -290,7 +290,7 @@ public class HeadersExchangeOperationsTabControl extends TabControl
                 {
                 	final CompositeData selectedMsg = (CompositeData)_bindingNumberTable.getItem(selectionIndex).getData();
 
-                	String[] bindings = (String[]) selectedMsg.get(HEADER_BINDINGS);
+                	String[] bindings = (String[]) selectedMsg.get(HDR_QUEUE_BINDINGS);
                 	_headersTableViewer.setInput(bindings);
                 }
                 else
@@ -334,7 +334,7 @@ public class HeadersExchangeOperationsTabControl extends TabControl
     /**
      * Content Provider class for the table viewer
      */
-    private class ContentProviderImpl implements IStructuredContentProvider
+    private static class ContentProviderImpl implements IStructuredContentProvider
     {
     	String type;
     	
@@ -355,7 +355,7 @@ public class HeadersExchangeOperationsTabControl extends TabControl
         
         public Object[] getElements(Object parent)
         {
-        	if(type.equals(BINDING_NUM))
+        	if(type.equals(HDR_BINDING_NUMBER))
         	{
         		Collection<Object> rowCollection = ((TabularDataSupport) parent).values();
 
@@ -383,14 +383,14 @@ public class HeadersExchangeOperationsTabControl extends TabControl
 
         public String getColumnText(Object element, int columnIndex)
         {
-        	if(type.equals(BINDING_NUM)) //binding num and queue name table
+        	if(type.equals(HDR_BINDING_NUMBER)) //binding num and queue name table
         	{
         		switch (columnIndex)
         		{
         			case 0 : // binding number column 
-        				return String.valueOf(((CompositeDataSupport) element).get(BINDING_NUM));
+        				return String.valueOf(((CompositeDataSupport) element).get(HDR_BINDING_NUMBER));
                     case 1 : // queue name column 
-                        return (String) ((CompositeDataSupport) element).get(QUEUE_NAME);
+                        return (String) ((CompositeDataSupport) element).get(HDR_QUEUE_NAME);
         			default :
         				return "";
         		}
@@ -417,7 +417,7 @@ public class HeadersExchangeOperationsTabControl extends TabControl
      * Sorter class for the table viewer.
      *
      */
-    public class TableSorter extends ViewerSorter
+    public static class TableSorter extends ViewerSorter
     {
         private int column;
         private static final int ASCENDING = 0;
@@ -454,7 +454,7 @@ public class HeadersExchangeOperationsTabControl extends TabControl
         {
             int comparison = 0;
 
-            if(type.equals(BINDING_NUM)) //binding num and queue name table
+            if(type.equals(HDR_BINDING_NUMBER)) //binding num and queue name table
             {
                 CompositeData binding1 = (CompositeData) e1;
                 CompositeData binding2 = (CompositeData) e2;
@@ -462,10 +462,10 @@ public class HeadersExchangeOperationsTabControl extends TabControl
                 switch(column)
                 {
                     case 0: // binding number column 
-                        comparison = ((Integer) binding1.get(BINDING_NUM)).compareTo((Integer) binding2.get(BINDING_NUM));
+                        comparison = ((Integer) binding1.get(HDR_BINDING_NUMBER)).compareTo((Integer) binding2.get(HDR_BINDING_NUMBER));
                         break;
                     case 1: // queue name column 
-                        comparison = ((String) binding1.get(QUEUE_NAME)).compareTo((String) binding2.get(QUEUE_NAME));
+                        comparison = ((String) binding1.get(HDR_QUEUE_NAME)).compareTo((String) binding2.get(HDR_QUEUE_NAME));
                         break;
                     default:
                         comparison = 0;
@@ -687,7 +687,7 @@ public class HeadersExchangeOperationsTabControl extends TabControl
         }
         
         CompositeData bindingResult = (CompositeData) table.getItem(selectionIndex).getData();
-        String queueName = (String) bindingResult.get(QUEUE_NAME);
+        String queueName = (String) bindingResult.get(HDR_QUEUE_NAME);
         ServerRegistry serverRegistry = ApplicationRegistry.getServerRegistry(_mbean);
         ManagedBean selectedMBean = serverRegistry.getQueue(queueName, _mbean.getVirtualHostName());
 

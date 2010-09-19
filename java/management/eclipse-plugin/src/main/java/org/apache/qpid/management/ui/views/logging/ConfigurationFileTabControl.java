@@ -20,6 +20,9 @@
  */
 package org.apache.qpid.management.ui.views.logging;
 
+import static org.apache.qpid.management.common.mbeans.LoggingManagement.LOGGER_LEVEL;
+import static org.apache.qpid.management.common.mbeans.LoggingManagement.LOGGER_NAME;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -82,9 +85,6 @@ public class ConfigurationFileTabControl extends TabControl
     private TabularDataSupport _configFileLoggerLevels = null;
     private LoggingManagement _lmmb;
     private ApiVersion _ApiVersion;
-    
-    static final String LOGGER_NAME = LoggingManagement.COMPOSITE_ITEM_NAMES[0];
-    static final String LOGGER_LEVEL = LoggingManagement.COMPOSITE_ITEM_NAMES[1];
     
     public ConfigurationFileTabControl(TabFolder tabFolder, JMXManagedObject mbean, MBeanServerConnection mbsc)
     {
