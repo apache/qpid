@@ -258,6 +258,7 @@
               output="html"
               outputFile="${build.findbugs}/report.html" 
               stylesheet="fancy-hist.xsl"
+              jvmargs="-Xmx512m"
               projectName="Qpid">
       <auxAnalyzePath>
         <fileset dir="${build.lib}" includes="qpid*.jar" excludes="*test*.jar *junit*.jar *example*.jar qpid-all.jar"/>
