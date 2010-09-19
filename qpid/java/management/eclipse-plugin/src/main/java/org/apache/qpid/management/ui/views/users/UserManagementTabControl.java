@@ -20,6 +20,11 @@
  */
 package org.apache.qpid.management.ui.views.users;
 
+import static org.apache.qpid.management.common.mbeans.UserManagement.RIGHTS_ADMIN;
+import static org.apache.qpid.management.common.mbeans.UserManagement.RIGHTS_READ_ONLY;
+import static org.apache.qpid.management.common.mbeans.UserManagement.RIGHTS_READ_WRITE;
+import static org.apache.qpid.management.common.mbeans.UserManagement.USERNAME;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -80,11 +85,6 @@ public class UserManagementTabControl extends TabControl
     private TabularDataSupport _userDetails = null;
     private UserManagement _ummb;
     private ApiVersion _ApiVersion;
-    
-    static final String USERNAME = UserManagement.COMPOSITE_ITEM_NAMES[0];
-    static final String RIGHTS_READ_ONLY = UserManagement.COMPOSITE_ITEM_NAMES[1];
-    static final String RIGHTS_READ_WRITE = UserManagement.COMPOSITE_ITEM_NAMES[2];
-    static final String RIGHTS_ADMIN = UserManagement.COMPOSITE_ITEM_NAMES[3];
     
     public UserManagementTabControl(TabFolder tabFolder, JMXManagedObject mbean, MBeanServerConnection mbsc)
     {
@@ -420,7 +420,7 @@ public class UserManagementTabControl extends TabControl
     /**
      * Content Provider class for the table viewer
      */
-    private class ContentProviderImpl  implements IStructuredContentProvider
+    private static class ContentProviderImpl  implements IStructuredContentProvider
     {
         
         public void inputChanged(Viewer v, Object oldInput, Object newInput)

@@ -95,7 +95,7 @@ public class AMQProtocolSessionMBeanTest extends InternalBrokerBaseCase
         _protocolSession.addChannel(channel4);
         channel4.setDefaultQueue(queue);
         
-        final String blocking = ManagedConnection.COMPOSITE_ITEM_NAMES[4];
+        final String blocking = ManagedConnection.FLOW_BLOCKED;
         TabularData channels = _mbean.channels();
         CompositeData chan4result = channels.get(new Integer[]{4});
         assertNotNull(chan4result);

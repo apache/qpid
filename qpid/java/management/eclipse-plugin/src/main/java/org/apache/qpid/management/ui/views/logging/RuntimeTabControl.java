@@ -20,6 +20,9 @@
  */
 package org.apache.qpid.management.ui.views.logging;
 
+import static org.apache.qpid.management.common.mbeans.LoggingManagement.LOGGER_LEVEL;
+import static org.apache.qpid.management.common.mbeans.LoggingManagement.LOGGER_NAME;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -31,9 +34,9 @@ import javax.management.openmbean.TabularDataSupport;
 
 import static org.apache.qpid.management.ui.Constants.FONT_BOLD;
 
+import org.apache.qpid.management.common.mbeans.LoggingManagement;
 import org.apache.qpid.management.ui.ApplicationRegistry;
 import org.apache.qpid.management.ui.ManagedBean;
-import org.apache.qpid.management.common.mbeans.LoggingManagement;
 import org.apache.qpid.management.ui.jmx.JMXManagedObject;
 import org.apache.qpid.management.ui.jmx.MBeanUtility;
 import org.apache.qpid.management.ui.views.TabControl;
@@ -87,9 +90,6 @@ public class RuntimeTabControl extends TabControl
     private TabularDataSupport _runtimeLoggerLevels = null;
     private ArrayList<String> _configFileLoggerNames = new ArrayList<String>();
     private LoggingManagement _lmmb;
-    
-    private static final String LOGGER_NAME = LoggingManagement.COMPOSITE_ITEM_NAMES[0];
-    private static final String LOGGER_LEVEL = LoggingManagement.COMPOSITE_ITEM_NAMES[1];
     
     public RuntimeTabControl(TabFolder tabFolder, JMXManagedObject mbean, MBeanServerConnection mbsc)
     {

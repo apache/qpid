@@ -567,7 +567,7 @@ public class QueueTypeTabControl extends MBeanTypeTabControl
      * sorter class for the table viewer.
      *
      */
-    private class QueueTableSorter extends ViewerSorter
+    private static class QueueTableSorter extends ViewerSorter
     {
         protected int column;
         protected static final int ASCENDING = 0;
@@ -624,7 +624,7 @@ public class QueueTypeTabControl extends MBeanTypeTabControl
     /**
      * Content Provider class for the table viewer for Qpid JMX API 1.3 and above.
      */
-    private class QueueContentProviderImpl  implements IStructuredContentProvider
+    private static class QueueContentProviderImpl  implements IStructuredContentProvider
     {
         
         public void inputChanged(Viewer v, Object oldInput, Object newInput)

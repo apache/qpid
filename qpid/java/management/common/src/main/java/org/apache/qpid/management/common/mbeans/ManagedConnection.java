@@ -22,8 +22,10 @@
 package org.apache.qpid.management.common.mbeans;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
-import java.security.Principal;
+import java.util.List;
 
 import javax.management.JMException;
 import javax.management.MBeanOperationInfo;
@@ -45,9 +47,13 @@ public interface ManagedConnection
     //TabularType and contained CompositeType key/description information
     //For compatibility reasons, DONT MODIFY the existing key values if expanding the set. 
     //"Flow Blocked" added in Qpid JMX API 1.5
-    String[] COMPOSITE_ITEM_NAMES = {"Channel Id", "Transactional", "Default Queue", "Unacknowledged Message Count", "Flow Blocked"};
-    String[] COMPOSITE_ITEM_DESCRIPTIONS = {"Channel Id", "Transactional", "Default Queue", "Unacknowledged Message Count", "Flow Blocked"};
-    String[] TABULAR_UNIQUE_INDEX = {COMPOSITE_ITEM_NAMES[0]};
+    String CHAN_ID = "Channel Id";
+    String TRANSACTIONAL = "Transactional";
+    String DEFAULT_QUEUE = "Default Queue";
+    String UNACKED_COUNT = "Unacknowledged Message Count";
+    String FLOW_BLOCKED = "Flow Blocked";
+    List<String> COMPOSITE_ITEM_NAMES_DESC = Collections.unmodifiableList(Arrays.asList(CHAN_ID, TRANSACTIONAL, DEFAULT_QUEUE, UNACKED_COUNT, FLOW_BLOCKED));
+    List<String> TABULAR_UNIQUE_INDEX = Collections.unmodifiableList(Arrays.asList(CHAN_ID));
 
     @MBeanAttribute(name = "ClientId", description = "Client Id")
     String getClientId();

@@ -20,6 +20,10 @@
  */
 package org.apache.qpid.management.common.mbeans;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
 import org.apache.qpid.management.common.mbeans.annotations.MBeanOperation;
 import org.apache.qpid.management.common.mbeans.annotations.MBeanOperationParameter;
 
@@ -33,12 +37,17 @@ public interface UserManagement
     
     //TabularType and contained CompositeType key/description information.
     //For compatibility reasons, DONT MODIFY the existing key values if expanding the set.
-    String[] COMPOSITE_ITEM_NAMES = {"Username", "read", "write", "admin"};
-    String[] COMPOSITE_ITEM_DESCRIPTIONS = {"Broker Login username", 
+    String USERNAME = "Username";
+    String RIGHTS_READ_ONLY = "read";
+    String RIGHTS_READ_WRITE = "write";
+    String RIGHTS_ADMIN = "admin";
+    List<String> COMPOSITE_ITEM_NAMES = Collections.unmodifiableList(Arrays.asList(USERNAME, RIGHTS_READ_ONLY, RIGHTS_READ_WRITE, RIGHTS_ADMIN));
+    List<String> COMPOSITE_ITEM_DESCRIPTIONS = Collections.unmodifiableList(
+                              Arrays.asList("Broker Login username", 
                                             "Management Console Read Permission", 
                                             "Management Console Write Permission", 
-                                            "Management Console Admin Permission"};
-    String[] TABULAR_UNIQUE_INDEX = {COMPOSITE_ITEM_NAMES[0]};
+                                            "Management Console Admin Permission"));
+    List<String> TABULAR_UNIQUE_INDEX = Collections.unmodifiableList(Arrays.asList(USERNAME));
 
     //********** Operations *****************//
     /**

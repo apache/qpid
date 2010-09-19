@@ -137,7 +137,7 @@ public class JMXConnnectionFactory {
 	    Map<String, Object> env = new HashMap<String, Object>();
 	    JMXServiceURL jmxUrl = null;
 	    
-        if (connectionType == "RMI")
+        if (connectionType.equalsIgnoreCase("RMI"))
         {
             jmxUrl = new JMXServiceURL("service:jmx:rmi:///jndi/rmi://" + host + ":" + port + "/jmxrmi");
 
@@ -167,7 +167,7 @@ public class JMXConnnectionFactory {
              * jmxremote.sasl plugin (from the jmxremote_optional.jar) */
             env.put("jmx.remote.protocol.provider.pkgs", "com.sun.jmx.remote.protocol");
 
-            if (connectionType == "JMXMP_CRAM-MD5")
+            if (connectionType.equalsIgnoreCase("JMXMP_CRAM-MD5"))
             {
                 Map<String, Class<? extends SaslClientFactory>> map = new HashMap<String, Class<? extends SaslClientFactory>>();
                 map.put("CRAM-MD5-HASHED", CRAMMD5HashedSaslClientFactory.class);
@@ -178,7 +178,7 @@ public class JMXConnnectionFactory {
                 env.put("jmx.remote.profiles", Constants.SASL_CRAMMD5);
                 env.put("jmx.remote.sasl.callback.handler", handler);
             }
-            else if (connectionType == "JMXMP_PLAIN")
+            else if (connectionType.equalsIgnoreCase("JMXMP_PLAIN"))
             {
                 Security.addProvider(new SaslProvider());
                 CallbackHandler handler = new UserPasswordCallbackHandler(userName, password);
@@ -233,9 +233,15 @@ public class JMXConnnectionFactory {
         {
             try
             {
-                _jmxc = null;
-                _connectionRetrieved = false;
-                _connectionException = null;
+                synchronized (this)
+                {
+                    if(_connectionRetrieved)
+                    {
+                        _jmxc = null;
+                        _connectionRetrieved = false;
+                        _connectionException = null;
+                    }
+                }
                 
                 JMXConnector conn = JMXConnectorFactory.connect(_jmxUrl, _env);
                 

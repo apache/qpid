@@ -20,9 +20,12 @@
  */
 package org.apache.qpid.management.ui.views.logging;
 
+import static org.apache.qpid.management.common.mbeans.LoggingManagement.LOGGER_LEVEL;
+import static org.apache.qpid.management.common.mbeans.LoggingManagement.LOGGER_NAME;
+
+
 import javax.management.openmbean.CompositeDataSupport;
 
-import org.apache.qpid.management.common.mbeans.LoggingManagement;
 import org.eclipse.jface.viewers.ITableLabelProvider;
 import org.eclipse.jface.viewers.LabelProvider;
 import org.eclipse.swt.graphics.Image;
@@ -31,10 +34,7 @@ import org.eclipse.swt.graphics.Image;
  * Label Provider class for the LoggingManagement table viewers
  */
 public class LoggingTableLabelProvider extends LabelProvider implements ITableLabelProvider
-{
-    private static final String LOGGER_NAME = LoggingManagement.COMPOSITE_ITEM_NAMES[0];
-    private static final String LOGGER_LEVEL = LoggingManagement.COMPOSITE_ITEM_NAMES[1];
-    
+{    
     @Override
     public String getColumnText(Object element, int columnIndex)
     {

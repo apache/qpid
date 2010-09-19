@@ -20,6 +20,9 @@
  */
 package org.apache.qpid.server.logging.management;
 
+import static org.apache.qpid.management.common.mbeans.LoggingManagement.LOGGER_LEVEL;
+import static org.apache.qpid.management.common.mbeans.LoggingManagement.LOGGER_NAME;
+
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -45,12 +48,9 @@ public class LoggingManagementMBeanTest extends InternalBrokerBaseCase
     private static final String TEST_LOGGER_CHILD1 = "LoggingManagementMBeanTestLogger.child1";
     private static final String TEST_LOGGER_CHILD2 = "LoggingManagementMBeanTestLogger.child2";
 
-    private static final String CATEGORY_PRIORITY = "LogManMBeanTest.category.priority";
-    private static final String CATEGORY_LEVEL = "LogManMBeanTest.category.level";
-    private static final String LOGGER_LEVEL = "LogManMBeanTest.logger.level";
-    
-    private static final String NAME_INDEX = LoggingManagement.COMPOSITE_ITEM_NAMES[0];
-    private static final String LEVEL_INDEX = LoggingManagement.COMPOSITE_ITEM_NAMES[1];
+    private static final String TEST_CATEGORY_PRIORITY = "LogManMBeanTest.category.priority";
+    private static final String TEST_CATEGORY_LEVEL = "LogManMBeanTest.category.level";
+    private static final String TEST_LOGGER_LEVEL = "LogManMBeanTest.logger.level";
 
     private static final String NEWLINE = System.getProperty("line.separator");
 
@@ -101,19 +101,19 @@ public class LoggingManagementMBeanTest extends InternalBrokerBaseCase
             writer.write("  </appender>"+NEWLINE);
 
             //Example of a 'category' with a 'priority'
-            writer.write("  <category additivity=\"true\" name=\"" + CATEGORY_PRIORITY +"\">"+NEWLINE);
+            writer.write("  <category additivity=\"true\" name=\"" + TEST_CATEGORY_PRIORITY +"\">"+NEWLINE);
             writer.write("      <priority value=\"info\"/>"+NEWLINE);
             writer.write("      <appender-ref ref=\"STDOUT\"/>"+NEWLINE);
             writer.write("  </category>"+NEWLINE);
 
             //Example of a 'category' with a 'level'
-            writer.write("  <category additivity=\"true\" name=\"" + CATEGORY_LEVEL +"\">"+NEWLINE);
+            writer.write("  <category additivity=\"true\" name=\"" + TEST_CATEGORY_LEVEL +"\">"+NEWLINE);
             writer.write("      <level value=\"warn\"/>"+NEWLINE);
             writer.write("      <appender-ref ref=\"STDOUT\"/>"+NEWLINE);
             writer.write("  </category>"+NEWLINE);
 
             //Example of a 'logger' with a 'level'
-            writer.write("  <logger additivity=\"true\" name=\"" + LOGGER_LEVEL + "\">"+NEWLINE);
+            writer.write("  <logger additivity=\"true\" name=\"" + TEST_LOGGER_LEVEL + "\">"+NEWLINE);
             writer.write("      <level value=\"error\"/>"+NEWLINE);
             writer.write("      <appender-ref ref=\"STDOUT\"/>"+NEWLINE);
             writer.write("  </logger>"+NEWLINE);
@@ -268,7 +268,7 @@ public class LoggingManagementMBeanTest extends InternalBrokerBaseCase
         for (Object o : records)
         {
             CompositeData data = (CompositeData) o;
-            list.put(data.get(NAME_INDEX).toString(), data.get(LEVEL_INDEX).toString());
+            list.put(data.get(LOGGER_NAME).toString(), data.get(LOGGER_LEVEL).toString());
         }
         
         //check child2 does not exist already
@@ -284,7 +284,7 @@ public class LoggingManagementMBeanTest extends InternalBrokerBaseCase
         for (Object o : records)
         {
             CompositeData data = (CompositeData) o;
-            list.put(data.get(NAME_INDEX).toString(), data.get(LEVEL_INDEX).toString());
+            list.put(data.get(LOGGER_NAME).toString(), data.get(LOGGER_LEVEL).toString());
         }
 
         //verify the parent and child2 loggers are present in returned values
@@ -305,7 +305,7 @@ public class LoggingManagementMBeanTest extends InternalBrokerBaseCase
         for (Object o : records)
         {
             CompositeData data = (CompositeData) o;
-            list.put(data.get(NAME_INDEX).toString(), data.get(LEVEL_INDEX).toString());
+            list.put(data.get(LOGGER_NAME).toString(), data.get(LOGGER_LEVEL).toString());
         }
 
         //check child2's effective level is now "warn"
@@ -332,30 +332,30 @@ public class LoggingManagementMBeanTest extends InternalBrokerBaseCase
         for (Object o : records)
         {
             CompositeData data = (CompositeData) o;
-            list.put(data.get(NAME_INDEX).toString(), data.get(LEVEL_INDEX).toString());
+            list.put(data.get(LOGGER_NAME).toString(), data.get(LOGGER_LEVEL).toString());
         }
 
         //check the 3 different types of logger definition are successfully retrieved before update
         assertTrue("Wrong number of items in returned list", list.size() == 3);
-        assertTrue(CATEGORY_PRIORITY + " logger was not in the returned list", list.containsKey(CATEGORY_PRIORITY));
-        assertTrue(CATEGORY_LEVEL + " logger was not in the returned list", list.containsKey(CATEGORY_LEVEL));
-        assertTrue(LOGGER_LEVEL + " logger was not in the returned list", list.containsKey(LOGGER_LEVEL));
+        assertTrue(TEST_CATEGORY_PRIORITY + " logger was not in the returned list", list.containsKey(TEST_CATEGORY_PRIORITY));
+        assertTrue(TEST_CATEGORY_LEVEL + " logger was not in the returned list", list.containsKey(TEST_CATEGORY_LEVEL));
+        assertTrue(TEST_LOGGER_LEVEL + " logger was not in the returned list", list.containsKey(TEST_LOGGER_LEVEL));
 
         //check that their level is as expected
-        assertTrue(CATEGORY_PRIORITY + " logger's level was incorrect", list.get(CATEGORY_PRIORITY).equalsIgnoreCase("info"));
-        assertTrue(CATEGORY_LEVEL + " logger's level was incorrect", list.get(CATEGORY_LEVEL).equalsIgnoreCase("warn"));
-        assertTrue(LOGGER_LEVEL + " logger's level was incorrect", list.get(LOGGER_LEVEL).equalsIgnoreCase("error"));
+        assertTrue(TEST_CATEGORY_PRIORITY + " logger's level was incorrect", list.get(TEST_CATEGORY_PRIORITY).equalsIgnoreCase("info"));
+        assertTrue(TEST_CATEGORY_LEVEL + " logger's level was incorrect", list.get(TEST_CATEGORY_LEVEL).equalsIgnoreCase("warn"));
+        assertTrue(TEST_LOGGER_LEVEL + " logger's level was incorrect", list.get(TEST_LOGGER_LEVEL).equalsIgnoreCase("error"));
 
         //increase their levels a notch to test the 3 different types of logger definition are successfully updated
         //change the category+priority to warn
-        assertTrue("failed to set new level", lm.setConfigFileLoggerLevel(CATEGORY_PRIORITY, "warn"));
+        assertTrue("failed to set new level", lm.setConfigFileLoggerLevel(TEST_CATEGORY_PRIORITY, "warn"));
         //change the category+level to error
-        assertTrue("failed to set new level", lm.setConfigFileLoggerLevel(CATEGORY_LEVEL, "error"));
+        assertTrue("failed to set new level", lm.setConfigFileLoggerLevel(TEST_CATEGORY_LEVEL, "error"));
         //change the logger+level to trace
-        assertTrue("failed to set new level", lm.setConfigFileLoggerLevel(LOGGER_LEVEL, "trace"));
+        assertTrue("failed to set new level", lm.setConfigFileLoggerLevel(TEST_LOGGER_LEVEL, "trace"));
 
         //try an invalid level
-        assertFalse("Use of an invalid logger level was successfull", lm.setConfigFileLoggerLevel(LOGGER_LEVEL, "made.up.level"));
+        assertFalse("Use of an invalid logger level was successfull", lm.setConfigFileLoggerLevel(TEST_LOGGER_LEVEL, "made.up.level"));
 
         //try an invalid logger name
         assertFalse("Use of an invalid logger name was successfull", lm.setConfigFileLoggerLevel("made.up.logger.name", "info"));
@@ -367,19 +367,19 @@ public class LoggingManagementMBeanTest extends InternalBrokerBaseCase
         for (Object o : records)
         {
             CompositeData data = (CompositeData) o;
-            list.put(data.get(NAME_INDEX).toString(), data.get(LEVEL_INDEX).toString());
+            list.put(data.get(LOGGER_NAME).toString(), data.get(LOGGER_LEVEL).toString());
         }
 
         //check the 3 different types of logger definition are successfully retrieved after update
         assertTrue("Wrong number of items in returned list", list.size() == 3);
-        assertTrue(CATEGORY_PRIORITY + " logger was not in the returned list", list.containsKey(CATEGORY_PRIORITY));
-        assertTrue(CATEGORY_LEVEL + " logger was not in the returned list", list.containsKey(CATEGORY_LEVEL));
-        assertTrue(LOGGER_LEVEL + " logger was not in the returned list", list.containsKey(LOGGER_LEVEL));
+        assertTrue(TEST_CATEGORY_PRIORITY + " logger was not in the returned list", list.containsKey(TEST_CATEGORY_PRIORITY));
+        assertTrue(TEST_CATEGORY_LEVEL + " logger was not in the returned list", list.containsKey(TEST_CATEGORY_LEVEL));
+        assertTrue(TEST_LOGGER_LEVEL + " logger was not in the returned list", list.containsKey(TEST_LOGGER_LEVEL));
 
         //check that their level is as expected after the changes
-        assertTrue(CATEGORY_PRIORITY + " logger's level was incorrect", list.get(CATEGORY_PRIORITY).equalsIgnoreCase("warn"));
-        assertTrue(CATEGORY_LEVEL + " logger's level was incorrect", list.get(CATEGORY_LEVEL).equalsIgnoreCase("error"));
-        assertTrue(LOGGER_LEVEL + " logger's level was incorrect", list.get(LOGGER_LEVEL).equalsIgnoreCase("trace"));
+        assertTrue(TEST_CATEGORY_PRIORITY + " logger's level was incorrect", list.get(TEST_CATEGORY_PRIORITY).equalsIgnoreCase("warn"));
+        assertTrue(TEST_CATEGORY_LEVEL + " logger's level was incorrect", list.get(TEST_CATEGORY_LEVEL).equalsIgnoreCase("error"));
+        assertTrue(TEST_LOGGER_LEVEL + " logger's level was incorrect", list.get(TEST_LOGGER_LEVEL).equalsIgnoreCase("trace"));
     }
     
     public void testGetAndSetConfigFileRootLoggerLevel() throws Exception

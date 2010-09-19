@@ -156,10 +156,10 @@ public class AttributesTabControl extends TabControl
         GridData gridData = new GridData(SWT.FILL, SWT.FILL, true, true);
         _table.setLayoutData(gridData);
         
-        for (int i = 0; i < ATTRIBUTE_TABLE_TITLES.length; ++i)
+        for (int i = 0; i < ATTRIBUTE_TABLE_TITLES.size(); ++i)
         {
             final TableColumn column = new TableColumn(_table, SWT.NONE);
-            column.setText(ATTRIBUTE_TABLE_TITLES[i]);
+            column.setText(ATTRIBUTE_TABLE_TITLES.get(i));
             column.setWidth(tableWidths[i]);
             column.setResizable(true);
         }
@@ -175,7 +175,8 @@ public class AttributesTabControl extends TabControl
     {
         _tableViewer = new TableViewer(_table);
         _tableViewer.setUseHashlookup(true);
-        _tableViewer.setColumnProperties(ATTRIBUTE_TABLE_TITLES);
+        _tableViewer.setColumnProperties(
+                ATTRIBUTE_TABLE_TITLES.toArray(new String[ATTRIBUTE_TABLE_TITLES.size()]));
         _tableViewer.setContentProvider(new ContentProviderImpl());
         _tableViewer.setLabelProvider(new LabelProviderImpl());
         _tableViewer.setSorter(new ViewerSorterImpl());
@@ -451,7 +452,7 @@ public class AttributesTabControl extends TabControl
         parent.setLayout(layout);
 
         // Name
-        Label label = _toolkit.createLabel(parent, ATTRIBUTE_TABLE_TITLES[0], SWT.NONE);       
+        Label label = _toolkit.createLabel(parent, ATTRIBUTE_TABLE_TITLES.get(0), SWT.NONE);       
         GridData layoutData = new GridData(SWT.TRAIL, SWT.TOP, false, false);
         label.setLayoutData(layoutData);
         int textStyle = SWT.BEGINNING | SWT.BORDER |SWT.READ_ONLY;
@@ -466,7 +467,7 @@ public class AttributesTabControl extends TabControl
         value.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
         
         // value
-        label = _toolkit.createLabel(parent, ATTRIBUTE_TABLE_TITLES[1], SWT.NONE);
+        label = _toolkit.createLabel(parent, ATTRIBUTE_TABLE_TITLES.get(1), SWT.NONE);
         label.setLayoutData(new GridData(SWT.TRAIL, SWT.TOP, false, false));
         
         if (!attribute.isReadable())
@@ -480,7 +481,7 @@ public class AttributesTabControl extends TabControl
             {
                 if (attribute.getValue() instanceof String[])
                 {
-                    String result = new String("");
+                    String result = "";
                     for(String val : (String[]) attribute.getValue()){
                         result = result.concat(val+ "; ");
                     }
@@ -813,7 +814,7 @@ public class AttributesTabControl extends TabControl
      * Content Provider class for the table viewer
      * @author Bhupendra Bhardwaj
      */
-    private class ContentProviderImpl  implements IStructuredContentProvider
+    private static class ContentProviderImpl  implements IStructuredContentProvider
     {
         
         public void inputChanged(Viewer v, Object oldInput, Object newInput)

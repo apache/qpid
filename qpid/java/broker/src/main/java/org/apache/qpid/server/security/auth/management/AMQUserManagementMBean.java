@@ -85,9 +85,10 @@ public class AMQUserManagementMBean extends AMQManagedObject implements UserMana
         try
         {
             _userDataType =
-                    new CompositeType("User", "User Data", COMPOSITE_ITEM_NAMES, COMPOSITE_ITEM_DESCRIPTIONS, userItemTypes);
+                    new CompositeType("User", "User Data", COMPOSITE_ITEM_NAMES.toArray(new String[COMPOSITE_ITEM_NAMES.size()]),
+                            COMPOSITE_ITEM_DESCRIPTIONS.toArray(new String[COMPOSITE_ITEM_DESCRIPTIONS.size()]), userItemTypes);
 
-            _userlistDataType = new TabularType("Users", "List of users", _userDataType, TABULAR_UNIQUE_INDEX);
+            _userlistDataType = new TabularType("Users", "List of users", _userDataType, TABULAR_UNIQUE_INDEX.toArray(new  String[TABULAR_UNIQUE_INDEX.size()]));
         }
         catch (OpenDataException e)
         {
@@ -326,7 +327,7 @@ public class AMQUserManagementMBean extends AMQManagedObject implements UserMana
                 }
 
                 Object[] itemData = {user.getName(), read, write, admin};
-                CompositeData messageData = new CompositeDataSupport(_userDataType, COMPOSITE_ITEM_NAMES, itemData);
+                CompositeData messageData = new CompositeDataSupport(_userDataType, COMPOSITE_ITEM_NAMES.toArray(new String[COMPOSITE_ITEM_NAMES.size()]), itemData);
                 userList.put(messageData);
             }
         }

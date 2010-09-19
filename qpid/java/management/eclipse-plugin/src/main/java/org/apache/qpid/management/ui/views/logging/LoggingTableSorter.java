@@ -20,9 +20,11 @@
  */
 package org.apache.qpid.management.ui.views.logging;
 
+import static org.apache.qpid.management.common.mbeans.LoggingManagement.LOGGER_LEVEL;
+import static org.apache.qpid.management.common.mbeans.LoggingManagement.LOGGER_NAME;
+
 import javax.management.openmbean.CompositeData;
 
-import org.apache.qpid.management.common.mbeans.LoggingManagement;
 import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.jface.viewers.ViewerSorter;
 
@@ -31,8 +33,6 @@ import org.eclipse.jface.viewers.ViewerSorter;
  */
 public class LoggingTableSorter extends ViewerSorter
 {
-    private static final String LOGGER_NAME = LoggingManagement.COMPOSITE_ITEM_NAMES[0];
-    private static final String LOGGER_LEVEL = LoggingManagement.COMPOSITE_ITEM_NAMES[1];
     private static final int ASCENDING = 0;
     private static final int DESCENDING = 1;
     
