@@ -31,9 +31,11 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.log4j.Logger;
+import org.apache.qpid.AMQConnectionException;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.*;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
+import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.ack.UnacknowledgedMessageMap;
 import org.apache.qpid.server.ack.UnacknowledgedMessageMapImpl;
 import org.apache.qpid.server.exchange.Exchange;
@@ -120,6 +122,7 @@ public class AMQChannel
 
     private LogActor _actor;
     private LogSubject _logSubject;
+    private long _txnUpdateTime;
 
     public AMQChannel(AMQProtocolSession session, int channelId, MessageStore messageStore)
             throws AMQException
@@ -166,6 +169,8 @@ public class AMQChannel
         _currentMessage = new IncomingMessage(_messageStore.getNewMessageId(), info, _txnContext, _session);
         _currentMessage.setMessageStore(_messageStore);
         _currentMessage.setExchange(e);
+
+        updateTransactionalActivity();
     }
 
     public void publishContentHeader(ContentHeaderBody contentHeaderBody)
@@ -770,6 +775,15 @@ public class AMQChannel
     public void acknowledgeMessage(long deliveryTag, boolean multiple) throws AMQException
     {
         _unacknowledgedMessageMap.acknowledgeMessage(deliveryTag, multiple, _txnContext);
+        updateTransactionalActivity();
+    }
+
+    public void updateTransactionalActivity()
+    {
+        if (isTransactional())
+        {
+            _txnUpdateTime = System.currentTimeMillis();
+        }
     }
 
     /**
@@ -1015,5 +1029,58 @@ public class AMQChannel
     public boolean getBlocking()
     {
         return _blocking.get();
+    }
+
+    /**
+     * This method is called from the housekeeping thread to check the status of
+     * transactions on this channel and react appropriately.
+     * 
+     * If a transaction is open for too long or idle for too long then a warning
+     * is logged or the connection is closed, depending on the configuration. An open
+     * transaction is one that has recent activity. The transaction age is counted
+     * from the time the transaction was started. An idle transaction is one that 
+     * has had no activity, such as publishing or acknowledgeing messages.
+     * 
+     * @param openWarn time in milliseconds before alerting on open transaction
+     * @param openClose time in milliseconds before closing connection with open transaction
+     * @param idleWarn time in milliseconds before alerting on idle transaction
+     * @param idleClose time in milliseconds before closing connection with idle transaction
+     */
+    public void checkTransactionStatus(long openWarn, long openClose, long idleWarn, long idleClose) throws AMQException
+    {
+        if (isTransactional() && _txnContext.inTransaction())
+        {
+            long currentTime = System.currentTimeMillis();
+            long openTime = currentTime - _txnContext.getTransactionStartTime();
+            long idleTime = currentTime - _txnUpdateTime;
+
+            // Log a warning on idle or open transactions
+            if (idleWarn > 0L && idleTime > idleWarn)
+            {
+                _actor.message(ChannelMessages.CHN_IDLE_TXN(idleTime));
+            }
+            else if (openWarn > 0L && openTime > openWarn)
+            {
+                _actor.message(ChannelMessages.CHN_OPEN_TXN(openTime));
+            }
+
+            // Close connection for idle or open transactions that have timed out
+            if (idleClose > 0L && idleTime > idleClose)
+            {
+                _session.closeConnection(_channelId,  new AMQConnectionException(AMQConstant.REQUEST_TIMEOUT,
+                        "Idle transaction timed out", 0, 0,
+                        _session.getProtocolOutputConverter().getProtocolMajorVersion(),
+                        _session.getProtocolOutputConverter().getProtocolMinorVersion(),
+                        (Throwable) null), true);
+            }
+            else if (openClose > 0L && openTime > openClose)
+            {
+                _session.closeConnection(_channelId,  new AMQConnectionException(AMQConstant.REQUEST_TIMEOUT,
+                        "Open transaction timed out", 0, 0,
+                        _session.getProtocolOutputConverter().getProtocolMajorVersion(),
+                        _session.getProtocolOutputConverter().getProtocolMinorVersion(),
+                        (Throwable) null), true);
+            }
+        }
     }
 }

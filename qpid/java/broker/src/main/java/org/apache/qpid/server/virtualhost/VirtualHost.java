@@ -27,6 +27,8 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.abstraction.ContentChunk;
 import org.apache.qpid.server.AMQBrokerManagerMBean;
+import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.logging.actors.AbstractActor;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.messages.VirtualHostMessages;
 import org.apache.qpid.server.configuration.ExchangeConfiguration;
@@ -41,6 +43,7 @@ import org.apache.qpid.server.exchange.ExchangeFactory;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.management.AMQManagedObject;
 import org.apache.qpid.server.management.ManagedObject;
+import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.queue.DefaultQueueRegistry;
@@ -230,7 +233,7 @@ public class VirtualHost implements Accessable
 	private void initialiseHouseKeeping(long period)
     {
         /* add a timer task to iterate over queues, cleaning expired messages from queues with no consumers */
-        if (period != 0L)
+        if (period > 0L)
         {
             class HouseKeepingTask extends TimerTask
             {
@@ -238,6 +241,12 @@ public class VirtualHost implements Accessable
             	
                 public void run()
                 {
+                    CurrentActor.set(new AbstractActor(ApplicationRegistry.getInstance().getRootMessageLogger()) {
+                        public String getLogMessage()
+                        {
+                            return "[" + Thread.currentThread().getName() + "]";
+                        }
+                    });
                     _hkLogger.info("Starting the houseKeeping job");
                     for (AMQQueue q : _queueRegistry.getQueues())
                     {
@@ -253,7 +262,27 @@ public class VirtualHost implements Accessable
                             // house keeping task from running.
                         }
                     }
+                    for (AMQProtocolSession conn : _connectionRegistry.getConnections())
+                    {
+                        _hkLogger.debug("Checking for long running open transactions on connection " + conn);
+                        for (AMQChannel ch : conn.getChannels())
+                        {
+                            try
+                            {
+                                ch.checkTransactionStatus(_configuration.getTransactionTimeoutOpenWarn(),
+			                                              _configuration.getTransactionTimeoutOpenClose(),
+			                                              _configuration.getTransactionTimeoutIdleWarn(),
+			                                              _configuration.getTransactionTimeoutIdleClose());
+                            }
+                            catch (Exception e)
+                            {
+                                _hkLogger.error("Exception in housekeeping for connection: " + conn.toString(), e);
+                            }
+                        }
+                    }
+
                     _hkLogger.info("HouseKeeping job completed.");
+                    CurrentActor.remove();
                 }
             }
 

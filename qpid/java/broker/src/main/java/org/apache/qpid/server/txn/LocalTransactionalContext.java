@@ -56,6 +56,7 @@ public class LocalTransactionalContext implements TransactionalContext
     private boolean _messageDelivered = false;
     private final AMQChannel _channel;
 
+    private long _txnStartTime;
 
     private abstract class DeliveryAction
     {
@@ -114,6 +115,7 @@ public class LocalTransactionalContext implements TransactionalContext
     public LocalTransactionalContext(final AMQChannel channel)
     {
         _channel = channel;
+        _txnStartTime = System.currentTimeMillis();
     }
 
     public StoreContext getStoreContext()
@@ -135,6 +137,7 @@ public class LocalTransactionalContext implements TransactionalContext
     public void rollback() throws AMQException
     {
         _txnBuffer.rollback(getStoreContext());
+ 
         // Hack to deal with uncommitted non-transactional writes
         if (getMessageStore().inTran(getStoreContext()))
         {
@@ -142,6 +145,7 @@ public class LocalTransactionalContext implements TransactionalContext
             _inTran = false;
         }
 
+        _txnStartTime = System.currentTimeMillis();
         _postCommitDeliveryList.clear();
     }
 
@@ -215,6 +219,17 @@ public class LocalTransactionalContext implements TransactionalContext
     {
         // Not required in this transactional context
     }
+    
+    public boolean inTransaction()
+    {
+        return _inTran;
+    }
+    
+    public long getTransactionStartTime()
+    {
+        return _txnStartTime;
+    }
+
 
     public void beginTranIfNecessary() throws AMQException
     {
@@ -226,6 +241,7 @@ public class LocalTransactionalContext implements TransactionalContext
             }
 
             getMessageStore().beginTran(getStoreContext());
+            _txnStartTime = System.currentTimeMillis();
             _inTran = true;
         }
     }
@@ -259,6 +275,7 @@ public class LocalTransactionalContext implements TransactionalContext
         {
             _messageDelivered = false;
             _inTran = getMessageStore().inTran(getStoreContext());
+            _txnStartTime = System.currentTimeMillis();
         }
 
         try

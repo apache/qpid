@@ -37,7 +37,7 @@ public class ChannelLogSubject extends AbstractLogSubject
      * 4 - Channel ID
      */
     public static String CHANNEL_FORMAT = ConnectionLogSubject.CONNECTION_FORMAT
-                                             + "/ch:{4}";
+    + "/ch:{4}";
 
     public ChannelLogSubject(AMQChannel channel)
     {

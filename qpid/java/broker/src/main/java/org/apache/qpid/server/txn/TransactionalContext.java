@@ -91,6 +91,20 @@ public interface TransactionalContext
      * @throws AMQException If the transaction cannot be started for any reason.
      */
     void beginTranIfNecessary() throws AMQException;
+    
+    /**
+     * Returns whether or not a transaction is currently in progress.
+     *
+     * @return true if a transaction is currently in progress
+     */
+    boolean inTransaction();
+    
+    /**
+     * Return the time the current transaction started.
+     * 
+     * @return the time this transaction started or 0 if not in a transaction
+     */
+    long getTransactionStartTime();
 
     /**
      * Makes all pending operations on the transaction permanent and visible.
@@ -118,13 +132,13 @@ public interface TransactionalContext
     void deliver(final AMQQueue queue, AMQMessage message) throws AMQException;
 
     /**
-         * Requeues the specified message entry (message queue pair)
-         *
-         *
-         * @param queueEntry      The message,queue pair
-         *
-         * @throws AMQException If the message cannot be delivered for any reason.
-         */
+     * Requeues the specified message entry (message queue pair)
+     *
+     *
+     * @param queueEntry      The message,queue pair
+     *
+     * @throws AMQException If the message cannot be delivered for any reason.
+     */
     void requeue(QueueEntry queueEntry) throws AMQException;
 
 

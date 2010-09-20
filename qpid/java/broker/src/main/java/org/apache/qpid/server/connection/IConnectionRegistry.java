@@ -20,13 +20,13 @@
  */
 package org.apache.qpid.server.connection;
 
-import org.apache.qpid.server.protocol.AMQMinaProtocolSession;
-import org.apache.qpid.server.protocol.AMQProtocolSession;
+import java.util.Collection;
+
 import org.apache.qpid.AMQException;
+import org.apache.qpid.server.protocol.AMQProtocolSession;
 
 public interface IConnectionRegistry
 {
-
     public void initialise();
 
     public void close() throws AMQException;
@@ -35,4 +35,5 @@ public interface IConnectionRegistry
 
     public void deregisterConnection(AMQProtocolSession connnection);
 
+    public Collection<AMQProtocolSession> getConnections();
 }

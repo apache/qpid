@@ -28,6 +28,8 @@ import org.apache.qpid.AMQConnectionException;
 import org.apache.qpid.protocol.AMQConstant;
 
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 public class ConnectionRegistry implements IConnectionRegistry
@@ -69,5 +71,10 @@ public class ConnectionRegistry implements IConnectionRegistry
     public void deregisterConnection(AMQProtocolSession connnection)
     {
         _registry.remove(connnection);
+    }
+
+    public Collection<AMQProtocolSession> getConnections()
+    {
+        return new ArrayList<AMQProtocolSession>(_registry);
     }
 }

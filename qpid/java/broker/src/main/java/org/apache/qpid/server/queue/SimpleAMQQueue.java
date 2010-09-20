@@ -510,6 +510,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             throws AMQException
     {
         _deliveredMessages.incrementAndGet();
+ 
         if (_logger.isDebugEnabled())
         {
             _logger.debug(sub + ": deliverMessage: " + entry.debugIdentity());

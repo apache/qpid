@@ -34,6 +34,7 @@ import org.apache.qpid.server.output.ProtocolOutputConverter;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.security.Principal;
+import java.util.Collection;
 
 
 public interface AMQProtocolSession extends AMQVersionAwareProtocolSession
@@ -113,6 +114,13 @@ public interface AMQProtocolSession extends AMQVersionAwareProtocolSession
      *                than one session but this is not validated.
      */
     void addChannel(AMQChannel channel) throws AMQException;
+    
+    /**
+     * Return all channels associated with this session.
+     * 
+     * @return a collection containing this sessions's channels
+     */
+    Collection<AMQChannel> getChannels();
 
     /**
      * Close a specific channel. This will remove any resources used by the channel, including: <ul><li>any queue

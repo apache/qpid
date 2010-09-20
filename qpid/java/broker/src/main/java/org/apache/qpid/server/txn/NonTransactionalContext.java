@@ -77,6 +77,16 @@ public class NonTransactionalContext implements TransactionalContext
             _inTran = true;
         }
     }
+    
+    public boolean inTransaction()
+    {
+        return false;
+    }
+    
+    public long getTransactionStartTime()
+    {
+        return 0L;
+    }
 
     public void commit() throws AMQException
     {

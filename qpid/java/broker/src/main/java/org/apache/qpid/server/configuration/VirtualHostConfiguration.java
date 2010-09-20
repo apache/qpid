@@ -176,4 +176,23 @@ public class VirtualHostConfiguration
         return _config.getLong("queues.flowResumeCapacity", getCapacity());
     }
 
+    public long getTransactionTimeoutOpenWarn()
+    {
+        return _config.getLong("transactionTimeout.openWarn", 0L);
+    }
+
+    public long getTransactionTimeoutOpenClose()
+    {
+        return _config.getLong("transactionTimeout.openClose", 0L);
+    }
+
+    public long getTransactionTimeoutIdleWarn()
+    {
+        return _config.getLong("transactionTimeout.idleWarn", 0L);
+    }
+
+    public long getTransactionTimeoutIdleClose()
+    {
+        return _config.getLong("transactionTimeout.idleClose", 0L);
+    }
 }
