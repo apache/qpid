@@ -230,20 +230,11 @@ public class ServerSessionDelegate extends SessionDelegate
                     }
 
                     FlowCreditManager_0_10 creditManager = new WindowCreditManager(0L,0L);
-
-                    FieldTable filters = new FieldTable();
-                    Map<String,Object> fields = method.getFields();
-                    for (String key: fields.keySet()) 
-                    {
-                        if (key.equals(AMQPFilterTypes.JMS_SELECTOR.getValue().asString()))
-                        { 
-                            filters.setObject(key, fields.get(key));
-                        }
-                    }
+                    
                     FilterManager filterManager = null;
                     try 
                     {
-                        filterManager = FilterManagerFactory.createManager(filters);
+                        filterManager = FilterManagerFactory.createManager(method.getArguments());
                     } 
                     catch (AMQException amqe) 
                     {
@@ -256,7 +247,7 @@ public class ServerSessionDelegate extends SessionDelegate
                                                                   method.getAcceptMode(),
                                                                   method.getAcquireMode(),
                                                                   MessageFlowMode.WINDOW,
-                                                                  creditManager, null);
+                                                                  creditManager, filterManager);
 
                     ((ServerSession)session).register(destination, sub);
                     try

@@ -20,15 +20,18 @@
  */
 package org.apache.qpid.server.filter;
 
+import java.util.Map;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.framing.FieldTable;
+import org.apache.log4j.Logger;
 
 
 public class FilterManagerFactory
 {
-    //private final static Logger _logger = LoggerFactory.getLogger(FilterManagerFactory.class);
-    private final static org.apache.log4j.Logger _logger = org.apache.log4j.Logger.getLogger(FilterManagerFactory.class);
+ 
+    private final static Logger _logger = Logger.getLogger(FilterManagerFactory.class);
 
     //fixme move to a common class so it can be refered to from client code.
 
@@ -63,5 +66,10 @@ public class FilterManagerFactory
 
         return manager;
 
+    }
+    
+    public static FilterManager createManager(Map<String,Object> map) throws AMQException
+    {
+        return createManager(FieldTable.convertToFieldTable(map));
     }
 }
