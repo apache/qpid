@@ -384,7 +384,7 @@ class Broker(Popen):
     def ready(self, **kwargs):
         """Wait till broker is ready to serve clients"""
         # First make sure the broker is listening by checking the log.
-        if not retry(self.log_ready):
+        if not retry(self.log_ready, timeout=30):
             raise Exception(
                 "Timed out waiting for broker %s%s"%(self.name, error_line(self.log,4)))
         # Create a connection and a session. For a cluster broker this will
