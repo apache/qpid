@@ -934,6 +934,25 @@ class FederationTests(TestBase010):
                                  0)     # sync
             self.assertEqual(result.status, 0)
 
+        # wait for the inter-broker links to become operational
+        retries = 0
+        operational = False
+        while not operational:
+            operational = True
+            for _l in qmf.getObjects(_class="link"):
+                #print("Link=%s:%s %s" % (_l.host, _l.port, str(_l.state)))
+                if _l.state != "Operational":
+                    operational = False
+            if not operational:
+                retries += 1
+                self.failIfEqual(retries, 10,
+                                 "inter-broker links failed to become operational.")
+                sleep(1)
+
+        # @todo - There is no way to determine when the bridge objects become
+        # active.  Hopefully, this is long enough!
+        sleep(6)
+
         # create a queue on B2, bound to "spudboy"
         self._brokers[2].client_session.queue_declare(queue="fedX1", exclusive=True, auto_delete=True)
         self._brokers[2].client_session.exchange_bind(queue="fedX1", exchange="fedX.direct", binding_key="spudboy")
@@ -969,7 +988,7 @@ class FederationTests(TestBase010):
         # send 10 msgs from B0
         for i in range(1, 11):
             dp = self._brokers[0].client_session.delivery_properties(routing_key="spudboy")
-            self._brokers[0].client_session.message_transfer(destination="fedX.direct", message=Message(dp, "Message %d" % i))
+            self._brokers[0].client_session.message_transfer(destination="fedX.direct", message=Message(dp, "Message_drp %d" % i))
 
         # wait for 10 messages to be forwarded from B0->B1,
         # 10 messages from B1->B2,
@@ -999,9 +1018,9 @@ class FederationTests(TestBase010):
         # get exactly 10 msgs on B2 and B3
         for i in range(1, 11):
             msg = queue_2.get(timeout=5)
-            self.assertEqual("Message %d" % i, msg.body)
+            self.assertEqual("Message_drp %d" % i, msg.body)
             msg = queue_3.get(timeout=5)
-            self.assertEqual("Message %d" % i, msg.body)
+            self.assertEqual("Message_drp %d" % i, msg.body)
 
         try:
             extra = queue_2.get(timeout=1)
@@ -1033,9 +1052,9 @@ class FederationTests(TestBase010):
         #     exchanges[1].update()
 
         # send 10 msgs from B0
-        for i in range(1, 11):
+        for i in range(11, 21):
             dp = self._brokers[0].client_session.delivery_properties(routing_key="spudboy")
-            self._brokers[0].client_session.message_transfer(destination="fedX.direct", message=Message(dp, "Message %d" % i))
+            self._brokers[0].client_session.message_transfer(destination="fedX.direct", message=Message(dp, "Message_drp %d" % i))
 
         # verify messages are forwarded to B3 only
         # note: why exchanges[1].msgRoutes == 40???, not 20???  QPID-2499?
@@ -1062,9 +1081,9 @@ class FederationTests(TestBase010):
                 ex.update()
 
         # get exactly 10 msgs on B3 only
-        for i in range(1, 11):
+        for i in range(11, 21):
             msg = queue_3.get(timeout=5)
-            self.assertEqual("Message %d" % i, msg.body)
+            self.assertEqual("Message_drp %d" % i, msg.body)
 
         try:
             extra = queue_3.get(timeout=1)
@@ -1174,6 +1193,25 @@ class FederationTests(TestBase010):
                                  0)     # sync
             self.assertEqual(result.status, 0)
 
+        # wait for the inter-broker links to become operational
+        retries = 0
+        operational = False
+        while not operational:
+            operational = True
+            for _l in qmf.getObjects(_class="link"):
+                #print("Link=%s:%s %s" % (_l.host, _l.port, str(_l.state)))
+                if _l.state != "Operational":
+                    operational = False
+            if not operational:
+                retries += 1
+                self.failIfEqual(retries, 10,
+                                 "inter-broker links failed to become operational.")
+                sleep(1)
+
+        # @todo - There is no way to determine when the bridge objects become
+        # active.
+        sleep(6)
+
         # create a queue on B2, bound to "spudboy"
         self._brokers[2].client_session.queue_declare(queue="fedX1", exclusive=True, auto_delete=True)
         self._brokers[2].client_session.exchange_bind(queue="fedX1", exchange="fedX.topic", binding_key="spud.*")
@@ -1209,7 +1247,7 @@ class FederationTests(TestBase010):
         # send 10 msgs from B0
         for i in range(1, 11):
             dp = self._brokers[0].client_session.delivery_properties(routing_key="spud.boy")
-            self._brokers[0].client_session.message_transfer(destination="fedX.topic", message=Message(dp, "Message %d" % i))
+            self._brokers[0].client_session.message_transfer(destination="fedX.topic", message=Message(dp, "Message_trp %d" % i))
 
         # wait for 10 messages to be forwarded from B0->B1,
         # 10 messages from B1->B2,
@@ -1239,9 +1277,9 @@ class FederationTests(TestBase010):
         # get exactly 10 msgs on B2 and B3
         for i in range(1, 11):
             msg = queue_2.get(timeout=5)
-            self.assertEqual("Message %d" % i, msg.body)
+            self.assertEqual("Message_trp %d" % i, msg.body)
             msg = queue_3.get(timeout=5)
-            self.assertEqual("Message %d" % i, msg.body)
+            self.assertEqual("Message_trp %d" % i, msg.body)
 
         try:
             extra = queue_2.get(timeout=1)
@@ -1272,9 +1310,9 @@ class FederationTests(TestBase010):
         #     exchanges[1].update()
 
         # send 10 msgs from B0
-        for i in range(1, 11):
+        for i in range(11, 21):
             dp = self._brokers[0].client_session.delivery_properties(routing_key="spud.boy")
-            self._brokers[0].client_session.message_transfer(destination="fedX.topic", message=Message(dp, "Message %d" % i))
+            self._brokers[0].client_session.message_transfer(destination="fedX.topic", message=Message(dp, "Message_trp %d" % i))
 
         # verify messages are forwarded to B3 only
         # note: why exchanges[1].msgRoutes == 40???, not 20???  QPID-2499?
@@ -1301,9 +1339,9 @@ class FederationTests(TestBase010):
                 ex.update()
 
         # get exactly 10 msgs on B3 only
-        for i in range(1, 11):
+        for i in range(11, 21):
             msg = queue_3.get(timeout=5)
-            self.assertEqual("Message %d" % i, msg.body)
+            self.assertEqual("Message_trp %d" % i, msg.body)
 
         try:
             extra = queue_3.get(timeout=1)
@@ -1414,6 +1452,25 @@ class FederationTests(TestBase010):
                                  0)     # sync
             self.assertEqual(result.status, 0)
 
+        # wait for the inter-broker links to become operational
+        retries = 0
+        operational = False
+        while not operational:
+            operational = True
+            for _l in qmf.getObjects(_class="link"):
+                # print("Link=%s:%s %s" % (_l.host, _l.port, str(_l.state)))
+                if _l.state != "Operational":
+                    operational = False
+            if not operational:
+                retries += 1
+                self.failIfEqual(retries, 10,
+                                 "inter-broker links failed to become operational.")
+                sleep(1)
+
+        # @todo - There is no way to determine when the bridge objects become
+        # active.
+        sleep(6)
+
         # create a queue on B2, bound to the exchange
         self._brokers[2].client_session.queue_declare(queue="fedX1", exclusive=True, auto_delete=True)
         self._brokers[2].client_session.exchange_bind(queue="fedX1", exchange="fedX.fanout")
@@ -1449,7 +1506,7 @@ class FederationTests(TestBase010):
         # send 10 msgs from B0
         for i in range(1, 11):
             dp = self._brokers[0].client_session.delivery_properties()
-            self._brokers[0].client_session.message_transfer(destination="fedX.fanout", message=Message(dp, "Message %d" % i))
+            self._brokers[0].client_session.message_transfer(destination="fedX.fanout", message=Message(dp, "Message_frp %d" % i))
 
         # wait for 10 messages to be forwarded from B0->B1,
         # 10 messages from B1->B2,
@@ -1479,9 +1536,9 @@ class FederationTests(TestBase010):
         # get exactly 10 msgs on B2 and B3
         for i in range(1, 11):
             msg = queue_2.get(timeout=5)
-            self.assertEqual("Message %d" % i, msg.body)
+            self.assertEqual("Message_frp %d" % i, msg.body)
             msg = queue_3.get(timeout=5)
-            self.assertEqual("Message %d" % i, msg.body)
+            self.assertEqual("Message_frp %d" % i, msg.body)
 
         try:
             extra = queue_2.get(timeout=1)
@@ -1512,9 +1569,9 @@ class FederationTests(TestBase010):
         #     exchanges[1].update()
 
         # send 10 msgs from B0
-        for i in range(1, 11):
+        for i in range(11, 21):
             dp = self._brokers[0].client_session.delivery_properties()
-            self._brokers[0].client_session.message_transfer(destination="fedX.fanout", message=Message(dp, "Message %d" % i))
+            self._brokers[0].client_session.message_transfer(destination="fedX.fanout", message=Message(dp, "Message_frp %d" % i))
 
         # verify messages are forwarded to B3 only
         # note: why exchanges[1].msgRoutes == 40???, not 20???  QPID-2499?
@@ -1541,9 +1598,9 @@ class FederationTests(TestBase010):
                 ex.update()
 
         # get exactly 10 msgs on B3 only
-        for i in range(1, 11):
+        for i in range(11, 21):
             msg = queue_3.get(timeout=5)
-            self.assertEqual("Message %d" % i, msg.body)
+            self.assertEqual("Message_frp %d" % i, msg.body)
 
         try:
             extra = queue_3.get(timeout=1)
