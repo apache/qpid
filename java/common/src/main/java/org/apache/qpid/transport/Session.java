@@ -774,7 +774,7 @@ public class Session extends SessionInvoker
         }
         else
         {
-            log.warn("Broker sent a result in response to a command" +
+            log.warn("Received a response to a command" +
             		" that's no longer valid on the client side." +
             		" [ command id : %s , result : %s ]",command, result);
         }
