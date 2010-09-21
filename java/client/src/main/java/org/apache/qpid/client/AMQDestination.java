@@ -125,7 +125,7 @@ public abstract class AMQDestination implements Destination, Referenceable
     
     protected final static DestSyntax defaultDestSyntax;
     
-    protected DestSyntax _destSyntax;
+    protected DestSyntax _destSyntax = DestSyntax.ADDR;
 
     protected AddressHelper _addrHelper;
     protected Address _address;
@@ -927,5 +927,15 @@ public abstract class AMQDestination implements Destination, Referenceable
         dest.setLink(_link);
         dest.setAddressResolved(_isAddressResolved);
         return dest;        
+    }
+    
+    protected void setAutoDelete(boolean b)
+    {
+        _isAutoDelete = b;
+    }
+    
+    protected void setDurable(boolean b)
+    {
+        _isDurable = b;
     }
 }

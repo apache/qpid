@@ -115,11 +115,14 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
         {
             capacity = _0_10session.getAMQConnection().getMaxPrefetch();
         }
-        
+
         if (destination.isAddressResolved() && AMQDestination.TOPIC_TYPE == destination.getAddressType()) 
         {
             
-            if (destination.getLink() == null || destination.getLink().getName() == null)
+            boolean durable = destination.getSourceNode() != null && destination.getSourceNode().isDurable();
+            boolean namedQueue = destination.getLink() != null && destination.getLink().getName() != null ; 
+            
+            if (!durable && !namedQueue)
             {
                 _destination = destination.copyDestination();
                 _destination.setQueueName(null);

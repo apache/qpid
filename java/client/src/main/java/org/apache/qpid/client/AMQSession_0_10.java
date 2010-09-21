@@ -531,6 +531,7 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
         {
             rk = routingKey.toString();
         }
+                
         return isQueueBound(exchangeName.toString(),queueName.toString(),rk,null);
     }
     
@@ -568,7 +569,7 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
     public void sendConsume(BasicMessageConsumer_0_10 consumer, AMQShortString queueName, AMQProtocolHandler protocolHandler,
                             boolean nowait, String messageSelector, int tag)
             throws AMQException, FailoverException
-    {
+    {        
         boolean preAcquire;
         
         long capacity = getCapacity(consumer.getDestination());
@@ -1175,7 +1176,6 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
                             "The name '" + dest.getAddressName() +
                             "' supplied in the address doesn't resolve to an exchange or a queue");
             }
-            
             dest.setAddressResolved(true);
         }
     }
@@ -1231,17 +1231,17 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
     private void createSubscriptionQueue(AMQDestination dest) throws AMQException
     {
         QueueNode node = (QueueNode)dest.getSourceNode();  // source node is never null
-                
+        
         if (dest.getQueueName() == null)
         {
             if (dest.getLink() != null && dest.getLink().getName() != null) 
             {
                 dest.setQueueName(new AMQShortString(dest.getLink().getName())); 
             }
-            node.setExclusive(true);
-            node.setAutoDelete(true);
-            send0_10QueueDeclare(dest,null,false,false);
         }
+        node.setExclusive(true);
+        node.setAutoDelete(!node.isDurable());
+        send0_10QueueDeclare(dest,null,false,true);
         node.addBinding(new Binding(dest.getAddressName(),
                                     dest.getQueueName(),// should have one by now
                                     dest.getSubject(),
@@ -1260,7 +1260,6 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
     public void setLegacyFiledsForTopicType(AMQDestination dest)
     {
         // legacy support
-        dest.setQueueName(null);
         dest.setExchangeName(new AMQShortString(dest.getAddressName()));
         ExchangeNode node = (ExchangeNode)dest.getTargetNode();
         dest.setExchangeClass(node.getExchangeType() == null? 
