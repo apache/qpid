@@ -54,6 +54,11 @@ SEV_NOTICE = cqmf2.SEV_NOTICE
 SEV_INFORM = cqmf2.SEV_INFORM
 SEV_DEBUG  = cqmf2.SEV_DEBUG
 
+QUERY_OBJECT    = cqmf2.QUERY_OBJECT
+QUERY_OBJECT_ID = cqmf2.QUERY_OBJECT_ID
+QUERY_SCHEMA    = cqmf2.QUERY_SCHEMA
+QUERY_SCHEMA_ID = cqmf2.QUERY_SCHEMA_ID
+
 
 #===================================================================================================
 # EXCEPTIONS
@@ -153,7 +158,7 @@ class ConsoleSession(object):
   def setAgentFilter(self, filt):
     """
     """
-    self.setAgentFilter(filt)
+    self._impl.setAgentFilter(filt)
 
   def open(self):
     """
@@ -321,6 +326,12 @@ class Agent(object):
       dataList.append(Data(result.getData(i)))
     return dataList
 
+  def loadSchemaInfo(self, timeout=30):
+    """
+    """
+    dur = cqpid.Duration(cqpid.Duration.SECOND.getMilliseconds() * timeout)
+    self._impl.querySchema(dur)
+
   def getPackages(self):
     """
     """
@@ -457,7 +468,7 @@ class Data(object):
     result = agent.callMethod(name, argmap, addr, dur)
 
     ##
-    ## If the agent sent an exception, raise it in a QmfAgentExeption.
+    ## If the agent sent an exception, raise it in a QmfAgentException.
     ##
     if result.getType() == cqmf2.CONSOLE_EXCEPTION:
       exdata = result.getData(0)

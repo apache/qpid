@@ -28,6 +28,7 @@
 #include "qmf/Schema.h"
 #include "qmf/ConsoleEventImpl.h"
 #include "qmf/SchemaCache.h"
+#include "qmf/Query.h"
 #include "qpid/sys/Mutex.h"
 #include "qpid/sys/Condition.h"
 #include "qpid/sys/Thread.h"
@@ -36,6 +37,7 @@
 #include "qpid/messaging/Message.h"
 #include "qpid/messaging/Connection.h"
 #include "qpid/messaging/Session.h"
+#include "qpid/messaging/Sender.h"
 #include "qpid/messaging/Address.h"
 #include "qpid/management/Buffer.h"
 #include "qpid/types/Variant.h"
@@ -65,13 +67,17 @@ namespace qmf {
         qpid::sys::Condition cond;
         qpid::messaging::Connection connection;
         qpid::messaging::Session session;
+        qpid::messaging::Sender directSender;
+        qpid::messaging::Sender topicSender;
         std::string domain;
-        qpid::types::Variant::Map agentFilter;
+        uint32_t maxAgentAgeMinutes;
+        Query agentQuery;
         bool opened;
         std::queue<ConsoleEvent> eventQueue;
         qpid::sys::Thread* thread;
         bool threadCanceled;
         uint64_t lastVisit;
+        uint64_t lastAgePass;
         std::map<std::string, Agent> agents;
         Agent connectedBrokerAgent;
         qpid::messaging::Address replyAddress;
@@ -83,6 +89,7 @@ namespace qmf {
         void enqueueEventLH(const ConsoleEvent&);
         void dispatch(qpid::messaging::Message);
         void sendBrokerLocate();
+        void sendAgentLocate();
         void handleAgentUpdate(const std::string&, const qpid::types::Variant::Map&, const qpid::messaging::Message&);
         void handleV1SchemaResponse(qpid::management::Buffer&, uint32_t, const qpid::messaging::Message&);
         void periodicProcessing(uint64_t);

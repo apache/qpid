@@ -42,6 +42,7 @@ namespace qmf {
         //
         SchemaPropertyImpl(const qpid::types::Variant::Map& m);
         SchemaPropertyImpl(qpid::management::Buffer& v1Buffer);
+        qpid::types::Variant::Map asMap() const;
         void updateHash(Hash&) const;
         void encodeV1(qpid::management::Buffer&, bool isArg, bool isMethodArg) const;
 
@@ -58,6 +59,7 @@ namespace qmf {
         void setDirection(int d) { direction = d; }
 
         const std::string& getName() const { return name; }
+        int getType() const { return dataType; }
         int getAccess() const { return access; }
         bool isIndex() const { return index; }
         bool isOptional() const { return optional; }
@@ -65,6 +67,7 @@ namespace qmf {
         const std::string& getDesc() const { return desc; }
         const std::string& getSubtype() const { return subtype; }
         int getDirection() const { return direction; }
+
     private:
         std::string name;
         int dataType;

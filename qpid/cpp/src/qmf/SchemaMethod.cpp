@@ -68,9 +68,47 @@ SchemaMethodImpl::SchemaMethodImpl(const string& n, const string& options) : nam
     }
 }
 
-SchemaMethodImpl::SchemaMethodImpl(const qpid::types::Variant::Map&)
+
+SchemaMethodImpl::SchemaMethodImpl(const qpid::types::Variant::Map& map)
 {
+    Variant::Map::const_iterator iter;
+    Variant::List::const_iterator lIter;
+
+    iter = map.find("_name");
+    if (iter == map.end())
+        throw QmfException("SchemaMethod without a _name element");
+    name = iter->second.asString();
+
+    iter = map.find("_desc");
+    if (iter != map.end())
+        desc = iter->second.asString();
+
+    iter = map.find("_arguments");
+    if (iter != map.end()) {
+        const Variant::List& argList(iter->second.asList());
+        for (lIter = argList.begin(); lIter != argList.end(); lIter++)
+            addArgument(SchemaProperty(new SchemaPropertyImpl(lIter->asMap())));
+    }
 }
+
+
+Variant::Map SchemaMethodImpl::asMap() const
+{
+    Variant::Map map;
+    Variant::List argList;
+
+    map["_name"] = name;
+
+    if (!desc.empty())
+        map["_desc"] = desc;
+
+    for (list<SchemaProperty>::const_iterator iter = arguments.begin(); iter != arguments.end(); iter++)
+        argList.push_back(SchemaPropertyImplAccess::get(*iter).asMap());
+    map["_arguments"] = argList;
+
+    return map;
+}
+
 
 SchemaMethodImpl::SchemaMethodImpl(qpid::management::Buffer& buffer)
 {

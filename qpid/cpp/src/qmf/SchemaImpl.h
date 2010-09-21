@@ -43,6 +43,7 @@ namespace qmf {
         // Impl-only public methods
         //
         SchemaImpl(const qpid::types::Variant::Map& m);
+        qpid::types::Variant::Map asMap() const;
         SchemaImpl(qpid::management::Buffer& v1Buffer);
         std::string asV1Content(uint32_t sequence) const;
 

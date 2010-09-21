@@ -51,6 +51,7 @@ void SchemaProperty::setSubtype(const string& s) { impl->setSubtype(s); }
 void SchemaProperty::setDirection(int d) { impl->setDirection(d); }
 
 const string& SchemaProperty::getName() const { return impl->getName(); }
+int SchemaProperty::getType() const { return impl->getType(); }
 int SchemaProperty::getAccess() const { return impl->getAccess(); }
 bool SchemaProperty::isIndex() const { return impl->isIndex(); }
 bool SchemaProperty::isOptional() const { return impl->isOptional(); }
@@ -132,9 +133,115 @@ SchemaPropertyImpl::SchemaPropertyImpl(const string& n, int t, const string opti
 }
 
 
-SchemaPropertyImpl::SchemaPropertyImpl(const Variant::Map&) :
+SchemaPropertyImpl::SchemaPropertyImpl(const Variant::Map& map) :
     access(ACCESS_READ_ONLY), index(false), optional(false), direction(DIR_IN)
 {
+    Variant::Map::const_iterator iter;
+
+    iter = map.find("_name");
+    if (iter == map.end())
+        throw QmfException("SchemaProperty without a _name element");
+    name = iter->second.asString();
+
+    iter = map.find("_type");
+    if (iter == map.end())
+        throw QmfException("SchemaProperty without a _type element");
+    const string& ts(iter->second.asString());
+    if      (ts == "TYPE_VOID")   dataType = SCHEMA_DATA_VOID;
+    else if (ts == "TYPE_BOOL")   dataType = SCHEMA_DATA_BOOL;
+    else if (ts == "TYPE_INT")    dataType = SCHEMA_DATA_INT;
+    else if (ts == "TYPE_FLOAT")  dataType = SCHEMA_DATA_FLOAT;
+    else if (ts == "TYPE_STRING") dataType = SCHEMA_DATA_STRING;
+    else if (ts == "TYPE_MAP")    dataType = SCHEMA_DATA_MAP;
+    else if (ts == "TYPE_LIST")   dataType = SCHEMA_DATA_LIST;
+    else if (ts == "TYPE_UUID")   dataType = SCHEMA_DATA_UUID;
+    else
+        throw QmfException("SchemaProperty with an invalid type code: " + ts);
+
+    iter = map.find("_access");
+    if (iter != map.end()) {
+        const string& as(iter->second.asString());
+        if      (as == "RO") access = ACCESS_READ_ONLY;
+        else if (as == "RC") access = ACCESS_READ_CREATE;
+        else if (as == "RW") access = ACCESS_READ_WRITE;
+        else
+            throw QmfException("SchemaProperty with an invalid access code: " + as);
+    }
+
+    iter = map.find("_unit");
+    if (iter != map.end())
+        unit = iter->second.asString();
+
+    iter = map.find("_dir");
+    if (iter != map.end()) {
+        const string& ds(iter->second.asString());
+        if      (ds == "I")  direction = DIR_IN;
+        else if (ds == "O")  direction = DIR_OUT;
+        else if (ds == "IO") direction = DIR_IN_OUT;
+        else
+            throw QmfException("SchemaProperty with an invalid direction code: " + ds);
+    }
+
+    iter = map.find("_desc");
+    if (iter != map.end())
+        desc = iter->second.asString();
+
+    iter = map.find("_index");
+    if (iter != map.end())
+        index = iter->second.asBool();
+
+    iter = map.find("_subtype");
+    if (iter != map.end())
+        subtype = iter->second.asString();
+}
+
+
+Variant::Map SchemaPropertyImpl::asMap() const
+{
+    Variant::Map map;
+    string ts;
+
+    map["_name"] = name;
+
+    switch (dataType) {
+    case SCHEMA_DATA_VOID:   ts = "TYPE_VOID";   break;
+    case SCHEMA_DATA_BOOL:   ts = "TYPE_BOOL";   break;
+    case SCHEMA_DATA_INT:    ts = "TYPE_INT";    break;
+    case SCHEMA_DATA_FLOAT:  ts = "TYPE_FLOAT";  break;
+    case SCHEMA_DATA_STRING: ts = "TYPE_STRING"; break;
+    case SCHEMA_DATA_MAP:    ts = "TYPE_MAP";    break;
+    case SCHEMA_DATA_LIST:   ts = "TYPE_LIST";   break;
+    case SCHEMA_DATA_UUID:   ts = "TYPE_UUID";   break;
+    }
+    map["_type"] = ts;
+
+    switch (access) {
+    case ACCESS_READ_ONLY:   ts = "RO"; break;
+    case ACCESS_READ_CREATE: ts = "RC"; break;
+    case ACCESS_READ_WRITE:  ts = "RW"; break;
+    }
+    map["_access"] = ts;
+
+    if (!unit.empty())
+        map["_unit"] = unit;
+
+    switch (direction) {
+    case DIR_IN:     ts = "I";  break;
+    case DIR_OUT:    ts = "O";  break;
+    case DIR_IN_OUT: ts = "IO"; break;
+    }
+    map["_dir"] = ts;
+
+    if (!desc.empty())
+        map["_desc"] = desc;
+
+    if (index)
+        map["_index"] = true;
+
+    if (!subtype.empty())
+        map["_subtype"] = subtype;
+
+    return map;
 }
 
 
