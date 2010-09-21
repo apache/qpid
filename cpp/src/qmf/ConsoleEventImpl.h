@@ -34,10 +34,12 @@ namespace qmf {
         //
         // Impl-only methods
         //
-        ConsoleEventImpl(ConsoleEventCode e) : eventType(e), correlator(0), final(false) {}
+        ConsoleEventImpl(ConsoleEventCode e, AgentDelReason r = AGENT_DEL_AGED) :
+            eventType(e), delReason(r), correlator(0), final(false) {}
         void setCorrelator(uint32_t c) { correlator = c; }
         void setAgent(const Agent& a) { agent = a; }
         void addData(const Data& d) { dataList.push_back(Data(d)); }
+        void addSchemaId(const SchemaId& s) { newSchemaIds.push_back(SchemaId(s)); }
         void setFinal() { final = true; }
         void setArguments(const qpid::types::Variant::Map& a) { arguments = a; }
 
@@ -47,6 +49,9 @@ namespace qmf {
         ConsoleEventCode getType() const { return eventType; }
         uint32_t getCorrelator() const { return correlator; }
         Agent getAgent() const { return agent; }
+        AgentDelReason getAgentDelReason() const { return delReason; }
+        uint32_t getSchemaIdCount() const { return newSchemaIds.size(); }
+        SchemaId getSchemaId(uint32_t) const;
         uint32_t getDataCount() const { return dataList.size(); }
         Data getData(uint32_t i) const;
         bool isFinal() const { return final; }
@@ -54,10 +59,12 @@ namespace qmf {
 
     private:
         const ConsoleEventCode eventType;
+        const AgentDelReason delReason;
         uint32_t correlator;
         Agent agent;
         bool final;
         std::list<Data> dataList;
+        std::list<SchemaId> newSchemaIds;
         qpid::types::Variant::Map arguments;
     };
 

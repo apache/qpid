@@ -19,56 +19,135 @@
  *
  */
 
-#include "qpid/RefCounted.h"
 #include "qmf/PrivateImplRef.h"
-#include "qmf/Query.h"
-#include "qmf/DataAddr.h"
-#include "qmf/SchemaId.h"
+#include "qmf/exceptions.h"
+#include "qmf/QueryImpl.h"
+#include "qmf/DataAddrImpl.h"
+#include "qmf/SchemaIdImpl.h"
+#include "qpid/messaging/AddressParser.h"
 
 using namespace std;
+using namespace qmf;
 using qpid::types::Variant;
 
-namespace qmf {
-    class QueryImpl : public virtual qpid::RefCounted {
-    public:
-        //
-        // Methods from API handle
-        //
-        QueryImpl(const string& c, const string& p, const string&) :  packageName(p), className(c) {}
-        QueryImpl(const SchemaId& s) : schemaId(s) {}
-        QueryImpl(const DataAddr& a) : dataAddr(a) {}
+typedef PrivateImplRef<Query> PI;
 
-        const DataAddr& getDataAddr() const { return dataAddr; }
-        const SchemaId& getSchemaId() const { return schemaId; }
-        const string& getClassName() const { return className; }
-        const string& getPackageName() const { return packageName; }
-        void addPredicate(const string& k, const Variant& v) { predicate[k] = v; }
-        const Variant::Map& getPredicate() const { return predicate; }
+Query::Query(QueryImpl* impl) { PI::ctor(*this, impl); }
+Query::Query(const Query& s) : qmf::Handle<QueryImpl>() { PI::copy(*this, s); }
+Query::~Query() { PI::dtor(*this); }
+Query& Query::operator=(const Query& s) { return PI::assign(*this, s); }
 
-    private:
-        string packageName;
-        string className;
-        SchemaId schemaId;
-        DataAddr dataAddr;
-        Variant::Map predicate;
-    };
+Query::Query(QueryTarget t, const string& pr) { PI::ctor(*this, new QueryImpl(t, pr)); }
+Query::Query(QueryTarget t, const string& c, const string& p, const string& pr) { PI::ctor(*this, new QueryImpl(t, c, p, pr)); }
+Query::Query(QueryTarget t, const SchemaId& s, const string& pr) { PI::ctor(*this, new QueryImpl(t, s, pr)); }
+Query::Query(const DataAddr& a) { PI::ctor(*this, new QueryImpl(a)); }
 
-    typedef PrivateImplRef<Query> PI;
+QueryTarget Query::getTarget() const { return impl->getTarget(); }
+const DataAddr& Query::getDataAddr() const { return impl->getDataAddr(); }
+const SchemaId& Query::getSchemaId() const { return impl->getSchemaId(); }
+void Query::setPredicate(const Variant::List& pr) { impl->setPredicate(pr); }
+const Variant::List& Query::getPredicate() const { return impl->getPredicate(); }
+bool Query::matchesPredicate(const qpid::types::Variant::Map& map) const { return impl->matchesPredicate(map); }
 
-    Query::Query(QueryImpl* impl) { PI::ctor(*this, impl); }
-    Query::Query(const Query& s) : qmf::Handle<QueryImpl>() { PI::copy(*this, s); }
-    Query::~Query() { PI::dtor(*this); }
-    Query& Query::operator=(const Query& s) { return PI::assign(*this, s); }
 
-    Query::Query(const string& c, const string& p, const string& pr) { PI::ctor(*this, new QueryImpl(c, p, pr)); }
-    Query::Query(const SchemaId& s) { PI::ctor(*this, new QueryImpl(s)); }
-    Query::Query(const DataAddr& a) { PI::ctor(*this, new QueryImpl(a)); }
+QueryImpl::QueryImpl(const Variant::Map& map)
+{
+    Variant::Map::const_iterator iter;
+    
+    iter = map.find("_what");
+    if (iter == map.end())
+        throw QmfException("Query missing _what element");
 
-    const DataAddr& Query::getDataAddr() const { return impl->getDataAddr(); }
-    const SchemaId& Query::getSchemaId() const { return impl->getSchemaId(); }
-    const string& Query::getClassName() const { return impl->getClassName(); }
-    const string& Query::getPackageName() const { return impl->getPackageName(); }
-    void Query::addPredicate(const string& k, const Variant& v) { impl->addPredicate(k, v); }
-    const Variant::Map& Query::getPredicate() const { return impl->getPredicate(); }
+    const string& targetString(iter->second.asString());
+    if      (targetString == "OBJECT")    target = QUERY_OBJECT;
+    else if (targetString == "OBJECT_ID") target = QUERY_OBJECT_ID;
+    else if (targetString == "SCHEMA")    target = QUERY_SCHEMA;
+    else if (targetString == "SCHEMA_ID") target = QUERY_SCHEMA_ID;
+    else
+        throw QmfException("Query with invalid _what value: " + targetString);
+
+    iter = map.find("_object_id");
+    if (iter != map.end()) {
+        auto_ptr<DataAddrImpl> addrImpl(new DataAddrImpl(iter->second.asMap()));
+        dataAddr = DataAddr(addrImpl.release());
+    }
+
+    iter = map.find("_schema_id");
+    if (iter != map.end()) {
+        auto_ptr<SchemaIdImpl> sidImpl(new SchemaIdImpl(iter->second.asMap()));
+        schemaId = SchemaId(sidImpl.release());
+    }
+
+    iter = map.find("_where");
+    if (iter != map.end())
+        predicate = iter->second.asList();
 }
 
+
+Variant::Map QueryImpl::asMap() const
+{
+    Variant::Map map;
+    string targetString;
+
+    switch (target) {
+    case QUERY_OBJECT    : targetString = "OBJECT";    break;
+    case QUERY_OBJECT_ID : targetString = "OBJECT_ID"; break;
+    case QUERY_SCHEMA    : targetString = "SCHEMA";    break;
+    case QUERY_SCHEMA_ID : targetString = "SCHEMA_ID"; break;
+    }
+
+    map["_what"] = targetString;
+
+    if (dataAddr.isValid())
+        map["_object_id"] = DataAddrImplAccess::get(dataAddr).asMap();
+
+    if (schemaId.isValid())
+        map["_schema_id"] = SchemaIdImplAccess::get(schemaId).asMap();
+
+    if (!predicate.empty())
+        map["_where"] = predicate;
+
+    return map;
+}
+
+
+bool QueryImpl::matchesPredicate(const qpid::types::Variant::Map& data) const
+{
+    if (predicate.empty())
+        return true;
+
+    if (!predicateCompiled) {
+        expression.reset(new Expression(predicate));
+        predicateCompiled = true;
+    }
+
+    return expression->evaluate(data);
+}
+
+
+void QueryImpl::parsePredicate(const string& pred)
+{
+    if (pred.empty())
+        return;
+
+    if (pred[0] == '[') {
+        //
+        // Parse this as an AddressParser list.
+        //
+        qpid::messaging::AddressParser parser(pred);
+        parser.parseList(predicate);
+    } else
+        throw QmfException("Invalid predicate format");
+}
+
+
+QueryImpl& QueryImplAccess::get(Query& item)
+{
+    return *item.impl;
+}
+
+
+const QueryImpl& QueryImplAccess::get(const Query& item)
+{
+    return *item.impl;
+}

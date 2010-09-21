@@ -25,6 +25,7 @@
 #include "qmf/Agent.h"
 #include "qmf/ConsoleEventImpl.h"
 #include "qmf/ConsoleSessionImpl.h"
+#include "qmf/QueryImpl.h"
 #include "qmf/SchemaCache.h"
 #include "qpid/messaging/Session.h"
 #include "qpid/messaging/Message.h"
@@ -41,10 +42,11 @@ namespace qmf {
         // Impl-only methods
         //
         AgentImpl(const std::string& n, uint32_t e, ConsoleSessionImpl& s);
-        void setAttribute(const std::string& k, const qpid::types::Variant& v) { attributes[k] = v; }
+        void setAttribute(const std::string& k, const qpid::types::Variant& v);
         void setAttribute(const std::string& k, const std::string& v) { attributes[k] = v; }
         void touch() { touched = true; }
-        uint32_t age() { untouchedCount = touched ? 0 : untouchedCount + 1; return untouchedCount; }
+        uint32_t age() { untouchedCount = touched ? 0 : untouchedCount + 1; touched = false; return untouchedCount; }
+        uint32_t getCapability() const { return capability; }
         void handleException(const qpid::types::Variant::Map&, const qpid::messaging::Message&);
         void handleMethodResponse(const qpid::types::Variant::Map&, const qpid::messaging::Message&);
         void handleDataIndication(const qpid::types::Variant::List&, const qpid::messaging::Message&);
@@ -60,6 +62,9 @@ namespace qmf {
         std::string getInstance() const { return getAttribute("_instance").asString(); }
         const qpid::types::Variant& getAttribute(const std::string& k) const;
         const qpid::types::Variant::Map& getAttributes() const { return attributes; }
+
+        ConsoleEvent querySchema(qpid::messaging::Duration t) { return query(Query(QUERY_SCHEMA_ID), t); }
+        uint32_t querySchemaAsync() { return queryAsync(Query(QUERY_SCHEMA_ID)); }
 
         ConsoleEvent query(const Query& q, qpid::messaging::Duration t);
         ConsoleEvent query(const std::string& q, qpid::messaging::Duration t);
@@ -88,15 +93,17 @@ namespace qmf {
         ConsoleSessionImpl& session;
         bool touched;
         uint32_t untouchedCount;
+        uint32_t capability;
         qpid::types::Variant::Map attributes;
         uint32_t nextCorrelator;
         std::map<uint32_t, boost::shared_ptr<SyncContext> > contextMap;
         boost::shared_ptr<SchemaCache> schemaCache;
         mutable std::set<std::string> packageSet;
-        std::set<SchemaId> schemaIdSet;
+        std::set<SchemaId, SchemaIdCompare> schemaIdSet;
 
         Query stringToQuery(const std::string&);
         void sendQuery(const Query&, uint32_t);
+        void sendSchemaIdQuery(uint32_t);
         void sendMethod(const std::string&, const qpid::types::Variant::Map&, const DataAddr&, uint32_t);
         void sendSchemaRequest(const SchemaId&);
         void learnSchemaId(const SchemaId&);

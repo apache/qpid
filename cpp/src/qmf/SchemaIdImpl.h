@@ -69,6 +69,15 @@ namespace qmf {
             return lhs.getHash() < rhs.getHash();
         }
     };
+
+    struct SchemaIdCompareNoHash {
+        bool operator() (const SchemaId& lhs, const SchemaId& rhs) const
+        {
+            if (lhs.getName() != rhs.getName())
+                return lhs.getName() < rhs.getName();
+            return lhs.getPackageName() < rhs.getPackageName();
+        }
+    };
 }
 
 #endif
