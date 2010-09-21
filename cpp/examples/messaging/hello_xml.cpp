@@ -26,7 +26,7 @@ int main(int argc, char** argv) {
 
   address << "xml; {"
     " create: always, "        // This line and the next are not in docs
-    " node: { type: topic }, " // Added so it works "out of the box"
+    " node: { type: topic, x-declare: { type: xml } }, " // Added so it works "out of the box"
     " link: { "
     "  x-bindings: [{ exchange: xml, key: weather, arguments: { xquery:\"" 
        << query 
