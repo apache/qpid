@@ -27,11 +27,17 @@ import javax.jms.Topic;
 
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.messaging.Address;
 import org.apache.qpid.url.BindingURL;
 
 public class AMQTopic extends AMQDestination implements Topic
 {
     public AMQTopic(String address) throws URISyntaxException
+    {
+        super(address);
+    }
+
+    public AMQTopic(Address address) throws Exception
     {
         super(address);
     }
@@ -92,9 +98,32 @@ public class AMQTopic extends AMQDestination implements Topic
     public static AMQTopic createDurableTopic(AMQTopic topic, String subscriptionName, AMQConnection connection)
             throws JMSException
     {
-        return new AMQTopic(topic.getExchangeName(), topic.getRoutingKey(), false,
+        if (topic.getDestSyntax() == DestSyntax.ADDR)
+        {
+            try
+            {
+                AMQTopic t = new AMQTopic(topic.getAddress());
+                t.setQueueName(getDurableTopicQueueName(subscriptionName, connection));
+                t.getSourceNode().setAutoDelete(false);
+                t.getSourceNode().setDurable(true);
+                t.setAutoDelete(false);
+                t.setDurable(true);
+                return t;
+            }
+            catch(Exception e)
+            {
+                JMSException ex = new JMSException("Error creating durable topic");
+                ex.initCause(e);
+                ex.setLinkedException(e);
+                throw ex;
+            }
+        }
+        else
+        {
+            return new AMQTopic(topic.getExchangeName(), topic.getRoutingKey(), false,
                             getDurableTopicQueueName(subscriptionName, connection),
                             true);
+        }
     }
 
     public static AMQShortString getDurableTopicQueueName(String subscriptionName, AMQConnection connection) throws JMSException
