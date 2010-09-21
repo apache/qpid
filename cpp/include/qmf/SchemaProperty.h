@@ -54,6 +54,7 @@ namespace qmf {
         QMF_EXTERN void setDirection(int);
 
         QMF_EXTERN const std::string& getName() const;
+        QMF_EXTERN int getType() const;
         QMF_EXTERN int getAccess() const;
         QMF_EXTERN bool isIndex() const;
         QMF_EXTERN bool isOptional() const;

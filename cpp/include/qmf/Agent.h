@@ -65,10 +65,52 @@ namespace qmf {
                                            qpid::messaging::Duration timeout=qpid::messaging::Duration::MINUTE);
         QMF_EXTERN uint32_t callMethodAsync(const std::string&, const qpid::types::Variant::Map&, const DataAddr&);
 
+        /**
+         * Query the agent for a list of schema classes that it exposes.  This operation comes in both
+         * synchronous (blocking) and asynchronous flavors.
+         *
+         * This method will typically be used after receiving an AGENT_SCHEMA_UPDATE event from the console session.
+         * It may also be used on a newly discovered agent to learn what schemata are exposed.
+         *
+         * querySchema returns a ConsoleEvent that contains a list of SchemaId objects exposed by the agent.
+         * This list is cached locally and can be locally queried using getPackage[Count] and getSchemaId[Count].
+         */
+        QMF_EXTERN ConsoleEvent querySchema(qpid::messaging::Duration timeout=qpid::messaging::Duration::MINUTE);
+        QMF_EXTERN uint32_t querySchemaAsync();
+
+        /**
+         * Get the list of schema packages exposed by the agent.
+         *
+         *   getPackageCount returns the number of packages exposed.
+         *   getPackage returns the name of the package by index (0..package-count)
+         *
+         * Note that both of these calls are synchronous and non-blocking.  They only return locally cached data
+         * and will not send any messages to the remote agent.  Use querySchema[Async] to get the latest schema
+         * information from the remote agent.
+         */
         QMF_EXTERN uint32_t getPackageCount() const;
         QMF_EXTERN const std::string& getPackage(uint32_t) const;
+
+        /**
+         * Get the list of schema identifiers for a particular package.
+         *
+         *   getSchemaIdCount returns the number of IDs in the indicates package.
+         *   getSchemaId returns the SchemaId by index (0..schema-id-count)
+         *
+         * Note that both of these calls are synchronous and non-blocking.  They only return locally cached data
+         * and will not send any messages to the remote agent.  Use querySchema[Async] to get the latest schema
+         * information from the remote agent.
+         */
         QMF_EXTERN uint32_t getSchemaIdCount(const std::string&) const;
         QMF_EXTERN SchemaId getSchemaId(const std::string&, uint32_t) const;
+
+        /**
+         * Get detailed schema information for a specified schema ID.
+         *
+         * This call will return cached information if it is available.  If not, it will send a query message to the
+         * remote agent and block waiting for a response.  The timeout argument specifies the maximum time to wait
+         * for a response from the agent.
+         */
         QMF_EXTERN Schema getSchema(const SchemaId&, qpid::messaging::Duration timeout=qpid::messaging::Duration::MINUTE);
 
 

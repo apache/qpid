@@ -23,6 +23,9 @@
 
 #include <qmf/ImportExport.h>
 #include "qmf/Handle.h"
+#include "qmf/Agent.h"
+#include "qmf/Data.h"
+#include "qmf/SchemaId.h"
 #include "qpid/types/Variant.h"
 
 namespace qmf {
@@ -32,18 +35,24 @@ namespace qmf {
 #endif
 
     class ConsoleEventImpl;
-    class Agent;
-    class Data;
 
     enum ConsoleEventCode {
-    CONSOLE_AGENT_ADD = 1,
-    CONSOLE_AGENT_AGE = 2,
-    CONSOLE_EVENT = 3,
-    CONSOLE_QUERY_RESPONSE = 4,
-    CONSOLE_METHOD_RESPONSE = 5,
-    CONSOLE_EXCEPTION = 6,
-    CONSOLE_SUBSCRIBE_UPDATE = 7,
-    CONSOLE_THREAD_FAILED = 8
+    CONSOLE_AGENT_ADD             = 1,
+    CONSOLE_AGENT_DEL             = 2,
+    CONSOLE_AGENT_RESTART         = 3,
+    CONSOLE_AGENT_SCHEMA_UPDATE   = 4,
+    CONSOLE_AGENT_SCHEMA_RESPONSE = 5,
+    CONSOLE_EVENT                 = 6,
+    CONSOLE_QUERY_RESPONSE        = 7,
+    CONSOLE_METHOD_RESPONSE       = 8,
+    CONSOLE_EXCEPTION             = 9,
+    CONSOLE_SUBSCRIBE_UPDATE      = 10,
+    CONSOLE_THREAD_FAILED         = 11
+    };
+
+    enum AgentDelReason {
+    AGENT_DEL_AGED   = 1,
+    AGENT_DEL_FILTER = 2 
     };
 
     class ConsoleEvent : public qmf::Handle<ConsoleEventImpl> {
@@ -56,6 +65,9 @@ namespace qmf {
         QMF_EXTERN ConsoleEventCode getType() const;
         QMF_EXTERN uint32_t getCorrelator() const;
         QMF_EXTERN Agent getAgent() const;
+        QMF_EXTERN AgentDelReason getAgentDelReason() const;
+        QMF_EXTERN uint32_t getSchemaIdCount() const;
+        QMF_EXTERN SchemaId getSchemaId(uint32_t) const;
         QMF_EXTERN uint32_t getDataCount() const;
         QMF_EXTERN Data getData(uint32_t) const;
         QMF_EXTERN bool isFinal() const;

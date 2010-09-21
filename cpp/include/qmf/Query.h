@@ -36,6 +36,13 @@ namespace qmf {
     class SchemaId;
     class DataAddr;
 
+    enum QueryTarget {
+    QUERY_OBJECT    = 1,
+    QUERY_OBJECT_ID = 2,
+    QUERY_SCHEMA    = 3,
+    QUERY_SCHEMA_ID = 4
+    };
+
     class Query : public qmf::Handle<QueryImpl> {
     public:
         QMF_EXTERN Query(QueryImpl* impl = 0);
@@ -43,20 +50,22 @@ namespace qmf {
         QMF_EXTERN Query& operator=(const Query&);
         QMF_EXTERN ~Query();
 
-        QMF_EXTERN Query(const std::string& className, const std::string& package="", const std::string& predicate="");
-        QMF_EXTERN Query(const SchemaId&);
+        QMF_EXTERN Query(QueryTarget, const std::string& predicate="");
+        QMF_EXTERN Query(QueryTarget, const std::string& className, const std::string& package, const std::string& predicate="");
+        QMF_EXTERN Query(QueryTarget, const SchemaId&, const std::string& predicate="");
         QMF_EXTERN Query(const DataAddr&);
 
+        QMF_EXTERN QueryTarget getTarget() const;
         QMF_EXTERN const DataAddr& getDataAddr() const;
         QMF_EXTERN const SchemaId& getSchemaId() const;
-        QMF_EXTERN const std::string& getClassName() const;
-        QMF_EXTERN const std::string& getPackageName() const;
-        QMF_EXTERN void addPredicate(const std::string&, const qpid::types::Variant&);
-        QMF_EXTERN const qpid::types::Variant::Map& getPredicate() const;
+        QMF_EXTERN void setPredicate(const qpid::types::Variant::List&);
+        QMF_EXTERN const qpid::types::Variant::List& getPredicate() const;
+        QMF_EXTERN bool matchesPredicate(const qpid::types::Variant::Map& map) const;
 
 #ifndef SWIG
     private:
         friend class qmf::PrivateImplRef<Query>;
+        friend class QueryImplAccess;
 #endif
     };
 

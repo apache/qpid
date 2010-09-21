@@ -43,6 +43,7 @@ namespace qmf {
         //
         SchemaMethodImpl(const qpid::types::Variant::Map& m);
         SchemaMethodImpl(qpid::management::Buffer& v1Buffer);
+        qpid::types::Variant::Map asMap() const;
         void updateHash(Hash&) const;
         void encodeV1(qpid::management::Buffer&) const;
 

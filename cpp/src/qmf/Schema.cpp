@@ -61,8 +61,65 @@ SchemaMethod Schema::getMethod(uint32_t i) const { return impl->getMethod(i); }
 // Impl Method Bodies
 //========================================================================================
 
-SchemaImpl::SchemaImpl(const qpid::types::Variant::Map&) : finalized(true)
+SchemaImpl::SchemaImpl(const Variant::Map& map) : finalized(false)
 {
+    Variant::Map::const_iterator iter;
+    Variant::List::const_iterator lIter;
+
+    iter = map.find("_schema_id");
+    if (iter == map.end())
+        throw QmfException("Schema map missing _schema_id element");
+    schemaId = SchemaId(new SchemaIdImpl(iter->second.asMap()));
+
+    iter = map.find("_desc");
+    if (iter != map.end())
+        description = iter->second.asString();
+
+    iter = map.find("_default_severity");
+    if (iter != map.end())
+        defaultSeverity = int(iter->second.asUint32());
+
+    iter = map.find("_properties");
+    if (iter != map.end()) {
+        const Variant::List& props(iter->second.asList());
+        for (lIter = props.begin(); lIter != props.end(); lIter++)
+            addProperty(SchemaProperty(new SchemaPropertyImpl(lIter->asMap())));
+    }
+
+    iter = map.find("_methods");
+    if (iter != map.end()) {
+        const Variant::List& meths(iter->second.asList());
+        for (lIter = meths.begin(); lIter != meths.end(); lIter++)
+            addMethod(SchemaMethod(new SchemaMethodImpl(lIter->asMap())));
+    }
+
+    finalized = true;
+}
+
+
+Variant::Map SchemaImpl::asMap() const
+{
+    Variant::Map map;
+    Variant::List propList;
+    Variant::List methList;
+
+    checkNotFinal();
+
+    map["_schema_id"] = SchemaIdImplAccess::get(schemaId).asMap();
+    if (!description.empty())
+        map["_desc"] = description;
+    if (schemaId.getType() == SCHEMA_TYPE_EVENT)
+        map["_default_severity"] = uint32_t(defaultSeverity);
+
+    for (list<SchemaProperty>::const_iterator pIter = properties.begin(); pIter != properties.end(); pIter++)
+        propList.push_back(SchemaPropertyImplAccess::get(*pIter).asMap());
+
+    for (list<SchemaMethod>::const_iterator mIter = methods.begin(); mIter != methods.end(); mIter++)
+        methList.push_back(SchemaMethodImplAccess::get(*mIter).asMap());
+
+    map["_properties"] = propList;
+    map["_methods"] = methList;
+    return map;
 }
 
 

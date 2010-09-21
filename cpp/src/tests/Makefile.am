@@ -30,6 +30,7 @@ lib_messaging = $(abs_builddir)/../libqpidmessaging.la
 lib_common = $(abs_builddir)/../libqpidcommon.la
 lib_broker = $(abs_builddir)/../libqpidbroker.la
 lib_console = $(abs_builddir)/../libqmfconsole.la
+lib_qmf2 = $(abs_builddir)/../libqmf2.la
 # lib_amqp_0_10 = $(abs_builddir)/../libqpidamqp_0_10.la
 
 #
@@ -66,7 +67,7 @@ tmodule_LTLIBRARIES=
 TESTS+=unit_test
 check_PROGRAMS+=unit_test
 unit_test_LDADD=-lboost_unit_test_framework -lboost_regex  \
-	$(lib_messaging) $(lib_broker) $(lib_console)
+	$(lib_messaging) $(lib_broker) $(lib_console) $(lib_qmf2)
 
 unit_test_SOURCES= unit_test.cpp unit_test.h \
 	MessagingSessionTests.cpp \
@@ -121,7 +122,8 @@ unit_test_SOURCES= unit_test.cpp unit_test.h \
 	PollableCondition.cpp \
 	Variant.cpp \
 	Address.cpp \
-	ClientMessage.cpp
+	ClientMessage.cpp \
+	Qmf2.cpp
 
 if HAVE_XML
 unit_test_SOURCES+= XmlClientSessionTest.cpp

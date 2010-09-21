@@ -1,4 +1,7 @@
+#ifndef QMF_AGENT_CAPABILITY_H
+#define QMF_AGENT_CAPABILITY_H
 /*
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -6,36 +9,31 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
+ * 
  *   http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
+ *
  */
 
-%module cqmf2
-%include "std_string.i"
-%include "../../swig_python_typemaps.i"
+namespace qmf {
 
-/* Define the general-purpose exception handling */
-%exception {
-    std::string error;
-    Py_BEGIN_ALLOW_THREADS;
-    try {
-        $action
-    } catch (qpid::types::Exception& ex) {
-        error = ex.what();
-    }
-    Py_END_ALLOW_THREADS;
-    if (!error.empty()) {
-        PyErr_SetString(PyExc_RuntimeError, error.c_str());
-        return NULL;
-    }
+    /**
+     * Legacy (Qpid 0.7 C++ Agent, 0.7 Broker Agent) capabilities
+     */
+    const uint32_t AGENT_CAPABILITY_LEGACY = 0;
+
+    /**
+     * Qpid 0.8 QMFv2 capabilities
+     */
+    const uint32_t AGENT_CAPABILITY_0_8             = 1;
+    const uint32_t AGENT_CAPABILITY_V2_SCHEMA       = 1;
+    const uint32_t AGENT_CAPABILITY_AGENT_PREDICATE = 1;
 }
 
-%include "../qmf2.i"
-
+#endif

@@ -37,12 +37,28 @@ ConsoleEvent& ConsoleEvent::operator=(const ConsoleEvent& s) { return PI::assign
 ConsoleEventCode ConsoleEvent::getType() const { return impl->getType(); }
 uint32_t ConsoleEvent::getCorrelator() const { return impl->getCorrelator(); }
 Agent ConsoleEvent::getAgent() const { return impl->getAgent(); }
+AgentDelReason ConsoleEvent::getAgentDelReason() const { return impl->getAgentDelReason(); }
+uint32_t ConsoleEvent::getSchemaIdCount() const { return impl->getSchemaIdCount(); }
+SchemaId ConsoleEvent::getSchemaId(uint32_t i) const { return impl->getSchemaId(i); }
 uint32_t ConsoleEvent::getDataCount() const { return impl->getDataCount(); }
 Data ConsoleEvent::getData(uint32_t i) const { return impl->getData(i); }
 bool ConsoleEvent::isFinal() const { return impl->isFinal(); }
 const Variant::Map& ConsoleEvent::getArguments() const { return impl->getArguments(); }
 
-Data ConsoleEventImpl::getData(uint32_t i) const {
+
+SchemaId ConsoleEventImpl::getSchemaId(uint32_t i) const
+{
+    uint32_t count = 0;
+    for (list<SchemaId>::const_iterator iter = newSchemaIds.begin(); iter != newSchemaIds.end(); iter++) {
+        if (count++ == i)
+            return *iter;
+    }
+    throw IndexOutOfRange();
+}
+
+
+Data ConsoleEventImpl::getData(uint32_t i) const
+{
     uint32_t count = 0;
     for (list<Data>::const_iterator iter = dataList.begin(); iter != dataList.end(); iter++) {
         if (count++ == i)

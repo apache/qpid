@@ -85,6 +85,7 @@ libqmf_la_SOURCES =			\
 
 libqmf2_la_SOURCES = 		\
   $(QMF2_API)			\
+  qmf/agentCapability.h		\
   qmf/Agent.cpp			\
   qmf/AgentEvent.cpp		\
   qmf/AgentEventImpl.h		\
@@ -99,10 +100,13 @@ libqmf2_la_SOURCES = 		\
   qmf/Data.cpp			\
   qmf/DataImpl.h		\
   qmf/exceptions.cpp		\
+  qmf/Expression.cpp		\
+  qmf/Expression.h		\
   qmf/Hash.cpp			\
   qmf/Hash.h			\
   qmf/PrivateImplRef.h		\
   qmf/Query.cpp			\
+  qmf/QueryImpl.h		\
   qmf/Schema.cpp		\
   qmf/SchemaCache.cpp		\
   qmf/SchemaCache.h		\

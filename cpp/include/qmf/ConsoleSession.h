@@ -44,6 +44,19 @@ namespace qmf {
         QMF_EXTERN ConsoleSession& operator=(const ConsoleSession&);
         QMF_EXTERN ~ConsoleSession();
 
+        /**
+         * ConsoleSession
+         *   A session that runs over an AMQP connection for QMF console operation.
+         *
+         * @param connection - An opened qpid::messaging::Connection
+         * @param options - An optional string containing options
+         *
+         * The options string is of the form "{key:value,key:value}".  The following keys are supported:
+         *
+         *    domain:NAME                - QMF Domain to join [default: "default"]
+         *    max-agent-age:N            - Maximum time, in minutes, that we will tolerate not hearing from
+         *                                 an agent before deleting it [default: 5]
+         */
         QMF_EXTERN ConsoleSession(qpid::messaging::Connection&, const std::string& options="");
         QMF_EXTERN void setDomain(const std::string&);
         QMF_EXTERN void setAgentFilter(const std::string&);
