@@ -262,7 +262,7 @@ public class Session extends SessionInvoker
                 sessionCommandPoint(m.getId(), 0);
                 send(m);
             }
-
+           
             sessionCommandPoint(commandsOut, 0);
             sessionFlush(COMPLETED);
             resumer = Thread.currentThread();
@@ -645,7 +645,7 @@ public class Session extends SessionInvoker
                 {
                     sessionCommandPoint(0, 0);
                 }
-                if ((!closing && !m.isUnreliable()) || m.hasCompletionListener())
+                if ((!closing && m instanceof MessageTransfer) || m.hasCompletionListener())
                 {
                     commands[mod(next, commands.length)] = m;
                     commandBytes += m.getBodySize();
