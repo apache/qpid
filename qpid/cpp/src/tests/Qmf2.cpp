@@ -44,7 +44,7 @@ QPID_AUTO_TEST_CASE(testQuery)
     BOOST_CHECK_EQUAL(newQuery.getSchemaId().getPackageName(), "package_name");
 
     Variant::List pred(newQuery.getPredicate());
-    BOOST_CHECK_EQUAL(pred.size(), 3);
+    BOOST_CHECK_EQUAL(pred.size(), size_t(3));
 
     Variant::List::iterator iter(pred.begin());
     BOOST_CHECK_EQUAL(iter->asString(), "and");
@@ -61,7 +61,7 @@ QPID_AUTO_TEST_CASE(testQuery)
     iter = iter->asList().begin();
     BOOST_CHECK_EQUAL(iter->asString(), "quote");
     iter++;
-    BOOST_CHECK_EQUAL(iter->asUint32(), 27);
+    BOOST_CHECK_EQUAL(iter->asUint32(), uint32_t(27));
 
     Query query2(QUERY_OBJECT_ID);
     Query newQuery2(new QueryImpl(QueryImplAccess::get(query2).asMap()));
@@ -81,7 +81,7 @@ QPID_AUTO_TEST_CASE(testQuery)
     BOOST_CHECK_EQUAL(newQuery5.getTarget(), QUERY_OBJECT);
     BOOST_CHECK_EQUAL(newQuery5.getDataAddr().getName(), "name");
     BOOST_CHECK_EQUAL(newQuery5.getDataAddr().getAgentName(), "agent_name");
-    BOOST_CHECK_EQUAL(newQuery5.getDataAddr().getAgentEpoch(), 34);
+    BOOST_CHECK_EQUAL(newQuery5.getDataAddr().getAgentEpoch(), uint32_t(34));
 }
 
 QPID_AUTO_TEST_CASE(testQueryPredicateErrors)
@@ -239,7 +239,7 @@ QPID_AUTO_TEST_CASE(testSchema)
     BOOST_CHECK_EQUAL(out.getSchemaId().getName(), "class");
     BOOST_CHECK_EQUAL(out.getSchemaId().getHash(), in.getSchemaId().getHash());
 
-    BOOST_CHECK_EQUAL(out.getPropertyCount(), 3);
+    BOOST_CHECK_EQUAL(out.getPropertyCount(), uint32_t(3));
     SchemaProperty prop;
 
     prop = out.getProperty(0);
@@ -261,13 +261,13 @@ QPID_AUTO_TEST_CASE(testSchema)
 
     BOOST_CHECK_THROW(out.getProperty(3), QmfException);
 
-    BOOST_CHECK_EQUAL(out.getMethodCount(), 2);
+    BOOST_CHECK_EQUAL(out.getMethodCount(), uint32_t(2));
     SchemaMethod method;
 
     method = out.getMethod(0);
     BOOST_CHECK_EQUAL(method.getName(), "method1");
     BOOST_CHECK_EQUAL(method.getDesc(), "Method One");
-    BOOST_CHECK_EQUAL(method.getArgumentCount(), 3);
+    BOOST_CHECK_EQUAL(method.getArgumentCount(), uint32_t(3));
 
     prop = method.getArgument(0);
     BOOST_CHECK_EQUAL(prop.getName(), "arg1");
@@ -292,7 +292,7 @@ QPID_AUTO_TEST_CASE(testSchema)
     method = out.getMethod(1);
     BOOST_CHECK_EQUAL(method.getName(), "method2");
     BOOST_CHECK_EQUAL(method.getDesc(), "Method Two");
-    BOOST_CHECK_EQUAL(method.getArgumentCount(), 3);
+    BOOST_CHECK_EQUAL(method.getArgumentCount(), uint32_t(3));
 
     prop = method.getArgument(0);
     BOOST_CHECK_EQUAL(prop.getName(), "arg21");
