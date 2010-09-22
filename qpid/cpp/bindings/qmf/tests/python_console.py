@@ -281,9 +281,9 @@ class QmfInteropTests(TestBase010):
                  'aSigned' : -666,
                  'aString' : "A String",
                  'aFloat' : 3.1415,
-                 'aList' : ['x', -1, 'y', 2]}
-
-        inList = ['aString', long(1), -1, 2.7182, {'aMap': -8}]
+                 'aList' : ['x', -1, 'y', 2],
+                 'abool' : False}
+        inList = ['aString', long(1), -1, 2.7182, {'aMap': -8}, True]
 
         result = parent.test_map_list(inMap, inList)
         self.assertEqual(result.status, 0)

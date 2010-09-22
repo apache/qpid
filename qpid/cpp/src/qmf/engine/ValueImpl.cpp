@@ -21,6 +21,7 @@
 #include <qpid/framing/FieldValue.h>
 #include <qpid/framing/FieldTable.h>
 #include <qpid/framing/List.h>
+#include <qpid/log/Statement.h>
 
 using namespace std;
 using namespace qmf::engine;
@@ -153,6 +154,12 @@ void ValueImpl::initMap(const FieldTable& ft)
                 subval->impl->initList(subList);
                 insert(name.c_str(), subval);
             }
+        } else if (amqType == 0x08) {
+            Value* subval(new Value(TYPE_BOOL));
+            subval->setBool(fvalue.get<int>() ? true : false);
+            insert(name.c_str(), subval);
+        } else {
+            QPID_LOG(error, "Unable to decode unsupported AMQP typecode=" << amqType << " map index=" << name);
         }
     }
 }
@@ -185,7 +192,7 @@ void ValueImpl::mapToFieldTable(FieldTable& ft) const
             ft.setInt64(name, subval.asInt64());
             break;
         case TYPE_BOOL:
-            ft.setInt(name, subval.asBool() ? 1 : 0);
+            ft.set(name, FieldTable::ValuePtr(new BoolValue(subval.asBool())));
             break;
         case TYPE_FLOAT:
             ft.setFloat(name, subval.asFloat());
@@ -274,6 +281,12 @@ void ValueImpl::initList(const List& fl)
                 subVal->impl->initList(subList);
                 appendToList(subVal);
             }
+        } else if (amqType == 0x08) {
+            Value* subval(new Value(TYPE_BOOL));
+            subval->setBool(fvalue.get<int>() ? true : false);
+            appendToList(subval);
+        } else {
+            QPID_LOG(error, "Unable to decode unsupported AMQP typecode =" << amqType);
         }
     }
 }
@@ -303,7 +316,7 @@ void ValueImpl::listToFramingList(List& fl) const
             fl.push_back(List::ValuePtr(new Integer64Value(subval.asInt64())));
             break;
         case TYPE_BOOL:
-            fl.push_back(List::ValuePtr(new IntegerValue(subval.asBool() ? 1 : 0)));
+            fl.push_back(List::ValuePtr(new BoolValue(subval.asBool() ? 1 : 0)));
             break;
         case TYPE_FLOAT:
             fl.push_back(List::ValuePtr(new FloatValue(subval.asFloat())));
