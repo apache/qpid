@@ -20,7 +20,7 @@
 #
 
 from  qpid.datatypes import uuid4, UUID, parseUUID
-import optparse, os.path, sys
+import optparse, os.path, sys, string
 
 op = optparse.OptionParser(
     usage="usage: %prog [options] DATADIR",
@@ -31,7 +31,7 @@ op.add_option("-c", "--mark-clean", default=False, action="store_true", help="ma
 class ClusterStoreStatus:
     """Load/save/display store status file"""
 
-    null_uuid=UUID('\0'*16)
+    null_uuid=UUID(bytes='\0'*16)
 
     def __init__(self, file):
         self.file = file
@@ -39,7 +39,7 @@ class ClusterStoreStatus:
 
     def read(self):
         f = open(self.file)
-        try: self.cluster_id, self.shutdown_id = [parseUUID(s) for s in f.readlines()]
+        try: self.cluster_id, self.shutdown_id = [parseUUID(string.rstrip(s)) for s in f.readlines()]
         finally: f.close()
 
     def write(self):
