@@ -412,20 +412,23 @@ class BrokerManager(Console):
             for oid in broker.subscriptions:
                 s = broker.subscriptions[oid]
                 row = []
-                if self.cluster:
-                    row.append(broker.getName())
-                row.append(s.name)
-                row.append(self.qmf.getObjects(_objectId=s.queueRef)[0].name)
-                connectionRef = self.qmf.getObjects(_objectId=s.sessionRef)[0].connectionRef
-                row.append(self.qmf.getObjects(_objectId=connectionRef)[0].address)
-                row.append(self.qmf.getObjects(_objectId=connectionRef)[0].remoteProcessName)
-                row.append(self.qmf.getObjects(_objectId=connectionRef)[0].remotePid)
-                row.append(s.browsing)
-                row.append(s.acknowledged)
-                row.append(s.exclusive)
-                row.append(s.creditMode)
-                row.append(s.delivered)
-                rows.append(row)
+                try:
+                    if self.cluster:
+                        row.append(broker.getName())
+                    row.append(s.name)
+                    row.append(self.qmf.getObjects(_objectId=s.queueRef)[0].name)
+                    connectionRef = self.qmf.getObjects(_objectId=s.sessionRef)[0].connectionRef
+                    row.append(self.qmf.getObjects(_objectId=connectionRef)[0].address)
+                    row.append(self.qmf.getObjects(_objectId=connectionRef)[0].remoteProcessName)
+                    row.append(self.qmf.getObjects(_objectId=connectionRef)[0].remotePid)
+                    row.append(s.browsing)
+                    row.append(s.acknowledged)
+                    row.append(s.exclusive)
+                    row.append(s.creditMode)
+                    row.append(s.delivered)
+                    rows.append(row)
+                except:
+                    pass
         title = "Subscriptions"
         if self.cluster:
             title += " for cluster '%s'" % self.cluster.clusterName
