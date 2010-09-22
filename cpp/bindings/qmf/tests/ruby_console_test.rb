@@ -333,9 +333,10 @@ class ConsoleTest < ConsoleTestBase
              'aSigned' => -666,
              'aString' => "A String",
              'aFloat' => 3.1415,
-             'aList' => ['x', -1, 'y', 2]}
+             'aList' => ['x', -1, 'y', 2],
+             'abool' => false}
 
-    inList = ['aString', 1, -1, 2.7182, {'aMap'=> -8}]
+    inList = ['aString', 1, -1, 2.7182, {'aMap'=> -8}, true]
 
     result = parent.test_map_list(inMap, inList)
     assert_equal(result.status, 0)
