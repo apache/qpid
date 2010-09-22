@@ -221,7 +221,9 @@ class Sorter:
     list = []
     for row in rows:
       list.append(Sortable(row, col))
-    list.sort(reverse=not inc)
+    list.sort()
+    if not inc:
+      list.reverse()
     count = 0
     self.sorted = []
     for row in list:
