@@ -1315,7 +1315,9 @@ class SchemaClass:
   def genPrimaryKey (self, stream, variables):
     first = 1
     for prop in self.properties:
-      if prop.getName() != "vhostRef": # Limit how deep the v2Key strings get
+      # deliberately leave out the "vhostRef" fields since there's only one vhost,
+      # this serves to shorten the keys without compromising uniqueness
+      if prop.getName() != "vhostRef":
         if prop.isIndex == 1:
           if first:
             first = None
