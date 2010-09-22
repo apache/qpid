@@ -117,18 +117,15 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
         }
 
         if (destination.isAddressResolved() && AMQDestination.TOPIC_TYPE == destination.getAddressType()) 
-        {
-            
-            boolean durable = destination.getSourceNode() != null && destination.getSourceNode().isDurable();
+        {            
             boolean namedQueue = destination.getLink() != null && destination.getLink().getName() != null ; 
             
-            if (!durable && !namedQueue)
+            if (!namedQueue)
             {
                 _destination = destination.copyDestination();
                 _destination.setQueueName(null);
             }
         }
-        
     }
 
 
