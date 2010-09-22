@@ -217,11 +217,7 @@ public class AddressHelper
 
     private void fillInCommonNodeArgs(Node node, Map parent, MapAccessor argsMap)
     {
-        if (nodeProps != null)
-        {
-            node.setDurable(nodeProps.getBoolean(DURABLE) == null ? false
-                    : nodeProps.getBoolean(DURABLE));
-        }
+        node.setDurable(getDurability(parent));
         node.setAutoDelete(argsMap.getBoolean(AUTO_DELETE) == null ? false
                 : argsMap.getBoolean(AUTO_DELETE));
         node.setAlternateExchange(argsMap.getString(ALT_EXCHANGE));
@@ -229,6 +225,18 @@ public class AddressHelper
         if (getDeclareArgs(parent).containsKey(ARGUMENTS))
         {
             node.setDeclareArgs((Map<String,Object>)getDeclareArgs(parent).get(ARGUMENTS));
+        }
+    }
+    
+    private boolean getDurability(Map map)
+    {
+        if (map != null && map.get(DURABLE) != null)
+        {
+            return Boolean.parseBoolean((String)map.get(DURABLE));
+        }
+        else
+        {
+            return false;
         }
     }
 
