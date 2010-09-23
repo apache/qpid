@@ -3202,6 +3202,18 @@ class Agent:
       for omap in content:
         context.addV2QueryResult(omap)
       context.processV2Data()
+      if 'partial' not in ah:
+        context.signal()
+
+    elif kind == "_event":
+      event = Event(self, v2Map=content)
+      if event.classKey is None or event.schema:
+        # schema optional or present
+        context.doEvent(event)
+      else:
+        # schema not optional and not present
+        self._v2SendSchemaRequest(event.classKey)
+        # @todo: event dropped - fix this!
 
     elif kind == "_schema_id":
       for sid in content:
@@ -3215,9 +3227,6 @@ class Agent:
           # _schema_id.  This request _must_ have been initiated by the framework
           # in order to update the schema cache.
           context.notifiable(qmf_schema_id=ckey)
-
-    if 'partial' not in ah:
-      context.signal()
 
 
   def _v2HandleMethodResp(self, mp, ah, content):
@@ -3627,20 +3636,41 @@ class RequestContext(object):
 #===================================================================================================
 class Event:
   """ """
-  def __init__(self, agent, codec):
+  def __init__(self, agent, codec=None, v2Map=None):
     self.agent = agent
     self.session = agent.session
     self.broker  = agent.broker
-    self.classKey = ClassKey(codec)
-    self.classKey._setType(ClassKey.TYPE_EVENT)
-    self.timestamp = codec.read_int64()
-    self.severity = codec.read_uint8()
-    self.arguments = {}
-    self.schema = self.session.schemaCache.getSchema(self.classKey)
-    if not self.schema:
-      return
-    for arg in self.schema.arguments:
-      self.arguments[arg.name] = self.session._decodeValue(codec, arg.type, self.broker)
+
+    if isinstance(v2Map,dict):
+      self.classKey = None
+      self.schema = None
+      try:
+        self.arguments = v2Map["_values"]
+        self.timestamp = long(v2Map["_timestamp"])
+        self.severity = v2Map["_severity"]
+        if "_schema_id" in v2Map:
+          self.classKey = ClassKey(v2Map["_schema_id"])
+          self.classKey._setType(ClassKey.TYPE_EVENT)
+      except:
+        raise Exception("Invalid event object: %s " % str(v2Map))
+      if self.classKey is not None:
+        self.schema = self.session.schemaCache.getSchema(self.classKey)
+
+    elif codec is not None:
+      self.classKey = ClassKey(codec)
+      self.classKey._setType(ClassKey.TYPE_EVENT)
+      self.timestamp = codec.read_int64()
+      self.severity = codec.read_uint8()
+      self.arguments = {}
+      self.schema = self.session.schemaCache.getSchema(self.classKey)
+      if not self.schema:
+        return
+      for arg in self.schema.arguments:
+        self.arguments[arg.name] = self.session._decodeValue(codec, arg.type,
+                                                             self.broker)
+    else:
+      raise Exception("No constructor for event object.")
+
 
   def __repr__(self):
     if self.schema == None:
