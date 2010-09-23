@@ -229,7 +229,7 @@ public class TransactionTimeoutTestCase extends QpidTestCase implements Exceptio
     
     /**
      * Checks that the correct exception was thrown and was received
-     * by the listener with a 408 error code.
+     * by the listener with a 506 error code.
      */
     protected void check(String reason)throws InterruptedException
     {
@@ -237,7 +237,7 @@ public class TransactionTimeoutTestCase extends QpidTestCase implements Exceptio
         assertNotNull("Should have thrown exception to client", _exception);
         assertTrue("Exception message should contain '" + reason + "': " + _message, _message.contains(reason + " transaction timed out"));
         assertNotNull("Exception should have an error code", _code);
-        assertEquals("Error code should be 408", AMQConstant.REQUEST_TIMEOUT, _code);
+        assertEquals("Error code should be 506", AMQConstant.RESOURCE_ERROR, _code);
     }
 
     /** @see javax.jms.ExceptionListener#onException(javax.jms.JMSException) */

@@ -778,7 +778,10 @@ public class AMQChannel
         updateTransactionalActivity();
     }
 
-    public void updateTransactionalActivity()
+    /**
+     * Update last transaction activity timestamp
+     */
+    private void updateTransactionalActivity()
     {
         if (isTransactional())
         {
@@ -1057,19 +1060,19 @@ public class AMQChannel
             // Log a warning on idle or open transactions
             if (idleWarn > 0L && idleTime > idleWarn)
             {
-                _actor.message(ChannelMessages.CHN_IDLE_TXN(idleTime));
+                CurrentActor.get().message(_logSubject, ChannelMessages.CHN_IDLE_TXN(idleTime));
                 _log.warn("Transaction on channel " + _channelId + " idle for " + idleTime + " ms");
             }
             else if (openWarn > 0L && openTime > openWarn)
             {
-                _actor.message(ChannelMessages.CHN_OPEN_TXN(openTime));
+                CurrentActor.get().message(_logSubject, ChannelMessages.CHN_OPEN_TXN(openTime));
                 _log.warn("Transaction on channel " + _channelId + " open for " + openTime + " ms");
             }
 
             // Close connection for idle or open transactions that have timed out
             if (idleClose > 0L && idleTime > idleClose)
             {
-                _session.closeConnection(_channelId,  new AMQConnectionException(AMQConstant.REQUEST_TIMEOUT,
+                _session.closeConnection(_channelId,  new AMQConnectionException(AMQConstant.RESOURCE_ERROR,
                         "Idle transaction timed out", 0, 0,
                         _session.getProtocolOutputConverter().getProtocolMajorVersion(),
                         _session.getProtocolOutputConverter().getProtocolMinorVersion(),
@@ -1077,7 +1080,7 @@ public class AMQChannel
             }
             else if (openClose > 0L && openTime > openClose)
             {
-                _session.closeConnection(_channelId,  new AMQConnectionException(AMQConstant.REQUEST_TIMEOUT,
+                _session.closeConnection(_channelId,  new AMQConnectionException(AMQConstant.RESOURCE_ERROR,
                         "Open transaction timed out", 0, 0,
                         _session.getProtocolOutputConverter().getProtocolMajorVersion(),
                         _session.getProtocolOutputConverter().getProtocolMinorVersion(),
