@@ -125,7 +125,8 @@ public class TransactionTimeoutTest extends TransactionTimeoutTestCase
             _exception = e;
         }
         
-        monitor(5, 10);
+        // the presistent store generates more idle messages?
+        monitor(isBrokerStorePersistent() ? 10 : 5, 10);
         
         check(OPEN);
     }
