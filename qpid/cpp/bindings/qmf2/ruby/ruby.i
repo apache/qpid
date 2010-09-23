@@ -17,7 +17,7 @@
  * under the License.
  */
 
-%module qmf2
+%module cqmf2
 %include "std_string.i"
 %include "../../swig_ruby_typemaps.i"
 
