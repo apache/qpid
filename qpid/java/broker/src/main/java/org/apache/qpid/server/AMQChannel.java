@@ -1058,10 +1058,12 @@ public class AMQChannel
             if (idleWarn > 0L && idleTime > idleWarn)
             {
                 _actor.message(ChannelMessages.CHN_IDLE_TXN(idleTime));
+                _log.warn("Transaction on channel " + _channelId + " idle for " + idleTime + " ms");
             }
             else if (openWarn > 0L && openTime > openWarn)
             {
                 _actor.message(ChannelMessages.CHN_OPEN_TXN(openTime));
+                _log.warn("Transaction on channel " + _channelId + " open for " + openTime + " ms");
             }
 
             // Close connection for idle or open transactions that have timed out
