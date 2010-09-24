@@ -46,6 +46,15 @@ SessionManager::~SessionManager()
     for (vector<Broker*>::iterator iter = brokers.begin();
          iter != brokers.end(); iter++)
         delete *iter;
+
+    for (map<string, Package*>::iterator iter = packages.begin();
+         iter != packages.end(); iter++) {
+        for (Package::ClassMap::iterator citer = iter->second->classes.begin();
+             citer != iter->second->classes.end();
+             citer++)
+            delete citer->second;
+        delete iter->second;
+    }
 }
 
 Broker* SessionManager::addBroker(client::ConnectionSettings& settings)
