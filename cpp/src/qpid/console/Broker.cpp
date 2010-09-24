@@ -59,6 +59,11 @@ Broker::~Broker()
 {
     connThreadBody.shutdown();
     connThread.join();
+    resetAgents();
+    // resetAgents() does not delete the broker agent...
+    for (AgentMap::iterator iter = agents.begin(); iter != agents.end(); iter++) {
+        delete iter->second;
+    }
 }
 
 string Broker::getUrl() const
