@@ -42,6 +42,7 @@ public class ApplicationRegistryShutdownTest extends TestCase
 
     public void setUp() throws Exception
     {
+        ApplicationRegistry.remove(); // I have a very good reason for doing this
         _registry = new TestApplicationRegistry();
     }
 
