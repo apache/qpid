@@ -230,13 +230,16 @@ Benefits:
 - During update consumers actually help by removing messages before they need to be updated.
 - Needs no separate "work to do" queue, only the brokers queues themselves.
 
+# TODO how can we recover from updater crashing before update complete?
+# Clear queues that are not updated & send request for udpates on those queues?
+  
 # TODO above is incomplete, we also need to replicate exchanges & bindings.
 # Think about where this fits into the update process above and when
-# local clients of the updatee can start to send & receive messages.
-# Probably we need to replicate all the wiring (exchanges, empty queues, bindings)
-# before we allow local clients to do anything, but we don't need to wait
-# for queues to fill with messages, queue locks will protect the queues until they are
-# ready for local consumers.
+# local clients of the updatee can start to send messages.
+
+# TODO updatee may receive a dequeue for a message it has not yet seen, needs
+# to hold on to that so it can drop the message when it is seen.
+# Similar problem exists for wiring?
   
 ** Cluster API
 
@@ -342,15 +345,18 @@ The existing design uses read-credit to solve 1., and does not solve 2.
 New design should stop reading on all connections while flow control
 condition exists? 
 
-Asynchronous queue replication could: be refactored to work the same
+Asynchronous queue replication could be refactored to work the same
 way: under a MessageStore interface using the same enqueue/dequeue
 protocol but over a TCP connection. Separate the "async queue
 replication" code for reuse.
 
-Unify as "reliability" (need better term) property of a queue:
-- normal: transient, unreplicated.
-- backup (to another broker): active/passive async replication.
-- cluster: active/active multicast replication to cluster
-Allow to be specified per-queue (with defaults that perserve existing behavior)
-Also specify on exchanges?
-Are these exclusive or additive: e.g. persistence + cluster is allowed.
+Can federation also be unified, at least in configuration?
+
+Consider queues (and exchanges?) as having "reliability" attributes:
+- persistent: is the message stored on disk.
+- backed-up (to another broker): active/passive async replication.
+- replicated (to a cluster): active/active multicast replication to cluster.
+- federated: federation link to a queue/exchange on another broker.
+
+"Reliability" seems right for the first 3 but not for federation, is
+there a better term?
