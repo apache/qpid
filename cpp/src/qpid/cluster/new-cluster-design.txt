@@ -1,3 +1,5 @@
+-*-org-*-
+
 * A new design for Qpid clustering.
 
 ** Issues with current design.
@@ -79,9 +81,11 @@ The cluster must provide these delivery guarantees:
 
 - client sends transfer: message must be replicated and not lost even if the local broker crashes.
 - client acquires a message: message must not be delivered on another broker while acquired.
-- client rejects acquired message: message must be re-queued on cluster and not lost.
-- client disconnects or broker crashes: acquired but not accepted messages must be re-queued on cluster.
 - client accepts message: message is forgotten, will never be delivered or re-queued by any broker.
+- client releases message: message must be re-queued on cluster and not lost.
+- client rejects message: message must be dead-lettered or discarded and forgotten.
+- client disconnects/broker crashes: acquired but not accepted messages must be re-queued on cluster.
+
 
 Each guarantee takes effect when the client receives a *completion*
 for the associated command (transfer, acquire, reject, accept)
@@ -170,6 +174,70 @@ being resolved.
 
 #TODO: The only source of dequeue errors is probably an unrecoverable journal failure.
 
+When a new member (the updatee) joins a cluster it needs to be brought up to date.
+The old cluster design an existing member (the updater) sends a state snapshot.
+
+To ensure consistency of the snapshot both the updatee and the updater
+"stall" at the point of the update. They stop processing multicast
+events and queue them up for processing when the update is
+complete. This creates a back-log of work for each to get through,
+which leaves them lagging behind the rest of the cluster till they
+catch up (which is not guaranteed to happen in a bounded time.)
+
+** Better handling of new brokers joining
+
+When a new member (the updatee) joins a cluster it needs to be brought
+up to date with the rest of the cluster.  An existing member (the
+updater) sends an "update".
+
+In the old cluster design the update is a snapshot of the entire
+broker state.  To ensure consistency of the snapshot both the updatee
+and the updater "stall" at the start of the update, i.e. they stop
+processing multicast events and queue them up for processing when the
+update is complete. This creates a back-log of work to get through,
+which leaves them lagging behind the rest of the cluster till they
+catch up (which is not guaranteed to happen in a bounded time.)
+
+With the new cluster design only queues need to be replicated
+(actually wiring needs replication also, see below.)
+
+The new update is:
+- per-queue rather than per-broker, separate queues can be updated in parallel.
+- updates queues in reverse order to eliminate potentially unbounded catch-up
+
+Replication events, multicast to cluster:
+- enqueue(q,m): message m pushed on back of queue q .
+- acquire(q,m): mark m acquired
+- dequeue(q,m): forget m.
+Messages sent on update connection:
+- update_front(q,m): during update, receiver pushes m to *front* of q
+- update_done(q): during update, update of q is complete.
+  
+Updater: 
+- when updatee joins set iterator i = q.end()
+- while i != q.begin(): --i; send update_front(q,*i) to updatee
+- send update_done(q) to updatee
+
+Updatee:
+- q initially in locked state, can't dequeue locally.
+- start processing replication events for q immediately (enqueue, dequeue, acquire etc.)
+- receive update_front(q,m): q.push_front(m)
+- receive update_done(q): q can be unlocked for local dequeing.
+
+Benefits:
+- No stall: updarer & updatee process multicast messages throughout the update.
+- No unbounded catch-up: update consists of at most N update_front() messages where N=q.size() at start of update.
+- During update consumers actually help by removing messages before they need to be updated.
+- Needs no separate "work to do" queue, only the brokers queues themselves.
+
+# TODO above is incomplete, we also need to replicate exchanges & bindings.
+# Think about where this fits into the update process above and when
+# local clients of the updatee can start to send & receive messages.
+# Probably we need to replicate all the wiring (exchanges, empty queues, bindings)
+# before we allow local clients to do anything, but we don't need to wait
+# for queues to fill with messages, queue locks will protect the queues until they are
+# ready for local consumers.
+  
 ** Cluster API
 
 The new cluster API is an extension of the existing MessageStore API.
@@ -274,4 +342,15 @@ The existing design uses read-credit to solve 1., and does not solve 2.
 New design should stop reading on all connections while flow control
 condition exists? 
 
-   
+Asynchronous queue replication could: be refactored to work the same
+way: under a MessageStore interface using the same enqueue/dequeue
+protocol but over a TCP connection. Separate the "async queue
+replication" code for reuse.
+
+Unify as "reliability" (need better term) property of a queue:
+- normal: transient, unreplicated.
+- backup (to another broker): active/passive async replication.
+- cluster: active/active multicast replication to cluster
+Allow to be specified per-queue (with defaults that perserve existing behavior)
+Also specify on exchanges?
+Are these exclusive or additive: e.g. persistence + cluster is allowed.
