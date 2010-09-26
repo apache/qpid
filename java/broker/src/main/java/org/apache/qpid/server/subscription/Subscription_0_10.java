@@ -102,13 +102,14 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
     private String _trace;
     private long _createTime = System.currentTimeMillis();
     private final AtomicLong _deliveredCount = new AtomicLong(0);
+    private final Map<String, Object> _arguments;
 
 
     public Subscription_0_10(ServerSession session, String destination, MessageAcceptMode acceptMode,
                              MessageAcquireMode acquireMode,
                              MessageFlowMode flowMode,
                              FlowCreditManager_0_10 creditManager,
-                             FilterManager filters)
+                             FilterManager filters,Map<String, Object> arguments)
     {
         _session = session;
         _destination = destination;
@@ -118,6 +119,8 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
         _flowMode = flowMode;
         _filters = filters;
         _creditManager.addStateListener(this);
+        _arguments = arguments == null ? Collections.<String, Object> emptyMap() :
+                                         Collections.<String, Object> unmodifiableMap(arguments);
         _state.set(_creditManager.hasCredit() ? State.ACTIVE : State.SUSPENDED);
 
     }
@@ -859,8 +862,7 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
 
     public Map<String, Object> getArguments()
     {
-        //TODO
-        return Collections.EMPTY_MAP;
+        return _arguments;
     }
 
     public boolean isSessionTransactional()

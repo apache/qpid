@@ -247,7 +247,9 @@ public class ServerSessionDelegate extends SessionDelegate
                                                                   method.getAcceptMode(),
                                                                   method.getAcquireMode(),
                                                                   MessageFlowMode.WINDOW,
-                                                                  creditManager, filterManager);
+                                                                  creditManager, 
+                                                                  filterManager,
+                                                                  method.getArguments());
 
                     ((ServerSession)session).register(destination, sub);
                     try
