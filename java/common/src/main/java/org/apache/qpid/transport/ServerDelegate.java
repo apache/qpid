@@ -117,7 +117,7 @@ public class ServerDelegate extends ConnectionDelegate
                 conn.connectionTune
                     (Integer.MAX_VALUE,
                      org.apache.qpid.transport.network.ConnectionBinding.MAX_FRAME_SIZE,
-                     0, Integer.MAX_VALUE);
+                     0, getHeartbeatMax());
                 conn.setAuthorizationID(ss.getAuthorizationID());
             }
             else
@@ -130,6 +130,11 @@ public class ServerDelegate extends ConnectionDelegate
             conn.exception(e);
             conn.connectionClose(ConnectionCloseCode.CONNECTION_FORCED, e.getMessage());
         }
+    }
+
+    protected int getHeartbeatMax()
+    {
+        return Integer.MAX_VALUE;
     }
 
     @Override public void connectionSecureOk(Connection conn, ConnectionSecureOk ok)
