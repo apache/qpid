@@ -121,4 +121,11 @@ public class ServerConnectionDelegate extends ServerDelegate
             sconn.setState(Connection.State.CLOSING);
         }
     }
+    
+    @Override
+    protected int getHeartbeatMax()
+    {
+        //TODO: implement broker support for actually sending heartbeats
+        return 0;
+    }
 }
