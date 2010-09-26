@@ -49,6 +49,7 @@ import org.apache.qpid.server.information.management.ServerInformationMBean;
 import org.apache.qpid.server.logging.SystemOutMessageLogger;
 import org.apache.qpid.server.logging.actors.BrokerActor;
 import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.logging.actors.GenericActor;
 import org.apache.qpid.server.logging.management.LoggingManagementMBean;
 import org.apache.qpid.server.logging.messages.BrokerMessages;
 import org.apache.qpid.server.protocol.AMQProtocolEngineFactory;
@@ -309,6 +310,8 @@ public class Main
         // for the remainder of the startup, and the default actor if the stack is empty
         CurrentActor.set(new BrokerActor(config.getCompositeStartupMessageLogger()));
         CurrentActor.setDefault(new BrokerActor(config.getRootMessageLogger()));
+        GenericActor.setDefaultMessageLogger(config.getRootMessageLogger());
+        
 
         try
         {
