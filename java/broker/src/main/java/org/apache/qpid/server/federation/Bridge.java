@@ -694,12 +694,14 @@ public class Bridge implements BridgeConfig
                 
             FlowCreditManager_0_10 creditManager = new WindowCreditManager(0xFFFFFFFF,getMessageWindowSize());
 
+            //TODO Handle the passing of non-null Filters and Arguments here
+            
             Subscription_0_10 sub = new Subscription_0_10((ServerSession)session,
                                                           _destination,
                                                           MessageAcceptMode.NONE,
                                                           MessageAcquireMode.PRE_ACQUIRED,
                                                           MessageFlowMode.WINDOW,
-                                                          creditManager, null);
+                                                          creditManager, null,null);
 
             ((ServerSession)session).register(_destination, sub);
 
@@ -764,12 +766,14 @@ public class Bridge implements BridgeConfig
 
             FlowCreditManager_0_10 creditManager = new WindowCreditManager(0xFFFFFFFF,getMessageWindowSize());
 
+          //TODO Handle the passing of non-null Filters and Arguments here
+            
             Subscription_0_10 sub = new Subscription_0_10((ServerSession)session,
                                                           _destination,
                                                           MessageAcceptMode.NONE,
                                                           MessageAcquireMode.PRE_ACQUIRED,
                                                           MessageFlowMode.WINDOW,
-                                                          creditManager, null);
+                                                          creditManager, null,null);
 
             ((ServerSession)session).register(_destination, sub);
 
