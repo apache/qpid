@@ -20,6 +20,11 @@
  */
 package org.apache.qpid.server.transport;
 
+import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.CHANNEL_FORMAT;
+import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.CONNECTION_FORMAT;
+import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.SOCKET_FORMAT;
+import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.USER_FORMAT;
+
 import org.apache.qpid.server.configuration.ConnectionConfig;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
@@ -37,6 +42,8 @@ import org.apache.qpid.transport.ExecutionException;
 import org.apache.qpid.transport.ExecutionErrorCode;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.AMQException;
+
+import java.text.MessageFormat;
 
 public class ServerConnection extends Connection implements AMQConnectionModel
 {
@@ -120,4 +127,39 @@ public class ServerConnection extends Connection implements AMQConnectionModel
 
         ((ServerSession)session).close();
     }
+
+    public String toLogString() {
+        boolean hasVirtualHost = (null != this.getVirtualHost());
+        boolean hasPrincipal = (null != getAuthorizationID());
+
+        if (hasPrincipal && hasVirtualHost)
+        {
+            return " [" +
+                    MessageFormat.format(CONNECTION_FORMAT,
+                                         getConnectionId(),
+                                         getAuthorizationID(),
+                                         _config.getAddress(),
+                                         getVirtualHost().getName())
+                 + "] ";
+        }
+        else if (hasPrincipal)
+        {
+            return " [" +
+                    MessageFormat.format(USER_FORMAT,
+                                         getConnectionId(),
+                                         getAuthorizationID(),
+                                         _config.getAddress())
+                 + "] ";
+
+        }
+        else
+        {
+            return " [" +
+                    MessageFormat.format(SOCKET_FORMAT,
+                                         this.getConnectionId(),
+                                         _config.getAddress())
+                 + "] ";
+        }
+    }
+
 }
