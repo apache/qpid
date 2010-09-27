@@ -185,7 +185,7 @@ goto afterQpidJavaMem
 
 :noQpidJavaMem
 echo Info: QPID_JAVA_MEM not set. Defaulting to JAVA_MEM %JAVA_MEM%
-:after QpidJavaMem
+:afterQpidJavaMem
 
 
 rem QPID_OPTS intended to hold any -D props for use
