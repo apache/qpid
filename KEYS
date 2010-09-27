@@ -315,15 +315,16 @@ v3bFHTk24dCc3QHRqFozGvNQyTzeTxtyIZ0Rsq9TKOBfRNmSTy+0hvHd5Q==
 -----END PGP PUBLIC KEY BLOCK-----
 pub   1024D/A9D7D0C7 2006-02-24
 uid                  Andrew Kennedy (Andrew Donald Kennedy, Nevada Systems, Edinburgh/London, United Kingdom) <andrewinternational@gmail.com>
-sig 3        A9D7D0C7 2010-09-26  Andrew Kennedy (Andrew Donald Kennedy, Nevada Systems, Edinburgh/London, United Kingdom) <andrewinternational@gmail.com>
 sig 3        A9D7D0C7 2006-02-24  Andrew Kennedy (Andrew Donald Kennedy, Nevada Systems, Edinburgh/London, United Kingdom) <andrewinternational@gmail.com>
+sig 3        A9D7D0C7 2010-09-26  Andrew Kennedy (Andrew Donald Kennedy, Nevada Systems, Edinburgh/London, United Kingdom) <andrewinternational@gmail.com>
 uid                  Andrew Kennedy (CODE SIGNING KEY) <grkvlt@apache.org>
 sig 3        A9D7D0C7 2010-09-26  Andrew Kennedy (Andrew Donald Kennedy, Nevada Systems, Edinburgh/London, United Kingdom) <andrewinternational@gmail.com>
+sig          54FDD85D 2010-09-27  Robert Gemmell (CODE SIGNING KEY) <robbie@apache.org>
 sub   2048g/6EEF3958 2006-02-24
 sig          A9D7D0C7 2006-02-24  Andrew Kennedy (Andrew Donald Kennedy, Nevada Systems, Edinburgh/London, United Kingdom) <andrewinternational@gmail.com>
 
 -----BEGIN PGP PUBLIC KEY BLOCK-----
-Version: GnuPG/MacGPG2 v2.0.14 (Darwin)
+Version: GnuPG v1.4.10 (GNU/Linux)
 
 mQGiBEP+fn8RBACYa3PCAyXCros2XTubOW3+v2yPn5cUikAR5TAfV1o9HoZmXvbN
 2X2z63JkdQNoGZiIe1Cr1jOMsX4CW72j/665mPtM0TbsuA7NGQaJ72HL4jaj45Bf
@@ -333,28 +334,40 @@ bgrSgLeCLbzamiwRp0DrrPrzg44nsNBu2yhnwxbL8uuCmA0ithCEpPM1dPbB2foO
 oqm5IQPZSXxgBxP1nqgULCpxeV3AD06bB8lO/iV+XZXdawbWrmdD/rgerdLEPPZH
 RRauA/9Dc+APY5L0HVutGiYWrP6AzDyReq+Yeh5zwPkaSYLXI9JnhGOa0YVCaWdr
 MqXNupvKUkkpwFebuT7OAoihqaJ5qce4aryPY76TdeqW2uOE/lfPEp9HzU0XfxvW
-8DTJ6JByWIewyheNAaD/hBRNa5ohxOI2ckFxcRT8yRRJYcohCrQ1QW5kcmV3IEtl
-bm5lZHkgKENPREUgU0lHTklORyBLRVkpIDxncmt2bHRAYXBhY2hlLm9yZz6IYAQT
-EQIAIAUCTJ/MbgIbIwYLCQgHAwIEFQIIAwQWAgMBAh4BAheAAAoJEIXHbVCp19DH
-8akAoM7sZE1TdIgwwoj6y+3D9UQzdI3pAKDIL7iL+WZYbKtnsKqakfZhMXIAOLR4
-QW5kcmV3IEtlbm5lZHkgKEFuZHJldyBEb25hbGQgS2VubmVkeSwgTmV2YWRhIFN5
-c3RlbXMsIEVkaW5idXJnaC9Mb25kb24sIFVuaXRlZCBLaW5nZG9tKSA8YW5kcmV3
-aW50ZXJuYXRpb25hbEBnbWFpbC5jb20+iF0EExECAB4GCwkIBwMCAxUCAwMWAgEC
-HgECF4AFAkyfzWICGQEACgkQhcdtUKnX0MfJQACY7pbXeqE23VmX7G0M+kpXfopy
-dACfSrVmoYpwU7nqrdjyoV5Y3AbD8XWIWwQTEQIAGwUCQ/5+fwYLCQgHAwIDFQID
-AxYCAQIeAQIXgAAKCRCFx21QqdfQxxPCAKC6+Op/mshRXyep2B5i6ka6zulOOACd
-HNSi4TiPA8QTI/rScbEaVR8ccz65Ag0EQ/5/EBAIAJgKVMCbuFHdgly3bQhSgIgG
-EdcoHCN3sGsGtoX/wBWAxvnKGKoYkjhk8Jbhs/Nx4GyoDB7znNyIpswyRHnHzL0e
-38DLQJRdRMYrYT+ruG7T34IV5YyLzWM+7fiS5DozVcBzAGtjL8LuKQ+dhR34kGDD
-FbXuKfD8Y7fbAEIfrsSbXZtPfPoj6wtoI5g+go2b+qF7lLb9QJ8jdvMTn+DI3Hxf
-o40/GWH+6NAdjGUbWdOp+siIxbI3sPrzdRQ1PakA1g7tZyqif/k/VWcxStQA6qmM
-jc7QfFkldOulmxwNT3YMngLR5iIV4QsbfxE2wUOLNhYY5MG77zBWgyxU4Ek+D/8A
-AwUH/j5QL4grC13hYjVSqahYrBZ7xIhHH6egvbumYMUaXJKj+IXU12SvMtu2ZJdp
-E8Lkz9jWYR6zgv8+iPX27jOKAtHWVbe+dctKJFgXMFMqXlFjXEaeO7wjoRlM+UX4
-h7Ry+qjlJnH3ftrGfpxxoxrK9e0dOzil2Eez+JgqtDDU9oSKb53Hj3kAmg1yJNq9
-z4fXNalEcBSYg3ocOtzES3//RNJYhEOevrkg87pKia7HFHqtqzAsFr8Zp9xQvTPp
-y4XDKElRhtPq9oTRlf6cFNG5/vUypwa/YJ/fOJAgD8KPuiB7I/vrANeMlr/Efkpq
-rxsZOscpUwjsPWianMTmKpUvZcKIRgQYEQIABgUCQ/5/EAAKCRCFx21QqdfQx+2M
-AKDPilVZy0YNhW5fIvA/3Tz0/UvjgQCfUQuSqdXNgZaTjvJP5xcF6/EBpys=
-=nA70
+8DTJ6JByWIewyheNAaD/hBRNa5ohxOI2ckFxcRT8yRRJYcohCrR4QW5kcmV3IEtl
+bm5lZHkgKEFuZHJldyBEb25hbGQgS2VubmVkeSwgTmV2YWRhIFN5c3RlbXMsIEVk
+aW5idXJnaC9Mb25kb24sIFVuaXRlZCBLaW5nZG9tKSA8YW5kcmV3aW50ZXJuYXRp
+b25hbEBnbWFpbC5jb20+iFsEExECABsFAkP+fn8GCwkIBwMCAxUCAwMWAgECHgEC
+F4AACgkQhcdtUKnX0McTwgCguvjqf5rIUV8nqdgeYupGus7pTjgAnRzUouE4jwPE
+EyP60nGxGlUfHHM+iF0EExECAB4GCwkIBwMCAxUCAwMWAgECHgECF4AFAkyfzWIC
+GQEACgkQhcdtUKnX0MfJQACY7pbXeqE23VmX7G0M+kpXfopydACfSrVmoYpwU7nq
+rdjyoV5Y3AbD8XW0NUFuZHJldyBLZW5uZWR5IChDT0RFIFNJR05JTkcgS0VZKSA8
+Z3Jrdmx0QGFwYWNoZS5vcmc+iGAEExECACAFAkyfzG4CGyMGCwkIBwMCBBUCCAME
+FgIDAQIeAQIXgAAKCRCFx21QqdfQx/GpAKDO7GRNU3SIMMKI+svtw/VEM3SN6QCg
+yC+4i/lmWGyrZ7CqmpH2YTFyADiJAhwEEAEKAAYFAkyhFSsACgkQdNgguFT92F39
+1Q/+O4ckbQjWTjhxvkKerrt9KFFQt0mhYHfvHV+qSip/HomAheeHk79W6cRO2mm3
+F/jDXOAXbn9xNtEAdLgTKh3DVVX7aOsX56++5LGsfd4tU2MmFMftT2NjFU3aif9k
+IqyaVKEgfYfQoZpjmp9mwpEOccPUcf2f1801dMybHlKVxKrTgp2N1YokaMjmT36E
+G1smuo6EqoX2P6ctza6dmI9P1xEGP2WswGBwFe0pX8NsgLXtjFW3dkyvLHiUGbDX
++Bt86f5gXexE+fVVcqaMGaMnjfqw+z0ji6Lqrq9duW4mgkPwfvpPJsZO9xFL7ZL3
+eH0nos38k3LA5TLfEFEM0wECUQaqnMkrnA4z6Z93hn2sWAhf16A6tQxs/g63vDUn
+iS9qWq7011TrrFBAb8awWYDqyOG/Jxk5+tInhZo9rxUSd740Y+qlviI+2SMYgiM7
+IbDnYHR4hmg2J14QAWYWqVSdtvfeBStgGvdEW7uopej2aCf8u+d4sFyo1LDGVA28
+u3VOjJRzc/BRqKqAqMorkpMYXT/ak9IOR7FJXEWxo3eEAPbVtV0biWQWwNktP1yr
+uMCwaoy5x17Af+dfhtnj03cm1W7RINFHIRl4YQKdG2Denf6nx7cPwxLRGfzNp2fI
+XJZR2SBzupYXix8F//SpZiKu2pAhr1r6o960ibfeOe23m+K5Ag0EQ/5/EBAIAJgK
+VMCbuFHdgly3bQhSgIgGEdcoHCN3sGsGtoX/wBWAxvnKGKoYkjhk8Jbhs/Nx4Gyo
+DB7znNyIpswyRHnHzL0e38DLQJRdRMYrYT+ruG7T34IV5YyLzWM+7fiS5DozVcBz
+AGtjL8LuKQ+dhR34kGDDFbXuKfD8Y7fbAEIfrsSbXZtPfPoj6wtoI5g+go2b+qF7
+lLb9QJ8jdvMTn+DI3Hxfo40/GWH+6NAdjGUbWdOp+siIxbI3sPrzdRQ1PakA1g7t
+Zyqif/k/VWcxStQA6qmMjc7QfFkldOulmxwNT3YMngLR5iIV4QsbfxE2wUOLNhYY
+5MG77zBWgyxU4Ek+D/8AAwUH/j5QL4grC13hYjVSqahYrBZ7xIhHH6egvbumYMUa
+XJKj+IXU12SvMtu2ZJdpE8Lkz9jWYR6zgv8+iPX27jOKAtHWVbe+dctKJFgXMFMq
+XlFjXEaeO7wjoRlM+UX4h7Ry+qjlJnH3ftrGfpxxoxrK9e0dOzil2Eez+JgqtDDU
+9oSKb53Hj3kAmg1yJNq9z4fXNalEcBSYg3ocOtzES3//RNJYhEOevrkg87pKia7H
+FHqtqzAsFr8Zp9xQvTPpy4XDKElRhtPq9oTRlf6cFNG5/vUypwa/YJ/fOJAgD8KP
+uiB7I/vrANeMlr/EfkpqrxsZOscpUwjsPWianMTmKpUvZcKIRgQYEQIABgUCQ/5/
+EAAKCRCFx21QqdfQx+2MAKDPilVZy0YNhW5fIvA/3Tz0/UvjgQCfUQuSqdXNgZaT
+jvJP5xcF6/EBpys=
+=Wc+j
 -----END PGP PUBLIC KEY BLOCK-----
