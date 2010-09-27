@@ -180,7 +180,12 @@
     <taskdef classpathref="cobertura.classpath" resource="tasks.properties" />
   </target>
 
-  <taskdef name="findbugs" classname="edu.umd.cs.findbugs.anttask.FindBugsTask" classpath="${findbugs.dir}/findbugs-ant.jar"/>
+  <target name="findbugs-init">
+    <available file="${findbugs.dir}/findbugs-ant.jar" property="findbugs-ant.jar.present"/>
+    <fail unless="findbugs-ant.jar.present" message="Please follow the instructions at ${findbugs.dir}/README.txt to configure FindBugs"/>
+
+    <taskdef name="findbugs" classname="edu.umd.cs.findbugs.anttask.FindBugsTask" classpath="${findbugs.dir}/findbugs-ant.jar"/>
+  </target>
 
   <target name="help" description="display detailed build documentation">
     <echo>
