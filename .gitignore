@@ -35,7 +35,8 @@ release
 .settings
 generated/
 target
-qpid/java/lib/cobertura/
+qpid/java/lib/cobertura
+qpid/java/lib/findbugs
 # Intellij Project files
 *.iml
 *.ipr
