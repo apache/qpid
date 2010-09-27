@@ -102,7 +102,7 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
 
                                                 public void stateChange(Subscription sub, State oldState, State newState)
                                                 {
-                                                    // TODO something ? log a message here ?
+                                                    CurrentActor.get().message(SubscriptionMessages.STATE(newState.toString()));    
                                                 }
                                             };
     private AMQQueue _queue;
@@ -179,8 +179,15 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
         _trace = (String) arguments.get("qpid.trace.id");
         _id = getConfigStore().createId();
         getConfigStore().addConfiguredObject(this);
-        _logActor = new SubscriptionActor(CurrentActor.get().getRootMessageLogger(), this);
-
+	String filterLogString = null;
+	LogActor _logActor = CurrentActor.get();
+        if (_logActor.getRootMessageLogger().isMessageEnabled(_logActor, this, SubscriptionMessages.CREATE_LOG_HIERARCHY))
+        {
+            filterLogString = getFilterLogString();
+            _logActor.message(SubscriptionMessages.CREATE(filterLogString, queue.isDurable() && exclusive,
+                    filterLogString.length() > 0));
+        }
+ 
     }
 
     public AMQShortString getConsumerTag()
@@ -268,6 +275,7 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
             }
             _creditManager.removeListener(this);
             getConfigStore().removeConfiguredObject(this);
+            CurrentActor.get().message(SubscriptionMessages.CLOSE());
         }
         finally
         {
