@@ -148,8 +148,8 @@ endif
 
 # Test programs that are installed and therefore built as part of make, not make check
 
-qpidtest_SCRIPTS += qpid-cpp-benchmark
-EXTRA_DIST += qpid-cpp-benchmark
+qpidtest_SCRIPTS += qpid-cpp-benchmark install_env.sh
+EXTRA_DIST += qpid-cpp-benchmark install_env.sh
 
 qpidtest_PROGRAMS += receiver
 receiver_SOURCES = \
@@ -377,7 +377,7 @@ check-long:
 	$(MAKE) check TESTS="$(LONG_TESTS)" VALGRIND=
 
 # Things that should be built before the check target runs.
-check-am: python_prep test_env.sh sasl_config
+check-am: python_prep test_env.sh install_env.sh sasl_config
 
 PYTHON_SRC_DIR=$(abs_srcdir)/../../../python
 PYTHON_BLD_DIR=$(abs_builddir)/python
@@ -402,3 +402,4 @@ clean-local:
 	rm -rf $(CLEAN_LOCAL)
 
 include testagent.mk
+

@@ -539,6 +539,7 @@ AC_CONFIG_FILES([
   src/Makefile
   src/tests/Makefile
   src/tests/test_env.sh
+  src/tests/install_env.sh
   src/qpid.pc
   docs/man/Makefile
   docs/api/Makefile
