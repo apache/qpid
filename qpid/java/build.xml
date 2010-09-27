@@ -233,7 +233,7 @@
       </exec>
   </target>
 
-  <target name="findbugs" depends="build">
+  <target name="findbugs" depends="findbugs-init,build">
 
     <mkdir dir="${build.findbugs}"/>
 
