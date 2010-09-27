@@ -20,10 +20,10 @@
 absdir() { echo `cd $1 && pwd`; }
 
 # Environment variables substituted by configure/cmake.
-srcdir=@abs_srcdir@
-builddir=@abs_builddir@
-top_srcdir=@abs_top_srcdir@
-top_builddir=@abs_top_builddir@
+srcdir=`absdir @abs_srcdir@`
+builddir=`absdir @abs_builddir@`
+top_srcdir=`absdir @abs_top_srcdir@`
+top_builddir=`absdir @abs_top_builddir@`
 moduledir=$top_builddir/src@builddir_lib_suffix@
 testmoduledir=$builddir@builddir_lib_suffix@
 
