@@ -35,6 +35,8 @@ import org.apache.qpid.server.filter.FilterManager;
 import org.apache.qpid.server.filter.FilterManagerFactory;
 import org.apache.qpid.server.flow.FlowCreditManager_0_10;
 import org.apache.qpid.server.flow.WindowCreditManager;
+import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.logging.actors.GenericActor;
 import org.apache.qpid.server.message.MessageMetaData_0_10;
 import org.apache.qpid.server.message.MessageTransferMessage;
 import org.apache.qpid.server.protocol.AMQSessionModel;
@@ -250,6 +252,8 @@ public class ServerSessionDelegate extends SessionDelegate
                                                                   creditManager, 
                                                                   filterManager,
                                                                   method.getArguments());
+
+                    CurrentActor.set(GenericActor.getInstance(sub));
 
                     ((ServerSession)session).register(destination, sub);
                     try
