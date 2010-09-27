@@ -136,10 +136,12 @@ public class AsymptoticTestDecorator extends WrappedSuiteTestDecorator
         log.debug("params = " + ((params == null) ? null : MathUtils.printArray(params)));
         log.debug("repeat = " + repeat);
 
-        for (int n : params)
+        if (params != null) 
         {
-            for (int j = 0; j < repeat; j++)
-            {
+           for (int n : params) 
+           {                
+             for (int j = 0; j < repeat; j++)
+             {
                 log.debug("n = " + n);
 
                 // Set the integer parameter in the TKTestResult to be passed to the tests.
@@ -148,14 +150,14 @@ public class AsymptoticTestDecorator extends WrappedSuiteTestDecorator
                 if (tkResult.shouldStop())
                 {
                     log.debug("tkResult.shouldStop = " + true);
-
                     break;
                 }
 
                 log.debug("Calling super#run");
                 super.run(tkResult);
             }
-        }
+          }
+       }     
     }
 
     /**

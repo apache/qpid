@@ -36,9 +36,9 @@ public class ProtocolBufferMonitorFilter extends IoFilterAdapter
 {
     private static final Logger _logger = LoggerFactory.getLogger(ProtocolBufferMonitorFilter.class);
 
-    public static long DEFAULT_FREQUENCY = 5000;
+    public static final long DEFAULT_FREQUENCY = 5000;
 
-    public static int DEFAULT_THRESHOLD = 3000;
+    public static final int DEFAULT_THRESHOLD = 3000;
 
     private int _bufferedMessages = 0;
 

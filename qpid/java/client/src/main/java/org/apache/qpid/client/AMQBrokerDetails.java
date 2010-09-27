@@ -318,6 +318,15 @@ public class AMQBrokerDetails implements BrokerDetails
                compareSSLConfigurations(bd.getSSLConfiguration());
         //todo do we need to compare all the options as well?
     }
+    
+    @Override
+    public int hashCode()
+    {
+        int result = _host != null ? _host.hashCode() : 0;
+        result = 31 * result + _port;
+        result = 31 * result + (_transport != null ? _transport.hashCode() : 0);
+        return result;
+    }
 
     private String printOptionsURL()
     {

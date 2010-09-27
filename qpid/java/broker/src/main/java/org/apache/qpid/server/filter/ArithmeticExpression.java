@@ -163,13 +163,13 @@ public abstract class ArithmeticExpression<E extends Exception> extends BinaryEx
         {
 
         case INTEGER:
-            return new Integer(left.intValue() + right.intValue());
+            return Integer.valueOf(left.intValue() + right.intValue());
 
         case LONG:
-            return new Long(left.longValue() + right.longValue());
+            return Long.valueOf(left.longValue() + right.longValue());
 
         default:
-            return new Double(left.doubleValue() + right.doubleValue());
+            return Double.valueOf(left.doubleValue() + right.doubleValue());
         }
     }
 
@@ -179,13 +179,13 @@ public abstract class ArithmeticExpression<E extends Exception> extends BinaryEx
         {
 
         case INTEGER:
-            return new Integer(left.intValue() - right.intValue());
+            return Integer.valueOf(left.intValue() - right.intValue());
 
         case LONG:
-            return new Long(left.longValue() - right.longValue());
+            return Long.valueOf(left.longValue() - right.longValue());
 
         default:
-            return new Double(left.doubleValue() - right.doubleValue());
+            return Double.valueOf(left.doubleValue() - right.doubleValue());
         }
     }
 
@@ -195,13 +195,13 @@ public abstract class ArithmeticExpression<E extends Exception> extends BinaryEx
         {
 
         case INTEGER:
-            return new Integer(left.intValue() * right.intValue());
+            return Integer.valueOf(left.intValue() * right.intValue());
 
         case LONG:
-            return new Long(left.longValue() * right.longValue());
+            return Long.valueOf(left.longValue() * right.longValue());
 
         default:
-            return new Double(left.doubleValue() * right.doubleValue());
+            return Double.valueOf(left.doubleValue() * right.doubleValue());
         }
     }
 

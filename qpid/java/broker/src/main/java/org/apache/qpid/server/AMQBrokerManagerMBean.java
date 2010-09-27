@@ -129,7 +129,7 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
         {
             attributeList.add(attr);
         }
-        
+
         Collections.sort(attributeList);
 
         return attributeList;
@@ -171,7 +171,7 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
                 }
                 catch (Exception e)
                 {
-                    attributeValues.add(new String("-"));
+                    attributeValues.add("-");
                 }
             }
             

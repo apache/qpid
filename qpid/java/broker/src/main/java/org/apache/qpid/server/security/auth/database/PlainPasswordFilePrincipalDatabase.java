@@ -202,10 +202,7 @@ public class PlainPasswordFilePrincipalDatabase implements PrincipalDatabase
             }
             finally
             {
-                if (_userUpdate.isHeldByCurrentThread())
-                {
                     _userUpdate.unlock();
-                }
             }
         }
         catch (Exception e)
@@ -243,10 +240,7 @@ public class PlainPasswordFilePrincipalDatabase implements PrincipalDatabase
         }
         finally
         {
-            if (_userUpdate.isHeldByCurrentThread())
-            {
                 _userUpdate.unlock();
-            }
         }
     }
 
@@ -278,10 +272,7 @@ public class PlainPasswordFilePrincipalDatabase implements PrincipalDatabase
         }
         finally
         {
-            if (_userUpdate.isHeldByCurrentThread())
-            {
                 _userUpdate.unlock();
-            }
         }
 
         return true;
@@ -380,10 +371,7 @@ public class PlainPasswordFilePrincipalDatabase implements PrincipalDatabase
         }
         finally
         {
-            if (_userUpdate.isHeldByCurrentThread())
-            {
                 _userUpdate.unlock();
-            }
         }
     }
 
@@ -469,14 +457,19 @@ public class PlainPasswordFilePrincipalDatabase implements PrincipalDatabase
             }
             finally
             {
-                if (reader != null)
+                try
                 {
-                    reader.close();
+                    if (reader != null)
+                    {
+                        reader.close();
+                    }
                 }
-
-                if (writer != null)
+                finally
                 {
-                    writer.close();
+                    if (writer != null)
+                    {
+                        writer.close();
+                    }
                 }
             }
             
@@ -512,10 +505,7 @@ public class PlainPasswordFilePrincipalDatabase implements PrincipalDatabase
         }
         finally
         {
-            if (_userUpdate.isHeldByCurrentThread())
-            {
                 _userUpdate.unlock();
-            }
         }
     }
     

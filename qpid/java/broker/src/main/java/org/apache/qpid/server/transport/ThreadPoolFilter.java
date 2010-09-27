@@ -85,7 +85,7 @@ public class ThreadPoolFilter extends IoFilterAdapter
     {
         synchronized (threadIdReuseQueue)
         {
-            threadIdReuseQueue.push(new Integer(id));
+            threadIdReuseQueue.push(id);
         }
     }
 

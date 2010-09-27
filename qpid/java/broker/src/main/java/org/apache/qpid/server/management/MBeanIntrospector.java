@@ -372,7 +372,7 @@ class MBeanIntrospector {
         //                                                    cons.getParameterTypes());
 
         return new MBeanConstructorInfo(cons.getName(),
-                                        desc != null ? _defaultConstructorDescription : desc ,
+                                        desc == null ? _defaultConstructorDescription : desc ,
                                         null);
     }
 

@@ -38,13 +38,13 @@ public class Subscriber
 {
     private static final Logger _log = LoggerFactory.getLogger(Subscriber.class);
 
-    protected static Connection _connection;
+    protected Connection _connection;
 
-    protected static MessageConsumer _consumer;
+    protected MessageConsumer _consumer;
 
-    protected static InitialContextHelper _contextHelper;
+    protected InitialContextHelper _contextHelper;
 
-    protected static AMQConnectionFactory _connectionFactory;
+    protected AMQConnectionFactory _connectionFactory;
 
     protected Destination _destination;
 

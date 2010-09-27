@@ -128,7 +128,7 @@ public class SimpleQueueEntryList implements QueueEntryList
     }
 
 
-    public class QueueEntryIteratorImpl implements QueueEntryIterator
+    public static class QueueEntryIteratorImpl implements QueueEntryIterator
     {
 
         private QueueEntryImpl _lastNode;

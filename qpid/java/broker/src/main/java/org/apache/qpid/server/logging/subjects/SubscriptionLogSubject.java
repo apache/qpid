@@ -34,7 +34,7 @@ public class SubscriptionLogSubject extends AbstractLogSubject
      *
      * 0 - Subscription ID
      */
-    public static String SUBSCRIPTION_FORMAT = "sub:{0}";
+    public static final String SUBSCRIPTION_FORMAT = "sub:{0}";
 
     /**
      * Create an QueueLogSubject that Logs in the following format.

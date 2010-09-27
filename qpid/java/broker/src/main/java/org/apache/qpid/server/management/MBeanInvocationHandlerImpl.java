@@ -266,6 +266,7 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler, Notificati
 
     public void handleNotification(Notification notification, Object handback)
     {
+        assert notification instanceof JMXConnectionNotification;
         // only RMI Connections are serviced here, Local API atta  
         // rmi://169.24.29.116 guest 3
         String[] connectionData = ((JMXConnectionNotification) notification).getConnectionId().split(" ");

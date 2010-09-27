@@ -47,30 +47,30 @@ public abstract class ComparisonExpression<E extends Exception> extends BinaryEx
         return LogicExpression.createOR(createLessThan(value, left), createGreaterThan(value, right));
     }
 
-    private static final HashSet REGEXP_CONTROL_CHARS = new HashSet();
+    private static final HashSet<Character> REGEXP_CONTROL_CHARS = new HashSet<Character>();
 
     static
     {
-        REGEXP_CONTROL_CHARS.add(new Character('.'));
-        REGEXP_CONTROL_CHARS.add(new Character('\\'));
-        REGEXP_CONTROL_CHARS.add(new Character('['));
-        REGEXP_CONTROL_CHARS.add(new Character(']'));
-        REGEXP_CONTROL_CHARS.add(new Character('^'));
-        REGEXP_CONTROL_CHARS.add(new Character('$'));
-        REGEXP_CONTROL_CHARS.add(new Character('?'));
-        REGEXP_CONTROL_CHARS.add(new Character('*'));
-        REGEXP_CONTROL_CHARS.add(new Character('+'));
-        REGEXP_CONTROL_CHARS.add(new Character('{'));
-        REGEXP_CONTROL_CHARS.add(new Character('}'));
-        REGEXP_CONTROL_CHARS.add(new Character('|'));
-        REGEXP_CONTROL_CHARS.add(new Character('('));
-        REGEXP_CONTROL_CHARS.add(new Character(')'));
-        REGEXP_CONTROL_CHARS.add(new Character(':'));
-        REGEXP_CONTROL_CHARS.add(new Character('&'));
-        REGEXP_CONTROL_CHARS.add(new Character('<'));
-        REGEXP_CONTROL_CHARS.add(new Character('>'));
-        REGEXP_CONTROL_CHARS.add(new Character('='));
-        REGEXP_CONTROL_CHARS.add(new Character('!'));
+        REGEXP_CONTROL_CHARS.add('.');
+        REGEXP_CONTROL_CHARS.add('\\');
+        REGEXP_CONTROL_CHARS.add('[');
+        REGEXP_CONTROL_CHARS.add(']');
+        REGEXP_CONTROL_CHARS.add('^');
+        REGEXP_CONTROL_CHARS.add('$');
+        REGEXP_CONTROL_CHARS.add('?');
+        REGEXP_CONTROL_CHARS.add('*');
+        REGEXP_CONTROL_CHARS.add('+');
+        REGEXP_CONTROL_CHARS.add('{');
+        REGEXP_CONTROL_CHARS.add('}');
+        REGEXP_CONTROL_CHARS.add('|');
+        REGEXP_CONTROL_CHARS.add('(');
+        REGEXP_CONTROL_CHARS.add(')');
+        REGEXP_CONTROL_CHARS.add(':');
+        REGEXP_CONTROL_CHARS.add('&');
+        REGEXP_CONTROL_CHARS.add('<');
+        REGEXP_CONTROL_CHARS.add('>');
+        REGEXP_CONTROL_CHARS.add('=');
+        REGEXP_CONTROL_CHARS.add('!');
     }
 
     static class LikeExpression<E extends Exception> extends UnaryExpression<E> implements BooleanExpression<E>
@@ -111,7 +111,7 @@ public abstract class ComparisonExpression<E extends Exception> extends BinaryEx
                 {
                     regexp.append("."); // match one
                 }
-                else if (REGEXP_CONTROL_CHARS.contains(new Character(c)))
+                else if (REGEXP_CONTROL_CHARS.contains(c))
                 {
                     regexp.append("\\x");
                     regexp.append(Integer.toHexString(0xFFFF & c));
@@ -417,23 +417,23 @@ public abstract class ComparisonExpression<E extends Exception> extends BinaryEx
             {
                 if (rc == Short.class)
                 {
-                    lv = new Short(((Number) lv).shortValue());
+                    lv = ((Number) lv).shortValue();
                 }
                 else if (rc == Integer.class)
                 {
-                    lv = new Integer(((Number) lv).intValue());
+                    lv = ((Number) lv).intValue();
                 }
                 else if (rc == Long.class)
                 {
-                    lv = new Long(((Number) lv).longValue());
+                    lv = ((Number) lv).longValue();
                 }
                 else if (rc == Float.class)
                 {
-                    lv = new Float(((Number) lv).floatValue());
+                    lv = ((Number) lv).floatValue();
                 }
                 else if (rc == Double.class)
                 {
-                    lv = new Double(((Number) lv).doubleValue());
+                    lv = ((Number) lv).doubleValue();
                 }
                 else
                 {
@@ -448,15 +448,15 @@ public abstract class ComparisonExpression<E extends Exception> extends BinaryEx
                 }
                 else if (rc == Long.class)
                 {
-                    lv = new Long(((Number) lv).longValue());
+                    lv = ((Number) lv).longValue();
                 }
                 else if (rc == Float.class)
                 {
-                    lv = new Float(((Number) lv).floatValue());
+                    lv = ((Number) lv).floatValue();
                 }
                 else if (rc == Double.class)
                 {
-                    lv = new Double(((Number) lv).doubleValue());
+                    lv = ((Number) lv).doubleValue();
                 }
                 else
                 {
@@ -467,15 +467,15 @@ public abstract class ComparisonExpression<E extends Exception> extends BinaryEx
             {
                 if (rc == Long.class)
                 {
-                    lv = new Long(((Number) lv).longValue());
+                    lv = ((Number) lv).longValue();
                 }
                 else if (rc == Float.class)
                 {
-                    lv = new Float(((Number) lv).floatValue());
+                    lv = ((Number) lv).floatValue();
                 }
                 else if (rc == Double.class)
                 {
-                    lv = new Double(((Number) lv).doubleValue());
+                    lv = ((Number) lv).doubleValue();
                 }
                 else
                 {
@@ -486,15 +486,15 @@ public abstract class ComparisonExpression<E extends Exception> extends BinaryEx
             {
                 if (rc == Integer.class)
                 {
-                    rv = new Long(((Number) rv).longValue());
+                    rv = ((Number) rv).longValue();
                 }
                 else if (rc == Float.class)
                 {
-                    lv = new Float(((Number) lv).floatValue());
+                    lv = ((Number) lv).floatValue();
                 }
                 else if (rc == Double.class)
                 {
-                    lv = new Double(((Number) lv).doubleValue());
+                    lv = ((Number) lv).doubleValue();
                 }
                 else
                 {
@@ -505,15 +505,15 @@ public abstract class ComparisonExpression<E extends Exception> extends BinaryEx
             {
                 if (rc == Integer.class)
                 {
-                    rv = new Float(((Number) rv).floatValue());
+                    rv = ((Number) rv).floatValue();
                 }
                 else if (rc == Long.class)
                 {
-                    rv = new Float(((Number) rv).floatValue());
+                    rv = ((Number) rv).floatValue();
                 }
                 else if (rc == Double.class)
                 {
-                    lv = new Double(((Number) lv).doubleValue());
+                    lv = ((Number) lv).doubleValue();
                 }
                 else
                 {
@@ -524,15 +524,15 @@ public abstract class ComparisonExpression<E extends Exception> extends BinaryEx
             {
                 if (rc == Integer.class)
                 {
-                    rv = new Double(((Number) rv).doubleValue());
+                    rv = ((Number) rv).doubleValue();
                 }
                 else if (rc == Long.class)
                 {
-                    rv = new Double(((Number) rv).doubleValue());
+                    rv = ((Number) rv).doubleValue();
                 }
                 else if (rc == Float.class)
                 {
-                    rv = new Float(((Number) rv).doubleValue());
+                    rv = ((Number) rv).doubleValue();
                 }
                 else
                 {

@@ -24,6 +24,7 @@ import org.apache.qpid.QpidException;
 import javax.transaction.xa.Xid;
 
 import java.io.*;
+import java.util.Arrays;
 
 /**
  * Implements javax.transaction.dtx.Xid
@@ -217,6 +218,15 @@ public class XidImpl implements Xid
         return false;
     }
 
+    @Override
+    public int hashCode()
+    {
+        int result = _branchQualifier != null ? Arrays.hashCode(_branchQualifier) : 0;
+        result = 31 * result + _formatID;
+        result = 31 * result + (_globalTransactionID != null ? Arrays.hashCode(_globalTransactionID) : 0);
+        return result;
+    }
+    
     //-- Static helper method
     /**
      * Convert an Xid into the AMQP String format.

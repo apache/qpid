@@ -217,14 +217,26 @@ public class DerbyMessageStore extends AbstractMessageStore
         if(!tableExists(DB_VERSION_TABLE_NAME, conn))
         {
             Statement stmt = conn.createStatement();
-
-            stmt.execute(CREATE_DB_VERSION_TABLE);
-            stmt.close();
+            try 
+            {
+               stmt.execute(CREATE_DB_VERSION_TABLE);
+            }
+            finally 
+            {
+               stmt.close();
+            }   
 
             PreparedStatement pstmt = conn.prepareStatement(INSERT_INTO_DB_VERSION);
-            pstmt.setInt(1, DB_VERSION);
-            pstmt.execute();
-            pstmt.close();
+            try 
+            {
+               pstmt.setInt(1, DB_VERSION);
+               pstmt.execute();
+            }
+            finally 
+            {
+                pstmt.close();
+            }
+            
         }
 
     }
@@ -235,9 +247,14 @@ public class DerbyMessageStore extends AbstractMessageStore
         if(!tableExists(EXCHANGE_TABLE_NAME, conn))
         {
             Statement stmt = conn.createStatement();
-
-            stmt.execute(CREATE_EXCHANGE_TABLE);
-            stmt.close();
+            try 
+            {
+               stmt.execute(CREATE_EXCHANGE_TABLE);
+            }
+            finally
+            {
+               stmt.close();
+            }   
         }
     }
 
@@ -246,8 +263,15 @@ public class DerbyMessageStore extends AbstractMessageStore
         if(!tableExists(QUEUE_TABLE_NAME, conn))
         {
             Statement stmt = conn.createStatement();
-            stmt.execute(CREATE_QUEUE_TABLE);
-            stmt.close();
+            try 
+            { 
+               stmt.execute(CREATE_QUEUE_TABLE);
+            }
+            finally
+            {
+               stmt.close();
+            }
+            
         }
     }
 
@@ -256,9 +280,14 @@ public class DerbyMessageStore extends AbstractMessageStore
         if(!tableExists(BINDINGS_TABLE_NAME, conn))
         {
             Statement stmt = conn.createStatement();
-            stmt.execute(CREATE_BINDINGS_TABLE);
-
-            stmt.close();
+            try 
+            {
+              stmt.execute(CREATE_BINDINGS_TABLE);
+            }
+            finally
+            {
+              stmt.close();
+            }
         }
 
     }
@@ -268,9 +297,14 @@ public class DerbyMessageStore extends AbstractMessageStore
         if(!tableExists(QUEUE_ENTRY_TABLE_NAME, conn))
         {
             Statement stmt = conn.createStatement();
-            stmt.execute(CREATE_QUEUE_ENTRY_TABLE);
-
-            stmt.close();
+            try
+            {
+               stmt.execute(CREATE_QUEUE_ENTRY_TABLE);
+            } 
+            finally
+            {
+               stmt.close();
+            }   
         }
 
     }
@@ -280,9 +314,14 @@ public class DerbyMessageStore extends AbstractMessageStore
         if(!tableExists(MESSAGE_META_DATA_TABLE_NAME, conn))
         {
             Statement stmt = conn.createStatement();
-            stmt.execute(CREATE_MESSAGE_META_DATA_TABLE);
-
-            stmt.close();
+            try 
+            {
+               stmt.execute(CREATE_MESSAGE_META_DATA_TABLE);
+            } 
+            finally
+            {
+               stmt.close();
+            }   
         }
 
     }
@@ -293,9 +332,14 @@ public class DerbyMessageStore extends AbstractMessageStore
         if(!tableExists(MESSAGE_CONTENT_TABLE_NAME, conn))
         {
             Statement stmt = conn.createStatement();
-            stmt.execute(CREATE_MESSAGE_CONTENT_TABLE);
-
-            stmt.close();
+            try 
+            {
+               stmt.execute(CREATE_MESSAGE_CONTENT_TABLE);
+            } 
+            finally
+            {
+               stmt.close();
+            }   
         }
 
     }
@@ -305,12 +349,24 @@ public class DerbyMessageStore extends AbstractMessageStore
     private boolean tableExists(final String tableName, final Connection conn) throws SQLException
     {
         PreparedStatement stmt = conn.prepareStatement(TABLE_EXISTANCE_QUERY);
-        stmt.setString(1, tableName);
-        ResultSet rs = stmt.executeQuery();
-        boolean exists = rs.next();
-        rs.close();
-        stmt.close();
-        return exists;
+        try 
+        {
+            stmt.setString(1, tableName);
+            ResultSet rs = stmt.executeQuery();
+            try 
+            {
+                return rs.next();
+            }
+            finally 
+            {
+                rs.close();
+            }
+        }
+        finally 
+        {
+           stmt.close();
+        }   
+        
     }
 
     public void recover() throws AMQException
@@ -425,8 +481,6 @@ public class DerbyMessageStore extends AbstractMessageStore
         try
         {
             conn = newConnection();
-
-
             stmt = conn.createStatement();
             ResultSet rs = stmt.executeQuery(SELECT_FROM_EXCHANGE);
 

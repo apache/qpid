@@ -26,6 +26,7 @@ import org.slf4j.LoggerFactory;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -35,10 +36,10 @@ public class SimpleConsole implements Console
     private static Logger _devlog = LoggerFactory.getLogger(SimpleConsole.class);
 
     /** Console Writer. */
-    protected static BufferedWriter _consoleWriter;
+    protected BufferedWriter _consoleWriter;
 
     /** Console Reader. */
-    protected static BufferedReader _consoleReader;
+    protected BufferedReader _consoleReader;
 
     /** Parser for command-line input. */
     protected CommandParser _parser;
@@ -62,7 +63,7 @@ public class SimpleConsole implements Console
         }
         catch (IOException e)
         {
-            _devlog.error(e.getMessage() + ": Occured whilst trying to write:" + message);
+            _devlog.error(e.getMessage() + ": Occurred whilst trying to write:" + Arrays.asList(message));
         }
 
     }

@@ -171,7 +171,7 @@ public class MessageStoreTool
     /**
      * Simple ShutdownHook to cleanly shutdown the databases
      */
-    class ShutdownHook implements Runnable
+    static class ShutdownHook implements Runnable
     {
         MessageStoreTool _tool;
 
@@ -443,7 +443,7 @@ public class MessageStoreTool
      *
      *
      */
-    public class State
+    public static class State
     {
         private VirtualHost _vhost = null;
         private AMQQueue _queue = null;

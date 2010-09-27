@@ -55,7 +55,7 @@ public class Session extends SessionInvoker
 
     enum State { NEW, DETACHED, RESUMING, OPEN, CLOSING, CLOSED }
 
-    class DefaultSessionListener implements SessionListener
+    static class DefaultSessionListener implements SessionListener
     {
 
         public void opened(Session ssn) {}

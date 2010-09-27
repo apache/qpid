@@ -52,16 +52,25 @@ public class BindingURLParser
     private String _error;
     private int _index = 0;
     private String _currentPropName;
-    private Map<String,Object> _options = new HashMap<String,Object>();
+    private Map<String,Object> _options;
 
+    public BindingURLParser()
+    {
+        
+    }
+    
     //<exch_class>://<exch_name>/[<destination>]/[<queue>]?<option>='<value>'[,<option>='<value>']*
-    public BindingURLParser(String url,AMQBindingURL bindingURL) throws URISyntaxException
+    public synchronized void parse(String url,AMQBindingURL bindingURL) throws URISyntaxException
     {
         _url = (url + END_OF_URL_MARKER_CHAR).toCharArray();
         _bindingURL = bindingURL;
         _currentParserState = BindingURLParserState.BINDING_URL_START;
         BindingURLParserState prevState = _currentParserState;
-
+        _index = 0;
+        _currentPropName = null;
+        _error = null;
+        _options = new HashMap<String,Object>();
+        
         try
         {
             while (_currentParserState != BindingURLParserState.ERROR && _currentParserState != BindingURLParserState.BINDING_URL_END)
@@ -447,13 +456,14 @@ public class BindingURLParser
 
         try
         {
+            BindingURLParser parser = new BindingURLParser();
+            
             for (String url: urls)
             {
                 System.out.println("URL " + url);
                 AMQBindingURL bindingURL = new AMQBindingURL(url);
-                BindingURLParser parser = new BindingURLParser(url,bindingURL);
+                parser.parse(url, bindingURL);
                 System.out.println("\nX " + bindingURL.toString() + " \n");
-
             }
 
         }

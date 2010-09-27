@@ -242,24 +242,24 @@ public abstract class BlockingWaiter<T>
 
         _lock.lock();
 
-        if (_closed)
-        {
-            return;
-        }
-
-        if (_error == null)
-        {
-            _error = e;
-        }
-        else
-        {
-            System.err.println("WARNING: new error '" + e == null ? "null" : e.getMessage() + "' arrived while old one not yet processed:" + _error.getMessage());
-        }
-
         try
         {
-            if (_waiting.get())
-            {
+           if (_closed)
+           {
+              return;
+           }
+
+          if (_error == null)
+          {
+             _error = e;
+          }
+          else
+          {
+              System.err.println("WARNING: new error '" + e == null ? "null" : e.getMessage() + "' arrived while old one not yet processed:" + _error.getMessage());
+          }
+
+          if (_waiting.get())
+          {
 
                 _ready = true;
                 _receivedCondition.signal();

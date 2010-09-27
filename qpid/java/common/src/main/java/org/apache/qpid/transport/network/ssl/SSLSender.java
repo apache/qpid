@@ -73,17 +73,17 @@ public class SSLSender implements Sender<ByteBuffer>
                 throw new SenderException("Error closing SSL connection",e);
             }
 
-            while (!engine.isOutboundDone())
+            synchronized(engineState)
             {
-                synchronized(engineState)
+                while (!engine.isInboundDone())
                 {
                     try
                     {
                         engineState.wait();
                     }
-                    catch(InterruptedException e)
+                    catch (InterruptedException e)
                     {
-                        // pass
+                        //pass
                     }
                 }
             }

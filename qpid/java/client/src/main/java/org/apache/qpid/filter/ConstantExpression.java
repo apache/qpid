@@ -72,7 +72,7 @@ public class ConstantExpression implements Expression
         long l = value.longValue();
         if ((Integer.MIN_VALUE <= l) && (l <= Integer.MAX_VALUE))
         {
-            value = new Integer(value.intValue());
+            value = Integer.valueOf(value.intValue());
         }
 
         return new ConstantExpression(value);
@@ -96,7 +96,7 @@ public class ConstantExpression implements Expression
         long l = value.longValue();
         if ((Integer.MIN_VALUE <= l) && (l <= Integer.MAX_VALUE))
         {
-            value = new Integer(value.intValue());
+            value = value.intValue();
         }
 
         return new ConstantExpression(value);
@@ -136,7 +136,7 @@ public class ConstantExpression implements Expression
 
         if (value instanceof Boolean)
         {
-            return ((Boolean) value).booleanValue() ? "TRUE" : "FALSE";
+            return ((Boolean) value) ? "TRUE" : "FALSE";
         }
 
         if (value instanceof String)
