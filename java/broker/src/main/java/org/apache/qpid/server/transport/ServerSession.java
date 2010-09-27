@@ -20,9 +20,13 @@
  */
 package org.apache.qpid.server.transport;
 
+import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.CHANNEL_FORMAT;
+import static org.apache.qpid.util.Serial.gt;
+
 import com.sun.security.auth.UserPrincipal;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.protocol.ProtocolEngine;
 import org.apache.qpid.server.configuration.ConfigStore;
 import org.apache.qpid.server.configuration.ConfiguredObject;
 import org.apache.qpid.server.configuration.ConnectionConfig;
@@ -51,10 +55,10 @@ import org.apache.qpid.transport.Range;
 import org.apache.qpid.transport.RangeSet;
 import org.apache.qpid.transport.Session;
 import org.apache.qpid.transport.SessionDelegate;
-import static org.apache.qpid.util.Serial.gt;
 
 import java.lang.ref.WeakReference;
 import java.security.Principal;
+import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -67,7 +71,7 @@ import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class ServerSession extends Session implements PrincipalHolder, SessionConfig, AMQSessionModel
+public class ServerSession extends Session implements PrincipalHolder, SessionConfig, AMQSessionModel, LogSubject
 {
     private static final String NULL_DESTINTATION = UUID.randomUUID().toString();
 
@@ -581,14 +585,19 @@ public class ServerSession extends Session implements PrincipalHolder, SessionCo
 
     public LogSubject getLogSubject()
     {
-        return new LogSubject()
-        {
-            public String toLogString()
-            {
-                return "[ ]";
-            }
+        return (LogSubject) this;
+    }
 
-        };
+    @Override
+    public String toLogString()
+    {
+       return " [" +
+               MessageFormat.format(CHANNEL_FORMAT, getId().toString(), getClientID(),
+                                   ((ProtocolEngine) _connectionConfig).getRemoteAddress().toString(),
+                                   this.getVirtualHost().getName(),
+                                   this.getChannel())
+            + "] ";
+
     }
 
 }

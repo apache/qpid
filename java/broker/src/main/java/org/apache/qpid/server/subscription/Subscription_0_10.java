@@ -20,41 +20,64 @@
  */
 package org.apache.qpid.server.subscription;
 
+import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.SUBSCRIPTION_FORMAT;
+import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.QUEUE_FORMAT;
+
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueEntry;
+import org.apache.qpid.server.configuration.ConfigStore;
+import org.apache.qpid.server.configuration.ConfiguredObject;
+import org.apache.qpid.server.configuration.SessionConfig;
+import org.apache.qpid.server.configuration.SubscriptionConfig;
+import org.apache.qpid.server.configuration.SubscriptionConfigType;
 import org.apache.qpid.server.flow.FlowCreditManager;
 import org.apache.qpid.server.flow.CreditCreditManager;
 import org.apache.qpid.server.flow.WindowCreditManager;
 import org.apache.qpid.server.flow.FlowCreditManager_0_10;
 import org.apache.qpid.server.filter.FilterManager;
 import org.apache.qpid.server.logging.actors.CurrentActor;
-import org.apache.qpid.server.logging.actors.SubscriptionActor;
-import org.apache.qpid.server.logging.subjects.SubscriptionLogSubject;
-import org.apache.qpid.server.logging.LogSubject;
+import org.apache.qpid.server.logging.messages.SubscriptionMessages;
 import org.apache.qpid.server.logging.LogActor;
+import org.apache.qpid.server.logging.LogSubject;
+import org.apache.qpid.server.logging.actors.SubscriptionActor;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.message.MessageTransferMessage;
 import org.apache.qpid.server.message.AMQMessage;
 import org.apache.qpid.server.transport.ServerSession;
-import org.apache.qpid.server.configuration.*;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
+import org.apache.qpid.transport.DeliveryProperties;
+import org.apache.qpid.transport.Header;
+import org.apache.qpid.transport.MessageAcceptMode;
+import org.apache.qpid.transport.MessageAcquireMode;
+import org.apache.qpid.transport.MessageCreditUnit;
+import org.apache.qpid.transport.MessageDeliveryPriority;
+import org.apache.qpid.transport.MessageFlowMode;
+import org.apache.qpid.transport.MessageProperties;
+import org.apache.qpid.transport.MessageTransfer;
+import org.apache.qpid.transport.Method;
+import org.apache.qpid.transport.Struct;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.transport.*;
 
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.*;
 import java.nio.ByteBuffer;
 
-public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCreditManagerListener, SubscriptionConfig
+public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCreditManagerListener, SubscriptionConfig, LogSubject
 {
 
     private static final AtomicLong idGenerator = new AtomicLong(0);
@@ -94,7 +117,6 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
     private ConcurrentHashMap<Integer, QueueEntry> _sentMap = new ConcurrentHashMap<Integer, QueueEntry>();
     private static final Struct[] EMPTY_STRUCT_ARRAY = new Struct[0];
 
-    private LogSubject _logSubject;
     private LogActor _logActor;
     private Map<String, Object> _properties = new ConcurrentHashMap<String, Object>();
     private UUID _id;
@@ -157,7 +179,6 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
         _trace = (String) arguments.get("qpid.trace.id");
         _id = getConfigStore().createId();
         getConfigStore().addConfiguredObject(this);
-        _logSubject = new SubscriptionLogSubject(this);
         _logActor = new SubscriptionActor(CurrentActor.get().getRootMessageLogger(), this);
 
     }
@@ -874,4 +895,49 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
     {
         return _createTime;
     }
+
+    public String toLogString()
+    {
+        String queueInfo = MessageFormat.format(QUEUE_FORMAT, _queue.getVirtualHost().getName(), 
+                  _queue.getNameShortString());
+        String result = "[" + MessageFormat.format(SUBSCRIPTION_FORMAT, getSubscriptionID()) + "("
+                // queueString is "vh(/{0})/qu({1}) " so need to trim
+                + queueInfo.substring(0, queueInfo.length() - 1) + ")" + "] ";
+        return result;
+    }
+
+    private String getFilterLogString()
+    {
+        StringBuilder filterLogString = new StringBuilder();
+        String delimiter = ", ";
+        boolean hasEntries = false;
+        if (_filters != null && _filters.hasFilters())
+        {
+            filterLogString.append(_filters.toString());
+            hasEntries = true;
+        }
+
+        if (isBrowser())
+        {
+            if (hasEntries)
+            {
+                filterLogString.append(delimiter);
+            }
+            filterLogString.append("Browser");
+            hasEntries = true;
+        }
+
+        if (isDurable())
+        {
+            if (hasEntries)
+            {
+                filterLogString.append(delimiter);
+            }
+            filterLogString.append("Durable");
+            hasEntries = true;
+        }
+
+        return filterLogString.toString();
+    }
+
 }
