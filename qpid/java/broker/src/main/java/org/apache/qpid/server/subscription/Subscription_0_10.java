@@ -275,7 +275,7 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
             }
             _creditManager.removeListener(this);
             getConfigStore().removeConfiguredObject(this);
-            CurrentActor.get().message(SubscriptionMessages.CLOSE());
+            CurrentActor.get().message(getLogSubject(), SubscriptionMessages.CLOSE());
         }
         finally
         {
@@ -946,6 +946,11 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
         }
 
         return filterLogString.toString();
+    }
+
+    public LogSubject getLogSubject()
+    {
+        return (LogSubject) this;
     }
 
 }
