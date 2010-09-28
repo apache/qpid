@@ -184,7 +184,7 @@ complete. This creates a back-log of work for each to get through,
 which leaves them lagging behind the rest of the cluster till they
 catch up (which is not guaranteed to happen in a bounded time.)
 
-** Better handling of new brokers joining
+** Updating new members
 
 When a new member (the updatee) joins a cluster it needs to be brought
 up to date with the rest of the cluster.  An existing member (the
@@ -316,6 +316,22 @@ so it probably is not a bottleneck. There may be scope to optimize
 decode/re-encode by re-using some of the original encoded data, this
 could also benefit the stand-alone broker.
 
+** Asynchronous queue replication
+
+The existing "asynchronous queue replication" feature maintains a
+passive backup passive backup of queues on a remote broker over a TCP
+connection.
+
+The new cluster replication protocol could be re-used to implement
+asynchronous queue replication: its just a special case where the
+active broker is always the queue owner and the enqueue/dequeue
+messages are sent over a TCP connection rather than multicast.
+
+The new update update mechanism could also work with 'asynchronous
+queue replication', allowing such replication (over a TCP connection
+on a WAN say) to be initiated after the queue had already been created
+and been in use (one of the key missing features).
+
 ** Misc outstanding issues & notes
 
 Message IDs: need an efficient cluster-wide message ID.
@@ -345,11 +361,6 @@ The existing design uses read-credit to solve 1., and does not solve 2.
 New design should stop reading on all connections while flow control
 condition exists? 
 
-Asynchronous queue replication could be refactored to work the same
-way: under a MessageStore interface using the same enqueue/dequeue
-protocol but over a TCP connection. Separate the "async queue
-replication" code for reuse.
-
 Can federation also be unified, at least in configuration?
 
 Consider queues (and exchanges?) as having "reliability" attributes:
@@ -360,3 +371,7 @@ Consider queues (and exchanges?) as having "reliability" attributes:
 
 "Reliability" seems right for the first 3 but not for federation, is
 there a better term?
+
+Clustering and scalability: new design may give us the flexibility to
+address scalability as part of cluster design. Think about
+relationship to federation and "fragmented queues" idea.
