@@ -140,6 +140,8 @@ void DeliveryRecord::reject()
         //just drop it
         QPID_LOG(info, "Dropping rejected message from " << queue->getName());
     }
+
+    dequeue();
 }
 
 uint32_t DeliveryRecord::getCredit() const
