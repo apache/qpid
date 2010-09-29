@@ -44,8 +44,6 @@ public class TransactionTimeoutConfigurationTest extends TransactionTimeoutTestC
     {
         try
         {
-            producer();
-            
             send(5, 0);
             
             sleep(20);
@@ -67,8 +65,6 @@ public class TransactionTimeoutConfigurationTest extends TransactionTimeoutTestC
     {
         try
         {
-            producer();
-            
             send(5, 3);
 
             _psession.commit();

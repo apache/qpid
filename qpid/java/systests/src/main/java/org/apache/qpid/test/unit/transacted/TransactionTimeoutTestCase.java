@@ -113,6 +113,10 @@ public class TransactionTimeoutTestCase extends QpidTestCase implements Exceptio
         AMQShortString queueName = new AMQShortString("test");
         _queue = new AMQQueue(qsession.getDefaultQueueExchangeName(), queueName, queueName, false, true);
         qsession.close();
+        
+        // Create producer and consumer
+        producer();
+        consumer();
     }
     
     protected void tearDown() throws Exception

@@ -30,12 +30,28 @@ package org.apache.qpid.test.unit.transacted;
  */
 public class TransactionTimeoutTest extends TransactionTimeoutTestCase
 {
+    public void testProducerIdle() throws Exception
+    {
+        try
+        {
+            sleep(20);
+    
+            _psession.commit();
+        }
+        catch (Exception e)
+        {
+            fail("Should have succeeded");
+        }
+        
+        assertTrue("Listener should not have received exception", _caught.getCount() == 1);
+        
+        monitor(0, 0);
+    }
+    
     public void testProducerIdleCommit() throws Exception
     {
         try
         {
-            producer();
-            
             send(5, 0);
             
             sleep(20);
@@ -57,8 +73,6 @@ public class TransactionTimeoutTest extends TransactionTimeoutTestCase
     {
         try
         {
-            producer();
-            
             send(6, 5);
     
             _psession.commit();
@@ -78,8 +92,6 @@ public class TransactionTimeoutTest extends TransactionTimeoutTestCase
     {
         try
         {
-            producer();
-            
             send(5, 0);
             
             sleep(10);
@@ -107,8 +119,6 @@ public class TransactionTimeoutTest extends TransactionTimeoutTestCase
     {
         try
         {
-            producer();
-            
             send(5, 0);
             
             sleep(10);
@@ -135,8 +145,6 @@ public class TransactionTimeoutTest extends TransactionTimeoutTestCase
     {
         try
         {
-            producer();
-            
             send(5, 0);
             
             sleep(20);
@@ -158,8 +166,6 @@ public class TransactionTimeoutTest extends TransactionTimeoutTestCase
     {
         try
         {
-            producer();
-            
             send(5, 0);
             
             sleep(10);
@@ -187,10 +193,6 @@ public class TransactionTimeoutTest extends TransactionTimeoutTestCase
     {
         try
         {
-            producer();
-            
-            consumer();
-            
             send(1, 0);
     
             _psession.commit();
@@ -208,6 +210,8 @@ public class TransactionTimeoutTest extends TransactionTimeoutTestCase
             fail("should have succeeded: " + e.getMessage());
         }
         
+        assertTrue("Listener should not have received exception", _caught.getCount() == 1);
+        
         monitor(0, 0);
     }
     
@@ -215,10 +219,6 @@ public class TransactionTimeoutTest extends TransactionTimeoutTestCase
     {
         try
         {
-            producer();
-            
-            consumer();
-            
             send(1, 0);
     
             _psession.commit();
@@ -235,6 +235,8 @@ public class TransactionTimeoutTest extends TransactionTimeoutTestCase
         {
             fail("Should have succeeded");
         }
+        
+        assertTrue("Listener should not have received exception", _caught.getCount() == 1);
         
         monitor(0, 0);
     }
@@ -243,10 +245,6 @@ public class TransactionTimeoutTest extends TransactionTimeoutTestCase
     {
         try
         {
-            producer();
-            
-            consumer();
-            
             send(1, 0);
     
             _psession.commit();
@@ -261,6 +259,8 @@ public class TransactionTimeoutTest extends TransactionTimeoutTestCase
         {
             fail("Should have succeeded");
         }
+        
+        assertTrue("Listener should not have received exception", _caught.getCount() == 1);
         
         monitor(0, 0);
     }
@@ -269,10 +269,6 @@ public class TransactionTimeoutTest extends TransactionTimeoutTestCase
     {
         try
         {
-            producer();
-            
-            consumer();
-    
             send(1, 0);
     
             _psession.commit();
@@ -288,6 +284,8 @@ public class TransactionTimeoutTest extends TransactionTimeoutTestCase
             fail("Should have succeeded");
         }
         
+        assertTrue("Listener should not have received exception", _caught.getCount() == 1);
+        
         monitor(0, 0);
     }
     
@@ -295,10 +293,6 @@ public class TransactionTimeoutTest extends TransactionTimeoutTestCase
     {
         try
         {
-            producer();
-            
-            consumer();
-    
             send(1, 0);
     
             _psession.commit();
@@ -312,6 +306,8 @@ public class TransactionTimeoutTest extends TransactionTimeoutTestCase
             fail("Should have succeeded");
         }
         
+        assertTrue("Listener should not have received exception", _caught.getCount() == 1);
+        
         monitor(0, 0);
     }
     
@@ -319,10 +315,6 @@ public class TransactionTimeoutTest extends TransactionTimeoutTestCase
     {
         try
         {
-            producer();
-            
-            consumer();
-    
             send(1, 0);
     
             _psession.commit();
@@ -335,6 +327,8 @@ public class TransactionTimeoutTest extends TransactionTimeoutTestCase
         {
             fail("Should have succeeded");
         }
+        
+        assertTrue("Listener should not have received exception", _caught.getCount() == 1);
         
         monitor(0, 0);
     }
