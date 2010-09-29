@@ -44,6 +44,7 @@ import org.apache.log4j.ConsoleAppender;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PatternLayout;
+import org.apache.qpid.client.AMQAnyDestination;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQTopic;
@@ -72,17 +73,15 @@ public class TestLauncher implements ErrorHandler
 {
     protected String host = "127.0.0.1";
     protected int port = 5672;
-    protected int session_count = 1;
+    protected int sessions_per_con = 1;
     protected int connection_count = 1;
-    protected long connection_idle_time = 5000;
+    protected long heartbeat = 5000;
     protected boolean sender = false;
     protected boolean receiver = false;
+    protected boolean useUniqueDests = false;
     protected String url;
 
-    protected String queue_name =  "message_queue";
-    protected String exchange_name =  "amq.direct";
-    protected String routing_key =  "routing_key";
-    protected boolean uniqueDests = false;
+    protected String address =  "my_queue; {create: always}";    
     protected boolean durable = false;
     protected String failover = "";
     protected AMQConnection controlCon;
@@ -99,22 +98,18 @@ public class TestLauncher implements ErrorHandler
        testName = System.getProperty("test_name","UNKNOWN");
        host = System.getProperty("host", "127.0.0.1");
        port = Integer.getInteger("port", 5672);
-       session_count = Integer.getInteger("ssn_count", 1);
+       sessions_per_con = Integer.getInteger("ssn_per_con", 1);
        connection_count = Integer.getInteger("con_count", 1);
-       connection_idle_time = Long.getLong("con_idle_time", 5000);
+       heartbeat = Long.getLong("heartbeat", 5);
        sender = Boolean.getBoolean("sender");
        receiver = Boolean.getBoolean("receiver");
+       useUniqueDests = Boolean.getBoolean("use_unique_dests");
        
-       queue_name = System.getProperty("queue_name", "message_queue");
-       exchange_name = System.getProperty("exchange_name", "amq.direct");
-       routing_key = System.getProperty("routing_key", "routing_key");
        failover = System.getProperty("failover", "");
-       uniqueDests = Boolean.getBoolean("unique_dests");
        durable = Boolean.getBoolean("durable");
        
        url = "amqp://username:password@topicClientid/test?brokerlist='tcp://"
-				+ host + ":" + port + "?idle_timeout=" + connection_idle_time
-				+ "'";
+				+ host + ":" + port + "?heartbeat='" + heartbeat+ "''";
        
        if (failover.equalsIgnoreCase("failover_exchange"))
        {
@@ -149,12 +144,7 @@ public class TestLauncher implements ErrorHandler
             controlCon = new AMQConnection(url);
             controlCon.start();
             
-            controlDest = new AMQQueue(new AMQShortString(""),
-                                     new AMQShortString("control"),
-                                     new AMQShortString("control"),
-                                     false, //exclusive
-                                     false, //auto-delete
-                                     false); // durable
+            controlDest = new AMQAnyDestination("control; {create: always}"); // durable
 
             // Create the session to setup the messages
             controlSession = controlCon.createSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -184,17 +174,17 @@ public class TestLauncher implements ErrorHandler
 	    }
     }
         
-    public void start()
+    public void start(String addr)
     {
         try
         {
+            if (addr == null)
+            {
+                addr = address;
+            }
            
-        	int ssn_per_con = session_count;
-        	if (connection_count < session_count)
-        	{
-        		ssn_per_con = session_count/connection_count;
-        	}
-        	
+        	int ssn_per_con = sessions_per_con;
+        	String addrTemp = addr;
         	for (int i = 0; i< connection_count; i++)
         	{
         		AMQConnection con = new AMQConnection(url);
@@ -202,16 +192,20 @@ public class TestLauncher implements ErrorHandler
         		clients.add(con);        		
         		for (int j = 0; j< ssn_per_con; j++)
             	{
-        			String prefix = createPrefix(i,j);
-        			Destination dest = createDest(prefix);
+        			String index = createPrefix(i,j);
+        			if (useUniqueDests)
+        			{
+        			    addrTemp = modifySubject(index,addr);
+        			}
+        			
         			if (sender)
         			{
-        				createSender(prefix,con,dest,this);
+        				createSender(index,con,addrTemp,this);
         			}
         			
         			if (receiver)
         			{
-        				createReceiver(prefix,con,dest,this);
+        				createReceiver(index,con,addrTemp,this);
         			}
             	}
         	}
@@ -223,7 +217,7 @@ public class TestLauncher implements ErrorHandler
 
     }
     
-    protected void createReceiver(String index,final AMQConnection con, final Destination dest, final ErrorHandler h)
+    protected void createReceiver(String index,final AMQConnection con, final String addr, final ErrorHandler h)
     {
     	Runnable r = new Runnable()
         {
@@ -231,7 +225,7 @@ public class TestLauncher implements ErrorHandler
             {
                try 
                {
-            	   Receiver rcv = new Receiver(con,dest);
+            	   Receiver rcv = new Receiver(con,addr);
 				   rcv.setErrorHandler(h);
 				   rcv.run();
 				}
@@ -256,7 +250,7 @@ public class TestLauncher implements ErrorHandler
         t.start();
     }
     
-    protected void createSender(String index,final AMQConnection con, final Destination dest, final ErrorHandler h)
+    protected void createSender(String index,final AMQConnection con, final String addr, final ErrorHandler h)
     {
     	Runnable r = new Runnable()
         {
@@ -264,7 +258,7 @@ public class TestLauncher implements ErrorHandler
             {
                try 
                {
-            	   Sender sender = new Sender(con, dest);
+            	   Sender sender = new Sender(con, addr);
             	   sender.setErrorHandler(h);
             	   sender.run();
 				}
@@ -289,7 +283,7 @@ public class TestLauncher implements ErrorHandler
         t.start();
     }
 
-    public void handleError(String msg,Exception e)
+    public synchronized void handleError(String msg,Exception e)
     {
     	// In case sending the message fails
         StringBuilder sb = new StringBuilder();
@@ -308,11 +302,13 @@ public class TestLauncher implements ErrorHandler
 			errorMsg.setStringProperty("desc", msg);
 			errorMsg.setStringProperty("time", df.format(new Date(System.currentTimeMillis())));        
 			errorMsg.setStringProperty("exception-trace", serializeStackTrace(e));
-			synchronized (this)
-			{
-				statusSender.send(errorMsg);
-			}
-		} catch (JMSException e1) {
+			
+			System.out.println("Msg " + errorMsg);
+			
+			statusSender.send(errorMsg);
+		} 
+        catch (JMSException e1) 
+        {
 			e1.printStackTrace();
 		}       
     }
@@ -332,50 +328,38 @@ public class TestLauncher implements ErrorHandler
     }
     
     /**
-     * The following are supported.
-     * 
-     * 1. A producer/consumer pair on a topic or a queue
-     * 2. A single producer with multiple consumers on topic/queue
-     * 
-     * Multiple consumers on a topic will result in a private queue
-     * for each consumers.
-     * 
-     * We want to avoid multiple producers on the same topic/queue
-     * as the queues will fill up in no time.
+     * A basic helper function to modify the subjects by
+     * appending an index. 
      */
-    private Destination createDest(String prefix)
+    private String modifySubject(String index,String addr)
     {
-    	Destination dest = null;
-        if (exchange_name.equals("amq.topic"))
+        if (addr.indexOf("/") > 0)
         {
-            dest = new AMQTopic(
-            		 new AMQShortString(exchange_name),
-                     new AMQShortString(uniqueDests ? prefix + routing_key :
-							                                   routing_key),
-                     false,   //auto-delete
-                     null,   //queue name
-                     durable);
+            addr = addr.substring(0,addr.indexOf("/")+1) +
+                   index +
+                   addr.substring(addr.indexOf("/")+1,addr.length());
+        }
+        else if (addr.indexOf(";") > 0)
+        {
+            addr = addr.substring(0,addr.indexOf(";")) +
+                   "/" + index +
+                   addr.substring(addr.indexOf(";"),addr.length());
         }
         else
         {
-            dest = new AMQQueue(
-            		new AMQShortString(exchange_name),
-            		new AMQShortString(uniqueDests ? prefix + routing_key :
-                                                              routing_key),
-                    new AMQShortString(uniqueDests ? prefix + queue_name :
-                    	                                      queue_name),
-                    false, //exclusive
-                    false, //auto-delete
-                    durable);
+            addr = addr + "/" + index;
         }
-        return dest;
+        
+        return addr;
     }
     
     public static void main(String[] args)
     {
     	final TestLauncher test = new TestLauncher();
     	test.setUpControlChannel();
-    	test.start();
+        System.out.println("args.length " + args.length);
+        System.out.println("args [0] " + args [0]);
+    	test.start(args.length > 0 ? args [0] : null);
     	Runtime.getRuntime().addShutdownHook(new Thread() {
     	    public void run() { test.cleanup(); }
     	});
