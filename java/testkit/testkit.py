@@ -213,4 +213,40 @@ class SoakTest(JavaClientTest):
 
         self.verify(receiver,sender)
         if error_msg:      
-            raise Exception(error_msg)               
+            raise Exception(error_msg)            
+     
+    def test_failover_with_durablesub(self):
+        cluster = self.cluster(4, expect=EXPECT_EXIT_FAIL)
+        p = cluster[0].port()
+        self.start_error_watcher(broker=cluster[0])
+        receiver = self.popen(self.client(receiver=True,
+                                          ssn_per_con=1,
+                                          port=p,
+                                          jms_durable_sub=True,
+                                          test_name=self.id()),
+                              expect=EXPECT_RUNNING) 
+
+        sender = self.popen(self.client(sender=True,
+                                        ssn_per_con=1,
+                                        port=p,
+                                        test_name=self.id()),
+                              expect=EXPECT_RUNNING) 
+      
+        # grace period for java clients to get the failover properly setup.
+        time.sleep(30) 
+        error_msg=None
+        # Kill original brokers, start new ones.
+        try:
+            for i in range(8):
+                cluster[i].kill()
+                b=cluster.start()
+                self.monitor_clients(broker=b,run_time=30,error_ck_freq=30)
+        except ConnectError, e1:
+            error_msg = "Unable to connect to new cluster node : " + traceback.format_exc(e1)
+
+        except SessionError, e2:
+            error_msg = "Session error while connected to new cluster node : " + traceback.format_exc(e2)
+
+        self.verify(receiver,sender)
+        if error_msg:      
+            raise Exception(error_msg)            
