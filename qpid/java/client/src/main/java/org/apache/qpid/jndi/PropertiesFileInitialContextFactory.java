@@ -81,10 +81,19 @@ public class PropertiesFileInitialContextFactory implements InitialContextFactor
             if (file != null)
             {
                 _logger.info("Loading Properties from:" + file);
-                // Load the properties specified
-                Properties p = new Properties();
 
-                p.load(new BufferedInputStream(new FileInputStream(file)));
+                // Load the properties specified
+                BufferedInputStream inputStream = new BufferedInputStream(new FileInputStream(file));
+                Properties p = new Properties();
+                try
+                {
+                    p.load(inputStream);
+                }
+                finally
+                {
+                    inputStream.close();
+                }
+
                 Strings.Resolver resolver = new Strings.ChainedResolver
                     (Strings.SYSTEM_RESOLVER, new Strings.PropertiesResolver(p));
 
