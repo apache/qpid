@@ -36,6 +36,7 @@ import javax.jms.MessageProducer;
 import javax.jms.Session;
 import javax.jms.TextMessage;
 
+import org.apache.qpid.client.AMQAnyDestination;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.tools.MessageFactory;
 
@@ -86,7 +87,7 @@ public class Sender extends Client
     protected MessageProducer producer;
     Random gen = new Random(19770905);
     
-    public Sender(Connection con,Destination dest) throws Exception
+    public Sender(Connection con,String addr) throws Exception
     {
        super(con);
        this.msg_size = Integer.getInteger("msg_size", 100);
@@ -94,11 +95,11 @@ public class Sender extends Client
        this.iterations = Integer.getInteger("iterations", -1);
        this.sleep_time = Long.getLong("sleep_time", 1000);
        this.setSsn(con.createSession(isTransacted(),Session.AUTO_ACKNOWLEDGE));
-       this.dest = dest;
+       this.dest = new AMQAnyDestination(addr);
        this.producer = getSsn().createProducer(dest);
        this.replyTo = getSsn().createTemporaryQueue();
        
-       System.out.println("Sending messages to : " + dest);
+       System.out.println("Sending messages to : " + addr);
     }
 
     /*
@@ -171,6 +172,7 @@ public class Sender extends Client
     {
     	String host = "127.0.0.1";
     	int port = 5672;
+    	String addr = "message_queue";
     	
     	if (args.length > 0)
     	{
@@ -180,16 +182,16 @@ public class Sender extends Client
     	{
     		port = Integer.parseInt(args[1]);
     	}
-    	// #3rd argument should be an address
-        // Any other properties is best configured via jvm args
+    	if (args.length > 2)
+    	{
+    	    addr = args[2];    
+    	}
     	
         AMQConnection con = new AMQConnection(
 				"amqp://username:password@topicClientid/test?brokerlist='tcp://"
 						+ host + ":" + port + "'");
         
-        // FIXME Need to add support for the new address format
-        // Then it's trivial to add destination for that.
-        Sender sender = new Sender(con,null);
+        Sender sender = new Sender(con,addr);
         sender.run();
     }
 }

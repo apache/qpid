@@ -32,10 +32,11 @@ import javax.jms.MessageListener;
 import javax.jms.MessageProducer;
 import javax.jms.TextMessage;
 
+import org.apache.qpid.client.AMQAnyDestination;
 import org.apache.qpid.client.AMQConnection;
 
 /**
- * A generic receiver which consumers a stream of messages
+ * A generic receiver which consumes messages
  * from a given address in a broker (host/port) 
  * until told to stop by killing it.
  * 
@@ -63,52 +64,31 @@ import org.apache.qpid.client.AMQConnection;
  * report_frequency - how often a timestamp is printed
  * durable
  * transacted
- * tx_size - size of transaction batch in # msgs. 
+ * tx_size - size of transaction batch in # msgs. * 
+ * check_for_dups - check for duplicate messages and out of order messages.
+ * jms_durable_sub - create a durable subscription instead of a regular subscription.
  */
 public class Receiver extends Client implements MessageListener
 {
-	// Until addressing is properly supported.
-	protected enum Reliability {
-		AT_MOST_ONCE, AT_LEAST_ONCE, EXACTLY_ONCE;
-		
-		Reliability getReliability(String s)
-		{
-			if (s.equalsIgnoreCase("at_most_once"))
-			{
-				return AT_MOST_ONCE;
-			}
-			else if (s.equalsIgnoreCase("at_least_once"))
-			{
-				return AT_LEAST_ONCE;
-			}
-			else
-			{
-				return EXACTLY_ONCE;
-			}
-		}
-	};
-	
 	long msg_count = 0;
 	int sequence = 0;
-	boolean sync_rcv = Boolean.getBoolean("sync_rcv");
-	boolean uniqueDests = Boolean.getBoolean("unique_dests");
-	Reliability reliability = Reliability.EXACTLY_ONCE;
+	boolean syncRcv = Boolean.getBoolean("sync_rcv");
+	boolean jmsDurableSub = Boolean.getBoolean("jms_durable_sub");
+	boolean checkForDups = Boolean.getBoolean("check_for_dups");
 	MessageConsumer consumer;
     List<Integer> duplicateMessages = new ArrayList<Integer>();
     
-    public Receiver(Connection con,Destination dest) throws Exception
+    public Receiver(Connection con,String addr) throws Exception
     {
     	super(con);
-    	reliability = reliability.getReliability(System.getProperty("reliability","exactly_once"));
     	setSsn(con.createSession(isTransacted(), getAck_mode()));
-    	consumer = getSsn().createConsumer(dest);
-    	if (!sync_rcv)
+    	consumer = getSsn().createConsumer(new AMQAnyDestination(addr));
+    	if (!syncRcv)
     	{
     		consumer.setMessageListener(this);
     	}
     	
-    	System.out.println("Operating in mode : " + reliability);
-    	System.out.println("Receiving messages from : " + dest);
+    	System.out.println("Receiving messages from : " + addr);
     }
 
     public void onMessage(Message msg)
@@ -118,21 +98,30 @@ public class Receiver extends Client implements MessageListener
     
     public void run() throws Exception
     {
+        long sleepTime = getReportFrequency();
     	while(true)
     	{
-    		if(sync_rcv)
-    		{
-    			Message msg = consumer.receive();
-    			handleMessage(msg);
+    		if(syncRcv)
+    		{   
+    		    long t = sleepTime;
+    		    while (t > 0)
+    		    {
+    		        long start = System.currentTimeMillis();
+    		        Message msg = consumer.receive(t);
+    		        t = t - (System.currentTimeMillis() - start);
+    		        handleMessage(msg);
+    		    }
     		}
-    		Thread.sleep(getReportFrequency());
-    		System.out.println(getDf().format(System.currentTimeMillis())
-    				+ " - messages received : " + msg_count);
+    		Thread.sleep(sleepTime);
+            System.out.println(getDf().format(System.currentTimeMillis())
+                    + " - messages received : " + msg_count);
     	}
     }
     
     private void handleMessage(Message m)
     {
+        if (m == null)  { return; }
+        
     	try
         {   
             if (m instanceof TextMessage && ((TextMessage) m).getText().equals("End"))
@@ -150,21 +139,18 @@ public class Receiver extends Client implements MessageListener
             {   
             	
             	int seq = m.getIntProperty("sequence");   
-            	if (uniqueDests)
+            	if (checkForDups)
             	{
             		if (seq == 0)
 	                {
             			sequence = 0; // wrap around for each iteration
+            			System.out.println("Received " + duplicateMessages.size() + " duplicate messages during the iteration");
+            			duplicateMessages.clear();
 	                }
             		
 	                if (seq < sequence)
 	                {                    
 	                    duplicateMessages.add(seq);
-	                    if (reliability == Reliability.EXACTLY_ONCE)
-	                    {
-	                    	throw new Exception(": Received a duplicate message (expected="
-	                    			+ sequence  + ",received=" + seq + ")" ); 
-	                    }                    
 	                }
 	                else if (seq == sequence)
 	                {
@@ -199,6 +185,7 @@ public class Receiver extends Client implements MessageListener
     {
     	String host = "127.0.0.1";
     	int port = 5672;
+    	String addr = "message_queue";
     	
     	if (args.length > 0)
     	{
@@ -208,16 +195,16 @@ public class Receiver extends Client implements MessageListener
     	{
     		port = Integer.parseInt(args[1]);
     	}    	
-    	// #3rd argument should be an address
-        // Any other properties is best configured via jvm args    	
+    	if (args.length > 2)
+        {
+            addr = args[2];    
+        }
         
     	AMQConnection con = new AMQConnection(
 				"amqp://username:password@topicClientid/test?brokerlist='tcp://"
 						+ host + ":" + port + "'");
         
-        // FIXME Need to add support for the new address format
-        // Then it's trivial to add destination for that.
-        Receiver rcv = new Receiver(con,null);
+        Receiver rcv = new Receiver(con,addr);
         rcv.run();
     }
 
