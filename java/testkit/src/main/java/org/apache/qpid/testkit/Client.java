@@ -28,9 +28,11 @@ import java.text.SimpleDateFormat;
 
 import javax.jms.Connection;
 import javax.jms.Destination;
+import javax.jms.ExceptionListener;
+import javax.jms.JMSException;
 import javax.jms.Session;
 
-public abstract class Client
+public abstract class Client implements ExceptionListener
 {
 	private Connection con;
 	private Session ssn;
@@ -50,7 +52,8 @@ public abstract class Client
     
     public Client(Connection con) throws Exception
     {
-       this.con = con;       
+       this.con = con;  
+       this.con.setExceptionListener(this);
        durable = Boolean.getBoolean("durable");
        transacted = Boolean.getBoolean("transacted");
        txSize = Integer.getInteger("tx_size",10);
@@ -68,6 +71,11 @@ public abstract class Client
     	{
     		handleError("Error closing connection",e);
     	}
+    }
+    
+    public void onException(JMSException e)
+    {
+        handleError("Connection error",e);
     }
     
     public void setErrorHandler(ErrorHandler h)
