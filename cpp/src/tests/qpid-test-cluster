@@ -1,0 +1,95 @@
+#!/bin/sh
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+
+DEFAULT_CONF=~/qpid-test-qpidd.conf
+DEFAULT_ENV=~/qpid-test-env.sh
+
+usage() {
+    echo "Usage: `basename $0` [options] start|stop|restart|check [qpidd-args]
+Start/stop/restart a cluster on hosts in \$HOSTS via ssh.
+
+Options:
+ -l USER     Run qpidd and copy files as USER.
+ -e SCRIPT   Source SCRIPT for environment settings. Copies SCRIPT to each host.
+             Default is $DEFAULT_ENV.
+ -c CONFIG   Use CONFIG as qpidd config file. Copies CONFIG to each host.
+             Default is $DEFAULT_CONF
+"
+    exit 1
+}
+
+absdir() { echo `cd $1 && pwd`; }
+copyall() { for h in $HOSTS; do rsync $1 $RSYNC_USER$h:$(absdir `dirname $1`); done; }
+
+test -f $DEFAULT_CONF && CONF_FILE=$DEFAULT_CONF
+test -f $DEFAULT_ENV && ENV_FILE=$DEFAULT_ENV
+while getopts "l:e:c:" opt; do
+    case $opt in
+	l) SSHOPTS="-l$OPTARG $SSHOPTS" ; RSYNC_USER="$OPTARG@" ;;
+	e) ENV_FILE=$OPTARG ;;
+	c) CONF_FILE=$OPTARG ;;
+	*) usage;;
+    esac
+done
+shift `expr $OPTIND - 1`
+test "$*" || usage
+CMD=$1; shift
+QPIDD_ARGS="$QPIDD_ARGS $*"
+
+if test -n "$CONF_FILE"; then
+    copyall $CONF_FILE
+    QPIDD_ARGS="$QPIDD_ARGS --config $CONF_FILE"
+fi
+if test -n "$ENV_FILE"; then
+    copyall $ENV_FILE
+    SOURCE_ENV="source $ENV_FILE && "
+fi
+
+
+do_start() {
+    for h in $HOSTS; do
+	COMMAND="qpidd -d $QPIDD_ARGS"
+	id -nG | grep '\<ais\>' >/dev/null && COMMAND="sg ais -c '$COMMAND'"
+	ssh $SSHOPTS $h "$SOURCE_ENV $COMMAND"
+    done
+}
+
+do_stop() {
+    for h in $HOSTS; do ssh $SSHOPTS $h "$SOURCE_ENV qpidd -q $QPIDD_ARGS"; done
+}
+
+do_check() {
+# FIXME aconway 2010-09-29: add check - get port from config.
+    for h in $HOSTS; do
+	if qpid-ping -b $h -q $OPTS &> /dev/null; then
+	    echo $h ok
+	else
+	    echo $h failed
+	fi
+    done
+}
+case $CMD in
+    start) do_start ;;
+    stop) do_stop ;;
+    restart) do_stop ; do_start ;;
+    check) do_check ;;
+    *) usage;;
+esac
+
