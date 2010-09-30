@@ -85,8 +85,6 @@ void ThroughputAndLatency::report(ostream& o) const {
         o << fixed << setprecision(2)
           << '\t' << min << '\t'  << max << '\t' << total/samples;
     }
-    else
-        o << "\t[No latency samples]";
 }
 
 ReporterBase::ReporterBase(ostream& o, int batch, bool wantHeader)
