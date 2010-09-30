@@ -36,7 +36,7 @@ Options:
 while getopts "tl:bs:dqo:" opt; do
     case $opt in
 	l) SSHOPTS="-l$OPTARG $SSHOPTS" ;;
-	t) TERMOPT="-t" ;;
+	t) SSHOPTS="-t $SSHOPTS" ;;
 	b) BACKGROUND=1 ;;
 	d) BACKGROUND=1; DISOWN=1 ;;
 	s) SLEEP="sleep $OPTARG" ;;

@@ -53,7 +53,8 @@ op.add_option("--receive-option", default=[], action="append", type="str",
               help="Additional option for receiving addresses")
 op.add_option("--no-timestamp", dest="timestamp", default=True,
               action="store_false", help="don't add a timestamp, no latency results")
-
+op.add_option("--connection-options", type="str",
+              help="Connection options for senders & receivers")
 single_quote_re = re.compile("'")
 
 def posix_quote(string):
@@ -69,12 +70,15 @@ def start_receive(queue, opts, ready_queue, broker, host):
     command = ["qpid-receive",
                "-b", broker,
                "-a", address,
+               "-m", str((opts.senders*opts.messages)/opts.receivers),
                "--forever",
                "--print-content=no",
                "--report-total",
                "--ack-frequency", str(opts.ack_frequency),
                "--ready-address", ready_queue,
                "--report-header=no"]
+    if opts.connection_options:
+        command += ["--connection-options",opts.connection_options]
     if host: command = ssh_command(host, command)
     return Popen(command, stdout=PIPE, stderr=STDOUT)
 
@@ -91,6 +95,8 @@ def start_send(queue, opts, broker, host):
                "--report-header=no",
                "--timestamp=%s"%(opts.timestamp and "yes" or "no"),
                "--sequence=no"]
+    if opts.connection_options:
+        command += ["--connection-options",opts.connection_options]
     if host: command = ssh_command(host, command)
     return Popen(command, stdout=PIPE, stderr=STDOUT)
 
