@@ -56,6 +56,7 @@ QPIDD_ARGS="$QPIDD_ARGS $*"
 if test -n "$CONF_FILE"; then
     copyall $CONF_FILE
     QPIDD_ARGS="$QPIDD_ARGS --config $CONF_FILE"
+    QPID_PORT=${QPID_PORT:-`awk -F= '/^ *port=/ {print $2}' $CONF_FILE`}
 fi
 if test -n "$ENV_FILE"; then
     copyall $ENV_FILE
@@ -76,9 +77,9 @@ do_stop() {
 }
 
 do_check() {
-# FIXME aconway 2010-09-29: add check - get port from config.
     for h in $HOSTS; do
-	if qpid-ping -b $h -q $OPTS &> /dev/null; then
+	test -n "$QPID_PORT" && PORTOPT="-p $QPID_PORT"
+	if qpid-ping -b $h $PORTOPT -q $* &> /dev/null; then
 	    echo $h ok
 	else
 	    echo $h failed
