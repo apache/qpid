@@ -196,6 +196,8 @@ public class FailoverExchangeMethod implements FailoverMethod, MessageListener
     
     public BrokerDetails getNextBrokerDetails()
     {
+        BrokerDetails broker = null;
+
         synchronized(_brokerListLock)
         {
             if (_currentBrokerIndex == (_connectionDetails.getBrokerCount() - 1))
@@ -207,7 +209,7 @@ public class FailoverExchangeMethod implements FailoverMethod, MessageListener
                 _currentBrokerIndex++;
             }
             
-            BrokerDetails broker = _connectionDetails.getBrokerDetails(_currentBrokerIndex);
+            broker = _connectionDetails.getBrokerDetails(_currentBrokerIndex);
             
             // When the broker list is updated it will include the current broker as well
             // There is no point trying it again, so trying the next one.
@@ -225,30 +227,31 @@ public class FailoverExchangeMethod implements FailoverMethod, MessageListener
                     return null;
                 }
             }
-
-            String delayStr = broker.getProperty(BrokerDetails.OPTIONS_CONNECT_DELAY);
-            if (delayStr != null)
-            {
-                Long delay = Long.parseLong(delayStr);
-                _logger.info("Delay between connect retries:" + delay);
-                try
-                {
-                    Thread.sleep(delay);
-                }
-                catch (InterruptedException ie)
-                {
-                    return null;
-                }
-            }
-            else
-            {
-                _logger.info("No delay between connect retries, use tcp://host:port?connectdelay='value' to enable.");
-            }
-
-            _failedAttemps ++;
-            _currentBrokerDetail = broker;
-            return broker;            
         }
+
+        String delayStr = broker.getProperty(BrokerDetails.OPTIONS_CONNECT_DELAY);
+        if (delayStr != null)
+        {
+            Long delay = Long.parseLong(delayStr);
+            _logger.info("Delay between connect retries:" + delay);
+            try
+            {
+                Thread.sleep(delay);
+            }
+            catch (InterruptedException ie)
+            {
+                return null;
+            }
+        }
+        else
+        {
+            _logger.info("No delay between connect retries, use tcp://host:port?connectdelay='value' to enable.");
+        }
+
+        _failedAttemps ++;
+        _currentBrokerDetail = broker;
+
+        return broker;
     }
     
     public boolean failoverAllowed()
