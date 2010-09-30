@@ -102,8 +102,8 @@ struct Options : public qpid::Options
             ("failover-updates", qpid::optValue(failoverUpdates), "Listen for membership updates distributed via amq.failover")
             ("report-total", qpid::optValue(reportTotal), "Report total throughput and latency statistics")
             ("report-every", qpid::optValue(reportEvery,"N"), "Report throughput and latency statistics every N messages.")
-            ("report-header", qpid::optValue(reportHeader, "yes|no"), "Headers on report.")            ("ready-address", qpid::optValue(readyAddress, "ADDRESS"),
-                                                                                                        "send a message to this address when ready to receive")
+            ("report-header", qpid::optValue(reportHeader, "yes|no"), "Headers on report.")
+            ("ready-address", qpid::optValue(readyAddress, "ADDRESS"), "send a message to this address when ready to receive")
             ("help", qpid::optValue(help), "print this usage statement");
         add(log);
     }
