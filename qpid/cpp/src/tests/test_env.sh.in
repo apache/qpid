@@ -26,6 +26,7 @@ top_srcdir=`absdir @abs_top_srcdir@`
 top_builddir=`absdir @abs_top_builddir@`
 moduledir=$top_builddir/src@builddir_lib_suffix@
 testmoduledir=$builddir@builddir_lib_suffix@
+export QPID_INSTALL_PREFIX=`absdir @prefix@`
 
 # Python paths and directories
 export PYTHON_DIR=$builddir/python
