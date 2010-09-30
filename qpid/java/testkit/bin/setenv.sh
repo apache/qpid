@@ -60,6 +60,16 @@ if [ "$CLUSTER_LIB" = "" ] ; then
    fi
 fi
 
+if [ "$STORE_LIB" = "" ] ; then
+   if [ -e /usr/lib64/qpid/daemon/msgstore.so ] ; then
+      CLUSTER_LIB="/usr/lib64/qpid/daemon/msgstore.so"
+   elif [ -e /usr/lib/qpid/daemon/msgstore.so ] ; then
+      CLUSTER_LIB="/usr/lib/qpid/daemon/msgstore.so"
+   else
+     echo "WARNING: skipping test, STORE_LIB not set and msgstore.so not found."; exit 0;
+   fi
+fi   
+
 if [ "$QP_CP" = "" ] ; then
    if [ -d ../../build/lib/ ]; then
       QP_JAR_PATH=`abs_path "../../build/lib/"`
