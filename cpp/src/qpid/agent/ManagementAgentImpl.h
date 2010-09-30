@@ -177,7 +177,7 @@ class ManagementAgentImpl : public ManagementAgent, public client::MessageListen
     std::string       directExchange;
     qpid::sys::Duration schemaTimestamp;
 
-    bool              clientWasAdded;
+    bool              publishAllData;
     uint32_t          requestedBrokerBank;
     uint32_t          requestedAgentBank;
     uint32_t          assignedBrokerBank;

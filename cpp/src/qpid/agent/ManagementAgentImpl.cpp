@@ -104,7 +104,7 @@ ManagementAgentImpl::ManagementAgentImpl() :
     initialized(false), connected(false), useMapMsg(false), lastFailure("never connected"),
     topicExchange("qmf.default.topic"), directExchange("qmf.default.direct"),
     schemaTimestamp(Duration(EPOCH, now())),
-    clientWasAdded(true), requestedBrokerBank(0), requestedAgentBank(0),
+    publishAllData(true), requestedBrokerBank(0), requestedAgentBank(0),
     assignedBrokerBank(0), assignedAgentBank(0), bootSequence(0),
     maxV2ReplyObjs(10),   // KAG todo: make this a tuneable parameter
     connThreadBody(*this), connThread(connThreadBody),
@@ -399,6 +399,10 @@ void ManagementAgentImpl::setSignalCallback(Notifyable& _notifyable)
 void ManagementAgentImpl::startProtocol()
 {
     sendHeartbeat();
+    {
+        sys::Mutex::ScopedLock lock(agentLock);
+        publishAllData = true;
+    }
 }
 
 void ManagementAgentImpl::storeData(bool requested)
@@ -550,7 +554,7 @@ void ManagementAgentImpl::handleSchemaRequest(Buffer& inBuffer, uint32_t sequenc
 void ManagementAgentImpl::handleConsoleAddedIndication()
 {
     sys::Mutex::ScopedLock lock(agentLock);
-    clientWasAdded = true;
+    publishAllData = true;
 
     QPID_LOG(trace, "RCVD ConsoleAddedInd");
 }
@@ -829,7 +833,7 @@ void ManagementAgentImpl::handleLocateRequest(const string&, const string& cid, 
 
     {
         sys::Mutex::ScopedLock lock(agentLock);
-        clientWasAdded = true;
+        publishAllData = true;
     }
 }
 
@@ -1047,12 +1051,12 @@ void ManagementAgentImpl::periodicProcessing()
          iter++) {
         ManagementObject* object = iter->second.get();
         object->setFlags(0);
-        if (clientWasAdded) {
+        if (publishAllData) {
             object->setForcePublish(true);
         }
     }
 
-    clientWasAdded = false;
+    publishAllData = false;
 
     //
     //  Process the entire object map.
