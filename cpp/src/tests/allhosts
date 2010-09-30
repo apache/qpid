@@ -54,7 +54,7 @@ trap "rm -f $OK_FILE" EXIT
 do_ssh() {
     h=$1; shift
     if test $SUFFIX ; then ssh $SSHOPTS $h "$@" &> $h.$SUFFIX
-    else ssh $SSHOPTS $h "$@"; fi || { echo "allhosts: error on $h"; rm -rf $OK_FILE; }
+    else ssh $SSHOPTS $h "$@"; fi || rm -rf $OK_FILE;
 }
 
 for h in $HOSTS ; do
