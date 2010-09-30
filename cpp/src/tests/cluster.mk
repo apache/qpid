@@ -81,7 +81,8 @@ cluster_test_LDADD=$(lib_client) $(lib_broker) ../cluster.la -lboost_unit_test_f
 
 qpidtest_SCRIPTS += run_cluster_tests cluster_tests.py run_long_cluster_tests long_cluster_tests.py testlib.py cluster_tests.fail
 
+# Useful scripts for doing cluster testing.
 qpidtest_SCRIPTS += allhosts rsynchosts qpid-build-rinstall qpid-src-rinstall
-
+EXTRA_DIST += allhosts rsynchosts qpid-build-rinstall qpid-src-rinstall
 
 endif
