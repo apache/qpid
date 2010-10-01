@@ -24,9 +24,9 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.security.Principal;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -104,7 +104,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable
 
     private VirtualHost _virtualHost;
 
-    private final Map<Integer, AMQChannel> _channelMap = new ConcurrentHashMap<Integer, AMQChannel>();
+    private final Map<Integer, AMQChannel> _channelMap = new HashMap<Integer, AMQChannel>();
 
     private final AMQChannel[] _cachedChannels = new AMQChannel[CHANNEL_CACHE_SIZE + 1];
 
