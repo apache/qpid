@@ -18,25 +18,71 @@
 # under the License.
 #
 
-# Extract all results from the current set of results directories in wiki format.
-# Runs from any directory with no arguments, output to standard out.
+# Extract all results from the current set of results directories in wiki
+# format. Output is compatible with Atlassian Confluence only. Runs from
+# any directory with no arguments, output to standard out.
 
-pushd .
+if [ $# -eq 0 ]
+then
+    dirs=$(echo results-*)
+else
+    dirs=$(echo $*)
+fi
+
+pushd . > /dev/null
 cd $(dirname "$0")
 
-echo "h1. Performance Testing Results"
+ver=$(basename $(dirname $(pwd)))
+node=$(uname -n)
+
+echo "h1. Qpid ${ver} Test Results"
 echo
-for r in results-*
+echo "{toc:type=flat|separator=pipe|minLevel=2|maxLevel=3}"
+echo
+for r in ${dirs}
 do
-	t=$(echo "${r}" | cut -d\- -f2)
-	f=$(echo "${t}" | sed -e "s/^\(.\).*$/\1/")
-	l=$(echo "${t}" | sed -e "s/^.\(.*\)$/\1/")
-	T=$(echo "${f}" | tr '[a-z]' '[A-Z]')
-	echo "h2. ${T}${l}"
-	echo
-	echo "||Test ||Total ||Passed ||Failed ||Error ||"
-	./extractResults.sh "${r}" | tr "," "\|" | sed -e "s/^/\|/" | sed -e "s/$/\|/" | sed -e "s/[A-Z][a-z]*:\ *//g"
-	echo
+	if [ -d "${r}" ]
+	then
+		t=$(echo "${r}" | cut -d\- -f2)
+		f=$(echo "${t}" | sed -e "s/^\(.\).*$/\1/")
+		l=$(echo "${t}" | sed -e "s/^.\(.*\)$/\1/")
+		T=$(echo "${f}" | tr '[a-z]' '[A-Z]')
+		echo "h2. ${T}${l}"
+		echo
+		echo "Generated on _$(ls -ld ${r} | cut -d\  -f7-9)_."
+		echo
+		echo "{table:cellpadding=3|cellspacing=0|border=1}"
+		echo "{tr}{td:bgcolor=#eeeeff}*Test*{td}"
+		echo "{td:bgcolor=#eeeeff}*Total*{td}{td:bgcolor=#eeeeff}*Passed*{td}"
+		echo "{td:bgcolor=#eeeeff}*Failed*{td}{td:bgcolor=#eeeeff}*Errors*{td}{tr}"
+		./extractResults.sh "${r}" |
+			sed -e "s/,/{td}{td}/g" |
+			sed -e "s/{td}\s*Error:\s*\([1-9][0-9]*\)/{td:bgcolor=#ffeeee}*\1*/" |
+			sed -e "s/{td}\s*Failed:\s*\([1-9][0-9]*\)/{td:bgcolor=#ffeeee}*\1*/" |
+			sed -e "s/^/{tr}{td}/" |
+			sed -e "s/$/{td}{tr}/" |
+			sed -e "s/[A-Z][a-z]*:\s*//g" |
+			sed -e "s/\s*//g"
+		echo "{table}"
+		echo
+	fi
 done
 
-popd
+if echo ${dirs} | grep  results-throughput > /dev/null && test -d results-throughput
+then
+	echo "h2. Throughput Numbers"
+	echo
+	echo "Generated on _$(ls -ld results-throughput | cut -d\  -f7-9)_."
+	echo
+	echo "{table:cellpadding=3|cellspacing=0|border=1}"
+	echo "{tr}{td:bgcolor=#eeeeff}*Test*{td}{td:bgcolor=#eeeeff}*Thoughput*{td}{tr}"
+	./extractThroughputResults.sh results-throughput |
+		sed -e "s/,/{td}{td}/g" |
+		sed -e "s/^/{tr}{td}/" |
+		sed -e "s/$/{td}{tr}/" |
+		sed -e "s/\s*//g"
+	echo "{table}"
+	echo
+fi
+
+popd > /dev/null 2>&1

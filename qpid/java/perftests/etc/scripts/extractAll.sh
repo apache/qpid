@@ -21,7 +21,7 @@
 # Extract all results from the current set of results directories as plain text.
 # Runs from any directory with no arguments, output to standard out.
 
-pushd .
+pushd . > /dev/null 2>&1
 cd $(dirname "$0")
 
 echo
@@ -36,4 +36,4 @@ do
 	echo
 done
 
-popd
+popd > /dev/null 2>&1
