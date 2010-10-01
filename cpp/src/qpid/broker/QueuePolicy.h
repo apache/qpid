@@ -46,6 +46,9 @@ class QueuePolicy
             
     static int getInt(const qpid::framing::FieldTable& settings, const std::string& key, int defaultValue);
 
+  protected:
+    uint64_t getCurrentQueueSize() const { return size; } 
+
   public:
     typedef std::deque<QueuedMessage> Messages;
     static QPID_BROKER_EXTERN const std::string maxCountKey;

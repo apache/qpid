@@ -1,4 +1,4 @@
- /*
+/*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -18,6 +18,7 @@
  * under the License.
  *
  */
+#include <sstream>
 #include "unit_test.h"
 #include "test_tools.h"
 
@@ -143,7 +144,7 @@ QPID_AUTO_TEST_CASE(testSettings)
     BOOST_CHECK_EQUAL(a->getMaxSize(), b->getMaxSize());
 }
 
-QPID_AUTO_TEST_CASE(testRingPolicy)
+QPID_AUTO_TEST_CASE(testRingPolicyCount)
 {
     FieldTable args;
     std::auto_ptr<QueuePolicy> policy = QueuePolicy::createQueuePolicy("test", 5, 0, QueuePolicy::RING);
@@ -171,6 +172,84 @@ QPID_AUTO_TEST_CASE(testRingPolicy)
     }
     BOOST_CHECK(!f.subs.get(msg, q));
 }
+
+QPID_AUTO_TEST_CASE(testRingPolicySize)
+{
+    std::string hundredBytes = std::string(100, 'h');
+    std::string fourHundredBytes = std::string (400, 'f');
+    std::string thousandBytes = std::string(1000, 't');
+
+    // Ring queue, 500 bytes maxSize
+
+    FieldTable args;
+    std::auto_ptr<QueuePolicy> policy = QueuePolicy::createQueuePolicy("test", 0, 500, QueuePolicy::RING);
+    policy->update(args);
+
+    ProxySessionFixture f;
+    std::string q("my-ring-queue");
+    f.session.queueDeclare(arg::queue=q, arg::exclusive=true, arg::autoDelete=true, arg::arguments=args);
+
+    // A. Send messages 0 .. 5, each 100 bytes
+
+    client::Message m(hundredBytes, q); 
+    
+    for (int i = 0; i < 6; i++) {
+        std::stringstream id;
+        id << i;        
+        m.getMessageProperties().setCorrelationId(id.str());
+        f.session.messageTransfer(arg::content=m);
+    }
+
+    // should find 1 .. 5 on the queue, 0 is displaced by 5
+    client::Message msg;
+    for (int i = 1; i < 6; i++) {
+        std::stringstream id;
+        id << i;        
+        BOOST_CHECK(f.subs.get(msg, q, qpid::sys::TIME_SEC));
+        BOOST_CHECK_EQUAL(msg.getMessageProperties().getCorrelationId(), id.str());
+    }
+    BOOST_CHECK(!f.subs.get(msg, q));
+
+    // B. Now make sure that one 400 byte message displaces four 100 byte messages
+
+    // Send messages 0 .. 5, each 100 bytes
+    for (int i = 0; i < 6; i++) {
+        client::Message m(hundredBytes, q);
+        std::stringstream id;
+        id << i;        
+        m.getMessageProperties().setCorrelationId(id.str());
+        f.session.messageTransfer(arg::content=m);
+    }
+
+    // Now send one 400 byte message
+    client::Message m2(fourHundredBytes, q);
+    m2.getMessageProperties().setCorrelationId("6");
+    f.session.messageTransfer(arg::content=m2);
+
+    // expect to see 5, 6 on the queue
+    for (int i = 5; i < 7; i++) {
+        std::stringstream id;
+        id << i;        
+        BOOST_CHECK(f.subs.get(msg, q, qpid::sys::TIME_SEC));
+        BOOST_CHECK_EQUAL(msg.getMessageProperties().getCorrelationId(), id.str());
+    }
+    BOOST_CHECK(!f.subs.get(msg, q));
+
+
+    // C. Try sending a 1000-byte message, should fail - exceeds maxSize of queue
+
+    client::Message m3(thousandBytes, q);
+    m3.getMessageProperties().setCorrelationId("6");
+    try {
+        ScopedSuppressLogging sl;
+        f.session.messageTransfer(arg::content=m3);
+        BOOST_FAIL("Ooops - successfully added a 1000 byte message to a 512 byte ring queue ..."); 
+    }
+    catch (...) {
+    }
+            
+}
+
 
 QPID_AUTO_TEST_CASE(testStrictRingPolicy)
 {
