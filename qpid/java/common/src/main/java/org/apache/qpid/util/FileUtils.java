@@ -374,13 +374,20 @@ public class FileUtils
         List<String> results = new LinkedList<String>();
 
         BufferedReader reader = new BufferedReader(new FileReader(file));
-        while (reader.ready())
+        try
         {
-            String line = reader.readLine();
-            if (line.contains(search))
+            while (reader.ready())
             {
-                results.add(line);
+                String line = reader.readLine();
+                if (line.contains(search))
+                {
+                    results.add(line);
+                }
             }
+        }
+        finally
+        {
+            reader.close();
         }
 
         return results;
