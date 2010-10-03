@@ -58,7 +58,7 @@ public class Session extends SessionInvoker
 
     private static final Logger log = Logger.get(Session.class);
 
-    enum State { NEW, DETACHED, RESUMING, OPEN, CLOSING, CLOSED }
+    public enum State { NEW, DETACHED, RESUMING, OPEN, CLOSING, CLOSED }
 
     static class DefaultSessionListener implements SessionListener
     {
@@ -187,7 +187,7 @@ public class Session extends SessionInvoker
         }
     }
 
-    void setState(State state)
+    protected void setState(State state)
     {
         synchronized (commands)
         {
