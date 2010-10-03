@@ -1151,6 +1151,11 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
         return _id;
     }
 
+    public long getConnectionId()
+    {
+        return getSessionID();
+    }
+
     public String getAddress()
     {
         return String.valueOf(getRemoteAddress());

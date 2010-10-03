@@ -35,4 +35,5 @@ public interface AMQConnectionModel
      */
     public void closeSession(AMQSessionModel session, AMQConstant cause, String message) throws AMQException;
 
+    public long getConnectionId();
 }
