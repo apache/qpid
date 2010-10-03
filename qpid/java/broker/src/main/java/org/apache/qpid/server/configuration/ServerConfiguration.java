@@ -145,7 +145,7 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
             Signal sig = new sun.misc.Signal("HUP");
             sun.misc.Signal.handle(sig, this);
         }
-        catch (IllegalArgumentException e)
+        catch (Exception e)
         {
             _logger.error("Signal HUP not supported for OS: " + System.getProperty("os.name"));
             // We're on something that doesn't handle SIGHUP, how sad, Windows.
