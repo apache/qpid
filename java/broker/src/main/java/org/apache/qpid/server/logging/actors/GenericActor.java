@@ -72,7 +72,7 @@ public class GenericActor extends AbstractActor
         {
             public String toLogString()
             {
-                return "[" + subjectMessage + "]";
+                return "[" + subjectMessage + "] ";
             }
 
         }, _defaultMessageLogger);

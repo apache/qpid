@@ -20,8 +20,6 @@ package org.apache.qpid.transport.network.nio;
  * 
  */
 
-
-import java.io.EOFException;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
@@ -30,7 +28,6 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.qpid.transport.Connection;
 import org.apache.qpid.transport.ConnectionDelegate;
@@ -44,8 +41,7 @@ public class NioHandler implements Runnable
     private Receiver<ByteBuffer> _receiver;
     private SocketChannel _ch;
     private ByteBuffer _readBuf;
-    private static Map<Integer,NioSender> _handlers = new ConcurrentHashMap<Integer,NioSender>();
-    private AtomicInteger _count = new AtomicInteger();
+    private static Map<Long,NioSender> _handlers = new ConcurrentHashMap<Long,NioSender>();
 
     private NioHandler(){}
 
@@ -91,7 +87,6 @@ public class NioHandler implements Runnable
         con.setSender(new Disassembler(sender, 64*1024 - 1));
         con.setConnectionDelegate(delegate);
 
-        con.setConnectionId(_count.incrementAndGet());
         _handlers.put(con.getConnectionId(),sender);
 
         _receiver = new InputHandler(new Assembler(con), InputHandler.State.FRAME_HDR);

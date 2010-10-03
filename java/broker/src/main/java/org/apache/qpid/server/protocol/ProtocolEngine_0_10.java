@@ -22,12 +22,13 @@ package org.apache.qpid.server.protocol;
 
 import org.apache.qpid.protocol.ProtocolEngine;
 import org.apache.qpid.transport.NetworkDriver;
-import org.apache.qpid.transport.Connection;
 import org.apache.qpid.transport.network.InputHandler;
 import org.apache.qpid.transport.network.Assembler;
 import org.apache.qpid.transport.network.Disassembler;
 import org.apache.qpid.server.configuration.*;
 import org.apache.qpid.server.transport.ServerConnection;
+import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.logging.messages.ConnectionMessages;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 
 import java.net.SocketAddress;
@@ -55,6 +56,10 @@ public class ProtocolEngine_0_10  extends InputHandler implements ProtocolEngine
         _networkDriver = networkDriver;
         _id = appRegistry.getConfigStore().createId();
         _appRegistry = appRegistry;
+
+        // FIXME Two log messages to maintain compatinbility with earlier protocol versions
+        CurrentActor.get().message(ConnectionMessages.OPEN(null, null, false, false));
+        CurrentActor.get().message(ConnectionMessages.OPEN(null, "0-10", false, true));
     }
 
     public void setNetworkDriver(NetworkDriver driver)

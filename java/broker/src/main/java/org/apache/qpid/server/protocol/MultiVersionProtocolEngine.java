@@ -20,8 +20,8 @@
 */
 package org.apache.qpid.server.protocol;
 
-import org.apache.log4j.Logger;
 
+import org.apache.log4j.Logger;
 import org.apache.qpid.protocol.ProtocolEngine;
 import org.apache.qpid.server.protocol.MultiVersionProtocolEngineFactory.VERSION;
 import org.apache.qpid.server.registry.IApplicationRegistry;

@@ -32,6 +32,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicLong;
 
 import javax.security.sasl.SaslClient;
 import javax.security.sasl.SaslServer;
@@ -111,9 +112,10 @@ public class Connection extends ConnectionInvoker
     private String userID;
     private ConnectionSettings conSettings;
     private SecurityLayer securityLayer;
+    private String _clientId;
     
-    // want to make this final
-    private int _connectionId;
+    private static final AtomicLong idGenerator = new AtomicLong(0);
+    private final long _connectionId = idGenerator.incrementAndGet();
 
     public Connection() {}
 
@@ -145,6 +147,16 @@ public class Connection extends ConnectionInvoker
             this.state = state;
             lock.notifyAll();
         }
+    }
+
+    public String getClientId()
+    {
+        return _clientId;
+    }
+
+    public void setClientId(String id)
+    {
+        _clientId = id;
     }
 
     void setLocale(String locale)
@@ -321,12 +333,7 @@ public class Connection extends ConnectionInvoker
         _sessionFactory = sessionFactory;
     }
 
-    public void setConnectionId(int id)
-    {
-        _connectionId = id;
-    }
-
-    public int getConnectionId()
+    public long getConnectionId()
     {
         return _connectionId;
     }
