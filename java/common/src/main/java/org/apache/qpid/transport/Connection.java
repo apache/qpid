@@ -404,7 +404,7 @@ public class Connection extends ConnectionInvoker
     {
         synchronized (lock)
         {
-            for (int i = 0; i < getChannelMax(); i++)
+            for (int i = 1; i <= getChannelMax(); i++)
             {
                 if (!channels.containsKey(i))
                 {
