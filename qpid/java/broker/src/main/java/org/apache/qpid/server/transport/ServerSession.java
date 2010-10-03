@@ -33,7 +33,9 @@ import org.apache.qpid.server.configuration.ConnectionConfig;
 import org.apache.qpid.server.configuration.SessionConfig;
 import org.apache.qpid.server.configuration.SessionConfigType;
 import org.apache.qpid.server.logging.LogSubject;
-import org.apache.qpid.server.logging.subjects.ConnectionLogSubject;
+import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.logging.actors.GenericActor;
+import org.apache.qpid.server.logging.messages.ChannelMessages;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.BaseQueue;
@@ -55,6 +57,7 @@ import org.apache.qpid.transport.Range;
 import org.apache.qpid.transport.RangeSet;
 import org.apache.qpid.transport.Session;
 import org.apache.qpid.transport.SessionDelegate;
+import org.apache.qpid.transport.Session.State;
 
 import java.lang.ref.WeakReference;
 import java.security.Principal;
@@ -119,6 +122,16 @@ public class ServerSession extends Session implements PrincipalHolder, SessionCo
     ServerSession(Connection connection, SessionDelegate delegate, Binary name, long expiry)
     {
         this(connection, delegate, name, expiry, ((ServerConnection)connection).getConfig());
+    }
+
+    protected void setState(State state)
+    {
+        super.setState(state);
+
+        if (state == State.OPEN)
+        {
+	        GenericActor.getInstance(this).message(ChannelMessages.CREATE());
+        }
     }
 
     public ServerSession(Connection connection, SessionDelegate delegate, Binary name, long expiry, ConnectionConfig connConfig)
@@ -337,7 +350,8 @@ public class ServerSession extends Session implements PrincipalHolder, SessionCo
         {
             task.doTask(this);
         }
-
+        
+        CurrentActor.get().message(getLogSubject(), ChannelMessages.CLOSE());
     }
 
     @Override
@@ -590,10 +604,12 @@ public class ServerSession extends Session implements PrincipalHolder, SessionCo
     public String toLogString()
     {
        return " [" +
-               MessageFormat.format(CHANNEL_FORMAT, getId().toString(), getClientID(),
+               MessageFormat.format(CHANNEL_FORMAT,
+                                   getConnection().getConnectionId(),
+                                   getClientID(),
                                    ((ProtocolEngine) _connectionConfig).getRemoteAddress().toString(),
-                                   this.getVirtualHost().getName(),
-                                   this.getChannel())
+                                   getVirtualHost().getName(),
+                                   getChannel())
             + "] ";
 
     }

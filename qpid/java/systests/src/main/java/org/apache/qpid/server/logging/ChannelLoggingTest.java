@@ -64,27 +64,34 @@ public class ChannelLoggingTest extends AbstractTestLogging
         // Test that calling session.close gives us the expected output
         ((AMQConnection)connection).createSession(false, Session.AUTO_ACKNOWLEDGE,PREFETCH);
 
-        // Wait to ensure that the CHN-1004 message is logged
-        waitForMessage("CHN-1004");
+        // Wait to ensure that the CHN-1001 message is logged
+        waitForMessage("CHN-1001");
 
-        List<String> results = findMatches(CHANNEL_PREFIX);
+        List<String> results = findMatches("CHN-1001");
 
         // Validation
-
-        assertEquals("CHN messages not logged", 2, results.size());
+        assertEquals("CHN-1001 messages not logged", 1, results.size());
 
         String log = getLogMessage(results, 0);
         //  MESSAGE [con:0(guest@anonymous(3273383)/test)/ch:1] CHN-1001 : Create
-        //1 & 2
         validateMessageID("CHN-1001", log);
         assertEquals("Incorrect Channel in actor:"+fromActor(log), 1, getChannelID(fromActor(log)));
 
-        log = getLogMessage(results, 1);
-        //  MESSAGE [con:0(guest@anonymous(3273383)/test)/ch:1] CHN-1004 : Prefetch Size (bytes) {0,number} : Count {1,number}
-        //1 & 2
-        validateMessageID("CHN-1004", log);
-        assertEquals("Incorrect Channel in actor:"+fromActor(log), 1, getChannelID(fromActor(log)));
-        assertTrue("Prefetch Count not correct",getMessageString(fromMessage(log)).endsWith("Count "+PREFETCH));
+        if (isBroker08())
+        {
+            // Wait to ensure that the CHN-1004 message is logged
+            waitForMessage("CHN-1004");
+
+            results = findMatches("CHN-1004");
+
+            // Validation
+            assertEquals("CHN-1004 messages not logged", 1, results.size());
+            log = getLogMessage(results, 0);
+            //  MESSAGE [con:0(guest@anonymous(3273383)/test)/ch:1] CHN-1004 : Prefetch Size (bytes) {0,number} : Count {1,number}
+            validateMessageID("CHN-1004", log);
+            assertEquals("Incorrect Channel in actor:"+fromActor(log), 1, getChannelID(fromActor(log)));
+            assertTrue("Prefetch Count not correct",getMessageString(fromMessage(log)).endsWith("Count "+PREFETCH));
+        }
 
         connection.close();
     }
@@ -276,9 +283,11 @@ public class ChannelLoggingTest extends AbstractTestLogging
         Connection connection = getConnection();
 
         // Create a session and then close it
-        connection.createSession(false, Session.AUTO_ACKNOWLEDGE).close();
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        waitForMessage("CHN-1001");
 
         // Wait to ensure that the CHN-1003 message is logged
+        session.close();
         waitForMessage("CHN-1003");
 
         List<String> results = findMatches(CHANNEL_PREFIX);
@@ -291,11 +300,14 @@ public class ChannelLoggingTest extends AbstractTestLogging
 
     private void validateChannelClose(List<String> results)
     {
-        String log = getLogMessageFromEnd(results, 0);
+        String open = getLogMessage(results, 0);
+        String close = getLogMessageFromEnd(results, 0);
 
-        validateMessageID("CHN-1003", log);
-        assertEquals("Message should be Close", "Close",getMessageString(fromMessage(log)));
-        assertEquals("Incorrect Channel ID closed.", 1, getChannelID(fromActor(log)));
-        assertEquals("Incorrect Channel ID closed.", 1, getChannelID(fromSubject(log)));
+        validateMessageID("CHN-1001", open);
+        validateMessageID("CHN-1003", close);
+        assertEquals("Message should be Close", "Close", getMessageString(fromMessage(close)));
+        assertEquals("Incorrect Channel ID closed", 1, getChannelID(fromSubject(close)));
+        assertEquals("Channel IDs should be the same", getChannelID(fromActor(open)), getChannelID(fromSubject(close)));
+        assertEquals("Connection IDs should be the same", getConnectionID(fromActor(open)), getConnectionID(fromSubject(close)));
     }
 }
