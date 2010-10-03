@@ -23,7 +23,9 @@ package org.apache.qpid.client;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.jms.ExceptionListener;
 import javax.jms.JMSException;
@@ -159,7 +161,6 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
 
             ConnectionSettings conSettings = new ConnectionSettings();
             retriveConnectionSettings(conSettings,brokerDetail);
-            
             _qpidConnection.connect(conSettings);
 
             _conn._connected = true;
@@ -371,6 +372,17 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
         
         conSettings.setVerifyHostname(brokerDetail.getBooleanProperty(BrokerDetails.OPTIONS_SSL_VERIFY_HOSTNAME));
         
+        // Pass client name from connection URL
+        Map<String, Object> clientProps = new HashMap<String, Object>();
+        try
+        {
+            clientProps.put("clientName", _conn.getClientID());
+	        conSettings.setClientProperties(clientProps);
+        }
+        catch (JMSException e)
+        {
+            // Ignore
+        }
         
         if (brokerDetail.getProperty(BrokerDetails.OPTIONS_TCP_NO_DELAY) != null)
         {

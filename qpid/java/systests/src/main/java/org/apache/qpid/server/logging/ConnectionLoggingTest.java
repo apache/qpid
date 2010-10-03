@@ -53,10 +53,18 @@ public class ConnectionLoggingTest extends AbstractTestLogging
         assertLoggingNotYetOccured(CONNECTION_PREFIX);
 
         Connection connection = getConnection();
+        String clientid = connection.getClientID();
 
-        List<String> results = waitAndFindMatches(CONNECTION_PREFIX);
+        // Wait until opened
+        waitForMessage("CON-1001");
+        
+        // Close the conneciton
+        connection.close();
 
-        assertTrue("No CON messages logged", results.size() > 0);        
+        // Wait to ensure that the desired message is logged
+        waitForMessage("CON-1002");
+
+        List<String> results = waitAndFindMatches("CON-1001");
 
         // Validation
         // We should have at least three messages when running InVM but when running External
@@ -79,9 +87,9 @@ public class ConnectionLoggingTest extends AbstractTestLogging
         //Use just the data from the last connection for the test
         results = connectionData.get(connectionID);
 
-        // If we are running inVM we will get three open messagse, if running externally weN will also have
-        // open and close messages from the failed 0-10 negotiation 
-        assertTrue("CON messages not logged:" + results.size(), results.size() >= 3);
+        // If we are running inVM or with 0-10 we will get three open messagse
+	    // if running externally with 0-8/0-9 we will also have open and close messages from the failed 0-10 negotiation 
+	    assertTrue("CON messages not logged:" + results.size(), results.size() >= 3);
 
         String log = getLogMessage(results, 0);
         //  MESSAGE [con:1(/127.0.0.1:52540)] CON-1001 : Open
@@ -94,14 +102,12 @@ public class ConnectionLoggingTest extends AbstractTestLogging
 
         // 3 - Assert the options are correct
         //  MESSAGE [con:1(/127.0.0.1:52540)] CON-1001 : Open : Client ID : clientid : Protocol Version : 0-9
-        validateConnectionOpen(results, 0, true, true, connection.getClientID());
+        validateConnectionOpen(results, 0, true, true, clientid);
 
         //  MESSAGE [con:1(/127.0.0.1:52540)] CON-1001 : Open : Protocol Version : 0-9
         validateConnectionOpen(results, 1, true, false, null);
 
         validateConnectionOpen(results, 2, false, false, null);
-
-        connection.close();
     }
     
     private void validateConnectionOpen(List<String> results, int positionFromEnd,
@@ -115,7 +121,7 @@ public class ConnectionLoggingTest extends AbstractTestLogging
         
         if(clientIdOptionPresent && clientIdValue != null)
         {
-            assertTrue("Client ID value is not present", fromMessage(log).contains(clientIdValue));
+            assertTrue("Client ID value is not present: " + clientIdValue, fromMessage(log).contains(clientIdValue));
         }
         
         assertEquals("unexpected Protocol Version option state", 
@@ -144,8 +150,13 @@ public class ConnectionLoggingTest extends AbstractTestLogging
     {
         assertLoggingNotYetOccured(CONNECTION_PREFIX);
 
-        // Open and then close the conneciton
-        getConnection().close();
+        Connection connection = getConnection();
+
+        // Wait until opened
+        waitForMessage("CON-1001");
+        
+        // Close the conneciton
+        connection.close();
 
         // Wait to ensure that the desired message is logged
         waitForMessage("CON-1002");
@@ -163,12 +174,19 @@ public class ConnectionLoggingTest extends AbstractTestLogging
         assertTrue("Message does not end with close:" + log, log.endsWith("Close"));
 
         // Extract connection ID to validate there is a CON-1001 messasge for it
-        int connectionID = getConnectionID(log);
+        int closeConnectionID = getConnectionID(fromSubject(log));
+        assertTrue("Could not find connection id in CLOSE", closeConnectionID != -1);
 
         //Previous log message should be the open
         log = getLogMessageFromEnd(results, 1);
         //  MESSAGE [con:1(/127.0.0.1:52540)] CON-1001 : Open : Client ID : clientid : Protocol Version : 0-9
         validateMessageID("CON-1001",log);
-        assertEquals("Connection IDs do not match", connectionID, getConnectionID(fromActor(log)));
+
+        // Extract connection ID to validate it matches the CON-1002 messasge
+        int openConnectionID = getConnectionID(fromActor(log));
+        assertTrue("Could not find connection id in OPEN", openConnectionID != -1);
+        
+        // Check connection ids match
+        assertEquals("Connection IDs do not match", closeConnectionID, openConnectionID);
     }
 }

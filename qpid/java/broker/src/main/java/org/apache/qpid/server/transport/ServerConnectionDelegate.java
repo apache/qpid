@@ -21,7 +21,9 @@
 package org.apache.qpid.server.transport;
 
 import org.apache.qpid.transport.*;
-
+import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.logging.actors.GenericActor;
+import org.apache.qpid.common.ClientProperties;
 import org.apache.qpid.protocol.ProtocolEngine;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.registry.IApplicationRegistry;
@@ -71,7 +73,7 @@ public class ServerConnectionDelegate extends ServerDelegate
         SessionDelegate serverSessionDelegate = new ServerSessionDelegate(_appRegistry);
 
         ServerSession ssn = new ServerSession(conn, serverSessionDelegate,  new Binary(atc.getName()), 0);
-        //ssn.setSessionListener(new Echo());
+
         return ssn;
     }
 
@@ -112,6 +114,7 @@ public class ServerConnectionDelegate extends ServerDelegate
             else
             {
 	            sconn.invoke(new ConnectionOpenOk(Collections.emptyList()));
+                CurrentActor.set(GenericActor.getInstance(sconn));
 	            sconn.setState(Connection.State.OPEN);
             }
         }
