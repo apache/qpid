@@ -85,7 +85,8 @@ qpidtest_SCRIPTS += run_cluster_tests cluster_tests.py run_long_cluster_tests lo
 CLUSTER_TEST_SCRIPTS_LIST=			\
 	allhosts rsynchosts			\
 	qpid-build-rinstall qpid-src-rinstall	\
-	qpid-test-cluster
+	qpid-test-cluster			\
+	qpid-cluster-benchmark
 qpidtest_SCRIPTS += $(CLUSTER_TEST_SCRIPTS_LIST)
 EXTRA_DIST += $(CLUSTER_TEST_SCRIPTS_LIST)
 
