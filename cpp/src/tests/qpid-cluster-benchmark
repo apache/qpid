@@ -1,0 +1,20 @@
+#!/bin/sh
+# Benchmark script for comparing cluster performance.
+#PORT=":5555"
+BROKER=`echo $HOSTS | awk '{print $1}'`	# Single broker
+BROKERS=`echo $HOSTS | sed "s/\>/$PORT/g;s/ /,/g"` # Broker URL list
+COUNT=100000
+RATE=20000			# Rate to throttle senders for latency results
+run_test() { echo $*; "$@"; echo; echo; echo; }
+
+# Thruput,  unshared queue
+run_test qpid-cpp-benchmark --repeat 10 -b $BROKER --no-timestamp -m $COUNT
+
+# Latency
+run_test qpid-cpp-benchmark --repeat 10 -b $BROKER --connection-options '{tcp-nodelay:true}' -m `expr $COUNT / 2` --send-rate $RATE
+
+# Multiple pubs/subs connect via multiple brokers (active-active)
+run_test qpid-cpp-benchmark --repeat 10 -b $BROKERS --no-timestamp --summarize -s10 -r10 -m `expr $COUNT / 10`
+
+# Multiple pubs/subs connect via single broker (active-passive)
+run_test qpid-cpp-benchmark --repeat 10 -b $BROKER --no-timestamp --summarize -s10 -r10 -m `expr $COUNT / 10`
