@@ -46,6 +46,8 @@ op.add_option("--ack-frequency", default=0, metavar="N", type="int",
               help="receiver ack's every N messages, 0 means unconfirmed (default %default)")
 op.add_option("--no-report-header", dest="report_header", default=True,
               action="store_false", help="don't print header on report")
+op.add_option("--summarize", default=False, action="store_true",
+              help="print summary statistics for multiple senders/receivers: total throughput, average latency")
 op.add_option("--repeat", default=1, metavar="N", help="repeat N times", type="int")
 op.add_option("--send-option", default=[], action="append", type="str",
               help="Additional option for sending addresses")
@@ -100,10 +102,10 @@ def start_send(queue, opts, broker, host):
     if host: command = ssh_command(host, command)
     return Popen(command, stdout=PIPE, stderr=STDOUT)
 
-def wait_for_output(p):
+def first_line(p):
     out,err=p.communicate()
     if p.returncode != 0: raise Exception("ERROR:\n%s"%(out))
-    return out
+    return out.split("\n")[0]
 
 def delete_queues(queues, broker):
     c = qpid.messaging.Connection(broker)
@@ -113,16 +115,43 @@ def delete_queues(queues, broker):
         except qpid.messaging.exceptions.NotFound: pass # Ignore "no such queue"
     c.close()
 
-def print_output(senders, receivers, want_header):
-    send_stats = sum([wait_for_output(p).split("\n")[:-1] for p in senders],[])
-    recv_stats = sum([wait_for_output(p).split("\n")[:-1] for p in receivers],[])
-    def empty_if_none(s):
-        if s: return s
-        else: return ""
-    stats = map(lambda s,r: empty_if_none(s)+"\t\t"+empty_if_none(r),
-                send_stats, recv_stats)
-    if want_header: print "send-tp\t\trecv-tp\tl-min\tl-max\tl-avg"
-    for s in stats: print s;
+def print_header(timestamp):
+    if timestamp: latency_header="\tl-min\tl-max\tl-avg"
+    else: latency_header=""
+    print "send-tp\t\trecv-tp%s"%latency_header
+
+def parse(parser, lines):               # Parse sender/receiver output
+    for l in lines:
+        fn_val = zip(parser, l)
+        
+    return [map(lambda p: p[0](p[1]), zip(parser,line.split())) for line in lines]
+
+def parse_senders(senders):
+    return parse([int],[first_line(p) for p in senders])
+    
+def parse_receivers(receivers):
+    return parse([int,float,float,float],[first_line(p) for p in receivers])
+
+def print_data(send_stats, recv_stats):
+    for send,recv in map(None, send_stats, recv_stats):
+        if send: print send[0],
+        if recv:
+            print "\t\t%d"%recv[0],
+            if len(recv) == 4: print "\t%.2f\t%.2f\t%.2f"%tuple(recv[1:]),
+        print
+
+def print_summary(send_stats, recv_stats):
+    def avg(s): sum(s) / len(s)
+    send_tp = sum([l[0] for l in send_stats])
+    recv_tp = sum([l[0] for l in recv_stats])
+    summary = "%d\t\t%d"%(send_tp, recv_tp)
+    if recv_stats and len(recv_stats[0]) == 4:
+        l_min = sum(l[1] for l in recv_stats)/len(recv_stats)
+        l_max = sum(l[2] for l in recv_stats)/len(recv_stats)
+        l_avg = sum(l[3] for l in recv_stats)/len(recv_stats)
+        summary += "\t%.2f\t%.2f\t%.2f"%(l_min, l_max, l_avg)
+    print summary
+    
 
 class ReadyReceiver:
     """A receiver for ready messages"""
@@ -176,7 +205,11 @@ def main():
         ready_receiver.wait(receivers) # Wait for receivers to be ready.
         senders = [start_send(q, opts,brokers.next(), client_hosts.next())
                    for q in queues for j in xrange(opts.senders)]
-        print_output(senders, receivers, opts.report_header and i == 0)
+        if opts.report_header and i == 0: print_header(opts.timestamp)
+        send_stats=parse_senders(senders)
+        recv_stats=parse_receivers(receivers)
+        if opts.summarize: print_summary(send_stats, recv_stats)
+        else: print_data(send_stats, recv_stats)
         delete_queues(queues, opts.broker[0])
 
 if __name__ == "__main__": main()
