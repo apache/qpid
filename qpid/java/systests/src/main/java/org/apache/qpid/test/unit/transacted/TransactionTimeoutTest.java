@@ -135,7 +135,7 @@ public class TransactionTimeoutTest extends TransactionTimeoutTestCase
             _exception = e;
         }
         
-        monitor(10, 10);
+        monitor(5, 10);
         
         check(OPEN);
     }
