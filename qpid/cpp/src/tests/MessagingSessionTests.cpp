@@ -771,6 +771,25 @@ QPID_AUTO_TEST_CASE(testExclusiveSubscriber)
     } catch (const MessagingException& /*e*/) {}
 }
 
+
+QPID_AUTO_TEST_CASE(testExclusiveQueueSubscriberAndBrowser)
+{
+    MessagingFixture fix;
+    
+    std::string address =       "exclusive-queue; { create: receiver, node : { x-declare : { auto-delete: true, exclusive: true } } }";
+    std::string browseAddress = "exclusive-queue; { mode: browse }";
+
+    Receiver receiver = fix.session.createReceiver(address);
+    fix.session.sync();
+
+    Connection c2 = fix.newConnection();    
+    c2.open();
+    Session s2 = c2.createSession();
+   
+    BOOST_CHECK_NO_THROW(Receiver browser = s2.createReceiver(browseAddress));
+    c2.close();    
+}
+
 QPID_AUTO_TEST_CASE(testAuthenticatedUsername)
 {
     MessagingFixture fix;

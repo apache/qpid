@@ -489,7 +489,8 @@ SessionAdapter::MessageHandlerImpl::subscribe(const string& queueName,
     Queue::shared_ptr queue = getQueue(queueName);
     if(!destination.empty() && state.exists(destination))
         throw NotAllowedException(QPID_MSG("Consumer tags must be unique"));
-    if (queue->hasExclusiveOwner() && !queue->isExclusiveOwner(&session)) 
+
+    if (queue->hasExclusiveOwner() && !queue->isExclusiveOwner(&session) && acquireMode == 0)
         throw ResourceLockedException(QPID_MSG("Cannot subscribe to exclusive queue "
                                                << queue->getName()));
 
