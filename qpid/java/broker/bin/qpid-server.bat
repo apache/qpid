@@ -165,7 +165,7 @@ REM end parsing -run arguments
 
 set JAVA_VM=-server
 set JAVA_MEM=-Xmx1024m
-set JAVA_GC=-XX:+UseConcMarkSweepGC -XX:+HeapDumpOnOutOfMemoryError -XX:+ExplicitGCInvokesConcurrent
+set JAVA_GC=-XX:+UseConcMarkSweepGC -XX:+HeapDumpOnOutOfMemoryError
 
 REM Use QPID_JAVA_GC if set
 if "%QPID_JAVA_GC%" == "" goto noQpidJavaGC
