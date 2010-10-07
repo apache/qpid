@@ -225,6 +225,8 @@ void AgentSessionImpl::open()
         throw QmfException("The session is already open");
     opened = true;
 
+    const string addrArgs(";{create:never,node:{type:topic}}");
+
     // Establish messaging addresses
     setAgentName();
     directBase = "qmf." + domain + ".direct";
@@ -232,14 +234,14 @@ void AgentSessionImpl::open()
 
     // Create AMQP session, receivers, and senders
     session = connection.createSession();
-    Receiver directRx = session.createReceiver(directBase + "/" + agentName);
-    Receiver topicRx = session.createReceiver(topicBase + "/console.#");
+    Receiver directRx = session.createReceiver(directBase + "/" + agentName + addrArgs);
+    Receiver topicRx = session.createReceiver(topicBase + "/console.#" + addrArgs);
 
     directRx.setCapacity(64);
     topicRx.setCapacity(64);
 
-    directSender = session.createSender(directBase + ";{create:never,node:{type:topic}}");
-    topicSender = session.createSender(topicBase + ";{create:never,node:{type:topic}}");
+    directSender = session.createSender(directBase + addrArgs);
+    topicSender = session.createSender(topicBase + addrArgs);
 
     // Start the receiver thread
     threadCanceled = false;
