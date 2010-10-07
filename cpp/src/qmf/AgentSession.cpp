@@ -223,7 +223,6 @@ void AgentSessionImpl::open()
 {
     if (opened)
         throw QmfException("The session is already open");
-    opened = true;
 
     const string addrArgs(";{create:never,node:{type:topic}}");
 
@@ -245,6 +244,7 @@ void AgentSessionImpl::open()
 
     // Start the receiver thread
     threadCanceled = false;
+    opened = true;
     thread = new qpid::sys::Thread(*this);
 
     // Send an initial agent heartbeat message
@@ -255,7 +255,7 @@ void AgentSessionImpl::open()
 void AgentSessionImpl::close()
 {
     if (!opened)
-        throw QmfException("The session is already closed");
+        return;
 
     // Stop and join the receiver thread
     threadCanceled = true;
