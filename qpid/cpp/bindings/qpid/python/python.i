@@ -23,13 +23,16 @@
 
 /* Define the general-purpose exception handling */
 %exception {
+    std::string error;
+    Py_BEGIN_ALLOW_THREADS;
     try {
-        Py_BEGIN_ALLOW_THREADS
         $action
-        Py_END_ALLOW_THREADS
+    } catch (qpid::types::Exception& ex) {
+        error = ex.what();
     }
-    catch (qpid::messaging::MessagingException& mex) {
-        PyErr_SetString(PyExc_RuntimeError, mex.what());
+    Py_END_ALLOW_THREADS;
+    if (!error.empty()) {
+        PyErr_SetString(PyExc_RuntimeError, error.c_str());
         return NULL;
     }
 }
