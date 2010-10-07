@@ -103,12 +103,11 @@ On recieving a message transfer, in the connection thread we:
 - enqueue the message on the local queue.
 - asynchronously complete the transfer when the message-received is self-delivered.
 
-This is exactly like the asynchronous completion in the MessageStore:
-the cluster "stores" a message by multicast. We send a completion to
-the client asynchronously when the multicast "completes" by
-self-delivery. This satisfies the "client sends transfer" guarantee,
-but makes the message available on the queue immediately, avoiding the
-multicast latency.
+This like asynchronous completion in the MessageStore: the cluster
+"stores" a message by multicast. We send a completion to the client
+asynchronously when the multicast "completes" by self-delivery. This
+satisfies the "client sends transfer" guarantee, but makes the message
+available on the queue immediately, avoiding the multicast latency.
 
 It also moves most of the work to the client connection thread. The
 only work in the virtual synchrony deliver thread is sending the client
@@ -198,12 +197,16 @@ update is complete. This creates a back-log of work to get through,
 which leaves them lagging behind the rest of the cluster till they
 catch up (which is not guaranteed to happen in a bounded time.)
 
-With the new cluster design only queues need to be replicated
-(actually wiring needs replication also, see below.)
+With the new cluster design only exchanges, queues, bindings and
+messages need to be replicated.
 
-The new update is:
+Update of wiring (exchanges, queues, bindings) is the same as current
+design.
+
+Update of messages is different:
 - per-queue rather than per-broker, separate queues can be updated in parallel.
-- updates queues in reverse order to eliminate potentially unbounded catch-up
+- updates queues in reverse order to eliminate unbounded catch-up
+- does not require updater & updatee to stall during update.
 
 Replication events, multicast to cluster:
 - enqueue(q,m): message m pushed on back of queue q .
@@ -225,17 +228,13 @@ Updatee:
 - receive update_done(q): q can be unlocked for local dequeing.
 
 Benefits:
-- No stall: updarer & updatee process multicast messages throughout the update.
+- Stall only for wiring update: updater & updatee can process multicast messages while messages are updated.
 - No unbounded catch-up: update consists of at most N update_front() messages where N=q.size() at start of update.
 - During update consumers actually help by removing messages before they need to be updated.
-- Needs no separate "work to do" queue, only the brokers queues themselves.
+- Needs no separate "work to do" queue, only the broker queues themselves.
 
 # TODO how can we recover from updater crashing before update complete?
 # Clear queues that are not updated & send request for udpates on those queues?
-  
-# TODO above is incomplete, we also need to replicate exchanges & bindings.
-# Think about where this fits into the update process above and when
-# local clients of the updatee can start to send messages.
 
 # TODO updatee may receive a dequeue for a message it has not yet seen, needs
 # to hold on to that so it can drop the message when it is seen.
@@ -243,33 +242,26 @@ Benefits:
   
 ** Cluster API
 
-The new cluster API is an extension of the existing MessageStore API.
+The new cluster API is similar to the MessageStore interface.
+(Initially I thought it would be an extension of the MessageStore interface,
+but as the design develops it seems better to make it a separate interface.)
 
-The MessageStore API already covers these events:
+The cluster interface captures these events:
 - wiring changes: queue/exchange declare/bind
-- message enqueued/dequeued.
-
-The cluster needs to add a "message acquired" call, which store
-implementations can ignore.
+- message enqueued/acquired/released/rejected/dequeued.
 
 The cluster will require some extensions to the Queue:
-- Queues can be "locked", locked queues are skipped by IO-driven output.
+- Queues can be "locked", locked queues are ignored by IO-driven output.
 - Messages carry a cluster-message-id.
 - messages can be dequeued by cluster-message-id
-
-When cluster+store are in use the cluster implementation of MessageStore
-will delegate to the store implementation.
 
 ** Maintainability
 
 This design gives us more robust code with a clear and explicit interfaces.
 
-The cluster depends on specific, well-defined events - defined by the
-extended MessageStore API. Provided the semantics of this API are not
-violated, the cluster will not be broken by changes to broker code.
-
-Re-using the established MessageStore API provides assurance that the
-API is sound and gives economy of design.
+The cluster depends on specific events clearly defined by an explicit
+interface. Provided the semantics of this interface are not violated,
+the cluster will not be broken by changes to broker code.
 
 The cluster no longer requires identical processing of the entire
 broker stack on each broker. It is not affected by the details of how
@@ -341,12 +333,10 @@ Replicating wiring
 - qpid.sequence_counter: need extra work to support in new design, do we care?
 
 Cluster+persistence:
-- cluster implements MessageStore+ & delegates to store?
 - finish async completion: dequeue completion for store & cluster
-- need to support multiple async completions
 - cluster restart from store: clean stores *not* identical, pick 1, all others update.
-- async completion of wiring changes?
-
+- need to generate cluster ids for messages recovered from store.
+  
 Live updates: we don't need to stall brokers during an update!
 - update on queue-by-queue basis.
 - updatee locks queues during update, no dequeue.
