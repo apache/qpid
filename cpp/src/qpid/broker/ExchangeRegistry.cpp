@@ -45,7 +45,7 @@ pair<Exchange::shared_ptr, bool> ExchangeRegistry::declare(const string& name, c
     if (i == exchanges.end()) {
         Exchange::shared_ptr exchange;
 
-        if(type == TopicExchange::typeName){
+        if (type == TopicExchange::typeName){
             exchange = Exchange::shared_ptr(new TopicExchange(name, durable, args, parent, broker));
         }else if(type == DirectExchange::typeName){
             exchange = Exchange::shared_ptr(new DirectExchange(name, durable, args, parent, broker));

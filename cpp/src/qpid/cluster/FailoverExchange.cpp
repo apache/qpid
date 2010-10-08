@@ -38,11 +38,11 @@ using namespace std;
 using namespace broker;
 using namespace framing;
 
-const string FailoverExchange::TYPE_NAME("amq.failover");
-
-FailoverExchange::FailoverExchange(management::Manageable* parent) : Exchange(TYPE_NAME, parent) {
+const string FailoverExchange::typeName("amq.failover");
+    
+FailoverExchange::FailoverExchange(management::Manageable* parent, Broker* b)  : Exchange(typeName, parent, b ) {
     if (mgmtExchange != 0)
-        mgmtExchange->set_type(TYPE_NAME);
+        mgmtExchange->set_type(typeName);
 }
 
 void FailoverExchange::setUrls(const vector<Url>& u) {
@@ -58,7 +58,7 @@ void FailoverExchange::updateUrls(const vector<Url>& u) {
                   boost::bind(&FailoverExchange::sendUpdate, this, _1));
 }
 
-string FailoverExchange::getType() const { return TYPE_NAME; }
+string FailoverExchange::getType() const { return typeName; }
 
 bool FailoverExchange::bind(Queue::shared_ptr queue, const string&, const framing::FieldTable*) {
     Lock l(lock);
@@ -77,7 +77,7 @@ bool FailoverExchange::isBound(Queue::shared_ptr queue, const string* const, con
 }
 
 void FailoverExchange::route(Deliverable&, const string& , const framing::FieldTable* ) {
-    QPID_LOG(warning, "Message received by exchange " << TYPE_NAME << " ignoring");
+    QPID_LOG(warning, "Message received by exchange " << typeName << " ignoring");
 }
 
 void FailoverExchange::sendUpdate(const Queue::shared_ptr& queue) {
@@ -88,16 +88,17 @@ void FailoverExchange::sendUpdate(const Queue::shared_ptr& queue) {
         array.add(boost::shared_ptr<Str16Value>(new Str16Value(i->str())));
     const ProtocolVersion v;
     boost::intrusive_ptr<Message> msg(new Message);
-    AMQFrame command(MessageTransferBody(v, TYPE_NAME, 1, 0));
+    AMQFrame command(MessageTransferBody(v, typeName, 1, 0));
     command.setLastSegment(false);
     msg->getFrames().append(command);
     AMQHeaderBody header;
     header.get<MessageProperties>(true)->setContentLength(0);
-    header.get<MessageProperties>(true)->getApplicationHeaders().setArray(TYPE_NAME, array);
+    header.get<MessageProperties>(true)->getApplicationHeaders().setArray(typeName, array);
     AMQFrame headerFrame(header);
     headerFrame.setFirstSegment(false);
     msg->getFrames().append(headerFrame);    
     DeliverableMessage(msg).deliverTo(queue);
 }
+
 
 }} // namespace cluster

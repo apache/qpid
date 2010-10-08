@@ -38,9 +38,9 @@ namespace cluster {
 class FailoverExchange : public broker::Exchange
 {
   public:
-    static const std::string TYPE_NAME;
+    static const std::string typeName;
 
-    FailoverExchange(management::Manageable* parent);
+    FailoverExchange(management::Manageable* parent, broker::Broker* b);
 
     /** Set the URLs but don't send an update.*/
     void setUrls(const std::vector<Url>&);
