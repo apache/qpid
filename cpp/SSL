@@ -1,6 +1,12 @@
                  Using SSL
                  =========
 
+The implementation and use of SSL has some differences on Linux and
+on Windows.
+
+Linux
+=====
+
 SSL support for Qpid-C++, based on Mozilla's Network Security Services
 library, is provided as two loadable modules: one for the client
 (sslconnector.so), one for the broker (ssl.so). Either these libraries
@@ -75,3 +81,51 @@ bob@acme.com).
 
 [1] http://www.mozilla.org/projects/security/pki/nss/ref/ssl/gtstd.html
 [2] http://www.mozilla.org/projects/security/pki/nss/tools/certutil.html
+
+
+Windows
+=======
+
+SSL support for Qpid-C++ on Windows is implemented using the Microsoft
+Secure Channel (Schannel) package.  Currently, only registry based
+certificates scoped to the local machine are supported, however
+Schannel also supports file based and user scoped certificates, so
+additional support could be added as required.  Client certificate
+authentication is not supported at this time.
+
+For testing purposes, a self signed certificate can be created as
+follows (requiring Administrator privilege on more recent versions of
+Windows):
+
+  makecert -ss qpidstore -n "CN=myhost.mydomain" -r -sr localmachine myhost.cer
+
+where "qpidstore" is an abitrary certificate store name.  The
+resulting output file "myhost.cer" is the public key of the
+certificate that will be required by any client that wishes to
+authenticate myhost.
+
+To run the server (also as Administrator on recent Windows versions):
+
+  qpidd --ssl-cert-name myhost.mydomain --ssl-cert-store qpidstore [other-args]
+
+On the Windows client side, the SSL support is available without
+loading a separate support module.  For each machine or separate user
+that will be using qpid, you must import the self signed certificate
+as a trusted root.  This can be done from the MMC certificate snapin
+or directly using certmgr.exe.  From the main window:
+
+  select "Third-Party Root Certification Authorities"
+  select "Action" -> "Import..."
+  then direct the Certificate Import Wizard to the "myhost.cer" file
+
+To test the setup:
+
+  perftest --count 10000 -P ssl --port 5671 --broker myhost.mydomain
+
+To export the certificate to non Windows clients, note that
+"myhost.cer" is the X.509 representation of the public key of the
+certificate in DER format.  Import the certificate into the other
+clients if they support the DER format.  Otherwise the certificate can
+be converted to PEM format using OpenSSL
+
+  openssl x509 -in myhost.cer -inform DER -out myhost.pem -outform PEM
