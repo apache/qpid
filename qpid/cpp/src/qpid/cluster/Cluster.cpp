@@ -282,7 +282,7 @@ Cluster::Cluster(const ClusterSettings& set, broker::Broker& b) :
     broker.setClusterTimer(std::auto_ptr<sys::Timer>(timer));
 
     // Failover exchange provides membership updates to clients.
-    failoverExchange.reset(new FailoverExchange(this));
+    failoverExchange.reset(new FailoverExchange(broker.GetVhostObject(), &broker));
     broker.getExchanges().registerExchange(failoverExchange);
 
     // Update exchange is used during updates to replicate messages

@@ -18,7 +18,7 @@
 # under the License.
 #
 
-import os, signal, sys, time, imp, re
+import os, signal, sys, time, imp, re, subprocess
 from qpid import datatypes, messaging
 from qpid.brokertest import *
 from qpid.harness import Skipped
@@ -213,6 +213,15 @@ acl allow all all
 
         for b in cluster: b.ready()     # Make sure all brokers still running.
 
+
+    def test_amqfailover_visible(self):
+        """Verify that the amq.failover exchange can be seen by
+        QMF-based tools - regression test for BZ615300."""
+        broker1 = self.cluster(1)[0]
+        broker2 = self.cluster(1)[0]
+        qs = subprocess.Popen(["qpid-stat", "-e", broker1.host_port()],  stdout=subprocess.PIPE)
+        out = qs.communicate()[0]
+        assert out.find("amq.failover") > 0
 
 class LongTests(BrokerTest):
     """Tests that can run for a long time if -DDURATION=<minutes> is set"""
@@ -525,4 +534,3 @@ class StoreTests(BrokerTest):
         self.assertEqual(c.get_message("q").content, "x")
         b = cluster.start("b")
         self.assertEqual(c.get_message("q").content, "y")
-
