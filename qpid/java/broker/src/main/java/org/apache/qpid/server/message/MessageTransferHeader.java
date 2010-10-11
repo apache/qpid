@@ -26,6 +26,7 @@ import org.apache.qpid.transport.MessageDeliveryPriority;
 
 import java.util.Set;
 import java.util.Map;
+import java.util.UUID;
 
 class MessageTransferHeader implements AMQMessageHeader
 {
@@ -61,7 +62,9 @@ class MessageTransferHeader implements AMQMessageHeader
 
     public String getMessageId()
     {
-        return _messageProps == null ? null : String.valueOf(_messageProps.getMessageId());
+        UUID id = _messageProps == null ? null : _messageProps.getMessageId();
+        
+        return id == null ? null : String.valueOf(id);
     }
 
     public String getMimeType()
