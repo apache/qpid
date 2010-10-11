@@ -1,4 +1,24 @@
 <?xml version="1.0" encoding="Windows-1252"?>
+<!--
+ 
+ Licensed to the Apache Software Foundation (ASF) under one
+ or more contributor license agreements.  See the NOTICE file
+ distributed with this work for additional information
+ regarding copyright ownership.  The ASF licenses this file
+ to you under the Apache License, Version 2.0 (the
+ "License"); you may not use this file except in compliance
+ with the License.  You may obtain a copy of the License at
+ 
+   http://www.apache.org/licenses/LICENSE-2.0
+ 
+ Unless required by applicable law or agreed to in writing,
+ software distributed under the License is distributed on an
+ "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ KIND, either express or implied.  See the License for the
+ specific language governing permissions and limitations
+ under the License.
+ 
+-->
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9.00"
@@ -98,82 +118,6 @@
 			/>
 		</Configuration>
 		<Configuration
-			Name="Release|Win32"
-			OutputDirectory="$(ProjectDir)bin\$(PlatformName)\$(ConfigurationName)"
-			IntermediateDirectory="$(ProjectDir)obj\$(PlatformName)\$(ConfigurationName)"
-			ConfigurationType="2"
-			CharacterSet="1"
-			ManagedExtensions="1"
-			WholeProgramOptimization="1"
-			>
-			<Tool
-				Name="VCPreBuildEventTool"
-			/>
-			<Tool
-				Name="VCCustomBuildTool"
-			/>
-			<Tool
-				Name="VCXMLDataGeneratorTool"
-			/>
-			<Tool
-				Name="VCWebServiceProxyGeneratorTool"
-			/>
-			<Tool
-				Name="VCMIDLTool"
-			/>
-			<Tool
-				Name="VCCLCompilerTool"
-				AdditionalOptions=" /Zm1000 /wd4244 /wd4800 /wd4355"
-				Optimization="0"
-				AdditionalIncludeDirectories="&quot;$(ProjectDir)..\..\..\..\include&quot;;&quot;$(ProjectDir)..\..\..\..\src&quot;"
-				PreprocessorDefinitions="WIN32;_WINDOWS;NDEBUG;WIN32_LEAN_AND_MEAN"
-				RuntimeLibrary="3"
-				UsePrecompiledHeader="0"
-				WarningLevel="3"
-				DebugInformationFormat="3"
-			/>
-			<Tool
-				Name="VCManagedResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCResourceCompilerTool"
-			/>
-			<Tool
-				Name="VCPreLinkEventTool"
-			/>
-			<Tool
-				Name="VCLinkerTool"
-				AdditionalOptions=" /STACK:10000000 /machine:I386"
-				AdditionalDependencies="$(QPID_BUILD_ROOT)\src\$(ConfigurationName)\qpidclient.lib $(QPID_BUILD_ROOT)\src\$(ConfigurationName)\qpidcommon.lib $(QPID_BUILD_ROOT)\src\$(ConfigurationName)\qpidmessaging.lib $(QPID_BUILD_ROOT)\src\$(ConfigurationName)\qpidtypes.lib"
-				OutputFile="$(QPID_BUILD_ROOT)\src\$(ConfigurationName)\org.apache.qpid.messaging.dll"
-				LinkIncremental="1"
-				GenerateDebugInformation="true"
-				AssemblyDebug="1"
-				TargetMachine="1"
-			/>
-			<Tool
-				Name="VCALinkTool"
-			/>
-			<Tool
-				Name="VCManifestTool"
-			/>
-			<Tool
-				Name="VCXDCMakeTool"
-			/>
-			<Tool
-				Name="VCBscMakeTool"
-			/>
-			<Tool
-				Name="VCFxCopTool"
-			/>
-			<Tool
-				Name="VCAppVerifierTool"
-			/>
-			<Tool
-				Name="VCPostBuildEventTool"
-			/>
-		</Configuration>
-		<Configuration
 			Name="Debug|x64"
 			OutputDirectory="$(ProjectDir)bin\$(PlatformName)\$(ConfigurationName)"
 			IntermediateDirectory="$(ProjectDir)obj\$(PlatformName)\$(ConfigurationName)"
@@ -253,6 +197,82 @@
 			/>
 		</Configuration>
 		<Configuration
+			Name="Release|Win32"
+			OutputDirectory="$(ProjectDir)bin\$(PlatformName)\$(ConfigurationName)"
+			IntermediateDirectory="$(ProjectDir)obj\$(PlatformName)\$(ConfigurationName)"
+			ConfigurationType="2"
+			CharacterSet="1"
+			ManagedExtensions="1"
+			WholeProgramOptimization="1"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalOptions=" /Zm1000 /wd4244 /wd4800 /wd4355"
+				Optimization="0"
+				AdditionalIncludeDirectories="&quot;$(ProjectDir)..\..\..\..\include&quot;;&quot;$(ProjectDir)..\..\..\..\src&quot;"
+				PreprocessorDefinitions="WIN32;_WINDOWS;NDEBUG;WIN32_LEAN_AND_MEAN"
+				RuntimeLibrary="2"
+				UsePrecompiledHeader="0"
+				WarningLevel="3"
+				DebugInformationFormat="3"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalOptions=" /STACK:10000000 /machine:I386"
+				AdditionalDependencies="$(QPID_BUILD_ROOT)\src\$(ConfigurationName)\qpidclient.lib $(QPID_BUILD_ROOT)\src\$(ConfigurationName)\qpidcommon.lib $(QPID_BUILD_ROOT)\src\$(ConfigurationName)\qpidmessaging.lib $(QPID_BUILD_ROOT)\src\$(ConfigurationName)\qpidtypes.lib"
+				OutputFile="$(QPID_BUILD_ROOT)\src\$(ConfigurationName)\org.apache.qpid.messaging.dll"
+				LinkIncremental="1"
+				GenerateDebugInformation="true"
+				AssemblyDebug="1"
+				TargetMachine="1"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
 			Name="Release|x64"
 			OutputDirectory="$(ProjectDir)bin\$(PlatformName)\$(ConfigurationName)"
 			IntermediateDirectory="$(ProjectDir)obj\$(PlatformName)\$(ConfigurationName)"
@@ -283,7 +303,160 @@
 				Optimization="0"
 				AdditionalIncludeDirectories="&quot;$(ProjectDir)..\..\..\..\include&quot;;&quot;$(ProjectDir)..\..\..\..\src&quot;"
 				PreprocessorDefinitions="WIN32;_WINDOWS;NDEBUG;WIN32_LEAN_AND_MEAN"
-				RuntimeLibrary="3"
+				RuntimeLibrary="2"
+				UsePrecompiledHeader="0"
+				WarningLevel="3"
+				DebugInformationFormat="3"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalOptions=" /STACK:10000000"
+				AdditionalDependencies="$(QPID_BUILD_ROOT)\src\$(ConfigurationName)\qpidclient.lib $(QPID_BUILD_ROOT)\src\$(ConfigurationName)\qpidcommon.lib $(QPID_BUILD_ROOT)\src\$(ConfigurationName)\qpidmessaging.lib $(QPID_BUILD_ROOT)\src\$(ConfigurationName)\qpidtypes.lib"
+				OutputFile="$(QPID_BUILD_ROOT)\src\$(ConfigurationName)\org.apache.qpid.messaging.dll"
+				LinkIncremental="1"
+				GenerateDebugInformation="true"
+				AssemblyDebug="1"
+				TargetMachine="17"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
+			Name="RelWithDebInfo|Win32"
+			OutputDirectory="$(ProjectDir)bin\$(PlatformName)\$(ConfigurationName)"
+			IntermediateDirectory="$(ProjectDir)obj\$(PlatformName)\$(ConfigurationName)"
+			ConfigurationType="2"
+			CharacterSet="1"
+			ManagedExtensions="1"
+			WholeProgramOptimization="1"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalOptions=" /Zm1000 /wd4244 /wd4800 /wd4355"
+				Optimization="0"
+				AdditionalIncludeDirectories="&quot;$(ProjectDir)..\..\..\..\include&quot;;&quot;$(ProjectDir)..\..\..\..\src&quot;"
+				PreprocessorDefinitions="WIN32;_WINDOWS;NDEBUG;WIN32_LEAN_AND_MEAN"
+				RuntimeLibrary="2"
+				UsePrecompiledHeader="0"
+				WarningLevel="3"
+				DebugInformationFormat="3"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalOptions=" /STACK:10000000 /machine:I386"
+				AdditionalDependencies="$(QPID_BUILD_ROOT)\src\$(ConfigurationName)\qpidclient.lib $(QPID_BUILD_ROOT)\src\$(ConfigurationName)\qpidcommon.lib $(QPID_BUILD_ROOT)\src\$(ConfigurationName)\qpidmessaging.lib $(QPID_BUILD_ROOT)\src\$(ConfigurationName)\qpidtypes.lib"
+				OutputFile="$(QPID_BUILD_ROOT)\src\$(ConfigurationName)\org.apache.qpid.messaging.dll"
+				LinkIncremental="1"
+				GenerateDebugInformation="true"
+				AssemblyDebug="1"
+				TargetMachine="1"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
+			Name="RelWithDebInfo|x64"
+			OutputDirectory="$(ProjectDir)bin\$(PlatformName)\$(ConfigurationName)"
+			IntermediateDirectory="$(ProjectDir)obj\$(PlatformName)\$(ConfigurationName)"
+			ConfigurationType="2"
+			CharacterSet="1"
+			ManagedExtensions="1"
+			WholeProgramOptimization="1"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+				TargetEnvironment="3"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalOptions=" /Zm1000 /wd4244 /wd4800 /wd4355"
+				Optimization="0"
+				AdditionalIncludeDirectories="&quot;$(ProjectDir)..\..\..\..\include&quot;;&quot;$(ProjectDir)..\..\..\..\src&quot;"
+				PreprocessorDefinitions="WIN32;_WINDOWS;NDEBUG;WIN32_LEAN_AND_MEAN"
+				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
 				DebugInformationFormat="3"
