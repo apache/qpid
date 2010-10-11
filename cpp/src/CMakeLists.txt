@@ -589,9 +589,18 @@ if (CMAKE_SYSTEM_NAME STREQUAL Windows)
       add_definitions(/D "_WIN32_WINNT=0x0501")
     endif (MSVC80)
 
-    # set the RelWithDebInfo compile/link switchs to equal Release
+    # set the RelWithDebInfo compile/link switches to equal Release
     set (CMAKE_CXX_FLAGS_RELWITHDEBINFO "/MD /O2 /Ob2 /D NDEBUG")
     set (CMAKE_SHARED_LINKER_FLAGS_RELWITHDEBINFO "/debug /INCREMENTAL:NO")
+
+    # Set the windows version for the .NET Binding cpp project
+    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/../bindings/qpid/dotnet/src/org.apache.qpid.messaging.template.rc
+                     ${CMAKE_CURRENT_BINARY_DIR}/windows/resources/org.apache.qpid.messaging.rc)
+
+    # Set the windows version for the .NET Binding sessionreceiver project
+    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/../bindings/qpid/dotnet/src/sessionreceiver/properties/sessionreceiver-AssemblyInfo-template.cs
+                     ${CMAKE_CURRENT_BINARY_DIR}/windows/generated_src/sessionreceiver-AssemblyInfo.cs)
+
   endif (MSVC)
 
   set (qpidtypes_platform_SOURCES

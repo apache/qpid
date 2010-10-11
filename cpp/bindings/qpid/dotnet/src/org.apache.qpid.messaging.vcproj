@@ -614,7 +614,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\org.apache.qpid.messaging.rc"
+				RelativePath="$(QPID_BUILD_ROOT)\src\windows\resources\org.apache.qpid.messaging.rc"
 				>
 			</File>
 			<File
