@@ -247,6 +247,8 @@ void RdmaConnector::disconnected() {
     aio->requestCallback(boost::bind(&RdmaConnector::drained, this));
 }
 
+// Bizarrely we seem to get rejected events *after* we've already got a connected event for some peer disconnects
+// so we need to check whether the data connection is started or not in here
 void RdmaConnector::rejected(sys::Poller::shared_ptr, Rdma::Connection::intrusive_ptr, const Rdma::ConnectionParams& cp) {
     QPID_LOG(debug, "Connection Rejected " << identifier << ": " << cp.maxRecvBufferSize);
     {
@@ -255,7 +257,11 @@ void RdmaConnector::rejected(sys::Poller::shared_ptr, Rdma::Connection::intrusiv
     if (!polling) return;
     polling = false;
     }
-    connectionStopped(acon);
+    if (dataConnected) {
+        disconnected();
+    } else {
+        connectionStopped(acon);
+    }
 }
 
 void RdmaConnector::dataError(Rdma::AsynchIO&) {
