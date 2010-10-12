@@ -89,6 +89,9 @@ namespace Rdma {
         dataHandle.startWatch(poller);
     }
 
+    // State constraints
+    // On entry: None
+    // On exit: STOPPED
     // Mark for deletion/Delete this object when we have no outstanding writes
     void AsynchIO::stop(NotifyCallback nc) {
         ScopedLock<Mutex> l(stateLock);
@@ -142,12 +145,15 @@ namespace Rdma {
         }
     }
 
+    // State constraints
+    // On entry: None
+    // On exit: NOTIFY_PENDING || STOPPED 
     void AsynchIO::notifyPendingWrite() {
         ScopedLock<Mutex> l(stateLock);
         switch (state) {
         case IDLE:
             dataHandle.call(pendingWriteAction);
-            break;
+            // Fall Thru
         case NOTIFY:
             state = NOTIFY_PENDING;
             break;
@@ -157,6 +163,9 @@ namespace Rdma {
         }
     }
 
+    // State constraints
+    // On entry: IDLE || STOPPED
+    // On exit: IDLE || STOPPED
     void AsynchIO::dataEvent() {
         {
         ScopedLock<Mutex> l(stateLock);
@@ -170,7 +179,10 @@ namespace Rdma {
         writeEvent();
     }
     
-    void AsynchIO::writeEvent() {    
+    // State constraints
+    // On entry: NOTIFY_PENDING || STOPPED
+    // On exit: IDLE || STOPPED
+    void AsynchIO::writeEvent() {
         State newState;
         do {
             {
@@ -192,8 +204,6 @@ namespace Rdma {
             newState = state;
             switch (newState) {
             case NOTIFY_PENDING:
-                state = NOTIFY;
-                break;
             case STOPPED:
                 break;
             default:
