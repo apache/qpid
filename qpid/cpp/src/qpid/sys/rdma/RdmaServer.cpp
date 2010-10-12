@@ -18,6 +18,7 @@
  * under the License.
  *
  */
+#include "qpid/sys/Thread.h"
 #include "qpid/sys/rdma/RdmaIO.h"
 #include "qpid/sys/rdma/rdma_exception.h"
 
@@ -36,9 +37,9 @@ using std::string;
 using std::cout;
 using std::cerr;
 
+using qpid::sys::Thread;
 using qpid::sys::SocketAddress;
 using qpid::sys::Poller;
-using qpid::sys::Dispatcher;
 
 // All the accepted connections
 namespace qpid {
@@ -179,7 +180,6 @@ int main(int argc, char* argv[]) {
 
     try {
         boost::shared_ptr<Poller> p(new Poller());
-        Dispatcher d(p);
 
         Rdma::Listener a(
             Rdma::ConnectionParams(16384, Rdma::DEFAULT_WR_ENTRIES),
@@ -191,7 +191,13 @@ int main(int argc, char* argv[]) {
 
         SocketAddress sa("", port);
         a.start(p, sa);
-        d.run();
+
+        // The poller loop blocks all signals so run in its own thread
+        Thread t(*p);
+
+        ::pause();
+        p->shutdown();
+        t.join();
     } catch (Rdma::Exception& e) {
         int err = e.getError();
         cerr << "Error: " << e.what() << "(" << err << ")\n";
