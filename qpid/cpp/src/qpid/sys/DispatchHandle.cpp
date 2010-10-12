@@ -20,6 +20,7 @@
  */
 
 #include "qpid/sys/DispatchHandle.h"
+#include "qpid/log/Statement.h"
 
 #include <algorithm>
 
@@ -273,6 +274,7 @@ void DispatchHandle::processEvent(Poller::EventType type) {
     // Do callbacks - whilst we are doing the callbacks we are prevented from processing
     // the same handle until we re-enable it. To avoid rentering the callbacks for a single
     // handle re-enabling in the callbacks is actually deferred until they are complete.
+    try {
     switch (type) {
     case Poller::READABLE:
         readableCallback(*this);
@@ -306,6 +308,11 @@ void DispatchHandle::processEvent(Poller::EventType type) {
         assert(cb);
         cb(*this);
         callbacks.pop();
+    }
+    } catch (std::exception& e) {
+        // One of the callbacks threw an exception - that's not allowed
+        QPID_LOG(error, "Caught exception in state: " << state << " with event: " << type << ": " << e.what());
+        // It would be nice to clean up and delete ourselves here, but we can't
     }
 
     {
