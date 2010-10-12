@@ -564,6 +564,10 @@ namespace Rdma {
         ci->listen();
     }
 
+    namespace {
+        const int64_t PoisonContext = -1;
+    }
+
     void Listener::connectionEvent(Connection::intrusive_ptr ci) {
         ConnectionEvent e(ci->getNextEvent());
 
@@ -577,6 +581,11 @@ namespace Rdma {
         ::rdma_cm_event_type eventType = e.getEventType();
         ::rdma_conn_param conn_param = e.getConnectionParam();
         Rdma::Connection::intrusive_ptr id = e.getConnection();
+
+        // Check for previous disconnection (it appears that you actually can get connection
+        // request events after a disconnect event in rare circumstances)
+        if (reinterpret_cast<int64_t>(id->getContext<void*>())==PoisonContext)
+            return;
 
         switch (eventType) {
         case RDMA_CM_EVENT_CONNECT_REQUEST: {
@@ -612,6 +621,9 @@ namespace Rdma {
             break;
         case RDMA_CM_EVENT_DISCONNECTED:
             disconnectedCallback(id);
+            // Poison the id context so that we do no more callbacks on it
+            id->removeContext();
+            id->addContext(reinterpret_cast<void*>(PoisonContext));
             break;
         case RDMA_CM_EVENT_CONNECT_ERROR:
             errorCallback(id, CONNECT_ERROR);
