@@ -371,6 +371,21 @@ namespace Rdma {
 
             ::ibv_wc_status status = e.getEventStatus();
             if (status != IBV_WC_SUCCESS) {
+                // Need special check for IBV_WC_WR_FLUSH_ERR here
+                // we will get this for every send/recv queue entry that was pending
+                // when disconnected, these aren't real errors and mostly need to be ignored
+                if (status == IBV_WC_WR_FLUSH_ERR) {
+                    QueueDirection dir = e.getDirection();
+                    if (dir == SEND) {
+                        Buffer* b = e.getBuffer();
+                        ++sendEvents;
+                        returnBuffer(b);
+                        --outstandingWrites;
+                    } else {
+                        ++recvEvents;
+                    }
+                    continue;
+                }
                 errorCallback(*this);
                 // TODO: Probably need to flush queues at this point
                 return;
@@ -398,6 +413,7 @@ namespace Rdma {
                 }
 
                 // At this point the buffer has been consumed so put it back on the recv queue
+                // TODO: Is this safe to do if the connection is disconnected already?
                 qp->postRecv(b);
 
                 // Received another message
