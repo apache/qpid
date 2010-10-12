@@ -26,7 +26,6 @@
 #include "qpid/sys/AtomicValue.h"
 #include "qpid/sys/Dispatcher.h"
 #include "qpid/sys/DispatchHandle.h"
-#include "qpid/sys/Mutex.h"
 #include "qpid/sys/SocketAddress.h"
 
 #include <netinet/in.h>
@@ -163,14 +162,19 @@ namespace Rdma {
     typedef boost::function1<void, Rdma::Connection::intrusive_ptr> DisconnectedCallback;
 
     class ConnectionManager {
+        typedef boost::function1<void, ConnectionManager&> NotifyCallback;
+ 
+        enum State {IDLE, STOPPED};
+        qpid::sys::AtomicValue<State> state;
         Connection::intrusive_ptr ci;
         qpid::sys::DispatchHandleRef handle;
+        NotifyCallback notifyCallback;
 
     protected:
         ErrorCallback errorCallback;
         DisconnectedCallback disconnectedCallback;
 
-   public:
+    public:
         ConnectionManager(
             ErrorCallback errc,
             DisconnectedCallback dc
@@ -179,10 +183,11 @@ namespace Rdma {
         virtual ~ConnectionManager();
 
         void start(qpid::sys::Poller::shared_ptr poller, const qpid::sys::SocketAddress& addr);
-        void stop();
+        void stop(NotifyCallback);
 
     private:
         void event(qpid::sys::DispatchHandle& handle);
+        void doStoppedCallback();
 
         virtual void startConnection(Connection::intrusive_ptr ci, const qpid::sys::SocketAddress& addr) = 0;
         virtual void connectionEvent(Connection::intrusive_ptr ci) = 0;
