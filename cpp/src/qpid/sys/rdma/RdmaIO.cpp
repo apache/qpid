@@ -518,6 +518,7 @@ namespace Rdma {
         ErrorCallback errc,
         DisconnectedCallback dc
     ) :
+        state(IDLE),
         ci(Connection::make()),
         handle(*ci, boost::bind(&ConnectionManager::event, this, _1), 0, 0),
         errorCallback(errc),
@@ -537,11 +538,23 @@ namespace Rdma {
         handle.startWatch(poller);
     }
 
-    void ConnectionManager::stop() {
+    void ConnectionManager::doStoppedCallback() {
+        // Ensure we can't get any more callbacks (except for the stopped callback)
         handle.stopWatch();
+
+        NotifyCallback nc;
+        nc.swap(notifyCallback);
+        nc(*this);
+    }
+
+    void ConnectionManager::stop(NotifyCallback nc) {
+        state = STOPPED;
+        notifyCallback = nc;
+        handle.call(boost::bind(&ConnectionManager::doStoppedCallback, this));
     }
 
     void ConnectionManager::event(DispatchHandle&) {
+        if (state.get() == STOPPED) return;
         connectionEvent(ci);
     }
 
