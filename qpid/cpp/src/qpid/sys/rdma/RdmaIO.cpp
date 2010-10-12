@@ -29,6 +29,8 @@
 using qpid::sys::SocketAddress;
 using qpid::sys::DispatchHandle;
 using qpid::sys::Poller;
+using qpid::sys::ScopedLock;
+using qpid::sys::Mutex;
 
 namespace Rdma {
     AsynchIO::AsynchIO(
@@ -55,7 +57,7 @@ namespace Rdma {
         idleCallback(ic),
         fullCallback(fc),
         errorCallback(ec),
-        pendingWriteAction(boost::bind(&AsynchIO::doWriteCallback, this))
+        pendingWriteAction(boost::bind(&AsynchIO::writeEvent, this))
     {
         qp->nonblocking();
         qp->notifyRecv();
@@ -74,7 +76,7 @@ namespace Rdma {
             QPID_LOG(error, "RDMA: qp=" << qp << ": Deleting queue before all write buffers finished");
 
         // Turn off callbacks if necessary (before doing the deletes)
-        if (state.get() != STOPPED) {
+        if (state != STOPPED) {
             QPID_LOG(error, "RDMA: qp=" << qp << ": Deleting queue whilst not shutdown");
             dataHandle.stopWatch();
         }
@@ -89,6 +91,7 @@ namespace Rdma {
 
     // Mark for deletion/Delete this object when we have no outstanding writes
     void AsynchIO::stop(NotifyCallback nc) {
+        ScopedLock<Mutex> l(stateLock);
         state = STOPPED;
         notifyCallback = nc;
         dataHandle.call(boost::bind(&AsynchIO::doStoppedCallback, this));
@@ -140,15 +143,64 @@ namespace Rdma {
     }
 
     void AsynchIO::notifyPendingWrite() {
-        dataHandle.call(pendingWriteAction);
+        ScopedLock<Mutex> l(stateLock);
+        switch (state) {
+        case IDLE:
+            dataHandle.call(pendingWriteAction);
+            break;
+        case NOTIFY:
+            state = NOTIFY_PENDING;
+            break;
+        case NOTIFY_PENDING:
+        case STOPPED:
+            break;
+        }
     }
 
     void AsynchIO::dataEvent() {
-        if (state.get() == STOPPED) return;
+        {
+        ScopedLock<Mutex> l(stateLock);
+
+        if (state == STOPPED) return;
         
+        state = NOTIFY_PENDING;
+        }
         processCompletions();
 
-        doWriteCallback();
+        writeEvent();
+    }
+    
+    void AsynchIO::writeEvent() {    
+        State newState;
+        do {
+            {
+            ScopedLock<Mutex> l(stateLock);
+
+            switch (state) {
+            case STOPPED:
+                return;
+            default:
+                state = NOTIFY;
+            }
+            }
+
+            doWriteCallback();
+
+            {
+            ScopedLock<Mutex> l(stateLock);
+
+            newState = state;
+            switch (newState) {
+            case NOTIFY_PENDING:
+                state = NOTIFY;
+                break;
+            case STOPPED:
+                break;
+            default:
+                state = IDLE;
+            }
+            }
+        } while (newState == NOTIFY_PENDING);
     }
 
     void AsynchIO::processCompletions() {
