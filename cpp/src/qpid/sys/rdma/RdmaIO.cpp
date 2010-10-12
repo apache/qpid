@@ -294,6 +294,9 @@ namespace Rdma {
             case IDLE:
                 newState  = DATA;
                 break;
+            case SHUTDOWN:
+                doReturn = true;
+                // Fallthru
             case DRAINED:
                 break;
             default:
