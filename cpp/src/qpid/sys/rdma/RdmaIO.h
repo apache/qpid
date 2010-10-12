@@ -26,6 +26,7 @@
 #include "qpid/sys/AtomicValue.h"
 #include "qpid/sys/Dispatcher.h"
 #include "qpid/sys/DispatchHandle.h"
+#include "qpid/sys/Mutex.h"
 #include "qpid/sys/SocketAddress.h"
 
 #include <netinet/in.h>
@@ -51,8 +52,9 @@ namespace Rdma {
         int xmitBufferCount;
         int outstandingWrites;
         bool draining;
-        enum State {IDLE, STOPPED};
-        qpid::sys::AtomicValue<State> state;
+        enum State {IDLE, NOTIFY, NOTIFY_PENDING, STOPPED};
+        State state;
+        qpid::sys::Mutex stateLock;
         QueuePair::intrusive_ptr qp;
         qpid::sys::DispatchHandleRef dataHandle;
 
@@ -101,6 +103,7 @@ namespace Rdma {
         const static int IgnoreData = 0x10000000; // Message contains no application data
 
         void dataEvent();
+        void writeEvent();
         void processCompletions();
         void doWriteCallback();
         void checkDrained();
