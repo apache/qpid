@@ -50,10 +50,9 @@ namespace Rdma {
         int recvBufferCount;
         int xmitBufferCount;
         int outstandingWrites;
-        bool draining; // TODO: Perhaps (probably) this state can be merged with the following...
-        enum State { IDLE, DATA, PENDING_DATA, NOTIFY_WRITE, PENDING_NOTIFY, DRAINED, SHUTDOWN };
+        bool draining;
+        enum State {IDLE, STOPPED};
         qpid::sys::AtomicValue<State> state;
-        //qpid::sys::Mutex stateLock;
         QueuePair::intrusive_ptr qp;
         qpid::sys::DispatchHandleRef dataHandle;
 
@@ -62,6 +61,7 @@ namespace Rdma {
         FullCallback fullCallback;
         ErrorCallback errorCallback;
         NotifyCallback notifyCallback;
+        qpid::sys::DispatchHandle::Callback pendingWriteAction;
 
     public:
         typedef boost::function1<void, AsynchIO&> RequestCallback;
@@ -103,9 +103,8 @@ namespace Rdma {
         void dataEvent();
         void processCompletions();
         void doWriteCallback();
-        void checkDrainedStopped();
+        void checkDrained();
         void doStoppedCallback();
-        void doDrainedCallback();
     };
 
     // We're only writable if:
