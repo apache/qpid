@@ -58,6 +58,8 @@ public class AMQBrokerDetails implements BrokerDetails
                 //todo this list of valid transports should be enumerated somewhere
                 if ((!(transport.equalsIgnoreCase(BrokerDetails.VM) ||
                        transport.equalsIgnoreCase(BrokerDetails.TCP) ||
+                       transport.equalsIgnoreCase(BrokerDetails.UDP) ||
+                       transport.equalsIgnoreCase(BrokerDetails.MULTICAST) ||
                        transport.equalsIgnoreCase(BrokerDetails.SOCKET))))
                 {
                     if (transport.equalsIgnoreCase("localhost"))

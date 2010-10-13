@@ -228,8 +228,16 @@ public class TextMessageTest extends QpidBrokerTestCase implements MessageListen
     {
         synchronized (received)
         {
-            _logger.info("===== received one message");
-            received.add((JMSTextMessage) message);
+            JMSTextMessage txt = (JMSTextMessage) message;
+            try
+            {
+                _logger.info("===== received message " + txt.getText());
+            }
+            catch (JMSException e)
+            {
+                // ignore
+            }
+            received.add(txt);
             _waitForCompletion.countDown();
         }
     }

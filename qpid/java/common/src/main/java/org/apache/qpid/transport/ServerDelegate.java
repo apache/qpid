@@ -23,27 +23,32 @@ package org.apache.qpid.transport;
 import static org.apache.qpid.transport.Connection.State.*;
 
 import java.util.Collections;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
 
 import javax.security.sasl.Sasl;
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
+import javax.security.sasl.SaslServerFactory;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 /**
  * ServerDelegate
- *
  */
-
 public class ServerDelegate extends ConnectionDelegate
 {
-
+    public static final int MAX_FRAME_SIZE = 64 * 1024 - 1;
+    
+    private static final Logger _log = LoggerFactory.getLogger(ServerDelegate.class);
+    
     private SaslServer saslServer;
     private List<Object> _locales;
     private List<Object> _mechanisms;
     private Map<String, Object> _clientProperties;
-
 
     public ServerDelegate()
     {
@@ -75,15 +80,12 @@ public class ServerDelegate extends ConnectionDelegate
         if (mechanism == null || mechanism.length() == 0)
         {
             conn.connectionTune
-                (Integer.MAX_VALUE,
-                 org.apache.qpid.transport.network.ConnectionBinding.MAX_FRAME_SIZE,
-                 0, Integer.MAX_VALUE);
+                (Integer.MAX_VALUE, MAX_FRAME_SIZE, 0, Integer.MAX_VALUE);
             return;
         }
 
         try
         {
-            
             SaslServer ss = createSaslServer(mechanism);
             if (ss == null)
             {
@@ -104,6 +106,15 @@ public class ServerDelegate extends ConnectionDelegate
     protected SaslServer createSaslServer(String mechanism)
             throws SaslException
     {
+        int n = 0;
+        Enumeration<SaslServerFactory> factories = Sasl.getSaslServerFactories();
+        while (factories.hasMoreElements())
+        {
+            n++;
+            SaslServerFactory factory = factories.nextElement();
+            _log.error(n + "factory: " + factory.toString());
+            _log.error(n + "class: " + factory.getClass().getName());
+        }
         SaslServer ss = Sasl.createSaslServer(mechanism, "AMQP", "localhost", null, null);
         return ss;
     }
@@ -117,10 +128,7 @@ public class ServerDelegate extends ConnectionDelegate
             if (ss.isComplete())
             {
                 ss.dispose();
-                conn.connectionTune
-                    (Integer.MAX_VALUE,
-                     org.apache.qpid.transport.network.ConnectionBinding.MAX_FRAME_SIZE,
-                     0, getHeartbeatMax());
+                conn.connectionTune(Integer.MAX_VALUE, MAX_FRAME_SIZE, 0, getHeartbeatMax());
                 conn.setAuthorizationID(ss.getAuthorizationID());
             }
             else

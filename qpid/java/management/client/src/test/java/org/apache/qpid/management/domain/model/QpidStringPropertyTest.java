@@ -20,12 +20,11 @@
  */
 package org.apache.qpid.management.domain.model;
 
-import junit.framework.TestCase;
-
 import org.apache.qpid.management.configuration.Configurator;
 import org.apache.qpid.management.domain.model.type.Str16;
+import org.apache.qpid.test.utils.QpidTestCase;
 
-public class QpidStringPropertyTest extends TestCase
+public class QpidStringPropertyTest extends QpidTestCase
 {
     private QpidProperty _property;
     private final String _5LettersString = "12345";

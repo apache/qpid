@@ -77,7 +77,7 @@ public class ChannelLoggingTest extends AbstractTestLogging
         validateMessageID("CHN-1001", log);
         assertEquals("Incorrect Channel in actor:"+fromActor(log), 1, getChannelID(fromActor(log)));
 
-        if (isBroker08())
+        if (isBroker08() || isBroker09())
         {
             // Wait to ensure that the CHN-1004 message is logged
             waitForMessage("CHN-1004");
@@ -249,9 +249,9 @@ public class ChannelLoggingTest extends AbstractTestLogging
 
         assertTrue("No CHN messages logged", results.size() > 0);
 
-        // The last two channel messages should be:
+        // The last channel message should be:
         //
-        // INFO - MESSAGE [con:0(guest@anonymous(4205299)/test)/ch:1] [con:0(guest@anonymous(4205299)/test)/ch:1] CHN-1002 : Flow On
+        // INFO - MESSAGE [con:0(guest@anonymous(4205299)/test)] [con:0(guest@anonymous(4205299)/test)/ch:1] CHN-1002 : Flow On
 
         // Verify
         validateChannelClose(results);

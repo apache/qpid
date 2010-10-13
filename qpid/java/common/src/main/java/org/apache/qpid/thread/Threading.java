@@ -1,4 +1,3 @@
-package org.apache.qpid.thread;
 /*
  * 
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -19,22 +18,30 @@ package org.apache.qpid.thread;
  * under the License.
  * 
  */
+package org.apache.qpid.thread;
 
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 
 public final class Threading
 {
-    private static ThreadFactory threadFactory;
+    private static ThreadFactory _factory;
     
     static {
         try
         {
-            Class threadFactoryClass = 
-                Class.forName(System.getProperty("qpid.thread_factory", 
-                                                 "org.apache.qpid.thread.DefaultThreadFactory"));
-            
-            threadFactory = (ThreadFactory)threadFactoryClass.newInstance();
+            String factoryName = System.getProperty("qpid.thread_factory");
+            if (factoryName == null)
+            {
+                _factory = Executors.defaultThreadFactory();
+            }
+            else
+            {
+                Class<?> factoryClass = Class.forName(factoryName);
+                _factory = (ThreadFactory) factoryClass.newInstance();
+            }
         }
-        catch(Exception e)
+        catch (Exception e)
         {
             throw new Error("Error occured while loading thread factory",e);
         }
@@ -42,6 +49,6 @@ public final class Threading
     
     public static ThreadFactory getThreadFactory()
     {
-        return threadFactory;
+        return _factory;
     }
 }

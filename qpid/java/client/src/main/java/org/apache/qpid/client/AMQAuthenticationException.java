@@ -24,19 +24,38 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.protocol.AMQConstant;
 
 /**
- * AMQAuthenticationException represents all failures to authenticate access to a broker.
+ * Authentication Exception represents all failures to authenticate access to a broker.
+ * 
+ * This exception encapsulates error code 530, or {@link AMQConstant#NOT_ALLOWED}
  *
  * <p/><table id="crc"><caption>CRC Card</caption>
  * <tr><th> Responsibilities <th> Collaborations
  * <tr><td> Represent failure to authenticate the client.
  * </table>
- *
- * @todo Will this alwyas have the same status code, NOT_ALLOWED 530? Might set this up to always use that code.
  */
 public class AMQAuthenticationException extends AMQException
 {
-    public AMQAuthenticationException(AMQConstant error, String msg, Throwable cause)
+    /** serialVersionUID */
+    private static final long serialVersionUID = 6045925435200184200L;
+
+    /**
+     * Creates an exception with an optional message and optional underlying cause.
+     *
+     * @param msg The exception message. May be null if not to be set.
+     * @param cause The underlying cause of the exception. May be null if not to be set.
+     */
+    public AMQAuthenticationException(String msg, Throwable cause)
     {
-        super(error, msg, cause);
+        super(AMQConstant.NOT_ALLOWED, ((msg == null) ? "Authentication error" : msg), cause);
+    }
+    
+    public AMQAuthenticationException(String msg) 
+    {
+        this(msg, null);
+    }
+    
+    public AMQAuthenticationException()
+    {
+        this(null);
     }
 }

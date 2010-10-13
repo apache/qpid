@@ -20,14 +20,14 @@
  */
 package org.apache.qpid.util;
 
-import junit.framework.TestCase;
-import org.apache.log4j.Logger;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
-public class LogMonitorTest extends TestCase
+import org.apache.log4j.Logger;
+import org.apache.qpid.test.utils.QpidTestCase;
+
+public class LogMonitorTest extends QpidTestCase
 {
 
     private LogMonitor _monitor;

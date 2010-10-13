@@ -77,7 +77,7 @@ public class ConnectionCloseMethodHandler implements StateAwareMethodListener<Co
                 {
                     _logger.info("Error :" + errorCode + ":" + Thread.currentThread().getName());
 
-                    error = new AMQAuthenticationException(errorCode, reason == null ? null : reason.toString(), null);
+                    error = new AMQAuthenticationException(reason == null ? null : reason.toString(), null);
                 }
                 else if (errorCode == AMQConstant.ACCESS_REFUSED)
                 {

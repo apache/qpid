@@ -47,7 +47,7 @@ import org.apache.qpid.jms.Session;
 /**
  * Test AMQ.
  */
-public class AMQTest extends TestCase implements ExceptionListener
+public class AMQTest extends QpidTestCase implements ExceptionListener
 {
 
     private final static String COMPRESSION_PROPNAME = "_MSGAPI_COMP";

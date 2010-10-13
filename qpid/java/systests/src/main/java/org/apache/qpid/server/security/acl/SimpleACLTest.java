@@ -131,7 +131,7 @@ public class SimpleACLTest extends AbstractACLTestCase
         }
         catch (JMSException e)
         {
-            // JMSException -> linkedException -> cause = AMQException (403 or 320)
+            // JMSException -> linkedException -> cause = AMQException (320 or 403)
             Exception linkedException = e.getLinkedException();
             assertNotNull("There was no linked exception", linkedException);
             Throwable cause = linkedException.getCause();

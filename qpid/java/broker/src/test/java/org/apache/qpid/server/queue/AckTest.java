@@ -309,7 +309,7 @@ public class AckTest extends InternalBrokerBaseCase
         }
     }
 
-            /**
+    /**
      * A regression fixing QPID-1136 showed this up
      *
      * @throws Exception
@@ -420,8 +420,4 @@ public class AckTest extends InternalBrokerBaseCase
     }
 
 */
-    public static junit.framework.Test suite()
-    {
-        return new junit.framework.TestSuite(AckTest.class);
-    }
 }

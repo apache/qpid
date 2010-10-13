@@ -79,21 +79,6 @@ public interface ManagedConnection
     Date getLastIoTime();
 
     /**
-     * Tells the total number of bytes written till now.
-     * @return number of bytes written.
-     *
-    @MBeanAttribute(name="WrittenBytes", description="The total number of bytes written till now")
-    Long getWrittenBytes();
-    */
-    /**
-     * Tells the total number of bytes read till now.
-     * @return number of bytes read.
-     *
-    @MBeanAttribute(name="ReadBytes", description="The total number of bytes read till now")
-    Long getReadBytes();
-    */
-
-    /**
      * Threshold high value for no of channels.  This is useful in setting notifications or
      * taking required action is there are more channels being created.
      * @return threshold limit for no of channels

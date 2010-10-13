@@ -21,11 +21,12 @@
 package org.apache.qpid.server.store;
 
 import java.io.File;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.framing.AMQShortString;
@@ -35,6 +36,7 @@ import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.framing.amqp_8_0.BasicConsumeBodyImpl;
 import org.apache.qpid.server.binding.Binding;
+import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.exchange.DirectExchange;
 import org.apache.qpid.server.exchange.Exchange;
@@ -55,6 +57,7 @@ import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.InternalBrokerBaseCase;
+import org.apache.qpid.server.util.TestApplicationRegistry;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.util.FileUtils;
 
@@ -66,43 +69,46 @@ import org.apache.qpid.util.FileUtils;
  */
 public class MessageStoreTest extends InternalBrokerBaseCase
 {
-    public static final int DEFAULT_PRIORTY_LEVEL = 5;
-    public static final String SELECTOR_VALUE = "Test = 'MST'";
-    public static final String LVQ_KEY = "MST-LVQ-KEY";
+    protected static final int DEFAULT_PRIORTY_LEVEL = 5;
+    protected static final String SELECTOR_VALUE = "Test = 'MST'";
+    protected static final String LVQ_KEY = "MST-LVQ-KEY";
 
-    AMQShortString nonDurableExchangeName = new AMQShortString("MST-NonDurableDirectExchange");
-    AMQShortString directExchangeName = new AMQShortString("MST-DirectExchange");
-    AMQShortString topicExchangeName = new AMQShortString("MST-TopicExchange");
+    protected static final AMQShortString nonDurableExchangeName = new AMQShortString("MST-NonDurableDirectExchange");
+    protected static final AMQShortString directExchangeName = new AMQShortString("MST-DirectExchange");
+    protected static final AMQShortString topicExchangeName = new AMQShortString("MST-TopicExchange");
 
-    AMQShortString durablePriorityTopicQueueName = new AMQShortString("MST-PriorityTopicQueue-Durable");
-    AMQShortString durableTopicQueueName = new AMQShortString("MST-TopicQueue-Durable");
-    AMQShortString priorityTopicQueueName = new AMQShortString("MST-PriorityTopicQueue");
-    AMQShortString topicQueueName = new AMQShortString("MST-TopicQueue");
+    protected static final AMQShortString durablePriorityTopicQueueName = new AMQShortString("MST-PriorityTopicQueue-Durable");
+    protected static final AMQShortString durableTopicQueueName = new AMQShortString("MST-TopicQueue-Durable");
+    protected static final AMQShortString priorityTopicQueueName = new AMQShortString("MST-PriorityTopicQueue");
+    protected static final AMQShortString topicQueueName = new AMQShortString("MST-TopicQueue");
 
-    AMQShortString durableExclusiveQueueName = new AMQShortString("MST-Queue-Durable-Exclusive");
-    AMQShortString durablePriorityQueueName = new AMQShortString("MST-PriorityQueue-Durable");
-    AMQShortString durableLastValueQueueName = new AMQShortString("MST-LastValueQueue-Durable");
-    AMQShortString durableQueueName = new AMQShortString("MST-Queue-Durable");
-    AMQShortString priorityQueueName = new AMQShortString("MST-PriorityQueue");
-    AMQShortString queueName = new AMQShortString("MST-Queue");
+    protected static final AMQShortString durableExclusiveQueueName = new AMQShortString("MST-Queue-Durable-Exclusive");
+    protected static final AMQShortString durablePriorityQueueName = new AMQShortString("MST-PriorityQueue-Durable");
+    protected static final AMQShortString durableLastValueQueueName = new AMQShortString("MST-LastValueQueue-Durable");
+    protected static final AMQShortString durableQueueName = new AMQShortString("MST-Queue-Durable");
+    protected static final AMQShortString priorityQueueName = new AMQShortString("MST-PriorityQueue");
+    protected static final AMQShortString queueName = new AMQShortString("MST-Queue");
 
-    AMQShortString directRouting = new AMQShortString("MST-direct");
-    AMQShortString topicRouting = new AMQShortString("MST-topic");
+    protected static final AMQShortString directRouting = new AMQShortString("MST-direct");
+    protected static final AMQShortString topicRouting = new AMQShortString("MST-topic");
 
-    AMQShortString queueOwner = new AMQShortString("MST");
-
-    protected PropertiesConfiguration _config;
-
+    protected static final AMQShortString queueOwner = new AMQShortString("MST");
+    
+    protected XMLConfiguration _xml = new XMLConfiguration();
+    protected ServerConfiguration _config;
+    
     public void setUp() throws Exception
     {
-        super.setUp();
-
         String storePath = System.getProperty("QPID_WORK") + "/" + getName();
         
-        _config = new PropertiesConfiguration();
-        _config.addProperty("store.class", getTestProfileMessageStoreClassName());
-        _config.addProperty("store.environment-path", storePath);
-
+        _xml.addProperty("store.class", getTestProfileMessageStoreClassName());
+        _xml.addProperty("store.environment-path", storePath);
+        
+        _config = new ServerConfiguration(_xml);
+        TestApplicationRegistry instance = new TestApplicationRegistry(_config);
+        ApplicationRegistry.initialise(instance);
+        _config.initialise();
+        
         cleanup(new File(storePath));
 
         reloadVirtualHost();
@@ -117,18 +123,19 @@ public class MessageStoreTest extends InternalBrokerBaseCase
             try
             {
                 getVirtualHost().close();
-                getVirtualHost().getApplicationRegistry().
-                getVirtualHostRegistry().unregisterVirtualHost(getVirtualHost());
+                getVirtualHost().getApplicationRegistry().getVirtualHostRegistry().unregisterVirtualHost(getVirtualHost());
             }
             catch (Exception e)
             {
+                e.printStackTrace();
+                _logger.error("reload vhost fail", e);
                 fail(e.getMessage());
             }
         }
 
         try
         {
-            setVirtualHost(ApplicationRegistry.getInstance().createVirtualHost(new VirtualHostConfiguration(getClass().getName(), _config)));
+            setVirtualHost(ApplicationRegistry.getInstance().createVirtualHost(new VirtualHostConfiguration(getClass().getName(), _xml)));
         }
         catch (Exception e)
         {
@@ -741,7 +748,7 @@ public class MessageStoreTest extends InternalBrokerBaseCase
 
         try
         {
-            exchange = type.newInstance(getVirtualHost(), name, durable, 0, false);
+            exchange = type.newInstance(getVirtualHost(), name, durable, 0, false, Collections.EMPTY_MAP);
         }
         catch (AMQException e)
         {

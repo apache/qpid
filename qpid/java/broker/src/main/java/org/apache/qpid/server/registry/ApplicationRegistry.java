@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.registry;
 
-import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -41,7 +40,6 @@ import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.logging.CompositeStartupMessageLogger;
 import org.apache.qpid.server.logging.Log4jMessageLogger;
 import org.apache.qpid.server.logging.RootMessageLogger;
-import org.apache.qpid.server.logging.AbstractRootMessageLogger;
 import org.apache.qpid.server.logging.SystemOutMessageLogger;
 import org.apache.qpid.server.logging.actors.BrokerActor;
 import org.apache.qpid.server.logging.actors.CurrentActor;
@@ -54,28 +52,26 @@ import org.apache.qpid.server.security.auth.database.ConfigurationFilePrincipalD
 import org.apache.qpid.server.security.auth.database.PrincipalDatabaseManager;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 import org.apache.qpid.server.security.auth.manager.PrincipalDatabaseAuthenticationManager;
-import org.apache.qpid.server.transport.QpidAcceptor;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
+import org.apache.qpid.transport.network.NetworkTransport;
 
 /**
  * An abstract application registry that provides access to configuration information and handles the
  * construction and caching of configurable objects.
- * <p/>
+ *
  * Subclasses should handle the construction of the "registered objects" such as the exchange registry.
  */
 public abstract class ApplicationRegistry implements IApplicationRegistry
 {
     protected static final Logger _logger = Logger.getLogger(ApplicationRegistry.class);
 
-    private static Map<Integer, IApplicationRegistry> _instanceMap = new HashMap<Integer, IApplicationRegistry>();
-
+    protected static IApplicationRegistry _instance = null;
+    
     protected final ServerConfiguration _configuration;
 
-    public static final int DEFAULT_INSTANCE = 1;
-
-    protected final Map<InetSocketAddress, QpidAcceptor> _acceptors = new HashMap<InetSocketAddress, QpidAcceptor>();
+    protected final Map<Integer, NetworkTransport> _transports = new HashMap<Integer, NetworkTransport>();
 
     protected ManagedObjectRegistry _managedObjectRegistry;
 
@@ -108,46 +104,45 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
     static
     {
         Runtime.getRuntime().addShutdownHook(new Thread(new ShutdownService()));
+        Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
+            public void uncaughtException(Thread t, Throwable e)
+            {
+                _logger.error(String.format("Caught exception trying to escape %s: %s", t.getName(), e.getMessage()), e);
+            }
+        });
     }
 
     private static class ShutdownService implements Runnable
     {
         public void run()
         {
-            removeAll();
+            remove();
         }
     }
 
     public static void initialise(IApplicationRegistry instance) throws Exception
     {
-        initialise(instance, DEFAULT_INSTANCE);
-    }
-
-    @SuppressWarnings("finally")
-    public static void initialise(IApplicationRegistry instance, int instanceID) throws Exception
-    {
         if (instance != null)
         {
-            _logger.info("Initialising Application Registry(" + instance + "):" + instanceID);
-            _instanceMap.put(instanceID, instance);
+            _logger.info("Initialising Application Registry(" + instance + ")");
+            _instance = instance;
 
             final ConfigStore store = ConfigStore.newInstance();
             store.setRoot(new SystemConfigImpl(store));
-            instance.setConfigStore(store);
+            _instance.setConfigStore(store);
 
-            BrokerConfig broker = new BrokerConfigAdapter(instance);
+            BrokerConfig broker = new BrokerConfigAdapter(_instance);
 
             SystemConfig system = (SystemConfig) store.getRoot();
             system.addBroker(broker);
-            instance.setBroker(broker);
+            _instance.setBroker(broker);
 
             try
             {
-                instance.initialise(instanceID);
+                _instance.initialise();
             }
             catch (Exception e)
             {
-                _instanceMap.remove(instanceID);
                 try
                 {
                     system.removeBroker(broker);
@@ -157,10 +152,20 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
                     throw e;
                 }
             }
+
+            // We have already loaded the BrokerMessages class by this point so we
+            // need to refresh the locale setting incase we had a different value in
+            // the configuration.
+            BrokerMessages.reload();
+
+            // instance.initialise() sets its own actor so we now need to set the actor
+            // for the remainder of the startup
+            CurrentActor.set(new BrokerActor(instance.getRootMessageLogger()));
+            CurrentActor.setDefault(new BrokerActor(instance.getRootMessageLogger()));
         }
         else
         {
-            remove(instanceID);
+            remove();
         }
     }
 
@@ -176,57 +181,31 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
     public static boolean isConfigured()
     {
-        return isConfigured(DEFAULT_INSTANCE);
+        return _instance != null;
     }
 
-    public static boolean isConfigured(int instanceID)
-    {
-        return _instanceMap.containsKey(instanceID);
-    }
-
-    /** Method to cleanly shutdown the default registry running in this JVM */
+    /** Method to cleanly shutdown the registry running in this JVM */
     public static void remove()
-    {
-        remove(DEFAULT_INSTANCE);
-    }
-
-    /**
-     * Method to cleanly shutdown specified registry running in this JVM
-     *
-     * @param instanceID the instance to shutdown
-     */
-    public static void remove(int instanceID)
     {
         try
         {
-            IApplicationRegistry instance = _instanceMap.get(instanceID);
-            if (instance != null)
+            if (_instance != null)
             {
                 if (_logger.isInfoEnabled())
                 {
-                    _logger.info("Shutting down ApplicationRegistry(" + instanceID + "):" + instance);
+                    _logger.info("Shutting down ApplicationRegistry(" + _instance + ")");
                 }
-                instance.close();
-                instance.getBroker().getSystem().removeBroker(instance.getBroker());
+                
+                _instance.close();
+                _instance.getBroker().getSystem().removeBroker(_instance.getBroker());
+                _instance.shutdown();
+                
+                _instance = null;
             }
         }
         catch (Exception e)
         {
-            _logger.error("Error shutting down Application Registry(" + instanceID + "): " + e, e);
-        }
-        finally
-        {
-            _instanceMap.remove(instanceID);
-        }
-    }
-
-    /** Method to cleanly shutdown all registries currently running in this JVM */
-    public static void removeAll()
-    {
-        Object[] keys = _instanceMap.keySet().toArray();
-        for (Object k : keys)
-        {
-            remove((Integer) k);
+            _logger.error("Error shutting down Application Registry(" + _instance + "): " + e.getMessage(), e);
         }
     }
 
@@ -251,11 +230,11 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
         _configuration.initialise();
     }
 
-    public void initialise(int instanceID) throws Exception
+    public void initialise() throws Exception
     {
         //Create the RootLogger to be used during broker operation
         _rootMessageLogger = new Log4jMessageLogger(_configuration);
-        _registryName = String.valueOf(instanceID);
+        _registryName = _brokerId.toString();
 
         //Create the composite (log4j+SystemOut MessageLogger to be used during startup
         RootMessageLogger[] messageLoggers = {new SystemOutMessageLogger(), _rootMessageLogger};
@@ -323,23 +302,13 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
     public static IApplicationRegistry getInstance()
     {
-        return getInstance(DEFAULT_INSTANCE);
-    }
-
-    public static IApplicationRegistry getInstance(int instanceID)
-    {
         synchronized (IApplicationRegistry.class)
         {
-            IApplicationRegistry instance = _instanceMap.get(instanceID);
-
-            if (instance == null)
+            if (!isConfigured())
             {
-                throw new IllegalStateException("Application Registry (" + instanceID + ") not created");
+                throw new IllegalStateException("Application Registry not configured");
             }
-            else
-            {
-                return instance;
-            }
+            return _instance;
         }
     }
 
@@ -362,6 +331,13 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
         }
     }
 
+    public void shutdown()
+    {
+        if (CurrentActor.get() != null)
+        {
+            CurrentActor.remove();
+        }
+    }
 
     public void close()
     {
@@ -376,39 +352,34 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
         //Shutdown virtualhosts
         close(_virtualHostRegistry);
 
-//      close(_accessManager);
-//
-//      close(_databaseManager);
-
-        close(_authenticationManager);
-
         close(_managedObjectRegistry);
 
         close(_qmfService);
 
         close(_pluginManager);
+        
+        //Shutdown Authentication manager
+        close(_authenticationManager);
 
         CurrentActor.get().message(BrokerMessages.STOPPED());
     }
 
     private void unbind()
     {
-        synchronized (_acceptors)
+        synchronized (_transports)
         {
-            for (InetSocketAddress bindAddress : _acceptors.keySet())
+            for (Integer port: _transports.keySet())
             {
-                QpidAcceptor acceptor = _acceptors.get(bindAddress);
-
+                NetworkTransport transport = _transports.get(port);
                 try
                 {
-                    acceptor.getNetworkDriver().close();
+                    transport.close();
                 }
                 catch (Throwable e)
                 {
                     _logger.error("Unable to close network driver due to:" + e.getMessage());
                 }
-
-               CurrentActor.get().message(BrokerMessages.SHUTTING_DOWN(acceptor.toString(), bindAddress.getPort()));
+                CurrentActor.get().message(BrokerMessages.SHUTTING_DOWN(transport.getAddress().toString(), port));
             }
         }
     }
@@ -418,11 +389,11 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
         return _configuration;
     }
 
-    public void addAcceptor(InetSocketAddress bindAddress, QpidAcceptor acceptor)
+    public void registerTransport(int port, NetworkTransport transport)
     {
-        synchronized (_acceptors)
+        synchronized (_transports)
         {
-            _acceptors.put(bindAddress, acceptor);
+            _transports.put(port, transport);
         }
     }
 

@@ -275,7 +275,7 @@ public abstract class AbstractACLTestCase extends QpidBrokerTestCase implements 
     public void check403Exception(Throwable t) throws Exception
     {
         assertNotNull("There was no linked exception", t);
-        assertTrue("Wrong linked exception type", t instanceof AMQException);
+        assertTrue("Wrong linked exception type: " + t.getClass().getName(), t instanceof AMQException);
         assertEquals("Incorrect error code received", 403, ((AMQException) t).getErrorCode().getCode());
     
         //use the latch to ensure the control thread waits long enough for the exception thread 

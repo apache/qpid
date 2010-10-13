@@ -20,10 +20,11 @@
  */
 package org.apache.qpid.systest;
 
-import org.apache.commons.configuration.ConfigurationException;
+import java.io.IOException;
 
 import javax.naming.NamingException;
-import java.io.IOException;
+
+import org.apache.commons.configuration.ConfigurationException;
 
 /**
  * This Topic test extends the Global queue test so it will run all the topic

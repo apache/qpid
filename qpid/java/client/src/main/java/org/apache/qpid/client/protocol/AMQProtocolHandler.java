@@ -56,42 +56,44 @@ import org.apache.qpid.framing.HeartbeatBody;
 import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.framing.ProtocolInitiation;
 import org.apache.qpid.framing.ProtocolVersion;
-import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.pool.Job;
 import org.apache.qpid.pool.ReferenceCountingExecutorService;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.protocol.AMQMethodListener;
-import org.apache.qpid.protocol.ProtocolEngine;
-import org.apache.qpid.transport.NetworkDriver;
-import org.apache.qpid.transport.network.io.IoTransport;
+import org.apache.qpid.transport.Receiver;
+import org.apache.qpid.transport.Sender;
+import org.apache.qpid.transport.network.NetworkConnection;
+import org.apache.qpid.transport.network.NetworkTransport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * AMQProtocolHandler is the client side protocol handler for AMQP, it handles all protocol events received from the
- * network by MINA. The primary purpose of AMQProtocolHandler is to translate the generic event model of MINA into the
+ * network by MINA.
+ * 
+ * The primary purpose of AMQProtocolHandler is to translate the generic event model of MINA into the
  * specific event model of AMQP, by revealing the type of the received events (from decoded data), and passing the
  * event on to more specific handlers for the type. In this sense, it channels the richer event model of AMQP,
  * expressed in terms of methods and so on, through the cruder, general purpose event model of MINA, expressed in
  * terms of "message received" and so on.
- *
- * <p/>There is a 1:1 mapping between an AMQProtocolHandler and an {@link AMQConnection}. The connection class is
+ * <p>
+ * There is a 1:1 mapping between an AMQProtocolHandler and an {@link AMQConnection}. The connection class is
  * exposed to the end user of the AMQP client API, and also implements the JMS Connection API, so provides the public
  * API calls through which an individual connection can be manipulated. This protocol handler talks to the network
  * through MINA, in a behind the scenes role; it is not an exposed part of the client API.
- *
- * <p/>There is a 1:many mapping between an AMQProtocolHandler and a set of {@link AMQSession}s. At the MINA level,
+ * <p>
+ * There is a 1:many mapping between an AMQProtocolHandler and a set of {@link AMQSession}s. At the MINA level,
  * there is one session per connection. At the AMQP level there can be many channels which are also called sessions in
  * JMS parlance. The {@link AMQSession}s are managed through an {@link AMQProtocolSession} instance. The protocol
  * session is similar to the MINA per-connection session, except that it can span the lifecycle of multiple MINA sessions
  * in the event of failover. See below for more information about this.
- *
- * <p/>Mina provides a session container that can be used to store/retrieve arbitrary objects as String named
+ * <p>
+ * Mina provides a session container that can be used to store/retrieve arbitrary objects as String named
  * attributes. A more convenient, type-safe, container for session data is provided in the form of
  * {@link AMQProtocolSession}.
- *
- * <p/>A common way to use MINA is to have a single instance of the event handler, and for MINA to pass in its session
+ * <p>
+ * A common way to use MINA is to have a single instance of the event handler, and for MINA to pass in its session
  * object with every event, and for per-connection data to be held in the MINA session (perhaps using a type-safe wrapper
  * as described above). This event handler is different, because dealing with failover complicates things. To the
  * end client of an AMQConnection, a failed over connection is still handled through the same connection instance, but
@@ -99,8 +101,8 @@ import org.slf4j.LoggerFactory;
  * be used to track the state of the fail-over process, because it is destroyed and a new one is created, as the old
  * connection is shutdown and a new one created. For this reason, an AMQProtocolHandler is created per AMQConnection
  * and the protocol session data is held outside of the MINA IOSession.
- *
- * <p/>This handler is responsibile for setting up the filter chain to filter all events for this handler through.
+ * <p>
+ * This handler is responsibile for setting up the filter chain to filter all events for this handler through.
  * The filter chain is set up as a stack of event handers that perform the following functions (working upwards from
  * the network traffic at the bottom), handing off incoming events to an asynchronous thread pool to do the work,
  * optionally handling secure sockets encoding/decoding, encoding/decoding the AMQP format itself.
@@ -118,7 +120,7 @@ import org.slf4j.LoggerFactory;
  * held per protocol handler, per protocol session, per network connection, per channel, in seperate classes, so
  * that lifecycles of the fields match lifecycles of their containing objects.
  */
-public class AMQProtocolHandler implements ProtocolEngine
+public class AMQProtocolHandler implements Receiver<java.nio.ByteBuffer>
 {
     /** Used for debugging. */
     private static final Logger _logger = LoggerFactory.getLogger(AMQProtocolHandler.class);
@@ -170,7 +172,9 @@ public class AMQProtocolHandler implements ProtocolEngine
     private Job _readJob;
     private Job _writeJob;
     private ReferenceCountingExecutorService _poolReference = ReferenceCountingExecutorService.getInstance();
-    private NetworkDriver _networkDriver;
+    private Sender<ByteBuffer> _sender;
+    private NetworkConnection _network;
+    private NetworkTransport _transport;
     private ProtocolVersion _suggestedProtocolVersion;
 
     private long _writtenBytes;
@@ -191,21 +195,6 @@ public class AMQProtocolHandler implements ProtocolEngine
         _writeJob = new Job(_poolReference, Job.MAX_JOB_EVENTS, false);
         _poolReference.acquireExecutorService();
         _failoverHandler = new FailoverHandler(this);
-    }
-
-    /**
-     * Called when we want to create a new IoTransport session
-     * @param brokerDetail
-     */
-    public void createIoTransportSession(BrokerDetails brokerDetail)
-    {
-        _protocolSession = new AMQProtocolSession(this, _connection);
-        _stateManager.setProtocolSession(_protocolSession);
-        IoTransport.connect_0_9(getProtocolSession(),
-                                brokerDetail.getHost(),
-                                brokerDetail.getPort(),
-                                brokerDetail.getBooleanProperty(BrokerDetails.OPTIONS_SSL));
-        _protocolSession.init();
     }
 
     /**
@@ -290,7 +279,7 @@ public class AMQProtocolHandler implements ProtocolEngine
         //  failover:
         HeartbeatDiagnostics.timeout();
         _logger.warn("Timed out while waiting for heartbeat from peer.");
-        _networkDriver.close();
+        _sender.close();
     }
 
     public void writerIdle()
@@ -312,7 +301,10 @@ public class AMQProtocolHandler implements ProtocolEngine
             {
                 _logger.info("Exception caught therefore going to attempt failover: " + cause, cause);
                 // this will attempt failover
-                _networkDriver.close();
+                if (_sender != null)
+                {
+	                _sender.close();
+                }
                 closed();
             }
             else
@@ -564,7 +556,7 @@ public class AMQProtocolHandler implements ProtocolEngine
         {
             public void run()
             {
-                _networkDriver.send(buf);
+                _sender.send(buf);
             }
         });
         if (PROTOCOL_DEBUG)
@@ -585,7 +577,7 @@ public class AMQProtocolHandler implements ProtocolEngine
 
         if (wait)
         {
-            _networkDriver.flush();
+            _sender.flush();
         }
     }
 
@@ -699,7 +691,7 @@ public class AMQProtocolHandler implements ProtocolEngine
             try
             {
                 syncWrite(frame, ConnectionCloseOkBody.class, timeout);
-                _networkDriver.close();
+                _sender.close();
                 closed();
             }
             catch (AMQTimeoutException e)
@@ -712,18 +704,6 @@ public class AMQProtocolHandler implements ProtocolEngine
             }
         }
         _poolReference.releaseExecutorService();
-    }
-
-    /** @return the number of bytes read from this protocol session */
-    public long getReadBytes()
-    {
-        return _readBytes;
-    }
-
-    /** @return the number of bytes written to this protocol session */
-    public long getWrittenBytes()
-    {
-        return _writtenBytes;
     }
 
     public void failover(String host, int port)
@@ -819,17 +799,19 @@ public class AMQProtocolHandler implements ProtocolEngine
 
     public SocketAddress getRemoteAddress()
     {
-        return _networkDriver.getRemoteAddress();
+        return _network.getRemoteAddress();
     }
 
     public SocketAddress getLocalAddress()
     {
-        return _networkDriver.getLocalAddress();
+        return _transport.getAddress();
     }
 
-    public void setNetworkDriver(NetworkDriver driver)
+    public void connect(NetworkTransport transport, NetworkConnection network)
     {
-        _networkDriver = driver;
+        _transport = transport;
+        _network = network;
+        _sender = network.getSender();
     }
 
     /** @param delay delay in seconds (not ms) */
@@ -837,15 +819,11 @@ public class AMQProtocolHandler implements ProtocolEngine
     {
         if (delay > 0)
         {
-            getNetworkDriver().setMaxWriteIdle(delay);
-            getNetworkDriver().setMaxReadIdle(HeartbeatConfig.CONFIG.getTimeout(delay));
+//        FIXME
+//            _sender.setMaxWriteIdle(delay);
+//            _sender.setMaxReadIdle(HeartbeatConfig.CONFIG.getTimeout(delay));
             HeartbeatDiagnostics.init(delay, HeartbeatConfig.CONFIG.getTimeout(delay));
         }
-    }
-
-    public NetworkDriver getNetworkDriver()
-    {
-        return _networkDriver;
     }
 
     public ProtocolVersion getSuggestedProtocolVersion()

@@ -29,6 +29,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -303,12 +304,8 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     protected final Lock _subscriberDetails = new ReentrantLock(true);
     protected final Lock _subscriberAccess = new ReentrantLock(true);
 
-    /**
-     * Used to hold incoming messages.
-     *
-     * @todo Weaken the type once {@link FlowControllingBlockingQueue} implements Queue.
-     */
-    protected final FlowControllingBlockingQueue _queue;
+    /** Used to hold incoming messages. */
+    protected final BlockingQueue<Dispatchable> _queue;
 
     /** Holds the highest received delivery tag. */
     private final AtomicLong _highestDeliveryTag = new AtomicLong(-1);
@@ -463,8 +460,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
         if (_acknowledgeMode == NO_ACKNOWLEDGE)
         {
-            _queue =
-                    new FlowControllingBlockingQueue(_prefetchHighMark, _prefetchLowMark,
+            _queue = new FlowControllingBlockingQueue<Dispatchable>(_prefetchHighMark, _prefetchLowMark,
                                                      new FlowControllingBlockingQueue.ThresholdListener()
                                                      {
                                                          private final AtomicBoolean _suspendState = new AtomicBoolean();
@@ -515,7 +511,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         }
         else
         {
-            _queue = new FlowControllingBlockingQueue(_prefetchHighMark, null);
+            _queue = new FlowControllingBlockingQueue<Dispatchable>();
         }
         
         // Add creation logging to tie in with the existing close logging
@@ -704,16 +700,16 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
             // Arrays.asList(stackTrace).subList(3, stackTrace.length - 1));
         }
 
-        // Ensure we only try and close an open session.
-        if (!_closed.getAndSet(true))
+        // We must close down all producers and consumers in an orderly fashion. This is the only method
+        // that can be called from a different thread of control from the one controlling the session.
+        synchronized (getFailoverMutex())
         {
-            _closing.set(true);
-            synchronized (getFailoverMutex())
-            {
-                // We must close down all producers and consumers in an orderly fashion. This is the only method
-                // that can be called from a different thread of control from the one controlling the session.
-                synchronized (_messageDeliveryLock)
-                {
+	        // Ensure we only try and close an open session.
+	        if (!_closed.getAndSet(true))
+	        {
+	            _closing.set(true);
+		        synchronized (_messageDeliveryLock)
+		        {
                     // we pass null since this is not an error case
                     closeProducersAndConsumers(null);
 
@@ -1366,21 +1362,11 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
     public StreamMessage createStreamMessage() throws JMSException
     {
-        // This method needs to be improved. Throwables only arrive here from the mina : exceptionRecived
-        // calls through connection.closeAllSessions which is also called by the public connection.close()
-        // with a null cause
-        // When we are closing the Session due to a protocol session error we simply create a new AMQException
-        // with the correct error code and text this is cleary WRONG as the instanceof check below will fail.
-        // We need to determin here if the connection should be
+        checkNotClosed();
 
-        synchronized (getFailoverMutex())
-        {
-            checkNotClosed();
-
-            JMSStreamMessage msg = new JMSStreamMessage(getMessageDelegateFactory());
-            msg.setAMQSession(this);
-            return msg;
-        }
+        JMSStreamMessage msg = new JMSStreamMessage(getMessageDelegateFactory());
+        msg.setAMQSession(this);
+        return msg;
     }
 
     /**
@@ -1454,14 +1440,11 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
     public TextMessage createTextMessage() throws JMSException
     {
-        synchronized (getFailoverMutex())
-        {
-            checkNotClosed();
+        checkNotClosed();
 
-            JMSTextMessage msg = new JMSTextMessage(getMessageDelegateFactory());
-            msg.setAMQSession(this);
-            return msg;
-        }
+        JMSTextMessage msg = new JMSTextMessage(getMessageDelegateFactory());
+        msg.setAMQSession(this);
+        return msg;
     }
 
     protected Object getFailoverMutex()
@@ -2268,7 +2251,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
             _dispatcher = new Dispatcher();
             try
             {
-                _dispatcherThread = Threading.getThreadFactory().createThread(_dispatcher);
+                _dispatcherThread = Threading.getThreadFactory().newThread(_dispatcher);
 
             }
             catch(Exception e)
@@ -2918,7 +2901,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     {
         ArrayList<C> consumers = new ArrayList<C>(_consumers.values());
         _consumers.clear();
-
+        _logger.info(MessageFormat.format("Resubscribing consumers = {0} consumers.size={1}", consumers, consumers.size())); // FIXME: removeKey
         for (C consumer : consumers)
         {
             consumer.failedOverPre();

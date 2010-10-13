@@ -31,10 +31,9 @@ import javax.security.auth.Subject;
 
 import org.apache.qpid.server.security.auth.database.Base64MD5PasswordFilePrincipalDatabase;
 import org.apache.qpid.server.security.auth.database.PlainPasswordFilePrincipalDatabase;
+import org.apache.qpid.test.utils.QpidTestCase;
 
-import junit.framework.TestCase;
-
-public class RMIPasswordAuthenticatorTest extends TestCase
+public class RMIPasswordAuthenticatorTest extends QpidTestCase
 {
     private final String USERNAME = "guest";
     private final String PASSWORD = "guest";

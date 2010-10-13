@@ -46,16 +46,14 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Session
- *
- * @author Rafael H. Schloming
  */
-
 public class Session extends SessionInvoker
 {
-
     private static final Logger log = Logger.get(Session.class);
 
     public enum State { NEW, DETACHED, RESUMING, OPEN, CLOSING, CLOSED }
@@ -278,10 +276,7 @@ public class Session extends SessionInvoker
         {
             for (Method m : commands)
             {
-                if (m != null)
-                {
-                    log.debug("%s", m);
-                }
+                log.debug("%s", (m == null ? "null" : m.toString()));
             }
         }
     }
@@ -489,7 +484,15 @@ public class Session extends SessionInvoker
 
     void received(Method m)
     {
-        m.delegate(this, delegate);
+        try
+        {
+            m.delegate(this, delegate);
+        }
+        catch (RuntimeException re)
+        {
+            closed();
+            throw re;
+        }
     }
 
     private void send(Method m)
@@ -727,6 +730,7 @@ public class Session extends SessionInvoker
 
             if (needSync && lt(maxComplete, point))
             {
+		        log.debug("%s executiuonSync", this);
                 executionSync(SYNC);
             }
 
@@ -793,12 +797,18 @@ public class Session extends SessionInvoker
         }
     }
 
-    private ConnectionClose close = null;
+    private ConnectionClose _close = null;
 
-    void closeCode(ConnectionClose close)
+    public void closeCode(ConnectionClose close)
     {
-        this.close = close;
+        _close = close;
     }
+    
+    public ConnectionClose getCloseCode()
+    {
+        return _close;
+    }
+    
 
     ExecutionException getException()
     {
@@ -825,7 +835,7 @@ public class Session extends SessionInvoker
 
     private class ResultFuture<T> implements Future<T>
     {
-
+        private Lock lock = new ReentrantLock();
         private final Class<T> klass;
         private T result;
 
@@ -854,7 +864,7 @@ public class Session extends SessionInvoker
                     w.await();
                 }
             }
-
+            
             if (isDone())
             {
                 return result;

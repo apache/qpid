@@ -55,7 +55,6 @@ public class SimpleAMQQueueTest extends InternalBrokerBaseCase
 {
 
     protected SimpleAMQQueue _queue;
-    protected VirtualHost _virtualHost;
     protected TestableMemoryMessageStore _store = new TestableMemoryMessageStore();
     protected AMQShortString _qname = new AMQShortString("qname");
     protected AMQShortString _owner = new AMQShortString("owner");
@@ -97,22 +96,17 @@ public class SimpleAMQQueueTest extends InternalBrokerBaseCase
     public void setUp() throws Exception
     {
         super.setUp();
-        //Create Application Registry for test
-        ApplicationRegistry applicationRegistry = (ApplicationRegistry)ApplicationRegistry.getInstance();
 
-        PropertiesConfiguration env = new PropertiesConfiguration();
-        _virtualHost = new VirtualHostImpl(new VirtualHostConfiguration(getClass().getName(), env), _store);
-        applicationRegistry.getVirtualHostRegistry().registerVirtualHost(_virtualHost);
+        _queue = (SimpleAMQQueue) AMQQueueFactory.createAMQQueueImpl(_qname, false, _owner, false, false, getVirtualHost(), _arguments);
 
-        _queue = (SimpleAMQQueue) AMQQueueFactory.createAMQQueueImpl(_qname, false, _owner, false, false, _virtualHost, _arguments);
-
-        _exchange = (DirectExchange)_virtualHost.getExchangeRegistry().getExchange(ExchangeDefaults.DIRECT_EXCHANGE_NAME);
+        _exchange = (DirectExchange) getVirtualHost().getExchangeRegistry().getExchange(ExchangeDefaults.DIRECT_EXCHANGE_NAME);
     }
 
     @Override
     public void tearDown() throws Exception
     {
         _queue.stop();
+        
         super.tearDown();
     }
 
@@ -120,7 +114,7 @@ public class SimpleAMQQueueTest extends InternalBrokerBaseCase
     {
         _queue.stop();
         try {
-            _queue = (SimpleAMQQueue) AMQQueueFactory.createAMQQueueImpl(null, false, _owner, false, false, _virtualHost, _arguments );
+            _queue = (SimpleAMQQueue) AMQQueueFactory.createAMQQueueImpl(null, false, _owner, false, false, getVirtualHost(), _arguments );
             assertNull("Queue was created", _queue);
         }
         catch (IllegalArgumentException e)
@@ -140,18 +134,18 @@ public class SimpleAMQQueueTest extends InternalBrokerBaseCase
         }
 
         _queue = (SimpleAMQQueue) AMQQueueFactory.createAMQQueueImpl(_qname, false, _owner, false,
-                                                                false, _virtualHost, _arguments);
+                                                                false, getVirtualHost(), _arguments);
         assertNotNull("Queue was not created", _queue);
     }
 
     public void testGetVirtualHost()
     {
-        assertEquals("Virtual host was wrong", _virtualHost, _queue.getVirtualHost());
+        assertEquals("Virtual host was wrong", getVirtualHost(), _queue.getVirtualHost());
     }
 
     public void testBinding() throws AMQSecurityException, AMQInternalException
     {
-        _virtualHost.getBindingFactory().addBinding(String.valueOf(_routingKey), _queue, _exchange, Collections.EMPTY_MAP);
+        getVirtualHost().getBindingFactory().addBinding(String.valueOf(_routingKey), _queue, _exchange, Collections.EMPTY_MAP);
 
         assertTrue("Routing key was not bound",
                         _exchange.isBound(_routingKey));
@@ -164,7 +158,7 @@ public class SimpleAMQQueueTest extends InternalBrokerBaseCase
         assertEquals("Wrong exchange bound", _exchange,
                 _queue.getBindings().get(0).getExchange());
 
-        _virtualHost.getBindingFactory().removeBinding(String.valueOf(_routingKey), _queue, _exchange, Collections.EMPTY_MAP);
+        getVirtualHost().getBindingFactory().removeBinding(String.valueOf(_routingKey), _queue, _exchange, Collections.EMPTY_MAP);
         assertFalse("Routing key was still bound",
                 _exchange.isBound(_routingKey));
 
@@ -255,7 +249,7 @@ public class SimpleAMQQueueTest extends InternalBrokerBaseCase
     public void testAutoDeleteQueue() throws Exception
     {
        _queue.stop();
-       _queue = new SimpleAMQQueue(_qname, false, null, true, false, _virtualHost, Collections.EMPTY_MAP);
+       _queue = new SimpleAMQQueue(_qname, false, null, true, false, getVirtualHost(), Collections.EMPTY_MAP);
        _queue.setDeleteOnNoConsumers(true);
        _queue.registerSubscription(_subscription, false);
        AMQMessage message = createMessage(new Long(25));

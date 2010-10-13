@@ -24,15 +24,15 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.Set;
 
-import junit.framework.TestCase;
-import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.queue.MockAMQQueue;
+import org.apache.qpid.test.utils.QpidTestCase;
 
 /**
+ * HeadersBindingTest
  */
-public class HeadersBindingTest extends TestCase
+public class HeadersBindingTest extends QpidTestCase
 {
 
     private class MockHeader implements AMQMessageHeader

@@ -21,15 +21,14 @@
 package org.apache.qpid.management.domain.model;
 
 import org.apache.qpid.management.configuration.Configurator;
-
-import junit.framework.TestCase;
+import org.apache.qpid.test.utils.QpidTestCase;
 
 /**
  * Layer supertype for all domain model related test cases.
  * 
  * @author Andrea Gazzarini
  */
-public abstract class BaseDomainModelTestCase extends TestCase
+public abstract class BaseDomainModelTestCase extends QpidTestCase
 {
     /**
      * Set up fixture for this test case.

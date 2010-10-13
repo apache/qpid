@@ -23,18 +23,18 @@ package org.apache.qpid.transport.network.security.sasl;
 
 import java.nio.ByteBuffer;
 
-import javax.security.sasl.SaslClient;
 import javax.security.sasl.SaslException;
 
 import org.apache.qpid.transport.Receiver;
 import org.apache.qpid.transport.SenderException;
-import org.apache.qpid.transport.util.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public class SASLReceiver extends SASLEncryptor implements Receiver<ByteBuffer> {
-
+public class SASLReceiver extends SASLEncryptor implements Receiver<ByteBuffer>
+{
     Receiver<ByteBuffer> delegate;
     private byte[] netData;
-    private static final Logger log = Logger.get(SASLReceiver.class);
+    private static final Logger _log = LoggerFactory.getLogger(SASLReceiver.class);
     
     public SASLReceiver(Receiver<ByteBuffer> delegate)
     {
@@ -80,7 +80,7 @@ public class SASLReceiver extends SASLEncryptor implements Receiver<ByteBuffer> 
     public void securityLayerEstablished()
     {
         netData = new byte[recvBuffSize];
-        log.debug("SASL Security Layer Established");
+        _log.debug("SASL Security Layer Established");
     }
 
 }

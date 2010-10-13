@@ -85,6 +85,7 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
 
     /**
      * Returns an array of the exchange types available for creation.
+     * 
      * @since Qpid JMX API 1.3
      * @throws IOException
      */
@@ -101,6 +102,7 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
 
     /**
      * Returns a list containing the names of the attributes available for the Queue mbeans.
+     * 
      * @since Qpid JMX API 1.3
      * @throws IOException
      */
@@ -111,7 +113,8 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
 
     /**
      * Returns a List of Object Lists containing the requested attribute values (in the same sequence requested) for each queue in the virtualhost.
-     * If a particular attribute cant be found or raises an mbean/reflection exception whilst being gathered its value is substituted with the String "-".
+     * If a particular attribute cant be found or raises an mbean/reflection exception whilst being gathered its value is substituted with the String "-"
+     * 
      * @since Qpid JMX API 1.3
      * @throws IOException
      */
@@ -175,7 +178,7 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
                 if (exchange == null)
                 {
                     exchange = _exchangeFactory.createExchange(new AMQShortString(exchangeName), new AMQShortString(type),
-                                                               durable, false, 0);
+                                                               durable, false, Collections.<String, Object>emptyMap(), 0);
                     _exchangeRegistry.registerExchange(exchange);
                     if (durable)
                     {

@@ -156,10 +156,11 @@ public class ManagementExchange implements Exchange, QMFService.Listener
                                             AMQShortString name,
                                             boolean durable,
                                             int ticket,
-                                            boolean autoDelete) throws AMQException
+                                            boolean autoDelete,
+                                            Map<String, Object> arguments) throws AMQException
         {
             ManagementExchange exch = new ManagementExchange();
-            exch.initialise(host, name, durable, ticket, autoDelete);
+            exch.initialise(host, name, durable, ticket, autoDelete, arguments);
             return exch;
         }
 
@@ -180,7 +181,7 @@ public class ManagementExchange implements Exchange, QMFService.Listener
         return QPID_MANAGEMENT_TYPE;
     }
 
-    public void initialise(VirtualHost host, AMQShortString name, boolean durable, int ticket, boolean autoDelete)
+    public void initialise(VirtualHost host, AMQShortString name, boolean durable, int ticket, boolean autoDelete, Map<String, Object> arguments)
             throws AMQException
     {
         if(!QPID_MANAGEMENT.equals(name))

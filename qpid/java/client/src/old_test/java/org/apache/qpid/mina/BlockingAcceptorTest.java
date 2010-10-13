@@ -30,7 +30,7 @@ import java.net.Socket;
 
 import junit.framework.TestCase;
 
-public class BlockingAcceptorTest extends TestCase
+public class BlockingAcceptorTest extends QpidTestCase
 {
     private static final Logger _logger = Logger.getLogger(BlockingAcceptorTest.class);
 

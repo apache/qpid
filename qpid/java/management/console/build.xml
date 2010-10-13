@@ -20,6 +20,8 @@
  -->
 <project name="QMF Console" default="build">
 
+    <property name="module.test.depends" value="common/test" />
+
     <property name="module.depends" value="common client"/>
 
     <import file="../../module.xml"/>

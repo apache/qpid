@@ -20,18 +20,23 @@
  */
 package org.apache.qpid.server.connection;
 
-import org.apache.qpid.server.protocol.AMQProtocolSession;
+import java.util.List;
+
 import org.apache.qpid.AMQException;
+import org.apache.qpid.protocol.AMQConstant;
+import org.apache.qpid.server.protocol.AMQConnectionModel;
 
 public interface IConnectionRegistry
 {
-
     public void initialise();
 
     public void close() throws AMQException;
+    
+    public void closeConnection(AMQConnectionModel connection, AMQConstant cause, String message);
+    
+    public List<AMQConnectionModel> getConnections();
 
-    public void registerConnection(AMQProtocolSession connnection);
+    public void registerConnection(AMQConnectionModel connnection);
 
-    public void deregisterConnection(AMQProtocolSession connnection);
-
+    public void deregisterConnection(AMQConnectionModel connnection);
 }

@@ -21,10 +21,9 @@
 package org.apache.qpid.client;
 
 import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.test.utils.QpidTestCase;
 
-import junit.framework.TestCase;
-
-public class AMQQueueTest extends TestCase
+public class AMQQueueTest extends QpidTestCase
 {
     AMQShortString exchange = new AMQShortString("test.exchange");
     AMQShortString routingkey = new AMQShortString("test-route");

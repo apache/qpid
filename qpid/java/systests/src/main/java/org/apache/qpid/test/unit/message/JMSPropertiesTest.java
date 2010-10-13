@@ -57,16 +57,6 @@ public class JMSPropertiesTest extends QpidBrokerTestCase
     protected static final String NULL_OBJECT_PROPERTY = "NullObject";
     protected static final String INVALID_OBJECT_PROPERTY = "InvalidObject";
 
-    protected void setUp() throws Exception
-    {
-        super.setUp();
-    }
-
-    protected void tearDown() throws Exception
-    {
-        super.tearDown();
-    }
-
     public void testJMSProperties() throws Exception
     {
         AMQConnection con = (AMQConnection) getConnection("guest", "guest");
@@ -125,7 +115,7 @@ public class JMSPropertiesTest extends QpidBrokerTestCase
         // get message and check JMS properties
         ObjectMessage rm = (ObjectMessage) consumer.receive(2000);
         assertNotNull(rm);
-
+        
         assertEquals("JMS Correlation ID mismatch", sentMsg.getJMSCorrelationID(), rm.getJMSCorrelationID());
         // TODO: Commented out as always overwritten by send delivery mode value - prob should not set in conversion
         // assertEquals("JMS Delivery Mode mismatch",sentMsg.getJMSDeliveryMode(),rm.getJMSDeliveryMode());
@@ -133,10 +123,6 @@ public class JMSPropertiesTest extends QpidBrokerTestCase
         assertEquals("JMS Reply To mismatch", sentMsg.getJMSReplyTo(), rm.getJMSReplyTo());
         assertTrue("JMSMessageID Does not start ID:", rm.getJMSMessageID().startsWith("ID:"));
         assertEquals("JMS Default priority should be 4",Message.DEFAULT_PRIORITY,rm.getJMSPriority());   
-        
-        //Validate that the JMSX values are correct
-        assertEquals("JMSXGroupID is not as expected:", JMSXGroupID_VALUE, rm.getStringProperty("JMSXGroupID"));
-        assertEquals("JMSXGroupSeq is not as expected:", JMSXGroupSeq_VALUE, rm.getIntProperty("JMSXGroupSeq"));
 
         boolean JMSXGroupID_Available = false;
         boolean JMSXGroupSeq_Available = false;
@@ -158,7 +144,11 @@ public class JMSPropertiesTest extends QpidBrokerTestCase
         assertTrue("JMSXGroupSeq not available.",JMSXGroupSeq_Available);
 
         // Check that the NULL_OBJECT_PROPERTY was not set or transmitted.
-        assertFalse(NULL_OBJECT_PROPERTY + " was not set.", rm.propertyExists(NULL_OBJECT_PROPERTY));
+        assertFalse(NULL_OBJECT_PROPERTY + " was set.", rm.propertyExists(NULL_OBJECT_PROPERTY));
+
+        //Validate that the JMSX values are correct
+        assertEquals("JMSXGroupID is not as expected:", JMSXGroupID_VALUE, rm.getStringProperty("JMSXGroupID"));
+        assertEquals("JMSXGroupSeq is not as expected:", JMSXGroupSeq_VALUE, rm.getIntProperty("JMSXGroupSeq"));
 
         con.close();
     }

@@ -23,14 +23,13 @@ package org.apache.qpid.tools;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.Executors;
 
 import javax.jms.BytesMessage;
 import javax.jms.DeliveryMode;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
-
-import org.apache.qpid.thread.Threading;
 
 /**
  * PerfProducer sends an x no of messages in warmup mode and wait for a confirmation
@@ -251,7 +250,7 @@ public class PerfProducer extends PerfBase
         Thread t;
         try
         {
-            t = Threading.getThreadFactory().createThread(r);                      
+            t = Executors.defaultThreadFactory().newThread(r);                      
         }
         catch(Exception e)
         {

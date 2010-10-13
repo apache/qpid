@@ -61,10 +61,11 @@ public class TopicExchange extends AbstractExchange
                                             AMQShortString name,
                                             boolean durable,
                                             int ticket,
-                                            boolean autoDelete) throws AMQException
+                                            boolean autoDelete,
+                                            Map<String, Object> arguments) throws AMQException
         {
             TopicExchange exch = new TopicExchange();
-            exch.initialise(host, name, durable, ticket, autoDelete);
+            exch.initialise(host, name, durable, ticket, autoDelete, arguments);
             return exch;
         }
 

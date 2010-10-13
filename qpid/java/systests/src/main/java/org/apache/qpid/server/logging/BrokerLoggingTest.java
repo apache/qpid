@@ -20,15 +20,15 @@
 */
 package org.apache.qpid.server.logging;
 
-import junit.framework.AssertionFailedError;
-import org.apache.qpid.server.Main;
-import org.apache.qpid.transport.ConnectionException;
-import org.apache.qpid.util.LogMonitor;
-
-import java.io.File;
 import java.io.IOException;
 import java.net.Socket;
 import java.util.List;
+
+import junit.framework.AssertionFailedError;
+
+import org.apache.qpid.BrokerOptions;
+import org.apache.qpid.transport.ConnectionException;
+import org.apache.qpid.util.LogMonitor;
 
 /**
  * Broker Test Suite
@@ -203,7 +203,7 @@ public class BrokerLoggingTest extends AbstractTestLogging
                                  1, findMatches(TESTID).size());
 
                     //3
-                    String defaultLog4j = _configFile.getParent() + "/" + Main.DEFAULT_LOG_CONFIG_FILENAME;
+                    String defaultLog4j = _configFile.getParent() + "/" + BrokerOptions.DEFAULT_LOG_CONFIG_FILENAME;
                     assertTrue("Log4j file(" + defaultLog4j + ") details not correctly logged:" + getMessageString(log),
                                getMessageString(log).endsWith(defaultLog4j));
 

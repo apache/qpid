@@ -21,7 +21,7 @@
 <project name="QMan - Qpid JMX / WS-DM Adapter" default="build">
 
     <property name="module.depends" value="client common"/>
-    <property name="module.test.depends" value="client common"/>
+    <property name="module.test.depends" value="client common common/test"/>
 	
 	<import file="../../module.xml"/>
 
@@ -137,6 +137,7 @@
 		
 	<path id="module.test.path">
 		<pathelement path="${module.test.classes}" />
+	    <pathelement path="${module.test.depends.path}"/>
 	    <path refid="module.test.libs"/>
 		<fileset dir="${build}/lib">
 	    	<include name="qpid-client-*.jar"/>

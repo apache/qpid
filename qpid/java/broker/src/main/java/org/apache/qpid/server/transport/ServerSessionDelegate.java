@@ -234,7 +234,7 @@ public class ServerSessionDelegate extends SessionDelegate
                     FlowCreditManager_0_10 creditManager = new WindowCreditManager(0L,0L);
                     
                     FilterManager filterManager = null;
-                    try 
+                    try
                     {
                         filterManager = FilterManagerFactory.createManager(method.getArguments());
                     } 
@@ -371,7 +371,6 @@ public class ServerSessionDelegate extends SessionDelegate
         }
 
         ssn.processed(xfr);
-
     }
 
     @Override
@@ -383,6 +382,8 @@ public class ServerSessionDelegate extends SessionDelegate
 
         if(sub == null)
         {
+            // FIXME this causes problems during failover if a queue browser is open and is then closed (with unbrowsed messages)
+            //  See QueueBrowser*Test methods testFailoverWithQueueBrowser and testFailoverAsQueueBrowserCreated
             exception(session, method, ExecutionErrorCode.NOT_FOUND, "not-found: destination '"+destination+"'");
         }
         else
@@ -482,8 +483,8 @@ public class ServerSessionDelegate extends SessionDelegate
                     exchange = exchangeFactory.createExchange(method.getExchange(),
                                                               method.getType(),
                                                               method.getDurable(),
-                                                              method.getAutoDelete());
-
+                                                              method.getAutoDelete(),
+                                                              method.getArguments());
                     String alternateExchangeName = method.getAlternateExchange();
                     if(alternateExchangeName != null && alternateExchangeName.length() != 0)
                     {
@@ -496,7 +497,6 @@ public class ServerSessionDelegate extends SessionDelegate
                         DurableConfigurationStore store = virtualHost.getDurableConfigurationStore();
                         store.createExchange(exchange);
                     }
-
                     exchangeRegistry.registerExchange(exchange);
                 }
                 catch(AMQUnknownExchangeType e)
@@ -645,6 +645,7 @@ public class ServerSessionDelegate extends SessionDelegate
             result.setDurable(exchange.isDurable());
             result.setType(exchange.getTypeShortString().toString());
             result.setNotFound(false);
+            result.setArguments(exchange.getArguments());
         }
         else
         {
@@ -893,11 +894,9 @@ public class ServerSessionDelegate extends SessionDelegate
 
         synchronized (queueRegistry)
         {
-
             if (((queue = queueRegistry.getQueue(queueName)) == null))
             {
-
-                if (method.getPassive())
+                if (method.hasPassive() && method.getPassive())
                 {
                     String description = "Queue: " + queueName + " not found on VirtualHost(" + virtualHost + ").";
                     ExecutionErrorCode errorCode = ExecutionErrorCode.NOT_FOUND;
@@ -910,21 +909,25 @@ public class ServerSessionDelegate extends SessionDelegate
                 {
                     try
                     {
-                        queue = createQueue(queueName, method, virtualHost, (ServerSession)session);
-                        if(method.getExclusive())
+                        final ServerSession s = (ServerSession) session;
+                        final AMQQueue q = createQueue(queueName, method, virtualHost, s);
+                        
+                        if (method.hasExclusive() && method.getExclusive())
                         {
-                            queue.setExclusive(true);
+                            q.setExclusive(true);
+                            q.setExclusiveOwningSession(s);
+                            q.setPrincipalHolder(s);
                         }
                         else if(method.getAutoDelete())
                         {
-                            queue.setDeleteOnNoConsumers(true);
+                            q.setDeleteOnNoConsumers(true);
                         }
 
                         final String alternateExchangeName = method.getAlternateExchange();
                         if(alternateExchangeName != null && alternateExchangeName.length() != 0)
                         {
                             Exchange alternate = getExchange(session, alternateExchangeName);
-                            queue.setAlternateExchange(alternate);
+                            q.setAlternateExchange(alternate);
                         }
 
                         if(method.hasArguments()  && method.getArguments() != null)
@@ -934,13 +937,13 @@ public class ServerSessionDelegate extends SessionDelegate
                                 Object no_local = method.getArguments().get("no-local");
                                 if(no_local instanceof Boolean && ((Boolean)no_local))
                                 {
-                                    queue.setNoLocal(true);
+                                    q.setNoLocal(true);
                                 }
                             }
                         }
 
 
-                        if (queue.isDurable() && !queue.isAutoDelete())
+                        if (q.isDurable() && !q.isAutoDelete())
                         {
                             if(method.hasArguments() && method.getArguments() != null)
                             {
@@ -950,79 +953,72 @@ public class ServerSessionDelegate extends SessionDelegate
                                 {
                                     ftArgs.put(new AMQShortString(entry.getKey()), entry.getValue());
                                 }
-                                store.createQueue(queue, ftArgs);
+                                store.createQueue(q, ftArgs);
                             }
                             else
                             {
-                                store.createQueue(queue);
+                                store.createQueue(q);
                             }
                         }
-                        queueRegistry.registerQueue(queue);
+                        queueRegistry.registerQueue(q);
                         boolean autoRegister = ApplicationRegistry.getInstance().getConfiguration().getQueueAutoRegister();
 
                         if (autoRegister)
                         {
-
                             ExchangeRegistry exchangeRegistry = getExchangeRegistry(session);
 
                             Exchange defaultExchange = exchangeRegistry.getDefaultExchange();
 
-                            virtualHost.getBindingFactory().addBinding(queueName, queue, defaultExchange, null);
-
+                            virtualHost.getBindingFactory().addBinding(queueName, q, defaultExchange, null);
                         }
 
-                        if(method.hasAutoDelete()
-                           && method.getAutoDelete()
-                           && method.hasExclusive()
-                           && method.getExclusive())
+                        if (method.hasAutoDelete() && method.getAutoDelete() &&
+                                method.hasExclusive() && method.getExclusive())
                         {
-                            final AMQQueue q = queue;
                             final ServerSession.Task deleteQueueTask = new ServerSession.Task()
+                            {
+                                public void doTask(ServerSession session)
+                                {
+                                    try
+                                    {
+                                        q.delete();
+                                    }
+                                    catch (AMQException e)
+                                    {
+                                        exception(session, method, e, "Cannot delete '" + method.getQueue());
+                                    }
+                                }
+                            };
+                            s.addSessionCloseTask(deleteQueueTask);
+                            q.addQueueDeleteTask(new AMQQueue.Task()
+                            {
+                                public void doTask(AMQQueue queue) throws AMQException
+                                {
+                                    s.removeSessionCloseTask(deleteQueueTask);
+                                }
+                            });
+                        }
+                        else if (method.hasExclusive() && method.getExclusive())
+                        {                            
+	                        if (!method.getDurable())
+	                        {
+                                final ServerSession.Task removeExclusive = new ServerSession.Task()
                                 {
                                     public void doTask(ServerSession session)
                                     {
-                                        try
-                                        {
-                                            q.delete();
-                                        }
-                                        catch (AMQException e)
-                                        {
-                                            exception(session, method, e, "Cannot delete '" + method.getQueue());
-                                        }
+                                        q.setPrincipalHolder(null);
+                                        q.setExclusiveOwningSession(null);
                                     }
                                 };
-                            final ServerSession s = (ServerSession) session;
-                            s.addSessionCloseTask(deleteQueueTask);
-                            queue.addQueueDeleteTask(new AMQQueue.Task()
+                                s.addSessionCloseTask(removeExclusive);
+                                q.addQueueDeleteTask(new AMQQueue.Task()
                                 {
                                     public void doTask(AMQQueue queue) throws AMQException
                                     {
-                                        s.removeSessionCloseTask(deleteQueueTask);
+                                        s.removeSessionCloseTask(removeExclusive);
                                     }
                                 });
-                        }
-                        else if(method.getExclusive())
-                        {
-                            final AMQQueue q = queue;
-                            final ServerSession.Task removeExclusive = new ServerSession.Task()
-                            {
-
-                                public void doTask(ServerSession session)
-                                {
-                                    q.setPrincipalHolder(null);
-                                    q.setExclusiveOwningSession(null);
-                                }
-                            };
-                            final ServerSession s = (ServerSession) session;
-                            s.addSessionCloseTask(removeExclusive);
-                            queue.addQueueDeleteTask(new AMQQueue.Task()
-                            {
-
-                                public void doTask(AMQQueue queue) throws AMQException
-                                {
-                                    s.removeSessionCloseTask(removeExclusive);
-                                }
-                            });
+                            }
                         }
                     }
                     catch (AMQException e)
@@ -1033,14 +1029,14 @@ public class ServerSessionDelegate extends SessionDelegate
             }
             else if (method.getExclusive() && (queue.getPrincipalHolder() != null && !queue.getPrincipalHolder().equals(session)))
             {
-                    String description = "Cannot declare queue('" + queueName + "'),"
-                                                                           + " as exclusive queue with same name "
-                                                                           + "declared on another session";
-                    ExecutionErrorCode errorCode = ExecutionErrorCode.RESOURCE_LOCKED;
-    
-                    exception(session, method, errorCode, description);
-    
-                    return;
+                String description = "Cannot declare queue('" + queueName + "'),"
+                                                                       + " as exclusive queue with same name "
+                                                                       + "declared on another session";
+                ExecutionErrorCode errorCode = ExecutionErrorCode.RESOURCE_LOCKED;
+
+                exception(session, method, errorCode, description);
+
+                return;
             }
         }
     }

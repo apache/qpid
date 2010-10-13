@@ -20,14 +20,14 @@
  */
 package org.apache.qpid.management.domain.model.type;
 
-import junit.framework.TestCase;
+import org.apache.qpid.test.utils.QpidTestCase;
 
 /**
  * Test case for "Binary" type.
  * 
  * @author Andrea Gazzarini
  */
-public class BinaryTest extends TestCase
+public class BinaryTest extends QpidTestCase
 {
     /**
      * Tests the lazy & once hash code computation behaviour of the binary type.

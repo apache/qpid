@@ -21,15 +21,15 @@
 
 package org.apache.qpid.info.test;
 
-import junit.framework.TestCase;
-import org.apache.qpid.info.SystemInfo;
-
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.qpid.info.SystemInfo;
+import org.apache.qpid.test.utils.QpidTestCase;
+
 /** Test the SystemInfo component */
-public class SystemInfoTest extends TestCase
+public class SystemInfoTest extends QpidTestCase
 {
 
     /**

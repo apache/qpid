@@ -38,20 +38,19 @@ import javax.management.MBeanServer;
 import javax.management.ObjectName;
 import javax.xml.namespace.QName;
 
-import junit.framework.TestCase;
-
 import org.apache.qpid.management.domain.handler.impl.QpidDomainObject;
 import org.apache.qpid.management.wsdm.common.EntityInstanceNotFoundFault;
 import org.apache.qpid.management.wsdm.common.MethodInvocationFault;
 import org.apache.qpid.management.wsdm.common.NoSuchAttributeFault;
 import org.apache.qpid.management.wsdm.common.QManFault;
+import org.apache.qpid.test.utils.QpidTestCase;
 
 /**
  * Test case for MBean capability builder.
  * 
  * @author Andrea Gazzarini
  */
-public class MBeanCapabilityBuilderTest extends TestCase
+public class MBeanCapabilityBuilderTest extends QpidTestCase
 {
 	
 	/**

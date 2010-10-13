@@ -30,7 +30,7 @@ import javax.security.sasl.SaslServerFactory;
 
 public class CRAMMD5HexServerFactory implements SaslServerFactory
 {
-    public SaslServer createSaslServer(String mechanism, String protocol, String serverName, Map<String, ?> props,
+    public SaslServer createSaslServer(String mechanism, String protocol, String serverName, Map props,
                                        CallbackHandler cbh) throws SaslException
     {
         if (mechanism.equals(CRAMMD5HexSaslServer.MECHANISM))

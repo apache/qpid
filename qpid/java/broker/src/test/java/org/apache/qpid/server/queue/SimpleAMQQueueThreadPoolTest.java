@@ -37,23 +37,16 @@ public class SimpleAMQQueueThreadPoolTest extends InternalBrokerBaseCase
         int initialCount = ReferenceCountingExecutorService.getInstance().getReferenceCount();
         VirtualHost test = ApplicationRegistry.getInstance().getVirtualHostRegistry().getVirtualHost("test");
 
-        try
-        {
-            SimpleAMQQueue queue = (SimpleAMQQueue) AMQQueueFactory.createAMQQueueImpl(new AMQShortString("test"), false,
-                                                                                       new AMQShortString("owner"),
-                                                                                       false, false, test, null);
+        SimpleAMQQueue queue = (SimpleAMQQueue) AMQQueueFactory.createAMQQueueImpl(new AMQShortString("test"), false,
+                                                                                   new AMQShortString("owner"),
+                                                                                   false, false, test, null);
 
-            assertFalse("Creation did not start Pool.", ReferenceCountingExecutorService.getInstance().getPool().isShutdown());
+        assertFalse("Creation did not start Pool.", ReferenceCountingExecutorService.getInstance().getPool().isShutdown());
 
-            assertEquals("References not increased", initialCount + 1, ReferenceCountingExecutorService.getInstance().getReferenceCount());
+        assertEquals("References not increased", initialCount + 1, ReferenceCountingExecutorService.getInstance().getReferenceCount());
 
-            queue.stop();
+        queue.stop();
 
-            assertEquals("References not decreased", initialCount , ReferenceCountingExecutorService.getInstance().getReferenceCount());
-        }
-        finally
-        {
-            ApplicationRegistry.remove();
-        }
+        assertEquals("References not decreased", initialCount , ReferenceCountingExecutorService.getInstance().getReferenceCount());
     }
 }

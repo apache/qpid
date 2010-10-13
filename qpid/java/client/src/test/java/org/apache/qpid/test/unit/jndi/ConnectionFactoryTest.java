@@ -20,13 +20,13 @@
  */
 package org.apache.qpid.test.unit.jndi;
 
-import junit.framework.TestCase;
 import org.apache.qpid.client.AMQConnectionFactory;
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.jms.ConnectionURL;
+import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.url.URLSyntaxException;
 
-public class ConnectionFactoryTest extends TestCase
+public class ConnectionFactoryTest extends QpidTestCase
 {
 
     //URL will be returned with the password field swapped for '********'

@@ -20,49 +20,55 @@ package org.apache.qpid.thread;
  * 
  */
 
-
 import java.lang.reflect.Constructor;
+import java.util.concurrent.ThreadFactory;
 
 public class RealtimeThreadFactory implements ThreadFactory
 {
-    private Class threadClass;
-    private Constructor threadConstructor;
-    private Constructor priorityParameterConstructor;
-    private int defaultRTThreadPriority = 20;
+    private Class<?> _threadClass;
+    private Constructor<?> _threadConstructor;
+    private Constructor<?> _priorityParameterConstructor;
+    private int _defaultRTThreadPriority = 20;
     
     public RealtimeThreadFactory() throws Exception
     {
-        defaultRTThreadPriority = Integer.getInteger("qpid.rt_thread_priority",20);
-        threadClass = Class.forName("javax.realtime.RealtimeThread");
+        _defaultRTThreadPriority = Integer.getInteger("qpid.rt_thread_priority", 20);
+        _threadClass = Class.forName("javax.realtime.RealtimeThread");
     
-        Class schedulingParametersClass = Class.forName("javax.realtime.SchedulingParameters");
-        Class releaseParametersClass = Class.forName("javax.realtime.ReleaseParameters");
-        Class memoryParametersClass = Class.forName("javax.realtime.MemoryParameters");
-        Class memoryAreaClass = Class.forName("javax.realtime.MemoryArea");
-        Class processingGroupParametersClass = Class.forName("javax.realtime.ProcessingGroupParameters");
+        Class<?> schedulingParametersClass = Class.forName("javax.realtime.SchedulingParameters");
+        Class<?> releaseParametersClass = Class.forName("javax.realtime.ReleaseParameters");
+        Class<?> memoryParametersClass = Class.forName("javax.realtime.MemoryParameters");
+        Class<?> memoryAreaClass = Class.forName("javax.realtime.MemoryArea");
+        Class<?> processingGroupParametersClass = Class.forName("javax.realtime.ProcessingGroupParameters");
      
-        Class[] paramTypes = new Class[]{schedulingParametersClass,
-                                         releaseParametersClass, 
-                                         memoryParametersClass,
-                                         memoryAreaClass,
-                                         processingGroupParametersClass,
-                                         java.lang.Runnable.class};
+        Class<?>[] paramTypes = new Class[] { schedulingParametersClass,
+                                              releaseParametersClass, 
+                                              memoryParametersClass,
+                                              memoryAreaClass,
+                                              processingGroupParametersClass,
+                                              java.lang.Runnable.class };
         
-        threadConstructor = threadClass.getConstructor(paramTypes);
+        _threadConstructor = _threadClass.getConstructor(paramTypes);
         
-        Class priorityParameterClass = Class.forName("javax.realtime.PriorityParameters");
-        priorityParameterConstructor = priorityParameterClass.getConstructor(new Class[]{int.class});        
+        Class<?> priorityParameterClass = Class.forName("javax.realtime.PriorityParameters");
+        _priorityParameterConstructor = priorityParameterClass.getConstructor(new Class<?>[] { Integer.TYPE });        
     }
 
-    public Thread createThread(Runnable r) throws Exception
+    public Thread newThread(Runnable r)
     {
-        return createThread(r,defaultRTThreadPriority);
+        return createThread(r,_defaultRTThreadPriority);
     }
 
-    public Thread createThread(Runnable r, int priority) throws Exception
+    public Thread createThread(Runnable r, int priority)
     {
-        Object priorityParams = priorityParameterConstructor.newInstance(priority);
-        return (Thread)threadConstructor.newInstance(priorityParams,null,null,null,null,r);
+        try
+        {
+	        Object priorityParams = _priorityParameterConstructor.newInstance(priority);
+	        return (Thread) _threadConstructor.newInstance(priorityParams, null, null, null, null, r);
+        }
+        catch (Exception e)
+        {
+            return null;
+        }
     }
-
 }

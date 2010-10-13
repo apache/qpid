@@ -55,7 +55,7 @@ public class ExchangeMBeanTest  extends InternalBrokerBaseCase
     public void testDirectExchangeMBean() throws Exception
     {
         DirectExchange exchange = new DirectExchange();
-        exchange.initialise(_virtualHost, ExchangeDefaults.DIRECT_EXCHANGE_NAME, false, 0, true);
+        exchange.initialise(_virtualHost, ExchangeDefaults.DIRECT_EXCHANGE_NAME, false, 0, true, Collections.EMPTY_MAP);
         ManagedObject managedObj = exchange.getManagedObject();
         ManagedExchange mbean = (ManagedExchange)managedObj;
 
@@ -82,7 +82,7 @@ public class ExchangeMBeanTest  extends InternalBrokerBaseCase
     public void testTopicExchangeMBean() throws Exception
     {
         TopicExchange exchange = new TopicExchange();
-        exchange.initialise(_virtualHost,ExchangeDefaults.TOPIC_EXCHANGE_NAME, false, 0, true);
+        exchange.initialise(_virtualHost,ExchangeDefaults.TOPIC_EXCHANGE_NAME, false, 0, true, Collections.EMPTY_MAP);
         ManagedObject managedObj = exchange.getManagedObject();
         ManagedExchange mbean = (ManagedExchange)managedObj;
 
@@ -109,7 +109,7 @@ public class ExchangeMBeanTest  extends InternalBrokerBaseCase
     public void testHeadersExchangeMBean() throws Exception
     {
         HeadersExchange exchange = new HeadersExchange();
-        exchange.initialise(_virtualHost,ExchangeDefaults.HEADERS_EXCHANGE_NAME, false, 0, true);
+        exchange.initialise(_virtualHost,ExchangeDefaults.HEADERS_EXCHANGE_NAME, false, 0, true, Collections.EMPTY_MAP);
         ManagedObject managedObj = exchange.getManagedObject();
         ManagedExchange mbean = (ManagedExchange)managedObj;
 

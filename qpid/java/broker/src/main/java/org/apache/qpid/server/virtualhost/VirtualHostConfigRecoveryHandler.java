@@ -46,6 +46,7 @@ import org.apache.log4j.Logger;
 
 import java.nio.ByteBuffer;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
@@ -133,7 +134,7 @@ public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHa
             exchange = _virtualHost.getExchangeRegistry().getExchange(exchangeNameSS);
             if (exchange == null)
             {
-                exchange = _virtualHost.getExchangeFactory().createExchange(exchangeNameSS, new AMQShortString(type), true, autoDelete, 0);
+                exchange = _virtualHost.getExchangeFactory().createExchange(exchangeNameSS, new AMQShortString(type), true, autoDelete, Collections.EMPTY_MAP, 0);
                 _virtualHost.getExchangeRegistry().registerExchange(exchange);
             }
         }

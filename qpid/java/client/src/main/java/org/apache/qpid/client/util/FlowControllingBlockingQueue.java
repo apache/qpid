@@ -20,48 +20,32 @@
  */
 package org.apache.qpid.client.util;
 
-import java.util.Iterator;
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.concurrent.LinkedBlockingQueue;
 
 /**
- * A blocking queue that emits events above a user specified threshold allowing the caller to take action (e.g. flow
+ * A {@link BlockingQueue} that emits events above a user specified threshold allowing the caller to take action (e.g. flow
  * control) to try to prevent the queue growing (much) further. The underlying queue itself is not bounded therefore the
- * caller is not obliged to react to the events. <p/> This implementation is <b>only</b> safe where we have a single
- * thread adding items and a single (different) thread removing items.
- *
- * @todo Make this implement java.util.Queue and hide the implementation. Then different queue types can be substituted.
+ * caller is not obliged to react to the events.
  */
-public class FlowControllingBlockingQueue
+public class FlowControllingBlockingQueue<E> extends LinkedBlockingQueue<E>
 {
-	private static final Logger _logger = LoggerFactory.getLogger(FlowControllingBlockingQueue.class);
-	
-    /** This queue is bounded and is used to store messages before being dispatched to the consumer */
-    private final Queue _queue = new ConcurrentLinkedQueue();
-
     private final int _flowControlHighThreshold;
     private final int _flowControlLowThreshold;
 
     private final ThresholdListener _listener;
-
-    /** We require a separate count so we can track whether we have reached the threshold */
-    private int _count;
     
-    private boolean disableFlowControl; 
-
-    public boolean isEmpty()
-    {
-        return _queue.isEmpty();
-    }
+    private boolean _disableFlowControl; 
 
     public interface ThresholdListener
     {
         void aboveThreshold(int currentValue);
 
         void underThreshold(int currentValue);
+    }
+    
+    public FlowControllingBlockingQueue()
+    {
+        this(0, null);
     }
 
     public FlowControllingBlockingQueue(int threshold, ThresholdListener listener)
@@ -71,65 +55,52 @@ public class FlowControllingBlockingQueue
 
     public FlowControllingBlockingQueue(int highThreshold, int lowThreshold, ThresholdListener listener)
     {
+        super();
+        
         _flowControlHighThreshold = highThreshold;
         _flowControlLowThreshold = lowThreshold;
         _listener = listener;
+        
         if (highThreshold == 0)
         {
-        	disableFlowControl = true;
+        	_disableFlowControl = true;
         }
     }
 
-    public Object take() throws InterruptedException
+    public E take() throws InterruptedException
     {
-        Object o = _queue.poll();
-        if(o == null)
-        {
-            synchronized(this)
-            {
-                while((o = _queue.poll())==null)
-                {
-                    wait();
-                }
-            }
-        }
-        if (!disableFlowControl && _listener != null)
+        E e = super.take();
+        
+        if (!_disableFlowControl && _listener != null)
         {
             synchronized (_listener)
             {
-                if (_count-- == _flowControlLowThreshold)
+                if (size() == _flowControlLowThreshold)
                 {
-                    _listener.underThreshold(_count);
+                    _listener.underThreshold(size());
                 }
             }
             
         }
 
-        return o;
+        return e;
     }
 
-    public void add(Object o)
+    public boolean add(E e)
     {
-        synchronized(this)
-        {
-            _queue.add(o);
-
-            notifyAll();
-        }
-        if (!disableFlowControl && _listener != null)
+        super.add(e);
+        
+        if (!_disableFlowControl && _listener != null)
         {
             synchronized (_listener)
             {
-                if (++_count == _flowControlHighThreshold)
+                if (size() == _flowControlHighThreshold)
                 {
-                    _listener.aboveThreshold(_count);
+                    _listener.aboveThreshold(size());
                 }
             }
         }
-    }
-
-    public Iterator iterator()
-    {
-        return _queue.iterator();
+        
+        return true;
     }
 }

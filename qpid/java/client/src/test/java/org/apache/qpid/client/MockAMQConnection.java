@@ -29,6 +29,7 @@ import org.apache.qpid.url.URLSyntaxException;
 
 import java.io.IOException;
 
+// FIXME
 public class MockAMQConnection extends AMQConnection
 {
     public MockAMQConnection(String broker, String username, String password, String clientName, String virtualHost)

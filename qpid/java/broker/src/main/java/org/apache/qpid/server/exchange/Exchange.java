@@ -38,6 +38,7 @@ import javax.management.JMException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Collection;
+import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public interface Exchange extends ExchangeReferrer, ExchangeConfig
@@ -53,7 +54,7 @@ public interface Exchange extends ExchangeReferrer, ExchangeConfig
 
     AMQShortString getTypeShortString();
 
-    void initialise(VirtualHost host, AMQShortString name, boolean durable, int ticket, boolean autoDelete)
+    void initialise(VirtualHost host, AMQShortString name, boolean durable, int ticket, boolean autoDelete, Map<String, Object> arguments)
             throws AMQException, JMException;
 
     boolean isDurable();

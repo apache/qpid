@@ -42,7 +42,7 @@ import java.nio.ByteOrder;
 
 
 /**
- * Disassembler
+ * Disassembler converts protocol events to byte buffers that can be sent on the network.
  *
  */
 
@@ -110,6 +110,7 @@ public final class Disassembler implements Sender<ProtocolEvent>,
             header.rewind();
 
             sender.send(header);
+            sender.flush();
 
             int limit = buf.limit();
             buf.limit(buf.position() + size);
@@ -227,8 +228,7 @@ public final class Disassembler implements Sender<ProtocolEvent>,
             if (payload)
             {
                 ByteBuffer body = method.getBody();
-                fragment(body == null ? LAST_SEG : 0x0, SegmentType.HEADER,
-                         method, headerSeg);
+                fragment(body == null ? LAST_SEG : 0x0, SegmentType.HEADER, method, headerSeg);
                 if (body != null)
                 {
                     fragment(LAST_SEG, SegmentType.BODY, method, body);
@@ -240,7 +240,7 @@ public final class Disassembler implements Sender<ProtocolEvent>,
 
     public void error(Void v, ProtocolError error)
     {
-        throw new IllegalArgumentException("" + error);
+        throw new IllegalArgumentException(error.toString());
     }
 
     public void setIdleTimeout(int i)

@@ -21,6 +21,7 @@
 package org.apache.qpid.console;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Map.Entry;
@@ -29,8 +30,6 @@ import org.apache.qpid.transport.codec.Decoder;
 import org.apache.qpid.transport.codec.Encoder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import edu.emory.mathcs.backport.java.util.Arrays;
 
 public class QMFObject
 {

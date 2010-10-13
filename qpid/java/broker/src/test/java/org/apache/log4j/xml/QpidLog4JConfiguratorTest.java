@@ -27,10 +27,9 @@ import java.io.FileWriter;
 import java.io.IOException;
 
 import org.apache.log4j.xml.QpidLog4JConfigurator.IllegalLoggerLevelException;
+import org.apache.qpid.test.utils.QpidTestCase;
 
-import junit.framework.TestCase;
-
-public class QpidLog4JConfiguratorTest extends TestCase
+public class QpidLog4JConfiguratorTest extends QpidTestCase
 {
     private static final String NEWLINE = System.getProperty("line.separator");
 

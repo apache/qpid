@@ -20,17 +20,19 @@
  */
 package org.apache.qpid.jms;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.qpid.client.SSLConfiguration;
 
 public interface BrokerDetails
 {
-
     /*
      * Known URL Options
      * @see ConnectionURL
-    */
+     */
+
     public static final String OPTIONS_RETRY = "retries";
     public static final String OPTIONS_CONNECT_TIMEOUT = "connecttimeout";
     public static final String OPTIONS_CONNECT_DELAY = "connectdelay";
@@ -54,6 +56,8 @@ public interface BrokerDetails
 
     public static final String SOCKET = "socket";
     public static final String TCP = "tcp";
+    public static final String UDP = "udp";
+    public static final String MULTICAST = "multicast";
     public static final String VM = "vm";
 
     public static final String DEFAULT_TRANSPORT = TCP;

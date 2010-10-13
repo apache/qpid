@@ -26,65 +26,74 @@ import org.apache.mina.common.IoSession;
 import org.apache.mina.common.WriteFuture;
 import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.TransportException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 /**
  * MinaSender
  */
-
 public class MinaSender implements Sender<java.nio.ByteBuffer>
 {
-    private static final int TIMEOUT = 2 * 60 * 1000;
-
-    private final IoSession session;
-    private WriteFuture lastWrite = null;
+    private static final Logger _log = LoggerFactory.getLogger(MinaSender.class);
+    
+    private final IoSession _session;
+    private WriteFuture _lastWrite;
+    private int _idleTimeout = 0;
 
     public MinaSender(IoSession session)
     {
-        this.session = session;
+        _session = session;
     }
 
-    public void send(java.nio.ByteBuffer buf)
+    public synchronized void send(java.nio.ByteBuffer buf)
     {
-        if (session.isClosing())
+        if (_session.isClosing())
         {
             throw new TransportException("attempted to write to a closed socket");
         }
-
-        synchronized (this)
+//        synchronized (this)
         {
-            lastWrite = session.write(ByteBuffer.wrap(buf));
+            ByteBuffer mina = ByteBuffer.allocate(buf.capacity());
+            mina.put(buf);
+            mina.flip();
+            flush();
+            _lastWrite = _session.write(mina);
+	        flush();
         }
     }
 
-    public void flush()
+    public synchronized void flush()
     {
-        // pass
+//        synchronized (this)
+        {
+	        if (_lastWrite != null)
+	        {
+	            _lastWrite.join();
+	            if (!_lastWrite.isWritten())
+	            {
+	                throw new RuntimeException("Error flushing buffe");
+	            }
+	        }
+        }
     }
 
-    public synchronized void close()
+    public void close()
     {
-        // MINA will sometimes throw away in-progress writes when you
-        // ask it to close
-        synchronized (this)
-        {
-            if (lastWrite != null)
-            {
-                lastWrite.join();
-            }
-        }
-        CloseFuture closed = session.close();
+        // MINA will sometimes throw away in-progress writes when you ask it to close
+        flush();
+        CloseFuture closed = _session.close();
         closed.join();
     }
     
     public void setIdleTimeout(int i)
     {
-      //noop
+        _idleTimeout = i;
+        _session.setWriteTimeout(_idleTimeout);
     }
     
     public long getIdleTimeout()
     {
-        return 0;
+        return _idleTimeout;
     }
-    
 }

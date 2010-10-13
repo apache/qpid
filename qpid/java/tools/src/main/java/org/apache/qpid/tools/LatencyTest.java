@@ -24,6 +24,7 @@ import java.io.FileOutputStream;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Executors;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -35,8 +36,6 @@ import javax.jms.MessageConsumer;
 import javax.jms.MessageListener;
 import javax.jms.MessageProducer;
 import javax.jms.TextMessage;
-
-import org.apache.qpid.thread.Threading;
 
 /**
  * Latency test sends an x number of messages in warmup mode and wait for a confirmation
@@ -338,7 +337,7 @@ public class LatencyTest extends PerfBase implements MessageListener
         Thread t;
         try
         {
-            t = Threading.getThreadFactory().createThread(r);                      
+            t = Executors.defaultThreadFactory().newThread(r);                      
         }
         catch(Exception e)
         {

@@ -20,8 +20,8 @@
 
 package org.apache.qpid.framing;
 
-import junit.framework.TestCase;
-public class AMQShortStringTest extends TestCase
+import org.apache.qpid.test.utils.QpidTestCase;
+public class AMQShortStringTest extends QpidTestCase
 {
 
     public static final AMQShortString HELLO = new AMQShortString("Hello");

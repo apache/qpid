@@ -20,6 +20,9 @@
  */
 package org.apache.qpid.transport.network;
 
+import static org.apache.qpid.transport.network.InputHandler.State.*;
+import static org.apache.qpid.transport.util.Functions.*;
+
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
@@ -27,10 +30,9 @@ import org.apache.qpid.transport.ProtocolError;
 import org.apache.qpid.transport.ProtocolHeader;
 import org.apache.qpid.transport.Receiver;
 import org.apache.qpid.transport.SegmentType;
-
-import static org.apache.qpid.transport.util.Functions.*;
-
-import static org.apache.qpid.transport.network.InputHandler.State.*;
+import org.apache.qpid.transport.util.Functions;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 /**
@@ -41,6 +43,7 @@ import static org.apache.qpid.transport.network.InputHandler.State.*;
 
 public class InputHandler implements Receiver<ByteBuffer>
 {
+    private static final Logger _log = LoggerFactory.getLogger(InputHandler.class);
 
     public enum State
     {

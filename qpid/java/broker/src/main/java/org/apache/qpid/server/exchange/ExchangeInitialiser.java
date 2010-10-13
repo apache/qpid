@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.server.exchange;
 
+import java.util.Collections;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
@@ -42,7 +44,7 @@ public class ExchangeInitialiser
     {
         if(r.getExchange(name)== null)
         {
-            Exchange exchange = f.createExchange(name, type, true, false, 0);
+            Exchange exchange = f.createExchange(name, type, true, false, Collections.EMPTY_MAP, 0);
             r.registerExchange(exchange);
 
             if(exchange.isDurable())

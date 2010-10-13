@@ -21,9 +21,6 @@
 
 package org.apache.qpid.info.test;
 
-import junit.framework.TestCase;
-import org.apache.qpid.info.util.SoapClient;
-
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -33,19 +30,25 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Properties;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
-public class SoapClientTest extends TestCase
+import org.apache.qpid.info.util.SoapClient;
+import org.apache.qpid.test.utils.QpidTestCase;
+
+public class SoapClientTest extends QpidTestCase
 {
+    private final ExecutorService exec = Executors.newCachedThreadPool();
 
     private int _port;
-
     private final String _hostName = "localhost";
-
     private final String _urlPath = "/testSoap";
-
     private ServerSocket _server = null;
 
-    /*
+    /**
      * Generate a soap client from a custom URL, hostname, port and soap context
      * path to be derived
      */
@@ -62,96 +65,90 @@ public class SoapClientTest extends TestCase
         return new SoapClient(soapmap, destprops);
     }
 
-    /*
+    /**
      * A connection handler class that verifies the correct message is received
-     * 
      */
-    class ConnectionHandler implements Runnable
+    class ConnectionHandler implements Callable<Void>
     {
         private Socket socket;
 
         public ConnectionHandler(Socket socket)
         {
             this.socket = socket;
-            Thread t = new Thread(this);
-            t.start();
         }
 
-        public void run()
+        public Void call() throws Exception
         {
-            String line;
-            final List<String> response = new ArrayList<String>();
+            List<String> response = new ArrayList<String>();
+            BufferedReader br = null;
             try
             {
-                BufferedReader br = new BufferedReader(new InputStreamReader(
-                        socket.getInputStream()));
+                br = new BufferedReader(new InputStreamReader(socket.getInputStream()));
                 assertNotNull(br);
+	            String line;
                 while ((line = br.readLine()) != null)
                 {
                     response.add(line);
                 }
+            }
+            finally
+            {
                 br.close();
             }
-            catch (Exception ex)
-            {
-                ex.printStackTrace();
-                fail("Exception while reading from the socket");
-            }
+ 
             assertTrue(response.contains("<ip>127.0.0.1</ip>"));
             assertTrue(response.contains("SOAPAction: \"urn:send\""));
-            assertTrue(response
-                    .contains("Content-Type: text/xml; charset=\"utf-8\""));
+            assertTrue(response.contains("Content-Type: text/xml; charset=\"utf-8\""));
             assertTrue(response.contains("Host: localhost" + _port));
             assertTrue(response.contains("User-Agent: Axis2"));
+            
+            return null;
         }
 
     }
 
-    /*
+    /**
      * Test that the SOAP client sends the expected data to the socket We mock a
      * simple SOAP envelope: <ip>127.0.0.1</ip>
      */
     public void testSoapClient() throws Exception
     {
-        //
         try
         {
             _server = new ServerSocket(0);
-            _port = _server.getLocalPort();
-            assertTrue("Server is not yet bound to a port", _port != -1);
             assertNotNull(_server);
         }
-        catch (Exception ex)
+        catch (IOException ioe)
         {
-            ex.printStackTrace();
-            fail("Unable to start the socket server");
+            fail("Unable to start the socket server: " + ioe.getMessage());
         }
+        _port = _server.getLocalPort();
+        assertTrue("Server is not yet bound to a port", _port != -1);
 
-        Thread _socketAcceptor = new Thread()
+        Callable<Void> acceptor = new Callable<Void>()
         {
-            public void run()
+            public Void call() throws Exception
             {
-                try
-                {
-                    Socket socket = _server.accept();
-                    new ConnectionHandler(socket);
-                }
-                catch (IOException e)
-                {
-                    e.printStackTrace();
-                }
+                Socket socket = _server.accept();
+                Callable<Void> handler = new ConnectionHandler(socket);
+                Future<Void> result = exec.submit(handler);
+                return result.get();
             }
         };
-        _socketAcceptor.start();
+        
+        Future<Void> result = exec.submit(acceptor);
+        
         // Sleep for 1 second to allow the ServerSocket readiness
         Thread.sleep(1000);
+ 
         SoapClient sc = getSoapClient();
         assertNotNull(sc);
         sc.sendSOAPMessage();
 
-        _socketAcceptor.join(2000);
+        result.get(2, TimeUnit.SECONDS);
+        exec.shutdown();
 
-        assertFalse("Socket Acceptor not stopped.", _socketAcceptor.isAlive());
+        assertTrue("Socket Acceptor not stopped", exec.isTerminated());
     }
 
     /**
@@ -204,5 +201,4 @@ public class SoapClientTest extends TestCase
 
         assertTrue("Replace variables did not work as expected", ("<addr>" + ip + ":" + port + "</addr>").equals(sc.getXMLData().toString()));
     }
-
 }

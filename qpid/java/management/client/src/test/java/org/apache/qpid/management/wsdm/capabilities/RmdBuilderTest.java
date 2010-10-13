@@ -29,16 +29,15 @@ import javax.management.ObjectName;
 
 import org.apache.qpid.management.Names;
 import org.apache.qpid.management.domain.handler.impl.QpidDomainObject;
+import org.apache.qpid.test.utils.QpidTestCase;
 import org.w3c.dom.Element;
-
-import junit.framework.TestCase;
 
 /**
  * Test case for Resource Metadata Descriptor Builder.
  * 
  * @author Andrea Gazzarini
  */
-public class RmdBuilderTest extends TestCase
+public class RmdBuilderTest extends QpidTestCase
 {
 	private MBeanInfo _metadata;
 	private RmdBuilder _builder;

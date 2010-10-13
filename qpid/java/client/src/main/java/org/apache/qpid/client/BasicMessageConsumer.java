@@ -47,7 +47,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
-public abstract class BasicMessageConsumer<U> extends Closeable implements MessageConsumer
+public abstract class BasicMessageConsumer<U extends UnprocessedMessage & AMQSession.Dispatchable> extends Closeable implements MessageConsumer
 {
     private static final Logger _logger = LoggerFactory.getLogger(BasicMessageConsumer.class);
 
@@ -805,21 +805,13 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
      */
     Long getLastDelivered()
     {
-        if (!_receivedDeliveryTags.isEmpty())
+        Long lastDeliveryTag = null;
+        while (!_receivedDeliveryTags.isEmpty());
         {
-            Long lastDeliveryTag = _receivedDeliveryTags.poll();
-
-            while (!_receivedDeliveryTags.isEmpty())
-            {
-                lastDeliveryTag = _receivedDeliveryTags.poll();
-            }
-
-            assert _receivedDeliveryTags.isEmpty();
-
-            return lastDeliveryTag;
+            lastDeliveryTag = _receivedDeliveryTags.poll();
         }
 
-        return null;
+        return lastDeliveryTag;
     }
 
     /**

@@ -36,6 +36,7 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
 import javax.management.MBeanFeatureInfo;
 import javax.management.MBeanInfo;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 
@@ -87,7 +88,7 @@ public class ManagementConsoleTest extends InternalBrokerBaseCase
         // If this test fails due to changes in the broker code,
         // then the constants in the Constants.java shoule be updated accordingly 
         DirectExchange exchange = new DirectExchange();
-        exchange.initialise(_virtualHost, ExchangeDefaults.DIRECT_EXCHANGE_NAME, false, 0, true);
+        exchange.initialise(_virtualHost, ExchangeDefaults.DIRECT_EXCHANGE_NAME, false, 0, true, Collections.EMPTY_MAP);
         AMQManagedObject mbean = (AMQManagedObject)exchange.getManagedObject();
         MBeanInfo mbeanInfo = mbean.getMBeanInfo();
 

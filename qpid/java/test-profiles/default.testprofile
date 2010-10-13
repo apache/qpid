@@ -1,7 +1,8 @@
 java.naming.factory.initial=org.apache.qpid.jndi.PropertiesFileInitialContextFactory
 java.naming.provider.url=${test.profiles}/test-provider.properties
 
-broker.version=0-8
+broker.version=0-91
+qpid.amqp.version=0-91
 broker=vm
 broker.clean=${test.profiles}/clean-dir ${build.data} ${project.root}/build/work
 broker.ready=Listening on TCP port
@@ -34,7 +35,7 @@ test.exclude=true
 profile.excludes=JavaTransientExcludes JavaInVMExcludes 08StandaloneExcludes
 test.excludes=Excludes XAExcludes JavaExcludes ${profile}.excludes ${profile.excludes}
 test.fork=no
-test.mem=512M
+test.mem=1024M
 test=*Test
 haltonfailure=no
 haltonerror=no

@@ -24,15 +24,14 @@ import java.util.List;
 import java.util.Properties;
 
 import org.apache.qpid.info.util.HttpPoster;
+import org.apache.qpid.test.utils.QpidTestCase;
 import org.mortbay.jetty.testing.ServletTester;
 
-import junit.framework.TestCase;
-
-/*
+/**
  * This test verifies that the plugin posts correctly to a webserver 
  * We use an embedded jetty container to mimic the webserver
  */
-public class HttpPosterTest extends TestCase
+public class HttpPosterTest extends QpidTestCase
 {
 
     private ServletTester tester;
@@ -41,7 +40,7 @@ public class HttpPosterTest extends TestCase
 
     private final String contextPath = "/info";
 
-    /*
+    /**
      * This method generates a dummy HttpPoster with a dummy body containing a
      * single line. The url we are posting to can be controlled by the parameter
      * url
@@ -56,9 +55,7 @@ public class HttpPosterTest extends TestCase
         return new HttpPoster(props, sb);
     }
 
-    /*
-     * (non-Javadoc)
-     * 
+    /**
      * @see junit.framework.TestCase#setUp()
      */
     protected void setUp() throws Exception
@@ -70,9 +67,7 @@ public class HttpPosterTest extends TestCase
         tester.start();
     }
 
-    /*
-     * (non-Javadoc)
-     * 
+    /** 
      * @see junit.framework.TestCase#tearDown()
      */
     protected void tearDown() throws Exception
@@ -81,7 +76,7 @@ public class HttpPosterTest extends TestCase
         tester.stop();
     }
 
-    /*
+    /**
      * This test is posting a string to an embedded Jetty Servlet and captures
      * the response message. If the servlet receives the message ok, it will
      * print Ok. A failure test is following where we post to a non-existent URL

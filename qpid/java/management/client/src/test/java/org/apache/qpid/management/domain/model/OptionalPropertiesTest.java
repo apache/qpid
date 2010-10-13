@@ -24,12 +24,11 @@ import java.nio.ByteBuffer;
 import java.util.LinkedList;
 import java.util.List;
 
-import junit.framework.TestCase;
-
 import org.apache.qpid.management.domain.model.type.Uint64;
+import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.transport.codec.BBDecoder;
 
-public class OptionalPropertiesTest extends TestCase
+public class OptionalPropertiesTest extends QpidTestCase
 {
     public void testDecoderStateChange()
     {

@@ -25,7 +25,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import javax.jms.Connection;
-import javax.jms.ConnectionFactory;
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
@@ -36,7 +35,6 @@ import javax.jms.Session;
 import javax.naming.Context;
 import javax.naming.spi.InitialContextFactory;
 
-import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.jndi.PropertiesFileInitialContextFactory;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.slf4j.Logger;
@@ -98,15 +96,6 @@ public class DispatcherTest extends QpidBrokerTestCase
         {
             _producer.send(_producerSession.createTextMessage("Message " + msg));
         }
-    }
-
-    protected void tearDown() throws Exception
-    {
-
-        _clientConnection.close();
-
-        _producerConnection.close();
-        super.tearDown();
     }
 
     public void testAsynchronousRecieve()

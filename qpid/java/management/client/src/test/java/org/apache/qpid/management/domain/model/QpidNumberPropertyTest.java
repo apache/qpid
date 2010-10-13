@@ -20,12 +20,11 @@
  */
 package org.apache.qpid.management.domain.model;
 
-import junit.framework.TestCase;
-
 import org.apache.qpid.management.configuration.Configurator;
 import org.apache.qpid.management.domain.model.type.Uint8;
+import org.apache.qpid.test.utils.QpidTestCase;
 
-public class QpidNumberPropertyTest extends TestCase
+public class QpidNumberPropertyTest extends QpidTestCase
 {
     private QpidProperty _property;
     private Long _value = 55432L;

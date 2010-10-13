@@ -1,3 +1,7 @@
+//======================================================================
+//These tests will not work over AMQP 0-10
+//======================================================================
+
 // Those tests are testing 0.8 specific semantics
 org.apache.qpid.test.testcases.ImmediateMessageTest#test_QPID_517_ImmediateFailsConsumerDisconnectedNoTxP2P
 org.apache.qpid.test.testcases.ImmediateMessageTest#test_QPID_517_ImmediateFailsConsumerDisconnectedTxP2P
@@ -58,7 +62,7 @@ org.apache.qpid.test.unit.client.DynamicQueueExchangeCreateTest#*
 org.apache.qpid.server.queue.ProducerFlowControlTest#*
 
 //QPID-1950 : Commit to test this failure. This is a MINA only failure so it cannot be tested when using 010.
-org.apache.qpid.server.failover.MessageDisappearWithIOExceptionTest#*
+//org.apache.qpid.server.failover.MessageDisappearWithIOExceptionTest#*
 
 //QPID-2471 : Issues with 0-10 recovery
 org.apache.qpid.test.unit.ack.RecoverTest#testRecoverInAutoAckListener
@@ -71,9 +75,5 @@ org.apache.qpid.test.unit.publish.DirtyTransactedPublishTest#*
 org.apache.qpid.test.client.RollbackOrderTest#testOrderingAfterRollbackOnMessage
 org.apache.qpid.test.unit.ack.RecoverTest#testRecoverInAutoAckListener
 
-//Temporarily adding the following until the issues are sorted out.
-//Should probably raise JIRAs for them.
-org.apache.qpid.transport.network.mina.MINANetworkDriverTest#*
-org.apache.qpid.test.unit.basic.LargeMessageTest#*
-org.apache.qpid.test.client.destination.AddressBasedDestinationTest#testCreateExchange
+// Requires ring-queue support
 org.apache.qpid.test.client.destination.AddressBasedDestinationTest#testBrowseMode

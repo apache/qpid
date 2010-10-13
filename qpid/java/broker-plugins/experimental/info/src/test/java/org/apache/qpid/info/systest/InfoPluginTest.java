@@ -80,14 +80,13 @@ public class InfoPluginTest extends QpidBrokerTestCase
         startSoapServer();
         // Must start the server first to identify a free port.
         createConfigFile();
+        super.setUp();
     }
 
     public void tearDown() throws Exception
     {
-        System.out.println("*** Stopping socket server...");
         _socketAcceptor.join(2000);
 
-        System.out.println("*** Deleting the config file...");
         if (_tmpCfgFile.isFile())
         {
             _tmpCfgFile.delete();
@@ -180,7 +179,6 @@ public class InfoPluginTest extends QpidBrokerTestCase
             }
         };
         _socketAcceptor.start();
-        System.out.println("*** Socket server started...");
     }
 
     class ConnectionHandler implements Runnable
@@ -196,21 +194,17 @@ public class InfoPluginTest extends QpidBrokerTestCase
 
         public void run()
         {
-            System.out.println("*** Connection handler running...");
             List<String> buf = new ArrayList<String>();
             String line;
             try
             {
-                BufferedReader br = new BufferedReader(new InputStreamReader(
-                        _socket.getInputStream()));
+                BufferedReader br = new BufferedReader(new InputStreamReader(_socket.getInputStream()));
                 assertNotNull(br);
                 while ((line = br.readLine()) != null)
                 {
                     buf.add(line);
                 }
                 br.close();
-                System.out.println("*** Received buffer: " + buf);
-                System.out.println("*** Latch countdown");
                 _latch.countDown();
                 synchronized (_recv)
                 {

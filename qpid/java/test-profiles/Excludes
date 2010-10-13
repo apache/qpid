@@ -1,4 +1,9 @@
+//======================================================================
+//These tests are *always* excluded
+//======================================================================
+
 org.apache.qpid.client.MultipleJCAProviderRegistrationTest#test
+
 // QPID-1715, QPID-1715 : Client Error Handling on close is still broken
 org.apache.qpid.server.queue.QueueCreateTest#testCreatePriorityString
 org.apache.qpid.server.queue.QueueCreateTest#testCreateFlowToDiskValidNoSize
@@ -23,7 +28,6 @@ org.apache.qpid.test.unit.ack.AcknowledgeAfterFailoverOnMessageTest#testClientAc
 org.apache.qpid.test.unit.ack.AcknowledgeAfterFailoverTest#testDirtyClientAck 
 org.apache.qpid.test.unit.ack.AcknowledgeAfterFailoverTest#testClientAck
 
-
 // QPID-143 : Failover can occur between receive and ack but we don't stop the ack.
 // Just fully disable both tests as they are highlighting to many Java Client race conditions
 org.apache.qpid.test.unit.ack.AcknowledgeAfterFailoverOnMessageTest#*
@@ -31,4 +35,3 @@ org.apache.qpid.test.unit.ack.AcknowledgeAfterFailoverTest#*
 
 // QPID-2418 : The queue backing the dur sub is not currently deleted at subscription change, so the test will fail.
 org.apache.qpid.test.unit.ct.DurableSubscriberTest#testResubscribeWithChangedSelectorAndRestart
-

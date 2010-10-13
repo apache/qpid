@@ -25,8 +25,6 @@ import java.net.URI;
 
 import javax.management.ObjectName;
 
-import junit.framework.TestCase;
-
 import org.apache.muse.ws.addressing.EndpointReference;
 import org.apache.muse.ws.resource.WsResource;
 import org.apache.muse.ws.resource.impl.SimpleWsResource;
@@ -34,13 +32,14 @@ import org.apache.qpid.management.domain.handler.impl.QpidDomainObject;
 import org.apache.qpid.management.wsdm.common.EntityInstanceNotFoundFault;
 import org.apache.qpid.management.wsdm.common.NoSuchAttributeFault;
 import org.apache.qpid.management.wsdm.common.QManFault;
+import org.apache.qpid.test.utils.QpidTestCase;
 
 /**
  * Test case for MBeanCapability supertype layer..
  * 
  * @author Andrea Gazzarini
  */
-public class MBeanCapabilityTest extends TestCase
+public class MBeanCapabilityTest extends QpidTestCase
 {	
 	private final String _typeAttributeName = "Type";
 	private final String _newTypeValue = "DomainObject";

@@ -20,29 +20,42 @@ package org.apache.qpid.server.txn;
  * 
  */
 
-
-import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.QueueEntry;
-import org.apache.qpid.server.queue.BaseQueue;
-import org.apache.qpid.server.message.EnqueableMessage;
-import org.apache.qpid.server.message.ServerMessage;
-import org.apache.qpid.server.store.TransactionLog;
-import org.apache.qpid.AMQException;
-
-import java.util.List;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
+
+import org.apache.qpid.AMQException;
+import org.apache.qpid.server.message.EnqueableMessage;
+import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.queue.BaseQueue;
+import org.apache.qpid.server.queue.QueueEntry;
+import org.apache.qpid.server.store.TransactionLog;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class LocalTransaction implements ServerTransaction
 {
+    private static final Logger _log = LoggerFactory.getLogger(LocalTransaction.class);
     private final List<Action> _postCommitActions = new ArrayList<Action>();
 
     private volatile TransactionLog.Transaction _transaction;
     private TransactionLog _transactionLog;
+    private long _txnStartTime = 0L;
 
     public LocalTransaction(TransactionLog transactionLog)
     {
         _transactionLog = transactionLog;
+    }
+    
+    public boolean inTransaction()
+    {
+        return _transaction != null;
+    }
+    
+    public long getTransactionStartTime()
+    {
+        return _txnStartTime;
     }
 
     public void addPostCommitAction(Action postCommitAction)
@@ -56,7 +69,6 @@ public class LocalTransaction implements ServerTransaction
         {
             try
             {
-
                 beginTranIfNecessary();
                 _transaction.dequeueMessage(queue, message.getMessageNumber());
 
@@ -73,7 +85,6 @@ public class LocalTransaction implements ServerTransaction
     {
         try
         {
-
             for(QueueEntry entry : queueEntries)
             {
                 ServerMessage message = entry.getMessage();
@@ -91,7 +102,6 @@ public class LocalTransaction implements ServerTransaction
             tidyUpOnError(e);
         }
         _postCommitActions.add(postCommitAction);
-
     }
 
     private void tidyUpOnError(Exception e)
@@ -113,8 +123,7 @@ public class LocalTransaction implements ServerTransaction
             {
                 // TODO could try to chain the information to the original error
             }
-            _transaction = null;
-            _postCommitActions.clear();
+            resetDetails();
         }
 
         throw new RuntimeException(e);
@@ -150,13 +159,14 @@ public class LocalTransaction implements ServerTransaction
             }
         }
         _postCommitActions.add(postCommitAction);
-
-
     }
 
     public void enqueue(List<? extends BaseQueue> queues, EnqueableMessage message, Action postCommitAction)
     {
-
+        if (_txnStartTime == 0L)
+        {
+            _txnStartTime = System.currentTimeMillis();
+        }
 
         if(message.isPersistent())
         {
@@ -170,10 +180,7 @@ public class LocalTransaction implements ServerTransaction
                         break;
                     }
                 }
-
-
             }
-
 
             try
             {
@@ -192,8 +199,6 @@ public class LocalTransaction implements ServerTransaction
             }
         }
         _postCommitActions.add(postCommitAction);
-
-
     }
 
     public void commit()
@@ -202,7 +207,6 @@ public class LocalTransaction implements ServerTransaction
         {
             if(_transaction != null)
             {
-
                 _transaction.commitTran();
             }
 
@@ -222,18 +226,14 @@ public class LocalTransaction implements ServerTransaction
         }
         finally
         {
-            _transaction = null;
-            _postCommitActions.clear();
+            resetDetails();
         }
-
     }
 
     public void rollback()
     {
-
         try
         {
-
             if(_transaction != null)
             {
 
@@ -257,9 +257,15 @@ public class LocalTransaction implements ServerTransaction
             }
             finally
             {
-                _transaction = null;
-                _postCommitActions.clear();
+                resetDetails();
             }
         }
+    }
+    
+    private void resetDetails()
+    {
+        _transaction = null;
+        _postCommitActions.clear();
+        _txnStartTime = 0L;
     }
 }

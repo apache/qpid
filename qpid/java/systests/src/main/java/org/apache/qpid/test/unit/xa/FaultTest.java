@@ -94,11 +94,8 @@ public class FaultTest extends AbstractXATestCase
 
     public void tearDown() throws Exception
     {
-        if (!isBroker08())
-        {
-            _xaqueueConnection.close();
-            _queueConnection.close();
-        }
+        _xaqueueConnection.close();
+        _queueConnection.close();
         super.tearDown();
     }
 
@@ -107,16 +104,13 @@ public class FaultTest extends AbstractXATestCase
      */
     public void init() throws Exception
     {
-        if (!isBroker08())
-        {
-            _queue = (Queue) getInitialContext().lookup(QUEUENAME);
-            _queueFactory = getConnectionFactory();
-            _xaqueueConnection = _queueFactory.createXAQueueConnection("guest", "guest");
-            XAQueueSession session = _xaqueueConnection.createXAQueueSession();
-            _queueConnection = _queueFactory.createQueueConnection();
-            _nonXASession = _queueConnection.createQueueSession(true, Session.AUTO_ACKNOWLEDGE);
-            init(session, _queue);
-        }
+        _queue = (Queue) getInitialContext().lookup(QUEUENAME);
+        _queueFactory = getConnectionFactory();
+        _xaqueueConnection = _queueFactory.createXAQueueConnection("guest", "guest");
+        XAQueueSession session = _xaqueueConnection.createXAQueueSession();
+        _queueConnection = _queueFactory.createQueueConnection();
+        _nonXASession = _queueConnection.createQueueSession(true, Session.AUTO_ACKNOWLEDGE);
+        init(session, _queue);
     }
 
     /** -------------------------------------------------------------------------------------- **/

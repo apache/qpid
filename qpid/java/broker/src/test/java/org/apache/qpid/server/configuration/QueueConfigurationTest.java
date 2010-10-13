@@ -20,12 +20,12 @@
  */
 package org.apache.qpid.server.configuration;
 
-import junit.framework.TestCase;
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
+import org.apache.qpid.test.utils.QpidTestCase;
 
-public class QueueConfigurationTest extends TestCase
+public class QueueConfigurationTest extends QpidTestCase
 {
 
     private VirtualHostConfiguration _emptyConf;

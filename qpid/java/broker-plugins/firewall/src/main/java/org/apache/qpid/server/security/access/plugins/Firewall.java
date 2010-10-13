@@ -22,6 +22,7 @@ package org.apache.qpid.server.security.access.plugins;
 
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
 
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
@@ -32,6 +33,7 @@ import org.apache.qpid.server.security.SecurityPluginFactory;
 import org.apache.qpid.server.security.access.ObjectProperties;
 import org.apache.qpid.server.security.access.ObjectType;
 import org.apache.qpid.server.security.access.Operation;
+import org.apache.qpid.server.security.access.ObjectProperties.Property;
 import org.apache.qpid.server.security.access.config.FirewallException;
 import org.apache.qpid.server.security.access.config.FirewallRule;
 
@@ -75,22 +77,32 @@ public class Firewall extends AbstractPlugin
 
     public Result authorise(Operation operation, ObjectType objectType, ObjectProperties properties)
     {
-        return Result.ABSTAIN; // We only deal with access requests
-    }
-
-    public Result access(ObjectType objectType, Object instance)
-    {
-        if (objectType != ObjectType.VIRTUALHOST)
+        if (operation != Operation.ACCESS && objectType != ObjectType.VIRTUALHOST)
         {
             return Result.ABSTAIN; // We are only interested in access to virtualhosts
         }
 
-        if (!(instance instanceof InetSocketAddress))
+        if (!properties.containsKey(Property.REMOTE_ADDRESS))
         {
-            return Result.ABSTAIN; // We need an internet address
+            return Result.ABSTAIN; // We need an address
         }
 
-        InetAddress address = ((InetSocketAddress) instance).getAddress();
+        String remoteAddress = properties.get(Property.REMOTE_ADDRESS);
+        int slash = remoteAddress.indexOf('/');
+        int colon = remoteAddress.indexOf(':');
+        if (slash == -1 || colon == -1)
+        {
+            return Result.ABSTAIN; // no internet address found
+        }
+        InetAddress address;
+        try
+        {
+            address = InetAddress.getByName(remoteAddress.substring(slash + 1, colon));
+        }
+        catch (UnknownHostException uhe)
+        {
+            return Result.DENIED;
+        }
         
         try
         {

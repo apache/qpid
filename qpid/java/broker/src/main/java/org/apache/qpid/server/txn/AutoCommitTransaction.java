@@ -40,7 +40,11 @@ public class AutoCommitTransaction implements ServerTransaction
     {
         _transactionLog = transactionLog;
     }
-
+    
+    public long getTransactionStartTime()
+    {
+        return 0L;
+    }
 
     public void addPostCommitAction(Action postCommitAction)
     {

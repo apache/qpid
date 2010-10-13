@@ -22,6 +22,7 @@ package org.apache.qpid.server.exchange;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -82,11 +83,18 @@ public class DefaultExchangeFactory implements ExchangeFactory
     public Exchange createExchange(String exchange, String type, boolean durable, boolean autoDelete)
             throws AMQException
     {
-        return createExchange(new AMQShortString(exchange), new AMQShortString(type), durable, autoDelete, 0);
+        return createExchange(exchange, type, durable, autoDelete, Collections.EMPTY_MAP);
     }
 
+    public Exchange createExchange(String exchange, String type, boolean durable, boolean autoDelete,
+                                   Map<String, Object> arguments)
+            throws AMQException
+    {
+        return createExchange(new AMQShortString(exchange), new AMQShortString(type), durable, autoDelete, arguments, 0);
+    }
+    
     public Exchange createExchange(AMQShortString exchange, AMQShortString type, boolean durable, boolean autoDelete,
-                                   int ticket)
+						           Map<String, Object> arguments, int ticket)
             throws AMQException
     {
         // Check access
@@ -102,7 +110,7 @@ public class DefaultExchangeFactory implements ExchangeFactory
             throw new AMQUnknownExchangeType("Unknown exchange type: " + type,null);
         }
         
-        Exchange e = exchType.newInstance(_host, exchange, durable, ticket, autoDelete);
+        Exchange e = exchType.newInstance(_host, exchange, durable, ticket, autoDelete, arguments);
         return e;
     }
 

@@ -22,16 +22,15 @@ package org.apache.qpid.management.configuration;
 
 import java.util.UUID;
 
-import junit.framework.TestCase;
-
 import org.apache.qpid.management.TestConstants;
+import org.apache.qpid.test.utils.QpidTestCase;
 
 /**
  * Test case for mapping parsers.
  * 
  * @author Andrea Gazzarini.
  */
-public class MappingParsersTest extends TestCase
+public class MappingParsersTest extends QpidTestCase
 {
     /**
      * Tests the execution of the broker connection data mapping parser.

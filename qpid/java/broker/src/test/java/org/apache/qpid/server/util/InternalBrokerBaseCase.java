@@ -29,13 +29,15 @@ import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
+import org.apache.qpid.protocol.ReceiverFactory;
 import org.apache.qpid.server.AMQChannel;
-import org.apache.qpid.server.logging.SystemOutMessageLogger;
-import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.logging.SystemOutMessageLogger;
+import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.TestLogActor;
 import org.apache.qpid.server.protocol.InternalTestProtocolSession;
+import org.apache.qpid.server.protocol.BrokerReceiverFactory;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.registry.ApplicationRegistry;
@@ -44,8 +46,10 @@ import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.qpid.transport.ConnectionSettings;
+import org.apache.qpid.transport.network.IncomingNetworkTransport;
+import org.apache.qpid.transport.network.Transport;
 import org.apache.qpid.util.MockChannel;
-
 
 public class InternalBrokerBaseCase extends QpidTestCase
 {
@@ -59,11 +63,10 @@ public class InternalBrokerBaseCase extends QpidTestCase
     private ServerConfiguration _configuration;
     private XMLConfiguration _configXml = new XMLConfiguration();
     private boolean _started = false;
+    private IncomingNetworkTransport _transport;
 
     public void setUp() throws Exception
     {
-        super.setUp();
-
         _configXml.addProperty("virtualhosts.virtualhost.name", "test");
         _configXml.addProperty("virtualhosts.virtualhost.test.store.class", TestableMemoryMessageStore.class.getName());
 
@@ -84,6 +87,7 @@ public class InternalBrokerBaseCase extends QpidTestCase
 
         _registry = new TestApplicationRegistry(_configuration);
         ApplicationRegistry.initialise(_registry);
+        
         _registry.getVirtualHostRegistry().setDefaultVirtualHostName(getName());
         _virtualHost = _registry.getVirtualHostRegistry().getVirtualHost(getName());
 
@@ -108,12 +112,20 @@ public class InternalBrokerBaseCase extends QpidTestCase
 
         _virtualHost.getBindingFactory().addBinding(getName(), _queue, defaultExchange, null);
 
-        _session = new InternalTestProtocolSession(_virtualHost);
-        CurrentActor.set(_session.getLogActor());
+        setSession(new InternalTestProtocolSession(_virtualHost));
+        CurrentActor.set(getSession().getLogActor());
 
-        _channel = new MockChannel(_session, 1, _messageStore);
+        _channel = new MockChannel(getSession(), 1, _messageStore);
 
-        _session.addChannel(_channel);
+        getSession().addChannel(_channel);
+        
+        ConnectionSettings settings = new ConnectionSettings();
+        settings.setProtocol("vm");
+        settings.setPort(1);
+        
+        _transport = Transport.getIncomingTransport();
+        ReceiverFactory factory = new BrokerReceiverFactory();
+        _transport.accept(settings, factory, null);
     }
 
     protected void configure()
@@ -123,10 +135,11 @@ public class InternalBrokerBaseCase extends QpidTestCase
 
     protected void stopBroker()
     {
+        //Remove the ProtocolSession Actor added during createBroker
+        CurrentActor.remove();
         try
         {
-            //Remove the ProtocolSession Actor added during createBroker
-            CurrentActor.remove();
+	        _transport.close();
         }
         finally
         {
@@ -138,21 +151,9 @@ public class InternalBrokerBaseCase extends QpidTestCase
 
     public void tearDown() throws Exception
     {
-        try
+        if (_started)
         {
-            if (_started)
-            {
-                stopBroker();
-            }
-        }
-        finally
-        {
-            super.tearDown();
-            // Purge Any erroneously added actors
-            while (CurrentActor.get() != null)
-            {
-                CurrentActor.remove();
-            }
+            stopBroker();
         }
     }
 
@@ -250,7 +251,6 @@ public class InternalBrokerBaseCase extends QpidTestCase
 
             channel.publishContentHeader(_headerBody);
         }
-
     }
 
     public void acknowledge(AMQChannel channel, long deliveryTag)

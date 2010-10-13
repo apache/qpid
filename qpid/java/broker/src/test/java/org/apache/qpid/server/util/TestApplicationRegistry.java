@@ -27,7 +27,6 @@ import org.apache.qpid.server.security.auth.database.PropertiesPrincipalDatabase
 
 import java.util.Properties;
 
-
 public class TestApplicationRegistry extends ApplicationRegistry
 {
     public TestApplicationRegistry(ServerConfiguration config) throws ConfigurationException
@@ -42,7 +41,6 @@ public class TestApplicationRegistry extends ApplicationRegistry
         users.put("admin","admin");
         _databaseManager = new PropertiesPrincipalDatabaseManager("testPasswordFile", users);
     }
-
 }
 
 

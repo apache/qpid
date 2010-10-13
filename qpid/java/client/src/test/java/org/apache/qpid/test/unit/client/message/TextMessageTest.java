@@ -23,13 +23,13 @@ package org.apache.qpid.test.unit.client.message;
 import javax.jms.JMSException;
 
 import junit.framework.Assert;
-import junit.framework.TestCase;
 
 import org.apache.qpid.client.message.JMSMapMessage;
 import org.apache.qpid.client.message.JMSTextMessage;
 import org.apache.qpid.client.message.TestMessageHelper;
+import org.apache.qpid.test.utils.QpidTestCase;
 
-public class TextMessageTest extends TestCase
+public class TextMessageTest extends QpidTestCase
 {
     public void testTextOnConstruction() throws Exception
     {

@@ -156,7 +156,7 @@ public class MessageRequeueTest extends QpidBrokerTestCase
 
         assertEquals("number of consumed messages does not match initial data", (int) numTestMessages, messagesReceived);
         // wit 0_10 we can have a delivery tag of 0
-        if (conn.isBroker08())
+        if (conn.isBroker08() || conn.isBroker09())
         {
             for (long b : messageLog)
             {
@@ -224,7 +224,7 @@ public class MessageRequeueTest extends QpidBrokerTestCase
         StringBuilder list = new StringBuilder();
         list.append("Failed to receive:");
         int failed = 0;
-        if (conn.isBroker08())
+        if (conn.isBroker08() || conn.isBroker09())
         {
             for (long b : receieved)
             {

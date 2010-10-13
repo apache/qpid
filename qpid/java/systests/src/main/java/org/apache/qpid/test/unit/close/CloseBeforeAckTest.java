@@ -20,20 +20,26 @@
  */
 package org.apache.qpid.test.unit.close;
 
-import junit.framework.Assert;
-
-import org.apache.qpid.test.utils.QpidBrokerTestCase;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import org.apache.qpid.junit.concurrency.TestRunnable;
-import org.apache.qpid.junit.concurrency.ThreadTestCoordinator;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 import javax.jms.Connection;
 import javax.jms.Message;
+import javax.jms.MessageConsumer;
 import javax.jms.MessageListener;
+import javax.jms.MessageProducer;
 import javax.jms.Session;
+
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This test forces the situation where a session is closed whilst a message consumer is still in its onMessage method.
@@ -46,51 +52,64 @@ import javax.jms.Session;
 public class CloseBeforeAckTest extends QpidBrokerTestCase
 {
     private static final Logger log = LoggerFactory.getLogger(CloseBeforeAckTest.class);
+    private static final String TEST_QUEUE_NAME = "TestQueue";
 
-    Connection connection;
-    Session session;
-    public static final String TEST_QUEUE_NAME = "TestQueue";
+    private Connection connection;
+    private Session session;
     private int TEST_COUNT = 25;
-
-    class TestThread1 extends TestRunnable implements MessageListener
+    
+    private CountDownLatch allowClose = new CountDownLatch(1);
+    private CountDownLatch allowContinue = new CountDownLatch(1);
+    
+    private Callable<Void> one = new Callable<Void>()
     {
-        public void runWithExceptions() throws Exception
+        public Void call() throws Exception
         {
             // Set this up to listen for message on the test session.
-            session.createConsumer(session.createQueue(TEST_QUEUE_NAME)).setMessageListener(this);
-        }
-
-        public void onMessage(Message message)
-        {
-            // Give thread 2 permission to close the session.
-            allow(new int[] { 1 });
-
-            // Wait until thread 2 has closed the connection, or is blocked waiting for this to complete.
-            waitFor(new int[] { 1 }, true);
-        }
-    }
-
-    TestThread1 testThread1 = new TestThread1();
-
-    TestRunnable testThread2 =
-        new TestRunnable()
-        {
-            public void runWithExceptions() throws Exception
+            MessageConsumer consumer = session.createConsumer(session.createQueue(TEST_QUEUE_NAME));
+            consumer.setMessageListener(new MessageListener()
             {
-                // Send a message to be picked up by thread 1.
-                session.createProducer(null).send(session.createQueue(TEST_QUEUE_NAME),
-                    session.createTextMessage("Hi there thread 1!"));
+                public void onMessage(Message message)
+                {
+                    // Give thread 2 permission to close the session.
+                    allowClose.countDown();
 
-                // Wait for thread 1 to pick up the message and give permission to continue.
-                waitFor(new int[] { 0 }, false);
+                    // Wait until thread 2 has closed the connection, or is blocked waiting for this to complete.
+                    try
+                    {
+                        allowContinue.await(1000, TimeUnit.MILLISECONDS);
+                    }
+                    catch (InterruptedException e)
+                    {
+                        // ignore
+                    }
+                }
+            });
+            
+            return null;
+        }
+    };
 
-                // Close the connection.
-                session.close();
+    private Callable<Void> two = new Callable<Void>()
+    {
+        public Void call() throws Exception
+        {
+            // Send a message to be picked up by thread 1.
+            MessageProducer producer = session.createProducer(null);
+            producer.send(session.createQueue(TEST_QUEUE_NAME), session.createTextMessage("Hi there thread 1!"));
 
-                // Allow thread 1 to continue to completion, if it is erronously still waiting.
-                allow(new int[] { 1 });
-            }
-        };
+            // Wait for thread 1 to pick up the message and give permission to continue.
+            allowClose.await();
+
+            // Close the connection.
+            session.close();
+
+            // Allow thread 1 to continue to completion, if it is erronously still waiting.
+            allowContinue.countDown();
+            
+            return null;
+        }
+    };
 
     public void testCloseBeforeAutoAck_QPID_397() throws Exception
     {
@@ -98,27 +117,35 @@ public class CloseBeforeAckTest extends QpidBrokerTestCase
         // message at the end of the onMessage method, after a close has been sent.
         session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
-        ThreadTestCoordinator tt = new ThreadTestCoordinator(2);
+        ExecutorService executor = new ScheduledThreadPoolExecutor(2);
+        Future<Void> first =  executor.submit(one);
+        Future<Void> second = executor.submit(two);
+        executor.shutdown();
 
-        tt.addTestThread(testThread1, 0);
-        tt.addTestThread(testThread2, 1);
-        tt.setDeadlockTimeout(500);
-        tt.run();
-
-        String errorMessage = tt.joinAndRetrieveMessages();
-
-        // Print any error messages or exceptions.
-        log.debug(errorMessage);
-
-        if (!tt.getExceptions().isEmpty())
+        if (!executor.awaitTermination(2000, TimeUnit.MILLISECONDS))
         {
-            for (Exception e : tt.getExceptions())
-            {
-                log.debug("Exception thrown during test thread: ", e);
-            }
+            fail("Deadlocked threads after 2000ms");
         }
-
-        Assert.assertTrue(errorMessage, "".equals(errorMessage));
+        
+        List<String> errors = new ArrayList<String>(2);
+        try
+        {
+	        first.get();
+        }
+        catch (ExecutionException ee)
+        {
+            errors.add(ee.getCause().getMessage());
+        }
+        try
+        {
+            second.get();
+        }
+        catch (ExecutionException ee)
+        {
+            errors.add(ee.getCause().getMessage());
+        }
+        
+        assertTrue("Errors found: " + errors.toArray(new String[0]), errors.isEmpty());
     }
 
     public void closeBeforeAutoAckManyTimes() throws Exception
@@ -133,6 +160,7 @@ public class CloseBeforeAckTest extends QpidBrokerTestCase
     {
         super.setUp();
         connection =  getConnection("guest", "guest");
+        connection.start();
     }
 
     protected void tearDown() throws Exception

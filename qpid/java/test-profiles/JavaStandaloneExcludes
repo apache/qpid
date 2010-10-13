@@ -1,22 +1,9 @@
+//======================================================================
+//These tests require an InVm broker
+//======================================================================
 
 // This is a long running test so should exclude from normal runs
 org.apache.qpid.test.client.failover.FailoverTest#test4MinuteFailover
-
-// Those tests require failover support
-org.apache.qpid.test.client.QueueBrowserAutoAckTest#testFailoverAsQueueBrowserCreated
-org.apache.qpid.test.client.QueueBrowserAutoAckTest#testFailoverWithQueueBrowser
-org.apache.qpid.test.client.QueueBrowserClientAckTest#testFailoverAsQueueBrowserCreated
-org.apache.qpid.test.client.QueueBrowserClientAckTest#testFailoverWithQueueBrowser
-org.apache.qpid.test.client.QueueBrowserDupsOkTest#testFailoverAsQueueBrowserCreated
-org.apache.qpid.test.client.QueueBrowserDupsOkTest#testFailoverWithQueueBrowser
-org.apache.qpid.test.client.QueueBrowserNoAckTest#testFailoverAsQueueBrowserCreated
-org.apache.qpid.test.client.QueueBrowserNoAckTest#testFailoverWithQueueBrowser
-org.apache.qpid.test.client.QueueBrowserPreAckTest#testFailoverAsQueueBrowserCreated
-org.apache.qpid.test.client.QueueBrowserPreAckTest#testFailoverWithQueueBrowser
-org.apache.qpid.test.client.QueueBrowserTransactedTest#testFailoverAsQueueBrowserCreated
-org.apache.qpid.test.client.QueueBrowserTransactedTest#testFailoverWithQueueBrowser
-org.apache.qpid.test.testcases.FailoverTest#*
-org.apache.qpid.test.client.failover.FailoverTest#*
 
 // InVM Broker tests awaiting resolution of QPID-1103
 org.apache.qpid.test.client.timeouts.SyncWaitDelayTest#*

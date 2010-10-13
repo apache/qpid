@@ -20,27 +20,36 @@
  */
 package org.apache.qpid.client.protocol;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicLong;
 
 import javax.jms.JMSException;
 import javax.security.sasl.SaslClient;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.ConnectionTuneParameters;
+import org.apache.qpid.client.handler.ClientMethodDispatcherImpl;
 import org.apache.qpid.client.message.UnprocessedMessage;
 import org.apache.qpid.client.message.UnprocessedMessage_0_8;
 import org.apache.qpid.client.state.AMQStateManager;
-import org.apache.qpid.client.state.AMQState;
-import org.apache.qpid.framing.*;
+import org.apache.qpid.framing.AMQDataBlock;
+import org.apache.qpid.framing.AMQMethodBody;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.ContentBody;
+import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpid.framing.HeartbeatBody;
+import org.apache.qpid.framing.MethodDispatcher;
+import org.apache.qpid.framing.MethodRegistry;
+import org.apache.qpid.framing.ProtocolInitiation;
+import org.apache.qpid.framing.ProtocolVersion;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
 import org.apache.qpid.transport.Sender;
-import org.apache.qpid.client.handler.ClientMethodDispatcherImpl;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Wrapper for protocol session that provides type-safe access to session attributes. <p/> The underlying protocol
@@ -79,8 +88,7 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
     private final UnprocessedMessage[] _channelId2UnprocessedMsgArray = new UnprocessedMessage[16];
 
     /** Counter to ensure unique queue names */
-    protected int _queueId = 1;
-    protected final Object _queueIdLock = new Object();
+    protected static final AtomicLong _queueIdGenerator = new AtomicLong(0);
 
     private ProtocolVersion _protocolVersion;
 //    private VersionSpecificRegistry _registry =
@@ -380,11 +388,7 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
 
     protected AMQShortString generateQueueName()
     {
-        int id;
-        synchronized (_queueIdLock)
-        {
-            id = _queueId++;
-        }
+        long id = _queueIdGenerator.incrementAndGet();
         // convert '.', '/', ':' and ';' to single '_', for spec compliance and readability
         String localAddress = _protocolHandler.getLocalAddress().toString().replaceAll("[./:;]", "_");
         String queueName = "tmp_" + localAddress + "_" + id;

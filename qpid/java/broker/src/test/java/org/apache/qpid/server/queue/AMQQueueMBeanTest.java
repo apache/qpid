@@ -418,11 +418,6 @@ public class AMQQueueMBeanTest extends InternalBrokerBaseCase
         _queueMBean = new AMQQueueMBean(getQueue());
     }
 
-    public void tearDown()
-    {
-        ApplicationRegistry.remove();
-    }
-
     private void sendMessages(int messageCount, boolean persistent) throws AMQException
     {
         for (int i = 0; i < messageCount; i++)

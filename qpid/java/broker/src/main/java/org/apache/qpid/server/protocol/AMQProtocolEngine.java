@@ -30,12 +30,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
 
 import javax.management.JMException;
 import javax.security.sasl.SaslServer;
@@ -71,7 +69,6 @@ import org.apache.qpid.pool.ReferenceCountingExecutorService;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.protocol.AMQMethodListener;
-import org.apache.qpid.protocol.ProtocolEngine;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.configuration.ConfigStore;
 import org.apache.qpid.server.configuration.ConfiguredObject;
@@ -94,16 +91,16 @@ import org.apache.qpid.server.state.AMQState;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
-import org.apache.qpid.transport.NetworkDriver;
+import org.apache.qpid.transport.Receiver;
 import org.apache.qpid.transport.Sender;
+import org.apache.qpid.transport.network.NetworkConnection;
+import org.apache.qpid.transport.network.NetworkTransport;
 
-public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocolSession, ConnectionConfig
+public class AMQProtocolEngine implements Receiver<java.nio.ByteBuffer>, Managable, AMQProtocolSession, ConnectionConfig
 {
-    private static final Logger _logger = Logger.getLogger(AMQProtocolEngine.class);
+    protected static final Logger _logger = Logger.getLogger(AMQProtocolEngine.class);
 
     private static final String CLIENT_PROPERTIES_INSTANCE = ClientProperties.instance.toString();
-
-    private static final AtomicLong idGenerator = new AtomicLong(0);
 
     // to save boxing the channelId and looking up in a map... cache in an array the low numbered
     // channels.  This value must be of the form 2^x - 1.
@@ -121,7 +118,7 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
 
     private final CopyOnWriteArraySet<AMQMethodListener> _frameListeners = new CopyOnWriteArraySet<AMQMethodListener>();
 
-    private final AMQStateManager _stateManager;
+    protected final AMQStateManager _stateManager;
 
     private AMQCodecFactory _codecFactory;
 
@@ -150,13 +147,14 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
     private MethodDispatcher _dispatcher;
     private ProtocolSessionIdentifier _sessionIdentifier;
 
-    // Create a simple ID that increments for ever new Session
-    private final long _sessionID = idGenerator.getAndIncrement();
+    private long _sessionID;
 
     private AMQPConnectionActor _actor;
     private LogSubject _logSubject;
 
-    private NetworkDriver _networkDriver;
+    private NetworkTransport _transport;
+    private NetworkConnection _network;
+    private Sender<ByteBuffer> _sender;
 
     private long _lastIoTime;
 
@@ -172,21 +170,22 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
     private final UUID _id;
     private final ConfigStore _configStore;
     private long _createTime = System.currentTimeMillis();
-
+    
     public ManagedObject getManagedObject()
     {
         return _managedObject;
     }
 
-    public AMQProtocolEngine(VirtualHostRegistry virtualHostRegistry, NetworkDriver driver)
+    public AMQProtocolEngine(VirtualHostRegistry virtualHostRegistry, NetworkTransport transport, NetworkConnection network, Sender<ByteBuffer> sender, long connectionId)
     {
         _stateManager = new AMQStateManager(virtualHostRegistry, this);
-        _networkDriver = driver;
-
         _codecFactory = new AMQCodecFactory(true, this);
         _poolReference.acquireExecutorService();
         _readJob = new Job(_poolReference, Job.MAX_JOB_EVENTS, true);
         _writeJob = new Job(_poolReference, Job.MAX_JOB_EVENTS, false);
+        _transport = transport;
+        _network = network;
+        _sender = sender;
 
         _actor = new AMQPConnectionActor(this, virtualHostRegistry.getApplicationRegistry().getRootMessageLogger());
 
@@ -194,10 +193,7 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
 
         _configStore = virtualHostRegistry.getConfigStore();
         _id = _configStore.createId();
-
-
-        _actor.message(ConnectionMessages.OPEN(null, null, false, false));
-
+        _sessionID = connectionId;
     }
 
     private AMQProtocolSessionMBean createMBean() throws JMException
@@ -247,6 +243,7 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
                         try
                         {
                             dataBlockReceived(dataBlock);
+                            _readBytes += dataBlock.getSize();
                         }
                         catch (Exception e)
                         {
@@ -363,14 +360,14 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
                                                                                        null,
                                                                                        mechanisms.getBytes(),
                                                                                        locales.getBytes());
-            _networkDriver.send(responseBody.generateFrame(0).toNioByteBuffer());
+            _sender.send(responseBody.generateFrame(0).toNioByteBuffer());
 
         }
         catch (AMQException e)
         {
             _logger.info("Received unsupported protocol initiation for protocol version: " + getProtocolVersion());
 
-            _networkDriver.send(new ProtocolInitiation(ProtocolVersion.getLatestSupportedVersion()).toNioByteBuffer());
+            _sender.send(new ProtocolInitiation(ProtocolVersion.getLatestSupportedVersion()).toNioByteBuffer());
         }
     }
 
@@ -422,8 +419,7 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
                     }
 
                     AMQConnectionException ce =
-                            evt.getMethod().getConnectionException(AMQConstant.CHANNEL_ERROR,
-                                                                   AMQConstant.CHANNEL_ERROR.getName().toString());
+                            evt.getMethod().getConnectionException(AMQConstant.CHANNEL_ERROR, e.getMessage());
 
                     _logger.info(e.getMessage() + " whilst processing:" + methodBody);
                     closeConnection(channelId, ce, false);
@@ -491,7 +487,7 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
         {
             public void run()
             {
-                _networkDriver.send(buf);
+                _sender.send(buf);
             }
         });
     }
@@ -613,7 +609,7 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
 
     /**
      * Close a specific channel. This will remove any resources used by the channel, including: <ul><li>any queue
-     * subscriptions (this may in turn remove queues if they are auto delete</li> </ul>
+     * subscriptions this may in turn remove queues if they are auto delete</li> </ul>
      *
      * @param channelId id of the channel to close
      *
@@ -683,8 +679,9 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
     {
         if (delay > 0)
         {
-            _networkDriver.setMaxWriteIdle(delay);
-            _networkDriver.setMaxReadIdle((int) (ApplicationRegistry.getInstance().getConfiguration().getHeartBeatTimeout() * delay));
+            // FIXME
+//            _transport.setMaxWriteIdle(delay);
+//            _transport.setMaxReadIdle((int) (ApplicationRegistry.getInstance().getConfiguration().getHeartBeatTimeout() * delay));
         }
     }
 
@@ -788,7 +785,7 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
 
     public void closeProtocolSession()
     {
-        _networkDriver.close();
+        _sender.close();
         try
         {
             _stateManager.changeState(AMQState.CONNECTION_CLOSED);
@@ -823,7 +820,7 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
      */
     public String getLocalFQDN()
     {
-        SocketAddress address = _networkDriver.getLocalAddress();
+        SocketAddress address = _transport.getAddress();
         // we use the vmpipe address in some tests hence the need for this rather ugly test. The host
         // information is used by SASL primary.
         if (address instanceof InetSocketAddress)
@@ -912,7 +909,7 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
 
     public Object getClientIdentifier()
     {
-        return (_networkDriver != null) ? _networkDriver.getRemoteAddress() : null;
+        return (_network != null) ? _network.getRemoteAddress() : null;
     }
 
     public VirtualHost getVirtualHost()
@@ -971,12 +968,7 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
 
     public SocketAddress getRemoteAddress()
     {
-        return _networkDriver.getRemoteAddress();
-    }
-
-    public SocketAddress getLocalAddress()
-    {
-        return _networkDriver.getLocalAddress();
+        return _network.getRemoteAddress();
     }
 
     public MethodRegistry getMethodRegistry()
@@ -1006,14 +998,9 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
         // Nothing
     }
 
-    public void setNetworkDriver(NetworkDriver driver)
-    {
-        _networkDriver = driver;
-    }
-
     public void writerIdle()
     {
-        _networkDriver.send(HeartbeatBody.FRAME.toNioByteBuffer());
+        _sender.send(HeartbeatBody.FRAME.toNioByteBuffer());
     }
 
     public void exception(Throwable throwable)
@@ -1021,9 +1008,9 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
         if (throwable instanceof AMQProtocolHeaderException)
         {
             writeFrame(new ProtocolInitiation(ProtocolVersion.getLatestSupportedVersion()));
-            _networkDriver.close();
+            _sender.close();
 
-            _logger.error("Error in protocol initiation " + this + ":" + getRemoteAddress() + " :" + throwable.getMessage(), throwable);
+            _logger.error("Error in protocol initiation " + this + ":" + _network.getRemoteAddress() + " :" + throwable.getMessage(), throwable);
         }
         else if (throwable instanceof IOException)
         {
@@ -1039,7 +1026,7 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
 
             writeFrame(closeBody.generateFrame(0));
 
-            _networkDriver.close();
+            _sender.close();
         }
     }
 
@@ -1050,17 +1037,7 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
 
     public void setSender(Sender<ByteBuffer> sender)
     {
-        // Do nothing
-    }
-
-    public long getReadBytes()
-    {
-        return _readBytes;
-    }
-
-    public long getWrittenBytes()
-    {
-        return _writtenBytes;
+        _sender = sender;
     }
 
     public long getLastIoTime()
@@ -1076,19 +1053,6 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
     public String getClientVersion()
     {
         return (_clientVersion == null) ? null : _clientVersion.toString();
-    }
-
-    public void closeIfLingeringClosedChannels()
-    {
-        for (Entry<Integer, Long>id : _closingChannelsList.entrySet())
-        {
-            if (id.getValue() + 30000 > System.currentTimeMillis())
-            {
-                // We have a channel that we closed 30 seconds ago. Client's dead, kill the connection
-                _logger.error("Closing connection as channel was closed more than 30 seconds ago and no ChannelCloseOk has been processed");
-                closeProtocolSession();
-            }
-        }
     }
 
     public Boolean isIncoming()
@@ -1263,7 +1227,6 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
 
     public void closeSession(AMQSessionModel session, AMQConstant cause, String message) throws AMQException
     {
-
         closeChannel((Integer)session.getID());
 
         MethodRegistry methodRegistry = getMethodRegistry();
@@ -1274,5 +1237,28 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
                         0,0);
 
         writeFrame(responseBody.generateFrame((Integer)session.getID()));       
+    }
+
+    public void close(AMQConstant cause, String message) throws AMQException
+    {
+        closeConnection(0, new AMQConnectionException(cause, message, 0, 0,
+		                getProtocolOutputConverter().getProtocolMajorVersion(),
+		                getProtocolOutputConverter().getProtocolMinorVersion(),
+		                (Throwable) null), true);
+    }
+
+    public List<AMQSessionModel> getSessionModels()
+    {
+		List<AMQSessionModel> sessions = new ArrayList<AMQSessionModel>(); 
+		for (AMQChannel channel : getChannels())
+		{
+		    sessions.add((AMQSessionModel) channel);
+		}
+		return sessions;
+    }
+
+    public LogSubject getLogSubject()
+    {
+        return _logSubject;
     }       
 }

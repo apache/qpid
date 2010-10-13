@@ -24,12 +24,11 @@ import java.util.Enumeration;
 
 import javax.jms.JMSException;
 
-import junit.framework.TestCase;
-
 import org.apache.qpid.client.message.JMSTextMessage;
 import org.apache.qpid.client.message.TestMessageHelper;
+import org.apache.qpid.test.utils.QpidTestCase;
 
-public class FieldTablePropertyTest extends TestCase
+public class FieldTablePropertyTest extends QpidTestCase
 {
     public void testPropertyNames()
     {

@@ -18,39 +18,91 @@
  * under the License.
  * 
  */
-
 package org.apache.qpid.transport.network;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.qpid.transport.TransportException;
 
+/**
+ * Loads the network transport class.
+ */
 public class Transport
-{    
-    private final static Class<?> transportClass;
+{
+    public static final String TCP = "tcp";
+    public static final String UDP = "udp";
+    public static final String VM = "vm";
+    public static final String SOCKET = "socket";
+    public static final String MULTICAST = "multicast";
+ 
+    public static final String MINA_TRANSPORT = "org.apache.qpid.transport.network.mina.MinaNetworkTransport";
+    public static final String IO_TRANSPORT = "org.apache.qpid.transport.network.io.IoNetworkTransport";
+    public static final String NIO_TRANSPORT = "org.apache.qpid.transport.network.nio.NioNetworkTransport";
+    public static final String NETTY_TRANSPORT = "org.apache.qpid.transport.network.netty.NettyNetworkTransport";
     
-    static 
+    private static final List<String> _incoming = new ArrayList<String>();
+    private static final List<String> _outgoing = new ArrayList<String>();
+    
+    public static void registerIncomingTransport(Class<? extends IncomingNetworkTransport> transport)
     {
-        try
-        {
-            transportClass = 
-                Class.forName(System.getProperty("qpid.transport", 
-                                                 "org.apache.qpid.transport.network.io.IoNetworkTransport"));
-            
-        }
-        catch(Exception e)
-        {
-            throw new Error("Error occured while loading Qpid Transport",e);
-        }
+        _incoming.add(transport.getName());
     }
     
-    public static NetworkTransport getTransport() throws TransportException
+    public static void registerOutgoingTransport(Class<? extends OutgoingNetworkTransport> transport)
     {
+        _outgoing.add(transport.getName());
+    }
+
+    public static IncomingNetworkTransport getIncomingTransport() throws TransportException
+    {
+        return (IncomingNetworkTransport) getTransport("incoming", _incoming, MINA_TRANSPORT, null);
+    }
+    
+    public static OutgoingNetworkTransport getOutgoingTransport() throws TransportException
+    {
+        return (OutgoingNetworkTransport) getTransport("outgoing", _outgoing, MINA_TRANSPORT, null);
+    }
+    
+    public static OutgoingNetworkTransport getOutgoingTransport(String protocol) throws TransportException
+    {
+        return (OutgoingNetworkTransport) getTransport("outgoing", _outgoing, MINA_TRANSPORT, protocol);
+    }
+    
+    private static NetworkTransport getTransport(String direction, List<String> registered, String defaultTransport, String protocol)
+    {
+        for (String transport : registered)
+        {
+            try
+            {
+                Class<?> clazz = Class.forName(transport);
+                NetworkTransport network = (NetworkTransport) clazz.newInstance();
+                if (protocol == null || network.isCompatible(protocol))
+                {
+                    return network;
+                }
+            }
+            catch (Exception e)
+            {
+                // Ignore and move to next class
+            }
+        }
+        
         try
         {
-            return (NetworkTransport)transportClass.newInstance();
+            String transport = System.getProperty("qpid.transport." + direction, MINA_TRANSPORT);
+            Class<?> clazz = Class.forName(transport);
+            NetworkTransport network = (NetworkTransport) clazz.newInstance();
+            if (protocol == null || network.isCompatible(protocol))
+            {
+                return network;
+            }
         }
         catch (Exception e)
         {
-            throw new TransportException("Error while creating a new transport instance",e);
+            throw new TransportException("Error while creating a new " + direction + " transport instance", e);
         }
+        
+        throw new TransportException("Cannot create " + direction + " transport supporting " + protocol);
     }
 }

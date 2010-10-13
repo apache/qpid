@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.server.exchange;
 
+import java.util.Map;
+
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.virtualhost.VirtualHost;
@@ -30,6 +32,6 @@ public interface ExchangeType<T extends Exchange>
     public AMQShortString getName();
     public Class<T> getExchangeClass();
     public T newInstance(VirtualHost host, AMQShortString name,
-                         boolean durable, int ticket, boolean autoDelete) throws AMQException;
+                         boolean durable, int ticket, boolean autoDelete, Map<String, Object> arguments) throws AMQException;
     public AMQShortString getDefaultExchangeName();
 }

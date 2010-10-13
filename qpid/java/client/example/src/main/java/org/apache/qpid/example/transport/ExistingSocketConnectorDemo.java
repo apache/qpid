@@ -21,9 +21,9 @@
 
 package org.apache.qpid.example.transport;
 
+import org.apache.mina.transport.socket.nio.ExistingSocketConnector;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQConnection;
-import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.jms.ConnectionListener;
 import org.apache.qpid.url.URLSyntaxException;
 
@@ -83,7 +83,7 @@ public class ExistingSocketConnectorDemo implements ConnectionListener
         Socket socket = SocketChannel.open().socket();
         socket.connect(new InetSocketAddress("localhost", 5672));
 
-        TransportConnection.registerOpenSocket(Socket1_ID, socket);
+        ExistingSocketConnector.registerOpenSocket(Socket1_ID, socket);
 
 
         _connection = new AMQConnection(CONNECTION);
@@ -140,7 +140,7 @@ public class ExistingSocketConnectorDemo implements ConnectionListener
             socket.connect(new InetSocketAddress("localhost", 5673));
 
             // This is the new method to pass in an open socket for the connection to use.
-            TransportConnection.registerOpenSocket(Socket2_ID, socket);
+            ExistingSocketConnector.registerOpenSocket(Socket2_ID, socket);
         }
         catch (IOException e)
         {

@@ -25,13 +25,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
 
-import junit.framework.TestCase;
-
 import org.apache.qpid.api.Message;
 import org.apache.qpid.management.TestConstants;
 import org.apache.qpid.management.domain.handler.base.IMessageHandler;
 import org.apache.qpid.management.domain.model.DomainModel;
 import org.apache.qpid.nclient.util.ByteBufferMessage;
+import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.transport.codec.Decoder;
 
 /**
@@ -39,7 +38,7 @@ import org.apache.qpid.transport.codec.Decoder;
  * 
  * @author Andrea Gazzarini
  */
-public class BrokerMessageListenerTest extends TestCase
+public class BrokerMessageListenerTest extends QpidTestCase
 {
     // An empty message handler user for test.
     private IMessageHandler _emptyMessageHandler = new IMessageHandler() 

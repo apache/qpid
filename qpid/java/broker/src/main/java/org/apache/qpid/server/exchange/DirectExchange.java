@@ -34,6 +34,7 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import javax.management.JMException;
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 
@@ -61,10 +62,11 @@ public class DirectExchange extends AbstractExchange
                                             AMQShortString name,
                                             boolean durable,
                                             int ticket,
-                                            boolean autoDelete) throws AMQException
+                                            boolean autoDelete,
+                                            Map<String, Object> arguments) throws AMQException
         {
             DirectExchange exch = new DirectExchange();
-            exch.initialise(host,name,durable,ticket,autoDelete);
+            exch.initialise(host, name, durable, ticket, autoDelete, arguments);
             return exch;
         }
 

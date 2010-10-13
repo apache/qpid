@@ -1020,9 +1020,9 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
             if (assertNode)
             {
                 match =  (result.getDurable() == node.isDurable()) && 
-                         (node.getExchangeType() != null && 
-                          node.getExchangeType().equals(result.getType())) &&
-                         (matchProps(result.getArguments(),node.getDeclareArgs()));
+                         (node.getExchangeType() != null && node.getExchangeType().equals(result.getType())) &&
+                         (node.getDeclareArgs() != null && result.hasArguments() &&
+                                 matchProps(result.getArguments(), node.getDeclareArgs()));
             }            
             else if (node.getExchangeType() != null)
             {

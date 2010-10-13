@@ -20,16 +20,15 @@
  */
 package org.apache.qpid.test.unit.client.destinationurl;
 
-import junit.framework.TestCase;
+import java.net.URISyntaxException;
 
 import org.apache.qpid.exchange.ExchangeDefaults;
+import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.url.AMQBindingURL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.URISyntaxException;
-
-public class DestinationURLTest extends TestCase
+public class DestinationURLTest extends QpidTestCase
 {
     private static final Logger _logger = LoggerFactory.getLogger(DestinationURLTest.class);
 

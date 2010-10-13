@@ -21,16 +21,15 @@
 
 package org.apache.qpid.info.test;
 
-import junit.framework.TestCase;
-import org.apache.qpid.info.util.XMLWriter;
-
 import java.util.HashMap;
 
-/*
+import org.apache.qpid.info.util.XMLWriter;
+import org.apache.qpid.test.utils.QpidTestCase;
+
+/**
  * This test verifies the XML writer custom class operations
  */
-
-public class XMLWriterTest extends TestCase
+public class XMLWriterTest extends QpidTestCase
 {
 
     private XMLWriter xw = null;

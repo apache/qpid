@@ -20,23 +20,24 @@
  */
 package org.apache.qpid.server.security.auth.sasl;
 
-import junit.framework.TestCase;
-import org.apache.qpid.server.security.auth.database.PropertiesPrincipalDatabase;
-import org.apache.qpid.server.security.auth.sasl.crammd5.CRAMMD5HexInitialiser;
-
-import javax.security.auth.callback.Callback;
-import javax.security.auth.callback.NameCallback;
-import javax.security.auth.callback.PasswordCallback;
-import javax.security.auth.callback.UnsupportedCallbackException;
 import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Properties;
 
+import javax.security.auth.callback.Callback;
+import javax.security.auth.callback.NameCallback;
+import javax.security.auth.callback.PasswordCallback;
+import javax.security.auth.callback.UnsupportedCallbackException;
+
+import org.apache.qpid.server.security.auth.database.PropertiesPrincipalDatabase;
+import org.apache.qpid.server.security.auth.sasl.crammd5.CRAMMD5HexInitialiser;
+import org.apache.qpid.test.utils.QpidTestCase;
+
 /**
  * These tests ensure that the Hex wrapping that the initialiser performs does actually operate when the handle method is called.
  */
-public class CRAMMD5HexInitialiserTest extends TestCase
+public class CRAMMD5HexInitialiserTest extends QpidTestCase
 {
     public void testHex()
     {

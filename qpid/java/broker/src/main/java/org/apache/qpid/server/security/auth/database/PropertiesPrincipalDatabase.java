@@ -22,6 +22,7 @@ package org.apache.qpid.server.security.auth.database;
 
 import org.apache.qpid.server.security.auth.sasl.AuthenticationProviderInitialiser;
 import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
+import org.apache.qpid.server.security.auth.sasl.amqplain.AmqPlainInitialiser;
 import org.apache.qpid.server.security.auth.sasl.crammd5.CRAMMD5Initialiser;
 import org.apache.qpid.server.security.auth.sasl.plain.PlainInitialiser;
 
@@ -52,13 +53,19 @@ public class PropertiesPrincipalDatabase implements PrincipalDatabase
          *  Create Authenticators for Properties Principal Database.
          */
 
+        // Accept AMQPlain incomming and compare it to the file.
+        AmqPlainInitialiser amqplain = new AmqPlainInitialiser();
+        amqplain.initialise(this);
+
         //  Accept MD5 incomming and use plain comparison with the file
         PlainInitialiser cram = new PlainInitialiser();
         cram.initialise(this);
+        
         // Accept Plain incomming and hash it for comparison to the file.
         CRAMMD5Initialiser plain = new CRAMMD5Initialiser();
         plain.initialise(this, CRAMMD5Initialiser.HashDirection.INCOMMING);
 
+        _saslServers.put(amqplain.getMechanismName(), amqplain);
         _saslServers.put(plain.getMechanismName(), cram);
         _saslServers.put(cram.getMechanismName(), plain);
     }

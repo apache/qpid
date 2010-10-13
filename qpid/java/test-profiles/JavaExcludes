@@ -1,3 +1,7 @@
+//======================================================================
+//These tests do not work with the Java broker
+//======================================================================
+
 // Those tests are not finished
 org.apache.qpid.test.testcases.TTLTest#*
 org.apache.qpid.test.testcases.FailoverTest#*

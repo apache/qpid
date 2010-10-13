@@ -85,20 +85,21 @@ public class CurrentActor
     }
 
     /**
-     * Remove the current LogActor.
-     * <p/>
-     * Calling remove without calling set will result in an EmptyStackException.
+     * Remove the current LogActor if it has been set.
      */
     public static void remove()
     {
         Stack<LogActor> stack = _currentActor.get();
-        stack.pop();
+        if (!stack.isEmpty())
+        {
+            stack.pop();
+        }
     }
 
     /**
      * Return the current head of the list of LogActors.
      * <p/>
-     * If there has been no set call then this will return Null.
+     * If there has been no set call then this will the default actor.
      *
      * @return Current LogActor
      */

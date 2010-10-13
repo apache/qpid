@@ -82,23 +82,6 @@ public abstract class AbstractProxyPlugin extends AbstractPlugin
     {
         return getDefault();
     }
-    
-    public Result accessVirtualhost(Object instance)
-    {
-        return getDefault();
-    }
-
-    @Override
-    public Result access(ObjectType objectType, Object instance)
-    {
-        switch (objectType)
-        {
-			case VIRTUALHOST:
-				return accessVirtualhost(instance);
-        }
-		
-		return getDefault();   
-    }
 
     @Override
     public Result authorise(Operation operation, ObjectType objectType, ObjectProperties properties)

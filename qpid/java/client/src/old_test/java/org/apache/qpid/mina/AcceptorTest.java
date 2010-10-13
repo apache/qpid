@@ -39,7 +39,7 @@ import junit.framework.TestCase;
  * Tests MINA socket performance. This acceptor simply reads data from the network and writes it back again.
  *
  */
-public class AcceptorTest extends TestCase
+public class AcceptorTest extends QpidTestCase
 {
     private static final Logger _logger = Logger.getLogger(AcceptorTest.class);
 

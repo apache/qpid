@@ -20,23 +20,24 @@
  */
 package org.apache.qpid.test.unit.message;
 
-import javax.jms.*;
+import javax.jms.Destination;
+import javax.jms.JMSException;
+import javax.jms.MapMessage;
+import javax.jms.Message;
+import javax.jms.TextMessage;
 
-import junit.framework.TestCase;
-
-import org.apache.qpid.client.*;
-import org.apache.qpid.client.protocol.AMQProtocolHandler;
-import org.apache.qpid.client.failover.FailoverException;
-import org.apache.qpid.client.message.*;
+import org.apache.qpid.client.AMQQueue;
+import org.apache.qpid.client.AMQSession;
+import org.apache.qpid.client.message.AMQMessageDelegateFactory;
+import org.apache.qpid.client.message.AbstractJMSMessage;
+import org.apache.qpid.client.message.JMSMapMessage;
+import org.apache.qpid.client.message.JMSTextMessage;
+import org.apache.qpid.client.message.MessageConverter;
 import org.apache.qpid.exchange.ExchangeDefaults;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.AMQException;
-
-import java.util.Map;
+import org.apache.qpid.test.utils.QpidTestCase;
 
 
-public class MessageConverterTest extends TestCase
+public class MessageConverterTest extends QpidTestCase
 {
 
     public static final String JMS_CORR_ID = "QPIDID_01";

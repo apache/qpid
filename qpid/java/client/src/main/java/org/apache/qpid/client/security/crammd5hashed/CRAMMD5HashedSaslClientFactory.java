@@ -36,7 +36,7 @@ public class CRAMMD5HashedSaslClientFactory implements SaslClientFactory
     public static final String MECHANISM = "CRAM-MD5-HASHED";
 
 
-    public SaslClient createSaslClient(String[] mechanisms, String authorizationId, String protocol, String serverName, Map<String, ?> props, CallbackHandler cbh) throws SaslException
+    public SaslClient createSaslClient(String[] mechanisms, String authorizationId, String protocol, String serverName, Map props, CallbackHandler cbh) throws SaslException
     {
         for (int i = 0; i < mechanisms.length; i++)
         {

@@ -21,11 +21,10 @@
 package org.apache.qpid.framing;
 
 import org.apache.mina.common.ByteBuffer;
+import org.apache.qpid.test.utils.QpidTestCase;
 
-import junit.framework.TestCase;
 
-
-public class BasicContentHeaderPropertiesTest extends TestCase
+public class BasicContentHeaderPropertiesTest extends QpidTestCase
 {
 
     BasicContentHeaderProperties _testProperties;

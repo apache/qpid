@@ -20,12 +20,6 @@
  */
 package org.apache.qpid.server.security.auth.database;
 
-import junit.framework.TestCase;
-
-import javax.security.auth.login.AccountNotFoundException;
-
-import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
-
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -38,7 +32,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
-public class PlainPasswordFilePrincipalDatabaseTest extends TestCase
+import javax.security.auth.login.AccountNotFoundException;
+
+import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
+import org.apache.qpid.test.utils.QpidTestCase;
+
+public class PlainPasswordFilePrincipalDatabaseTest extends QpidTestCase
 {
 
     private static final String TEST_COMMENT = "# Test Comment";

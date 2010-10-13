@@ -23,9 +23,8 @@ package org.apache.qpid.test.unit.client.connection;
 import org.apache.qpid.AMQConnectionFailureException;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQUnresolvedAddressException;
-import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
-import org.apache.qpid.client.AMQAuthenticationException;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
@@ -40,7 +39,6 @@ import org.apache.qpid.jms.BrokerDetails;
 import javax.jms.Connection;
 import javax.jms.QueueSession;
 import javax.jms.TopicSession;
-import javax.naming.NamingException;
 
 public class ConnectionTest extends QpidBrokerTestCase
 {
@@ -149,6 +147,9 @@ public class ConnectionTest extends QpidBrokerTestCase
         {
             assertNotNull("No cause set:" + amqe.getMessage(), amqe.getCause());
             assertTrue("Exception was wrong type", amqe.getCause() instanceof AMQException);
+            AMQException cause = (AMQException) amqe.getCause();
+            assertNotNull("No error code set", cause.getErrorCode());
+            assertEquals("Wrong error code set", isBroker010() ? AMQConstant.CONTEXT_IN_USE : AMQConstant.NOT_ALLOWED, cause.getErrorCode());
         }
         finally
         {

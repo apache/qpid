@@ -93,11 +93,11 @@ public class HeadersExchange extends AbstractExchange
         }
 
         public HeadersExchange newInstance(VirtualHost host, AMQShortString name, boolean durable, int ticket,
-                boolean autoDelete) throws AMQException
+                boolean autoDelete, Map<String, Object> arguments) throws AMQException
         {
             HeadersExchange exch = new HeadersExchange();
 
-            exch.initialise(host, name, durable, ticket, autoDelete);
+            exch.initialise(host, name, durable, ticket, autoDelete, arguments);
             return exch;
         }
 

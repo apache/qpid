@@ -23,9 +23,9 @@ package org.apache.qpid.client.message;
 
 import javax.jms.JMSException;
 
-import junit.framework.TestCase;
+import org.apache.qpid.test.utils.QpidTestCase;
 
-public class AbstractJMSMessageTest extends TestCase
+public class AbstractJMSMessageTest extends QpidTestCase
 {
 
     public void testSetNullJMSReplyTo08() throws JMSException

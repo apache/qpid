@@ -26,15 +26,14 @@ import java.lang.reflect.Proxy;
 
 import org.apache.muse.ws.notification.NotificationProducer;
 import org.apache.qpid.management.Names;
-
-import junit.framework.TestCase;
+import org.apache.qpid.test.utils.QpidTestCase;
 
 /**
  * Test case for QMan adapter capability.
  * 
  * @author Andrea Gazzarini
  */
-public class QManAdapterCapabilityTest extends TestCase
+public class QManAdapterCapabilityTest extends QpidTestCase
 {	
 	/**
 	 * Tests the execution of the getTopicName() method.

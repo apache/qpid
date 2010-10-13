@@ -20,8 +20,6 @@
  */
 package org.apache.qpid.util;
 
-import junit.framework.TestCase;
-
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -29,7 +27,9 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.List;
 
-public class FileUtilsTest extends TestCase
+import org.apache.qpid.test.utils.QpidTestCase;
+
+public class FileUtilsTest extends QpidTestCase
 {
     private static final String COPY = "-Copy";
     private static final String SUB = "-Sub";

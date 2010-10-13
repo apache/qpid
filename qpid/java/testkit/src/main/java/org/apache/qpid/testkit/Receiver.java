@@ -165,11 +165,6 @@ public class Receiver extends Client implements MessageListener
 	                			+ sequence  + ",received=" + seq + ")" ); 
 	                }
             	}
-            	else
-            	{
-            	    msg_count ++;
-            	}
-            	
                 // Please note that this test case doesn't expect duplicates
                 // When testing for transactions.
             	if (isTransacted() && msg_count % getTxSize() == 0)

@@ -21,6 +21,7 @@
 package org.apache.qpid.test.client;
 
 import org.apache.log4j.Logger;
+import org.apache.mina.common.support.IoServiceListenerSupport;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQSession;
@@ -52,7 +53,6 @@ public class QueueBrowserAutoAckTest extends FailoverBaseCase
     public void setUp() throws Exception
     {
         super.setUp();
-
 
         //Create Client
         _clientConnection = getConnection();

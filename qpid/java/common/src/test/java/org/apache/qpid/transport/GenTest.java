@@ -20,14 +20,14 @@
  */
 package org.apache.qpid.transport;
 
-import junit.framework.TestCase;
+import org.apache.qpid.test.utils.QpidTestCase;
 
 /**
  * GenTest
  *
  */
 
-public class GenTest extends TestCase
+public class GenTest extends QpidTestCase
 {
 
     public void testBooleans()

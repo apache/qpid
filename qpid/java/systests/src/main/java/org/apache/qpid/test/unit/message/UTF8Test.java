@@ -89,22 +89,21 @@ public class UTF8Test extends QpidBrokerTestCase
 
     private void declareQueue(String exch, String routkey, String qname) throws Exception
     {
-            Connection conn = new Connection();
-            if (!_broker.equals(QpidBrokerTestCase.EXTERNAL) && !isBroker08())
-            {
-                conn.connect("localhost", QpidBrokerTestCase.DEFAULT_PORT, "test", "guest", "guest",false);
-            }
-            else
-            {
-                throw new Exception("unsupported test " +
-                        "configuration. broker: " + _broker + " version > 0.10 "+ !isBroker08() + " This test must be run on a local broker using protocol 0.10 or higher.");
-            }
-            Session sess = conn.createSession(0);
-            sess.exchangeDeclare(exch, "direct", null, null);
-            sess.queueDeclare(qname, null, null);
-            sess.exchangeBind(qname, exch, routkey, null);
-            sess.sync();
-            conn.close();        
+        Connection conn = new Connection();
+        if (_broker.equals(EXTERNAL) || isBroker08() || isBroker09())
+        {
+            throw new Exception("unsupported test " +
+                    "configuration. broker: " + _broker + " version > 0.10 "+ isBroker010() +
+                    " This test must be run on a local broker using protocol 0.10 or higher.");
+        }
+
+        conn.connect("localhost", DEFAULT_PORT, "test", "guest", "guest", false);
+        Session sess = conn.createSession(0);
+        sess.exchangeDeclare(exch, "direct", null, null);
+        sess.queueDeclare(qname, null, null);
+        sess.exchangeBind(qname, exch, routkey, null);
+        sess.sync();
+        conn.close();        
     }
 
     private Destination getDestination(String exch, String routkey, String qname)

@@ -40,8 +40,6 @@ public abstract class AbstractPlugin implements SecurityPlugin
 	{
 		return Result.ABSTAIN;
 	}
-    
-    public abstract Result access(ObjectType object, Object instance);
 
     public abstract Result authorise(Operation operation, ObjectType object, ObjectProperties properties);
 

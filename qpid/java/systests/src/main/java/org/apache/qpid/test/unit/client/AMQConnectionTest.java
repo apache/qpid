@@ -231,7 +231,7 @@ public class AMQConnectionTest extends QpidBrokerTestCase
             }
             
             MessageConsumer consumerB = null;
-            if (isBroker08())
+            if (isBroker08() || isBroker09())
             {
                 Session consSessB = _connection.createSession(true, Session.AUTO_ACKNOWLEDGE);
                 consumerB = consSessB.createConsumer(_queue);
@@ -246,7 +246,7 @@ public class AMQConnectionTest extends QpidBrokerTestCase
             for (int i = 0; i < 2; i++)
             {
                 msg = consumerA.receive(1500);
-                assertNotNull("Consumer A should receive 2 messages",msg);                
+                assertNotNull("Consumer A should receive 2 messages: " + i,  msg);                
             }
             
             msg = consumerA.receive(1500);

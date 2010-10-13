@@ -20,20 +20,20 @@
  */
 package org.apache.qpid.transport;
 
+import static org.apache.qpid.util.Serial.*;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import junit.framework.TestCase;
-
-import static org.apache.qpid.util.Serial.*;
+import org.apache.qpid.test.utils.QpidTestCase;
 
 /**
  * RangeSetTest
  *
  */
 
-public class RangeSetTest extends TestCase
+public class RangeSetTest extends QpidTestCase
 {
 
     private void check(RangeSet ranges)

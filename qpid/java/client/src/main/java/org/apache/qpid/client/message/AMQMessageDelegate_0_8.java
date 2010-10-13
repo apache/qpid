@@ -21,9 +21,11 @@
 
 package org.apache.qpid.client.message;
 
+import java.lang.ref.SoftReference;
 import java.net.URISyntaxException;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -38,7 +40,6 @@ import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.AMQTopic;
 import org.apache.qpid.client.CustomJMSXProperty;
 import org.apache.qpid.client.JMSAMQException;
-import org.apache.qpid.collections.ReferenceMap;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.ContentHeaderProperties;
@@ -47,7 +48,7 @@ import org.apache.qpid.url.BindingURL;
 
 public class AMQMessageDelegate_0_8 extends AbstractAMQMessageDelegate
 {
-    private static final Map _destinationCache = Collections.synchronizedMap(new ReferenceMap());
+    private static final Map<String, SoftReference<Destination>> _destinationCache = Collections.synchronizedMap(new HashMap<String, SoftReference<Destination>>());
 
     public static final String JMS_TYPE = "x-jms-type";
 
@@ -181,7 +182,8 @@ public class AMQMessageDelegate_0_8 extends AbstractAMQMessageDelegate
         }
         else
         {
-            Destination dest = (Destination) _destinationCache.get(replyToEncoding);
+            SoftReference<Destination> ref = _destinationCache.get(replyToEncoding);
+            Destination dest = ref.get();
             if (dest == null)
             {
                 try
@@ -194,7 +196,7 @@ public class AMQMessageDelegate_0_8 extends AbstractAMQMessageDelegate
                     throw new JMSAMQException("Illegal value in JMS_ReplyTo property: " + replyToEncoding, e);
                 }
 
-                _destinationCache.put(replyToEncoding, dest);
+                _destinationCache.put(replyToEncoding, new SoftReference<Destination>(dest));
             }
 
             return dest;
@@ -218,7 +220,7 @@ public class AMQMessageDelegate_0_8 extends AbstractAMQMessageDelegate
         final AMQDestination amqd = (AMQDestination) destination;
 
         final AMQShortString encodedDestination = amqd.getEncodedName();
-        _destinationCache.put(encodedDestination, destination);
+        _destinationCache.put(encodedDestination.asString(), new SoftReference<Destination>(amqd));
         getContentHeaderProperties().setReplyTo(encodedDestination);
     }
 

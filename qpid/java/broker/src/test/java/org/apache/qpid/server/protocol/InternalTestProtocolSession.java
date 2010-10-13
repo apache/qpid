@@ -20,24 +20,30 @@
  */
 package org.apache.qpid.server.protocol;
 
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.security.Principal;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.AMQDataBlock;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.AMQChannel;
-import org.apache.qpid.server.output.ProtocolOutputConverter;
 import org.apache.qpid.server.message.AMQMessage;
+import org.apache.qpid.server.message.MessageContentSource;
+import org.apache.qpid.server.output.ProtocolOutputConverter;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.state.AMQState;
 import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.message.MessageContentSource;
-import org.apache.qpid.transport.TestNetworkDriver;
 
 public class InternalTestProtocolSession extends AMQProtocolEngine implements ProtocolOutputConverter
 {
@@ -47,7 +53,7 @@ public class InternalTestProtocolSession extends AMQProtocolEngine implements Pr
 
     public InternalTestProtocolSession(VirtualHost virtualHost) throws AMQException
     {
-        super(ApplicationRegistry.getInstance().getVirtualHostRegistry(), new TestNetworkDriver());
+        super(ApplicationRegistry.getInstance().getVirtualHostRegistry(), null, null, null, 0);
 
         _channelDelivers = new HashMap<Integer, Map<AMQShortString, LinkedList<DeliveryPair>>>();
 
@@ -63,9 +69,31 @@ public class InternalTestProtocolSession extends AMQProtocolEngine implements Pr
         setVirtualHost(virtualHost);
     }
 
+    public void closeProtocolSession()
+    {
+        try
+        {
+            _stateManager.changeState(AMQState.CONNECTION_CLOSED);
+        }
+        catch (AMQException e)
+        {
+            _logger.info(e.getMessage());
+        }
+    }
+
+    public void writeFrame(AMQDataBlock frame)
+    {
+        _logger.info("writing frame " + frame.getSize() + " bytes");
+    }
+    
     public ProtocolOutputConverter getProtocolOutputConverter()
     {
         return this;
+    }
+
+    public SocketAddress getRemoteAddress()
+    {
+        return new InetSocketAddress("localhost", 12345);
     }
 
     public byte getProtocolMajorVersion()

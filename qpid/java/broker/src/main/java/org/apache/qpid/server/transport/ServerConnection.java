@@ -23,6 +23,9 @@ package org.apache.qpid.server.transport;
 import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.*;
 
 import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.protocol.AMQConstant;
@@ -33,20 +36,36 @@ import org.apache.qpid.server.logging.actors.GenericActor;
 import org.apache.qpid.server.logging.messages.ConnectionMessages;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
+import org.apache.qpid.server.protocol.BrokerReceiver;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.transport.Connection;
+import org.apache.qpid.transport.ConnectionCloseCode;
 import org.apache.qpid.transport.ExecutionErrorCode;
 import org.apache.qpid.transport.ExecutionException;
 import org.apache.qpid.transport.Method;
+import org.apache.qpid.transport.Session;
 
 public class ServerConnection extends Connection implements AMQConnectionModel, LogSubject
 {
     private ConnectionConfig _config;
     private Runnable _onOpenTask;
 
-    public ServerConnection()
+    private long _connectionId;
+
+    public long getConnectionId()
     {
+        return _connectionId;
+    }
+
+    public ServerConnection(long connectionId)
+    {
+        _connectionId = connectionId;
         CurrentActor.set(GenericActor.getInstance(this));
+    }
+
+    public UUID getId()
+    {
+        return _config.getId();
     }
 
     @Override
@@ -97,6 +116,7 @@ public class ServerConnection extends Connection implements AMQConnectionModel, 
     public void setVirtualHost(VirtualHost virtualHost)
     {
         _virtualHost = virtualHost;
+        _virtualHost.getConnectionRegistry().registerConnection(this);
     }
 
     public void setConnectionConfig(final ConnectionConfig config)
@@ -132,8 +152,14 @@ public class ServerConnection extends Connection implements AMQConnectionModel, 
 
         ((ServerSession)session).close();
     }
+    
+    public LogSubject getLogSubject()
+    {
+        return (LogSubject) this;
+    }
 
-    public String toLogString() {
+    public String toLogString()
+    {
         boolean hasVirtualHost = (null != this.getVirtualHost());
         boolean hasPrincipal = (null != getAuthorizationID());
 
@@ -167,4 +193,30 @@ public class ServerConnection extends Connection implements AMQConnectionModel, 
         }
     }
 
+    @Override
+    public void close(AMQConstant cause, String message) throws AMQException
+    {
+        ConnectionCloseCode replyCode = ConnectionCloseCode.NORMAL;
+        try
+        {
+	        replyCode = ConnectionCloseCode.get(cause.getCode());
+        }
+        catch (IllegalArgumentException iae)
+        {
+            // Ignore
+        }
+        close(replyCode, message);
+        getVirtualHost().getConnectionRegistry().deregisterConnection(this);
+    }
+
+    @Override
+    public List<AMQSessionModel> getSessionModels()
+    {
+        List<AMQSessionModel> sessions = new ArrayList<AMQSessionModel>();
+        for (Session ssn : getChannels())
+        {
+            sessions.add((AMQSessionModel) ssn);
+        }
+        return sessions;
+    }
 }

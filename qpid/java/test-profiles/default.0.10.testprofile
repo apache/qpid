@@ -1,0 +1,5 @@
+broker.language=java
+broker.version=0-10
+qpid.amqp.version=0-10
+amqj.protocolprovider.class=org.apache.qpid.server.protocol.MultiVersionProtocolEngineFactory
+profile.excludes=JavaTransientExcludes JavaInVMExcludes Java010Excludes

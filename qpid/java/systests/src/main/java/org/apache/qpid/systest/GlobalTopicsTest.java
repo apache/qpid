@@ -20,11 +20,6 @@
  */
 package org.apache.qpid.systest;
 
-import org.apache.commons.configuration.ConfigurationException;
-
-import javax.naming.NamingException;
-import java.io.IOException;
-
 public class GlobalTopicsTest extends GlobalQueuesTest
 {
     @Override

@@ -20,13 +20,9 @@
  */
 package org.apache.qpid.systest;
 
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.qpid.AMQChannelClosedException;
-import org.apache.qpid.AMQException;
-import org.apache.qpid.client.AMQSession_0_10;
-import org.apache.qpid.jms.ConnectionListener;
-import org.apache.qpid.protocol.AMQConstant;
-import org.apache.qpid.test.utils.QpidBrokerTestCase;
+import java.io.IOException;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import javax.jms.Connection;
 import javax.jms.Destination;
@@ -37,9 +33,12 @@ import javax.jms.MessageProducer;
 import javax.jms.Session;
 import javax.jms.Topic;
 import javax.naming.NamingException;
-import java.io.IOException;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
+
+import org.apache.commons.configuration.ConfigurationException;
+import org.apache.qpid.AMQException;
+import org.apache.qpid.jms.ConnectionListener;
+import org.apache.qpid.protocol.AMQConstant;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 public class TestingBaseCase extends QpidBrokerTestCase implements ExceptionListener, ConnectionListener
 {
@@ -68,7 +67,6 @@ public class TestingBaseCase extends QpidBrokerTestCase implements ExceptionList
                                  ".slow-consumer-detection.timeunit", "SECONDS");
 
     }
-
 
     protected void setProperty(String property, String value) throws NamingException, IOException, ConfigurationException
     {
@@ -123,22 +121,14 @@ public class TestingBaseCase extends QpidBrokerTestCase implements ExceptionList
      *
      * Test creates a new connection and sets up the connection to prevent
      * failover
-     *
+     * <p>
      * A new consumer is connected and started so that it will prefetch msgs.
-     *
+     * <p>
      * An asynchrounous publisher is started to fill the broker with messages.
-     *
+     * <p>
      * We then wait to be notified of the disconnection via the ExceptionListener
      *
-     * 0-10 does not have the same notification paths but sync() apparently should
-     * give us the exception, currently it doesn't, so the test is excluded from 0-10
-     *
-     * We should ensure that this test has the same path for all protocol versions.
-     *
-     * Clients should not have to modify their code based on the protocol in use.
-     *
-     * @param ackMode @see javax.jms.Session
-     *
+     * @param ackMode see {@link javax.jms.Session} for modes
      * @throws Exception
      */
     protected void topicConsumer(int ackMode, boolean durable) throws Exception
@@ -174,7 +164,8 @@ public class TestingBaseCase extends QpidBrokerTestCase implements ExceptionList
         boolean disconnected = _disconnectionLatch.await(DISCONNECTION_WAIT, TimeUnit.SECONDS);
         
         assertTrue("Client was not disconnected", disconnected);
-        assertTrue("Client was not disconnected.", _connectionException != null);
+
+        assertNotNull("No error received onException listener.", _connectionException);
 
         Exception linked = _connectionException.getLinkedException();
 
@@ -187,11 +178,6 @@ public class TestingBaseCase extends QpidBrokerTestCase implements ExceptionList
         {
             throw _publisherError;
         }
-
-        // NOTE these exceptions will need to be modeled so that they are not
-        // 0-8 specific. e.g. JMSSessionClosedException
-
-        assertNotNull("No error received onException listener.", _connectionException);
 
         assertNotNull("No linked exception set on:" + _connectionException.getMessage(), linked);
 

@@ -23,8 +23,6 @@ package org.apache.qpid.management.configuration;
 import java.util.Map;
 import java.util.UUID;
 
-import junit.framework.TestCase;
-
 import org.apache.qpid.management.Protocol;
 import org.apache.qpid.management.domain.handler.base.IMessageHandler;
 import org.apache.qpid.management.domain.handler.impl.ConfigurationMessageHandler;
@@ -43,6 +41,7 @@ import org.apache.qpid.management.domain.model.type.Uint16;
 import org.apache.qpid.management.domain.model.type.Uint32;
 import org.apache.qpid.management.domain.model.type.Uint64;
 import org.apache.qpid.management.domain.model.type.Uint8;
+import org.apache.qpid.test.utils.QpidTestCase;
 import org.xml.sax.SAXException;
 
 /**
@@ -51,7 +50,7 @@ import org.xml.sax.SAXException;
  * @author Andrea Gazzarini
  *
  */
-public class ConfiguratorTest extends TestCase
+public class ConfiguratorTest extends QpidTestCase
 {
     /**
      * Tests the execution of the configure() method when no configuration file is given.

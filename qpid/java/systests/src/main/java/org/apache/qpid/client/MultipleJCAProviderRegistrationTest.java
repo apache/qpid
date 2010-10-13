@@ -20,16 +20,12 @@
  */
 package org.apache.qpid.client;
 
-import org.apache.qpid.test.utils.QpidBrokerTestCase;
-import org.apache.qpid.server.registry.ConfigurationFileApplicationRegistry;
-import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.client.transport.TransportConnection;
-
-import java.io.File;
 import java.security.Provider;
 import java.security.Security;
-import java.util.List;
 import java.util.LinkedList;
+import java.util.List;
+
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 /**
  * QPID-1394 : Test to ensure that the client can register their custom JCAProviders after the broker to ensure that

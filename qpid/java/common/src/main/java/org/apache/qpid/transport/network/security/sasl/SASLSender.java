@@ -20,31 +20,30 @@ package org.apache.qpid.transport.network.security.sasl;
  * 
  */
 
-
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import javax.security.sasl.SaslClient;
 import javax.security.sasl.SaslException;
 
 import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.SenderException;
-import org.apache.qpid.transport.util.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public class SASLSender extends SASLEncryptor implements Sender<ByteBuffer> {
+public class SASLSender extends SASLEncryptor implements Sender<ByteBuffer>
+{
+    private static final Logger _log = LoggerFactory.getLogger(SASLSender.class);
 
     protected Sender<ByteBuffer> delegate;
     private byte[] appData;
     private final AtomicBoolean closed = new AtomicBoolean(false);
-    private static final Logger log = Logger.get(SASLSender.class);
     
     public SASLSender(Sender<ByteBuffer> delegate)
     {
         this.delegate = delegate;
-        log.debug("SASL Sender enabled");
+        _log.debug("SASL Sender enabled");
     }
-    
-    @Override
+
     public void close() 
     {
         
@@ -65,13 +64,11 @@ public class SASLSender extends SASLEncryptor implements Sender<ByteBuffer> {
         }
     }
 
-    @Override
     public void flush() 
     {
        delegate.flush();
     }
 
-    @Override
     public void send(ByteBuffer buf) 
     {        
         if (closed.get())
@@ -84,21 +81,21 @@ public class SASLSender extends SASLEncryptor implements Sender<ByteBuffer> {
             while (buf.hasRemaining())
             {
                 int length = Math.min(buf.remaining(),sendBuffSize);
-                log.debug("sendBuffSize %s", sendBuffSize);
-                log.debug("buf.remaining() %s", buf.remaining());
+                _log.debug("sendBuffSize " + sendBuffSize);
+                _log.debug("buf.remaining() " + buf.remaining());
                 
                 buf.get(appData, 0, length);
                 try
                 {
                     byte[] out = saslClient.wrap(appData, 0, length);
-                    log.debug("out.length %s", out.length);
+                    _log.debug("out.length " + out.length);
                     
                     delegate.send(ByteBuffer.wrap(out));
                 } 
                 catch (SaslException e)
                 {
-                    log.error("Exception while encrypting data.",e);
-                    throw new SenderException("SASL Sender, Error occurred while encrypting data",e);
+                    _log.error("Exception while encrypting data.", e);
+                    throw new SenderException("SASL Sender, Error occurred while encrypting data", e);
                 }
             }            
         }
@@ -108,7 +105,6 @@ public class SASLSender extends SASLEncryptor implements Sender<ByteBuffer> {
         }        
     }
 
-    @Override
     public void setIdleTimeout(int i) 
     {
         delegate.setIdleTimeout(i);
@@ -117,7 +113,7 @@ public class SASLSender extends SASLEncryptor implements Sender<ByteBuffer> {
     public void securityLayerEstablished()
     {
         appData = new byte[sendBuffSize];
-        log.debug("SASL Security Layer Established");
+        _log.debug("SASL Security Layer Established");
     }
 
 }

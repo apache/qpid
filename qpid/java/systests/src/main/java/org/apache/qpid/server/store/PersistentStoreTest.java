@@ -99,6 +99,8 @@ public class PersistentStoreTest extends QpidBrokerTestCase
      */
     public void testForcibleStartStop() throws Exception
     {
+        ((AMQSession) _session).sync();
+        _con.close();
         restartBroker();
         checkMessages();
     }
@@ -128,6 +130,7 @@ public class PersistentStoreTest extends QpidBrokerTestCase
         sendMessage(_session, _destination, 5);
         //sync to ensure that the above messages have reached the broker
         ((AMQSession) _session).sync();
+        _con.close();
         restartBroker();
         checkMessages();
     }
@@ -144,6 +147,8 @@ public class PersistentStoreTest extends QpidBrokerTestCase
     public void testClientDeathMidTransaction() throws Exception
     {
         sendMessage(_session, _destination, 5);
+        //sync to ensure that the above messages have reached the broker
+        ((AMQSession) _session).sync();
         _con.close();
         checkMessages();
     }

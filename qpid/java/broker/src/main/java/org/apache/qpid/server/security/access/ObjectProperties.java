@@ -64,7 +64,8 @@ public class ObjectProperties extends HashMap<ObjectProperties.Property, String>
         AUTO_DELETE,
         COMPONENT,
         PACKAGE,
-        CLASS;
+        CLASS,
+        REMOTE_ADDRESS;
         
         public static Property parse(String text)
         {

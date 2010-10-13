@@ -18,17 +18,17 @@
  */
 package org.apache.qpid.server.plugins;
 
-import junit.framework.TestCase;
+import java.util.Map;
+
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.exchange.ExchangeType;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.util.TestApplicationRegistry;
+import org.apache.qpid.test.utils.QpidTestCase;
 
-import java.util.Map;
-
-public class ExtrasTest extends TestCase
+public class ExtrasTest extends QpidTestCase
 {
     private static final String TEST_EXCHANGE_CLASS = "org.apache.qpid.extras.exchanges.example.TestExchangeType";
     

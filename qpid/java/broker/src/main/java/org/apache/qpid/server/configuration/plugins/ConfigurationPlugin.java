@@ -67,6 +67,7 @@ public abstract class ConfigurationPlugin
         return _configuration;
     }
 
+    @SuppressWarnings("unchecked")
     public <C extends ConfigurationPlugin> C getConfiguration(String plugin)
     {
         return (C) _pluginConfiguration.get(plugin);
@@ -126,18 +127,6 @@ public abstract class ConfigurationPlugin
             elements.remove(tag);
         }
 
-        if (_logger.isInfoEnabled())
-        {
-            if (!elements.isEmpty())
-            {
-                _logger.info("Elements to lookup:" + path);
-                for (String tag : elements)
-                {
-                    _logger.info("Tag:'" + tag + "'");
-                }
-            }
-        }
-
         // Process the elements in the configuration
         for (String element : elements)
         {
@@ -151,12 +140,6 @@ public abstract class ConfigurationPlugin
             }
 
             List<ConfigurationPlugin> handlers = configurationManager.getConfigurationPlugins(configurationElement, handled);
-
-            if(_logger.isDebugEnabled())
-            {
-                _logger.debug("For '" + element + "' found handlers (" + handlers.size() + "):" + handlers);
-            }
-            
             for (ConfigurationPlugin plugin : handlers)
             {
                 _pluginConfiguration.put(plugin.getClass().getName(), plugin);
@@ -241,14 +224,15 @@ public abstract class ConfigurationPlugin
         return _configuration.getBoolean(property, defaultValue);
     }
 
-    protected List getListValue(String property)
+    protected List<String> getListValue(String property)
     {
-        return getListValue(property, Collections.EMPTY_LIST);
+        return getListValue(property, Collections.<String>emptyList());
     }
 
-    protected List getListValue(String property, List defaultValue)
+    @SuppressWarnings("unchecked")
+    protected List<String> getListValue(String property, List<String> defaultValue)
     {
-        return _configuration.getList(property, defaultValue);
+        return (List<String>) _configuration.getList(property, defaultValue);
     }
 
     /// Validation Helpers

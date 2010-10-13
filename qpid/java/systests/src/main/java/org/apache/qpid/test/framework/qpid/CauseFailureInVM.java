@@ -20,16 +20,16 @@
  */
 package org.apache.qpid.test.framework.qpid;
 
-import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.test.framework.CauseFailure;
 import org.apache.qpid.test.framework.BrokerLifecycleAware;
+import org.apache.qpid.transport.vm.VmBroker;
 
 /**
  * <p/><table id="crc"><caption>CRC Card</caption>
  * <tr><th> Responsibilities <th> Collaborations
  * <tr><td> Cause messaging broker failure on the active in-vm broker.
- *     <td> {@link TransportConnection}, {@link ApplicationRegistry}
+ *     <td> {@link VmBroker}, {@link ApplicationRegistry}
  * </table>
  */
 public class CauseFailureInVM implements CauseFailure
@@ -62,9 +62,10 @@ public class CauseFailureInVM implements CauseFailure
      */
     public void causeFailure()
     {
+        // FIXMW
+        
         int liveBroker = inVMTest.getLiveBroker();
 
-        TransportConnection.killVMBroker(liveBroker);
-        ApplicationRegistry.remove(liveBroker);
+        VmBroker.killVMBroker();
     }
 }

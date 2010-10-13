@@ -228,8 +228,7 @@ public class CurrentActorTest extends BaseConnectionActorTestCase
             try
             {
 
-                AMQPConnectionActor actor = new AMQPConnectionActor(getSession(),
-                                                                    new NullRootMessageLogger());
+                AMQPConnectionActor actor = new AMQPConnectionActor(getSession(), new NullRootMessageLogger());
 
                 CurrentActor.set(actor);
 

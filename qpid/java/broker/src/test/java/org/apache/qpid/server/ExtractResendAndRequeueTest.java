@@ -20,24 +20,24 @@
  */
 package org.apache.qpid.server;
 
-import junit.framework.TestCase;
-import org.apache.qpid.server.ack.UnacknowledgedMessageMapImpl;
-import org.apache.qpid.server.queue.QueueEntry;
-import org.apache.qpid.server.queue.SimpleQueueEntryList;
-import org.apache.qpid.server.queue.MockAMQMessage;
-import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.MockAMQQueue;
-import org.apache.qpid.server.message.AMQMessage;
-import org.apache.qpid.server.queue.QueueEntryIterator;
-import org.apache.qpid.server.subscription.Subscription;
-import org.apache.qpid.server.subscription.MockSubscription;
-import org.apache.qpid.server.store.MemoryMessageStore;
-import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.AMQException;
-
-import java.util.Map;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
+import java.util.Map;
+
+import org.apache.qpid.AMQException;
+import org.apache.qpid.server.ack.UnacknowledgedMessageMapImpl;
+import org.apache.qpid.server.message.AMQMessage;
+import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.queue.MockAMQMessage;
+import org.apache.qpid.server.queue.MockAMQQueue;
+import org.apache.qpid.server.queue.QueueEntry;
+import org.apache.qpid.server.queue.QueueEntryIterator;
+import org.apache.qpid.server.queue.SimpleQueueEntryList;
+import org.apache.qpid.server.store.MemoryMessageStore;
+import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.subscription.MockSubscription;
+import org.apache.qpid.server.subscription.Subscription;
+import org.apache.qpid.test.utils.QpidTestCase;
 
 /**
  * QPID-1385 : Race condition between added to unacked map and resending due to a rollback.
@@ -56,7 +56,7 @@ import java.util.LinkedList;
  * delivery thread will be in progress while the rollback method is called. Hopefully this will cause the
  * deliveryTag to be lost
  */
-public class ExtractResendAndRequeueTest extends TestCase
+public class ExtractResendAndRequeueTest extends QpidTestCase
 {
 
     UnacknowledgedMessageMapImpl _unacknowledgedMessageMap;

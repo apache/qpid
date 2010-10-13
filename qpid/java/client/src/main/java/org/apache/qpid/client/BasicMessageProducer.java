@@ -274,93 +274,55 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
 
     public void send(Message message) throws JMSException
     {
-        checkPreConditions();
-        checkInitialDestination();
-
-
-        synchronized (_connection.getFailoverMutex())
-        {
-            sendImpl(_destination, message, _deliveryMode, _messagePriority, _timeToLive, _mandatory, _immediate);
-        }
+        send(message, _deliveryMode);
     }
 
     public void send(Message message, int deliveryMode) throws JMSException
     {
-        checkPreConditions();
-        checkInitialDestination();
-
-        synchronized (_connection.getFailoverMutex())
-        {
-            sendImpl(_destination, message, deliveryMode, _messagePriority, _timeToLive, _mandatory, _immediate);
-        }
+        send(message, deliveryMode, _immediate);
     }
 
     public void send(Message message, int deliveryMode, boolean immediate) throws JMSException
     {
-        checkPreConditions();
-        checkInitialDestination();
-        synchronized (_connection.getFailoverMutex())
-        {
-            sendImpl(_destination, message, deliveryMode, _messagePriority, _timeToLive, _mandatory, immediate);
-        }
+        send(message, deliveryMode, _messagePriority, _timeToLive, _mandatory, immediate);
     }
 
     public void send(Message message, int deliveryMode, int priority, long timeToLive) throws JMSException
+    {
+        send(message, deliveryMode, priority, timeToLive, _mandatory, _immediate);
+    }
+
+    public void send(Message message, int deliveryMode, int priority, long timeToLive, boolean mandatory, boolean immediate) throws JMSException
     {
         checkPreConditions();
         checkInitialDestination();
         synchronized (_connection.getFailoverMutex())
         {
-            sendImpl(_destination, message, deliveryMode, priority, timeToLive, _mandatory, _immediate);
+            sendImpl(_destination, message, deliveryMode, priority, timeToLive, mandatory, immediate, _waitUntilSent);
         }
     }
 
     public void send(Destination destination, Message message) throws JMSException
     {
-        checkPreConditions();
-        checkDestination(destination);
-        synchronized (_connection.getFailoverMutex())
-        {
-            validateDestination(destination);
-            sendImpl((AMQDestination) destination, message, _deliveryMode, _messagePriority, _timeToLive, _mandatory,
-                     _immediate);
-        }
+        send(destination, message, _deliveryMode, _messagePriority, _timeToLive);
     }
 
     public void send(Destination destination, Message message, int deliveryMode, int priority, long timeToLive)
         throws JMSException
     {
-        checkPreConditions();
-        checkDestination(destination);
-        synchronized (_connection.getFailoverMutex())
-        {
-            validateDestination(destination);
-            sendImpl((AMQDestination) destination, message, deliveryMode, priority, timeToLive, _mandatory, _immediate);
-        }
+        send((AMQDestination) destination, message, deliveryMode, priority, timeToLive, _mandatory);
     }
 
     public void send(Destination destination, Message message, int deliveryMode, int priority, long timeToLive,
                      boolean mandatory) throws JMSException
     {
-        checkPreConditions();
-        checkDestination(destination);
-        synchronized (_connection.getFailoverMutex())
-        {
-            validateDestination(destination);
-            sendImpl((AMQDestination) destination, message, deliveryMode, priority, timeToLive, mandatory, _immediate);
-        }
+        send((AMQDestination) destination, message, deliveryMode, priority, timeToLive, mandatory, _immediate);
     }
 
     public void send(Destination destination, Message message, int deliveryMode, int priority, long timeToLive,
                      boolean mandatory, boolean immediate) throws JMSException
     {
-        checkPreConditions();
-        checkDestination(destination);
-        synchronized (_connection.getFailoverMutex())
-        {
-            validateDestination(destination);
-            sendImpl((AMQDestination) destination, message, deliveryMode, priority, timeToLive, mandatory, immediate);
-        }
+        send((AMQDestination) destination, message, deliveryMode, priority, timeToLive, mandatory, immediate, _waitUntilSent);
     }
 
     public void send(Destination destination, Message message, int deliveryMode, int priority, long timeToLive,
@@ -437,12 +399,6 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
             declareDestination(amqDestination);
             amqDestination.setExchangeExistsChecked(true);
         }
-    }
-
-    protected void sendImpl(AMQDestination destination, Message message, int deliveryMode, int priority, long timeToLive,
-                            boolean mandatory, boolean immediate) throws JMSException
-    {
-        sendImpl(destination, message, deliveryMode, priority, timeToLive, mandatory, immediate, _waitUntilSent);
     }
 
     /**

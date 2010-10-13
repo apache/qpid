@@ -23,12 +23,11 @@ import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.PrintWriter;
 
-import junit.framework.TestCase;
-
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.qpid.server.security.access.config.ConfigurationFile;
 import org.apache.qpid.server.security.access.config.PlainConfiguration;
 import org.apache.qpid.server.security.access.config.RuleSet;
+import org.apache.qpid.test.utils.QpidTestCase;
 
 /**
  * These tests check that the ACL file parsing works correctly.
@@ -36,7 +35,7 @@ import org.apache.qpid.server.security.access.config.RuleSet;
  * For each message that can be returned in a {@link ConfigurationException}, an ACL file is created that should trigger this
  * particular message.
  */
-public class AccessControlTest extends TestCase
+public class AccessControlTest extends QpidTestCase
 {
     public void writeACLConfig(String...aclData) throws Exception
     {

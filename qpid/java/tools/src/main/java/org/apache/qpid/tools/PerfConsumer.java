@@ -20,14 +20,14 @@
  */
 package org.apache.qpid.tools;
 
+import java.util.concurrent.Executors;
+
 import javax.jms.Destination;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageListener;
 import javax.jms.MessageProducer;
 import javax.jms.TextMessage;
-
-import org.apache.qpid.thread.Threading;
 
 /**
  * PerfConsumer will receive x no of messages in warmup mode.
@@ -256,7 +256,7 @@ public class PerfConsumer extends PerfBase implements MessageListener
         Thread t;
         try
         {
-            t = Threading.getThreadFactory().createThread(r);                      
+            t = Executors.defaultThreadFactory().newThread(r);                      
         }
         catch(Exception e)
         {

@@ -69,6 +69,7 @@ public abstract class AbstractExchange implements Exchange, Managable
 
     private final List<Exchange.Task> _closeTaskList = new CopyOnWriteArrayList<Exchange.Task>();
 
+    private Map<String, Object> _arguments;
 
     protected AbstractExchangeMBean _exchangeMbean;
 
@@ -115,9 +116,9 @@ public abstract class AbstractExchange implements Exchange, Managable
      * called during initialisation (template method pattern).
      * @return the MBean
      */
-    protected abstract AbstractExchangeMBean createMBean() throws JMException;
+    protected abstract AbstractExchangeMBean<?> createMBean() throws JMException;
 
-    public void initialise(VirtualHost host, AMQShortString name, boolean durable, int ticket, boolean autoDelete)
+    public void initialise(VirtualHost host, AMQShortString name, boolean durable, int ticket, boolean autoDelete, Map<String, Object> arguments)
             throws AMQException
     {
         _virtualHost = host;
@@ -125,6 +126,7 @@ public abstract class AbstractExchange implements Exchange, Managable
         _durable = durable;
         _autoDelete = autoDelete;
         _ticket = ticket;
+        _arguments = arguments;
 
         // TODO - fix
         _id = getConfigStore().createId();
@@ -293,6 +295,7 @@ public abstract class AbstractExchange implements Exchange, Managable
         return _bindingCountHigh.get();
     }
 
+    // TODO scd stuff
     public final void removeBinding(final Binding binding)
     {
         onUnbind(binding);
@@ -325,8 +328,7 @@ public abstract class AbstractExchange implements Exchange, Managable
 
     public Map<String, Object> getArguments()
     {
-        // TODO - Fix
-        return Collections.EMPTY_MAP;
+        return _arguments;
     }
 
     public UUID getId()

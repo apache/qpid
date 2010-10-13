@@ -20,7 +20,11 @@
  */
 package org.apache.qpid.common;
 
-
+/**
+ * Interface indicating an object can be closed.
+ * 
+ * Used as a marker for various components of the broker application registry, to allow clean shutdown.
+ */
 public interface Closeable
 {
     public void close();

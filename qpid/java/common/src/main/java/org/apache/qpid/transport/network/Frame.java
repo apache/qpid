@@ -20,24 +20,16 @@
  */
 package org.apache.qpid.transport.network;
 
-import org.apache.qpid.transport.SegmentType;
-import org.apache.qpid.transport.util.SliceIterator;
+import static org.apache.qpid.transport.util.Functions.*;
 
 import java.nio.ByteBuffer;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Iterator;
-
-import static org.apache.qpid.transport.util.Functions.*;
+import org.apache.qpid.transport.SegmentType;
 
 
 /**
  * Frame
- *
- * @author Rafael H. Schloming
  */
-
 public final class Frame implements NetworkEvent
 {
     public static final int HEADER_SIZE = 12;

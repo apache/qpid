@@ -21,10 +21,9 @@
 package org.apache.qpid.management.ui;
 
 import org.apache.qpid.management.common.mbeans.ServerInformation;
+import org.apache.qpid.test.utils.QpidTestCase;
 
-import junit.framework.TestCase;
-
-public class ApplicationRegistryTest extends TestCase
+public class ApplicationRegistryTest extends QpidTestCase
 {
     public void testSupportedManagementApiVersion()
     {

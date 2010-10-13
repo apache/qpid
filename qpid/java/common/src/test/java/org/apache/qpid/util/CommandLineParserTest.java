@@ -21,12 +21,14 @@
 
 package org.apache.qpid.util;
 
-import junit.framework.*;
+import java.util.Properties;
 
+import junit.framework.Test;
+import junit.framework.TestSuite;
+
+import org.apache.qpid.test.utils.QpidTestCase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Properties;
 
 /**
  * Unit tests the {@link CommandLineParser} class.
@@ -57,7 +59,7 @@ import java.util.Properties;
  * <tr><td> Check that get options in force return a non-empty string after parsing.
  * </table>
  */
-public class CommandLineParserTest extends TestCase
+public class CommandLineParserTest extends QpidTestCase
 {
     private static final Logger log = LoggerFactory.getLogger(CommandLineParserTest.class);
 

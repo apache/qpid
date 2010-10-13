@@ -27,6 +27,7 @@ import java.io.InputStream;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.io.IOException;
+import java.util.Arrays;
 
 public class RunBrokerWithCommand
 {
@@ -35,11 +36,8 @@ public class RunBrokerWithCommand
         //Start the broker
         try
         {
-            String[] fudge = args.clone();
-
-            // Override the first value which is the command we are going to run later.
-            fudge[0] = "-v";
-            new Main(fudge).startup();
+            String[] copy = Arrays.copyOfRange(args, 1, args.length);
+            Main.main(copy);
         }
         catch (Exception e)
         {

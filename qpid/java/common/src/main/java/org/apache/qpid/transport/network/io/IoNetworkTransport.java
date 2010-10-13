@@ -24,55 +24,64 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.net.SocketAddress;
 import java.net.SocketException;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
+import java.util.List;
 
+import org.apache.qpid.ssl.SSLContextFactory;
 import org.apache.qpid.transport.ConnectionSettings;
 import org.apache.qpid.transport.Receiver;
-import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.TransportException;
-import org.apache.qpid.transport.network.NetworkTransport;
-import org.apache.qpid.transport.util.Logger;
+import org.apache.qpid.transport.network.NetworkConnection;
+import org.apache.qpid.transport.network.OutgoingNetworkTransport;
+import org.apache.qpid.transport.network.Transport;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public class IoNetworkTransport implements NetworkTransport, IoContext
+public class IoNetworkTransport implements OutgoingNetworkTransport
 {
-    static
-    {
-        org.apache.mina.common.ByteBuffer.setAllocator
-            (new org.apache.mina.common.SimpleByteBufferAllocator());
-        org.apache.mina.common.ByteBuffer.setUseDirectBuffers
-            (Boolean.getBoolean("amqj.enableDirectBuffers"));
-    }
-
-    private static final Logger log = Logger.get(IoNetworkTransport.class);
-
-    private Socket socket;
-    private Sender<ByteBuffer> sender;
-    private IoReceiver receiver;
-    private long timeout = 60000; 
-    private ConnectionSettings settings;    
+    private static final Logger _log = LoggerFactory.getLogger(IoNetworkTransport.class);
     
-    @Override
-    public void init(ConnectionSettings settings)
+    private static final int DEFAULT_BUFFER_SIZE = 32 * 1024;
+
+    public static final List<String> SUPPORTED = Arrays.asList(Transport.TCP);
+    
+    private Socket _socket;
+    private IoNetworkConnection _connection;
+    private long _timeout = 60000;
+    
+    public NetworkConnection connect(ConnectionSettings settings, Receiver<ByteBuffer> delegate, SSLContextFactory sslfactory)
     {
+        if (!settings.getProtocol().equalsIgnoreCase(Transport.TCP))
+        {
+            throw new TransportException("Invalid protocol: " + settings.getProtocol());
+        }
+        
+        boolean noDelay = Boolean.getBoolean("amqj.tcpNoDelay");
+        boolean keepAlive = Boolean.getBoolean("amqj.keepAlive");
+        Integer sendBufferSize = Integer.getInteger("amqj.sendBufferSize", DEFAULT_BUFFER_SIZE);
+        Integer receiveBufferSize = Integer.getInteger("amqj.receiveBufferSize", DEFAULT_BUFFER_SIZE);
+        
         try
         {
-            this.settings = settings;
+            _socket = new Socket();
+
+            _log.debug("default-SO_RCVBUF : %s", _socket.getReceiveBufferSize());
+            _log.debug("default-SO_SNDBUF : %s", _socket.getSendBufferSize());
+
+            _socket.setTcpNoDelay(noDelay);
+            _socket.setKeepAlive(keepAlive);
+            _socket.setSendBufferSize(sendBufferSize);
+            _socket.setReceiveBufferSize(receiveBufferSize);
+            _socket.setReuseAddress(true);
+
+            _log.debug("new-SO_RCVBUF : %s", _socket.getReceiveBufferSize());
+            _log.debug("new-SO_SNDBUF : %s", _socket.getSendBufferSize());
+
             InetAddress address = InetAddress.getByName(settings.getHost());
-            socket = new Socket();
-            socket.setReuseAddress(true);
-            socket.setTcpNoDelay(settings.isTcpNodelay());
-
-            log.debug("default-SO_RCVBUF : %s", socket.getReceiveBufferSize());
-            log.debug("default-SO_SNDBUF : %s", socket.getSendBufferSize());
-
-            socket.setSendBufferSize(settings.getWriteBufferSize());
-            socket.setReceiveBufferSize(settings.getReadBufferSize());
-
-            log.debug("new-SO_RCVBUF : %s", socket.getReceiveBufferSize());
-            log.debug("new-SO_SNDBUF : %s", socket.getSendBufferSize());
-
-            socket.connect(new InetSocketAddress(address, settings.getPort()));
+            _socket.connect(new InetSocketAddress(address, settings.getPort()));
         }
         catch (SocketException e)
         {
@@ -82,39 +91,23 @@ public class IoNetworkTransport implements NetworkTransport, IoContext
         {
             throw new TransportException("Error connecting to broker", e);
         }
+        
+        _connection = new IoNetworkConnection(_socket, delegate, sendBufferSize, receiveBufferSize, _timeout);
+        
+        return _connection;
     }
 
-    @Override
-    public void receiver(Receiver<ByteBuffer> delegate)
-    {
-        receiver = new IoReceiver(this, delegate,
-                2*settings.getReadBufferSize() , timeout);
-    }
-
-    @Override
-    public Sender<ByteBuffer> sender()
-    {
-        return new IoSender(this, 2*settings.getWriteBufferSize(), timeout);
-    }
-    
-    @Override
     public void close()
     {
-        
+        _connection.close();
     }
 
-    public Sender<ByteBuffer> getSender()
+    public SocketAddress getAddress()
     {
-        return sender;
+        return _socket.getLocalSocketAddress();
     }
 
-    public IoReceiver getReceiver()
-    {
-        return receiver;
-    }
-
-    public Socket getSocket()
-    {
-        return socket;
+    public boolean isCompatible(String protocol) {
+        return SUPPORTED.contains(protocol);
     }
 }

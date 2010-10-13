@@ -21,17 +21,16 @@
 package org.apache.qpid.framing;
 
 import junit.framework.Assert;
-import junit.framework.TestCase;
 
 import org.apache.mina.common.ByteBuffer;
 
 import org.apache.qpid.AMQInvalidArgumentException;
 import org.apache.qpid.AMQPInvalidClassException;
-
+import org.apache.qpid.test.utils.QpidTestCase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class PropertyFieldTableTest extends TestCase
+public class PropertyFieldTableTest extends QpidTestCase
 {
     private static final Logger _logger = LoggerFactory.getLogger(PropertyFieldTableTest.class);
 

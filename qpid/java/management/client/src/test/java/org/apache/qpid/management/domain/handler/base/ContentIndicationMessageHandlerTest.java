@@ -20,16 +20,15 @@
  */
 package org.apache.qpid.management.domain.handler.base;
 
-import junit.framework.TestCase;
-
 import org.apache.qpid.management.domain.model.type.Binary;
+import org.apache.qpid.test.utils.QpidTestCase;
 
 /**
  * Test case for Content indication message handler (base class).
  * 
  * @author Andrea Gazzarini
  */
-public class ContentIndicationMessageHandlerTest extends TestCase
+public class ContentIndicationMessageHandlerTest extends QpidTestCase
 {      
     /**
      * Tests the behaviour of the objectHasBeenRemoved method().

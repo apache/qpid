@@ -32,7 +32,7 @@ import java.util.concurrent.CountDownLatch;
 
 import junit.framework.TestCase;
 
-public class WriterTest extends TestCase
+public class WriterTest extends QpidTestCase
 {
     private static final Logger _logger = Logger.getLogger(WriterTest.class);
 

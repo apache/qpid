@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.transport.util;
 
+import java.util.concurrent.locks.Lock;
+
 
 /**
  * Waiter

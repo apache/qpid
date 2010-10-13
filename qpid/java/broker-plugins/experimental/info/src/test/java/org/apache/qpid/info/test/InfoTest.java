@@ -23,14 +23,14 @@ package org.apache.qpid.info.test;
 
 import java.util.HashMap;
 import java.util.Properties;
-import junit.framework.TestCase;
-import org.apache.qpid.info.Info;
 
-/*
+import org.apache.qpid.info.Info;
+import org.apache.qpid.test.utils.QpidTestCase;
+
+/**
  * This test verifies the toString(), toProps(), toXML() and toStringBuffer() methods of the Info object
- * 
  */
-public class InfoTest extends TestCase
+public class InfoTest extends QpidTestCase
 {
     private HashMap<String, String> _infoPayLoad = null;
 
@@ -38,13 +38,12 @@ public class InfoTest extends TestCase
 
     protected void setUp() throws Exception
     {
-        super.setUp();
         _infoPayLoad = new HashMap<String, String>();
         _infoPayLoad.put("test", "Test");
         _info = new Info<HashMap<String, String>>(_infoPayLoad);
     }
 
-    /*
+    /**
      * Test the conversion toString() of the Info object
      */
     public void testToString()
@@ -54,7 +53,7 @@ public class InfoTest extends TestCase
                 "test=Test\n", _info.toString());
     }
 
-    /*
+    /**
      * Test the conversion toProps() of the Info object
      */
     public void testToProps()
@@ -66,7 +65,7 @@ public class InfoTest extends TestCase
                 .toProps());
     }
 
-    /*
+    /**
      * Test the conversion toStringBuffer() of the Info object
      */
     public void testToStringBuffer()
@@ -76,7 +75,7 @@ public class InfoTest extends TestCase
         assertEquals(sb.toString(), _info.toStringBuffer().toString());
     }
 
-    /*
+    /**
      * Test conversion toXML() of the info object
      */
     public void testToXML()
@@ -93,7 +92,7 @@ public class InfoTest extends TestCase
                 .toXML().toString(), sb.toString());
     }
 
-    /*
+    /**
      * Test the conversion toMap() of the Info object
      */
     public void testToMap()

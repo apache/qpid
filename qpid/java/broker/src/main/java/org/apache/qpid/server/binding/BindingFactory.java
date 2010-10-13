@@ -33,8 +33,6 @@ import org.apache.qpid.server.configuration.BindingConfig;
 import org.apache.qpid.server.configuration.BindingConfigType;
 import org.apache.qpid.server.configuration.ConfigStore;
 import org.apache.qpid.server.configuration.ConfiguredObject;
-import org.apache.qpid.server.configuration.QueueConfiguration;
-import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.messages.BindingMessages;
@@ -50,7 +48,6 @@ public class BindingFactory
     private final Exchange _defaultExchange;
 
     private final ConcurrentHashMap<BindingImpl, BindingImpl> _bindings = new ConcurrentHashMap<BindingImpl, BindingImpl>();
-
 
     public BindingFactory(final VirtualHost vhost)
     {
@@ -76,8 +73,6 @@ public class BindingFactory
         return _virtualHost;
     }
 
-
-
     private final class BindingImpl extends Binding implements AMQQueue.Task, Exchange.Task, BindingConfig
     {
         private final BindingLogSubject _logSubject;
@@ -88,7 +83,6 @@ public class BindingFactory
         {
             super(queue.getVirtualHost().getConfigStore().createId(), bindingKey, queue, exchange, arguments);
             _logSubject = new BindingLogSubject(bindingKey,exchange,queue);
-
         }
 
 
@@ -157,7 +151,10 @@ public class BindingFactory
 
     private boolean makeBinding(String bindingKey, AMQQueue queue, Exchange exchange, Map<String, Object> arguments, boolean restore, boolean force) throws AMQSecurityException, AMQInternalException
     {
-        assert queue != null;
+        if (queue == null)
+        {
+            throw new AMQInternalException("Queue cannot be null");
+        }
         if (bindingKey == null)
         {
             bindingKey = "";
@@ -224,7 +221,10 @@ public class BindingFactory
 
     public Binding removeBinding(String bindingKey, AMQQueue queue, Exchange exchange, Map<String, Object> arguments) throws AMQSecurityException, AMQInternalException
     {
-        assert queue != null;
+        if (queue == null)
+        {
+            throw new AMQInternalException("Queue cannot be null");
+        }
         if (bindingKey == null)
         {
             bindingKey = "";
@@ -269,16 +269,19 @@ public class BindingFactory
 
     public Binding getBinding(String bindingKey, AMQQueue queue, Exchange exchange, Map<String, Object> arguments)
     {
-        assert queue != null;
-        if(bindingKey == null)
+        if (queue == null)
+        {
+            throw new RuntimeException("Queue cannot be null"); // FIXME
+        }
+        if (bindingKey == null)
         {
             bindingKey = "";
         }
-        if(exchange == null)
+        if (exchange == null)
         {
             exchange = _defaultExchange;
         }
-        if(arguments == null)
+        if (arguments == null)
         {
             arguments = Collections.emptyMap();
         }

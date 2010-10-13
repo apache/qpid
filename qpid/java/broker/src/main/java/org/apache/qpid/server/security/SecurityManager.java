@@ -41,6 +41,7 @@ import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.security.access.ObjectProperties;
 import org.apache.qpid.server.security.access.Operation;
+import org.apache.qpid.server.security.access.ObjectProperties.Property;
 import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
 
 /**
@@ -276,8 +277,8 @@ public class SecurityManager
             Result allowed(SecurityPlugin plugin)
             {
                 ObjectProperties properties = new ObjectProperties();
-                properties.put(ObjectProperties.Property.PACKAGE, packageName);
-                properties.put(ObjectProperties.Property.CLASS, className);
+                properties.put(Property.PACKAGE, packageName);
+                properties.put(Property.CLASS, className);
                 return plugin.authorise(ACCESS, OBJECT, properties);
             }
         });
@@ -294,20 +295,22 @@ public class SecurityManager
                 if (componentName != null)
                 {
                     // Only set the property if there is a component name
-	                properties.put(ObjectProperties.Property.COMPONENT, componentName);
+	                properties.put(Property.COMPONENT, componentName);
                 }
                 return plugin.authorise(operation, METHOD, properties);
             }
         });
     }
 
-    public boolean accessVirtualhost(final String vhostname, final SocketAddress remoteAddress)
+    public boolean accessVirtualhost(final String vhostname, final String remoteAddress)
     {
         return checkAllPlugins(new AccessCheck()
         {
             Result allowed(SecurityPlugin plugin)
             {
-                return plugin.access(VIRTUALHOST, remoteAddress);
+                ObjectProperties properties = new ObjectProperties();
+                properties.put(Property.REMOTE_ADDRESS, remoteAddress);
+                return plugin.authorise(ACCESS, VIRTUALHOST, properties);
             }
         });
     }

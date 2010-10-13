@@ -20,23 +20,21 @@
  */
 package org.apache.qpid.management.domain.model;
 
-import static org.apache.qpid.management.domain.model.QpidFeatureBuilder.Attribute.desc;
-import static org.apache.qpid.management.domain.model.QpidFeatureBuilder.Attribute.name;
+import static org.apache.qpid.management.domain.model.QpidFeatureBuilder.Attribute.*;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import junit.framework.TestCase;
-
 import org.apache.qpid.management.configuration.Configurator;
 import org.apache.qpid.management.domain.model.QpidFeatureBuilder.Attribute;
+import org.apache.qpid.test.utils.QpidTestCase;
 
 /**
  * Layer supertype for feature builder test cases.
  * 
  * @author Andrea Gazzarini
  */
-public abstract class BaseQpidFeatureBuilderTestCase extends TestCase
+public abstract class BaseQpidFeatureBuilderTestCase extends QpidTestCase
 {
     protected final static String NAME = "aName";
 

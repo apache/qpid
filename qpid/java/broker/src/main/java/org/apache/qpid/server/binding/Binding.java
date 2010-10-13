@@ -43,7 +43,7 @@ public class Binding
         _bindingKey = bindingKey;
         _queue = queue;
         _exchange = exchange;
-        _arguments = arguments == null ? Collections.EMPTY_MAP : Collections.unmodifiableMap(arguments);
+        _arguments = arguments == null ? Collections.<String, Object>emptyMap() : Collections.unmodifiableMap(arguments);
     }
 
     public UUID getId()

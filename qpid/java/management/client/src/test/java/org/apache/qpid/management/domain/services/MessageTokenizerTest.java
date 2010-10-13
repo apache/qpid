@@ -23,12 +23,14 @@ package org.apache.qpid.management.domain.services;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.*;
-
-import junit.framework.TestCase;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Random;
 
 import org.apache.qpid.api.Message;
 import org.apache.qpid.nclient.util.ByteBufferMessage;
+import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.transport.codec.BBDecoder;
 
 /**
@@ -36,7 +38,7 @@ import org.apache.qpid.transport.codec.BBDecoder;
  * 
  * @author Andrea Gazzarini
  */
-public class MessageTokenizerTest extends TestCase {
+public class MessageTokenizerTest extends QpidTestCase {
 	
 	/**
 	 * Tests the execution of the message tokenizer when the given message is not a valid AMQP message.

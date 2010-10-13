@@ -21,9 +21,6 @@
 
 package org.apache.qpid.info.test;
 
-import junit.framework.TestCase;
-import org.apache.qpid.info.util.IniFileReader;
-
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -31,11 +28,14 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.Properties;
 
+import org.apache.qpid.info.util.IniFileReader;
+import org.apache.qpid.test.utils.QpidTestCase;
+
 /**
  * Test the Loading of the ini file reader by first writing
  * out a correct ini file.
  */
-public class IniFileReaderTest extends TestCase
+public class IniFileReaderTest extends QpidTestCase
 {
 
     public void testLoad()

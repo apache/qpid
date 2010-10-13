@@ -24,15 +24,14 @@ package org.apache.qpid.codec;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 
-import junit.framework.TestCase;
-
 import org.apache.qpid.framing.AMQDataBlock;
 import org.apache.qpid.framing.AMQFrame;
 import org.apache.qpid.framing.AMQFrameDecodingException;
 import org.apache.qpid.framing.AMQProtocolVersionException;
 import org.apache.qpid.framing.HeartbeatBody;
+import org.apache.qpid.test.utils.QpidTestCase;
 
-public class AMQDecoderTest extends TestCase
+public class AMQDecoderTest extends QpidTestCase
 {
 
     private AMQCodecFactory _factory;

@@ -29,9 +29,8 @@ import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
+import java.util.concurrent.Executors;
 
 import javax.jms.Destination;
 import javax.jms.JMSException;
@@ -46,10 +45,6 @@ import org.apache.log4j.Logger;
 import org.apache.log4j.PatternLayout;
 import org.apache.qpid.client.AMQAnyDestination;
 import org.apache.qpid.client.AMQConnection;
-import org.apache.qpid.client.AMQQueue;
-import org.apache.qpid.client.AMQTopic;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.thread.Threading;
 
 /**
  * A basic test case class that could launch a Sender/Receiver
@@ -239,7 +234,7 @@ public class TestLauncher implements ErrorHandler
         Thread t = null;
         try
         {
-            t = Threading.getThreadFactory().createThread(r);                      
+            t = Executors.defaultThreadFactory().newThread(r);                      
         }
         catch(Exception e)
         {
@@ -272,7 +267,7 @@ public class TestLauncher implements ErrorHandler
         Thread t = null;
         try
         {
-            t = Threading.getThreadFactory().createThread(r);                      
+            t = Executors.defaultThreadFactory().newThread(r);                      
         }
         catch(Exception e)
         {

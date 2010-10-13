@@ -20,12 +20,13 @@
  */
 package org.apache.qpid.server.registry;
 
-import org.apache.qpid.server.util.InternalBrokerBaseCase;
-
-import java.security.Security;
 import java.security.Provider;
+import java.security.Security;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
-import java.util.LinkedList;
+
+import org.apache.qpid.server.util.InternalBrokerBaseCase;
 
 /**
  * QPID-1390 : Test to validate that the AuthenticationManger can successfully unregister any new SASL providers when
@@ -35,71 +36,51 @@ import java.util.LinkedList;
  */
 public class ApplicationRegistryShutdownTest extends InternalBrokerBaseCase
 {
+    List<Provider> _before;
 
-    Provider[] _defaultProviders;
     @Override
     public void setUp() throws Exception
     {
         // Get default providers
-        _defaultProviders = Security.getProviders();
+        _before = Arrays.asList(Security.getProviders());
 
         //Startup the new broker and register the new providers
         super.setUp();
     }
 
-
     /**
      * QPID-1399 : Ensure that the Authentiction manager unregisters any SASL providers created during
      * ApplicationRegistry initialisation.
-     *
      */
     public void testAuthenticationMangerCleansUp() throws Exception
     {
-
         // Get the providers after initialisation
-        Provider[] providersAfterInitialisation = Security.getProviders();
+        List<Provider> after = Arrays.asList(Security.getProviders());
 
         // Find the additions
-        List additions = new LinkedList();
-        for (Provider afterInit : providersAfterInitialisation)
+        List<Provider> additions = new ArrayList<Provider>();
+        for (Provider provider : after)
         {
-            boolean found = false;
-            for (Provider defaultProvider : _defaultProviders)
+            if (!_before.contains(provider))
             {
-                if (defaultProvider == afterInit)
-                {
-                    found=true;
-                    break;
-                }
-            }
-
-            // Record added registies
-            if (!found)
-            {
-                additions.add(afterInit);
+                additions.add(provider);
             }
         }
 
-        // Not using isEmpty as that is not in Java 5
-        assertTrue("No new SASL mechanisms added by initialisation.", additions.size() != 0 );
+        assertFalse("No new SASL mechanisms added by initialisation.", additions.isEmpty());
 
         //Close the registry which will perform the close the AuthenticationManager
         getRegistry().close();
 
-        //Validate that the SASL plugFins have been removed.
-        Provider[] providersAfterClose = Security.getProviders();
+        //Validate that the SASL plugins have been removed.
+        List<Provider> closed = Arrays.asList(Security.getProviders());
 
-        assertTrue("No providers unregistered", providersAfterInitialisation.length > providersAfterClose.length);
+        assertEquals("No providers unregistered", _before.size(), closed.size());
 
         //Ensure that the additions are not still present after close().
-        for (Provider afterClose : providersAfterClose)
+        for (Provider provider : closed)
         {
-            assertFalse("Added provider not unregistered", additions.contains(afterClose));
+            assertFalse("Added provider not unregistered: " + provider.getName(), additions.contains(provider));
         }
     }
-
-
-
-
-
 }

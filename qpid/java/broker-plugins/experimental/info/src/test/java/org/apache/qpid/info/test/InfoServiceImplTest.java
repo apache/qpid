@@ -28,13 +28,12 @@ import java.util.Properties;
 
 import org.apache.qpid.info.Info;
 import org.apache.qpid.info.InfoServiceImpl;
+import org.apache.qpid.test.utils.QpidTestCase;
 
-import junit.framework.TestCase;
-
-/*
+/**
  * This test verifies the invoke() method for the info service making sure that the parameters are returned
  */
-public class InfoServiceImplTest extends TestCase
+public class InfoServiceImplTest extends QpidTestCase
 {
 
     InfoServiceImpl _isi = null;

@@ -106,9 +106,18 @@
     <!-- Examples of additional logging settings -->
     <!-- Used to generate extra debug. See debug.log4j.xml -->
     
-    <!--<category additivity="true" name="org.apache.qpid.server.store">
+    <!-- Transaction Logging -->
+    <category additivity="true" name="org.apache.qpid.server.store">
         <priority value="debug"/>
-    </category-->
+    </category>
+    
+    <category additivity="true" name="org.apache.qpid.server.txn">
+        <priority value="debug"/>
+    </category>
+    
+    <category additivity="true" name="com.sleepycat.je">
+        <priority value="debug"/>
+    </category>
 
     <!-- Set the commons logging that the XML parser uses to WARN, it is very chatty at debug -->
     <logger name="org.apache.commons">

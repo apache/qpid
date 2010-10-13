@@ -26,14 +26,13 @@ import java.util.NoSuchElementException;
 
 import javax.jms.JMSException;
 
-import junit.framework.TestCase;
-
 import org.apache.qpid.client.message.JMSTextMessage;
 import org.apache.qpid.client.message.TestMessageHelper;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.FieldTableFactory;
+import org.apache.qpid.test.utils.QpidTestCase;
 
-public class FieldTableKeyEnumeratorTest extends TestCase
+public class FieldTableKeyEnumeratorTest extends QpidTestCase
 {
     public void testTrue()
     {

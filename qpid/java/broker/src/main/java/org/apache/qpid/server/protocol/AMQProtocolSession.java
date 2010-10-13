@@ -219,8 +219,6 @@ public interface AMQProtocolSession extends AMQVersionAwareProtocolSession, Prin
 
     long getLastIoTime();
 
-    long getWrittenBytes();
-
     Long getMaximumNumberOfChannels();
 
     void setMaximumNumberOfChannels(Long value);
@@ -230,8 +228,6 @@ public interface AMQProtocolSession extends AMQVersionAwareProtocolSession, Prin
     void rollbackTransactions(AMQChannel channel) throws AMQException;
 
     List<AMQChannel> getChannels();
-
-    void closeIfLingeringClosedChannels();
 
     void mgmtCloseChannel(int channelId);
 }

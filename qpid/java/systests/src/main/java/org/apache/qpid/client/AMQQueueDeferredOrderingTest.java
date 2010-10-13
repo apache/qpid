@@ -20,17 +20,25 @@
  */
 package org.apache.qpid.client;
 
+import java.util.concurrent.Callable;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorCompletionService;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.FutureTask;
+import java.util.concurrent.ThreadPoolExecutor;
+
 import javax.jms.Connection;
-import javax.jms.Session;
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
+import javax.jms.Session;
 import javax.jms.TextMessage;
 
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
-import org.apache.qpid.client.transport.TransportConnection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,43 +47,45 @@ public class AMQQueueDeferredOrderingTest extends QpidBrokerTestCase
 
     private static final int NUM_MESSAGES = 1000;
 
-    private Connection con;
-    private Session session;
-    private AMQQueue queue;
-    private MessageConsumer consumer;
+    private Connection _con;
+    private Session _session;
+    private AMQQueue _queue;
+    private MessageConsumer _consumer;
 
     private static final Logger _logger = LoggerFactory.getLogger(AMQQueueDeferredOrderingTest.class);
 
-    private ASyncProducer producerThread;
+    private ExecutorService _exec = Executors.newCachedThreadPool();
 
-    private class ASyncProducer extends Thread
+    private class ASyncProducer implements Callable<Void>
     {
 
         private MessageProducer producer;
-        private final Logger _logger = LoggerFactory.getLogger(ASyncProducer.class);
+        private final Logger logger = LoggerFactory.getLogger(ASyncProducer.class);
         private Session session;
         private int start;
         private int end;
 
         public ASyncProducer(AMQQueue q, int start, int end) throws Exception
         {
-            this.session = con.createSession(false, Session.AUTO_ACKNOWLEDGE);
-            this._logger.info("Create Consumer of Q1");
+            this.logger.info("Create Producer for " + q.getQueueName());
+            this.session = _con.createSession(false, Session.AUTO_ACKNOWLEDGE);
             this.producer = this.session.createProducer(q);
             this.start = start;
             this.end = end;
         }
 
-        public void run()
+        public Void call() throws Exception
         {
             try
             {
-                this._logger.info("Starting to send messages");
-                for (int i = start; i < end && !interrupted(); i++)
+                this.logger.info("Starting to send messages");
+                for (int i = start; i < end && !Thread.currentThread().isInterrupted(); i++)
                 {
                     producer.send(session.createTextMessage(Integer.toString(i)));
                 }
-                this._logger.info("Sent " + (end - start) + " messages");
+                this.logger.info("Sent " + (end - start) + " messages");
+                
+                return null;
             }
             catch (JMSException e)
             {
@@ -89,38 +99,43 @@ public class AMQQueueDeferredOrderingTest extends QpidBrokerTestCase
         super.setUp();
 
         _logger.info("Create Connection");
-        con = getConnection();
+        _con = getConnection();
+        
         _logger.info("Create Session");
-        session = con.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        _session = _con.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        
         _logger.info("Create Q");
-        queue = new AMQQueue(new AMQShortString("amq.direct"), new AMQShortString("Q"), new AMQShortString("Q"),
-                false, true);
+        _queue = new AMQQueue(new AMQShortString("amq.direct"), new AMQShortString("Q"), new AMQShortString("Q"), false, true);
+        
         _logger.info("Create Consumer of Q");
-        consumer = session.createConsumer(queue);
+        _consumer = _session.createConsumer(_queue);
+        
         _logger.info("Start Connection");
-        con.start();
+        _con.start();
     }
 
     public void testPausedOrder() throws Exception
     {
+        ASyncProducer producer;
 
         // Setup initial messages
         _logger.info("Creating first producer thread");
-        producerThread = new ASyncProducer(queue, 0, NUM_MESSAGES / 2);
-        producerThread.start();
+        producer = new ASyncProducer(_queue, 0, NUM_MESSAGES / 2);
+        Future<Void> initial = _exec.submit(producer);
+        
         // Wait for them to be done
-        producerThread.join();
+        initial.get();
 
         // Setup second set of messages to produce while we consume
         _logger.info("Creating second producer thread");
-        producerThread = new ASyncProducer(queue, NUM_MESSAGES / 2, NUM_MESSAGES);
-        producerThread.start();
+        producer = new ASyncProducer(_queue, NUM_MESSAGES / 2, NUM_MESSAGES);
+        _exec.submit(producer);
 
         // Start consuming and checking they're in order
         _logger.info("Consuming messages");
         for (int i = 0; i < NUM_MESSAGES; i++)
         {
-            Message msg = consumer.receive(3000);
+            Message msg = _consumer.receive(3000);
             assertNotNull("Message should not be null", msg);
             assertTrue("Message should be a text message", msg instanceof TextMessage);
             assertEquals("Message content does not match expected", Integer.toString(i), ((TextMessage) msg).getText());
@@ -130,16 +145,12 @@ public class AMQQueueDeferredOrderingTest extends QpidBrokerTestCase
     protected void tearDown() throws Exception
     {
         _logger.info("Interuptting producer thread");
-        producerThread.interrupt();
+        _exec.shutdownNow();
+        
         _logger.info("Closing connection");
-        con.close();
+        _con.close();
 
         super.tearDown();
-    }
-
-    public static junit.framework.Test suite()
-    {
-        return new junit.framework.TestSuite(AMQQueueDeferredOrderingTest.class);
     }
 
 }

@@ -20,18 +20,11 @@
  */
 package org.apache.qpid.test.unit.client.BrokerDetails;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import junit.framework.TestCase;
-
 import org.apache.qpid.client.AMQBrokerDetails;
-import org.apache.qpid.client.AMQConnectionURL;
-import org.apache.qpid.jms.ConnectionURL;
-import org.apache.qpid.jms.BrokerDetails;
+import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.url.URLSyntaxException;
 
-public class BrokerDetailsTest extends TestCase
+public class BrokerDetailsTest extends QpidTestCase
 {
     public void testMultiParameters() throws URLSyntaxException
     {

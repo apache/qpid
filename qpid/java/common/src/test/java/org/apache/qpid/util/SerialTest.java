@@ -21,16 +21,12 @@ package org.apache.qpid.util;
  */
 
 
-import junit.framework.TestCase;
-
-import java.util.Random;
-
-import org.apache.qpid.SerialException;
+import org.apache.qpid.test.utils.QpidTestCase;
 
 /**
  *Junit tests for the Serial class 
  */
-public class SerialTest extends TestCase
+public class SerialTest extends QpidTestCase
 {
 
     /**

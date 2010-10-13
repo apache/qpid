@@ -20,9 +20,9 @@
  */
 package org.apache.qpid.console;
 
-import junit.framework.TestCase;
+import org.apache.qpid.test.utils.QpidTestCase;
 
-public class ClassKeyTest extends TestCase
+public class ClassKeyTest extends QpidTestCase
 {
     public void testCreation()
     {

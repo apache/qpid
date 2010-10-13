@@ -21,16 +21,18 @@
 
 package org.apache.qpid.extras.exchanges.example;
 
+import java.util.Map;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.ExchangeType;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
-public class TestExchangeType implements ExchangeType
+public class TestExchangeType implements ExchangeType<TestExchange>
 {
 
-    public Class getExchangeClass()
+    public Class<TestExchange> getExchangeClass()
     {
         return TestExchange.class;
     }
@@ -40,12 +42,12 @@ public class TestExchangeType implements ExchangeType
         return null;
     }
 
-    public Exchange newInstance(VirtualHost host, AMQShortString name, boolean durable,
-                                int token, boolean autoDelete)
+    public TestExchange newInstance(VirtualHost host, AMQShortString name, boolean durable,
+                                int token, boolean autoDelete, Map<String, Object> arguments)
             throws AMQException
     {
         TestExchange ex = new TestExchange();
-        ex.initialise(host, name, durable, token, autoDelete);
+        ex.initialise(host, name, durable, token, autoDelete, arguments);
         return ex;
     }
 

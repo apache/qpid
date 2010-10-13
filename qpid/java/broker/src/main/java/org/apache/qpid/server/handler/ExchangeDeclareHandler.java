@@ -78,7 +78,9 @@ public class ExchangeDeclareHandler implements StateAwareMethodListener<Exchange
                         exchange = exchangeFactory.createExchange(body.getExchange() == null ? null : body.getExchange().intern(),
                                                                   body.getType() == null ? null : body.getType().intern(),
                                                                   body.getDurable(),
-                                                                  body.getPassive(), body.getTicket());
+                                                                  body.getPassive(),
+                                                                  FieldTable.convertToMap(body.getArguments()),
+                                                                  body.getTicket());
                         exchangeRegistry.registerExchange(exchange);
 
                         if (exchange.isDurable())

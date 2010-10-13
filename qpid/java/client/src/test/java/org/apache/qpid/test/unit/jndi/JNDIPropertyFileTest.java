@@ -29,10 +29,9 @@ import javax.naming.InitialContext;
 
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.test.utils.QpidTestCase;
 
-import junit.framework.TestCase;
-
-public class JNDIPropertyFileTest extends TestCase
+public class JNDIPropertyFileTest extends QpidTestCase
 {
     Context ctx;
     

@@ -31,20 +31,19 @@ import java.util.Map;
 import javax.management.MBeanAttributeInfo;
 import javax.management.MBeanInfo;
 
-import junit.framework.TestCase;
-
 import org.apache.qpid.management.TestConstants;
 import org.apache.qpid.management.configuration.ConfigurationException;
 import org.apache.qpid.management.configuration.Configurator;
 import org.apache.qpid.management.domain.handler.impl.MethodOrEventDataTransferObject;
 import org.apache.qpid.management.domain.model.QpidClass.QManManagedObject;
+import org.apache.qpid.test.utils.QpidTestCase;
 
 /**
  * Test case for Qpid Class.
  * 
  * @author Andrea Gazzarini
  */
-public class QpidClassTest extends TestCase
+public class QpidClassTest extends QpidTestCase
 {
     private QpidClass _class;
     private QpidPackage _package;

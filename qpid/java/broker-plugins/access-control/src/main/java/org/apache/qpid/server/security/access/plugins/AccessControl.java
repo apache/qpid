@@ -75,17 +75,6 @@ public class AccessControl extends AbstractPlugin
     {
         return _ruleSet.getDefault();
     }
-
-    /**
-     * Object instance access authorisation.
-     *
-	 * Delegate to the {@link #authorise(Operation, ObjectType, ObjectProperties)} method, with
-     * the operation set to ACCESS and no object properties.
-	 */
-    public Result access(ObjectType objectType, Object instance)
-    {
-        return authorise(Operation.ACCESS, objectType, ObjectProperties.EMPTY);
-    }
     
     /**
      * Check if an operation is authorised by asking the  configuration object about the access

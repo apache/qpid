@@ -21,6 +21,7 @@
 package org.apache.qpid.server.exchange;
 
 import java.util.Collection;
+import java.util.Map;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
@@ -29,7 +30,7 @@ import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 
 public interface ExchangeFactory
 {
-    Exchange createExchange(AMQShortString exchange, AMQShortString type, boolean durable, boolean autoDelete,
+    Exchange createExchange(AMQShortString exchange, AMQShortString type, boolean durable, boolean autoDelete, Map<String, Object> arguments,
                             int ticket)
             throws AMQException;
 
@@ -40,4 +41,6 @@ public interface ExchangeFactory
     Collection<ExchangeType<? extends Exchange>> getPublicCreatableTypes();
 
     Exchange createExchange(String exchange, String type, boolean durable, boolean autoDelete) throws AMQException;
-}
+    
+    Exchange createExchange(String exchange, String type, boolean durable, boolean autoDelete, Map<String, Object> arguments) throws AMQException;
+} 

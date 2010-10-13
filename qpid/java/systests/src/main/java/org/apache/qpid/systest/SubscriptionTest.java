@@ -20,11 +20,12 @@
  */
 package org.apache.qpid.systest;
 
-import org.apache.commons.configuration.ConfigurationException;
+import java.io.IOException;
 
 import javax.jms.Session;
 import javax.naming.NamingException;
-import java.io.IOException;
+
+import org.apache.commons.configuration.ConfigurationException;
 
 /**
  * Test SCD when configured with Subscription details.
@@ -126,14 +127,14 @@ public class SubscriptionTest extends TestingBaseCase
      * Ensure we set the delete-persistent option
      *
      * Sets the messageAge to be 1/5 the disconnection wait timeout (or 1sec)
-     * Send 10 messages and then ensure that we get disconnected as we will
+     * Send a message and then ensure that we get disconnected as we will
      * wait for the full timeout.
      *
      * @throws Exception
      */
     public void testTopicDurableConsumerMessageAge() throws Exception
     {
-        MAX_QUEUE_MESSAGE_COUNT = 10;
+        MAX_QUEUE_MESSAGE_COUNT = 1;
 
         setConfig("messageAge", String.valueOf(DISCONNECTION_WAIT / 5), true);
 

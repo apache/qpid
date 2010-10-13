@@ -20,6 +20,8 @@
  -->
 <project name="Management Common" default="build">
 
+    <property name="module.test.depends" value="common/test" />
+    	
     <import file="../../module.xml"/>
 
     <target name="bundle" depends="bundle-tasks"/>

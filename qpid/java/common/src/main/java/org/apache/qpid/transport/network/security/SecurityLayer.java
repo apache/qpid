@@ -39,8 +39,8 @@ import org.apache.qpid.transport.network.security.ssl.SSLUtil;
 
 public class SecurityLayer
 {
-    ConnectionSettings settings;
     Connection con;
+    ConnectionSettings settings;
     SSLSecurityLayer sslLayer;
     SASLSecurityLayer saslLayer;
     

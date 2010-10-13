@@ -34,7 +34,7 @@ import java.io.InputStream;
 
 import junit.framework.TestCase;
 
-public class PropertiesFileInitialContextFactoryTest extends TestCase
+public class PropertiesFileInitialContextFactoryTest extends QpidTestCase
 {
     InitialContextFactory contextFactory;
     Properties _properties;

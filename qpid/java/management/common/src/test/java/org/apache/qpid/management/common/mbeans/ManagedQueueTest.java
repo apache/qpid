@@ -30,9 +30,9 @@ import javax.management.MBeanAttributeInfo;
 import javax.management.NotCompliantMBeanException;
 import javax.management.StandardMBean;
 
-import junit.framework.TestCase;
+import org.apache.qpid.test.utils.QpidTestCase;
 
-public class ManagedQueueTest extends TestCase
+public class ManagedQueueTest extends QpidTestCase
 {
     public void testAttributesContants()
     {

@@ -33,11 +33,6 @@ import org.apache.qpid.server.security.access.Operation;
  */
 public abstract class BasicPlugin extends AbstractPlugin
 {
-    public Result access(ObjectType objectType, Object instance)
-    {
-        return getDefault();
-    }
-    
     public Result authorise(Operation operation, ObjectType objectType, ObjectProperties properties)
     {
         return getDefault();

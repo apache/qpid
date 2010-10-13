@@ -42,7 +42,6 @@ import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
-import org.apache.qpid.transport.NetworkDriverConfiguration;
 
 import sun.misc.Signal;
 import sun.misc.SignalHandler;
@@ -654,34 +653,34 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
         return getIntValue("connector.processors", 4);
     }
 
-    public List getPorts()
+    public List<String> getPorts()
     {
-        return getListValue("connector.port", Collections.singletonList(DEFAULT_PORT));
+        return getListValue("connector.port", Collections.<String>singletonList(Integer.toString(DEFAULT_PORT)));
     }
 
-    public List getPortExclude010()
+    public List<String> getPortExclude010()
     {
         return getListValue("connector.non010port");
     }
 
-    public List getPortExclude091()
+    public List<String> getPortExclude091()
     {
         return getListValue("connector.non091port");
     }
 
-    public List getPortExclude09()
+    public List<String> getPortExclude09()
     {
         return getListValue("connector.non09port");
     }
 
-    public List getPortExclude08()
+    public List<String> getPortExclude08()
     {
         return getListValue("connector.non08port");
     }
 
     public String getBind()
     {
-        return getStringValue("connector.bind", "wildcard");
+        return getStringValue("connector.bind", "*");
     }
 
     public int getReceiveBufferSize()
@@ -774,58 +773,5 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
         return getLongValue("housekeeping.checkPeriod",
                                    getLongValue("housekeeping.expiredMessageCheckPeriod",
                                                        DEFAULT_HOUSEKEEPING_PERIOD));
-    }
-
-    public NetworkDriverConfiguration getNetworkConfiguration()
-    {
-        return new NetworkDriverConfiguration()
-        {
-
-            public Integer getTrafficClass()
-            {
-                return null;
-            }
-
-            public Boolean getTcpNoDelay()
-            {
-                // Can't call parent getTcpNoDelay since it just calls this one
-                return getBooleanValue("connector.tcpNoDelay", true);
-            }
-
-            public Integer getSoTimeout()
-            {
-                return null;
-            }
-
-            public Integer getSoLinger()
-            {
-                return null;
-            }
-
-            public Integer getSendBufferSize()
-            {
-                return getBufferWriteLimit();
-            }
-
-            public Boolean getReuseAddress()
-            {
-                return null;
-            }
-
-            public Integer getReceiveBufferSize()
-            {
-                return getBufferReadLimit();
-            }
-
-            public Boolean getOOBInline()
-            {
-                return null;
-            }
-
-            public Boolean getKeepAlive()
-            {
-                return null;
-            }
-        };
     }
 }

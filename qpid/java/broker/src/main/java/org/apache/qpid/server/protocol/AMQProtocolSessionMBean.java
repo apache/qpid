@@ -153,16 +153,6 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
         return _protocolSession.getVirtualHost().getManagedObject();
     }
 
-    public Long getWrittenBytes()
-    {
-        return _protocolSession.getWrittenBytes();
-    }
-
-    public Long getReadBytes()
-    {
-        return _protocolSession.getWrittenBytes();
-    }
-
     public Long getMaximumNumberOfChannels()
     {
         return _protocolSession.getMaximumNumberOfChannels();

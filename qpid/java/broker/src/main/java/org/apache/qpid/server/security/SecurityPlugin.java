@@ -24,21 +24,16 @@ import org.apache.qpid.server.security.access.ObjectType;
 import org.apache.qpid.server.security.access.Operation;
 
 /**
- * The two methods, {@link #access(ObjectType, Object)} and {@link #authorise(Operation, ObjectType, ObjectProperties)}, 
- * return the {@link Result} of the security decision, which may be to {@link Result#ABSTAIN} if no decision is made
- * by this plugin.
+ * The method {@link #authorise(Operation, ObjectType, ObjectProperties)}, returns
+ * the {@link Result} of the security decision, which may be to {@link Result#ABSTAIN}
+ * if no decision is made by this plugin.
  */
 public interface SecurityPlugin extends Plugin
 {	
 	/**
-	 * Default result for {@link #access(ObjectType, Object)} or {@link #authorise(Operation, ObjectType, ObjectProperties)}.
+	 * Default result for {@link #authorise(Operation, ObjectType, ObjectProperties)}.
 	 */
 	Result getDefault();
-	
-    /**
-     * Authorise access granted to an object instance.
-     */
-    Result access(ObjectType objectType, Object instance);
     
     /**
      * Authorise an operation on an object defined by a set of properties.

@@ -20,14 +20,6 @@
  */
 package org.apache.qpid.server.security.auth.database;
 
-import junit.framework.TestCase;
-
-import javax.security.auth.callback.PasswordCallback;
-import javax.security.auth.login.AccountNotFoundException;
-
-import org.apache.commons.codec.binary.Base64;
-import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
-
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -42,7 +34,14 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
 
-public class Base64MD5PasswordFilePrincipalDatabaseTest extends TestCase
+import javax.security.auth.callback.PasswordCallback;
+import javax.security.auth.login.AccountNotFoundException;
+
+import org.apache.commons.codec.binary.Base64;
+import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
+import org.apache.qpid.test.utils.QpidTestCase;
+
+public class Base64MD5PasswordFilePrincipalDatabaseTest extends QpidTestCase
 {
 
     private static final String TEST_COMMENT = "# Test Comment";

@@ -31,19 +31,18 @@ import javax.management.MBeanException;
 import javax.management.ObjectName;
 import javax.management.ReflectionException;
 
-import junit.framework.TestCase;
-
 import org.apache.qpid.management.TestConstants;
 import org.apache.qpid.management.configuration.ConfigurationException;
 import org.apache.qpid.management.configuration.Configurator;
 import org.apache.qpid.management.domain.model.QpidEvent.QManManagedEvent;
+import org.apache.qpid.test.utils.QpidTestCase;
 
 /**
  * Test case for qpid class entity.
  * 
  * @author Andrea Gazzarini
  */
-public class QpidEventTest extends TestCase
+public class QpidEventTest extends QpidTestCase
 {
     private QpidEvent _event;
     private QpidPackage _qpidPackage;

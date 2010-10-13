@@ -20,1493 +20,658 @@
  */
 package org.apache.qpid.server.configuration;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.RandomAccessFile;
 import java.util.List;
 import java.util.Locale;
 
-import junit.framework.TestCase;
-
-import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.XMLConfiguration;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.server.exchange.Exchange;
-import org.apache.qpid.server.protocol.AMQProtocolEngine;
-import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.registry.ConfigurationFileApplicationRegistry;
-import org.apache.qpid.server.util.InternalBrokerBaseCase;
-import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
-import org.apache.qpid.transport.TestNetworkDriver;
+import org.apache.qpid.server.util.TestApplicationRegistry;
+import org.apache.qpid.test.utils.QpidTestCase;
 
-public class ServerConfigurationTest extends InternalBrokerBaseCase
+public class ServerConfigurationTest extends QpidTestCase
 {
-    private XMLConfiguration _config = new XMLConfiguration();
-
-
-    public void testSetJMXManagementPort() throws ConfigurationException
+    private XMLConfiguration _xml = new XMLConfiguration();
+    private ServerConfiguration _config ;
+    
+    public void setUp() throws Exception
     {
-        ServerConfiguration serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        serverConfig.setJMXManagementPort(23);
-        assertEquals(23, serverConfig.getJMXManagementPort());
+        _config = new ServerConfiguration(_xml);
+        TestApplicationRegistry instance = new TestApplicationRegistry(_config);
+        ApplicationRegistry.initialise(instance);
+        _config.initialise();
+    }
+    
+    public void testGetJMXManagementPort() throws Exception
+    {
+        _config.setJMXManagementPort(23);
+        assertEquals(23, _config.getJMXManagementPort());
     }
 
-    public void testGetJMXManagementPort() throws ConfigurationException
+    public void testSetJMXManagementPort() throws Exception
     {
-        _config.setProperty("management.jmxport", 42);
-        ServerConfiguration serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(42, serverConfig.getJMXManagementPort());
+        _xml.setProperty("management.jmxport", 42);
+        _config.initialise();
+        assertEquals(42, _config.getJMXManagementPort());
     }
 
-    public void testGetPlatformMbeanserver() throws ConfigurationException
+    public void testGetPlatformMbeanserver() throws Exception
     {
-        // Check default
-        ServerConfiguration serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(true, serverConfig.getPlatformMbeanserver());
-
-        // Check value we set
-        _config.setProperty("management.platform-mbeanserver", false);
-        serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(false, serverConfig.getPlatformMbeanserver());
+        assertTrue(_config.getPlatformMbeanserver());
     }
 
-    public void testGetPluginDirectory() throws ConfigurationException
+    public void testSetPlatformMbeanserver() throws Exception
     {
-        // Check default
-        ServerConfiguration serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(null, serverConfig.getPluginDirectory());
-
-        // Check value we set
-        _config.setProperty("plugin-directory", "/path/to/plugins");
-        serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals("/path/to/plugins", serverConfig.getPluginDirectory());
+        _xml.setProperty("management.platform-mbeanserver", false);
+        _config.initialise();
+        assertFalse(_config.getPlatformMbeanserver());
     }
 
-    public void testGetCacheDirectory() throws ConfigurationException
+    public void testGetPluginDirectory() throws Exception
     {
-        // Check default
-        ServerConfiguration serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(null, serverConfig.getCacheDirectory());
-
-        // Check value we set
-        _config.setProperty("cache-directory", "/path/to/cache");
-        serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals("/path/to/cache", serverConfig.getCacheDirectory());
+        assertNull(_config.getPluginDirectory());
     }
 
-    public void testGetPrincipalDatabaseNames() throws ConfigurationException
+    public void testSetPluginDirectory() throws Exception
     {
-        // Check default
-        ServerConfiguration serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(0, serverConfig.getPrincipalDatabaseNames().size());
+        _xml.setProperty("plugin-directory", "/path/to/plugins");
+        _config.initialise();
+        assertEquals("/path/to/plugins", _config.getPluginDirectory());
+    }
 
-        // Check value we set
-        _config.setProperty("security.principal-databases.principal-database(0).name", "a");
-        _config.setProperty("security.principal-databases.principal-database(1).name", "b");
-        serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        List<String> dbs = serverConfig.getPrincipalDatabaseNames();
+    public void testGetCacheDirectory() throws Exception
+    {
+        assertNull(_config.getCacheDirectory());
+    }
+
+    public void testSetCacheDirectory() throws Exception
+    {
+        _xml.setProperty("cache-directory", "/path/to/cache");
+        _config.initialise();
+        assertEquals("/path/to/cache", _config.getCacheDirectory());
+    }
+
+    public void testGetPrincipalDatabaseNames() throws Exception
+    {
+        assertEquals(0, _config.getPrincipalDatabaseNames().size());
+    }
+
+    public void testSetPrincipalDatabaseNames() throws Exception
+    {
+        _xml.setProperty("security.principal-databases.principal-database(0).name", "a");
+        _xml.setProperty("security.principal-databases.principal-database(1).name", "b");
+        _config.initialise();
+        List<String> dbs = _config.getPrincipalDatabaseNames();
         assertEquals(2, dbs.size());
         assertEquals("a", dbs.get(0));
         assertEquals("b", dbs.get(1));
     }
 
-    public void testGetPrincipalDatabaseClass() throws ConfigurationException
+    public void testGetPrincipalDatabaseClass() throws Exception
     {
-        // Check default
-        ServerConfiguration serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(0, serverConfig.getPrincipalDatabaseClass().size());
+        assertEquals(0, _config.getPrincipalDatabaseClass().size());
+    }
 
-        // Check value we set
-        _config.setProperty("security.principal-databases.principal-database(0).class", "a");
-        _config.setProperty("security.principal-databases.principal-database(1).class", "b");
-        serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        List<String> dbs = serverConfig.getPrincipalDatabaseClass();
+    public void testSetPrincipalDatabaseClass() throws Exception
+    {
+        _xml.setProperty("security.principal-databases.principal-database(0).class", "a");
+        _xml.setProperty("security.principal-databases.principal-database(1).class", "b");
+        _config.initialise();
+        List<String> dbs = _config.getPrincipalDatabaseClass();
         assertEquals(2, dbs.size());
         assertEquals("a", dbs.get(0));
         assertEquals("b", dbs.get(1));
     }
 
-    public void testGetPrincipalDatabaseAttributeNames() throws ConfigurationException
+    public void testGetPrincipalDatabaseAttributeNames() throws Exception
     {
-        // Check default
-        ServerConfiguration serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(0, serverConfig.getPrincipalDatabaseAttributeNames(1).size());
+        assertEquals(0, _config.getPrincipalDatabaseAttributeNames(1).size());
+    }
 
-        // Check value we set
-        _config.setProperty("security.principal-databases.principal-database(0).attributes(0).attribute.name", "a");
-        _config.setProperty("security.principal-databases.principal-database(0).attributes(1).attribute.name", "b");
-        serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        List<String> dbs = serverConfig.getPrincipalDatabaseAttributeNames(0);
+    public void testSetPrincipalDatabaseAttributeNames() throws Exception
+    {
+        _xml.setProperty("security.principal-databases.principal-database(0).attributes(0).attribute.name", "a");
+        _xml.setProperty("security.principal-databases.principal-database(0).attributes(1).attribute.name", "b");
+        _config.initialise();
+        List<String> dbs = _config.getPrincipalDatabaseAttributeNames(0);
         assertEquals(2, dbs.size());
         assertEquals("a", dbs.get(0));
         assertEquals("b", dbs.get(1));
     }
 
-    public void testGetPrincipalDatabaseAttributeValues() throws ConfigurationException
+    public void testGetPrincipalDatabaseAttributeValues() throws Exception
     {
-        // Check default
-        ServerConfiguration serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(0, serverConfig.getPrincipalDatabaseAttributeValues(1).size());
+        assertEquals(0, _config.getPrincipalDatabaseAttributeValues(1).size());
+    }
 
-        // Check value we set
-        _config.setProperty("security.principal-databases.principal-database(0).attributes(0).attribute.value", "a");
-        _config.setProperty("security.principal-databases.principal-database(0).attributes(1).attribute.value", "b");
-        serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        List<String> dbs = serverConfig.getPrincipalDatabaseAttributeValues(0);
+    public void testSetPrincipalDatabaseAttributeValues() throws Exception
+    {
+        _xml.setProperty("security.principal-databases.principal-database(0).attributes(0).attribute.value", "a");
+        _xml.setProperty("security.principal-databases.principal-database(0).attributes(1).attribute.value", "b");
+        _config.initialise();
+        List<String> dbs = _config.getPrincipalDatabaseAttributeValues(0);
         assertEquals(2, dbs.size());
         assertEquals("a", dbs.get(0));
         assertEquals("b", dbs.get(1));
     }
 
-    public void testGetManagementAccessList() throws ConfigurationException
+    public void testGetManagementAccessList() throws Exception
     {
-        // Check default
-        ServerConfiguration serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(0, serverConfig.getManagementAccessList().size());
+        assertEquals(0, _config.getManagementAccessList().size());
+    }
 
-        // Check value we set
-        _config.setProperty("security.jmx.access(0)", "a");
-        _config.setProperty("security.jmx.access(1)", "b");
-        serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        List<String> dbs = serverConfig.getManagementAccessList();
+    public void testSetManagementAccessList() throws Exception
+    {
+        _xml.setProperty("security.jmx.access(0)", "a");
+        _xml.setProperty("security.jmx.access(1)", "b");
+        _config.initialise();
+        List<String> dbs = _config.getManagementAccessList();
         assertEquals(2, dbs.size());
         assertEquals("a", dbs.get(0));
         assertEquals("b", dbs.get(1));
     }
 
-    public void testGetFrameSize() throws ConfigurationException
+    public void testGetFrameSize() throws Exception
     {
-        // Check default
-        ServerConfiguration serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(65536, serverConfig.getFrameSize());
-
-        // Check value we set
-        _config.setProperty("advanced.framesize", "23");
-        serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(23, serverConfig.getFrameSize());
+        assertEquals(65536, _config.getFrameSize());
     }
 
-    public void testGetProtectIOEnabled() throws ConfigurationException
+    public void testSetFrameSize() throws Exception
     {
-        // Check default
-        ServerConfiguration serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(false, serverConfig.getProtectIOEnabled());
-
-        // Check value we set
-        _config.setProperty(ServerConfiguration.CONNECTOR_PROTECTIO_ENABLED, true);
-        serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(true, serverConfig.getProtectIOEnabled());
+        _xml.setProperty("advanced.framesize", "23");
+        _config.initialise();
+        assertEquals(23, _config.getFrameSize());
     }
 
-    public void testGetBufferReadLimit() throws ConfigurationException
+    public void testGetProtectIOEnabled() throws Exception
     {
-        // Check default
-        ServerConfiguration serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(262144, serverConfig.getBufferReadLimit());
-
-        // Check value we set
-        _config.setProperty(ServerConfiguration.CONNECTOR_PROTECTIO_READ_BUFFER_LIMIT_SIZE, 23);
-        serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(23, serverConfig.getBufferReadLimit());
+        assertFalse(_config.getProtectIOEnabled());
     }
 
-    public void testGetBufferWriteLimit() throws ConfigurationException
+    public void testSetProtectIOEnabled() throws Exception
     {
-        // Check default
-        ServerConfiguration serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(262144, serverConfig.getBufferWriteLimit());
-
-        // Check value we set
-        _config.setProperty(ServerConfiguration.CONNECTOR_PROTECTIO_WRITE_BUFFER_LIMIT_SIZE, 23);
-        serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(23, serverConfig.getBufferWriteLimit());
+        _xml.setProperty(ServerConfiguration.CONNECTOR_PROTECTIO_ENABLED, true);
+        _config.initialise();
+        assertTrue(_config.getProtectIOEnabled());
     }
 
-
-    public void testGetStatusEnabled() throws ConfigurationException
+    public void testGetBufferReadLimit() throws Exception
     {
-        // Check default
-        ServerConfiguration serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
+        assertEquals(262144, _config.getBufferReadLimit());
+    }
+
+    public void testSetBufferReadLimit() throws Exception
+    {
+        _xml.setProperty(ServerConfiguration.CONNECTOR_PROTECTIO_READ_BUFFER_LIMIT_SIZE, 23);
+        _config.initialise();
+        assertEquals(23, _config.getBufferReadLimit());
+    }
+
+    public void testGetBufferWriteLimit() throws Exception
+    {
+        assertEquals(262144, _config.getBufferWriteLimit());
+    }
+
+    public void testSetBufferWriteLimit() throws Exception
+    {
+        _xml.setProperty(ServerConfiguration.CONNECTOR_PROTECTIO_WRITE_BUFFER_LIMIT_SIZE, 23);
+        _config.initialise();
+        assertEquals(23, _config.getBufferWriteLimit());
+    }
+
+    public void testGetStatusEnabled() throws Exception
+    {
         assertEquals(ServerConfiguration.DEFAULT_STATUS_UPDATES.equalsIgnoreCase("on"),
-                     serverConfig.getStatusUpdatesEnabled());
-
-        // Check disabling we set
-        _config.setProperty(ServerConfiguration.STATUS_UPDATES, "off");
-        serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(false, serverConfig.getStatusUpdatesEnabled());
-
-        // Check invalid values don't cause error but result in disabled
-        _config.setProperty(ServerConfiguration.STATUS_UPDATES, "Yes Please");
-        serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(false, serverConfig.getStatusUpdatesEnabled());
-
-    }
-    public void testGetSynchedClocks() throws ConfigurationException
-    {
-        // Check default
-        ServerConfiguration serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(false, serverConfig.getSynchedClocks());
-
-        // Check value we set
-        _config.setProperty("advanced.synced-clocks", true);
-        serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(true, serverConfig.getSynchedClocks());
+                     _config.getStatusUpdatesEnabled());
     }
 
-    public void testGetLocale() throws ConfigurationException
+    public void testSetStatusEnabled() throws Exception
     {
-        // Check default
-        ServerConfiguration serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
+        _xml.setProperty(ServerConfiguration.STATUS_UPDATES, "off");
+        _config.initialise();
+        assertFalse(_config.getStatusUpdatesEnabled());
+    }
 
+    public void testSetStatusEnabledError() throws Exception
+    {
+        _xml.setProperty(ServerConfiguration.STATUS_UPDATES, "Yes Please");
+        _config.initialise();
+        assertFalse(_config.getStatusUpdatesEnabled());
+    }
+
+    public void testGetSynchedClocks() throws Exception
+    {
+        assertFalse(_config.getSynchedClocks());
+    }
+
+    public void testSetSynchedClocks() throws Exception
+    {
+        _xml.setProperty("advanced.synced-clocks", true);
+        _config.initialise();
+        assertTrue(_config.getSynchedClocks());
+    }
+
+    public void testGetLocale() throws Exception
+    {
         // The Default is what ever the VMs default is
         Locale defaultLocale = Locale.getDefault();
 
-        assertEquals(defaultLocale, serverConfig.getLocale());
+        assertEquals(defaultLocale, _config.getLocale());
+    }
 
-
-        //Test Language only
+    public void testSetLocaleOne() throws Exception
+    {
         Locale update = new Locale("es");
-        _config.setProperty(ServerConfiguration.ADVANCED_LOCALE, "es");
-        serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(update, serverConfig.getLocale());
-
-        //Test Language and Country
-        update = new Locale("es","ES");
-        _config.setProperty(ServerConfiguration.ADVANCED_LOCALE, "es_ES");
-        serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(update, serverConfig.getLocale());
-
-        //Test Language and Country and Variant
-        update = new Locale("es","ES", "Traditional_WIN");
-        _config.setProperty(ServerConfiguration.ADVANCED_LOCALE, "es_ES_Traditional_WIN");
-        serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(update, serverConfig.getLocale());
+        _xml.setProperty(ServerConfiguration.ADVANCED_LOCALE, "es");
+        _config.initialise();
+        assertEquals(update, _config.getLocale());
     }
 
-
-    public void testGetMsgAuth() throws ConfigurationException
+    public void testSetLocaleTwo() throws Exception
     {
-        // Check default
-        ServerConfiguration serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(false, serverConfig.getMsgAuth());
-
-        // Check value we set
-        _config.setProperty("security.msg-auth", true);
-        serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(true, serverConfig.getMsgAuth());
+        Locale update = new Locale("es","ES");
+        _xml.setProperty(ServerConfiguration.ADVANCED_LOCALE, "es_ES");
+        _config.initialise();
+        assertEquals(update, _config.getLocale());
     }
 
-    public void testGetJMXPrincipalDatabase() throws ConfigurationException
+    public void testSetLocaleThree() throws Exception
     {
-        // Check default
-        ServerConfiguration serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(null, serverConfig.getJMXPrincipalDatabase());
-
-        // Check value we set
-        _config.setProperty("security.jmx.principal-database", "a");
-        serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals("a", serverConfig.getJMXPrincipalDatabase());
+        Locale update = new Locale("es","ES", "Traditional_WIN");
+        _xml.setProperty(ServerConfiguration.ADVANCED_LOCALE, "es_ES_Traditional_WIN");
+        _config.initialise();
+        assertEquals(update, _config.getLocale());
     }
 
-    public void testGetManagementKeyStorePath() throws ConfigurationException
+    public void testGetMsgAuth() throws Exception
     {
-        // Check default
-        ServerConfiguration serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(null, serverConfig.getManagementKeyStorePath());
-
-        // Check value we set
-        _config.setProperty("management.ssl.keyStorePath", "a");
-        serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals("a", serverConfig.getManagementKeyStorePath());
+        assertFalse(_config.getMsgAuth());
     }
 
-    public void testGetManagementSSLEnabled() throws ConfigurationException
+    public void testSetMsgAuth() throws Exception
     {
-        // Check default
-        ServerConfiguration serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(true, serverConfig.getManagementSSLEnabled());
-
-        // Check value we set
-        _config.setProperty("management.ssl.enabled", false);
-        serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(false, serverConfig.getManagementSSLEnabled());
+        _xml.setProperty("security.msg-auth", true);
+        _config.initialise();
+        assertTrue(_config.getMsgAuth());
     }
 
-    public void testGetManagementKeyStorePassword() throws ConfigurationException
+    public void testGetJMXPrincipalDatabase() throws Exception
     {
-        // Check default
-        ServerConfiguration serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(null, serverConfig.getManagementKeyStorePassword());
-
-        // Check value we set
-        _config.setProperty("management.ssl.keyStorePassword", "a");
-        serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals("a", serverConfig.getManagementKeyStorePassword());
+        assertNull(_config.getJMXPrincipalDatabase());
     }
 
-    public void testGetQueueAutoRegister() throws ConfigurationException
+    public void testSetJMXPrincipalDatabase() throws Exception
     {
-        // Check default
-        ServerConfiguration serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(true, serverConfig.getQueueAutoRegister());
-
-        // Check value we set
-        _config.setProperty("queue.auto_register", false);
-        serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(false, serverConfig.getQueueAutoRegister());
+        _xml.setProperty("security.jmx.principal-database", "a");
+        _config.initialise();
+        assertEquals("a", _config.getJMXPrincipalDatabase());
     }
 
-    public void testGetManagementEnabled() throws ConfigurationException
+    public void testGetManagementKeyStorePath() throws Exception
     {
-        // Check default
-        ServerConfiguration serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(true, serverConfig.getManagementEnabled());
-
-        // Check value we set
-        _config.setProperty("management.enabled", false);
-        serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(false, serverConfig.getManagementEnabled());
+        assertNull(_config.getManagementKeyStorePath());
     }
 
-    public void testSetManagementEnabled() throws ConfigurationException
+    public void testSetManagementKeyStorePath() throws Exception
     {
-        // Check value we set
-        ServerConfiguration serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        serverConfig.setManagementEnabled(false);
-        assertEquals(false, serverConfig.getManagementEnabled());
+        _xml.setProperty("management.ssl.keyStorePath", "a");
+        _config.initialise();
+        assertEquals("a", _config.getManagementKeyStorePath());
     }
 
-    public void testGetHeartBeatDelay() throws ConfigurationException
+    public void testGetManagementSSLEnabled() throws Exception
     {
-        // Check default
-        ServerConfiguration serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(5, serverConfig.getHeartBeatDelay());
-
-        // Check value we set
-        _config.setProperty("heartbeat.delay", 23);
-        serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(23, serverConfig.getHeartBeatDelay());
+        assertTrue(_config.getManagementSSLEnabled());
     }
 
-    public void testGetHeartBeatTimeout() throws ConfigurationException
+    public void testSetManagementSSLEnabled() throws Exception
     {
-        // Check default
-        ServerConfiguration serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(2.0, serverConfig.getHeartBeatTimeout());
-
-        // Check value we set
-        _config.setProperty("heartbeat.timeoutFactor", 2.3);
-        serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(2.3, serverConfig.getHeartBeatTimeout());
+        _xml.setProperty("management.ssl.enabled", false);
+        _config.initialise();
+        assertFalse(_config.getManagementSSLEnabled());
     }
 
-    public void testGetMaximumMessageAge() throws ConfigurationException
+    public void testGetManagementKeyStorePassword() throws Exception
     {
-        // Check default
-        ServerConfiguration serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(0, serverConfig.getMaximumMessageAge());
-
-        // Check value we set
-        _config.setProperty("maximumMessageAge", 10L);
-        serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(10, serverConfig.getMaximumMessageAge());
+        assertNull(_config.getManagementKeyStorePassword());
     }
 
-    public void testGetMaximumMessageCount() throws ConfigurationException
+    public void testSetManagementKeyStorePassword() throws Exception
     {
-        // Check default
-        ServerConfiguration serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(0, serverConfig.getMaximumMessageCount());
-
-        // Check value we set
-        _config.setProperty("maximumMessageCount", 10L);
-        serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(10, serverConfig.getMaximumMessageCount());
+        _xml.setProperty("management.ssl.keyStorePassword", "a");
+        _config.initialise();
+        assertEquals("a", _config.getManagementKeyStorePassword());
     }
 
-    public void testGetMaximumQueueDepth() throws ConfigurationException
+    public void testGetQueueAutoRegister() throws Exception
     {
-        // Check default
-        ServerConfiguration serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(0, serverConfig.getMaximumQueueDepth());
-
-        // Check value we set
-        _config.setProperty("maximumQueueDepth", 10L);
-        serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(10, serverConfig.getMaximumQueueDepth());
+        assertTrue(_config.getQueueAutoRegister());
     }
 
-    public void testGetMaximumMessageSize() throws ConfigurationException
+    public void testSetQueueAutoRegister() throws Exception
     {
-        // Check default
-        ServerConfiguration serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(0, serverConfig.getMaximumMessageSize());
-
-        // Check value we set
-        _config.setProperty("maximumMessageSize", 10L);
-        serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(10, serverConfig.getMaximumMessageSize());
+        _xml.setProperty("queue.auto_register", false);
+        _config.initialise();
+        assertFalse(_config.getQueueAutoRegister());
     }
 
-    public void testGetMinimumAlertRepeatGap() throws ConfigurationException
+    public void testGetManagementEnabled() throws Exception
     {
-        // Check default
-        ServerConfiguration serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(0, serverConfig.getMinimumAlertRepeatGap());
-
-        // Check value we set
-        _config.setProperty("minimumAlertRepeatGap", 10L);
-        serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(10, serverConfig.getMinimumAlertRepeatGap());
+        _config.setManagementEnabled(false);
+        _config.initialise();
+        assertFalse(_config.getManagementEnabled());
     }
 
-    public void testGetProcessors() throws ConfigurationException
+    public void testSetManagementEnabled() throws Exception
     {
-        // Check default
-        ServerConfiguration serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(4, serverConfig.getProcessors());
-
-        // Check value we set
-        _config.setProperty("connector.processors", 10);
-        serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(10, serverConfig.getProcessors());
+        _xml.setProperty("management.enabled", false);
+        _config.initialise();
+        assertFalse(_config.getManagementEnabled());
     }
 
-    public void testGetPort() throws ConfigurationException
+    public void testGetHeartBeatDelay() throws Exception
     {
-        // Check default
-        ServerConfiguration serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertNotNull(serverConfig.getPorts());
-        assertEquals(1, serverConfig.getPorts().size());
-        assertEquals(5672, serverConfig.getPorts().get(0));
-
-
-        // Check value we set
-        _config.setProperty("connector.port", "10");
-        serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertNotNull(serverConfig.getPorts());
-        assertEquals(1, serverConfig.getPorts().size());
-        assertEquals("10", serverConfig.getPorts().get(0));
+        assertEquals(5, _config.getHeartBeatDelay());
     }
 
-    public void testGetBind() throws ConfigurationException
+    public void testSetHeartBeatDelay() throws Exception
     {
-        // Check default
-        ServerConfiguration serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals("wildcard", serverConfig.getBind());
-
-        // Check value we set
-        _config.setProperty("connector.bind", "a");
-        serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals("a", serverConfig.getBind());
+        _xml.setProperty("heartbeat.delay", 23);
+        _config.initialise();
+        assertEquals(23, _config.getHeartBeatDelay());
     }
 
-    public void testGetReceiveBufferSize() throws ConfigurationException
+    public void testGetHeartBeatTimeout() throws Exception
     {
-        // Check default
-        ServerConfiguration serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(32767, serverConfig.getReceiveBufferSize());
-
-        // Check value we set
-        _config.setProperty("connector.socketReceiveBuffer", "23");
-        serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(23, serverConfig.getReceiveBufferSize());
+        assertEquals(2.0, _config.getHeartBeatTimeout());
     }
 
-    public void testGetWriteBufferSize() throws ConfigurationException
+    public void testSetHeartBeatTimeout() throws Exception
     {
-        // Check default
-        ServerConfiguration serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(32767, serverConfig.getWriteBufferSize());
-
-        // Check value we set
-        _config.setProperty("connector.socketWriteBuffer", "23");
-        serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(23, serverConfig.getWriteBufferSize());
+        _xml.setProperty("heartbeat.timeoutFactor", 2.3);
+        _config.initialise();
+        assertEquals(2.3, _config.getHeartBeatTimeout());
     }
 
-    public void testGetTcpNoDelay() throws ConfigurationException
+    public void testGetMaximumMessageAge() throws Exception
     {
-        // Check default
-        ServerConfiguration serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(true, serverConfig.getTcpNoDelay());
-
-        // Check value we set
-        _config.setProperty("connector.tcpNoDelay", false);
-        serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(false, serverConfig.getTcpNoDelay());
+        assertEquals(0, _config.getMaximumMessageAge());
     }
 
-    public void testGetEnableExecutorPool() throws ConfigurationException
+    public void testSetMaximumMessageAge() throws Exception
     {
-        // Check default
-        ServerConfiguration serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(false, serverConfig.getEnableExecutorPool());
-
-        // Check value we set
-        _config.setProperty("advanced.filterchain[@enableExecutorPool]", true);
-        serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(true, serverConfig.getEnableExecutorPool());
+        _xml.setProperty("maximumMessageAge", 10L);
+        _config.initialise();
+        assertEquals(10, _config.getMaximumMessageAge());
     }
 
-    public void testGetEnablePooledAllocator() throws ConfigurationException
+    public void testGetMaximumMessageCount() throws Exception
     {
-        // Check default
-        ServerConfiguration serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(false, serverConfig.getEnablePooledAllocator());
-
-        // Check value we set
-        _config.setProperty("advanced.enablePooledAllocator", true);
-        serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(true, serverConfig.getEnablePooledAllocator());
+        assertEquals(0, _config.getMaximumMessageCount());
     }
 
-    public void testGetEnableDirectBuffers() throws ConfigurationException
+    public void testSetMaximumMessageCount() throws Exception
     {
-        // Check default
-        ServerConfiguration serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(false, serverConfig.getEnableDirectBuffers());
-
-        // Check value we set
-        _config.setProperty("advanced.enableDirectBuffers", true);
-        serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(true, serverConfig.getEnableDirectBuffers());
+        _xml.setProperty("maximumMessageCount", 10L);
+        _config.initialise();
+        assertEquals(10, _config.getMaximumMessageCount());
     }
 
-    public void testGetEnableSSL() throws ConfigurationException
+    public void testGetMaximumQueueDepth() throws Exception
     {
-        // Check default
-        ServerConfiguration serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(false, serverConfig.getEnableSSL());
-
-        // Check value we set
-        _config.setProperty("connector.ssl.enabled", true);
-        serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(true, serverConfig.getEnableSSL());
+        assertEquals(0, _config.getMaximumQueueDepth());
     }
 
-    public void testGetSSLOnly() throws ConfigurationException
+    public void testSetMaximumQueueDepth() throws Exception
     {
-        // Check default
-        ServerConfiguration serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(false, serverConfig.getSSLOnly());
-
-        // Check value we set
-        _config.setProperty("connector.ssl.sslOnly", true);
-        serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(true, serverConfig.getSSLOnly());
+        _xml.setProperty("maximumQueueDepth", 10L);
+        _config.initialise();
+        assertEquals(10, _config.getMaximumQueueDepth());
     }
 
-    public void testGetSSLPort() throws ConfigurationException
+    public void testGetMaximumMessageSize() throws Exception
     {
-        // Check default
-        ServerConfiguration serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(8672, serverConfig.getSSLPort());
-
-        // Check value we set
-        _config.setProperty("connector.ssl.port", 23);
-        serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(23, serverConfig.getSSLPort());
+        assertEquals(0, _config.getMaximumMessageSize());
     }
 
-    public void testGetKeystorePath() throws ConfigurationException
+    public void testSetMaximumMessageSize() throws Exception
     {
-        // Check default
-        ServerConfiguration serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals("none", serverConfig.getKeystorePath());
-
-        // Check value we set
-        _config.setProperty("connector.ssl.keystorePath", "a");
-        serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals("a", serverConfig.getKeystorePath());
+        _xml.setProperty("maximumMessageSize", 10L);
+        _config.initialise();
+        assertEquals(10, _config.getMaximumMessageSize());
     }
 
-    public void testGetKeystorePassword() throws ConfigurationException
+    public void testGetMinimumAlertRepeatGap() throws Exception
     {
-        // Check default
-        ServerConfiguration serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals("none", serverConfig.getKeystorePassword());
-
-        // Check value we set
-        _config.setProperty("connector.ssl.keystorePassword", "a");
-        serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals("a", serverConfig.getKeystorePassword());
+        assertEquals(0, _config.getMinimumAlertRepeatGap());
     }
 
-    public void testGetCertType() throws ConfigurationException
+    public void testSetMinimumAlertRepeatGap() throws Exception
     {
-        // Check default
-        ServerConfiguration serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals("SunX509", serverConfig.getCertType());
-
-        // Check value we set
-        _config.setProperty("connector.ssl.certType", "a");
-        serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals("a", serverConfig.getCertType());
+        _xml.setProperty("minimumAlertRepeatGap", 10L);
+        _config.initialise();
+        assertEquals(10, _config.getMinimumAlertRepeatGap());
     }
 
-    public void testGetQpidNIO() throws ConfigurationException
+    public void testGetProcessors() throws Exception
     {
-        // Check default
-        ServerConfiguration serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(false, serverConfig.getQpidNIO());
-
-        // Check value we set
-        _config.setProperty("connector.qpidnio", true);
-        serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(true, serverConfig.getQpidNIO());
+        assertEquals(4, _config.getProcessors());
     }
 
-    public void testGetUseBiasedWrites() throws ConfigurationException
+    public void testSetProcessors() throws Exception
     {
-        // Check default
-        ServerConfiguration serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(false, serverConfig.getUseBiasedWrites());
-
-        // Check value we set
-        _config.setProperty("advanced.useWriteBiasedPool", true);
-        serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(true, serverConfig.getUseBiasedWrites());
+        _xml.setProperty("connector.processors", 10);
+        _config.initialise();
+        assertEquals(10, _config.getProcessors());
     }
 
-    public void testGetHousekeepingExpiredMessageCheckPeriod() throws ConfigurationException
+    public void testGetPort() throws Exception
     {
-        // Check default
-        ServerConfiguration serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(30000, serverConfig.getHousekeepingCheckPeriod());
-
-        // Check value we set
-        _config.setProperty("housekeeping.expiredMessageCheckPeriod", 23L);
-        serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(23, serverConfig.getHousekeepingCheckPeriod());
-        serverConfig.setHousekeepingExpiredMessageCheckPeriod(42L);
-        assertEquals(42, serverConfig.getHousekeepingCheckPeriod());
+        assertNotNull(_config.getPorts());
+        assertEquals(1, _config.getPorts().size());
+        assertEquals("5672", _config.getPorts().get(0));
     }
 
-    public void testSingleConfiguration() throws IOException, ConfigurationException
+    public void testSetPort() throws Exception
     {
-        File fileA = File.createTempFile(getClass().getName(), null);
-        fileA.deleteOnExit();
-        FileWriter out = new FileWriter(fileA);
-        out.write("<broker><connector><port>2342</port><ssl><port>4235</port></ssl></connector></broker>");
-        out.close();
-        ServerConfiguration conf = new ServerConfiguration(fileA);
-        conf.initialise();
-        assertEquals(4235, conf.getSSLPort());
+        _xml.setProperty("connector.port", "10");
+        _config.initialise();
+        assertNotNull(_config.getPorts());
+        assertEquals(1, _config.getPorts().size());
+        assertEquals("10", _config.getPorts().get(0));
     }
 
-    public void testCombinedConfiguration() throws IOException, ConfigurationException
+    public void testGetBind() throws Exception
     {
-        File mainFile = File.createTempFile(getClass().getName(), null);
-        File fileA = File.createTempFile(getClass().getName(), null);
-        File fileB = File.createTempFile(getClass().getName(), null);
-
-        mainFile.deleteOnExit();
-        fileA.deleteOnExit();
-        fileB.deleteOnExit();
-
-        FileWriter out = new FileWriter(mainFile);
-        out.write("<configuration><system/>");
-        out.write("<xml fileName=\"" + fileA.getAbsolutePath() + "\"/>");
-        out.write("<xml fileName=\"" + fileB.getAbsolutePath() + "\"/>");
-        out.write("</configuration>");
-        out.close();
-
-        out = new FileWriter(fileA);
-        out.write("<broker><connector><port>2342</port><ssl><port>4235</port></ssl></connector></broker>");
-        out.close();
-
-        out = new FileWriter(fileB);
-        out.write("<broker><connector><ssl><port>2345</port></ssl><qpidnio>true</qpidnio></connector></broker>");
-        out.close();
-
-        ServerConfiguration config = new ServerConfiguration(mainFile.getAbsoluteFile());
-        config.initialise();
-        assertEquals(4235, config.getSSLPort()); // From first file, not
-                                                 // overriden by second
-        assertNotNull(config.getPorts());
-        assertEquals(1, config.getPorts().size());
-        assertEquals("2342", config.getPorts().get(0)); // From the first file, not
-                                              // present in the second
-        assertEquals(true, config.getQpidNIO()); // From the second file, not
-                                                 // present in the first
+        assertEquals("*", _config.getBind());
     }
 
-    public void testVariableInterpolation() throws Exception
+    public void testSetBind() throws Exception
     {
-        File mainFile = File.createTempFile(getClass().getName(), null);
-
-        mainFile.deleteOnExit();
-
-        FileWriter out = new FileWriter(mainFile);
-        out.write("<broker>\n");
-        out.write("\t<work>foo</work>\n");
-        out.write("\t<management><ssl><keyStorePath>${work}</keyStorePath></ssl></management>\n");
-        out.write("</broker>\n");
-        out.close();
-
-        ServerConfiguration config = new ServerConfiguration(mainFile.getAbsoluteFile());
-        config.initialise();
-        assertEquals("Did not get correct interpolated value",
-                "foo", config.getManagementKeyStorePath());
+        _xml.setProperty("connector.bind", "a");
+        _config.initialise();
+        assertEquals("a", _config.getBind());
     }
 
-    private void writeConfigFile(File mainFile, boolean allow) throws IOException {
-        writeConfigFile(mainFile, allow, true, null, "test");
-    }
-
-    private void writeConfigFile(File mainFile, boolean allow, boolean includeVhosts, File vhostsFile, String name) throws IOException {
-        FileWriter out = new FileWriter(mainFile);
-        out.write("<broker>\n");
-        out.write("\t<management><enabled>false</enabled></management>\n");
-        out.write("\t<security>\n");
-        out.write("\t\t<principal-databases>\n");
-        out.write("\t\t\t<principal-database>\n");
-        out.write("\t\t\t\t<name>passwordfile</name>\n");
-        out.write("\t\t\t\t<class>org.apache.qpid.server.security.auth.database.PlainPasswordFilePrincipalDatabase</class>\n");
-        out.write("\t\t\t\t<attributes>\n");
-        out.write("\t\t\t\t\t<attribute>\n");
-        out.write("\t\t\t\t\t\t<name>passwordFile</name>\n");
-        out.write("\t\t\t\t\t\t<value>/dev/null</value>\n");
-        out.write("\t\t\t\t\t</attribute>\n");
-        out.write("\t\t\t\t</attributes>\n");
-        out.write("\t\t\t</principal-database>\n");
-        out.write("\t\t</principal-databases>\n");
-        out.write("\t\t<jmx>\n");
-        out.write("\t\t\t<access>/dev/null</access>\n");
-        out.write("\t\t\t<principal-database>passwordfile</principal-database>\n");
-        out.write("\t\t</jmx>\n");
-        out.write("\t\t<firewall>\n");
-        out.write("\t\t\t<rule access=\""+ ((allow) ? "allow" : "deny") +"\" network=\"127.0.0.1\"/>");
-        out.write("\t\t</firewall>\n");
-        out.write("\t</security>\n");
-        if (includeVhosts)
-        {
-	        out.write("\t<virtualhosts>\n");
-            out.write("\t\t<default>test</default>\n");
-	        out.write("\t\t<virtualhost>\n");
-	        out.write(String.format("\t\t\t<name>%s</name>\n", name));
-	        out.write(String.format("\t\t<%s> \n", name));
-	        out.write("\t\t\t<exchanges>\n");
-	        out.write("\t\t\t\t<exchange>\n");
-	        out.write("\t\t\t\t\t<type>topic</type>\n");
-	        out.write(String.format("\t\t\t\t\t<name>%s.topic</name>\n", name));
-	        out.write("\t\t\t\t\t<durable>true</durable>\n");
-	        out.write("\t\t\t\t</exchange>\n");
-	        out.write("\t\tt</exchanges>\n");
-	        out.write(String.format("\t\t</%s> \n", name));
-	        out.write("\t\t</virtualhost>\n");
-	        out.write("\t</virtualhosts>\n");
-        }
-        if (vhostsFile != null)
-        {
-        	out.write("\t<virtualhosts>"+vhostsFile.getAbsolutePath()+"</virtualhosts>\n");	
-        }
-        out.write("</broker>\n");
-        out.close();
-    }
-
-    private void writeTestFishConfigFile(File mainFile) throws IOException {
-        FileWriter out = new FileWriter(mainFile);
-        out.write("<broker>\n");
-        out.write("\t<management><enabled>false</enabled></management>\n");
-        out.write("\t<security>\n");
-        out.write("\t\t<principal-databases>\n");
-        out.write("\t\t\t<principal-database>\n");
-        out.write("\t\t\t\t<name>passwordfile</name>\n");
-        out.write("\t\t\t\t<class>org.apache.qpid.server.security.auth.database.PlainPasswordFilePrincipalDatabase</class>\n");
-        out.write("\t\t\t\t<attributes>\n");
-        out.write("\t\t\t\t\t<attribute>\n");
-        out.write("\t\t\t\t\t\t<name>passwordFile</name>\n");
-        out.write("\t\t\t\t\t\t<value>/dev/null</value>\n");
-        out.write("\t\t\t\t\t</attribute>\n");
-        out.write("\t\t\t\t</attributes>\n");
-        out.write("\t\t\t</principal-database>\n");
-        out.write("\t\t</principal-databases>\n");
-        out.write("\t\t<jmx>\n");
-        out.write("\t\t\t<access>/dev/null</access>\n");
-        out.write("\t\t\t<principal-database>passwordfile</principal-database>\n");
-        out.write("\t\t</jmx>\n");
-        out.write("\t\t<firewall>\n");
-        out.write("\t\t\t<rule access=\"allow\" network=\"127.0.0.1\"/>");
-        out.write("\t\t</firewall>\n");
-        out.write("\t</security>\n");
-        out.write("\t<virtualhosts>\n");
-        out.write("\t\t<virtualhost>\n");
-        out.write("\t\t\t<name>test</name>\n");
-        out.write("\t\t<test> \n");
-        out.write("\t\t\t<exchanges>\n");
-        out.write("\t\t\t\t<exchange>\n");
-        out.write("\t\t\t\t\t<type>topic</type>\n");
-        out.write("\t\t\t\t\t<name>test.topic</name>\n");
-        out.write("\t\t\t\t\t<durable>true</durable>\n");
-        out.write("\t\t\t\t</exchange>\n");
-        out.write("\t\tt</exchanges>\n");
-        out.write("\t\t</test> \n");
-        out.write("\t\t</virtualhost>\n");
-        out.write("\t\t<virtualhost>\n");
-        out.write("\t\t\t<name>fish</name>\n");
-        out.write("\t\t<fish> \n");
-        out.write("\t\t\t<exchanges>\n");
-        out.write("\t\t\t\t<exchange>\n");
-        out.write("\t\t\t\t\t<type>topic</type>\n");
-        out.write("\t\t\t\t\t<name>fish.topic</name>\n");
-        out.write("\t\t\t\t\t<durable>false</durable>\n");
-        out.write("\t\t\t\t</exchange>\n");
-        out.write("\t\tt</exchanges>\n");
-        out.write("\t\t</fish> \n");
-        out.write("\t\t</virtualhost>\n");
-        out.write("\t</virtualhosts>\n");
-        out.write("</broker>\n");
-        out.close();
-    }
-
-    private void writeVirtualHostsFile(File vhostsFile, String name) throws IOException {
-        FileWriter out = new FileWriter(vhostsFile);
-        out.write("<virtualhosts>\n");
-        out.write(String.format("\t\t<default>%s</default>\n", name));
-        out.write("\t<virtualhost>\n");
-        out.write(String.format("\t\t<name>%s</name>\n", name));
-        out.write(String.format("\t\t<%s>\n", name));
-        out.write("\t\t\t<exchanges>\n");
-        out.write("\t\t\t\t<exchange>\n");
-        out.write("\t\t\t\t\t<type>topic</type>\n");
-        out.write("\t\t\t\t\t<name>test.topic</name>\n");
-        out.write("\t\t\t\t\t<durable>true</durable>\n");
-        out.write("\t\t\t\t</exchange>\n");
-        out.write("\t\tt</exchanges>\n");
-        out.write(String.format("\t\t</%s>\n", name));
-        out.write("\t</virtualhost>\n");
-        out.write("</virtualhosts>\n");
-        out.close();
-    }
-
-    private void writeMultiVirtualHostsFile(File vhostsFile) throws IOException {
-        FileWriter out = new FileWriter(vhostsFile);
-        out.write("<virtualhosts>\n");
-        out.write("\t<virtualhost>\n");
-        out.write("\t\t<name>topic</name>\n");
-        out.write("\t\t<topic>\n");
-        out.write("\t\t\t<exchanges>\n");
-        out.write("\t\t\t\t<exchange>\n");
-        out.write("\t\t\t\t\t<type>topic</type>\n");
-        out.write("\t\t\t\t\t<name>test.topic</name>\n");
-        out.write("\t\t\t\t\t<durable>true</durable>\n");
-        out.write("\t\t\t\t</exchange>\n");
-        out.write("\t\tt</exchanges>\n");
-        out.write("\t\t</topic>\n");
-        out.write("\t</virtualhost>\n");
-        out.write("\t<virtualhost>\n");
-        out.write("\t\t<name>fanout</name>\n");
-        out.write("\t\t<fanout>\n");
-        out.write("\t\t\t<exchanges>\n");
-        out.write("\t\t\t\t<exchange>\n");
-        out.write("\t\t\t\t\t<type>fanout</type>\n");
-        out.write("\t\t\t\t\t<name>test.fanout</name>\n");
-        out.write("\t\t\t\t\t<durable>true</durable>\n");
-        out.write("\t\t\t\t</exchange>\n");
-        out.write("\t\tt</exchanges>\n");
-        out.write("\t\t</fanout>\n");
-        out.write("\t</virtualhost>\n");
-        out.write("</virtualhosts>\n");
-        out.close();
-    }
-
-    private void writeMultipleVhostsConfigFile(File mainFile, File[] vhostsFileArray) throws IOException {
-        FileWriter out = new FileWriter(mainFile);
-        out.write("<broker>\n");
-        out.write("\t<management><enabled>false</enabled></management>\n");
-        out.write("\t<security>\n");
-        out.write("\t\t<principal-databases>\n");
-        out.write("\t\t\t<principal-database>\n");
-        out.write("\t\t\t\t<name>passwordfile</name>\n");
-        out.write("\t\t\t\t<class>org.apache.qpid.server.security.auth.database.PlainPasswordFilePrincipalDatabase</class>\n");
-        out.write("\t\t\t\t<attributes>\n");
-        out.write("\t\t\t\t\t<attribute>\n");
-        out.write("\t\t\t\t\t\t<name>passwordFile</name>\n");
-        out.write("\t\t\t\t\t\t<value>/dev/null</value>\n");
-        out.write("\t\t\t\t\t</attribute>\n");
-        out.write("\t\t\t\t</attributes>\n");
-        out.write("\t\t\t</principal-database>\n");
-        out.write("\t\t</principal-databases>\n");
-        out.write("\t\t<jmx>\n");
-        out.write("\t\t\t<access>/dev/null</access>\n");
-        out.write("\t\t\t<principal-database>passwordfile</principal-database>\n");
-        out.write("\t\t</jmx>\n");
-        out.write("\t\t<firewall>\n");
-        out.write("\t\t\t<rule access=\"allow\" network=\"127.0.0.1\"/>");
-        out.write("\t\t</firewall>\n");
-        out.write("\t</security>\n");
-        for (File vhostsFile : vhostsFileArray)
-        {
-        	out.write("\t<virtualhosts>"+vhostsFile.getAbsolutePath()+"</virtualhosts>\n");
-        }
-	    out.write("</broker>\n");
-        out.close();
-    }
-
-    private void writeCombinedConfigFile(File mainFile, File fileA, File fileB) throws Exception
+    public void testGetReceiveBufferSize() throws Exception
     {
-        FileWriter out = new FileWriter(mainFile);
-        out.write("<configuration><system/>");
-        out.write("<xml fileName=\"" + fileA.getAbsolutePath() + "\"/>");
-        out.write("<xml fileName=\"" + fileB.getAbsolutePath() + "\"/>");
-        out.write("</configuration>");
-        out.close();
-    }
-    
-    /**
-     * Test that configuration loads correctly when virtual hosts are specified in the main
-     * configuration file only.
-     * <p>
-     * Test for QPID-2361
-     */
-    public void testInternalVirtualhostConfigFile() throws Exception
-    {
-        // Write out config
-        File mainFile = File.createTempFile(getClass().getName(), "config");
-        mainFile.deleteOnExit();
-        writeConfigFile(mainFile, false, true, null, "test");
-
-        // Load config
-        ApplicationRegistry reg = new ConfigurationFileApplicationRegistry(mainFile);
-        ApplicationRegistry.initialise(reg, 1);
-
-        // Test config
-        VirtualHostRegistry virtualHostRegistry = reg.getVirtualHostRegistry();
-        String defaultVirtualHost = reg.getConfiguration().getDefaultVirtualHost();
-        VirtualHost virtualHost = virtualHostRegistry.getVirtualHost("test");
-        Exchange exchange = virtualHost.getExchangeRegistry().getExchange(new AMQShortString("test.topic"));
-
-        assertEquals("Incorrect default host", "test", defaultVirtualHost);
-        assertEquals("Incorrect virtualhost count", 1, virtualHostRegistry.getVirtualHosts().size());
-        assertEquals("Incorrect virtualhost name", "test", virtualHost.getName());
-        assertEquals("Incorrect exchange type", "topic", exchange.getType().getName().toString());
-    }
-    
-    /**
-     * Test that configuration loads correctly when virtual hosts are specified in an external
-     * configuration file only.
-     * <p>
-     * Test for QPID-2361
-     */
-    public void testExternalVirtualhostXMLFile() throws Exception
-    {
-        // Write out config
-        File mainFile = File.createTempFile(getClass().getName(), "config");
-        mainFile.deleteOnExit();
-        File vhostsFile = File.createTempFile(getClass().getName(), "vhosts");
-        vhostsFile.deleteOnExit();
-        writeConfigFile(mainFile, false, false, vhostsFile, null);    
-        writeVirtualHostsFile(vhostsFile, "test");
-
-        // Load config
-        ApplicationRegistry reg = new ConfigurationFileApplicationRegistry(mainFile);
-        ApplicationRegistry.initialise(reg, 1);
-
-        // Test config
-        VirtualHostRegistry virtualHostRegistry = reg.getVirtualHostRegistry();
-        String defaultVirtualHost = reg.getConfiguration().getDefaultVirtualHost();
-        VirtualHost virtualHost = virtualHostRegistry.getVirtualHost("test");
-        Exchange exchange = virtualHost.getExchangeRegistry().getExchange(new AMQShortString("test.topic"));
-
-        assertEquals("Incorrect default host", "test", defaultVirtualHost);
-        assertEquals("Incorrect virtualhost count", 1, virtualHostRegistry.getVirtualHosts().size());
-        assertEquals("Incorrect virtualhost name", "test", virtualHost.getName());
-        assertEquals("Incorrect exchange type", "topic", exchange.getType().getName().toString());
-    }
-    
-    /**
-     * Test that configuration loads correctly when virtual hosts are specified in an external
-     * configuration file only, with two vhosts that have different properties.
-     * <p>
-     * Test for QPID-2361
-     */
-    public void testExternalMultiVirtualhostXMLFile() throws Exception
-    {
-        // Write out vhosts
-        File vhostsFile = File.createTempFile(getClass().getName(), "vhosts-multi");
-        vhostsFile.deleteOnExit();
-        writeMultiVirtualHostsFile(vhostsFile);
-        
-        // Write out config
-        File mainFile = File.createTempFile(getClass().getName(), "config");
-        mainFile.deleteOnExit();
-        writeConfigFile(mainFile, false, false, vhostsFile, null);
-
-        // Load config
-        ApplicationRegistry reg = new ConfigurationFileApplicationRegistry(mainFile);
-        ApplicationRegistry.initialise(reg, 1);
-
-        // Test config
-        VirtualHostRegistry virtualHostRegistry = reg.getVirtualHostRegistry();
-
-        assertEquals("Incorrect virtualhost count", 2, virtualHostRegistry.getVirtualHosts().size());
-        
-        // test topic host
-        VirtualHost topicVirtualHost = virtualHostRegistry.getVirtualHost("topic");
-        Exchange topicExchange = topicVirtualHost.getExchangeRegistry().getExchange(new AMQShortString("test.topic"));
-        
-        assertEquals("Incorrect topic virtualhost name", "topic", topicVirtualHost.getName());
-        assertEquals("Incorrect topic exchange type", "topic", topicExchange.getType().getName().toString());
-        
-        // Test fanout host
-        VirtualHost fanoutVirtualHost = virtualHostRegistry.getVirtualHost("fanout");
-        Exchange fanoutExchange = fanoutVirtualHost.getExchangeRegistry().getExchange(new AMQShortString("test.fanout"));
-        
-        assertEquals("Incorrect fanout virtualhost name", "fanout", fanoutVirtualHost.getName());
-        assertEquals("Incorrect fanout exchange type", "fanout", fanoutExchange.getType().getName().toString());
-    }
-    
-    /**
-     * Test that configuration does not load when virtual hosts are specified in both the main
-     * configuration file and an external file. Should throw a {@link ConfigurationException}.
-     * <p>
-     * Test for QPID-2361
-     */
-    public void testInternalAndExternalVirtualhostXMLFile() throws Exception
-    {
-        // Write out vhosts
-        File vhostsFile = File.createTempFile(getClass().getName(), "vhosts");
-        vhostsFile.deleteOnExit();
-        writeVirtualHostsFile(vhostsFile, "test");
-        
-        // Write out config
-        File mainFile = File.createTempFile(getClass().getName(), "config");
-        mainFile.deleteOnExit();
-        writeConfigFile(mainFile, false, true, vhostsFile, "test");
-        
-        // Load config
-        try
-        {       
-            ApplicationRegistry reg = new ConfigurationFileApplicationRegistry(mainFile);
-            ApplicationRegistry.initialise(reg, 1);
-            fail("Different virtualhost XML configurations not allowed");
-        }
-        catch (ConfigurationException ce)
-        {
-            assertEquals("Incorrect error message", "Only one of external or embedded virtualhosts configuration allowed.", ce.getMessage());
-        }
-    }
-    
-    /**
-     * Test that configuration does not load when virtual hosts are specified in multiple external
-     * files. Should throw a {@link ConfigurationException}.
-     * <p>
-     * Test for QPID-2361
-     */
-    public void testMultipleInternalVirtualhostXMLFile() throws Exception
-    {
-        // Write out vhosts
-        File vhostsFileOne = File.createTempFile(getClass().getName(), "vhosts-one");
-        vhostsFileOne.deleteOnExit();
-        writeVirtualHostsFile(vhostsFileOne, "one");
-        File vhostsFileTwo = File.createTempFile(getClass().getName(), "vhosts-two");
-        vhostsFileTwo.deleteOnExit();
-        writeVirtualHostsFile(vhostsFileTwo, "two");
-        
-        // Write out config
-        File mainFile = File.createTempFile(getClass().getName(), "config");
-        mainFile.deleteOnExit();
-        writeMultipleVhostsConfigFile(mainFile, new File[] { vhostsFileOne, vhostsFileTwo });
-        
-        // Load config
-        try
-        {
-            ApplicationRegistry reg = new ConfigurationFileApplicationRegistry(mainFile);
-            ApplicationRegistry.initialise(reg, 1);
-            fail("Multiple virtualhost XML configurations not allowed");
-        }
-        catch (ConfigurationException ce)
-        {
-            assertEquals("Incorrect error message",
-                    "Only one external virtualhosts configuration file allowed, multiple filenames found.",
-                    ce.getMessage());
-        }
-    }
-    
-    /**
-     * Test that configuration loads correctly when virtual hosts are specified in an external
-     * configuration file in the first of two configurations and embedded in the second. This
-     * will throe a {@link ConfigurationException} since the configurations have different 
-     * types.
-     * <p>
-     * Test for QPID-2361
-     */
-    public void testCombinedDifferentVirtualhostConfig() throws Exception
-    {
-        // Write out vhosts config
-        File vhostsFile = File.createTempFile(getClass().getName(), "vhosts");
-        vhostsFile.deleteOnExit();  
-        writeVirtualHostsFile(vhostsFile, "external");
-        
-        // Write out combined config file
-        File mainFile = File.createTempFile(getClass().getName(), "main");
-        File fileA = File.createTempFile(getClass().getName(), "a");
-        File fileB = File.createTempFile(getClass().getName(), "b");
-        mainFile.deleteOnExit();
-        fileA.deleteOnExit();
-        fileB.deleteOnExit();
-        writeCombinedConfigFile(mainFile, fileA, fileB);
-        writeConfigFile(fileA, false, false, vhostsFile, null);  
-        writeConfigFile(fileB, false);
-
-        // Load config
-        try
-        {
-            ServerConfiguration config = new ServerConfiguration(mainFile.getAbsoluteFile());
-            config.initialise();
-            fail("Different virtualhost XML configurations not allowed");
-        }
-        catch (ConfigurationException ce)
-        {
-            assertEquals("Incorrect error message", "Only one of external or embedded virtualhosts configuration allowed.", ce.getMessage());
-        }
+        assertEquals(32767, _config.getReceiveBufferSize());
     }
 
-    /**
-     * Test that configuration loads correctly when virtual hosts are specified two overriding configurations
-     * each with an embedded virtualhost section. The first configuration section should be used.
-     * <p>
-     * Test for QPID-2361
-     */
-    public void testCombinedConfigEmbeddedVirtualhost() throws Exception
+    public void testSetReceiveBufferSize() throws Exception
     {
-        // Write out combined config file
-        File mainFile = File.createTempFile(getClass().getName(), "main");
-        File fileA = File.createTempFile(getClass().getName(), "a");
-        File fileB = File.createTempFile(getClass().getName(), "b");
-        mainFile.deleteOnExit();
-        fileA.deleteOnExit();
-        fileB.deleteOnExit();
-        writeCombinedConfigFile(mainFile, fileA, fileB);
-        writeConfigFile(fileA, false, true, null, "a");
-        writeConfigFile(fileB, false, true, null, "b"); 
-
-        // Load config
-        ServerConfiguration config = new ServerConfiguration(mainFile.getAbsoluteFile());
-        config.initialise();
-        
-        // Test config
-        VirtualHostConfiguration virtualHost = config.getVirtualHostConfig("a");
-
-        assertEquals("Incorrect virtualhost count", 1, config.getVirtualHosts().length);
-        assertEquals("Incorrect virtualhost name", "a", virtualHost.getName());
+        _xml.setProperty("connector.socketReceiveBuffer", "23");
+        _config.initialise();
+        assertEquals(23, _config.getReceiveBufferSize());
     }
 
-    /**
-     * Test that configuration loads correctly when virtual hosts are specified two overriding configurations
-     * each with an external virtualhost XML file. The first configuration file should be used.
-     * <p>
-     * Test for QPID-2361
-     */
-    public void testCombinedConfigExternalVirtualhost() throws Exception
+    public void testGetWriteBufferSize() throws Exception
     {
-        // Write out vhosts config
-        File vhostsOne = File.createTempFile(getClass().getName(), "vhosts-one");
-        vhostsOne.deleteOnExit();
-        writeVirtualHostsFile(vhostsOne, "one");
-        File vhostsTwo = File.createTempFile(getClass().getName(), "vhosts-two");
-        vhostsTwo.deleteOnExit();
-        writeVirtualHostsFile(vhostsTwo, "two");
-        
-        // Write out combined config file
-        File mainFile = File.createTempFile(getClass().getName(), "main");
-        File fileA = File.createTempFile(getClass().getName(), "a");
-        File fileB = File.createTempFile(getClass().getName(), "b");
-        mainFile.deleteOnExit();
-        fileA.deleteOnExit();
-        fileB.deleteOnExit();
-        writeCombinedConfigFile(mainFile, fileA, fileB);
-        writeConfigFile(fileA, false, false, vhostsOne, null);
-        writeConfigFile(fileB, false, false, vhostsTwo, null);
-
-        // Load config
-        ServerConfiguration config = new ServerConfiguration(mainFile.getAbsoluteFile());
-        config.initialise();
-        
-        // Test config
-        VirtualHostConfiguration virtualHost = config.getVirtualHostConfig("one");
-
-        assertEquals("Incorrect virtualhost count", 1, config.getVirtualHosts().length);
-        assertEquals("Incorrect virtualhost name", "one", virtualHost.getName());
+        _config.initialise();
+        assertEquals(32767, _config.getWriteBufferSize());
     }
 
-    /**
-     * Test that configuration loads correctly when an overriding virtualhost configuration resets
-     * a property of an embedded virtualhost section. The overriding configuration property value
-     * should be used.
-     * <p>
-     * Test for QPID-2361
-     */
-    public void testCombinedConfigEmbeddedVirtualhostOverride() throws Exception
+    public void testSetWriteBufferSize() throws Exception
     {
-        // Write out combined config file
-        File mainFile = File.createTempFile(getClass().getName(), "main");
-        File fileA = File.createTempFile(getClass().getName(), "override");
-        File fileB = File.createTempFile(getClass().getName(), "config");
-        mainFile.deleteOnExit();
-        fileA.deleteOnExit();
-        fileB.deleteOnExit();
-        writeCombinedConfigFile(mainFile, fileA, fileB);
-        writeTestFishConfigFile(fileB);
-        
-        // Write out overriding virtualhosts section
-        FileWriter out = new FileWriter(fileA);
-        out.write("<broker>\n");
-        out.write("<virtualhosts>\n");
-        out.write("\t<virtualhost>\n");
-        out.write("\t\t<test>\n");
-        out.write("\t\t\t<exchanges>\n");
-        out.write("\t\t\t\t<exchange>\n");
-        out.write("\t\t\t\t\t<durable>false</durable>\n");
-        out.write("\t\t\t\t</exchange>\n");
-        out.write("\t\tt</exchanges>\n");
-        out.write("\t\t</test>\n");
-        out.write("\t\t<fish>\n");
-        out.write("\t\t\t<exchanges>\n");
-        out.write("\t\t\t\t<exchange>\n");
-        out.write("\t\t\t\t\t<durable>true</durable>\n");
-        out.write("\t\t\t\t</exchange>\n");
-        out.write("\t\tt</exchanges>\n");
-        out.write("\t\t</fish>\n");
-        out.write("\t</virtualhost>\n");
-        out.write("</virtualhosts>\n");
-        out.write("</broker>\n");
-        out.close();
-
-        // Load config
-        ServerConfiguration config = new ServerConfiguration(mainFile.getAbsoluteFile());
-        config.initialise();
-        
-        // Test config
-        VirtualHostConfiguration testHost = config.getVirtualHostConfig("test");
-        ExchangeConfiguration testExchange = testHost.getExchangeConfiguration("test.topic");
-        VirtualHostConfiguration fishHost = config.getVirtualHostConfig("fish");
-        ExchangeConfiguration fishExchange = fishHost.getExchangeConfiguration("fish.topic");
-
-        assertEquals("Incorrect virtualhost count", 2, config.getVirtualHosts().length);
-        assertEquals("Incorrect virtualhost name", "test", testHost.getName());
-        assertFalse("Incorrect exchange durable property", testExchange.getDurable());
-        assertEquals("Incorrect virtualhost name", "fish", fishHost.getName());
-        assertTrue("Incorrect exchange durable property", fishExchange.getDurable());
+        _xml.setProperty("connector.socketWriteBuffer", "23");
+        _config.initialise();
+        assertEquals(23, _config.getWriteBufferSize());
     }
 
-    /**
-     * Test that configuration loads correctly when the virtualhost configuration is a set of overriding
-     * configuration files that resets a property of a virtualhost. The opmost overriding configuration
-     * property value should be used.
-     * <p>
-     * Test for QPID-2361
-     */
-    public void testCombinedVirtualhostOverride() throws Exception
+    public void testGetTcpNoDelay() throws Exception
     {
-        // Write out combined config file
-        File mainFile = File.createTempFile(getClass().getName(), "main");
-        File vhostsFile = File.createTempFile(getClass().getName(), "vhosts");
-        File fileA = File.createTempFile(getClass().getName(), "vhosts-override");
-        File fileB = File.createTempFile(getClass().getName(), "vhosts-base");
-        mainFile.deleteOnExit();
-        vhostsFile.deleteOnExit();
-        fileA.deleteOnExit();
-        fileB.deleteOnExit();
-        writeConfigFile(mainFile, true, false, vhostsFile, null);
-        writeCombinedConfigFile(vhostsFile, fileA, fileB);
-
-        // Write out overriding virtualhosts sections
-        FileWriter out = new FileWriter(fileA);
-        out.write("<virtualhosts>\n");
-        out.write("\t<virtualhost>\n");
-        out.write("\t\t<test>\n");
-        out.write("\t\t\t<exchanges>\n");
-        out.write("\t\t\t\t<exchange>\n");
-        out.write("\t\t\t\t\t<durable>false</durable>\n");
-        out.write("\t\t\t\t</exchange>\n");
-        out.write("\t\tt</exchanges>\n");
-        out.write("\t\t</test>\n");
-        out.write("\t</virtualhost>\n");
-        out.write("</virtualhosts>\n");
-        out.close();
-        writeVirtualHostsFile(fileB, "test");
-
-        // Load config
-        ServerConfiguration config = new ServerConfiguration(mainFile.getAbsoluteFile());
-        config.initialise();
-        
-        // Test config
-        VirtualHostConfiguration testHost = config.getVirtualHostConfig("test");
-        ExchangeConfiguration testExchange = testHost.getExchangeConfiguration("test.topic");
-
-        assertEquals("Incorrect virtualhost count", 1, config.getVirtualHosts().length);
-        assertEquals("Incorrect virtualhost name", "test", testHost.getName());
-        assertFalse("Incorrect exchange durable property", testExchange.getDurable());
+        assertTrue(_config.getTcpNoDelay());
     }
 
-    /**
-     * Test that configuration loads correctly when the virtualhost configuration is a set of overriding
-     * configuration files that define multiple virtualhosts, one per file. Only the virtualhosts defined in
-     * the topmost file should be used.
-     * <p>
-     * Test for QPID-2361
-     */
-    public void testCombinedMultipleVirtualhosts() throws Exception
+    public void testSetTcpNoDelay() throws Exception
     {
-        // Write out combined config file
-        File mainFile = File.createTempFile(getClass().getName(), "main");
-        File vhostsFile = File.createTempFile(getClass().getName(), "vhosts");
-        File fileA = File.createTempFile(getClass().getName(), "vhosts-one");
-        File fileB = File.createTempFile(getClass().getName(), "vhosts-two");
-        mainFile.deleteOnExit();
-        vhostsFile.deleteOnExit();
-        fileA.deleteOnExit();
-        fileB.deleteOnExit();
-        writeConfigFile(mainFile, true, false, vhostsFile, null);
-        writeCombinedConfigFile(vhostsFile, fileA, fileB);
-
-        // Write both virtualhosts definitions
-        writeVirtualHostsFile(fileA, "test-one");
-        writeVirtualHostsFile(fileB, "test-two");
-
-        // Load config
-        ServerConfiguration config = new ServerConfiguration(mainFile.getAbsoluteFile());
-        config.initialise();
-        
-        // Test config
-        VirtualHostConfiguration oneHost = config.getVirtualHostConfig("test-one");
-
-        assertEquals("Incorrect virtualhost count", 1, config.getVirtualHosts().length);
-        assertEquals("Incorrect virtualhost name", "test-one", oneHost.getName());
+        _xml.setProperty("connector.tcpNoDelay", false);
+        _config.initialise();
+        assertFalse(_config.getTcpNoDelay());
     }
 
-    /**
-     * Test that a non-existant virtualhost file throws a {@link ConfigurationException}.
-     * <p>
-     * Test for QPID-2624
-     */
-    public void testNonExistantVirtualhosts() throws Exception
+    public void testGetEnableExecutorPool() throws Exception
     {
-        // Write out combined config file
-        File mainFile = File.createTempFile(getClass().getName(), "main");
-        File vhostsFile = new File("doesnotexist");
-        mainFile.deleteOnExit();
-        writeConfigFile(mainFile, true, false, vhostsFile, null);
+        assertFalse(_config.getEnableExecutorPool());
+    }
 
-        // Load config
-        try
-        {
-            ServerConfiguration config = new ServerConfiguration(mainFile.getAbsoluteFile());
-            config.initialise();
-        }
-        catch (ConfigurationException ce)
-        {
-            assertEquals("Virtualhosts file does not exist", ce.getMessage());
-        }
-        catch (Exception e)
-        {
-            fail("Should throw a ConfigurationException");
-        }
+    public void testSetEnableExecutorPool() throws Exception
+    {
+        _xml.setProperty("advanced.filterchain[@enableExecutorPool]", true);
+        _config.initialise();
+        assertTrue(_config.getEnableExecutorPool());
+    }
+
+    public void testGetEnablePooledAllocator() throws Exception
+    {
+        assertFalse(_config.getEnablePooledAllocator());
+    }
+
+    public void testSetEnablePooledAllocator() throws Exception
+    {
+        _xml.setProperty("advanced.enablePooledAllocator", true);
+        _config.initialise();
+        assertTrue(_config.getEnablePooledAllocator());
+    }
+
+    public void testGetEnableDirectBuffers() throws Exception
+    {
+        assertFalse(_config.getEnableDirectBuffers());
+    }
+
+    public void testSetEnableDirectBuffers() throws Exception
+    {
+        _xml.setProperty("advanced.enableDirectBuffers", true);
+        _config.initialise();
+        assertTrue(_config.getEnableDirectBuffers());
+    }
+
+    public void testGetEnableSSL() throws Exception
+    {
+        assertFalse(_config.getEnableSSL());
+    }
+
+    public void testSetEnableSSL() throws Exception
+    {
+        _xml.setProperty("connector.ssl.enabled", true);
+        _config.initialise();
+        assertTrue(_config.getEnableSSL());
+    }
+
+    public void testGetSSLOnly() throws Exception
+    {
+        assertFalse(_config.getSSLOnly());
+    }
+
+    public void testSetSSLOnly() throws Exception
+    {
+        _xml.setProperty("connector.ssl.sslOnly", true);
+        _config.initialise();
+        assertTrue(_config.getSSLOnly());
+    }
+
+    public void testGetSSLPort() throws Exception
+    {
+        assertEquals(8672, _config.getSSLPort());
+    }
+
+    public void testSetSSLPort() throws Exception
+    {
+        _xml.setProperty("connector.ssl.port", 23);
+        _config.initialise();
+        assertEquals(23, _config.getSSLPort());
+    }
+
+    public void testGetKeystorePath() throws Exception
+    {
+        assertEquals("none", _config.getKeystorePath());
+    }
+
+    public void testSetKeystorePath() throws Exception
+    {
+        _xml.setProperty("connector.ssl.keystorePath", "a");
+        _config.initialise();
+        assertEquals("a", _config.getKeystorePath());
+    }
+
+    public void testGetKeystorePassword() throws Exception
+    {
+        assertEquals("none", _config.getKeystorePassword());
+    }
+
+    public void testSetKeystorePassword() throws Exception
+    {
+        _xml.setProperty("connector.ssl.keystorePassword", "a");
+        _config.initialise();
+        assertEquals("a", _config.getKeystorePassword());
+    }
+
+    public void testGetCertType() throws Exception
+    {
+        assertEquals("SunX509", _config.getCertType());
+    }
+
+    public void testSetCertType() throws Exception
+    {
+        _xml.setProperty("connector.ssl.certType", "a");
+        _config.initialise();
+        assertEquals("a", _config.getCertType());
+    }
+
+    public void testGetQpidNIO() throws Exception
+    {
+        assertFalse(_config.getQpidNIO());
+    }
+
+    public void testSetQpidNIO() throws Exception
+    {
+        _xml.setProperty("connector.qpidnio", true);
+        _config.initialise();
+        assertTrue(_config.getQpidNIO());
+    }
+
+    public void testGetUseBiasedWrites() throws Exception
+    {
+        assertFalse(_config.getUseBiasedWrites());
+    }
+
+    public void testSetUseBiasedWrites() throws Exception
+    {
+        _xml.setProperty("advanced.useWriteBiasedPool", true);
+        _config.initialise();
+        assertTrue(_config.getUseBiasedWrites());
+    }
+
+    public void testGetHousekeepingExpiredMessageCheckPeriod() throws Exception
+    {
+        assertEquals(30000, _config.getHousekeepingCheckPeriod());
+    }
+
+    public void testSetHousekeepingExpiredMessageCheckPeriod() throws Exception
+    {
+        _xml.setProperty("housekeeping.expiredMessageCheckPeriod", 23L);
+        _config.initialise();
+        assertEquals(23, _config.getHousekeepingCheckPeriod());
+        _config.setHousekeepingExpiredMessageCheckPeriod(42L);
+        assertEquals(42, _config.getHousekeepingCheckPeriod());
     }
 }

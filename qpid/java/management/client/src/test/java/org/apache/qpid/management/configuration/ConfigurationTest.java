@@ -23,18 +23,17 @@ package org.apache.qpid.management.configuration;
 import java.util.Map;
 import java.util.UUID;
 
-import junit.framework.TestCase;
-
 import org.apache.qpid.management.TestConstants;
 import org.apache.qpid.management.domain.handler.base.IMessageHandler;
 import org.apache.qpid.management.domain.handler.impl.ConfigurationMessageHandler;
 import org.apache.qpid.management.domain.handler.impl.InstrumentationMessageHandler;
 import org.apache.qpid.management.domain.handler.impl.SchemaResponseMessageHandler;
+import org.apache.qpid.test.utils.QpidTestCase;
 
 /**
  * Test case for Configuration singleton.
  */
-public class ConfigurationTest extends TestCase
+public class ConfigurationTest extends QpidTestCase
 {
     /**
      * Tests the singleton behaviour of the configuration object.

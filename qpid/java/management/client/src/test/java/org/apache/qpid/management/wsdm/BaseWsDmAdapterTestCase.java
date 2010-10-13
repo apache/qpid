@@ -28,21 +28,20 @@ import javax.management.MBeanInfo;
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
 
-import junit.framework.TestCase;
-
 import org.apache.muse.ws.addressing.EndpointReference;
 import org.apache.muse.ws.resource.remote.WsResourceClient;
 import org.apache.muse.ws.resource.sg.remote.ServiceGroupClient;
 import org.apache.qpid.management.Names;
 import org.apache.qpid.management.Protocol;
 import org.apache.qpid.management.TestConstants;
+import org.apache.qpid.test.utils.QpidTestCase;
 
 /**
  * Test case for WS-Resource lifecycle management.
  * 
  * @author Andrea Gazzarini
  */
-public abstract class BaseWsDmAdapterTestCase extends TestCase implements TestConstants{
+public abstract class BaseWsDmAdapterTestCase extends QpidTestCase implements TestConstants{
 	
 	protected MBeanServer _managementServer;
 	protected ObjectName _resourceObjectName;

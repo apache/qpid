@@ -31,9 +31,13 @@ public interface ServerTransaction
 {
 
     void addPostCommitAction(Action postCommitAction);
-
-
-
+    
+    /**
+     * Return the time the current transaction started.
+     * 
+     * @return the time this transaction started or 0 if not in a transaction
+     */
+    long getTransactionStartTime();
 
     public static interface Action
     {

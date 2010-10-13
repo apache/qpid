@@ -384,10 +384,10 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         this(new AMQConnectionURL(
                 useSSL
                 ? (ConnectionURL.AMQ_PROTOCOL + "://" + username + ":" + password + "@"
-                   + ((clientName == null) ? "" : clientName) + virtualHost + "?brokerlist='tcp://" + host + ":" + port
+                   + ((clientName == null) ? "" : clientName) + "/" + virtualHost + "?brokerlist='tcp://" + host + ":" + port
                    + "'" + "," + BrokerDetails.OPTIONS_SSL + "='true'")
                 : (ConnectionURL.AMQ_PROTOCOL + "://" + username + ":" + password + "@"
-                   + ((clientName == null) ? "" : clientName) + virtualHost + "?brokerlist='tcp://" + host + ":" + port
+                   + ((clientName == null) ? "" : clientName) + "/" + virtualHost + "?brokerlist='tcp://" + host + ":" + port
                    + "'" + "," + BrokerDetails.OPTIONS_SSL + "='false'")), sslConfig);
     }
 
@@ -473,7 +473,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         
         _failoverPolicy = new FailoverPolicy(connectionURL, this);
         BrokerDetails brokerDetails = _failoverPolicy.getCurrentBrokerDetails();
-        if (brokerDetails.getTransport().equals(BrokerDetails.VM) || "0-8".equals(amqpVersion)) 
+        if ("0-8".equals(amqpVersion)) 
         {
             _delegate = new AMQConnectionDelegate_8_0(this);
         } 
@@ -1010,9 +1010,15 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         if (!_closed.getAndSet(true))
         {
             _closing.set(true);
-            try{
-                doClose(sessions, timeout);
-            }finally{
+            try
+            {
+                synchronized (getFailoverMutex())
+                {
+	                doClose(sessions, timeout);
+                }
+            }
+            finally
+            {
                 _closing.set(false);
             }
         }
@@ -1032,55 +1038,52 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
             }
             else
             {
-                synchronized (getFailoverMutex())
+                try
                 {
-                    try
+                    long startCloseTime = System.currentTimeMillis();
+
+                    closeAllSessions(null, timeout, startCloseTime);
+
+                    //This MUST occur after we have successfully closed all Channels/Sessions
+                    _taskPool.shutdown();
+
+                    if (!_taskPool.isTerminated())
                     {
-                        long startCloseTime = System.currentTimeMillis();
-
-	                    closeAllSessions(null, timeout, startCloseTime);
-
-                        //This MUST occur after we have successfully closed all Channels/Sessions
-                        _taskPool.shutdown();
-
-                        if (!_taskPool.isTerminated())
+                        try
                         {
-                            try
-                            {
-                                // adjust timeout
-                                long taskPoolTimeout = adjustTimeout(timeout, startCloseTime);
+                            // adjust timeout
+                            long taskPoolTimeout = adjustTimeout(timeout, startCloseTime);
 
-                                _taskPool.awaitTermination(taskPoolTimeout, TimeUnit.MILLISECONDS);
-                            }
-                            catch (InterruptedException e)
-                            {
-                                _logger.info("Interrupted while shutting down connection thread pool.");
-                            }
+                            _taskPool.awaitTermination(taskPoolTimeout, TimeUnit.MILLISECONDS);
                         }
-
-                        // adjust timeout
-                        timeout = adjustTimeout(timeout, startCloseTime);
-                        _delegate.closeConnection(timeout);
-
-                        //If the taskpool hasn't shutdown by now then give it shutdownNow.
-                        // This will interupt any running tasks.
-                        if (!_taskPool.isTerminated())
+                        catch (InterruptedException e)
                         {
-                            List<Runnable> tasks = _taskPool.shutdownNow();
-                            for (Runnable r : tasks)
-                            {
-                                _logger.warn("Connection close forced taskpool to prevent execution:" + r);
-                            }
+                            _logger.info("Interrupted while shutting down connection thread pool.");
                         }
                     }
-                    catch (AMQException e)
+
+                    // adjust timeout
+                    timeout = adjustTimeout(timeout, startCloseTime);
+                    _delegate.closeConnection(timeout);
+
+                    //If the taskpool hasn't shutdown by now then give it shutdownNow.
+                    // This will interupt any running tasks.
+                    if (!_taskPool.isTerminated())
                     {
-                        _logger.error("error:", e);
-                        JMSException jmse = new JMSException("Error closing connection: " + e);
-                        jmse.setLinkedException(e);
-                        jmse.initCause(e);
-                        throw jmse;
+                        List<Runnable> tasks = _taskPool.shutdownNow();
+                        for (Runnable r : tasks)
+                        {
+                            _logger.warn("Connection close forced taskpool to prevent execution:" + r);
+                        }
                     }
+                }
+                catch (AMQException e)
+                {
+                    _logger.error("error:", e);
+                    JMSException jmse = new JMSException("Error closing connection: " + e);
+                    jmse.setLinkedException(e);
+                    jmse.initCause(e);
+                    throw jmse;
                 }
             }
         }

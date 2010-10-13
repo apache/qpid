@@ -20,11 +20,10 @@
  */
 package org.apache.qpid.framing.abstraction;
 
-import junit.framework.TestCase;
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.abstraction.MessagePublishInfoImpl;
+import org.apache.qpid.test.utils.QpidTestCase;
 
-public class MessagePublishInfoImplTest extends TestCase
+public class MessagePublishInfoImplTest extends QpidTestCase
 {
     MessagePublishInfoImpl _mpi;
     final AMQShortString _exchange = new AMQShortString("exchange");

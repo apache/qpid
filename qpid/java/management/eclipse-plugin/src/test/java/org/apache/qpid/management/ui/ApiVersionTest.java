@@ -20,9 +20,9 @@
  */
 package org.apache.qpid.management.ui;
 
-import junit.framework.TestCase;
+import org.apache.qpid.test.utils.QpidTestCase;
 
-public class ApiVersionTest extends TestCase
+public class ApiVersionTest extends QpidTestCase
 {
 
     public void testGetMajor()
