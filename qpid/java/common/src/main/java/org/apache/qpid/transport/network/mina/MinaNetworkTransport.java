@@ -68,11 +68,9 @@ public class MinaNetworkTransport implements IncomingNetworkTransport, OutgoingN
 {
     private static final Logger _log = LoggerFactory.getLogger(MinaNetworkTransport.class);
     
-    private static final int DEFAULT_BUFFER_SIZE = 32 * 1024;
-    
     public static final List<String> SUPPORTED = Arrays.asList(Transport.SOCKET, Transport.TCP, Transport.UDP, Transport.VM);
     
-    private int _processors;
+    private int _threads;
     private Executor _executor;
     private ConnectionSettings _settings;    
     private SocketAddress _address;
@@ -86,16 +84,17 @@ public class MinaNetworkTransport implements IncomingNetworkTransport, OutgoingN
         org.apache.mina.common.ByteBuffer.setUseDirectBuffers(Boolean.getBoolean("amqj.enableDirectBuffers"));
 
         // the default is to use the simple allocator
-//        if (Boolean.getBoolean("amqj.enablePooledAllocator"))
-//        {
+        if (Boolean.getBoolean("amqj.enablePooledAllocator"))
+        {
             org.apache.mina.common.ByteBuffer.setAllocator(new PooledByteBufferAllocator());
-//        }
-//        else
-//        {
-//            org.apache.mina.common.ByteBuffer.setAllocator(new SimpleByteBufferAllocator());
-//        }
+        }
+        else
+        {
+            org.apache.mina.common.ByteBuffer.setAllocator(new SimpleByteBufferAllocator());
+        }
         
-        _processors = Integer.parseInt(System.getProperty("amqj.processors", "4"));
+	    int processors = Runtime.getRuntime().availableProcessors();
+        _threads = Integer.parseInt(System.getProperty("amqj.processors", Integer.toString(processors)));
         _executor = Executors.newCachedThreadPool(Threading.getThreadFactory());
     }
     
@@ -109,7 +108,7 @@ public class MinaNetworkTransport implements IncomingNetworkTransport, OutgoingN
         if (_settings.getProtocol().equalsIgnoreCase(Transport.TCP))
         {
 	        _address = new InetSocketAddress(_settings.getHost(), _settings.getPort());
-	        _connector = new SocketConnector(_processors, _executor); // non-blocking connector
+	        _connector = new SocketConnector(_threads, _executor); // non-blocking connector
         }
         else if (_settings.getProtocol().equalsIgnoreCase(Transport.UDP))
         {
@@ -134,7 +133,7 @@ public class MinaNetworkTransport implements IncomingNetworkTransport, OutgoingN
                                                    "with 'socket://<SocketID>' transport");
             }
 	        _address = socket.getRemoteSocketAddress();
-            _connector = new ExistingSocketConnector(_processors, _executor);
+            _connector = new ExistingSocketConnector(_threads, _executor);
             ((ExistingSocketConnector) _connector).setOpenSocket(socket);
         }
         else
@@ -162,8 +161,8 @@ public class MinaNetworkTransport implements IncomingNetworkTransport, OutgoingN
         {
             SocketSessionConfig scfg = (SocketSessionConfig) cfg.getSessionConfig();
             scfg.setTcpNoDelay(Boolean.getBoolean("amqj.tcpNoDelay"));
-            Integer sendBufferSize = Integer.getInteger("amqj.sendBufferSize", DEFAULT_BUFFER_SIZE);
-            Integer receiveBufferSize = Integer.getInteger("amqj.receiveBufferSize", DEFAULT_BUFFER_SIZE);
+            Integer sendBufferSize = Integer.getInteger("amqj.sendBufferSize", Transport.DEFAULT_BUFFER_SIZE);
+            Integer receiveBufferSize = Integer.getInteger("amqj.receiveBufferSize", Transport.DEFAULT_BUFFER_SIZE);
             scfg.setSendBufferSize(sendBufferSize);
             scfg.setReceiveBufferSize(receiveBufferSize);
 
@@ -190,15 +189,16 @@ public class MinaNetworkTransport implements IncomingNetworkTransport, OutgoingN
     {
         if (settings.getProtocol().equalsIgnoreCase(Transport.TCP))
         {
-            _acceptor = new SocketAcceptor(_processors, _executor);
+            _acceptor = new SocketAcceptor(_threads, _executor);
     
             SocketAcceptorConfig sconfig = (SocketAcceptorConfig) _acceptor.getDefaultConfig();
+            sconfig.setDisconnectOnUnbind(true);
             SocketSessionConfig ssc = (SocketSessionConfig) sconfig.getSessionConfig();
             ssc.setReuseAddress(true);
             ssc.setKeepAlive(Boolean.getBoolean("amqj.keepAlive"));
             ssc.setTcpNoDelay(Boolean.getBoolean("amqj.tcpNoDelay"));
-            Integer sendBufferSize = Integer.getInteger("amqj.sendBufferSize", DEFAULT_BUFFER_SIZE);
-            Integer receiveBufferSize = Integer.getInteger("amqj.receiveBufferSize", DEFAULT_BUFFER_SIZE);
+            Integer sendBufferSize = Integer.getInteger("amqj.sendBufferSize", Transport.DEFAULT_BUFFER_SIZE);
+            Integer receiveBufferSize = Integer.getInteger("amqj.receiveBufferSize", Transport.DEFAULT_BUFFER_SIZE);
             ssc.setSendBufferSize(sendBufferSize);
             ssc.setReceiveBufferSize(receiveBufferSize);
             
@@ -216,10 +216,11 @@ public class MinaNetworkTransport implements IncomingNetworkTransport, OutgoingN
             _acceptor = new DatagramAcceptor(_executor);
     
             DatagramAcceptorConfig dconfig = (DatagramAcceptorConfig) _acceptor.getDefaultConfig();
+            dconfig.setDisconnectOnUnbind(true);
             DatagramSessionConfig dsc = (DatagramSessionConfig) dconfig.getSessionConfig();
             dsc.setReuseAddress(true);
-            Integer sendBufferSize = Integer.getInteger("amqj.sendBufferSize", DEFAULT_BUFFER_SIZE);
-            Integer receiveBufferSize = Integer.getInteger("amqj.receiveBufferSize", DEFAULT_BUFFER_SIZE);
+            Integer sendBufferSize = Integer.getInteger("amqj.sendBufferSize", Transport.DEFAULT_BUFFER_SIZE);
+            Integer receiveBufferSize = Integer.getInteger("amqj.receiveBufferSize", Transport.DEFAULT_BUFFER_SIZE);
             dsc.setSendBufferSize(sendBufferSize);
             dsc.setReceiveBufferSize(receiveBufferSize);
             

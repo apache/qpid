@@ -61,10 +61,14 @@ import org.apache.qpid.pool.ReferenceCountingExecutorService;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.protocol.AMQMethodListener;
+import org.apache.qpid.ssl.SSLContextFactory;
+import org.apache.qpid.transport.ConnectionSettings;
 import org.apache.qpid.transport.Receiver;
 import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.network.NetworkConnection;
 import org.apache.qpid.transport.network.NetworkTransport;
+import org.apache.qpid.transport.network.OutgoingNetworkTransport;
+import org.apache.qpid.transport.network.Transport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -174,7 +178,7 @@ public class AMQProtocolHandler implements Receiver<java.nio.ByteBuffer>
     private ReferenceCountingExecutorService _poolReference = ReferenceCountingExecutorService.getInstance();
     private Sender<ByteBuffer> _sender;
     private NetworkConnection _network;
-    private NetworkTransport _transport;
+    private OutgoingNetworkTransport _transport;
     private ProtocolVersion _suggestedProtocolVersion;
 
     private long _writtenBytes;
@@ -807,11 +811,11 @@ public class AMQProtocolHandler implements Receiver<java.nio.ByteBuffer>
         return _transport.getAddress();
     }
 
-    public void connect(NetworkTransport transport, NetworkConnection network)
+    public void connect(ConnectionSettings settings, SSLContextFactory sslFactory)
     {
-        _transport = transport;
-        _network = network;
-        _sender = network.getSender();
+        _transport = Transport.getOutgoingTransport();
+        _network = _transport.connect(settings, this, sslFactory);
+        _sender = _network.getSender();
     }
 
     /** @param delay delay in seconds (not ms) */

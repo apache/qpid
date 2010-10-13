@@ -44,13 +44,10 @@ public class IoNetworkTransport implements OutgoingNetworkTransport
 {
     private static final Logger _log = LoggerFactory.getLogger(IoNetworkTransport.class);
     
-    private static final int DEFAULT_BUFFER_SIZE = 32 * 1024;
-
     public static final List<String> SUPPORTED = Arrays.asList(Transport.TCP);
     
     private Socket _socket;
     private IoNetworkConnection _connection;
-    private long _timeout = 60000;
     
     public NetworkConnection connect(ConnectionSettings settings, Receiver<ByteBuffer> delegate, SSLContextFactory sslfactory)
     {
@@ -61,8 +58,9 @@ public class IoNetworkTransport implements OutgoingNetworkTransport
         
         boolean noDelay = Boolean.getBoolean("amqj.tcpNoDelay");
         boolean keepAlive = Boolean.getBoolean("amqj.keepAlive");
-        Integer sendBufferSize = Integer.getInteger("amqj.sendBufferSize", DEFAULT_BUFFER_SIZE);
-        Integer receiveBufferSize = Integer.getInteger("amqj.receiveBufferSize", DEFAULT_BUFFER_SIZE);
+        Integer sendBufferSize = Integer.getInteger("amqj.sendBufferSize", Transport.DEFAULT_BUFFER_SIZE);
+        Integer receiveBufferSize = Integer.getInteger("amqj.receiveBufferSize", Transport.DEFAULT_BUFFER_SIZE);
+        Long timeout = Long.getLong("amqj.timeout", Transport.DEFAULT_TIMEOUT);
         
         try
         {
@@ -92,7 +90,7 @@ public class IoNetworkTransport implements OutgoingNetworkTransport
             throw new TransportException("Error connecting to broker", e);
         }
         
-        _connection = new IoNetworkConnection(_socket, delegate, sendBufferSize, receiveBufferSize, _timeout);
+        _connection = new IoNetworkConnection(_socket, delegate, sendBufferSize, receiveBufferSize, timeout);
         
         return _connection;
     }

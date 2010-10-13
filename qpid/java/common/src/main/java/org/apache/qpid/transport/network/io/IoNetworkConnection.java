@@ -31,6 +31,7 @@ import org.apache.qpid.transport.Receiver;
 import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.TransportException;
 import org.apache.qpid.transport.network.NetworkConnection;
+import org.apache.qpid.transport.network.Transport;
 
 /**
  * IoNetworkConnection
@@ -42,7 +43,6 @@ public class IoNetworkConnection implements NetworkConnection
     private final long _timeout;
     private final AtomicBoolean _closed = new AtomicBoolean(false);
     private final Thread _receiverThread;
-    private final boolean _shutdownBroken = ((String) System.getProperties().get("os.name")).matches("(?i).*windows.*");
 
     public IoNetworkConnection(Socket socket, Receiver<ByteBuffer> receiver,
                       int sendBufferSize, int receiveBufferSize, long timeout)
@@ -58,11 +58,11 @@ public class IoNetworkConnection implements NetworkConnection
         }
         catch(Exception e)
         {
-            throw new Error("Error creating IoNetworkTransport thread",e);
+            throw new Error("Error creating IoNetworkConnection thread",e);
         }
         
         _receiverThread.setDaemon(true);
-        _receiverThread.setName(String.format("IoNetworkTransport-%s", socket.getRemoteSocketAddress()));
+        _receiverThread.setName(String.format("IoNetworkConnection-%s", socket.getRemoteSocketAddress()));
         _receiverThread.start();
     }
 
@@ -73,7 +73,7 @@ public class IoNetworkConnection implements NetworkConnection
         {
             try
             {
-                if (_shutdownBroken)
+                if (Transport.WINDOWS)
                 {
                    _socket.close();
                 }

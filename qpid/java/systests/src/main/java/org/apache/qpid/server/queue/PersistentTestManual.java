@@ -27,7 +27,6 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.url.URLSyntaxException;
-import org.apache.qpid.util.CommandLineParser;
 
 import javax.jms.JMSException;
 import javax.jms.MessageProducer;
@@ -257,12 +256,8 @@ public class PersistentTestManual
 
     public static void main(String[] args)
     {
-        PersistentTestManual test;
-
-        Properties options =
-                CommandLineParser.processCommandLine(args, new CommandLineParser(new String[][]{}), System.getProperties());
-
-        test = new PersistentTestManual(options);
+        Properties options = System.getProperties();
+        PersistentTestManual test = new PersistentTestManual(options);
         try
         {
             test.test();

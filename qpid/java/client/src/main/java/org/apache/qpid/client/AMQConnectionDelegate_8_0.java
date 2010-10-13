@@ -104,9 +104,7 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
             sslFactory = new SSLContextFactory(sslConfig.getKeystorePath(), sslConfig.getKeystorePassword(), sslConfig.getCertType());
         }
         
-        OutgoingNetworkTransport transport = Transport.getOutgoingTransport();
-        NetworkConnection network = transport.connect(settings, _conn._protocolHandler, sslFactory);
-        _conn._protocolHandler.connect(transport, network);
+        _conn._protocolHandler.connect(settings, sslFactory);
         _conn._protocolHandler.getProtocolSession().init();
         
         // this blocks until the connection has been set up or when an error

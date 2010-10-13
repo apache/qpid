@@ -26,7 +26,6 @@ import java.nio.ByteBuffer;
 
 import org.apache.qpid.transport.SegmentType;
 
-
 /**
  * Frame
  */

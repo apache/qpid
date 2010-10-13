@@ -35,6 +35,11 @@ public class Transport
     public static final String VM = "vm";
     public static final String SOCKET = "socket";
     public static final String MULTICAST = "multicast";
+    
+    public static final int DEFAULT_BUFFER_SIZE = 32 * 1024;
+    public static final long DEFAULT_TIMEOUT = 60000;
+
+    public static final boolean WINDOWS = ((String) System.getProperties().get("os.name")).matches("(?i).*windows.*");
  
     public static final String MINA_TRANSPORT = "org.apache.qpid.transport.network.mina.MinaNetworkTransport";
     public static final String IO_TRANSPORT = "org.apache.qpid.transport.network.io.IoNetworkTransport";

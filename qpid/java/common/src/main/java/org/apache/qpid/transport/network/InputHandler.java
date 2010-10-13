@@ -30,10 +30,8 @@ import org.apache.qpid.transport.ProtocolError;
 import org.apache.qpid.transport.ProtocolHeader;
 import org.apache.qpid.transport.Receiver;
 import org.apache.qpid.transport.SegmentType;
-import org.apache.qpid.transport.util.Functions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 
 /**
  * InputHandler

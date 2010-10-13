@@ -24,12 +24,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import java.nio.ByteBuffer;
 
 import org.apache.qpid.transport.codec.BBDecoder;
-import org.apache.qpid.transport.codec.Decoder;
-import org.apache.qpid.transport.util.Functions;
 
 import org.apache.qpid.transport.Header;
 import org.apache.qpid.transport.Method;
@@ -37,17 +34,13 @@ import org.apache.qpid.transport.ProtocolError;
 import org.apache.qpid.transport.ProtocolEvent;
 import org.apache.qpid.transport.ProtocolHeader;
 import org.apache.qpid.transport.Receiver;
-import org.apache.qpid.transport.SegmentType;
 import org.apache.qpid.transport.Struct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
 /**
  * Assembler
- *
  */
-
 public class Assembler implements Receiver<NetworkEvent>, NetworkDelegate
 {
     private static final Logger _log = LoggerFactory.getLogger(Assembler.class);

@@ -52,29 +52,22 @@ public class MinaSender implements Sender<java.nio.ByteBuffer>
         {
             throw new TransportException("attempted to write to a closed socket");
         }
-//        synchronized (this)
-        {
-            ByteBuffer mina = ByteBuffer.allocate(buf.capacity());
-            mina.put(buf);
-            mina.flip();
-            flush();
-            _lastWrite = _session.write(mina);
-	        flush();
-        }
+        ByteBuffer mina = ByteBuffer.allocate(buf.capacity());
+        mina.put(buf);
+        mina.flip();
+        flush();
+        _lastWrite = _session.write(mina);
     }
 
     public synchronized void flush()
     {
-//        synchronized (this)
+        if (_lastWrite != null)
         {
-	        if (_lastWrite != null)
-	        {
-	            _lastWrite.join();
-	            if (!_lastWrite.isWritten())
-	            {
-	                throw new RuntimeException("Error flushing buffe");
-	            }
-	        }
+            _lastWrite.join();
+            if (!_lastWrite.isWritten())
+            {
+                throw new RuntimeException("Error flushing buffer");
+            }
         }
     }
 

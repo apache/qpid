@@ -25,6 +25,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * ReferenceCountingExecutorService wraps an ExecutorService in order to provide shared reference to it. It counts
@@ -75,14 +76,11 @@ public class ReferenceCountingExecutorService
      */
     private static final ReferenceCountingExecutorService _instance = new ReferenceCountingExecutorService();
 
-    /** This lock is used to ensure that reference counts are updated atomically with create/destroy operations. */
-    private final Object _lock = new Object();
-
     /** The shared executor service that is reference counted. */
     private ExecutorService _pool;
 
     /** Holds the number of references given out to the executor service. */
-    private int _refCount = 0;
+    private AtomicInteger _refCount = new AtomicInteger(0);
 
     /** Holds the number of executor threads to create. */
     private int _poolSize = Integer.getInteger("amqj.read_write_pool_size", DEFAULT_POOL_SIZE);
@@ -112,28 +110,24 @@ public class ReferenceCountingExecutorService
      */
     public ExecutorService acquireExecutorService()
     {
-        synchronized (_lock)
+        if (_refCount.getAndIncrement() == 0)
         {
-            if (_refCount++ == 0)
-            {
 //                _pool = Executors.newFixedThreadPool(_poolSize);
 
-                // Use a job queue that biases to writes
-                if(_useBiasedPool)
-                {
-                    _pool =  new ThreadPoolExecutor(_poolSize, _poolSize,
-                                          0L, TimeUnit.MILLISECONDS,
-                                          new ReadWriteJobQueue());
-                }
-                else
-                {
-                    _pool = Executors.newFixedThreadPool(_poolSize);
-                }
+            // Use a job queue that biases to writes
+            if(_useBiasedPool)
+            {
+                _pool =  new ThreadPoolExecutor(_poolSize, _poolSize,
+                                      0L, TimeUnit.MILLISECONDS,
+                                      new ReadWriteJobQueue());
             }
+            else
+            {
+                _pool = Executors.newFixedThreadPool(_poolSize);
+            }
+	    }
 
-
-            return _pool;
-        }
+        return _pool;
     }
 
     /**
@@ -142,12 +136,9 @@ public class ReferenceCountingExecutorService
      */
     public void releaseExecutorService()
     {
-        synchronized (_lock)
+        if (_refCount.decrementAndGet() == 0)
         {
-            if (--_refCount == 0)
-            {
-                _pool.shutdownNow();
-            }
+            _pool.shutdownNow();
         }
     }
 
@@ -167,6 +158,6 @@ public class ReferenceCountingExecutorService
      */
     public int getReferenceCount()
     {
-        return _refCount;
+        return _refCount.get();
     }
 }

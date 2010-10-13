@@ -20,6 +20,10 @@
  */
 package org.apache.qpid.transport.network;
 
+import static org.apache.qpid.transport.network.Frame.*;
+
+import static java.lang.Math.min;
+
 import org.apache.qpid.transport.Header;
 import org.apache.qpid.transport.Method;
 import org.apache.qpid.transport.ProtocolDelegate;
@@ -30,22 +34,13 @@ import org.apache.qpid.transport.SegmentType;
 import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.Struct;
 import org.apache.qpid.transport.codec.BBEncoder;
-import static org.apache.qpid.transport.network.Frame.FIRST_FRAME;
-import static org.apache.qpid.transport.network.Frame.FIRST_SEG;
-import static org.apache.qpid.transport.network.Frame.HEADER_SIZE;
-import static org.apache.qpid.transport.network.Frame.LAST_FRAME;
-import static org.apache.qpid.transport.network.Frame.LAST_SEG;
 
-import static java.lang.Math.min;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
-
 /**
  * Disassembler converts protocol events to byte buffers that can be sent on the network.
- *
  */
-
 public final class Disassembler implements Sender<ProtocolEvent>,
                                            ProtocolDelegate<Void>
 {

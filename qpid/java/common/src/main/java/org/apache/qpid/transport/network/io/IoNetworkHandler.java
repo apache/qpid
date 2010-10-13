@@ -26,6 +26,7 @@ import java.net.SocketException;
 import java.nio.ByteBuffer;
 
 import org.apache.qpid.transport.Receiver;
+import org.apache.qpid.transport.network.Transport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,7 +40,6 @@ public class IoNetworkHandler implements Runnable
     private final Receiver<ByteBuffer> _receiver;
     private final int _bufSize;
     private final Socket _socket;
-    private final boolean _shutdownBroken = ((String) System.getProperties().get("os.name")).matches("(?i).*windows.*");
 
     public IoNetworkHandler(Socket socket, Receiver<ByteBuffer> receiver, int bufSize)
     {
@@ -77,7 +77,7 @@ public class IoNetworkHandler implements Runnable
         }
         catch (Throwable t)
         {
-            if (!(_shutdownBroken &&
+            if (!(Transport.WINDOWS &&
                   t instanceof SocketException &&
                   t.getMessage().equalsIgnoreCase("socket closed") &&
                   _socket.isClosed()) && _socket.isConnected())
