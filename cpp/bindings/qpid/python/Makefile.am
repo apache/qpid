@@ -39,7 +39,7 @@ lib_LTLIBRARIES = _cqpid.la
 #_cqpid_la_LDFLAGS = -avoid-version -module -shrext ".so"
 _cqpid_la_LDFLAGS = -avoid-version -module -shared
 _cqpid_la_LIBADD = $(PYTHON_LIBS) -L$(top_builddir)/src/.libs -lqpidmessaging -lqpidtypes $(top_builddir)/src/libqpidmessaging.la $(top_builddir)/src/libqpidtypes.la
-_cqpid_la_CXXFLAGS = $(INCLUDES) -I$(PYTHON_INC)
+_cqpid_la_CXXFLAGS = $(INCLUDES) -I$(PYTHON_INC) -fno-strict-aliasing
 nodist__cqpid_la_SOURCES = cqpid.cpp
 
 CLEANFILES = $(generated_file_list)

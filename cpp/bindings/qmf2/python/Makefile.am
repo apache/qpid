@@ -37,7 +37,7 @@ lib_LTLIBRARIES = _cqmf2.la
 
 _cqmf2_la_LDFLAGS = -avoid-version -module -shared
 _cqmf2_la_LIBADD = $(PYTHON_LIBS) -L$(top_builddir)/src/.libs $(top_builddir)/src/libqmf2.la
-_cqmf2_la_CXXFLAGS = $(INCLUDES) -I$(srcdir)/qmf -I$(PYTHON_INC)
+_cqmf2_la_CXXFLAGS = $(INCLUDES) -I$(srcdir)/qmf -I$(PYTHON_INC) -fno-strict-aliasing
 nodist__cqmf2_la_SOURCES = cqmf2.cpp
 
 CLEANFILES = $(generated_file_list)
