@@ -35,7 +35,7 @@ pyexec_LTLIBRARIES = _saslwrapper.la
 
 _saslwrapper_la_LDFLAGS = -avoid-version -module -shared
 _saslwrapper_la_LIBADD = $(PYTHON_LIBS) $(top_builddir)/src/libsaslwrapper.la -lsasl2
-_saslwrapper_la_CXXFLAGS = -I$(PYTHON_INC)
+_saslwrapper_la_CXXFLAGS = -I$(PYTHON_INC) -fno-strict-aliasing
 nodist__saslwrapper_la_SOURCES = saslwrapper.cpp
 
 CLEANFILES = $(generated_file_list)
