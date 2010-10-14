@@ -63,7 +63,7 @@
     <ErrorReport>prompt</ErrorReport>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'RelWithDebInfo|AnyCPU' ">
-    <OutputPath>bin\RelWithDebInfo\</OutputPath>
+    <OutputPath>$(QPID_BUILD_ROOT)\src\$(Configuration)\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <Optimize>true</Optimize>
     <DebugType>pdbonly</DebugType>
@@ -71,7 +71,7 @@
     <ErrorReport>prompt</ErrorReport>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'RelWithDebInfo|x86' ">
-    <OutputPath>bin\x86\RelWithDebInfo\</OutputPath>
+    <OutputPath>$(QPID_BUILD_ROOT)\src\$(Configuration)\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <Optimize>true</Optimize>
     <DebugType>pdbonly</DebugType>
@@ -79,7 +79,7 @@
     <ErrorReport>prompt</ErrorReport>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'RelWithDebInfo|x64' ">
-    <OutputPath>bin\x64\RelWithDebInfo\</OutputPath>
+    <OutputPath>$(QPID_BUILD_ROOT)\src\$(Configuration)\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <Optimize>true</Optimize>
     <DebugType>pdbonly</DebugType>

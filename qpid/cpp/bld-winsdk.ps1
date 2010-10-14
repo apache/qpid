@@ -17,19 +17,20 @@
 # under the License.
 #
 
-# This script builds a WinSDK from a raw Qpid source checkout.
+# This script builds a WinSDK from a Qpid source checkout that
+# has been cleaned of any SVN artifacts.
 #
 # On entry:
 #  1. Args[0] holds the relative path to Qpid/trunk.
-#     Directory ".\$args[0]" holds the "cpp" directory and
-#     file QPID_VERSION.txt.
+#       Directory ".\$args[0]" holds the "cpp" directory and
+#       file QPID_VERSION.txt.
 #  2. Args[1] holds the x86 32-bit BOOST_ROOT.  "c:\boost"
 #  3. Args[2] holds the x64 64-bit BOOST_ROOT.  "c:\boost_x64"
-#  4. Args[1] holds the version number.         "0.7.946106-99"
+#  4. Args[3] holds the version number.         "0.7.946106-99"
 #  5. The current directory will receive x86 and x64 subdirs.
 #  6. The x86 an x64 dirs are where cmake will run.
 #  7. Two Boost installations, 32- and 64-bit, are available.
-#  9. No Boost directory must be on the path.
+#  9. Boost directories must not be on the path.
 #  9. cmake, 7z, and devenv are already on the path.
 # 10. devenv is Visual Studio 2008
 #
@@ -41,13 +42,30 @@ Set-PSDebug -Trace 1
 Set-PSDebug -strict
 $ErrorActionPreference='Stop'
 
+################################
 #
 # Global variables
 #
-# Define boost
 [string] $global:bldwinsdkDirectory = Split-Path -parent $MyInvocation.MyCommand.Definition
 [string] $global:sourceDirectory    = Split-Path -parent $global:bldwinsdkDirectory
 [string] $global:currentDirectory   = Split-Path -parent $global:sourceDirectory
+
+
+################################
+#
+# Unix2Dos
+#   Change text file to DOS line endings
+#
+function Unix2Dos
+{
+    param
+    (
+        [string] $fname
+    )
+    
+    $fContent = Get-Content $fname
+    $fContent | Set-Content $fname
+}
 
 
 ################################
@@ -115,12 +133,28 @@ function BuildAPlatform
     devenv qpid-cpp.sln /build "$vsTargetRelease" /project INSTALL
 
     # Build the .NET binding
-    devenv $qpid_cpp_src\bindings\qpid\dotnet\org.apache.qpid.messaging.sln `
-           /build "Debug|$platform" /project org.apache.qpid.messaging.sessionreceiver
+    if ("x86" -eq $platform) {
+        devenv $qpid_cpp_src\bindings\qpid\dotnet\org.apache.qpid.messaging.sln `
+               /build "Debug|Win32" /project org.apache.qpid.messaging
+        devenv $qpid_cpp_src\bindings\qpid\dotnet\org.apache.qpid.messaging.sln `
+               /build "Debug|$platform" /project org.apache.qpid.messaging.sessionreceiver
+        devenv $qpid_cpp_src\bindings\qpid\dotnet\org.apache.qpid.messaging.sln `
+               /build "RelWithDebInfo|Win32" /project org.apache.qpid.messaging
+        devenv $qpid_cpp_src\bindings\qpid\dotnet\org.apache.qpid.messaging.sln `
+               /build "RelWithDebInfo|$platform" /project org.apache.qpid.messaging.sessionreceiver
+    } else {
+        devenv $qpid_cpp_src\bindings\qpid\dotnet\org.apache.qpid.messaging.sln `
+               /build "Debug|$platform" /project org.apache.qpid.messaging
+        devenv $qpid_cpp_src\bindings\qpid\dotnet\org.apache.qpid.messaging.sln `
+               /build "Debug|$platform" /project org.apache.qpid.messaging.sessionreceiver
+        devenv $qpid_cpp_src\bindings\qpid\dotnet\org.apache.qpid.messaging.sln `
+               /build "RelWithDebInfo|$platform" /project org.apache.qpid.messaging
+        devenv $qpid_cpp_src\bindings\qpid\dotnet\org.apache.qpid.messaging.sln `
+               /build "RelWithDebInfo|$platform" /project org.apache.qpid.messaging.sessionreceiver
+    }
 
-    # This would be kludgy if we have only one entry as the array declaration syntax
-    # can't cope with just one nested array
-    # Target must be a directory
+    # Define lists of items to be touched in installation tree
+    # Move target must be a directory
     $move=(
     	('bin/*.lib','lib'),
     	('bin/boost/*.dll','bin')
@@ -136,6 +170,7 @@ function BuildAPlatform
         'include/qpid/sys/posix/IntegerTypes.h',
     	'include/qpid/types',
     	'include/qpid/CommonImportExport.h')
+
     $remove=(
     	'bin/qpidd.exe',         'bin/qpidbroker*.*',
     	'bin/*PDB/qpidd.exe',    'bin/*PDB/qpidbroker*.*',
@@ -187,12 +222,21 @@ function BuildAPlatform
     }
     Remove-Item -recurse $preserve_dir
 
-    # Install the README
+    # Install the README and MS-LICENSE
     Copy-Item -force -path "$qpid_cpp_src/README-winsdk.txt" -destination "$install_dir/README-winsdk.txt"
+    Copy-Item -force -path "$qpid_cpp_src/src/windows/winsdk/MS-LICENSE.HTM" -destination "$install_dir/MS-LICENSE.HTM"
 
-    # Install the .NET binding
-    Copy-Item -force -path "./src/Debug/org.apache.qpid.messaging*.dll" -destination "$install_dir/bin"
-    Copy-Item -force -path "./src/Debug/org.apache.qpid.messaging*.pdb" -destination "$install_dir/bin/DebugPDB"
+    # Append the MSVC license info to the plain LICENSE
+    $licenseinfo = Get-Content "$qpid_cpp_src/src/windows/winsdk/LICENSE-MSVC"
+    Add-Content "$install_dir/LICENSE" $licenseinfo
+    
+    # Set top level info files to DOS line endings
+    Unix2Dos "$install_dir/README-winsdk.txt"
+    Unix2Dos "$install_dir/LICENSE"
+    Unix2Dos "$install_dir/NOTICE"
+    
+    # Install the Debug .NET binding
+    Copy-Item -force -path "./src/Debug/org.apache.qpid.messaging*.dll"          -destination "$install_dir/bin"
 
     # Install the .NET binding examples
     New-Item -path $(Join-Path $(Get-Location) $install_dir) -name dotnet_examples -type directory
@@ -206,14 +250,24 @@ function BuildAPlatform
     $dst = Resolve-Path "$install_dir/dotnet_examples"
     Copy-Item "$src\*" -destination "$dst\" -recurse -force 
 
-    # Zip the /bin PDB files into two zip files.
-    # we previously arranged that the Debug pdbs go in the DebugPDB subdirectory
-    # and the Release pdbs go in the ReleasePDB subdirectory
+    # Zip the /bin PDB files
     &'7z' a -mx9 ".\$install_dir\bin\symbols-debug.zip"   ".\$install_dir\bin\DebugPDB\*.pdb"
     &'7z' a -mx9 ".\$install_dir\bin\symbols-release.zip" ".\$install_dir\bin\ReleasePDB\*.pdb"
-
     Remove-Item -recurse ".\$install_dir\bin\DebugPDB"
     Remove-Item -recurse ".\$install_dir\bin\ReleasePDB"
+
+    # Zip the dotnet bindings
+    New-Item -force -type directory "$install_dir/bin/bindingDebug"
+    Copy-Item -force -path "./src/Debug/org.apache.qpid.messaging*.dll"          -destination "$install_dir/bin/bindingDebug/"
+    Copy-Item -force -path "./src/Debug/org.apache.qpid.messaging*.pdb"          -destination "$install_dir/bin/bindingDebug/"
+    &'7z' a -mx9 ".\$install_dir\bin\dotnet-binding-debug.zip"   ".\$install_dir\bin\bindingDebug\*.*"
+    Remove-Item -recurse ".\$install_dir\bin\bindingDebug"
+
+    New-Item -force -type directory "$install_dir/bin/bindingRelease"
+    Copy-Item -force -path "./src/RelWithDebInfo/org.apache.qpid.messaging*.dll" -destination "$install_dir/bin/bindingRelease/"
+    Copy-Item -force -path "./src/RelWithDebInfo/org.apache.qpid.messaging*.pdb" -destination "$install_dir/bin/bindingRelease/"
+    &'7z' a -mx9 ".\$install_dir\bin\dotnet-binding-release.zip" ".\$install_dir\bin\bindingRelease\*.*"
+    Remove-Item -recurse ".\$install_dir\bin\bindingRelease"
 
     # Create a new zip for the whole kit.
     # Exclude *.pdb so as not include the debug symbols twice
