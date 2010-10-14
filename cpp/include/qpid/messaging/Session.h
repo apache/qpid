@@ -80,15 +80,13 @@ class Session : public qpid::messaging::Handle<SessionImpl>
      */
     QPID_MESSAGING_EXTERN void acknowledge(Message&, bool sync=false);
     /**
-     * Rejects the specified message. This will prevent the message
-     * being redelivered. This must be called before the message is
-     * acknowledged.
+     * Rejects the specified message. The broker does not redeliver
+     * a message that has been rejected.
      */
     QPID_MESSAGING_EXTERN void reject(Message&);
     /**
-     * Releases the specified message. This will allow the broker to
-     * redeliver the message. This must be called before the message
-     * is acknowledged.
+     * Releases the specified message. The broker may
+     * redeliver the message.
      */
     QPID_MESSAGING_EXTERN void release(Message&);
 
@@ -97,7 +95,7 @@ class Session : public qpid::messaging::Handle<SessionImpl>
      * 
      * @param block if true, this call will block until the server
      * confirms completion of all pending operations; if false the
-     * call will request notifcation from the server but will return
+     * call will request notification from the server but will return
      * before receiving it.
      */
     QPID_MESSAGING_EXTERN void sync(bool block=true);
