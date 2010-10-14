@@ -61,7 +61,7 @@ The kit directories hold the content described here.
 
   \examples
     A Visual Studio solution file and associated project files 
-    to demonstrate using this SDK in C++.
+    to demonstrate using this SDK in unmanaged C++.
 
   \dotnet_examples
     A Visual Studio solution file and associated project files 
@@ -72,6 +72,49 @@ The kit directories hold the content described here.
     
     For more information on Qpid QMF go to:
     https://cwiki.apache.org/qpid/qpid-management-framework.html
+
+The architectural relationships of the components in this SDK are 
+illustrated here.
+
+                      +----------------------------+
+                      | \dotnet_examples           |
+                      | Managed C#                 |
+                      +------+---------------+-----+
+                             |               |
+                             V               |
+        +---------------------------+        |
+        | Managed Callback          |        |
+        | org.apache.qpid.messaging.|        |
+        | sessionreceiver.dll       |        |
+        +----------------------+----+        |
+                               |             |
+managed                        V             V
+(.NET)                 +-------------------------------+
+:::::::::::::::::::::::| Qpid Interop Binding          |::::::::::::
+unmanaged              | org.apache.qpid.messaging.dll |
+(Native Win32/64)      +---------------+---------------+
+                                       |
+                                       |
+      +----------------+               |
+      | \examples      |               |
+      | Unmanaged C++  |               |
+      +--------+-------+               |
+               |                       |
+               V                       V
+          +----------------------------------+
+          |  Qpid C++ Messaging Libraries    |
+          |  bin\qpid*.dll bin\qmf*.dll      |
+          +--------+--------------+----------+
+                   |              |
+                   V              |
+          +-----------------+     |
+          | Boost Libraries |     |
+          +--------+--------+     |
+                   |              |
+                   V              V
+          +---------------------------------+
+          | MSVC Runtime Libraries          |
+          +---------------------------------+
 
 
 4. Building dotnet_examples
@@ -85,6 +128,19 @@ Debug configuration.
 The resulting executable programs may be run from within Visual Studio
 or stand-alone from the \bin directory.
 
+To build the examples in the Release configuration please follow these steps:
+  a. Exit from Visual Studio. Stop all executing example processes.
+  b. Extract two org.apache.qpid.messaging DLL files from 
+     bin/dotnet-binding-release.zip and place the files in the /bin 
+     directory, overwriting the files arleady in /bin.
+  c. Start winsdk_dotnet_examples.sln.
+  d. In the Configuration pulldown, select Release.
+  e. In the Platform pulldown, select x86 or x64 to match the SDK
+     in use.
+  f. For each project remove the Reference to org.apache.qpid.messagingd.dll
+     and add a reference to bin/org.apache.qpid.messaging.dll.
+  g. Build and run the project.
+
 5. Notes
 ========
 * Only the Release variant of Qpid code uses the redistributable 
@@ -92,5 +148,4 @@ or stand-alone from the \bin directory.
   the Debug variant of Qpid code may do so under their own copy of 
   Visual Studio 2008 where the debug versions of MSVC90 runtime 
   libraries are available.
-
-* The dotnet_examples are only available in the Debug configuration.
+  
