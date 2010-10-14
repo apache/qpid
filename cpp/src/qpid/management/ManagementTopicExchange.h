@@ -36,19 +36,19 @@ class ManagementTopicExchange : public virtual TopicExchange
   public:
     static const std::string typeName;
 
-    ManagementTopicExchange(const string& name, Manageable* _parent = 0, Broker* broker = 0);
-    ManagementTopicExchange(const string& _name, bool _durable, 
+    ManagementTopicExchange(const std::string& name, Manageable* _parent = 0, Broker* broker = 0);
+    ManagementTopicExchange(const std::string& _name, bool _durable, 
                             const qpid::framing::FieldTable& _args,
                             Manageable* _parent = 0, Broker* broker = 0);
 
     virtual std::string getType() const { return typeName; }
 
     virtual void route(Deliverable& msg,
-                       const string& routingKey,
+                       const std::string& routingKey,
                        const qpid::framing::FieldTable* args);
 
     virtual bool bind(Queue::shared_ptr queue,
-                      const string& routingKey,
+                      const std::string& routingKey,
                       const qpid::framing::FieldTable* args);
 
     void setManagmentAgent(management::ManagementAgent* agent, int qmfVersion);

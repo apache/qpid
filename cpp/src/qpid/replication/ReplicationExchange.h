@@ -26,6 +26,11 @@
 #include "qpid/framing/SequenceNumber.h"
 
 namespace qpid {
+
+namespace broker {
+class QueueRegistry;
+}
+
 namespace replication {
 
 /**
@@ -49,9 +54,9 @@ class ReplicationExchange : public qpid::broker::Exchange
 
     void route(qpid::broker::Deliverable& msg, const std::string& routingKey, const qpid::framing::FieldTable* args);
         
-    bool bind(qpid::broker::Queue::shared_ptr queue, const std::string& routingKey, const qpid::framing::FieldTable* args);
-    bool unbind(qpid::broker::Queue::shared_ptr queue, const std::string& routingKey, const qpid::framing::FieldTable* args);
-    bool isBound(qpid::broker::Queue::shared_ptr queue, const std::string* const routingKey, const qpid::framing::FieldTable* const args);
+    bool bind(boost::shared_ptr<broker::Queue> queue, const std::string& routingKey, const qpid::framing::FieldTable* args);
+    bool unbind(boost::shared_ptr<broker::Queue> queue, const std::string& routingKey, const qpid::framing::FieldTable* args);
+    bool isBound(boost::shared_ptr<broker::Queue> queue, const std::string* const routingKey, const qpid::framing::FieldTable* const args);
   private:
     qpid::broker::QueueRegistry& queues;
     qpid::framing::SequenceNumber sequence;

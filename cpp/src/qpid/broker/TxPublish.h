@@ -22,7 +22,6 @@
 #define _TxPublish_
 
 #include "qpid/broker/BrokerImportExport.h"
-#include "qpid/broker/Queue.h"
 #include "qpid/broker/Deliverable.h"
 #include "qpid/broker/Message.h"
 #include "qpid/broker/MessageStore.h"
@@ -62,8 +61,8 @@ namespace qpid {
             };
 
             boost::intrusive_ptr<Message> msg;
-            std::list<Queue::shared_ptr> queues;
-            std::list<Queue::shared_ptr> prepared;
+             std::list<boost::shared_ptr<Queue> > queues;
+            std::list<boost::shared_ptr<Queue> > prepared;
 
             void prepare(TransactionContext* ctxt, boost::shared_ptr<Queue>);
 
@@ -83,7 +82,7 @@ namespace qpid {
             QPID_BROKER_EXTERN uint64_t contentSize();
 
             boost::intrusive_ptr<Message> getMessage() const { return msg; }
-            const std::list<Queue::shared_ptr> getQueues() const { return queues; }
+            const std::list<boost::shared_ptr<Queue> > getQueues() const { return queues; }
         };
     }
 }

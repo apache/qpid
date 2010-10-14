@@ -22,6 +22,7 @@
 #include "qpid/broker/DeliverableMessage.h"
 #include "qpid/broker/SemanticState.h"
 #include "qpid/broker/Exchange.h"
+#include "qpid/broker/Queue.h"
 #include "qpid/log/Statement.h"
 #include "qpid/framing/FrameHandler.h"
 #include "qpid/framing/MessageTransferBody.h"

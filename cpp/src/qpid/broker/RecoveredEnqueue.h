@@ -24,7 +24,6 @@
 #include "qpid/broker/Deliverable.h"
 #include "qpid/broker/Message.h"
 #include "qpid/broker/MessageStore.h"
-#include "qpid/broker/Queue.h"
 #include "qpid/broker/TxOp.h"
 
 #include <boost/intrusive_ptr.hpp>
@@ -34,24 +33,24 @@
 #include <list>
 
 namespace qpid {
-    namespace broker {
-        class RecoveredEnqueue : public TxOp{
-            Queue::shared_ptr queue;
-            boost::intrusive_ptr<Message> msg;
+namespace broker {
+class RecoveredEnqueue : public TxOp{
+    boost::shared_ptr<Queue> queue;
+    boost::intrusive_ptr<Message> msg;
 
-        public:
-            RecoveredEnqueue(Queue::shared_ptr queue, boost::intrusive_ptr<Message> msg);
-            virtual bool prepare(TransactionContext* ctxt) throw();
-            virtual void commit() throw();
-            virtual void rollback() throw();
-            virtual ~RecoveredEnqueue(){}
-            virtual void accept(TxOpConstVisitor& visitor) const { visitor(*this); }
+  public:
+    RecoveredEnqueue(boost::shared_ptr<Queue> queue, boost::intrusive_ptr<Message> msg);
+    virtual bool prepare(TransactionContext* ctxt) throw();
+    virtual void commit() throw();
+    virtual void rollback() throw();
+    virtual ~RecoveredEnqueue(){}
+    virtual void accept(TxOpConstVisitor& visitor) const { visitor(*this); }
 
-            Queue::shared_ptr getQueue() const { return queue; }
-            boost::intrusive_ptr<Message> getMessage() const { return msg; }
+    boost::shared_ptr<Queue> getQueue() const { return queue; }
+    boost::intrusive_ptr<Message> getMessage() const { return msg; }
             
-        };
-    }
+};
+}
 }
 
 

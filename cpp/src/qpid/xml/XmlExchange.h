@@ -57,7 +57,7 @@ class XmlExchange : public virtual Exchange {
     };
 
         
-    typedef std::map<string, XmlBinding::vector > XmlBindingsMap;
+    typedef std::map<std::string, XmlBinding::vector > XmlBindingsMap;
 
     XmlBindingsMap bindingsMap;
     XQilla xqilla;
@@ -69,7 +69,7 @@ class XmlExchange : public virtual Exchange {
     static const std::string typeName;
         
     XmlExchange(const std::string& name, management::Manageable* parent = 0, Broker* broker = 0);
-    XmlExchange(const string& _name, bool _durable,
+    XmlExchange(const std::string& _name, bool _durable,
 		const qpid::framing::FieldTable& _args, management::Manageable* parent = 0, Broker* broker = 0);
 
     virtual std::string getType() const { return typeName; }
@@ -80,7 +80,7 @@ class XmlExchange : public virtual Exchange {
 
     virtual void route(Deliverable& msg, const std::string& routingKey, const qpid::framing::FieldTable* args);
 
-    virtual bool isBound(Queue::shared_ptr queue, const string* const routingKey, const qpid::framing::FieldTable* const args);
+    virtual bool isBound(Queue::shared_ptr queue, const std::string* const routingKey, const qpid::framing::FieldTable* const args);
 
     virtual ~XmlExchange();
 };

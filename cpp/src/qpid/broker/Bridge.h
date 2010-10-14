@@ -75,7 +75,7 @@ public:
     // Exchange::DynamicBridge methods
     void propagateBinding(const std::string& key, const std::string& tagList, const std::string& op, const std::string& origin, qpid::framing::FieldTable* extra_args=0);
     void sendReorigin();
-    void ioThreadPropagateBinding(const string& queue, const string& exchange, const string& key, framing::FieldTable args);
+    void ioThreadPropagateBinding(const std::string& queue, const std::string& exchange, const std::string& key, framing::FieldTable args);
     bool containsLocalTag(const std::string& tagList) const;
     const std::string& getLocalTag() const;
 

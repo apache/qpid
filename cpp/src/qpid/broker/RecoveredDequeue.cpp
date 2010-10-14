@@ -18,6 +18,8 @@
  * under the License.
  *
  */
+
+#include "qpid/broker/Queue.h"
 #include "qpid/broker/RecoveredDequeue.h"
 
 using boost::intrusive_ptr;

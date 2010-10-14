@@ -28,13 +28,14 @@
 #include <ostream>
 #include "qpid/framing/SequenceSet.h"
 #include "qpid/broker/BrokerImportExport.h"
-#include "qpid/broker/Queue.h"
 #include "qpid/broker/QueuedMessage.h"
 #include "qpid/broker/DeliveryId.h"
 #include "qpid/broker/Message.h"
 
 namespace qpid {
 namespace broker {
+
+class TransactionContext;
 class SemanticState;
 struct AckRange;
 
@@ -44,7 +45,7 @@ struct AckRange;
 class DeliveryRecord
 {
     QueuedMessage msg;
-    mutable Queue::shared_ptr queue;
+    mutable boost::shared_ptr<Queue> queue;
     std::string tag;
     DeliveryId id;
     bool acquired : 1;
@@ -65,7 +66,7 @@ class DeliveryRecord
 
   public:
     QPID_BROKER_EXTERN DeliveryRecord(const QueuedMessage& msg,
-                                      const Queue::shared_ptr& queue, 
+                                      const boost::shared_ptr<Queue>& queue, 
                                       const std::string& tag,
                                       bool acquired,
                                       bool accepted,
@@ -105,7 +106,7 @@ class DeliveryRecord
     static AckRange findRange(DeliveryRecords& records, DeliveryId first, DeliveryId last);
     const QueuedMessage& getMessage() const { return msg; }
     framing::SequenceNumber getId() const { return id; }
-    Queue::shared_ptr getQueue() const { return queue; }
+    boost::shared_ptr<Queue> getQueue() const { return queue; }
 
     friend std::ostream& operator<<(std::ostream&, const DeliveryRecord&);
 };

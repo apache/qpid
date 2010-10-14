@@ -20,6 +20,7 @@
  */
 
 #include "qpid/broker/Message.h"
+#include "qpid/broker/Queue.h"
 #include "qpid/broker/ExchangeRegistry.h"
 #include "qpid/broker/ExpiryPolicy.h"
 #include "qpid/StringUtils.h"

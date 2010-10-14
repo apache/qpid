@@ -18,6 +18,7 @@
  * under the License.
  *
  */
+#include "qpid/broker/Queue.h"
 #include "qpid/broker/QueueBindings.h"
 #include "qpid/broker/ExchangeRegistry.h"
 #include "qpid/framing/reply_exceptions.h"

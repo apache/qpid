@@ -22,6 +22,8 @@
 #include "qpid/replication/constants.h"
 #include "qpid/Plugin.h"
 #include "qpid/broker/Broker.h"
+#include "qpid/broker/Queue.h"
+#include "qpid/broker/QueueRegistry.h"
 #include "qpid/broker/ExchangeRegistry.h"
 #include "qpid/framing/reply_exceptions.h"
 #include "qpid/log/Statement.h"

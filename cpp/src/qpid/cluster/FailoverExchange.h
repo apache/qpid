@@ -49,17 +49,17 @@ class FailoverExchange : public broker::Exchange
 
     // Exchange overrides
     std::string getType() const;
-    bool bind(broker::Queue::shared_ptr queue, const std::string& routingKey, const framing::FieldTable* args);
-    bool unbind(broker::Queue::shared_ptr queue, const std::string& routingKey, const framing::FieldTable* args);
-    bool isBound(broker::Queue::shared_ptr queue, const std::string* const routingKey, const framing::FieldTable* const args);
+    bool bind(boost::shared_ptr<broker::Queue> queue, const std::string& routingKey, const framing::FieldTable* args);
+    bool unbind(boost::shared_ptr<broker::Queue> queue, const std::string& routingKey, const framing::FieldTable* args);
+    bool isBound(boost::shared_ptr<broker::Queue> queue, const std::string* const routingKey, const framing::FieldTable* const args);
     void route(broker::Deliverable& msg, const std::string& routingKey, const framing::FieldTable* args);
 
   private:
-    void sendUpdate(const broker::Queue::shared_ptr&);
+    void sendUpdate(const boost::shared_ptr<broker::Queue>&);
     
     typedef sys::Mutex::ScopedLock Lock;
     typedef std::vector<Url> Urls;
-    typedef std::set<broker::Queue::shared_ptr> Queues;
+    typedef std::set<boost::shared_ptr<broker::Queue> > Queues;
 
     sys::Mutex lock;
     Urls urls;

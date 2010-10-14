@@ -36,15 +36,15 @@ class ManagementDirectExchange : public virtual DirectExchange
   public:
     static const std::string typeName;
 
-    ManagementDirectExchange(const string& name, Manageable* _parent = 0, Broker* broker = 0);
-    ManagementDirectExchange(const string& _name, bool _durable, 
+    ManagementDirectExchange(const std::string& name, Manageable* _parent = 0, Broker* broker = 0);
+    ManagementDirectExchange(const std::string& _name, bool _durable, 
                              const qpid::framing::FieldTable& _args,
                              Manageable* _parent = 0, Broker* broker = 0);
 
     virtual std::string getType() const { return typeName; }
 
     virtual void route(Deliverable& msg,
-                       const string& routingKey,
+                       const std::string& routingKey,
                        const qpid::framing::FieldTable* args);
 
     void setManagmentAgent(management::ManagementAgent* agent, int qmfVersion);
