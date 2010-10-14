@@ -28,6 +28,7 @@
 
 using boost::intrusive_ptr;
 using qpid::framing::FieldTable;
+using std::string;
 
 namespace qpid {
 namespace broker {

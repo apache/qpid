@@ -25,7 +25,6 @@
 #include <boost/shared_ptr.hpp>
 #include "qpid/broker/BrokerImportExport.h"
 #include "qpid/broker/Deliverable.h"
-#include "qpid/broker/Queue.h"
 #include "qpid/broker/MessageStore.h"
 #include "qpid/broker/PersistableExchange.h"
 #include "qpid/framing/FieldTable.h"
@@ -37,6 +36,7 @@
 namespace qpid {
 namespace broker {
 
+class Broker;
 class ExchangeRegistry;
 
 class Exchange : public PersistableExchange, public management::Manageable {
@@ -46,13 +46,13 @@ public:
         typedef std::vector<Binding::shared_ptr> vector;
 
         Exchange*                 parent;
-        Queue::shared_ptr         queue;
+        boost::shared_ptr<Queue>         queue;
         const std::string         key;
         const framing::FieldTable args;
         std::string               origin;
         qmf::org::apache::qpid::broker::Binding* mgmtBinding;
 
-        Binding(const std::string& key, Queue::shared_ptr queue, Exchange* parent = 0,
+        Binding(const std::string& key, boost::shared_ptr<Queue> queue, Exchange* parent = 0,
                 framing::FieldTable args = framing::FieldTable(), const std::string& origin = std::string());
         ~Binding();
         void startManagement();
@@ -90,8 +90,8 @@ protected:
            
 
     struct MatchQueue {
-        const Queue::shared_ptr queue;        
-        MatchQueue(Queue::shared_ptr q);
+        const boost::shared_ptr<Queue> queue;        
+        MatchQueue(boost::shared_ptr<Queue> q);
         bool operator()(Exchange::Binding::shared_ptr b);
     };
 
@@ -145,9 +145,9 @@ public:
     bool inUseAsAlternate() { return alternateUsers > 0; }
 
     virtual std::string getType() const = 0;
-    virtual bool bind(Queue::shared_ptr queue, const std::string& routingKey, const qpid::framing::FieldTable* args) = 0;
-    virtual bool unbind(Queue::shared_ptr queue, const std::string& routingKey, const qpid::framing::FieldTable* args) = 0;
-    virtual bool isBound(Queue::shared_ptr queue, const std::string* const routingKey, const qpid::framing::FieldTable* const args) = 0;
+    virtual bool bind(boost::shared_ptr<Queue> queue, const std::string& routingKey, const qpid::framing::FieldTable* args) = 0;
+    virtual bool unbind(boost::shared_ptr<Queue> queue, const std::string& routingKey, const qpid::framing::FieldTable* args) = 0;
+    virtual bool isBound(boost::shared_ptr<Queue> queue, const std::string* const routingKey, const qpid::framing::FieldTable* const args) = 0;
     QPID_BROKER_EXTERN virtual void setProperties(const boost::intrusive_ptr<Message>&);
     virtual void route(Deliverable& msg, const std::string& routingKey, const qpid::framing::FieldTable* args) = 0;
     

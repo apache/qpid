@@ -18,7 +18,9 @@
  * under the License.
  *
  */
+
 #include "qpid/log/Statement.h"
+#include "qpid/broker/Queue.h"
 #include "qpid/broker/DirectExchange.h"
 #include <iostream>
 

@@ -49,6 +49,7 @@
 using namespace qpid::framing;
 using namespace qpid::sys;
 using qpid::management::Manageable;
+using std::string;
 namespace _qmf = qmf::org::apache::qpid::broker;
 
 namespace qpid {

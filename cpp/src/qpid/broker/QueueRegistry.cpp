@@ -18,6 +18,7 @@
  * under the License.
  *
  */
+#include "qpid/broker/Queue.h"
 #include "qpid/broker/QueueRegistry.h"
 #include "qpid/broker/QueueEvents.h"
 #include "qpid/log/Statement.h"
@@ -26,6 +27,7 @@
 
 using namespace qpid::broker;
 using namespace qpid::sys;
+using std::string;
 
 QueueRegistry::QueueRegistry(Broker* b) :
     counter(1), store(0), events(0), parent(0), lastNode(false), broker(b) {}

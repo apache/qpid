@@ -23,7 +23,6 @@
 
 #include "qpid/broker/BrokerImportExport.h"
 #include "qpid/broker/Deliverable.h"
-#include "qpid/broker/Queue.h"
 #include "qpid/broker/Message.h"
 
 #include <boost/intrusive_ptr.hpp>

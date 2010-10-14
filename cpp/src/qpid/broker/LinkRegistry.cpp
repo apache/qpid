@@ -27,6 +27,7 @@
 
 using namespace qpid::broker;
 using namespace qpid::sys;
+using std::string;
 using std::pair;
 using std::stringstream;
 using boost::intrusive_ptr;

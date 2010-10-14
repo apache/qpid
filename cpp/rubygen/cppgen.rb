@@ -51,7 +51,7 @@ CppKeywords = Set.new(["and", "and_eq", "asm", "auto", "bitand",
                        "void", "volatile", "wchar_t", "while", "xor",
                        "xor_eq"])
 # Names that need a trailing "_" to avoid clashes.
-CppMangle = CppKeywords+Set.new(["string"])
+CppMangle = CppKeywords+Set.new(["std::string"])
 
 class String
   def cppsafe() CppMangle.include?(self) ? self+"_" : self; end
@@ -124,17 +124,17 @@ class AmqpRoot
     "uint32"=>CppType.new("uint32_t").code("Long").defval("0"),
     "uint64"=>CppType.new("uint64_t").code("LongLong").defval("0"),
     "datetime"=>CppType.new("uint64_t").code("LongLong").defval("0"),
-    "str8"=>CppType.new("string").passcref.retcref.code("ShortString"),
-    "str16"=>CppType.new("string").passcref.retcref.code("MediumString"),
-    "str32"=>CppType.new("string").passcref.retcref.code("LongString"),
-    "vbin8"=>CppType.new("string").passcref.retcref.code("ShortString"),
-    "vbin16"=>CppType.new("string").passcref.retcref.code("MediumString"),
-    "vbin32"=>CppType.new("string").passcref.retcref.code("LongString"),
+    "str8"=>CppType.new("std::string").passcref.retcref.code("ShortString"),
+    "str16"=>CppType.new("std::string").passcref.retcref.code("MediumString"),
+    "str32"=>CppType.new("std::string").passcref.retcref.code("LongString"),
+    "vbin8"=>CppType.new("std::string").passcref.retcref.code("ShortString"),
+    "vbin16"=>CppType.new("std::string").passcref.retcref.code("MediumString"),
+    "vbin32"=>CppType.new("std::string").passcref.retcref.code("LongString"),
     "map"=>CppType.new("FieldTable").passcref.retcref,
     "array"=>CppType.new("Array").passcref.retcref,
     "sequence-no"=>CppType.new("SequenceNumber").passcref,
     "sequence-set"=>CppType.new("SequenceSet").passcref.retcref,
-    "struct32"=>CppType.new("string").passcref.retcref.code("LongString"),
+    "struct32"=>CppType.new("std::string").passcref.retcref.code("LongString"),
     "uuid"=>CppType.new("Uuid").passcref.retcref,
     "byte-ranges"=>CppType.new("ByteRanges").passcref.retcref
   }

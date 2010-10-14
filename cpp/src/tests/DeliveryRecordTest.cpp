@@ -20,6 +20,7 @@
  *
  */
 #include "qpid/broker/DeliveryRecord.h"
+#include "qpid/broker/Queue.h"
 #include "unit_test.h"
 #include <iostream>
 #include <memory>

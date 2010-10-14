@@ -34,6 +34,7 @@ using qpid::framing::FieldTable;
 using qpid::framing::Uuid;
 using qpid::framing::Buffer;
 using qpid::management::ManagementAgent;
+using std::string;
 namespace _qmf = qmf::org::apache::qpid::broker;
 
 namespace 

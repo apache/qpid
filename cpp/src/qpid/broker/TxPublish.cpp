@@ -20,6 +20,7 @@
  */
 #include "qpid/log/Statement.h"
 #include "qpid/broker/TxPublish.h"
+#include "qpid/broker/Queue.h"
 
 using boost::intrusive_ptr;
 using namespace qpid::broker;

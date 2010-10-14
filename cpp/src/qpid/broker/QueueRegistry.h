@@ -22,17 +22,21 @@
 #define _QueueRegistry_
 
 #include "qpid/broker/BrokerImportExport.h"
-#include "qpid/broker/Queue.h"
 #include "qpid/sys/Mutex.h"
 #include "qpid/management/Manageable.h"
 #include <boost/bind.hpp>
+#include <boost/shared_ptr.hpp>
 #include <algorithm>
 #include <map>
 
 namespace qpid {
 namespace broker {
 
+class Queue;
 class QueueEvents;
+class OwnershipToken;
+class Broker;
+class MessageStore;
 
 /**
  * A registry of queues indexed by queue name.
@@ -52,11 +56,11 @@ class QueueRegistry {
      * @return The queue and a boolean flag which is true if the queue
      * was created by this declare call false if it already existed.
      */
-    QPID_BROKER_EXTERN std::pair<Queue::shared_ptr, bool> declare
-      (const string& name,
-       bool durable = false,
-       bool autodelete = false, 
-       const OwnershipToken* owner = 0);
+    QPID_BROKER_EXTERN std::pair<boost::shared_ptr<Queue>, bool> declare(
+        const std::string& name,
+        bool durable = false,
+        bool autodelete = false, 
+        const OwnershipToken* owner = 0);
 
     /**
      * Destroy the named queue.
@@ -70,8 +74,8 @@ class QueueRegistry {
      * subsequent calls to find or declare with the same name.
      *
      */
-    QPID_BROKER_EXTERN void destroy(const string& name);
-    template <class Test> bool destroyIf(const string& name, Test test)
+    QPID_BROKER_EXTERN void destroy(const std::string& name);
+    template <class Test> bool destroyIf(const std::string& name, Test test)
     {
         qpid::sys::RWlock::ScopedWlock locker(lock);
         if (test()) {
@@ -85,12 +89,12 @@ class QueueRegistry {
     /**
      * Find the named queue. Return 0 if not found.
      */
-    QPID_BROKER_EXTERN Queue::shared_ptr find(const string& name);
+    QPID_BROKER_EXTERN boost::shared_ptr<Queue> find(const std::string& name);
 
     /**
      * Generate unique queue name.
      */
-    string generateName();
+    std::string generateName();
 
     void setQueueEvents(QueueEvents*);
 
@@ -123,7 +127,7 @@ class QueueRegistry {
 	void updateQueueClusterState(bool lastNode);
     
 private:
-    typedef std::map<string, Queue::shared_ptr> QueueMap;
+    typedef std::map<std::string, boost::shared_ptr<Queue> > QueueMap;
     QueueMap queues;
     mutable qpid::sys::RWlock lock;
     int counter;
@@ -134,7 +138,7 @@ private:
     Broker* broker;
 
     //destroy impl that assumes lock is already held:
-    void destroyLH (const string& name);
+    void destroyLH (const std::string& name);
 };
 
     

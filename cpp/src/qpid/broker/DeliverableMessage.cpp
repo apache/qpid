@@ -18,7 +18,9 @@
  * under the License.
  *
  */
+
 #include "qpid/broker/DeliverableMessage.h"
+#include "qpid/broker/Queue.h"
 
 using namespace qpid::broker;
 

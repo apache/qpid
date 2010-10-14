@@ -42,6 +42,7 @@ using qpid::management::Manageable;
 using qpid::management::Args;
 using qpid::sys::Mutex;
 using std::stringstream;
+using std::string;
 namespace _qmf = qmf::org::apache::qpid::broker;
 
 Link::Link(LinkRegistry*  _links,
