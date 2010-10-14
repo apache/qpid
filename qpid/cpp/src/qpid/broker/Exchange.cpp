@@ -23,6 +23,7 @@
 #include "qpid/broker/ExchangeRegistry.h"
 #include "qpid/broker/Broker.h"
 #include "qpid/management/ManagementAgent.h"
+#include "qpid/broker/Queue.h"
 #include "qpid/log/Statement.h"
 #include "qpid/framing/MessageProperties.h"
 #include "qpid/framing/reply_exceptions.h"

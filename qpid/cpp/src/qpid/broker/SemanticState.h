@@ -44,6 +44,7 @@
 #include <map>
 #include <vector>
 
+#include <boost/enable_shared_from_this.hpp>
 #include <boost/intrusive_ptr.hpp>
 #include <boost/cast.hpp>
 
@@ -74,14 +75,14 @@ class SemanticState : private boost::noncopyable {
     {
         mutable qpid::sys::Mutex lock;
         SemanticState* const parent;
-        const string name;
-        const Queue::shared_ptr queue;
+        const std::string name;
+        const boost::shared_ptr<Queue> queue;
         const bool ackExpected;
         const bool acquire;
         bool blocked;
         bool windowing;
         bool exclusive;
-        string resumeId;
+        std::string resumeId;
         uint64_t resumeTtl;
         framing::FieldTable arguments;
         uint32_t msgCredit;
@@ -99,7 +100,7 @@ class SemanticState : private boost::noncopyable {
         typedef boost::shared_ptr<ConsumerImpl> shared_ptr;
 
         ConsumerImpl(SemanticState* parent, 
-                     const string& name, Queue::shared_ptr queue,
+                     const std::string& name, boost::shared_ptr<Queue> queue,
                      bool ack, bool acquire, bool exclusive,
                      const std::string& resumeId, uint64_t resumeTtl, const framing::FieldTable& arguments);
         ~ConsumerImpl();
@@ -122,7 +123,7 @@ class SemanticState : private boost::noncopyable {
         void flush();
         void stop();
         void complete(DeliveryRecord&);    
-        Queue::shared_ptr getQueue() const { return queue; }
+        boost::shared_ptr<Queue> getQueue() const { return queue; }
         bool isBlocked() const { return blocked; }
         bool setBlocked(bool set) { std::swap(set, blocked); return set; }
 
@@ -164,8 +165,8 @@ class SemanticState : private boost::noncopyable {
     boost::shared_ptr<Exchange> cacheExchange;
     AclModule* acl;
     const bool authMsg;
-    const string userID;
-    const string userName;
+    const std::string userID;
+    const std::string userName;
     const bool isDefaultRealm;
     bool closeComplete;
 
@@ -194,17 +195,17 @@ class SemanticState : private boost::noncopyable {
      * @exception: ChannelException if no queue of that name is found.
      * @exception: ConnectionException if name="" and session has no default.
      */
-    Queue::shared_ptr getQueue(const std::string& name) const;
+    boost::shared_ptr<Queue> getQueue(const std::string& name) const;
     
-    bool exists(const string& consumerTag);
+    bool exists(const std::string& consumerTag);
 
-    void consume(const string& destination, 
-                 Queue::shared_ptr queue, 
+    void consume(const std::string& destination, 
+                 boost::shared_ptr<Queue> queue, 
                  bool ackRequired, bool acquire, bool exclusive,
-                 const string& resumeId=string(), uint64_t resumeTtl=0,
+                 const std::string& resumeId=std::string(), uint64_t resumeTtl=0,
                  const framing::FieldTable& = framing::FieldTable());
 
-    void cancel(const string& tag);
+    void cancel(const std::string& tag);
 
     void setWindowMode(const std::string& destination);
     void setCreditMode(const std::string& destination);

@@ -41,7 +41,7 @@ class FanOutExchange : public virtual Exchange {
         
     QPID_BROKER_EXTERN FanOutExchange(const std::string& name,
                                       management::Manageable* parent = 0, Broker* broker = 0);
-    QPID_BROKER_EXTERN FanOutExchange(const string& _name,
+    QPID_BROKER_EXTERN FanOutExchange(const std::string& _name,
                                       bool _durable, 
                                       const qpid::framing::FieldTable& _args,
                                       management::Manageable* parent = 0, Broker* broker = 0);
@@ -59,7 +59,7 @@ class FanOutExchange : public virtual Exchange {
                                           const qpid::framing::FieldTable* args);
 
     QPID_BROKER_EXTERN virtual bool isBound(Queue::shared_ptr queue,
-                                            const string* const routingKey,
+                                            const std::string* const routingKey,
                                             const qpid::framing::FieldTable* const args);
 
     QPID_BROKER_EXTERN virtual ~FanOutExchange();

@@ -82,7 +82,7 @@ class Queue;
     {
         HandlerHelper(SemanticState& s) : HandlerImpl(s) {}
 
-        Queue::shared_ptr getQueue(const string& name) const;
+        boost::shared_ptr<Queue> getQueue(const std::string& name) const;
     };
 
 
@@ -156,7 +156,7 @@ class Queue;
 
       public:
         MessageHandlerImpl(SemanticState& session);
-        void transfer(const string& destination,
+        void transfer(const std::string& destination,
                       uint8_t acceptMode,
                       uint8_t acquireMode);
         
@@ -164,34 +164,34 @@ class Queue;
         
         void reject(const framing::SequenceSet& commands,
                     uint16_t code,
-                    const string& text);
+                    const std::string& text);
         
         void release(const framing::SequenceSet& commands,
                      bool setRedelivered);
         
         framing::MessageAcquireResult acquire(const framing::SequenceSet&);
 
-        void subscribe(const string& queue,
-                       const string& destination,
+        void subscribe(const std::string& queue,
+                       const std::string& destination,
                        uint8_t acceptMode,
                        uint8_t acquireMode,
                        bool exclusive,
-                       const string& resumeId,
+                       const std::string& resumeId,
                        uint64_t resumeTtl,
                        const framing::FieldTable& arguments);
         
-        void cancel(const string& destination);
+        void cancel(const std::string& destination);
         
-        void setFlowMode(const string& destination,
+        void setFlowMode(const std::string& destination,
                          uint8_t flowMode);
         
-        void flow(const string& destination,
+        void flow(const std::string& destination,
                   uint8_t unit,
                   uint32_t value);
         
-        void flush(const string& destination);
+        void flush(const std::string& destination);
         
-        void stop(const string& destination);
+        void stop(const std::string& destination);
 
         framing::MessageResumeResult resume(const std::string& destination,
                                             const std::string& resumeId);
@@ -204,7 +204,7 @@ class Queue;
         ExecutionHandlerImpl(SemanticState& session) : HandlerHelper(session) {}
 
         void sync();            
-        void result(const framing::SequenceNumber& commandId, const string& value);        
+        void result(const framing::SequenceNumber& commandId, const std::string& value);        
         void exception(uint16_t errorCode,
                        const framing::SequenceNumber& commandId,
                        uint8_t classCode,

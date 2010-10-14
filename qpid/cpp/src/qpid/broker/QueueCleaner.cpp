@@ -18,6 +18,7 @@
  * under the License.
  *
  */
+#include "qpid/broker/Queue.h"
 #include "qpid/broker/QueueCleaner.h"
 
 #include "qpid/broker/Broker.h"

@@ -94,7 +94,7 @@ class Connection : public sys::ConnectionInputHandler,
     SessionHandler& getChannel(framing::ChannelId channel);
 
     /** Close the connection */
-    void close(framing::connection::CloseCode code, const string& text);
+    void close(framing::connection::CloseCode code, const std::string& text);
 
     // ConnectionInputHandler methods
     void received(framing::AMQFrame& frame);
@@ -116,7 +116,7 @@ class Connection : public sys::ConnectionInputHandler,
     std::string getAuthMechanism();
     std::string getAuthCredentials();
     void notifyConnectionForced(const std::string& text);
-    void setUserId(const string& uid);
+    void setUserId(const std::string& uid);
     void raiseConnectEvent();
     const std::string& getUserId() const { return ConnectionState::getUserId(); }
     const std::string& getMgmtId() const { return mgmtId; }
@@ -158,7 +158,7 @@ class Connection : public sys::ConnectionInputHandler,
 
   private:
     typedef boost::ptr_map<framing::ChannelId, SessionHandler> ChannelMap;
-    typedef std::vector<Queue::shared_ptr>::iterator queue_iterator;
+    typedef std::vector<boost::shared_ptr<Queue> >::iterator queue_iterator;
 
     ChannelMap channels;
     qpid::sys::SecuritySettings securitySettings;

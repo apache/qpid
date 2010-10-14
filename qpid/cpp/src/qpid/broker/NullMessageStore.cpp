@@ -85,11 +85,11 @@ void NullMessageStore::stage(const intrusive_ptr<PersistableMessage>&) {}
 
 void NullMessageStore::destroy(PersistableMessage&) {}
 
-void NullMessageStore::appendContent(const intrusive_ptr<const PersistableMessage>&, const string&) {}
+void NullMessageStore::appendContent(const intrusive_ptr<const PersistableMessage>&, const std::string&) {}
 
 void NullMessageStore::loadContent(const qpid::broker::PersistableQueue&,
                                    const intrusive_ptr<const PersistableMessage>&,
-                                   string&, uint64_t, uint32_t)
+                                   std::string&, uint64_t, uint32_t)
 {
     throw qpid::framing::InternalErrorException("Can't load content; persistence not enabled");
 }
@@ -139,7 +139,7 @@ void NullMessageStore::abort(TransactionContext& ctxt)
     prepared.erase(DummyCtxt::getXid(ctxt));
 }
 
-void NullMessageStore::collectPreparedXids(std::set<string>& out)
+void NullMessageStore::collectPreparedXids(std::set<std::string>& out)
 {
     out.insert(prepared.begin(), prepared.end());
 }

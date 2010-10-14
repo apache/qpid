@@ -23,6 +23,7 @@
 #include "qpid/broker/SessionState.h"
 #include "qpid/broker/Bridge.h"
 #include "qpid/broker/Broker.h"
+#include "qpid/broker/Queue.h"
 #include "qpid/sys/SecuritySettings.h"
 #include "qpid/sys/ClusterSafe.h"
 
@@ -273,7 +274,7 @@ void Connection::closed(){ // Physically closed, suspend open sessions.
         while (!channels.empty())
             ptr_map_ptr(channels.begin())->handleDetach();
         while (!exclusiveQueues.empty()) {
-            Queue::shared_ptr q(exclusiveQueues.front());
+            boost::shared_ptr<Queue> q(exclusiveQueues.front());
             q->releaseExclusiveOwnership();
             if (q->canAutoDelete()) {
                 Queue::tryAutoDelete(broker, q);

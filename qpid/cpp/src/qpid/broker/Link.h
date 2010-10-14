@@ -37,7 +37,6 @@
 namespace qpid {
     namespace broker {
 
-        using std::string;
         class LinkRegistry;
         class Broker;
         class Connection;
@@ -47,13 +46,13 @@ namespace qpid {
             sys::Mutex          lock;
             LinkRegistry*       links;
             MessageStore*       store;
-            string        host;
+            std::string        host;
             uint16_t      port;
-            string        transport;
+            std::string        transport;
             bool          durable;
-            string        authMechanism;
-            string        username;
-            string        password;
+            std::string        authMechanism;
+            std::string        username;
+            std::string        password;
             mutable uint64_t    persistenceId;
             qmf::org::apache::qpid::broker::Link* mgmtObject;
             Broker* broker;
@@ -93,13 +92,13 @@ namespace qpid {
 
             Link(LinkRegistry* links,
                  MessageStore* store,
-                 string&       host,
+                 std::string&       host,
                  uint16_t      port,
-                 string&       transport,
+                 std::string&       transport,
                  bool          durable,
-                 string&       authMechanism,
-                 string&       username,
-                 string&       password,
+                 std::string&       authMechanism,
+                 std::string&       username,
+                 std::string&       password,
                  Broker*       broker,
                  management::Manageable* parent = 0);
             virtual ~Link();
@@ -117,9 +116,9 @@ namespace qpid {
             void setConnection(Connection*); // Set pointer to the AMQP Connection
             void reconnect(const Address&); //called by LinkRegistry
 
-            string getAuthMechanism() { return authMechanism; }
-            string getUsername()      { return username; }
-            string getPassword()      { return password; }
+            std::string getAuthMechanism() { return authMechanism; }
+            std::string getUsername()      { return username; }
+            std::string getPassword()      { return password; }
             Broker* getBroker()       { return broker; }
 
             void notifyConnectionForced(const std::string text);
@@ -130,7 +129,7 @@ namespace qpid {
             uint64_t getPersistenceId() const { return persistenceId; }
             uint32_t encodedSize() const;
             void     encode(framing::Buffer& buffer) const; 
-            const string& getName() const;
+            const std::string& getName() const;
 
             static Link::shared_ptr decode(LinkRegistry& links, framing::Buffer& buffer);
 

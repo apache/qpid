@@ -60,11 +60,11 @@ class HeadersExchange : public virtual Exchange {
 
     struct FedUnbindModifier
     {
-        string fedOrigin;
+        std::string fedOrigin;
         bool shouldUnbind;
         bool shouldPropagate;
         FedUnbindModifier();
-        FedUnbindModifier(string & origin);
+        FedUnbindModifier(std::string & origin);
         bool operator()(BoundKey & bk);
     };
 
@@ -82,9 +82,9 @@ class HeadersExchange : public virtual Exchange {
   public:
     static const std::string typeName;
 
-    QPID_BROKER_EXTERN HeadersExchange(const string& name,
+    QPID_BROKER_EXTERN HeadersExchange(const std::string& name,
                                        management::Manageable* parent = 0, Broker* broker = 0);
-    QPID_BROKER_EXTERN HeadersExchange(const string& _name,
+    QPID_BROKER_EXTERN HeadersExchange(const std::string& _name,
                                        bool _durable, 
                                        const qpid::framing::FieldTable& _args,
                                        management::Manageable* parent = 0, Broker* broker = 0);
@@ -92,17 +92,17 @@ class HeadersExchange : public virtual Exchange {
     virtual std::string getType() const { return typeName; }            
         
     QPID_BROKER_EXTERN virtual bool bind(Queue::shared_ptr queue,
-                                         const string& routingKey,
+                                         const std::string& routingKey,
                                          const qpid::framing::FieldTable* args);
 
-    virtual bool unbind(Queue::shared_ptr queue, const string& routingKey, const qpid::framing::FieldTable* args);
+    virtual bool unbind(Queue::shared_ptr queue, const std::string& routingKey, const qpid::framing::FieldTable* args);
 
     QPID_BROKER_EXTERN virtual void route(Deliverable& msg,
-                                          const string& routingKey,
+                                          const std::string& routingKey,
                                           const qpid::framing::FieldTable* args);
 
     QPID_BROKER_EXTERN virtual bool isBound(Queue::shared_ptr queue,
-                                            const string* const routingKey,
+                                            const std::string* const routingKey,
                                             const qpid::framing::FieldTable* const args);
 
     QPID_BROKER_EXTERN virtual ~HeadersExchange();

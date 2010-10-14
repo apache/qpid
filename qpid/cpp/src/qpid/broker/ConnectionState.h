@@ -61,16 +61,16 @@ class ConnectionState : public ConnectionToken, public management::Manageable
     void setHeartbeat(uint16_t hb) { heartbeat = hb; }
     void setHeartbeatMax(uint16_t hbm) { heartbeatmax = hbm; }
 
-    virtual void setUserId(const string& uid) {  userId = uid; }
-    const string& getUserId() const { return userId; }
+    virtual void setUserId(const std::string& uid) {  userId = uid; }
+    const std::string& getUserId() const { return userId; }
 
-    void setUrl(const string& _url) { url = _url; }
-    const string& getUrl() const { return url; }
+    void setUrl(const std::string& _url) { url = _url; }
+    const std::string& getUrl() const { return url; }
 
     void setFederationLink(bool b) {  federationLink = b; }
     bool isFederationLink() const { return federationLink; }
-    void setFederationPeerTag(const string& tag) { federationPeerTag = string(tag); }
-    const string& getFederationPeerTag() const { return federationPeerTag; }
+    void setFederationPeerTag(const std::string& tag) { federationPeerTag = std::string(tag); }
+    const std::string& getFederationPeerTag() const { return federationPeerTag; }
     std::vector<Url>& getKnownHosts() { return knownHosts; }
     
     void setClientThrottling(bool set=true) { clientSupportsThrottling = set; }
@@ -79,7 +79,7 @@ class ConnectionState : public ConnectionToken, public management::Manageable
     Broker& getBroker() { return broker; }
 
     Broker& broker;
-    std::vector<Queue::shared_ptr> exclusiveQueues;
+    std::vector<boost::shared_ptr<Queue> > exclusiveQueues;
 
     //contained output tasks
     sys::AggregateOutput outputTasks;
@@ -104,10 +104,10 @@ class ConnectionState : public ConnectionToken, public management::Manageable
     uint32_t framemax;
     uint16_t heartbeat;
     uint16_t heartbeatmax;
-    string userId;
-    string url;
+    std::string userId;
+    std::string url;
     bool federationLink;
-    string federationPeerTag;
+    std::string federationPeerTag;
     std::vector<Url> knownHosts;
     bool clientSupportsThrottling;
     framing::FrameHandler* clusterOrderOut;

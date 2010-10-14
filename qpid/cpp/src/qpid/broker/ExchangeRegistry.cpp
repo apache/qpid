@@ -31,6 +31,7 @@
 using namespace qpid::broker;
 using namespace qpid::sys;
 using std::pair;
+using std::string;
 using qpid::framing::FieldTable;
 
 pair<Exchange::shared_ptr, bool> ExchangeRegistry::declare(const string& name, const string& type){

@@ -30,6 +30,7 @@
 
 using boost::dynamic_pointer_cast;
 using boost::intrusive_ptr;
+using std::string;
 
 namespace qpid {
 namespace broker {
