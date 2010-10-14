@@ -671,7 +671,7 @@ public class DurableSubscriptionTest extends QpidBrokerTestCase
      * <li>create another durable subscriber with a different selector and same name
      * <li>check first subscriber is now closed
      * <li>create a publisher and send messages
-     * <li>check messages are recieved correctly
+     * <li>check messages are received correctly
      * </ul>
      * <p>
      * QPID-2418
@@ -704,6 +704,8 @@ public class DurableSubscriptionTest extends QpidBrokerTestCase
             e.printStackTrace();
         }
 
+        conn.stop();
+        
         // Send 1 matching message and 1 non-matching message
         MessageProducer producer = session.createProducer(topic);
         TextMessage msg = session.createTextMessage("testResubscribeWithChangedSelectorAndRestart1");
@@ -718,6 +720,8 @@ public class DurableSubscriptionTest extends QpidBrokerTestCase
         AMQQueue queue = new AMQQueue("amq.topic", "clientid" + ":" + "testResubscribeWithChangedSelectorNoClose");
         assertEquals("Queue depth is wrong", isJavaBroker() ? 1 : 2, ((AMQSession<?, ?>) session).getQueueDepth(queue));
 
+        conn.start();
+        
         Message rMsg = subB.receive(1000);
         assertNotNull(rMsg);
         assertEquals("Content was wrong", 
@@ -768,6 +772,8 @@ public class DurableSubscriptionTest extends QpidBrokerTestCase
             e.printStackTrace();
         }
 
+        conn.stop();
+        
         // Send 1 matching message and 1 non-matching message
         MessageProducer producer = session.createProducer(topic);
         TextMessage msg = session.createTextMessage("testResubscribeWithChangedSelectorAndRestart1");
@@ -781,6 +787,8 @@ public class DurableSubscriptionTest extends QpidBrokerTestCase
         // (1 for the java broker due to use of server side selectors, and 2 for the cpp broker due to client side selectors only)
         AMQQueue queue = new AMQQueue("amq.topic", "clientid" + ":" + "subscriptionName");
         assertEquals("Queue depth is wrong", isJavaBroker() ? 1 : 2, ((AMQSession<?, ?>) session).getQueueDepth(queue));
+        
+        conn.start();
         
         Message rMsg = subTwo.receive(1000);
         assertNotNull(rMsg);
