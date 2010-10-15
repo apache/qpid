@@ -80,13 +80,15 @@ class Session : public qpid::messaging::Handle<SessionImpl>
      */
     QPID_MESSAGING_EXTERN void acknowledge(Message&, bool sync=false);
     /**
-     * Rejects the specified message. The broker does not redeliver
-     * a message that has been rejected.
+     * Rejects the specified message. The broker does not redeliver a
+     * message that has been rejected. Once a message has been
+     * acknowledged, it can no longer be rejected.
      */
     QPID_MESSAGING_EXTERN void reject(Message&);
     /**
-     * Releases the specified message. The broker may
-     * redeliver the message.
+     * Releases the specified message. The broker may redeliver the
+     * message. One a message has been acknowledged, it can no longer
+     * be released.
      */
     QPID_MESSAGING_EXTERN void release(Message&);
 
