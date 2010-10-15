@@ -77,7 +77,7 @@ public class ConnectionCloseTest extends QpidBrokerTestCase
         // This should leave the finalizer enough time to notify those threads 
         synchronized (this)
         {
-            this.wait(10000);
+            this.wait(60000);
         }
 
         Map<Thread,StackTraceElement[]> after = Thread.getAllStackTraces();
@@ -92,7 +92,7 @@ public class ConnectionCloseTest extends QpidBrokerTestCase
 
         assertTrue("Spurious thread creation exceeded threshold, " +
                    delta.size() + " threads created.",
-                   delta.size() < 50);
+                   delta.size() < 100);
     }
 
     private void dumpStacks(Map<Thread,StackTraceElement[]> map)

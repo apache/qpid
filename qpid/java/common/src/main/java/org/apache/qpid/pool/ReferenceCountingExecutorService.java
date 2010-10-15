@@ -27,6 +27,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.apache.qpid.thread.Threading;
+
 /**
  * ReferenceCountingExecutorService wraps an ExecutorService in order to provide shared reference to it. It counts
  * the references taken, instantiating the service on the first reference, and shutting it down when the last
@@ -83,9 +85,11 @@ public class ReferenceCountingExecutorService
     private AtomicInteger _refCount = new AtomicInteger(0);
 
     /** Holds the number of executor threads to create. */
-    private int _poolSize = Integer.getInteger("amqj.read_write_pool_size", DEFAULT_POOL_SIZE);
+    private final int _poolSize = Integer.getInteger("amqj.read_write_pool_size", DEFAULT_POOL_SIZE);
 
-    private final boolean _useBiasedPool = Boolean.getBoolean("org.apache.qpid.use_write_biased_pool");
+    private final boolean _useFixedPool = Boolean.getBoolean("qpid.useFixedPool");
+    
+    private final boolean _useBiasedPool = Boolean.getBoolean("qpid.useWriteBiasedPool");
 
     /**
      * Retrieves the singleton instance of this reference counter.
@@ -112,18 +116,24 @@ public class ReferenceCountingExecutorService
     {
         if (_refCount.getAndIncrement() == 0)
         {
-//                _pool = Executors.newFixedThreadPool(_poolSize);
-
-            // Use a job queue that biases to writes
-            if(_useBiasedPool)
+            if (_useBiasedPool)
             {
+	            // Use a job queue that biases to writes
                 _pool =  new ThreadPoolExecutor(_poolSize, _poolSize,
                                       0L, TimeUnit.MILLISECONDS,
-                                      new ReadWriteJobQueue());
+                                      new ReadWriteJobQueue(),
+                                      Threading.getThreadFactory(),
+                                      new ThreadPoolExecutor.AbortPolicy());
+            }
+            else if (_useFixedPool)
+            {
+	            // Use a fixed size pool of threads
+                _pool = Executors.newFixedThreadPool(_poolSize, Threading.getThreadFactory());
             }
             else
             {
-                _pool = Executors.newFixedThreadPool(_poolSize);
+	            // Use a thread pool that caches threads
+                _pool = Executors.newCachedThreadPool(Threading.getThreadFactory());
             }
 	    }
 

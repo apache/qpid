@@ -183,7 +183,7 @@ public class AMQMessageDelegate_0_8 extends AbstractAMQMessageDelegate
         else
         {
             SoftReference<Destination> ref = _destinationCache.get(replyToEncoding);
-            Destination dest = ref.get();
+            Destination dest = ref == null ? null : ref.get();
             if (dest == null)
             {
                 try

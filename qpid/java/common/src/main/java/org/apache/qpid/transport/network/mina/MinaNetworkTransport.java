@@ -108,7 +108,7 @@ public class MinaNetworkTransport implements IncomingNetworkTransport, OutgoingN
         if (_settings.getProtocol().equalsIgnoreCase(Transport.TCP))
         {
 	        _address = new InetSocketAddress(_settings.getHost(), _settings.getPort());
-	        _connector = new SocketConnector(_threads, _executor); // non-blocking connector
+	        _connector = new SocketConnector(1, _executor); // non-blocking connector
         }
         else if (_settings.getProtocol().equalsIgnoreCase(Transport.UDP))
         {
@@ -133,7 +133,7 @@ public class MinaNetworkTransport implements IncomingNetworkTransport, OutgoingN
                                                    "with 'socket://<SocketID>' transport");
             }
 	        _address = socket.getRemoteSocketAddress();
-            _connector = new ExistingSocketConnector(_threads, _executor);
+            _connector = new ExistingSocketConnector(1, _executor);
             ((ExistingSocketConnector) _connector).setOpenSocket(socket);
         }
         else
@@ -271,7 +271,7 @@ public class MinaNetworkTransport implements IncomingNetworkTransport, OutgoingN
         {
             _receiver.closed();
         }
-        if (_session != null && _session.isConnected())
+        if (_session != null)
         {
             _session.close();
         }

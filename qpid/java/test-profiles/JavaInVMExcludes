@@ -18,6 +18,8 @@ org.apache.qpid.test.client.QueueBrowserTransactedTest#testFailoverWithQueueBrow
 org.apache.qpid.test.testcases.FailoverTest#*
 org.apache.qpid.test.client.failover.FailoverTest#*
 org.apache.qpid.server.failover.MessageDisappearWithIOExceptionTest#*
+org.apache.qpid.test.unit.publish.DirtyTransactedPublishTest#*
+org.apache.qpid.test.unit.ack.RecoverTest#*
 
 // The FirewallPlugin only operates for TCP connections, the tests NO-OP when run InVM
 org.apache.qpid.server.security.firewall.FirewallConfigTest#*

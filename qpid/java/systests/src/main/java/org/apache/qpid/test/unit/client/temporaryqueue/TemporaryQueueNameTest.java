@@ -30,9 +30,12 @@ import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.ssl.SSLContextFactory;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
+import org.apache.qpid.transport.ConnectionSettings;
 import org.apache.qpid.transport.TestNetworkConnection;
 import org.apache.qpid.transport.TestNetworkTransport;
+import org.apache.qpid.transport.network.Transport;
 
 public class TemporaryQueueNameTest extends QpidBrokerTestCase
 {
@@ -40,7 +43,7 @@ public class TemporaryQueueNameTest extends QpidBrokerTestCase
     {
         public QueueNameSession(AMQProtocolHandler protocolHandler, AMQConnection connection)
         {
-            super(protocolHandler,connection);
+            super(protocolHandler, connection);
         }
 
         public AMQShortString genQueueName()
@@ -48,19 +51,31 @@ public class TemporaryQueueNameTest extends QpidBrokerTestCase
             return generateQueueName();
         }
     }
+ 
+    private class QueueNameProtocolHandler extends AMQProtocolHandler
+    {
+        public QueueNameProtocolHandler(AMQConnection connection)
+        {
+            super(connection);
+        }
+
+        @Override
+        public SocketAddress getLocalAddress()
+        {
+            return _transport.getAddress();
+        }
+    }
 
     private QueueNameSession _queueNameSession;
-    private TestNetworkTransport _transport = new TestNetworkTransport();
-    private TestNetworkConnection _network = new TestNetworkConnection();
+    private TestNetworkTransport _transport;
 
     protected void setUp() throws Exception
     {
         super.setUp();
         AMQConnection con = (AMQConnection) getConnection("guest", "guest");
-
-        AMQProtocolHandler protocolHandler = new AMQProtocolHandler(con);
-        protocolHandler.connect(_transport, _network);
-        _queueNameSession = new QueueNameSession(protocolHandler , con);
+        QueueNameProtocolHandler queueNameHandler = new QueueNameProtocolHandler(con);
+        _queueNameSession = new QueueNameSession(queueNameHandler , con);
+        _transport = new TestNetworkTransport();
     }
     
     public void testTemporaryQueueWildcard() throws UnknownHostException

@@ -30,7 +30,7 @@ public final class Threading
     static {
         try
         {
-            String factoryName = System.getProperty("qpid.thread_factory");
+            String factoryName = System.getProperty("qpid.threadFactory");
             if (factoryName == null)
             {
                 _factory = Executors.defaultThreadFactory();

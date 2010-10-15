@@ -58,6 +58,7 @@ public class PrincipalDatabaseAuthenticationManager implements AuthenticationMan
     private Map<String, Map<String, ?>> _serverCreationProperties = new HashMap<String, Map<String, ?>>();
 
     private AuthenticationManager _default = null;
+ 
     /** The name for the required SASL Server mechanisms */
     public static final String PROVIDER_NAME= "AMQSASLProvider-Server";
 
@@ -74,6 +75,7 @@ public class PrincipalDatabaseAuthenticationManager implements AuthenticationMan
 
         if (name == null || hostConfig == null)
         {
+	        Security.removeProvider(PROVIDER_NAME);
             initialiseAuthenticationMechanisms(providerMap, ApplicationRegistry.getInstance().getDatabaseManager().getDatabases());
         }
         else
@@ -82,7 +84,6 @@ public class PrincipalDatabaseAuthenticationManager implements AuthenticationMan
 
             if (databaseName == null)
             {
-
                 _default = ApplicationRegistry.getInstance().getAuthenticationManager();
                 return;
             }

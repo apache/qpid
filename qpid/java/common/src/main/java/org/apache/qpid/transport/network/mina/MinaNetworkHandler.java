@@ -21,6 +21,7 @@
 package org.apache.qpid.transport.network.mina;
 
 import static org.apache.qpid.transport.util.Functions.*;
+import static org.apache.qpid.configuration.ClientProperties.*;
 
 import org.apache.mina.common.ByteBuffer;
 import org.apache.mina.common.IdleStatus;
@@ -45,9 +46,6 @@ import org.slf4j.LoggerFactory;
 public class MinaNetworkHandler extends IoHandlerAdapter 
 {
     private static final Logger _log = LoggerFactory.getLogger(MinaNetworkHandler.class);
-    
-    /** Default buffer size for pending messages reads */
-    private static final String DEFAULT_READ_BUFFER_LIMIT = "262144";
     
     private NetworkTransport _transport = null;
     private SSLContextFactory _sslFactory = null;
@@ -117,12 +115,12 @@ public class MinaNetworkHandler extends IoHandlerAdapter
         }
         
         // Add IO Protection Read Filter
-        if (Boolean.getBoolean("qpid.protectio"))
+        if (Boolean.getBoolean(PROTECTIO_PROP_NAME))
         {
             try
             {
                 ReadThrottleFilterBuilder readFilter = new ReadThrottleFilterBuilder();
-                readFilter.setMaximumConnectionBufferSize(Integer.parseInt(System.getProperty("qpid.read.buffer.limit", DEFAULT_READ_BUFFER_LIMIT)));
+                readFilter.setMaximumConnectionBufferSize(Integer.getInteger(READ_BUFFER_LIMIT_PROP_NAME, READ_BUFFER_LIMIT_DEFAULT));
                 readFilter.attach(chain);
                 _log.info("Using IO Read/Write Filter Protection");
             }

@@ -23,7 +23,6 @@ package org.apache.qpid.configuration;
  */
 public class ClientProperties
 {
-  
     /**
      * Currently with Qpid it is not possible to change the client ID.
      * If one is not specified upon connection construction, an id is generated automatically.
@@ -86,7 +85,7 @@ public class ClientProperties
     
     public static final String USE_LEGACY_MAP_MESSAGE_FORMAT = "qpid.use_legacy_map_message";
 
-     /**
+    /*
      * ==========================================================
      * Those properties are used when the io size should be bounded
      * ==========================================================
@@ -99,7 +98,7 @@ public class ClientProperties
      * speed.
      * type: boolean
      */
-    public static final String PROTECTIO_PROP_NAME = "protectio";
+    public static final String PROTECTIO_PROP_NAME = "qpid.protectio";
 
     //=== The following properties are only used when the previous one is true.
     /**
@@ -107,28 +106,14 @@ public class ClientProperties
      * type: int
      */
     public static final String READ_BUFFER_LIMIT_PROP_NAME = "qpid.read.buffer.limit";
-    public static final String READ_BUFFER_LIMIT_DEFAULT = "262144";
+    public static final Integer READ_BUFFER_LIMIT_DEFAULT = 256 * 1024;
+
     /**
      * Max size of written messages that can be stored within the MINA layer
      * type: int
      */
-    public static final String WRITE_BUFFER_LIMIT_PROP_NAME = "qpid.read.buffer.limit";
-    public static final String WRITE_BUFFER_LIMIT_DEFAULT = "262144";
+    public static final String WRITE_BUFFER_LIMIT_PROP_NAME = "qpid.write.buffer.limit";
+    public static final Integer WRITE_BUFFER_LIMIT_DEFAULT = 256 * 1024;
 
     public static final String AMQP_VERSION = "qpid.amqp.version";
-    
-    private static ClientProperties _instance = new ClientProperties();
-    
-    /*
-    public static final QpidProperty<Boolean>  IGNORE_SET_CLIENTID_PROP_NAME = 
-        QpidProperty.booleanProperty(false,"qpid.ignore_set_client_id","ignore_setclientID");
-    
-    public static final QpidProperty<Boolean> SYNC_PERSISTENT_PROP_NAME =
-        QpidProperty.booleanProperty(false,"qpid.sync_persistence","sync_persistence");
-    
-    
-    public static final QpidProperty<Integer> MAX_PREFETCH_PROP_NAME =
-        QpidProperty.intProperty(500,"qpid.max_prefetch","max_prefetch"); */
-    
-    
 }
