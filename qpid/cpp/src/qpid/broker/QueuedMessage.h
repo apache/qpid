@@ -34,10 +34,9 @@ struct QueuedMessage
     framing::SequenceNumber position;
     Queue* queue;
 
-    QueuedMessage() : queue(0) {}
+    QueuedMessage(Queue* q=0) : position(0), queue(q) {}
     QueuedMessage(Queue* q, boost::intrusive_ptr<Message> msg, framing::SequenceNumber sn) : 
         payload(msg), position(sn), queue(q) {}
-    QueuedMessage(Queue* q) : queue(q) {}
     
 };
     inline bool operator<(const QueuedMessage& a, const QueuedMessage& b) { return a.position < b.position; } 

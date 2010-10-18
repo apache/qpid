@@ -70,6 +70,7 @@ namespace broker {
 
 class ExpiryPolicy;
 class Message;
+class Cluster;
 
 static const  uint16_t DEFAULT_PORT=5672;
 
@@ -153,6 +154,7 @@ public:
     std::auto_ptr<management::ManagementAgent> managementAgent;
     ProtocolFactoryMap protocolFactories;
     std::auto_ptr<MessageStore> store;
+    std::auto_ptr<Cluster> cluster;
     AclModule* acl;
     DataDir dataDir;
 
@@ -272,6 +274,9 @@ public:
 
     void setClusterUpdatee(bool set) { clusterUpdatee = set; }
     bool isClusterUpdatee() const { return clusterUpdatee; }
+
+    QPID_BROKER_EXTERN void setCluster(std::auto_ptr<Cluster> c) { cluster = c; }
+    QPID_BROKER_EXTERN Cluster& getCluster() { return *cluster; }
 
     management::ManagementAgent* getManagementAgent() { return managementAgent.get(); }
     
