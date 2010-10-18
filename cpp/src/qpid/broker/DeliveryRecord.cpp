@@ -112,7 +112,7 @@ void DeliveryRecord::complete()  {
 
 bool DeliveryRecord::accept(TransactionContext* ctxt) {
     if (acquired && !ended) {
-        queue->dequeue(ctxt, msg);
+        queue->accept(ctxt, msg);
         setEnded();
         QPID_LOG(debug, "Accepted " << id);
     }
@@ -130,19 +130,8 @@ void DeliveryRecord::committed() const{
 }
 
 void DeliveryRecord::reject() 
-{    
-    Exchange::shared_ptr alternate = queue->getAlternateExchange();
-    if (alternate) {
-        DeliverableMessage delivery(msg.payload);
-        alternate->route(delivery, msg.payload->getRoutingKey(), msg.payload->getApplicationHeaders());
-        QPID_LOG(info, "Routed rejected message from " << queue->getName() << " to " 
-                 << alternate->getName());
-    } else {
-        //just drop it
-        QPID_LOG(info, "Dropping rejected message from " << queue->getName());
-    }
-
-    dequeue();
+{
+    queue->reject(msg);
 }
 
 uint32_t DeliveryRecord::getCredit() const
@@ -156,7 +145,7 @@ void DeliveryRecord::acquire(DeliveryIds& results) {
         results.push_back(id);
         if (!acceptExpected) {
             if (ended) { QPID_LOG(error, "Can't dequeue ended message"); }
-            else { queue->dequeue(0, msg); setEnded(); }
+            else { queue->accept(0, msg); setEnded(); }
         }
     } else {
         QPID_LOG(info, "Message already acquired " << id.getValue());

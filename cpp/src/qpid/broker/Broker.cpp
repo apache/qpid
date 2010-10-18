@@ -24,6 +24,7 @@
 #include "qpid/broker/FanOutExchange.h"
 #include "qpid/broker/HeadersExchange.h"
 #include "qpid/broker/MessageStoreModule.h"
+#include "qpid/broker/NullCluster.h"
 #include "qpid/broker/NullMessageStore.h"
 #include "qpid/broker/RecoveryManagerImpl.h"
 #include "qpid/broker/SaslAuthenticator.h"
@@ -146,6 +147,7 @@ Broker::Broker(const Broker::Options& conf) :
                                                           conf.qmf2Support)
                                     : 0),
     store(new NullMessageStore),
+    cluster(new NullCluster),
     acl(0),
     dataDir(conf.noDataDir ? std::string() : conf.dataDir),
     queues(this),
