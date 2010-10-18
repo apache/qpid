@@ -271,6 +271,28 @@ public class ConnectionTest extends QpidBrokerTestCase
         }
         connection.close();
     }
+    
+    public void testUnsupportedSASLMechanism() throws Exception
+    {
+        BrokerDetails broker = getBroker();
+        broker.setProperty(BrokerDetails.OPTIONS_SASL_MECHS, "MY_MECH");
+
+        try
+        {
+            Connection connection = new AMQConnection(broker.toString(), "guest", "guest",
+                    null, "test");
+            connection.close();
+            fail("The client should throw a ConnectionException stating the" +
+            		" broker does not support the SASL mech specified by the client");
+        }
+        catch (Exception e)
+        {
+            assertTrue("Incorrect exception thrown",
+                       e.getMessage().contains("The following SASL mechanisms " +
+                       "[MY_MECH]"  + 
+                       " specified by the client are not supported by the broker"));
+        }
+    }
 
     public static junit.framework.Test suite()
     {
