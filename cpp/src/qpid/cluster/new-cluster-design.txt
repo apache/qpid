@@ -75,6 +75,8 @@ Use a moving queue ownership protocol to agree order of dequeues, rather
 than relying on identical state and lock-step behavior to cause
 identical dequeues on each broker.
 
+Clearly defined interface between broker code and cluster plug-in.
+
 *** Requirements
 
 The cluster must provide these delivery guarantees: 
@@ -365,3 +367,4 @@ there a better term?
 Clustering and scalability: new design may give us the flexibility to
 address scalability as part of cluster design. Think about
 relationship to federation and "fragmented queues" idea.
+
