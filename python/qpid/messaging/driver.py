@@ -791,6 +791,7 @@ class Engine:
   def do_execution_result(self, er):
     sst = self.get_sst(er)
     sst.results[er.command_id] = er.value
+    sst.executed.add(er.id)
 
   def do_execution_exception(self, ex):
     sst = self.get_sst(ex)
