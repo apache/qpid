@@ -512,5 +512,9 @@ void Broker::setClusterTimer(std::auto_ptr<sys::Timer> t) {
 
 const std::string Broker::TCP_TRANSPORT("tcp");
 
+void Broker::setCluster(std::auto_ptr<Cluster> c) { cluster = c; }
+
+Cluster& Broker::getCluster() { return *cluster; }
+
 }} // namespace qpid::broker
 
