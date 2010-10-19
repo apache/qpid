@@ -144,7 +144,7 @@ QPID_AUTO_TEST_CASE(testSimplePubSub) {
 
     // Queue creation
     Sender sender = f.s.createSender("q;{create:always,delete:always}");
-    int i = 0;
+    size_t i = 0;
     BOOST_CHECK_EQUAL(h.at(i++), "createq(q)"); // Note: at() does bounds checking.
     BOOST_CHECK_EQUAL(h.size(), i);
 
@@ -199,7 +199,7 @@ QPID_AUTO_TEST_CASE(testReleaseReject) {
     // Explicit release
     f.s.release(m);
     f.s.sync();
-    int i = 0;
+    size_t i = 0;
     BOOST_CHECK_EQUAL(h.at(i++), "release(q, 1, a)");
     BOOST_CHECK_EQUAL(h.size(), i);
 
@@ -291,7 +291,7 @@ QPID_AUTO_TEST_CASE(testFanout) {
     r1.setCapacity(0);          // Don't receive immediately.
     r2.setCapacity(0);
     h.clear();
-    int i = 0;
+    size_t i = 0;
 
     // Send message
     sender.send(Message("a"));
@@ -336,7 +336,7 @@ QPID_AUTO_TEST_CASE(testRingQueue) {
     c.close();
     Sender sender = f.s.createSender("ring");
     
-    int i = 0;
+    size_t i = 0;
     // Send message
     sender.send(Message("a"));
     sender.send(Message("b"));
@@ -388,7 +388,7 @@ QPID_AUTO_TEST_CASE(testTransactions) {
     vector<string>& h = f.dc->history;
     Session ts = f.c.createTransactionalSession();
     Sender sender = ts.createSender("q;{create:always,delete:always}");
-    int i = 0;
+    size_t i = 0;
     BOOST_CHECK_EQUAL(h.at(i++), "createq(q)"); // Note: at() does bounds checking.
     BOOST_CHECK_EQUAL(h.size(), i);
 
