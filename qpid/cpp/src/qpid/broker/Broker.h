@@ -275,8 +275,8 @@ public:
     void setClusterUpdatee(bool set) { clusterUpdatee = set; }
     bool isClusterUpdatee() const { return clusterUpdatee; }
 
-    QPID_BROKER_EXTERN void setCluster(std::auto_ptr<Cluster> c) { cluster = c; }
-    QPID_BROKER_EXTERN Cluster& getCluster() { return *cluster; }
+    QPID_BROKER_EXTERN void setCluster(std::auto_ptr<Cluster> c);
+    QPID_BROKER_EXTERN Cluster& getCluster();
 
     management::ManagementAgent* getManagementAgent() { return managementAgent.get(); }
     
