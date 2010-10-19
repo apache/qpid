@@ -50,7 +50,6 @@ fi
 if $cygwin; then
     SEP=";"
     CLASSPATH=`cygpath -w $CLASSPATH`
-    CLASSPATH=$CLASSPATH$SEP`cygpath -w $QPIDLIB/backport-util-concurrent-2.2.jar`
     CLASSPATH=$CLASSPATH$SEP`cygpath -w $QPIDLIB/geronimo-jms_1.1_spec-1.0.jar`
     CLASSPATH=$CLASSPATH$SEP`cygpath -w $QPIDLIB/commons-collections-3.1.jar`
     CLASSPATH=$CLASSPATH$SEP`cygpath -w $QPIDLIB/commons-configuration-1.2.jar`
@@ -59,8 +58,8 @@ if $cygwin; then
     CLASSPATH=$CLASSPATH$SEP`cygpath -w $QPIDLIB/commons-logging-api-1.0.4.jar`
     CLASSPATH=$CLASSPATH$SEP`cygpath -w $QPIDLIB/commons-logging-1.0.jar`
     CLASSPATH=$CLASSPATH$SEP`cygpath -w $QPIDLIB/log4j-1.2.12.jar`
-    CLASSPATH=$CLASSPATH$SEP`cygpath -w $QPIDLIB/mina-core-1.0.0.jar`
-    CLASSPATH=$CLASSPATH$SEP`cygpath -w $QPIDLIB/mina-filter-ssl-1.0.0.jar`
+    CLASSPATH=$CLASSPATH$SEP`cygpath -w $QPIDLIB/mina-core-1.1.7.jar`
+    CLASSPATH=$CLASSPATH$SEP`cygpath -w $QPIDLIB/mina-filter-ssl-1.1.7.jar`
     CLASSPATH=$CLASSPATH$SEP`cygpath -w $QPIDLIB/mina-java5-1.0.0.jar`
     CLASSPATH=$CLASSPATH$SEP`cygpath -w $QPIDLIB/slf4j-simple-1.0.jar`
     export CLASSPATH

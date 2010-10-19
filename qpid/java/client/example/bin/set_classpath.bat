@@ -27,7 +27,6 @@ set QPIDLIB=%QPID_HOME%\lib
 
 if "%CLASSPATH%" == "" GOTO ERROR_CLASSPATH
 
-set CLASSPATH=%CLASSPATH%;%QPIDLIB%\backport-util-concurrent-2.2.jar
 set CLASSPATH=%CLASSPATH%;%QPIDLIB%\geronimo-jms_1.1_spec-1.0.jar
 set CLASSPATH=%CLASSPATH%;%QPIDLIB%\commons-collections-3.1.jar
 set CLASSPATH=%CLASSPATH%;%QPIDLIB%\commons-configuration-1.2.jar
@@ -36,8 +35,8 @@ set CLASSPATH=%CLASSPATH%;%QPIDLIB%\commons-lang-2.1.jar
 set CLASSPATH=%CLASSPATH%;%QPIDLIB%\commons-logging-api-1.0.4.jar
 set CLASSPATH=%CLASSPATH%;%QPIDLIB%\commons-logging-1.0.jar
 set CLASSPATH=%CLASSPATH%;%QPIDLIB%\log4j-1.2.12.jar
-set CLASSPATH=%CLASSPATH%;%QPIDLIB%\mina-core-1.0.0.jar
-set CLASSPATH=%CLASSPATH%;%QPIDLIB%\mina-filter-ssl-1.0.0.jar
+set CLASSPATH=%CLASSPATH%;%QPIDLIB%\mina-core-1.1.7.jar
+set CLASSPATH=%CLASSPATH%;%QPIDLIB%\mina-filter-ssl-1.1.7.jar
 set CLASSPATH=%CLASSPATH%;%QPIDLIB%\mina-java5-1.0.0.jar
 set CLASSPATH=%CLASSPATH%;%QPIDLIB%\slf4j-simple-1.0.jar
 
