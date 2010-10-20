@@ -28,6 +28,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
@@ -57,6 +58,14 @@ public class BrokerInstance
 {
     private static Logger _logger;
 
+    // Unique identity generator for connections to the broker
+    private static AtomicLong _idGenerator;
+    
+    public static long getNextConnectionId()
+    {
+        return _idGenerator.incrementAndGet();
+    }
+    
     public void shutdown()
     {
         ApplicationRegistry.remove();
@@ -102,7 +111,7 @@ public class BrokerInstance
         catch (NumberFormatException e)
         {
             System.err.println("Log watch configuration value of " + watch + " is invalid. Must be "
-                               + "a non-negative integer. Using default of zero (no watching configured");
+                               + "a non-negative integer. Using default of zero (no watching configured)");
         }
 
         String log4j = options.getValue(BrokerOptions.LOG4J, System.getProperty("log4j.configuration"));
@@ -110,14 +119,13 @@ public class BrokerInstance
         if (log4j != null)
         {
             logConfigFile = new File(log4j);
-            configureLogging(logConfigFile, logWatchTime);
         }
         else
         {
             File configFileDirectory = configFile.getParentFile();
             logConfigFile = new File(configFileDirectory, BrokerOptions.DEFAULT_LOG_CONFIG_FILENAME);
-            configureLogging(logConfigFile, logWatchTime);
         }
+        configureLogging(logConfigFile, logWatchTime);
 
         ConfigurationFileApplicationRegistry config = new ConfigurationFileApplicationRegistry(configFile);
         ServerConfiguration serverConfig = config.getConfiguration();
@@ -127,6 +135,7 @@ public class BrokerInstance
 
         // Initialise application registry
         ApplicationRegistry.initialise(config);
+        _idGenerator = new AtomicLong(0L);
 
         // We have already loaded the BrokerMessages class by this point so we
         // need to refresh the locale setting in case we had a different value in

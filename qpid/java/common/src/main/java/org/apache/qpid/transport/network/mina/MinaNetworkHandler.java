@@ -106,11 +106,11 @@ public class MinaNetworkHandler extends IoHandlerAdapter
         {
 	        if (_factory != null)
 	        {
-	            chain.addBefore("protocolFilter", "sslFilter", new SSLFilter(_sslFactory.buildServerContext()));
+	            chain.addFirst("sslFilter", new SSLFilter(_sslFactory.buildServerContext()));
 	        }
 	        else
 	        {
-	            chain.addBefore("protocolFilter", "sslFilter", new SSLFilter(_sslFactory.buildClientContext()));
+	            chain.addFirst("sslFilter", new SSLFilter(_sslFactory.buildClientContext()));
 	        }
         }
         

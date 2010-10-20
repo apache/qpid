@@ -28,6 +28,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.log4j.Logger;
+import org.apache.qpid.server.BrokerInstance;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.actors.GenericActor;
 import org.apache.qpid.server.logging.messages.ConnectionMessages;
@@ -43,8 +44,6 @@ import org.apache.qpid.transport.network.NetworkTransport;
 public class BrokerReceiver implements Receiver<java.nio.ByteBuffer>, LogSubject
 {
     private static final Logger _logger = Logger.getLogger(BrokerReceiver.class);
-
-    private static final AtomicLong _idGenerator = new AtomicLong(0);
 
     private long _connectionId;
     private NetworkConnection _network;
@@ -68,7 +67,7 @@ public class BrokerReceiver implements Receiver<java.nio.ByteBuffer>, LogSubject
         _transport = transport;
         _network = network;
         _sender = _network.getSender();
-        _connectionId = _idGenerator.incrementAndGet();
+        _connectionId = BrokerInstance.getNextConnectionId();
         
         GenericActor.getInstance(this).message(ConnectionMessages.OPEN(null, null, false, false));
     }
