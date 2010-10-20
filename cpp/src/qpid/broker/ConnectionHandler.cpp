@@ -20,6 +20,7 @@
  *
  */
 
+#include "qpid/SaslFactory.h"
 #include "qpid/broker/ConnectionHandler.h"
 #include "qpid/broker/Connection.h"
 #include "qpid/broker/SecureConnection.h"
@@ -49,6 +50,7 @@ const std::string CLIENT_PROCESS_NAME("qpid.client_process");
 const std::string CLIENT_PID("qpid.client_pid");
 const std::string CLIENT_PPID("qpid.client_ppid");
 const int SESSION_FLOW_CONTROL_VER = 1;
+const std::string SPACE(" ");
 }
 
 void ConnectionHandler::close(connection::CloseCode code, const string& text)
@@ -106,7 +108,10 @@ ConnectionHandler::Handler::Handler(Connection& c, bool isClient, bool isShadow)
         boost::shared_ptr<FieldValue> l(new Str16Value(en_US));
         locales.add(l);
         proxy.start(properties, mechanisms, locales);
+        
     }
+
+    maxFrameSize = (64 * 1024) - 1;
 }
 
 
@@ -230,33 +235,105 @@ void ConnectionHandler::Handler::heartbeat(){
 }
 
 void ConnectionHandler::Handler::start(const FieldTable& serverProperties,
-                                       const framing::Array& /*mechanisms*/,
+                                       const framing::Array& supportedMechanisms,
                                        const framing::Array& /*locales*/)
 {
-    string mechanism = connection.getAuthMechanism();
+    string requestedMechanism = connection.getAuthMechanism();
     string response  = connection.getAuthCredentials();
+
+    std::string username = connection.getUsername();
+    std::string password = connection.getPassword();
+    std::string host     = connection.getHost();
+    std::string service("qpidd");
+
+    sasl = SaslFactory::getInstance().create( username,
+                                              password,
+                                              service,
+                                              host,
+                                              0,   // TODO -- mgoulish Fri Sep 24 06:41:26 EDT 2010
+                                              256  /* TODO -- mgoulish*/ );
+    std::string supportedMechanismsList;
+    bool requestedMechanismIsSupported = false;
+    Array::const_iterator i;
+
+    /*
+      If no specific mechanism has been requested, just make
+      a list of all of them, and assert that the one the caller
+      requested is there.  ( If *any* are supported! )
+    */
+    if ( requestedMechanism.empty() ) {
+        for ( i = supportedMechanisms.begin(); i != supportedMechanisms.end(); ++i) {
+            if (i != supportedMechanisms.begin())
+                supportedMechanismsList += SPACE;
+            supportedMechanismsList += (*i)->get<std::string>();
+            requestedMechanismIsSupported = true;
+        }
+    }
+    else {
+        requestedMechanismIsSupported = false;
+        /*
+          The caller has requested a mechanism.  If it's available,
+          make sure it ends up at the head of the list.
+        */
+        for ( i = supportedMechanisms.begin(); i != supportedMechanisms.end(); ++i) {
+            string currentMechanism = (*i)->get<std::string>();
+
+            if ( requestedMechanism == currentMechanism ) {
+                requestedMechanismIsSupported = true;
+                supportedMechanismsList = currentMechanism + SPACE + supportedMechanismsList;
+            } else {
+                if (i != supportedMechanisms.begin())
+                    supportedMechanismsList += SPACE;
+                supportedMechanismsList += currentMechanism;
+            }
+        }
+    }
 
     connection.setFederationPeerTag(serverProperties.getAsString(QPID_FED_TAG));
 
     FieldTable ft;
     ft.setInt(QPID_FED_LINK,1);
     ft.setString(QPID_FED_TAG, connection.getBroker().getFederationTag());
-    proxy.startOk(ft, mechanism, response, en_US);
+
+    if (sasl.get()) {
+        string response =
+            sasl->start ( requestedMechanism.empty()
+                              ? supportedMechanismsList
+                              : requestedMechanism,
+                          getSecuritySettings 
+                              ? getSecuritySettings()
+                              : 0
+                        );
+        proxy.startOk ( ft, sasl->getMechanism(), response, en_US );
+    }
+    else {
+        string response = ((char)0) + username + ((char)0) + password;
+        proxy.startOk ( ft, requestedMechanism, response, en_US );
+    }
+
 }
 
-void ConnectionHandler::Handler::secure(const string& /*challenge*/)
+void ConnectionHandler::Handler::secure(const string& challenge )
 {
-    proxy.secureOk("");
+    if (sasl.get()) {
+        string response = sasl->step(challenge);
+        proxy.secureOk(response);
+    }
+    else {
+        proxy.secureOk("");
+    }
 }
 
 void ConnectionHandler::Handler::tune(uint16_t channelMax,
-                                      uint16_t frameMax,
+                                      uint16_t maxFrameSizeProposed,
                                       uint16_t /*heartbeatMin*/,
                                       uint16_t heartbeatMax)
 {
-    connection.setFrameMax(frameMax);
+    maxFrameSize = std::min(maxFrameSize, maxFrameSizeProposed);
+    connection.setFrameMax(maxFrameSize);
+
     connection.setHeartbeat(heartbeatMax);
-    proxy.tuneOk(channelMax, frameMax, heartbeatMax);
+    proxy.tuneOk(channelMax, maxFrameSize, heartbeatMax);
     proxy.open("/", Array(), true);
 }
 
@@ -266,6 +343,17 @@ void ConnectionHandler::Handler::openOk(const framing::Array& knownHosts)
         Url url((*i)->get<std::string>());
         connection.getKnownHosts().push_back(url);
     }
+
+    if (sasl.get()) {
+        std::auto_ptr<qpid::sys::SecurityLayer> securityLayer = sasl->getSecurityLayer(maxFrameSize);
+
+        if ( securityLayer.get() ) {
+          secured->activateSecurityLayer(securityLayer, true);
+        }
+
+        saslUserId = sasl->getUserId();
+    }
+
     isOpen = true;
 }
 

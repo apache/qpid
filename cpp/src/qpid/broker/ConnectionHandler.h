@@ -22,6 +22,7 @@
 #define _ConnectionAdapter_
 
 #include <memory>
+#include "qpid/Sasl.h"
 #include "qpid/broker/SaslAuthenticator.h"
 #include "qpid/framing/amqp_types.h"
 #include "qpid/framing/AMQFrame.h"
@@ -33,8 +34,16 @@
 #include "qpid/framing/ProtocolVersion.h"
 #include "qpid/Exception.h"
 #include "qpid/broker/AclModule.h"
+#include "qpid/sys/SecurityLayer.h"
+
 
 namespace qpid {
+
+namespace sys {
+struct SecuritySettings;
+}
+
+
 namespace broker {
 
 class Connection;
@@ -79,6 +88,12 @@ class ConnectionHandler : public framing::FrameHandler
         void openOk(const framing::Array& knownHosts);
 
         void redirect(const std::string& host, const framing::Array& knownHosts);
+
+        std::auto_ptr<Sasl> sasl;
+        typedef boost::function<const qpid::sys::SecuritySettings*()> GetSecuritySettings;
+        GetSecuritySettings  getSecuritySettings;     /* query the transport for its security details */
+        std::string saslUserId;
+        uint16_t maxFrameSize;
     };
     std::auto_ptr<Handler> handler;
 

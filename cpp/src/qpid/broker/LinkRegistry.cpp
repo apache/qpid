@@ -312,6 +312,42 @@ std::string LinkRegistry::getAuthCredentials(const std::string& key)
     return result;
 }
 
+std::string LinkRegistry::getUsername(const std::string& key)
+{
+    Link::shared_ptr link = findLink(key);
+    if (!link)
+        return string();
+
+    return link->getUsername();
+}
+
+std::string LinkRegistry::getHost(const std::string& key)
+{
+    Link::shared_ptr link = findLink(key);
+    if (!link)
+        return string();
+
+    return link->getHost();
+}
+
+uint16_t LinkRegistry::getPort(const std::string& key)
+{
+    Link::shared_ptr link = findLink(key);
+    if (!link)
+        return 0;
+
+    return link->getPort();
+}
+
+std::string LinkRegistry::getPassword(const std::string& key)
+{
+    Link::shared_ptr link = findLink(key);
+    if (!link)
+        return string();
+
+    return link->getPassword();
+}
+
 std::string LinkRegistry::getAuthIdentity(const std::string& key)
 {
     Link::shared_ptr link = findLink(key);

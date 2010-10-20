@@ -18,8 +18,7 @@
  * under the License.
  *
  */
-#include "qpid/client/SaslFactory.h"
-#include "qpid/client/ConnectionSettings.h"
+#include "qpid//SaslFactory.h"
 #include <map>
 #include <string.h>
 
@@ -30,7 +29,6 @@
 #ifndef HAVE_SASL
 
 namespace qpid {
-namespace client {
 
 //Null implementation
 
@@ -47,7 +45,7 @@ SaslFactory& SaslFactory::getInstance()
     return *instance;
 }
 
-std::auto_ptr<Sasl> SaslFactory::create(const ConnectionSettings&)
+std::auto_ptr<Sasl> SaslFactory::create( const std::string &, const std::string &, const std::string &, const std::string &, int, int )
 {
     return std::auto_ptr<Sasl>();
 }
@@ -55,7 +53,7 @@ std::auto_ptr<Sasl> SaslFactory::create(const ConnectionSettings&)
 qpid::sys::Mutex SaslFactory::lock;
 std::auto_ptr<SaslFactory> SaslFactory::instance;
 
-}} // namespace qpid::client
+} // namespace qpid
 
 #else
 
@@ -69,7 +67,6 @@ std::auto_ptr<SaslFactory> SaslFactory::instance;
 #include <strings.h>
 
 namespace qpid {
-namespace client {
 
 using qpid::sys::SecurityLayer;
 using qpid::sys::SecuritySettings;
@@ -78,10 +75,42 @@ using qpid::framing::InternalErrorException;
 
 const size_t MAX_LOGIN_LENGTH = 50;
 
+struct CyrusSaslSettings
+{
+    CyrusSaslSettings ( ) :
+        username ( std::string(0) ),
+        password ( std::string(0) ),
+        service  ( std::string(0) ),
+        host     ( std::string(0) ),
+        minSsf ( 0 ),
+        maxSsf ( 0 )
+    {
+    }
+
+    CyrusSaslSettings ( const std::string & user, const std::string & password, const std::string & service, const std::string & host, int minSsf, int maxSsf ) :
+        username(user),
+        password(password),
+        service(service),
+        host(host),
+        minSsf(minSsf),
+        maxSsf(maxSsf)
+    {
+    }
+
+    std::string username,
+                password,
+                service,
+                host;
+
+    int minSsf,
+        maxSsf;
+};
+
+
 class CyrusSasl : public Sasl
 {
   public:
-    CyrusSasl(const ConnectionSettings&);
+    CyrusSasl(const std::string & username, const std::string & password, const std::string & serviceName, const std::string & hostName, int minSsf, int maxSsf);
     ~CyrusSasl();
     std::string start(const std::string& mechanisms, const SecuritySettings* externalSettings);
     std::string step(const std::string& challenge);
@@ -91,7 +120,7 @@ class CyrusSasl : public Sasl
   private:
     sasl_conn_t* conn;    
     sasl_callback_t callbacks[5];//realm, user, authname, password, end-of-list
-    ConnectionSettings settings;
+    CyrusSaslSettings settings;
     std::string input;
     std::string mechanism;
     char login[MAX_LOGIN_LENGTH];
@@ -130,13 +159,14 @@ SaslFactory& SaslFactory::getInstance()
     return *instance;
 }
 
-std::auto_ptr<Sasl> SaslFactory::create(const ConnectionSettings& settings)
+std::auto_ptr<Sasl> SaslFactory::create(const std::string & username, const std::string & password, const std::string & serviceName, const std::string & hostName, int minSsf, int maxSsf)
 {
-    std::auto_ptr<Sasl> sasl(new CyrusSasl(settings));
+    std::auto_ptr<Sasl> sasl(new CyrusSasl(username, password, serviceName, hostName, minSsf, maxSsf));
     return sasl;
 }
 
-CyrusSasl::CyrusSasl(const ConnectionSettings& s) : conn(0), settings(s) 
+CyrusSasl::CyrusSasl(const std::string & username, const std::string & password, const std::string & serviceName, const std::string & hostName, int minSsf, int maxSsf)
+    : conn(0), settings(username, password, serviceName, hostName, minSsf, maxSsf) 
 {
     size_t i = 0;
 
@@ -336,7 +366,7 @@ std::auto_ptr<SecurityLayer> CyrusSasl::getSecurityLayer(uint16_t maxFrameSize)
 int getUserFromSettings(void* context, int /*id*/, const char** result, unsigned* /*len*/)
 {
     if (context) {
-        *result = ((ConnectionSettings*) context)->username.c_str();
+        *result = ((CyrusSaslSettings*) context)->username.c_str();
         QPID_LOG(debug, "getUserFromSettings(): " << (*result));
         return SASL_OK;
     } else {
@@ -345,7 +375,7 @@ int getUserFromSettings(void* context, int /*id*/, const char** result, unsigned
 }
 
 namespace {
-// Global map of secrest allocated for SASL connections via callback
+// Global map of secrets allocated for SASL connections via callback
 // to getPasswordFromSettings. Ensures secrets are freed.
 class SecretsMap {
     typedef std::map<sasl_conn_t*, void*> Map;
@@ -368,11 +398,11 @@ SecretsMap getPasswordFromSettingsSecrets;
 int getPasswordFromSettings(sasl_conn_t* conn, void* context, int /*id*/, sasl_secret_t** psecret)
 {
     if (context) {
-        size_t length = ((ConnectionSettings*) context)->password.size();
+        size_t length = ((CyrusSaslSettings*) context)->password.size();
         sasl_secret_t* secret = (sasl_secret_t*) malloc(sizeof(sasl_secret_t) + length);
         getPasswordFromSettingsSecrets.keep(conn, secret);
         secret->len = length;
-        memcpy(secret->data, ((ConnectionSettings*) context)->password.data(), length);
+        memcpy(secret->data, ((CyrusSaslSettings*) context)->password.data(), length);
         *psecret = secret;
         return SASL_OK;
     } else {
@@ -380,6 +410,6 @@ int getPasswordFromSettings(sasl_conn_t* conn, void* context, int /*id*/, sasl_s
     }
 }
 
-}} // namespace qpid::client
+} // namespace qpid
 
 #endif

@@ -712,7 +712,6 @@ else (CMAKE_SYSTEM_NAME STREQUAL Windows)
   )
 
   set (qpidclient_platform_SOURCES
-     qpid/client/SaslFactory.cpp
   )
 
   set (qpidd_platform_SOURCES
@@ -732,6 +731,7 @@ set (qpidcommon_SOURCES
      qpid/Options.cpp
      qpid/Plugin.cpp
      qpid/RefCountedBuffer.cpp
+     qpid/SaslFactory.cpp
      qpid/SessionState.cpp
      qpid/SessionId.cpp
      qpid/StringUtils.cpp
