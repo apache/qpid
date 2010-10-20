@@ -19,24 +19,13 @@
  *
  */
 #include "qpid/broker/FanOutExchange.h"
+#include "qpid/broker/FedOps.h"
 #include <algorithm>
 
 using namespace qpid::broker;
 using namespace qpid::framing;
 using namespace qpid::sys;
 namespace _qmf = qmf::org::apache::qpid::broker;
-
-namespace 
-{
-const std::string qpidFedOp("qpid.fed.op");
-const std::string qpidFedTags("qpid.fed.tags");
-const std::string qpidFedOrigin("qpid.fed.origin");
-
-const std::string fedOpBind("B");
-const std::string fedOpUnbind("U");
-const std::string fedOpReorigin("R");
-const std::string fedOpHello("H");
-}
 
 FanOutExchange::FanOutExchange(const std::string& _name, Manageable* _parent, Broker* b) :
     Exchange(_name, _parent, b)

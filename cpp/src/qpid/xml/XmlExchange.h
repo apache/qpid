@@ -33,41 +33,45 @@
 
 #include <map>
 #include <vector>
+#include <string>
+
+using namespace std;
 
 namespace qpid {
 namespace broker {
 
 class Broker;
+
+typedef boost::shared_ptr<XQQuery> Query;
+
+struct XmlBinding : public Exchange::Binding {
+
+     static XQilla xqilla;
+
+     typedef boost::shared_ptr<XmlBinding> shared_ptr;
+     typedef qpid::sys::CopyOnWriteArray<XmlBinding::shared_ptr> vector;
+    
+     Query xquery;
+     bool parse_message_content;
+     const std::string fedOrigin;   // empty for local bindings
+    
+     XmlBinding(const std::string& key, const Queue::shared_ptr queue, const std::string& fedOrigin, Exchange* parent, 
+                const ::qpid::framing::FieldTable& _arguments, const std::string& );
+        
+};
+
 class XmlExchange : public virtual Exchange {
 
-    typedef boost::shared_ptr<XQQuery> Query;
-
-    struct XmlBinding : public Exchange::Binding {
-        typedef boost::shared_ptr<XmlBinding> shared_ptr;
-        typedef qpid::sys::CopyOnWriteArray<XmlBinding::shared_ptr> vector;
-
-        boost::shared_ptr<XQQuery> xquery;
-        bool parse_message_content;
-
-        XmlBinding(const std::string& key, const Queue::shared_ptr queue, Exchange* parent, 
-		   const ::qpid::framing::FieldTable& _arguments, Query query):
-            Binding(key, queue, parent, _arguments),
-	      xquery(query),
-                parse_message_content(true) { startManagement(); }
-    };
-
-        
-    typedef std::map<std::string, XmlBinding::vector > XmlBindingsMap;
-
+    typedef std::map<string, XmlBinding::vector> XmlBindingsMap;
     XmlBindingsMap bindingsMap;
-    XQilla xqilla;
+
     qpid::sys::RWlock lock;
 
     bool matches(Query& query, Deliverable& msg, const qpid::framing::FieldTable* args, bool parse_message_content);
 
   public:
     static const std::string typeName;
-        
+
     XmlExchange(const std::string& name, management::Manageable* parent = 0, Broker* broker = 0);
     XmlExchange(const std::string& _name, bool _durable,
 		const qpid::framing::FieldTable& _args, management::Manageable* parent = 0, Broker* broker = 0);
@@ -82,7 +86,29 @@ class XmlExchange : public virtual Exchange {
 
     virtual bool isBound(Queue::shared_ptr queue, const std::string* const routingKey, const qpid::framing::FieldTable* const args);
 
+    virtual void propagateFedOp(const std::string& bindingKey, const std::string& fedTags, const std::string& fedOp, const std::string& fedOrigin, const qpid::framing::FieldTable* args=0);
+
+    virtual bool fedUnbind(const std::string& fedOrigin, const std::string& fedTags, Queue::shared_ptr queue, const std::string& bindingKey, const  qpid::framing::FieldTable* args);
+    
+    virtual void fedReorigin();
+
+    virtual bool supportsDynamicBinding() { return true; }
+
     virtual ~XmlExchange();
+
+    struct MatchOrigin {
+        const std::string origin;
+        MatchOrigin(const std::string& origin);
+        bool operator()(XmlBinding::shared_ptr b);
+    };
+
+    struct MatchQueueAndOrigin {
+        const Queue::shared_ptr queue;
+        const std::string origin;
+        MatchQueueAndOrigin(Queue::shared_ptr queue, const std::string& origin);
+        bool operator()(XmlBinding::shared_ptr b);
+    };
+
 };
 
 

@@ -94,10 +94,11 @@ bool HeadersExchange::bind(Queue::shared_ptr queue, const string& bindingKey, co
         fedTags = args->getAsString(qpidFedTags);
         fedOrigin = args->getAsString(qpidFedOrigin);
     }
+
     bool propagate = false;
 
     // The federation args get propagated directly, so we need to identify
-    // the non feteration args in case a federated propagate is needed
+    // the non federation args in case a federated propagate is needed
     FieldTable extra_args;
     getNonFedArgs(args, extra_args);
     

@@ -21,6 +21,7 @@
 
 #include "qpid/broker/Exchange.h"
 #include "qpid/broker/ExchangeRegistry.h"
+#include "qpid/broker/FedOps.h"
 #include "qpid/broker/Broker.h"
 #include "qpid/broker/Cluster.h"
 #include "qpid/management/ManagementAgent.h"
@@ -43,19 +44,10 @@ namespace _qmf = qmf::org::apache::qpid::broker;
 
 namespace
 {
-const std::string qpidMsgSequence("qpid.msg_sequence");
-const std::string qpidSequenceCounter("qpid.sequence_counter");
-const std::string qpidIVE("qpid.ive");
-const std::string qpidFedOp("qpid.fed.op");
-const std::string qpidFedTags("qpid.fed.tags");
-const std::string qpidFedOrigin("qpid.fed.origin");
-
-const std::string fedOpBind("B");
-const std::string fedOpUnbind("U");
-const std::string fedOpReorigin("R");
-const std::string fedOpHello("H");
-
-const std::string QPID_MANAGEMENT("qpid.management");
+    const std::string qpidMsgSequence("qpid.msg_sequence");
+    const std::string qpidSequenceCounter("qpid.sequence_counter");
+    const std::string qpidIVE("qpid.ive");
+    const std::string QPID_MANAGEMENT("qpid.management");
 }
 
 
