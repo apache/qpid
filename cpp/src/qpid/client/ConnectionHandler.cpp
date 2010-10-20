@@ -21,7 +21,7 @@
 
 #include "qpid/client/ConnectionHandler.h"
 
-#include "qpid/client/SaslFactory.h"
+#include "qpid/SaslFactory.h"
 #include "qpid/client/Bounds.h"
 #include "qpid/framing/amqp_framing.h"
 #include "qpid/framing/all_method_bodies.h"
@@ -208,7 +208,13 @@ void ConnectionHandler::start(const FieldTable& /*serverProps*/, const Array& me
 {
     checkState(NOT_STARTED, INVALID_STATE_START);
     setState(NEGOTIATING);
-    sasl = SaslFactory::getInstance().create(*this);
+    sasl = SaslFactory::getInstance().create( username,
+                                              password,
+                                              service,
+                                              host,
+                                              minSsf,
+                                              maxSsf
+                                            );
 
     std::string mechlist;
     bool chosenMechanismSupported = mechanism.empty();

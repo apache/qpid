@@ -30,7 +30,7 @@ def Usage(short=False):
     print "Usage:  qpid-route [OPTIONS] dynamic add <dest-broker> <src-broker> <exchange> [tag] [exclude-list]"
     print "        qpid-route [OPTIONS] dynamic del <dest-broker> <src-broker> <exchange>"
     print
-    print "        qpid-route [OPTIONS] route add   <dest-broker> <src-broker> <exchange> <routing-key> [tag] [exclude-list]"
+    print "        qpid-route [OPTIONS] route add   <dest-broker> <src-broker> <exchange> <routing-key> [tag] [exclude-list] [mechanism]"
     print "        qpid-route [OPTIONS] route del   <dest-broker> <src-broker> <exchange> <routing-key>"
     print "        qpid-route [OPTIONS] queue add   <dest-broker> <src-broker> <exchange> <queue>"
     print "        qpid-route [OPTIONS] queue del   <dest-broker> <src-broker> <exchange> <queue>"
@@ -98,7 +98,7 @@ class RouteManager:
                 return link
         return None
 
-    def addLink(self, remoteBroker):
+    def addLink(self, remoteBroker, mech="PLAIN"):
         self.remote = BrokerURL(remoteBroker)
         if self.local.match(self.remote.host, self.remote.port):
             raise Exception("Linking broker to itself is not permitted")
@@ -107,10 +107,6 @@ class RouteManager:
         broker = brokers[0]
         link = self.getLink()
         if link == None:
-            if not self.remote.authName or self.remote.authName == "anonymous":
-                mech = "ANONYMOUS"
-            else:
-                mech = "PLAIN"
             res = broker.connect(self.remote.host, self.remote.port, _durable,
                                  mech, self.remote.authName or "", self.remote.authPass or "",
                                  _transport)
@@ -231,11 +227,11 @@ class RouteManager:
             if b[0] != self.local.name():
                 self.qmf.delBroker(b[1])
 
-    def addRoute(self, remoteBroker, exchange, routingKey, tag, excludes, dynamic=False):
+    def addRoute(self, remoteBroker, exchange, routingKey, tag, excludes, mech="PLAIN", dynamic=False):
         if dynamic and _srclocal:
             raise Exception("--src-local is not permitted on dynamic routes")
 
-        self.addLink(remoteBroker)
+        self.addLink(remoteBroker, mech)
         link = self.getLink()
         if link == None:
             raise Exception("Link failed to create")
@@ -494,9 +490,10 @@ try:
 
             tag = ""
             excludes = ""
+            mech = "PLAIN"
             if nargs > 5: tag = cargs[5]     
             if nargs > 6: excludes = cargs[6]     
-            rm.addRoute(remoteBroker, cargs[4], "", tag, excludes, dynamic=True)
+            rm.addRoute(remoteBroker, cargs[4], "", tag, excludes, mech, dynamic=True)
         elif cmd == "del":
             if nargs != 5:
                 Usage()
@@ -505,14 +502,16 @@ try:
 
     elif group == "route":
         if cmd == "add":
-            if nargs < 6 or nargs > 8:
+            if nargs < 6 or nargs > 9:
                 Usage()
 
             tag = ""
             excludes = ""
+            mech = "PLAIN"
             if nargs > 6: tag = cargs[6]     
             if nargs > 7: excludes = cargs[7]
-            rm.addRoute(remoteBroker, cargs[4], cargs[5], tag, excludes, dynamic=False)
+            if nargs > 8: mech = cargs[8]
+            rm.addRoute(remoteBroker, cargs[4], cargs[5], tag, excludes, mech, dynamic=False)
         elif cmd == "del":
             if nargs != 6:
                 Usage()

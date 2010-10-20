@@ -115,6 +115,10 @@ class Connection : public sys::ConnectionInputHandler,
     void recordFromClient (framing::AMQFrame& frame);
     std::string getAuthMechanism();
     std::string getAuthCredentials();
+    std::string getUsername();
+    std::string getPassword();
+    std::string getHost();
+    uint16_t    getPort();
     void notifyConnectionForced(const std::string& text);
     void setUserId(const std::string& uid);
     void raiseConnectEvent();

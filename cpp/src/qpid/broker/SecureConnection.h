@@ -49,7 +49,7 @@ class SecureConnection : public qpid::sys::ConnectionCodec
     bool isClosed() const;
     framing::ProtocolVersion getVersion() const;
     void setCodec(std::auto_ptr<ConnectionCodec>);
-    void activateSecurityLayer(std::auto_ptr<qpid::sys::SecurityLayer>);
+    void activateSecurityLayer(std::auto_ptr<qpid::sys::SecurityLayer>, bool secureImmediately=false);
   private:
     std::auto_ptr<ConnectionCodec> codec;
     std::auto_ptr<qpid::sys::SecurityLayer> securityLayer;

@@ -132,6 +132,10 @@ namespace broker {
         std::string getAuthMechanism   (const std::string& key);
         std::string getAuthCredentials (const std::string& key);
         std::string getAuthIdentity    (const std::string& key);
+        std::string getUsername        (const std::string& key);
+        std::string getPassword        (const std::string& key);
+        std::string getHost            (const std::string& key);
+        uint16_t    getPort            (const std::string& key);
 
         /**
          * Called by links failing over to new address

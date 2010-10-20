@@ -1,5 +1,5 @@
-#ifndef QPID_CLIENT_SASLFACTORY_H
-#define QPID_CLIENT_SASLFACTORY_H
+#ifndef QPID_SASLFACTORY_H
+#define QPID_SASLFACTORY_H
 
 /*
  *
@@ -21,12 +21,11 @@
  * under the License.
  *
  */
-#include "qpid/client/Sasl.h"
+#include "qpid/Sasl.h"
 #include "qpid/sys/Mutex.h"
 #include <memory>
 
 namespace qpid {
-namespace client {
 
 /**
  * Factory for instances of the Sasl interface through which Sasl
@@ -35,7 +34,7 @@ namespace client {
 class SaslFactory
 {
   public:
-    std::auto_ptr<Sasl> create(const ConnectionSettings&);
+    std::auto_ptr<Sasl> create(const std::string & userName, const std::string & password, const std::string & serviceName, const std::string & hostName, int minSsf, int maxSsf );
     static SaslFactory& getInstance();
     ~SaslFactory();
   private:
@@ -43,6 +42,6 @@ class SaslFactory
     static qpid::sys::Mutex lock;
     static std::auto_ptr<SaslFactory> instance;
 };
-}} // namespace qpid::client
+} // namespace qpid
 
-#endif  /*!QPID_CLIENT_SASLFACTORY_H*/
+#endif  /*!QPID_SASLFACTORY_H*/
