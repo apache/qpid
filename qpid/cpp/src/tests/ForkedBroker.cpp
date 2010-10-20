@@ -129,7 +129,7 @@ void ForkedBroker::init(const Args& userArgs) {
             if (ferror(f)) throw ErrnoException("Error reading port number from child.");
             else throw qpid::Exception("EOF reading port number from child.");
         }
-        ::close(pipeFds[0]);
+        ::fclose(f);
 	running = true;
     }
     else {                  // child
