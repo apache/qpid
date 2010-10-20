@@ -101,6 +101,13 @@ protected:
     public:
         FedBinding() : localBindings(0) {}
         bool hasLocal() const { return localBindings != 0; }
+
+        /**
+         *  Returns 'true' if and only if this is the first local
+         *  binding.
+         *
+         *  The first local binding may need to be propagated.
+         */
         bool addOrigin(const std::string& origin) {
             if (origin.empty()) {
                 localBindings++;
@@ -113,6 +120,14 @@ protected:
             originSet.erase(origin);
             return true;
         }
+
+        /**
+         *  Returns 'true' if and only if the last local binding is
+         *  deleted.
+         *
+         *  When the last local binding is deleted, it may need to
+         *  be propagated.
+         */
         bool delOrigin() {
             if (localBindings > 0)
                 localBindings--;
@@ -145,6 +160,17 @@ public:
     bool inUseAsAlternate() { return alternateUsers > 0; }
 
     virtual std::string getType() const = 0;
+
+    /**
+     *  bind() is used for two distinct purposes:
+     *
+     *  1. To create a binding, in the conventional sense
+     *
+     *  2. As a vehicle for any FedOp, currently including federated
+     *  binding, federated unbinding, federated reorigin.
+     *
+     */
+
     virtual bool bind(boost::shared_ptr<Queue> queue, const std::string& routingKey, const qpid::framing::FieldTable* args) = 0;
     virtual bool unbind(boost::shared_ptr<Queue> queue, const std::string& routingKey, const qpid::framing::FieldTable* args) = 0;
     virtual bool isBound(boost::shared_ptr<Queue> queue, const std::string* const routingKey, const qpid::framing::FieldTable* const args) = 0;

@@ -19,6 +19,7 @@
  *
  */
 #include "qpid/broker/TopicExchange.h"
+#include "qpid/broker/FedOps.h"
 #include "qpid/log/Statement.h"
 #include <algorithm>
 
@@ -36,19 +37,6 @@ namespace _qmf = qmf::org::apache::qpid::broker;
 // Areas for improvement:
 // - excessive string copying: should be 0 copy, match from original buffer.
 // - match/lookup: use descision tree or other more efficient structure.
-
-namespace 
-{
-const std::string qpidFedOp("qpid.fed.op");
-const std::string qpidFedTags("qpid.fed.tags");
-const std::string qpidFedOrigin("qpid.fed.origin");
-
-const std::string fedOpBind("B");
-const std::string fedOpUnbind("U");
-const std::string fedOpReorigin("R");
-const std::string fedOpHello("H");
-}
-
 
 namespace {
 // Iterate over a string of '.'-separated tokens.
