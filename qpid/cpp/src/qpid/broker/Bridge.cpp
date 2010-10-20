@@ -19,6 +19,7 @@
  *
  */
 #include "qpid/broker/Bridge.h"
+#include "qpid/broker/FedOps.h"
 #include "qpid/broker/ConnectionState.h"
 #include "qpid/broker/Connection.h"
 #include "qpid/broker/Link.h"
@@ -36,18 +37,6 @@ using qpid::framing::Buffer;
 using qpid::management::ManagementAgent;
 using std::string;
 namespace _qmf = qmf::org::apache::qpid::broker;
-
-namespace 
-{
-const std::string qpidFedOp("qpid.fed.op");
-const std::string qpidFedTags("qpid.fed.tags");
-const std::string qpidFedOrigin("qpid.fed.origin");
-
-const std::string fedOpBind("B");
-const std::string fedOpUnbind("U");
-const std::string fedOpReorigin("R");
-const std::string fedOpHello("H");
-}
 
 namespace qpid {
 namespace broker {

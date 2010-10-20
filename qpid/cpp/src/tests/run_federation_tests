@@ -25,29 +25,37 @@ source ./test_env.sh
 
 trap stop_brokers INT TERM QUIT
 
+if [ -f ../.libs/xml.so ] ; then
+    MODULES="--load-module xml" # Load the XML exchange and run XML exchange federation tests
+    SKIPTESTS=""
+else
+    MODULES="--no-module-dir"  
+    SKIPTESTS="-i *xml"
+fi
+
 start_brokers() {
-    ../qpidd --daemon --port 0 --no-data-dir --no-module-dir --auth no > qpidd.port
+    ../qpidd --daemon --port 0 --no-data-dir $MODULES --auth no > qpidd.port
     LOCAL_PORT=`cat qpidd.port`
-    ../qpidd --daemon --port 0 --no-data-dir --no-module-dir --auth no > qpidd.port
+    ../qpidd --daemon --port 0 --no-data-dir $MODULES --auth no > qpidd.port
     REMOTE_PORT=`cat qpidd.port`
 
-    ../qpidd --daemon --port 0 --no-data-dir --no-module-dir --auth no > qpidd.port
+    ../qpidd --daemon --port 0 --no-data-dir $MODULES --auth no > qpidd.port
     REMOTE_B1=`cat qpidd.port`
-    ../qpidd --daemon --port 0 --no-data-dir --no-module-dir --auth no > qpidd.port
+    ../qpidd --daemon --port 0 --no-data-dir $MODULES --auth no > qpidd.port
     REMOTE_B2=`cat qpidd.port`
 }
 
 stop_brokers() {
-        $QPIDD_EXEC --no-module-dir -q --port $LOCAL_PORT
-        $QPIDD_EXEC --no-module-dir -q --port $REMOTE_PORT
-        $QPIDD_EXEC --no-module-dir -q --port $REMOTE_B1
-        $QPIDD_EXEC --no-module-dir -q --port $REMOTE_B2
+        $QPIDD_EXEC $MODULES -q --port $LOCAL_PORT
+        $QPIDD_EXEC $MODULES -q --port $REMOTE_PORT
+        $QPIDD_EXEC $MODULES -q --port $REMOTE_B1
+        $QPIDD_EXEC $MODULES -q --port $REMOTE_B2
 }
 
 if test -d ${PYTHON_DIR} ;  then
     start_brokers
     echo "Running federation tests using brokers on ports $LOCAL_PORT $REMOTE_PORT $REMOTE_B1 $REMOTE_B2"
-    $QPID_PYTHON_TEST -m federation -b localhost:$LOCAL_PORT -Dremote-port=$REMOTE_PORT -Dextra-brokers="$REMOTE_B1 $REMOTE_B2" $@
+    $QPID_PYTHON_TEST -m federation $SKIPTESTS -b localhost:$LOCAL_PORT -Dremote-port=$REMOTE_PORT -Dextra-brokers="$REMOTE_B1 $REMOTE_B2" $@
     RETCODE=$?
     stop_brokers
     if test x$RETCODE != x0; then

@@ -20,6 +20,7 @@
  */
 
 #include "qpid/log/Statement.h"
+#include "qpid/broker/FedOps.h"
 #include "qpid/broker/Queue.h"
 #include "qpid/broker/DirectExchange.h"
 #include <iostream>
@@ -32,15 +33,7 @@ namespace _qmf = qmf::org::apache::qpid::broker;
 
 namespace 
 {
-const std::string qpidFedOp("qpid.fed.op");
-const std::string qpidFedTags("qpid.fed.tags");
-const std::string qpidFedOrigin("qpid.fed.origin");
-const std::string qpidExclusiveBinding("qpid.exclusive-binding");
-
-const std::string fedOpBind("B");
-const std::string fedOpUnbind("U");
-const std::string fedOpReorigin("R");
-const std::string fedOpHello("H");
+    const std::string qpidExclusiveBinding("qpid.exclusive-binding");
 }
 
 DirectExchange::DirectExchange(const string& _name, Manageable* _parent, Broker* b) : Exchange(_name, _parent, b)
@@ -67,7 +60,7 @@ bool DirectExchange::bind(Queue::shared_ptr queue, const string& routingKey, con
         fedOp = args->getAsString(qpidFedOp);
         fedTags = args->getAsString(qpidFedTags);
         fedOrigin = args->getAsString(qpidFedOrigin);
-        exclusiveBinding = args->get(qpidExclusiveBinding);
+        exclusiveBinding = args->get(qpidExclusiveBinding);  // only direct exchanges take exclusive bindings
     }
 
     bool propagate = false;
