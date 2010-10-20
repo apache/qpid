@@ -192,6 +192,38 @@ string Connection::getAuthMechanism()
     return links.getAuthMechanism(mgmtId);
 }
 
+string Connection::getUsername ( )
+{
+    if (!isLink)
+        return string("anonymous");
+
+    return links.getUsername(mgmtId);
+}
+
+string Connection::getPassword ( )
+{
+    if (!isLink)
+        return string("");
+
+    return links.getPassword(mgmtId);
+}
+
+string Connection::getHost ( )
+{
+    if (!isLink)
+        return string("");
+
+    return links.getHost(mgmtId);
+}
+
+uint16_t Connection::getPort ( )
+{
+    if (!isLink)
+        return 0;
+
+    return links.getPort(mgmtId);
+}
+
 string Connection::getAuthCredentials()
 {
     if (!isLink)

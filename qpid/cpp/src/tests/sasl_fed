@@ -1,0 +1,152 @@
+#! /bin/bash
+
+source test_env.sh
+
+minimum_sasl_version="2.1.22"
+if [ ! `pkg-config --atleast-version $minimum_sasl_version cyrus-sasl`]; then
+  echo "sasl_fed requires at least $minimum_sasl_version"
+  exit 0
+fi
+
+let minimum_sasl_version=$((2 * 65536 + 1 * 256 + 22))
+sasl_version_numbers=(`rpm -q cyrus-sasl-devel | head -1 | tr '-' ' ' | awk '{print $4}' | tr '.' ' '`)
+let sasl_version=$((${sasl_version_numbers[0]} * 65536 + ${sasl_version_numbers[1]} * 256 + ${sasl_version_numbers[2]}))
+
+if [ "$sasl_version" -lt "$minimum_sasl_version" ]; then
+  echo "sasl_fed requires version 2.1.22 or later"
+  exit 0
+fi
+
+exit
+
+QPID_SRC=$top_srcdir/src
+QPIDD=$QPID_SRC/.libs/qpidd
+PY_TOOLS=$QPID_TOOLS/src/py
+
+sasl_config_file=$QPID_SRC/tests/sasl_config
+
+my_random_number=$RANDOM
+tmp_root=/tmp/sasl_fed/$my_random_number
+mkdir -p $tmp_root
+
+
+#--------------------------------------------------
+#echo " Starting broker 1"
+#--------------------------------------------------
+$QPIDD                                       \
+  -p 0                                       \
+  --data-dir $tmp_root/data_1                \
+  --auth=yes                                 \
+  --mgmt-enable=yes                          \
+  --log-enable info+                         \
+  --log-source yes                           \
+  --log-to-file $tmp_root/qpidd_1.log        \
+  --sasl-config=$sasl_config_file            \
+  -d > $tmp_root/broker_1_port
+
+broker_1_port=`cat $tmp_root/broker_1_port`
+
+
+#--------------------------------------------------
+#echo " Starting broker 2"
+#--------------------------------------------------
+$QPIDD                                       \
+  -p 0                                       \
+  --data-dir $tmp_root/data_2                \
+  --auth=yes                                 \
+  --mgmt-enable=yes                          \
+  --log-enable info+                         \
+  --log-source yes                           \
+  --log-to-file $tmp_root/qpidd_2.log        \
+  --sasl-config=$sasl_config_file            \
+  -d > $tmp_root/broker_2_port
+
+broker_2_port=`cat $tmp_root/broker_2_port`
+
+
+# Now find the PIDs so I can kill them later.
+#pids=`ps -aef | grep -v grep | grep sasl_fed | grep $my_random_number  | awk '{print $2}'`
+
+
+# I am not randomizing these names, because the test creates its own brokers.
+QUEUE_NAME=sasl_fed_queue
+ROUTING_KEY=sasl_fed_queue
+EXCHANGE_NAME=sasl_fedex
+
+#--------------------------------------------------
+#echo "  add exchanges"
+#--------------------------------------------------
+$PY_TOOLS/qpid-config -a localhost:$broker_1_port add exchange direct $EXCHANGE_NAME
+$PY_TOOLS/qpid-config -a localhost:$broker_2_port add exchange direct $EXCHANGE_NAME
+
+
+#--------------------------------------------------
+#echo "  add queues"
+#--------------------------------------------------
+$PY_TOOLS/qpid-config -a localhost:$broker_1_port add queue $QUEUE_NAME
+$PY_TOOLS/qpid-config -a localhost:$broker_2_port add queue $QUEUE_NAME
+
+sleep 5
+
+#--------------------------------------------------
+#echo " create bindings"
+#--------------------------------------------------
+$PY_TOOLS/qpid-config -a localhost:$broker_1_port bind $EXCHANGE_NAME $QUEUE_NAME $ROUTING_KEY
+$PY_TOOLS/qpid-config -a localhost:$broker_2_port bind $EXCHANGE_NAME $QUEUE_NAME $ROUTING_KEY
+
+sleep 5
+
+
+#--------------------------------------------------
+#echo "  qpid-route route add"
+#--------------------------------------------------
+$PY_TOOLS/qpid-route route add zag/zag@localhost:$broker_2_port zag/zag@localhost:$broker_1_port $EXCHANGE_NAME $ROUTING_KEY "" "" DIGEST-MD5
+
+sleep 5
+
+
+n_messages=100
+#--------------------------------------------------
+#echo "  Sending 100 messages to $broker_1_port "
+#--------------------------------------------------
+$QPID_SRC/tests/datagen --count $n_messages | $QPID_SRC/tests/sender --username zag --password zag --exchange $EXCHANGE_NAME --routing-key $ROUTING_KEY --port $broker_1_port
+
+sleep 5
+
+#--------------------------------------------------
+#echo "  Examine Broker $broker_1_port"
+#--------------------------------------------------
+broker_1_message_count=`$PY_TOOLS/qpid-stat -q localhost:$broker_1_port | grep sasl_fed_queue | awk '{print $2}'`
+#echo " "
+
+#--------------------------------------------------
+#echo "  Examine Broker $broker_2_port"
+#--------------------------------------------------
+broker_2_message_count=`$PY_TOOLS/qpid-stat -q localhost:$broker_2_port | grep sasl_fed_queue | awk '{print $2}'`
+#echo " "
+
+#--------------------------------------------------
+#echo "  Asking brokers to quit."
+#--------------------------------------------------
+$QPIDD --port $broker_1_port --quit
+$QPIDD --port $broker_2_port --quit
+
+
+#--------------------------------------------------
+#echo   "Removing temporary directory $tmp_root"
+#--------------------------------------------------
+rm -rf $tmp_root
+
+if [ "$broker_2_message_count" =  "$n_messages" ]; then
+  echo "good: $broker_2_message_count"
+  exit 0
+else
+  echo "not ideal: $broker_1_message_count != $n_messages"
+  exit 1
+fi
+
+
+
+
+
+

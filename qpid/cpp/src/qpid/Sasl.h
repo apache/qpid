@@ -1,5 +1,5 @@
-#ifndef QPID_CLIENT_SASL_H
-#define QPID_CLIENT_SASL_H
+#ifndef QPID_SASL_H
+#define QPID_SASL_H
 
 /*
  *
@@ -33,10 +33,6 @@ class SecurityLayer;
 struct SecuritySettings;
 }
 
-namespace client {
-
-struct ConnectionSettings;
-
 /**
  * Interface to SASL support. This class is implemented by platform-specific
  * SASL providers.
@@ -59,6 +55,6 @@ class Sasl
     virtual std::auto_ptr<qpid::sys::SecurityLayer> getSecurityLayer(uint16_t maxFrameSize) = 0;    
     virtual ~Sasl() {}
 };
-}} // namespace qpid::client
+} // namespace qpid
 
-#endif  /*!QPID_CLIENT_SASL_H*/
+#endif  /*!QPID_SASL_H*/

@@ -23,7 +23,7 @@
 
 #include "qpid/client/ChainableFrameHandler.h"
 #include "qpid/client/ConnectionSettings.h"
-#include "qpid/client/Sasl.h"
+#include "qpid/Sasl.h"
 #include "qpid/client/StateManager.h"
 #include "qpid/framing/AMQMethodBody.h"
 #include "qpid/framing/AMQP_HighestVersion.h"

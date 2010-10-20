@@ -331,6 +331,9 @@ libqpidcommon_la_SOURCES +=			\
   qpid/RefCounted.h				\
   qpid/RefCountedBuffer.cpp			\
   qpid/RefCountedBuffer.h			\
+  qpid/Sasl.h                                   \
+  qpid/SaslFactory.cpp                          \
+  qpid/SaslFactory.h                            \
   qpid/Serializer.h				\
   qpid/SessionId.cpp				\
   qpid/SessionState.cpp				\
@@ -692,9 +695,6 @@ libqpidclient_la_SOURCES =			\
   qpid/client/QueueOptions.cpp			\
   qpid/client/Results.cpp			\
   qpid/client/Results.h				\
-  qpid/client/Sasl.h				\
-  qpid/client/SaslFactory.cpp			\
-  qpid/client/SaslFactory.h			\
   qpid/client/SessionBase_0_10.cpp		\
   qpid/client/SessionBase_0_10Access.h		\
   qpid/client/SessionImpl.cpp			\

@@ -78,10 +78,13 @@ void SecureConnection:: setCodec(std::auto_ptr<ConnectionCodec> c)
     codec = c;
 }
 
-void SecureConnection::activateSecurityLayer(std::auto_ptr<SecurityLayer> sl)
+void SecureConnection::activateSecurityLayer(std::auto_ptr<SecurityLayer> sl, bool secureImmediately)
 {
     securityLayer = sl;
     securityLayer->init(codec.get());
+
+    if ( secureImmediately )
+        secured = true;
 }
 
 }} // namespace qpid::broker
