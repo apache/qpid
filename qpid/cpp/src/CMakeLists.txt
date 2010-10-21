@@ -626,6 +626,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL Windows)
     qpid/sys/windows/SystemInfo.cpp
     qpid/sys/windows/Thread.cpp
     qpid/sys/windows/Time.cpp
+    qpid/client/windows/SaslFactory.cpp
     ${sslcommon_windows_SOURCES}
   )
 
@@ -642,7 +643,6 @@ if (CMAKE_SYSTEM_NAME STREQUAL Windows)
     ${windows_ssl_libs} ${windows_ssl_server_libs}
   )
   set (qpidclient_platform_SOURCES
-    qpid/client/windows/SaslFactory.cpp
     ${sslclient_windows_SOURCES}
   )
   set (qpidclient_platform_LIBS
@@ -694,6 +694,7 @@ else (CMAKE_SYSTEM_NAME STREQUAL Windows)
     qpid/sys/posix/StrError.cpp
     qpid/sys/posix/Thread.cpp
     qpid/sys/posix/Time.cpp
+    qpid/SaslFactory.cpp
 
     ${qpid_poller_module}
   )
@@ -731,7 +732,6 @@ set (qpidcommon_SOURCES
      qpid/Options.cpp
      qpid/Plugin.cpp
      qpid/RefCountedBuffer.cpp
-     qpid/SaslFactory.cpp
      qpid/SessionState.cpp
      qpid/SessionId.cpp
      qpid/StringUtils.cpp
