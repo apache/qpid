@@ -224,8 +224,7 @@ MessageMapRecordset::recover(MessageQueueMap& msgMap)
                        (LPVOID *)&piAdoRecordBinding);
     piAdoRecordBinding->BindToRecordset(&b);
     while (!rs->EndOfFile) {
-        qpid::store::QueueEntry entry;
-        entry.queueId = b.queueId;
+        qpid::store::QueueEntry entry(b.queueId);
         if (b.xidStatus == adFldOK && b.xidLength > 0) {
             entry.xid.assign(b.xid, b.xidLength);
             entry.tplStatus =

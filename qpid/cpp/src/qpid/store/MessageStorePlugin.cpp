@@ -61,10 +61,12 @@ MessageStorePlugin::StoreOptions::StoreOptions(const std::string& name) :
 void
 MessageStorePlugin::earlyInitialize (qpid::Plugin::Target& target)
 {
-    qpid::broker::Broker* broker =
+    qpid::broker::Broker* b =
         dynamic_cast<qpid::broker::Broker*>(&target);
-    if (0 == broker)
+    if (0 == b)
         return;        // Only listen to Broker targets
+
+    broker = b;
 
     // See if there are any storage provider plugins ready. If not, we can't
     // do a message store.
@@ -412,8 +414,12 @@ MessageStorePlugin::recover(broker::RecoveryManager& recoverer)
     provider->second->recoverExchanges(recoverer, exchanges);
     provider->second->recoverQueues(recoverer, queues);
     provider->second->recoverBindings(recoverer, exchanges, queues);
-    provider->second->recoverTransactions(recoverer, dtxMap);
+    // Important to recover messages before transactions in the SQL-CLFS
+    // case. If this becomes a problem, it may be possible to resolve it.
+    // If in doubt please raise a jira and notify Steve Huston
+    // <shuston@riverace.com>.
     provider->second->recoverMessages(recoverer, messages, messageQueueMap);
+    provider->second->recoverTransactions(recoverer, dtxMap);
     // Enqueue msgs where needed.
     for (MessageQueueMap::const_iterator i = messageQueueMap.begin();
          i != messageQueueMap.end();
