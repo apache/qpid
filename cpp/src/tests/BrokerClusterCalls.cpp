@@ -297,8 +297,10 @@ QPID_AUTO_TEST_CASE(testFanout) {
     sender.send(Message("a"));
     f.s.sync();
     BOOST_CHECK_EQUAL(h.at(i++), "routing(a)");
-    BOOST_CHECK_REGEX("enqueue\\(amq.fanout_r[12], 1, a\\)", h.at(i++));
-    BOOST_CHECK_REGEX("enqueue\\(amq.fanout_r[12], 1, a\\)", h.at(i++));
+    char const * str = "enqueue(amq.fanout_r";
+    int len = strlen(str);
+    BOOST_CHECK_EQUAL(0, strncmp(str, h.at(i++).c_str(), len));
+    BOOST_CHECK_EQUAL(0, strncmp(str, h.at(i++).c_str(), len));
     BOOST_CHECK(h.at(i-1) != h.at(i-2));
     BOOST_CHECK_EQUAL(h.at(i++), "routed(a)");
     BOOST_CHECK_EQUAL(h.size(), i);
