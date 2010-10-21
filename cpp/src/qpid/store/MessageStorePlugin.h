@@ -57,7 +57,7 @@ class MessageStorePlugin :
     // @TODO Need a mgmt story for this. Maybe allow r/o access to provider store info?    public qpid::management::Manageable
 {
   public:
-    MessageStorePlugin() {}
+    MessageStorePlugin() : broker(0) {}
 
     /**
      * @name Methods inherited from qpid::Plugin
@@ -264,6 +264,9 @@ class MessageStorePlugin :
     //    inline management::Manageable::status_t ManagementMethod (uint32_t, management::Args&, std::string&)
     //        { return management::Manageable::STATUS_OK; }
 
+    // So storage provider can get the broker info.
+    broker::Broker *getBroker() { return broker; }
+
   protected:
 
     struct StoreOptions : public qpid::Options {
@@ -275,6 +278,8 @@ class MessageStorePlugin :
     typedef std::map<const std::string, StorageProvider*> ProviderMap;
     ProviderMap providers;
     ProviderMap::const_iterator provider;
+
+    broker::Broker *broker;
 
 }; // class MessageStoreImpl
 
