@@ -34,9 +34,9 @@ namespace qpid {
 class SaslFactory
 {
   public:
-    std::auto_ptr<Sasl> create(const std::string & userName, const std::string & password, const std::string & serviceName, const std::string & hostName, int minSsf, int maxSsf );
-    static SaslFactory& getInstance();
-    ~SaslFactory();
+    QPID_COMMON_EXTERN std::auto_ptr<Sasl> create(const std::string & userName, const std::string & password, const std::string & serviceName, const std::string & hostName, int minSsf, int maxSsf );
+    QPID_COMMON_EXTERN static SaslFactory& getInstance();
+    QPID_COMMON_EXTERN ~SaslFactory();
   private:
     SaslFactory();
     static qpid::sys::Mutex lock;
