@@ -19,8 +19,7 @@
  *
  */
 
-#include "qpid/client/SaslFactory.h"
-#include "qpid/client/ConnectionSettings.h"
+#include "qpid/SaslFactory.h"
 
 #include "qpid/Exception.h"
 #include "qpid/framing/reply_exceptions.h"
@@ -31,16 +30,46 @@
 #include "boost/tokenizer.hpp"
 
 namespace qpid {
-namespace client {
 
 using qpid::sys::SecurityLayer;
 using qpid::sys::SecuritySettings;
 using qpid::framing::InternalErrorException;
 
+struct WindowsSaslSettings
+{
+    WindowsSaslSettings ( ) :
+        username ( std::string(0) ),
+        password ( std::string(0) ),
+        service  ( std::string(0) ),
+        host     ( std::string(0) ),
+        minSsf ( 0 ),
+        maxSsf ( 0 )
+    {
+    }
+
+    WindowsSaslSettings ( const std::string & user, const std::string & password, const std::string & service, const std::string & host, int minSsf, int maxSsf ) :
+        username(user),
+        password(password),
+        service(service),
+        host(host),
+        minSsf(minSsf),
+        maxSsf(maxSsf)
+    {
+    }
+
+    std::string username,
+                password,
+                service,
+                host;
+
+    int minSsf,
+        maxSsf;
+};
+
 class WindowsSasl : public Sasl
 {
   public:
-    WindowsSasl(const ConnectionSettings&);
+    WindowsSasl( const std::string &, const std::string &, const std::string &, const std::string &, int, int );
     ~WindowsSasl();
     std::string start(const std::string& mechanisms, const SecuritySettings* externalSettings);
     std::string step(const std::string& challenge);
@@ -48,7 +77,7 @@ class WindowsSasl : public Sasl
     std::string getUserId();
     std::auto_ptr<SecurityLayer> getSecurityLayer(uint16_t maxFrameSize);
   private:
-    ConnectionSettings settings;
+    WindowsSaslSettings settings;
     std::string mechanism;
 };
 
@@ -72,9 +101,9 @@ SaslFactory& SaslFactory::getInstance()
     return *instance;
 }
 
-std::auto_ptr<Sasl> SaslFactory::create(const ConnectionSettings& settings)
+std::auto_ptr<Sasl> SaslFactory::create( const std::string & username, const std::string & password, const std::string & serviceName, const std::string & hostName, int minSsf, int maxSsf )
 {
-    std::auto_ptr<Sasl> sasl(new WindowsSasl(settings));
+    std::auto_ptr<Sasl> sasl(new WindowsSasl( username, password, serviceName, hostName, minSsf, maxSsf ));
     return sasl;
 }
 
@@ -83,8 +112,8 @@ namespace {
     const std::string PLAIN = "PLAIN";
 }
 
-WindowsSasl::WindowsSasl(const ConnectionSettings& s)
-  : settings(s) 
+WindowsSasl::WindowsSasl( const std::string & username, const std::string & password, const std::string & serviceName, const std::string & hostName, int minSsf, int maxSsf )
+  : settings(username, password, serviceName, hostName, minSsf, maxSsf) 
 {
 }
 
@@ -145,4 +174,4 @@ std::auto_ptr<SecurityLayer> WindowsSasl::getSecurityLayer(uint16_t maxFrameSize
     return std::auto_ptr<SecurityLayer>(0);
 }
 
-}} // namespace qpid::client
+} // namespace qpid
