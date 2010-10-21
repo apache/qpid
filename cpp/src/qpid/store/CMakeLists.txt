@@ -80,3 +80,32 @@ if (BUILD_MSSQL)
            DESTINATION ${QPIDD_MODULE_DIR}
            COMPONENT ${QPID_COMPONENT_BROKER})
 endif (BUILD_MSSQL)
+
+# Build the MS SQL-CLFS Storage Provider plugin
+set (msclfs_default ON)
+if (NOT CMAKE_SYSTEM_NAME STREQUAL Windows)
+  set(msclfs_default OFF)
+endif (NOT CMAKE_SYSTEM_NAME STREQUAL Windows)
+option(BUILD_MSCLFS "Build MS hybrid SQL-CLFS Store provider plugin" ${msclfs_default})
+if (BUILD_MSCLFS)
+  add_library (msclfs_store MODULE
+               ms-clfs/MsSqlClfsProvider.cpp
+               ms-clfs/Log.cpp
+               ms-clfs/MessageLog.cpp
+               ms-clfs/Messages.cpp
+               ms-clfs/Transaction.cpp
+               ms-clfs/TransactionLog.cpp
+               ms-sql/BindingRecordset.cpp
+               ms-sql/BlobAdapter.cpp
+               ms-sql/BlobEncoder.cpp
+               ms-sql/BlobRecordset.cpp
+               ms-sql/DatabaseConnection.cpp
+               ms-sql/Recordset.cpp
+               ms-sql/State.cpp
+               ms-sql/VariantHelper.cpp)
+  include_directories(ms-sql)
+  target_link_libraries (msclfs_store qpidbroker qpidcommon ${Boost_PROGRAM_OPTIONS_LIBRARY} clfsw32.lib)
+  install (TARGETS msclfs_store # RUNTIME
+           DESTINATION ${QPIDD_MODULE_DIR}
+           COMPONENT ${QPID_COMPONENT_BROKER})
+endif (BUILD_MSCLFS)
