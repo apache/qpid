@@ -36,14 +36,12 @@
 #include "BrokerFixture.h"
 #include <boost/assign.hpp>
 #include <boost/format.hpp>
-#include <boost/regex.hpp>
 
 using namespace std;
 using namespace boost;
 using namespace boost::assign;
 using namespace qpid::messaging;
 using boost::format;
-using boost::regex;
 
 namespace qpid {
 namespace tests {
@@ -297,10 +295,8 @@ QPID_AUTO_TEST_CASE(testFanout) {
     sender.send(Message("a"));
     f.s.sync();
     BOOST_CHECK_EQUAL(h.at(i++), "routing(a)");
-    char const * str = "enqueue(amq.fanout_r";
-    int len = strlen(str);
-    BOOST_CHECK_EQUAL(0, strncmp(str, h.at(i++).c_str(), len));
-    BOOST_CHECK_EQUAL(0, strncmp(str, h.at(i++).c_str(), len));
+    BOOST_CHECK_EQUAL(0u, h.at(i++).find("enqueue(amq.fanout_r"));
+    BOOST_CHECK_EQUAL(0u, h.at(i++).find("enqueue(amq.fanout_r"));
     BOOST_CHECK(h.at(i-1) != h.at(i-2));
     BOOST_CHECK_EQUAL(h.at(i++), "routed(a)");
     BOOST_CHECK_EQUAL(h.size(), i);

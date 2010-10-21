@@ -66,7 +66,7 @@ tmodule_LTLIBRARIES=
 
 TESTS+=unit_test
 check_PROGRAMS+=unit_test
-unit_test_LDADD=-lboost_unit_test_framework -lboost_regex  \
+unit_test_LDADD=-lboost_unit_test_framework \
 	$(lib_messaging) $(lib_broker) $(lib_console) $(lib_qmf2)
 
 unit_test_SOURCES= unit_test.cpp unit_test.h \

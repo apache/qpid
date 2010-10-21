@@ -172,7 +172,7 @@ QPID_AUTO_TEST_CASE(testLoggerFormat) {
 
     l.format(Logger::FILE|Logger::LINE);
     QPID_LOG(critical, "foo");
-    BOOST_CHECK_REGEX(string(__FILE__)+":\\d+: foo\n", out->last());
+    BOOST_CHECK_EQUAL(out->last().find(__FILE__), 0u);
 
     l.format(Logger::FUNCTION);
     QPID_LOG(critical, "foo");
