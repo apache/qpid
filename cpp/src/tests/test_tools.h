@@ -23,7 +23,6 @@
 #include <limits.h>             // Include before boost/test headers.
 #include <boost/test/test_tools.hpp>
 #include <boost/assign/list_of.hpp>
-#include <boost/regex.hpp>
 #include <boost/assign/list_of.hpp>
 #include <vector>
 #include <set>
@@ -74,21 +73,6 @@ bool operator == (const boost::assign_detail::generic_list<T>& b, const set<T>& 
 
 namespace qpid {
 namespace tests {
-
-/** NB: order of parameters is regex first, in line with
- * CHECK(expected, actual) convention.
- */
-inline bool regexPredicate(const std::string& re, const std::string& text) {
-    return boost::regex_match(text, boost::regex(re));
-}
-
-/** Check for regular expression match. You must #include <boost/regex.hpp> */
-#if (BOOST_VERSION < 103300)
-  #define BOOST_CHECK_REGEX(re, text)
-#else
-  #define BOOST_CHECK_REGEX(re, text) \
-    BOOST_CHECK_PREDICATE(regexPredicate, (re)(text))
-#endif
 
 /** Check if types of two objects (as given by typeinfo::name()) match. */
 #define BOOST_CHECK_TYPEID_EQUAL(a,b) BOOST_CHECK_EQUAL(typeid(a).name(),typeid(b).name())
