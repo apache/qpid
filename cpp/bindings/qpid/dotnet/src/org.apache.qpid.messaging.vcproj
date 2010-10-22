@@ -249,6 +249,7 @@
 				GenerateDebugInformation="true"
 				AssemblyDebug="1"
 				TargetMachine="1"
+				KeyFile="qpid.snk"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -326,6 +327,7 @@
 				GenerateDebugInformation="true"
 				AssemblyDebug="1"
 				TargetMachine="17"
+				KeyFile="qpid.snk"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -402,6 +404,7 @@
 				GenerateDebugInformation="true"
 				AssemblyDebug="1"
 				TargetMachine="1"
+				KeyFile="qpid.snk"
 			/>
 			<Tool
 				Name="VCALinkTool"
@@ -479,6 +482,7 @@
 				GenerateDebugInformation="true"
 				AssemblyDebug="1"
 				TargetMachine="17"
+				KeyFile="qpid.snk"
 			/>
 			<Tool
 				Name="VCALinkTool"
