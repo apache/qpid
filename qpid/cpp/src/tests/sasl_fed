@@ -2,23 +2,6 @@
 
 source test_env.sh
 
-minimum_sasl_version="2.1.22"
-if [ ! `pkg-config --atleast-version $minimum_sasl_version cyrus-sasl`]; then
-  echo "sasl_fed requires at least $minimum_sasl_version"
-  exit 0
-fi
-
-let minimum_sasl_version=$((2 * 65536 + 1 * 256 + 22))
-sasl_version_numbers=(`rpm -q cyrus-sasl-devel | head -1 | tr '-' ' ' | awk '{print $4}' | tr '.' ' '`)
-let sasl_version=$((${sasl_version_numbers[0]} * 65536 + ${sasl_version_numbers[1]} * 256 + ${sasl_version_numbers[2]}))
-
-if [ "$sasl_version" -lt "$minimum_sasl_version" ]; then
-  echo "sasl_fed requires version 2.1.22 or later"
-  exit 0
-fi
-
-exit
-
 QPID_SRC=$top_srcdir/src
 QPIDD=$QPID_SRC/.libs/qpidd
 PY_TOOLS=$QPID_TOOLS/src/py
@@ -63,9 +46,17 @@ $QPIDD                                       \
 
 broker_2_port=`cat $tmp_root/broker_2_port`
 
+sleep 2
 
-# Now find the PIDs so I can kill them later.
-#pids=`ps -aef | grep -v grep | grep sasl_fed | grep $my_random_number  | awk '{print $2}'`
+# Grep the sasl version out of broker 2's log
+sasl_version=`cat $tmp_root/qpidd_2.log | grep "SASL enabled" | tr ' ' '\n' | tail -1`
+
+# Minimum sasl version I can use is 2.1.22 == (2<<16) + (1<<8) + 22 == 131350.
+if [ "$sasl_version" -lt "131350" ]; then
+  echo "sasl_fed test requires SASL version 2.1.22 or greater"
+  # but this should not cause a test failure.
+  exit 0
+fi
 
 
 # I am not randomizing these names, because the test creates its own brokers.
@@ -137,11 +128,11 @@ $QPIDD --port $broker_2_port --quit
 #--------------------------------------------------
 rm -rf $tmp_root
 
-if [ "$broker_2_message_count" =  "$n_messages" ]; then
-  echo "good: $broker_2_message_count"
+if [ "$broker_2_message_count" -eq  "$n_messages" ]; then
+  # echo "good: |$broker_2_message_count| == |$n_messages|"
   exit 0
 else
-  echo "not ideal: $broker_1_message_count != $n_messages"
+  # echo "not ideal: |$broker_1_message_count| != |$n_messages|"
   exit 1
 fi
 
