@@ -124,12 +124,14 @@ class Connection(Endpoint):
     if isinstance(url, basestring):
       url = URL(url)
     self.host = url.host
-    if url.scheme == url.AMQP:
+    if options.has_key("transport"):
+      self.transport = options.get("transport")
+    elif url.scheme == url.AMQP:
       self.transport = "tcp"
     elif url.scheme == url.AMQPS:
       self.transport = "ssl"
     else:
-      self.transport = options.get("transport", "tcp")
+      self.transport = "tcp"
     if self.transport in ("ssl", "tcp+tls"):
       self.port = default(url.port, options.get("port", AMQPS_PORT))
     else:
