@@ -32,6 +32,7 @@ namespace Apache.Qpid.Channel
     using System.Text;
     using System.Threading;
     using System.Globalization;
+    using System.Web;
     using System.Xml;
 
     // the thin interop layer that provides access to the Qpid AMQP client libraries
@@ -52,11 +53,11 @@ namespace Apache.Qpid.Channel
         private bool shared;
         private int prefetchLimit;
         private string encoderContentType;
+        // AMQP subject/routing key
+        private string subject;
+        // Qpid addressing value for "qpid.subject" property
+        private string qpidSubject;
 
-        // input = 0-10 queue, output = 0-10 exchange
-        private string queueName;
-
-        private String routingKey;
         private BufferManager bufferManager;
         private AmqpProperties outputMessageProperties;
 
@@ -85,7 +86,7 @@ namespace Apache.Qpid.Channel
             this.remoteAddress = remoteAddress;
 
             // pull out host, port, queue, and connection arguments
-            this.ParseAmqpUri(remoteAddress.Uri);
+            string qpidAddress = this.UriToQpidAddress(remoteAddress.Uri, out subject);
 
             this.encoder = msgEncoder;
             string ct = String.Empty;
@@ -129,12 +130,14 @@ namespace Apache.Qpid.Channel
 
             if (this.isInputChannel)
             {
-                this.inputLink = ConnectionManager.GetInputLink(this.factoryChannelProperties, shared, false, this.queueName);
+                this.inputLink = ConnectionManager.GetInputLink(this.factoryChannelProperties, shared, false, qpidAddress);
                 this.inputLink.PrefetchLimit = this.prefetchLimit;
             }
             else
             {
-                this.outputLink = ConnectionManager.GetOutputLink(this.factoryChannelProperties, shared, false, this.queueName);
+                this.outputLink = ConnectionManager.GetOutputLink(this.factoryChannelProperties, shared, false, qpidAddress);
+                this.subject = this.outputLink.DefaultSubject;
+                this.qpidSubject = this.outputLink.QpidSubject;
             }
         }
 
@@ -423,9 +426,14 @@ namespace Apache.Qpid.Channel
                     outgoingProperties.MergeFrom(this.factoryChannelProperties.DefaultMessageProperties);
                 }
 
-                if (this.routingKey != null)
+                if (this.subject != null)
                 {
-                    outgoingProperties.RoutingKey = this.routingKey;
+                    outgoingProperties.RoutingKey = this.subject;
+                }
+
+                if (this.qpidSubject != null)
+                {
+                    outgoingProperties.PropertyMap["qpid.subject"] = new AmqpString(this.qpidSubject);
                 }
 
                 // Add the Properties set by the application on this particular message.
@@ -544,8 +552,7 @@ namespace Apache.Qpid.Channel
             this.bufferManager.Clear();
         }
 
-        // "amqp:queue1" | "amqp:stocks@broker1.com" | "amqp:queue3?routingkey=key"
-        private void ParseAmqpUri(Uri uri)
+        private string UriToQpidAddress(Uri uri, out string subject)
         {
             if (uri.Scheme != AmqpConstants.Scheme)
             {
@@ -553,43 +560,83 @@ namespace Apache.Qpid.Channel
                     "The scheme {0} specified in address is not supported.", uri.Scheme), "uri");
             }
 
-            this.queueName = uri.LocalPath;
+            subject = "";
+           string path = uri.LocalPath;
+            string query = uri.Query;
 
-            if ((this.queueName.IndexOf('@') != -1) && this.isInputChannel)
+            // legacy... convert old style myqueue?routingkey=key to myqueue/key
+
+            if (query.Length > 0)
             {
-                throw new ArgumentException(string.Format(CultureInfo.CurrentCulture,
-                    "Invalid input queue name: \"{0}\" specified.", this.queueName), "uri");
-            }
-
-            // search out session parameters in the query portion of the URI
-
-            string routingParseKey = "routingkey=";
-            char[] charSeparators = new char[] { '?', ';' };
-            string[] args = uri.Query.Split(charSeparators, StringSplitOptions.RemoveEmptyEntries);
-            foreach (string s in args)
-            {
-                if (s.StartsWith(routingParseKey))
-                {
-                    this.routingKey = s.Substring(routingParseKey.Length);
-                }
-            }
-
-            if (this.queueName == String.Empty)
-            {
-                if (this.isInputChannel)
+                if (!query.StartsWith("?"))
                 {
                     throw new ArgumentException(string.Format(CultureInfo.CurrentCulture,
-                        "Empty queue target specifier not allowed."), "uri");
+                        "Invalid query argument."), "uri");
                 }
-                else
+
+                string routingParseKey = "routingkey=";
+                string subjectParseKey = "subject=";
+                char[] charSeparators = new char[] { '?', ';' };
+                string[] args = uri.Query.Split(charSeparators, StringSplitOptions.RemoveEmptyEntries);
+                foreach (string s in args)
                 {
-                    if (this.routingKey == null)
+                    if (s.StartsWith(routingParseKey))
                     {
-                        throw new ArgumentException(string.Format(CultureInfo.CurrentCulture,
-                        "No target queue or routing key specified."), "uri");
+                        subject = s.Substring(routingParseKey.Length);
+                    }
+                    else if (s.StartsWith(subjectParseKey))
+                    {
+                        subject = s.Substring(subjectParseKey.Length);
+                    }
+                    else
+                    {
+                        if (s.Length > 0)
+                        {
+                            throw new ArgumentException(string.Format(CultureInfo.CurrentCulture,
+                            "Invalid query argument {0}.", s), "uri");
+                        }
                     }
                 }
+
+                if (path.Contains("/"))
+                {
+                    throw new ArgumentException(string.Format(CultureInfo.CurrentCulture,
+                        "Invalid queue name {0}.", path), "uri");
+                }
+
+                if (path.Length == 0)
+                {
+                    // special case, user wants default exchange
+                    return "//" + subject;
+                }
+
+                return path + "/" + subject;
             }
+
+            // find subject in "myqueue/mysubject;{mode:browse}"
+            int pos = path.IndexOf('/');
+            if ((pos > -1) && (pos < path.Length + 1))
+            {
+                subject = path.Substring(pos);
+                pos = subject.IndexOf(';');
+                if (pos == 0)
+                {
+                    throw new ArgumentException(string.Format(CultureInfo.CurrentCulture,
+                        "Empty subject in address {0}.", path), "uri");
+                }
+
+                if (pos > 0)
+                {
+                    subject = subject.Substring(0, pos);
+                }
+            }
+
+            if (subject.Length > 0)
+            {
+                subject = HttpUtility.UrlDecode(subject);
+            }
+
+            return HttpUtility.UrlDecode(path);
         }
     }
 }
