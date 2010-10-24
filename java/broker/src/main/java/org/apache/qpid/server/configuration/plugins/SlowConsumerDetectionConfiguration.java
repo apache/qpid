@@ -85,8 +85,5 @@ public class SlowConsumerDetectionConfiguration extends ConfigurationPlugin
             }
         }
 
-        System.out.println("Configured SCDC");
-        System.out.println("Delay:" + getDelay());
-        System.out.println("TimeUnit:" + getTimeUnit());
     }
 }
