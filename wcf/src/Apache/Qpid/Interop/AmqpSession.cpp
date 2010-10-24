@@ -357,17 +357,20 @@ bool AmqpSession::MessageStop(std::string &name)
     return true;
 }
 
-void AmqpSession::AcceptAndComplete(SequenceSet& transfers)
+void AmqpSession::AcceptAndComplete(SequenceSet& transfers, bool browsing)
 {
     lock l(sessionLock);
 
-    // delimit with session dtx commands depending on the transaction context
-    UpdateTransactionState(%l);
+    if (!browsing) {
+	// delimit with session dtx commands depending on the transaction context
+	UpdateTransactionState(%l);
+    }
 
     CheckOpen();
 
     sessionp->markCompleted(transfers, false);
-    sessionp->messageAccept(transfers, false);
+    if (!browsing)
+	sessionp->messageAccept(transfers, false);
 }
 
 
@@ -607,6 +610,24 @@ void AmqpSession::ReleaseCompletion(IntPtr completion) {
     lock l(sessionLock);
     DecrementSyncs();
     delete completion.ToPointer();
+}
+
+
+// Non-exclusive borrowing for a "brief" period.  I.e. several synced
+// commands (address resolution)
+
+IntPtr AmqpSession::BorrowNativeSession() {
+    lock l(sessionLock);
+    if (closing)
+	return IntPtr::Zero;
+
+    IncrementSyncs();
+    return (IntPtr) sessionp;
+}
+
+void AmqpSession::ReturnNativeSession() {
+    lock l(sessionLock);
+    DecrementSyncs();
 }
 
 }}} // namespace Apache::Qpid::Cli

@@ -88,9 +88,12 @@ InputLink::InputLink(AmqpSession^ session, System::String^ sourceQueue,
     waiters = gcnew Collections::Generic::List<MessageWaiter^>();
     linkLock = waiters;  // private and available
     subscriptionLock = gcnew Object();
+    qpidAddress = QpidAddress::CreateAddress(sourceQueue, true);
+    qpidAddress->ResolveLink(session);
+    browsing = qpidAddress->Browsing;
 
     try {
-	std::string qname = QpidMarshal::ToNative(sourceQueue);
+	std::string qname = QpidMarshal::ToNative(qpidAddress->LinkName);
 
 	if (temporary) {
 	    qpidSessionp->queueDeclare(arg::queue=qname, arg::durable=false, arg::autoDelete=true, arg::exclusive=true);
@@ -103,6 +106,15 @@ InputLink::InputLink(AmqpSession^ session, System::String^ sourceQueue,
 	SubscriptionSettings settings;
 	settings.flowControl = FlowControl::messageCredit(0);
 	settings.completionMode = CompletionMode::MANUAL_COMPLETION;
+
+	if (browsing) {
+	    settings.acquireMode = AcquireMode::ACQUIRE_MODE_NOT_ACQUIRED;
+	    settings.acceptMode = AcceptMode::ACCEPT_MODE_NONE;
+	}
+	else {
+	    settings.acquireMode = AcquireMode::ACQUIRE_MODE_PRE_ACQUIRED;
+	    settings.acceptMode = AcceptMode::ACCEPT_MODE_EXPLICIT;
+	}
 
 	Subscription sub = qpidSubsMgrp->subscribe(*localQueuep, qname, settings);
 	subscriptionp = new Subscription (sub); // copy smart pointer for later IDisposable cleanup
@@ -186,8 +198,10 @@ void InputLink::Cleanup()
 	{
 	    ReleaseNative();
 	}
-
     }
+
+    // Now that subscription is torn down, we can execute pending delete on remote node
+    qpidAddress->CleanupLink(amqpSession);
     amqpSession->NotifyClosed();
 }
 
@@ -699,7 +713,7 @@ AmqpMessage^ InputLink::createAmqpMessage(IntPtr msgp)
 	
 	// subscriptionp->accept(frameSetID) is a slow sync operation in the native API
 	// so do it within the AsyncSession directly
-	amqpSession->AcceptAndComplete(frameSetID);
+	amqpSession->AcceptAndComplete(frameSetID, browsing);
 
 	workingCredit--;
 	// check if more messages need to be requested from broker
