@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -29,34 +29,132 @@
 #include "qpid/sys/Monitor.h"
 #include "qpid/broker/Queue.h"
 
+
 namespace qpid {
 namespace broker {
 
 class TopicExchange : public virtual Exchange {
-    struct BoundKey {
+
+    struct TokenIterator;
+    class Normalizer;
+
+    struct BindingKey {        // binding for this node
         Binding::vector bindingVector;
         FedBinding fedBinding;
     };
-    typedef std::map<std::string, BoundKey> BindingMap;
-    BindingMap bindings;
-    qpid::sys::RWlock lock;
+
+    // Binding database:
+    // The dotted form of a binding key is broken up and stored in a directed tree graph.
+    // Common binding prefix are merged.  This allows the route match alogrithm to quickly
+    // isolate those sub-trees that match a given routingKey.
+    // For example, given the routes:
+    //     a.b.c.<...>
+    //     a.b.d.<...>
+    //     a.x.y.<...>
+    // The resulting tree would be:
+    //    a-->b-->c-->...
+    //    |   +-->d-->...
+    //    +-->x-->y-->...
+    //
+    class BindingNode {
+    public:
+
+        typedef boost::shared_ptr<BindingNode> shared_ptr;
+
+        // for database transversal (visit a node).
+        class TreeIterator {
+        public:
+            TreeIterator() {};
+            virtual ~TreeIterator() {};
+            virtual bool visit(BindingNode& node) = 0;
+        };
+
+        BindingNode() {};
+        BindingNode(const std::string& token) : token(token) {};
+        virtual ~BindingNode();
+
+        // add normalizedRoute to tree, return associated BindingKey
+        BindingKey* addBindingKey(const std::string& normalizedRoute);
+
+        // return BindingKey associated with normalizedRoute
+        BindingKey* getBindingKey(const std::string& normalizedRoute);
+
+        // remove BindingKey associated with normalizedRoute
+        void removeBindingKey(const std::string& normalizedRoute);
+
+        // applies iter against each node in tree until iter returns false
+        bool iterateAll(TreeIterator& iter);
+
+        // applies iter against only matching nodes until iter returns false
+        bool iterateMatch(const std::string& routingKey, TreeIterator& iter);
+
+        std::string routePattern;  // normalized binding that matches this node
+        BindingKey bindings;  // for matches against this node
+
+  protected:
+
+        std::string token;         // portion of pattern represented by this node
+
+        // children
+        typedef std::map<const std::string, BindingNode::shared_ptr> ChildMap;
+        ChildMap childTokens;
+        BindingNode::shared_ptr starChild;  // "*" subtree
+        BindingNode::shared_ptr hashChild;  // "#" subtree
+
+        unsigned int getChildCount() { return childTokens.size() +
+              (starChild ? 1 : 0) + (hashChild ? 1 : 0); }
+        BindingKey* addBindingKey(TokenIterator& bKey,
+                                  const std::string& fullPattern);
+        bool removeBindingKey(TokenIterator& bKey,
+                              const std::string& fullPattern);
+        BindingKey* getBindingKey(TokenIterator& bKey);
+        virtual bool iterateMatch(TokenIterator& rKey, TreeIterator& iter);
+        bool iterateMatchChildren(const TokenIterator& key, TreeIterator& iter);
+    };
+
+    // Special case: ("*" token) Node in the tree for a match exactly one wildcard
+    class StarNode : public BindingNode {
+    public:
+        StarNode();
+        ~StarNode() {};
+
+    protected:
+        virtual bool iterateMatch(TokenIterator& key, TreeIterator& iter);
+    };
+
+    // Special case: ("#" token) Node in the tree for a match zero or more
+    class HashNode : public BindingNode {
+    public:
+        HashNode();
+        ~HashNode() {};
+
+    protected:
+        virtual bool iterateMatch(TokenIterator& key, TreeIterator& iter);
+    };
+
+    BindingNode bindingTree;
+    unsigned long nBindings;
+    qpid::sys::RWlock lock;     // protects bindingTree and nBindings
 
     bool isBound(Queue::shared_ptr queue, const std::string& pattern);
-    
+
+    class ReOriginIter;
+    class BindingsFinderIter;
+    class QueueFinderIter;
+
   public:
     static const std::string typeName;
 
-    static QPID_BROKER_EXTERN bool match(const std::string& pattern, const std::string& topic);
     static QPID_BROKER_EXTERN std::string normalize(const std::string& pattern);
 
     QPID_BROKER_EXTERN TopicExchange(const std::string& name,
                                      management::Manageable* parent = 0, Broker* broker = 0);
     QPID_BROKER_EXTERN TopicExchange(const std::string& _name,
-                                     bool _durable, 
+                                     bool _durable,
                                      const qpid::framing::FieldTable& _args,
                                      management::Manageable* parent = 0, Broker* broker = 0);
 
-    virtual std::string getType() const { return typeName; }            
+    virtual std::string getType() const { return typeName; }
 
     QPID_BROKER_EXTERN virtual bool bind(Queue::shared_ptr queue,
                                          const std::string& routingKey,
@@ -74,6 +172,9 @@ class TopicExchange : public virtual Exchange {
 
     QPID_BROKER_EXTERN virtual ~TopicExchange();
     virtual bool supportsDynamicBinding() { return true; }
+
+    class TopicExchangeTester;
+    friend class TopicExchangeTester;
 };
 
 
