@@ -78,7 +78,7 @@ public:
     OutputLink^ CreateOutputLink(System::String^ targetQueue);
     InputLink^ CreateInputLink(System::String^ sourceQueue);
 
-    // 0-10 specific support
+    // 0-10 specific support; deprecated in favor of Qpid messaging addresses
     InputLink^ CreateInputLink(System::String^ sourceQueue, bool exclusive, bool temporary, System::String^ filterKey, System::String^ exchange);
     void Bind(System::String^ queue, System::String^ exchange, System::String^ filterKey);
 
@@ -90,7 +90,7 @@ internal:
     void internalWaitForCompletion(IntPtr future);
     void removeWaiter(CompletionWaiter^ waiter);
     bool MessageStop(std::string &name);
-    void AcceptAndComplete(SequenceSet& transfers);
+    void AcceptAndComplete(SequenceSet& transfers, bool browsing);
     IntPtr BeginPhase0Flush(XaTransaction^);
     void EndPhase0Flush(XaTransaction^, IntPtr);
     IntPtr DtxStart(IntPtr xidp, bool, bool);
@@ -98,6 +98,8 @@ internal:
     IntPtr DtxCommit(IntPtr xidp, bool onePhase);
     IntPtr DtxRollback(IntPtr xidp);
     void ReleaseCompletion(IntPtr completion);
+    IntPtr BorrowNativeSession();
+    void ReturnNativeSession();
 
     property AmqpConnection^ Connection {
 	AmqpConnection^ get () { return connection; }

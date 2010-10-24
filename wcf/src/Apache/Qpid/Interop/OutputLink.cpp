@@ -48,13 +48,14 @@ using namespace std;
 using namespace Apache::Qpid::AmqpTypes;
 
 
-OutputLink::OutputLink(AmqpSession^ session, String^ defaultQueue) :
+OutputLink::OutputLink(AmqpSession^ session, String^ address) :
     amqpSession(session),
-    queue(defaultQueue),
     disposed(false),
     maxFrameSize(session->Connection->MaxFrameSize),
     finalizing(false)
 {
+    qpidAddress = QpidAddress::CreateAddress(address, false);
+    qpidAddress->ResolveLink(session);
 }
 
 void OutputLink::Cleanup()
@@ -67,6 +68,8 @@ void OutputLink::Cleanup()
 	disposed = true;
     }
 
+    // process any pending queue delete
+    qpidAddress->CleanupLink(amqpSession);
     amqpSession->NotifyClosed();
 }
 
@@ -217,7 +220,8 @@ void OutputLink::Send(AmqpMessage^ amqpMessage, TimeSpan timeout)
     ManagedToNative(amqpMessage);
 
     MessageBodyStream^ messageBodyStream = (MessageBodyStream^ ) amqpMessage->BodyStream;
-    CompletionWaiter^ waiter = amqpSession->SendMessage(queue, messageBodyStream, timeout, false, nullptr, nullptr);
+    CompletionWaiter^ waiter = amqpSession->SendMessage(qpidAddress->LinkName, messageBodyStream,
+							timeout, false, nullptr, nullptr);
 
     if (waiter != nullptr) {
 	waiter->WaitForCompletion();
@@ -234,7 +238,7 @@ IAsyncResult^ OutputLink::BeginSend(AmqpMessage^ amqpMessage, TimeSpan timeout, 
     ManagedToNative(amqpMessage);
 
     MessageBodyStream^ messageBodyStream = (MessageBodyStream^ ) amqpMessage->BodyStream;
-    CompletionWaiter^ waiter = amqpSession->SendMessage(queue, messageBodyStream, timeout, true, callback, state);
+    CompletionWaiter^ waiter = amqpSession->SendMessage(qpidAddress->LinkName, messageBodyStream, timeout, true, callback, state);
     return waiter;
 }
 

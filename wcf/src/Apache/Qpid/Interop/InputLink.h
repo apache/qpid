@@ -20,6 +20,7 @@
 #pragma once
 
 #include "MessageWaiter.h"
+#include "QpidAddress.h"
 
 namespace Apache {
 namespace Qpid {
@@ -58,6 +59,9 @@ private:
     // working credit low water mark
     int minWorkingCredit;
 
+    bool browsing;
+    QpidAddress^ qpidAddress;
+
     void Cleanup();
     void ReleaseNative();
     bool haveMessage();
@@ -95,6 +99,10 @@ public:
     property int PrefetchLimit {
 	int get () { return prefetchLimit; }
 	void set (int value);
+    }
+
+    property bool Browsing {
+	bool get () { return browsing; }
     }
 
 };

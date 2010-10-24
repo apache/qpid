@@ -19,6 +19,8 @@
 
 #pragma once
 
+#include "QpidAddress.h"
+
 namespace Apache {
 namespace Qpid {
 namespace Interop {
@@ -34,7 +36,7 @@ public ref class OutputLink
 {
 private:
     AmqpSession^ amqpSession;
-    String^ queue;
+    QpidAddress^ qpidAddress;
     bool disposed;
     bool finalizing;
     void Cleanup();
@@ -58,6 +60,15 @@ public:
 	AmqpTypes::AmqpProperties^ get () { return defaultProperties; }
 	void set(AmqpTypes::AmqpProperties^ p) { defaultProperties = p; }
     }
+
+    property String^ DefaultSubject {
+	String^ get() { return (qpidAddress == nullptr) ? nullptr : qpidAddress->RoutingKey; }
+    }
+
+    property String^ QpidSubject {
+	String^ get() { return (qpidAddress == nullptr) ? nullptr : qpidAddress->Subject; }
+    }
+
 };
 
 

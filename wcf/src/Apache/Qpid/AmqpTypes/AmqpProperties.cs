@@ -29,7 +29,7 @@ namespace Apache.Qpid.AmqpTypes
         // AMQP 0-10 delivery properties
         private bool durable;
         private Nullable<TimeSpan> timeToLive;
-        private string routingKey;
+        private string subject;
 
         // AMQP 0-10 message properties
         private string replyToExchange;
@@ -50,7 +50,7 @@ namespace Apache.Qpid.AmqpTypes
         {
             get
             {
-                return ((this.routingKey != null) || this.durable || this.timeToLive.HasValue);
+                return ((this.subject != null) || this.durable || this.timeToLive.HasValue);
             }
         }
 
@@ -163,10 +163,19 @@ namespace Apache.Qpid.AmqpTypes
             set { this.timeToLive = value; }
         }
 
+        /// <summary>
+        /// Obsolete: switch to AMQP 1.0 "Subject" naming
+        /// </summary>
         public string RoutingKey
         {
-            get { return this.routingKey; }
-            set { this.routingKey = value; }
+            get { return this.subject; }
+            set { this.subject = value; }
+        }
+
+        public string Subject
+        {
+            get { return this.subject; }
+            set { this.subject = value; }
         }
 
         public string ReplyToExchange
@@ -200,7 +209,7 @@ namespace Apache.Qpid.AmqpTypes
         public void Clear()
         {
             this.timeToLive = null;
-            this.routingKey = null;
+            this.subject = null;
             this.replyToRoutingKey = null;
             this.replyToExchange = null;
             this.durable = false;
@@ -251,9 +260,9 @@ namespace Apache.Qpid.AmqpTypes
                 this.replyToRoutingKey = other.replyToRoutingKey;
             }
 
-            if (other.routingKey != null)
+            if (other.subject != null)
             {
-                this.routingKey = other.routingKey;
+                this.subject = other.subject;
             }
 
             if (other.durable)
