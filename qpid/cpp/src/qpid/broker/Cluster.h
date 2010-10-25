@@ -54,8 +54,14 @@ class Cluster
 
     /** In Exchange::route, before the message is enqueued. */
     virtual void routing(const boost::intrusive_ptr<Message>&) = 0;
-    /** A message is delivered to a queue. */
-    virtual void enqueue(QueuedMessage&) = 0;
+
+    /** A message is delivered to a queue.
+     * Called before actually pushing the message to the queue.
+     *@return If true the message should be pushed to the queue now.
+     * otherwise the cluster code will push the message when it is replicated.
+     */
+    virtual bool enqueue(Queue& queue, const boost::intrusive_ptr<Message>&) = 0;
+
     /** In Exchange::route, after all enqueues for the message. */
     virtual void routed(const boost::intrusive_ptr<Message>&) = 0;
 
@@ -71,11 +77,12 @@ class Cluster
 
     /** A locally-acquired message is released by the consumer and re-queued. */
     virtual void release(const QueuedMessage&) = 0;
-    /** A message is dropped from the queue, e.g. expired or replaced on an LVQ.
-     * This function does only local book-keeping, it does not multicast.
-     * It is reasonable to call with a queue lock held.
+
+    /** A message is removed from the queue. It could have been
+     * accepted, rejected or dropped for other reasons e.g. expired or
+     * replaced on an LVQ.
      */
-    virtual void dequeue(const QueuedMessage&) = 0;
+    virtual void drop(const QueuedMessage&) = 0;
 
     // Consumers
 
