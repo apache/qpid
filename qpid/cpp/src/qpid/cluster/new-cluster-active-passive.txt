@@ -1,0 +1,39 @@
+-*-org-*-
+* Active/passive cluster implementation
+
+An active/passive implementation requires a subset of the active/active approach:
+- drop Queue ownership and locking
+- replicate subset of Cluster interface, don't need to know all message disposition.
+
+Can re-use:
+- cluster membership
+- new member updates
+- store integration
+
+Simpler implementation of broker::Cluster:
+- act like distributed MessageStore. Don't need acquisition details.
+- can do immediate local enqueue and still guarantee order.
+- can use smaller message IDs: just sequence number. Can be implicit.
+
+Extra requirements:
+- Passive members refuse client connections and redirect to active member.
+- Choose new active member when the active dies.
+
+Question: How best to direct clients to the correct node after failover?
+
+** Active/active vs. active passive
+
+Active/active benefits:
+- Total # connections: practical 60k limit per node.
+- Handle client losing connectivity to one cluster node - can fail over to any.
+- Some load sharing: reading from client + multicast only done on direct node.
+
+Active/active drawbacks:
+- Co-ordinating message allocation impacts performance.
+
+Active/passive benefits:
+- Don't need message allocation strategy, can feed consumers at top speed.
+
+Active/passive drawbacks:
+- Can't help clients with no connectivity to the active member.
+- Clients must find the single active node in failover.
