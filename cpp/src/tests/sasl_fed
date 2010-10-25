@@ -2,11 +2,7 @@
 
 source test_env.sh
 
-QPID_SRC=$top_srcdir/src
-QPIDD=$QPID_SRC/.libs/qpidd
-PY_TOOLS=$QPID_TOOLS/src/py
-
-sasl_config_file=$QPID_SRC/tests/sasl_config
+sasl_config_file=$builddir/sasl_config
 
 my_random_number=$RANDOM
 tmp_root=/tmp/sasl_fed/$my_random_number
@@ -16,7 +12,7 @@ mkdir -p $tmp_root
 #--------------------------------------------------
 #echo " Starting broker 1"
 #--------------------------------------------------
-$QPIDD                                       \
+$QPIDD_EXEC                                  \
   -p 0                                       \
   --data-dir $tmp_root/data_1                \
   --auth=yes                                 \
@@ -33,7 +29,7 @@ broker_1_port=`cat $tmp_root/broker_1_port`
 #--------------------------------------------------
 #echo " Starting broker 2"
 #--------------------------------------------------
-$QPIDD                                       \
+$QPIDD_EXEC                                  \
   -p 0                                       \
   --data-dir $tmp_root/data_2                \
   --auth=yes                                 \
@@ -67,23 +63,23 @@ EXCHANGE_NAME=sasl_fedex
 #--------------------------------------------------
 #echo "  add exchanges"
 #--------------------------------------------------
-$PY_TOOLS/qpid-config -a localhost:$broker_1_port add exchange direct $EXCHANGE_NAME
-$PY_TOOLS/qpid-config -a localhost:$broker_2_port add exchange direct $EXCHANGE_NAME
+$PYTHON_COMMANDS/qpid-config -a localhost:$broker_1_port add exchange direct $EXCHANGE_NAME
+$PYTHON_COMMANDS/qpid-config -a localhost:$broker_2_port add exchange direct $EXCHANGE_NAME
 
 
 #--------------------------------------------------
 #echo "  add queues"
 #--------------------------------------------------
-$PY_TOOLS/qpid-config -a localhost:$broker_1_port add queue $QUEUE_NAME
-$PY_TOOLS/qpid-config -a localhost:$broker_2_port add queue $QUEUE_NAME
+$PYTHON_COMMANDS/qpid-config -a localhost:$broker_1_port add queue $QUEUE_NAME
+$PYTHON_COMMANDS/qpid-config -a localhost:$broker_2_port add queue $QUEUE_NAME
 
 sleep 5
 
 #--------------------------------------------------
 #echo " create bindings"
 #--------------------------------------------------
-$PY_TOOLS/qpid-config -a localhost:$broker_1_port bind $EXCHANGE_NAME $QUEUE_NAME $ROUTING_KEY
-$PY_TOOLS/qpid-config -a localhost:$broker_2_port bind $EXCHANGE_NAME $QUEUE_NAME $ROUTING_KEY
+$PYTHON_COMMANDS/qpid-config -a localhost:$broker_1_port bind $EXCHANGE_NAME $QUEUE_NAME $ROUTING_KEY
+$PYTHON_COMMANDS/qpid-config -a localhost:$broker_2_port bind $EXCHANGE_NAME $QUEUE_NAME $ROUTING_KEY
 
 sleep 5
 
@@ -91,7 +87,7 @@ sleep 5
 #--------------------------------------------------
 #echo "  qpid-route route add"
 #--------------------------------------------------
-$PY_TOOLS/qpid-route route add zag/zag@localhost:$broker_2_port zag/zag@localhost:$broker_1_port $EXCHANGE_NAME $ROUTING_KEY "" "" DIGEST-MD5
+$PYTHON_COMMANDS/qpid-route route add zag/zag@localhost:$broker_2_port zag/zag@localhost:$broker_1_port $EXCHANGE_NAME $ROUTING_KEY "" "" DIGEST-MD5
 
 sleep 5
 
@@ -100,27 +96,27 @@ n_messages=100
 #--------------------------------------------------
 #echo "  Sending 100 messages to $broker_1_port "
 #--------------------------------------------------
-$QPID_SRC/tests/datagen --count $n_messages | $QPID_SRC/tests/sender --username zag --password zag --exchange $EXCHANGE_NAME --routing-key $ROUTING_KEY --port $broker_1_port
+$builddir/datagen --count $n_messages | $SENDER_EXEC --username zag --password zag --exchange $EXCHANGE_NAME --routing-key $ROUTING_KEY --port $broker_1_port
 
 sleep 5
 
 #--------------------------------------------------
 #echo "  Examine Broker $broker_1_port"
 #--------------------------------------------------
-broker_1_message_count=`$PY_TOOLS/qpid-stat -q localhost:$broker_1_port | grep sasl_fed_queue | awk '{print $2}'`
+broker_1_message_count=`$PYTHON_COMMANDS/qpid-stat -q localhost:$broker_1_port | grep sasl_fed_queue | awk '{print $2}'`
 #echo " "
 
 #--------------------------------------------------
 #echo "  Examine Broker $broker_2_port"
 #--------------------------------------------------
-broker_2_message_count=`$PY_TOOLS/qpid-stat -q localhost:$broker_2_port | grep sasl_fed_queue | awk '{print $2}'`
+broker_2_message_count=`$PYTHON_COMMANDS/qpid-stat -q localhost:$broker_2_port | grep sasl_fed_queue | awk '{print $2}'`
 #echo " "
 
 #--------------------------------------------------
 #echo "  Asking brokers to quit."
 #--------------------------------------------------
-$QPIDD --port $broker_1_port --quit
-$QPIDD --port $broker_2_port --quit
+$QPIDD_EXEC --port $broker_1_port --quit
+$QPIDD_EXEC --port $broker_2_port --quit
 
 
 #--------------------------------------------------
