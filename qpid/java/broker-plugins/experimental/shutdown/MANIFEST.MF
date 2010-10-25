@@ -1,0 +1,15 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: Experimental Shutdown
+Bundle-Description: Experimental Qpid Broker Shutdown Plugin
+Bundle-License: http://www.apache.org/licenses/LICENSE-2.0.txt
+Bundle-DocURL: http://qpid.apache.org/
+Bundle-SymbolicName: broker-plugins-experimental-shutdown;singleton:=true
+Bundle-Version: 1.0.0
+Bundle-Activator: org.apache.qpid.shutdown.Activator
+Import-Package: javax.management;resolution:=optional,
+ org.apache.log4j,
+ org.osgi.framework
+Bundle-RequiredExecutionEnvironment: J2SE-1.5
+Bundle-ActivationPolicy: lazy
+
