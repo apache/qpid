@@ -161,6 +161,7 @@ class ReadyReceiver:
         self.connection.open()
         self.receiver = self.connection.session().receiver(
             "%s;{create:always,delete:always}"%(queue))
+        self.receiver.session.sync()
         self.timeout=2
 
     def wait(self, receivers):
@@ -169,7 +170,9 @@ class ReadyReceiver:
             self.connection.close()
         except qpid.messaging.Empty:
             for r in receivers:
-                if (r.poll()): raise "Receiver error: %s"%(wait_for_output(r))
+                if (r.poll() is not None):
+                    out,err=r.communicate()
+                    raise "Receiver error: %s"%(out)
             raise "Timed out waiting for receivers to be ready"
 
 def flatten(l): return sum(map(lambda s: s.split(","), l),[])
@@ -197,7 +200,6 @@ def main():
     ready_queue="%s-ready"%(opts.queue_name)
     queues = ["%s-%s"%(opts.queue_name, i) for i in xrange(opts.queues)]
     for i in xrange(opts.repeat):
-
         delete_queues(queues, opts.broker[0])
         ready_receiver = ReadyReceiver(ready_queue, opts.broker[0])
         receivers = [start_receive(q, opts, ready_queue, brokers.next(), client_hosts.next())
