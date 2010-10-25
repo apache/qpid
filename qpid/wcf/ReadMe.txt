@@ -13,6 +13,8 @@
 10. Programming samples
 11. Prefetch window for inbound messages
 12. Full distributed transaction support with single phase optimization.
+13. Limited Qpid Messaging address naming for temporary queues and topics
+14. TLS/SSL security with username/password credentials
 
 
 2. Planned features (not yet available)
@@ -22,11 +24,9 @@
 2.  AMQP session-based local transactions.
 3.  Shared sessions
 4.  Connection failover with AMQP broker clusters
-5.  Temporary queues
-6.  Broker management
-7.  System logging and tracing
-8.  CMake build system support
-9.  Transport and message based security
+5.  Broker management
+6.  System logging and tracing
+7.  CMake build system support
 
 
 3. Prerequisites
