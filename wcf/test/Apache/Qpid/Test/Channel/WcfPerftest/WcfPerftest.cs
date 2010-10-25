@@ -183,7 +183,7 @@ namespace Apache.Qpid.Test.Channel.WcfPerftest
             this.messageCount = 500000;
             this.messageSize = 1024;
             this.type = ClientType.InteropDemo;  // default: once as pub and once as sub
-            this.baseName = "perftest";
+            this.baseName = "qpid-perftest";
             this.pubTxSize = 0;
             this.subTxSize = 0;
             this.durable = false;
@@ -410,7 +410,7 @@ namespace Apache.Qpid.Test.Channel.WcfPerftest
 
         static void InteropDemo(Options opts)
         {
-            string perftest_cpp_exe = "perftest.exe";
+            string perftest_cpp_exe = "qpid-perftest.exe";
             string commonArgs = String.Format(" --count {0} --size {1} --broker {2} --port {3}", opts.messageCount, opts.messageSize, opts.broker, opts.port);
 
             if (opts.durable)
