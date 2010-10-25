@@ -37,9 +37,11 @@ PollerDispatch::PollerDispatch(Cpg& c, boost::shared_ptr<sys::Poller> p,
       started(false)
 {}
     
-PollerDispatch::~PollerDispatch() {
-    if (started)
-        dispatchHandle.stopWatch();
+PollerDispatch::~PollerDispatch() { stop(); }
+
+void PollerDispatch::stop() {
+    if (started) dispatchHandle.stopWatch();
+    started = false;
 }
 
 void PollerDispatch::start() {
@@ -54,6 +56,7 @@ void PollerDispatch::dispatch(sys::DispatchHandle& h) {
         h.rewatch();
     } catch (const std::exception& e) {
         QPID_LOG(critical, "Error in cluster dispatch: " << e.what());
+        stop();
         onError();
     }
 }

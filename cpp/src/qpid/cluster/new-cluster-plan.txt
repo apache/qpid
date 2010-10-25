@@ -38,21 +38,9 @@ a note for later optimization/improvement.
 - acquire then kill broker: verify can be dequeued other members.
 - acquire then reject: verify goes on alt-exchange once only.
 
-*** TODO broker::Cluster interface and call points.
+*** DONE broker::Cluster interface and call points.
 
-Initial draft is commited. 
-
-Issues to review:
-
-queue API: internal classes like RingQueuePolicy use Queue::acuqire/dequeue
-when messages are pushed. How to reconcile with queue ownership?
-
-rejecting messages: if there's an alternate exchange where do we do the
-re-routing? On origin broker or on all brokers?
-
-Intercept points: on Queue vs. on DeliveryRecord, SemanticState etc.
-Intercepting client actions on the queue vs. internal actions
-(e.g. ring policy)
+Initial interface commited.
 
 *** Main classes
 
@@ -63,7 +51,7 @@ BrokerHandler:
 
 LocalMessageMap:
 - Holds local messages while they are being enqueued.
-- thread safe: called by both BrokerHandler and DeliverHandler
+- thread safe: called by both BrokerHandler and MessageHandler
 
 MessageHandler:
 - handles delivered mcast messages related to messages.
@@ -77,7 +65,7 @@ QueueOwnerHandler:
 - maintains view of cluster state regarding queue ownership.
 
 cluster::Core: class to hold new cluster together (replaces cluster::Cluster)
-- thread safe: manage state used by both DeliverHandler and BrokerHandler
+- thread safe: manage state used by both MessageHandler and BrokerHandler
 
 The following code sketch illustrates only the "happy path" error handling
 is omitted.
@@ -89,13 +77,15 @@ Types:
 - NodeId 64 bit CPG node-id, identifies member of the cluster.
 - struct MessageId { NodeId node; SequenceNumber seq; }
 
+NOTE: Message ID's identify a QueuedMessage, i.e. a position on a queue.
+
 Members:
 - atomic<SequenceNumber> sequence // sequence number for message IDs.
 - thread_local bool noReplicate // suppress replication.
 - thread_local bool isRouting // suppress operations while routing
 - QueuedMessage localMessage[SequenceNumber] // local messages being enqueued.
 
-NOTE: localMessage is also modified by DeliverHandler.
+NOTE: localMessage is also modified by MessageHandler.
 
 broker::Cluster intercept functions:
 
@@ -150,7 +140,7 @@ dequeue(QueuedMessage)
   # FIXME revisit - move it out of the queue lock.
   cleanup(msg)
 
-*** DeliverHandler and mcast messages
+*** MessageHandler and mcast messages
 Types:
 - struct QueueEntry { QueuedMessage qmsg; NodeId acquired; }
 - struct QueueKey { MessageId id; QueueName q; }
@@ -326,8 +316,9 @@ cancel(q,consumer,consumerCount) - Queue::cancel()
 - keep design modular, keep threading rules clear.
 
 ** TODO [#B] Large message replication.
-Need to be able to multicast large messages in fragments
-
+Multicast should encode messages in fixed size buffers (64k)?
+Can't assume we can send message in one chunk.
+For 0-10 can use channel numbers & send whole frames packed into larger buffer.
 ** TODO [#B] Batch CPG multicast messages
 The new cluster design involves a lot of small multicast messages,
 they need to be batched into larger CPG messages for efficiency.
@@ -437,3 +428,9 @@ Look for ways to capitalize on the similarity & simplify the code.
 
 In particular QueuedEvents (async replication) strongly resembles
 cluster replication, but over TCP rather than multicast.
+** TODO [#C] Concurrency for enqueue events.
+All enqueue events are being processed in the CPG deliver thread context which
+serializes all the work. We only need ordering on a per queue basis, can we
+enqueue in parallel on different queues and will that improve performance?
+** TODO [#C] Handling immediate messages in a cluster
+Include remote consumers in descision to deliver an immediate message?

@@ -328,8 +328,6 @@ and been in use (one of the key missing features).
 
 ** Misc outstanding issues & notes
 
-Message IDs: need an efficient cluster-wide message ID.
-
 Replicating wiring
 - Need async completion of wiring commands? 
 - qpid.sequence_counter: need extra work to support in new design, do we care?
