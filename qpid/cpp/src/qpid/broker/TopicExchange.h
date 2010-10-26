@@ -71,22 +71,22 @@ class TopicExchange : public virtual Exchange {
 
         BindingNode() {};
         BindingNode(const std::string& token) : token(token) {};
-        virtual ~BindingNode();
+        QPID_BROKER_EXTERN virtual ~BindingNode();
 
         // add normalizedRoute to tree, return associated BindingKey
-        BindingKey* addBindingKey(const std::string& normalizedRoute);
+        QPID_BROKER_EXTERN BindingKey* addBindingKey(const std::string& normalizedRoute);
 
         // return BindingKey associated with normalizedRoute
-        BindingKey* getBindingKey(const std::string& normalizedRoute);
+        QPID_BROKER_EXTERN BindingKey* getBindingKey(const std::string& normalizedRoute);
 
         // remove BindingKey associated with normalizedRoute
-        void removeBindingKey(const std::string& normalizedRoute);
+        QPID_BROKER_EXTERN void removeBindingKey(const std::string& normalizedRoute);
 
         // applies iter against each node in tree until iter returns false
-        bool iterateAll(TreeIterator& iter);
+        QPID_BROKER_EXTERN bool iterateAll(TreeIterator& iter);
 
         // applies iter against only matching nodes until iter returns false
-        bool iterateMatch(const std::string& routingKey, TreeIterator& iter);
+        QPID_BROKER_EXTERN bool iterateMatch(const std::string& routingKey, TreeIterator& iter);
 
         std::string routePattern;  // normalized binding that matches this node
         BindingKey bindings;  // for matches against this node
@@ -108,7 +108,7 @@ class TopicExchange : public virtual Exchange {
         bool removeBindingKey(TokenIterator& bKey,
                               const std::string& fullPattern);
         BindingKey* getBindingKey(TokenIterator& bKey);
-        virtual bool iterateMatch(TokenIterator& rKey, TreeIterator& iter);
+        QPID_BROKER_EXTERN virtual bool iterateMatch(TokenIterator& rKey, TreeIterator& iter);
         bool iterateMatchChildren(const TokenIterator& key, TreeIterator& iter);
     };
 
