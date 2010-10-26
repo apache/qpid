@@ -326,6 +326,13 @@ queue replication', allowing such replication (over a TCP connection
 on a WAN say) to be initiated after the queue had already been created
 and been in use (one of the key missing features).
 
+** Optimizing the active-passive special case.
+
+In the case where all consumers of a queue are on the same broker, we
+can get better performance because we don't need to transfer ownership
+or information about acquisition. We need to optimize this case to
+perform like an active-passive mode of replication.
+
 ** Misc outstanding issues & notes
 
 Replicating wiring
