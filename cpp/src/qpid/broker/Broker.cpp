@@ -55,8 +55,6 @@
 #include "qpid/Url.h"
 #include "qpid/Version.h"
 
-#include "sasl/sasl.h"
-
 #include <boost/bind.hpp>
 #include <boost/format.hpp>
 
@@ -273,9 +271,7 @@ Broker::Broker(const Broker::Options& conf) :
      */
     if (conf.auth) {
         SaslAuthenticator::init(qpid::saslName, conf.saslConfigPath);
-        int saslVersion = (SASL_VERSION_MAJOR << 16) + (SASL_VERSION_MINOR << 8) +
-        SASL_VERSION_STEP;
-        QPID_LOG(info, "SASL enabled : version " << saslVersion);
+        QPID_LOG(info, "SASL enabled");
     } else {
         QPID_LOG(notice, "SASL disabled: No Authentication Performed");
     }
