@@ -1,5 +1,27 @@
 #! /bin/bash
 
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+# 
+#   http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+
+# disable this test for all sasl verisons temporarily until TODO, below, is completed.
+exit 0
+
 source test_env.sh
 
 sasl_config_file=$builddir/sasl_config
@@ -44,15 +66,7 @@ broker_2_port=`cat $tmp_root/broker_2_port`
 
 sleep 2
 
-# Grep the sasl version out of broker 2's log
-sasl_version=`cat $tmp_root/qpidd_2.log | grep "SASL enabled" | tr ' ' '\n' | tail -1`
-
-# Minimum sasl version I can use is 2.1.22 == (2<<16) + (1<<8) + 22 == 131350.
-if [ "$sasl_version" -lt "131350" ]; then
-  echo "sasl_fed test requires SASL version 2.1.22 or greater"
-  # but this should not cause a test failure.
-  exit 0
-fi
+# TODO -- check for SASL version here, and exit 0 if it is less than 2.1.22 == 131350.
 
 
 # I am not randomizing these names, because the test creates its own brokers.
