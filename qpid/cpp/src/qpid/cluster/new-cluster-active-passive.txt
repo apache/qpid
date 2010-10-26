@@ -1,6 +1,10 @@
 -*-org-*-
 * Active/passive cluster implementation
 
+The active-active cluster can be used in an active-passive mode. In
+this mode we would like the cluster to be as efficient as a strictly
+active-passive implementation.
+
 An active/passive implementation requires a subset of the active/active approach:
 - drop Queue ownership and locking
 - replicate subset of Cluster interface, don't need to know all message disposition.
@@ -18,8 +22,7 @@ Simpler implementation of broker::Cluster:
 Extra requirements:
 - Passive members refuse client connections and redirect to active member.
 - Choose new active member when the active dies.
-
-Question: How best to direct clients to the correct node after failover?
+- On failover, clients keep trying till they find the active member.
 
 ** Active/active vs. active passive
 

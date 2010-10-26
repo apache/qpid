@@ -10,7 +10,8 @@ Co-existence with old cluster code and tests:
 Minimal POC for message delivery & perf test.
 - no wiring replication, no updates, no failover, no persistence, no async completion.
 - just implement publish and acquire/dequeue locking protocol.
-- measure performance.
+- optimize the special case where all consumers are on the same node.
+- measure performance: compare active-passive and active-active modes of use.
 
 Full implementation of transient cluster
 - Update (based on existing update), async completion etc.
