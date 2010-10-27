@@ -37,8 +37,8 @@ Simpler implementation of broker::Cluster:
 - can use smaller message IDs: just sequence number. Can be implicit.
 
 Extra requirements:
+- Exactly one broker hast to take over if primary fails. 
 - Passive members refuse client connections and redirect to active member.
-- Choose new active member when the active dies.
 - On failover, clients keep trying till they find the active member.
 
 ** Active/active vs. active passive
@@ -47,6 +47,7 @@ Active/active benefits:
 - Total # connections: practical 60k limit per node.
 - Handle client losing connectivity to one cluster node - can fail over to any.
 - Some load sharing: reading from client + multicast only done on direct node.
+- Clients can switch to any broker
   
 Active/active drawbacks:
 - Co-ordinating message allocation impacts performance.
@@ -57,3 +58,4 @@ Active/passive benefits:
 Active/passive drawbacks:
 - Can't help clients with no connectivity to the active member.
 - Clients must find the single active node in failover.
+- May have gaps where no broker is active for some period of time.
