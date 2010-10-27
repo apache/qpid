@@ -68,13 +68,19 @@ namespace Messaging {
     public:
 
         static bool ObjectIsMap (System::Object ^ theValue)
-        { 
-            return (*theValue).GetType() == QpidTypeCheckConstants::mapTypeP;
+        {
+            if (nullptr == theValue)
+                return false;
+            else
+                return (*theValue).GetType() == QpidTypeCheckConstants::mapTypeP;
         }
 
         static bool ObjectIsList(System::Object ^ theValue)
-        { 
-            return (*theValue).GetType() == QpidTypeCheckConstants::listTypeP;
+        {
+            if (nullptr == theValue)
+                return false;
+            else
+                return (*theValue).GetType() == QpidTypeCheckConstants::listTypeP;
         }
     };
 }}}}
