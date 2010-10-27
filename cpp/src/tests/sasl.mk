@@ -25,8 +25,9 @@ cluster_authentication_soak_INCLUDES=$(PUBLIC_INCLUDES)
 cluster_authentication_soak_SOURCES=cluster_authentication_soak.cpp  ForkedBroker.h ForkedBroker.cpp
 cluster_authentication_soak_LDADD=$(lib_client) $(lib_broker)
 
-TESTS +=   run_cluster_authentication_test
-TESTS +=   sasl_fed
+TESTS += run_cluster_authentication_test sasl_fed
 LONG_TESTS += run_cluster_authentication_soak
+EXTRA_DIST += run_cluster_authentication_test sasl_fed run_cluster_authentication_soak
+
 
 endif # HAVE_SASL
