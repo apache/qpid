@@ -504,7 +504,6 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/Broker.cpp \
   qpid/broker/Broker.h \
   qpid/broker/BrokerImportExport.h \
-  qpid/broker/Cluster.h \
   qpid/broker/Connection.cpp \
   qpid/broker/Connection.h \
   qpid/broker/ConnectionFactory.cpp \
@@ -564,7 +563,6 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/MessageStoreModule.h \
   qpid/broker/NameGenerator.cpp \
   qpid/broker/NameGenerator.h \
-  qpid/broker/NullCluster.h \
   qpid/broker/NullMessageStore.cpp \
   qpid/broker/NullMessageStore.h \
   qpid/broker/OwnershipToken.h \

@@ -259,13 +259,6 @@ class Queue : public boost::enable_shared_from_this<Queue>,
 
     bool enqueue(TransactionContext* ctxt, boost::intrusive_ptr<Message>& msg, bool suppressPolicyCheck = false);
     void enqueueAborted(boost::intrusive_ptr<Message> msg);
-
-    /** Message acknowledged, dequeue it. */
-    QPID_BROKER_EXTERN void accept(TransactionContext* ctxt, const QueuedMessage &msg);
-
-    /** Message rejected, dequeue it and re-route to alternate exchange if necessary. */
-    QPID_BROKER_EXTERN void reject(const QueuedMessage &msg);
-    
     /**
      * dequeue from store (only done once messages is acknowledged)
      */
