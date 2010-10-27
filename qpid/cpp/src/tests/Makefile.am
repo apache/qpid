@@ -346,8 +346,7 @@ EXTRA_DIST +=								\
   run_test.ps1								\
   start_broker.ps1							\
   stop_broker.ps1							\
-  topictest.ps1								\
-  run_cluster_authentication_test
+  topictest.ps1
 
 check_LTLIBRARIES += libdlclose_noop.la
 libdlclose_noop_la_LDFLAGS = -module -rpath $(abs_builddir)
@@ -370,7 +369,6 @@ EXTRA_DIST+=						\
 	run_failover_soak				\
 	reliable_replication_test			\
 	federated_cluster_test_with_node_failure        \
-        run_cluster_authentication_soak			\
 	sasl_test_setup.sh
 
 check-long:
