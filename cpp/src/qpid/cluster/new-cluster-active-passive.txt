@@ -47,7 +47,8 @@ Active/active benefits:
 - Total # connections: practical 60k limit per node.
 - Handle client losing connectivity to one cluster node - can fail over to any.
 - Some load sharing: reading from client + multicast only done on direct node.
-- Clients can switch to any broker
+- Clients can switch to any broker on failover
+- Failure affects a subset of the clients, not all the clients.
   
 Active/active drawbacks:
 - Co-ordinating message allocation impacts performance.
@@ -56,6 +57,8 @@ Active/passive benefits:
 - Don't need message allocation strategy, can feed consumers at top speed.
 
 Active/passive drawbacks:
+- All clients on one node so a failure affects every client in the system.
+- After a failure there is a "reconnect storm" as every client reconnects to the new active node.
+- After a failure there may be a period where no broker is active.
 - Can't help clients with no connectivity to the active member.
-- Clients must find the single active node in failover.
-- May have gaps where no broker is active for some period of time.
+- Clients must find the single active to fail-over.
