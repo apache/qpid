@@ -409,25 +409,17 @@ class Cluster:
 
     _cluster_count = 0
 
-    def __init__(self, test, count=0, args=[], expect=EXPECT_RUNNING, wait=True,
-                 cluster2=False):
-        if cluster2:
-            cluster_name = "--cluster2-name"
-            cluster_lib = BrokerTest.cluster2_lib
-        else:
-            cluster_name = "--cluster-name"
-            cluster_lib = BrokerTest.cluster_lib
+    def __init__(self, test, count=0, args=[], expect=EXPECT_RUNNING, wait=True):
         self.test = test
         self._brokers=[]
         self.name = "cluster%d" % Cluster._cluster_count
         Cluster._cluster_count += 1
         # Use unique cluster name
         self.args = copy(args)
-        self.args += [ cluster_name,
-                       "%s-%s:%d" % (self.name, socket.gethostname(), os.getpid()) ]
+        self.args += [ "--cluster-name", "%s-%s:%d" % (self.name, socket.gethostname(), os.getpid()) ]
         self.args += [ "--log-enable=info+", "--log-enable=debug+:cluster"]
-        assert cluster_lib, "Cannot locate cluster plug-in"
-        self.args += [ "--load-module", cluster_lib ]
+        assert BrokerTest.cluster_lib, "Cannot locate cluster plug-in"
+        self.args += [ "--load-module", BrokerTest.cluster_lib ]
         self.start_n(count, expect=expect, wait=wait)
 
     def start(self, name=None, expect=EXPECT_RUNNING, wait=True, args=[], port=0):
@@ -453,7 +445,6 @@ class BrokerTest(TestCase):
     # Environment settings.
     qpidd_exec = checkenv("QPIDD_EXEC")
     cluster_lib = os.getenv("CLUSTER_LIB")
-    cluster2_lib = os.getenv("CLUSTER2_LIB")
     xml_lib = os.getenv("XML_LIB")
     qpid_config_exec = os.getenv("QPID_CONFIG_EXEC")
     qpid_route_exec = os.getenv("QPID_ROUTE_EXEC")
@@ -500,9 +491,9 @@ class BrokerTest(TestCase):
                 raise RethrownException("Failed to start broker %s(%s): %s" % (b.name, b.log, e))
         return b
 
-    def cluster(self, count=0, args=[], expect=EXPECT_RUNNING, wait=True, cluster2=False):
+    def cluster(self, count=0, args=[], expect=EXPECT_RUNNING, wait=True):
         """Create and return a cluster ready for use"""
-        cluster = Cluster(self, count, args, expect=expect, wait=wait, cluster2=cluster2)
+        cluster = Cluster(self, count, args, expect=expect, wait=wait)
         return cluster
 
 class RethrownException(Exception):

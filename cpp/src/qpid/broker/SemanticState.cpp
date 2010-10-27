@@ -333,7 +333,7 @@ bool SemanticState::ConsumerImpl::deliver(QueuedMessage& msg)
         parent->record(record);
     } 
     if (acquire && !ackExpected) {
-        queue->accept(0, msg);
+        queue->dequeue(0, msg);
     }
     if (mgmtObject) { mgmtObject->inc_delivered(); }
     return true;
@@ -347,6 +347,11 @@ bool SemanticState::ConsumerImpl::filter(intrusive_ptr<Message>)
 bool SemanticState::ConsumerImpl::accept(intrusive_ptr<Message> msg)
 {
     assertClusterSafe();
+    // FIXME aconway 2009-06-08: if we have byte & message credit but
+    // checkCredit fails because the message is to big, we should
+    // remain on queue's listener list for possible smaller messages
+    // in future.
+    // 
     blocked = !(filter(msg) && checkCredit(msg));
     return !blocked;
 }

@@ -35,6 +35,7 @@ endif
 if HAVE_LIBCPG
 
 dmodule_LTLIBRARIES += cluster.la
+
 cluster_la_SOURCES =				\
   $(CMAN_SOURCES)				\
   qpid/cluster/Cluster.cpp			\
@@ -97,27 +98,6 @@ cluster_la_SOURCES =				\
 cluster_la_LIBADD=  -lcpg $(libcman) libqpidbroker.la libqpidclient.la
 cluster_la_CXXFLAGS = $(AM_CXXFLAGS) -fno-strict-aliasing
 cluster_la_LDFLAGS = $(PLUGINLDFLAGS)
-
-# Experimental new cluster plugin
-dmodule_LTLIBRARIES += cluster2.la
-cluster2_la_LIBADD = -lcpg libqpidbroker.la
-cluster2_la_LDFLAGS = $(PLUGINLDFLAGS)
-cluster2_la_SOURCES =				\
-	qpid/cluster/BrokerHandler.cpp		\
-	qpid/cluster/BrokerHandler.h		\
-	qpid/cluster/Cluster2Plugin.cpp		\
-	qpid/cluster/Core.cpp			\
-	qpid/cluster/Core.h			\
-	qpid/cluster/Cpg.cpp			\
-	qpid/cluster/Cpg.h			\
-	qpid/cluster/EventHandler.cpp		\
-	qpid/cluster/EventHandler.h		\
-	qpid/cluster/MessageHandler.cpp		\
-	qpid/cluster/MessageHandler.h		\
-	qpid/cluster/MessageId.cpp		\
-	qpid/cluster/MessageId.h		\
-	qpid/cluster/PollerDispatch.cpp		\
-	qpid/cluster/PollerDispatch.h
 
 # The watchdog plugin and helper executable
 dmodule_LTLIBRARIES += watchdog.la
