@@ -79,6 +79,8 @@ namespace Org.Apache.Qpid.Messaging.examples
             colors.Add("red");
             colors.Add("green");
             colors.Add("white");
+            // list contains null value
+            colors.Add(null);
             content["colorsList"] = colors;
 
             // add one of each supported amqp data type
@@ -117,6 +119,8 @@ namespace Org.Apache.Qpid.Messaging.examples
 
             Guid myGuid = new Guid("000102030405060708090a0b0c0d0e0f");
             content["myGuid"] = myGuid;
+
+            content["myNull"] = null;
 
             //
             // Construct a message with the map content and send it synchronously
