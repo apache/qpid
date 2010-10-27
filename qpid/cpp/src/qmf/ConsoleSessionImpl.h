@@ -80,6 +80,7 @@ namespace qmf {
         uint64_t lastAgePass;
         std::map<std::string, Agent> agents;
         Agent connectedBrokerAgent;
+        bool connectedBrokerInAgentList;
         qpid::messaging::Address replyAddress;
         std::string directBase;
         std::string topicBase;

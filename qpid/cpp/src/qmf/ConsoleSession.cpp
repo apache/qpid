@@ -59,7 +59,7 @@ Agent ConsoleSession::getConnectedBrokerAgent() const { return impl->getConnecte
 ConsoleSessionImpl::ConsoleSessionImpl(Connection& c, const string& options) :
     connection(c), domain("default"), maxAgentAgeMinutes(5), opened(false),
     thread(0), threadCanceled(false),
-    lastVisit(0), lastAgePass(0), schemaCache(new SchemaCache())
+    lastVisit(0), lastAgePass(0), connectedBrokerInAgentList(false), schemaCache(new SchemaCache())
 {
     if (!options.empty()) {
         qpid::messaging::AddressParser parser(options);
@@ -97,9 +97,10 @@ void ConsoleSessionImpl::setAgentFilter(const string& predicate)
         qpid::sys::Mutex::ScopedLock l(lock);
         map<string, Agent> toDelete;
         for (map<string, Agent>::iterator iter = agents.begin(); iter != agents.end(); iter++)
-            if ((iter->second.getName() != connectedBrokerAgent.getName()) &&
-                (!agentQuery.matchesPredicate(iter->second.getAttributes()))) {
+            if (!agentQuery.matchesPredicate(iter->second.getAttributes())) {
                 toDelete[iter->first] = iter->second;
+                if (iter->second.getName() == connectedBrokerAgent.getName())
+                    connectedBrokerInAgentList = false;
             }
 
         for (map<string, Agent>::iterator iter = toDelete.begin(); iter != toDelete.end(); iter++) {
@@ -107,6 +108,11 @@ void ConsoleSessionImpl::setAgentFilter(const string& predicate)
             auto_ptr<ConsoleEventImpl> eventImpl(new ConsoleEventImpl(CONSOLE_AGENT_DEL, AGENT_DEL_FILTER));
             eventImpl->setAgent(iter->second);
             enqueueEventLH(eventImpl.release());
+        }
+
+        if (!connectedBrokerInAgentList && agentQuery.matchesPredicate(connectedBrokerAgent.getAttributes())) {
+            agents[connectedBrokerAgent.getName()] = connectedBrokerAgent;
+            connectedBrokerInAgentList = true;
         }
     }
 
@@ -376,18 +382,29 @@ void ConsoleSessionImpl::handleAgentUpdate(const string& agentName, const Varian
         return;
     Variant::Map attrs(iter->second.asMap());
 
+    iter = attrs.find("epoch");
+    if (iter != attrs.end())
+        epoch = iter->second.asUint32();
+
+    if (cid == "broker-locate") {
+        qpid::sys::Mutex::ScopedLock l(lock);
+        agent = Agent(new AgentImpl(agentName, epoch, *this));
+        connectedBrokerAgent = agent;
+        if (!agentQuery || agentQuery.matchesPredicate(attrs)) {
+            connectedBrokerInAgentList = true;
+            agents[agentName] = agent;
+        }
+        return;
+    }
+
     //
     // Check this agent against the agent filter.  Exit if it doesn't match.
     // (only if this isn't the connected broker agent)
     //
-    if ((cid != "broker-locate") && agentQuery && (!agentQuery.matchesPredicate(attrs)))
+    if (agentQuery && (!agentQuery.matchesPredicate(attrs)))
         return;
 
     QPID_LOG(trace, "RCVD AgentHeartbeat from an agent matching our filter: " << agentName);
-
-    iter = attrs.find("epoch");
-    if (iter != attrs.end())
-        epoch = iter->second.asUint32();
 
     {
         qpid::sys::Mutex::ScopedLock l(lock);
@@ -421,6 +438,7 @@ void ConsoleSessionImpl::handleAgentUpdate(const string& agentName, const Varian
                 // The agent has restarted since the last time we heard from it.
                 // Enqueue a notification.
                 //
+                impl.setEpoch(epoch);
                 auto_ptr<ConsoleEventImpl> eventImpl(new ConsoleEventImpl(CONSOLE_AGENT_RESTART));
                 eventImpl->setAgent(agent);
                 enqueueEventLH(ConsoleEvent(eventImpl.release()));
@@ -440,9 +458,6 @@ void ConsoleSessionImpl::handleAgentUpdate(const string& agentName, const Varian
                 }
             }
         }
-
-        if (cid == "broker-locate")
-            connectedBrokerAgent = agent;
     }
 }
 
