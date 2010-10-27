@@ -57,6 +57,7 @@ namespace qmf {
         //
         const std::string& getName() const { return name; }
         uint32_t getEpoch() const { return epoch; }
+        void setEpoch(uint32_t e) { epoch = e; }
         std::string getVendor() const { return getAttribute("_vendor").asString(); }
         std::string getProduct() const { return getAttribute("_product").asString(); }
         std::string getInstance() const { return getAttribute("_instance").asString(); }
