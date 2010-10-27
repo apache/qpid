@@ -91,7 +91,10 @@ namespace Messaging {
             {
                 // Add a simple native type to map
                 ::qpid::types::Variant entryValue;
-                ManagedToNativeObject(kvp.Value, entryValue);
+                if (nullptr != kvp.Value)
+                {
+                    ManagedToNativeObject(kvp.Value, entryValue);
+                }
                 std::string entryName = QpidMarshal::ToNative(kvp.Key);
                 qpidMap.insert(std::make_pair<std::string, ::qpid::types::Variant>(entryName, entryValue));
             }
@@ -144,7 +147,10 @@ namespace Messaging {
             {
                 // Add a simple native type to list
                 ::qpid::types::Variant entryValue;
-                ManagedToNativeObject(listObj, entryValue);
+                if (nullptr != listObj)
+                {
+                    ManagedToNativeObject(listObj, entryValue);
+                }
                 qpidList.push_back(entryValue);
             }
         }
@@ -265,6 +271,10 @@ namespace Messaging {
 
             switch (vType)
             {
+            case ::qpid::types::VAR_VOID:
+                dict[elementName] = nullptr;
+                break;
+
             case ::qpid::types::VAR_BOOL:
                 dict[elementName] = variant.asBool();
                 break;
@@ -358,6 +368,10 @@ namespace Messaging {
 
             switch (vType)
             {
+            case ::qpid::types::VAR_VOID:
+                (*managedList).Add(nullptr);
+                break;
+
             case ::qpid::types::VAR_BOOL:
                 (*managedList).Add(variant.asBool());
                 break;

@@ -277,6 +277,12 @@ namespace Messaging {
 					ListAsString((System::Collections::ObjectModel::Collection<
 							System::Object^> ^)kvp.Value));
             }
+            else if (nullptr == kvp.Value)
+            {
+                sb->AppendFormat(
+					"{0}=", 
+					kvp.Key);
+            }
             else
                 sb->AppendFormat("{0}={1}", kvp.Key, kvp.Value);
         }
@@ -309,6 +315,10 @@ namespace Messaging {
             {
                 sb->Append(ListAsString((System::Collections::ObjectModel::Collection<
                                 System::Object^> ^)obj));
+            }
+            else if (nullptr == obj)
+            {
+                // no display for null objects
             }
             else
                 sb->Append(obj->ToString());
