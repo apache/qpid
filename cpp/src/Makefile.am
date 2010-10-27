@@ -543,6 +543,7 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/ExpiryPolicy.h \
   qpid/broker/FanOutExchange.cpp \
   qpid/broker/FanOutExchange.h \
+  qpid/broker/FedOps.h \
   qpid/broker/HandlerImpl.h \
   qpid/broker/HeadersExchange.cpp \
   qpid/broker/HeadersExchange.h \
