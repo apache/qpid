@@ -349,6 +349,18 @@ can get better performance because we don't need to transfer ownership
 or information about acquisition. We need to optimize this case to
 perform like an active-passive mode of replication.
 
+** Increasing Concurrency and load sharing
+The current cluster is bottlenecked by processing everything in the
+CPG deliver thread. By removing the need for identical operation on
+each broker, we open up the possiblility of greater concurrency.
+
+Handling multicast enqueue, acquire, accpet, release etc: concurrency per queue.
+Operatons on different queues can be done in different threads.
+
+The new design does not force each broker to do all the work in the
+CPG thread so spreading load across cluster members should give some
+scale-up.
+
 ** Misc outstanding issues & notes
 
 Replicating wiring

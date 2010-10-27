@@ -398,6 +398,10 @@ No integration with DTX transactions.
 ** TODO [#B] Make new cluster work with replication exchange.
 Possibly re-use some common logic. Replication exchange is like clustering
 except over TCP.
+** TODO [#B] Better concurrency, scalabiility on multi-cores.
+Introduce PollableQueue of operations per broker queue. Queue up mcast
+operations (enqueue, acquire, accept etc.) to be handled concurrently
+on different queue. Performance testing to verify improved scalability.
 ** TODO [#C] Async completion for declare, bind, destroy queues and exchanges.
 Cluster needs to complete these asynchronously to guarantee resources
 exist across the cluster when the command completes.
