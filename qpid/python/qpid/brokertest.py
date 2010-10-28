@@ -21,7 +21,7 @@
 # or federation
 
 import os, signal, string, tempfile, subprocess, socket, threading, time, imp, re
-import qpid, traceback
+import qpid, traceback, signal
 from qpid import connection, messaging, util
 from qpid.compat import format_exc
 from qpid.harness import Skipped
@@ -153,7 +153,7 @@ class Popen(subprocess.Popen):
         self.cmd  = [ str(x) for x in cmd ]
         self.returncode = None
         self.expect = expect
-        subprocess.Popen.__init__(self, self.cmd, 0, None, subprocess.PIPE, subprocess.PIPE, subprocess.PIPE)
+        subprocess.Popen.__init__(self, self.cmd, 0, None, subprocess.PIPE, subprocess.PIPE, subprocess.PIPE, close_fds=True)
         self.pname = "%s-%d" % (os.path.split(self.cmd[0])[1], self.pid)
         msg = "Process %s" % self.pname
         self.stdin = ExceptionWrapper(self.stdin, msg)
@@ -195,18 +195,7 @@ class Popen(subprocess.Popen):
                 except: pass
             elif self.expect == EXPECT_RUNNING:
                 try:
-                    self.terminate()
-                except AttributeError:
-                  # no terminate method to Popen..
-                  try:
-                    import signal
-                    os.kill( self.pid , signal.SIGTERM)
-                  except AttributeError:
-                    # no os.kill, using taskkill.. (Windows only)
-                    try:
-                      os.popen('TASKKILL /PID ' +str(self.pid) + ' /F')
-                    except:
-                      print "  ERROR: could not terminate process."
+                    self.kill()
                 except:
                     self.unexpected("expected running, exit code %d" % self.wait())
             else:
@@ -237,7 +226,7 @@ class Popen(subprocess.Popen):
 
     def poll(self):
         if self.returncode is None:
-            ret = subprocess.poll(self)
+            ret = subprocess.Popen.poll(self)
             if (ret != -1):
                 self.returncode = ret
                 self._cleanup()
@@ -251,12 +240,21 @@ class Popen(subprocess.Popen):
             self._cleanup()
         return self.returncode
 
-    def send_signal(self, sig):
-        try: os.kill(self.pid,sig)
-        except OSError,e: raise OSError("Kill failed %s: %s"%(self.pname, e))
-
-    def terminate(self): self.send_signal(signal.SIGTERM) 
-    def kill(self): self.send_signal(signal.SIGKILL)
+    def terminate(self):
+        try: subprocess.Popen.terminate(self)
+        except AttributeError:          # No terminate method
+            try:
+                os.kill( self.pid , signal.SIGTERM)
+            except AttributeError: # no os.kill, using taskkill.. (Windows only)
+                os.popen('TASKKILL /PID ' +str(self.pid) + ' /F')
+            
+    def kill(self):
+        try: subprocess.Popen.kill(self)
+        except AttributeError:          # No terminate method
+            try:
+                os.kill( self.pid , signal.SIGKILL)
+            except AttributeError: # no os.kill, using taskkill.. (Windows only)
+                os.popen('TASKKILL /PID ' +str(self.pid) + ' /F')
 
     def cmd_str(self): return " ".join([str(s) for s in self.cmd])
 
