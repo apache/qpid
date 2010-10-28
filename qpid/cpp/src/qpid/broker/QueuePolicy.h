@@ -44,7 +44,7 @@ class QueuePolicy
     uint64_t size;
     bool policyExceeded;
             
-    static int getInt(const qpid::framing::FieldTable& settings, const std::string& key, int defaultValue);
+    static uint32_t getCapacity(const qpid::framing::FieldTable& settings, const std::string& key, uint32_t defaultValue);
 
   protected:
     uint64_t getCurrentQueueSize() const { return size; } 
