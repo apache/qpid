@@ -25,6 +25,11 @@ cluster_authentication_soak_INCLUDES=$(PUBLIC_INCLUDES)
 cluster_authentication_soak_SOURCES=cluster_authentication_soak.cpp  ForkedBroker.h ForkedBroker.cpp
 cluster_authentication_soak_LDADD=$(lib_client) $(lib_broker)
 
+# Note: sasl_version is not a test -- it is a tool used by tests.
+check_PROGRAMS+=sasl_version
+sasl_version_SOURCES=sasl_version.cpp
+sasl_version_LDADD=$(lib_client)
+
 TESTS += run_cluster_authentication_test sasl_fed
 LONG_TESTS += run_cluster_authentication_soak
 EXTRA_DIST += run_cluster_authentication_test sasl_fed run_cluster_authentication_soak

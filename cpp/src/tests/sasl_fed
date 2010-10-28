@@ -19,10 +19,19 @@
 # under the License.
 #
 
-# disable this test for all sasl verisons temporarily until TODO, below, is completed.
-exit 0
-
 source test_env.sh
+
+# This minimum value corresponds to sasl version 2.1.22
+minimum_sasl_version=131350
+
+sasl_version=`$QPID_TEST_EXEC_DIR/sasl_version`
+
+# This test is necessary becasue this sasl version is the first one that permits 
+# redirection of the sasl config file path.
+if [ "$sasl_version" -lt  "$minimum_sasl_version" ]; then
+  echo "sasl_fed: must have sasl version 2.1.22 or greater.  Version is: $sasl_version"
+  exit 0
+fi
 
 sasl_config_file=$builddir/sasl_config
 
