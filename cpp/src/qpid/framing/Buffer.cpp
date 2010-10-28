@@ -20,6 +20,7 @@
  */
 #include "qpid/framing/Buffer.h"
 #include "qpid/framing/FieldTable.h" 
+#include "qpid/Msg.h"
 #include <string.h>
 #include <boost/format.hpp>
 namespace qpid {
@@ -211,17 +212,29 @@ uint64_t Buffer::getUInt<8>() {
 
 template <>
 void Buffer::putUInt<1>(uint64_t i) {
-    putOctet(i);
+    if (std::numeric_limits<uint8_t>::min() <= i && i <= std::numeric_limits<uint8_t>::max()) {
+        putOctet(i);
+        return;
+    }
+    throw Exception(QPID_MSG("Could not encode (" << i << ") as uint8_t."));
 }
 
 template <>
 void Buffer::putUInt<2>(uint64_t i) {
-    putShort(i);
+    if (std::numeric_limits<uint16_t>::min() <= i && i <= std::numeric_limits<uint16_t>::max()) {
+        putShort(i);
+        return;
+    }
+    throw Exception(QPID_MSG("Could not encode (" << i << ") as uint16_t."));
 }
 
 template <>
 void Buffer::putUInt<4>(uint64_t i) {
-    putLong(i);
+    if (std::numeric_limits<uint32_t>::min() <= i && i <= std::numeric_limits<uint32_t>::max()) {
+        putLong(i);
+        return;
+    }
+    throw Exception(QPID_MSG("Could not encode (" << i << ") as uint32_t."));
 }
 
 template <>
@@ -231,18 +244,26 @@ void Buffer::putUInt<8>(uint64_t i) {
 
 void Buffer::putShortString(const string& s){
     size_t slen = s.length();
-    uint8_t len = slen < 0x100 ? (uint8_t) slen : 0xFF;
-    putOctet(len);
-    s.copy(data + position, len);
-    position += len;    
+    if (slen <= std::numeric_limits<uint8_t>::max()) {
+        uint8_t len = (uint8_t) slen;
+        putOctet(len);
+        s.copy(data + position, len);
+        position += len;
+        return;
+    }
+    throw Exception(QPID_MSG("Could not encode string of " << slen << " bytes as uint8_t string."));
 }
 
 void Buffer::putMediumString(const string& s){
     size_t slen = s.length();
-    uint16_t len = slen < 0x10000 ? (uint16_t) slen : 0xFFFF;
-    putShort(len);
-    s.copy(data + position, len);
-    position += len;    
+    if (slen <= std::numeric_limits<uint16_t>::max()) {
+        uint16_t len = (uint16_t) slen;
+        putShort(len);
+        s.copy(data + position, len);
+        position += len;
+        return;
+    }
+    throw Exception(QPID_MSG("Could not encode string of " << slen << " bytes as uint16_t string."));
 }
 
 void Buffer::putLongString(const string& s){

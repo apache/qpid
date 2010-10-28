@@ -28,13 +28,13 @@
 
     This class represents a parent object
 
-    <property name="name"      type="sstr" access="RC" index="y"/>
+    <property name="name"      type="lstr" access="RC" index="y"/>
 
     <statistic name="state" type="sstr"                desc="Operational state of the link"/>
     <statistic name="count" type="count64" unit="tick" desc="Counter that increases monotonically"/>
 
     <method name="create_child" desc="Create child object">
-      <arg name="name"     dir="I" type="sstr"/>
+      <arg name="name"     dir="I" type="lstr"/>
       <arg name="childRef" dir="O" type="objId"/>
     </method>
   </class>
@@ -47,7 +47,7 @@
   -->
   <class name="Child">
     <property name="ParentRef" type="objId"  references="Parent" access="RC" index="y" parentRef="y"/>
-    <property name="name"      type="sstr"                       access="RC" index="y"/>
+    <property name="name"      type="lstr"                       access="RC" index="y"/>
 
     <statistic name="count" type="count64" unit="tick" desc="Counter that increases monotonically"/>
 
@@ -55,7 +55,7 @@
   </class>
 
   <eventArguments>
-    <arg name="childName" type="sstr"/>
+    <arg name="childName" type="lstr"/>
   </eventArguments>
 
   <event name="ChildCreated"   args="childName"/>

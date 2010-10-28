@@ -18,7 +18,7 @@
 
   <class name="Acl">
     <property name="brokerRef"     type="objId"   references="org.apache.qpid.broker:Broker" access="RO" index="y" parentRef="y"/>
-    <property name="policyFile"    type="sstr"    access="RO"    desc="Name of the policy file"/>
+    <property name="policyFile"    type="lstr"    access="RO"    desc="Name of the policy file"/>
     <property name="enforcingAcl"  type="bool"    access="RO"    desc="Currently Enforcing ACL"/>
     <property name="transferAcl"   type="bool"    access="RO"    desc="Any transfer ACL rules in force"/>
     <property name="lastAclLoad"   type="absTime" access="RO"    desc="Timestamp of last successful load of ACL"/>
@@ -32,7 +32,7 @@
     <arg name="arguments"  type="map"/>
     <arg name="objectName" type="sstr"/>
     <arg name="objectType" type="sstr"/>
-    <arg name="reason"     type="sstr"/>
+    <arg name="reason"     type="lstr"/>
     <arg name="userId"     type="sstr"/>
   </eventArguments>
 

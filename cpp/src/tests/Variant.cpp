@@ -20,10 +20,12 @@
  */
 #include <iostream>
 #include "qpid/types/Variant.h"
+#include "qpid/amqp_0_10/Codecs.h"
 
 #include "unit_test.h"
 
 using namespace qpid::types;
+using namespace qpid::amqp_0_10;
 
 namespace qpid {
 namespace tests {
@@ -684,6 +686,30 @@ QPID_AUTO_TEST_CASE(testEncoding)
     BOOST_CHECK_EQUAL(a.getEncoding(), map.asMap()["a"].getEncoding());
     BOOST_CHECK_EQUAL(b.getEncoding(), map.asMap()["b"].getEncoding());
     BOOST_CHECK_EQUAL(map.asMap()["a"].getEncoding(), map.asMap()["b"].getEncoding());
+}
+
+QPID_AUTO_TEST_CASE(testBufferEncoding)
+{
+    Variant a("abc");
+    a.setEncoding("utf8");
+    std::string buffer;
+
+    Variant::Map inMap, outMap;
+    inMap["a"] = a;
+
+    MapCodec::encode(inMap, buffer);
+    MapCodec::decode(buffer, outMap);
+    BOOST_CHECK_EQUAL(inMap, outMap);
+
+    inMap["b"] = Variant(std::string(65535, 'X'));
+    inMap["b"].setEncoding("utf16");
+    MapCodec::encode(inMap, buffer);
+    MapCodec::decode(buffer, outMap);
+    BOOST_CHECK_EQUAL(inMap, outMap);
+
+    inMap["fail"] = Variant(std::string(65536, 'X'));
+    inMap["fail"].setEncoding("utf16");
+    BOOST_CHECK_THROW(MapCodec::encode(inMap, buffer), std::exception);
 }
 
 QPID_AUTO_TEST_SUITE_END()

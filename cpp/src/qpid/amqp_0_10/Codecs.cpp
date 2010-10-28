@@ -198,15 +198,21 @@ boost::shared_ptr<FieldValue> convertString(const std::string& value, const std:
         } else {
             return boost::shared_ptr<FieldValue>(new Var16Value(value, 0x90));
         }
-    } else if (encoding == utf8 && !large) {
+    } else if (encoding == utf8) {
+        if (!large)
             return boost::shared_ptr<FieldValue>(new Str16Value(value));
-    } else if (encoding == utf16 && !large) {
-        return boost::shared_ptr<FieldValue>(new Var16Value(value, 0x96));
-    } else if (encoding == iso885915 && !large) {
-        return boost::shared_ptr<FieldValue>(new Var16Value(value, 0x94));
+        throw Exception(QPID_MSG("Could not encode utf8 character string - too long (" << value.size() << " bytes)"));
+    } else if (encoding == utf16) {
+        if (!large)
+            return boost::shared_ptr<FieldValue>(new Var16Value(value, 0x96));
+        throw Exception(QPID_MSG("Could not encode utf16 character string - too long (" << value.size() << " bytes)"));
+    } else if (encoding == iso885915) {
+        if (!large)
+            return boost::shared_ptr<FieldValue>(new Var16Value(value, 0x94));
+        throw Exception(QPID_MSG("Could not encode iso-8859-15 character string - too long (" << value.size() << " bytes)"));
     } else {
-        //either the string is too large for the encoding in amqp 0-10, or the encoding was not recognised
-        QPID_LOG(warning, "Could not encode " << value.size() << " byte value as " << encoding << ", encoding as vbin32.");
+        // the encoding was not recognised
+        QPID_LOG(warning, "Unknown byte encoding: [" << encoding << "], encoding as vbin32.");
         return boost::shared_ptr<FieldValue>(new Var32Value(value, 0xa0));
     }
 }
