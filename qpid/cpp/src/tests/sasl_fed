@@ -29,7 +29,7 @@ sasl_version=`$QPID_TEST_EXEC_DIR/sasl_version`
 # This test is necessary becasue this sasl version is the first one that permits 
 # redirection of the sasl config file path.
 if [ "$sasl_version" -lt  "$minimum_sasl_version" ]; then
-  echo "sasl_fed: must have sasl version 2.1.22 or greater.  Version is: $sasl_version"
+  echo "sasl_fed: must have sasl version 2.1.22 or greater.  ( Integer value: $minimum_sasl_version )  Version is: $sasl_version"
   exit 0
 fi
 
