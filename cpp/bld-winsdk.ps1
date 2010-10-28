@@ -222,13 +222,8 @@ function BuildAPlatform
     }
     Remove-Item -recurse $preserve_dir
 
-    # Install the README and MS-LICENSE
+    # Install the README
     Copy-Item -force -path "$qpid_cpp_src/README-winsdk.txt" -destination "$install_dir/README-winsdk.txt"
-    Copy-Item -force -path "$qpid_cpp_src/src/windows/winsdk/MS-LICENSE.HTM" -destination "$install_dir/MS-LICENSE.HTM"
-
-    # Append the MSVC license info to the plain LICENSE
-    $licenseinfo = Get-Content "$qpid_cpp_src/src/windows/winsdk/LICENSE-MSVC"
-    Add-Content "$install_dir/LICENSE" $licenseinfo
     
     # Set top level info files to DOS line endings
     Unix2Dos "$install_dir/README-winsdk.txt"
