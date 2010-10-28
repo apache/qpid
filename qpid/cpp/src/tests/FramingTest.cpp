@@ -151,6 +151,17 @@ QPID_AUTO_TEST_CASE(testMessageCancelBodyFrame)
     BOOST_CHECK_EQUAL(tostring(in), tostring(out));
 }
 
+QPID_AUTO_TEST_CASE(badStrings) {
+    char data[(65535 + 2) + (255 + 1)];
+    Buffer b(data, sizeof(data));
+    BOOST_CHECK_THROW(b.putShortString(std::string(256, 'X')),
+                      Exception);
+    BOOST_CHECK_THROW(b.putMediumString(std::string(65536, 'X')),
+                      Exception);
+    b.putShortString(std::string(255, 'X'));
+    b.putMediumString(std::string(65535, 'X'));
+}
+
 QPID_AUTO_TEST_SUITE_END()
 
 }} // namespace qpid::tests

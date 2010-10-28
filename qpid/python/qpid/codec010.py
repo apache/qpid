@@ -85,11 +85,15 @@ class Codec(Packer):
   def read_uint8(self):
     return self.unpack("!B")
   def write_uint8(self, n):
+    if n < 0 or n > 255:
+      raise CodecException("Cannot encode %d as uint8" % n)
     return self.pack("!B", n)
 
   def read_int8(self):
     return self.unpack("!b")
   def write_int8(self, n):
+    if n < -128 or n > 127:
+      raise CodecException("Cannot encode %d as int8" % n)
     self.pack("!b", n)
 
   def read_char(self):
@@ -108,22 +112,30 @@ class Codec(Packer):
   def read_uint16(self):
     return self.unpack("!H")
   def write_uint16(self, n):
+    if n < 0 or n > 65535:
+      raise CodecException("Cannot encode %d as uint16" % n)
     self.pack("!H", n)
 
   def read_int16(self):
     return self.unpack("!h")
   def write_int16(self, n):
+    if n < -32768 or n > 32767:
+      raise CodecException("Cannot encode %d as int16" % n)
     self.pack("!h", n)
 
 
   def read_uint32(self):
     return self.unpack("!L")
   def write_uint32(self, n):
+    if n < 0 or n > 4294967295:
+      raise CodecException("Cannot encode %d as uint32" % n)
     self.pack("!L", n)
 
   def read_int32(self):
     return self.unpack("!l")
   def write_int32(self, n):
+    if n < -2147483648 or n > 2147483647:
+      raise CodecException("Cannot encode %d as int32" % n)
     self.pack("!l", n)
 
   def read_float(self):
