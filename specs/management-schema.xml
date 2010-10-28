@@ -70,7 +70,7 @@
     <property name="stagingThreshold" type="uint32" access="RO" desc="Broker stages messages over this size to disk"/>
     <property name="mgmtPubInterval"  type="uint16" access="RW" unit="second" min="1" desc="Interval for management broadcasts"/>
     <property name="version"          type="sstr"   access="RO" desc="Running software version"/>
-    <property name="dataDir"          type="sstr"   access="RO" optional="y" desc="Persistent configuration storage location"/>
+    <property name="dataDir"          type="lstr"   access="RO" optional="y" desc="Persistent configuration storage location"/>
     <statistic name="uptime" type="deltaTime"/>
 
     <method name="echo" desc="Request a response to test the path to the management broker">
@@ -198,7 +198,7 @@
   <class name="Binding">
     <property name="exchangeRef" type="objId" references="Exchange" access="RC" index="y" parentRef="y"/>
     <property name="queueRef"    type="objId" references="Queue"    access="RC" index="y"/>
-    <property name="bindingKey"  type="sstr"  access="RC" index="y"/>
+    <property name="bindingKey"  type="lstr"  access="RC" index="y"/>
     <property name="arguments"   type="map"   access="RC"/>
     <property name="origin"      type="sstr"  access="RO" optional="y"/>
 
@@ -234,7 +234,7 @@
     <property name="SystemConnection"   type="bool"   access="RC" desc="Infrastucture/ Inter-system connection (Cluster, Federation, ...)"/>
     <property name="federationLink"     type="bool"   access="RO" desc="Is this a federation link"/>
     <property name="authIdentity"       type="sstr"   access="RO" desc="authId of connection if authentication enabled"/>
-    <property name="remoteProcessName"  type="sstr"   access="RO" optional="y" desc="Name of executable running as remote client"/>
+    <property name="remoteProcessName"  type="lstr"   access="RO" optional="y" desc="Name of executable running as remote client"/>
     <property name="remotePid"          type="uint32" access="RO" optional="y" desc="Process ID of remote client"/>
     <property name="remoteParentPid"    type="uint32" access="RO" optional="y" desc="Parent Process ID of remote client"/>
     <property name="shadow"             type="bool"   access="RO" desc="True for shadow connections"/>
@@ -263,7 +263,7 @@
     <property name="durable"   type="bool"   access="RC"/>
 
     <statistic name="state"       type="sstr" desc="Operational state of the link"/>
-    <statistic name="lastError"   type="sstr" desc="Reason link is not operational"/>
+    <statistic name="lastError"   type="lstr" desc="Reason link is not operational"/>
 
     <method name="close"/> 
 
@@ -271,7 +271,7 @@
       <arg name="durable"     dir="I" type="bool"/>
       <arg name="src"         dir="I" type="sstr"/>
       <arg name="dest"        dir="I" type="sstr"/>
-      <arg name="key"         dir="I" type="sstr"/>
+      <arg name="key"         dir="I" type="lstr"/>
       <arg name="tag"         dir="I" type="sstr"/>
       <arg name="excludes"    dir="I" type="sstr"/>
       <arg name="srcIsQueue"  dir="I" type="bool"/>
@@ -293,7 +293,7 @@
     <property name="durable"     type="bool"   access="RC"/>
     <property name="src"         type="sstr"   access="RC"/>
     <property name="dest"        type="sstr"   access="RC"/>
-    <property name="key"         type="sstr"   access="RC"/>
+    <property name="key"         type="lstr"   access="RC"/>
     <property name="srcIsQueue"  type="bool"   access="RC"/>
     <property name="srcIsLocal"  type="bool"   access="RC"/>
     <property name="tag"         type="sstr"   access="RC"/>
