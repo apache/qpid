@@ -24,6 +24,7 @@
 #include "qpid/framing/FieldValue.h"
 #include "qpid/framing/reply_exceptions.h"
 #include "qpid/log/Statement.h"
+#include <sstream>
 
 using namespace qpid::broker;
 using namespace qpid::framing;
@@ -115,12 +116,24 @@ void QueuePolicy::update(FieldTable& settings)
     settings.setString(typeKey, type);
 }
 
-
-int QueuePolicy::getInt(const FieldTable& settings, const std::string& key, int defaultValue)
+uint32_t QueuePolicy::getCapacity(const FieldTable& settings, const std::string& key, uint32_t defaultValue)
 {
     FieldTable::ValuePtr v = settings.get(key);
-    if (v && v->convertsTo<int>()) return v->get<int>();
-    else return defaultValue;
+
+    int32_t result = 0;
+
+    if (!v) return defaultValue;
+    if (v->convertsTo<int>()) {
+        result = v->get<int>();
+        if (result >= 0) return result;
+    }
+    else {
+        string s(v->get<string>());  // I assume anything can be converted to a string
+        std::istringstream convert(s);
+        if (convert >> result && result >= 0) return result;
+    }
+
+    throw InvalidArgumentException(QPID_MSG("Cannot convert " << key << " to unsigned integer"));
 }
 
 std::string QueuePolicy::getType(const FieldTable& settings)
@@ -297,8 +310,8 @@ std::auto_ptr<QueuePolicy> QueuePolicy::createQueuePolicy(const qpid::framing::F
 
 std::auto_ptr<QueuePolicy> QueuePolicy::createQueuePolicy(const std::string& name, const qpid::framing::FieldTable& settings)
 {
-    uint32_t maxCount = getInt(settings, maxCountKey, 0);
-    uint32_t maxSize = getInt(settings, maxSizeKey, defaultMaxSize);
+    uint32_t maxCount = getCapacity(settings, maxCountKey, 0);
+    uint32_t maxSize = getCapacity(settings, maxSizeKey, defaultMaxSize);
     if (maxCount || maxSize) {
         return createQueuePolicy(name, maxCount, maxSize, getType(settings));
     } else {
