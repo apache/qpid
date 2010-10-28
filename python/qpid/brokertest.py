@@ -20,7 +20,7 @@
 # Support library for tests that start multiple brokers, e.g. cluster
 # or federation
 
-import os, signal, string, tempfile, popen2, socket, threading, time, imp, re
+import os, signal, string, tempfile, subprocess, socket, threading, time, imp, re
 import qpid, traceback
 from qpid import connection, messaging, util
 from qpid.compat import format_exc
@@ -104,9 +104,8 @@ def retry(function, timeout=10, delay=.01):
         delay *= 2
     return True
 
-class Popen(popen2.Popen3):
+class Popen(subprocess.Popen):
     """
-    Similar to subprocess.Popen but using popen2 classes for portability.
     Can set and verify expectation of process status at end of test.
     Dumps command line, stdout, stderr to data dir for debugging.
     """
@@ -154,12 +153,12 @@ class Popen(popen2.Popen3):
         self.cmd  = [ str(x) for x in cmd ]
         self.returncode = None
         self.expect = expect
-        popen2.Popen3.__init__(self, self.cmd, True)
+        subprocess.Popen.__init__(self, self.cmd, 0, None, subprocess.PIPE, subprocess.PIPE, subprocess.PIPE)
         self.pname = "%s-%d" % (os.path.split(self.cmd[0])[1], self.pid)
         msg = "Process %s" % self.pname
-        self.stdin = ExceptionWrapper(self.tochild, msg)
-        self.stdout = Popen.OutStream(self.fromchild, self.outfile("out"), msg)
-        self.stderr = Popen.OutStream(self.childerr, self.outfile("err"), msg)
+        self.stdin = ExceptionWrapper(self.stdin, msg)
+        self.stdout = Popen.OutStream(self.stdout, self.outfile("out"), msg)
+        self.stderr = Popen.OutStream(self.stderr, self.outfile("err"), msg)
         f = open(self.outfile("cmd"), "w")
         try: f.write(self.cmd_str())
         finally: f.close()
@@ -196,7 +195,18 @@ class Popen(popen2.Popen3):
                 except: pass
             elif self.expect == EXPECT_RUNNING:
                 try:
-                    self.kill()
+                    self.terminate()
+                except AttributeError:
+                  # no terminate method to Popen..
+                  try:
+                    import signal
+                    os.kill( self.pid , signal.SIGTERM)
+                  except AttributeError:
+                    # no os.kill, using taskkill.. (Windows only)
+                    try:
+                      os.popen('TASKKILL /PID ' +str(self.pid) + ' /F')
+                    except:
+                      print "  ERROR: could not terminate process."
                 except:
                     self.unexpected("expected running, exit code %d" % self.wait())
             else:
@@ -227,7 +237,7 @@ class Popen(popen2.Popen3):
 
     def poll(self):
         if self.returncode is None:
-            ret = popen2.Popen3.poll(self)
+            ret = subprocess.poll(self)
             if (ret != -1):
                 self.returncode = ret
                 self._cleanup()
@@ -236,7 +246,7 @@ class Popen(popen2.Popen3):
     def wait(self):
         if self.returncode is None:
             self.drain()
-            try: self.returncode = popen2.Popen3.wait(self)
+            try: self.returncode = subprocess.Popen.wait(self)
             except OSError,e: raise OSError("Wait failed %s: %s"%(self.pname, e))
             self._cleanup()
         return self.returncode
@@ -283,6 +293,14 @@ class Broker(Popen):
 
         self.test = test
         self._port=port
+        if BrokerTest.store_lib:
+            args = args + ['--load-module', BrokerTest.store_lib]
+            if BrokerTest.sql_store_lib:
+                args = args + ['--load-module', BrokerTest.sql_store_lib]
+                args = args + ['--catalog', BrokerTest.sql_catalog]
+            if BrokerTest.sql_clfs_store_lib:
+                args = args + ['--load-module', BrokerTest.sql_clfs_store_lib]
+                args = args + ['--catalog', BrokerTest.sql_catalog]
         cmd = [BrokerTest.qpidd_exec, "--port", port, "--no-module-dir"] + args
         if not "--auth" in args: cmd.append("--auth=no")
         if wait != None:
@@ -443,13 +461,16 @@ class BrokerTest(TestCase):
     """
 
     # Environment settings.
-    qpidd_exec = checkenv("QPIDD_EXEC")
+    qpidd_exec = os.path.abspath(checkenv("QPIDD_EXEC"))
     cluster_lib = os.getenv("CLUSTER_LIB")
     xml_lib = os.getenv("XML_LIB")
     qpid_config_exec = os.getenv("QPID_CONFIG_EXEC")
     qpid_route_exec = os.getenv("QPID_ROUTE_EXEC")
     receiver_exec = os.getenv("RECEIVER_EXEC")
     sender_exec = os.getenv("SENDER_EXEC")
+    sql_store_lib = os.getenv("STORE_SQL_LIB")
+    sql_clfs_store_lib = os.getenv("STORE_SQL_CLFS_LIB")
+    sql_catalog = os.getenv("STORE_CATALOG")
     store_lib = os.getenv("STORE_LIB")
     test_store_lib = os.getenv("TEST_STORE_LIB")
     rootdir = os.getcwd()
@@ -468,7 +489,7 @@ class BrokerTest(TestCase):
         for p in self.stopem:
             try: p.stop()
             except Exception, e: err.append(str(e))
-
+        os.chdir(self.rootdir)
         if err: raise Exception("Unexpected process status:\n    "+"\n    ".join(err))
 
     def cleanup_stop(self, stopable):
