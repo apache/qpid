@@ -136,7 +136,7 @@ class ConsoleTest < ConsoleTestBase
     strings << "DEF"
     strings << "GHIJKLMNOPQRSTUVWXYZ"
     big = "a"
-    for i in 0...270 
+    for i in 0...254
       big << "X"
     end
     strings << big
