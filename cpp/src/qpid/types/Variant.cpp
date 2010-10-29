@@ -23,6 +23,7 @@
 #include "qpid/log/Statement.h"
 #include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
+#include <boost/algorithm/string.hpp>
 #include <algorithm>
 #include <limits>
 #include <sstream>
@@ -765,6 +766,42 @@ Variant& Variant::operator=(const Variant& v)
     impl = VariantImpl::create(v);
     return *this;
 }
+
+
+template <class T>
+bool from_string(T& t, const std::string& s)
+{
+    char c; // Make sure there are no extra characters
+    
+    std::istringstream iss(s);
+    return !(iss >> t).fail() && (iss>>c).fail();
+}
+
+Variant& Variant::fromString(const std::string& s)
+{
+    double d;    
+    int i;
+
+    if (from_string<int>(i, s))  {
+        return operator=(i);        
+    }    
+    else if (from_string<double>(d, s)) {            
+        return operator=(d);
+    }    
+    else {
+        std::string upper(boost::to_upper_copy(s));
+        if (upper == "TRUE") {
+            return operator=(true);
+        }    
+        else if (upper == "FALSE") {
+            return operator=(false);
+        }    
+        else {               
+            return operator=(s);            
+        }        
+    }    
+}
+
 
 VariantType Variant::getType() const { return impl ? impl->getType() : VAR_VOID; }
 bool Variant::isVoid() const { return getType() == VAR_VOID; }

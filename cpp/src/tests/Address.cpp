@@ -49,8 +49,15 @@ QPID_AUTO_TEST_CASE(testParseOptions)
 {
     Address address("my-topic; {a:bc, x:101, y:'a string'}");
     BOOST_CHECK_EQUAL(std::string("my-topic"), address.getName());
+
+    BOOST_CHECK_EQUAL(std::string("bc"), address.getOptions()["a"]);
+    BOOST_CHECK_EQUAL(101, static_cast<int>(address.getOptions()["x"]));
+    BOOST_CHECK_EQUAL(std::string("a string"), address.getOptions()["y"]);
+
+    // Test asString() and asInt64() once here
+
     BOOST_CHECK_EQUAL(std::string("bc"), address.getOptions()["a"].asString());
-    BOOST_CHECK_EQUAL((uint16_t) 101, address.getOptions()["x"].asInt64());
+    BOOST_CHECK_EQUAL(static_cast<uint16_t>(101), address.getOptions()["x"].asInt64());
     BOOST_CHECK_EQUAL(std::string("a string"), address.getOptions()["y"].asString());
 }
 
@@ -59,19 +66,19 @@ QPID_AUTO_TEST_CASE(testParseSubjectAndOptions)
     Address address("my-topic/my-subject; {a:bc, x:101, y:'a string'}");
     BOOST_CHECK_EQUAL(std::string("my-topic"), address.getName());
     BOOST_CHECK_EQUAL(std::string("my-subject"), address.getSubject());
-    BOOST_CHECK_EQUAL(std::string("bc"), address.getOptions()["a"].asString());
-    BOOST_CHECK_EQUAL((uint16_t) 101, address.getOptions()["x"].asInt64());
-    BOOST_CHECK_EQUAL(std::string("a string"), address.getOptions()["y"].asString());
+
+    BOOST_CHECK_EQUAL(std::string("bc"), address.getOptions()["a"]);
+    BOOST_CHECK_EQUAL(101, static_cast<int>(address.getOptions()["x"]));
+    BOOST_CHECK_EQUAL(std::string("a string"), address.getOptions()["y"]);
 }
 
 QPID_AUTO_TEST_CASE(testParseNestedOptions)
 {
     Address address("my-topic; {a:{p:202, q:'another string'}, x:101, y:'a string'}");
     BOOST_CHECK_EQUAL(std::string("my-topic"), address.getName());
-    BOOST_CHECK_EQUAL((uint16_t) 202, address.getOptions()["a"].asMap()["p"].asInt64());
-    BOOST_CHECK_EQUAL(std::string("another string"), address.getOptions()["a"].asMap()["q"].asString());
-    BOOST_CHECK_EQUAL((uint16_t) 101, address.getOptions()["x"].asInt64());
-    BOOST_CHECK_EQUAL(std::string("a string"), address.getOptions()["y"].asString());
+    BOOST_CHECK_EQUAL(202, static_cast<int>(address.getOptions()["a"].asMap()["p"]));
+    BOOST_CHECK_EQUAL(std::string("another string"), address.getOptions()["a"].asMap()["q"]);
+    BOOST_CHECK_EQUAL(std::string("a string"), address.getOptions()["y"]);
 }
 
 QPID_AUTO_TEST_CASE(testParseOptionsWithList)
