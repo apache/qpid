@@ -196,13 +196,14 @@ bool AddressParser::readQuotedValue(Variant& value)
         return false;
     }
 }
-
-bool AddressParser::readSimpleValue(Variant& value)
+    
+bool AddressParser::readSimpleValue(Variant& value)   
 {
     std::string s;
     if (readWord(s)) {
-        value = s;
+        value.fromString(s);        
         return true;
+
     } else {
         return false;
     }
