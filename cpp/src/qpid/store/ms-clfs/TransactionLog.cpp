@@ -99,6 +99,16 @@ namespace qpid {
 namespace store {
 namespace ms_clfs {
 
+void
+TransactionLog::initialize()
+{
+    // Write something to occupy the first record, preventing a real
+    // transaction from being lsn/id 0. Delete of a non-existant id is easily
+    // tossed during recovery if no other transactions have caused the tail
+    // to be moved up past this dummy record by then.
+    deleteTransaction(0);
+}
+
 uint32_t
 TransactionLog::marshallingBufferSize()
 {
@@ -226,7 +236,6 @@ TransactionLog::deleteTransaction(uint64_t transId)
     write(&deleteEntry, sizeof(deleteEntry), &transLsn);
     if (newFirstId != 0)
         moveTail(idToLsn(newFirstId));
-
 }
 
 void
@@ -252,6 +261,8 @@ TransactionLog::collectPreparedXids(std::map<std::string, TPCTransaction::shared
 void
 TransactionLog::recover(std::map<uint64_t, Transaction::shared_ptr>& transMap)
 {
+    QPID_LOG(debug, "Recovering transaction log");
+
     // Note that there may be transaction refs in the log which are deleted,
     // so be sure to only add transactions at Start records, and ignore those
     // that don't have an existing message record.
@@ -377,6 +388,8 @@ TransactionLog::recover(std::map<uint64_t, Transaction::shared_ptr>& transMap)
     ::TerminateReadLog(readContext);
     if (status != ERROR_HANDLE_EOF)  // No more records
         throw QPID_WINDOWS_ERROR(status);
+
+    QPID_LOG(debug, "Transaction log recovered");
 
     // At this point we have a list of all the not-deleted transactions that
     // were in existence when the broker last ran. All transactions of both

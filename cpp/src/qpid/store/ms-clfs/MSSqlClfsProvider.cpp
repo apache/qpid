@@ -572,10 +572,10 @@ MSSqlClfsProvider::destroy(PersistableQueue& queue)
         queues.erase(queues.find(qId));
     }
     // Now tell each of the messages they are less one queue commitment.
-    // Can I call dequeue()? Or some sub-piece of that?
     Transaction::shared_ptr nonTransactional;
     BOOST_FOREACH(uint64_t msgId, affectedMessages) {
-      messages.dequeue(msgId, qId, nonTransactional);
+        QPID_LOG(debug, "Removing message " << msgId);
+        messages.dequeue(msgId, qId, nonTransactional);
     }
 }
 
@@ -827,20 +827,9 @@ MSSqlClfsProvider::loadContent(const qpid::broker::PersistableQueue& /*queue*/,
                                uint64_t offset,
                                uint32_t length)
 {
-#if 0
-    // SQL store keeps all messages in one table, so we don't need the
+    // Message log keeps all messages in one log, so we don't need the
     // queue reference.
-    DatabaseConnection *db = initConnection();
-    MessageRecordset rsMessages;
-    try {
-        rsMessages.open(db, TblMessage);
-        rsMessages.loadContent(msg, data, offset, length);
-    }
-    catch(_com_error &e) {
-        std::string errs = db->getErrors();
-        throw ADOException("Error loading message content", e, errs);
-    }
-#endif
+    messages.loadContent(msg->getPersistenceId(), data, offset, length);
 }
 
 /**
@@ -858,9 +847,15 @@ MSSqlClfsProvider::enqueue(qpid::broker::TransactionContext* ctxt,
                            const PersistableQueue& queue)
 {
     Transaction::shared_ptr t;
-    TransactionContext *ctx = dynamic_cast<TransactionContext*> (ctxt);
-    if (ctx != 0)
+    TransactionContext *ctx = dynamic_cast<TransactionContext*>(ctxt);
+    if (ctx)
         t = ctx->getTransaction();
+    else {
+        TPCTransactionContext *tctx;
+        tctx = dynamic_cast<TPCTransactionContext*>(ctxt);
+        if (tctx)
+            t = tctx->getTransaction();
+    }
     uint64_t qId = queue.getPersistenceId();
     uint64_t msgId = msg->getPersistenceId();
     QueueContents::shared_ptr q;
@@ -898,9 +893,15 @@ MSSqlClfsProvider::dequeue(qpid::broker::TransactionContext* ctxt,
                            const PersistableQueue& queue)
 {
     Transaction::shared_ptr t;
-    TransactionContext *ctx = dynamic_cast<TransactionContext*> (ctxt);
-    if (ctx != 0)
+    TransactionContext *ctx = dynamic_cast<TransactionContext*>(ctxt);
+    if (ctx)
         t = ctx->getTransaction();
+    else {
+        TPCTransactionContext *tctx;
+        tctx = dynamic_cast<TPCTransactionContext*>(ctxt);
+        if (tctx)
+            t = tctx->getTransaction();
+    }
     uint64_t qId = queue.getPersistenceId();
     uint64_t msgId = msg->getPersistenceId();
     QueueContents::shared_ptr q;

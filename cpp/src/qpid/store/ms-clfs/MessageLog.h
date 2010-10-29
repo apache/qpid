@@ -41,6 +41,11 @@ namespace ms_clfs {
  */
 class MessageLog : public Log {
 
+protected:
+    // Message log needs to have a no-op first record written in the log
+    // to ensure that no real message gets an ID 0.
+    virtual void initialize();
+
 public:
     // Inherited and reimplemented from Log. Figure the minimum marshalling
     // buffer size needed for the records this class writes.
@@ -52,6 +57,13 @@ public:
     // Write a Delete entry for messageId. If newFirstId is not 0, it is now
     // the earliest valid message in the log, so move the tail up to it.
     void deleteMessage(uint64_t messageId, uint64_t newFirstId);
+
+    // Load part or all of a message's content from previously stored
+    // log record(s).
+    void loadContent(uint64_t messageId,
+                     std::string& data,
+                     uint64_t offset,
+                     uint32_t length);
 
     // Enqueue and dequeue operations track messages' transit across
     // queues; each operation may be associated with a transaction. If

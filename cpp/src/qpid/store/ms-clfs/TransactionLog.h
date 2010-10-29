@@ -58,6 +58,12 @@ class TransactionLog : public Log,
     std::map<uint64_t, boost::weak_ptr<Transaction> > validIds;
     qpid::sys::Mutex idsLock;
 
+protected:
+    // Transaction log needs to have a no-op first record written in the log
+    // to ensure that no real transaction gets an ID 0; messages think trans
+    // id 0 means "no transaction."
+    virtual void initialize();
+
 public:
     // Inherited and reimplemented from Log. Figure the minimum marshalling
     // buffer size needed for the records this class writes.
