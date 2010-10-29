@@ -1555,9 +1555,9 @@ session.acknowledge()
 	<para>.NET C#:</para>
 	<programlisting><![CDATA[
 Receiver receiver1 = session.CreateReceiver(address1);
-receiver1.SetCapacity(10);
+receiver1.Capacity = 10;
 Receiver receiver2 = session.CreateReceiver(address2);
-receiver2.SetCapacity(10);
+receiver2.Capacity = 10;
 
 Message message = new Message();
 message =  session.NextReceiver().Fetch();
@@ -2109,6 +2109,7 @@ Send(message, true);
 	    </row>
 	  </thead>
 	  <tbody>
+   	    <row><entry>void</entry><entry>nullptr</entry></row>
    	    <row><entry>bool</entry><entry>bool</entry></row>
    	    <row><entry>uint8</entry><entry>byte</entry></row>
 	    <row><entry>uint16</entry><entry>UInt16</entry></row>
@@ -4594,7 +4595,7 @@ using (TransactionScope ts = new TransactionScope())
             </row>
             <row>
              <entry>C++</entry>
-             <entry>n/a</entry>
+             <entry>void setProperty(const std::string&amp;, const qpid::types::Variant&amp;);</entry>
             </row>
             <row>
              <entry>.NET</entry>
