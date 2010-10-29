@@ -45,3 +45,19 @@ add_messaging_example(map_sender)
 
 add_messaging_example(client)
 add_messaging_example(server)
+
+# These don't need Boost or OptionParser
+add_executable(hello_world hello_world.cpp)
+set_target_properties(hello_world PROPERTIES OUTPUT_NAME hello_world)
+target_link_libraries(hello_world qpidmessaging)
+install (FILES ${CMAKE_CURRENT_SOURCE_DIR}/hello_world.cpp
+           DESTINATION ${QPID_INSTALL_EXAMPLESDIR}/messaging
+           COMPONENT ${QPID_COMPONENT_EXAMPLES})
+
+add_executable(hello_xml hello_xml.cpp)
+set_target_properties(hello_xml PROPERTIES OUTPUT_NAME hello_xml)
+target_link_libraries(hello_xml qpidmessaging)
+install (FILES ${CMAKE_CURRENT_SOURCE_DIR}/hello_xml.cpp
+           DESTINATION ${QPID_INSTALL_EXAMPLESDIR}/messaging
+           COMPONENT ${QPID_COMPONENT_EXAMPLES})
+
