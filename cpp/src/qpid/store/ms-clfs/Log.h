@@ -44,6 +44,11 @@ protected:
     std::string logPath;
     PVOID marshal;
 
+    // Give subclasses a chance to initialize a new log. Called after a new
+    // log is created, initial set of containers is added, and marshalling
+    // area is allocated.
+    virtual void initialize() {}
+
 public:
     struct TuningParameters {
         size_t containerSize;

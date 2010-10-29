@@ -222,6 +222,17 @@ Messages::abort(uint64_t msgId, Transaction::shared_ptr& t)
     }
 }
 
+// Load part or all of a message's content from previously stored
+// log record(s).
+void
+Messages::loadContent(uint64_t msgId,
+                      std::string& data,
+                      uint64_t offset,
+                      uint32_t length)
+{
+    log.loadContent(msgId, data, offset, length);
+}
+
 // Recover the current set of messages and where they're queued from
 // the log.
 void
@@ -247,7 +258,7 @@ Messages::recover(qpid::broker::RecoveryManager& recoverer,
     for (msg = messageOps.begin(); msg != messageOps.end(); ++msg) {
         uint64_t msgId = msg->first;
         const std::vector<MessageLog::RecoveredMsgOp>& ops = msg->second;
-        QPID_LOG(debug, "Message " << msgId << "; " << ops.size() << " ops");
+        QPID_LOG(debug, "Message " << msgId << "; " << ops.size() << " op(s)");
         MessageInfo::shared_ptr m(new MessageInfo);
         std::vector<QueueEntry>& entries = messageQueueMap[msgId];
         std::vector<MessageLog::RecoveredMsgOp>::const_iterator op;
