@@ -104,6 +104,8 @@ namespace Messaging {
         void Rollback();
         void Acknowledge();
         void Acknowledge(bool sync);
+        void Acknowledge(Message ^ message);
+        void Acknowledge(Message ^ message, bool sync);
         void Reject(Message ^);
         void Release(Message ^);
         void Sync();

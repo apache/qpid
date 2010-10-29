@@ -112,6 +112,16 @@ namespace Messaging {
         sessionp->acknowledge(sync);
     }
 
+    void Session::Acknowledge(Message ^ message)
+    {
+        Acknowledge(message, false);
+    }
+
+    void Session::Acknowledge(Message ^ message, bool sync)
+    {
+        sessionp->acknowledge(*(message->NativeMessage), sync);
+    }
+
     void Session::Reject(Message ^ message)
     {
         sessionp->::qpid::messaging::Session::reject(*(message->NativeMessage));
