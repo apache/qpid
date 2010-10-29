@@ -5251,12 +5251,24 @@ using (TransactionScope ts = new TransactionScope())
              <entry>void acknowledge(bool sync=false);</entry>
             </row>
             <row>
+             <entry>C++</entry>
+             <entry>void acknowledge(Message&amp;, bool sync=false);</entry>
+            </row>
+            <row>
              <entry>.NET</entry>
              <entry>public void Acknowledge();</entry>
             </row>
             <row>
              <entry>.NET</entry>
              <entry>public void Acknowledge(bool sync);</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public void Acknowledge(Message __p1);</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public void Acknowledge(Message __p1, bool __p2);</entry>
             </row>
             <row>
               <entry namest="c1" nameend="c2" align="center">Method: Reject</entry>
