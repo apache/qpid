@@ -52,8 +52,7 @@ class Messages {
 
         typedef boost::shared_ptr<MessageInfo> shared_ptr;
 
-        MessageInfo()
-            : enqueuedCount(0) { /*latestLsn.Internal = 0;*/ }
+        MessageInfo() : enqueuedCount(0) {}
     };
 
     qpid::sys::RWlock lock;
@@ -89,6 +88,13 @@ public:
     // actions under a specified transaction. If this results in the message's
     // being removed from all queues, it is deleted.
     void abort(uint64_t msgId, Transaction::shared_ptr& transaction);
+
+    // Load part or all of a message's content from previously stored
+    // log record(s).
+    void loadContent(uint64_t msgId,
+                     std::string& data,
+                     uint64_t offset,
+                     uint32_t length);
 
     // Recover the current set of messages and where they're queued from
     // the log.

@@ -62,6 +62,9 @@ Log::open(const std::string& path, const TuningParameters& params)
     ULONG infoSize = sizeof(info);
     BOOL ok = ::GetLogFileInformation(handle, &info, &infoSize);
     QPID_WINDOWS_CHECK_NOT(ok, 0);
+    // If this is the first time this log is opened, give an opportunity to
+    // initialize its content.
+    bool needInitialize(false);
     if (info.TotalContainers == 0) {
         std::vector<const std::wstring> paths;
         LPWSTR cPaths[1024];
@@ -82,6 +85,7 @@ Log::open(const std::string& path, const TuningParameters& params)
                                   cPaths,
                                   NULL);
         QPID_WINDOWS_CHECK_NOT(ok, 0);
+        needInitialize = true;
     }
     // Need a marshaling area
     ok = ::CreateLogMarshallingArea(handle,
@@ -91,6 +95,8 @@ Log::open(const std::string& path, const TuningParameters& params)
                                     1,                   // Max read buffers
                                     &marshal);
     QPID_WINDOWS_CHECK_NOT(ok, 0);
+    if (needInitialize)
+        initialize();
 }
 
 uint32_t

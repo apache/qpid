@@ -49,12 +49,18 @@ struct MessageStart {
     MessageEntryType type;
     // If the complete message encoding doesn't fit, remainder is in
     // MessageChunk records to follow.
+    // headerLength is the size of the message's header in content. It is
+    // part of the totalLength and the segmentLength.
+    uint32_t headerLength;
     uint32_t totalLength;
     uint32_t segmentLength;
     char content[MaxMessageContentLength];
 
     MessageStart()
-        : type(MessageStartEntry), totalLength(0), segmentLength(0) {}
+      : type(MessageStartEntry),
+        headerLength(0),
+        totalLength(0),
+        segmentLength(0) {}
 };
 // Message-Chunk
 struct MessageChunk {
@@ -95,6 +101,16 @@ namespace qpid {
 namespace store {
 namespace ms_clfs {
 
+void
+MessageLog::initialize()
+{
+    // Write something to occupy the first record, preventing a real message
+    // from being lsn/id 0. Delete of a non-existant id is easily tossed
+    // during recovery if no other messages have caused the tail to be moved
+    // up past this dummy record by then.
+    deleteMessage(0, 0);
+}
+
 uint32_t
 MessageLog::marshallingBufferSize()
 {
@@ -114,8 +130,10 @@ MessageLog::add(const boost::intrusive_ptr<qpid::broker::PersistableMessage>& ms
     // Message-Chunk records to contain the rest. If it does all fit in one
     // record, though, optimize the encoding by going straight to the
     // Message-Start record rather than encoding then copying to the record.
+    // In all case
     MessageStart entry;
     uint32_t encodedMessageLength = msg->encodedSize();
+    entry.headerLength = msg->encodedHeaderSize();
     entry.totalLength = encodedMessageLength;
     CLFS_LSN location, lastChunkLsn;
     std::auto_ptr<char> encodeStage;
@@ -165,6 +183,16 @@ MessageLog::deleteMessage(uint64_t messageId, uint64_t newFirstId)
         moveTail(idToLsn(newFirstId));
 }
 
+// Load part or all of a message's content from previously stored
+// log record(s).
+void
+MessageLog::loadContent(uint64_t messageId,
+                        std::string& data,
+                        uint64_t offset,
+                        uint32_t length)
+{
+}
+
 void
 MessageLog::recordEnqueue (uint64_t messageId,
                            uint64_t queueId,
@@ -202,9 +230,11 @@ MessageLog::recover(qpid::broker::RecoveryManager& recoverer,
     std::map<uint64_t, MessageBlocks> reassemblies;
     std::map<uint64_t, MessageBlocks>::iterator at;
 
-    //   Note that there may be message refs in the log which are deleted, so
-    //   be sure to only add msgs at message-start record, and ignore those
-    //   that don't have an existing message record.
+    QPID_LOG(debug, "Recovering message log");
+
+    // Note that there may be message refs in the log which are deleted, so
+    // be sure to only add msgs at message-start record, and ignore those
+    // that don't have an existing message record.
     // Get the base LSN - that's how to say "start reading at the beginning"
     CLFS_INFORMATION info;
     ULONG infoLength = sizeof (info);
@@ -253,11 +283,20 @@ MessageLog::recover(qpid::broker::RecoveryManager& recoverer,
             // this content off to the side until the remaining record(s) are
             // located.
             if (start->totalLength == start->segmentLength) {  // Whole thing
-                qpid::framing::Buffer buff(start->content, start->totalLength);
+                // Start by recovering the header then see if the rest of
+                // the content is desired.
+                qpid::framing::Buffer buff(start->content, start->headerLength);
                 qpid::broker::RecoverableMessage::shared_ptr m =
                     recoverer.recoverMessage(buff);
                 m->setPersistenceId(msgId);
                 messageMap[msgId] = m;
+                uint32_t contentLength =
+                    start->totalLength - start->headerLength;
+                if (m->loadContent(contentLength)) {
+                    qpid::framing::Buffer content(&(start->content[start->headerLength]),
+                                                  contentLength);
+                    m->decodeContent(content);
+                }
             }
             else {
                 // Save it in a block big enough.
@@ -310,7 +349,7 @@ MessageLog::recover(qpid::broker::RecoveryManager& recoverer,
             enqueue = reinterpret_cast<MessageEnqueue *>(recordPointer);
             msgId = lsnToId(messageLsn);
             QPID_LOG(debug, "Message " << msgId << " Enqueue on queue " <<
-                            enqueue->queueId);
+                            enqueue->queueId << ", txn " << enqueue->transId);
             if (messageMap.find(msgId) == messageMap.end()) {
                 QPID_LOG(debug,
                          "Message " << msgId << " doesn't exist; discarded");
@@ -357,8 +396,10 @@ MessageLog::recover(qpid::broker::RecoveryManager& recoverer,
     }
     DWORD status = ::GetLastError();
     ::TerminateReadLog(readContext);
-    if (status == ERROR_HANDLE_EOF)  // No more records
+    if (status == ERROR_HANDLE_EOF) { // No more records
+        QPID_LOG(debug, "Message log recovered");
         return;
+    }
     throw QPID_WINDOWS_ERROR(status);
 }
 
