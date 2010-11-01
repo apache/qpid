@@ -92,18 +92,18 @@ is omitted.
 
 *** BrokerHandler
 Types:
-- struct QueuedMessage { Message msg; QueueName q; Position pos; }
-- SequenceNumber 64 bit sequence number to identify messages.
-- NodeId 64 bit CPG node-id, identifies member of the cluster.
-- struct MessageId { NodeId node; SequenceNumber seq; }
+- struct QueuedMessage { Message msg; QueueName q; SequenceNumber position; }
+- struct
 
-NOTE: Message ID's identify a QueuedMessage, i.e. a position on a queue.
+NOTE:
+- Messages on queues are identified by a queue name + a position.
+- Messages being routed are identified by a sequence number.
 
 Members:
-- atomic<SequenceNumber> sequence // sequence number for message IDs.
 - thread_local bool noReplicate // suppress replication.
 - thread_local bool isRouting // suppress operations while routing
-- QueuedMessage localMessage[SequenceNumber] // local messages being enqueued.
+- Message localMessage[SequenceNumber] // local messages being routed.
+- thread_local SequenceNumber routingSequence
 
 NOTE: localMessage is also modified by MessageHandler.
 
@@ -118,47 +118,37 @@ routing(msg)
 
 enqueue(qmsg):
   if noReplicate: return
-  if !qmsg.msg.id:
-    seq = sequence++
-    qmsg.msg.id = (self,seq)
-    localMessage[seq] = qmsg
-    mcast create(encode(qmsg.msg),seq)
-  mcast enqueue(qmsg.q,qmsg.msg.id.seq)
+  if routingSequence == 0 # thread local
+    routingSequence = nextRoutingSequence()
+    mcast create(encode(qmsg.msg),routingSeq)
+  mcast enqueue(qmsg.q,routingSeq)
 
 routed(msg):
   if noReplicate: return
-  if msg.id: mcast routed(msg.id.seq)
   isRouting = false
 
 acquire(qmsg):
   if noReplicate: return
   if isRouting: return # Ignore while we are routing a message.
-  if msg.id: mcast acquire(msg.id, q)
+  if msg.id: mcast acquire(qmsg)
 
 release(QueuedMessage) 
   if noReplicate: return
   if isRouting: return # Ignore while we are routing a message.
-  if msg.id: mcast release(id, q)
+  mcast release(qmsg)
 
 accept(QueuedMessage):
   if noReplicate: return
   if isRouting: return # Ignore while we are routing a message.
-  if msg.id: mcast dequeue(msg.id, msg.q)
+  mcast accept(qmsg)
 
 reject(QueuedMessage):
   isRejecting = true
-  if msg.id: mcast reject(msg.id, msg.q)
+  mcast reject(qmsg)
 
-rejected(QueuedMessage):
-  isRejecting = false
-  mcast dequeue(msg.id, msg.q)
-
-dequeue(QueuedMessage) 
-  # No mcast in dequeue, only used for local cleanup of resources. 
-  # E.g. messages that are replaced on an LVQ are dequeued without being
-  # accepted or rejected. dequeue is called with the queue lock held
-  # FIXME revisit - move it out of the queue lock.
-  cleanup(msg)
+# FIXME no longer needed?
+drop(QueuedMessage)
+  cleanup(qmsg)
 
 *** MessageHandler and mcast messages
 Types:
@@ -328,6 +318,21 @@ cancel(q,consumer,consumerCount) - Queue::cancel()
 
 #TODO: lifecycle, updating cluster data structures when queues are destroyed
 
+*** Increasing concurrency
+The major performance limitation of the old cluster is that it does
+everything in the single CPG deliver thread context.
+
+We can get additional concurrency by creating a thread context _per queue_
+for queue operations: enqueue, acquire, accept etc.
+
+We associate a PollableQueue of queue operations with each AMQP queue.
+The CPG deliver thread would
+- build messages and associate with cluster IDs.
+- push queue ops to the appropriate PollableQueue to be dispatched the queues thread.
+
+Serializing operations on the same queue avoids contention, but takes advantage
+of the independence of operations on separate queues.
+
 *** Re-use of existing cluster code
 - re-use Event
 - re-use Multicaster
@@ -387,10 +392,18 @@ Target broker may not have all messages on other brokers for purge/destroy.
 Need to add callpoints & mcast messages to replicate these?
 
 ** TODO [#B] Flow control for internal queues.
-   
-Need to bound the size of the internal queues holding cluster events & frames.
-- stop polling when we reach bound.
-- start polling when we get back under it.
+
+Need to bound the size of internal queues: delivery and multicast.
+- stop polling for read on client connections when we reach a bound.
+- restart polling when we get back under it.
+
+That will stop local multicasting, we still have to deal with remote
+multicasting (note existing cluster does not do this.) Something like:
+- when over bounds multicast a flow-control event.
+- on delivery of flow-control all members stop polling to read client connections
+- when back under bounds send flow-control-end, all members resume
+- if flow-controling member dies others resume
+
 ** TODO [#B] Integration with transactions.
 Do we want to replicate during transaction & replicate commit/rollback
 or replicate only on commit?
