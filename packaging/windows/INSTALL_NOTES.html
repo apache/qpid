@@ -86,6 +86,25 @@ gacutil -I "C:\Program Files\Apache\qpidc-0.6\bin\Apache.Qpid.Interop.dll"
 gacutil /u "Apache.Qpid.Channel"
 gacutil /u "Apache.Qpid.Interop"
 </pre>
+To use transactions with the WCF channel, you must enable the Microsoft Distributed Transaction Coordinator service and configure it to find and use the Qpid XA transaction module.
+<ul>
+<li>
+Update the PATH environment variable for services:
+right click <i>Computer</i>, select <i>Properties > Advanced System
+Settings > Environment Variables > System Variables</i> and add
+"C:\Program Files\Apache\qpidc-0.6\bin" to the PATH variable.
+<li>
+Following the instructions in
+<a href="http://support.microsoft.com/kb/817066">
+http://support.microsoft.com/kb/817066</a>,
+update the MSDTC security settings to allow XA transactions, and
+create an XADLL registry entry for "qpidxarm" with string (REG_SZ)
+value "C:\Program Files\Apache\qpidc-0.6\bin\qpidxarm.dll"
+<li>
+Open <i>Control Panel > Administrative Tools > Services</i> and start
+(or restart) the DTC service and make sure that the DTC service is set
+to start automatically when the system reboots.
+</ul>
 
 <H2>Broker Persistence Module</H2>
 <p>This release includes a new persistence module. The broker can use this
