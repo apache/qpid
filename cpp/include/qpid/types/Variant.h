@@ -113,7 +113,11 @@ class Variant
     QPID_TYPES_EXTERN Variant& operator=(const Variant&);
     QPID_TYPES_EXTERN Variant& operator=(const Uuid&);
 
-    QPID_TYPES_EXTERN Variant& fromString(const std::string&);
+    /**
+     * Parses the argument and assigns itself the appropriate
+     * value. Recognises integers, doubles and booleans.
+     */
+    QPID_TYPES_EXTERN Variant& parse(const std::string&);
 
     QPID_TYPES_EXTERN bool asBool() const;
     QPID_TYPES_EXTERN uint8_t asUint8() const;

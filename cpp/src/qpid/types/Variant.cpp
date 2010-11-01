@@ -767,39 +767,19 @@ Variant& Variant::operator=(const Variant& v)
     return *this;
 }
 
-
-template <class T>
-bool from_string(T& t, const std::string& s)
+Variant& Variant::parse(const std::string& s)
 {
-    char c; // Make sure there are no extra characters
-    
-    std::istringstream iss(s);
-    return !(iss >> t).fail() && (iss>>c).fail();
-}
-
-Variant& Variant::fromString(const std::string& s)
-{
-    double d;    
-    int i;
-
-    if (from_string<int>(i, s))  {
-        return operator=(i);        
-    }    
-    else if (from_string<double>(d, s)) {            
-        return operator=(d);
-    }    
-    else {
-        std::string upper(boost::to_upper_copy(s));
-        if (upper == "TRUE") {
-            return operator=(true);
-        }    
-        else if (upper == "FALSE") {
-            return operator=(false);
-        }    
-        else {               
-            return operator=(s);            
-        }        
-    }    
+    operator=(s);
+    try {
+        return operator=(asInt64());
+    } catch (const InvalidConversion&) {}
+    try {
+        return operator=(asDouble());
+    } catch (const InvalidConversion&) {}
+    try {
+        return operator=(asBool());
+    } catch (const InvalidConversion&) {}
+    return *this;
 }
 
 
