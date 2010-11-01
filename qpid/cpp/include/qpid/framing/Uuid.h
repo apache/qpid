@@ -67,7 +67,8 @@ struct Uuid : public boost::array<uint8_t, 16> {
 
     QPID_COMMON_EXTERN void encode(framing::Buffer& buf) const;
     QPID_COMMON_EXTERN void decode(framing::Buffer& buf);
-    QPID_COMMON_EXTERN uint32_t encodedSize() const { return size(); }
+    QPID_COMMON_EXTERN uint32_t encodedSize() const
+        { return static_cast<uint32_t>(size()); }
 
     /** String value in format 1b4e28ba-2fa1-11d2-883f-b9a761bde3fb. */
     QPID_COMMON_EXTERN std::string str() const;
