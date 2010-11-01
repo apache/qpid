@@ -371,14 +371,53 @@ Clustering and scalability: new design may give us the flexibility to
 address scalability as part of cluster design. Think about
 relationship to federation and "fragmented queues" idea.
 
-* Design questions/descisions
+* Design debates/descisions
+
+** Active/active vs. active passive
+
+An active-active cluster can be used in an active-passive mode. In
+this mode we would like the cluster to be as efficient as a strictly
+active-passive implementation.
+
+An active/passive implementation allows some simplifications over active/active:
+- drop Queue ownership and locking
+- don't need to replicate message acquisition.
+- can do immediate local enqueue and still guarantee order.
+
+Active/passive introduces a few extra requirements:
+- Exactly one broker hast to take over if primary fails.
+- Passive members must refuse client connections.
+- On failover, clients must re-try all known addresses till they find the active member.
+
+Active/active benefits:
+- A broker failure only affects the subset of clients connected to that broker.
+- Clients can switch to any other broker on failover
+- Backup brokers are immediately available on failover.
+- Some load sharing: reading from client + multicast only done on direct node.
+
+Active/active drawbacks:
+- Co-ordinating message acquisition may impact performance (not tested)
+- Code may be more complex that active/passive.
+
+Active/passive benefits:
+- Don't need message allocation strategy, can feed consumers at top speed.
+- Code may be simpler than active/active.
+
+Active/passive drawbacks:
+- All clients on one node so a failure affects every client in the system.
+- After a failure there is a "reconnect storm" as every client reconnects to the new active node.
+- After a failure there is a period where no broker is active, until the other brokers realize the primary is gone and agree on the new primary.
+- Clients must find the single active node, may involve multiple connect attempts.
+
 ** Total ordering.
+
 Initial thinking: allow message ordering to differ between brokers.
 New thinking: use CPG total ordering, get identical ordering on all brokers.
 - Allowing variation in order introduces too much chance of unexpected behavior.
 - Usign total order allows other optimizations, see Message Identifiers below.
 
 ** Message identifiers.
+
 Initial thinking: message ID = CPG node id + 64 bit sequence number.
 This involves a lot of mapping between cluster IDs and broker messsages.
 
@@ -387,6 +426,7 @@ New thinking: message ID = queue name + queue position.
 - Requires total ordering of messages (see above)
 
 ** Message rejection
+
 Initial thinking: add special reject/rejected points to cluster interface so
 rejected messages could be re-queued without multicast.
 
