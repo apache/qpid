@@ -7,9 +7,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -21,7 +21,7 @@
 Notes on new cluster implementation. See also: new-cluster-design.txt
 
 * Implementation plan.
-  
+
 Co-existence with old cluster code and tests:
 - Separate plugin cluster2, options --cluster2-*. Eventually renamed to replace cluster.
 - Double up tests with old version/new version as the new code develops.
@@ -114,7 +114,7 @@ routing(msg)
   # Supress everything except enqueues while we are routing.
   # We don't want to replicate acquires & dequeues caused by an enqueu,
   # e.g. removal of messages from ring/LV queues.
-  isRouting = true 
+  isRouting = true
 
 enqueue(qmsg):
   if noReplicate: return
@@ -132,7 +132,7 @@ acquire(qmsg):
   if isRouting: return # Ignore while we are routing a message.
   if msg.id: mcast acquire(qmsg)
 
-release(QueuedMessage) 
+release(QueuedMessage)
   if noReplicate: return
   if isRouting: return # Ignore while we are routing a message.
   mcast release(qmsg)
@@ -420,7 +420,7 @@ Cluster needs to complete these asynchronously to guarantee resources
 exist across the cluster when the command completes.
 
 ** TODO [#C] Allow non-replicated exchanges, queues.
-   
+
 Set qpid.replicated=false in declare arguments, set flag on Exchange, Queue objects.
 - save replicated status to store.
 - support in management tools.

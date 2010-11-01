@@ -6,9 +6,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -37,7 +37,7 @@ Simpler implementation of broker::Cluster:
 - can use smaller message IDs: just sequence number. Can be implicit.
 
 Extra requirements:
-- Exactly one broker hast to take over if primary fails. 
+- Exactly one broker hast to take over if primary fails.
 - Passive members refuse client connections and redirect to active member.
 - On failover, clients keep trying till they find the active member.
 
@@ -49,7 +49,7 @@ Active/active benefits:
 - Some load sharing: reading from client + multicast only done on direct node.
 - Clients can switch to any broker on failover
 - Failure affects a subset of the clients, not all the clients.
-  
+
 Active/active drawbacks:
 - Co-ordinating message allocation impacts performance.
 
