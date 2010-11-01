@@ -201,9 +201,8 @@ bool AddressParser::readSimpleValue(Variant& value)
 {
     std::string s;
     if (readWord(s)) {
-        value.fromString(s);        
+        value.parse(s);        
         return true;
-
     } else {
         return false;
     }
