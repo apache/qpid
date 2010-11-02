@@ -46,9 +46,24 @@ namespace Messaging {
     // unmanaged clone
     Receiver::Receiver(const ::qpid::messaging::Receiver & r,
                        Org::Apache::Qpid::Messaging::Session ^ sessRef) :
-        receiverp(new ::qpid::messaging::Receiver (r)),
         parentSession(sessRef)
     {
+        System::Exception ^ newException = nullptr;
+
+        try 
+		{
+            receiverp = new ::qpid::messaging::Receiver (r);
+        } 
+        catch (const ::qpid::types::Exception & error) 
+		{
+            String ^ errmsg = gcnew String(error.what());
+            newException    = gcnew QpidException(errmsg);
+        }
+
+		if (newException != nullptr) 
+		{
+	        throw newException;
+		}
     }
 
     // unmanaged clone
@@ -69,11 +84,26 @@ namespace Messaging {
 
 
     // Copy constructor
-    Receiver::Receiver(const Receiver ^ receiver)
-        : receiverp(new ::qpid::messaging::Receiver(
-                        *(const_cast<Receiver ^>(receiver)->NativeReceiver))),
-          parentSession(receiver->parentSession)
+    Receiver::Receiver(const Receiver ^ receiver) :
+        parentSession(receiver->parentSession)
     {
+        System::Exception ^ newException = nullptr;
+
+        try 
+		{
+            receiverp = new ::qpid::messaging::Receiver(
+                        *(const_cast<Receiver ^>(receiver)->NativeReceiver));
+        } 
+        catch (const ::qpid::types::Exception & error) 
+		{
+            String ^ errmsg = gcnew String(error.what());
+            newException    = gcnew QpidException(errmsg);
+        }
+
+		if (newException != nullptr) 
+		{
+	        throw newException;
+		}
     }
 
 

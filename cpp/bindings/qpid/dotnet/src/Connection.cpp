@@ -43,36 +43,97 @@ namespace Messaging {
     /// </summary>
 
     // constructors
-    Connection::Connection(System::String ^ url) :
-        connectionp(new ::qpid::messaging::Connection(QpidMarshal::ToNative(url)))
+    Connection::Connection(System::String ^ url)
     {
+        System::Exception ^ newException = nullptr;
+
+        try 
+		{
+            connectionp = new ::qpid::messaging::Connection(QpidMarshal::ToNative(url));
+        } 
+        catch (const ::qpid::types::Exception & error) 
+		{
+            String ^ errmsg = gcnew String(error.what());
+            newException    = gcnew QpidException(errmsg);
+        }
+
+		if (newException != nullptr) 
+		{
+	        throw newException;
+		}
     }
 
 
     Connection::Connection(System::String ^ url,
                            System::Collections::Generic::Dictionary<
-                               System::String ^, System::Object ^> ^ options) :
-        connectionp(new ::qpid::messaging::Connection(QpidMarshal::ToNative(url)))
+                               System::String ^, System::Object ^> ^ options)
     {
-        for each (System::Collections::Generic::KeyValuePair<System::String^, System::Object^> kvp in options)
-        {
-            SetOption(kvp.Key, kvp.Value);
+        System::Exception ^ newException = nullptr;
+
+        try 
+		{
+            connectionp = new ::qpid::messaging::Connection(QpidMarshal::ToNative(url));
+
+            for each (System::Collections::Generic::KeyValuePair<System::String^, System::Object^> kvp in options)
+            {
+                SetOption(kvp.Key, kvp.Value);
+            }
+        } 
+        catch (const ::qpid::types::Exception & error) 
+		{
+            String ^ errmsg = gcnew String(error.what());
+            newException    = gcnew QpidException(errmsg);
         }
+
+		if (newException != nullptr) 
+		{
+	        throw newException;
+		}
     }
 
 
-    Connection::Connection(System::String ^ url, System::String ^ options) :
-        connectionp(new ::qpid::messaging::Connection(QpidMarshal::ToNative(url),
-                    QpidMarshal::ToNative(options)))
+    Connection::Connection(System::String ^ url, System::String ^ options)
     {
+        System::Exception ^ newException = nullptr;
+
+        try 
+		{
+            connectionp = new ::qpid::messaging::Connection(QpidMarshal::ToNative(url),
+                    QpidMarshal::ToNative(options));
+        } 
+        catch (const ::qpid::types::Exception & error) 
+		{
+            String ^ errmsg = gcnew String(error.what());
+            newException    = gcnew QpidException(errmsg);
+        }
+
+		if (newException != nullptr) 
+		{
+	        throw newException;
+		}
     }
 
 
     // Copy constructor
     Connection::Connection(const Connection ^ connection)
-        : connectionp(new ::qpid::messaging::Connection(
-                        *(const_cast<Connection ^>(connection)->NativeConnection)))
     {
+        System::Exception ^ newException = nullptr;
+
+        try 
+		{
+            connectionp = new ::qpid::messaging::Connection(
+                        *(const_cast<Connection ^>(connection)->NativeConnection));
+        } 
+        catch (const ::qpid::types::Exception & error) 
+		{
+            String ^ errmsg = gcnew String(error.what());
+            newException    = gcnew QpidException(errmsg);
+        }
+
+		if (newException != nullptr) 
+		{
+	        throw newException;
+		}
     }
 
 
@@ -104,20 +165,65 @@ namespace Messaging {
 
     void Connection::SetOption(System::String ^ name, System::Object ^ value)
     {
-        ::qpid::types::Variant entryValue;
-        TypeTranslator::ManagedToNativeObject(value, entryValue);
-        std::string entryName = QpidMarshal::ToNative(name);
-        connectionp->::qpid::messaging::Connection::setOption(entryName, entryValue);
+        System::Exception ^ newException = nullptr;
+
+        try 
+		{
+            ::qpid::types::Variant entryValue;
+            TypeTranslator::ManagedToNativeObject(value, entryValue);
+            std::string entryName = QpidMarshal::ToNative(name);
+            connectionp->::qpid::messaging::Connection::setOption(entryName, entryValue);
+        } 
+        catch (const ::qpid::types::Exception & error) 
+		{
+            String ^ errmsg = gcnew String(error.what());
+            newException    = gcnew QpidException(errmsg);
+        }
+
+		if (newException != nullptr) 
+		{
+	        throw newException;
+		}
     }
 
     void Connection::Open()
     {
-        connectionp->open();
+        System::Exception ^ newException = nullptr;
+
+        try 
+		{
+            connectionp->open();
+        } 
+        catch (const ::qpid::types::Exception & error) 
+		{
+            String ^ errmsg = gcnew String(error.what());
+            newException    = gcnew QpidException(errmsg);
+        }
+
+		if (newException != nullptr) 
+		{
+	        throw newException;
+		}
     }
 
     void Connection::Close()
     {
-        connectionp->close();
+        System::Exception ^ newException = nullptr;
+
+        try 
+		{
+            connectionp->close();
+        } 
+        catch (const ::qpid::types::Exception & error) 
+		{
+            String ^ errmsg = gcnew String(error.what());
+            newException    = gcnew QpidException(errmsg);
+        }
+
+		if (newException != nullptr) 
+		{
+	        throw newException;
+		}
     }
 
     //

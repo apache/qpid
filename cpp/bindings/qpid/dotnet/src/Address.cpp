@@ -29,6 +29,7 @@
 #include "QpidMarshal.h"
 #include "QpidTypeCheck.h"
 #include "TypeTranslator.h"
+#include "QpidException.h"
 
 namespace Org {
 namespace Apache {
@@ -40,28 +41,74 @@ namespace Messaging {
     /// </summary>
 
     // Create empty
-    Address::Address() :
-        addressp(new ::qpid::messaging::Address(QpidMarshal::ToNative("")))
+    Address::Address()
     {
+        System::Exception ^ newException = nullptr;
+
+        try 
+		{
+            addressp = new ::qpid::messaging::Address(QpidMarshal::ToNative(""));
+        } 
+        catch (const ::qpid::types::Exception & error) 
+		{
+            String ^ errmsg = gcnew String(error.what());
+            newException    = gcnew QpidException(errmsg);
+        }
+
+		if (newException != nullptr) 
+		{
+	        throw newException;
+		}
     }
 
     // Create string address
-    Address::Address(System::String ^ address) :
-        addressp(new ::qpid::messaging::Address(QpidMarshal::ToNative(address)))
+    Address::Address(System::String ^ address)
     {
+        System::Exception ^ newException = nullptr;
+
+        try 
+		{
+            addressp = new ::qpid::messaging::Address(QpidMarshal::ToNative(address));
+        } 
+        catch (const ::qpid::types::Exception & error) 
+		{
+            String ^ errmsg = gcnew String(error.what());
+            newException    = gcnew QpidException(errmsg);
+        }
+
+		if (newException != nullptr) 
+		{
+	        throw newException;
+		}
     }
 
     // Create with options
     Address::Address(System::String ^ name, 
                      System::String ^ subject,
                      System::Collections::Generic::Dictionary<
-                         System::String ^, System::Object ^> ^ options) :
-        addressp(new ::qpid::messaging::Address())
+                         System::String ^, System::Object ^> ^ options)
     {
-        Name = name;
-        Subject = subject;
-        Options = options;
-        Type = "";
+        System::Exception ^ newException = nullptr;
+
+        try 
+		{
+            addressp = new ::qpid::messaging::Address();
+
+            Name = name;
+            Subject = subject;
+            Options = options;
+            Type = "";
+        } 
+        catch (const ::qpid::types::Exception & error) 
+		{
+            String ^ errmsg = gcnew String(error.what());
+            newException    = gcnew QpidException(errmsg);
+        }
+
+		if (newException != nullptr) 
+		{
+	        throw newException;
+		}
     }
 
     // Create with options and type
@@ -69,26 +116,72 @@ namespace Messaging {
                      System::String ^ subject,
                      System::Collections::Generic::Dictionary<
                          System::String ^, System::Object ^> ^ options,
-                     System::String ^ type) :
-        addressp(new ::qpid::messaging::Address())
+                     System::String ^ type)
     {
-        Name = name;
-        Subject = subject;
-        Options = options;
-        Type = type;
+        System::Exception ^ newException = nullptr;
+
+        try 
+		{
+            addressp = new ::qpid::messaging::Address();
+
+            Name = name;
+            Subject = subject;
+            Options = options;
+            Type = type;
+        } 
+        catch (const ::qpid::types::Exception & error) 
+		{
+            String ^ errmsg = gcnew String(error.what());
+            newException    = gcnew QpidException(errmsg);
+        }
+
+		if (newException != nullptr) 
+		{
+	        throw newException;
+		}
     }
 
     // copy constructor
     Address::Address(const Address ^ address)
-        : addressp(new ::qpid::messaging::Address(
-                        *(const_cast<Address ^>(address)->NativeAddress)))
     {
+        System::Exception ^ newException = nullptr;
+
+        try 
+		{
+            addressp = new ::qpid::messaging::Address(
+                        *(const_cast<Address ^>(address)->NativeAddress));
+        } 
+        catch (const ::qpid::types::Exception & error) 
+		{
+            String ^ errmsg = gcnew String(error.what());
+            newException    = gcnew QpidException(errmsg);
+        }
+
+		if (newException != nullptr) 
+		{
+	        throw newException;
+		}
     }
 
     // unmanaged clone
-    Address::Address(const ::qpid::messaging::Address & addrp) :
-        addressp(new ::qpid::messaging::Address(addrp))
+    Address::Address(const ::qpid::messaging::Address & addrp)
     {
+        System::Exception ^ newException = nullptr;
+
+        try 
+		{
+            addressp = new ::qpid::messaging::Address(addrp);
+        } 
+        catch (const ::qpid::types::Exception & error) 
+		{
+            String ^ errmsg = gcnew String(error.what());
+            newException    = gcnew QpidException(errmsg);
+        }
+
+		if (newException != nullptr) 
+		{
+	        throw newException;
+		}
     }
 
     // Destructor
@@ -121,6 +214,23 @@ namespace Messaging {
     //
     System::String ^ Address::ToStr()
     {
-        return gcnew System::String(addressp->str().c_str());
+        System::String ^ result = nullptr;
+        System::Exception ^ newException = nullptr;
+
+        try 
+		{
+            result = gcnew System::String(addressp->str().c_str());
+        } 
+        catch (const ::qpid::types::Exception & error) 
+		{
+            String ^ errmsg = gcnew String(error.what());
+            newException    = gcnew QpidException(errmsg);
+        }
+
+		if (newException != nullptr) 
+		{
+	        throw newException;
+		}
+        return result;
     }
 }}}}
