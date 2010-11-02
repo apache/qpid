@@ -47,66 +47,126 @@ namespace Messaging {
     /// </summary>
 
     // Create empty message
-    Message::Message() :
-        messagep(new ::qpid::messaging::Message(QpidMarshal::ToNative("")))
+    Message::Message()
     {
+        System::Exception ^ newException = nullptr;
+
+        try 
+		{
+            messagep = new ::qpid::messaging::Message(QpidMarshal::ToNative(""));
+        } 
+        catch (const ::qpid::types::Exception & error) 
+		{
+            String ^ errmsg = gcnew String(error.what());
+            newException    = gcnew QpidException(errmsg);
+        }
+
+		if (newException != nullptr) 
+		{
+	        throw newException;
+		}
     }
 
     // Create from string
-    Message::Message(System::String ^ theStr) :
-        messagep(new ::qpid::messaging::Message(QpidMarshal::ToNative(theStr)))
+    Message::Message(System::String ^ theStr)
     {
+        System::Exception ^ newException = nullptr;
+
+        try 
+		{
+            messagep = new ::qpid::messaging::Message(QpidMarshal::ToNative(theStr));
+        } 
+        catch (const ::qpid::types::Exception & error) 
+		{
+            String ^ errmsg = gcnew String(error.what());
+            newException    = gcnew QpidException(errmsg);
+        }
+
+		if (newException != nullptr) 
+		{
+	        throw newException;
+		}
     }
 
     // Create from object
-    Message::Message(System::Object ^ theValue) :
-        messagep(new ::qpid::messaging::Message(QpidMarshal::ToNative("")))
+    Message::Message(System::Object ^ theValue)
     {
-        if (QpidTypeCheck::ObjectIsMap(theValue))
-        {
-            // Create a mapped message using given dictionary
+        System::Exception ^ newException = nullptr;
 
-            // Allocate a map
-            ::qpid::types::Variant::Map newMap;
+        try 
+		{
+            messagep = new ::qpid::messaging::Message(QpidMarshal::ToNative(""));
 
-            // Add the map variables to the map
-            TypeTranslator::ManagedToNative((QpidMap ^)theValue, newMap);
+            if (QpidTypeCheck::ObjectIsMap(theValue))
+            {
+                // Create a mapped message using given dictionary
 
-            // Set message content type
-            messagep->setContentType("ampq/map");
+                // Allocate a map
+                ::qpid::types::Variant::Map newMap;
 
-            // Insert the map into the message
-            ::qpid::messaging::encode(newMap, *messagep, QpidMarshal::ToNative("amqp/map"));
+                // Add the map variables to the map
+                TypeTranslator::ManagedToNative((QpidMap ^)theValue, newMap);
+
+                // Set message content type
+                messagep->setContentType("ampq/map");
+
+                // Insert the map into the message
+                ::qpid::messaging::encode(newMap, *messagep, QpidMarshal::ToNative("amqp/map"));
+            }
+            else if (QpidTypeCheck::ObjectIsList(theValue))
+            {
+                // Create a list message using given list
+
+                // Allocate a list
+                ::qpid::types::Variant::List newList;
+
+                // Add the list variables to the list
+                TypeTranslator::ManagedToNative((QpidList ^)theValue, newList);
+
+                // Set message content type
+                messagep->setContentType("ampq/list");
+
+                // Insert the list into the message
+                ::qpid::messaging::encode(newList, *messagep, QpidMarshal::ToNative("amqp/list"));
+            }
+            else
+            {
+                // Create a binary string message
+                messagep->setContent(QpidMarshal::ToNative(theValue->ToString()));
+            }
+        } 
+        catch (const ::qpid::types::Exception & error) 
+		{
+            String ^ errmsg = gcnew String(error.what());
+            newException    = gcnew QpidException(errmsg);
         }
-        else if (QpidTypeCheck::ObjectIsList(theValue))
-        {
-            // Create a list message using given list
 
-            // Allocate a list
-            ::qpid::types::Variant::List newList;
-
-            // Add the list variables to the list
-            TypeTranslator::ManagedToNative((QpidList ^)theValue, newList);
-
-            // Set message content type
-            messagep->setContentType("ampq/list");
-
-            // Insert the list into the message
-            ::qpid::messaging::encode(newList, *messagep, QpidMarshal::ToNative("amqp/list"));
-        }
-        else
-        {
-            // Create a binary string message
-            messagep->setContent(QpidMarshal::ToNative(theValue->ToString()));
-        }
+		if (newException != nullptr) 
+		{
+	        throw newException;
+		}
     }
 
 
 	// Create from bytes
 	Message::Message(array<System::Byte> ^ bytes)
 	{
-		pin_ptr<unsigned char> pBytes = &bytes[0];
-		messagep = new ::qpid::messaging::Message((char *)pBytes, bytes->Length);
+        System::Exception ^ newException = nullptr;
+        try 
+		{
+		    pin_ptr<unsigned char> pBytes = &bytes[0];
+		    messagep = new ::qpid::messaging::Message((char *)pBytes, bytes->Length);
+        } 
+        catch (const ::qpid::types::Exception & error) 
+		{
+            String ^ errmsg = gcnew String(error.what());
+            newException    = gcnew QpidException(errmsg);
+        }
+
+		if (newException != nullptr) 
+		{
+	        throw newException;
+		}
 	}
 
     // Create from byte array slice
@@ -115,15 +175,44 @@ namespace Messaging {
         if ((offset + size) > bytes->Length)
 			throw gcnew QpidException("Message::Message Create from byte array slice: buffer length exceeded");
 
-		pin_ptr<unsigned char> pBytes = &bytes[offset];
-		messagep = new ::qpid::messaging::Message((char *)pBytes, size);
+        System::Exception ^ newException = nullptr;
+        try 
+		{
+		    pin_ptr<unsigned char> pBytes = &bytes[offset];
+		    messagep = new ::qpid::messaging::Message((char *)pBytes, size);
+        } 
+        catch (const ::qpid::types::Exception & error) 
+		{
+            String ^ errmsg = gcnew String(error.what());
+            newException    = gcnew QpidException(errmsg);
+        }
+
+		if (newException != nullptr) 
+		{
+	        throw newException;
+		}
 	}
 
 
 	// unmanaged clone
-    Message::Message(const ::qpid::messaging::Message & msgp) :
-        messagep(new ::qpid::messaging::Message(msgp))
+    Message::Message(const ::qpid::messaging::Message & msgp)
     {
+        System::Exception ^ newException = nullptr;
+
+        try 
+		{
+            messagep = new ::qpid::messaging::Message(msgp);
+        } 
+        catch (const ::qpid::types::Exception & error) 
+		{
+            String ^ errmsg = gcnew String(error.what());
+            newException    = gcnew QpidException(errmsg);
+        }
+
+		if (newException != nullptr) 
+		{
+	        throw newException;
+		}
     }
 
 
@@ -142,9 +231,24 @@ namespace Messaging {
 
     // Copy constructor
     Message::Message(const Message ^ message)
-        : messagep(new ::qpid::messaging::Message(
-                        *(const_cast<Message ^>(message)->NativeMessage)))
     {
+        System::Exception ^ newException = nullptr;
+
+        try 
+		{
+            messagep = new ::qpid::messaging::Message(
+                        *(const_cast<Message ^>(message)->NativeMessage));
+        } 
+        catch (const ::qpid::types::Exception & error) 
+		{
+            String ^ errmsg = gcnew String(error.what());
+            newException    = gcnew QpidException(errmsg);
+        }
+
+		if (newException != nullptr) 
+		{
+	        throw newException;
+		}
     }
 
     // Destroys kept object
@@ -161,23 +265,68 @@ namespace Messaging {
 	// Property
     void Message::SetProperty(System::String ^ name, System::Object ^ value)
     {
-        ::qpid::types::Variant entryValue;
-        TypeTranslator::ManagedToNativeObject(value, entryValue);
+        System::Exception ^ newException = nullptr;
 
-        messagep->getProperties()[QpidMarshal::ToNative(name)] = entryValue;
+        try 
+		{
+            ::qpid::types::Variant entryValue;
+            TypeTranslator::ManagedToNativeObject(value, entryValue);
+
+            messagep->getProperties()[QpidMarshal::ToNative(name)] = entryValue;
+        } 
+        catch (const ::qpid::types::Exception & error) 
+		{
+            String ^ errmsg = gcnew String(error.what());
+            newException    = gcnew QpidException(errmsg);
+        }
+
+		if (newException != nullptr) 
+		{
+	        throw newException;
+		}
     }
 
 	// Content
 	void Message::SetContent(System::String ^ content)
     {
-        messagep->setContent(QpidMarshal::ToNative(content));
+        System::Exception ^ newException = nullptr;
+
+        try 
+		{
+            messagep->setContent(QpidMarshal::ToNative(content));
+        } 
+        catch (const ::qpid::types::Exception & error) 
+		{
+            String ^ errmsg = gcnew String(error.what());
+            newException    = gcnew QpidException(errmsg);
+        }
+
+		if (newException != nullptr) 
+		{
+	        throw newException;
+		}
     }
 
 
     void Message::SetContent(cli::array<System::Byte> ^ bytes)
     {
-		pin_ptr<unsigned char> pBytes = &bytes[0];
-		messagep->setContent((char *)pBytes, bytes->Length);
+        System::Exception ^ newException = nullptr;
+
+        try 
+		{
+		    pin_ptr<unsigned char> pBytes = &bytes[0];
+		    messagep->setContent((char *)pBytes, bytes->Length);
+        } 
+        catch (const ::qpid::types::Exception & error) 
+		{
+            String ^ errmsg = gcnew String(error.what());
+            newException    = gcnew QpidException(errmsg);
+        }
+
+		if (newException != nullptr) 
+		{
+	        throw newException;
+		}
     }
 
 
@@ -186,14 +335,47 @@ namespace Messaging {
         if ((offset + size) > bytes->Length)
 			throw gcnew QpidException("Message::SetContent from byte array slice: buffer length exceeded");
 
-		pin_ptr<unsigned char> pBytes = &bytes[offset];
-		messagep->setContent((char *)pBytes, size);
+        System::Exception ^ newException = nullptr;
+
+        try 
+		{
+		    pin_ptr<unsigned char> pBytes = &bytes[offset];
+		    messagep->setContent((char *)pBytes, size);
+        } 
+        catch (const ::qpid::types::Exception & error) 
+		{
+            String ^ errmsg = gcnew String(error.what());
+            newException    = gcnew QpidException(errmsg);
+        }
+
+		if (newException != nullptr) 
+		{
+	        throw newException;
+		}
     }
 
 
     System::String ^ Message::GetContent()
     {
-        return gcnew String(messagep->getContent().c_str());
+        System::String ^ result = nullptr;
+        System::Exception ^ newException = nullptr;
+
+        try 
+		{
+            result = gcnew String(messagep->getContent().c_str());
+        } 
+        catch (const ::qpid::types::Exception & error) 
+		{
+            String ^ errmsg = gcnew String(error.what());
+            newException    = gcnew QpidException(errmsg);
+        }
+
+		if (newException != nullptr) 
+		{
+	        throw newException;
+		}
+
+        return result;
     }
 
 
@@ -204,12 +386,27 @@ namespace Messaging {
                                 System::String^, 
                                 System::Object^> ^ dict)
     {
-        // Extract the message map from the message
-        ::qpid::types::Variant::Map map;
-        
-        ::qpid::messaging::decode(*messagep, map, QpidMarshal::ToNative("amqp/map"));
+        System::Exception ^ newException = nullptr;
 
-        TypeTranslator::NativeToManaged(map, dict);
+        try 
+		{
+            // Extract the message map from the message
+            ::qpid::types::Variant::Map map;
+            
+            ::qpid::messaging::decode(*messagep, map, QpidMarshal::ToNative("amqp/map"));
+
+            TypeTranslator::NativeToManaged(map, dict);
+        } 
+        catch (const ::qpid::types::Exception & error) 
+		{
+            String ^ errmsg = gcnew String(error.what());
+            newException    = gcnew QpidException(errmsg);
+        }
+
+		if (newException != nullptr) 
+		{
+	        throw newException;
+		}
     }
 
 
@@ -219,14 +416,29 @@ namespace Messaging {
     void Message::GetContent(System::Collections::ObjectModel::Collection<
                         System::Object^> ^ list)
     {
-        // allocate a native messaging::List
-        ::qpid::types::Variant::List nativeList;
-        
-        // Extract the list from the message in native format
-        ::qpid::messaging::decode(*messagep, nativeList, QpidMarshal::ToNative("amqp/list"));
+        System::Exception ^ newException = nullptr;
 
-        // translate native list into user's managed list
-        TypeTranslator::NativeToManaged(nativeList, list);
+        try 
+		{
+            // allocate a native messaging::List
+            ::qpid::types::Variant::List nativeList;
+            
+            // Extract the list from the message in native format
+            ::qpid::messaging::decode(*messagep, nativeList, QpidMarshal::ToNative("amqp/list"));
+
+            // translate native list into user's managed list
+            TypeTranslator::NativeToManaged(nativeList, list);
+        } 
+        catch (const ::qpid::types::Exception & error) 
+		{
+            String ^ errmsg = gcnew String(error.what());
+            newException    = gcnew QpidException(errmsg);
+        }
+
+		if (newException != nullptr) 
+		{
+	        throw newException;
+		}
     }
 
     //
@@ -236,60 +448,90 @@ namespace Messaging {
     //
     void Message::GetContent(array<System::Byte> ^ arr)
     {
-        System::UInt32 size = messagep->getContentSize();
-     
-        if (0 == size)
-            throw gcnew QpidException("Message::GetRaw - message size is zero");
+        System::Exception ^ newException = nullptr;
 
-        if (arr->Length != size)
-            throw gcnew QpidException("Message::GetRaw - receive buffer is wrong size");
+        try 
+		{
+            System::UInt32 size = messagep->getContentSize();
+         
+            if (0 == size)
+                throw gcnew QpidException("Message::GetRaw - message size is zero");
 
-        const char * pMsgSrc = messagep->getContentPtr();
-		pin_ptr<unsigned char> pArr = &arr[0];
-		memcpy(pArr, pMsgSrc, size);
+            if (arr->Length != size)
+                throw gcnew QpidException("Message::GetRaw - receive buffer is wrong size");
+
+            const char * pMsgSrc = messagep->getContentPtr();
+		    pin_ptr<unsigned char> pArr = &arr[0];
+		    memcpy(pArr, pMsgSrc, size);
+        } 
+        catch (const ::qpid::types::Exception & error) 
+		{
+            String ^ errmsg = gcnew String(error.what());
+            newException    = gcnew QpidException(errmsg);
+        }
+
+		if (newException != nullptr) 
+		{
+	        throw newException;
+		}
     }
 
 
 	System::String ^ Message::MapAsString(System::Collections::Generic::Dictionary<
 					           System::String^, System::Object^> ^ dict)
     {
-		System::String ^ leading = "";
-		System::Text::StringBuilder ^ sb = gcnew System::Text::StringBuilder("{");
+	    System::Text::StringBuilder ^ sb = gcnew System::Text::StringBuilder("{");
+        System::Exception ^ newException = nullptr;
 
-		for each (System::Collections::Generic::KeyValuePair
-			     <System::String^, System::Object^> kvp in dict)
-        {
-            sb->Append(leading);
-            leading = ", ";
+        try 
+		{
+		    System::String ^ leading = "";
 
-			if (QpidTypeCheck::ObjectIsMap(kvp.Value))
+		    for each (System::Collections::Generic::KeyValuePair
+			         <System::String^, System::Object^> kvp in dict)
             {
-				sb->AppendFormat(
-					"{0}={1}", 
-					kvp.Key,
-					MapAsString((System::Collections::Generic::Dictionary<System::String^, System::Object^> ^)kvp.Value));
+                sb->Append(leading);
+                leading = ", ";
+
+			    if (QpidTypeCheck::ObjectIsMap(kvp.Value))
+                {
+				    sb->AppendFormat(
+					    "{0}={1}", 
+					    kvp.Key,
+					    MapAsString((System::Collections::Generic::Dictionary<System::String^, System::Object^> ^)kvp.Value));
+                }
+			    else if (QpidTypeCheck::ObjectIsList(kvp.Value))
+                {
+                    sb->AppendFormat(
+					    "{0}={1}", 
+					    kvp.Key,
+					    ListAsString((System::Collections::ObjectModel::Collection<
+							    System::Object^> ^)kvp.Value));
+                }
+                else if (nullptr == kvp.Value)
+                {
+                    sb->AppendFormat(
+					    "{0}=", 
+					    kvp.Key);
+                }
+                else
+                    sb->AppendFormat("{0}={1}", kvp.Key, kvp.Value);
             }
-			else if (QpidTypeCheck::ObjectIsList(kvp.Value))
-            {
-                sb->AppendFormat(
-					"{0}={1}", 
-					kvp.Key,
-					ListAsString((System::Collections::ObjectModel::Collection<
-							System::Object^> ^)kvp.Value));
-            }
-            else if (nullptr == kvp.Value)
-            {
-                sb->AppendFormat(
-					"{0}=", 
-					kvp.Key);
-            }
-            else
-                sb->AppendFormat("{0}={1}", kvp.Key, kvp.Value);
+		    sb->Append("}");
+        } 
+        catch (const ::qpid::types::Exception & error) 
+		{
+            String ^ errmsg = gcnew String(error.what());
+            newException    = gcnew QpidException(errmsg);
         }
-		sb->Append("}");
 
-		System::String ^ result = gcnew System::String(sb->ToString());
-		return result;
+		if (newException != nullptr) 
+		{
+	        throw newException;
+		}
+
+        System::String ^ result = gcnew System::String(sb->ToString());
+        return result;
     }
 
     /// <summary>
@@ -298,35 +540,50 @@ namespace Messaging {
     /// <param name="list">The AMQP list</param>
 	System::String ^ Message::ListAsString(System::Collections::ObjectModel::Collection<System::Object^> ^ list)
     {
-		System::String ^ leading = "";
-		System::Text::StringBuilder ^ sb = gcnew System::Text::StringBuilder("[");
+        System::Text::StringBuilder ^ sb = gcnew System::Text::StringBuilder("[");
+        System::Exception ^ newException = nullptr;
 
-		for each (System::Object ^ obj in list)
-        {
-            sb->Append(leading);
-            leading = ", ";
+        try 
+		{
+		    System::String ^ leading = "";
 
-			if (QpidTypeCheck::ObjectIsMap(obj))
+		    for each (System::Object ^ obj in list)
             {
-                sb->Append(MapAsString((System::Collections::Generic::Dictionary<
-                                System::String^, System::Object^> ^)obj));
+                sb->Append(leading);
+                leading = ", ";
+
+			    if (QpidTypeCheck::ObjectIsMap(obj))
+                {
+                    sb->Append(MapAsString((System::Collections::Generic::Dictionary<
+                                    System::String^, System::Object^> ^)obj));
+                }
+			    else if (QpidTypeCheck::ObjectIsList(obj))
+                {
+                    sb->Append(ListAsString((System::Collections::ObjectModel::Collection<
+                                    System::Object^> ^)obj));
+                }
+                else if (nullptr == obj)
+                {
+                    // no display for null objects
+                }
+                else
+                    sb->Append(obj->ToString());
             }
-			else if (QpidTypeCheck::ObjectIsList(obj))
-            {
-                sb->Append(ListAsString((System::Collections::ObjectModel::Collection<
-                                System::Object^> ^)obj));
-            }
-            else if (nullptr == obj)
-            {
-                // no display for null objects
-            }
-            else
-                sb->Append(obj->ToString());
+            sb->Append("]");
+        } 
+        catch (const ::qpid::types::Exception & error) 
+		{
+            String ^ errmsg = gcnew String(error.what());
+            newException    = gcnew QpidException(errmsg);
         }
-        sb->Append("]");
 
-		System::String ^ result = gcnew System::String(sb->ToString());
-		return result;
+		if (newException != nullptr) 
+		{
+	        throw newException;
+		}
+
+	    System::String ^ result = gcnew System::String(sb->ToString());
+        return result;
     }
 
 	System::String ^ Message::AsString(System::Object ^ obj)

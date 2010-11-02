@@ -39,14 +39,10 @@ namespace Messaging {
     /// </summary>
 
     // constructors
-    //FailoverUpdates::FailoverUpdates(Connection ^ connection) :
-    //    failoverupdatesp(new ::qpid::messaging::FailoverUpdates(*(connection->NativeConnection)))
-    //{
-    //}
 
     FailoverUpdates::FailoverUpdates(Connection ^ connection)
     {
-        System::Exception           ^ newException = nullptr;
+        System::Exception ^ newException = nullptr;
 
         try 
 		{
@@ -62,8 +58,6 @@ namespace Messaging {
 		{
 	        throw newException;
 		}
-
-        return;
     }
 
 

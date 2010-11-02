@@ -48,9 +48,24 @@ namespace Messaging {
     // unmanaged clone
     Session::Session(const ::qpid::messaging::Session & session, 
                      Org::Apache::Qpid::Messaging::Connection ^ connRef) :
-        sessionp(new ::qpid::messaging::Session (session)),
         parentConnectionp(connRef)
     {
+        System::Exception ^ newException = nullptr;
+
+        try 
+		{
+            sessionp = new ::qpid::messaging::Session (session);
+        } 
+        catch (const ::qpid::types::Exception & error) 
+		{
+            String ^ errmsg = gcnew String(error.what());
+            newException    = gcnew QpidException(errmsg);
+        }
+
+		if (newException != nullptr) 
+		{
+	        throw newException;
+		}
     }
 
 
@@ -69,10 +84,26 @@ namespace Messaging {
 
     // Copy constructor
     Session::Session(const Session ^ session)
-        : sessionp(new ::qpid::messaging::Session(
-                        *(const_cast<Session ^>(session)->NativeSession))),
-          parentConnectionp(session->parentConnectionp)
+        : parentConnectionp(session->parentConnectionp)
     {
+        System::Exception ^ newException = nullptr;
+
+        try 
+		{
+            sessionp = new ::qpid::messaging::Session(
+                        *(const_cast<Session ^>(session)->NativeSession));
+          
+        } 
+        catch (const ::qpid::types::Exception & error) 
+		{
+            String ^ errmsg = gcnew String(error.what());
+            newException    = gcnew QpidException(errmsg);
+        }
+
+		if (newException != nullptr) 
+		{
+	        throw newException;
+		}
     }
 
 
@@ -89,17 +120,62 @@ namespace Messaging {
 
     void Session::Close()
     {
-        sessionp->close();
+        System::Exception ^ newException = nullptr;
+
+        try 
+		{
+            sessionp->close();
+        } 
+        catch (const ::qpid::types::Exception & error) 
+		{
+            String ^ errmsg = gcnew String(error.what());
+            newException    = gcnew QpidException(errmsg);
+        }
+
+		if (newException != nullptr) 
+		{
+	        throw newException;
+		}
     }
 
     void Session::Commit()
     {
-        sessionp->commit();
+        System::Exception ^ newException = nullptr;
+
+        try 
+		{
+            sessionp->commit();
+        } 
+        catch (const ::qpid::types::Exception & error) 
+		{
+            String ^ errmsg = gcnew String(error.what());
+            newException    = gcnew QpidException(errmsg);
+        }
+
+		if (newException != nullptr) 
+		{
+	        throw newException;
+		}
     }
 
     void Session::Rollback()
     {
-        sessionp->rollback();
+        System::Exception ^ newException = nullptr;
+
+        try 
+		{
+            sessionp->rollback();
+        } 
+        catch (const ::qpid::types::Exception & error) 
+		{
+            String ^ errmsg = gcnew String(error.what());
+            newException    = gcnew QpidException(errmsg);
+        }
+
+		if (newException != nullptr) 
+		{
+	        throw newException;
+		}
     }
 
     void Session::Acknowledge()
@@ -109,7 +185,22 @@ namespace Messaging {
 
     void Session::Acknowledge(bool sync)
     {
-        sessionp->acknowledge(sync);
+        System::Exception ^ newException = nullptr;
+
+        try 
+		{
+            sessionp->acknowledge(sync);
+        } 
+        catch (const ::qpid::types::Exception & error) 
+		{
+            String ^ errmsg = gcnew String(error.what());
+            newException    = gcnew QpidException(errmsg);
+        }
+
+		if (newException != nullptr) 
+		{
+	        throw newException;
+		}
     }
 
     void Session::Acknowledge(Message ^ message)
@@ -119,17 +210,62 @@ namespace Messaging {
 
     void Session::Acknowledge(Message ^ message, bool sync)
     {
-        sessionp->acknowledge(*(message->NativeMessage), sync);
+        System::Exception ^ newException = nullptr;
+
+        try 
+		{
+            sessionp->acknowledge(*(message->NativeMessage), sync);
+        } 
+        catch (const ::qpid::types::Exception & error) 
+		{
+            String ^ errmsg = gcnew String(error.what());
+            newException    = gcnew QpidException(errmsg);
+        }
+
+		if (newException != nullptr) 
+		{
+	        throw newException;
+		}
     }
 
     void Session::Reject(Message ^ message)
     {
-        sessionp->::qpid::messaging::Session::reject(*(message->NativeMessage));
+        System::Exception ^ newException = nullptr;
+
+        try 
+		{
+            sessionp->::qpid::messaging::Session::reject(*(message->NativeMessage));
+        } 
+        catch (const ::qpid::types::Exception & error) 
+		{
+            String ^ errmsg = gcnew String(error.what());
+            newException    = gcnew QpidException(errmsg);
+        }
+
+		if (newException != nullptr) 
+		{
+	        throw newException;
+		}
     }
 
     void Session::Release(Message ^ message)
     {
-        sessionp->::qpid::messaging::Session::release(*(message->NativeMessage));
+        System::Exception ^ newException = nullptr;
+
+        try 
+		{
+            sessionp->::qpid::messaging::Session::release(*(message->NativeMessage));
+        } 
+        catch (const ::qpid::types::Exception & error) 
+		{
+            String ^ errmsg = gcnew String(error.what());
+            newException    = gcnew QpidException(errmsg);
+        }
+
+		if (newException != nullptr) 
+		{
+	        throw newException;
+		}
     }
 
     void Session::Sync()
@@ -139,7 +275,22 @@ namespace Messaging {
 
     void Session::Sync(bool block)
     {
-        sessionp->sync(block);
+        System::Exception ^ newException = nullptr;
+
+        try 
+		{
+            sessionp->sync(block);
+        } 
+        catch (const ::qpid::types::Exception & error) 
+		{
+            String ^ errmsg = gcnew String(error.what());
+            newException    = gcnew QpidException(errmsg);
+        }
+
+		if (newException != nullptr) 
+		{
+	        throw newException;
+		}
     }
 
     // next(receiver)
@@ -444,6 +595,21 @@ namespace Messaging {
 
     void Session::CheckError()
     {
-        sessionp->checkError();
+        System::Exception ^ newException = nullptr;
+
+        try 
+		{
+            sessionp->checkError();
+        } 
+        catch (const ::qpid::types::Exception & error) 
+		{
+            String ^ errmsg = gcnew String(error.what());
+            newException    = gcnew QpidException(errmsg);
+        }
+
+		if (newException != nullptr) 
+		{
+	        throw newException;
+		}
     }
 }}}}
