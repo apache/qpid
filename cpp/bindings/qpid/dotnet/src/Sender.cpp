@@ -29,6 +29,7 @@
 
 #include "Sender.h"
 #include "Message.h"
+#include "QpidException.h"
 
 namespace Org {
 namespace Apache {
@@ -42,9 +43,24 @@ namespace Messaging {
     // unmanaged clone
     Sender::Sender(const ::qpid::messaging::Sender & s,
                      Org::Apache::Qpid::Messaging::Session ^ sessRef) :
-		senderp(new ::qpid::messaging::Sender (s)),
         parentSession(sessRef)
     {
+        System::Exception ^ newException = nullptr;
+
+        try 
+		{
+            senderp = new ::qpid::messaging::Sender (s);
+        } 
+        catch (const ::qpid::types::Exception & error) 
+		{
+            String ^ errmsg = gcnew String(error.what());
+            newException    = gcnew QpidException(errmsg);
+        }
+
+		if (newException != nullptr) 
+		{
+	        throw newException;
+		}
     }
 
 
@@ -63,10 +79,25 @@ namespace Messaging {
 
     // Copy constructor
     Sender::Sender(const Sender ^ sender)
-        : senderp(new ::qpid::messaging::Sender(
-                        *(const_cast<Sender ^>(sender)->NativeSender))),
-          parentSession(sender->parentSession)
+        : parentSession(sender->parentSession)
     {
+        System::Exception ^ newException = nullptr;
+
+        try 
+		{
+            senderp = new ::qpid::messaging::Sender(
+                        *(const_cast<Sender ^>(sender)->NativeSender));
+        } 
+        catch (const ::qpid::types::Exception & error) 
+		{
+            String ^ errmsg = gcnew String(error.what());
+            newException    = gcnew QpidException(errmsg);
+        }
+
+		if (newException != nullptr) 
+		{
+	        throw newException;
+		}
     }
 
 
@@ -91,12 +122,42 @@ namespace Messaging {
 
     void Sender::Send(Message ^ mmsgp, bool sync)
     {
-        senderp->::qpid::messaging::Sender::send(*((*mmsgp).NativeMessage), sync);
+        System::Exception ^ newException = nullptr;
+
+        try 
+		{
+            senderp->::qpid::messaging::Sender::send(*((*mmsgp).NativeMessage), sync);
+        } 
+        catch (const ::qpid::types::Exception & error) 
+		{
+            String ^ errmsg = gcnew String(error.what());
+            newException    = gcnew QpidException(errmsg);
+        }
+
+		if (newException != nullptr) 
+		{
+	        throw newException;
+		}
     }
 
 
     void Sender::Close()
     {
-        senderp->close();
+        System::Exception ^ newException = nullptr;
+
+        try 
+		{
+            senderp->close();
+        } 
+        catch (const ::qpid::types::Exception & error) 
+		{
+            String ^ errmsg = gcnew String(error.what());
+            newException    = gcnew QpidException(errmsg);
+        }
+
+		if (newException != nullptr) 
+		{
+	        throw newException;
+		}
     }
 }}}}
