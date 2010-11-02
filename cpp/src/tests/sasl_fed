@@ -82,9 +82,6 @@ broker_2_port=`cat $tmp_root/broker_2_port`
 
 sleep 2
 
-# TODO -- check for SASL version here, and exit 0 if it is less than 2.1.22 == 131350.
-
-
 # I am not randomizing these names, because the test creates its own brokers.
 QUEUE_NAME=sasl_fed_queue
 ROUTING_KEY=sasl_fed_queue
