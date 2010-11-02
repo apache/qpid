@@ -538,6 +538,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\FailoverUpdates.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\Message.cpp"
 				>
 			</File>
@@ -573,6 +577,10 @@
 			</File>
 			<File
 				RelativePath=".\Duration.h"
+				>
+			</File>
+			<File
+				RelativePath=".\FailoverUpdates.h"
 				>
 			</File>
 			<File
