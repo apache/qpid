@@ -58,6 +58,7 @@
         <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="How-to-Tune-M3-Java-Broker-Performance.xml"/>
         <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Qpid-Java-Build-How-To.xml"/>
         <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Use-Priority-Queues.xml"/>
+        <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="How-to-Use-SlowConsumerDisconnect.xml"/> 
 </chapter>
 
 
