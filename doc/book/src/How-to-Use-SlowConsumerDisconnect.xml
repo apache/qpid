@@ -1,0 +1,454 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.1.2//EN"
+	"http://www.oasis-open.org/docbook/xml/4.1.2/docbookx.dtd">
+
+<book lang='en_US'>
+<title>Slow Consumer Disconnect - User Guide</title>
+
+ <chapter>
+<title> </title>
+
+  <sect1>
+<title>Introduction</title>
+   <para>
+
+   </para>
+
+   <para>Slow Consumer Disconnect (SCD) is a new feature in Qpid that provides a configurable
+        mechanism to prevent a single slow consumer from causing a back up of unconsumed messages on
+        the broker. </para>
+
+   <para>
+
+   </para>
+
+   <para>This is most relevant where Topics are in use, since a published message is not removed
+        from the broker's memory until all subscribers have acknowledged that message. </para>
+
+   <para>
+
+   </para>
+
+   <para>Cases where a consumer is 'slow' can arise due to one of the following: poor network
+        connectivity exists; a transitory system issue affects a single client;a single subscriber
+        written by a client team is behaving incorrectly and not acknowledging messages; a
+        downstream resource such as a database is non-responsive. </para>
+
+   <para>
+
+   </para>
+
+   <para>SCD will enable the application owner to configure limits for a given consumer's queue and
+        the behaviour to execute when those limits are reached. </para>
+
+   <para>
+
+   </para>
+
+  </sect1>
+
+  <sect1>
+<title><emphasis role='bold'>What can it do?</emphasis></title>
+   <para>
+
+   </para>
+
+   <para>SCD is only applicable to topics and durable subscriptions and can be configured on either
+        topic or a subscription name. </para>
+
+   <para>
+
+   </para>
+
+   <para>On triggering of a specified threshold the offending client will be disconnected from the
+        broker with a 506 error code wrapped in a JMSException returned to the client via the
+        ExceptionListener registered on the Connection object. </para>
+      <para>Note that it is essential that an ExceptionListener be specified by the client on
+        creation of the connection and that exceptions coming back on that listener are handled
+        correctly. </para>
+
+   <para>
+
+   </para>
+
+  </sect1>
+
+  <sect1>
+<title>Frequency of SCD Checking</title>
+   <para>
+
+   </para>
+
+   <sect2>
+<title><emphasis role='bold'>Configuring Frequency</emphasis></title>
+    <para>
+
+    </para>
+
+    <para>You can configure the frequency with which the SCD process will check for slow consumers,
+          along with the unit of time you're using to specify that frequency. </para>
+
+    <para>
+
+    </para>
+
+    <para><emphasis role="italic">virtualhosts.virtualhost.slow-consumer-detection. delay</emphasis>
+          and <emphasis role="italic">.timeunit</emphasis> are the elements used to specify the
+          frequency and timeunit for that frequency on the virtualhosts.xml file e.g. </para>
+
+    <para> </para>
+
+    <para> &lt;virtualhosts></para>
+
+    <para>     &lt;default&gt;test&lt;/default&gt; </para>
+
+    <para>     &lt;virtualhost&gt; </para>
+
+    <para>         &lt;name&gt;test&lt;/name&gt; </para>
+
+    <para>         &lt;test&gt; </para>
+
+    <para>            &lt;slow-consumer-detection&gt; </para>
+
+    <para>                 &lt;delay&gt;60&lt;delay/&gt; </para>
+
+    <para>                 &lt;timeunit&gt;seconds&lt;timeunit/&gt; </para>
+
+    <para>             &lt;slow-consumer-detection/&gt; </para>
+
+    <para>         &lt;/test&gt; </para>
+
+    <para>     &lt;/virtualhost&gt; </para>
+
+    <para>
+&lt;/virtualhosts&gt;
+    </para>
+
+    <para>
+
+    </para>
+
+   </sect2>
+
+   <sect2>
+<title><emphasis role='bold'>SCD Log output</emphasis></title>
+    <para>
+
+    </para>
+
+    <para>
+When the SCD component finds a queue with a configured threshold to check, the operational logging component (if enabled) will log:
+    </para>
+
+    <para>
+SCD-1003 : Checking Status of Queue
+    </para>
+
+    <para>
+
+    </para>
+
+   </sect2>
+
+  </sect1>
+
+  <sect1>
+<title>Client Exception<emphasis role='bold'>s</emphasis></title>
+   <para>When a Slow Consumer is disconnected, the client receives a 506 error from the broker
+        wrapped in a JMSException and the Session and Connection are closed:</para>
+
+   <para> </para>
+
+   <para>
+Dispatcher-Channel-1 2010-09-01 16:23:34,206 INFO [qpid.client.AMQSession.Dispatcher] Dispatcher-Channel-1 thread terminating for channel 1:org.apache.qpid.client.AMQSession_0_8@1de8aa8
+   </para>
+
+   <para>
+pool-2-thread-3 2010-09-01 16:23:34,238 INFO [apache.qpid.client.AMQConnection] Closing AMQConnection due to
+   </para>
+
+   <para>
+:org.apache.qpid.AMQChannelClosedException: Error: Consuming to slow. /[error code 506: resource error/]
+   </para>
+
+   <para>
+javax.jms.JMSException: 506
+   </para>
+
+   <para>
+ at org.apache.qpid.client.AMQConnection.exceptionReceived(AMQConnection.java:1396)
+   </para>
+
+   <para>
+ at org.apache.qpid.client.protocol.AMQProtocolHandler.exception(AMQProtocolHandler.java:329)
+   </para>
+
+   <para>
+ at org.apache.qpid.client.protocol.AMQProtocolHandler.methodBodyReceived(AMQProtocolHandler.java:536)
+   </para>
+
+   <para>
+ at org.apache.qpid.client.protocol.AMQProtocolSession.methodFrameReceived(AMQProtocolSession.java:453)
+   </para>
+
+   <para>
+ at org.apache.qpid.framing.AMQMethodBodyImpl.handle(AMQMethodBodyImpl.java:93)
+   </para>
+
+   <para>
+ at org.apache.qpid.client.protocol.AMQProtocolHandler$1.run(AMQProtocolHandler.java:462)
+   </para>
+
+   <para>
+ at org.apache.qpid.pool.Job.processAll(Job.java:110)
+   </para>
+
+   <para>
+ at org.apache.qpid.pool.Job.run(Job.java:149)
+   </para>
+
+   <para>
+ at java.util.concurrent.ThreadPoolExecutor$Worker.runTask(ThreadPoolExecutor.java:885)
+   </para>
+
+   <para>
+ at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:907)
+   </para>
+
+   <para>
+ at java.lang.Thread.run(Thread.java:619)
+   </para>
+
+   <para>
+Caused by: org.apache.qpid.AMQChannelClosedException: Error: Consuming to slow. /[error code 506: resource error/]
+   </para>
+
+   <para>
+ at org.apache.qpid.client.handler.ChannelCloseMethodHandler.methodReceived(ChannelCloseMethodHandler.java:96)
+   </para>
+
+   <para>
+ at org.apache.qpid.client.handler.ClientMethodDispatcherImpl.dispatchChannelClose(ClientMethodDispatcherImpl.java:163)
+   </para>
+
+   <para>
+ at org.apache.qpid.framing.amqp_8_0.ChannelCloseBodyImpl.execute(ChannelCloseBodyImpl.java:140)
+   </para>
+
+   <para>
+ at org.apache.qpid.client.state.AMQStateManager.methodReceived(AMQStateManager.java:112)
+   </para>
+
+   <para>
+ at org.apache.qpid.client.protocol.AMQProtocolHandler.methodBodyReceived(AMQProtocolHandler.java:511)
+   </para>
+
+   <para>
+ ... 8 more
+   </para>
+
+   <para>
+main 2010-09-01 16:23:34,316 INFO /[apache.qpid.client.AMQSession/] Closing session: org.apache.qpid.client.AMQSession_0_8@ffeef1
+   </para>
+
+   <para>
+
+   </para>
+
+  </sect1>
+
+  <sect1>
+<title>Disconnection Thresholds</title>
+   <para>
+
+   </para>
+
+   <sect2>
+<title>Topic Subscriptions</title>
+    <para>One key feature of SCD is the disconnection of a consuming client when a specified
+          threshold is exceeded. For a pub-sub model using topics, this means that messages will no
+          longer be delivered to the private queue which was associated with that consuming client,
+          thus reducing any associated backlog in the broker. </para>
+
+    <para>
+
+    </para>
+
+   </sect2>
+
+   <sect2>
+<title>Durable Topic Subscriptions</title>
+    <para>For durable subscriptions, simply disconnecting the consuming client will not suffice
+          since the associated queue is by definition durable and messages would continue to flow to
+          it after disconnection, potentially worsening any backing up of data on the broker. </para>
+
+    <para>The solution is to configure durable subscriptions to delete the underlying queue on
+          disconnection. This means that messages will no longer be delivered to the private queue
+          associated with the subscription, thus preventing any backlog. </para>
+
+    <para>Full details of how to configure the thresholds are provided below. </para>
+
+    <para>
+
+    </para>
+
+   </sect2>
+
+   <sect2>
+<title>Message Age Threshold</title>
+    <para>You can configure SCD to be triggered on a topic or subscription when the oldest message
+          in the associated private queue for the consumer ages beyond the specified value, in
+          milliseconds. </para>
+
+   </sect2>
+
+   <sect2>
+<title>Queue Depth Threshold</title>
+    <para>You can opt to use the depth of the queue in bytes as a threshold. SCD will be triggered
+          by a queue depth greater than the threshold specified i.e. when a broker receives a
+          message that takes the queue depth over the threshold. </para>
+
+    <para>
+
+    </para>
+
+   </sect2>
+
+   <sect2>
+<title>Message Count Threshold</title>
+    <para>You can use the message count for the consumer's queue as the trigger, where a count
+          higher than that specified will trigger disconnection. </para>
+
+    <para>
+
+    </para>
+
+   </sect2>
+
+   <sect2>
+<title><emphasis role='bold'>Delete Policy</emphasis></title>
+    <para>You can configure the policy you wish to apply in your broker configuration. There are
+          currently 2 policies available: </para>
+
+    <para>
+<emphasis role='bold'>Delete Temporary Queues Only</emphasis>
+    </para>
+
+    <para>If you do not specify a topicDelete element in your configuration, then only temporary
+          queues associated with a topic subscription will be delete on client disconnect. This is
+          the default behaviour. </para>
+        <para/>
+
+    <para>
+<emphasis role='bold'>Delete Durable Subscription Queues</emphasis>
+    </para>
+
+    <para>If you add the &lt;topicDelete/&gt; element with the sub-element
+          &lt;delete-persistent/&gt; to your config, then the persistent queue which is associated
+          with durable subscriptions to a topic will also be deleted. This is an important
+          consideration since without deleting the underlying queue the client's unconsumed data
+          will grow indefinitely while they will be unable to reconnect to that queue due to the SCD
+          threshold configured, potentially having an adverse effect on the application or broker in
+          use.</para>
+        <para/>
+
+    <para><emphasis role="bold"> Example Topic Configuration </emphasis></para>
+
+    <para/>
+
+    <para>
+The following steps are required to configure SCD:
+    </para>
+
+    <para>
+- enable SCD checking for your virtual host
+    </para>
+
+    <para>
+- specify frequency for SCD checking
+    </para>
+
+    <para>
+- define thresholds for the topic
+    </para>
+
+    <para>
+- define the policy to apply on trigger
+    </para>
+
+    <para>The example below shows a simple definition, with all three thresholds specified and a
+          simple disconnection, with deletion of any temporary queue, defined. </para>
+
+    <para>For a durable subscription to this topic, no queue deletion would be applied on disconnect
+          - which is likely to be undesirable (see section above). </para>
+
+    <para>&lt;topics&gt; </para>
+
+    <para>     &lt;topic&gt; </para>
+
+    <para>     &lt;name&gt;stocks.us.*&lt;/name&gt; </para>
+
+    <para>     &lt;slow-consumer-detection&gt; </para>
+
+    <para>         &lt;!-- The maximum depth before which the policy will be applied--&gt; </para>
+
+    <para>         &lt;depth&gt;4235264&lt;/depth&gt; </para>
+
+    <para>         &lt;!-- The maximum message age before which the policy will be applied--&gt; </para>
+
+    <para>         &lt;messageAge&gt;600000&lt;/messageAge&gt; </para>
+
+    <para>         &lt;!-- The maximum number of message before which the policy will be
+          applied--&gt; </para>
+
+    <para>         &lt;messageCount&gt;50&lt;/messageCount&gt; </para>
+
+    <para>         &lt;!-- Policy Selection --&gt; </para>
+
+    <para>         &lt;policy name="TopicDelete"/&gt; </para>
+
+    <para>     &lt;/slow-consumer-detection&gt; </para>
+
+    <para>     &lt;/topic&gt; </para>
+
+    <para>&lt;/topics&gt; </para>
+
+   </sect2>
+
+  </sect1>
+
+  <sect1>
+<title><emphasis role='bold'>Important Points To Note</emphasis></title>
+   <para> Client application developers should be educated about how to correctly handle being
+        disconnected with a 506 error code, to avoid them getting into a thrashing state where they
+        continually attempt to connect, fail to consume fast enough and are disconnected again. </para>
+
+   <para>
+
+   </para>
+
+   <para>Clients affected by slow consumer disconnect configuration should always use transactions
+        where duplicate processing of an incoming message would have adverse affects, since they may
+        receive a message more than once if disconnected before acknowledging a message in flight. </para>
+
+   <para>
+
+   </para>
+
+   <para>
+
+   </para>
+
+   <para>
+
+   </para>
+
+   <para>
+
+   </para>
+
+  </sect1>
+
+ </chapter>
+
+</book>
