@@ -72,6 +72,12 @@
         <fixcrlf srcdir="${module.release}/bin" fixlast="true" eol="dos" includes="*.bat"/>
     </target>
 
-    <target name="release-bin" depends="release-bin-tasks"/>
+    <target name="copy-broker-plugins-release" description="copy broker-plugins into module release">
+        <copy todir="${module.release}/lib/plugins" failonerror="true">
+            <fileset dir="${build.lib}/plugins"/>
+        </copy>
+    </target>
+
+    <target name="release-bin" depends="release-bin-tasks, copy-broker-plugins-release"/>
 
 </project>
