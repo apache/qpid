@@ -216,7 +216,7 @@ const std::string Opts::helpText=
 "For a  multi-process test first run:\n"
 "  qpid-perftest --setup <other options>\n"
 "and wait for it to complete. The remaining process should run concurrently::\n"
-"Run --npubs times: pqid-perftest --publish <other options>\n"
+"Run --npubs times: qpid-perftest --publish <other options>\n"
 "Run --nsubs times: qpid-perftest --subscribe <other options>\n"
 "Run once:          qpid-perftest --control <other options>\n"
 "Note the <other options> must be identical for all processes.\n";
