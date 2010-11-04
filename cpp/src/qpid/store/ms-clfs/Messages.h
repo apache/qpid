@@ -24,6 +24,7 @@
 
 #include <windows.h>
 #include <map>
+#include <set>
 #include <vector>
 #include <boost/intrusive_ptr.hpp>
 #include <qpid/broker/PersistableMessage.h>
@@ -46,9 +47,38 @@ class Messages {
         // Keep a list of transactional operations this message is
         // referenced in. When the transaction changes/finalizes these all
         // need to be acted on.
-        typedef enum { TRANSACTION_ENQUEUE, TRANSACTION_DEQUEUE } TransType;
+        typedef enum { TRANSACTION_NONE = 0,
+                       TRANSACTION_ENQUEUE,
+                       TRANSACTION_DEQUEUE } TransType;
+#if 0
         std::map<Transaction::shared_ptr, std::vector<TransType> > transOps;
         qpid::sys::Mutex transOpsLock;
+#endif
+      // Think what I need is a list of "where is this message" - queue id,
+      // transaction ref, what kind of trans op (enq/deq). Then "remove all
+      // queue refs" can search through all messages looking for queue ids
+      // and undo them. Write "remove from queue" record to log. Also need to
+      // add "remove from queue" to recovery.
+        struct Location {
+            uint64_t queueId;
+            Transaction::shared_ptr transaction;
+            TransType disposition;
+
+            Location(uint64_t q)
+                : queueId(q), transaction(), disposition(TRANSACTION_NONE) {}
+            Location(uint64_t q, Transaction::shared_ptr& t, TransType d)
+                : queueId(q), transaction(t), disposition(d) {}
+        };
+        qpid::sys::Mutex whereLock;
+        std::list<Location> where;
+        // The transactions vector just keeps a shared_ptr to each
+        // Transaction this message was involved in, regardless of the
+        // disposition or transaction state. Keeping a valid shared_ptr
+        // prevents the Transaction from being deleted. As long as there
+        // are any messages that referred to a transaction, that
+        // transaction's state needs to be known so the message disposition
+        // can be correctly recovered if needed.
+        std::vector<Transaction::shared_ptr> transactions;
 
         typedef boost::shared_ptr<MessageInfo> shared_ptr;
 
@@ -96,12 +126,17 @@ public:
                      uint64_t offset,
                      uint32_t length);
 
+    // Expunge is called when a queue is deleted. All references to that
+    // queue must be expunged from all messages.
+    void expunge(uint64_t queueId);
+
     // Recover the current set of messages and where they're queued from
     // the log.
     void recover(qpid::broker::RecoveryManager& recoverer,
+                 const std::set<uint64_t> &validQueues,
+                 const std::map<uint64_t, Transaction::shared_ptr>& transMap,
                  qpid::store::MessageMap& messageMap,
-                 qpid::store::MessageQueueMap& messageQueueMap,
-                 const std::map<uint64_t, Transaction::shared_ptr>& transMap);
+                 qpid::store::MessageQueueMap& messageQueueMap);
 };
 
 }}}  // namespace qpid::store::ms_clfs
