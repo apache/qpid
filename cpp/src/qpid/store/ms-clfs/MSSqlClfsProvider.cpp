@@ -21,6 +21,7 @@
 
 #include <list>
 #include <map>
+#include <set>
 #include <stdlib.h>
 #include <string>
 #include <windows.h>
@@ -67,21 +68,6 @@ const std::string TblBinding("tblBinding");
 const std::string TblConfig("tblConfig");
 const std::string TblExchange("tblExchange");
 const std::string TblQueue("tblQueue");
-
-/*
- * Maintain a map of id -> QueueContents. RWlock protecting the map allows
- * concurrent reads so multiple threads can get access to the needed queue;
- * queue lock protects the QueueContents themselves.
- */
-struct QueueContents {
-    typedef boost::shared_ptr<QueueContents> shared_ptr;
-    qpid::sys::Mutex lock;
-    std::list<uint64_t> messages;
-};
-
-typedef std::map<uint64_t, QueueContents::shared_ptr> QueuesMap;
-qpid::sys::RWlock queuesLock;
-QueuesMap queues;
 
 }
 
@@ -494,12 +480,6 @@ MSSqlClfsProvider::create(PersistableQueue& queue,
         db->beginTransaction();
         rsQueues.open(db, TblQueue);
         rsQueues.add(queue);
-        {
-            // Db stuff ok so far; add an empty QueueContents for the queue.
-            QueueContents::shared_ptr entry(new QueueContents);
-            qpid::sys::ScopedWlock<qpid::sys::RWlock> l(queuesLock);
-            queues[queue.getPersistenceId()] = entry;
-        }
         db->commitTransaction();
     }
     catch(_com_error &e) {
@@ -539,44 +519,13 @@ MSSqlClfsProvider::destroy(PersistableQueue& queue)
     }
 
     /*
-     * Now that the SQL stuff has recorded the queue deletion, reflect
-     * all the dequeued messages in memory. Don't worry about any errors
-     * that occur while reflecting these in the log because:
-     *   - If we have to recover from this point (or anywhere from here
-     *     until all messages are dequeued) there's no valid queue ID
-     *     from the Enqueue record, so recovery will throw it out anyway.
-     *   - If there is a failure before the SQL changes commit, the
-     *     existing Enqueue records will replace the message on the
-     *     queue during recovery.
-     * so, the best we could do by logging these dequeue operations is
-     * record something that will need to be ignored during recovery.
-     *
-     * Obtain a write lock to the queue map. Doing so gets this thread
-     * exclusive access to the queue map. This means no other thread can
-     * come while we're holding it and access, even for read, the list.
-     * However, there may already be other previously obtained references
-     * to the queue's message list outstanding, so also get the queue's
-     * list lock to serialize with any other threads. We should be able
-     * to count on the broker not making the destroy() call while other
-     * uses of the queue are outstanding, but play it safe.
+     * Now that the SQL stuff has recorded the queue deletion, expunge
+     * all record of the queue from the messages set. Any errors logging
+     * these removals are swallowed because during a recovery the queue
+     * Id won't be present (the SQL stuff already committed) so any references
+     * to it in message operations will be removed.
      */
-    std::list<uint64_t> affectedMessages;
-    uint64_t qId = queue.getPersistenceId();
-    {
-        ::qpid::sys::RWlock::ScopedWlock l(queuesLock);
-        QueueContents::shared_ptr q = queues[qId];
-        {
-            ::qpid::sys::Mutex::ScopedLock ql(q->lock);
-            affectedMessages = q->messages;
-        }
-        queues.erase(queues.find(qId));
-    }
-    // Now tell each of the messages they are less one queue commitment.
-    Transaction::shared_ptr nonTransactional;
-    BOOST_FOREACH(uint64_t msgId, affectedMessages) {
-        QPID_LOG(debug, "Removing message " << msgId);
-        messages.dequeue(msgId, qId, nonTransactional);
-    }
+    messages.expunge(queue.getPersistenceId());
 }
 
 /**
@@ -856,25 +805,12 @@ MSSqlClfsProvider::enqueue(qpid::broker::TransactionContext* ctxt,
         if (tctx)
             t = tctx->getTransaction();
     }
-    uint64_t qId = queue.getPersistenceId();
     uint64_t msgId = msg->getPersistenceId();
-    QueueContents::shared_ptr q;
-    {
-        qpid::sys::ScopedRlock<qpid::sys::RWlock> l(queuesLock);
-        QueuesMap::iterator i = queues.find(qId);
-        if (i == queues.end())
-            THROW_STORE_EXCEPTION("Queue does not exist");
-        q = i->second;
-    }
     if (msgId == 0) {
         messages.add(msg);
         msgId = msg->getPersistenceId();
     }
-    messages.enqueue(msgId, qId, t);
-    {
-        qpid::sys::ScopedLock<qpid::sys::Mutex> ql(q->lock);
-        q->messages.push_back(msgId);
-    }
+    messages.enqueue(msgId, queue.getPersistenceId(), t);
     msg->enqueueComplete();
 }
 
@@ -902,21 +838,7 @@ MSSqlClfsProvider::dequeue(qpid::broker::TransactionContext* ctxt,
         if (tctx)
             t = tctx->getTransaction();
     }
-    uint64_t qId = queue.getPersistenceId();
-    uint64_t msgId = msg->getPersistenceId();
-    QueueContents::shared_ptr q;
-    {
-        qpid::sys::ScopedRlock<qpid::sys::RWlock> l(queuesLock);
-        QueuesMap::const_iterator i = queues.find(qId);
-        if (i == queues.end())
-            THROW_STORE_EXCEPTION("Queue does not exist");
-        q = i->second;
-    }
-    messages.dequeue(msgId, qId, t);
-    {
-        qpid::sys::ScopedLock<qpid::sys::Mutex> ql(q->lock);
-        q->messages.remove(msgId);
-    }
+    messages.dequeue(msg->getPersistenceId(), queue.getPersistenceId(), t);
     msg->dequeueComplete();
 }
 
@@ -1063,8 +985,6 @@ MSSqlClfsProvider::recoverQueues(qpid::broker::RecoveryManager& recoverer,
             recoverer.recoverQueue(blob);
         queue->setPersistenceId(id);
         queueMap[id] = queue;
-        QueueContents::shared_ptr entry(new QueueContents);
-        queues[id] = entry;
         p->MoveNext();
     }
 }
@@ -1085,9 +1005,28 @@ MSSqlClfsProvider::recoverMessages(qpid::broker::RecoveryManager& recoverer,
                                    MessageMap& messageMap,
                                    MessageQueueMap& messageQueueMap)
 {
+    // Read the list of valid queue Ids to ensure that no broken msg->queue
+    // refs get restored.
+    DatabaseConnection *db = initConnection();
+    BlobRecordset rsQueues;
+    rsQueues.open(db, TblQueue);
+    _RecordsetPtr p = (_RecordsetPtr)rsQueues;
+    std::set<uint64_t> validQueues;
+    if (!(p->BOF && p->EndOfFile)) {
+        p->MoveFirst();
+        while (!p->EndOfFile) {
+            uint64_t id = p->Fields->Item["persistenceId"]->Value;
+            validQueues.insert(id);
+            p->MoveNext();
+        }
+    }
     std::map<uint64_t, Transaction::shared_ptr> transMap;
     transactions->recover(transMap);
-    messages.recover(recoverer, messageMap, messageQueueMap, transMap);
+    messages.recover(recoverer,
+                     validQueues,
+                     transMap,
+                     messageMap,
+                     messageQueueMap);
 }
 
 void
