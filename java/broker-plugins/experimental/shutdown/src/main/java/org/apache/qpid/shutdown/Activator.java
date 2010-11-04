@@ -21,6 +21,7 @@ package org.apache.qpid.shutdown;
 
 import java.lang.management.ManagementFactory;
 
+import javax.management.InstanceNotFoundException;
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
 
@@ -56,7 +57,14 @@ public class Activator implements BundleActivator
         // Unregister MBean
         MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
         ObjectName name = new ObjectName(SHUTDOWN_MBEAN_NAME);
-        mbs.unregisterMBean(name);
+        try
+        {
+            mbs.unregisterMBean(name);
+        }
+        catch (InstanceNotFoundException e)
+        {
+            //ignore
+        }
 
         _logger.info("Shutdown plugin MBean unregistered");
     }
