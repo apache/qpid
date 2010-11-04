@@ -107,7 +107,7 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
     /**
      * We store the exclusive field in order to be able to reuse it when resubscribing in the event of failover
      */
-    private final boolean _exclusive;
+    protected boolean _exclusive;
 
     /**
      * The acknowledge mode in force for this consumer. Note that the AMQP protocol allows different ack modes per
@@ -182,7 +182,7 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
         _prefetchHigh = prefetchHigh;
         _prefetchLow = prefetchLow;
         _exclusive = exclusive;
-
+        
         _synchronousQueue = new LinkedBlockingQueue();
         _autoClose = autoClose;
         _noConsume = noConsume;

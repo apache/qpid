@@ -20,6 +20,9 @@
  */
 package org.apache.qpid.client.messaging.address;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.apache.qpid.client.messaging.address.Node.QueueNode;
 
 public class Link
@@ -34,6 +37,7 @@ public class Link
     protected int _consumerCapacity = 0;
     protected int _producerCapacity = 0;
     protected Node node;
+    protected Subscription subscription;
     
     public Node getNode()
     {
@@ -113,5 +117,41 @@ public class Link
     public void setName(String name)
     {
         this.name = name;
+    }
+    
+    public Subscription getSubscription()
+    {
+        return this.subscription;
+    }    
+ 
+    public void setSubscription(Subscription subscription)
+    {
+        this.subscription = subscription;
+    }   
+    
+    public static class Subscription
+    {
+        private Map<String,Object> args = new HashMap<String,Object>();        
+        private boolean exclusive = false;
+        
+        public Map<String, Object> getArgs()
+        {
+            return args;
+        }
+        
+        public void setArgs(Map<String, Object> args)
+        {
+            this.args = args;
+        }
+        
+        public boolean isExclusive()
+        {
+            return exclusive;
+        }
+        
+        public void setExclusive(boolean exclusive)
+        {
+            this.exclusive = exclusive;
+        }
     }
 }
