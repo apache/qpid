@@ -27,6 +27,7 @@ import java.util.Map;
 
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQDestination.Binding;
+import org.apache.qpid.client.messaging.address.Link.Subscription;
 import org.apache.qpid.client.messaging.address.Node.ExchangeNode;
 import org.apache.qpid.client.messaging.address.Node.QueueNode;
 import org.apache.qpid.client.messaging.address.Node.UnknownNodeType;
@@ -264,6 +265,7 @@ public class AddressHelper
     public Link getLink()
     {
         Link link = new Link();
+        link.setSubscription(new Subscription());
         if (linkProps != null)
         {
             link.setDurable(linkProps.getBoolean(DURABLE) == null ? false
@@ -283,7 +285,8 @@ public class AddressHelper
                         .setProducerCapacity(capacityProps
                                 .getInt(CAPACITY_TARGET) == null ? 0
                                 : capacityProps.getInt(CAPACITY_TARGET));
-            } else
+            } 
+            else
             {
                 int cap = linkProps.getInt(CAPACITY) == null ? 0 : linkProps
                         .getInt(CAPACITY);
@@ -292,6 +295,21 @@ public class AddressHelper
             }
             link.setFilter(linkProps.getString(FILTER));
             // so far filter type not used
+            
+            if (((Map) address.getOptions().get(LINK)).containsKey(X_SUBSCRIBE))
+            {   
+                Map x_subscribe = (Map)((Map) address.getOptions().get(LINK)).get(X_SUBSCRIBE);
+                
+                if (x_subscribe.containsKey(ARGUMENTS))
+                {
+                    link.getSubscription().setArgs((Map<String,Object>)x_subscribe.get(ARGUMENTS));
+                }
+                
+                boolean exclusive = x_subscribe.containsKey(EXCLUSIVE) ?
+                                    Boolean.parseBoolean((String)x_subscribe.get(EXCLUSIVE)): false;
+                
+                link.getSubscription().setExclusive(exclusive);
+            }
         }
 
         return link;
