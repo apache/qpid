@@ -489,4 +489,24 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
             clearReceiveQueue();
         }
     }
+    
+    public boolean isExclusive()
+    {
+        AMQDestination dest = this.getDestination();
+        if (dest.getDestSyntax() == AMQDestination.DestSyntax.ADDR)
+        {
+            if (dest.getAddressType() == AMQDestination.TOPIC_TYPE)
+            {
+                return true;
+            }
+            else
+            {                
+                return dest.getLink().getSubscription().isExclusive();
+            }
+        }
+        else
+        {
+            return _exclusive;
+        }
+    }
 }

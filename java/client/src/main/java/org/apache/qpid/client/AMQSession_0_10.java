@@ -577,7 +577,8 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
         try
         {
             boolean isTopic;
-
+            Map<String, Object> arguments = FieldTable.convertToMap(consumer.getArguments());
+            
             if (consumer.getDestination().getDestSyntax() == AMQDestination.DestSyntax.BURL)
             {
                 isTopic = consumer.getDestination() instanceof AMQTopic ||
@@ -593,9 +594,12 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
                 preAcquire = !consumer.isNoConsume() && 
                              (isTopic || consumer.getMessageSelector() == null || 
                               consumer.getMessageSelector().equals(""));
+                
+                arguments.putAll(
+                        (Map<? extends String, ? extends Object>) consumer.getDestination().getLink().getSubscription().getArgs());
             }
             
-            Map<String, Object> arguments = FieldTable.convertToMap(consumer.getArguments());
+            
             getQpidSession().messageSubscribe
                 (queueName.toString(), String.valueOf(tag),
                  getAcknowledgeMode() == NO_ACKNOWLEDGE ? MessageAcceptMode.NONE : MessageAcceptMode.EXPLICIT,
