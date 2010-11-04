@@ -153,7 +153,10 @@ class Popen(subprocess.Popen):
         self.cmd  = [ str(x) for x in cmd ]
         self.returncode = None
         self.expect = expect
-        subprocess.Popen.__init__(self, self.cmd, 0, None, subprocess.PIPE, subprocess.PIPE, subprocess.PIPE, close_fds=True)
+        try:
+            subprocess.Popen.__init__(self, self.cmd, 0, None, subprocess.PIPE, subprocess.PIPE, subprocess.PIPE, close_fds=True)
+        except ValueError:     # Windows can't do close_fds
+            subprocess.Popen.__init__(self, self.cmd, 0, None, subprocess.PIPE, subprocess.PIPE, subprocess.PIPE)
         self.pname = "%s-%d" % (os.path.split(self.cmd[0])[1], self.pid)
         msg = "Process %s" % self.pname
         self.stdin = ExceptionWrapper(self.stdin, msg)
@@ -487,6 +490,7 @@ class BrokerTest(TestCase):
         for p in self.stopem:
             try: p.stop()
             except Exception, e: err.append(str(e))
+        self.stopem = []                # reset in case more processes start
         os.chdir(self.rootdir)
         if err: raise Exception("Unexpected process status:\n    "+"\n    ".join(err))
 
