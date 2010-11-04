@@ -53,6 +53,10 @@ op.add_option("--send-option", default=[], action="append", type="str",
               help="Additional option for sending addresses")
 op.add_option("--receive-option", default=[], action="append", type="str",
               help="Additional option for receiving addresses")
+op.add_option("--send-arg", default=[], action="append", type="str",
+              help="Additional argument for qpid-send")
+op.add_option("--receive-arg", default=[], action="append", type="str",
+              help="Additional argument for qpid-receive")
 op.add_option("--no-timestamp", dest="timestamp", default=True,
               action="store_false", help="don't add a timestamp, no latency results")
 op.add_option("--connection-options", type="str",
@@ -79,6 +83,7 @@ def start_receive(queue, opts, ready_queue, broker, host):
                "--ack-frequency", str(opts.ack_frequency),
                "--ready-address", ready_queue,
                "--report-header=no"]
+    command += opts.receive_arg
     if opts.connection_options:
         command += ["--connection-options",opts.connection_options]
     if host: command = ssh_command(host, command)
@@ -97,6 +102,7 @@ def start_send(queue, opts, broker, host):
                "--report-header=no",
                "--timestamp=%s"%(opts.timestamp and "yes" or "no"),
                "--sequence=no"]
+    command += opts.send_arg
     if opts.connection_options:
         command += ["--connection-options",opts.connection_options]
     if host: command = ssh_command(host, command)
@@ -172,8 +178,8 @@ class ReadyReceiver:
             for r in receivers:
                 if (r.poll() is not None):
                     out,err=r.communicate()
-                    raise "Receiver error: %s"%(out)
-            raise "Timed out waiting for receivers to be ready"
+                    raise Exception("Receiver error: %s"%(out))
+            raise Exception("Timed out waiting for receivers to be ready")
 
 def flatten(l): return sum(map(lambda s: s.split(","), l),[])
 
