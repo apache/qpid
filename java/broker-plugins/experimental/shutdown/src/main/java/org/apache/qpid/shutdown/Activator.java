@@ -31,33 +31,33 @@ import org.osgi.framework.BundleContext;
 public class Activator implements BundleActivator
 {
     private static final Logger _logger = Logger.getLogger(Activator.class);
-    
+
     private static final String SHUTDOWN_MBEAN_NAME = "org.apache.qpid:type=ShutdownMBean";
-    
-	/** @see org.osgi.framework.BundleActivator#start(org.osgi.framework.BundleContext) */
-	public void start(BundleContext ctx) throws Exception {
-	    Shutdown shutdown = new Shutdown();
-	    if (ctx != null)
+
+    /** @see org.osgi.framework.BundleActivator#start(org.osgi.framework.BundleContext) */
+    public void start(BundleContext ctx) throws Exception {
+        Shutdown shutdown = new Shutdown();
+        if (ctx != null)
         {
             ctx.registerService(ShutdownMBean.class.getName(), shutdown, null);
         }
 
-	    // MBean registration
-	    MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
+        // MBean registration
+        MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
         ObjectName name = new ObjectName(SHUTDOWN_MBEAN_NAME);
         mbs.registerMBean(shutdown, name);
 
         _logger.info("Shutdown plugin MBean registered");
-	}
-	
-	/** @see org.osgi.framework.BundleActivator#stop(org.osgi.framework.BundleContext) */
-	public void stop(BundleContext ctx) throws Exception
-	{
-	    // Unregister MBean
-	    MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
+    }
+
+    /** @see org.osgi.framework.BundleActivator#stop(org.osgi.framework.BundleContext) */
+    public void stop(BundleContext ctx) throws Exception
+    {
+        // Unregister MBean
+        MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
         ObjectName name = new ObjectName(SHUTDOWN_MBEAN_NAME);
-	    mbs.unregisterMBean(name);
- 
+        mbs.unregisterMBean(name);
+
         _logger.info("Shutdown plugin MBean unregistered");
-	}
+    }
 }
