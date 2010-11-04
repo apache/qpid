@@ -20,8 +20,14 @@
 # Run the store tests.
 # There are two sets of tests:
 #  1. A subset of the normal broker python tests, dtx and persistence, but
-#     run again with the SQL store loaded.
+#     run again with the desired store loaded.
 #  2. store.py, which tests recovering things across broker restarts.
+
+$test_store = $args[0]
+if ($test_store -ne "MSSQL" -and $test_store -ne "MSSQL-CLFS") {
+   "Invalid store test type $test_store - must be MSSQL or MSSQL-CLFS"
+   exit 1
+}
 
 $srcdir = Split-Path $myInvocation.InvocationName
 $PYTHON_DIR = "$srcdir\..\..\..\python"
@@ -53,13 +59,28 @@ if (!([string]::Compare($sub, "Debug", $True))) {
     $suffix = "d"
 }
 
+$stamp = Get-Date -format %dMMMyyyy_HHmmss
+$env:STORE_LIB="$store_dir\store$suffix.dll"
+if ($test_store -eq "MSSQL") {
+    $test_store_module="$store_dir\mssql_store$suffix.dll"
+    $env:STORE_SQL_LIB=$test_store_module
+    $env:STORE_CATALOG="store_recovery_sql_test_$stamp"
+    $cat1="store_sql_test_$stamp"
+    $out = "sql_store_test_$stamp"
+}
+else {
+    $test_store_module="$store_dir\msclfs_store$suffix.dll"
+    $env:STORE_SQL_CLFS_LIB=$test_store_module
+    $env:STORE_CATALOG="store_recovery_clfs_test_$stamp"
+    $cat1="store_clfs_test_$stamp"
+    $out = "clfs_store_test_$stamp"
+}
+
 $FAILCODE = 0
 
 # Test 1... re-run some of the regular python broker tests against a broker
 # with the store module loaded.
-$stamp = Get-Date -format %dMMMyyyy_HHmmss
-$catalog = "broker_test_$stamp"
-$cmdline = "$prog --auth=no --port=0 --log-to-file qpidd-store.log --module-dir $store_dir --catalog $catalog | foreach { set-content qpidd-store.port `$_ }"
+$cmdline = "$prog --auth=no --port=0 --log-to-file qpidd-store.log --no-module-dir --load-module $env:STORE_LIB --load-module $test_store_module --catalog $cat1 | foreach { set-content qpidd-store.port `$_ }"
 $cmdblock = $executioncontext.invokecommand.NewScriptBlock($cmdline)
 . $srcdir\background.ps1 $cmdblock
 
@@ -74,6 +95,7 @@ if (!(Test-Path qpidd-store.port)) {
 }
 set-item -path env:QPID_PORT -value (get-content -path qpidd-store.port -totalcount 1)
 Remove-Item qpidd-store.port
+
 $PYTHON_TEST_DIR = "$srcdir\..\..\..\tests\src\py\qpid_tests\broker_0_10"
 $env:PYTHONPATH="$PYTHON_DIR;$PYTHON_TEST_DIR;$env:PYTHONPATH;$QMF_LIB"
 python $PYTHON_DIR/qpid-python-test -m dtx -m persistence -b localhost:$env:QPID_PORT $fails $tests
@@ -81,23 +103,31 @@ $RETCODE=$LASTEXITCODE
 if ($RETCODE -ne 0) {
    $FAILCODE = 1
 }
+
 # Piping the output makes the script wait for qpidd to finish.
 Invoke-Expression "$prog --quit --port $env:QPID_PORT" | Write-Output
 
 
 # Test 2... store.py starts/stops/restarts its own brokers
 
-# This only works with the brokertest.py changes made by Steve - see QPID-2492.
-#$tests = "*"
-#$env:PYTHONPATH="$PYTHON_DIR;$srcdir"
-#$env:QPIDD_EXEC="$prog"
-#$env:STORE_LIB="$store_dir\store$suffix.dll"
-#$env:STORE_SQL_LIB="$store_dir\mssql_store$suffix.dll"
-#$env:STORE_CATALOG="store_recovery_test_$stamp"
-#Invoke-Expression "python $PYTHON_DIR/qpid-python-test -m store $tests" | Out-Default
-#$RETCODE=$LASTEXITCODE
-#if ($RETCODE -ne 0) {
-#    "FAIL store tests"
-#    $FAILCODE = 1
-#}
+$tests = "*"
+$env:PYTHONPATH="$PYTHON_DIR;$srcdir"
+$env:QPIDD_EXEC="$prog"
+$env:STORE_LIB="$store_dir\store$suffix.dll"
+if ($test_store -eq "MSSQL") {
+    $env:STORE_SQL_LIB="$store_dir\mssql_store$suffix.dll"
+    $env:STORE_CATALOG="store_recovery_sql_test_$stamp"
+    $out = "sql_store_test_$stamp"
+}
+else {
+    $env:STORE_SQL_CLFS_LIB="$store_dir\msclfs_store$suffix.dll"
+    $env:STORE_CATALOG="store_recovery_clfs_test_$stamp"
+    $out = "clfs_store_test_$stamp"
+}
+Invoke-Expression "python $PYTHON_DIR/qpid-python-test -m store -D OUTDIR=$out $tests" | Out-Default
+$RETCODE=$LASTEXITCODE
+if ($RETCODE -ne 0) {
+    "FAIL $test_store store tests"
+    $FAILCODE = 1
+}
 exit $FAILCODE
