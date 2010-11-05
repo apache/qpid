@@ -344,6 +344,10 @@ of the independence of operations on separate queues.
 Multicast should encode messages in fixed size buffers (64k)?
 Can't assume we can send message in one chunk.
 For 0-10 can use channel numbers & send whole frames packed into larger buffer.
+** TODO [#B] Transaction support.
+Extend broker::Cluster interface to capture transaction context and completion.
+Sequence number to generate per-node tx IDs.
+Replicate transaction completion.
 ** TODO [#B] Batch CPG multicast messages
 The new cluster design involves a lot of small multicast messages,
 they need to be batched into larger CPG messages for efficiency.
