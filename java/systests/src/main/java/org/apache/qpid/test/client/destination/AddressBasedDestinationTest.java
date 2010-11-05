@@ -280,6 +280,10 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
         assertTrue("Queue not bound as expected",(
                 (AMQSession_0_10)jmsSession).isQueueBound("my-exchange", 
                     dest.getQueueName(),"hello", Collections.<String, Object>emptyMap()));
+        
+        // The client should be able to query and verify the existence of my-exchange (QPID-2774)
+        dest = new AMQAnyDestination("ADDR:my-exchange; {create: never}");
+        cons = jmsSession.createConsumer(dest); 
     }
     
     public void testBindQueueWithArgs() throws Exception
@@ -684,9 +688,11 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
     }
     
     /**
-     * Test Goal : Verify that unique subscription queues are created when consumers are
-     *             created using the same destination except when the subscription queue
-     *             has a name.
+     * Test Goal : When the same destination is used when creating two consumers,
+     *             If the type == topic, verify that unique subscription queues are created, 
+     *             unless subscription queue has a name.
+     *             
+     *             If the type == queue, same queue should be shared.
      */
     public void testSubscriptionForSameDestination() throws Exception
     {
@@ -714,6 +720,28 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
         }
         catch(Exception e)
         {            
+        }
+        _connection.close();
+        
+        _connection = getConnection() ;
+        _connection.start();
+        ssn = _connection.createSession(false,Session.AUTO_ACKNOWLEDGE);        
+        dest = ssn.createTopic("ADDR:my_queue; {create: always}");
+        consumer1 = ssn.createConsumer(dest);
+        consumer2 = ssn.createConsumer(dest);
+        prod = ssn.createProducer(dest);
+        
+        prod.send(ssn.createTextMessage("A"));
+        Message m1 = consumer1.receive(1000); 
+        Message m2 = consumer2.receive(1000);
+        
+        if (m1 != null)
+        {
+            assertNull("Only one consumer should receive the message",m2);  
+        }
+        else
+        {
+            assertNotNull("Only one consumer should receive the message",m2);  
         }
     }
  
@@ -751,5 +779,21 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
         prod.send(msg);
         assertNotNull("consumer should receive a message",cons.receive(1000));
         cons.close();
+    }
+    
+    public void testXSubscribeOverrides() throws Exception
+    {
+        Session ssn = _connection.createSession(false,Session.AUTO_ACKNOWLEDGE);
+        String str = "ADDR:my_queue; {create:always,link: {x-subscribes:{exclusive: true, arguments: {a:b,x:y}}}}";
+        Destination dest = ssn.createTopic(str);
+        MessageConsumer consumer1 = ssn.createConsumer(dest);
+        try
+        {
+            MessageConsumer consumer2 = ssn.createConsumer(dest);
+            fail("An exception should be thrown as 'my-queue' already have an exclusive subscriber");
+        }
+        catch(Exception e)
+        {            
+        }
     }
 }
