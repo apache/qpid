@@ -652,6 +652,10 @@ if (CMAKE_SYSTEM_NAME STREQUAL Windows)
   set (qpidd_platform_SOURCES
     windows/QpiddBroker.cpp
   )
+  
+  set (qpidmessaging_platform_SOURCES
+     qpid/messaging/HandleInstantiator.cpp
+  )
 
 else (CMAKE_SYSTEM_NAME STREQUAL Windows)
 
@@ -717,6 +721,9 @@ else (CMAKE_SYSTEM_NAME STREQUAL Windows)
 
   set (qpidd_platform_SOURCES
     posix/QpiddBroker.cpp
+  )
+
+  set (qpidmessaging_platform_SOURCES
   )
 endif (CMAKE_SYSTEM_NAME STREQUAL Windows)
 
@@ -866,6 +873,7 @@ install_pdb (qpidclient ${QPID_COMPONENT_CLIENT})
 
 
 set (qpidmessaging_SOURCES
+	 ${qpidmessaging_platform_SOURCES}
      qpid/messaging/Address.cpp
      qpid/messaging/AddressParser.h
      qpid/messaging/AddressParser.cpp
