@@ -81,9 +81,9 @@ under the License.
     <ErrorReport>prompt</ErrorReport>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="org.apache.qpid.messagingd, Version=1.0.3890.18681, Culture=neutral, PublicKeyToken=7e57166074abee8c, processorArchitecture=$(Platform)">
+    <Reference Include="org.apache.qpid.messaging, Version=1.0.3890.18681, Culture=neutral, PublicKeyToken=7e57166074abee8c, processorArchitecture=$(Platform)">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>$(ProjectDir)..\..\..\bin\org.apache.qpid.messagingd.dll</HintPath>
+      <HintPath>$(ProjectDir)..\..\..\bin\org.apache.qpid.messaging.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core">
