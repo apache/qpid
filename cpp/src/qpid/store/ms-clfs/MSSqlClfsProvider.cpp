@@ -400,6 +400,7 @@ MSSqlClfsProvider::earlyInitialize(Plugin::Target &target)
             Log::TuningParameters params;
             params.containerSize = options.containerSize;
             params.containers = options.initialContainers;
+            params.shrinkPct = 50;
             params.maxWriteBuffers = options.maxWriteBuffers;
             std::string msgPath = options.storeDir + "\\" + "messages";
             messages.openLog(msgPath, params);

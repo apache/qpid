@@ -53,6 +53,7 @@ public:
     struct TuningParameters {
         size_t containerSize;
         unsigned short containers;
+        unsigned short shrinkPct;
         uint32_t maxWriteBuffers;
     };
 
