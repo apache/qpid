@@ -2887,7 +2887,7 @@ destination.topicExchange = amq.topic
           Boolean
 	        </entry>
 	        <entry>
-          If you are using JMS Map messages and deploying a new client with any JMS client older than 0.7 release, you must set this to true to ensure the older clients can understand the map message encoding.
+          If you are using JMS Map messages and deploying a new client with any JMS client older than 0.8 release, you must set this to true to ensure the older clients can understand the map message encoding.
 	        </entry>
 	      </row>
           <row>
