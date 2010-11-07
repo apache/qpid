@@ -63,6 +63,7 @@ public class PluginManager implements Closeable
     private static final Logger _logger = Logger.getLogger(PluginManager.class);
 
     private static final int FELIX_STOP_TIMEOUT = 30000;
+    private static final String QPID_VER_SUFFIX = "version=0.7,";
 
     private Framework _felix;
 
@@ -133,33 +134,33 @@ public class PluginManager implements Closeable
                 "org.osgi.service.startlevel; version=1.0.0," +
                 "org.osgi.service.url; version=1.0.0," +
                 "org.osgi.util.tracker; version=1.0.0," +
-                "org.apache.qpid.junit.extensions.util; version=0.7," +
-                "org.apache.qpid; version=0.7," +
-                "org.apache.qpid.common; version=0.7," +
-                "org.apache.qpid.exchange; version=0.7," +
-                "org.apache.qpid.framing; version=0.7," +
-                "org.apache.qpid.management.common.mbeans.annotations; version=0.7," +
-                "org.apache.qpid.protocol; version=0.7," +
-                "org.apache.qpid.server.binding; version=0.7," +
-                "org.apache.qpid.server.configuration; version=0.7," +
-                "org.apache.qpid.server.configuration.plugins; version=0.7," +
-                "org.apache.qpid.server.configuration.management; version=0.7," +
-                "org.apache.qpid.server.exchange; version=0.7," +
-                "org.apache.qpid.server.logging; version=0.7," +
-                "org.apache.qpid.server.logging.actors; version=0.7," +                
-                "org.apache.qpid.server.logging.subjects; version=0.7," +                
-                "org.apache.qpid.server.management; version=0.7," +
-                "org.apache.qpid.server.persistent; version=0.7," +
-                "org.apache.qpid.server.plugins; version=0.7," +
-                "org.apache.qpid.server.protocol; version=0.7," +
-                "org.apache.qpid.server.queue; version=0.7," +
-                "org.apache.qpid.server.registry; version=0.7," +
-                "org.apache.qpid.server.security; version=0.7," +
-                "org.apache.qpid.server.security.access; version=0.7," +
-                "org.apache.qpid.server.security.access.plugins; version=0.7," +
-                "org.apache.qpid.server.virtualhost; version=0.7," +
-                "org.apache.qpid.server.virtualhost.plugins; version=0.7," +
-                "org.apache.qpid.util; version=0.7," +
+                "org.apache.qpid.junit.extensions.util; " + QPID_VER_SUFFIX +
+                "org.apache.qpid; " + QPID_VER_SUFFIX +
+                "org.apache.qpid.common; " + QPID_VER_SUFFIX +
+                "org.apache.qpid.exchange; " + QPID_VER_SUFFIX +
+                "org.apache.qpid.framing; " + QPID_VER_SUFFIX +
+                "org.apache.qpid.management.common.mbeans.annotations; " + QPID_VER_SUFFIX +
+                "org.apache.qpid.protocol; " + QPID_VER_SUFFIX +
+                "org.apache.qpid.server.binding; " + QPID_VER_SUFFIX +
+                "org.apache.qpid.server.configuration; " + QPID_VER_SUFFIX +
+                "org.apache.qpid.server.configuration.plugins; " + QPID_VER_SUFFIX +
+                "org.apache.qpid.server.configuration.management; " + QPID_VER_SUFFIX +
+                "org.apache.qpid.server.exchange; " + QPID_VER_SUFFIX +
+                "org.apache.qpid.server.logging; " + QPID_VER_SUFFIX +
+                "org.apache.qpid.server.logging.actors; " + QPID_VER_SUFFIX +
+                "org.apache.qpid.server.logging.subjects; " + QPID_VER_SUFFIX +
+                "org.apache.qpid.server.management; " + QPID_VER_SUFFIX +
+                "org.apache.qpid.server.persistent; " + QPID_VER_SUFFIX +
+                "org.apache.qpid.server.plugins; " + QPID_VER_SUFFIX +
+                "org.apache.qpid.server.protocol; " + QPID_VER_SUFFIX +
+                "org.apache.qpid.server.queue; " + QPID_VER_SUFFIX +
+                "org.apache.qpid.server.registry; " + QPID_VER_SUFFIX +
+                "org.apache.qpid.server.security; " + QPID_VER_SUFFIX +
+                "org.apache.qpid.server.security.access; " + QPID_VER_SUFFIX +
+                "org.apache.qpid.server.security.access.plugins; " + QPID_VER_SUFFIX +
+                "org.apache.qpid.server.virtualhost; " + QPID_VER_SUFFIX +
+                "org.apache.qpid.server.virtualhost.plugins; " + QPID_VER_SUFFIX +
+                "org.apache.qpid.util; " + QPID_VER_SUFFIX +
                 "org.apache.commons.configuration; version=1.0.0," +
                 "org.apache.commons.lang; version=1.0.0," +
                 "org.apache.commons.lang.builder; version=1.0.0," +
