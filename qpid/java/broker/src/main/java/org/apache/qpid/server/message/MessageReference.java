@@ -20,13 +20,12 @@
  */
 package org.apache.qpid.server.message;
 
-import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public abstract class MessageReference<M extends ServerMessage>
 {
 
-    private static final AtomicReferenceFieldUpdater<MessageReference, ServerMessage> _messageUpdater =
-            AtomicReferenceFieldUpdater.newUpdater(MessageReference.class, ServerMessage.class,"_message");
+    private final AtomicBoolean _released = new AtomicBoolean(false);
 
     private volatile M _message;
 
@@ -47,10 +46,12 @@ public abstract class MessageReference<M extends ServerMessage>
 
     public void release()
     {
-        M message = (M) _messageUpdater.getAndSet(this,null);
-        if(message != null)
+        if(!_released.getAndSet(true))
         {
-            onRelease(message);
+            if(_message != null)
+            {
+                onRelease(_message);
+            }
         }
     }
 
