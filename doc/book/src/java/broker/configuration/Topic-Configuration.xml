@@ -23,7 +23,7 @@
 <section> 
     <title>Topic Configuration on Java Broker</title>
 
-    <para>New in 0.7 is the ability to define configuration for topics. Currently this is limited to
+    <para>New in 0.8 is the ability to define configuration for topics. Currently this is limited to
         configuration for slow consumer detection. This configuration is based on the work
         designed on the <ulink
             url="http://cwiki.apache.org/confluence/display/qpid/Topic+Configuration+Design">design
@@ -84,7 +84,7 @@
 
     <section id="Limitiations">
     	<title>Limitiations</title>
-        <para> As of 0.7 the topic configuration is limited to straight string matching. This means
+        <para> As of 0.8 the topic configuration is limited to straight string matching. This means
             that given the following two topic configuring sections for 'stocks.us' and 'stocks.*' a
             subscription for 'stocks.uk' will not match the expected 'stocks.*'. Nor will any
             additional configuration listed in 'stocks.*' affect any 'stocks.us' subscriptions. </para>
