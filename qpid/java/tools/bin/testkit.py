@@ -149,7 +149,7 @@ class JavaClientTest(BrokerTest):
 
 class ConcurrencyTest(JavaClientTest):
     """A concurrency test suite for the JMS client"""
-    skip = True
+    skip = False
 
     def base_case(self,**options):
         if self.skip :
