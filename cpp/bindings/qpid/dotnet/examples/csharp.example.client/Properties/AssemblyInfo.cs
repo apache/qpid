@@ -26,11 +26,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("csharp.direct.receiver")]
+[assembly: AssemblyTitle("csharp.example.client")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("csharp.direct.receiver")]
+[assembly: AssemblyProduct("csharp.example.client")]
 [assembly: AssemblyCopyright("Copyright ?  2010")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
