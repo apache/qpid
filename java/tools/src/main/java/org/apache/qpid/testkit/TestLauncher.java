@@ -205,6 +205,8 @@ public class TestLauncher implements ErrorHandler
         			
         			if (receiver)
         			{
+        			    System.out.println("########## Creating receiver ##################");
+        			    
         				createReceiver(index,con,addrTemp,this);
         			}
             	}
