@@ -34,9 +34,8 @@ import org.apache.qpid.management.common.mbeans.annotations.MBeanOperationParame
 /**
  * The ManagedBroker is the management interface to expose management
  * features of the Broker.
- *
- * @author   Bhupendra Bhardwaj
- * @version  0.1
+ * 
+ * @since Qpid JMX API 1.9
  */
 public interface ManagedBroker
 {
@@ -122,4 +121,62 @@ public interface ManagedBroker
                          impact= MBeanOperationInfo.ACTION)
     void deleteQueue(@MBeanOperationParameter(name= ManagedQueue.TYPE, description="Queue Name")String queueName)
         throws IOException, JMException;
+    
+    /**
+     * Resets all message and data statistics for the virtual host.
+     * 
+     * @since Qpid JMX API 1.9
+     */
+    @MBeanOperation(name="resetStatistics",
+                    description="Resets all message and data statistics for the virtual host",
+                    impact= MBeanOperationInfo.ACTION)
+    void resetStatistics() throws Exception;
+
+    /**
+     * Peak rate of messages per second for the virtual host.
+     * 
+     * @since Qpid JMX API 1.9
+     */
+    @MBeanAttribute(name="peakMessageRate", description=TYPE + " Peak Message Rate")
+    double getPeakMessageRate();
+
+    /**
+     * Peak rate of bytes per second for the virtual host.
+     * 
+     * @since Qpid JMX API 1.9
+     */
+    @MBeanAttribute(name="peakDataRate", description=TYPE + " Peak Data Rate")
+    double getPeakDataRate();
+
+    /**
+     * Rate of messages per second for the virtual host.
+     * 
+     * @since Qpid JMX API 1.9
+     */
+    @MBeanAttribute(name="messageRate", description=TYPE + " Message Rate")
+    double getMessageRate();
+
+    /**
+     * Rate of bytes per second for the virtual host.
+     * 
+     * @since Qpid JMX API 1.9
+     */
+    @MBeanAttribute(name="dataRate", description=TYPE + " Data Rate")
+    double getDataRate();
+
+    /**
+     * Total count of messages for the virtual host.
+     * 
+     * @since Qpid JMX API 1.9
+     */
+    @MBeanAttribute(name="totalMessages", description=TYPE + " Total Message Count")
+    long getTotalMessages();
+
+    /**
+     * Total count of bytes for the virtual host.
+     * 
+     * @since Qpid JMX API 1.9
+     */
+    @MBeanAttribute(name="totalData", description=TYPE + " Total Bytes")
+    long getTotalData();
 }

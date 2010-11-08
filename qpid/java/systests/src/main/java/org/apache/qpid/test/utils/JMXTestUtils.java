@@ -24,7 +24,9 @@ import org.apache.commons.configuration.ConfigurationException;
 import org.apache.qpid.commands.objects.AllObjects;
 import org.apache.qpid.management.common.JMXConnnectionFactory;
 import org.apache.qpid.management.common.mbeans.ManagedBroker;
+import org.apache.qpid.management.common.mbeans.ManagedConnection;
 import org.apache.qpid.management.common.mbeans.ManagedExchange;
+import org.apache.qpid.management.common.mbeans.ServerInformation;
 
 import javax.management.JMException;
 import javax.management.MBeanException;
@@ -33,7 +35,11 @@ import javax.management.MBeanServerInvocationHandler;
 import javax.management.ObjectName;
 import javax.management.remote.JMXConnector;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
+
+import junit.framework.TestCase;
 
 /**
  * 
@@ -57,6 +63,7 @@ public class JMXTestUtils
     public void setUp() throws IOException, ConfigurationException, Exception
     {
         _test.setConfigurationProperty("management.enabled", "true");       
+        _test.setSystemProperty("qpid.management.disableCustomSocketFactory", "true");
     }
 
     public void open() throws Exception
@@ -208,5 +215,45 @@ public class JMXTestUtils
         return MBeanServerInvocationHandler.
                 newProxyInstance(_mbsc, getExchangeObjectName("test", exchangeName),
                                  ManagedExchange.class, false);
+    }
+
+    /**
+     * Retrive {@link ServerInformation} JMX MBean.
+     */
+    public ServerInformation getServerInformation()
+    {
+        // Get the name of the test manager
+        AllObjects allObject = new AllObjects(_mbsc);
+        allObject.querystring = "org.apache.qpid:type=ServerInformation,name=ServerInformation,*";
+
+        Set<ObjectName> objectNames = allObject.returnObjects();
+
+        TestCase.assertNotNull("Null ObjectName Set returned", objectNames);
+        TestCase.assertEquals("Incorrect number of objects returned", 1, objectNames.size());
+
+        // We have verified we have only one value in objectNames so return it
+        return getManagedObject(ServerInformation.class, objectNames.iterator().next());
+    }
+
+    /**
+     * Retrive all {@link ManagedConnection} objects.
+     */
+    public List<ManagedConnection> getManagedConnections(String vhost)
+    {
+        // Get the name of the test manager
+        AllObjects allObject = new AllObjects(_mbsc);
+        allObject.querystring = "org.apache.qpid:type=VirtualHost.Connection,VirtualHost=" + vhost + ",name=*";
+
+        Set<ObjectName> objectNames = allObject.returnObjects();
+
+        TestCase.assertNotNull("Null ObjectName Set returned", objectNames);
+
+        // Collect all the connection objects
+        List<ManagedConnection> connections = new ArrayList<ManagedConnection>();
+        for (ObjectName name : objectNames)
+        {
+            connections.add(getManagedObject(ManagedConnection.class, name));
+        }
+        return connections; 
     }
 }

@@ -92,7 +92,7 @@ public class ConnectionCloseTest extends QpidTestCase
 
         assertTrue("Spurious thread creation exceeded threshold, " +
                    delta.size() + " threads created.",
-                   delta.size() < 10);
+                   delta.size() < 20);
     }
 
     private void dumpStacks(Map<Thread,StackTraceElement[]> map)

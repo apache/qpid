@@ -71,6 +71,9 @@ public class NullApplicationRegistry extends ApplicationRegistry
         _accessManager = new ACLManager(_configuration.getSecurityConfiguration(), _pluginManager, AllowAll.FACTORY);
 
         _authenticationManager = new PrincipalDatabaseAuthenticationManager(null, null);
+        
+        initialiseStatistics();
+        initialiseStatisticsReporting();
 
         _managedObjectRegistry = new NoopManagedObjectRegistry();
         _virtualHostRegistry = new VirtualHostRegistry(this);

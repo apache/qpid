@@ -291,7 +291,7 @@ public class Main
             configMBean.register();
 
             ServerInformationMBean sysInfoMBean =
-                    new ServerInformationMBean(QpidProperties.getBuildVersion(), QpidProperties.getReleaseVersion());
+                    new ServerInformationMBean((ApplicationRegistry) ApplicationRegistry.getInstance());
             sysInfoMBean.register();
 
             //fixme .. use QpidProperties.getVersionString when we have fixed the classpath issues

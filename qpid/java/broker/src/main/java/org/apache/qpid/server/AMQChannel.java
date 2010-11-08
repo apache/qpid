@@ -206,6 +206,9 @@ public class AMQChannel
         // check and deliver if header says body length is zero
         if (_currentMessage.allContentReceived())
         {
+            long bodySize = _currentMessage.getContentHeaderBody().bodySize;
+            long timestamp = ((BasicContentHeaderProperties) _currentMessage.getContentHeaderBody().properties).getTimestamp();
+            _session.registerMessageDelivery(bodySize, timestamp);
             try
             {
                 _currentMessage.deliverToQueues();

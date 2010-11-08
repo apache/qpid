@@ -98,8 +98,9 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
 
     public void start() throws IOException, ConfigurationException
     {
-
         CurrentActor.get().message(ManagementConsoleMessages.MNG_STARTUP());
+
+        boolean disableCustomSocketFactory = Boolean.getBoolean("qpid.management.disableCustomSocketFactory");
         
         //check if system properties are set to use the JVM's out-of-the-box JMXAgent
         if (areOutOfTheBoxJMXOptionsSet())
@@ -225,8 +226,15 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
          * As a result, only binds made using the object reference will succeed, thus securing it from external change. 
          */
         System.setProperty("java.rmi.server.randomIDs", "true");
-        _rmiRegistry = LocateRegistry.createRegistry(port, null, new CustomRMIServerSocketFactory());
-
+        if (disableCustomSocketFactory)
+        {
+	        _rmiRegistry = LocateRegistry.createRegistry(port, null, null);
+        }
+        else
+        {
+	        _rmiRegistry = LocateRegistry.createRegistry(port, null, new CustomRMIServerSocketFactory());
+        }
+        
         /*
          * We must now create the RMI ConnectorServer manually, as the JMX Factory methods use RMI calls 
          * to bind the ConnectorServer to the registry, which will now fail as for security we have

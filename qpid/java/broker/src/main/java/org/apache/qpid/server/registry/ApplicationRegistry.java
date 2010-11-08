@@ -23,19 +23,28 @@ package org.apache.qpid.server.registry;
 import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.management.ManagedObjectRegistry;
 import org.apache.qpid.server.plugins.PluginManager;
+import org.apache.qpid.server.protocol.AMQMinaProtocolSession;
+import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.security.access.ACLManager;
 import org.apache.qpid.server.security.auth.database.PrincipalDatabaseManager;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
+import org.apache.qpid.server.stats.StatisticsCounter;
+import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 import org.apache.qpid.server.logging.RootMessageLogger;
 import org.apache.qpid.server.logging.messages.BrokerMessages;
+import org.apache.qpid.server.logging.messages.ConnectionMessages;
+import org.apache.qpid.server.logging.messages.VirtualHostMessages;
+import org.apache.qpid.server.logging.actors.AbstractActor;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.transport.QpidAcceptor;
 
@@ -45,7 +54,7 @@ import org.apache.qpid.server.transport.QpidAcceptor;
  * <p/>
  * Subclasses should handle the construction of the "registered objects" such as the exchange registry.
  */
-public abstract class ApplicationRegistry implements IApplicationRegistry
+public abstract class ApplicationRegistry implements IApplicationRegistry, StatisticsGatherer
 {
     protected static final Logger _logger = Logger.getLogger(ApplicationRegistry.class);
 
@@ -75,6 +84,10 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
     protected RootMessageLogger _rootMessageLogger;
 
+    protected Timer _reportingTimer;
+    protected boolean _statisticsEnabled = false;
+    protected StatisticsCounter _messageStats, _dataStats;
+    
     static
     {
         Runtime.getRuntime().addShutdownHook(new Thread(new ShutdownService()));
@@ -220,6 +233,12 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
             _logger.info("Shutting down ApplicationRegistry:"+this);
         }
 
+        //Stop Statistics Reporting
+        if (_reportingTimer != null)
+        {
+            _reportingTimer.cancel();
+        }
+
         //Stop incomming connections
         unbind();
 
@@ -317,4 +336,109 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
         return _rootMessageLogger;
     }
     
+    public void initialiseStatisticsReporting()
+    {
+        long report = _configuration.getStatisticsReportingPeriod() * 1000; // convert to ms
+        final boolean broker = _configuration.isStatisticsGenerationBrokerEnabled();
+        final boolean virtualhost = _configuration.isStatisticsGenerationVirtualhostsEnabled();
+        final boolean reset = _configuration.isStatisticsReportResetEnabled();
+        
+        /* add a timer task to report statistics if generation is enabled for broker or virtualhosts */
+        if (report > 0L && (broker || virtualhost))
+        {
+	        _reportingTimer = new Timer("Statistics-Reporting", true);
+	        
+            class StatisticsReportingTask extends TimerTask
+            {
+                Logger _srLogger = Logger.getLogger(StatisticsReportingTask.class);
+                
+                public void run()
+                {
+                    CurrentActor.set(new AbstractActor(ApplicationRegistry.getInstance().getRootMessageLogger()) {
+                        public String getLogMessage()
+                        {
+                            return "[" + Thread.currentThread().getName() + "] ";
+                        }
+                    });
+                    
+                    if (broker)
+                    {
+	                    CurrentActor.get().message(BrokerMessages.BRK_STATS_DATA(_dataStats.getPeak() / 1024.0, _dataStats.getTotal()));
+	                    CurrentActor.get().message(BrokerMessages.BRK_STATS_MSGS(_messageStats.getPeak(), _messageStats.getTotal()));
+                    }
+                    
+                    if (virtualhost)
+                    {
+	                    for (VirtualHost vhost : getVirtualHostRegistry().getVirtualHosts())
+	                    {
+	                        String name = vhost.getName();
+	                        StatisticsCounter data = vhost.getDataStatistics();
+	                        StatisticsCounter messages = vhost.getMessageStatistics();
+	                        
+	                        CurrentActor.get().message(VirtualHostMessages.VHT_STATS_DATA(name, data.getPeak() / 1024.0, data.getTotal()));
+	                        CurrentActor.get().message(VirtualHostMessages.VHT_STATS_MSGS(name, messages.getPeak(), messages.getTotal()));
+	                    }
+                    }
+                    
+                    if (reset)
+                    {
+                        resetStatistics();
+                    }
+
+                    CurrentActor.remove();
+                }
+            }
+
+            _reportingTimer.scheduleAtFixedRate(new StatisticsReportingTask(),
+                                                report / 2,
+                                                report);
+        }
+    }
+    
+    public void registerMessageDelivery(long messageSize, long timestamp)
+    {
+        if (isStatisticsEnabled())
+        {
+	        _messageStats.registerEvent(1L, timestamp);
+	        _dataStats.registerEvent(messageSize, timestamp);
+        }
+    }
+    
+    public StatisticsCounter getMessageStatistics()
+    {
+        return _messageStats;
+    }
+    
+    public StatisticsCounter getDataStatistics()
+    {
+        return _dataStats;
+    }
+    
+    public void resetStatistics()
+    {
+        _messageStats.reset();
+        _dataStats.reset();
+        
+        for (VirtualHost vhost : _virtualHostRegistry.getVirtualHosts())
+        {
+            vhost.resetStatistics();
+        }
+    }
+
+    public void initialiseStatistics()
+    {
+        setStatisticsEnabled(getConfiguration().isStatisticsGenerationBrokerEnabled());
+        _messageStats = new StatisticsCounter("messages");
+        _dataStats = new StatisticsCounter("bytes");
+    }
+
+    public boolean isStatisticsEnabled()
+    {
+        return _statisticsEnabled;
+    }
+
+    public void setStatisticsEnabled(boolean enabled)
+    {
+        _statisticsEnabled = enabled;
+    }
 }

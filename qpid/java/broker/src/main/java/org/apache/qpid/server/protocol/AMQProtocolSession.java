@@ -221,4 +221,5 @@ public interface AMQProtocolSession extends AMQVersionAwareProtocolSession
 
     public ProtocolSessionIdentifier getSessionIdentifier();
     
+    public void registerMessageDelivery(long messageSize, long timestamp);
 }

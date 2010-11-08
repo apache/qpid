@@ -341,4 +341,49 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
         _broadcaster.sendNotification(n);
     }
 
-} // End of MBean class
+    public void resetStatistics() throws Exception
+    {
+        _session.getMessageStatistics().reset();
+        _session.getDataStatistics().reset();
+    }
+
+    public double getPeakMessageRate()
+    {
+        return _session.getMessageStatistics().getPeak();
+    }
+
+    public double getPeakDataRate()
+    {
+        return _session.getDataStatistics().getPeak();
+    }
+
+    public double getMessageRate()
+    {
+        return _session.getMessageStatistics().getRate();
+    }
+
+    public double getDataRate()
+    {
+        return _session.getDataStatistics().getRate();
+    }
+
+    public long getTotalMessages()
+    {
+        return _session.getMessageStatistics().getTotal();
+    }
+
+    public long getTotalData()
+    {
+        return _session.getDataStatistics().getTotal();
+    }
+
+    public boolean isStatisticsEnabled()
+    {
+        return _session.isStatisticsEnabled();
+    }
+
+    public void setStatisticsEnabled(boolean enabled)
+    {
+        _session.setStatisticsEnabled(enabled);
+    }
+} 

@@ -34,8 +34,12 @@ import org.apache.qpid.server.security.access.ACLManager;
 import org.apache.qpid.server.security.access.ACLPlugin;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 import org.apache.qpid.server.logging.RootMessageLogger;
+import org.apache.qpid.server.plugins.PluginManager;
+import org.apache.qpid.server.security.access.ACLManager;
+import org.apache.qpid.server.security.auth.database.PrincipalDatabaseManager;
+import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 import org.apache.qpid.server.transport.QpidAcceptor;
-import org.apache.mina.common.IoAcceptor;
+import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
 public interface IApplicationRegistry
 {
@@ -81,4 +85,5 @@ public interface IApplicationRegistry
      */
     void addAcceptor(InetSocketAddress bindAddress, QpidAcceptor acceptor);
 
+    void initialiseStatisticsReporting();
 }

@@ -21,12 +21,17 @@
 package org.apache.qpid.server.information.management;
 
 import java.io.IOException;
-
-import org.apache.qpid.management.common.mbeans.ServerInformation;
-import org.apache.qpid.management.common.mbeans.annotations.MBeanDescription;
-import org.apache.qpid.server.management.AMQManagedObject;
+import java.util.Collection;
 
 import javax.management.JMException;
+
+import org.apache.qpid.common.QpidProperties;
+import org.apache.qpid.management.common.mbeans.ServerInformation;
+import org.apache.qpid.management.common.mbeans.annotations.MBeanDescription;
+import org.apache.qpid.server.AMQBrokerManagerMBean;
+import org.apache.qpid.server.management.AMQManagedObject;
+import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 
 /** MBean class for the ServerInformationMBean. */
 @MBeanDescription("Server Information Interface")
@@ -34,12 +39,15 @@ public class ServerInformationMBean extends AMQManagedObject implements ServerIn
 {
     private String buildVersion;
     private String productVersion;
+    private ApplicationRegistry registry;
     
-    public ServerInformationMBean(String buildVersion, String productVersion) throws JMException
+    public ServerInformationMBean(ApplicationRegistry applicationRegistry) throws JMException
     {
         super(ServerInformation.class, ServerInformation.TYPE);
-        this.buildVersion = buildVersion;
-        this.productVersion = productVersion;
+
+        registry = applicationRegistry;
+        buildVersion = QpidProperties.getBuildVersion();
+        productVersion = QpidProperties.getReleaseVersion();
     }
 
     public String getObjectInstanceName()
@@ -67,5 +75,45 @@ public class ServerInformationMBean extends AMQManagedObject implements ServerIn
         return productVersion;
     }
 
-    
+    public void resetStatistics() throws Exception
+    {
+        registry.getDataStatistics().reset();
+        registry.getMessageStatistics().reset();
+        
+        Collection<VirtualHost> virtualhosts = registry.getVirtualHostRegistry().getVirtualHosts();
+        for (VirtualHost vhost : virtualhosts)
+        {
+            ((AMQBrokerManagerMBean) vhost.getBrokerMBean()).resetStatistics();
+        }
+    }
+
+    public double getPeakMessageRate()
+    {
+        return registry.getMessageStatistics().getPeak();
+    }
+
+    public double getPeakDataRate()
+    {
+        return registry.getDataStatistics().getPeak();
+    }
+
+    public double getMessageRate()
+    {
+        return registry.getMessageStatistics().getRate();
+    }
+
+    public double getDataRate()
+    {
+        return registry.getDataStatistics().getRate();
+    }
+
+    public long getTotalMessages()
+    {
+        return registry.getMessageStatistics().getTotal();
+    }
+
+    public long getTotalData()
+    {
+        return registry.getDataStatistics().getTotal();
+    }
 }

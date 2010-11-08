@@ -22,11 +22,15 @@ package org.apache.qpid.management.common.mbeans;
 
 import java.io.IOException;
 
+import javax.management.MBeanOperationInfo;
+
 import org.apache.qpid.management.common.mbeans.annotations.MBeanAttribute;
+import org.apache.qpid.management.common.mbeans.annotations.MBeanOperation;
 
 /**
  * Interface for the ServerInformation MBean
- * @since Qpid JMX API 1.3
+ * 
+ * @since Qpid JMX API 1.9
  */
 public interface ServerInformation
 {
@@ -80,4 +84,62 @@ public interface ServerInformation
     @MBeanAttribute(name="ProductVersion", 
                     description = "The product version string")
     String getProductVersion() throws IOException;
+    
+    /**
+     * Resets all message and data statistics for the broker.
+     * 
+     * @since Qpid JMX API 1.9
+     */
+    @MBeanOperation(name="resetStatistics",
+                    description="Resets all message and data statistics for the broker",
+                    impact= MBeanOperationInfo.ACTION)
+    void resetStatistics() throws Exception;
+
+    /**
+     * Peak rate of messages per second for the broker.
+     * 
+     * @since Qpid JMX API 1.9
+     */
+    @MBeanAttribute(name="peakMessageRate", description=TYPE + " Peak Message Rate")
+    double getPeakMessageRate();
+
+    /**
+     * Peak rate of bytes per second for the broker.
+     * 
+     * @since Qpid JMX API 1.9
+     */
+    @MBeanAttribute(name="peakDataRate", description=TYPE + " Peak Data Rate")
+    double getPeakDataRate();
+
+    /**
+     * Rate of messages per second for the broker.
+     * 
+     * @since Qpid JMX API 1.9
+     */
+    @MBeanAttribute(name="messageRate", description=TYPE + " Message Rate")
+    double getMessageRate();
+
+    /**
+     * Rate of bytes per second for the broker.
+     * 
+     * @since Qpid JMX API 1.9
+     */
+    @MBeanAttribute(name="dataRate", description=TYPE + " Data Rate")
+    double getDataRate();
+
+    /**
+     * Total count of messages for the broker.
+     * 
+     * @since Qpid JMX API 1.9
+     */
+    @MBeanAttribute(name="totalMessages", description=TYPE + " Total Message Count")
+    long getTotalMessages();
+
+    /**
+     * Total count of bytes for the broker.
+     * 
+     * @since Qpid JMX API 1.9
+     */
+    @MBeanAttribute(name="totalData", description=TYPE + " Total Bytes")
+    long getTotalData();
 }

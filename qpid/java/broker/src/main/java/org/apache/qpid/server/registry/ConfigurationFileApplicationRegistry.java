@@ -35,6 +35,7 @@ import org.apache.qpid.server.plugins.PluginManager;
 import org.apache.qpid.server.security.access.ACLManager;
 import org.apache.qpid.server.security.auth.database.ConfigurationFilePrincipalDatabaseManager;
 import org.apache.qpid.server.security.auth.manager.PrincipalDatabaseAuthenticationManager;
+import org.apache.qpid.server.stats.StatisticsCounter;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
@@ -76,6 +77,9 @@ public class ConfigurationFileApplicationRegistry extends ApplicationRegistry
         _databaseManager.initialiseManagement(_configuration);
 
         _managedObjectRegistry.start();
+        
+        initialiseStatistics();
+        initialiseStatisticsReporting();
 
         initialiseVirtualHosts();
 

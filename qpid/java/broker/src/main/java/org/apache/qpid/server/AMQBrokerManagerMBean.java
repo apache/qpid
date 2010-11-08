@@ -39,6 +39,7 @@ package org.apache.qpid.server;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -57,16 +58,19 @@ import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.ExchangeFactory;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.exchange.ExchangeType;
+import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.logging.actors.ManagementActor;
 import org.apache.qpid.server.management.AMQManagedObject;
 import org.apache.qpid.server.management.ManagedObject;
+import org.apache.qpid.server.protocol.AMQMinaProtocolSession;
+import org.apache.qpid.server.protocol.AMQProtocolSession;
+import org.apache.qpid.server.protocol.AMQProtocolSessionMBean;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.queue.AMQQueueMBean;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.logging.actors.CurrentActor;
-import org.apache.qpid.server.logging.actors.ManagementActor;
 
 /**
  * This MBean implements the broker management interface and exposes the
@@ -79,6 +83,7 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
     private final ExchangeRegistry _exchangeRegistry;
     private final ExchangeFactory _exchangeFactory;
     private final MessageStore _messageStore;
+    private final VirtualHost _virtualHost;
 
     private final VirtualHost.VirtualHostMBean _virtualHostMBean;
 
@@ -88,12 +93,12 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
         super(ManagedBroker.class, ManagedBroker.TYPE);
 
         _virtualHostMBean = virtualHostMBean;
-        VirtualHost virtualHost = virtualHostMBean.getVirtualHost();
+        _virtualHost = virtualHostMBean.getVirtualHost();
 
-        _queueRegistry = virtualHost.getQueueRegistry();
-        _exchangeRegistry = virtualHost.getExchangeRegistry();
-        _messageStore = virtualHost.getMessageStore();
-        _exchangeFactory = virtualHost.getExchangeFactory();
+        _queueRegistry = _virtualHost.getQueueRegistry();
+        _exchangeRegistry = _virtualHost.getExchangeRegistry();
+        _messageStore = _virtualHost.getMessageStore();
+        _exchangeFactory = _virtualHost.getExchangeFactory();
     }
 
     public String getObjectInstanceName()
@@ -348,4 +353,46 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
     {
         return getObjectNameForSingleInstanceMBean();
     }
-} // End of MBean class
+
+    public void resetStatistics() throws Exception
+    {
+        _virtualHost.getMessageStatistics().reset();
+        _virtualHost.getDataStatistics().reset();
+        
+        Collection<AMQProtocolSession> connections = _virtualHost.getConnectionRegistry().getConnections();
+        for (AMQProtocolSession con : connections)
+        {
+            ((AMQProtocolSessionMBean) ((AMQMinaProtocolSession) con).getManagedObject()).resetStatistics();
+        }
+    }
+
+    public double getPeakMessageRate()
+    {
+        return _virtualHost.getMessageStatistics().getPeak();
+    }
+
+    public double getPeakDataRate()
+    {
+        return _virtualHost.getDataStatistics().getPeak();
+    }
+
+    public double getMessageRate()
+    {
+        return _virtualHost.getMessageStatistics().getRate();
+    }
+
+    public double getDataRate()
+    {
+        return _virtualHost.getDataStatistics().getRate();
+    }
+
+    public long getTotalMessages()
+    {
+        return _virtualHost.getMessageStatistics().getTotal();
+    }
+
+    public long getTotalData()
+    {
+        return _virtualHost.getDataStatistics().getTotal();
+    }
+}

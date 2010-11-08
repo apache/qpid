@@ -94,6 +94,9 @@ public class TestApplicationRegistry extends ApplicationRegistry
         _managedObjectRegistry = new NoopManagedObjectRegistry();
 
         _messageStore = new TestableMemoryMessageStore();
+        
+        initialiseStatistics();
+        initialiseStatisticsReporting();
 
         _virtualHostRegistry = new VirtualHostRegistry(this);
         
