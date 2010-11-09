@@ -38,8 +38,10 @@ op.add_option("-m", "--messages", default=100000, type="int", metavar="N",
               help="send N messages per sender (default %default)")
 op.add_option("--queue-name", default="benchmark", metavar="NAME",
                help="base name for queues (default %default)")
-op.add_option("--send-rate", default=0, metavar="R",
-              help="send rate limited to R messages/second, 0 means no limit (default %default)")
+op.add_option("--send-rate", default=0, metavar="N",
+              help="send rate limited to N messages/second, 0 means no limit (default %default)")
+op.add_option("--receive-rate", default=0, metavar="N",
+              help="receive rate limited to N messages/second, 0 means no limit (default %default)")
 op.add_option("--content-size", default=1024, type="int", metavar="BYTES",
               help="message size in bytes (default %default)")
 op.add_option("--ack-frequency", default=0, metavar="N", type="int",
@@ -79,6 +81,7 @@ def start_receive(queue, opts, ready_queue, broker, host):
                "-m", str((opts.senders*opts.messages)/opts.receivers),
                "--forever",
                "--print-content=no",
+               "--receive-rate", str(opts.receive_rate),
                "--report-total",
                "--ack-frequency", str(opts.ack_frequency),
                "--ready-address", ready_queue,
