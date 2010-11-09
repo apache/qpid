@@ -24,6 +24,7 @@
 #include <qpid/agent/ManagementAgent.h>
 #include <qpid/sys/Mutex.h>
 #include <qpid/sys/Time.h>
+#include <qpid/log/Statement.h>
 #include "qpid/types/Variant.h"
 #include "qmf/org/apache/qpid/agent/example/Parent.h"
 #include "qmf/org/apache/qpid/agent/example/Child.h"
@@ -72,7 +73,8 @@ public:
     { return mgmtObject; }
 
     void doLoop();
-    status_t ManagementMethod (uint32_t methodId, Args& args, string& text);
+    bool AuthorizeMethod(uint32_t methodId, Args& args, const string& userId);
+    status_t ManagementMethod(uint32_t methodId, Args& args, string& text);
 };
 
 class ChildClass : public Manageable
@@ -136,6 +138,14 @@ void CoreClass::doLoop()
         }
     }
 }
+
+
+bool CoreClass::AuthorizeMethod(uint32_t methodId, Args& args, const string& userId)
+{
+    QPID_LOG(trace, "AuthorizeMethod for methodId=" << methodId << " userId=" << userId);
+    return methodId != _qmf::Parent::METHOD_AUTH_FAIL;
+}
+
 
 Manageable::status_t CoreClass::ManagementMethod(uint32_t methodId, Args& args, string& /*text*/)
 {

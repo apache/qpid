@@ -1083,8 +1083,8 @@ void ManagementAgent::handleMethodRequestLH(Buffer& inBuffer, const string& repl
         return;
     }
 
+    string userId = ((const qpid::broker::ConnectionState*) connToken)->getUserId();
     if (acl != 0) {
-        string userId = ((const qpid::broker::ConnectionState*) connToken)->getUserId();
         map<acl::Property, string> params;
         params[acl::PROP_SCHEMAPACKAGE] = packageName;
         params[acl::PROP_SCHEMACLASS]   = className;
@@ -1115,7 +1115,7 @@ void ManagementAgent::handleMethodRequestLH(Buffer& inBuffer, const string& repl
                 outBuffer.record();
                 sys::Mutex::ScopedUnlock u(userLock);
                 string outBuf;
-                iter->second->doMethod(methodName, inArgs, outBuf);
+                iter->second->doMethod(methodName, inArgs, outBuf, userId);
                 outBuffer.putRawData(outBuf);
             } catch(exception& e) {
                 outBuffer.restore();
@@ -1193,8 +1193,8 @@ void ManagementAgent::handleMethodRequestLH (const string& body, const string& r
         return;
     }
 
+    string userId = ((const qpid::broker::ConnectionState*) connToken)->getUserId();
     if (acl != 0) {
-        string userId = ((const qpid::broker::ConnectionState*) connToken)->getUserId();
         map<acl::Property, string> params;
         params[acl::PROP_SCHEMAPACKAGE] = iter->second->getPackageName();
         params[acl::PROP_SCHEMACLASS]   = iter->second->getClassName();
@@ -1214,7 +1214,7 @@ void ManagementAgent::handleMethodRequestLH (const string& body, const string& r
 
     try {
         sys::Mutex::ScopedUnlock u(userLock);
-        iter->second->doMethod(methodName, inArgs, callMap);
+        iter->second->doMethod(methodName, inArgs, callMap, userId);
         errorCode = callMap["_status_code"].asUint32();
         if (errorCode == 0) {
             outMap["_arguments"] = Variant::Map();
