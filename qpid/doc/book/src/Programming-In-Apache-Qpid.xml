@@ -4336,6 +4336,68 @@ using (TransactionScope ts = new TransactionScope())
       </table>
     </section>
     <section>
+      <title>.NET Binding Class: FailoverUpdates</title>
+      <table id="table-Dotnet-Binding-FailoverUpdates">
+        <title>.NET Binding Class: FailoverUpdates</title>
+        <tgroup cols="2">
+          <colspec colname="c1"/>
+          <colspec colname="c2"/>
+          <thead>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">.NET Binding Class: FailoverUpdates</entry>
+            </row>
+            <row>
+              <entry>Language</entry>
+              <entry>Syntax</entry>
+            </row>
+          </thead>
+          <tbody>
+            <row>
+             <entry>C++</entry>
+             <entry>class FailoverUpdates</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public ref class FailoverUpdates</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Constructor</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>FailoverUpdates(Connection&amp; connection);</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>public FailoverUpdates(Connection connection);</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Destructor</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>~FailoverUpdates();</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>~FailoverUpdates();</entry>
+            </row>
+            <row>
+              <entry namest="c1" nameend="c2" align="center">Finalizer</entry>
+            </row>
+            <row>
+             <entry>C++</entry>
+             <entry>n/a</entry>
+            </row>
+            <row>
+             <entry>.NET</entry>
+             <entry>!FailoverUpdates();</entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </table>
+    </section>
+    <section>
       <title>.NET Binding Class: Message</title>
       <table id="table-Dotnet-Binding-Message">
         <title>.NET Binding Class: Message</title>
