@@ -46,3 +46,8 @@ Manageable::status_t Manageable::ManagementMethod (uint32_t, Args&, std::string&
     return STATUS_UNKNOWN_METHOD;
 }
 
+bool Manageable::AuthorizeMethod(uint32_t, Args&, const std::string&)
+{
+    return true;
+}
+

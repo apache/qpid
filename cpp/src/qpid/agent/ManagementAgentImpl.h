@@ -128,12 +128,13 @@ class ManagementAgentImpl : public ManagementAgent, public client::MessageListen
     };
 
     struct QueuedMethod {
-    QueuedMethod(const std::string& _cid, const std::string& _reply, const std::string& _body) :
-        cid(_cid), replyTo(_reply), body(_body) {}
+    QueuedMethod(const std::string& _cid, const std::string& _reply, const std::string& _body, const std::string& _uid) :
+        cid(_cid), replyTo(_reply), body(_body), userId(_uid) {}
 
         std::string cid;
         std::string replyTo;
         std::string body;
+        std::string userId;
     };
 
     typedef std::deque<QueuedMethod*> MethodQueue;
@@ -282,11 +283,11 @@ class ManagementAgentImpl : public ManagementAgent, public client::MessageListen
     void handlePackageRequest (qpid::framing::Buffer& inBuffer);
     void handleClassQuery     (qpid::framing::Buffer& inBuffer);
     void handleSchemaRequest  (qpid::framing::Buffer& inBuffer, uint32_t sequence, const std::string& replyTo);
-    void invokeMethodRequest  (const std::string& body, const std::string& cid, const std::string& replyTo);
+    void invokeMethodRequest  (const std::string& body, const std::string& cid, const std::string& replyTo, const std::string& userId);
 
     void handleGetQuery       (const std::string& body, const std::string& cid, const std::string& replyTo);
     void handleLocateRequest  (const std::string& body, const std::string& sequence, const std::string& replyTo);
-    void handleMethodRequest  (const std::string& body, const std::string& sequence, const std::string& replyTo);
+    void handleMethodRequest  (const std::string& body, const std::string& sequence, const std::string& replyTo, const std::string& userId);
     void handleConsoleAddedIndication();
     void getHeartbeatContent  (qpid::types::Variant::Map& map);
 };

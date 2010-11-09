@@ -45,6 +45,9 @@
       <arg name="aList"  dir="IO" type="list"/>
     </method>
 
+    <method name="auth_fail" desc="Method that fails authorization">
+    </method>
+
   </class>
 
 

@@ -360,7 +360,7 @@ uint32_t ManagementAgentImpl::pollCallbacks(uint32_t callLimit)
         methodQueue.pop_front();
         {
             sys::Mutex::ScopedUnlock unlock(agentLock);
-            invokeMethodRequest(item->body, item->cid, item->replyTo);
+            invokeMethodRequest(item->body, item->cid, item->replyTo, item->userId);
             delete item;
         }
     }
@@ -559,7 +559,7 @@ void ManagementAgentImpl::handleConsoleAddedIndication()
     QPID_LOG(trace, "RCVD ConsoleAddedInd");
 }
 
-void ManagementAgentImpl::invokeMethodRequest(const string& body, const string& cid, const string& replyTo)
+void ManagementAgentImpl::invokeMethodRequest(const string& body, const string& cid, const string& replyTo, const string& userId)
 {
     string  methodName;
     bool    failed = false;
@@ -606,7 +606,7 @@ void ManagementAgentImpl::invokeMethodRequest(const string& body, const string& 
                               Manageable::STATUS_UNKNOWN_OBJECT);
                 failed = true;
             } else {
-                oPtr->doMethod(methodName, inArgs, callMap);
+                oPtr->doMethod(methodName, inArgs, callMap, userId);
 
                 if (callMap["_status_code"].asUint32() == 0) {
                     outMap["_arguments"] = Variant::Map();
@@ -837,12 +837,12 @@ void ManagementAgentImpl::handleLocateRequest(const string&, const string& cid, 
     }
 }
 
-void ManagementAgentImpl::handleMethodRequest(const string& body, const string& cid, const string& replyTo)
+void ManagementAgentImpl::handleMethodRequest(const string& body, const string& cid, const string& replyTo, const string& userId)
 {
     if (extThread) {
         sys::Mutex::ScopedLock lock(agentLock);
 
-        methodQueue.push_back(new QueuedMethod(cid, replyTo, body));
+        methodQueue.push_back(new QueuedMethod(cid, replyTo, body, userId));
         if (pipeHandle != 0) {
             pipeHandle->write("X", 1);
         } else if (notifyable != 0) {
@@ -861,7 +861,7 @@ void ManagementAgentImpl::handleMethodRequest(const string& body, const string& 
             inCallback = false;
         }
     } else {
-        invokeMethodRequest(body, cid, replyTo);
+        invokeMethodRequest(body, cid, replyTo, userId);
     }
 
     QPID_LOG(trace, "RCVD MethodRequest");
@@ -876,13 +876,17 @@ void ManagementAgentImpl::received(Message& msg)
         replyToKey = rt.getRoutingKey();
     }
 
+    string userId;
+    if (mp.hasUserId())
+        userId = mp.getUserId();
+
     if (mp.hasAppId() && mp.getAppId() == "qmf2")
     {
         string opcode = mp.getApplicationHeaders().getAsString("qmf.opcode");
         string cid = msg.getMessageProperties().getCorrelationId();
 
         if      (opcode == "_agent_locate_request") handleLocateRequest(msg.getData(), cid, replyToKey);
-        else if (opcode == "_method_request")       handleMethodRequest(msg.getData(), cid, replyToKey);
+        else if (opcode == "_method_request")       handleMethodRequest(msg.getData(), cid, replyToKey, userId);
         else if (opcode == "_query_request")        handleGetQuery(msg.getData(), cid, replyToKey);
         else {
             QPID_LOG(warning, "Support for QMF V2 Opcode [" << opcode << "] TBD!!!");
