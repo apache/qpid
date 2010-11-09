@@ -175,7 +175,8 @@ protected:
     virtual void mapDecodeValues(const types::Variant::Map& map) = 0;
     virtual void doMethod(std::string&           methodName,
                           const types::Variant::Map& inMap,
-                          types::Variant::Map& outMap) = 0;
+                          types::Variant::Map& outMap,
+                          const std::string& userId) = 0;
     QPID_COMMON_EXTERN void writeTimestamps(types::Variant::Map& map) const;
     QPID_COMMON_EXTERN void readTimestamps(const types::Variant::Map& buf);
 
@@ -187,7 +188,7 @@ protected:
     virtual void readProperties(const std::string&) {}
     virtual void writeProperties(std::string&) const {}
     virtual void writeStatistics(std::string&, bool = false) {}
-    virtual void doMethod(std::string&, const std::string&, std::string&) {}
+    virtual void doMethod(std::string&, const std::string&, std::string&, const std::string&) {}
 
     QPID_COMMON_EXTERN virtual void setReference(ObjectId objectId);
 

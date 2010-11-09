@@ -79,7 +79,8 @@ class /*MGEN:Class.NameCap*/ : public ::qpid::management::ManagementObject
     void mapDecodeValues(const ::qpid::types::Variant::Map& map);
     void doMethod(std::string&           methodName,
                   const ::qpid::types::Variant::Map& inMap,
-                  ::qpid::types::Variant::Map& outMap);
+                  ::qpid::types::Variant::Map& outMap,
+                  const std::string& userId);
     std::string getKey() const;
 /*MGEN:IF(Root.GenQMFv1)*/
     uint32_t writePropertiesSize() const;
@@ -88,7 +89,8 @@ class /*MGEN:Class.NameCap*/ : public ::qpid::management::ManagementObject
     void writeStatistics(std::string& buf, bool skipHeaders = false);
     void doMethod(std::string& methodName,
                   const std::string& inBuf,
-                  std::string& outBuf);
+                  std::string& outBuf,
+                  const std::string& userId);
 /*MGEN:ENDIF*/
 
     writeSchemaCall_t getWriteSchemaCall() { return writeSchema; }

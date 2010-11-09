@@ -1228,12 +1228,12 @@ class SchemaClass:
           inArgCount = inArgCount + 1
 
     if methodCount == 0:
-      stream.write ("string&, const string&, string& outStr")
+      stream.write ("string&, const string&, string& outStr, const string&")
     else:
       if inArgCount == 0:
-        stream.write ("string& methodName, const string&, string& outStr")
+        stream.write ("string& methodName, const string&, string& outStr, const string& userId")
       else:
-        stream.write ("string& methodName, const string& inStr, string& outStr")
+        stream.write ("string& methodName, const string& inStr, string& outStr, const string& userId")
 
 
   def genDoMapMethodArgs (self, stream, variables):
@@ -1248,16 +1248,16 @@ class SchemaClass:
     if methodCount == 0:
       stream.write ("string&," +
                     " const ::qpid::types::Variant::Map&," +
-                    " ::qpid::types::Variant::Map& outMap")
+                    " ::qpid::types::Variant::Map& outMap, const string&")
     else:
       if inArgCount == 0:
         stream.write ("string& methodName," +
                       " const ::qpid::types::Variant::Map&," +
-                      " ::qpid::types::Variant::Map& outMap")
+                      " ::qpid::types::Variant::Map& outMap, const string& userId")
       else:
         stream.write ("string& methodName," +
                       " const ::qpid::types::Variant::Map& inMap," +
-                      " ::qpid::types::Variant::Map& outMap")
+                      " ::qpid::types::Variant::Map& outMap, const string& userId")
 
   def genHiLoStatResets (self, stream, variables):
     for inst in self.statistics:
@@ -1367,8 +1367,13 @@ class SchemaClass:
                                                    arg.dir.lower () + "_" +\
                                                    arg.name, "inBuf") + ";\n")
 
-      stream.write ("        status = coreObject->ManagementMethod (METHOD_" +\
+      stream.write ("        bool allow = coreObject->AuthorizeMethod(METHOD_" +\
+                    method.getName().upper() + ", ioArgs, userId);\n")
+      stream.write ("        if (allow)\n")
+      stream.write ("            status = coreObject->ManagementMethod (METHOD_" +\
                     method.getName().upper() + ", ioArgs, text);\n")
+      stream.write ("        else\n")
+      stream.write ("            status = Manageable::STATUS_FORBIDDEN;\n")
       stream.write ("        outBuf.putLong        (status);\n")
       stream.write ("        outBuf.putMediumString(::qpid::management::Manageable::StatusText (status, text));\n")
       for arg in method.args:
@@ -1402,8 +1407,13 @@ class SchemaClass:
                                  arg.name,
                                  "inMap")
 
-      stream.write ("        status = coreObject->ManagementMethod (METHOD_" +\
+      stream.write ("        bool allow = coreObject->AuthorizeMethod(METHOD_" +\
+                    method.getName().upper() + ", ioArgs, userId);\n")
+      stream.write ("        if (allow)\n")
+      stream.write ("            status = coreObject->ManagementMethod (METHOD_" +\
                     method.getName().upper() + ", ioArgs, text);\n")
+      stream.write ("        else\n")
+      stream.write ("            status = Manageable::STATUS_FORBIDDEN;\n")
       stream.write ("        outMap[\"_status_code\"] = (uint32_t) status;\n")
       stream.write ("        outMap[\"_status_text\"] = ::qpid::management::Manageable::StatusText(status, text);\n")
       for arg in method.args:
