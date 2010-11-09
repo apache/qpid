@@ -21,17 +21,14 @@
 package org.apache.qpid.server.information.management;
 
 import java.io.IOException;
-import java.util.Collection;
 
 import javax.management.JMException;
 
 import org.apache.qpid.common.QpidProperties;
 import org.apache.qpid.management.common.mbeans.ServerInformation;
 import org.apache.qpid.management.common.mbeans.annotations.MBeanDescription;
-import org.apache.qpid.server.AMQBrokerManagerMBean;
 import org.apache.qpid.server.management.AMQManagedObject;
 import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.virtualhost.VirtualHost;
 
 /** MBean class for the ServerInformationMBean. */
 @MBeanDescription("Server Information Interface")
@@ -77,44 +74,67 @@ public class ServerInformationMBean extends AMQManagedObject implements ServerIn
 
     public void resetStatistics() throws Exception
     {
-        registry.getDataStatistics().reset();
-        registry.getMessageStatistics().reset();
-        
-        Collection<VirtualHost> virtualhosts = registry.getVirtualHostRegistry().getVirtualHosts();
-        for (VirtualHost vhost : virtualhosts)
-        {
-            ((AMQBrokerManagerMBean) vhost.getBrokerMBean()).resetStatistics();
-        }
+        registry.resetStatistics();
     }
 
-    public double getPeakMessageRate()
+    public double getPeakMessageDeliveryRate()
     {
-        return registry.getMessageStatistics().getPeak();
+        return registry.getMessageDeliveryStatistics().getPeak();
     }
 
-    public double getPeakDataRate()
+    public double getPeakDataDeliveryRate()
     {
-        return registry.getDataStatistics().getPeak();
+        return registry.getDataDeliveryStatistics().getPeak();
     }
 
-    public double getMessageRate()
+    public double getMessageDeliveryRate()
     {
-        return registry.getMessageStatistics().getRate();
+        return registry.getMessageDeliveryStatistics().getRate();
     }
 
-    public double getDataRate()
+    public double getDataDeliveryRate()
     {
-        return registry.getDataStatistics().getRate();
+        return registry.getDataDeliveryStatistics().getRate();
     }
 
-    public long getTotalMessages()
+    public long getTotalMessagesDelivered()
     {
-        return registry.getMessageStatistics().getTotal();
+        return registry.getMessageDeliveryStatistics().getTotal();
     }
 
-    public long getTotalData()
+    public long getTotalDataDelivered()
     {
-        return registry.getDataStatistics().getTotal();
+        return registry.getDataDeliveryStatistics().getTotal();
+    }
+
+    public double getPeakMessageReceiptRate()
+    {
+        return registry.getMessageReceiptStatistics().getPeak();
+    }
+
+    public double getPeakDataReceiptRate()
+    {
+        return registry.getDataReceiptStatistics().getPeak();
+    }
+
+    public double getMessageReceiptRate()
+    {
+        return registry.getMessageReceiptStatistics().getRate();
+    }
+
+    public double getDataReceiptRate()
+    {
+        return registry.getDataReceiptStatistics().getRate();
+    }
+
+    public long getTotalMessagesReceived()
+    {
+        return registry.getMessageReceiptStatistics().getTotal();
+    }
+
+    public long getTotalDataReceived()
+    {
+        return registry.getDataReceiptStatistics().getTotal();
     }
 
     public boolean isStatisticsEnabled()

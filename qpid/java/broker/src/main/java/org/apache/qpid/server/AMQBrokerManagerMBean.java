@@ -39,7 +39,6 @@ package org.apache.qpid.server;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
@@ -62,9 +61,6 @@ import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.ManagementActor;
 import org.apache.qpid.server.management.AMQManagedObject;
 import org.apache.qpid.server.management.ManagedObject;
-import org.apache.qpid.server.protocol.AMQMinaProtocolSession;
-import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.server.protocol.AMQProtocolSessionMBean;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.queue.AMQQueueMBean;
@@ -356,44 +352,67 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
 
     public void resetStatistics() throws Exception
     {
-        _virtualHost.getMessageStatistics().reset();
-        _virtualHost.getDataStatistics().reset();
-        
-        Collection<AMQProtocolSession> connections = _virtualHost.getConnectionRegistry().getConnections();
-        for (AMQProtocolSession con : connections)
-        {
-            ((AMQProtocolSessionMBean) ((AMQMinaProtocolSession) con).getManagedObject()).resetStatistics();
-        }
+        _virtualHost.resetStatistics();
     }
 
-    public double getPeakMessageRate()
+    public double getPeakMessageDeliveryRate()
     {
-        return _virtualHost.getMessageStatistics().getPeak();
+        return _virtualHost.getMessageDeliveryStatistics().getPeak();
     }
 
-    public double getPeakDataRate()
+    public double getPeakDataDeliveryRate()
     {
-        return _virtualHost.getDataStatistics().getPeak();
+        return _virtualHost.getDataDeliveryStatistics().getPeak();
     }
 
-    public double getMessageRate()
+    public double getMessageDeliveryRate()
     {
-        return _virtualHost.getMessageStatistics().getRate();
+        return _virtualHost.getMessageDeliveryStatistics().getRate();
     }
 
-    public double getDataRate()
+    public double getDataDeliveryRate()
     {
-        return _virtualHost.getDataStatistics().getRate();
+        return _virtualHost.getDataDeliveryStatistics().getRate();
     }
 
-    public long getTotalMessages()
+    public long getTotalMessagesDelivered()
     {
-        return _virtualHost.getMessageStatistics().getTotal();
+        return _virtualHost.getMessageDeliveryStatistics().getTotal();
     }
 
-    public long getTotalData()
+    public long getTotalDataDelivered()
     {
-        return _virtualHost.getDataStatistics().getTotal();
+        return _virtualHost.getDataDeliveryStatistics().getTotal();
+    }
+
+    public double getPeakMessageReceiptRate()
+    {
+        return _virtualHost.getMessageReceiptStatistics().getPeak();
+    }
+
+    public double getPeakDataReceiptRate()
+    {
+        return _virtualHost.getDataReceiptStatistics().getPeak();
+    }
+
+    public double getMessageReceiptRate()
+    {
+        return _virtualHost.getMessageReceiptStatistics().getRate();
+    }
+
+    public double getDataReceiptRate()
+    {
+        return _virtualHost.getDataReceiptStatistics().getRate();
+    }
+
+    public long getTotalMessagesReceived()
+    {
+        return _virtualHost.getMessageReceiptStatistics().getTotal();
+    }
+
+    public long getTotalDataReceived()
+    {
+        return _virtualHost.getDataReceiptStatistics().getTotal();
     }
 
     public boolean isStatisticsEnabled()

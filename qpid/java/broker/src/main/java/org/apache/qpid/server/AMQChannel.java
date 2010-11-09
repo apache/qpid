@@ -208,7 +208,7 @@ public class AMQChannel
         {
             long bodySize = _currentMessage.getContentHeaderBody().bodySize;
             long timestamp = ((BasicContentHeaderProperties) _currentMessage.getContentHeaderBody().properties).getTimestamp();
-            _session.registerMessageDelivery(bodySize, timestamp);
+            _session.registerMessageReceived(bodySize, timestamp);
             try
             {
                 _currentMessage.deliverToQueues();
@@ -972,6 +972,7 @@ public class AMQChannel
                     throws AMQException
             {
                getProtocolSession().getProtocolOutputConverter().writeDeliver(entry.getMessage(), getChannelId(), deliveryTag, sub.getConsumerTag());
+               _session.registerMessageDelivered(entry.getMessage().getSize());
             }
         };
 

@@ -154,7 +154,7 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable, St
     
     private ApplicationRegistry _registry;
     private boolean _statisticsEnabled = false;
-    private StatisticsCounter _messageStats, _dataStats;
+    private StatisticsCounter _messagesDelivered, _dataDelivered, _messagesReceived, _dataReceived;
 
     public ManagedObject getManagedObject()
     {
@@ -954,30 +954,52 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable, St
        // No-op, interface munging between this and AMQProtocolSession
     }
 
-    public void registerMessageDelivery(long messageSize, long timestamp)
+    public void registerMessageDelivered(long messageSize)
     {
         if (isStatisticsEnabled())
         {
-	        _messageStats.registerEvent(1L, timestamp);
-	        _dataStats.registerEvent(messageSize, timestamp);
+	        _messagesDelivered.registerEvent(1L);
+	        _dataDelivered.registerEvent(messageSize);
 	    }
-        _virtualHost.registerMessageDelivery(messageSize, timestamp);
+        _virtualHost.registerMessageDelivered(messageSize);
+    }
+
+    public void registerMessageReceived(long messageSize, long timestamp)
+    {
+        if (isStatisticsEnabled())
+        {
+            _messagesReceived.registerEvent(1L, timestamp);
+            _dataReceived.registerEvent(messageSize, timestamp);
+        }
+        _virtualHost.registerMessageReceived(messageSize, timestamp);
     }
     
-    public StatisticsCounter getMessageStatistics()
+    public StatisticsCounter getMessageReceiptStatistics()
     {
-        return _messageStats;
+        return _messagesReceived;
     }
     
-    public StatisticsCounter getDataStatistics()
+    public StatisticsCounter getDataReceiptStatistics()
     {
-        return _dataStats;
+        return _dataReceived;
+    }
+    
+    public StatisticsCounter getMessageDeliveryStatistics()
+    {
+        return _messagesDelivered;
+    }
+    
+    public StatisticsCounter getDataDeliveryStatistics()
+    {
+        return _dataDelivered;
     }
     
     public void resetStatistics()
     {
-        _messageStats.reset();
-        _dataStats.reset();
+        _messagesDelivered.reset();
+        _dataDelivered.reset();
+        _messagesReceived.reset();
+        _dataReceived.reset();
     }
 
     public void initialiseStatistics()
@@ -985,8 +1007,10 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable, St
         setStatisticsEnabled(!StatisticsCounter.DISABLE_STATISTICS &&
                 _registry.getConfiguration().isStatisticsGenerationConnectionsEnabled());
         
-        _messageStats = new StatisticsCounter("messages-" + getSessionID());
-        _dataStats = new StatisticsCounter("bytes-" + getSessionID());
+        _messagesDelivered = new StatisticsCounter("messages-delivered-" + getSessionID());
+        _dataDelivered = new StatisticsCounter("data-delivered-" + getSessionID());
+        _messagesReceived = new StatisticsCounter("messages-received-" + getSessionID());
+        _dataReceived = new StatisticsCounter("data-received-" + getSessionID());
     }
 
     public boolean isStatisticsEnabled()

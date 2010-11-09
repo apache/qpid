@@ -67,8 +67,6 @@ import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.ManagementActor;
-import org.apache.qpid.server.logging.LogActor;
-import org.apache.qpid.server.logging.RootMessageLogger;
 import org.apache.qpid.server.management.AMQManagedObject;
 import org.apache.qpid.server.management.ManagedObject;
 
@@ -343,38 +341,67 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
 
     public void resetStatistics() throws Exception
     {
-        _session.getMessageStatistics().reset();
-        _session.getDataStatistics().reset();
+        _session.resetStatistics();
     }
 
-    public double getPeakMessageRate()
+    public double getPeakMessageDeliveryRate()
     {
-        return _session.getMessageStatistics().getPeak();
+        return _session.getMessageDeliveryStatistics().getPeak();
     }
 
-    public double getPeakDataRate()
+    public double getPeakDataDeliveryRate()
     {
-        return _session.getDataStatistics().getPeak();
+        return _session.getDataDeliveryStatistics().getPeak();
     }
 
-    public double getMessageRate()
+    public double getMessageDeliveryRate()
     {
-        return _session.getMessageStatistics().getRate();
+        return _session.getMessageDeliveryStatistics().getRate();
     }
 
-    public double getDataRate()
+    public double getDataDeliveryRate()
     {
-        return _session.getDataStatistics().getRate();
+        return _session.getDataDeliveryStatistics().getRate();
     }
 
-    public long getTotalMessages()
+    public long getTotalMessagesDelivered()
     {
-        return _session.getMessageStatistics().getTotal();
+        return _session.getMessageDeliveryStatistics().getTotal();
     }
 
-    public long getTotalData()
+    public long getTotalDataDelivered()
     {
-        return _session.getDataStatistics().getTotal();
+        return _session.getDataDeliveryStatistics().getTotal();
+    }
+
+    public double getPeakMessageReceiptRate()
+    {
+        return _session.getMessageReceiptStatistics().getPeak();
+    }
+
+    public double getPeakDataReceiptRate()
+    {
+        return _session.getDataReceiptStatistics().getPeak();
+    }
+
+    public double getMessageReceiptRate()
+    {
+        return _session.getMessageReceiptStatistics().getRate();
+    }
+
+    public double getDataReceiptRate()
+    {
+        return _session.getDataReceiptStatistics().getRate();
+    }
+
+    public long getTotalMessagesReceived()
+    {
+        return _session.getMessageReceiptStatistics().getTotal();
+    }
+
+    public long getTotalDataReceived()
+    {
+        return _session.getDataReceiptStatistics().getTotal();
     }
 
     public boolean isStatisticsEnabled()

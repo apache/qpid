@@ -57,52 +57,52 @@ public class MessageStatisticsTest extends MessageStatisticsTestCase
         long data = 0;
         for (ManagedConnection mc : _jmxUtils.getManagedConnections("*"))
         {
-            total += mc.getTotalMessages();
-            data += mc.getTotalData();
+            total += mc.getTotalMessagesReceived();
+            data += mc.getTotalDataReceived();
         }
         assertEquals("Incorrect connection total", 45, total);
         assertEquals("Incorrect connection data", 4500, data);
         if (!_broker.equals(VM))
         {
-            assertEquals("Incorrect server total", 45, _jmxUtils.getServerInformation().getTotalMessages());
-            assertEquals("Incorrect server data", 4500, _jmxUtils.getServerInformation().getTotalData());
+            assertEquals("Incorrect server total", 45, _jmxUtils.getServerInformation().getTotalMessagesReceived());
+            assertEquals("Incorrect server data", 4500, _jmxUtils.getServerInformation().getTotalDataReceived());
         }
         
         long testTotal = 0;
         long testData = 0;
         for (ManagedConnection mc : _jmxUtils.getManagedConnections("test"))
         {
-            testTotal += mc.getTotalMessages();
-            testData += mc.getTotalData();
+            testTotal += mc.getTotalMessagesReceived();
+            testData += mc.getTotalDataReceived();
         }
         assertEquals("Incorrect test connection total", 10, testTotal);
-        assertEquals("Incorrect test vhost total", 10, test.getTotalMessages());
+        assertEquals("Incorrect test vhost total", 10, test.getTotalMessagesReceived());
         assertEquals("Incorrect test connection data", 1000, testData);
-        assertEquals("Incorrect test vhost data", 1000, test.getTotalData());
+        assertEquals("Incorrect test vhost data", 1000, test.getTotalDataReceived());
         
         long devTotal = 0;
         long devData = 0;
         for (ManagedConnection mc : _jmxUtils.getManagedConnections("development"))
         {
-            devTotal += mc.getTotalMessages();
-            devData += mc.getTotalData();
+            devTotal += mc.getTotalMessagesReceived();
+            devData += mc.getTotalDataReceived();
         }
         assertEquals("Incorrect test connection total", 20, devTotal);
-        assertEquals("Incorrect development total", 20, dev.getTotalMessages());
+        assertEquals("Incorrect development total", 20, dev.getTotalMessagesReceived());
         assertEquals("Incorrect test connection data", 2000, devData);
-        assertEquals("Incorrect development data", 2000, dev.getTotalData());
+        assertEquals("Incorrect development data", 2000, dev.getTotalDataReceived());
         
         long localTotal = 0;
         long localData = 0;
         for (ManagedConnection mc : _jmxUtils.getManagedConnections("localhost"))
         {
-            localTotal += mc.getTotalMessages();
-            localData += mc.getTotalData();
+            localTotal += mc.getTotalMessagesReceived();
+            localData += mc.getTotalDataReceived();
         }
         assertEquals("Incorrect test connection total", 15, localTotal);
-        assertEquals("Incorrect localhost total", 15, local.getTotalMessages());
+        assertEquals("Incorrect localhost total", 15, local.getTotalMessagesReceived());
         assertEquals("Incorrect test connection data", 1500, localData);
-        assertEquals("Incorrect localhost data", 1500, local.getTotalData());
+        assertEquals("Incorrect localhost data", 1500, local.getTotalDataReceived());
     }
 
     /**
@@ -125,28 +125,28 @@ public class MessageStatisticsTest extends MessageStatisticsTestCase
         long data = 0;
         for (ManagedConnection mc : _jmxUtils.getManagedConnections("*"))
         {
-            total += mc.getTotalMessages();
-            data += mc.getTotalData();
+            total += mc.getTotalMessagesReceived();
+            data += mc.getTotalDataReceived();
         }
         assertEquals("Incorrect active connection total", 20, total);
         assertEquals("Incorrect active connection data", 2000, data);
         if (!_broker.equals(VM))
         {
-            assertEquals("Incorrect server total", 30, _jmxUtils.getServerInformation().getTotalMessages());
-            assertEquals("Incorrect server data", 3000, _jmxUtils.getServerInformation().getTotalData());
+            assertEquals("Incorrect server total", 30, _jmxUtils.getServerInformation().getTotalMessagesReceived());
+            assertEquals("Incorrect server data", 3000, _jmxUtils.getServerInformation().getTotalDataReceived());
         }
         
         long testTotal = 0;
         long testData = 0;
         for (ManagedConnection mc : _jmxUtils.getManagedConnections("test"))
         {
-            testTotal += mc.getTotalMessages();
-            testData += mc.getTotalData();
+            testTotal += mc.getTotalMessagesReceived();
+            testData += mc.getTotalDataReceived();
         }
         assertEquals("Incorrect test active connection total", 20, testTotal);
-        assertEquals("Incorrect test vhost total", 30, test.getTotalMessages());
+        assertEquals("Incorrect test vhost total", 30, test.getTotalMessagesReceived());
         assertEquals("Incorrect test active connection data", 20 * 100, testData);
-        assertEquals("Incorrect test vhost data", 30 * 100, test.getTotalData());
+        assertEquals("Incorrect test vhost data", 30 * 100, test.getTotalDataReceived());
     }
     
     /**
@@ -161,15 +161,15 @@ public class MessageStatisticsTest extends MessageStatisticsTestCase
         ManagedBroker test = _jmxUtils.getManagedBroker("test");
         ManagedBroker dev = _jmxUtils.getManagedBroker("development");
         
-        assertApprox("Incorrect test vhost peak messages", 0.2d, 1.0d, test.getPeakMessageRate());
-        assertApprox("Incorrect test vhost peak data", 0.2d, 10000.0d, test.getPeakDataRate());
-        assertApprox("Incorrect dev vhost peak messages", 0.2d, 10.0d, dev.getPeakMessageRate());
-        assertApprox("Incorrect dev vhost peak data", 0.2d, 100.0d, dev.getPeakDataRate());
+        assertApprox("Incorrect test vhost peak messages", 0.2d, 1.0d, test.getPeakMessageReceiptRate());
+        assertApprox("Incorrect test vhost peak data", 0.2d, 10000.0d, test.getPeakDataReceiptRate());
+        assertApprox("Incorrect dev vhost peak messages", 0.2d, 10.0d, dev.getPeakMessageReceiptRate());
+        assertApprox("Incorrect dev vhost peak data", 0.2d, 100.0d, dev.getPeakDataReceiptRate());
 
         if (!_broker.equals(VM))
         {
-            assertApprox("Incorrect server peak messages", 0.2d, 10.0d, _jmxUtils.getServerInformation().getPeakMessageRate());
-            assertApprox("Incorrect server peak data", 0.2d, 10000.0d, _jmxUtils.getServerInformation().getPeakDataRate());
+            assertApprox("Incorrect server peak messages", 0.2d, 10.0d, _jmxUtils.getServerInformation().getPeakMessageReceiptRate());
+            assertApprox("Incorrect server peak data", 0.2d, 10000.0d, _jmxUtils.getServerInformation().getPeakDataReceiptRate());
         }
     }
     
@@ -184,28 +184,28 @@ public class MessageStatisticsTest extends MessageStatisticsTestCase
         ManagedBroker test = _jmxUtils.getManagedBroker("test");
         ManagedBroker dev = _jmxUtils.getManagedBroker("development");
         
-        assertEquals("Incorrect test vhost total messages", 10, test.getTotalMessages());
-        assertEquals("Incorrect test vhost total data", 100, test.getTotalData());
-        assertEquals("Incorrect dev vhost total messages", 10, dev.getTotalMessages());
-        assertEquals("Incorrect dev vhost total data", 100, dev.getTotalData());
+        assertEquals("Incorrect test vhost total messages", 10, test.getTotalMessagesReceived());
+        assertEquals("Incorrect test vhost total data", 100, test.getTotalDataReceived());
+        assertEquals("Incorrect dev vhost total messages", 10, dev.getTotalMessagesReceived());
+        assertEquals("Incorrect dev vhost total data", 100, dev.getTotalDataReceived());
 
         if (!_broker.equals(VM))
         {
-            assertEquals("Incorrect server total messages", 20, _jmxUtils.getServerInformation().getTotalMessages());
-            assertEquals("Incorrect server total data", 200, _jmxUtils.getServerInformation().getTotalData());
+            assertEquals("Incorrect server total messages", 20, _jmxUtils.getServerInformation().getTotalMessagesReceived());
+            assertEquals("Incorrect server total data", 200, _jmxUtils.getServerInformation().getTotalDataReceived());
         }
         
         test.resetStatistics();
         
-        assertEquals("Incorrect test vhost total messages", 0, test.getTotalMessages());
-        assertEquals("Incorrect test vhost total data", 0, test.getTotalData());
-        assertEquals("Incorrect dev vhost total messages", 10, dev.getTotalMessages());
-        assertEquals("Incorrect dev vhost total data", 100, dev.getTotalData());
+        assertEquals("Incorrect test vhost total messages", 0, test.getTotalMessagesReceived());
+        assertEquals("Incorrect test vhost total data", 0, test.getTotalDataReceived());
+        assertEquals("Incorrect dev vhost total messages", 10, dev.getTotalMessagesReceived());
+        assertEquals("Incorrect dev vhost total data", 100, dev.getTotalDataReceived());
 
         if (!_broker.equals(VM))
         {
-            assertEquals("Incorrect server total messages", 20, _jmxUtils.getServerInformation().getTotalMessages());
-            assertEquals("Incorrect server total data", 200, _jmxUtils.getServerInformation().getTotalData());
+            assertEquals("Incorrect server total messages", 20, _jmxUtils.getServerInformation().getTotalMessagesReceived());
+            assertEquals("Incorrect server total data", 200, _jmxUtils.getServerInformation().getTotalDataReceived());
         }
     }
 }

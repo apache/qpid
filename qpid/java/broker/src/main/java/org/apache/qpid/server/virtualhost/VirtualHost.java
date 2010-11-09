@@ -100,7 +100,7 @@ public class VirtualHost implements Accessable, StatisticsGatherer
     
     private ApplicationRegistry _registry;
     private boolean _statisticsEnabled = false;
-    private StatisticsCounter _messageStats, _dataStats;
+    private StatisticsCounter _messagesDelivered, _dataDelivered, _messagesReceived, _dataReceived;
 
     public void setAccessableName(String name)
     {
@@ -490,30 +490,52 @@ public class VirtualHost implements Accessable, StatisticsGatherer
         return _virtualHostMBean;
     }
     
-    public void registerMessageDelivery(long messageSize, long timestamp)
+    public void registerMessageDelivered(long messageSize)
     {
         if (isStatisticsEnabled())
         {
-            _messageStats.registerEvent(1L, timestamp);
-            _dataStats.registerEvent(messageSize, timestamp);
+            _messagesDelivered.registerEvent(1L);
+            _dataDelivered.registerEvent(messageSize);
         }
-        _registry.registerMessageDelivery(messageSize, timestamp);
+        _registry.registerMessageDelivered(messageSize);
     }
     
-    public StatisticsCounter getMessageStatistics()
+    public void registerMessageReceived(long messageSize, long timestamp)
     {
-        return _messageStats;
+        if (isStatisticsEnabled())
+        {
+            _messagesReceived.registerEvent(1L, timestamp);
+            _dataReceived.registerEvent(messageSize, timestamp);
+        }
+        _registry.registerMessageReceived(messageSize, timestamp);
     }
     
-    public StatisticsCounter getDataStatistics()
+    public StatisticsCounter getMessageReceiptStatistics()
     {
-        return _dataStats;
+        return _messagesReceived;
+    }
+    
+    public StatisticsCounter getDataReceiptStatistics()
+    {
+        return _dataReceived;
+    }
+    
+    public StatisticsCounter getMessageDeliveryStatistics()
+    {
+        return _messagesDelivered;
+    }
+    
+    public StatisticsCounter getDataDeliveryStatistics()
+    {
+        return _dataDelivered;
     }
     
     public void resetStatistics()
     {
-        _messageStats.reset();
-        _dataStats.reset();
+        _messagesDelivered.reset();
+        _dataDelivered.reset();
+        _messagesReceived.reset();
+        _dataReceived.reset();
         
         for (AMQProtocolSession session : _connectionRegistry.getConnections())
         {
@@ -526,8 +548,10 @@ public class VirtualHost implements Accessable, StatisticsGatherer
         setStatisticsEnabled(!StatisticsCounter.DISABLE_STATISTICS &&
                 _registry.getConfiguration().isStatisticsGenerationVirtualhostsEnabled());
         
-        _messageStats = new StatisticsCounter("messages-" + getName());
-        _dataStats = new StatisticsCounter("bytes-" + getName());
+        _messagesDelivered = new StatisticsCounter("messages-delivered-" + getName());
+        _dataDelivered = new StatisticsCounter("bytes-delivered-" + getName());
+        _messagesReceived = new StatisticsCounter("messages-received-" + getName());
+        _dataReceived = new StatisticsCounter("bytes-received-" + getName());
     }
 
     public boolean isStatisticsEnabled()

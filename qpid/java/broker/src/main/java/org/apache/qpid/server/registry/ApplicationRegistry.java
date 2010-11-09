@@ -86,7 +86,7 @@ public abstract class ApplicationRegistry implements IApplicationRegistry, Stati
 
     protected Timer _reportingTimer;
     protected boolean _statisticsEnabled = false;
-    protected StatisticsCounter _messageStats, _dataStats;
+    protected StatisticsCounter _messagesDelivered, _dataDelivered, _messagesReceived, _dataReceived;
     
     static
     {
@@ -363,8 +363,10 @@ public abstract class ApplicationRegistry implements IApplicationRegistry, Stati
                     
                     if (broker)
                     {
-	                    CurrentActor.get().message(BrokerMessages.BRK_STATS_DATA(_dataStats.getPeak() / 1024.0, _dataStats.getTotal()));
-	                    CurrentActor.get().message(BrokerMessages.BRK_STATS_MSGS(_messageStats.getPeak(), _messageStats.getTotal()));
+	                    CurrentActor.get().message(BrokerMessages.BRK_STATS_DATA("delivered", _dataDelivered.getPeak() / 1024.0, _dataDelivered.getTotal()));
+	                    CurrentActor.get().message(BrokerMessages.BRK_STATS_MSGS("delivered", _messagesDelivered.getPeak(), _messagesDelivered.getTotal()));
+	                    CurrentActor.get().message(BrokerMessages.BRK_STATS_DATA("received", _dataReceived.getPeak() / 1024.0, _dataReceived.getTotal()));
+	                    CurrentActor.get().message(BrokerMessages.BRK_STATS_MSGS("received", _messagesReceived.getPeak(), _messagesReceived.getTotal()));
                     }
                     
                     if (virtualhost)
@@ -372,11 +374,15 @@ public abstract class ApplicationRegistry implements IApplicationRegistry, Stati
 	                    for (VirtualHost vhost : getVirtualHostRegistry().getVirtualHosts())
 	                    {
 	                        String name = vhost.getName();
-	                        StatisticsCounter data = vhost.getDataStatistics();
-	                        StatisticsCounter messages = vhost.getMessageStatistics();
+	                        StatisticsCounter dataDelivered = vhost.getDataDeliveryStatistics();
+	                        StatisticsCounter messagesDelivered = vhost.getMessageDeliveryStatistics();
+	                        StatisticsCounter dataReceived = vhost.getDataReceiptStatistics();
+	                        StatisticsCounter messagesReceived = vhost.getMessageReceiptStatistics();
 	                        
-	                        CurrentActor.get().message(VirtualHostMessages.VHT_STATS_DATA(name, data.getPeak() / 1024.0, data.getTotal()));
-	                        CurrentActor.get().message(VirtualHostMessages.VHT_STATS_MSGS(name, messages.getPeak(), messages.getTotal()));
+	                        CurrentActor.get().message(VirtualHostMessages.VHT_STATS_DATA(name, "delivered", dataDelivered.getPeak() / 1024.0, dataDelivered.getTotal()));
+	                        CurrentActor.get().message(VirtualHostMessages.VHT_STATS_MSGS(name, "delivered", messagesDelivered.getPeak(), messagesDelivered.getTotal()));
+	                        CurrentActor.get().message(VirtualHostMessages.VHT_STATS_DATA(name, "received", dataReceived.getPeak() / 1024.0, dataReceived.getTotal()));
+	                        CurrentActor.get().message(VirtualHostMessages.VHT_STATS_MSGS(name, "received", messagesReceived.getPeak(), messagesReceived.getTotal()));
 	                    }
                     }
                     
@@ -395,29 +401,50 @@ public abstract class ApplicationRegistry implements IApplicationRegistry, Stati
         }
     }
     
-    public void registerMessageDelivery(long messageSize, long timestamp)
+    public void registerMessageDelivered(long messageSize)
     {
         if (isStatisticsEnabled())
         {
-	        _messageStats.registerEvent(1L, timestamp);
-	        _dataStats.registerEvent(messageSize, timestamp);
+            _messagesDelivered.registerEvent(1L);
+            _dataDelivered.registerEvent(messageSize);
         }
     }
     
-    public StatisticsCounter getMessageStatistics()
+    public void registerMessageReceived(long messageSize, long timestamp)
     {
-        return _messageStats;
+        if (isStatisticsEnabled())
+        {
+            _messagesReceived.registerEvent(1L, timestamp);
+            _dataReceived.registerEvent(messageSize, timestamp);
+        }
     }
     
-    public StatisticsCounter getDataStatistics()
+    public StatisticsCounter getMessageReceiptStatistics()
     {
-        return _dataStats;
+        return _messagesReceived;
+    }
+    
+    public StatisticsCounter getDataReceiptStatistics()
+    {
+        return _dataReceived;
+    }
+    
+    public StatisticsCounter getMessageDeliveryStatistics()
+    {
+        return _messagesDelivered;
+    }
+    
+    public StatisticsCounter getDataDeliveryStatistics()
+    {
+        return _dataDelivered;
     }
     
     public void resetStatistics()
     {
-        _messageStats.reset();
-        _dataStats.reset();
+        _messagesDelivered.reset();
+        _dataDelivered.reset();
+        _messagesReceived.reset();
+        _dataReceived.reset();
         
         for (VirtualHost vhost : _virtualHostRegistry.getVirtualHosts())
         {
@@ -430,8 +457,10 @@ public abstract class ApplicationRegistry implements IApplicationRegistry, Stati
         setStatisticsEnabled(!StatisticsCounter.DISABLE_STATISTICS &&
                 getConfiguration().isStatisticsGenerationBrokerEnabled());
         
-        _messageStats = new StatisticsCounter("messages");
-        _dataStats = new StatisticsCounter("bytes");
+        _messagesDelivered = new StatisticsCounter("messages-delivered");
+        _dataDelivered = new StatisticsCounter("bytes-delivered");
+        _messagesReceived = new StatisticsCounter("messages-received");
+        _dataReceived = new StatisticsCounter("bytes-received");
     }
 
     public boolean isStatisticsEnabled()

@@ -151,52 +151,100 @@ public interface ManagedConnection
     void resetStatistics() throws Exception;
 
     /**
-     * Peak rate of messages per second on this connection.
+     * Peak rate of messages delivered per second for the virtual host.
      * 
      * @since Qpid JMX API 1.9
      */
-    @MBeanAttribute(name="peakMessageRate", description=TYPE + " Peak Message Rate")
-    double getPeakMessageRate();
+    @MBeanAttribute(name="peakMessageDeliveryRate", description=TYPE + " Peak Message Delivery Rate")
+    double getPeakMessageDeliveryRate();
 
     /**
-     * Peak rate of bytes per second on this connection.
+     * Peak rate of bytes delivered per second for the virtual host.
      * 
      * @since Qpid JMX API 1.9
      */
-    @MBeanAttribute(name="peakDataRate", description=TYPE + " Peak Data Rate")
-    double getPeakDataRate();
+    @MBeanAttribute(name="peakDataDeliveryRate", description=TYPE + " Peak Data Delivery Rate")
+    double getPeakDataDeliveryRate();
 
     /**
-     * Rate of messages per second on this connection.
+     * Rate of messages delivered per second for the virtual host.
      * 
      * @since Qpid JMX API 1.9
      */
-    @MBeanAttribute(name="messageRate", description=TYPE + " Message Rate")
-    double getMessageRate();
+    @MBeanAttribute(name="messageDeliveryRate", description=TYPE + " Message Delivery Rate")
+    double getMessageDeliveryRate();
 
     /**
-     * Rate of bytes per second on this connection.
+     * Rate of bytes delivered per second for the virtual host.
      * 
      * @since Qpid JMX API 1.9
      */
-    @MBeanAttribute(name="dataRate", description=TYPE + " Data Rate")
-    double getDataRate();
+    @MBeanAttribute(name="dataDeliveryRate", description=TYPE + " Data Delivery Rate")
+    double getDataDeliveryRate();
 
     /**
-     * Total count of messages on this connection.
+     * Total count of messages delivered for the virtual host.
      * 
      * @since Qpid JMX API 1.9
      */
-    @MBeanAttribute(name="totalMessages", description=TYPE + " Total Message Count")
-    long getTotalMessages();
+    @MBeanAttribute(name="totalMessagesDelivery", description=TYPE + " Total Messages Delivered")
+    long getTotalMessagesDelivered();
 
     /**
-     * Total count of bytes on this connection.
+     * Total count of bytes for the virtual host.
      * 
      * @since Qpid JMX API 1.9
      */
-    @MBeanAttribute(name="totalData", description=TYPE + " Total Bytes")
-    long getTotalData();
+    @MBeanAttribute(name="totalDataDelivered", description=TYPE + " Total Data Delivered")
+    long getTotalDataDelivered();
+
+    /**
+     * Peak rate of messages received per second for this connection.
+     * 
+     * @since Qpid JMX API 1.9
+     */
+    @MBeanAttribute(name="peakMessageReceiptRate", description=TYPE + " Peak Message Receipt Rate")
+    double getPeakMessageReceiptRate();
+
+    /**
+     * Peak rate of bytes received per second for this connection.
+     * 
+     * @since Qpid JMX API 1.9
+     */
+    @MBeanAttribute(name="peakDataReceiptRate", description=TYPE + " Peak Data Receipt Rate")
+    double getPeakDataReceiptRate();
+
+    /**
+     * Rate of messages received per second for this connection.
+     * 
+     * @since Qpid JMX API 1.9
+     */
+    @MBeanAttribute(name="messageReceiptRate", description=TYPE + " Message Receipt Rate")
+    double getMessageReceiptRate();
+
+    /**
+     * Rate of bytes received per second for this connection.
+     * 
+     * @since Qpid JMX API 1.9
+     */
+    @MBeanAttribute(name="dataReceiptRate", description=TYPE + " Data Receipt Rate")
+    double getDataReceiptRate();
+
+    /**
+     * Total count of messages received for this connection.
+     * 
+     * @since Qpid JMX API 1.9
+     */
+    @MBeanAttribute(name="totalMessagesReceived", description=TYPE + " Total Messages Received")
+    long getTotalMessagesReceived();
+
+    /**
+     * Total count of bytes received for this connection.
+     * 
+     * @since Qpid JMX API 1.9
+     */
+    @MBeanAttribute(name="totalDataReceived", description=TYPE + " Total Data Received")
+    long getTotalDataReceived();
 
     /**
      * Is statistics collection enabled for this connection.

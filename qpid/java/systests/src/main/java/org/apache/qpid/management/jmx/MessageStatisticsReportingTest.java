@@ -60,10 +60,10 @@ public class MessageStatisticsReportingTest extends MessageStatisticsTestCase
         List<String> vhostStatsData = _monitor.findMatches("VHT-1003");
         List<String> vhostStatsMessages = _monitor.findMatches("VHT-1004");
         
-        assertEquals("Incorrect number of broker data stats log messages", 1, brokerStatsData.size());
-        assertEquals("Incorrect number of broker message stats log messages", 1, brokerStatsMessages.size());
-        assertEquals("Incorrect number of virtualhost data stats log messages", 3, vhostStatsData.size());
-        assertEquals("Incorrect number of virtualhost message stats log messages", 3, vhostStatsMessages.size());
+        assertEquals("Incorrect number of broker data stats log messages", 2, brokerStatsData.size());
+        assertEquals("Incorrect number of broker message stats log messages", 2, brokerStatsMessages.size());
+        assertEquals("Incorrect number of virtualhost data stats log messages", 6, vhostStatsData.size());
+        assertEquals("Incorrect number of virtualhost message stats log messages", 6, vhostStatsMessages.size());
     }
 
     /**

@@ -47,7 +47,7 @@ public interface StatisticsGatherer
     void initialiseStatistics();
     
     /**
-     * This method is responsible for registering the delivery of a message
+     * This method is responsible for registering the receipt of a message
      * with the counters, and also for passing this notification to any parent
      * {@link StatisticsGatherer}s. If statistics generation is not enabled,
      * then this method should simple delegate to the parent gatherer.
@@ -55,23 +55,49 @@ public interface StatisticsGatherer
      * @param messageSize the size in bytes of the delivered message
      * @param timestamp the time the message was delivered
      */
-    void registerMessageDelivery(long messageSize, long timestamp);
+    void registerMessageReceived(long messageSize, long timestamp);
+    
+    /**
+     * This method is responsible for registering the delivery of a message
+     * with the counters. Message delivery is recorded by the counter using
+     * the current system time, as opposed to the message timestamp.
+     * 
+     * @param messageSize the size in bytes of the delivered message
+     * @see #registerMessageReceived(long, long)
+     */
+    void registerMessageDelivered(long messageSize);
     
     /**
      * Gives access to the {@link StatisticsCounter} that is used to count
-     * message statistics.
+     * delivered message statistics.
      * 
-     * @return the {@link StatisticsCounter} that counts messages
+     * @return the {@link StatisticsCounter} that counts delivered messages
      */
-    StatisticsCounter getMessageStatistics();
+    StatisticsCounter getMessageDeliveryStatistics();
     
     /**
      * Gives access to the {@link StatisticsCounter} that is used to count
-     * message size statistics.
+     * received message statistics.
      * 
-     * @return the {@link StatisticsCounter} that counts bytes
+     * @return the {@link StatisticsCounter} that counts received messages
      */
-    StatisticsCounter getDataStatistics();
+    StatisticsCounter getMessageReceiptStatistics();
+    
+    /**
+     * Gives access to the {@link StatisticsCounter} that is used to count
+     * delivered message size statistics.
+     * 
+     * @return the {@link StatisticsCounter} that counts delivered bytes
+     */
+    StatisticsCounter getDataDeliveryStatistics();
+    
+    /**
+     * Gives access to the {@link StatisticsCounter} that is used to count
+     * received message size statistics.
+     * 
+     * @return the {@link StatisticsCounter} that counts received bytes
+     */
+    StatisticsCounter getDataReceiptStatistics();
     
     /**
      * Reset the counters for this, and any child {@link StatisticsGatherer}s.
