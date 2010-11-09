@@ -53,11 +53,12 @@ public class MessageConnectionStatisticsTest extends MessageStatisticsTestCase
         {
 	        assertEquals("Incorrect connection total", 0,  mc.getTotalMessages());
 	        assertEquals("Incorrect connection data", 0, mc.getTotalData());
+	        assertFalse("Connection statistics should not be enabled", mc.isStatisticsEnabled());
             
             addresses.add(mc.getRemoteAddress());
         }
-        assertEquals("Incorrect active connection data", 0, vhost.getTotalData());
-        assertEquals("Incorrect active connection data", 0, vhost.getTotalMessages());
+        assertEquals("Incorrect vhost total", 0, vhost.getTotalMessages());
+        assertEquals("Incorrect vhost data", 0, vhost.getTotalData());
         
         Connection test = new AMQConnection(_brokerUrl, USER, USER, "clientid", "test");
         test.start();
@@ -81,14 +82,17 @@ public class MessageConnectionStatisticsTest extends MessageStatisticsTestCase
             {
 		        assertEquals("Incorrect connection total", 0,  mc.getTotalMessages());
 		        assertEquals("Incorrect connection data", 0, mc.getTotalData());
+		        assertFalse("Connection statistics should not be enabled", mc.isStatisticsEnabled());
             }
             else
             {
 		        assertEquals("Incorrect connection total", 5,  mc.getTotalMessages());
 		        assertEquals("Incorrect connection data", 1000, mc.getTotalData());
+		        assertTrue("Connection statistics should be enabled", mc.isStatisticsEnabled());
             }
         }
-        assertEquals("Incorrect active connection data", 0, vhost.getTotalData());
-        assertEquals("Incorrect active connection data", 0, vhost.getTotalMessages());
+        assertEquals("Incorrect vhost total", 0, vhost.getTotalMessages());
+        assertEquals("Incorrect vhost data", 0, vhost.getTotalData());
+        assertFalse("Vhost statistics should not be enabled", vhost.isStatisticsEnabled());
     }
 }

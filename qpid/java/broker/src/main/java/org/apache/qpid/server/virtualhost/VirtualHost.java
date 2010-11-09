@@ -523,7 +523,9 @@ public class VirtualHost implements Accessable, StatisticsGatherer
 
     public void initialiseStatistics()
     {
-        setStatisticsEnabled(_registry.getConfiguration().isStatisticsGenerationVirtualhostsEnabled());
+        setStatisticsEnabled(!StatisticsCounter.DISABLE_STATISTICS &&
+                _registry.getConfiguration().isStatisticsGenerationVirtualhostsEnabled());
+        
         _messageStats = new StatisticsCounter("messages-" + getName());
         _dataStats = new StatisticsCounter("bytes-" + getName());
     }

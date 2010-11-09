@@ -47,16 +47,19 @@ public class MessageStatisticsConfigurationTest extends MessageStatisticsTestCas
         {
 	        assertEquals("Incorrect connection total", 0,  mc.getTotalMessages());
 	        assertEquals("Incorrect connection data", 0, mc.getTotalData());
+	        assertFalse("Connection statistics should not be enabled", mc.isStatisticsEnabled());
         }
         
         ManagedBroker vhost = _jmxUtils.getManagedBroker("test");
         assertEquals("Incorrect vhost data", 0, vhost.getTotalMessages());
         assertEquals("Incorrect vhost data", 0, vhost.getTotalData());
+        assertFalse("Vhost statistics should not be enabled", vhost.isStatisticsEnabled());
 
         if (!_broker.equals(VM))
         {
             assertEquals("Incorrect server total messages", 5, _jmxUtils.getServerInformation().getTotalMessages());
             assertEquals("Incorrect server total data", 1000, _jmxUtils.getServerInformation().getTotalData());
+            assertTrue("Server statistics should be enabled", _jmxUtils.getServerInformation().isStatisticsEnabled());
         }
     }
 
@@ -72,16 +75,19 @@ public class MessageStatisticsConfigurationTest extends MessageStatisticsTestCas
         {
             assertEquals("Incorrect connection total", 0,  mc.getTotalMessages());
             assertEquals("Incorrect connection data", 0, mc.getTotalData());
+	        assertFalse("Connection statistics should not be enabled", mc.isStatisticsEnabled());
         }
         
         ManagedBroker vhost = _jmxUtils.getManagedBroker("test");
         assertEquals("Incorrect vhost data", 5, vhost.getTotalMessages());
         assertEquals("Incorrect vhost data", 1000, vhost.getTotalData());
+        assertTrue("Vhost statistics should be enabled", vhost.isStatisticsEnabled());
 
         if (!_broker.equals(VM))
         {
             assertEquals("Incorrect server total messages", 0, _jmxUtils.getServerInformation().getTotalMessages());
             assertEquals("Incorrect server total data", 0, _jmxUtils.getServerInformation().getTotalData());
+            assertFalse("Server statistics should not be enabled", _jmxUtils.getServerInformation().isStatisticsEnabled());
         }
     }
 
@@ -97,16 +103,19 @@ public class MessageStatisticsConfigurationTest extends MessageStatisticsTestCas
         {
             assertEquals("Incorrect connection total", 5,  mc.getTotalMessages());
             assertEquals("Incorrect connection data", 1000, mc.getTotalData());
+	        assertTrue("Connection statistics should be enabled", mc.isStatisticsEnabled());
         }
         
         ManagedBroker vhost = _jmxUtils.getManagedBroker("test");
         assertEquals("Incorrect vhost data", 0, vhost.getTotalMessages());
         assertEquals("Incorrect vhost data", 0, vhost.getTotalData());
+        assertFalse("Vhost statistics should not be enabled", vhost.isStatisticsEnabled());
 
         if (!_broker.equals(VM))
         {
             assertEquals("Incorrect server total messages", 0, _jmxUtils.getServerInformation().getTotalMessages());
             assertEquals("Incorrect server total data", 0, _jmxUtils.getServerInformation().getTotalData());
+            assertFalse("Server statistics should not be enabled", _jmxUtils.getServerInformation().isStatisticsEnabled());
         }
     }
 
@@ -122,16 +131,19 @@ public class MessageStatisticsConfigurationTest extends MessageStatisticsTestCas
         {
             assertEquals("Incorrect connection total", 0,  mc.getTotalMessages());
             assertEquals("Incorrect connection data", 0, mc.getTotalData());
+	        assertFalse("Connection statistics should not be enabled", mc.isStatisticsEnabled());
         }
         
         ManagedBroker vhost = _jmxUtils.getManagedBroker("test");
         assertEquals("Incorrect vhost data", 5, vhost.getTotalMessages());
         assertEquals("Incorrect vhost data", 1000, vhost.getTotalData());
+        assertTrue("Vhost statistics should be enabled", vhost.isStatisticsEnabled());
 
         if (!_broker.equals(VM))
         {
             assertEquals("Incorrect server total messages", 5, _jmxUtils.getServerInformation().getTotalMessages());
             assertEquals("Incorrect server total data", 1000, _jmxUtils.getServerInformation().getTotalData());
+            assertTrue("Server statistics should be enabled", _jmxUtils.getServerInformation().isStatisticsEnabled());
         }
     }
 
@@ -147,16 +159,19 @@ public class MessageStatisticsConfigurationTest extends MessageStatisticsTestCas
         {
             assertEquals("Incorrect connection total", 5,  mc.getTotalMessages());
             assertEquals("Incorrect connection data", 1000, mc.getTotalData());
+	        assertTrue("Connection statistics should be enabled", mc.isStatisticsEnabled());
         }
         
         ManagedBroker vhost = _jmxUtils.getManagedBroker("test");
         assertEquals("Incorrect vhost data", 5, vhost.getTotalMessages());
         assertEquals("Incorrect vhost data", 1000, vhost.getTotalData());
+        assertTrue("Vhost statistics should be enabled", vhost.isStatisticsEnabled());
 
         if (!_broker.equals(VM))
         {
             assertEquals("Incorrect server total messages", 5, _jmxUtils.getServerInformation().getTotalMessages());
             assertEquals("Incorrect server total data", 1000, _jmxUtils.getServerInformation().getTotalData());
+            assertTrue("Server statistics should be enabled", _jmxUtils.getServerInformation().isStatisticsEnabled());
         }
     }
 }

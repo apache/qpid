@@ -96,4 +96,17 @@ public abstract class MessageStatisticsTestCase extends QpidTestCase
             producer.send(msg);
         }
     }
+    
+    /**
+     * Asserts that the actual value is within the expected value plus or
+     * minus the given error.
+     */
+    public void assertApprox(String message, double error, double expected, double actual)
+    {
+        double min = expected * (1.0d - error);
+        double max = expected * (1.0d + error);
+        String assertion = String.format("%s: expected %f +/- %d, actual %f",
+                message, expected, (int) (error * 100.0d), actual);
+        assertTrue(assertion, actual > min && actual < max);
+    }
 }

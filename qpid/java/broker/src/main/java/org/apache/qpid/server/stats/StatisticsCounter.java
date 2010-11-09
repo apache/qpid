@@ -32,9 +32,10 @@ public class StatisticsCounter
 {
     private static final Logger _log = LoggerFactory.getLogger(StatisticsCounter.class);
     
+    public static final long DEFAULT_SAMPLE_PERIOD = Long.getLong("qpid.statistics.samplePeriod", 1000L); // 1s
+    public static final boolean DISABLE_STATISTICS = Boolean.getBoolean("qpid.statistics.disable");
+    
     private static final String COUNTER = "counter";
-    private static final long DEFAULT_SAMPLE_PERIOD = Long.getLong("qpid.statistics.samplePeriod", 1000L); // 1s
-    private static final boolean _disable = Boolean.getBoolean("qpid.statistics.disable");
     private static final AtomicLong _counterIds = new AtomicLong(0L);
     
     private final AtomicLong _peak = new AtomicLong(0L);
@@ -76,7 +77,7 @@ public class StatisticsCounter
 
     public void registerEvent(long value, long timestamp)
     {
-        if (_disable)
+        if (DISABLE_STATISTICS)
         {
             return;
         }

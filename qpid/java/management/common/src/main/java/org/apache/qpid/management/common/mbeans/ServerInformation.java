@@ -142,4 +142,12 @@ public interface ServerInformation
      */
     @MBeanAttribute(name="totalData", description=TYPE + " Total Bytes")
     long getTotalData();
+
+    /**
+     * Is statistics collection enabled for this connection.
+     * 
+     * @since Qpid JMX API 1.9
+     */
+    @MBeanAttribute(name="statisticsEnabled", description=TYPE + " Statistics Enabled")
+    boolean isStatisticsEnabled();
 }

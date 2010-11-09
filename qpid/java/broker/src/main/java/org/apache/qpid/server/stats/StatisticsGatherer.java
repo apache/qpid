@@ -19,50 +19,74 @@
 package org.apache.qpid.server.stats;
 
 /**
- * Statistics gatherer.
+ * This interface is to be implemented by any broker business object that
+ * wishes to gather statistics about messages delivered through it.
+ * 
+ * These statistics are exposed using a separate JMX Mbean interface, which
+ * calls these methods to retrieve the underlying {@link StatisticsCounter}s
+ * and return their attributes. This interface gives a standard way for
+ * parts of the broker to set up and configure statistics generation.
+ * <p>
+ * When creating these objects, there should be a parent/child relationship
+ * between them, such that the lowest level gatherer can record staticics if
+ * enabled, and pass on the notification to the parent object to allow higher
+ * level aggregation. When resetting statistics, this works in the opposite
+ * direction, with higher level gatherers also resetting all of their children.
  */
 public interface StatisticsGatherer
 {
     /**
+     * Initialise the statistics gathering for this object.
      * 
-     * @param period
+     * This method is responsible for creating any {@link StatisticsCounter}
+     * objects and for determining whether statistics generation should be
+     * enabled, by checking broker and system configuration.
+     * 
+     * @see StatisticsCounter#DISABLE_STATISTICS
      */
     void initialiseStatistics();
     
     /**
+     * This method is responsible for registering the delivery of a message
+     * with the counters, and also for passing this notification to any parent
+     * {@link StatisticsGatherer}s. If statistics generation is not enabled,
+     * then this method should simple delegate to the parent gatherer.
      * 
-     * @param messageSize
-     * @param timestamp
+     * @param messageSize the size in bytes of the delivered message
+     * @param timestamp the time the message was delivered
      */
     void registerMessageDelivery(long messageSize, long timestamp);
     
     /**
+     * Gives access to the {@link StatisticsCounter} that is used to count
+     * message statistics.
      * 
-     * @return
+     * @return the {@link StatisticsCounter} that counts messages
      */
     StatisticsCounter getMessageStatistics();
     
     /**
+     * Gives access to the {@link StatisticsCounter} that is used to count
+     * message size statistics.
      * 
-     * @return
+     * @return the {@link StatisticsCounter} that counts bytes
      */
     StatisticsCounter getDataStatistics();
     
     /**
-     * 
-     * @return
+     * Reset the counters for this, and any child {@link StatisticsGatherer}s.
      */
     void resetStatistics();
     
     /**
+     * Check if this object has statistics generation enabled.
      * 
-     * @return
+     * @return true if statistics generation is enabled
      */
     boolean isStatisticsEnabled();
     
     /**
-     * 
-     * @param enabled
+     * Enable or disable statistics generation for this object.
      */
     void setStatisticsEnabled(boolean enabled);
 }

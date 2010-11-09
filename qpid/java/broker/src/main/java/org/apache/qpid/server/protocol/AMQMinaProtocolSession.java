@@ -958,7 +958,6 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable, St
     {
         if (isStatisticsEnabled())
         {
-            _logger.info("=== STATS === register " + messageSize);
 	        _messageStats.registerEvent(1L, timestamp);
 	        _dataStats.registerEvent(messageSize, timestamp);
 	    }
@@ -983,7 +982,9 @@ public class AMQMinaProtocolSession implements AMQProtocolSession, Managable, St
 
     public void initialiseStatistics()
     {
-        setStatisticsEnabled(_registry.getConfiguration().isStatisticsGenerationConnectionsEnabled());
+        setStatisticsEnabled(!StatisticsCounter.DISABLE_STATISTICS &&
+                _registry.getConfiguration().isStatisticsGenerationConnectionsEnabled());
+        
         _messageStats = new StatisticsCounter("messages-" + getSessionID());
         _dataStats = new StatisticsCounter("bytes-" + getSessionID());
     }

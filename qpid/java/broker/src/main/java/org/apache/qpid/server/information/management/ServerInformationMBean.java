@@ -116,4 +116,9 @@ public class ServerInformationMBean extends AMQManagedObject implements ServerIn
     {
         return registry.getDataStatistics().getTotal();
     }
+
+    public boolean isStatisticsEnabled()
+    {
+        return registry.isStatisticsEnabled();
+    }
 }

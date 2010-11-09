@@ -427,7 +427,9 @@ public abstract class ApplicationRegistry implements IApplicationRegistry, Stati
 
     public void initialiseStatistics()
     {
-        setStatisticsEnabled(getConfiguration().isStatisticsGenerationBrokerEnabled());
+        setStatisticsEnabled(!StatisticsCounter.DISABLE_STATISTICS &&
+                getConfiguration().isStatisticsGenerationBrokerEnabled());
+        
         _messageStats = new StatisticsCounter("messages");
         _dataStats = new StatisticsCounter("bytes");
     }

@@ -395,4 +395,9 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
     {
         return _virtualHost.getDataStatistics().getTotal();
     }
+
+    public boolean isStatisticsEnabled()
+    {
+        return _virtualHost.isStatisticsEnabled();
+    }
 }
