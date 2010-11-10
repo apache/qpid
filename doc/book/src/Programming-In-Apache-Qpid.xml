@@ -1711,11 +1711,22 @@ try:
 		  string
 		</entry>
 		<entry>
-		  The specific SASL mechanism to use when
-		  authenticating to the broker. In c++ only a single
-		  value can be specified at present. In python the
-		  value can be a space separated list in order of
-		  preference.
+		  The specific SASL mechanism to use with the c++
+		  client when authenticating to the broker. Only a
+		  single value can be specified at present. [C++ only].
+		</entry>
+	      </row>
+	      <row>
+		<entry>
+		  sasl_mechanisms
+		</entry>
+		<entry>
+		  string
+		</entry>
+		<entry>
+		  The specific SASL mechanism to use with the python
+		  client when authenticating to the broker. The value
+		  is a space separated list in order of preference. [Python only].
 		</entry>
 	      </row>
 
