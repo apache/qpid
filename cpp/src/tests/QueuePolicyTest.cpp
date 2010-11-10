@@ -378,6 +378,24 @@ QPID_AUTO_TEST_CASE(testPolicyFailureOnCommit)
     BOOST_CHECK_THROW(f.session.txCommit(), InternalErrorException);
 }
 
+QPID_AUTO_TEST_CASE(testCapacityConversion)
+{
+    FieldTable args;
+    args.setString("qpid.max_count", "5");
+
+    ProxySessionFixture f;
+    std::string q("q");
+    f.session.queueDeclare(arg::queue=q, arg::exclusive=true, arg::autoDelete=true, arg::arguments=args);
+    for (int i = 0; i < 5; i++) {
+        f.session.messageTransfer(arg::content=client::Message((boost::format("%1%_%2%") % "Message" % (i+1)).str(), q));
+    }
+    try {
+        ScopedSuppressLogging sl; // Suppress messages for expected errors.
+        f.session.messageTransfer(arg::content=client::Message("Message_6", q));
+        BOOST_FAIL("expecting ResourceLimitExceededException.");
+    } catch (const ResourceLimitExceededException&) {}
+}
+
 QPID_AUTO_TEST_SUITE_END()
 
 }} // namespace qpid::tests
