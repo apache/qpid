@@ -110,9 +110,17 @@ void ConsoleSessionImpl::setAgentFilter(const string& predicate)
             enqueueEventLH(eventImpl.release());
         }
 
-        if (!connectedBrokerInAgentList && agentQuery.matchesPredicate(connectedBrokerAgent.getAttributes())) {
+        if (!connectedBrokerInAgentList && connectedBrokerAgent.isValid() &&
+            agentQuery.matchesPredicate(connectedBrokerAgent.getAttributes())) {
             agents[connectedBrokerAgent.getName()] = connectedBrokerAgent;
             connectedBrokerInAgentList = true;
+
+            //
+            // Enqueue a notification of the new agent.
+            //
+            auto_ptr<ConsoleEventImpl> eventImpl(new ConsoleEventImpl(CONSOLE_AGENT_ADD));
+            eventImpl->setAgent(connectedBrokerAgent);
+            enqueueEventLH(ConsoleEvent(eventImpl.release()));
         }
     }
 
@@ -393,6 +401,13 @@ void ConsoleSessionImpl::handleAgentUpdate(const string& agentName, const Varian
         if (!agentQuery || agentQuery.matchesPredicate(attrs)) {
             connectedBrokerInAgentList = true;
             agents[agentName] = agent;
+
+            //
+            // Enqueue a notification of the new agent.
+            //
+            auto_ptr<ConsoleEventImpl> eventImpl(new ConsoleEventImpl(CONSOLE_AGENT_ADD));
+            eventImpl->setAgent(agent);
+            enqueueEventLH(ConsoleEvent(eventImpl.release()));
         }
         return;
     }

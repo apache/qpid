@@ -175,7 +175,7 @@ AgentSessionImpl::AgentSessionImpl(Connection& c, const string& options) :
     schemaUpdateTime(uint64_t(qpid::sys::Duration(qpid::sys::EPOCH, qpid::sys::now())))
 {
     //
-    // Set Capability Level to 1
+    // Set Agent Capability Level
     //
     attributes["qmf.agent_capability"] = AGENT_CAPABILITY_0_8;
 
