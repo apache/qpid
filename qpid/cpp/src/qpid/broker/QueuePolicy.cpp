@@ -123,17 +123,23 @@ uint32_t QueuePolicy::getCapacity(const FieldTable& settings, const std::string&
     int32_t result = 0;
 
     if (!v) return defaultValue;
-    if (v->convertsTo<int>()) {
+    if (v->getType() == 0x23) {
+        QPID_LOG(debug, "Value for " << key << " specified as float: " << v->get<float>());
+    } else if (v->getType() == 0x33) {
+        QPID_LOG(debug, "Value for " << key << " specified as double: " << v->get<double>());
+    } else if (v->convertsTo<int>()) {
         result = v->get<int>();
+        QPID_LOG(debug, "Got integer value for " << key << ": " << result);
         if (result >= 0) return result;
-    }
-    else {
-        string s(v->get<string>());  // I assume anything can be converted to a string
+    } else if (v->convertsTo<string>()) {
+        string s(v->get<string>());
+        QPID_LOG(debug, "Got string value for " << key << ": " << s);
         std::istringstream convert(s);
         if (convert >> result && result >= 0) return result;
     }
 
-    throw InvalidArgumentException(QPID_MSG("Cannot convert " << key << " to unsigned integer"));
+    QPID_LOG(warning, "Cannot convert " << key << " to unsigned integer, using default (" << defaultValue << ")");
+    return defaultValue;
 }
 
 std::string QueuePolicy::getType(const FieldTable& settings)
