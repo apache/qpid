@@ -350,7 +350,8 @@ public abstract class ApplicationRegistry implements IApplicationRegistry, Stati
 	        
             class StatisticsReportingTask extends TimerTask
             {
-                Logger _srLogger = Logger.getLogger(StatisticsReportingTask.class);
+                private final int DELIVERED = 0;
+                private final int RECEIVED = 1;
                 
                 public void run()
                 {
@@ -363,10 +364,10 @@ public abstract class ApplicationRegistry implements IApplicationRegistry, Stati
                     
                     if (broker)
                     {
-	                    CurrentActor.get().message(BrokerMessages.BRK_STATS_DATA("delivered", _dataDelivered.getPeak() / 1024.0, _dataDelivered.getTotal()));
-	                    CurrentActor.get().message(BrokerMessages.BRK_STATS_MSGS("delivered", _messagesDelivered.getPeak(), _messagesDelivered.getTotal()));
-	                    CurrentActor.get().message(BrokerMessages.BRK_STATS_DATA("received", _dataReceived.getPeak() / 1024.0, _dataReceived.getTotal()));
-	                    CurrentActor.get().message(BrokerMessages.BRK_STATS_MSGS("received", _messagesReceived.getPeak(), _messagesReceived.getTotal()));
+	                    CurrentActor.get().message(BrokerMessages.BRK_STATS_DATA(DELIVERED, _dataDelivered.getPeak() / 1024.0, _dataDelivered.getTotal()));
+	                    CurrentActor.get().message(BrokerMessages.BRK_STATS_MSGS(DELIVERED, _messagesDelivered.getPeak(), _messagesDelivered.getTotal()));
+	                    CurrentActor.get().message(BrokerMessages.BRK_STATS_DATA(RECEIVED, _dataReceived.getPeak() / 1024.0, _dataReceived.getTotal()));
+	                    CurrentActor.get().message(BrokerMessages.BRK_STATS_MSGS(RECEIVED, _messagesReceived.getPeak(), _messagesReceived.getTotal()));
                     }
                     
                     if (virtualhost)
@@ -379,10 +380,10 @@ public abstract class ApplicationRegistry implements IApplicationRegistry, Stati
 	                        StatisticsCounter dataReceived = vhost.getDataReceiptStatistics();
 	                        StatisticsCounter messagesReceived = vhost.getMessageReceiptStatistics();
 	                        
-	                        CurrentActor.get().message(VirtualHostMessages.VHT_STATS_DATA(name, "delivered", dataDelivered.getPeak() / 1024.0, dataDelivered.getTotal()));
-	                        CurrentActor.get().message(VirtualHostMessages.VHT_STATS_MSGS(name, "delivered", messagesDelivered.getPeak(), messagesDelivered.getTotal()));
-	                        CurrentActor.get().message(VirtualHostMessages.VHT_STATS_DATA(name, "received", dataReceived.getPeak() / 1024.0, dataReceived.getTotal()));
-	                        CurrentActor.get().message(VirtualHostMessages.VHT_STATS_MSGS(name, "received", messagesReceived.getPeak(), messagesReceived.getTotal()));
+	                        CurrentActor.get().message(VirtualHostMessages.VHT_STATS_DATA(name, DELIVERED, dataDelivered.getPeak() / 1024.0, dataDelivered.getTotal()));
+	                        CurrentActor.get().message(VirtualHostMessages.VHT_STATS_MSGS(name, DELIVERED, messagesDelivered.getPeak(), messagesDelivered.getTotal()));
+	                        CurrentActor.get().message(VirtualHostMessages.VHT_STATS_DATA(name, RECEIVED, dataReceived.getPeak() / 1024.0, dataReceived.getTotal()));
+	                        CurrentActor.get().message(VirtualHostMessages.VHT_STATS_MSGS(name, RECEIVED, messagesReceived.getPeak(), messagesReceived.getTotal()));
 	                    }
                     }
                     
