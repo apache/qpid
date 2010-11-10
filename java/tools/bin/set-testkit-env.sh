@@ -62,11 +62,11 @@ fi
 
 if [ "$STORE_LIB" = "" ] ; then
    if [ -e /usr/lib64/qpid/daemon/msgstore.so ] ; then
-      CLUSTER_LIB="/usr/lib64/qpid/daemon/msgstore.so"
+      STORE_LIB="/usr/lib64/qpid/daemon/msgstore.so"
    elif [ -e /usr/lib/qpid/daemon/msgstore.so ] ; then
-      CLUSTER_LIB="/usr/lib/qpid/daemon/msgstore.so"
-   else
-     echo "WARNING: skipping test, STORE_LIB not set and msgstore.so not found."; exit 0;
+      STORE_LIB="/usr/lib/qpid/daemon/msgstore.so"
+   #else
+   #  echo "WARNING: skipping test, STORE_LIB not set and msgstore.so not found."; exit 0;
    fi
 fi   
 
@@ -82,7 +82,7 @@ if [ "$QP_CP" = "" ] ; then
 fi
 
 if [ "$OUTDIR" = "" ] ; then
-   OUTDIR=`abs_path "../output"`
+   OUTDIR=`abs_path "./output"`
 fi
 
 export PYTHONPATH PYTHON_DIR QPIDD_EXEC CLUSTER_LIB QP_CP OUTDIR
