@@ -40,6 +40,7 @@ public class StatisticsCounter
     
     private final AtomicLong _peak = new AtomicLong(0L);
     private final AtomicLong _total = new AtomicLong(0L);
+    private final AtomicLong _temp = new AtomicLong(0L);
     private final AtomicLong _last = new AtomicLong(0L);
     private final AtomicLong _rate = new AtomicLong(0L);
 
@@ -88,12 +89,13 @@ public class StatisticsCounter
         {
             if (_last.compareAndSet(lastSample, thisSample))
             {
-                _rate.set(0L);
+                long rate = _temp.getAndSet(0L);
+                _rate.set(rate);
             }
         }
         
         _total.addAndGet(value);
-        long current = _rate.addAndGet(value);
+        long current = _temp.addAndGet(value);
         long peak;
         while (current > (peak = _peak.get()))
         {

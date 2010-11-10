@@ -27,14 +27,13 @@ import javax.jms.Connection;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.Session;
-import javax.jms.TextMessage;
 
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.management.common.mbeans.ManagedBroker;
 import org.apache.qpid.management.common.mbeans.ManagedConnection;
 
 /**
- * Test generation of message statistics.
+ * Test statistics for delivery and receipt.
  */
 public class MessageStatisticsDeliveryTest extends MessageStatisticsTestCase
 {
@@ -45,10 +44,7 @@ public class MessageStatisticsDeliveryTest extends MessageStatisticsTestCase
         setConfigurationProperty("statistics.generation.connections", "true");
     }
 
-    /**
-     * Test statistics on a single connection
-     */
-    public void testEnablingStatisticsPerConnection() throws Exception
+    public void testDeliveryAndReceiptStatistics() throws Exception
     {
         ManagedBroker vhost = _jmxUtils.getManagedBroker("test");
         
