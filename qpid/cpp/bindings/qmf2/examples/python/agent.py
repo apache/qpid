@@ -35,12 +35,14 @@ class ExampleAgent(AgentHandler):
     ## Create and open a messaging connection to a broker.
     ##
     self.connection = cqpid.Connection(url)
+    self.session = None
     self.connection.open()
 
     ##
     ## Create, configure, and open a QMFv2 agent session using the connection.
     ##
     self.session = AgentSession(self.connection, "{interval:30}")
+    self.session.setDomain("test")
     self.session.setVendor('profitron.com')
     self.session.setProduct('blastinator')
     self.session.setAttribute('attr1', 1000)
@@ -56,7 +58,8 @@ class ExampleAgent(AgentHandler):
     """
     Clean up the session and connection.
     """
-    self.session.close()
+    if self.session:
+      self.session.close()
     self.connection.close()
 
 
@@ -141,10 +144,13 @@ class ExampleAgent(AgentHandler):
     self.controlAddr = self.session.addData(self.control, "singleton")
 
 
+try:
+  agent = ExampleAgent("localhost")
+  agent.setupSchema()
+  agent.populateData()
+  agent.run()  # Use agent.start() to launch the agent in a separate thread
+  agent.shutdown()
+except Exception, e:
+  print "Exception Caught:", e
 
-agent = ExampleAgent("localhost")
-agent.setupSchema()
-agent.populateData()
-agent.run()  # Use agent.start() to launch the agent in a separate thread
-agent.shutdown()
 
