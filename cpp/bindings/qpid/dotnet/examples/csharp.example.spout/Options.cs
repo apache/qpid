@@ -23,10 +23,6 @@ namespace Org.Apache.Qpid.Messaging.Examples
     using System.Collections;
     using System.Collections.Generic;
     using System.Collections.ObjectModel;
-    using System.Diagnostics;
-    using System.IO;
-    using System.Text;
-    using System.Xml;
 
     public class Options
     {
