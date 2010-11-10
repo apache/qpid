@@ -21,6 +21,11 @@ INCLUDE = -I$(top_srcdir)/include
 
 AM_CPPFLAGS = $(INCLUDE)
 
-noinst_PROGRAMS=agent
+noinst_PROGRAMS=agent list_agents
+
 agent_SOURCES=agent.cpp
 agent_LDADD=$(top_builddir)/src/libqmf2.la
+
+list_agents_SOURCES=list_agents.cpp
+list_agents_LDADD=$(top_builddir)/src/libqmf2.la
+
