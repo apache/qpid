@@ -22,8 +22,6 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Linq;
-using System.Text;
 using Org.Apache.Qpid.Messaging;
 
 namespace Org.Apache.Qpid.Messaging.examples

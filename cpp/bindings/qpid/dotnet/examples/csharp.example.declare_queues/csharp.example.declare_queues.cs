@@ -20,9 +20,6 @@
  */
 
 using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using Org.Apache.Qpid.Messaging;
 
 namespace Org.Apache.Qpid.Messaging.Examples {

@@ -20,9 +20,6 @@
  */
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using Org.Apache.Qpid.Messaging;
 
 namespace CSharpDirect
