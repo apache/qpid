@@ -185,14 +185,13 @@ int main(int argc, char ** argv)
             Reporter<ThroughputAndLatency> reporter(std::cout, opts.reportEvery, opts.reportHeader);
             if (!opts.readyAddress.empty())
                 session.createSender(opts.readyAddress).send(msg);
-            
-            uint received = 0;
+
+            // For receive rate calculation
             qpid::sys::AbsTime start = qpid::sys::now();
             int64_t interval = 0;
             if (opts.receiveRate) interval = qpid::sys::TIME_SEC/opts.receiveRate;
 
             while (!done && receiver.fetch(msg, timeout)) {
-                ++received;
                 reporter.message(msg);
                 if (!opts.ignoreDuplicates || !sequenceTracker.isDuplicate(msg)) {
                     if (msg.getContent() == EOS) {
@@ -225,7 +224,7 @@ int main(int argc, char ** argv)
                     session.acknowledge();
                 }
                 if (opts.receiveRate) {
-                    qpid::sys::AbsTime waitTill(start, received*interval);
+                    qpid::sys::AbsTime waitTill(start, count*interval);
                     int64_t delay = qpid::sys::Duration(qpid::sys::now(), waitTill);
                     if (delay > 0) qpid::sys::usleep(delay/qpid::sys::TIME_USEC);
                 }
