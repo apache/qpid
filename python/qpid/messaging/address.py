@@ -33,6 +33,7 @@ COMMA = l.define("COMMA", r",")
 NUMBER = l.define("NUMBER", r'[+-]?[0-9]*\.?[0-9]+')
 TRUE = l.define("TRUE", r'True')
 FALSE = l.define("FALSE", r'False')
+NONE = l.define("NONE", r'None')
 ID = l.define("ID", r'[a-zA-Z_](?:[a-zA-Z0-9_-]*[a-zA-Z0-9_])?')
 STRING = l.define("STRING", r""""(?:[^\\"]|\\.)*"|'(?:[^\\']|\\.)*'""")
 ESC = l.define("ESC", r"\\[^ux]|\\x[0-9a-fA-F][0-9a-fA-F]|\\u[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]")
@@ -65,6 +66,8 @@ def tok2obj(tok):
     return True
   elif tok.type == FALSE:
     return False
+  elif tok.type == NONE:
+    return None
   else:
     return tok.value
 
@@ -133,7 +136,7 @@ class AddressParser(Parser):
     return (key, val)
 
   def value(self):
-    if self.matches(NUMBER, STRING, ID, TRUE, FALSE):
+    if self.matches(NUMBER, STRING, ID, TRUE, FALSE, NONE):
       return tok2obj(self.eat())
     elif self.matches(LBRACE):
       return self.map()
