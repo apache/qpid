@@ -50,11 +50,17 @@ int main(int argc, char** argv)
     ConsoleSession session(connection, sessionOptions);
     session.open();
 
+    session.setAgentFilter("");
+
     while (true) {
         ConsoleEvent event;
         if (session.nextEvent(event)) {
-            if (event.getType() == CONSOLE_AGENT_ADD)
-                cout << "Agent Added: " << event.getAgent().getName() << endl;
+            if (event.getType() == CONSOLE_AGENT_ADD) {
+                string extra;
+                if (event.getAgent().getName() == session.getConnectedBrokerAgent().getName())
+                    extra = "  [Connected Broker]";
+                cout << "Agent Added: " << event.getAgent().getName() << extra << endl;
+            }
             if (event.getType() == CONSOLE_AGENT_DEL) {
                 if (event.getAgentDelReason() == AGENT_DEL_AGED)
                     cout << "Agent Aged: " << event.getAgent().getName() << endl;
