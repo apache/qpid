@@ -17,6 +17,38 @@
 # under the License.
 #
 
+
+# Include cluster scripts and extra files in distribution even if
+# we're not configured for cluster.
+
+# Useful scripts for doing cluster testing.
+CLUSTER_TEST_SCRIPTS_LIST=			\
+	allhosts rsynchosts			\
+	qpid-build-rinstall qpid-src-rinstall	\
+	qpid-test-cluster			\
+	qpid-cluster-benchmark
+
+EXTRA_DIST +=					\
+	$(CLUSTER_TEST_SCRIPTS_LIST)		\
+	ais_check				\
+	run_cluster_test			\
+	cluster_read_credit			\
+	test_watchdog				\
+	start_cluster				\
+	stop_cluster				\
+	restart_cluster				\
+	cluster_python_tests			\
+	cluster_python_tests_failing.txt	\
+	federated_cluster_test			\
+	clustered_replication_test		\
+	run_cluster_tests			\
+	run_long_cluster_tests			\
+	testlib.py				\
+	cluster_tests.py			\
+	long_cluster_tests.py			\
+	cluster_tests.fail
+
+
 if HAVE_LIBCPG
 
 #
@@ -40,25 +72,6 @@ TESTS +=					\
 # Clean up after cluster_test and start_cluster
 CLEANFILES += cluster_test.acl cluster.ports
 
-EXTRA_DIST +=					\
-	ais_check				\
-	run_cluster_test			\
-	cluster_read_credit			\
-	test_watchdog				\
-	start_cluster				\
-	stop_cluster				\
-	restart_cluster				\
-	cluster_python_tests			\
-	cluster_python_tests_failing.txt	\
-	federated_cluster_test			\
-	clustered_replication_test		\
-	run_cluster_tests			\
-	run_long_cluster_tests			\
-	testlib.py				\
-	cluster_tests.py			\
-	long_cluster_tests.py			\
-	cluster_tests.fail
-
 LONG_TESTS +=					\
 	run_long_cluster_tests                  \
 	start_cluster				\
@@ -80,14 +93,6 @@ cluster_test_SOURCES =				\
 cluster_test_LDADD=$(lib_client) $(lib_broker) ../cluster.la -lboost_unit_test_framework
 
 qpidtest_SCRIPTS += run_cluster_tests cluster_tests.py run_long_cluster_tests long_cluster_tests.py testlib.py cluster_tests.fail
-
-# Useful scripts for doing cluster testing.
-CLUSTER_TEST_SCRIPTS_LIST=			\
-	allhosts rsynchosts			\
-	qpid-build-rinstall qpid-src-rinstall	\
-	qpid-test-cluster			\
-	qpid-cluster-benchmark
 qpidtest_SCRIPTS += $(CLUSTER_TEST_SCRIPTS_LIST)
-EXTRA_DIST += $(CLUSTER_TEST_SCRIPTS_LIST)
 
 endif
