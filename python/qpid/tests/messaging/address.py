@@ -19,8 +19,8 @@
 
 
 from qpid.tests import Test
-from qpid.messaging.address import lex, parse, ParseError, EOF, ID, NUMBER, SYM, WSPACE, \
-    LEXER
+from qpid.messaging.address import lex, parse, ParseError, EOF, ID, NONE, \
+    NUMBER, SYM, WSPACE, LEXER
 from qpid.lexer import Token
 from qpid.harness import Skipped
 from qpid.tests.parser import ParserBase
@@ -149,6 +149,9 @@ class AddressTests(ParserBase, Test):
   def testNegativeNum(self):
     self.lex("-3", NUMBER)
 
+  def testNone(self):
+    self.lex("None", NONE)
+
   def testHash(self):
     self.valid("foo/bar.#", "foo", "bar.#")
 
@@ -165,6 +168,10 @@ class AddressTests(ParserBase, Test):
   def testOptionsTrailingComma(self):
     self.valid("name/subject; {key: value,}", "name", "subject",
                {"key": "value"})
+
+  def testOptionsNone(self):
+    self.valid("name/subject; {key: None}", "name", "subject",
+               {"key": None})
 
   def testSemiSubject(self):
     self.valid("foo.bar/'baz.qux;moo:arf'; {key: value}",
