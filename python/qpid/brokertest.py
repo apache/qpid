@@ -227,9 +227,13 @@ class Popen(subprocess.Popen):
     def assert_running(self):
         if not self.is_running(): self.unexpected("Exit code %d" % self.returncode)
 
-    def poll(self, _deadstate=None):    # _deadstate required by base class in python 2.4
+    def poll(self, _deadstate=None): # _deadstate required by base class in python 2.4
         if self.returncode is None:
-            ret = subprocess.Popen.poll(self, _deadstate)
+            # Pass _deadstate only if it has been set, there is no _deadstate
+            # parameter in Python 2.6 
+            if _deadstate is None: ret = subprocess.Popen.poll(self)
+            else: ret = subprocess.Popen.poll(self, _deadstate)
+
             if (ret != -1):
                 self.returncode = ret
                 self._cleanup()
