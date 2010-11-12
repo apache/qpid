@@ -304,6 +304,15 @@ void DispatchHandle::processEvent(Poller::EventType type) {
     // (because we use a copy from before the previous callbacks we won't
     //  do anything yet that was just added) 
     while (callbacks.size() > 0) {
+        {
+        ScopedLock<Mutex> lock(stateLock);
+        switch (state) {
+        case DELETING:
+            goto finishcallbacks;
+        default:
+            break;
+        }
+        }
         Callback cb = callbacks.front();
         assert(cb);
         cb(*this);
@@ -315,6 +324,7 @@ void DispatchHandle::processEvent(Poller::EventType type) {
         // It would be nice to clean up and delete ourselves here, but we can't
     }
 
+finishcallbacks:
     {
     ScopedLock<Mutex> lock(stateLock);
     switch (state) {
