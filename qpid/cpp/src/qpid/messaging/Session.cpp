@@ -39,7 +39,7 @@ Session& Session::operator=(const Session& s) { return PI::assign(*this, s); }
 void Session::commit() { impl->commit(); }
 void Session::rollback() { impl->rollback(); }
 void Session::acknowledge(bool sync) { impl->acknowledge(sync); }
-void Session::acknowledge(Message& m, bool s) { impl->acknowledge(m); if (s) sync(true); }
+void Session::acknowledge(Message& m, bool s) { impl->acknowledge(m); sync(s); }
 void Session::reject(Message& m) { impl->reject(m); }
 void Session::release(Message& m) { impl->release(m); }
 void Session::close() { impl->close(); }
