@@ -97,7 +97,7 @@ void SessionImpl::acknowledge(bool sync_)
     //message may be redelivered; i.e. the application cannot delete
     //any state necessary for preventing reprocessing of the message
     execute<Acknowledge>();
-    if (sync_) sync(true);
+    sync(sync_);
 }
 
 void SessionImpl::reject(qpid::messaging::Message& m)
@@ -433,6 +433,8 @@ void SessionImpl::syncImpl(bool block)
 {
     if (block) session.sync();
     else session.flush();
+    //cleanup unconfirmed accept records:
+    incoming.pendingAccept();
 }
 
 void SessionImpl::commitImpl()
