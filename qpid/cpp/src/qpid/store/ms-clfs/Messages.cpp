@@ -359,10 +359,13 @@ Messages::recover(qpid::broker::RecoveryManager& recoverer,
                 std::list<MessageInfo::Location>::iterator w = m->where.begin();
                 while (w != m->where.end()) {
                     if (w->queueId == loc.queueId) {
-                        if (loc.transaction.get() != 0)
+                        if (loc.transaction.get() != 0) {
                             *w = loc;
-                        else
-                            m->where.erase(w);
+                            ++w;
+                        }
+                        else {
+                            w = m->where.erase(w);
+                        }
                     }
                 }
             }
@@ -381,6 +384,7 @@ Messages::recover(qpid::broker::RecoveryManager& recoverer,
             messages.insert(p);
         }
     }
+
     QPID_LOG(debug, "Message log recovery done.");
     // Done! Ok, go back and delete all the homeless messages.
     BOOST_FOREACH(uint64_t msg, homeless) {
