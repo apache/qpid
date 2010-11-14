@@ -39,4 +39,4 @@ Administration
 
 After QMan has been started successfully you can browse its administration console pointing your browser to :
 
-http://<host>:<port>/qman/admin.jsp
+http://<host>:<port>/qman/console
