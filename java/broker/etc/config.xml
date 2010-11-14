@@ -53,9 +53,10 @@
         <enabled>true</enabled>
         <jmxport>8999</jmxport>
         <ssl>
-            <enabled>true</enabled>
-            <!-- Update below path to your keystore location, eg ${conf}/qpid.keystore  -->
-            <keyStorePath>${prefix}/../test-profiles/test_resources/ssl/keystore.jks</keyStorePath>
+            <enabled>false</enabled>
+            <!-- Update below path to your keystore location, or run the bin/create-example-ssl-stores(.sh|.bat)
+                 script from within the etc/ folder to generate an example store with self-signed cert -->
+            <keyStorePath>${conf}/qpid.keystore</keyStorePath>
             <keyStorePassword>password</keyStorePassword>
         </ssl>
     </management>
