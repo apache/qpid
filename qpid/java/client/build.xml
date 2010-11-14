@@ -27,6 +27,9 @@
 
   <import file="../module.xml"/>
 
+  <property name="example.src.dir" value="${project.root}/client/example/src/main/java" />
+  <property name="example.jar.file" value="${build.lib}/qpid-client-example-${project.version}.jar" />
+
   <property name="output.dir" value="${module.precompiled}/org/apache/qpid/filter/selector"/>
 
   <target name="precompile">
@@ -45,6 +48,17 @@
       <javadoc destdir="${module.release}/api" sourcepathref="module.src.path"
                classpathref="module.class.path" packagenames="org.apache.qpid.jms"/>
   </target>
+
+  <target name="release-bin-copy-examples">
+      <copy todir="${module.release}/example/src" failonerror="true">
+          <fileset dir="${example.src.dir}" excludes="runSample.sh README.txt" />
+      </copy>
+     <copy todir="${module.release}/example/lib" failonerror="true">
+          <fileset file="${example.jar.file}"/>
+      </copy>
+  </target>
+
+  <target name="release-bin-other" depends="release-bin-copy-examples"/>
 
   <target name="release-bin" depends="release-bin-tasks"/>    
 
