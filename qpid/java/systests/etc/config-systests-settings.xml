@@ -24,6 +24,8 @@
         <enabled>false</enabled>
         <ssl>
             <enabled>false</enabled>
+            <keyStorePath>${QPID_HOME}/../test-profiles/test_resources/ssl/keystore.jks</keyStorePath>
+            <keyStorePassword>password</keyStorePassword>
         </ssl>
     </management>
     <virtualhosts>${QPID_HOME}/etc/virtualhosts-systests.xml</virtualhosts>
