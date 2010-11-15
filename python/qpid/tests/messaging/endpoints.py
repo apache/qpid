@@ -126,14 +126,14 @@ class SetupTests(Base):
         return self.real.writing(writing)
 
       def send(self, bytes):
-        if self.sent_count > 1024:
+        if self.sent_count > 2048:
           raise socket.error("fake error")
         n = self.real.send(bytes)
         self.sent_count += n
         return n
 
       def recv(self, n):
-        if self.recv_count > 1024:
+        if self.recv_count > 2048:
           return ""
         bytes = self.real.recv(n)
         self.recv_count += len(bytes)
@@ -155,7 +155,7 @@ class SetupTests(Base):
     snd = ssn.sender("test-reconnect-queue; {create: always, delete: always}")
     rcv = ssn.receiver(snd.target)
 
-    msgs = [self.message("testReconnect", i) for i in range(10)]
+    msgs = [self.message("testReconnect", i) for i in range(20)]
     for m in msgs:
       snd.send(m)
 
