@@ -79,7 +79,8 @@ Timer::Timer() :
     active(false),
     late(50 * TIME_MSEC),
     overran(2 * TIME_MSEC),
-    lateCancel(500 * TIME_MSEC)
+    lateCancel(500 * TIME_MSEC),
+    warn(5 * TIME_SEC)
 {
     start();
 }
@@ -127,23 +128,15 @@ void Timer::run()
                 if (!tasks.empty()) {
                     overrun = Duration(tasks.top()->nextFireTime, end);
                 }
-                if (delay > late) {
-                    if (overrun > overran) {
-                        QPID_LOG(warning, t->name <<
-                                 " timer woken up " << delay / TIME_MSEC <<
-                                 "ms late, overrunning by " <<
-                                 overrun / TIME_MSEC << "ms [taking " <<
-                                 Duration(start, end) << "]");
-                    } else {
-                        QPID_LOG(warning, t->name <<
-                                 " timer woken up " << delay / TIME_MSEC <<
-                                 "ms late");
-                    }
-                } else if (overrun > overran) {
-                    QPID_LOG(warning,t->name <<
-                             " timer callback overran by " <<
-                             overrun / TIME_MSEC <<
-                             "ms [taking " << Duration(start, end) << "]");
+                bool warningsEnabled;
+                QPID_LOG_TEST(warning, warningsEnabled);
+                if (warningsEnabled) {
+                    if (delay > late && overrun > overran)
+                        warn.lateAndOverran(t->name, delay, overrun, Duration(start, end));
+                    else if (delay > late)
+                        warn.late(t->name, delay);
+                    else if (overrun > overran)
+                        warn.overran(t->name, overrun, Duration(start, end));
                 }
                 continue;
             } else {
