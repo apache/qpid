@@ -134,6 +134,8 @@ public class DerbyMessageStore implements MessageStore
     private static final String DELETE_FROM_META_DATA = "DELETE FROM " + META_DATA_TABLE_NAME + " WHERE message_id = ?";
     private static final String SELECT_ALL_FROM_META_DATA = "SELECT message_id, meta_data FROM " + META_DATA_TABLE_NAME;
 
+    private static final String DERBY_SINGLE_DB_SHUTDOWN_CODE = "08006";
+
 
     private LogSubject _logSubject;
     private boolean _configured;
@@ -631,9 +633,9 @@ public class DerbyMessageStore implements MessageStore
         }
         catch (SQLException e)
         { 
-            if (e.getSQLState().equalsIgnoreCase("XJ015")) 
+            if (e.getSQLState().equalsIgnoreCase(DERBY_SINGLE_DB_SHUTDOWN_CODE)) 
             {     
-                //XJ015 is expected and represents a clean shutdown, do nothing.
+                //expected and represents a clean shutdown of this database only, do nothing.
             }
             else
             {
