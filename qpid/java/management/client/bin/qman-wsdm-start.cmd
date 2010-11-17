@@ -59,8 +59,8 @@ SET CLASSPATH=%CLASSPATH%;%QMAN_LIBS%\start.jar
 SET CLASSPATH=%CLASSPATH%;%QMAN_LIBS%\jetty-6.1.14.jar
 SET CLASSPATH=%CLASSPATH%;%QMAN_LIBS%\jetty-util-6.1.14.jar
 SET CLASSPATH=%CLASSPATH%;%QMAN_LIBS%\geronimo-servlet_2.5_spec-1.2.jar
-SET CLASSPATH=%CLASSPATH%;%QMAN_LIBS%\slf4j-api-1.4.0.jar
-SET CLASSPATH=%CLASSPATH%;%QMAN_LIBS%\slf4j-log4j12-1.4.0.jar
+SET CLASSPATH=%CLASSPATH%;%QMAN_LIBS%\slf4j-api-1.6.1.jar
+SET CLASSPATH=%CLASSPATH%;%QMAN_LIBS%\slf4j-log4j12-1.6.1.jar
 SET CLASSPATH=%CLASSPATH%;%QMAN_LIBS%\log4j-1.2.12.jar
 
 echo ===============================================================================
