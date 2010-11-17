@@ -32,7 +32,8 @@ http://cwiki.apache.org/qpid/
 
 3. Quick start
 ==============
-If you are impatient to get on, ./configure && make will usually be
-sufficient to compile. Running make check will run tests, make install
-will install the client and daemon. For more detailed information,
-please see the INSTALL notes.
+
+If you are impatient to get on, ./bootstrap && ./configure && make
+will usually be sufficient to compile. Running make check will run
+tests, make install will install the client and daemon. For more
+detailed information, please see the INSTALL notes.
