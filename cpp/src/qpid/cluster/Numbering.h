@@ -57,8 +57,6 @@ template <class T> class Numbering
         return (i != byObject.end()) ? i->second : size();
     }
 
-    bool contains(const T& t) const { return (*this)[t] == size(); }
-
   private:
     typedef std::map<T, size_t> Map;
     Map byObject;
