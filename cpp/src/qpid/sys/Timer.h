@@ -21,6 +21,7 @@
 #ifndef sys_Timer
 #define sys_Timer
 
+#include "qpid/sys/TimerWarnings.h"
 #include "qpid/sys/Monitor.h"
 #include "qpid/sys/Mutex.h"
 #include "qpid/sys/Thread.h"
@@ -96,6 +97,7 @@ class Timer : private Runnable {
     Duration late;
     Duration overran;
     Duration lateCancel;
+    TimerWarnings warn;
 };
 
 
