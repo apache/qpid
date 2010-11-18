@@ -787,6 +787,7 @@ set (qpidcommon_SOURCES
      qpid/sys/Runnable.cpp
      qpid/sys/Shlib.cpp
      qpid/sys/Timer.cpp
+     qpid/sys/TimerWarnings.cpp
      qpid/amqp_0_10/Codecs.cpp
 )
 add_msvc_version (qpidcommon library dll)
