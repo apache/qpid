@@ -41,40 +41,76 @@ struct ExpiryTask : public sys::TimerTask {
     const uint64_t expiryId;
 };
 
+// Called while receiving an update
+void ExpiryPolicy::setId(uint64_t id) {
+    sys::Mutex::ScopedLock l(lock);
+    expiryId = id;
+}
+
+// Called while giving an update
+uint64_t ExpiryPolicy::getId() const {
+    sys::Mutex::ScopedLock l(lock);
+    return expiryId;
+}
+
+// Called in enqueuing connection thread
 void ExpiryPolicy::willExpire(broker::Message& m) {
-    uint64_t id = expiryId++;
-    assert(unexpiredById.find(id) == unexpiredById.end());
-    assert(unexpiredByMessage.find(&m) == unexpiredByMessage.end());
-    unexpiredById[id] = &m;
-    unexpiredByMessage[&m] = id;
+    uint64_t id;
+    {
+        // When messages are fanned out to multiple queues, update sends
+        // them as independenty messages so we can have multiple messages
+        // with the same expiry ID.
+        //
+        // TODO: fix update to avoid duplicating messages.
+        sys::Mutex::ScopedLock l(lock);
+        id = expiryId++;        // if this is an update, this expiryId may already exist
+        assert(unexpiredByMessage.find(&m) == unexpiredByMessage.end());
+        unexpiredById.insert(IdMessageMap::value_type(id, &m));
+        unexpiredByMessage[&m] = id;
+    }
     timer.add(new ExpiryTask(this, id, m.getExpiration()));
 }
 
+// Called in dequeueing connection thread
 void ExpiryPolicy::forget(broker::Message& m) {
+    sys::Mutex::ScopedLock l(lock);
     MessageIdMap::iterator i = unexpiredByMessage.find(&m);
     assert(i != unexpiredByMessage.end());
     unexpiredById.erase(i->second);
     unexpiredByMessage.erase(i);
 }
 
+// Called in dequeueing connection or cleanup thread.
 bool ExpiryPolicy::hasExpired(broker::Message& m) {
+    sys::Mutex::ScopedLock l(lock);
     return unexpiredByMessage.find(&m) == unexpiredByMessage.end();
 }
 
+// Called in timer thread
 void ExpiryPolicy::sendExpire(uint64_t id) {
+    {
+        sys::Mutex::ScopedLock l(lock);
+        // Don't multicast an expiry notice if message is already forgotten.
+        if (unexpiredById.find(id) == unexpiredById.end()) return;
+    }
     mcast.mcastControl(framing::ClusterMessageExpiredBody(framing::ProtocolVersion(), id), memberId);
 }
 
+// Called in CPG deliver thread.
 void ExpiryPolicy::deliverExpire(uint64_t id) {
-    IdMessageMap::iterator i = unexpiredById.find(id);
-    if (i != unexpiredById.end()) {
+    sys::Mutex::ScopedLock l(lock);
+    std::pair<IdMessageMap::iterator, IdMessageMap::iterator> expired = unexpiredById.equal_range(id);
+    IdMessageMap::iterator i = expired.first;
+    while (i != expired.second) {
         i->second->setExpiryPolicy(expiredPolicy); // hasExpired() == true; 
         unexpiredByMessage.erase(i->second);
-        unexpiredById.erase(i);
+        unexpiredById.erase(i++);
     }
 }
 
+// Called in update thread on the updater.
 boost::optional<uint64_t> ExpiryPolicy::getId(broker::Message& m) {
+    sys::Mutex::ScopedLock l(lock);
     MessageIdMap::iterator i = unexpiredByMessage.find(&m);
     return i == unexpiredByMessage.end() ? boost::optional<uint64_t>() : i->second;
 }

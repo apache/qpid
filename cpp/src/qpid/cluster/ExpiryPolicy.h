@@ -61,20 +61,24 @@ class ExpiryPolicy : public broker::ExpiryPolicy
     // Cluster delivers expiry notice.
     void deliverExpire(uint64_t);
 
-    void setId(uint64_t id) { expiryId = id; }
-    uint64_t getId() const { return expiryId; }
+    void setId(uint64_t id);
+    uint64_t getId() const;
     
     boost::optional<uint64_t> getId(broker::Message&);
     
   private:
     typedef std::map<broker::Message*,  uint64_t> MessageIdMap;
-    typedef std::map<uint64_t, broker::Message*> IdMessageMap;
+    // When messages are fanned out to multiple queues, update sends
+    // them as independenty messages so we can have multiple messages
+    // with the same expiry ID.
+    typedef std::multimap<uint64_t, broker::Message*> IdMessageMap;
 
     struct Expired : public broker::ExpiryPolicy {
         bool hasExpired(broker::Message&);
         void willExpire(broker::Message&);
     };
 
+    mutable sys::Mutex lock;
     MessageIdMap unexpiredByMessage;
     IdMessageMap unexpiredById;
     uint64_t expiryId;
