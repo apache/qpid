@@ -1,5 +1,5 @@
-2			Qpid/C++
-			========
+            Qpid/C++
+            ========
 
 Table of Contents
 =================
@@ -22,13 +22,13 @@ http://cwiki.apache.org/qpid/
 
 2. Available Documentation
 ==========================
-  - INSTALL 		- How to install Qpid/C++.
-  - SSL                 - How to setup SSL
-  - RELEASE_NOTES 	- Release notes.
-  - DESIGN 		- Qpid/C++ implementation.
-  - LICENSE		- Apache license.
-  - NOTICE		- Corresponds to the section 4 d of 
-                          the Apache License, Version 2.0.
+  - INSTALL       - How to install Qpid/C++.
+  - SSL           - How to setup SSL
+  - RELEASE_NOTES - Release notes.
+  - DESIGN        - Qpid/C++ implementation.
+  - LICENSE       - Apache license.
+  - NOTICE        - Corresponds to the section 4 d of 
+                    the Apache License, Version 2.0.
 
 3. Quick start
 ==============
