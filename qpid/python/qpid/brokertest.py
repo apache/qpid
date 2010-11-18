@@ -523,6 +523,20 @@ class BrokerTest(TestCase):
         cluster = Cluster(self, count, args, expect=expect, wait=wait)
         return cluster
 
+    def assert_browse(self, session, queue, expect_contents, timeout=0):
+        """Assert that the contents of messages on queue (as retrieved
+        using session and timeout) exactly match the strings in
+        expect_contents"""
+
+        r = session.receiver("%s;{mode:browse}"%(queue))
+        actual_contents = []
+        try:
+            for c in expect_contents: actual_contents.append(r.fetch(timeout=timeout).content)
+            while True: actual_contents.append(r.fetch(timeout=0).content) # Check for extra messages.
+        except messaging.Empty: pass
+        r.close()
+        self.assertEqual(expect_contents, actual_contents)
+
 class RethrownException(Exception):
     """Captures the stack trace of the current exception to be thrown later"""
     def __init__(self, msg=""):

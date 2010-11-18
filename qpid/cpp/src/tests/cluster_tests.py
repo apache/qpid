@@ -22,7 +22,7 @@ import os, signal, sys, time, imp, re, subprocess
 from qpid import datatypes, messaging
 from qpid.brokertest import *
 from qpid.harness import Skipped
-from qpid.messaging import Message
+from qpid.messaging import Message, Empty
 from threading import Thread, Lock
 from logging import getLogger
 from itertools import chain
@@ -40,7 +40,6 @@ log = getLogger("qpid.cluster_tests")
 
 # Import scripts as modules
 qpid_cluster=import_script(checkenv("QPID_CLUSTER_EXEC"))
-
 
 def readfile(filename):
     """Returns te content of file named filename as a string"""
@@ -222,6 +221,29 @@ acl allow all all
         qs = subprocess.Popen(["qpid-stat", "-e", broker1.host_port()],  stdout=subprocess.PIPE)
         out = qs.communicate()[0]
         assert out.find("amq.failover") > 0
+
+    def evaluate_address(self, session, address):
+        """Create a receiver just to evaluate an address for its side effects"""
+        r = session.receiver(address)
+        r.close()
+
+    def test_expire_fanout(self):
+        """Regression test for QPID-2874: Clustered broker crashes in assertion in
+        cluster/ExpiryPolicy.cpp.
+        Caused by a fan-out message being updated as separate messages"""
+        cluster = self.cluster(1)
+        session0 = cluster[0].connect().session()
+        # Create 2 queues bound to fanout exchange.
+        self.evaluate_address(session0, "q1;{create:always,node:{x-bindings:[{exchange:'amq.fanout',queue:q1}]}}")
+        self.evaluate_address(session0, "q2;{create:always,node:{x-bindings:[{exchange:'amq.fanout',queue:q2}]}}")
+        queues = ["q1", "q2"]
+        # Send a fanout message with a long timeout
+        s = session0.sender("amq.fanout")
+        s.send(Message("foo", ttl=100), sync=False)
+        # Start a new member, check the messages
+        cluster.start()
+        session1 = cluster[1].connect().session()
+        for q in queues: self.assert_browse(session1, "q1", ["foo"])
 
 class LongTests(BrokerTest):
     """Tests that can run for a long time if -DDURATION=<minutes> is set"""
