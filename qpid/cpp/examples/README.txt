@@ -149,16 +149,9 @@ On Windows:
   C:\Program Files\qpidc-0.7\examples\request-response> server
   C:\Program Files\qpidc-0.7\examples\request-response> client
 
-== QMF Agent ==
+== qmf-console ==
 
-This example demonstrates integration with the Qpid Management Framework (QMF).
-The qmf-agent program will connect to a running Qpid broker and advertise a
-managed object (org.apache.qpid.agent.example:parent). Using the qpid-tool,
-you can monitor the object and also call a method (create_child) to spawn
-managed child objects.
+This directory contains examples which demonstrate integration with
+the Qpid Management Framework (QMF).  Refer to the README.txt file
+within the directory for more information.
 
-To build this example, simply invoke make on Unix or Linux. On Windows, you 
-must invoke 
-	nmake /f example_gen.mak
-before building the sample to generate the supporting model classes 
-(e.g., Parent,Child,etc.).
