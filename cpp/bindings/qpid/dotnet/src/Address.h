@@ -173,7 +173,7 @@ namespace Messaging {
 
             void set (System::String ^ type)
             {
-                addressp->setName(QpidMarshal::ToNative(type));
+                addressp->setType(QpidMarshal::ToNative(type));
             }
         }
 
