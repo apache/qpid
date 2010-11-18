@@ -1,4 +1,4 @@
-			Qpid/C++
+2			Qpid/C++
 			========
 
 Table of Contents
@@ -33,7 +33,17 @@ http://cwiki.apache.org/qpid/
 3. Quick start
 ==============
 
-If you are impatient to get on, ./bootstrap && ./configure && make
-will usually be sufficient to compile. Running make check will run
-tests, make install will install the client and daemon. For more
-detailed information, please see the INSTALL notes.
+In C++ distributions:
+
+   ./configure && make - compiles all sources
+
+   make check - runs tests
+
+   make install - installs the client and daemon
+
+In source distributions, no ./configure file is provided. To create
+the ./configure file, run ./bootstrap from the qpid/cpp directory,
+then follow the above instructions.
+
+The INSTALL notes contain more detailed information on compiling and
+installing this software.
