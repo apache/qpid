@@ -391,8 +391,13 @@ namespace Apache.Qpid.Test.Channel.WcfPerftest
             Console.WriteLine("Initializing transactions");
             IRawBodyUtility bodyUtil = new RawEncoderUtility();
 
-            // send a transacted message to nowhere to force the initial registration with MSDTC
-            IOutputChannel channel = QueueChannelFactory.CreateWriterChannel("", Guid.NewGuid().ToString());
+            // Send a transacted message to nowhere to force the initial registration with MSDTC.
+            // MSDTC insists on verifying it can contact the resource in the manner expected for
+            // recovery.  This requires setting up and finishing a separate connection to the
+            // broker by a thread owned by the DTC.  Excluding this time allows the existing
+            // reporting mechanisms to better reflect the cost per transaction without requiring
+            // long test runs.
+            IOutputChannel channel = QueueChannelFactory.CreateWriterChannel("amq.direct", Guid.NewGuid().ToString());
             Message msg = bodyUtil.CreateMessage("sacrificial transacted message from WcfPerftest");
             using (TransactionScope ts = new TransactionScope())
             {
