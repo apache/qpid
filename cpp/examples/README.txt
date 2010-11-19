@@ -4,6 +4,77 @@ This directory contains example C++ programs for Apache Qpid. They are
 based on the 0-10 version of the AMQP specification (see www.amqp.org for
 details). A short description of each example follows.
 
+= Messaging API Examples = 
+
+Qpid now uses a new, simpler API called the Messaging API. The
+examples that use this API are in the cpp/examples/messaging
+directory. If you are new to Qpid, we encourage you to start with
+these examples.
+
+== hello_world.cpp ==
+
+hello_world.cpp is a simple example that creates a Sender and a
+Receiver for the same address, sends a message to the address, reads
+it, and prints it:
+
+$ ./hello_world
+Hello world!
+
+By default, this program connects to a broker running on
+localhost:5672. You can specify a host and port explicitly on the
+command line:
+
+$ ./hello_world localhost:5673
+
+== drain.cpp, spout.cpp ==
+
+drain and spout provide many features for sending or receiving
+messages. Use --help to see all available options.
+
+To learn how to specify various kinds of addresses using these
+programs, read the chapter on Addresses here:
+
+  http://qpid.apache.org/books/0.7/Programming-In-Apache-Qpid/html/
+
+If you do not have qpid-config installed, you can create queues
+explicitly as part of an address. For instance, to create a queue
+named 'hello-world' and send a message to it, you can use spout as
+follows:
+
+$ ./spout "hello-world ; { create: always }"
+
+Now you can read the message from this queue using drain:
+
+$ ./drain hello-world
+
+Message(properties={spout-id:c877e622-d57b-4df2-bf3e-6014c68da0ea:0}, content='')
+
+
+== map_sender.cpp, map_receiver.cpp ==
+
+These examples show how to send and receive typed data. Send the data
+with map_sender, then receive it with map_receiver:
+
+$ ./map_sender
+$ ./map_receiver
+{colours:[red, green, white], id:987654321, name:Widget, percent:0.98999999999999999, uuid:34935b4a-fd55-4212-9c41-e5baebc6e7a5}
+
+
+== hello-xml.cpp ==
+
+This example shows how to route XML messages with an XQuery using an
+XML Exchange.
+
+$ ./hello_xml
+<weather><station>Raleigh-Durham International Airport (KRDU)</station><wind_speed_mph>16</wind_speed_mph><temperature_f>70</temperature_f><dewpoint>35</dewpoint></weather>
+
+
+= Examples that use the Legacy API =
+
+The following examples use an older API that is now deprecated. If you
+are new to Qpid, we encourage you to use the Messaging API
+instead. These examples may not be part of future distributions.
+
 Please note that by default these examples attempt to connect to a Qpid
 broker running on the local host (127.0.0.1) at the standard AMQP port (5672).
 It is possible to instruct the examples to connect to an alternate broker
@@ -24,6 +95,7 @@ on Windows. The default install locations are:
 
 In a C++ source distribution the broker is located in the src subdirectory
 (generally, from this examples directory, ../src).
+
 
 == Direct ==
 
