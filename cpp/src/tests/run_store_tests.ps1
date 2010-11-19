@@ -85,7 +85,7 @@ $cmdblock = $executioncontext.invokecommand.NewScriptBlock($cmdline)
 . $srcdir\background.ps1 $cmdblock
 
 $wait_time = 0
-while (!(Test-Path qpidd-store.port) -and ($wait_time -lt 10)) {
+while (!(Test-Path qpidd-store.port) -and ($wait_time -lt 20)) {
    Start-Sleep 2
    $wait_time += 2
 }
