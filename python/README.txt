@@ -1,24 +1,23 @@
-= INSTALLATION =
-
-Extract the release archive into a directory of your choice and set
-your PYTHONPATH accordingly:
-
-  tar -xzf qpid-python-<version>.tar.gz -C <install-prefix>
-  export PYTHONPATH=<install-prefix>/qpid-<version>/python
-
 = GETTING STARTED =
 
-The python client includes a simple hello-world example that publishes
-and consumes a message:
+1. Make sure the Qpid Python client libraries are on your PYTHONPATH:
 
-  cp <install-prefix>/qpid-<version>/python/hello-world .
-  ./hello-world
+$ export PYTHONPATH=/home/me/qpid-0.8/python
+
+2. Make sure a broker is running
+
+3. Run the 'hello' example from qpid-0.8/python/examples/api:
+
+$ ./hello
+Hello world!
+
 
 = EXAMPLES =
 
-More comprehensive examples can be found here:
+The examples/api directory contains several examples. 
 
-  cd <install-prefix>/qpid-<version>/python/examples
+Read examples/README.txt for further details on these examples.
+
 
 = RUNNING THE TESTS =
 
