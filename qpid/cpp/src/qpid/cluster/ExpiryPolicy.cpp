@@ -31,7 +31,7 @@ namespace qpid {
 namespace cluster {
 
 ExpiryPolicy::ExpiryPolicy(Multicaster& m, const MemberId& id, sys::Timer& t)
-    : expiryId(0), expiredPolicy(new Expired), mcast(m), memberId(id), timer(t) {}
+    : expiryId(1), expiredPolicy(new Expired), mcast(m), memberId(id), timer(t) {}
 
 struct ExpiryTask : public sys::TimerTask {
     ExpiryTask(const boost::intrusive_ptr<ExpiryPolicy>& policy, uint64_t id, sys::AbsTime when)
@@ -61,12 +61,17 @@ void ExpiryPolicy::willExpire(broker::Message& m) {
         // them as independenty messages so we can have multiple messages
         // with the same expiry ID.
         //
-        // TODO: fix update to avoid duplicating messages.
         sys::Mutex::ScopedLock l(lock);
-        id = expiryId++;        // if this is an update, this expiryId may already exist
-        assert(unexpiredByMessage.find(&m) == unexpiredByMessage.end());
-        unexpiredById.insert(IdMessageMap::value_type(id, &m));
-        unexpiredByMessage[&m] = id;
+        id = expiryId++;
+        if (!id) {              // This is an update of an already-expired message.
+            m.setExpiryPolicy(expiredPolicy);
+        }
+        else {
+            assert(unexpiredByMessage.find(&m) == unexpiredByMessage.end());
+            // If this is an update, the id may already exist
+            unexpiredById.insert(IdMessageMap::value_type(id, &m));
+            unexpiredByMessage[&m] = id;
+        }
     }
     timer.add(new ExpiryTask(this, id, m.getExpiration()));
 }

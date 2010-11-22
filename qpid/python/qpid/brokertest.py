@@ -335,7 +335,7 @@ class Broker(Popen):
             try: self._port = int(self.stdout.readline())
             except ValueError:
                 raise Exception("Can't get port for broker %s (%s)%s" %
-                                (self.name, self.pname, error_line(self.log,4)))
+                                (self.name, self.pname, error_line(self.log,5)))
         return self._port
 
     def unexpected(self,msg):
@@ -409,7 +409,7 @@ class Broker(Popen):
         # First make sure the broker is listening by checking the log.
         if not retry(self.log_ready, timeout=30):
             raise Exception(
-                "Timed out waiting for broker %s%s"%(self.name, error_line(self.log,4)))
+                "Timed out waiting for broker %s%s"%(self.name, error_line(self.log,5)))
         # Create a connection and a session. For a cluster broker this will
         # return after cluster init has finished.
         try:
@@ -417,7 +417,7 @@ class Broker(Popen):
             try: c.session()
             finally: c.close()
         except: raise RethrownException(
-            "Broker %s failed ready test%s"%(self.name,error_line(self.log,4)))
+            "Broker %s failed ready test%s"%(self.name,error_line(self.log, 5)))
 
     def store_state(self):
         uuids = open(os.path.join(self.datadir, "cluster", "store.status")).readlines()
