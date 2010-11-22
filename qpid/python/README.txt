@@ -1,24 +1,39 @@
-= INSTALLATION =
+This distribution contains the Python client libraries for Apache Qpid.
 
-Extract the release archive into a directory of your choice and set
-your PYTHONPATH accordingly:
+Apache Qpid is a high-speed, language independent, platform
+independent enterprise messaging system. It currently provides two
+messaging brokers (one implemented in C++, one implemented in Java),
+and messaging client libraries for Java JMS, C++, C# .NET, Python,
+Ruby, and WCF. The messaging protocol for Apache Qpid is AMQP
+(Advanced Message Queuing Protocol). You can read more about Qpid
+here:
 
-  tar -xzf qpid-python-<version>.tar.gz -C <install-prefix>
-  export PYTHONPATH=<install-prefix>/qpid-<version>/python
+  http://qpid.apache.org/
+
+Documentation can be found here:
+
+  http://qpid.apache.org/documentation.html
 
 = GETTING STARTED =
 
-The python client includes a simple hello-world example that publishes
-and consumes a message:
+1. Make sure the Qpid Python client libraries are on your
+PYTHONPATH. If you have extracted the archive to the directory
+INSTALLPATH, the following export will work:
 
-  cp <install-prefix>/qpid-<version>/python/hello-world .
-  ./hello-world
+$ export PYTHONPATH=${PYTHONPATH}:${INSTALLPATH}/qpid-0.8/python
+
+2. Make sure a broker is running
+
+3. Run the 'hello' example from qpid-0.8/python/examples/api:
+
+$ ./hello
+Hello world!
 
 = EXAMPLES =
 
-More comprehensive examples can be found here:
+The examples/api directory contains several examples. 
 
-  cd <install-prefix>/qpid-<version>/python/examples
+Read examples/README.txt for further details on these examples.
 
 = RUNNING THE TESTS =
 
