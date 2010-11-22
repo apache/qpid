@@ -52,3 +52,5 @@ from the qpid/cpp directory, then follow the above instructions.
 
 The INSTALL notes contain more detailed information on compiling and
 installing this software.
+
+qpid/cpp/examples/README.txt describes the C++ client API examples.
