@@ -272,8 +272,7 @@ class MessageUpdater {
         // Send the expiry ID if necessary.
         if (message.payload->getProperties<DeliveryProperties>()->getTtl()) {
             boost::optional<uint64_t> expiryId = expiry.getId(*message.payload);
-            if (!expiryId) return; // Message already expired, don't replicate.
-            ClusterConnectionProxy(session).expiryId(*expiryId);
+            ClusterConnectionProxy(session).expiryId(expiryId?*expiryId:0);
         }
 
         // We can't send a broker::Message via the normal client API,
@@ -408,7 +407,8 @@ void UpdateClient::updateSession(broker::SessionHandler& sh) {
 
     QPID_LOG(debug, updaterId << " updating unacknowledged messages.");
     broker::DeliveryRecords& drs = ss->getSemanticState().getUnacked();
-    std::for_each(drs.begin(), drs.end(),  boost::bind(&UpdateClient::updateUnacked, this, _1));
+    std::for_each(drs.begin(), drs.end(),
+                  boost::bind(&UpdateClient::updateUnacked, this, _1));
 
     updateTxState(ss->getSemanticState());           // Tx transaction state.
 
