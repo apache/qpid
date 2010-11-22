@@ -16,9 +16,11 @@ Documentation can be found here:
 
 = GETTING STARTED =
 
-1. Make sure the Qpid Python client libraries are on your PYTHONPATH:
+1. Make sure the Qpid Python client libraries are on your
+PYTHONPATH. If you have extracted the archive to the directory
+/path/to, the following export will work:
 
-$ export PYTHONPATH=/home/me/qpid-0.8/python
+$ export PYTHONPATH=/path/to/qpid-0.8/python
 
 2. Make sure a broker is running
 
