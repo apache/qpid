@@ -245,6 +245,25 @@ acl allow all all
         session1 = cluster[1].connect().session()
         for q in queues: self.assert_browse(session1, "q1", ["foo"])
 
+    def test_dr_no_message(self):
+        """Regression test for https://bugzilla.redhat.com/show_bug.cgi?id=655141
+        Joining broker crashes with 'error deliveryRecord no update message'
+        """
+
+        cluster = self.cluster(1)
+        session0 = cluster[0].connect().session()
+        s = session0.sender("q1;{create:always}")
+        s.send(Message("a", ttl=0.05), sync=False)
+        s.send(Message("b", ttl=0.05), sync=False)
+        r1 = session0.receiver("q1")
+        self.assertEqual("a", r1.fetch(timeout=0).content)
+        r2 = session0.receiver("q1;{mode:browse}")
+        self.assertEqual("b", r2.fetch(timeout=0).content)
+        # Leave messages un-acknowledged, let the expire, then start new broker.
+        time.sleep(.1)
+        cluster.start()
+        self.assertRaises(Empty, cluster[1].connect().session().receiver("q1").fetch,0)
+
 class LongTests(BrokerTest):
     """Tests that can run for a long time if -DDURATION=<minutes> is set"""
     def duration(self):
@@ -274,7 +293,7 @@ class LongTests(BrokerTest):
             i += 1
             b = cluster.start(expect=EXPECT_EXIT_FAIL)
             ErrorGenerator(b)
-            time.sleep(min(5,self.duration()/2))
+            time.sleep(5)
         sender.stop()
         receiver.stop()
         for i in range(i, len(cluster)): cluster[i].kill()
@@ -363,7 +382,7 @@ class LongTests(BrokerTest):
         start_mclients(cluster[alive])
 
         while time.time() < endtime:
-            time.sleep(max(5,self.duration()/4))
+            time.sleep(5)
             for b in cluster[alive:]: b.ready() # Check if a broker crashed.
             # Kill the first broker, expect the clients to fail. 
             b = cluster[alive]
