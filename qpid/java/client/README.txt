@@ -34,8 +34,8 @@ themselves. Failure to do so will result in a warning being output and use of
 NoOp logging by the client.
 
 More information on using SLF4J is available at http://www.slf4j.org/manual.html
-which details some of the suipported logging implementations and their
-associted SLF4 bindings as available in the SLF4J distribution.
+which details some of the supported logging implementations and their
+associated SLF4 bindings as available in the SLF4J distribution.
 
 
 
