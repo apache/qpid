@@ -20,7 +20,7 @@ Documentation can be found here:
 PYTHONPATH. If you have extracted the archive to the directory
 /path/to, the following export will work:
 
-$ export PYTHONPATH=/path/to/qpid-0.8/python
+$ export PYTHONPATH=${PYTHONPATH}:/path/to/qpid-0.8/python
 
 2. Make sure a broker is running
 
