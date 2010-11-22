@@ -1,3 +1,19 @@
+This distribution contains the Python client libraries for Apache Qpid.
+
+Apache Qpid is a high-speed, language independent, platform
+independent enterprise messaging system. It currently provides two
+messaging brokers (one implemented in C++, one implemented in Java),
+and messaging client libraries for Java JMS, C++, C# .NET, Python,
+Ruby, and WCF. The messaging protocol for Apache Qpid is AMQP
+(Advanced Message Queuing Protocol). You can read more about Qpid
+here:
+
+  http://qpid.apache.org/
+
+Documentation can be found here:
+
+  http://qpid.apache.org/documentation.html
+
 = GETTING STARTED =
 
 1. Make sure the Qpid Python client libraries are on your PYTHONPATH:
@@ -11,13 +27,11 @@ $ export PYTHONPATH=/home/me/qpid-0.8/python
 $ ./hello
 Hello world!
 
-
 = EXAMPLES =
 
 The examples/api directory contains several examples. 
 
 Read examples/README.txt for further details on these examples.
-
 
 = RUNNING THE TESTS =
 
