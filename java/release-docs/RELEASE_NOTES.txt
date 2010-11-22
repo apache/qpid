@@ -1,7 +1,7 @@
-Apache Qpid Incubating Java 0.6 Release Notes
+Apache Qpid Java 0.8 Release Notes
 -------------------------------------------
 
-The Qpid 0.6 release contains support for AMQP 0-8, 0-9 and 0-10. You
+The Qpid 0.8 release contains support for AMQP 0-8, 0-9 and 0-10. You
 can access the specifications from
 
 http://www.amqp.org/confluence/display/AMQP/AMQP+Specification
