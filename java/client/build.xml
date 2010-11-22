@@ -58,7 +58,13 @@
       </copy>
   </target>
 
-  <target name="release-bin-other" depends="release-bin-copy-examples"/>
+  <target name="release-bin-copy-readme">
+      <copy todir="${module.release}" overwrite="true" failonerror="true">
+          <fileset file="${basedir}/README.txt" />
+      </copy>
+  </target>
+
+  <target name="release-bin-other" depends="release-bin-copy-examples,release-bin-copy-readme"/>
 
   <target name="release-bin" depends="release-bin-tasks"/>    
 
