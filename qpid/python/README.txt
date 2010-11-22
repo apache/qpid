@@ -18,9 +18,9 @@ Documentation can be found here:
 
 1. Make sure the Qpid Python client libraries are on your
 PYTHONPATH. If you have extracted the archive to the directory
-/path/to, the following export will work:
+INSTALLPATH, the following export will work:
 
-$ export PYTHONPATH=${PYTHONPATH}:/path/to/qpid-0.8/python
+$ export PYTHONPATH=${PYTHONPATH}:${INSTALLPATH}/qpid-0.8/python
 
 2. Make sure a broker is running
 
