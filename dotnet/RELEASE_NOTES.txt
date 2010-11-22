@@ -1,7 +1,7 @@
-Apache Incubator Qpid .NET 0.6 Release Notes
+Apache Qpid .NET 0.8 Release Notes
 -------------------------------------------
 
-The Qpid 0.6 release contains seperate clients that support the AMQP
+The Qpid 0.8 release contains seperate clients that support the AMQP
 0-10 and AMQP 0-8 protocols.
 
 Known Issues/Outstanding Work
