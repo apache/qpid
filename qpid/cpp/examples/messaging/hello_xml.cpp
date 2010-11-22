@@ -45,11 +45,11 @@ int main(int argc, char** argv) {
 
   stringstream address;
 
-  address << "xml; {"
+  address << "xml-exchange; {"
     " create: always, "        // This line and the next are not in docs
     " node: { type: topic, x-declare: { type: xml } }, " // Added so it works "out of the box"
     " link: { "
-    "  x-bindings: [{ exchange: xml, key: weather, arguments: { xquery:\"" 
+    "  x-bindings: [{ exchange: xml-exchange, key: weather, arguments: { xquery:\"" 
        << query 
        << "\"} }] "
     " } "
@@ -70,7 +70,7 @@ int main(int argc, char** argv) {
        "<temperature_f>70</temperature_f>"
        "<dewpoint>35</dewpoint>"
        "</weather>");
-    Sender sender = session.createSender("xml/weather");
+    Sender sender = session.createSender("xml-exchange/weather");
     sender.send(message);
 
     Message response = receiver.fetch();
