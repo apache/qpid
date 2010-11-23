@@ -32,7 +32,7 @@ public class StatisticsCounter
 {
     private static final Logger _log = LoggerFactory.getLogger(StatisticsCounter.class);
     
-    public static final long DEFAULT_SAMPLE_PERIOD = Long.getLong("qpid.statistics.samplePeriod", 1000L); // 1s
+    public static final long DEFAULT_SAMPLE_PERIOD = Long.getLong("qpid.statistics.samplePeriod", 2000L); // 2s
     public static final boolean DISABLE_STATISTICS = Boolean.getBoolean("qpid.statistics.disable");
     
     private static final String COUNTER = "counter";
@@ -89,18 +89,18 @@ public class StatisticsCounter
         {
             if (_last.compareAndSet(lastSample, thisSample))
             {
-                long rate = _temp.getAndSet(0L);
-                _rate.set(rate);
+                long current = _temp.getAndSet(0L);
+                _rate.set(current);
+                long peak;
+                while (current > (peak = _peak.get()))
+                {
+                    _peak.compareAndSet(peak, current);
+                }
             }
         }
         
         _total.addAndGet(value);
-        long current = _temp.addAndGet(value);
-        long peak;
-        while (current > (peak = _peak.get()))
-        {
-            _peak.compareAndSet(peak, current);
-        }
+        _temp.addAndGet(value);
     }
     
     /**
@@ -126,6 +126,7 @@ public class StatisticsCounter
 
     public double getPeak()
     {
+        update();
         return (double) _peak.get() / ((double) _period / 1000.0d);
     }
 
