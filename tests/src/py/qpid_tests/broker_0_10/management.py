@@ -23,6 +23,7 @@ from qpid.management import managementChannel, managementClient
 from threading import Condition
 from time import sleep
 import qmf.console
+import qpid.messaging
 
 class ManagementTest (TestBase010):
     """
@@ -386,6 +387,30 @@ class ManagementTest (TestBase010):
         conn = self.connect()
         session = conn.session("my-named-session")
         session.queue_declare(queue="whatever", exclusive=True, auto_delete=True)
+
+    def test_immediate_method(self):
+        url = "%s://%s:%d" % (self.broker.scheme or "amqp", self.broker.host, self.broker.port)
+        conn = qpid.messaging.Connection(url)
+        conn.open()
+        sess = conn.session()
+        replyTo = "qmf.default.direct/reply_immediate_method_test;{node:{type:topic}}"
+        agent_sender   = sess.sender("qmf.default.direct/broker")
+        agent_receiver = sess.receiver(replyTo)
+        queue_create = sess.sender("test-queue-imm-method;{create:always,delete:always,node:{type:queue,durable:False,x-declare:{auto-delete:True}}}")
+
+        method_request = {'_method_name':'reroute','_object_id':{'_object_name':'org.apache.qpid.broker:queue:test-queue-imm-method'}}
+        method_request['_arguments'] = {'request':0, 'useAltExchange':False, 'exchange':'amq.fanout'}
+
+        reroute_call = qpid.messaging.Message(method_request)
+        reroute_call.properties['qmf.opcode'] = '_method_request'
+        reroute_call.properties['x-amqp-0-10.app-id'] = 'qmf2'
+        reroute_call.reply_to = replyTo
+
+        agent_sender.send(reroute_call)
+        result = agent_receiver.fetch(3)
+        self.assertEqual(result.properties['qmf.opcode'], '_method_response')
+
+        conn.close()
 
     def test_binding_count_on_queue(self):
         self.startQmf()

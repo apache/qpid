@@ -1038,6 +1038,8 @@ bool ManagementAgent::dispatchCommand (Deliverable&      deliverable,
 
 void ManagementAgent::handleMethodRequestLH(Buffer& inBuffer, const string& replyToKey, uint32_t sequence, const ConnectionToken* connToken)
 {
+    moveNewObjectsLH();
+
     string   methodName;
     string   packageName;
     string   className;
@@ -1134,6 +1136,8 @@ void ManagementAgent::handleMethodRequestLH(Buffer& inBuffer, const string& repl
 void ManagementAgent::handleMethodRequestLH (const string& body, const string& replyTo,
                                              const string& cid, const ConnectionToken* connToken, bool viaLocal)
 {
+    moveNewObjectsLH();
+
     string   methodName;
     Variant::Map inMap;
     MapCodec::decode(body, inMap);
