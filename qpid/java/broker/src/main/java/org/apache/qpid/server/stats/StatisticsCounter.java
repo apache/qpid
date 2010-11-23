@@ -38,11 +38,11 @@ public class StatisticsCounter
     private static final String COUNTER = "counter";
     private static final AtomicLong _counterIds = new AtomicLong(0L);
     
-    private final AtomicLong _peak = new AtomicLong(0L);
-    private final AtomicLong _total = new AtomicLong(0L);
-    private final AtomicLong _temp = new AtomicLong(0L);
-    private final AtomicLong _last = new AtomicLong(0L);
-    private final AtomicLong _rate = new AtomicLong(0L);
+    private long _peak = 0L;
+    private long _total = 0L;
+    private long _temp = 0L;
+    private long _last = 0L;
+    private long _rate = 0L;
 
     private long _start;
     
@@ -82,25 +82,24 @@ public class StatisticsCounter
         {
             return;
         }
-        
+
         long thisSample = (timestamp / _period);
-        long lastSample;
-        while (thisSample > (lastSample = _last.get()))
+        synchronized (this)
         {
-            if (_last.compareAndSet(lastSample, thisSample))
+            if (thisSample > _last)
             {
-                long current = _temp.getAndSet(0L);
-                _rate.set(current);
-                long peak;
-                while (current > (peak = _peak.get()))
+                _last = thisSample;
+                _rate = _temp;
+                _temp = 0L;
+                if (_rate > _peak)
                 {
-                    _peak.compareAndSet(peak, current);
+                    _peak = _rate;
                 }
             }
+            
+            _total += value;
+            _temp += value;
         }
-        
-        _total.addAndGet(value);
-        _temp.addAndGet(value);
     }
     
     /**
@@ -117,28 +116,28 @@ public class StatisticsCounter
      */
     public void reset()
     {
-        _peak.set(0L);
-        _rate.set(0L);
-        _total.set(0L);
+        _peak = 0L;
+        _rate = 0L;
+        _total = 0L;
         _start = System.currentTimeMillis();
-        _last.set(_start / _period);
+        _last = _start / _period;
     }
 
     public double getPeak()
     {
         update();
-        return (double) _peak.get() / ((double) _period / 1000.0d);
+        return (double) _peak / ((double) _period / 1000.0d);
     }
 
     public double getRate()
     {
         update();
-        return (double) _rate.get() / ((double) _period / 1000.0d);
+        return (double) _rate / ((double) _period / 1000.0d);
     }
 
     public long getTotal()
     {
-        return _total.get();
+        return _total;
     }
 
     public long getStart()
