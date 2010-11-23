@@ -154,22 +154,23 @@ public class MessageStatisticsTest extends MessageStatisticsTestCase
      */
     public void testMessagePeakRates() throws Exception
     {
-        sendUsing(_test, 1, 10000);
+        sendUsing(_test, 2, 10);
         Thread.sleep(10 * 1000);
-        sendUsing(_dev, 10, 10);
+        sendUsing(_dev, 4, 10);
+        Thread.sleep(10 * 1000);
         
         ManagedBroker test = _jmxUtils.getManagedBroker("test");
         ManagedBroker dev = _jmxUtils.getManagedBroker("development");
         
         assertApprox("Incorrect test vhost peak messages", 0.2d, 1.0d, test.getPeakMessageReceiptRate());
-        assertApprox("Incorrect test vhost peak data", 0.2d, 10000.0d, test.getPeakDataReceiptRate());
-        assertApprox("Incorrect dev vhost peak messages", 0.2d, 10.0d, dev.getPeakMessageReceiptRate());
-        assertApprox("Incorrect dev vhost peak data", 0.2d, 100.0d, dev.getPeakDataReceiptRate());
+        assertApprox("Incorrect test vhost peak data", 0.2d, 10.0d, test.getPeakDataReceiptRate());
+        assertApprox("Incorrect dev vhost peak messages", 0.2d, 2.0d, dev.getPeakMessageReceiptRate());
+        assertApprox("Incorrect dev vhost peak data", 0.2d, 20.0d, dev.getPeakDataReceiptRate());
 
         if (!_broker.equals(VM))
         {
-            assertApprox("Incorrect server peak messages", 0.2d, 10.0d, _jmxUtils.getServerInformation().getPeakMessageReceiptRate());
-            assertApprox("Incorrect server peak data", 0.2d, 10000.0d, _jmxUtils.getServerInformation().getPeakDataReceiptRate());
+            assertApprox("Incorrect server peak messages", 0.2d, 2.0d, _jmxUtils.getServerInformation().getPeakMessageReceiptRate());
+            assertApprox("Incorrect server peak data", 0.2d, 20.0d, _jmxUtils.getServerInformation().getPeakDataReceiptRate());
         }
     }
     

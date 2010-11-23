@@ -28,9 +28,9 @@ import org.slf4j.LoggerFactory;
  * This class collects statistics and counts the total, rate per second and
  * peak rate per second values for the events that are registered with it. 
  */
-public class StatisticsCounter
+public class StatisticsCounter1
 {
-    private static final Logger _log = LoggerFactory.getLogger(StatisticsCounter.class);
+    private static final Logger _log = LoggerFactory.getLogger(StatisticsCounter1.class);
     
     public static final long DEFAULT_SAMPLE_PERIOD = Long.getLong("qpid.statistics.samplePeriod", 2000L); // 2s
     public static final boolean DISABLE_STATISTICS = Boolean.getBoolean("qpid.statistics.disable");
@@ -38,28 +38,28 @@ public class StatisticsCounter
     private static final String COUNTER = "counter";
     private static final AtomicLong _counterIds = new AtomicLong(0L);
     
-    private long _peak = 0L;
-    private long _total = 0L;
-    private long _temp = 0L;
-    private long _last = 0L;
-    private long _rate = 0L;
+    private final AtomicLong _peak = new AtomicLong(0L);
+    private final AtomicLong _total = new AtomicLong(0L);
+    private final AtomicLong _temp = new AtomicLong(0L);
+    private final AtomicLong _last = new AtomicLong(0L);
+    private final AtomicLong _rate = new AtomicLong(0L);
 
     private long _start;
     
     private final long _period;
     private final String _name;
 
-    public StatisticsCounter()
+    public StatisticsCounter1()
     {
         this(COUNTER);
     }
     
-    public StatisticsCounter(String name)
+    public StatisticsCounter1(String name)
     {
         this(name, DEFAULT_SAMPLE_PERIOD);
     }
 
-    public StatisticsCounter(String name, long period)
+    public StatisticsCounter1(String name, long period)
     {
         _period = period;
         _name = name + "-" + + _counterIds.incrementAndGet();
@@ -84,22 +84,23 @@ public class StatisticsCounter
         }
         
         long thisSample = (timestamp / _period);
-        synchronized (this)
+        long lastSample;
+        while (thisSample > (lastSample = _last.get()))
         {
-            if (thisSample > _last)
+            if (_last.compareAndSet(lastSample, thisSample))
             {
-                _last = thisSample;
-                _rate = _temp;
-                _temp = 0L;
-                if (_rate > _peak)
+                long current = _temp.getAndSet(0L);
+                _rate.set(current);
+                long peak;
+                while (current > (peak = _peak.get()))
                 {
-                    _peak = _rate;
+                    _peak.compareAndSet(peak, current);
                 }
             }
-            
-            _total += value;
-            _temp += value;
         }
+        
+        _total.addAndGet(value);
+        _temp.addAndGet(value);
     }
     
     /**
@@ -116,28 +117,28 @@ public class StatisticsCounter
      */
     public void reset()
     {
-        _peak = 0L;
-        _rate = 0L;
-        _total = 0L;
+        _peak.set(0L);
+        _rate.set(0L);
+        _total.set(0L);
         _start = System.currentTimeMillis();
-        _last = _start / _period;
+        _last.set(_start / _period);
     }
 
     public double getPeak()
     {
         update();
-        return (double) _peak / ((double) _period / 1000.0d);
+        return (double) _peak.get() / ((double) _period / 1000.0d);
     }
 
     public double getRate()
     {
         update();
-        return (double) _rate / ((double) _period / 1000.0d);
+        return (double) _rate.get() / ((double) _period / 1000.0d);
     }
 
     public long getTotal()
     {
-        return _total;
+        return _total.get();
     }
 
     public long getStart()

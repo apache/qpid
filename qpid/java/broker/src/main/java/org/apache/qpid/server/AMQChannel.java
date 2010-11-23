@@ -206,9 +206,6 @@ public class AMQChannel
         // check and deliver if header says body length is zero
         if (_currentMessage.allContentReceived())
         {
-            long bodySize = _currentMessage.getContentHeaderBody().bodySize;
-            long timestamp = ((BasicContentHeaderProperties) _currentMessage.getContentHeaderBody().properties).getTimestamp();
-            _session.registerMessageReceived(bodySize, timestamp);
             try
             {
                 _currentMessage.deliverToQueues();
@@ -223,6 +220,9 @@ public class AMQChannel
             }
             finally
             {
+	            long bodySize = _currentMessage.getContentHeaderBody().bodySize;
+	            long timestamp = ((BasicContentHeaderProperties) _currentMessage.getContentHeaderBody().properties).getTimestamp();
+	            _session.registerMessageReceived(bodySize, timestamp);
                 // callback to allow the context to do any post message processing
                 // primary use is to allow message return processing in the non-tx case
                 _txnContext.messageProcessed(_session);

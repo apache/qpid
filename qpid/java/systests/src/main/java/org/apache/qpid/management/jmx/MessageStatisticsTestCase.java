@@ -105,7 +105,7 @@ public abstract class MessageStatisticsTestCase extends QpidTestCase
     {
         double min = expected * (1.0d - error);
         double max = expected * (1.0d + error);
-        String assertion = String.format("%s: expected %f +/- %d, actual %f",
+        String assertion = String.format("%s: expected %f +/- %d%%, actual %f",
                 message, expected, (int) (error * 100.0d), actual);
         assertTrue(assertion, actual > min && actual < max);
     }

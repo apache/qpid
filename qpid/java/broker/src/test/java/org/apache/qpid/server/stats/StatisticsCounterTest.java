@@ -76,22 +76,25 @@ public class StatisticsCounterTest extends TestCase
     /**
      * Test that the peak rate is reported correctly.
      */
-    public void testPeak()
+    public void testPeak() throws Exception
     {
         StatisticsCounter counter = new StatisticsCounter("test", 1000L);
         long start = counter.getStart();
         assertEquals(0.0, counter.getPeak());
         counter.registerEvent(1000, start + 500);
+        Thread.sleep(1250);
         assertEquals(1000.0, counter.getPeak());
         counter.registerEvent(2000, start + 1500);
+        Thread.sleep(1000);
         assertEquals(2000.0, counter.getPeak());
         counter.registerEvent(1000, start + 2500);
+        Thread.sleep(1000);
         assertEquals(2000.0, counter.getPeak());
     }
  
     /**
-     * Test that peak rate is reported correctly even when messages are
-     * delivered out-of-order.
+     * Test that peak rate is reported correctly for out-of-order messages,
+     * and the total is also unaffected.
      */
     public void testPeakOutOfOrder() throws Exception
     {
@@ -99,18 +102,22 @@ public class StatisticsCounterTest extends TestCase
         long start = counter.getStart();
         assertEquals(0.0, counter.getPeak());
         counter.registerEvent(1000, start + 2500);
-        assertEquals(1000.0, counter.getPeak());
+        Thread.sleep(1250);
+        assertEquals(0.0, counter.getPeak());
         counter.registerEvent(2000, start + 1500);
-        assertEquals(3000.0, counter.getPeak());
+        Thread.sleep(1000);
+        assertEquals(0.0, counter.getPeak());
         counter.registerEvent(1000, start + 500);
+        Thread.sleep(1500);
         assertEquals(4000.0, counter.getPeak());
         Thread.sleep(2000);
         assertEquals(4000.0, counter.getPeak());
         counter.registerEvent(1000, start + 500);
-        assertEquals(5000.0, counter.getPeak());
+        assertEquals(4000.0, counter.getPeak());
         Thread.sleep(2000);
         counter.registerEvent(1000);
-        assertEquals(5000.0, counter.getPeak());
+        assertEquals(4000.0, counter.getPeak());
+        assertEquals(6000, counter.getTotal());
     }
  
     /**
@@ -122,12 +129,13 @@ public class StatisticsCounterTest extends TestCase
         assertEquals(0.0, counter.getRate());
         Thread.sleep(100);
         counter.registerEvent(1000);
+        Thread.sleep(1250);
         assertEquals(1000.0, counter.getRate());
-        Thread.sleep(1000);
         counter.registerEvent(2000);
-        assertEquals(2000.0, counter.getRate());
         Thread.sleep(1000);
+        assertEquals(2000.0, counter.getRate());
         counter.registerEvent(1000);
+        Thread.sleep(1000);
         assertEquals(1000.0, counter.getRate());
         Thread.sleep(1000);
         assertEquals(0.0, counter.getRate());

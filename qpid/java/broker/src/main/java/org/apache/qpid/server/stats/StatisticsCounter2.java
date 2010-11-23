@@ -28,9 +28,9 @@ import org.slf4j.LoggerFactory;
  * This class collects statistics and counts the total, rate per second and
  * peak rate per second values for the events that are registered with it. 
  */
-public class StatisticsCounter
+public class StatisticsCounter2
 {
-    private static final Logger _log = LoggerFactory.getLogger(StatisticsCounter.class);
+    private static final Logger _log = LoggerFactory.getLogger(StatisticsCounter2.class);
     
     public static final long DEFAULT_SAMPLE_PERIOD = Long.getLong("qpid.statistics.samplePeriod", 2000L); // 2s
     public static final boolean DISABLE_STATISTICS = Boolean.getBoolean("qpid.statistics.disable");
@@ -49,17 +49,17 @@ public class StatisticsCounter
     private final long _period;
     private final String _name;
 
-    public StatisticsCounter()
+    public StatisticsCounter2()
     {
         this(COUNTER);
     }
     
-    public StatisticsCounter(String name)
+    public StatisticsCounter2(String name)
     {
         this(name, DEFAULT_SAMPLE_PERIOD);
     }
 
-    public StatisticsCounter(String name, long period)
+    public StatisticsCounter2(String name, long period)
     {
         _period = period;
         _name = name + "-" + + _counterIds.incrementAndGet();
@@ -82,7 +82,7 @@ public class StatisticsCounter
         {
             return;
         }
-        
+
         long thisSample = (timestamp / _period);
         synchronized (this)
         {
