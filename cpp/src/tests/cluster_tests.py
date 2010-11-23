@@ -293,7 +293,7 @@ class LongTests(BrokerTest):
             i += 1
             b = cluster.start(expect=EXPECT_EXIT_FAIL)
             ErrorGenerator(b)
-            time.sleep(5)
+            time.sleep(min(5,self.duration()/2))
         sender.stop()
         receiver.stop()
         for i in range(i, len(cluster)): cluster[i].kill()
@@ -382,7 +382,7 @@ class LongTests(BrokerTest):
         start_mclients(cluster[alive])
 
         while time.time() < endtime:
-            time.sleep(5)
+            time.sleep(max(5,self.duration()/4))
             for b in cluster[alive:]: b.ready() # Check if a broker crashed.
             # Kill the first broker, expect the clients to fail. 
             b = cluster[alive]
