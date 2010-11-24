@@ -81,8 +81,9 @@ public class StatisticsCounterTest extends TestCase
         StatisticsCounter counter = new StatisticsCounter("test", 1000L);
         long start = counter.getStart();
         assertEquals(0.0, counter.getPeak());
+        Thread.sleep(500);
         counter.registerEvent(1000, start + 500);
-        Thread.sleep(1250);
+        Thread.sleep(1000);
         assertEquals(1000.0, counter.getPeak());
         counter.registerEvent(2000, start + 1500);
         Thread.sleep(1000);
@@ -102,10 +103,10 @@ public class StatisticsCounterTest extends TestCase
         long start = counter.getStart();
         assertEquals(0.0, counter.getPeak());
         counter.registerEvent(1000, start + 2500);
-        Thread.sleep(1250);
+        Thread.sleep(1500);
         assertEquals(0.0, counter.getPeak());
         counter.registerEvent(2000, start + 1500);
-        Thread.sleep(1000);
+        Thread.sleep(1000L);
         assertEquals(0.0, counter.getPeak());
         counter.registerEvent(1000, start + 500);
         Thread.sleep(1500);
@@ -127,9 +128,9 @@ public class StatisticsCounterTest extends TestCase
     {
         StatisticsCounter counter = new StatisticsCounter("test", 1000L);
         assertEquals(0.0, counter.getRate());
-        Thread.sleep(100);
+        Thread.sleep(500);
         counter.registerEvent(1000);
-        Thread.sleep(1250);
+        Thread.sleep(1000);
         assertEquals(1000.0, counter.getRate());
         counter.registerEvent(2000);
         Thread.sleep(1000);

@@ -76,6 +76,7 @@ public class MessageConnectionStatisticsTest extends MessageStatisticsTestCase
         
         sendUsing(test, 5, 200);
         sendUsing(_test, 5, 200);
+        Thread.sleep(1000);
         
         for (ManagedConnection mc : _jmxUtils.getManagedConnections("test"))
         {

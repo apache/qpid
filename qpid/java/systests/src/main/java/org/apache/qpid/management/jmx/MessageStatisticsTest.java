@@ -48,6 +48,7 @@ public class MessageStatisticsTest extends MessageStatisticsTestCase
         sendUsing(_local, 5, 100);
         sendUsing(_local, 5, 100);
         sendUsing(_local, 5, 100);
+        Thread.sleep(2000);
         
         ManagedBroker test = _jmxUtils.getManagedBroker("test");
         ManagedBroker dev = _jmxUtils.getManagedBroker("development");
@@ -116,6 +117,7 @@ public class MessageStatisticsTest extends MessageStatisticsTestCase
         sendUsing(_test, 10, 100);
         sendUsing(temp, 10, 100);
         sendUsing(_test, 10, 100);
+        Thread.sleep(2000);
         
         temp.close();
         
@@ -155,9 +157,9 @@ public class MessageStatisticsTest extends MessageStatisticsTestCase
     public void testMessagePeakRates() throws Exception
     {
         sendUsing(_test, 2, 10);
-        Thread.sleep(10 * 1000);
+        Thread.sleep(10000);
         sendUsing(_dev, 4, 10);
-        Thread.sleep(10 * 1000);
+        Thread.sleep(10000);
         
         ManagedBroker test = _jmxUtils.getManagedBroker("test");
         ManagedBroker dev = _jmxUtils.getManagedBroker("development");
@@ -181,6 +183,7 @@ public class MessageStatisticsTest extends MessageStatisticsTestCase
     {
         sendUsing(_test, 10, 10);
         sendUsing(_dev, 10, 10);
+        Thread.sleep(2000);
         
         ManagedBroker test = _jmxUtils.getManagedBroker("test");
         ManagedBroker dev = _jmxUtils.getManagedBroker("development");
