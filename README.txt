@@ -63,3 +63,7 @@ Management Tools (implemented in Java):
 Documentation:
 
   ./doc
+
+
+Further information about the organization of Qpid source components may
+be found in ./doc/dev-readme/QPID-0.8-Component-README.pdf.
