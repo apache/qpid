@@ -222,8 +222,10 @@ public class AMQMessageDelegate_0_10 extends AbstractAMQMessageDelegate
                 String exchange = replyTo.getExchange();
                 String routingKey = replyTo.getRoutingKey();
 
-                dest = generateDestination(exchange == null ? null : new AMQShortString(exchange),
-                        routingKey == null ? null : new AMQShortString(routingKey));
+                dest = generateDestination(exchange == null ? new AMQShortString("") : 
+                                                              new AMQShortString(exchange),
+                                           routingKey == null ? new AMQShortString(""):
+                                                                new AMQShortString(routingKey));
 
 
 
