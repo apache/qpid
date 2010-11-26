@@ -234,12 +234,23 @@ bool XmlExchange::matches(Query& query, Deliverable& msg, const qpid::framing::F
         if (args) {
             FieldTable::ValueMap::const_iterator v = args->begin();
             for(; v != args->end(); ++v) {
-                // ### TODO: Do types properly
-                if (v->second->convertsTo<std::string>()) {
-                    QPID_LOG(trace, "XmlExchange, external variable: " << v->first << " = " << v->second->getData().getString().c_str());
-                    Item::Ptr value = context->getItemFactory()->createString(X(v->second->getData().getString().c_str()), context.get());
+
+                if (v->second->convertsTo<double>()) {
+                    QPID_LOG(trace, "XmlExchange, external variable (double): " << v->first << " = " << v->second->get<double>());
+                    Item::Ptr value = context->getItemFactory()->createDouble(v->second->get<double>(), context.get());
+                    context->setExternalVariable(X(v->first.c_str()), value);
+                }              
+                else if (v->second->convertsTo<int>()) {
+                    QPID_LOG(trace, "XmlExchange, external variable (int):" << v->first << " = " << v->second->getData().getInt());
+                    Item::Ptr value = context->getItemFactory()->createInteger(v->second->get<int>(), context.get());
                     context->setExternalVariable(X(v->first.c_str()), value);
                 }
+                else if (v->second->convertsTo<std::string>()) {
+                    QPID_LOG(trace, "XmlExchange, external variable (string):" << v->first << " = " << v->second->getData().getString().c_str());
+                    Item::Ptr value = context->getItemFactory()->createString(X(v->second->get<std::string>().c_str()), context.get());
+                    context->setExternalVariable(X(v->first.c_str()), value);
+                }
+
             }
         }
 
