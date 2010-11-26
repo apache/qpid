@@ -104,8 +104,6 @@ struct ClientSessionFixture : public ProxySessionFixture
 
 // ########### START HERE ####################################
 
-
-
 QPID_AUTO_TEST_CASE(testXmlBinding) {
     ClientSessionFixture f;
 
@@ -213,6 +211,78 @@ olour", arg::arguments=blue);
     }
     BOOST_ERROR("A bad XQuery must raise an exception when used in an XML Binding.");
 
+}
+
+
+//### Test: double, string, and integer field values can all be bound to queries
+
+QPID_AUTO_TEST_CASE(testXmlBindingUntyped) {
+    ClientSessionFixture f;
+
+    SubscriptionManager subscriptions(f.session);
+    SubscribedLocalQueue localQueue(subscriptions);
+
+    f.session.exchangeDeclare(qpid::client::arg::exchange="xml", qpid::client::arg::type="xml");
+    f.session.queueDeclare(qpid::client::arg::queue="odd_blue");
+    subscriptions.subscribe(localQueue, "odd_blue");
+
+    FieldTable binding;
+    binding.setString("xquery", 
+                      "declare variable $s external;"
+                      "declare variable $i external;"
+                      "declare variable $d external;"
+                      "$s = 'string' and $i = 1 and $d < 1");
+    f.session.exchangeBind(qpid::client::arg::exchange="xml", qpid::client::arg::queue="odd_blue", qpid::client::arg::bindingKey="query_name", qpid::client::arg::arguments=binding);
+
+    Message message;
+    message.getDeliveryProperties().setRoutingKey("query_name");
+
+    message.getHeaders().setString("s", "string");
+    message.getHeaders().setInt("i", 1);
+    message.getHeaders().setDouble("d", 0.5);
+    string m = "<message>Hi, Mom!</message>";
+    message.setData(m);
+
+    f.session.messageTransfer(qpid::client::arg::content=message,  qpid::client::arg::destination="xml");
+
+    Message m2 = localQueue.get(1*qpid::sys::TIME_SEC);
+    BOOST_CHECK_EQUAL(m, m2.getData());
+}
+
+
+//### Test: double, string, and integer field values can all be bound to queries
+
+QPID_AUTO_TEST_CASE(testXmlBindingTyped) {
+    ClientSessionFixture f;
+
+    SubscriptionManager subscriptions(f.session);
+    SubscribedLocalQueue localQueue(subscriptions);
+
+    f.session.exchangeDeclare(qpid::client::arg::exchange="xml", qpid::client::arg::type="xml");
+    f.session.queueDeclare(qpid::client::arg::queue="odd_blue");
+    subscriptions.subscribe(localQueue, "odd_blue");
+
+    FieldTable binding;
+    binding.setString("xquery", 
+                      "declare variable $s as xs:string external;"
+                      "declare variable $i as xs:integer external;"
+                      "declare variable $d external;"              // XQilla bug when declaring xs:float, xs:double types? Fine if untyped, acts as float.
+                      "$s = 'string' and $i = 1 and $d < 1");
+    f.session.exchangeBind(qpid::client::arg::exchange="xml", qpid::client::arg::queue="odd_blue", qpid::client::arg::bindingKey="query_name", qpid::client::arg::arguments=binding);
+
+    Message message;
+    message.getDeliveryProperties().setRoutingKey("query_name");
+
+    message.getHeaders().setString("s", "string");
+    message.getHeaders().setInt("i", 1);
+    message.getHeaders().setDouble("d", 0.5);
+    string m = "<message>Hi, Mom!</message>";
+    message.setData(m);
+
+    f.session.messageTransfer(qpid::client::arg::content=message,  qpid::client::arg::destination="xml");
+
+    Message m2 = localQueue.get(1*qpid::sys::TIME_SEC);
+    BOOST_CHECK_EQUAL(m, m2.getData());
 }
 
 
