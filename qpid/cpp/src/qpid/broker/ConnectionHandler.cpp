@@ -246,12 +246,15 @@ void ConnectionHandler::Handler::start(const FieldTable& serverProperties,
     std::string host     = connection.getHost();
     std::string service("qpidd");
 
-    sasl = SaslFactory::getInstance().create( username,
-                                              password,
-                                              service,
-                                              host,
-                                              0,   // TODO -- mgoulish Fri Sep 24 06:41:26 EDT 2010
-                                              256  /* TODO -- mgoulish*/ );
+    if ( connection.getBroker().isAuthenticating() ) {
+        sasl = SaslFactory::getInstance().create( username,
+                                                  password,
+                                                  service,
+                                                  host,
+                                                  0,   // TODO -- mgoulish Fri Sep 24 2010
+                                                  256,  
+                                                  false ); // disallow interaction
+    }
     std::string supportedMechanismsList;
     bool requestedMechanismIsSupported = false;
     Array::const_iterator i;

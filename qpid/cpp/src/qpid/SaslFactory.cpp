@@ -110,7 +110,7 @@ struct CyrusSaslSettings
 class CyrusSasl : public Sasl
 {
   public:
-    CyrusSasl(const std::string & username, const std::string & password, const std::string & serviceName, const std::string & hostName, int minSsf, int maxSsf);
+    CyrusSasl(const std::string & username, const std::string & password, const std::string & serviceName, const std::string & hostName, int minSsf, int maxSsf, bool allowInteraction);
     ~CyrusSasl();
     std::string start(const std::string& mechanisms, const SecuritySettings* externalSettings);
     std::string step(const std::string& challenge);
@@ -125,6 +125,10 @@ class CyrusSasl : public Sasl
     std::string mechanism;
     char login[MAX_LOGIN_LENGTH];
 
+    /* In some contexts, like running in the broker or as a daemon, console 
+     * interaction is impossible.  In those cases, we will treat the attempt 
+     * to interact as an error. */
+    bool allowInteraction;
     void interact(sasl_interact_t* client_interact);
 };
 
@@ -159,14 +163,14 @@ SaslFactory& SaslFactory::getInstance()
     return *instance;
 }
 
-std::auto_ptr<Sasl> SaslFactory::create(const std::string & username, const std::string & password, const std::string & serviceName, const std::string & hostName, int minSsf, int maxSsf)
+std::auto_ptr<Sasl> SaslFactory::create(const std::string & username, const std::string & password, const std::string & serviceName, const std::string & hostName, int minSsf, int maxSsf, bool allowInteraction)
 {
-    std::auto_ptr<Sasl> sasl(new CyrusSasl(username, password, serviceName, hostName, minSsf, maxSsf));
+    std::auto_ptr<Sasl> sasl(new CyrusSasl(username, password, serviceName, hostName, minSsf, maxSsf, allowInteraction));
     return sasl;
 }
 
-CyrusSasl::CyrusSasl(const std::string & username, const std::string & password, const std::string & serviceName, const std::string & hostName, int minSsf, int maxSsf)
-    : conn(0), settings(username, password, serviceName, hostName, minSsf, maxSsf) 
+CyrusSasl::CyrusSasl(const std::string & username, const std::string & password, const std::string & serviceName, const std::string & hostName, int minSsf, int maxSsf, bool allowInteraction)
+    : conn(0), settings(username, password, serviceName, hostName, minSsf, maxSsf), allowInteraction(allowInteraction)
 {
     size_t i = 0;
 
@@ -329,6 +333,15 @@ std::string CyrusSasl::getUserId()
 
 void CyrusSasl::interact(sasl_interact_t* client_interact)
 {
+
+    /*
+      In some context console interaction cannot be allowed, such
+      as when this code run as part of a broker, or as a some other 
+      daemon.   In those cases we will treat the attempt to 
+    */
+    if ( ! allowInteraction ) {
+        throw InternalErrorException("interaction disallowed");
+    }
 
     if (client_interact->id == SASL_CB_PASS) {
         char* password = getpass(client_interact->prompt);
