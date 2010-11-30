@@ -286,6 +286,7 @@ public:
     boost::function<bool (const std::string& queue,
                           const boost::intrusive_ptr<Message>& msg)> deferDelivery;
 
+    bool isAuthenticating ( ) { return config.auth; }
 };
 
 }}
