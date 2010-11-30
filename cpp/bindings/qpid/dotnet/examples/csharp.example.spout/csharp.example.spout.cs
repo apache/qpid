@@ -105,6 +105,7 @@ namespace Org.Apache.Qpid.Messaging.Examples {
                     message.SetProperty("spout-id", spoutid);
                     sender.Send(message);
                 }
+                session.Sync();
                 connection.Close();
             } catch (Exception e) {
                 Console.WriteLine("Exception {0}.", e);
