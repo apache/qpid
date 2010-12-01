@@ -101,7 +101,7 @@ SaslFactory& SaslFactory::getInstance()
     return *instance;
 }
 
-std::auto_ptr<Sasl> SaslFactory::create( const std::string & username, const std::string & password, const std::string & serviceName, const std::string & hostName, int minSsf, int maxSsf )
+std::auto_ptr<Sasl> SaslFactory::create( const std::string & username, const std::string & password, const std::string & serviceName, const std::string & hostName, int minSsf, int maxSsf, bool )
 {
     std::auto_ptr<Sasl> sasl(new WindowsSasl( username, password, serviceName, hostName, minSsf, maxSsf ));
     return sasl;
