@@ -913,6 +913,7 @@ bool Cluster::isExpectingUpdate() {
     return state <= UPDATEE;
 }
 
+// Called in update thread or deliver thread.
 void Cluster::checkUpdateIn(Lock& l) {
     if (state != UPDATEE) return; // Wait till we reach the stall point.
     if (!updateClosed) return;  // Wait till update connection closes.
@@ -926,10 +927,11 @@ void Cluster::checkUpdateIn(Lock& l) {
         // thread. It will be updated on delivery of the "ready" we just mcast.
         broker.setClusterUpdatee(false);
         if (mAgent) mAgent->suppress(false); // Enable management output.
-        discarding = false;     // ok to set, we're stalled for update.
+        discarding = false;     // OK to set, we're stalled for update.
         QPID_LOG(notice, *this << " update complete, starting catch-up.");
-        QPID_LOG(debug, debugSnapshot());
+        QPID_LOG(debug, debugSnapshot()); // OK to call because we're stalled.
         if (mAgent) mAgent->clusterUpdate();
+        enableClusterSafe();    // Enable cluster-safe assertions
         deliverEventQueue.start();
     }
     else if (updateRetracted) { // Update was retracted, request another update
