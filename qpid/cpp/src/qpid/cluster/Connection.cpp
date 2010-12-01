@@ -18,6 +18,7 @@
  * under the License.
  *
  */
+#include "qpid/amqp_0_10/Codecs.h"
 #include "Connection.h"
 #include "UpdateClient.h"
 #include "Cluster.h"
@@ -42,6 +43,7 @@
 #include "qpid/framing/ConnectionCloseOkBody.h"
 #include "qpid/log/Statement.h"
 #include "qpid/sys/ClusterSafe.h"
+#include "qpid/types/Variant.h"
 #include "qpid/management/ManagementAgent.h"
 #include <boost/current_function.hpp>
 
@@ -51,7 +53,8 @@ namespace cluster {
 
 using namespace framing;
 using namespace framing::cluster;
-
+using amqp_0_10::ListCodec;
+using types::Variant;
 
 qpid::sys::AtomicValue<uint64_t> Connection::catchUpId(0x5000000000000000LL);
 
@@ -626,15 +629,6 @@ void Connection::addQueueListener(const std::string& q, uint32_t listener) {
     findQueue(q)->getListeners().addListener(updateIn.consumerNumbering[listener]);
 }
 
-void Connection::managementSchema(const std::string& data) {
-    management::ManagementAgent* agent = cluster.getBroker().getManagementAgent();
-    if (!agent)
-        throw Exception(QPID_MSG("Management schema update but management not enabled."));
-    framing::Buffer buf(const_cast<char*>(data.data()), data.size());
-    agent->importSchemas(buf);
-    QPID_LOG(debug, cluster << " updated management schemas");
-}
-
 //
 // This is the handler for incoming managementsetup messages.
 //
@@ -648,15 +642,5 @@ void Connection::managementSetupState(uint64_t objectNum, uint16_t bootSequence)
     agent->setNextObjectId(objectNum);
     agent->setBootSequence(bootSequence);
 }
-
-void Connection::managementAgents(const std::string& data) {
-    management::ManagementAgent* agent = cluster.getBroker().getManagementAgent();
-    if (!agent)
-        throw Exception(QPID_MSG("Management agent update but management not enabled."));
-    framing::Buffer buf(const_cast<char*>(data.data()), data.size());
-    agent->importAgents(buf);
-    QPID_LOG(debug, cluster << " updated management agents");
-}
-
 }} // Namespace qpid::cluster
 
