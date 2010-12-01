@@ -30,7 +30,7 @@ namespace Org.Apache.Qpid.Messaging.Examples {
         //
         // Sample invocation: csharp.example.drain.exe --broker localhost:5672 --timeout 30 my-queue
         //
-        static void Main(string[] args) {
+        static int Main(string[] args) {
             Options options = new Options(args);
 
             Connection connection = null;
@@ -74,6 +74,7 @@ namespace Org.Apache.Qpid.Messaging.Examples {
                 receiver.Close();
                 session.Close();
                 connection.Close();
+                return 0;
             }
             catch (Exception e)
             {
@@ -81,6 +82,7 @@ namespace Org.Apache.Qpid.Messaging.Examples {
                 if (null != connection)
                     connection.Close();
             }
+            return 1;
         }
     }
 }

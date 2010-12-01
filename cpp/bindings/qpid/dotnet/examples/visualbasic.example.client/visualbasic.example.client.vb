@@ -24,14 +24,16 @@ Imports Org.Apache.Qpid.Messaging
 Namespace Org.Apache.Qpid.Messaging.Examples
     Module Module1
         Class Client
-            Public Shared Sub Main(ByVal args() As String)
+            Public Shared Function Main(ByVal args() As String) As Integer
                 Dim url As String = "amqp:tcp:127.0.0.1:5672"
+                Dim connectionOptions As String = ""
 
                 If args.Length > 0 Then url = args(0)
+                If args.Length > 1 Then connectionOptions = args(1)
 
                 Dim connection As Connection
                 Try
-                    connection = New Connection(url)
+                    connection = New Connection(url, connectionOptions)
                     connection.Open()
 
                     Dim session As Session = connection.CreateSession()
@@ -58,12 +60,13 @@ Namespace Org.Apache.Qpid.Messaging.Examples
                         Console.WriteLine("{0} -> {1}", request.GetContent(), response.GetContent())
                     Next i
                     connection.Close()
-
+                    Main = 0
                 Catch e As Exception
                     Console.WriteLine("Exception {0}.", e)
                     connection.Close()
+                    Main = 1
                 End Try
-            End Sub
+            End Function
         End Class
     End Module
 End Namespace

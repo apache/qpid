@@ -24,13 +24,16 @@ using Org.Apache.Qpid.Messaging;
 
 namespace Org.Apache.Qpid.Messaging.Examples {
     class Client {
-        static void Main(string[] args) {
+        static int Main(string[] args) {
             String url = "amqp:tcp:127.0.0.1:5672";
+            String connectionOptions = "";
 
             if (args.Length > 0)
                 url = args[0];
+            if (args.Length > 1)
+                connectionOptions = args[1];
 
-            Connection connection = new Connection(url);
+            Connection connection = new Connection(url, connectionOptions);
             try
             {
                 connection.Open();
@@ -59,12 +62,14 @@ namespace Org.Apache.Qpid.Messaging.Examples {
                     Console.WriteLine("{0} -> {1}", request.GetContent(), response.GetContent());
                 }
                 connection.Close();
+                return 0;
             }
             catch (Exception e)
             {
                 Console.WriteLine("Exception {0}.", e);
                 connection.Close();
             }
+            return 1;
         }
     }
 }
