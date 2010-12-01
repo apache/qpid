@@ -63,13 +63,13 @@ namespace Org.Apache.Qpid.Messaging.Examples {
             }
         }
 
-        static void Main(string[] args) {
+        static int Main(string[] args) {
             Options options = new Options(args);
 
             Connection connection = null;
             try
             {
-                connection = new Connection(options.Url);
+                connection = new Connection(options.Url, options.ConnectionOptions);
                 connection.Open();
                 Session session = connection.CreateSession();
                 Sender sender = session.CreateSender(options.Address);
@@ -107,11 +107,13 @@ namespace Org.Apache.Qpid.Messaging.Examples {
                 }
                 session.Sync();
                 connection.Close();
+                return 0;
             } catch (Exception e) {
                 Console.WriteLine("Exception {0}.", e);
                 if (null != connection)
                     connection.Close();
             }
+            return 1;
         }
     }
 }

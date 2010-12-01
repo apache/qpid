@@ -27,7 +27,7 @@ namespace Org.Apache.Qpid.Messaging.Examples {
         //
         // Sample invocation: csharp.example.declare_queues.exe localhost:5672 my-queue
         //
-        static void Main(string[] args) {
+        static int Main(string[] args) {
             string addr = "localhost:5672";
             string queue = "my-queue";
 
@@ -46,6 +46,7 @@ namespace Org.Apache.Qpid.Messaging.Examples {
                 Sender sender = session.CreateSender(queueName);
                 session.Close();
                 connection.Close();
+                return 0;
             }
             catch (Exception e)
             {
@@ -53,6 +54,7 @@ namespace Org.Apache.Qpid.Messaging.Examples {
                 if (null != connection)
                     connection.Close();
             }
+            return 1;
         }
     }
 }

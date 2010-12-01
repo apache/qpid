@@ -31,7 +31,7 @@ namespace CSharpDirect
         // Receive 10 messages from localhost:5672, amq.direct/key
         // Messages are assumed to be printable strings.
         //
-        static void Main(string[] args)
+        static int Main(string[] args)
         {
             String host = "localhost:5672";
             String addr = "amq.direct/key";
@@ -66,12 +66,14 @@ namespace CSharpDirect
                         Console.WriteLine("Rcvd msg {0} : {1}", i, msg2.GetContent());
                     }
                     connection.Close();
+                    return 0;
                 }
             } catch (Exception e) {
                 Console.WriteLine("Exception {0}.", e);
                 if (null != connection)
                     connection.Close();
             }
+            return 1;
         }
     }
 }

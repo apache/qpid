@@ -31,7 +31,7 @@ namespace csharp.direct.sender
         // Send 10 messages from localhost:5672, amq.direct/key
         // Messages are assumed to be printable strings.
         //
-        static void Main(string[] args)
+        static int Main(string[] args)
         {
             String host = "localhost:5672";
             String addr = "amq.direct/key";
@@ -65,13 +65,16 @@ namespace csharp.direct.sender
                         Message message = new Message(String.Format("Test Message {0}", i));
                         sender.Send(message);
                     }
+                    session.Sync();
                     connection.Close();
+                    return 0;
                 }
             } catch (Exception e) {
                 Console.WriteLine("Exception {0}.", e);
                 if (null != connection)
                     connection.Close();
             }
+            return 1;
         }
     }
 }

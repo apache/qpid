@@ -31,7 +31,7 @@ namespace Org.Apache.Qpid.Messaging.Examples
         //
         // usage
         //
-        static void usage(string url, string addr, UInt32 count)
+        static void usage(string url, string addr, UInt32 count, string connOpts)
         {
 
             Console.WriteLine("usage: {0} [url  [addr [count]]]",
@@ -43,29 +43,31 @@ namespace Org.Apache.Qpid.Messaging.Examples
             Console.WriteLine(" url = target address for 'new Connection(url)'");
             Console.WriteLine(" addr = address for 'session.CreateReceiver(addr)'");
             Console.WriteLine(" count = number of messages to send");
+            Console.WriteLine(" connectionOptions = options list");
             Console.WriteLine();
             Console.WriteLine("Default values:");
-            Console.WriteLine("  {0} {1} {2} {3}",
+            Console.WriteLine("  {0} {1} {2} {3} {4}",
                 System.Diagnostics.Process.GetCurrentProcess().ProcessName,
-                url, addr, count);
+                url, addr, count, connOpts);
         }
 
         
         //
         // TestProgram
         //
-        public void TestProgram(string[] args)
+        public int TestProgram(string[] args)
         {
             string url = "amqp:tcp:localhost:5672";
             string addr = "amq.direct/map_example";
             UInt32 count = 1;
+            string connectionOptions = "";
 
             if (1 == args.Length)
             {
                 if (args[0].Equals("-h") || args[0].Equals("-H") || args[0].Equals("/?"))
                 {
-                    usage(url, addr, count);
-                    return;
+                    usage(url, addr, count, connectionOptions);
+                    return 1;
                 }
             }
 
@@ -75,12 +77,13 @@ namespace Org.Apache.Qpid.Messaging.Examples
                 addr = args[1];
             if (args.Length > 2)
                 count = System.Convert.ToUInt32(args[2]);
-
+            if (args.Length > 3)
+                connectionOptions = args[3];
             
             //
             // Create and open an AMQP connection to the broker URL
             //
-            Connection connection = new Connection(url);
+            Connection connection = new Connection(url, connectionOptions);
             connection.Open();
 
             //
@@ -160,9 +163,16 @@ namespace Org.Apache.Qpid.Messaging.Examples
                 sender.Send(message, true);
 
             //
+            // Wait until broker receives all messages.
+            //
+            session.Sync();
+
+            //
             // Close the connection.
             //
             connection.Close();
+
+            return 0;
         }
     }
 
@@ -171,13 +181,14 @@ namespace Org.Apache.Qpid.Messaging.Examples
         //
         // Main
         //
-        static void Main(string[] args)
+        static int Main(string[] args)
         {
             // Invoke 'TestProgram' as non-static class.
             MapSender mainProc = new MapSender();
 
-            mainProc.TestProgram(args);
+            int result = mainProc.TestProgram(args);
 
+            return result;
         }
     }
 }
