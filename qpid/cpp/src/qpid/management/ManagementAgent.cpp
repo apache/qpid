@@ -596,9 +596,10 @@ void ManagementAgent::sendBufferLH(const string& data,
     DeliveryProperties* dp =
         msg->getFrames().getHeaders()->get<DeliveryProperties>(true);
     dp->setRoutingKey(routingKey);
-    if (ttl_msec)
+    if (ttl_msec) {
         dp->setTtl(ttl_msec);
-
+        msg->setTimestamp(broker->getExpiryPolicy());
+    }
     msg->getFrames().append(content);
 
     {
