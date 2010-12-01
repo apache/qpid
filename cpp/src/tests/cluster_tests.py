@@ -298,7 +298,7 @@ class LongTests(BrokerTest):
         receiver.stop()
         for i in range(i, len(cluster)): cluster[i].kill()
 
-    def test_management(self):
+    def test_management(self, args=[]):
         """Stress test: Run management clients and other clients concurrently."""
 
         class ClientLoop(StoppableThread):
@@ -353,7 +353,7 @@ class LongTests(BrokerTest):
                 StoppableThread.stop(self)
 
         # def test_management
-        args = ["--mgmt-pub-interval", 1] # Publish management information every second.
+        args += ["--mgmt-pub-interval", 1] # Publish management information every second.
         # Use store if present.
         if BrokerTest.store_lib: args +=["--load-module", BrokerTest.store_lib]
         cluster = self.cluster(3, args)
@@ -401,6 +401,9 @@ class LongTests(BrokerTest):
             start_mclients(cluster[alive])
         for c in chain(mclients, *clients):
             c.stop()
+
+    def test_management_qmf2(self):
+        self.test_management(args=["--mgmt-qmf2=yes"])
 
 class StoreTests(BrokerTest):
     """

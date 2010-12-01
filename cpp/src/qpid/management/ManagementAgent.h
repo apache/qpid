@@ -148,6 +148,40 @@ public:
     static boost::shared_ptr<framing::FieldValue> toFieldValue(const types::Variant& in);
     static types::Variant toVariant(const boost::shared_ptr<framing::FieldValue>& val);
 
+    // For Clustering: management objects that have been marked as
+    // "deleted", but are waiting for their last published object
+    // update are not visible to the cluster replication code.  These
+    // interfaces allow clustering to gather up all the management
+    // objects that are deleted in order to allow all clustered
+    // brokers to publish the same set of deleted objects.
+
+    class DeletedObject {
+      public:
+        typedef boost::shared_ptr<DeletedObject> shared_ptr;
+        DeletedObject() {};
+        DeletedObject( const std::string &encoded );
+        ~DeletedObject() {};
+        void encode( std::string& toBuffer );
+
+      private:
+      friend class ManagementAgent;
+
+        std::string packageName;
+        std::string className;
+        std::string objectId;
+
+        std::string encodedV1Config;    // qmfv1 properties
+        std::string encodedV1Inst;      // qmfv1 statistics
+        qpid::types::Variant::Map encodedV2;
+    };
+
+    typedef std::vector<DeletedObject::shared_ptr> DeletedObjectList;
+
+    /** returns a snapshot of all currently deleted management objects. */
+    void exportDeletedObjects( DeletedObjectList& outList );
+
+    /** Import a list of deleted objects to send on next publish interval. */
+    void importDeletedObjects( const DeletedObjectList& inList );
 
 private:
     struct Periodic : public qpid::sys::TimerTask
@@ -292,6 +326,13 @@ private:
     // Maximum # of objects allowed in a single V2 response
     // message.
     uint32_t maxV2ReplyObjs;
+
+    // list of objects that have been deleted, but have yet to be published
+    // one final time.
+    // Indexed by a string composed of the object's package and class name.
+    // Protected by userLock.
+    typedef std::map<std::string, DeletedObjectList> PendingDeletedObjsMap;
+    PendingDeletedObjsMap pendingDeletedObjs;
 
 #   define MA_BUFFER_SIZE 65536
     char inputBuffer[MA_BUFFER_SIZE];

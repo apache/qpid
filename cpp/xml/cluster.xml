@@ -263,20 +263,10 @@
       <field name="consumer" type="uint32"/>
     </control>
 
-    <!-- Replicate management agent schema -->
-    <control name="management-schema" code="0x35">
-      <field name="data" type="vbin32"/>
-    </control>
-
     <!-- added by jrd.  propagate a management-setup-state widget -->
     <control name="management-setup-state" code="0x36">
       <field name="objectNum" type="uint64"/>
       <field name="bootSequence" type="uint16"/>
-    </control>
-
-    <!-- Replicate management agent's remote-agent map -->
-    <control name="management-agents" code="0x37">
-      <field name="data" type="vbin32"/>
     </control>
   </class>
 </amqp>
