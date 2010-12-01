@@ -127,6 +127,7 @@
 #include "qpid/cluster/UpdateClient.h"
 #include "qpid/cluster/RetractClient.h"
 #include "qpid/cluster/FailoverExchange.h"
+#include "qpid/cluster/UpdateDataExchange.h"
 #include "qpid/cluster/UpdateExchange.h"
 #include "qpid/cluster/ClusterTimer.h"
 
@@ -197,7 +198,7 @@ namespace _qmf = ::qmf::org::apache::qpid::cluster;
  * Currently use SVN revision to avoid clashes with versions from
  * different branches.
  */
-const uint32_t Cluster::CLUSTER_VERSION = 964709;
+const uint32_t Cluster::CLUSTER_VERSION = 1039478;
 
 struct ClusterDispatcher : public framing::AMQP_AllOperations::ClusterHandler {
     qpid::cluster::Cluster& cluster;
@@ -289,6 +290,10 @@ Cluster::Cluster(const ClusterSettings& set, broker::Broker& b) :
     // without modifying delivery-properties.exchange.
     broker.getExchanges().registerExchange(
         boost::shared_ptr<broker::Exchange>(new UpdateExchange(this)));
+    // Update-data exchange is used for passing data that may be too large
+    // for single control frame.
+    broker.getExchanges().registerExchange(
+        boost::shared_ptr<broker::Exchange>(new UpdateDataExchange(this, broker.getManagementAgent())));
 
     // Load my store status before we go into initialization
     if (! broker::NullMessageStore::isNullStore(&broker.getStore())) {

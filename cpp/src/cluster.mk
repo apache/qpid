@@ -93,7 +93,9 @@ cluster_la_SOURCES =				\
   qpid/cluster/SecureConnectionFactory.h        \
   qpid/cluster/SecureConnectionFactory.cpp      \
   qpid/cluster/StoreStatus.h			\
-  qpid/cluster/StoreStatus.cpp
+  qpid/cluster/StoreStatus.cpp			\
+  qpid/cluster/UpdateDataExchange.h		\
+  qpid/cluster/UpdateDataExchange.cpp
 
 cluster_la_LIBADD=  -lcpg $(libcman) libqpidbroker.la libqpidclient.la
 cluster_la_CXXFLAGS = $(AM_CXXFLAGS) -fno-strict-aliasing
