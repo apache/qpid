@@ -19,8 +19,6 @@
 
 # Build a simple qmf agent for test purposes.
 
-QMF_GEN=$(top_srcdir)/managementgen/qmf-gen
-
 TESTAGENT_GEN_SRC=									\
 	testagent_gen/qmf/org/apache/qpid/agent/example/Parent.h			\
 	testagent_gen/qmf/org/apache/qpid/agent/example/Child.h				\
