@@ -32,14 +32,18 @@ namespace Org.Apache.Qpid.Messaging.examples
         // Send an amqp/map message to amqp:tcp:localhost:5672 amq.direct/map_example
         // The map message 
         //
-        static void Main(string[] args)
+        static int Main(string[] args)
         {
             string url = "amqp:tcp:localhost:5672";
             string address = "message_queue; {create: always}";
+            string connectionOptions = "";
+
             if (args.Length > 0)
                 url = args[0];
             if (args.Length > 1)
                 address = args[1];
+            if (args.Length > 2)
+                connectionOptions = args[3];
 
             //
             // Create and open an AMQP connection to the broker URL
@@ -76,6 +80,7 @@ namespace Org.Apache.Qpid.Messaging.examples
             //
             receiver.Close();
             connection.Close();
+            return 0;
         }
     }
 }

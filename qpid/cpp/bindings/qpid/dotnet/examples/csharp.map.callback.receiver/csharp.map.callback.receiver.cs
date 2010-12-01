@@ -186,18 +186,19 @@ namespace Org.Apache.Qpid.Messaging.Examples
         /// receive messages.
         /// </summary>
         /// <param name="args">Main program arguments</param>
-        public void TestProgram(string[] args)
+        public int TestProgram(string[] args)
         {
             string url = "amqp:tcp:localhost:5672";
             string addr = "amq.direct/map_example";
             int nSec = 30;
+            string connectionOptions = "";
 
             if (1 == args.Length)
             {
                 if (args[0].Equals("-h") || args[0].Equals("-H") || args[0].Equals("/?"))
                 {
                     usage(url, addr, nSec);
-                    return;
+                    return 1;
                 }
             }
 
@@ -207,11 +208,13 @@ namespace Org.Apache.Qpid.Messaging.Examples
                 addr = args[1];
             if (args.Length > 2)
                 nSec = System.Convert.ToInt32(args[2]);
+            if (args.Length > 3)
+                connectionOptions = args[3];
 
             //
             // Create and open an AMQP connection to the broker URL
             //
-            Connection connection = new Connection(url);
+            Connection connection = new Connection(url, connectionOptions);
             connection.Open();
 
             //
@@ -258,6 +261,7 @@ namespace Org.Apache.Qpid.Messaging.Examples
             //
             receiver.Close();
             connection.Close();
+            return 0;
         }
     }
 
@@ -268,13 +272,14 @@ namespace Org.Apache.Qpid.Messaging.Examples
         /// Main program
         /// </summary>
         /// <param name="args">Main prgram args</param>
-        static void Main(string[] args)
+        static int Main(string[] args)
         {
             // Invoke 'TestProgram' as non-static class.
             ReceiverProcess mainProc = new ReceiverProcess();
 
-            mainProc.TestProgram(args);
+            int result = mainProc.TestProgram(args);
 
+            return result;
         }
     }
 }

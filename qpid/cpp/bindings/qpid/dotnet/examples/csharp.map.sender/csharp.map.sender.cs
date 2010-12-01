@@ -34,19 +34,23 @@ namespace Org.Apache.Qpid.Messaging.examples
         // The map message contains simple types, a nested amqp/map,
         // an ampq/list, and specific instances of each supported type.
         //
-        static void Main(string[] args)
+        static int Main(string[] args)
         {
             string url = "amqp:tcp:localhost:5672";
             string address = "message_queue; {create: always}";
+            string connectionOptions = "";
+
             if (args.Length > 0)
                 url = args[0];
             if (args.Length > 1)
                 address = args[1];
+            if (args.Length > 2)
+                connectionOptions = args[2];
 
             //
             // Create and open an AMQP connection to the broker URL
             //
-            Connection connection = new Connection(url);
+            Connection connection = new Connection(url, connectionOptions);
             connection.Open();
 
             //
@@ -128,9 +132,15 @@ namespace Org.Apache.Qpid.Messaging.examples
             sender.Send(message, true);
 
             //
+            // Wait until broker receives all messages.
+            //
+            session.Sync();
+
+            //
             // Close the connection.
             //
             connection.Close();
+            return 0;
         }
     }
 }
