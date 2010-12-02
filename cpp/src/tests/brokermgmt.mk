@@ -17,14 +17,13 @@
 # under the License.
 #
 
-# Build a simple qmf agent for test purposes.
+# Build a unit test for the broker's internal management agent.
 
 BROKERMGMT_GEN_SRC=									\
-	brokermgmt_gen/qmf/org/apache/qpid/broker/mgmt/test/TestObject.h		\
 	brokermgmt_gen/qmf/org/apache/qpid/broker/mgmt/test/Package.cpp			\
 	brokermgmt_gen/qmf/org/apache/qpid/broker/mgmt/test/Package.h			\
-	brokermgmt_gen/qmf/org/apache/qpid/broker/mgmt/test/TestObject.cpp		\
-	brokermgmt_gen/qmf/org/apache/qpid/broker/mgmt/test/ArgsTestObjectMethod1.h
+	brokermgmt_gen/qmf/org/apache/qpid/broker/mgmt/test/TestObject.h		\
+	brokermgmt_gen/qmf/org/apache/qpid/broker/mgmt/test/TestObject.cpp
 
 $(BROKERMGMT_GEN_SRC): brokermgmt_gen.timestamp
 
@@ -43,5 +42,3 @@ unit_test_SOURCES+=BrokerMgmtAgent.cpp ${BROKERMGMT_GEN_SRC}
 INCLUDES+= -Ibrokermgmt_gen
 
 EXTRA_DIST+=BrokerMgmtAgent.xml
-
-#nodist_SOURCES+=${BROKERMGMT_GEN_SRC}
