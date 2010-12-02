@@ -681,7 +681,9 @@ void ManagementAgent::periodicProcessing (void)
 
         dptr->packageName = delObj->getPackageName();
         dptr->className = delObj->getClassName();
-        delObj->getObjectId().encode(dptr->objectId);
+        stringstream oid;
+        oid << delObj->getObjectId();
+        dptr->objectId = oid.str();
 
         if (qmf1Support) {
             delObj->writeProperties(dptr->encodedV1Config);
@@ -2862,6 +2864,8 @@ Variant ManagementAgent::toVariant(const boost::shared_ptr<FieldValue>& in)
 // next (last) publish-ment.
 void ManagementAgent::exportDeletedObjects(DeletedObjectList& outList)
 {
+    outList.clear();
+
     sys::Mutex::ScopedLock lock (userLock);
     list<pair<ObjectId, ManagementObject*> > deleteList;
 
@@ -2890,7 +2894,9 @@ void ManagementAgent::exportDeletedObjects(DeletedObjectList& outList)
 
         dptr->packageName = delObj->getPackageName();
         dptr->className = delObj->getClassName();
-        delObj->getObjectId().encode(dptr->objectId);
+        stringstream oid;
+        oid << delObj->getObjectId();
+        dptr->objectId = oid.str();
 
         if (qmf1Support) {
             delObj->writeProperties(dptr->encodedV1Config);
