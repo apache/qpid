@@ -43,3 +43,5 @@ unit_test_SOURCES+=BrokerMgmtAgent.cpp ${BROKERMGMT_GEN_SRC}
 INCLUDES+= -Ibrokermgmt_gen
 
 EXTRA_DIST+=BrokerMgmtAgent.xml
+
+nodist_SOURCES+=${BROKERMGMT_GEN_SRC}
