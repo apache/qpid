@@ -44,4 +44,4 @@ INCLUDES+= -Ibrokermgmt_gen
 
 EXTRA_DIST+=BrokerMgmtAgent.xml
 
-nodist_SOURCES+=${BROKERMGMT_GEN_SRC}
+#nodist_SOURCES+=${BROKERMGMT_GEN_SRC}
