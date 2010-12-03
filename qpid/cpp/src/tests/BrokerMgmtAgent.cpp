@@ -515,7 +515,7 @@ namespace qpid {
 
             // destroy some of the objects, then immediately export (before the next poll cycle)
 
-            int delCount = 0;
+            uint32_t delCount = 0;
             for (size_t i = 0; i < objCount; i += 2) {
                 tmv[i]->GetManagementObject()->resourceDestroy();
                 delCount++;
@@ -542,7 +542,7 @@ namespace qpid {
 
             // wait for the deleted object to be published, verify the count
 
-            int countDels = 0;
+            uint32_t countDels = 0;
             while (r1.fetch(m1, Duration::SECOND * 6)) {
                 TestObjectVector objs;
                 decodeV1ObjectUpdates(m1, objs, objLen);
@@ -609,7 +609,7 @@ namespace qpid {
 
             // destroy some of the objects, then immediately export (before the next poll cycle)
 
-            int delCount = 0;
+            uint32_t delCount = 0;
             for (size_t i = 0; i < objCount; i += 2) {
                 tmv[i]->GetManagementObject()->resourceDestroy();
                 delCount++;
@@ -636,7 +636,7 @@ namespace qpid {
 
             // wait for the deleted object to be published, verify the count
 
-            int countDels = 0;
+            uint32_t countDels = 0;
             while (r1.fetch(m1, Duration::SECOND * 6)) {
                 TestObjectVector objs;
                 decodeV2ObjectUpdates(m1, objs);
