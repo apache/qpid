@@ -3762,18 +3762,279 @@ using (TransactionScope ts = new TransactionScope())
   <chapter>
     <title>The .NET Binding for the C++ Messaging Client</title>
     <para>
-      The C++ Messaging Client unmanaged code is exposed to .NET
-      code through an interoperability DLL. This DLL wrapper 
-      is a thin layer that serves primarily by translating between
-      the managed .NET programs and the unmanaged C++ libraries.
-    </para>
-    <para>
-      This chapter describes the mapping provided by the .NET binding classes.
+      The .NET Binding for the C++ Qpid Messaging Client is an intermediary program designed
+      to make access to C++ Qpid Messaging methods simple and in a way familiar to the programmer.
+      The .NET Binding creates and manipulates actual C++ Qpid Messaging API objects so that a .NET
+      program will operate the same as if the program were written in native C++.
     </para>
     <section>
-      <title>.NET Binding Class: Address</title>
+      <title>.NET Binding for the C++ Messaging Client Component Architecture</title>
+      <programlisting><![CDATA[
+                      +----------------------------+
+                      | Dotnet examples           |
+                      | Managed C#                 |
+                      +------+---------------+-----+
+                             |               |
+                             V               |
+        +---------------------------+        |
+        | Managed Callback          |        |
+        | org.apache.qpid.messaging.|        |
+        | sessionreceiver.dll       |        |
+        +----------------------+----+        |
+                               |             |
+managed                        V             V
+(.NET)                 +--------------------------------+
+:::::::::::::::::::::::| .NET Binding Library           |::::::::::::
+unmanaged              | org.apache.qpid.messaging.dll  |
+(Native Win32/64)      +---------------+----------------+
+                                       |
+                                       |
+      +----------------+               |
+      | Native examples|               |
+      | Unmanaged C++  |               |
+      +--------+-------+               |
+               |                       |
+               V                       V
+          +----------------------------------+
+          | QPID Messaging C++ Libraries     |
+          | qpid*.dll qmf*.dll               |
+          +--------+--------------+----------+
+]]></programlisting>
+This diagram illustrates the code and library components of the binding
+and the hierarchical relationships between them.  
+
+	<table id="table-Dotnet-Binding-Component-Architecture" >
+	<title>.NET Binding for the C++ Messaging Client Component Architecture</title>
+	<tgroup cols="2">
+	  <thead>
+	    <row>
+	      <entry>Component Name</entry>
+	      <entry>Component Function</entry>	      
+	    </row>
+	  </thead>
+	  <tbody>
+	    <row>
+	      <entry>QPID Messaging C++ Libraries</entry>
+	      <entry>The QPID Messaging C++ core run time system</entry>
+	    </row>
+	    <row>
+	      <entry>Unmanaged C++ Example Source Programs</entry>
+	      <entry>Ordinary C++ programs that illustrate using qpid/cpp Messaging directly
+		in a native Windows environment.</entry>
+	    </row>
+	    <row>
+	      <entry>.NET Messaging Binding Library</entry>
+	      <entry>The .NET Messaging library provides interoprability between managed .NET
+		programs and the unmanaged, native Messaging C++ run time system. .NET programs
+		create a Reference to this library thereby exposing all of the native C++
+		Messaging functionality to programs written in any .NET language.</entry>
+	    </row>
+	    <row>
+	      <entry>.NET Messaging Managed Callback Library</entry>
+	      <entry>An extension of the .NET Messaging Binding Library that provides message
+		callbacks in a managed .NET environment. This component is written purely in C#.</entry>
+	    </row>
+	    <row>
+	      <entry>Managed C# .NET Example Source Programs</entry>
+	      <entry>Various C# example programs that illustrate using .NET Messaging Binding in the .NET environment.</entry>
+	    </row>
+	  </tbody>
+	</tgroup>
+	</table>
+    </section>
+
+    <section>
+      <title>.NET Binding for the C++ Messaging Client Examples</title>
+
+      This chapter describes the various sample programs that are available to 
+      illustrate common Qpid Messaging usage.
+
+      <table id="table-Dotnet-Binding-Example-Client-Server">
+        <title>Example : Client - Server</title>
+        <tgroup cols="2">
+          <colspec colname="c1"/>
+          <colspec colname="c2"/>
+          <thead>
+            <row>
+              <entry>Example</entry>
+	      <entry>Client - Server</entry>
+            </row>
+          </thead>
+          <tbody>
+	    <row>
+	      <entry>csharp.example.server</entry>
+	      <entry>Creates a Receiver and listens for messages.
+		Upon message reception the message content is converted to upper case
+		and forwarded to the received message's ReplyTo address.</entry>
+	    </row>
+	    <row>
+	      <entry>csharp.example.client</entry>
+	      <entry>Sends a series of messages to the Server and prints the original message
+		content and the received message content.</entry>
+	    </row>
+	  </tbody>
+	</tgroup>
+      </table>
+
+      <table id="table-Dotnet-Binding-Example-MapSender-MapReceiver">
+        <title>Example : Map Sender – Map Receiver</title>
+        <tgroup cols="2">
+          <colspec colname="c1"/>
+          <colspec colname="c2"/>
+          <thead>
+            <row>
+              <entry>Example</entry>
+	      <entry>Map Sender - Map Receiver</entry>
+            </row>
+          </thead>
+          <tbody>
+	    <row>
+	      <entry>csharp.map.receiver</entry>
+	      <entry>Creates a Receiver and listens for a map message.
+		Upon message reception the message is decoded and displayed on the console.</entry>
+	    </row>
+	    <row>
+	      <entry>csharp.map.sender</entry>
+	      <entry>Creates a map message and sends it to map.receiver.
+		The map message contains values for every supported .NET Messaging
+		Binding data type.</entry>
+	    </row>
+	  </tbody>
+	</tgroup>
+      </table>
+
+      <table id="table-Dotnet-Binding-Example-Spout-Drain">
+        <title>Example : Spout - Drain</title>
+        <tgroup cols="2">
+          <colspec colname="c1"/>
+          <colspec colname="c2"/>
+          <thead>
+            <row>
+              <entry>Example</entry>
+	      <entry>Spout - Drain</entry>
+            </row>
+          </thead>
+          <tbody>
+	    <row>
+	      <entry>csharp.example.spout</entry>
+	      <entry>Spout is a more complex example of code that generates a series of messages
+		and sends them to peer program Drain. Flexible command line arguments allow
+		the user to specify a variety of message and program options.</entry>
+	    </row>
+	    <row>
+	      <entry>csharp.example.drain</entry>
+	      <entry>Drain is a more complex example of code that receives a series of messages
+		and displays their contents on the console.</entry>
+	    </row>
+	  </tbody>
+	</tgroup>
+      </table>
+
+      <table id="table-Dotnet-Binding-Example-CallbackSender-CallbackReceiver">
+        <title>Example : Map Callback Sender – Map Callback Receiver</title>
+        <tgroup cols="2">
+          <colspec colname="c1"/>
+          <colspec colname="c2"/>
+          <thead>
+            <row>
+              <entry>Example</entry>
+	      <entry>Map Callback Sender - Map Callback Receiver</entry>
+            </row>
+          </thead>
+          <tbody>
+	    <row>
+	      <entry>csharp.map.callback.receiver</entry>
+	      <entry>Creates a Receiver and listens for a map message.
+		Upon message reception the message is decoded and displayed on the console.
+		This example illustrates the use of the C# managed code callback mechanism
+		provided by .NET Messaging Binding Managed Callback Library.</entry>
+	    </row>
+	    <row>
+	      <entry>csharp.map.callback.sender</entry>
+	      <entry>Creates a map message and sends it to map_receiver.
+		The map message contains values for every supported .NET Messaging
+		Binding data type.</entry>
+	    </row>
+	  </tbody>
+	</tgroup>
+      </table>
+
+      <table id="table-Dotnet-Binding-Example-DeclareQueues">
+        <title>Example - Declare Queues</title>
+        <tgroup cols="2">
+          <colspec colname="c1"/>
+          <colspec colname="c2"/>
+          <thead>
+            <row>
+              <entry>Example</entry>
+	      <entry>Declare Queues</entry>
+            </row>
+          </thead>
+          <tbody>
+	    <row>
+	      <entry>csharp.example.declare_queues</entry>
+	      <entry>A program to illustrate creating objects on a broker.
+		This program creates a queue used by spout and drain.</entry>
+	    </row>
+	  </tbody>
+	</tgroup>
+      </table>
+
+      <table id="table-Dotnet-Binding-Example-DirectSender-DirectReceiver">
+        <title>Example: Direct Sender - Direct Receiver</title>
+        <tgroup cols="2">
+          <colspec colname="c1"/>
+          <colspec colname="c2"/>
+          <thead>
+            <row>
+              <entry>Example</entry>
+	      <entry>Direct Sender - Direct Receiver</entry>
+            </row>
+          </thead>
+          <tbody>
+	    <row>
+	      <entry>csharp.direct.receiver</entry>
+	      <entry>Creates a Receiver and listens for a messages.
+		Upon message reception the message is decoded and displayed on the console.</entry>
+	    </row>
+	    <row>
+	      <entry>csharp.direct.sender</entry>
+	      <entry> Creates a series of messages and sends them to csharp.direct.receiver.</entry>
+	    </row>
+	  </tbody>
+	</tgroup>
+      </table>
+
+      <table id="table-Dotnet-Binding-Example-Helloworld">
+        <title>Example: Hello World</title>
+        <tgroup cols="2">
+          <colspec colname="c1"/>
+          <colspec colname="c2"/>
+          <thead>
+            <row>
+              <entry>Example</entry>
+	      <entry>Hello World</entry>
+            </row>
+          </thead>
+          <tbody>
+	    <row>
+	      <entry>csharp.example.helloworld</entry>
+	      <entry>A program to send a message and to receive the same message.</entry>
+	    </row>
+	  </tbody>
+	</tgroup>
+      </table>
+
+    </section>
+
+    <section>
+      <title>.NET Binding Class Mapping to Underlying C++ Messaging API</title>
+      This chapter describes the specific mappings between classes in the .NET
+      Binding and the underlying C++ Messaging API.
+    <section>
+      <title>.NET Binding for the C++ Messaging API Class: Address</title>
       <table id="table-Dotnet-Binding-Address">
-        <title>.NET Binding Class: Address</title>
+        <title>.NET Binding for the C++ Messaging API Class: Address</title>
         <tgroup cols="2">
           <colspec colname="c1"/>
           <colspec colname="c2"/>
@@ -3978,9 +4239,9 @@ using (TransactionScope ts = new TransactionScope())
       </table>
     </section>
     <section>
-      <title>.NET Binding Class: Connection</title>
+      <title>.NET Binding for the C++ Messaging API Class: Connection</title>
       <table id="table-Dotnet-Binding-Connection">
-        <title>.NET Binding Class: Connection</title>
+        <title>.NET Binding for the C++ Messaging API Class: Connection</title>
         <tgroup cols="2">
           <colspec colname="c1"/>
           <colspec colname="c2"/>
@@ -4040,9 +4301,9 @@ using (TransactionScope ts = new TransactionScope())
              <entry>public Connection(string url, Dictionary&lt;string, object&gt; options);</entry>
             </row>
             <row>
+              <entry namest="c1" nameend="c2" align="center">Constructor</entry>
              <entry>  </entry>
-             <entry>Constructor</entry>
-            </row>
+             <entry>Constructor</entry>            </row>
             <row>
              <entry>C++</entry>
              <entry>Connection(const std::string&amp; url, const std::string&amp; options);</entry>
@@ -4052,9 +4313,9 @@ using (TransactionScope ts = new TransactionScope())
              <entry>public Connection(string url, string options);  </entry>
             </row>
             <row>
+              <entry namest="c1" nameend="c2" align="center">Copy Constructor</entry>
              <entry>  </entry>
-             <entry>Copy constructor</entry>
-            </row>
+             <entry>Copy constructor</entry>            </row>
             <row>
              <entry>C++</entry>
              <entry>Connection(const Connection&amp;);</entry>
@@ -4197,9 +4458,9 @@ using (TransactionScope ts = new TransactionScope())
       </table>
     </section>
     <section>
-      <title>.NET Binding Class: Duration</title>
+      <title>.NET Binding for the C++ Messaging API Class: Duration</title>
       <table id="table-Dotnet-Binding-Duration">
-        <title>.NET Binding Class: Duration</title>
+        <title>.NET Binding for the C++ Messaging API Class: Duration</title>
         <tgroup cols="2">
           <colspec colname="c1"/>
           <colspec colname="c2"/>
@@ -4347,9 +4608,9 @@ using (TransactionScope ts = new TransactionScope())
       </table>
     </section>
     <section>
-      <title>.NET Binding Class: FailoverUpdates</title>
+      <title>.NET Binding for the C++ Messaging API Class: FailoverUpdates</title>
       <table id="table-Dotnet-Binding-FailoverUpdates">
-        <title>.NET Binding Class: FailoverUpdates</title>
+        <title>.NET Binding for the C++ Messaging API Class: FailoverUpdates</title>
         <tgroup cols="2">
           <colspec colname="c1"/>
           <colspec colname="c2"/>
@@ -4409,9 +4670,9 @@ using (TransactionScope ts = new TransactionScope())
       </table>
     </section>
     <section>
-      <title>.NET Binding Class: Message</title>
+      <title>.NET Binding for the C++ Messaging API Class: Message</title>
       <table id="table-Dotnet-Binding-Message">
-        <title>.NET Binding Class: Message</title>
+        <title>.NET Binding for the C++ Messaging API Class: Message</title>
         <tgroup cols="2">
           <colspec colname="c1"/>
           <colspec colname="c2"/>
@@ -4822,9 +5083,9 @@ using (TransactionScope ts = new TransactionScope())
       </table>
     </section>
     <section>
-      <title>.NET Binding Class: Receiver</title>
+      <title>.NET Binding for the C++ Messaging API Class: Receiver</title>
       <table id="table-Dotnet-Binding-Receiver">
-        <title>.NET Binding Class: Receiver</title>
+        <title>.NET Binding for the C++ Messaging API Class: Receiver</title>
         <tgroup cols="2">
           <colspec colname="c1"/>
           <colspec colname="c2"/>
@@ -5043,9 +5304,9 @@ using (TransactionScope ts = new TransactionScope())
       </table>
     </section>
     <section>
-      <title>.NET Binding Class: Sender</title>
+      <title>.NET Binding for the C++ Messaging API Class: Sender</title>
       <table id="table-Dotnet-Binding-Sender">
-        <title>.NET Binding Class: Sender</title>
+        <title>.NET Binding for the C++ Messaging API Class: Sender</title>
         <tgroup cols="2">
           <colspec colname="c1"/>
           <colspec colname="c2"/>
@@ -5208,9 +5469,9 @@ using (TransactionScope ts = new TransactionScope())
       </table>
     </section>
     <section>
-      <title>.NET Binding Class: Session</title>
+      <title>.NET Binding for the C++ Messaging API Class: Session</title>
       <table id="table-Dotnet-Binding-Session">
-        <title>.NET Binding Class: Session</title>
+        <title>.NET Binding for the C++ Messaging API Class: Session</title>
         <tgroup cols="2">
           <colspec colname="c1"/>
           <colspec colname="c2"/>
@@ -5536,7 +5797,7 @@ using (TransactionScope ts = new TransactionScope())
       </table>
     </section>
     <section>
-      <title>.NET Binding Class: SessionReceiver</title>
+      <title>.NET Binding for the C++ Messaging API Class: SessionReceiver</title>
       <para>
 	The SessionReceiver class provides a convenient callback
 	mechanism for Messages received by all Receivers on a given
@@ -5577,6 +5838,7 @@ namespace Org.Apache.Qpid.Messaging.SessionReceiver
 	A complete operating example of using the SessionReceiver callback
 	is contained in cpp/bindings/qpid/dotnet/examples/csharp.map.callback.receiver.
       </para>
+    </section>
     </section>
   </chapter>
 </book>
