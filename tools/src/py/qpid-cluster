@@ -20,7 +20,7 @@
 #
 
 import os
-import getopt
+from optparse import OptionParser, OptionGroup
 import sys
 import locale
 import socket
@@ -37,27 +37,6 @@ class Config:
         self._numeric = False
         self._showConn = False
         self._delConn = None
-
-def usage (short=False):
-    print "Usage:  qpid-cluster [OPTIONS] [broker-addr]"
-    print
-    print "             broker-addr is in the form:   [username/password@] hostname | ip-address [:<port>]"
-    print "             ex:  localhost, 10.1.1.7:10000, broker-host:10000, guest/guest@localhost"
-    print
-    if short:
-        return
-
-    print "Options:"
-    print "          --timeout seconds (10)  Maximum time to wait for broker connection"
-    print "          -C [--all-connections]  View client connections to all cluster members"
-    print "          -c [--connections] ID   View client connections to specified member"
-    print "          -d [--del-connection] HOST:PORT"
-    print "                                  Disconnect a client connection"
-    print "          -s [--stop] ID          Stop one member of the cluster by its ID"
-    print "          -k [--all-stop]         Shut down the whole cluster"
-    print "          -f [--force]            Suppress the 'are-you-sure?' prompt"
-    print "          -n [--numeric]          Don't resolve names"
-    print
 
 class IpAddr:
     def __init__(self, text):
@@ -256,68 +235,52 @@ def main(argv=None):
     if argv is None: argv = sys.argv
     try:
         config = Config()
-        try:
-            longOpts = ("help", "stop=", "all-stop", "force", "connections=", "all-connections" "del-connection=", "numeric", "timeout=")
-            (optlist, encArgs) = getopt.gnu_getopt(argv[1:], "hs:kfCc:d:n", longOpts)
-        except Exception, e:
-            usage (short=True)
-            # make output match optparse-based tools' output, for consistent scripting
-            msg = str(e).replace('option', 'no such option:').replace('not recognized', '')
-            print "qpid-config: error:", msg
-            sys.exit (1)    
 
-        try:
-            encoding = locale.getpreferredencoding()
-            cargs = [a.decode(encoding) for a in encArgs]
-        except:
-            cargs = encArgs
+        parser = OptionParser(usage="usage: %prog [options] BROKER",
+                      description="Example: $ qpid-cluster -C  broker-host:10000")
 
-        count = 0
-        for opt in optlist:
-            if opt[0] == "-h" or opt[0] == "--help":
-                usage()
-                sys.exit(1)
-            if opt[0] == "--timeout":
-                config._connTimeout = int(opt[1])
-                if config._connTimeout == 0:
-                    config._connTimeout = None
-            if opt[0] == "-s" or opt[0] == "--stop":
-                config._stopId = opt[1]
-                if len(config._stopId.split(":")) != 2:
-                    raise Exception("Member ID must be of form: <host or ip>:<number>")
-                count += 1
-            if opt[0] == "-k" or opt[0] == "--all-stop":
-                config._stopAll = True
-                count += 1
-            if opt[0] == "-f" or opt[0] == "--force":
-                config._force = True
-            if opt[0] == "-n" or opt[0] == "--numeric":
-                config._numeric = True
-            if opt[0] == "-C" or opt[0] == "--all-connections":
-                config._showConn = "all"
-                count += 1
-            if opt[0] == "-c" or opt[0] == "--connections":
-                config._showConn = opt[1]
-                if len(config._showConn.split(":")) != 2:
-                    raise Exception("Member ID must be of form: <host or ip>:<number>")
-                count += 1
-            if opt[0] == "-d" or opt[0] == "--del-connection":
-                config._delConn = opt[1]
-                if len(config._delConn.split(":")) != 2:
-                    raise Exception("Connection must be of form: <host or ip>:<port>")
-                count += 1
+        parser.add_option("-t", "--timeout", action="store", type="int", default="10", metavar="SECS", help="Maximum time to wait for broker connection (in seconds)")
+        parser.add_option("-C", "--all-connections", action="store_true", default=False, help="View client connections to all cluster members")
+        parser.add_option("-c", "--connections",  metavar="ID", help="View client connections to specified member")
+        parser.add_option("-d", "--del-connection",  metavar="HOST:PORT", help="Disconnect a client connection")
+        parser.add_option("-s", "--stop",  metavar="ID", help="Stop one member of the cluster by its ID")
+        parser.add_option("-k", "--all-stop", action="store_true", default=False, help="Shut down the whole cluster")
+        parser.add_option("-f", "--force", action="store_true", default=False, help="Suppress the 'are you sure' prompt")
+        parser.add_option("-n", "--numeric", action="store_true", default=False, help="Don't resolve names")
 
-        if count > 1:
-            print "Only one command option may be supplied"
-            print
-            usage()
-            return 1
+        opts, args = parser.parse_args()
 
-        nargs = len(cargs)
+        if args:
+            _host = args[0]
+
+        if opts.timeout != 0:
+            config._connTimeout = opts.timeout
+        else:
+            config._connTimeout = None
+
+        if opts.all_connections:
+            config._showConn = "all"
+
+        if opts.connections:
+            config._connections = opts.connections
+            if len(config._connections.split(":")) != 2:
+                parser.error("Member ID must be of form: <host or ip>:<number>")
+
+        if opts.del_connection:
+            config._delConn = opts.del_connection
+            if len(config._delConn.split(":")) != 2: 
+                parser.error("Member ID must be of form: <host or ip>:<number>")
+
+        if opts.stop:
+            config._stopID = opts.stop
+            if len(config._stopId.split(":")) != 2: 
+                parser.error("Member ID must be of form: <host or ip>:<number>")
+
+        config._stopAll = opts.all_stop
+        config._force = opts.force
+        config._numeric = opts.numeric
+
         bm    = BrokerManager(config)
-
-        if nargs == 1:
-            config._host = cargs[0]
 
         try:
             bm.SetBroker(config._host)

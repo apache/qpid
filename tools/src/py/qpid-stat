@@ -20,7 +20,7 @@
 #
 
 import os
-import getopt
+from optparse import OptionParser, OptionGroup
 import sys
 import locale
 import socket
@@ -35,35 +35,6 @@ _limit = 50
 _increasing = False
 _sortcol = None
 _cluster_detail = False
-
-def Usage (short=False):
-    print "Usage:  qpid-stat [OPTIONS] [broker-addr]"
-    print
-    print "             broker-addr is in the form:   [username/password@] hostname | ip-address [:<port>]"
-    print "             ex:  localhost, 10.1.1.7:10000, broker-host:10000, guest/guest@localhost"
-    print
-    if short:
-        return
-
-    print "General Options:"
-    print "    --timeout seconds (10)  Maximum time to wait for broker connection"
-#    print "     -n [--numeric]  Don't resolve names"
-    print
-    print "Display Options:"
-    print
-    print "     -b   Show Brokers"
-    print "     -c   Show Connections"
-#    print "     -s   Show Sessions"
-    print "     -e   Show Exchanges"
-    print "     -q   Show Queues"
-    print "     -u   Show Subscriptions"
-    print
-    print "     -S [--sort-by] COLNAME  Sort by column name"
-    print "     -I [--increasing]       Sort by increasing value (default = decreasing)"
-    print "     -L [--limit] NUM        Limit output to NUM rows (default = 50)"
-    print "     -C [--cluster]          Display per-broker cluster detail."
-    print
-    sys.exit (1)
 
 class IpAddr:
     def __init__(self, text):
@@ -473,58 +444,50 @@ class BrokerManager(Console):
 ## Main Program
 ##
 
-try:
-    longOpts = ("help", "top", "numeric", "sort-by=", "limit=", "increasing",
-                "timeout=", "cluster")
-    (optlist, encArgs) = getopt.gnu_getopt(sys.argv[1:], "hbcequCS:L:I", longOpts)
-except Exception, e:
-    Usage(short=True)
-    # make output match optparse-based tools' output, for consistent scripting
-    msg = str(e).replace('option', 'no such option:').replace('not recognized', '')
-    print "qpid-config: error:", msg
-    sys.exit (1)    
+parser = OptionParser(usage="usage: %prog [options] BROKER",
+                      description="Example: $ qpid-stat -q  broker-host:10000")
 
-try:
-    encoding = locale.getpreferredencoding()
-    cargs = [a.decode(encoding) for a in encArgs]
-except:
-    cargs = encArgs
+group1 = OptionGroup(parser, "General Options")
+group1.add_option("-t", "--timeout", action="store", type="int", default="10", metavar="SECS", help="Maximum time to wait for broker connection (in seconds)")
+parser.add_option_group(group1)
 
-for opt in optlist:
-    if opt[0] == "-h" or opt[0] == "--help":
-        Usage()
-        sys.exit(1)
-    if opt[0] == "--timeout":
-        _connTimeout = int(opt[1])
-        if _connTimeout == 0:
-            _connTimeout = None
-    elif opt[0] == "-n" or opt[0] == "--numeric":
-        _numeric = True
-    elif opt[0] == "-S" or opt[0] == "--sort-by":
-        _sortcol = opt[1]
-    elif opt[0] == "-I" or opt[0] == "--increasing":
-        _increasing = True
-    elif opt[0] == "-L" or opt[0] == "--limit":
-        _limit = int(opt[1])
-    elif opt[0] == "-C" or opt[0] == "--cluster":
-        _cluster_detail = True
-    elif len(opt[0]) == 2:
-        char = opt[0][1]
-        if "bcequ".find(char) != -1:
-            _types += char
-        else:
-            Usage()
-    else:
-        Usage()
+group2 = OptionGroup(parser, "Display Options")
+group2.add_option("-b", "--broker", help="Show Brokers", 
+                  action="store_const", const="b", dest="show")
+group2.add_option("-c", "--connections", help="Show Connections",
+                  action="store_const", const="c", dest="show")
+group2.add_option("-e", "--exchanges", help="Show Exchanges",
+                  action="store_const", const="e", dest="show")
+group2.add_option("-q", "--queues", help="Show Queues",
+                  action="store_const", const="q", dest="show")
+group2.add_option("-u", "--subscriptions", help="Show Subscriptions",
+                  action="store_const", const="u", dest="show")
+group2.add_option("-S", "--sort-by",  metavar="COLNAME",
+                  help="Sort by column name")
+group2.add_option("-I", "--increasing", action="store_true", default=False,
+                  help="Sort by increasing value (default = decreasing)")
+group2.add_option("-L", "--limit", default=50, metavar="NUM",
+                  help="Limit output to NUM rows")
+group2.add_option("-C", "--cluster", action="store_true", default=False,
+                  help="Display per-broker cluster detail.")
+parser.add_option_group(group2)
 
-if len(_types) == 0:
-    Usage()
+opts, args = parser.parse_args()
 
-nargs = len(cargs)
+if not opts.show:
+    parser.error("You must specify one of these options: -b, -c, -e, -q. or -u. For details, try $ qpid-stat --help")
+
+_types = opts.show
+_sortcol = opts.sort_by
+_connTimeout = opts.timeout
+_increasing = opts.increasing
+_limit = opts.limit
+_cluster_detail = opts.cluster
+
+if args:
+    _host = args[0]
+
 bm    = BrokerManager()
-
-if nargs == 1:
-    _host = cargs[0]
 
 try:
     bm.SetBroker(_host)
