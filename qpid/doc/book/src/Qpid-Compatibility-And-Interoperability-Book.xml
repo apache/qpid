@@ -25,6 +25,12 @@
 ]>
 
 <book>
+    <chapter>
+        <title>AMQP Compatibility</title>
 	  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="AMQP-Compatibility.xml"/>
+    </chapter>
+    <chapter>
+        <title>Qpid Interoperability Documentation</title>
 	  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Qpid-Interoperability-Documentation.xml"/>
+    </chapter>
 </book>

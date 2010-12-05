@@ -20,11 +20,8 @@
  
 -->
 
-<chapter><title>
-      Qpid Interoperability Documentation
-    </title><section role="h2" id="QpidInteroperabilityDocumentation-QpidInteroperabilityDocumentation"><title>
-            Qpid Interoperability Documentation
-          </title>
+<section role="h2" id="QpidInteroperabilityDocumentation-QpidInteroperabilityDocumentation">
+    <title>Qpid Interoperability Documentation</title>
 
 	 <para>
             This page documents the various interoperable features of the
@@ -378,4 +375,3 @@
 <!--h4--></section>
 <!--h3--></section>
 <!--h2--></section>
-</chapter>
