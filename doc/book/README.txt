@@ -20,13 +20,13 @@ After installing, use make to build the documentation:
 
 $ make
 
-By default, the Makefile builds a PDF. It supports the following
-targets:
+The Makefile supports the following targets:
 
-pdf	Make the PDF
-html	Make HTML pages
-all	Make both PDF and HTML
-clean	Delete the build and output directories
+all            Builds the cpp, java, and programming targets.
+cpp            Build html+pdf for the C++ broker.
+java           Build html+pdf for the Java broker.
+programming    Build html+pdf for Programming In Apache Qpid.
+clean          Delete the build directory
 
 
 You will see quite a few error messages. Many of these are due to
