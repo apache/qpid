@@ -19,46 +19,12 @@
 # under the License.
 #
 
-import getopt
+from optparse import OptionParser, OptionGroup, IndentedHelpFormatter
 import sys
 import socket
 import os
 import locale
 from qmf.console import Session, BrokerURL
-
-def Usage(short=False):
-    print "Usage:  qpid-route [OPTIONS] dynamic add <dest-broker> <src-broker> <exchange> [tag] [exclude-list]"
-    print "        qpid-route [OPTIONS] dynamic del <dest-broker> <src-broker> <exchange>"
-    print
-    print "        qpid-route [OPTIONS] route add   <dest-broker> <src-broker> <exchange> <routing-key> [tag] [exclude-list] [mechanism]"
-    print "        qpid-route [OPTIONS] route del   <dest-broker> <src-broker> <exchange> <routing-key>"
-    print "        qpid-route [OPTIONS] queue add   <dest-broker> <src-broker> <exchange> <queue>"
-    print "        qpid-route [OPTIONS] queue del   <dest-broker> <src-broker> <exchange> <queue>"
-    print "        qpid-route [OPTIONS] route list  [<dest-broker>]"
-    print "        qpid-route [OPTIONS] route flush [<dest-broker>]"
-    print "        qpid-route [OPTIONS] route map   [<broker>]"
-    print
-    print "        qpid-route [OPTIONS] link add  <dest-broker> <src-broker>"
-    print "        qpid-route [OPTIONS] link del  <dest-broker> <src-broker>"
-    print "        qpid-route [OPTIONS] link list [<dest-broker>]"
-    print
-    if short:
-        return
-    print "Options:"
-    print "    --timeout seconds (10)   Maximum time to wait for broker connection"
-    print "    -v [ --verbose ]         Verbose output"
-    print "    -q [ --quiet ]           Quiet output, don't print duplicate warnings"
-    print "    -d [ --durable ]         Added configuration shall be durable"
-    print "    -e [ --del-empty-link ]  Delete link after deleting last route on the link"
-    print "    -s [ --src-local ]       Make connection to source broker (push route)"
-    print "    --ack N                  Acknowledge transfers over the bridge in batches of N"
-    print "    -t <transport> [ --transport <transport>]"
-    print "                             Specify transport to use for links, defaults to tcp"
-    print
-    print "  dest-broker and src-broker are in the form:  [username/password@] hostname | ip-address [:<port>]"
-    print "  ex:  localhost, 10.1.1.7:10000, broker-host:10000, guest/guest@localhost"
-    print
-    sys.exit(1)
 
 _verbose   = False
 _quiet     = False
@@ -412,61 +378,113 @@ def YN(val):
 ## Main Program
 ##
 
-try:
-    longOpts = ("help", "verbose", "quiet", "durable", "del-empty-link", "src-local", "transport=", "ack=", "timeout=")
-    (optlist, encArgs) = getopt.gnu_getopt(sys.argv[1:], "hvqdest:", longOpts)
-except Exception, e:
-    Usage(short=True)
-    # make output match optparse-based tools' output, for consistent scripting
-    msg = str(e).replace('option', 'no such option:').replace('not recognized', '')
-    print "qpid-config: error:", msg
-    sys.exit (1)    
+
+class JHelpFormatter(IndentedHelpFormatter):
+    """Format usage and description without stripping newlines from usage strings
+    """
+
+    def format_usage(self, usage):
+        return usage
+
+
+    def format_description(self, description):
+        if description:
+            return description + "\n"
+        else:
+            return ""
+
+def usage(parser):
+    parser.print_help()
+    exit(-1)
+
+usage = """
+Usage:  qpid-route [OPTIONS] dynamic add <dest-broker> <src-broker> <exchange> [tag] [exclude-list]
+        qpid-route [OPTIONS] dynamic del <dest-broker> <src-broker> <exchange>
+
+        qpid-route [OPTIONS] route add   <dest-broker> <src-broker> <exchange> <routing-key> [tag] [exclude-list] [mechanism]
+        qpid-route [OPTIONS] route del   <dest-broker> <src-broker> <exchange> <routing-key>
+        qpid-route [OPTIONS] queue add   <dest-broker> <src-broker> <exchange> <queue>
+        qpid-route [OPTIONS] queue del   <dest-broker> <src-broker> <exchange> <queue>
+        qpid-route [OPTIONS] route list  [<dest-broker>]
+        qpid-route [OPTIONS] route flush [<dest-broker>]
+        qpid-route [OPTIONS] route map   [<broker>]
+
+        qpid-route [OPTIONS] link add  <dest-broker> <src-broker>
+        qpid-route [OPTIONS] link del  <dest-broker> <src-broker>
+        qpid-route [OPTIONS] link list [<dest-broker>]"""
+
+description = """
+ADDRESS syntax:   
+
+      [username/password@] hostname
+      ip-address [:<port>]"""
+         
+parser = OptionParser(usage=usage,
+                      description=description,
+                      formatter=JHelpFormatter())
+
+parser.add_option("--timeout", action="store", type="int", default="10", metavar="SECS", help="Maximum time to wait for broker connection (in seconds)")
+parser.add_option("-v", "--verbose", action="store_true", help="Verbose output")
+parser.add_option("-q", "--quiet", action="store_true", help="Quiet output, don't print duplicate warnings")
+parser.add_option("-d", "--durable", action="store_true", help="Added configuration shall be durable")
+
+parser.add_option("-e", "--del-empty-link", action="store_true", help="Delete link after deleting last route on the link")
+parser.add_option("-s", "--src-local", action="store_true", help="Make connection to source broker (push route)")
+
+parser.add_option("--ack", action="store", type="int", metavar="N", help="Acknowledge transfers over the bridge in batches of N")
+parser.add_option("-t", "--transport", action="store", type="string", default="tcp", metavar="<transport>", help="Transport to use for links, defaults to tcp")
+
+opts, encArgs = parser.parse_args()
 
 try:
     encoding = locale.getpreferredencoding()
-    cargs = [a.decode(encoding) for a in encArgs]
+    args = [a.decode(encoding) for a in encArgs]
 except:
-    cargs = encArgs
+    args = encArgs
 
-for opt in optlist:
-    if opt[0] == "-h" or opt[0] == "--help":
-        Usage()
-        sys.exit(1)
-    if opt[0] == "--timeout":
-        _connTimeout = int(opt[1])
-        if _connTimeout == 0:
-            _connTimeout = None
-    if opt[0] == "-v" or opt[0] == "--verbose":
-        _verbose = True
-    if opt[0] == "-q" or opt[0] == "--quiet":
-        _quiet = True
-    if opt[0] == "-d" or opt[0] == "--durable":
-        _durable = True
-    if opt[0] == "-e" or opt[0] == "--del-empty-link":
-        _dellink = True
-    if opt[0] == "-s" or opt[0] == "--src-local":
-        _srclocal = True
-    if opt[0] == "-t" or opt[0] == "--transport":
-        _transport = opt[1]
-    if opt[0] == "--ack":
-        _ack = int(opt[1])
+if opts.timeout:
+    _connTimeout = opts.timeout
+    if _connTimeout == 0:
+        _connTimeout = None
+    
+if opts.verbose:
+    _verbose = True
 
-nargs = len(cargs)
+if opts.quiet:
+    _quiet = True
+
+if opts.durable:
+    _durable = True
+
+if opts.del_empty_link:
+    _dellink = True
+
+if opts.src_local:
+    _srclocal = true
+
+if opts.transport:
+    _transport = opts.transport
+
+if opts.ack:
+    _ack = opts.ack
+
+nargs = len(args)
 if nargs < 2:
-    Usage()
+    usage(parser)
+
 if nargs == 2:
     localBroker = socket.gethostname()
 else:
     if _srclocal:
-        localBroker = cargs[3]
-        remoteBroker = cargs[2]
+        localBroker = args[3]
+        remoteBroker = args[2]
     else:
-        localBroker = cargs[2]
+        localBroker = args[2]
         if nargs > 3:
-            remoteBroker = cargs[3]
+            remoteBroker = args[3]
 
-group = cargs[0]
-cmd   = cargs[1]
+group = args[0]
+cmd   = args[1]
 
 rm = None
 try:
@@ -474,11 +492,11 @@ try:
     if group == "link":
         if cmd == "add":
             if nargs != 4:
-                Usage()
+                usage(parser)
             rm.addLink(remoteBroker)
         elif cmd == "del":
             if nargs != 4:
-                Usage()
+                usage(parser)
             rm.delLink(remoteBroker)
         elif cmd == "list":
             rm.listLinks()
@@ -486,36 +504,36 @@ try:
     elif group == "dynamic":
         if cmd == "add":
             if nargs < 5 or nargs > 7:
-                Usage()
+                usage(parser)
 
             tag = ""
             excludes = ""
             mech = "PLAIN"
-            if nargs > 5: tag = cargs[5]     
-            if nargs > 6: excludes = cargs[6]     
-            rm.addRoute(remoteBroker, cargs[4], "", tag, excludes, mech, dynamic=True)
+            if nargs > 5: tag = args[5]     
+            if nargs > 6: excludes = args[6]     
+            rm.addRoute(remoteBroker, args[4], "", tag, excludes, mech, dynamic=True)
         elif cmd == "del":
             if nargs != 5:
-                Usage()
+                usage(parser)
             else:
-                rm.delRoute(remoteBroker, cargs[4], "", dynamic=True)
+                rm.delRoute(remoteBroker, args[4], "", dynamic=True)
 
     elif group == "route":
         if cmd == "add":
             if nargs < 6 or nargs > 9:
-                Usage()
+                usage(parser)
 
             tag = ""
             excludes = ""
             mech = "PLAIN"
-            if nargs > 6: tag = cargs[6]     
-            if nargs > 7: excludes = cargs[7]
-            if nargs > 8: mech = cargs[8]
-            rm.addRoute(remoteBroker, cargs[4], cargs[5], tag, excludes, mech, dynamic=False)
+            if nargs > 6: tag = args[6]     
+            if nargs > 7: excludes = args[7]
+            if nargs > 8: mech = args[8]
+            rm.addRoute(remoteBroker, args[4], args[5], tag, excludes, mech, dynamic=False)
         elif cmd == "del":
             if nargs != 6:
-                Usage()
-            rm.delRoute(remoteBroker, cargs[4], cargs[5], dynamic=False)
+                usage(parser)
+            rm.delRoute(remoteBroker, args[4], args[5], dynamic=False)
         elif cmd == "map":
             rm.mapRoutes()
         else:
@@ -524,17 +542,17 @@ try:
             elif cmd == "flush":
                 rm.clearAllRoutes()
             else:
-                Usage()
+                usage(parser)
 
     elif group == "queue":
         if nargs != 6:
-            Usage()
+            usage(parser)
         if cmd == "add":
-            rm.addQueueRoute(remoteBroker, exchange=cargs[4], queue=cargs[5])
+            rm.addQueueRoute(remoteBroker, exchange=args[4], queue=args[5])
         elif cmd == "del":
-            rm.delQueueRoute(remoteBroker, exchange=cargs[4], queue=cargs[5])
+            rm.delQueueRoute(remoteBroker, exchange=args[4], queue=args[5])
         else:
-            Usage()
+            usage(parser)
 
 except Exception,e:
     if rm:
