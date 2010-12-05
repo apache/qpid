@@ -45,4 +45,4 @@ build/Programming-In-Apache-Qpid:
 	./build-book.sh Programming-In-Apache-Qpid
 
 clean:
-	rm -rf build pdf
+	rm -rf build
