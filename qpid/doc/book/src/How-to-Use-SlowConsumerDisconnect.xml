@@ -21,13 +21,10 @@
  under the License.
  
 -->
-<book lang='en_US'>
-<title>Slow Consumer Disconnect - User Guide</title>
+<section>
+  <title>Slow Consumer Disconnect - User Guide</title>
 
- <chapter>
-<title> </title>
-
-  <sect1>
+  <section>
 <title>Introduction</title>
    <para>
 
@@ -64,10 +61,10 @@
 
    </para>
 
-  </sect1>
+  </section>
 
-  <sect1>
-<title><emphasis role='bold'>What can it do?</emphasis></title>
+  <section>
+<title>What can it do?</title>
    <para>
 
    </para>
@@ -90,15 +87,15 @@
 
    </para>
 
-  </sect1>
+  </section>
 
-  <sect1>
+  <section>
 <title>Frequency of SCD Checking</title>
    <para>
 
    </para>
 
-   <sect2>
+   <section>
 <title><emphasis role='bold'>Configuring Frequency</emphasis></title>
     <para>
 
@@ -147,9 +144,9 @@
 
     </para>
 
-   </sect2>
+   </section>
 
-   <sect2>
+   <section>
 <title><emphasis role='bold'>SCD Log output</emphasis></title>
     <para>
 
@@ -167,11 +164,11 @@ SCD-1003 : Checking Status of Queue
 
     </para>
 
-   </sect2>
+   </section>
 
-  </sect1>
+  </section>
 
-  <sect1>
+  <section>
 <title>Client Exception<emphasis role='bold'>s</emphasis></title>
    <para>When a Slow Consumer is disconnected, the client receives a 506 error from the broker
         wrapped in a JMSException and the Session and Connection are closed:</para>
@@ -274,15 +271,15 @@ main 2010-09-01 16:23:34,316 INFO /[apache.qpid.client.AMQSession/] Closing sess
 
    </para>
 
-  </sect1>
+  </section>
 
-  <sect1>
+  <section>
 <title>Disconnection Thresholds</title>
    <para>
 
    </para>
 
-   <sect2>
+   <section>
 <title>Topic Subscriptions</title>
     <para>One key feature of SCD is the disconnection of a consuming client when a specified
           threshold is exceeded. For a pub-sub model using topics, this means that messages will no
@@ -293,9 +290,9 @@ main 2010-09-01 16:23:34,316 INFO /[apache.qpid.client.AMQSession/] Closing sess
 
     </para>
 
-   </sect2>
+   </section>
 
-   <sect2>
+   <section>
 <title>Durable Topic Subscriptions</title>
     <para>For durable subscriptions, simply disconnecting the consuming client will not suffice
           since the associated queue is by definition durable and messages would continue to flow to
@@ -311,17 +308,17 @@ main 2010-09-01 16:23:34,316 INFO /[apache.qpid.client.AMQSession/] Closing sess
 
     </para>
 
-   </sect2>
+   </section>
 
-   <sect2>
+   <section>
 <title>Message Age Threshold</title>
     <para>You can configure SCD to be triggered on a topic or subscription when the oldest message
           in the associated private queue for the consumer ages beyond the specified value, in
           milliseconds. </para>
 
-   </sect2>
+   </section>
 
-   <sect2>
+   <section>
 <title>Queue Depth Threshold</title>
     <para>You can opt to use the depth of the queue in bytes as a threshold. SCD will be triggered
           by a queue depth greater than the threshold specified i.e. when a broker receives a
@@ -331,9 +328,9 @@ main 2010-09-01 16:23:34,316 INFO /[apache.qpid.client.AMQSession/] Closing sess
 
     </para>
 
-   </sect2>
+   </section>
 
-   <sect2>
+   <section>
 <title>Message Count Threshold</title>
     <para>You can use the message count for the consumer's queue as the trigger, where a count
           higher than that specified will trigger disconnection. </para>
@@ -342,9 +339,9 @@ main 2010-09-01 16:23:34,316 INFO /[apache.qpid.client.AMQSession/] Closing sess
 
     </para>
 
-   </sect2>
+   </section>
 
-   <sect2>
+   <section>
 <title><emphasis role='bold'>Delete Policy</emphasis></title>
     <para>You can configure the policy you wish to apply in your broker configuration. There are
           currently 2 policies available: </para>
@@ -432,12 +429,12 @@ The following steps are required to configure SCD:
 
     <para>&lt;/topics&gt; </para>
 
-   </sect2>
+   </section>
 
-  </sect1>
+  </section>
 
-  <sect1>
-<title><emphasis role='bold'>Important Points To Note</emphasis></title>
+  <section>
+<title>Important Points To Note</title>
    <para> Client application developers should be educated about how to correctly handle being
         disconnected with a 506 error code, to avoid them getting into a thrashing state where they
         continually attempt to connect, fail to consume fast enough and are disconnected again. </para>
@@ -466,8 +463,8 @@ The following steps are required to configure SCD:
 
    </para>
 
-  </sect1>
+  </section>
 
- </chapter>
+ </section>
 
-</book>
+
