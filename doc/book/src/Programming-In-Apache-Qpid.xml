@@ -4302,8 +4302,7 @@ and the hierarchical relationships between them.
             </row>
             <row>
               <entry namest="c1" nameend="c2" align="center">Constructor</entry>
-             <entry>  </entry>
-             <entry>Constructor</entry>            </row>
+            </row>
             <row>
              <entry>C++</entry>
              <entry>Connection(const std::string&amp; url, const std::string&amp; options);</entry>
@@ -4314,8 +4313,7 @@ and the hierarchical relationships between them.
             </row>
             <row>
               <entry namest="c1" nameend="c2" align="center">Copy Constructor</entry>
-             <entry>  </entry>
-             <entry>Copy constructor</entry>            </row>
+            </row>
             <row>
              <entry>C++</entry>
              <entry>Connection(const Connection&amp;);</entry>
