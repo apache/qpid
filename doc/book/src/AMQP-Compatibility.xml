@@ -20,7 +20,7 @@
  
 -->
 
-<chapter id="AMQP-Compatibility">
+<section id="AMQP-Compatibility">
   <title>
       AMQP compatibility
     </title>
@@ -710,4 +710,4 @@
     <!--h3-->
   </section>
 
-</chapter>
+</section>
