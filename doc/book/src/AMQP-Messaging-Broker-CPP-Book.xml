@@ -23,6 +23,8 @@
 <book>
   <title>AMQP Messaging Broker (Implemented in C++)</title>
   <preface>
+    <title>Introduction</title>
+
     <para>Qpid provides two AMQP messaging brokers:</para>
 
     <itemizedlist>
