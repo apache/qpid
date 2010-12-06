@@ -33,9 +33,9 @@ import org.apache.qpid.management.common.mbeans.annotations.MBeanOperationParame
 
 /**
  * The management interface exposed to allow management of a queue.
- * @author  Robert J. Greig
- * @author  Bhupendra Bhardwaj
- * @version 0.1
+ *
+ * @version Qpid JMX API 1.6
+ * @since Qpid JMX API 1.1
  */
 public interface ManagedQueue
 {
@@ -269,7 +269,7 @@ public interface ManagedQueue
     /**
      * Sets the FlowResumeCapacity in bytes below which flow resumes.
      * 
-     * @since Qpid JMX API 1.6
+     * @since 1.6
      * @param value of the resume capacity in bytes
      * @throws IOException
      * @throws IllegalArgumentException If the given value exceeds the queue Capacity
@@ -293,7 +293,7 @@ public interface ManagedQueue
      * Returns a subset of all the messages stored in the queue. The messages
      * are returned based on the given index numbers.
      * 
-     * Deprecated as of Qpid JMX API 1.3
+     * @deprecated Qpid JMX API 1.3
      * @param fromIndex
      * @param toIndex
      * @return
@@ -335,7 +335,7 @@ public interface ManagedQueue
     /**
      * Deletes the first message from top.
      * 
-     * Deprecated as of Qpid JMX API 1.3
+     * @deprecated Qpid JMX API 1.3
      * @throws IOException
      * @throws JMException
      */

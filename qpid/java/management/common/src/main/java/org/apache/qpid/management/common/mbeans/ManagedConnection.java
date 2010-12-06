@@ -36,7 +36,8 @@ import org.apache.qpid.management.common.mbeans.annotations.MBeanOperationParame
 /**
  * The management interface exposed to allow management of Connections.
  * 
- * @since Qpid JMX API 1.9
+ * @version Qpid JMX API 1.9
+ * @since Qpid JMX API 1.1
  */
 public interface ManagedConnection
 {
@@ -155,7 +156,7 @@ public interface ManagedConnection
      * 
      * @since Qpid JMX API 1.9
      */
-    @MBeanAttribute(name="peakMessageDeliveryRate", description=TYPE + " Peak Message Delivery Rate")
+    @MBeanAttribute(name="PeakMessageDeliveryRate", description=TYPE + " Peak Message Delivery Rate")
     double getPeakMessageDeliveryRate();
 
     /**
@@ -163,7 +164,7 @@ public interface ManagedConnection
      * 
      * @since Qpid JMX API 1.9
      */
-    @MBeanAttribute(name="peakDataDeliveryRate", description=TYPE + " Peak Data Delivery Rate")
+    @MBeanAttribute(name="PeakDataDeliveryRate", description=TYPE + " Peak Data Delivery Rate")
     double getPeakDataDeliveryRate();
 
     /**
@@ -171,7 +172,7 @@ public interface ManagedConnection
      * 
      * @since Qpid JMX API 1.9
      */
-    @MBeanAttribute(name="messageDeliveryRate", description=TYPE + " Message Delivery Rate")
+    @MBeanAttribute(name="MessageDeliveryRate", description=TYPE + " Message Delivery Rate")
     double getMessageDeliveryRate();
 
     /**
@@ -179,7 +180,7 @@ public interface ManagedConnection
      * 
      * @since Qpid JMX API 1.9
      */
-    @MBeanAttribute(name="dataDeliveryRate", description=TYPE + " Data Delivery Rate")
+    @MBeanAttribute(name="DataDeliveryRate", description=TYPE + " Data Delivery Rate")
     double getDataDeliveryRate();
 
     /**
@@ -187,7 +188,7 @@ public interface ManagedConnection
      * 
      * @since Qpid JMX API 1.9
      */
-    @MBeanAttribute(name="totalMessagesDelivery", description=TYPE + " Total Messages Delivered")
+    @MBeanAttribute(name="TotalMessagesDelivered", description=TYPE + " Total Messages Delivered")
     long getTotalMessagesDelivered();
 
     /**
@@ -195,7 +196,7 @@ public interface ManagedConnection
      * 
      * @since Qpid JMX API 1.9
      */
-    @MBeanAttribute(name="totalDataDelivered", description=TYPE + " Total Data Delivered")
+    @MBeanAttribute(name="TotalDataDelivered", description=TYPE + " Total Data Delivered")
     long getTotalDataDelivered();
 
     /**
@@ -203,7 +204,7 @@ public interface ManagedConnection
      * 
      * @since Qpid JMX API 1.9
      */
-    @MBeanAttribute(name="peakMessageReceiptRate", description=TYPE + " Peak Message Receipt Rate")
+    @MBeanAttribute(name="PeakMessageReceiptRate", description=TYPE + " Peak Message Receipt Rate")
     double getPeakMessageReceiptRate();
 
     /**
@@ -211,7 +212,7 @@ public interface ManagedConnection
      * 
      * @since Qpid JMX API 1.9
      */
-    @MBeanAttribute(name="peakDataReceiptRate", description=TYPE + " Peak Data Receipt Rate")
+    @MBeanAttribute(name="PeakDataReceiptRate", description=TYPE + " Peak Data Receipt Rate")
     double getPeakDataReceiptRate();
 
     /**
@@ -219,7 +220,7 @@ public interface ManagedConnection
      * 
      * @since Qpid JMX API 1.9
      */
-    @MBeanAttribute(name="messageReceiptRate", description=TYPE + " Message Receipt Rate")
+    @MBeanAttribute(name="MessageReceiptRate", description=TYPE + " Message Receipt Rate")
     double getMessageReceiptRate();
 
     /**
@@ -227,7 +228,7 @@ public interface ManagedConnection
      * 
      * @since Qpid JMX API 1.9
      */
-    @MBeanAttribute(name="dataReceiptRate", description=TYPE + " Data Receipt Rate")
+    @MBeanAttribute(name="DataReceiptRate", description=TYPE + " Data Receipt Rate")
     double getDataReceiptRate();
 
     /**
@@ -235,7 +236,7 @@ public interface ManagedConnection
      * 
      * @since Qpid JMX API 1.9
      */
-    @MBeanAttribute(name="totalMessagesReceived", description=TYPE + " Total Messages Received")
+    @MBeanAttribute(name="TotalMessagesReceived", description=TYPE + " Total Messages Received")
     long getTotalMessagesReceived();
 
     /**
@@ -243,7 +244,7 @@ public interface ManagedConnection
      * 
      * @since Qpid JMX API 1.9
      */
-    @MBeanAttribute(name="totalDataReceived", description=TYPE + " Total Data Received")
+    @MBeanAttribute(name="TotalDataReceived", description=TYPE + " Total Data Received")
     long getTotalDataReceived();
 
     /**
@@ -251,7 +252,7 @@ public interface ManagedConnection
      * 
      * @since Qpid JMX API 1.9
      */
-    @MBeanAttribute(name="statisticsEnabled", description=TYPE + " Statistics Enabled")
+    @MBeanAttribute(name="StatisticsEnabled", description=TYPE + " Statistics Enabled")
     boolean isStatisticsEnabled();
     
     void setStatisticsEnabled(boolean enabled);
