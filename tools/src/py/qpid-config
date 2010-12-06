@@ -381,7 +381,7 @@ class JHelpFormatter(IndentedHelpFormatter):
             return ""
 
 def Usage(parser):
-    parser.print_help()
+    parser.print_usage()
     exit(-1)
 
 ##
