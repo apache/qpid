@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 import javax.management.NotCompliantMBeanException;
@@ -215,6 +216,25 @@ public class VirtualHostImpl implements VirtualHost
         _connectionRegistry = new ConnectionRegistry();
 
         _houseKeepingTasks = new ScheduledThreadPoolExecutor(_configuration.getHouseKeepingThreadCount());
+        _houseKeepingTasks.setThreadFactory(new ThreadFactory()
+        {
+            public Thread newThread(Runnable r)
+            {
+                Thread t = new Thread(r);
+                String name = "HouseKeeping";
+                StackTraceElement[] trace = Thread.currentThread().getStackTrace();
+                for (StackTraceElement elt : trace)
+                {
+                    if (elt.getClassName().endsWith("Test"))
+                    {
+                        name += "-" + elt.getClassName();
+//                        break; // FIXME
+                    }
+                }
+                t.setName(name);
+                return t;
+            }
+        });
 
         _queueRegistry = new DefaultQueueRegistry(this);
 
@@ -248,6 +268,7 @@ public class VirtualHostImpl implements VirtualHost
 
         _brokerMBean = new AMQBrokerManagerMBean(_virtualHostMBean);
         _brokerMBean.register();
+ 
         initialiseHouseKeeping(hostConfig.getHousekeepingExpiredMessageCheckPeriod());
     }
 
@@ -275,12 +296,22 @@ public class VirtualHostImpl implements VirtualHost
                         }
                         catch (Exception e)
                         {
-                            _logger.error("Exception in housekeeping for queue: "
-                                          + q.getNameShortString().toString(), e);
-                            //Don't throw exceptions as this will stop the
-                            // house keeping task from running.
+                            _logger.error("Exception in housekeeping for queue: " + q.getName(), e);
+                            // Don't throw exceptions as this will stop the task from running.
                         }
                     }
+                }
+            }
+ 
+            class CheckTransactionsTask extends HouseKeepingTask
+            {
+                public CheckTransactionsTask(VirtualHost vhost)
+                {
+                    super(vhost);
+                }
+
+                public void execute()
+                {
                     for (AMQConnectionModel connection : getConnectionRegistry().getConnections())
                     {
                         _logger.debug("Checking for long running open transactions on connection " + connection);
@@ -293,17 +324,19 @@ public class VirtualHostImpl implements VirtualHost
 	                                                           _configuration.getTransactionTimeoutOpenClose(),
 	                                                           _configuration.getTransactionTimeoutIdleWarn(),
 	                                                           _configuration.getTransactionTimeoutIdleClose());
-	                            }
+                            }
                             catch (Exception e)
                             {
                                 _logger.error("Exception in housekeeping for connection: " + connection.toString(), e);
+	                            // Don't throw exceptions as this will stop the task from running.
                             }
                         }
                     }
                 }
-            }
+            };
 
             scheduleHouseKeepingTask(period, new ExpiredMessagesTask(this));
+            scheduleHouseKeepingTask(period, new CheckTransactionsTask(this));
 
             Map<String, VirtualHostPluginFactory> plugins =
                 ApplicationRegistry.getInstance().getPluginManager().getVirtualHostPlugins();
@@ -368,12 +401,10 @@ public class VirtualHostImpl implements VirtualHost
         _houseKeepingTasks.setCorePoolSize(newSize);
     }
 
-
     public int getHouseKeepingActiveCount()
     {
         return _houseKeepingTasks.getActiveCount();
     }
-
 
     private void initialiseMessageStore(VirtualHostConfiguration hostConfig) throws Exception
     {

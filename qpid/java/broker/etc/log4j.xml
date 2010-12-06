@@ -68,7 +68,7 @@
         <param name="backupFilesToPath" value="${QPID_WORK}/backup/log"/>
 
         <layout class="org.apache.log4j.PatternLayout">
-            <param name="ConversionPattern" value="%d %-5p [%t] %C{2} (%F:%L) - %m%n"/>
+            <param name="ConversionPattern" value="%d %-5p [%t] (%F:%L) - %m%n"/>
         </layout>
     </appender>
 
@@ -77,13 +77,13 @@
         <param name="Append" value="false"/>
 
         <layout class="org.apache.log4j.PatternLayout">
-            <param name="ConversionPattern" value="%d %-5p [%t] %C{2} (%F:%L) - %m%n"/>
+            <param name="ConversionPattern" value="%d %-5p [%t] (%F:%L) - %m%n"/>
         </layout>
     </appender>
 
     <appender class="org.apache.log4j.ConsoleAppender" name="STDOUT">
         <layout class="org.apache.log4j.PatternLayout">
-            <param name="ConversionPattern" value="%d %-5p [%t] %C{2} (%F:%L) - %m%n"/>
+            <param name="ConversionPattern" value="%d %-5p [%t] (%F:%L) - %m%n"/>
         </layout>
     </appender>
 

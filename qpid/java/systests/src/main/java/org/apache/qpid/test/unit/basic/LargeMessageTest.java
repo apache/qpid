@@ -41,11 +41,18 @@ public class LargeMessageTest extends QpidBrokerTestCase
     private static final Logger _logger = LoggerFactory.getLogger(LargeMessageTest.class);
 
     private Destination _destination;
-    private AMQSession _session;
+    private AMQSession<?, ?> _session;
     private AMQConnection _connection;
     
     protected void setUp() throws Exception
     {
+        // Smaller packet size for UDP
+        if (Boolean.getBoolean("profile.udp"))
+        {
+            setConfigurationProperty("advanced.framesize", "20000");
+            setBrokerEnvironment("qpid.maxFrameSize", "20000");
+        }
+    
         super.setUp();
         try
         {

@@ -55,6 +55,7 @@ import org.apache.qpid.server.security.auth.manager.PrincipalDatabaseAuthenticat
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
+import org.apache.qpid.transport.network.IncomingNetworkTransport;
 import org.apache.qpid.transport.network.NetworkTransport;
 
 /**
@@ -71,7 +72,7 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
     
     protected final ServerConfiguration _configuration;
 
-    protected final Map<Integer, NetworkTransport> _transports = new HashMap<Integer, NetworkTransport>();
+    protected final Map<Integer, IncomingNetworkTransport> _transports = new HashMap<Integer, IncomingNetworkTransport>();
 
     protected ManagedObjectRegistry _managedObjectRegistry;
 
@@ -374,12 +375,12 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
                 try
                 {
                     transport.close();
+	                CurrentActor.get().message(BrokerMessages.SHUTTING_DOWN(transport.getAddress().toString(), port));
                 }
                 catch (Throwable e)
                 {
                     _logger.error("Unable to close network driver due to:" + e.getMessage());
                 }
-                CurrentActor.get().message(BrokerMessages.SHUTTING_DOWN(transport.getAddress().toString(), port));
             }
         }
     }
@@ -389,7 +390,7 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
         return _configuration;
     }
 
-    public void registerTransport(int port, NetworkTransport transport)
+    public void registerTransport(int port, IncomingNetworkTransport transport)
     {
         synchronized (_transports)
         {

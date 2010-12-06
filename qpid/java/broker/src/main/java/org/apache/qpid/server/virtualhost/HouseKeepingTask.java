@@ -45,13 +45,13 @@ public abstract class HouseKeepingTask implements Runnable
     {
         // Don't need to undo this as this is a thread pool thread so will
         // always go through here before we do any real work.
-        Thread.currentThread().setName(_name);
+        //Thread.currentThread().setName(_name); // XXX temporary
         CurrentActor.set(new AbstractActor(_rootLogger)
         {
             @Override
             public String getLogMessage()
             {
-                return _name;
+                return _name + " ";
             }
         });
 

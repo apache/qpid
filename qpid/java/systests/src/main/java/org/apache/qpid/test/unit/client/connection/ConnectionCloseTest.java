@@ -46,7 +46,7 @@ public class ConnectionCloseTest extends QpidBrokerTestCase
     public void testSendReceiveClose() throws Exception
     {
         Map<Thread,StackTraceElement[]> before = Thread.getAllStackTraces();
-
+        
         for (int i = 0; i < 500; i++)
         {
             if ((i % 10) == 0)
@@ -92,7 +92,7 @@ public class ConnectionCloseTest extends QpidBrokerTestCase
 
         assertTrue("Spurious thread creation exceeded threshold, " +
                    delta.size() + " threads created.",
-                   delta.size() < 100);
+                   delta.size() < 10);
     }
 
     private void dumpStacks(Map<Thread,StackTraceElement[]> map)
@@ -104,5 +104,4 @@ public class ConnectionCloseTest extends QpidBrokerTestCase
             log.warn(t, entry.getKey().toString());
         }
     }
-
 }

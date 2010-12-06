@@ -83,9 +83,11 @@ public class ConfiguredQueueBindingListener implements BindingListener
         if (config != null)
         {
             _cache.add(queue);
+            _log.error("=== SCD === ADD " + queue.getName());
         }
         else
         {
+            _log.error("=== SCD === REMOVE " + queue.getName());
             _cache.remove(queue);
         }
     }

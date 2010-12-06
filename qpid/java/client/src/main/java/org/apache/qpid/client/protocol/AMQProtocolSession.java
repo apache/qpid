@@ -112,8 +112,7 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
         _protocolHandler = protocolHandler;
         _protocolVersion = connection.getProtocolVersion();
         _logger.info("Using ProtocolVersion for Session:" + _protocolVersion);
-        _methodDispatcher = ClientMethodDispatcherImpl.newMethodDispatcher(ProtocolVersion.getLatestSupportedVersion(),
-                                                                           this);
+        _methodDispatcher = ClientMethodDispatcherImpl.newMethodDispatcher(ProtocolVersion.getLatestSupportedVersion(), this);
         _connection = connection;
     }
 

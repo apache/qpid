@@ -54,7 +54,7 @@ public class BrokerReceiver implements Receiver<java.nio.ByteBuffer>, LogSubject
     private IApplicationRegistry _appRegistry;
 
     private volatile Receiver<java.nio.ByteBuffer> _delegate = new SelfDelegateProtocolEngine();
-
+    
     public BrokerReceiver(IApplicationRegistry appRegistry,
                                       String fqdn,
                                       Set<VERSION> supported,

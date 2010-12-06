@@ -1,4 +1,3 @@
-#!/bin/bash
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -18,13 +17,9 @@
 # under the License.
 #
 
-# This is wrapper script to run the tests defined in testkit.py 
-# via the python test runner. The defaults are set for a running
-# from an svn checkout
+ver: 0.9.0
 
-. ./setenv.sh
-
-export PYTHONPATH=../:$PYTHONPATH
-rm -rf $OUTDIR
-$PYTHON_DIR/qpid-python-test -DOUTDIR=$OUTDIR  -m testkit "$@"
-
+Bundle-SymbolicName: qpid-shutdown-plugin
+Bundle-Version: ${ver}
+Export-Package: *;version=${ver}
+Bundle-RequiredExecutionEnvironment: J2SE-1.5

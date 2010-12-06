@@ -1,4 +1,5 @@
 Manifest-Version: 1.0
+Bundle-License: http://www.apache.org/licenses/LICENSE-2.0.txt
 Bundle-ManifestVersion: 2
 Bundle-Name: jmx sasl Plug-in
 Bundle-SymbolicName: jmxremote.sasl

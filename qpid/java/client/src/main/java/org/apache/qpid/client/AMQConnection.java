@@ -1452,16 +1452,6 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
             {
                 _logger.info("Not a hard-error connection not closing: " + cause);
             }
-            
-            // deliver the exception if there is a listener
-            if (_exceptionListener != null)
-            {
-                _exceptionListener.onException(je);
-            }
-            else
-            {
-                _logger.error("Throwable Received but no listener set: " + cause);
-            }
     
             // if we are closing the connection, close sessions first
             if (closer)
@@ -1474,6 +1464,16 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
                 {
                     _logger.error("Error closing all sessions: " + e, e);
                 }
+            }
+            
+            // deliver the exception if there is a listener
+            if (_exceptionListener != null)
+            {
+                _exceptionListener.onException(je);
+            }
+            else
+            {
+                _logger.error("Throwable Received but no listener set: " + cause);
             }
         }
     }

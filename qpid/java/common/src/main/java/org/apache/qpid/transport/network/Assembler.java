@@ -20,13 +20,11 @@
  */
 package org.apache.qpid.transport.network;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.nio.ByteBuffer;
-
-import org.apache.qpid.transport.codec.BBDecoder;
 
 import org.apache.qpid.transport.Header;
 import org.apache.qpid.transport.Method;
@@ -35,19 +33,16 @@ import org.apache.qpid.transport.ProtocolEvent;
 import org.apache.qpid.transport.ProtocolHeader;
 import org.apache.qpid.transport.Receiver;
 import org.apache.qpid.transport.Struct;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.qpid.transport.codec.BBDecoder;
 
 /**
  * Assembler
  */
 public class Assembler implements Receiver<NetworkEvent>, NetworkDelegate
 {
-    private static final Logger _log = LoggerFactory.getLogger(Assembler.class);
-
     private final Receiver<ProtocolEvent> receiver;
-    private final Map<Integer,List<Frame>> segments;
-    private final Method[] incomplete;
+    private final Map<Integer, List<Frame>> segments;
+    private final Map<Integer, Method> incomplete;
     private final ThreadLocal<BBDecoder> decoder = new ThreadLocal<BBDecoder>()
     {
         public BBDecoder initialValue()
@@ -59,8 +54,9 @@ public class Assembler implements Receiver<NetworkEvent>, NetworkDelegate
     public Assembler(Receiver<ProtocolEvent> receiver)
     {
         this.receiver = receiver;
-        segments = new HashMap<Integer,List<Frame>>();
-        incomplete = new Method[64*1024];
+        segments = new HashMap<Integer, List<Frame>>();
+        incomplete = new HashMap<Integer, Method>();
+//        incomplete = new Method[64*1024];
     }
 
     private int segmentKey(Frame frame)
@@ -102,12 +98,12 @@ public class Assembler implements Receiver<NetworkEvent>, NetworkDelegate
 
     public void exception(Throwable t)
     {
-        this.receiver.exception(t);
+        receiver.exception(t);
     }
 
     public void closed()
     {
-        this.receiver.closed();
+        receiver.closed();
     }
 
     public void init(ProtocolHeader header)
@@ -188,7 +184,7 @@ public class Assembler implements Receiver<NetworkEvent>, NetworkDelegate
             command.read(dec);
             if (command.hasPayload())
             {
-                incomplete[channel] = command;
+                incomplete.put(channel, command);
             }
             else
             {
@@ -196,8 +192,8 @@ public class Assembler implements Receiver<NetworkEvent>, NetworkDelegate
             }
             break;
         case HEADER:
-            command = incomplete[channel];
-            List<Struct> structs = new ArrayList(2);
+            command = incomplete.get(channel);
+            List<Struct> structs = new ArrayList<Struct>(2);
             while (dec.hasRemaining())
             {
                 structs.add(dec.readStruct32());
@@ -205,14 +201,14 @@ public class Assembler implements Receiver<NetworkEvent>, NetworkDelegate
             command.setHeader(new Header(structs));
             if (frame.isLastSegment())
             {
-                incomplete[channel] = null;
+                incomplete.remove(channel);
                 emit(channel, command);
             }
             break;
         case BODY:
-            command = incomplete[channel];
+            command = incomplete.get(channel);
             command.setBody(segment);
-            incomplete[channel] = null;
+            incomplete.remove(channel);
             emit(channel, command);
             break;
         default:

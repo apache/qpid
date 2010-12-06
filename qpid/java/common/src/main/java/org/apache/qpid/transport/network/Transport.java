@@ -20,7 +20,7 @@
  */
 package org.apache.qpid.transport.network;
 
-import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 
 import org.apache.qpid.transport.TransportException;
@@ -34,7 +34,7 @@ public class Transport
     public static final String UDP = "udp";
     public static final String VM = "vm";
     public static final String SOCKET = "socket";
-    public static final String MULTICAST = "multicast";
+    public static final String MULTICAST = "multicast"; // TODO
     
     public static final int DEFAULT_BUFFER_SIZE = 32 * 1024;
     public static final long DEFAULT_TIMEOUT = 60000;
@@ -43,20 +43,35 @@ public class Transport
  
     public static final String MINA_TRANSPORT = "org.apache.qpid.transport.network.mina.MinaNetworkTransport";
     public static final String IO_TRANSPORT = "org.apache.qpid.transport.network.io.IoNetworkTransport";
-    public static final String NIO_TRANSPORT = "org.apache.qpid.transport.network.nio.NioNetworkTransport";
-    public static final String NETTY_TRANSPORT = "org.apache.qpid.transport.network.netty.NettyNetworkTransport";
+    public static final String NIO_TRANSPORT = "org.apache.qpid.transport.network.nio.NioNetworkTransport"; // TODO
+    public static final String NETTY_TRANSPORT = "org.apache.qpid.transport.network.netty.NettyNetworkTransport"; // TODO
     
-    private static final List<String> _incoming = new ArrayList<String>();
-    private static final List<String> _outgoing = new ArrayList<String>();
+    private static final List<String> _incoming = new LinkedList<String>();
+    private static final List<String> _outgoing = new LinkedList<String>();
     
     public static void registerIncomingTransport(Class<? extends IncomingNetworkTransport> transport)
     {
-        _incoming.add(transport.getName());
+        registerTransport(_incoming, transport.getName());
+    }
+    
+    public static void registerIncomingTransport(String transport)
+    {
+        registerTransport(_incoming, transport);
     }
     
     public static void registerOutgoingTransport(Class<? extends OutgoingNetworkTransport> transport)
     {
-        _outgoing.add(transport.getName());
+        registerTransport(_outgoing, transport.getName());
+    }
+    
+    public static void registerOutgoingTransport(String transport)
+    {
+        registerTransport(_outgoing, transport);
+    }
+    
+    private static void registerTransport(List<String> registered, String transport)
+    {
+        registered.add(transport);
     }
 
     public static IncomingNetworkTransport getIncomingTransport() throws TransportException
@@ -71,7 +86,7 @@ public class Transport
     
     public static OutgoingNetworkTransport getOutgoingTransport(String protocol) throws TransportException
     {
-        return (OutgoingNetworkTransport) getTransport("outgoing", _outgoing, MINA_TRANSPORT, protocol);
+        return (OutgoingNetworkTransport) getTransport("outgoing", _outgoing, IO_TRANSPORT, protocol);
     }
     
     private static NetworkTransport getTransport(String direction, List<String> registered, String defaultTransport, String protocol)
@@ -95,7 +110,7 @@ public class Transport
         
         try
         {
-            String transport = System.getProperty("qpid.transport." + direction, MINA_TRANSPORT);
+            String transport = System.getProperty("qpid.transport." + direction, defaultTransport);
             Class<?> clazz = Class.forName(transport);
             NetworkTransport network = (NetworkTransport) clazz.newInstance();
             if (protocol == null || network.isCompatible(protocol))

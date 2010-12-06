@@ -57,20 +57,21 @@ public class ConnectionRegistry implements IConnectionRegistry, Closeable
         {
             connection.close(cause, message);
         }
-        catch (AMQException e)
+        catch (Exception e)
         {
-            _logger.warn("Error closing connection:" + e.getMessage());
+            _logger.warn("Error closing connection: " + e.getMessage());
+            deregisterConnection(connection);
         }
     }
 
-    public void registerConnection(AMQConnectionModel connnection)
+    public void registerConnection(AMQConnectionModel connection)
     {
-        _registry.add(connnection);
+        _registry.add(connection);
     }
 
-    public void deregisterConnection(AMQConnectionModel connnection)
+    public void deregisterConnection(AMQConnectionModel connection)
     {
-        _registry.remove(connnection);
+        _registry.remove(connection);
     }
 
     @Override

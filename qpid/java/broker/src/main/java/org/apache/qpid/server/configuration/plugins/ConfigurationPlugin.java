@@ -229,13 +229,12 @@ public abstract class ConfigurationPlugin
         return getListValue(property, Collections.<String>emptyList());
     }
 
-    @SuppressWarnings("unchecked")
     protected List<String> getListValue(String property, List<String> defaultValue)
     {
-        return (List<String>) _configuration.getList(property, defaultValue);
+        return _configuration.getList(property, defaultValue);
     }
 
-    /// Validation Helpers
+    // Validation Helpers
 
     protected boolean contains(String property)
     {

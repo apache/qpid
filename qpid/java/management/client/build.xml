@@ -44,9 +44,9 @@
 		<copy todir="${module.release}" failonerror="false" flatten="true">
 			<fileset dir="${resources}" excludes="META-INF">
 				<exclude name="META-INF"/>
-				<exclude name="README"/>
+				<exclude name="README.txt"/>
 			</fileset>
-			<fileset file="${module.build}${file.separator}README"/>
+			<fileset file="${module.build}${file.separator}README.txt"/>
 	    </copy>
 	</target>
 
@@ -153,7 +153,7 @@
 	<target name="copy-README-to-build">
 		<copy todir="${module.build}">
 			<fileset dir="${module.src}${file.separator}..${file.separator}..${file.separator}..">
-				<include name="README"/>				
+				<include name="README.txt"/>				
 			</fileset>
 		</copy>			
 	</target>
@@ -163,7 +163,7 @@
 		<mkdir dir="${examples.folder}${file.separator}sample_messages"/>
 		<copy todir="${examples.folder}">
 			<fileset dir="${module.src}${file.separator}..${file.separator}..${file.separator}example">
-				<include name="README"/>				
+				<include name="README.txt"/>				
 			</fileset>
 		</copy>		
 		<copy todir="${examples.folder}${file.separator}src">
@@ -175,7 +175,7 @@
 		<copy todir="${examples.folder}${file.separator}sample_messages">
 			<fileset dir="${module.src}${file.separator}..${file.separator}..${file.separator}example" >
 				<exclude name="**/*.java"/>
-				<exclude name="**/README"/>				
+				<exclude name="**/README.txt"/>				
 				<include name="**/*.out.*"/>
 			</fileset>
 		</copy>

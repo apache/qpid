@@ -361,7 +361,6 @@ public class AMQProtocolEngine implements Receiver<java.nio.ByteBuffer>, Managab
                                                                                        mechanisms.getBytes(),
                                                                                        locales.getBytes());
             _sender.send(responseBody.generateFrame(0).toNioByteBuffer());
-
         }
         catch (AMQException e)
         {

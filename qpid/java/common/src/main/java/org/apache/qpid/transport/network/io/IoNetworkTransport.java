@@ -66,8 +66,8 @@ public class IoNetworkTransport implements OutgoingNetworkTransport
         {
             _socket = new Socket();
 
-            _log.debug("default-SO_RCVBUF : %s", _socket.getReceiveBufferSize());
-            _log.debug("default-SO_SNDBUF : %s", _socket.getSendBufferSize());
+            _log.debug("default SO_RCVBUF " + _socket.getReceiveBufferSize());
+            _log.debug("default SO_SNDBUF " + _socket.getSendBufferSize());
 
             _socket.setTcpNoDelay(noDelay);
             _socket.setKeepAlive(keepAlive);
@@ -75,8 +75,8 @@ public class IoNetworkTransport implements OutgoingNetworkTransport
             _socket.setReceiveBufferSize(receiveBufferSize);
             _socket.setReuseAddress(true);
 
-            _log.debug("new-SO_RCVBUF : %s", _socket.getReceiveBufferSize());
-            _log.debug("new-SO_SNDBUF : %s", _socket.getSendBufferSize());
+            _log.debug("new SO_RCVBUF " + _socket.getReceiveBufferSize());
+            _log.debug("new SO_SNDBUF " + _socket.getSendBufferSize());
 
             InetAddress address = InetAddress.getByName(settings.getHost());
             _socket.connect(new InetSocketAddress(address, settings.getPort()));

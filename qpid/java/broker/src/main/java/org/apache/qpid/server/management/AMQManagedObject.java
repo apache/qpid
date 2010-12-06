@@ -20,9 +20,13 @@
  */
 package org.apache.qpid.server.management;
 
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicLong;
+
 import org.apache.qpid.server.logging.actors.ManagementActor;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.LogActor;
+import org.apache.qpid.thread.Threading;
 
 import javax.management.ListenerNotFoundException;
 import javax.management.MBeanInfo;
@@ -45,12 +49,13 @@ public abstract class AMQManagedObject extends DefaultManagedObject
     /**
      * broadcaster support class
      */
-    protected NotificationBroadcasterSupport _broadcaster = new NotificationBroadcasterSupport();
+    protected NotificationBroadcasterSupport _broadcaster = new NotificationBroadcasterSupport(
+            Executors.newCachedThreadPool(Threading.getThreadFactory()));
 
     /**
      * sequence number for notifications
      */
-    protected long _notificationSequenceNumber = 0;
+    protected AtomicLong _notificationSequenceNumber = new AtomicLong(0);
 
     protected MBeanInfo _mbeanInfo;
 

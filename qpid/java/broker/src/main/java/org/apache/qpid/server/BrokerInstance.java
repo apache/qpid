@@ -255,6 +255,7 @@ public class BrokerInstance
 
     private void configureLogging(File logConfigFile, int logWatchTime) throws Exception
     {
+        _logger.info("configuring logging using file " + logConfigFile.getName());
         if (logConfigFile.exists() && logConfigFile.canRead())
         {
             CurrentActor.get().message(BrokerMessages.LOG_CONFIG(logConfigFile.getAbsolutePath()));

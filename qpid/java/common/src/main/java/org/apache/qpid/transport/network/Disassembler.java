@@ -20,9 +20,15 @@
  */
 package org.apache.qpid.transport.network;
 
-import static org.apache.qpid.transport.network.Frame.*;
-
 import static java.lang.Math.min;
+import static org.apache.qpid.transport.network.Frame.FIRST_FRAME;
+import static org.apache.qpid.transport.network.Frame.FIRST_SEG;
+import static org.apache.qpid.transport.network.Frame.HEADER_SIZE;
+import static org.apache.qpid.transport.network.Frame.LAST_FRAME;
+import static org.apache.qpid.transport.network.Frame.LAST_SEG;
+
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
 import org.apache.qpid.transport.Header;
 import org.apache.qpid.transport.Method;
@@ -35,19 +41,14 @@ import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.Struct;
 import org.apache.qpid.transport.codec.BBEncoder;
 
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-
 /**
  * Disassembler converts protocol events to byte buffers that can be sent on the network.
  */
 public final class Disassembler implements Sender<ProtocolEvent>,
                                            ProtocolDelegate<Void>
 {
-
     private final Sender<ByteBuffer> sender;
     private final int maxPayload;
-    private final ByteBuffer header;
     private final Object sendlock = new Object();
     private final ThreadLocal<BBEncoder> encoder = new ThreadLocal<BBEncoder>()
     {
@@ -66,8 +67,6 @@ public final class Disassembler implements Sender<ProtocolEvent>,
         }
         this.sender = sender;
         this.maxPayload  = maxFrame - HEADER_SIZE;
-        this.header =  ByteBuffer.allocate(HEADER_SIZE);
-        this.header.order(ByteOrder.BIG_ENDIAN);
 
     }
 
@@ -78,39 +77,35 @@ public final class Disassembler implements Sender<ProtocolEvent>,
 
     public void flush()
     {
-        synchronized (sendlock)
-        {
-            sender.flush();
-        }
+        sender.flush();
     }
 
     public void close()
     {
-        synchronized (sendlock)
-        {
-            sender.close();
-        }
+        sender.close();
     }
 
     private void frame(byte flags, byte type, byte track, int channel, int size, ByteBuffer buf)
     {
         synchronized (sendlock)
         {
-            header.put(0, flags);
-            header.put(1, type);
-            header.putShort(2, (short) (size + HEADER_SIZE));
-            header.put(5, track);
-            header.putShort(6, (short) channel);
-
-            header.rewind();
-
-            sender.send(header);
-            sender.flush();
+            ByteBuffer data = ByteBuffer.allocate(size + HEADER_SIZE);
+            data.order(ByteOrder.BIG_ENDIAN);
+            
+            data.put(0, flags);
+            data.put(1, type);
+            data.putShort(2, (short) (size + HEADER_SIZE));
+            data.put(5, track);
+            data.putShort(6, (short) channel);
+            data.position(HEADER_SIZE);
 
             int limit = buf.limit();
             buf.limit(buf.position() + size);
-            sender.send(buf);
+            data.put(buf);
             buf.limit(limit);
+ 
+            data.rewind();
+            sender.send(data);
         }
     }
 
@@ -164,14 +159,6 @@ public final class Disassembler implements Sender<ProtocolEvent>,
     public void command(Void v, Method method)
     {
         method(method, SegmentType.COMMAND);
-    }
-
-    private ByteBuffer copy(ByteBuffer src)
-    {
-        ByteBuffer buf = ByteBuffer.allocate(src.remaining());
-        buf.put(src);
-        buf.flip();
-        return buf;
     }
 
     private void method(Method method, SegmentType type)
@@ -228,7 +215,6 @@ public final class Disassembler implements Sender<ProtocolEvent>,
                 {
                     fragment(LAST_SEG, SegmentType.BODY, method, body);
                 }
-
             }
         }
     }

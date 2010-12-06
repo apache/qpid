@@ -38,7 +38,7 @@ import org.apache.qpid.transport.network.NetworkConnection;
 
 public class ProtocolEngine_0_10  extends InputHandler implements ConnectionConfig
 {
-    public static final int MAX_FRAME_SIZE = 64 * 1024 - 1;
+    public static final int MAX_FRAME_SIZE = Integer.getInteger("qpid.maxFrameSize", 64 * 1024 - 1);
 
     private NetworkConnection _network;
     private ServerConnection _connection;

@@ -639,20 +639,23 @@ public class QpidBrokerTestCase extends QpidTestCase
 
     public void stopBroker(int port) throws Exception
     {
-        port = getPort(port);
-
         _logger.info("stopping broker: " + getBrokerCommand(port) + " on port " + port);
-        Process process = _brokers.remove(port);
-        if (process != null)
-        {
-            process.destroy();
-            process.waitFor();
-            _logger.info("broker exited: " + process.exitValue());
-        }
-        else if (_broker.equals(VM))
+        if (_broker.equals(VM))
         {
             VmBroker.killVMBroker();
         }
+        else
+        {
+            port = getPort(port);
+    
+            Process process = _brokers.remove(port);
+            if (process != null)
+            {
+                process.destroy();
+                process.waitFor();
+                _logger.info("broker exited: " + process.exitValue());
+            }
+        } 
     }
 
     /**
@@ -973,20 +976,22 @@ public class QpidBrokerTestCase extends QpidTestCase
 
     protected void tearDown() throws Exception
     {
-        try
+        // close all the connections used by this test.
+        for (Connection c : _connections)
         {
-            // close all the connections used by this test.
-            for (Connection c : _connections)
-            {
+	        try
+	        {
                 c.close();
             }
+	        catch (Exception e)
+	        {
+	            _logger.warn("Error closing connection", e);
+	        }
         }
-        finally
-        {
-            // Ensure any problems with close does not interfer with property resets
-            super.tearDown();
-            revertLoggingLevels();
-        }
+        
+        // Ensure any problems with close does not interfer with property resets
+        super.tearDown();
+        revertLoggingLevels();
     }
 
     /**

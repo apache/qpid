@@ -61,7 +61,7 @@ public abstract class AbstractConfiguration implements ConfigurationFile
     public RuleSet reload()
     {
         RuleSet oldRules = _config;
-        
+ 
         try
         {
             RuleSet newRules = load();

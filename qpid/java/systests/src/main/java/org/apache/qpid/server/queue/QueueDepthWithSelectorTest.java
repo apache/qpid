@@ -169,7 +169,7 @@ public class QueueDepthWithSelectorTest extends QpidBrokerTestCase
         for (int i = 0; i < MSG_COUNT; i++)
         {
             _messages[i] = _consumer.receive(1000);
-            assertNotNull("should have received a message but didn't", _messages[i]);
+            assertNotNull("should have received a message but didn't " + i, _messages[i]);
         }
         
 //        long queueDepth = ((AMQSession) _clientSession).getQueueDepth((AMQDestination) _queue);

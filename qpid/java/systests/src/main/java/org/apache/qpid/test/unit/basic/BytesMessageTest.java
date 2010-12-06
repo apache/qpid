@@ -239,7 +239,8 @@ public class BytesMessageTest extends QpidBrokerTestCase implements MessageListe
         {
             if (expected[i] != actual[i])
             {
-                throw new RuntimeException("Failed on byte " + i + " of " + expected.length);
+                throw new RuntimeException("Failed on byte " + i + " of " + expected.length +
+                        "(" + new String(expected) +", " + new String(actual) + ")");
             }
         }
     }

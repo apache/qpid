@@ -243,11 +243,14 @@ public class TransactionTimeoutTestCase extends QpidBrokerTestCase implements Ex
     /** @see javax.jms.ExceptionListener#onException(javax.jms.JMSException) */
     public void onException(JMSException jmse)
     {
-        _caught.countDown();
-        _message = jmse.getLinkedException().getMessage();
-        if (jmse.getLinkedException() instanceof AMQException)
+        if (_caught.getCount() > 0L)
         {
-            _code = ((AMQException) jmse.getLinkedException()).getErrorCode();
+            _caught.countDown();
+            _message = jmse.getLinkedException().getMessage();
+            if (jmse.getLinkedException() instanceof AMQException)
+            {
+                _code = ((AMQException) jmse.getLinkedException()).getErrorCode();
+            }
         }
     }
 }

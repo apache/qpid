@@ -138,7 +138,8 @@ public class AMQQueueDeferredOrderingTest extends QpidBrokerTestCase
             Message msg = _consumer.receive(3000);
             assertNotNull("Message should not be null", msg);
             assertTrue("Message should be a text message", msg instanceof TextMessage);
-            assertEquals("Message content does not match expected", Integer.toString(i), ((TextMessage) msg).getText());
+            _logger.error("== " + Integer.toString(i) + " == " + ((TextMessage) msg).getText());
+            assertEquals("Message content does not match", Integer.toString(i), ((TextMessage) msg).getText());
         }
     }
 

@@ -26,20 +26,16 @@ import org.apache.mina.common.IoSession;
 import org.apache.mina.common.WriteFuture;
 import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.TransportException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import org.apache.qpid.transport.network.Transport;
 
 /**
  * MinaSender
  */
 public class MinaSender implements Sender<java.nio.ByteBuffer>
 {
-    private static final Logger _log = LoggerFactory.getLogger(MinaSender.class);
-    
     private final IoSession _session;
-    private WriteFuture _lastWrite;
-    private int _idleTimeout = 0;
+    private int _idle = 0;
+    private WriteFuture _written;
 
     public MinaSender(IoSession session)
     {
@@ -52,41 +48,36 @@ public class MinaSender implements Sender<java.nio.ByteBuffer>
         {
             throw new TransportException("attempted to write to a closed socket");
         }
-        ByteBuffer mina = ByteBuffer.allocate(buf.capacity());
-        mina.put(buf);
-        mina.flip();
-        flush();
-        _lastWrite = _session.write(mina);
+        _written = _session.write(ByteBuffer.wrap(buf));
     }
 
     public synchronized void flush()
     {
-        if (_lastWrite != null)
+        if (_written != null)
         {
-            _lastWrite.join();
-            if (!_lastWrite.isWritten())
-            {
-                throw new RuntimeException("Error flushing buffer");
-            }
+	        _written.join(Transport.DEFAULT_TIMEOUT);
+	        if (!_written.isWritten())
+	        {
+	            throw new TransportException("Error flushing data buffer");
+	        }
         }
     }
 
-    public void close()
+    public synchronized void close()
     {
-        // MINA will sometimes throw away in-progress writes when you ask it to close
         flush();
         CloseFuture closed = _session.close();
         closed.join();
     }
     
-    public void setIdleTimeout(int i)
+    public void setIdleTimeout(int idle)
     {
-        _idleTimeout = i;
-        _session.setWriteTimeout(_idleTimeout);
+        _idle = idle;
+        _session.setWriteTimeout(_idle);
     }
     
     public long getIdleTimeout()
     {
-        return _idleTimeout;
+        return _idle;
     }
 }

@@ -135,7 +135,7 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
 
     public String getVersion()
     {
-        return (_protocolSession.getClientVersion() == null) ? null : _protocolSession.getClientVersion().toString();
+        return _protocolSession.getClientVersion();
     }
 
     public Date getLastIoTime()
@@ -324,7 +324,7 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
     public void notifyClients(String notificationMsg)
     {
         Notification n =
-            new Notification(MonitorNotification.THRESHOLD_VALUE_EXCEEDED, this, ++_notificationSequenceNumber,
+            new Notification(MonitorNotification.THRESHOLD_VALUE_EXCEEDED, this, _notificationSequenceNumber.getAndIncrement(),
                 System.currentTimeMillis(), notificationMsg);
         _broadcaster.sendNotification(n);
     }

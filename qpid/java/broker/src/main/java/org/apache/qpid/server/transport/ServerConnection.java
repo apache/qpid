@@ -91,6 +91,10 @@ public class ServerConnection extends Connection implements AMQConnectionModel, 
         if (state == State.CLOSED)
         {
             CurrentActor.get().message(this, ConnectionMessages.CLOSE());
+            if (_virtualHost != null)
+            {
+                _virtualHost.getConnectionRegistry().deregisterConnection(this);
+            }
         }
     }
 

@@ -1,3 +1,24 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+
+backport-util-concurrent=lib/backport-util-concurrent-2.2.jar
+
 commons-beanutils-core=lib/commons-beanutils-core-1.8.0.jar
 commons-cli=lib/commons-cli-1.0.jar
 commons-codec=lib/commons-codec-1.3.jar
@@ -22,8 +43,8 @@ log4j=lib/log4j-1.2.12.jar
 mina-core=lib/mina-core-1.1.7.jar
 mina-filter-ssl=lib/mina-filter-ssl-1.1.7.jar
 
-slf4j-api=lib/slf4j-api-1.4.0.jar
-slf4j-log4j=lib/slf4j-log4j12-1.4.0.jar
+slf4j-api=lib/slf4j-api-1.6.1.jar
+slf4j-log4j=lib/slf4j-log4j12-1.6.1.jar
 
 xalan=lib/xalan-2.7.0.jar
 
@@ -75,9 +96,15 @@ felix.libs=${felix-framework}
 commons-configuration.libs = ${commons-beanutils-core} ${commons-digester} \
 	${commons-codec} ${commons-lang} ${commons-collections} ${commons-configuration}
 
+<<<<<<< .working
 common.libs=${slf4j-api} ${mina-core} ${mina-filter-ssl} 
 client.libs=${geronimo-jms} ${common.libs}
 tools.libs=${commons-configuration.libs} ${broker.libs}
+=======
+common.libs=${slf4j-api} ${backport-util-concurrent} ${mina-core} ${mina-filter-ssl} 
+client.libs=${geronimo-jms}
+tools.libs=${commons-configuration.libs} ${log4j}
+>>>>>>> .merge-right.r1042616
 broker.libs=${commons-cli} ${commons-logging} ${log4j} ${slf4j-log4j} \
     ${xalan} ${felix.libs} ${derby-db} ${commons-configuration.libs}
 

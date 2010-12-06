@@ -36,6 +36,7 @@ import org.apache.qpid.server.security.auth.database.PrincipalDatabaseManager;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
+import org.apache.qpid.transport.network.IncomingNetworkTransport;
 import org.apache.qpid.transport.network.NetworkTransport;
 
 public interface IApplicationRegistry
@@ -81,7 +82,7 @@ public interface IApplicationRegistry
     /**
      * Register any network transports for this registry
      */
-    void registerTransport(int port, NetworkTransport transport);
+    void registerTransport(int port, IncomingNetworkTransport transport);
 
     public UUID getBrokerId();
 
