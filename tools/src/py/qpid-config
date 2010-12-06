@@ -232,7 +232,7 @@ class BrokerManager:
 
     def AddExchange (self, args):
         if len (args) < 2:
-            Usage ()
+            Usage(parser)
         etype = args[0]
         ename = args[1]
         declArgs = {}
@@ -247,13 +247,13 @@ class BrokerManager:
 
     def DelExchange (self, args):
         if len (args) < 1:
-            Usage ()
+            Usage(parser)
         ename = args[0]
         self.broker.getAmqpSession().exchange_delete (exchange=ename)
 
     def AddQueue (self, args):
         if len (args) < 1:
-            Usage ()
+            Usage(parser)
         qname    = args[0]
         declArgs = {}
         if _durable:
@@ -295,14 +295,14 @@ class BrokerManager:
 
     def DelQueue (self, args):
         if len (args) < 1:
-            Usage ()
+            Usage(parser)
         qname = args[0]
         self.broker.getAmqpSession().queue_delete (queue=qname, if_empty=_if_empty, if_unused=_if_unused)
 
 
     def Bind (self, args):
         if len (args) < 2:
-            Usage ()
+            Usage(parser)
         ename = args[0]
         qname = args[1]
         key   = ""
@@ -340,7 +340,7 @@ class BrokerManager:
 
     def Unbind (self, args):
         if len (args) < 2:
-            Usage ()
+            Usage(parser)
         ename = args[0]
         qname = args[1]
         key   = ""
@@ -379,6 +379,10 @@ class JHelpFormatter(IndentedHelpFormatter):
             return description + "\n"
         else:
             return ""
+
+def Usage(parser):
+    parser.print_help()
+    exit(-1)
 
 ##
 ## Main Program
@@ -555,20 +559,20 @@ try:
             elif modifier == "queue":
                 bm.AddQueue (args[2:])
             else:
-                Usage ()
+                Usage(parser)
         elif cmd == "del":
             if modifier == "exchange":
                 bm.DelExchange (args[2:])
             elif modifier == "queue":
                 bm.DelQueue (args[2:])
             else:
-                Usage ()
+                Usage(parser)
         elif cmd == "bind":
             bm.Bind (args[1:])
         elif cmd == "unbind":
             bm.Unbind (args[1:])
         else:
-            Usage ()
+            Usage(parser)
 except KeyboardInterrupt:
     print
 except IOError, e:
