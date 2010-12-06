@@ -135,6 +135,8 @@ if (BUILD_CLUSTER)
        qpid/cluster/SecureConnectionFactory.cpp
        qpid/cluster/StoreStatus.h
        qpid/cluster/StoreStatus.cpp
+       qpid/cluster/UpdateDataExchange.h
+       qpid/cluster/UpdateDataExchange.cpp
       )
 
   add_library (cluster MODULE ${cluster_SOURCES})
