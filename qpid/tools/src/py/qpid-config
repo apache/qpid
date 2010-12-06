@@ -319,6 +319,7 @@ class BrokerManager:
         # map containing key/value pairs.  if neither of those, extra
         # args are ignored.
         ok = True
+        _args = None
         if res.type == "xml":
             # this checks/imports the -f arg
             [ok, xquery] = snarf_xquery_args()
