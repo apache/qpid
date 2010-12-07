@@ -21,8 +21,13 @@
 package org.apache.qpid.server.queue;
 
 import junit.framework.TestCase;
+
+import org.apache.qpid.server.exchange.DefaultExchangeFactory;
+import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.AMQException;
@@ -45,10 +50,13 @@ public class AMQQueueFactoryTest extends TestCase
 
     public void tearDown()
     {
-        assertEquals("Queue was not registered in virtualhost", 1, _queueRegistry.getQueues().size());
         ApplicationRegistry.remove();
     }
 
+    private void verifyRegisteredQueueCount(int count)
+    {
+        assertEquals("Queue was not registered in virtualhost", count, _queueRegistry.getQueues().size());
+    }
 
     public void testPriorityQueueRegistration()
     {
@@ -60,7 +68,8 @@ public class AMQQueueFactoryTest extends TestCase
             AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("testPriorityQueue"), false, new AMQShortString("owner"), false,
                                                _virtualHost, fieldTable);
 
-            assertEquals("Queue not a priorty queue", AMQPriorityQueue.class, queue.getClass());            
+            assertEquals("Queue not a priorty queue", AMQPriorityQueue.class, queue.getClass());
+            verifyRegisteredQueueCount(1);
         }
         catch (AMQException e)
         {
@@ -73,10 +82,20 @@ public class AMQQueueFactoryTest extends TestCase
     {
         try
         {
+            AMQShortString queueName = new AMQShortString("testSimpleQueueRegistration");
+            AMQShortString dlQueueName = new AMQShortString(queueName + AMQQueueFactory.DEFAULT_DLQ_NAME_SUFFIX);
+            
             AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("testQueue"), false, new AMQShortString("owner"), false,
                                                _virtualHost, null);
             assertEquals("Queue not a simple queue", SimpleAMQQueue.class, queue.getClass());
-            assertNull("Queue should not have alternate exchange as DLQ isnt enabled", queue.getAlternateExchange());
+            
+            //verify that no alternate exchange or DLQ were produced
+            QueueRegistry qReg = _virtualHost.getQueueRegistry();
+
+            assertNull("Queue should not have an alternate exchange as DLQ wasnt enabled", queue.getAlternateExchange());
+            assertNull("The DLQ should not exist", qReg.getQueue(dlQueueName));
+            
+            verifyRegisteredQueueCount(1);
         }
         catch (AMQException e)
         {
@@ -85,18 +104,122 @@ public class AMQQueueFactoryTest extends TestCase
     }
 
     /**
-     * Tests that setting the {@link AMQQueueFactory#X_QPID_DLQ_ENABLED} argument causes the alternate exchange to be set.
+     * Tests that setting the {@link AMQQueueFactory#X_QPID_DLQ_ENABLED} argument true does
+     * cause the alternate exchange to be set and DLQ to be produced.
      */
     public void testDeadLetterQueueEnabled()
     {
         FieldTable fieldTable = new FieldTable();
-        fieldTable.put(new AMQShortString(AMQQueueFactory.X_QPID_DLQ_ENABLED), true);
+        fieldTable.put(AMQQueueFactory.X_QPID_DLQ_ENABLED, true);
+        
+        AMQShortString queueName = new AMQShortString("testDeadLetterQueueEnabled");
+        AMQShortString dlExchangeName = new AMQShortString(queueName + DefaultExchangeFactory.DEFAULT_DLE_NAME_SUFFIX);
+        AMQShortString dlQueueName = new AMQShortString(queueName + AMQQueueFactory.DEFAULT_DLQ_NAME_SUFFIX);
         
         try
         {
-            AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("testQueue"), false, new AMQShortString("owner"), false,
+            QueueRegistry qReg = _virtualHost.getQueueRegistry();
+            ExchangeRegistry exReg = _virtualHost.getExchangeRegistry();
+
+            assertNull("The DLQ should not yet exist", qReg.getQueue(dlQueueName));
+            assertNull("The alternate exchange should not yet exist", exReg.getExchange(dlExchangeName));
+
+            AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(queueName, false, new AMQShortString("owner"), false,
                                                _virtualHost, fieldTable);
-            assertNotNull("Queue should have an alternate exchange as DLQ is enabled", queue.getAlternateExchange());
+
+            Exchange altExchange = queue.getAlternateExchange();
+            assertNotNull("Queue should have an alternate exchange as DLQ is enabled", altExchange);
+            assertEquals("Alternate exchange name was not as expected", dlExchangeName, altExchange.getName());
+            assertEquals("Alternate exchange type was not as expected", ExchangeDefaults.FANOUT_EXCHANGE_CLASS, altExchange.getType());
+
+            assertNotNull("The alternate exchange was not registered as expected", exReg.getExchange(dlExchangeName));
+            assertEquals("The registered exchange was not the expected exchange instance", altExchange, exReg.getExchange(dlExchangeName));
+
+            AMQQueue dlQueue = qReg.getQueue(dlQueueName);
+            assertNotNull("The DLQ was not registered as expected", dlQueue);
+            assertTrue("DLQ should have been bound to the alternate exchange", altExchange.isBound(dlQueue));
+
+            //2 queues should have been registered
+            verifyRegisteredQueueCount(2);
+        }
+        catch (AMQException e)
+        {
+            fail(e.getMessage());
+        }
+    }
+    
+    /**
+     * Tests that setting the {@link AMQQueueFactory#X_QPID_DLQ_ENABLED} argument false does not 
+     * result in the alternate exchange being set and DLQ being created.
+     */
+    public void testDeadLetterQueueDisabled()
+    {
+        FieldTable fieldTable = new FieldTable();
+        fieldTable.put(AMQQueueFactory.X_QPID_DLQ_ENABLED, false);
+        
+        AMQShortString queueName = new AMQShortString("testDeadLetterQueueDisabled");
+        AMQShortString dlExchangeName = new AMQShortString(queueName + DefaultExchangeFactory.DEFAULT_DLE_NAME_SUFFIX);
+        AMQShortString dlQueueName = new AMQShortString(queueName + AMQQueueFactory.DEFAULT_DLQ_NAME_SUFFIX);
+        
+        try
+        {
+            QueueRegistry qReg = _virtualHost.getQueueRegistry();
+            ExchangeRegistry exReg = _virtualHost.getExchangeRegistry();
+
+            assertNull("The DLQ should not yet exist", qReg.getQueue(dlQueueName));
+            assertNull("The alternate exchange should not exist", exReg.getExchange(dlExchangeName));
+
+            AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(queueName, false, new AMQShortString("owner"), false,
+                                               _virtualHost, fieldTable);
+
+            assertNull("Queue should not have an alternate exchange as DLQ is disabled", queue.getAlternateExchange());
+            assertNull("The alternate exchange should still not exist", exReg.getExchange(dlExchangeName));
+            
+            assertNull("The DLQ should still not exist", qReg.getQueue(dlQueueName));
+
+            //only 1 queue should have been registered
+            verifyRegisteredQueueCount(1);
+        }
+        catch (AMQException e)
+        {
+            fail(e.getMessage());
+        }
+    }
+    
+    /**
+     * Tests that setting the {@link AMQQueueFactory#X_QPID_DLQ_ENABLED} argument true but
+     * creating an auto-delete queue, does not result in the alternate exchange
+     * being set and DLQ being created.
+     */
+    public void testDeadLetterQueueNotCreatedForAutodeleteQueues()
+    {
+        FieldTable fieldTable = new FieldTable();
+        fieldTable.put(AMQQueueFactory.X_QPID_DLQ_ENABLED, true);
+        
+        AMQShortString queueName = new AMQShortString("testDeadLetterQueueNotCreatedForAutodeleteQueues");
+        AMQShortString dlExchangeName = new AMQShortString(queueName + DefaultExchangeFactory.DEFAULT_DLE_NAME_SUFFIX);
+        AMQShortString dlQueueName = new AMQShortString(queueName + AMQQueueFactory.DEFAULT_DLQ_NAME_SUFFIX);
+        
+        try
+        {
+            QueueRegistry qReg = _virtualHost.getQueueRegistry();
+            ExchangeRegistry exReg = _virtualHost.getExchangeRegistry();
+
+            assertNull("The DLQ should not yet exist", qReg.getQueue(dlQueueName));
+            assertNull("The alternate exchange should not exist", exReg.getExchange(dlExchangeName));
+
+            //create an autodelete queue
+            AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(queueName, false, new AMQShortString("owner"), true,
+                                               _virtualHost, fieldTable);
+            assertTrue("Queue should be autodelete", queue.isAutoDelete());
+
+            //ensure that the autodelete property overrides the request to enable DLQ
+            assertNull("Queue should not have an alternate exchange as queue is autodelete", queue.getAlternateExchange());
+            assertNull("The alternate exchange should not exist as queue is autodelete", exReg.getExchange(dlExchangeName));
+            assertNull("The DLQ should not exist as queue is autodelete", qReg.getQueue(dlQueueName));
+
+            //only 1 queue should have been registered
+            verifyRegisteredQueueCount(1);
         }
         catch (AMQException e)
         {
