@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.client;
 
-
 import java.util.Map;
 
 import javax.jms.Destination;
@@ -241,17 +240,38 @@ public final class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, B
                 break;
             }
 
-            rejectMessage(tag, true);
+            boolean shouldRequeue = true;
+            BasicMessageConsumer_0_8 rejectingConsumer = null;
+
+            for(BasicMessageConsumer_0_8 consumer : _consumers.values())
+            {
+                shouldRequeue = consumer.shouldRequeueMessage(tag);
+                if(!shouldRequeue)
+                {
+                    rejectingConsumer = consumer;
+
+                    //no need to consult other consumers now, it is rejected.
+                    break;
+                }
+            }
+
+            rejectMessage(tag, shouldRequeue);
+            if(!shouldRequeue)
+            {
+                //explicitly remove records for message, we know they wont be used again
+                rejectingConsumer.removeDeliveryCountRecordsForMessage(tag);
+            }
         }
     }
 
     public void rejectMessage(long deliveryTag, boolean requeue)
     {
-        if ((_acknowledgeMode == CLIENT_ACKNOWLEDGE) || (_acknowledgeMode == SESSION_TRANSACTED))
+        if ((_acknowledgeMode == CLIENT_ACKNOWLEDGE) || (_acknowledgeMode == SESSION_TRANSACTED) ||
+              ((_acknowledgeMode == AUTO_ACKNOWLEDGE || _acknowledgeMode == DUPS_OK_ACKNOWLEDGE ) && hasMessageListeners()))
         {
             if (_logger.isDebugEnabled())
             {
-                _logger.debug("Rejecting delivery tag:" + deliveryTag + ":SessionHC:" + this.hashCode());
+                _logger.debug("Rejecting delivery tag:" + deliveryTag + ":ReQueue:" + requeue + ":SessionHC:" + this.hashCode());
             }
 
             BasicRejectBody body = getMethodRegistry().createBasicRejectBody(deliveryTag, requeue);

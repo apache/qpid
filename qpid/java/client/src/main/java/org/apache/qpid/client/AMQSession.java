@@ -314,6 +314,9 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     /** All the delivered message tags */
     protected ConcurrentLinkedQueue<Long> _deliveredMessageTags = new ConcurrentLinkedQueue<Long>();
 
+    /** The last asynchronously delivered auto-ack message tag */
+    protected Long _lastAsyncAutoAckDeliveryTag = null;
+    
     /** Holds the dispatcher thread for this session. */
     protected Dispatcher _dispatcher;
 
@@ -821,7 +824,8 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                                                          "Forced rollback");
             }
 
-
+            ArrayList<Long> ackedMessageTags = new ArrayList<Long>();
+            
             // Acknowledge all delivered messages
             while (true)
             {
@@ -832,10 +836,17 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                 }
 
                 acknowledgeMessage(tag, false);
+                ackedMessageTags.add(tag);
             }
             // Commits outstanding messages and acknowledgments
             sendCommit();
             markClean();
+            
+            //remove MaxRedelivery info for the commited deliveryTags to enhance retention of other message tags
+            for(C consumer : _consumers.values())
+            {
+                consumer.removeDeliveryCountRecordsForMessages(ackedMessageTags);
+            }
         }
         catch (AMQException e)
         {
@@ -1631,6 +1642,8 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                 _dispatcher.rollback();
             }
 
+            enforceMaxDeliveryCountDuringRecover();
+            
             sendRecover();
 
             markClean();
@@ -1647,6 +1660,76 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         catch (FailoverException e)
         {
             throw new JMSAMQException("Recovery was interrupted by fail-over. Recovery status is not known.", e);
+        }
+    }
+
+    private void enforceMaxDeliveryCountDuringRecover()
+    {
+        ArrayList<C> consumersToCheck = new ArrayList<C>(_consumers.values());
+        Iterator<C> iter = consumersToCheck.iterator();
+        if(!iter.hasNext())
+        {
+            return;
+        }
+
+        //remove any consumers not enforcing MaxDelivery
+        while(iter.hasNext())
+        {
+            C con = iter.next();
+            if(!con.isMaxDeliveryCountEnforced())
+            {
+                iter.remove();
+            }
+        }
+        
+        if (consumersToCheck.size() > 0)
+        {
+            //reject(false) any messages we don't want returned again 
+            switch(_acknowledgeMode)
+            {
+                case Session.CLIENT_ACKNOWLEDGE:
+                    for(long tag : _unacknowledgedMessageTags)
+                    {
+                        for(C consumer : consumersToCheck)
+                        {
+                            if(!consumer.shouldRequeueMessage(tag))
+                            {
+                                //consumer said we should not requeue the message, do reject(false)
+                                rejectMessage(tag, false);
+                                
+                                //explicitly remove records for message, we know they wont be used again
+                                consumer.removeDeliveryCountRecordsForMessage(tag);
+                                //no need to check other consumers now
+                                break;
+                            }
+                        }
+                    }
+                    break;
+                case Session.DUPS_OK_ACKNOWLEDGE:
+                    //fall through
+                case Session.AUTO_ACKNOWLEDGE:
+                    //check the last message asynchronously delivered via auto-ack
+                    Long tag = getLastAsyncAutoAckDeliveryTag();
+                    clearLastAsyncAutoAckDeliveryTag();
+                    
+                    if(tag != null)
+                    {
+                        for(C consumer : consumersToCheck)
+                        {
+                            if(consumer.isMessageListenerSet() && !consumer.shouldRequeueMessage(tag))
+                            {
+                                //consumer said we should not requeue the message, do reject(false)
+                                rejectMessage(tag, false);
+
+                                //explicitly remove records for message, we know they wont be used again
+                                consumer.removeDeliveryCountRecordsForMessage(tag);
+                                //no need to check other consumers now
+                                break;
+                            }
+                        }
+                    }
+                    break;
+            }
         }
     }
 
@@ -2046,7 +2129,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
     void syncDispatchQueue()
     {
-        if (Thread.currentThread() == _dispatcherThread)
+        if (isDispatcherThread())
         {
             while (!_closed.get() && !_queue.isEmpty())
             {
@@ -2154,7 +2237,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     void startDispatcherIfNecessary()
     {
         //If we are the dispatcher then we don't need to check we are started
-        if (Thread.currentThread() == _dispatcherThread)
+        if (isDispatcherThread())
         {
             return;
         }
@@ -2762,11 +2845,6 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         _producers.put(new Long(producerId), producer);
     }
 
-    private void rejectAllMessages(boolean requeue)
-    {
-        rejectMessagesForConsumerTag(0, requeue, true);
-    }
-
     /**
      * @param consumerTag The consumerTag to prune from queue or all if null
      * @param requeue     Should the removed messages be requeued (or discarded. Possibly to DLQ)
@@ -3306,5 +3384,25 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     public boolean isClosing()
     {
         return _closing.get()|| _connection.isClosing();
+    }
+
+    public void setLastAsyncAutoAckDeliveryTag(Long tag)
+    {
+        _lastAsyncAutoAckDeliveryTag = tag;
+    }
+    
+    public Long getLastAsyncAutoAckDeliveryTag()
+    {
+        return _lastAsyncAutoAckDeliveryTag;
+    }
+    
+    public void clearLastAsyncAutoAckDeliveryTag()
+    {
+        _lastAsyncAutoAckDeliveryTag = null;
+    }
+    
+    protected boolean isDispatcherThread()
+    {
+        return Thread.currentThread() == _dispatcherThread;
     }
 }

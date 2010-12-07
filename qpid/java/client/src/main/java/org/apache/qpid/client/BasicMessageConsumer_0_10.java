@@ -457,4 +457,11 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
             clearReceiveQueue();
         }
     }
+    
+    @Override
+    public boolean isMaxDeliveryCountEnforced()
+    {
+        //TODO Implement for 0-10 consumers.
+        return false;
+    }
 }
