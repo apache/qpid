@@ -354,8 +354,13 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
     }
 
     // ------ Enqueue / Dequeue
-
+    
     public QueueEntry enqueue(StoreContext storeContext, AMQMessage message) throws AMQException
+    {
+        return enqueue(storeContext, message, false);
+    }
+
+    public QueueEntry enqueue(StoreContext storeContext, AMQMessage message, boolean ignoreImmediate) throws AMQException
     {
 
         incrementQueueCount();
@@ -442,7 +447,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             }
         }
 
-        if (entry.immediateAndNotDelivered())
+        if (entry.immediateAndNotDelivered() && !ignoreImmediate)
         {
             dequeue(storeContext, entry);
             entry.dispose(storeContext);

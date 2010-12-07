@@ -1113,8 +1113,6 @@ public class AMQChannel
             AMQQueue queue = rejectedQueueEntry.getQueue();
             Exchange altExchange = queue.getAlternateExchange();
             
-            //TODO:remove below line, its temporary for some noddy testing only
-//            altExchange = ApplicationRegistry.getInstance().getVirtualHostRegistry().getVirtualHost("test").getExchangeRegistry().getExchange(new AMQShortString("dle.test"));
             if (altExchange == null)
             {
                 _log.warn("No alternate exchange configured for queue, must discard the message as unable to DLQ: delivery tag: " + deliveryTag);
@@ -1150,9 +1148,7 @@ public class AMQChannel
                     store.enqueueMessage(dlqStoreContext, destinationQueues.get(i), msg.getMessageId());
                 }
             }
-            
-            //TODO: ensure the AMQMessage used is NOT marked IMMEDIATE, to prevent it not being enqueued
-            
+
             //configure the txn context to ack consumption from old queue upon commit
             unackedMap.acknowledgeMessage(deliveryTag, false, dlqTxnContext);
             

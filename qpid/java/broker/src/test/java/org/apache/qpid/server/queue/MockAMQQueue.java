@@ -167,6 +167,11 @@ public class MockAMQQueue implements AMQQueue
         return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
+    public QueueEntry enqueue(StoreContext storeContext, AMQMessage message, boolean ignoreImmediate) throws AMQException
+    {
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
+    }
+
     public void requeue(QueueEntry entry) throws AMQException
     {
         //To change body of implemented methods use File | Settings | File Templates.

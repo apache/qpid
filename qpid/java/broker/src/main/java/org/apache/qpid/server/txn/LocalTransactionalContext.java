@@ -58,14 +58,12 @@ public class LocalTransactionalContext implements TransactionalContext
 
     private long _txnStartTime;
 
-    private abstract class DeliveryAction
+    protected interface DeliveryAction
     {
-
-        abstract public void process() throws AMQException;
-
+        void process() throws AMQException;
     }
 
-    private class RequeueAction extends DeliveryAction
+    private class RequeueAction implements DeliveryAction
     {
         public QueueEntry entry;
 
@@ -80,17 +78,15 @@ public class LocalTransactionalContext implements TransactionalContext
         }
     }
 
-    private class PublishAction extends DeliveryAction
+    private class PublishAction implements DeliveryAction
     {
         private final AMQQueue _queue;
         private final AMQMessage _message;
-        private final boolean _enqueueOnly;
 
-        public PublishAction(final AMQQueue queue, final AMQMessage message, boolean enqueueOnly)
+        public PublishAction(final AMQQueue queue, final AMQMessage message)
         {
             _queue = queue;
             _message = message;
-            _enqueueOnly = enqueueOnly;
         }
 
         public void process() throws AMQException
@@ -100,14 +96,11 @@ public class LocalTransactionalContext implements TransactionalContext
             try
             {
                 QueueEntry entry = _queue.enqueue(getStoreContext(),_message);
-                if(!_enqueueOnly)
-                {
-                    _queue.checkCapacity(_channel);
+                _queue.checkCapacity(_channel);
 
-                    if(entry.immediateAndNotDelivered())
-                    {
-                        getReturnMessages().add(new NoConsumersException(_message));
-                    }
+                if(entry.immediateAndNotDelivered())
+                {
+                    getReturnMessages().add(new NoConsumersException(_message));
                 }
             }
             finally
@@ -115,6 +108,11 @@ public class LocalTransactionalContext implements TransactionalContext
                 _message.decrementReference(getStoreContext());
             }
         }
+    }
+
+    protected DeliveryAction createPublishAction(AMQQueue queue, AMQMessage message)
+    {
+        return new PublishAction(queue, message);
     }
 
     public LocalTransactionalContext(final AMQChannel channel)
@@ -156,17 +154,12 @@ public class LocalTransactionalContext implements TransactionalContext
 
     public void deliver(final AMQQueue queue, AMQMessage message) throws AMQException
     {
-        deliver(queue, message, false);
-    }
-    
-    protected void deliver(final AMQQueue queue, AMQMessage message, boolean enqueueOnly) throws AMQException
-    {
         // A publication will result in the enlisting of several
         // TxnOps. The first is an op that will store the message.
         // Following that (and ordering is important), an op will
         // be added for every queue onto which the message is
         // enqueued.
-        _postCommitDeliveryList.add(new PublishAction(queue, message, enqueueOnly));
+        _postCommitDeliveryList.add(createPublishAction(queue, message));
         _messageDelivered = true;
     }
 

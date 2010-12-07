@@ -31,6 +31,32 @@ import org.apache.qpid.server.store.StoreContext;
 public class DLQTransactionalContext extends LocalTransactionalContext
 {
     private final StoreContext _storeContext;
+    
+    private class DLQPublishAction implements DeliveryAction
+    {
+        private final AMQQueue _queue;
+        private final AMQMessage _message;
+
+        public DLQPublishAction(final AMQQueue queue, final AMQMessage message)
+        {
+            _queue = queue;
+            _message = message;
+        }
+
+        public void process() throws AMQException
+        {
+            _message.incrementReference();
+            try
+            {
+                //enqueue, ignoring whether the message is immediate
+                _queue.enqueue(getStoreContext(),_message, true);
+            }
+            finally
+            {
+                _message.decrementReference(getStoreContext());
+            }
+        }
+    }
 
     public DLQTransactionalContext(final AMQChannel channel, final StoreContext storeContext)
     {
@@ -39,15 +65,14 @@ public class DLQTransactionalContext extends LocalTransactionalContext
     }
 
     @Override
-    public void deliver(final AMQQueue queue, AMQMessage message) throws AMQException
-    {
-        //TODO: ensure message is not Immediate. Copy the message object if necessary.
-        deliver(queue, message, true);
-    }
-
-    @Override
     public StoreContext getStoreContext()
     {
         return _storeContext;
+    }
+
+    @Override
+    protected DeliveryAction createPublishAction(AMQQueue queue, AMQMessage message)
+    {
+        return new DLQPublishAction(queue, message);
     }
 }

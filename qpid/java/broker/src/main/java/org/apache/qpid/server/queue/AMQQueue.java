@@ -20,14 +20,11 @@
  */
 package org.apache.qpid.server.queue;
 
-import org.apache.commons.configuration.CompositeConfiguration;
-import org.apache.commons.configuration.Configuration;
 import org.apache.qpid.server.management.Managable;
 import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.configuration.QueueConfiguration;
 import org.apache.qpid.server.exchange.Exchange;
-import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.subscription.Subscription;
@@ -94,6 +91,8 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>
 
 
     QueueEntry enqueue(StoreContext storeContext, AMQMessage message) throws AMQException;
+    
+    QueueEntry enqueue(StoreContext storeContext, AMQMessage message, boolean ignoreImmediate) throws AMQException;
 
     void requeue(QueueEntry entry) throws AMQException;
 
