@@ -171,7 +171,7 @@ public interface QueueEntry extends Comparable<QueueEntry>
 
     boolean isRejectedBy(Subscription subscription);
 
-    void requeue(StoreContext storeContext) throws AMQException;
+    void requeue() throws AMQException;
 
     void dequeue(final StoreContext storeContext) throws FailedDequeueException;
 

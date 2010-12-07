@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -44,12 +45,14 @@ import org.apache.qpid.server.flow.FlowCreditManager;
 import org.apache.qpid.server.flow.Pre0_10CreditManager;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.queue.*;
+import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.subscription.SubscriptionFactoryImpl;
 import org.apache.qpid.server.subscription.ClientDeliveryMethod;
 import org.apache.qpid.server.subscription.RecordDeliveryMethod;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StoreContext;
+import org.apache.qpid.server.txn.DLQTransactionalContext;
 import org.apache.qpid.server.txn.LocalTransactionalContext;
 import org.apache.qpid.server.txn.NonTransactionalContext;
 import org.apache.qpid.server.txn.TransactionalContext;
@@ -1090,6 +1093,77 @@ public class AMQChannel
                         _session.getProtocolOutputConverter().getProtocolMinorVersion(),
                         (Throwable) null), true);
             }
+        }
+    }
+
+    public void deadLetter(long deliveryTag) throws AMQException
+    {
+        UnacknowledgedMessageMap unackedMap = getUnacknowledgedMessageMap();
+        QueueEntry rejectedQueueEntry = unackedMap.get(deliveryTag);
+        
+        if (rejectedQueueEntry == null)
+        {
+            _log.warn("No message found, unable to DLQ delivery tag: " + deliveryTag);
+            return;
+        }
+        else
+        {
+            AMQMessage msg = rejectedQueueEntry.getMessage();
+
+            AMQQueue queue = rejectedQueueEntry.getQueue();
+            Exchange altExchange = queue.getAlternateExchange();
+            
+            //TODO:remove below line, its temporary for some noddy testing only
+//            altExchange = ApplicationRegistry.getInstance().getVirtualHostRegistry().getVirtualHost("test").getExchangeRegistry().getExchange(new AMQShortString("dle.test"));
+            if (altExchange == null)
+            {
+                _log.warn("No alternate exchange configured for queue, must discard the message as unable to DLQ: delivery tag: " + deliveryTag);
+                rejectedQueueEntry.discard(new StoreContext());
+                return;
+            }
+
+            InboundMessageAdapter adapter = new InboundMessageAdapter(msg);
+            altExchange.route(adapter);
+
+            ArrayList<AMQQueue> destinationQueues = adapter.getEnqueuedList();
+            if (destinationQueues == null || destinationQueues.isEmpty())
+            {
+                _log.warn("Routing process provided no queues to enqueue the message on, must discard message as unable to DLQ: delivery tag: " + deliveryTag);
+                rejectedQueueEntry.discard(new StoreContext());
+                return;
+            }
+            
+            //increment the message reference count to include the new queue(s)
+            msg.incrementReference(destinationQueues.size());
+            
+            //create a new storeContext to use with a new TransactionContext for the DLQ process
+            StoreContext dlqStoreContext = new StoreContext("Session: " + _session.getClientIdentifier() + "; channel: " + _channelId + "; DLQ deliveryTag: " + deliveryTag);
+            DLQTransactionalContext dlqTxnContext = new DLQTransactionalContext(this, dlqStoreContext);
+            
+            //enqueue the message on the new queues in the store if its persistent
+            if (msg.isPersistent())
+            {
+                MessageStore store = getMessageStore();
+                
+                for (int i = 0; i < destinationQueues.size(); i++)
+                {
+                    store.enqueueMessage(dlqStoreContext, destinationQueues.get(i), msg.getMessageId());
+                }
+            }
+            
+            //TODO: ensure the AMQMessage used is NOT marked IMMEDIATE, to prevent it not being enqueued
+            
+            //configure the txn context to ack consumption from old queue upon commit
+            unackedMap.acknowledgeMessage(deliveryTag, false, dlqTxnContext);
+            
+            //configure the txn context to deliver to the new queues following commit
+            for (int i = 0; i < destinationQueues.size(); i++)
+            {
+                dlqTxnContext.deliver(destinationQueues.get(i), msg);
+            }
+            
+            dlqTxnContext.commit();
+            
         }
     }
 }

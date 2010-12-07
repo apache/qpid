@@ -76,7 +76,7 @@ public class LocalTransactionalContext implements TransactionalContext
 
         public void process() throws AMQException
         {
-            entry.requeue(getStoreContext());
+            entry.requeue();
         }
     }
 
@@ -84,11 +84,13 @@ public class LocalTransactionalContext implements TransactionalContext
     {
         private final AMQQueue _queue;
         private final AMQMessage _message;
+        private final boolean _enqueueOnly;
 
-        public PublishAction(final AMQQueue queue, final AMQMessage message)
+        public PublishAction(final AMQQueue queue, final AMQMessage message, boolean enqueueOnly)
         {
             _queue = queue;
             _message = message;
+            _enqueueOnly = enqueueOnly;
         }
 
         public void process() throws AMQException
@@ -98,11 +100,14 @@ public class LocalTransactionalContext implements TransactionalContext
             try
             {
                 QueueEntry entry = _queue.enqueue(getStoreContext(),_message);
-                _queue.checkCapacity(_channel);
-
-                if(entry.immediateAndNotDelivered())
+                if(!_enqueueOnly)
                 {
-                    getReturnMessages().add(new NoConsumersException(_message));
+                    _queue.checkCapacity(_channel);
+
+                    if(entry.immediateAndNotDelivered())
+                    {
+                        getReturnMessages().add(new NoConsumersException(_message));
+                    }
                 }
             }
             finally
@@ -151,23 +156,25 @@ public class LocalTransactionalContext implements TransactionalContext
 
     public void deliver(final AMQQueue queue, AMQMessage message) throws AMQException
     {
+        deliver(queue, message, false);
+    }
+    
+    protected void deliver(final AMQQueue queue, AMQMessage message, boolean enqueueOnly) throws AMQException
+    {
         // A publication will result in the enlisting of several
         // TxnOps. The first is an op that will store the message.
         // Following that (and ordering is important), an op will
         // be added for every queue onto which the message is
         // enqueued.
-        _postCommitDeliveryList.add(new PublishAction(queue, message));
+        _postCommitDeliveryList.add(new PublishAction(queue, message, enqueueOnly));
         _messageDelivered = true;
-
     }
 
     public void requeue(QueueEntry entry) throws AMQException
     {
         _postCommitDeliveryList.add(new RequeueAction(entry));
         _messageDelivered = true;
-
     }
-
 
     private void checkAck(long deliveryTag, UnacknowledgedMessageMap unacknowledgedMessageMap) throws AMQException
     {
@@ -255,10 +262,10 @@ public class LocalTransactionalContext implements TransactionalContext
 
         if (_ackOp != null)
         {
-
+            //there are unacknowledged messages to commit delivery of to the client
             _messageDelivered = true;
             _ackOp.consolidate();
-            // already enlisted, after commit will reset regardless of outcome
+            // ackOp has already enlisted in the txnBuffer, after commit will reset regardless of outcome
             _ackOp = null;
         }
 
@@ -293,7 +300,7 @@ public class LocalTransactionalContext implements TransactionalContext
     {
         if (_log.isDebugEnabled())
         {
-            _log.debug("Performing post commit delivery");
+            _log.debug("Beginning post commit delivery");
         }
 
         try
@@ -306,6 +313,7 @@ public class LocalTransactionalContext implements TransactionalContext
         finally
         {
             _postCommitDeliveryList.clear();
+            _log.debug("Completed post commit delivery");
         }
     }
 }

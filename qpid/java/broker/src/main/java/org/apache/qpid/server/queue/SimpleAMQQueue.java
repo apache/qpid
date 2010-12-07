@@ -129,6 +129,8 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
     private long _flowResumeCapacity = ApplicationRegistry.getInstance().getConfiguration().getFlowResumeCapacity();
     private final AtomicBoolean _overfull = new AtomicBoolean(false);
 
+    private Exchange _alternateExchange;
+
     protected SimpleAMQQueue(AMQShortString name, boolean durable, AMQShortString owner, boolean autoDelete, VirtualHost virtualHost)
             throws AMQException
     {
@@ -554,7 +556,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         }
     }
 
-    public void requeue(StoreContext storeContext, QueueEntry entry) throws AMQException
+    public void requeue(QueueEntry entry) throws AMQException
     {
 
         SubscriptionList.SubscriptionNodeIterator subscriberIter = _subscriptionList.iterator();
@@ -1811,5 +1813,15 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
     public String toString()
     {
         return String.valueOf(getName());
+    }
+
+    public Exchange getAlternateExchange()
+    {
+        return _alternateExchange;
+    }
+    
+    public void setAlternateExchange(Exchange exchange)
+    {
+        _alternateExchange = exchange;
     }
 }

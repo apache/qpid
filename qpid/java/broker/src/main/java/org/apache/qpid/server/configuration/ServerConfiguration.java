@@ -36,6 +36,8 @@ import org.apache.commons.configuration.HierarchicalConfiguration;
 import org.apache.commons.configuration.SystemConfiguration;
 import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.qpid.server.configuration.management.ConfigurationManagementMBean;
+import org.apache.qpid.server.exchange.DefaultExchangeFactory;
+import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
@@ -693,5 +695,21 @@ public class ServerConfiguration implements SignalHandler
     public boolean isStatisticsReportResetEnabled()
     {
         return getConfig().getBoolean("statistics.reporting.reset", false);
+    }
+
+    /**
+     * String to affix to end of queue name when generating an alternate exchange for DLQ purposes.
+     */
+    public String getDeadLetterExchangeSuffix()
+    {
+        return getConfig().getString("deadLetterExchangeSuffix", DefaultExchangeFactory.DEFAULT_DLE_NAME_SUFFIX);
+    }
+
+    /**
+     * String to affix to end of queue name when generating a queue for DLQ purposes.
+     */
+    public String getDeadLetterQueueSuffix()
+    {
+        return getConfig().getString("deadLetterQueueSuffix", AMQQueueFactory.DEFAULT_DLQ_NAME_SUFFIX);
     }
 }

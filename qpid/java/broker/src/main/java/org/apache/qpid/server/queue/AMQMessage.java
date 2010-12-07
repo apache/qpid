@@ -25,6 +25,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQBody;
 import org.apache.qpid.framing.AMQDataBlock;
 import org.apache.qpid.framing.AMQFrame;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.abstraction.ContentChunk;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
@@ -41,7 +42,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * A deliverable message.
  */
-public class AMQMessage implements Filterable<AMQException>
+public class AMQMessage implements Filterable
 {
     /** Used for debugging purposes. */
     private static final Logger _log = Logger.getLogger(AMQMessage.class);
@@ -273,7 +274,10 @@ public class AMQMessage implements Filterable<AMQException>
         return _messageHandle.getContentHeaderBody(getStoreContext());
     }
 
-
+    public AMQShortString getRoutingKey() throws AMQException
+    {
+        return getMessagePublishInfo().getRoutingKey();
+    }
 
     public Long getMessageId()
     {
@@ -373,7 +377,7 @@ public class AMQMessage implements Filterable<AMQException>
         return (_flags & DELIVERED_TO_CONSUMER) != 0;
     }
 
-    public boolean isPersistent() throws AMQException
+    public boolean isPersistent()
     {
         return _messageHandle.isPersistent();
     }

@@ -21,17 +21,23 @@
 package org.apache.qpid.server.queue;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.configuration.QueueConfiguration;
+import org.apache.qpid.server.configuration.ServerConfiguration;
+import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.exchange.ExchangeFactory;
+import org.apache.qpid.server.exchange.ExchangeRegistry;
+import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.virtualhost.VirtualHost;
-
-import java.util.Map;
-import java.util.HashMap;
-
 
 public class AMQQueueFactory
 {
+    public static final boolean CONSTANT_THAT_NEEDS_REPLACED_IS_DLQ_CONFIGURED = true;//TODO: take from queue configuration
+    public static final AMQShortString DLQ_ROUTING_KEY = new AMQShortString("dlq");
+    public static final AMQShortString X_QPID_DLQ_ENABLED = new AMQShortString("x-qpid-dlq-enabled");
+    public static final String DEFAULT_DLQ_NAME_SUFFIX = "_DLQ";
     public static final AMQShortString X_QPID_PRIORITIES = new AMQShortString("x-qpid-priorities");
     private static final AMQShortString QPID_LAST_VALUE_QUEUE = new AMQShortString ("qpid.last_value_queue");
     private static final AMQShortString QPID_LAST_VALUE_QUEUE_KEY = new AMQShortString("qpid.last_value_queue_key");
@@ -147,7 +153,6 @@ public class AMQQueueFactory
             }
         }
 
-
         AMQQueue q = null;
         if(conflationKey != null)
         {
@@ -164,7 +169,8 @@ public class AMQQueueFactory
 
         //Register the new queue
         virtualHost.getQueueRegistry().registerQueue(q);
-        q.configure(virtualHost.getConfiguration().getQueueConfiguration(name.asString()));
+        QueueConfiguration qConfig = virtualHost.getConfiguration().getQueueConfiguration(name.asString());
+        q.configure(qConfig);
 
         if(arguments != null)
         {
@@ -177,6 +183,74 @@ public class AMQQueueFactory
             }
         }
 
+        boolean dlqArgPresent = (arguments != null && (arguments.containsKey(X_QPID_DLQ_ENABLED)));
+
+        if(dlqArgPresent || CONSTANT_THAT_NEEDS_REPLACED_IS_DLQ_CONFIGURED)
+        {
+            //verify that the argument isn't explicitly disabling DLQ for this queue.
+            boolean dlqEnabled = true;
+            if(dlqArgPresent)
+            {
+                dlqEnabled = arguments.getBoolean(X_QPID_DLQ_ENABLED);
+            }
+
+            //feature is not to be enabled for temporary queues or when explicitly disabled by argument
+            if(!q.isAutoDelete() && dlqEnabled) 
+            {
+                ServerConfiguration serverConfig = ApplicationRegistry.getInstance().getConfiguration();
+                AMQShortString dlExchangeName = new AMQShortString(name + serverConfig.getDeadLetterExchangeSuffix());
+                AMQShortString dlQueueName = new AMQShortString(name + serverConfig.getDeadLetterQueueSuffix());
+
+                ExchangeRegistry exchangeRegistry = virtualHost.getExchangeRegistry();
+                ExchangeFactory exchangeFactory = virtualHost.getExchangeFactory();
+                QueueRegistry queueRegistry = virtualHost.getQueueRegistry();
+
+                Exchange dlExchange = null;
+                synchronized(exchangeRegistry)
+                {
+                    dlExchange = exchangeRegistry.getExchange(dlExchangeName);
+
+                    if(dlExchange == null)
+                    {
+                        dlExchange = exchangeFactory.createExchange(dlExchangeName, 
+                                ExchangeDefaults.FANOUT_EXCHANGE_CLASS, true, false, 0);
+
+                        exchangeRegistry.registerExchange(dlExchange);
+
+                        //enter the dle in the persistent store
+                        virtualHost.getMessageStore().createExchange(dlExchange);
+                    }
+                }
+
+                AMQQueue dlQueue = null;
+                synchronized(queueRegistry)
+                {
+                    dlQueue = queueRegistry.getQueue(dlQueueName);
+
+                    if(dlQueue == null)
+                    {
+                        //set args to disable DLQ'ing from the DLQ itself, preventing loops etc
+                        FieldTable args = new FieldTable();
+                        args.setBoolean(X_QPID_DLQ_ENABLED, false);
+                        
+                        dlQueue = createAMQQueueImpl(dlQueueName, true, owner, false, virtualHost, args);
+
+                        //enter the dlq in the persistent store
+                        virtualHost.getMessageStore().createQueue(dlQueue, args);
+                    }
+                }
+
+                //ensure the queue is bound to the exchange
+                if(!dlExchange.isBound(DLQ_ROUTING_KEY, dlQueue))
+                {
+                    dlQueue.bind(dlExchange, DLQ_ROUTING_KEY, null);
+                }
+                
+                q.setAlternateExchange(dlExchange);
+            }
+
+        }
+        
         return q;
     }
 
@@ -211,6 +285,15 @@ public class AMQQueueFactory
             arguments.setInteger(QPID_LAST_VALUE_QUEUE, 1);
             arguments.setString(QPID_LAST_VALUE_QUEUE_KEY, config.getLVQKey() == null ? QPID_LVQ_KEY : config.getLVQKey());
 
+        }
+        if (!config.getAutoDelete() && CONSTANT_THAT_NEEDS_REPLACED_IS_DLQ_CONFIGURED)
+        {
+            if(arguments == null)
+            {
+                arguments = new FieldTable();
+            }
+            
+            arguments.setBoolean(X_QPID_DLQ_ENABLED, true);
         }
 
         AMQQueue q = createAMQQueueImpl(queueName, durable, owner, autodelete, host, arguments);

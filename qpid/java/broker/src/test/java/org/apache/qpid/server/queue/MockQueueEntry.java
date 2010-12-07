@@ -167,7 +167,7 @@ public class MockQueueEntry implements QueueEntry
     }
 
     
-    public void requeue(StoreContext storeContext) throws AMQException
+    public void requeue() throws AMQException
     {
 
 

@@ -34,7 +34,7 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.exchange.AbstractExchange;
-import org.apache.qpid.server.queue.IncomingMessage;
+import org.apache.qpid.server.queue.InboundMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 
 import org.apache.qpid.junit.extensions.util.SizeOf;
@@ -204,7 +204,7 @@ public class DiagnosticExchange extends AbstractExchange
         return false;
     }
 
-    public void route(IncomingMessage payload) throws AMQException
+    public void route(InboundMessage payload) throws AMQException
     {
         
         Long value = new Long(SizeOf.getUsedMemory());

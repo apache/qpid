@@ -33,6 +33,7 @@ import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.ManagementActor;
+import org.apache.qpid.server.queue.InboundMessage;
 import org.apache.qpid.server.queue.IncomingMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.virtualhost.VirtualHost;
@@ -286,7 +287,7 @@ public class HeadersExchange extends AbstractExchange
         }
     }
 
-    public void route(IncomingMessage payload) throws AMQException
+    public void route(InboundMessage payload) throws AMQException
     {
         FieldTable headers = getHeaders(payload.getContentHeaderBody());
         if (_logger.isDebugEnabled())

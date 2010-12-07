@@ -167,7 +167,7 @@ public class MockAMQQueue implements AMQQueue
         return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
-    public void requeue(StoreContext storeContext, QueueEntry entry) throws AMQException
+    public void requeue(QueueEntry entry) throws AMQException
     {
         //To change body of implemented methods use File | Settings | File Templates.
     }
@@ -375,5 +375,15 @@ public class MockAMQQueue implements AMQQueue
     public boolean isOverfull()
     {
         return false;
+    }
+
+    public Exchange getAlternateExchange()
+    {
+        return null;
+    }
+
+    public void setAlternateExchange(Exchange exchange)
+    {
+
     }
 }

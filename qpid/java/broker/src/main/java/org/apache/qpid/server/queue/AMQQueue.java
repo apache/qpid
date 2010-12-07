@@ -95,7 +95,7 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>
 
     QueueEntry enqueue(StoreContext storeContext, AMQMessage message) throws AMQException;
 
-    void requeue(StoreContext storeContext, QueueEntry entry) throws AMQException;
+    void requeue(QueueEntry entry) throws AMQException;
 
     void dequeue(StoreContext storeContext, QueueEntry entry) throws FailedDequeueException;
 
@@ -248,4 +248,8 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>
     void configure(QueueConfiguration config);
     
     ManagedObject getManagedObject();
+
+    Exchange getAlternateExchange();
+    
+    void setAlternateExchange(Exchange exchange);
 }

@@ -115,7 +115,7 @@ public class NonTransactionalContext implements TransactionalContext
 
     public void requeue(QueueEntry entry) throws AMQException
     {
-        entry.requeue(_storeContext);
+        entry.requeue();
     }
 
     public void acknowledgeMessage(final long deliveryTag, long lastDeliveryTag,

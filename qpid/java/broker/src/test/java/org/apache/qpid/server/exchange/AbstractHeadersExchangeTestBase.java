@@ -367,7 +367,7 @@ public class AbstractHeadersExchangeTestBase extends TestCase
                     return false;  //To change body of implemented methods use File | Settings | File Templates.
                 }
 
-                public void requeue(StoreContext storeContext) throws AMQException
+                public void requeue() throws AMQException
                 {
                     //To change body of implemented methods use File | Settings | File Templates.
                 }

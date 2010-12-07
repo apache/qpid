@@ -260,9 +260,9 @@ public class QueueEntryImpl implements QueueEntry
     }
 
 
-    public void requeue(final StoreContext storeContext) throws AMQException
+    public void requeue() throws AMQException
     {
-        getQueue().requeue(storeContext, this);
+        getQueue().requeue(this);
         if(_stateChangeListeners != null)
         {
             notifyStateChange(QueueEntry.State.ACQUIRED, QueueEntry.State.AVAILABLE);

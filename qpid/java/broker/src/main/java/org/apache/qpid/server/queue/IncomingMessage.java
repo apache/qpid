@@ -35,9 +35,8 @@ import org.apache.qpid.AMQException;
 import org.apache.log4j.Logger;
 
 import java.util.ArrayList;
-import java.util.Collection;
 
-public class IncomingMessage implements Filterable<RuntimeException>
+public class IncomingMessage implements InboundMessage
 {
 
     /** Used for debugging purposes. */
@@ -278,7 +277,6 @@ public class IncomingMessage implements Filterable<RuntimeException>
     {
         return _contentHeaderBody;
     }
-
 
     public boolean isPersistent()
     {

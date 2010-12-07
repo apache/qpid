@@ -30,6 +30,7 @@ import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.AMQShortStringTokenizer;
+import org.apache.qpid.server.queue.InboundMessage;
 import org.apache.qpid.server.queue.IncomingMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.virtualhost.VirtualHost;
@@ -265,7 +266,7 @@ public class TopicExchange extends AbstractExchange
             _filteredQueues.put(queue,newFilters);
         }
 
-        public Collection<AMQQueue> processMessage(IncomingMessage msg, Collection<AMQQueue> queues)
+        public Collection<AMQQueue> processMessage(InboundMessage msg, Collection<AMQQueue> queues)
         {
             if(queues == null)
             {
@@ -501,7 +502,7 @@ public class TopicExchange extends AbstractExchange
 
         if(selectorRef == null || (selector = selectorRef.get())==null)
         {
-            selector = new JMSSelectorFilter<RuntimeException>(selectorString);
+            selector = new JMSSelectorFilter(selectorString);
             _selectorCache.put(selectorString, new WeakReference<JMSSelectorFilter<RuntimeException>>(selector));
         }
         return selector;
@@ -563,7 +564,7 @@ public class TopicExchange extends AbstractExchange
         return normalizedString;
     }
 
-    public void route(IncomingMessage payload) throws AMQException
+    public void route(InboundMessage payload) throws AMQException
     {
 
         final AMQShortString routingKey = payload.getRoutingKey();
@@ -681,7 +682,7 @@ public class TopicExchange extends AbstractExchange
         }
     }
 
-    private Collection<AMQQueue> getMatchedQueues(IncomingMessage message, AMQShortString routingKey)
+    private Collection<AMQQueue> getMatchedQueues(InboundMessage message, AMQShortString routingKey)
     {
 
         Collection<TopicMatcherResult> results = _parser.parse(routingKey);

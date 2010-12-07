@@ -349,14 +349,7 @@ public class Show extends AbstractCommand
 
             arrival.add("" + msg.getArrivalTime());
 
-            try
-            {
-                ispersitent.add(msg.isPersistent() ? "true" : "false");
-            }
-            catch (AMQException e)
-            {
-                ispersitent.add("n/a");
-            }
+            ispersitent.add(msg.isPersistent() ? "true" : "false");
 
             isredelivered.add(msg.isRedelivered() ? "true" : "false");
 
