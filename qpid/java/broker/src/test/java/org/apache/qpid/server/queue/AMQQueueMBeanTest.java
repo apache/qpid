@@ -33,6 +33,7 @@ import org.apache.qpid.server.RequiredDeliveryException;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.subscription.SubscriptionFactory;
 import org.apache.qpid.server.subscription.SubscriptionFactoryImpl;
+import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.protocol.InternalTestProtocolSession;
 import org.apache.qpid.server.virtualhost.VirtualHost;
@@ -367,6 +368,51 @@ public class AMQQueueMBeanTest extends TestCase
         
         assertFalse(_queueMBean.isFlowOverfull());
         assertFalse(channel.getBlocking());
+    }
+
+    /**
+     * Tests the get/set methods for manipulating the queues alternate exchange
+     */
+    public void testAlternateExchangeAttribute() throws Exception
+    {
+        assertNull("expected MBean alternate exchange to be null initially", _queueMBean.getAlternateExchange());
+        assertNull("expected queue alternate exchange to be null initially", _queue.getAlternateExchange());
+        
+        try
+        {
+            //try to set to a non-existent exchange
+            _queueMBean.setAlternateExchange("doesnt-exist-abcdefg");
+            fail("expected exception did not occur");
+        }
+        catch (RuntimeException e)
+        {
+            //expected exception, ignore
+        }
+        
+        _queueMBean.setAlternateExchange("amq.fanout");
+        assertNotNull("MBean still reports no alternate exchange", _queueMBean.getAlternateExchange());
+        assertNotNull("Queue still has no alternate exchange", _queue.getAlternateExchange());
+        
+        Exchange altExch = _virtualHost.getExchangeRegistry().getExchange(new AMQShortString("amq.fanout"));
+        assertNotNull("failed to retrieve amq.fanout from exchange registry", altExch);
+        
+        assertEquals("unexpected exchange instance set as alternate exchange", altExch, _queue.getAlternateExchange());
+        assertEquals("unexpected exchange name for alternate exchange", "amq.fanout", _queueMBean.getAlternateExchange());
+
+        //test using "" clears the value
+        _queueMBean.setAlternateExchange("");
+        assertNull("MBean still reports having an alternate exchange", _queueMBean.getAlternateExchange());
+        assertNull("Queue still reports having an alternate exchange", _queue.getAlternateExchange());
+        
+        //set amq.fanout as alt exchange again
+        _queueMBean.setAlternateExchange("amq.fanout");
+        assertNotNull("MBean still reports no alternate exchange", _queueMBean.getAlternateExchange());
+        assertNotNull("Queue still has no alternate exchange", _queue.getAlternateExchange());
+        
+        //test using null clears the value
+        _queueMBean.setAlternateExchange(null);
+        assertNull("MBean still reports having an alternate exchange", _queueMBean.getAlternateExchange());
+        assertNull("Queue still reports having an alternate exchange", _queue.getAlternateExchange());
     }
 
     private IncomingMessage message(final boolean immediate, boolean persistent) throws AMQException

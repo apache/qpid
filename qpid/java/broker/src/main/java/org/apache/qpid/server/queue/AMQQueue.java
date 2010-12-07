@@ -252,4 +252,6 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>
     Exchange getAlternateExchange();
     
     void setAlternateExchange(Exchange exchange);
+    
+    void setAlternateExchange(String exchangeName);
 }

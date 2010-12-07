@@ -33,6 +33,7 @@ import org.apache.qpid.framing.abstraction.ContentChunk;
 import org.apache.qpid.management.common.mbeans.ManagedQueue;
 import org.apache.qpid.management.common.mbeans.annotations.MBeanConstructor;
 import org.apache.qpid.management.common.mbeans.annotations.MBeanDescription;
+import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.management.AMQManagedObject;
 import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.store.StoreContext;
@@ -276,6 +277,19 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
     public boolean isFlowOverfull()
     {
         return _queue.isOverfull();
+    }
+
+    public void setAlternateExchange(String exchangeName)
+    {
+        _queue.setAlternateExchange(exchangeName);
+    }
+
+    public String getAlternateExchange()
+    {
+        Exchange exchange = _queue.getAlternateExchange();
+        AMQShortString name = exchange == null ? null : exchange.getName();
+        
+        return name == null ? null : name.asString();
     }
 
     /**

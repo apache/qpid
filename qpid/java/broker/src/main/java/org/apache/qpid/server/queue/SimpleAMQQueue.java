@@ -1824,4 +1824,23 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
     {
         _alternateExchange = exchange;
     }
+    
+    public void setAlternateExchange(String exchangeName)
+    {
+        if(exchangeName == null || exchangeName.equals(""))
+        {
+            _alternateExchange = null;
+            return;
+        }
+        
+        Exchange exchange = getVirtualHost().getExchangeRegistry().getExchange(new AMQShortString(exchangeName));
+        if(exchange != null)
+        {
+            _alternateExchange = exchange;
+        }
+        else
+        {
+            throw new RuntimeException("Exchange '" + exchangeName + "' is not registered with the VirtualHost.");
+        }
+    }
 }

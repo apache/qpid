@@ -386,4 +386,9 @@ public class MockAMQQueue implements AMQQueue
     {
 
     }
+    
+    public void setAlternateExchange(String exchangeName)
+    {
+        
+    }
 }

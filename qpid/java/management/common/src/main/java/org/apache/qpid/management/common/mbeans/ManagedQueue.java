@@ -70,6 +70,7 @@ public interface ManagedQueue
     String ATTR_CAPACITY = "Capacity";
     String ATTR_FLOW_OVERFULL = "FlowOverfull";
     String ATTR_FLOW_RESUME_CAPACITY = "FlowResumeCapacity";
+    String ATTR_ALT_EXCHANGE = "AlternateExchange";
     
     //All attribute names constant
     String[] QUEUE_ATTRIBUTES = new String[]{
@@ -88,7 +89,8 @@ public interface ManagedQueue
             ATTR_RCVD_MSG_COUNT,
             ATTR_CAPACITY,
             ATTR_FLOW_OVERFULL,
-            ATTR_FLOW_RESUME_CAPACITY
+            ATTR_FLOW_RESUME_CAPACITY,
+            ATTR_ALT_EXCHANGE
     };
     
     /**
@@ -286,6 +288,25 @@ public interface ManagedQueue
     @MBeanAttribute(name="FlowOverfull", description="true if the queue is considered overfull by the Flow Control system")
     boolean isFlowOverfull() throws IOException;
 
+    /**
+     * Sets the Alternate Exchange for the queue, for use in dead letter queue functionality.
+     * 
+     * @since Qpid JMX API 1.10
+     * @param the name of the exchange to use. Specifying null or the empty string will clear the alternate exchange.
+     * @throws IOException
+     */
+    void setAlternateExchange(String exchangeName) throws IOException;
+
+    /**
+     * Returns the name of the Alternate Exchange for the queue, or null if there isn't one.
+     * 
+     * @since Qpid JMX API 1.10
+     * @return the name of the Alternate Exchange for the queue, or null if there isn't one
+     * @throws IOException
+     */
+    @MBeanAttribute(name="AlternateExchange", description="Alternate exchange for the queue")
+    String getAlternateExchange() throws IOException;
+    
     //********** Operations *****************//
 
 

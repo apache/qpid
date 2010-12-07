@@ -20,10 +20,20 @@
  */
 package org.apache.qpid.server;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import junit.framework.TestCase;
+
+import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.management.common.mbeans.ManagedBroker;
+import org.apache.qpid.server.exchange.DefaultExchangeFactory;
+import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
+import org.apache.qpid.server.queue.AMQPriorityQueue;
+import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
@@ -79,6 +89,103 @@ public class AMQBrokerManagerMBeanTest extends TestCase
         assertTrue(_queueRegistry.getQueue(new AMQShortString(queueName)) == null);
     }
 
+    /**
+     * Tests that setting the {@link AMQQueueFactory#X_QPID_DLQ_ENABLED} argument true does
+     * cause the alternate exchange to be set and DLQ to be produced.
+     */
+    public void testCreateNewQueueWithDLQEnabled() throws Exception
+    {
+        Map<String,Object> args = new HashMap<String, Object>();
+        args.put(AMQQueueFactory.X_QPID_DLQ_ENABLED.asString(), true);
+
+        AMQShortString queueName = new AMQShortString("testCreateNewQueueWithDLQEnabled");
+        AMQShortString dlExchangeName = new AMQShortString(queueName + DefaultExchangeFactory.DEFAULT_DLE_NAME_SUFFIX);
+        AMQShortString dlQueueName = new AMQShortString(queueName + AMQQueueFactory.DEFAULT_DLQ_NAME_SUFFIX);
+
+        QueueRegistry qReg = _vHost.getQueueRegistry();
+        ExchangeRegistry exReg = _vHost.getExchangeRegistry();
+
+        assertNull("The DLQ should not yet exist", qReg.getQueue(new AMQShortString(dlQueueName)));
+        assertNull("The alternate exchange should not yet exist", exReg.getExchange(dlExchangeName));
+
+        ManagedBroker mbean = new AMQBrokerManagerMBean((VirtualHost.VirtualHostMBean) _vHost.getManagedObject());
+        mbean.createNewQueue(queueName.asString(), "test", false, args);
+
+        Exchange altExchange = exReg.getExchange(dlExchangeName);
+        assertNotNull("The alternate exchange should be registered as DLQ was enabled", altExchange);
+        assertEquals("Alternate exchange type was not as expected", ExchangeDefaults.FANOUT_EXCHANGE_CLASS, altExchange.getType());
+
+        AMQQueue dlQueue = qReg.getQueue(dlQueueName);
+        assertNotNull("The DLQ was not registered as expected", dlQueue);
+        assertTrue("DLQ should have been bound to the alternate exchange", altExchange.isBound(dlQueue));
+    }
+    
+    /**
+     * Tests that setting the {@link AMQQueueFactory#X_QPID_DLQ_ENABLED} argument false does not 
+     * result in the alternate exchange being set and DLQ being created.
+     */
+    public void testCreateNewQueueWithDLQDisabled() throws Exception
+    {
+        Map<String,Object> args = new HashMap<String, Object>();
+        args.put(AMQQueueFactory.X_QPID_DLQ_ENABLED.asString(), false);
+
+        AMQShortString queueName = new AMQShortString("testCreateNewQueueWithDLQDisabled");
+        AMQShortString dlExchangeName = new AMQShortString(queueName + DefaultExchangeFactory.DEFAULT_DLE_NAME_SUFFIX);
+        AMQShortString dlQueueName = new AMQShortString(queueName + AMQQueueFactory.DEFAULT_DLQ_NAME_SUFFIX);
+
+        QueueRegistry qReg = _vHost.getQueueRegistry();
+        ExchangeRegistry exReg = _vHost.getExchangeRegistry();
+
+        assertNull("The DLQ should not exist", qReg.getQueue(new AMQShortString(dlQueueName)));
+        assertNull("The alternate exchange should not exist", exReg.getExchange(dlExchangeName));
+
+        ManagedBroker mbean = new AMQBrokerManagerMBean((VirtualHost.VirtualHostMBean) _vHost.getManagedObject());
+        mbean.createNewQueue(queueName.asString(), "test", false, args);
+
+        Exchange altExchange = exReg.getExchange(dlExchangeName);
+        assertNull("The alternate exchange should be not registered as DLQ was disabled", altExchange);
+
+        AMQQueue dlQueue = qReg.getQueue(dlQueueName);
+        assertNull("The DLQ should not be registered as DLQ was disabled on created queue", dlQueue);
+        
+        AMQQueue queue = qReg.getQueue(queueName);
+        assertNull("The alternate exchange should be not set as DLQ wasnt enabled", queue.getAlternateExchange());
+    }
+
+    /**
+     * Tests that setting the {@link AMQQueueFactory#X_QPID_PRIORITIES} argument prompts creation of
+     * a Priority Queue, without alternateExchange or a DLQ being set/created.
+     */
+    public void testCreatePriorityQueue() throws Exception
+    {
+        int numPriorities = 7;
+        Map<String,Object> args = new HashMap<String, Object>();
+        args.put(AMQQueueFactory.X_QPID_PRIORITIES.asString(), numPriorities);
+
+        AMQShortString queueName = new AMQShortString("testCreatePriorityQueue");
+        AMQShortString dlExchangeName = new AMQShortString(queueName + DefaultExchangeFactory.DEFAULT_DLE_NAME_SUFFIX);
+        AMQShortString dlQueueName = new AMQShortString(queueName + AMQQueueFactory.DEFAULT_DLQ_NAME_SUFFIX);
+
+        QueueRegistry qReg = _vHost.getQueueRegistry();
+        ExchangeRegistry exReg = _vHost.getExchangeRegistry();
+
+        assertNull("The DLQ should not exist", qReg.getQueue(new AMQShortString(dlQueueName)));
+        assertNull("The alternate exchange should not exist", exReg.getExchange(dlExchangeName));
+
+        ManagedBroker mbean = new AMQBrokerManagerMBean((VirtualHost.VirtualHostMBean) _vHost.getManagedObject());
+        mbean.createNewQueue(queueName.asString(), "test", false, args);
+        
+        AMQQueue queue = qReg.getQueue(queueName);
+        assertEquals("Queue is not a priorty queue", AMQPriorityQueue.class, queue.getClass());
+        assertEquals("Number of priorities supported was not as expected", numPriorities, ((AMQPriorityQueue)queue).getPriorities());
+
+        assertNull("The alternate exchange should be not registered as DLQ wasnt enabled", exReg.getExchange(dlExchangeName));
+        assertNull("The alternate exchange should be not set as DLQ wasnt enabled", queue.getAlternateExchange());
+
+        AMQQueue dlQueue = qReg.getQueue(dlQueueName);
+        assertNull("The DLQ should not be registered as DLQ wasnt enabled", dlQueue);
+    }
+    
     @Override
     protected void setUp() throws Exception
     {

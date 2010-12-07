@@ -23,6 +23,7 @@ package org.apache.qpid.management.common.mbeans;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 import javax.management.JMException;
 import javax.management.MBeanOperationInfo;
@@ -97,17 +98,35 @@ public interface ManagedBroker
         throws IOException, JMException;
 
     /**
-     * Create a new Queue on the Broker server
+     * Create a new Queue in the VirtualHost
      * @param queueName
      * @param durable
      * @param owner
      * @throws IOException
      * @throws JMException
      */
-    @MBeanOperation(name="createNewQueue", description="Create a new Queue on the Broker server", impact= MBeanOperationInfo.ACTION)
+    @MBeanOperation(name="createNewQueue", description="Create a new Queue in the VirtualHost", impact= MBeanOperationInfo.ACTION)
     void createNewQueue(@MBeanOperationParameter(name="queue name", description="Name of the new queue")String queueName,
                         @MBeanOperationParameter(name="owner", description="Owner name")String owner,
                         @MBeanOperationParameter(name="durable", description="true if the queue should be durable")boolean durable)
+        throws IOException, JMException;
+
+    /**
+     * Create a new Queue in the VirtualHost
+     * 
+     * @since Qpid JMX API 1.10
+     * @param queueName name of the new queue
+     * @param durable true if the queue should be durable
+     * @param owner owner
+     * @param arguments declaration arguments for use when creating the queue, may be null.
+     * @throws IOException
+     * @throws JMException
+     */
+    @MBeanOperation(name="createNewQueue", description="Create a new Queue in the VirtualHost", impact= MBeanOperationInfo.ACTION)
+    void createNewQueue(@MBeanOperationParameter(name="queue name", description="Name of the new queue")String queueName,
+                        @MBeanOperationParameter(name="owner", description="Owner name")String owner,
+                        @MBeanOperationParameter(name="durable", description="true if the queue should be durable")boolean durable,
+                        @MBeanOperationParameter(name="arguments", description="Map of arguments")Map<String,Object> arguments)
         throws IOException, JMException;
 
     /**
