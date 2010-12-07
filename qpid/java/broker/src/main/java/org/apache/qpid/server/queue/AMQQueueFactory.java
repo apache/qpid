@@ -34,7 +34,6 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
 
 public class AMQQueueFactory
 {
-    public static final boolean CONSTANT_THAT_NEEDS_REPLACED_IS_DLQ_CONFIGURED = true;//TODO: take from queue configuration
     public static final AMQShortString DLQ_ROUTING_KEY = new AMQShortString("dlq");
     public static final AMQShortString X_QPID_DLQ_ENABLED = new AMQShortString("x-qpid-dlq-enabled");
     public static final String DEFAULT_DLQ_NAME_SUFFIX = "_DLQ";
@@ -185,7 +184,7 @@ public class AMQQueueFactory
 
         boolean dlqArgPresent = (arguments != null && (arguments.containsKey(X_QPID_DLQ_ENABLED)));
 
-        if(dlqArgPresent || CONSTANT_THAT_NEEDS_REPLACED_IS_DLQ_CONFIGURED)
+        if(dlqArgPresent || qConfig.isDeadLetterQueueEnabled())
         {
             //verify that the argument isn't explicitly disabling DLQ for this queue.
             boolean dlqEnabled = true;
@@ -286,7 +285,7 @@ public class AMQQueueFactory
             arguments.setString(QPID_LAST_VALUE_QUEUE_KEY, config.getLVQKey() == null ? QPID_LVQ_KEY : config.getLVQKey());
 
         }
-        if (!config.getAutoDelete() && CONSTANT_THAT_NEEDS_REPLACED_IS_DLQ_CONFIGURED)
+        if (!config.getAutoDelete() && config.isDeadLetterQueueEnabled())
         {
             if(arguments == null)
             {

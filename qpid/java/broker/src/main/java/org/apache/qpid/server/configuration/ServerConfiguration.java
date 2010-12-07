@@ -712,4 +712,12 @@ public class ServerConfiguration implements SignalHandler
     {
         return getConfig().getString("deadLetterQueueSuffix", AMQQueueFactory.DEFAULT_DLQ_NAME_SUFFIX);
     }
+
+    /**
+     * Check if dead letter queue delivery is enabled, defaults to disabled if not set.
+     */
+    public boolean isDeadLetterQueueEnabled()
+    {
+        return getConfig().getBoolean("deadLetterQueues", false);
+    }
 }

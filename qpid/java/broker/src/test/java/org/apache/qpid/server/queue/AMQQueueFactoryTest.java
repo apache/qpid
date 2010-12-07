@@ -76,6 +76,27 @@ public class AMQQueueFactoryTest extends TestCase
             AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("testQueue"), false, new AMQShortString("owner"), false,
                                                _virtualHost, null);
             assertEquals("Queue not a simple queue", SimpleAMQQueue.class, queue.getClass());
+            assertNull("Queue should not have alternate exchange as DLQ isnt enabled", queue.getAlternateExchange());
+        }
+        catch (AMQException e)
+        {
+            fail(e.getMessage());
+        }
+    }
+
+    /**
+     * Tests that setting the {@link AMQQueueFactory#X_QPID_DLQ_ENABLED} argument causes the alternate exchange to be set.
+     */
+    public void testDeadLetterQueueEnabled()
+    {
+        FieldTable fieldTable = new FieldTable();
+        fieldTable.put(new AMQShortString(AMQQueueFactory.X_QPID_DLQ_ENABLED), true);
+        
+        try
+        {
+            AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString("testQueue"), false, new AMQShortString("owner"), false,
+                                               _virtualHost, fieldTable);
+            assertNotNull("Queue should have an alternate exchange as DLQ is enabled", queue.getAlternateExchange());
         }
         catch (AMQException e)
         {

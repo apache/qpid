@@ -195,4 +195,12 @@ public class VirtualHostConfiguration
     {
         return _config.getLong("transactionTimeout.idleClose", 0L);
     }
+    
+    /**
+     * Check if dead letter queue delivery is enabled, deferring to the broker configuration if not set.
+     */
+    public boolean isDeadLetterQueueEnabled()
+    {
+        return _config.getBoolean("queues.deadLetterQueues", ApplicationRegistry.getInstance().getConfiguration().isDeadLetterQueueEnabled());
+    }
 }

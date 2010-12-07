@@ -127,5 +127,13 @@ public class QueueConfiguration
     {
         return _config.getString("lvqKey", null);
     }
+    
+    /**
+     * Check if dead letter queue delivery is enabled, deferring to the virtualhost configuration if not set.
+     */
+    public boolean isDeadLetterQueueEnabled()
+    {
+        return _config.getBoolean("deadLetterQueues", _vHostConfig.isDeadLetterQueueEnabled());
+    }
 
 }

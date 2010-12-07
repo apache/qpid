@@ -43,6 +43,7 @@ public class QueueConfigurationTest extends TestCase
         fullEnv.setProperty("queues.maximumMessageSize", 1);
         fullEnv.setProperty("queues.maximumMessageCount", 1);
         fullEnv.setProperty("queues.minimumAlertRepeatGap", 1);
+        fullEnv.setProperty("queues.deadLetterQueues", true);
 
         _fullHostConf = new VirtualHostConfiguration("test", fullEnv);
         
@@ -133,4 +134,24 @@ public class QueueConfigurationTest extends TestCase
         assertEquals(1, qConf.getMinimumAlertRepeatGap());
     }
 
+    /**
+     * Tests that the default setting for DLQ configuration is disabled, and verifies that it can be overridden
+     * at a broker or virtualhost level.
+     */
+    public void testIsDeadLetterQueueEnabled()
+    {
+        // Check default value
+        QueueConfiguration qConf = new QueueConfiguration("test", _env, _emptyConf);        
+        assertFalse(qConf.isDeadLetterQueueEnabled());
+
+        // Check explicit value
+        PropertiesConfiguration fullEnv = new PropertiesConfiguration();
+        fullEnv.setProperty("deadLetterQueues", true);
+        qConf = new QueueConfiguration("test", fullEnv, _fullHostConf);        
+        assertTrue(qConf.isDeadLetterQueueEnabled());
+        
+        // Check inherited value
+        qConf = new QueueConfiguration("test", _env, _fullHostConf);        
+        assertTrue(qConf.isDeadLetterQueueEnabled());
+    }
 }
