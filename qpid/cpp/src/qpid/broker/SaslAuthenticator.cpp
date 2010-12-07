@@ -294,6 +294,14 @@ void CyrusAuthenticator::init()
     secprops.property_names = 0;
     secprops.property_values = 0;
     secprops.security_flags = 0; /* or SASL_SEC_NOANONYMOUS etc as appropriate */
+    /*
+     * The nodict flag restricts SASL authentication mechanisms 
+     * to those that are not susceptible to dictionary attacks.  
+     * They are:  
+     *   SRP
+     *   PASSDSS-3DES-1
+     *   EXTERNAL
+     */
     if (external.nodict) secprops.security_flags |= SASL_SEC_NODICTIONARY;    
     int result = sasl_setprop(sasl_conn, SASL_SEC_PROPS, &secprops);
     if (result != SASL_OK) {
