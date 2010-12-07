@@ -21,6 +21,7 @@
 package org.apache.qpid.client;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.client.configuration.ClientProperties;
 import org.apache.qpid.client.failover.FailoverException;
 import org.apache.qpid.client.message.*;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
@@ -112,11 +113,10 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
      */
     protected final int _acknowledgeMode;
 
-    private int _idMapSize = 100;//TODO: set by configuration
-    private int _maxDeliveryAttempts = 3; //TODO: set by configuration
-    private boolean _maxRedeliverEnabled = true;//TODO set based on above config
+    private int _maxDeliveryAttempts = 0;
+    private boolean _maxRedeliverEnabled = false;
 
-    final DeliveryCountTracker _tracker = new DeliveryCountTracker(_idMapSize);//TODO
+    private final DeliveryCountTracker _tracker;
 
     /**
      * The thread that was used to call receive(). This is important for being able to interrupt that thread if a
@@ -174,6 +174,13 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
         {
             _acknowledgeMode = acknowledgeMode;
         }
+
+        //set configuration + create tracker for Max Delivery Count
+        int idMapSize = Integer.getInteger(ClientProperties.MAX_DELIVERY_RECORDS_PROP_NAME, 2 * _prefetchHigh);
+        Integer maxDeliveries = destination.getMaxDeliveryCount();
+        _maxDeliveryAttempts = maxDeliveries == null ? connection.getMaxDeliveryCount() : maxDeliveries;
+        _maxRedeliverEnabled = _maxDeliveryAttempts > 0;
+        _tracker = isMaxDeliveryCountEnforced() ? new DeliveryCountTracker(idMapSize) : null;
     }
 
     public AMQDestination getDestination()
@@ -1036,6 +1043,7 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
     {
         return _maxDeliveryAttempts;
     }
+
     public void removeDeliveryCountRecordsForMessage(long deliveryTag)
     {
         if(isMaxDeliveryCountEnforced())

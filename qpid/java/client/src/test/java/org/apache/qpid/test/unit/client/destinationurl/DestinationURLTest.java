@@ -22,8 +22,10 @@ package org.apache.qpid.test.unit.client.destinationurl;
 
 import junit.framework.TestCase;
 
+import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.url.AMQBindingURL;
+import org.apache.qpid.url.BindingURL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -188,6 +190,67 @@ public class DestinationURLTest extends TestCase
         assertTrue(dest.getExchangeClass().equals("topic"));
         assertTrue(dest.getExchangeName().equals("amq.topic"));
         assertTrue(dest.getQueueName().equals("test:testQueueD"));
+    }
+    
+    public void testMaxDeliveryCountPresent() throws URISyntaxException
+    {
+        String url = "exchangeClass://exchangeName/Destination/Queue?maxdeliverycount='5'";
+
+        AMQBindingURL burl = new AMQBindingURL(url);
+
+        assertTrue(url.equals(burl.toString()));
+        assertTrue(burl.getExchangeClass().equals("exchangeClass"));
+        assertTrue(burl.getExchangeName().equals("exchangeName"));
+        assertTrue(burl.getDestinationName().equals("Destination"));
+        assertTrue(burl.getQueueName().equals("Queue"));
+        
+        //check that the MaxDeliveryCount property has the right value
+        assertTrue(burl.getOption("maxdeliverycount").equals("5"));
+        
+        //check that the MaxDeliveryCount value is correctly returned from an AMQDestination
+        class MyTestAMQDestination extends AMQDestination
+        {
+            public MyTestAMQDestination(BindingURL url)
+            {
+                super(url);
+            }
+            public boolean isNameRequired()
+            {
+                return false;
+            }
+        };
+        
+        AMQDestination dest = new MyTestAMQDestination(burl);
+        assertEquals("Max Delivery Count should have been 5", Integer.valueOf(5), dest.getMaxDeliveryCount());
+    }
+
+    public void testMaxDeliveryCountNotPresent() throws URISyntaxException
+    {
+        String url = "exchangeClass://exchangeName/Destination/Queue";
+
+        AMQBindingURL burl = new AMQBindingURL(url);
+
+        assertTrue(url.equals(burl.toString()));
+
+        assertTrue(burl.getExchangeClass().equals("exchangeClass"));
+        assertTrue(burl.getExchangeName().equals("exchangeName"));
+        assertTrue(burl.getDestinationName().equals("Destination"));
+        assertTrue(burl.getQueueName().equals("Queue"));
+        
+        class MyTestAMQDestination extends AMQDestination
+        {
+            public MyTestAMQDestination(BindingURL url)
+            {
+                super(url);
+            }
+            public boolean isNameRequired()
+            {
+                return false;
+            }
+        };
+        
+        AMQDestination dest = new MyTestAMQDestination(burl);
+        assertEquals("Max Delivery Count should have been null", null, dest.getMaxDeliveryCount());
     }
 
     public static junit.framework.Test suite()

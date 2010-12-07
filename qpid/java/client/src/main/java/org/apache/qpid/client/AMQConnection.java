@@ -325,6 +325,11 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     //By default it's async publish
     private String _syncPublish = ""; 
     
+    /* Indicates the maximum number of times an individual consumer
+     * created on this connection can see a specific MessageID
+     * before it should reject the message during rollback/recover */
+    private int _maxDeliveryCount;
+    
     /**
      * @param broker      brokerdetails
      * @param username    username
@@ -453,6 +458,18 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
             // use the default value set for all connections
             _syncPublish = System.getProperty((ClientProperties.SYNC_ACK_PROP_NAME),_syncPublish);
         }
+        
+        if (connectionURL.getOption(ConnectionURL.OPTIONS_MAX_DELIVERY_COUNT) != null)
+        {
+            _maxDeliveryCount = Integer.parseInt(
+                    connectionURL.getOption(ConnectionURL.OPTIONS_MAX_DELIVERY_COUNT));
+        }
+        else
+        {
+            // use the default value for all connections, if set
+            _maxDeliveryCount = Integer.getInteger(ClientProperties.MAX_DELIVERY_COUNT_PROP_NAME, 0);
+        }
+
         
         _failoverPolicy = new FailoverPolicy(connectionURL, this);
         BrokerDetails brokerDetails = _failoverPolicy.getCurrentBrokerDetails();
@@ -1595,5 +1612,16 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     public int getNextChannelID()
     {
         return _sessions.getNextChannelId();
+    }
+
+    /**
+     * Returns the MaxDeliveryCount value applied to this connection either via a
+     * ConnectionURL option or system property. If no setting was made this defaults to 0;
+     * 
+     * @return the value (0 if none was set)
+     */
+    public int getMaxDeliveryCount()
+    {
+        return _maxDeliveryCount;
     }
 }

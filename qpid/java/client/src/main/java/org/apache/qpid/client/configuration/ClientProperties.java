@@ -70,7 +70,18 @@ public class ClientProperties
      * heartbeat in TuneOK will be used
      */
     public static final String IDLE_TIMEOUT_PROP_NAME = "idle_timeout";
+
+    /**
+     * System property to set default value for maximum delivery count on a client-wide basis, 
+     * unless overridden by the more specific settings at connection or binding URL level.
+     */
+    public static final String MAX_DELIVERY_COUNT_PROP_NAME = "qpid.max.delivery.count";
     
+    /**
+     * System property to set default value for maximum number of retained MessageID records
+     * per-consumer for use in enforcing maximum delivery count.
+     */
+    public static final String MAX_DELIVERY_RECORDS_PROP_NAME = "qpid.max.delivery.records";
 
      /**
      * ==========================================================

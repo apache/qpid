@@ -1709,6 +1709,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                     //fall through
                 case Session.AUTO_ACKNOWLEDGE:
                     //check the last message asynchronously delivered via auto-ack
+                    //This will be null unless an async auto-ack delivery is in progress
                     Long tag = getLastAsyncAutoAckDeliveryTag();
                     clearLastAsyncAutoAckDeliveryTag();
                     

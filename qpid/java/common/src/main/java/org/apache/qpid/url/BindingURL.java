@@ -36,6 +36,7 @@ public interface BindingURL
     public static final String OPTION_SUBSCRIPTION = "subscription";
     public static final String OPTION_ROUTING_KEY = "routingkey";
     public static final String OPTION_BINDING_KEY = "bindingkey";
+    public static final String OPTION_MAX_DELIVERY_COUNT = "maxdeliverycount";
 
 
     String getURL();

@@ -23,7 +23,9 @@ package org.apache.qpid.test.unit.client.connectionurl;
 import junit.framework.TestCase;
 
 import org.apache.qpid.client.AMQBrokerDetails;
+import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQConnectionURL;
+import org.apache.qpid.client.MockAMQConnection;
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.jms.ConnectionURL;
 import org.apache.qpid.url.URLSyntaxException;
@@ -547,6 +549,38 @@ public class ConnectionURLTest extends TestCase
         ConnectionURL url = new AMQConnectionURL("amqp://user:pass@temp/test?maxprefetch='12345'&brokerlist='tcp://localhost:5672'");
         
         assertTrue("String representation should contain options and values", url.toString().contains("maxprefetch='12345'"));
+    }
+
+    public void testMaxDeliveryCountPresent() throws Exception
+    {
+        String url = "amqp://guest:guest@/test?brokerlist='tcp://localhost:5672'&maxdeliverycount='3'";
+
+        ConnectionURL connectionURL = new AMQConnectionURL(url);
+
+        assertTrue(connectionURL.getFailoverMethod() == null);
+        assertTrue(connectionURL.getUsername().equals("guest"));
+        assertTrue(connectionURL.getPassword().equals("guest"));
+        assertTrue(connectionURL.getVirtualHost().equals("/test"));
+        
+        //check that the max delivery count option is returned as expected
+        assertEquals("Max Delivery Count option was not as expected", "3", 
+                connectionURL.getOption(ConnectionURL.OPTIONS_MAX_DELIVERY_COUNT));
+    }
+    
+    public void testMaxDeliveryCountNotPresent() throws URLSyntaxException
+    {
+        String url = "amqp://guest:guest@/test?brokerlist='tcp://localhost:5672'&foo='bar'";
+
+        ConnectionURL connectionurl = new AMQConnectionURL(url);
+
+        assertTrue(connectionurl.getFailoverMethod() == null);
+        assertTrue(connectionurl.getUsername().equals("guest"));
+        assertTrue(connectionurl.getPassword().equals("guest"));
+        assertTrue(connectionurl.getVirtualHost().equals("/test"));
+        
+        //check that the max delivery count option is null as expected
+        assertEquals("Max Delivery Count option was not as expected", null, 
+                connectionurl.getOption(ConnectionURL.OPTIONS_MAX_DELIVERY_COUNT));
     }
 
     public static junit.framework.Test suite()
