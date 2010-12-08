@@ -68,6 +68,7 @@ namespace cluster {
 class Connection;
 class EventFrame;
 class ClusterTimer;
+class UpdateDataExchange;
 
 /**
  * Connection to the cluster
@@ -255,6 +256,7 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     PollableEventQueue deliverEventQueue;
     PollableFrameQueue deliverFrameQueue;
     boost::shared_ptr<FailoverExchange> failoverExchange;
+    boost::shared_ptr<UpdateDataExchange> updateDataExchange;
     Quorum quorum;
     LockedConnectionMap localConnections;
 
