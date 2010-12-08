@@ -2227,6 +2227,8 @@ class Broker(Thread):
     self.port = port
     self.mechanisms = authMechs
     self.ssl = ssl
+    if connTimeout is not None:
+	connTimeout = float(connTimeout)
     self.connTimeout = connTimeout
     self.authUser = authUser
     self.authPass = authPass
