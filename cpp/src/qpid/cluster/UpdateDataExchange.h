@@ -45,7 +45,7 @@ class UpdateDataExchange : public broker::Exchange
     static const std::string MANAGEMENT_SCHEMAS_KEY;
     static const std::string MANAGEMENT_DELETED_OBJECTS_KEY;
 
-    UpdateDataExchange(management::Manageable* parent, management::ManagementAgent*);
+    UpdateDataExchange(management::Manageable* parent);
 
     void route(broker::Deliverable& msg, const std::string& routingKey,
                const framing::FieldTable* args);
@@ -68,12 +68,13 @@ class UpdateDataExchange : public broker::Exchange
                  const qpid::framing::FieldTable*)
     { return false; }
 
-  private:
-    management::ManagementAgent* agent;
+    void updateManagementAgent(management::ManagementAgent* agent);
 
-    void managementAgents(const std::string&);
-    void managementSchemas(const std::string&);
-    void managementDeletedObjects(const std::string&);
+  private:
+
+    std::string managementAgents;
+    std::string managementSchemas;
+    std::string managementDeletedObjects;
 };
 
 }} // namespace qpid::cluster

@@ -463,15 +463,15 @@ void Connection::membership(const FieldTable& joiners, const FieldTable& members
                             const framing::SequenceNumber& frameSeq)
 {
     QPID_LOG(debug, cluster << " incoming update complete on connection " << *this);
-    cluster.updateInDone(ClusterMap(joiners, members, frameSeq));
     updateIn.consumerNumbering.clear();
     closeUpdated();
+    cluster.updateInDone(ClusterMap(joiners, members, frameSeq));
 }
 
 void Connection::retractOffer() {
     QPID_LOG(info, cluster << " incoming update retracted on connection " << *this);
-    cluster.updateInRetracted();
     closeUpdated();
+    cluster.updateInRetracted();
 }
 
 void Connection::closeUpdated() {

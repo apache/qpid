@@ -35,54 +35,37 @@ const std::string UpdateDataExchange::MANAGEMENT_AGENTS_KEY("management-agents")
 const std::string UpdateDataExchange::MANAGEMENT_SCHEMAS_KEY("management-schemas");
 const std::string UpdateDataExchange::MANAGEMENT_DELETED_OBJECTS_KEY("management-deleted-objects");
 
-UpdateDataExchange::UpdateDataExchange(management::Manageable* parent,
-                                       management::ManagementAgent* agent_) :
-    Exchange(EXCHANGE_NAME, parent),
-    agent(agent_)
+UpdateDataExchange::UpdateDataExchange(management::Manageable* parent) :
+    Exchange(EXCHANGE_NAME, parent)
 {}
 
 void UpdateDataExchange::route(broker::Deliverable& msg, const std::string& routingKey,
                                const qpid::framing::FieldTable* )
 {
     std::string data = msg.getMessage().getFrames().getContent();
-    if (routingKey == MANAGEMENT_AGENTS_KEY)
-        managementAgents(data);
-    else if (routingKey == MANAGEMENT_SCHEMAS_KEY)
-        managementSchemas(data);
-    else if (routingKey == MANAGEMENT_DELETED_OBJECTS_KEY)
-        managementDeletedObjects(data);
-    else
-        throw Exception(
-            QPID_MSG("Cluster update-data exchange received unknown routing-key: "
-                     << routingKey));
+    if (routingKey == MANAGEMENT_AGENTS_KEY) managementAgents = data;
+    else if (routingKey == MANAGEMENT_SCHEMAS_KEY) managementSchemas = data;
+    else if (routingKey == MANAGEMENT_DELETED_OBJECTS_KEY) managementDeletedObjects = data;
+    else throw Exception(
+        QPID_MSG("Cluster update-data exchange received unknown routing-key: "
+                 << routingKey));
 }
 
-void UpdateDataExchange::managementAgents(const std::string& data) {
-    if (!agent)
-        throw Exception(
-            QPID_MSG("Received management agent update but management is disabled."));
-    framing::Buffer buf(const_cast<char*>(data.data()), data.size());
-    agent->importAgents(buf);
+void UpdateDataExchange::updateManagementAgent(management::ManagementAgent* agent) {
+    if (!agent) return;
+
+    framing::Buffer buf1(const_cast<char*>(managementAgents.data()), managementAgents.size());
+    agent->importAgents(buf1);
     QPID_LOG(debug, " Updated management agents.");
-}
 
-void UpdateDataExchange::managementSchemas(const std::string& data) {
-    if (!agent)
-        throw Exception(
-            QPID_MSG("Received management schema update but management is disabled."));
-    framing::Buffer buf(const_cast<char*>(data.data()), data.size());
-    agent->importSchemas(buf);
+    framing::Buffer buf2(const_cast<char*>(managementSchemas.data()), managementSchemas.size());
+    agent->importSchemas(buf2);
     QPID_LOG(debug, " Updated management schemas");
-}
 
-void UpdateDataExchange::managementDeletedObjects(const std::string& data) {
     using amqp_0_10::ListCodec;
     using types::Variant;
-    if (!agent)
-        throw Exception(
-            QPID_MSG("Management agent update but management not enabled."));
     Variant::List encoded;
-    ListCodec::decode(data, encoded);
+    ListCodec::decode(managementDeletedObjects, encoded);
     management::ManagementAgent::DeletedObjectList objects;
     for (Variant::List::iterator i = encoded.begin(); i != encoded.end(); ++i) {
         objects.push_back(management::ManagementAgent::DeletedObject::shared_ptr(
