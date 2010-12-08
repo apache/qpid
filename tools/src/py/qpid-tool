@@ -296,13 +296,14 @@ class QmfData(Console):
       for key in keys:
         kind = "object"
         schema = self.session.getSchema(key)
-        if schema.kind == SchemaClass.CLASS_KIND_EVENT:
-          kind = "event"
-        if schema.kind == SchemaClass.CLASS_KIND_TABLE:
-          #
-          # Don't display event schemata.  This will be a future feature.
-          #
-          rows.append((package, key.getClassName(), kind))
+        if schema:
+          if schema.kind == SchemaClass.CLASS_KIND_EVENT:
+            kind = "event"
+          if schema.kind == SchemaClass.CLASS_KIND_TABLE:
+            #
+            # Don't display event schemata.  This will be a future feature.
+            #
+            rows.append((package, key.getClassName(), kind))
     self.disp.table("QMF Classes:", ("Package", "Name", "Kind"), rows)
 
   def schemaTable(self, text):
