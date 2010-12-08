@@ -2940,29 +2940,27 @@ void ManagementAgent::exportDeletedObjects(DeletedObjectList& outList)
     }
 }
 
-
-// Merge this list's deleted objects to the management Agent's list of deleted
-// objects waiting for next (last) publish-ment.
+// Called by cluster to reset the management agent's list of deleted
+// objects to match the rest of the cluster.
 void ManagementAgent::importDeletedObjects(const DeletedObjectList& inList)
 {
     sys::Mutex::ScopedLock lock (userLock);
-
+    // Clear out any existing deleted objects
+    moveNewObjectsLH();
+    pendingDeletedObjs.clear();
+    ManagementObjectMap::iterator i = managementObjects.begin();
+    while (i != managementObjects.end()) {
+        ManagementObject* object = i->second;
+        if (object->isDeleted()) {
+            delete object;
+            managementObjects.erase(i++);
+        }
+        else ++i;
+    }
     for (DeletedObjectList::const_iterator lIter = inList.begin(); lIter != inList.end(); lIter++) {
 
         std::string classkey((*lIter)->packageName + std::string(":") + (*lIter)->className);
-        DeletedObjectList& dList = pendingDeletedObjs[classkey];
-
-        // not sure if this is necessary - merge by objectid....
-        bool found = false;
-        for (DeletedObjectList::iterator dIter = dList.begin(); dIter != dList.end(); dIter++) {
-            if ((*dIter)->objectId == (*lIter)->objectId) {
-                found = true;
-                break;
-            }
-        }
-        if (!found) {
-            dList.push_back(*lIter);
-        }
+        pendingDeletedObjs[classkey].push_back(*lIter);
     }
 }
 
