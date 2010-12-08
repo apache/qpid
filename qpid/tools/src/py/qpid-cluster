@@ -239,7 +239,7 @@ def main(argv=None):
         parser = OptionParser(usage="usage: %prog [options] BROKER",
                       description="Example: $ qpid-cluster -C  broker-host:10000")
 
-        parser.add_option("-t", "--timeout", action="store", type="int", default="10", metavar="SECS", help="Maximum time to wait for broker connection (in seconds)")
+        parser.add_option("-t", "--timeout", action="store", type="int", default=10, metavar="SECS", help="Maximum time to wait for broker connection (in seconds)")
         parser.add_option("-C", "--all-connections", action="store_true", default=False, help="View client connections to all cluster members")
         parser.add_option("-c", "--connections",  metavar="ID", help="View client connections to specified member")
         parser.add_option("-d", "--del-connection",  metavar="HOST:PORT", help="Disconnect a client connection")

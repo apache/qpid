@@ -423,7 +423,7 @@ parser = OptionParser(usage=usage,
                       description=description,
                       formatter=JHelpFormatter())
 
-parser.add_option("--timeout", action="store", type="int", default="10", metavar="SECS", help="Maximum time to wait for broker connection (in seconds)")
+parser.add_option("--timeout", action="store", type="int", default=10, metavar="SECS", help="Maximum time to wait for broker connection (in seconds)")
 parser.add_option("-v", "--verbose", action="store_true", help="Verbose output")
 parser.add_option("-q", "--quiet", action="store_true", help="Quiet output, don't print duplicate warnings")
 parser.add_option("-d", "--durable", action="store_true", help="Added configuration shall be durable")
