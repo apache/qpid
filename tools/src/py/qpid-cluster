@@ -232,7 +232,7 @@ class BrokerManager:
             self.qmf.delBroker(broker)
 
 def main(argv=None):
-    if argv is None: argv = sys.argv
+
     try:
         config = Config()
 
@@ -247,11 +247,11 @@ def main(argv=None):
         parser.add_option("-k", "--all-stop", action="store_true", default=False, help="Shut down the whole cluster")
         parser.add_option("-f", "--force", action="store_true", default=False, help="Suppress the 'are you sure' prompt")
         parser.add_option("-n", "--numeric", action="store_true", default=False, help="Don't resolve names")
-
-        opts, args = parser.parse_args()
+	
+        opts, args = parser.parse_args(args=argv)
 
         if args:
-            _host = args[0]
+            config._host = args[0]
 
         if opts.timeout != 0:
             config._connTimeout = opts.timeout
