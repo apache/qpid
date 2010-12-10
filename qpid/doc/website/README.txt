@@ -11,7 +11,7 @@ should be written in XHTML, with one <div/> element at the root - see
 
 Use wrap like this:
 
-$ tools/wrap templates/template.html content/<filename> build/<filename>
+$ tools/wrap template/template.html content/<filename> build/<filename>
 
 Content for the main pages should be check into the content
 directory. Content for documentation is created in the ../book
