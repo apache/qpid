@@ -35,6 +35,7 @@ import org.apache.qpid.server.queue.AMQPriorityQueue;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.queue.QueueRegistry;
+import org.apache.qpid.server.queue.SimpleAMQQueue;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.virtualhost.VirtualHost;
@@ -105,6 +106,7 @@ public class AMQBrokerManagerMBeanTest extends TestCase
         QueueRegistry qReg = _vHost.getQueueRegistry();
         ExchangeRegistry exReg = _vHost.getExchangeRegistry();
 
+        assertNull("The queue should not yet exist", qReg.getQueue(queueName));
         assertNull("The DLQ should not yet exist", qReg.getQueue(new AMQShortString(dlQueueName)));
         assertNull("The alternate exchange should not yet exist", exReg.getExchange(dlExchangeName));
 
@@ -136,6 +138,7 @@ public class AMQBrokerManagerMBeanTest extends TestCase
         QueueRegistry qReg = _vHost.getQueueRegistry();
         ExchangeRegistry exReg = _vHost.getExchangeRegistry();
 
+        assertNull("The queue should not yet exist", qReg.getQueue(queueName));
         assertNull("The DLQ should not exist", qReg.getQueue(new AMQShortString(dlQueueName)));
         assertNull("The alternate exchange should not exist", exReg.getExchange(dlExchangeName));
 
@@ -149,12 +152,43 @@ public class AMQBrokerManagerMBeanTest extends TestCase
         assertNull("The DLQ should not be registered as DLQ was disabled on created queue", dlQueue);
         
         AMQQueue queue = qReg.getQueue(queueName);
+        assertNull("The alternate exchange should be not set as DLQ was disabled", queue.getAlternateExchange());
+    }
+
+    /**
+     * Tests that not setting the {@link AMQQueueFactory#X_QPID_DLQ_ENABLED} argument does not 
+     * result in the alternate exchange being set and DLQ being created (assuming that
+     * DLQing isn't enabled at broker or vhost levels).
+     */
+    public void testCreateNewQueueWithDLQUnspecified() throws Exception
+    {
+        AMQShortString queueName = new AMQShortString("testCreateNewQueueWithDLQUnspecified");
+        AMQShortString dlExchangeName = new AMQShortString(queueName + DefaultExchangeFactory.DEFAULT_DLE_NAME_SUFFIX);
+        AMQShortString dlQueueName = new AMQShortString(queueName + AMQQueueFactory.DEFAULT_DLQ_NAME_SUFFIX);
+
+        QueueRegistry qReg = _vHost.getQueueRegistry();
+        ExchangeRegistry exReg = _vHost.getExchangeRegistry();
+
+        assertNull("The queue should not yet exist", qReg.getQueue(queueName));
+        assertNull("The DLQ should not exist", qReg.getQueue(new AMQShortString(dlQueueName)));
+        assertNull("The alternate exchange should not exist", exReg.getExchange(dlExchangeName));
+
+        ManagedBroker mbean = new AMQBrokerManagerMBean((VirtualHost.VirtualHostMBean) _vHost.getManagedObject());
+        mbean.createNewQueue(queueName.asString(), "test", false, null);
+
+        Exchange altExchange = exReg.getExchange(dlExchangeName);
+        assertNull("The alternate exchange should be not registered as DLQ wasnt enabled", altExchange);
+
+        AMQQueue dlQueue = qReg.getQueue(dlQueueName);
+        assertNull("The DLQ should not be registered as DLQ wasnt enabled on created queue", dlQueue);
+        
+        AMQQueue queue = qReg.getQueue(queueName);
         assertNull("The alternate exchange should be not set as DLQ wasnt enabled", queue.getAlternateExchange());
     }
 
     /**
      * Tests that setting the {@link AMQQueueFactory#X_QPID_PRIORITIES} argument prompts creation of
-     * a Priority Queue, without alternateExchange or a DLQ being set/created.
+     * a Priority Queue.
      */
     public void testCreatePriorityQueue() throws Exception
     {
@@ -163,14 +197,11 @@ public class AMQBrokerManagerMBeanTest extends TestCase
         args.put(AMQQueueFactory.X_QPID_PRIORITIES.asString(), numPriorities);
 
         AMQShortString queueName = new AMQShortString("testCreatePriorityQueue");
-        AMQShortString dlExchangeName = new AMQShortString(queueName + DefaultExchangeFactory.DEFAULT_DLE_NAME_SUFFIX);
-        AMQShortString dlQueueName = new AMQShortString(queueName + AMQQueueFactory.DEFAULT_DLQ_NAME_SUFFIX);
 
         QueueRegistry qReg = _vHost.getQueueRegistry();
         ExchangeRegistry exReg = _vHost.getExchangeRegistry();
 
-        assertNull("The DLQ should not exist", qReg.getQueue(new AMQShortString(dlQueueName)));
-        assertNull("The alternate exchange should not exist", exReg.getExchange(dlExchangeName));
+        assertNull("The queue should not yet exist", qReg.getQueue(queueName));
 
         ManagedBroker mbean = new AMQBrokerManagerMBean((VirtualHost.VirtualHostMBean) _vHost.getManagedObject());
         mbean.createNewQueue(queueName.asString(), "test", false, args);
@@ -178,12 +209,6 @@ public class AMQBrokerManagerMBeanTest extends TestCase
         AMQQueue queue = qReg.getQueue(queueName);
         assertEquals("Queue is not a priorty queue", AMQPriorityQueue.class, queue.getClass());
         assertEquals("Number of priorities supported was not as expected", numPriorities, ((AMQPriorityQueue)queue).getPriorities());
-
-        assertNull("The alternate exchange should be not registered as DLQ wasnt enabled", exReg.getExchange(dlExchangeName));
-        assertNull("The alternate exchange should be not set as DLQ wasnt enabled", queue.getAlternateExchange());
-
-        AMQQueue dlQueue = qReg.getQueue(dlQueueName);
-        assertNull("The DLQ should not be registered as DLQ wasnt enabled", dlQueue);
     }
     
     @Override
