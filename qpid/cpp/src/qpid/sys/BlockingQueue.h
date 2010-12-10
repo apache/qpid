@@ -53,9 +53,13 @@ public:
             Waitable::ScopedWait w(waitable);
             if (timeout == TIME_INFINITE) {
                 while (queue.empty()) waitable.wait();
-            } else {
+            } else if (timeout) {
                 AbsTime deadline(now(),timeout);
                 while (queue.empty() && deadline > now()) waitable.wait(deadline);
+            } else {
+                //ensure zero timeout pop does not miss the fact that
+                //queue is closed
+                waitable.checkException();
             }
         }
         if (queue.empty()) return false;

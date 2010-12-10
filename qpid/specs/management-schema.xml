@@ -94,6 +94,14 @@
       <arg name="qty"               dir="I" type="uint32" desc="# of messages to move. 0 means all messages"/>
     </method>
 
+    <method name="setLogLevel" desc="Set the log level">
+      <arg name="level"     dir="I" type="sstr"/>
+    </method>
+
+    <method name="getLogLevel" desc="Get the current log level">
+      <arg name="level"     dir="O" type="sstr"/>
+    </method>
+
   </class>
 
   <!--

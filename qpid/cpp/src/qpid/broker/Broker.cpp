@@ -34,10 +34,15 @@
 
 #include "qmf/org/apache/qpid/broker/Package.h"
 #include "qmf/org/apache/qpid/broker/ArgsBrokerEcho.h"
+#include "qmf/org/apache/qpid/broker/ArgsBrokerGetLogLevel.h"
 #include "qmf/org/apache/qpid/broker/ArgsBrokerQueueMoveMessages.h"
+#include "qmf/org/apache/qpid/broker/ArgsBrokerSetLogLevel.h"
 #include "qpid/management/ManagementDirectExchange.h"
 #include "qpid/management/ManagementTopicExchange.h"
+#include "qpid/log/Logger.h"
+#include "qpid/log/Options.h"
 #include "qpid/log/Statement.h"
+#include "qpid/log/posix/SinkOptions.h"
 #include "qpid/framing/AMQFrame.h"
 #include "qpid/framing/ProtocolInitiation.h"
 #include "qpid/framing/Uuid.h"
@@ -51,6 +56,7 @@
 #include "qpid/sys/TimeoutHandler.h"
 #include "qpid/sys/SystemInfo.h"
 #include "qpid/Address.h"
+#include "qpid/StringUtils.h"
 #include "qpid/Url.h"
 #include "qpid/Version.h"
 
@@ -388,17 +394,21 @@ Manageable::status_t Broker::ManagementMethod (uint32_t methodId,
 {
     Manageable::status_t status = Manageable::STATUS_UNKNOWN_METHOD;
 
-    QPID_LOG (debug, "Broker::ManagementMethod [id=" << methodId << "]");
-
     switch (methodId)
     {
     case _qmf::Broker::METHOD_ECHO :
+        QPID_LOG (debug, "Broker::echo("
+                  << dynamic_cast<_qmf::ArgsBrokerEcho&>(args).io_sequence 
+                  << ", " 
+                  << dynamic_cast<_qmf::ArgsBrokerEcho&>(args).io_body 
+                  << ")");
         status = Manageable::STATUS_OK;
         break;
     case _qmf::Broker::METHOD_CONNECT : {
         _qmf::ArgsBrokerConnect& hp=
             dynamic_cast<_qmf::ArgsBrokerConnect&>(args);
 
+        QPID_LOG (debug, "Broker::connect()");
         string transport = hp.i_transport.empty() ? TCP_TRANSPORT : hp.i_transport;
         if (!getProtocolFactory(transport)) {
             QPID_LOG(error, "Transport '" << transport << "' not supported");
@@ -415,18 +425,49 @@ Manageable::status_t Broker::ManagementMethod (uint32_t methodId,
     case _qmf::Broker::METHOD_QUEUEMOVEMESSAGES : {
         _qmf::ArgsBrokerQueueMoveMessages& moveArgs=
             dynamic_cast<_qmf::ArgsBrokerQueueMoveMessages&>(args);
+        QPID_LOG (debug, "Broker::queueMoveMessages()");
 	if (queueMoveMessages(moveArgs.i_srcQueue, moveArgs.i_destQueue, moveArgs.i_qty))
             status = Manageable::STATUS_OK;
 	else
             return Manageable::STATUS_PARAMETER_INVALID;
         break;
       }
+    case _qmf::Broker::METHOD_SETLOGLEVEL :
+        setLogLevel(dynamic_cast<_qmf::ArgsBrokerSetLogLevel&>(args).i_level);
+        QPID_LOG (debug, "Broker::setLogLevel()");
+        status = Manageable::STATUS_OK;
+        break;
+    case _qmf::Broker::METHOD_GETLOGLEVEL :
+        dynamic_cast<_qmf::ArgsBrokerGetLogLevel&>(args).o_level = getLogLevel();
+        QPID_LOG (debug, "Broker::getLogLevel()");
+        status = Manageable::STATUS_OK;
+        break;
    default:
+        QPID_LOG (debug, "Broker ManagementMethod not implemented: id=" << methodId << "]");
         status = Manageable::STATUS_NOT_IMPLEMENTED;
         break;
     }
 
     return status;
+}
+
+void Broker::setLogLevel(const std::string& level)
+{
+    QPID_LOG(notice, "Changing log level to " << level);
+    std::vector<std::string> selectors;
+    split(selectors, level, ", ");
+    qpid::log::Logger::instance().reconfigure(selectors);
+}
+
+std::string Broker::getLogLevel()
+{
+    std::string level;
+    const std::vector<std::string>& selectors = qpid::log::Logger::instance().getOptions().selectors;
+    for (std::vector<std::string>::const_iterator i = selectors.begin(); i != selectors.end(); ++i) {
+        if (i != selectors.begin()) level += std::string(",");
+        level += *i;        
+    }
+    return level;
 }
 
 boost::shared_ptr<ProtocolFactory> Broker::getProtocolFactory(const std::string& name) const {
