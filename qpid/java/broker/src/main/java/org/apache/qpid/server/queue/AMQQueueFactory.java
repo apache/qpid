@@ -242,6 +242,8 @@ public class AMQQueueFactory
                 //ensure the queue is bound to the exchange
                 if(!dlExchange.isBound(DLQ_ROUTING_KEY, dlQueue))
                 {
+                    //actual routing key used does not matter due to use of fanout exchange, 
+                    //but we will make the key 'dlq' as it can be logged at creation.
                     dlQueue.bind(dlExchange, DLQ_ROUTING_KEY, null);
                 }
                 

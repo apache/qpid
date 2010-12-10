@@ -1112,11 +1112,14 @@ public class AMQChannel
 
             AMQQueue queue = rejectedQueueEntry.getQueue();
             Exchange altExchange = queue.getAlternateExchange();
-            
+
+            StoreContext dlqStoreContext = new StoreContext("Session: " + _session.getClientIdentifier() + "; channel: " + _channelId + "; DL deliveryTag: " + deliveryTag);
+
             if (altExchange == null)
             {
                 _log.warn("No alternate exchange configured for queue, must discard the message as unable to DLQ: delivery tag: " + deliveryTag);
-                rejectedQueueEntry.discard(new StoreContext());
+                unackedMap.remove(deliveryTag);
+                rejectedQueueEntry.discard(dlqStoreContext);
                 return;
             }
 
@@ -1127,17 +1130,17 @@ public class AMQChannel
             if (destinationQueues == null || destinationQueues.isEmpty())
             {
                 _log.warn("Routing process provided no queues to enqueue the message on, must discard message as unable to DLQ: delivery tag: " + deliveryTag);
-                rejectedQueueEntry.discard(new StoreContext());
+                unackedMap.remove(deliveryTag);
+                rejectedQueueEntry.discard(dlqStoreContext);
                 return;
             }
-            
+
             //increment the message reference count to include the new queue(s)
             msg.incrementReference(destinationQueues.size());
-            
-            //create a new storeContext to use with a new TransactionContext for the DLQ process
-            StoreContext dlqStoreContext = new StoreContext("Session: " + _session.getClientIdentifier() + "; channel: " + _channelId + "; DLQ deliveryTag: " + deliveryTag);
+
+            //create a new storeContext to use with the TransactionContext for the DLQ process
             DLQTransactionalContext dlqTxnContext = new DLQTransactionalContext(this, dlqStoreContext);
-            
+
             //enqueue the message on the new queues in the store if its persistent
             if (msg.isPersistent())
             {
@@ -1157,9 +1160,8 @@ public class AMQChannel
             {
                 dlqTxnContext.deliver(destinationQueues.get(i), msg);
             }
-            
+
             dlqTxnContext.commit();
-            
         }
     }
 }
