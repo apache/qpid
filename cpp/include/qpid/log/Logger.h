@@ -74,6 +74,9 @@ class Logger : private boost::noncopyable {
     /** Configure logger from Options */
     QPID_COMMON_EXTERN void configure(const Options& o);
 
+    /** Reset the log selectors */
+    QPID_COMMON_EXTERN void reconfigure(const std::vector<std::string>& selectors);
+
     /** Add a statement. */
     QPID_COMMON_EXTERN void add(Statement& s);
 

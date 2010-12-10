@@ -103,7 +103,7 @@ PORT1=`pick_port`; ssl_cluster_broker $PORT1
 PORT2=`pick_port`; ssl_cluster_broker $PORT2
 
 # Pipe receive output to uniq to remove duplicates
-./qpid-receive --connection-options "{reconnect-timeout:5}" --failover-updates -b amqp:ssl:$TEST_HOSTNAME:$PORT1 -a "foo;{create:always}" -f | uniq > ssl_test_receive.tmp &
+./qpid-receive --connection-options "{reconnect:true, reconnect-timeout:5}" --failover-updates -b amqp:ssl:$TEST_HOSTNAME:$PORT1 -a "foo;{create:always}" -f | uniq > ssl_test_receive.tmp &
 ./qpid-send -b amqp:ssl:$TEST_HOSTNAME:$PORT2 --content-string=one -a "foo;{create:always}"
 ../qpidd --no-module-dir -qp $PORT1 # Kill broker 1 receiver should fail-over.
 ./qpid-send -b amqp:ssl:$TEST_HOSTNAME:$PORT2 --content-string=two -a "foo;{create:always}" --send-eos 1

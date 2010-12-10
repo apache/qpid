@@ -145,6 +145,8 @@ public:
 
     void declareStandardExchange(const std::string& name, const std::string& type);
     void setStore ();
+    void setLogLevel(const std::string& level);
+    std::string getLogLevel();
 
     boost::shared_ptr<sys::Poller> poller;
     sys::Timer timer;

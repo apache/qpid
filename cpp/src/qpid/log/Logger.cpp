@@ -146,6 +146,11 @@ void Logger::configure(const Options& opts) {
     options.sinkOptions->setup(this);
 }
 
+void Logger::reconfigure(const std::vector<std::string>& selectors) {
+    options.selectors = selectors;
+    select(Selector(options));
+}
+
 void Logger::setPrefix(const std::string& p) { prefix = p; }
 
 }} // namespace qpid::log
