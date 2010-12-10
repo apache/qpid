@@ -176,7 +176,7 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
         }
 
         //set configuration + create tracker for Max Delivery Count
-        int idMapSize = Integer.getInteger(ClientProperties.MAX_DELIVERY_RECORDS_PROP_NAME, 2 * _prefetchHigh);
+        int idMapSize = Integer.getInteger(ClientProperties.MAX_DELIVERY_RECORDS_PROP_NAME, Math.max(2 * _prefetchHigh, 20));
         Integer maxDeliveries = destination.getMaxDeliveryCount();
         _maxDeliveryAttempts = maxDeliveries == null ? connection.getMaxDeliveryCount() : maxDeliveries;
         _maxRedeliverEnabled = _maxDeliveryAttempts > 0;
