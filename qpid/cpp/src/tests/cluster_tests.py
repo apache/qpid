@@ -435,7 +435,7 @@ class StoreTests(BrokerTest):
     def stop_cluster(self,broker):
         """Clean shut-down of a cluster"""
         self.assertEqual(0, qpid_cluster.main(
-            ["qpid-cluster", "-kf", broker.host_port()]))
+            ["-kf", broker.host_port()]))
 
     def test_persistent_restart(self):
         """Verify persistent cluster shutdown/restart scenarios"""
