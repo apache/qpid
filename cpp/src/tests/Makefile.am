@@ -310,7 +310,7 @@ TESTS_ENVIRONMENT = \
     $(srcdir)/run_test 
 
 system_tests = qpid-client-test quick_perftest quick_topictest run_header_test quick_txtest
-TESTS += start_broker $(system_tests) python_tests stop_broker run_federation_tests run_acl_tests run_cli_tests replication_test
+TESTS += start_broker $(system_tests) python_tests stop_broker run_federation_tests run_acl_tests run_cli_tests replication_test dynamic_log_level_test
 
 EXTRA_DIST +=								\
   run_test vg_check							\
@@ -335,6 +335,8 @@ EXTRA_DIST +=								\
   run_perftest								\
   ring_queue_test							\
   run_ring_queue_test							\
+  dynamic_log_level_test						\
+  qpid-ctrl								\
   CMakeLists.txt							\
   cluster.cmake								\
   windows/DisableWin32ErrorWindows.cpp					\

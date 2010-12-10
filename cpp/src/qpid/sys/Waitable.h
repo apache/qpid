@@ -79,6 +79,9 @@ class Waitable : public Monitor {
     /** True if the waitable has an exception */
     bool hasException() const { return exception; }
 
+    /** Throws if the waitable has an exception */
+    void checkException() const { exception.raise(); }
+
     /** Clear the exception if any */
     void resetException() { exception.reset(); }
 
