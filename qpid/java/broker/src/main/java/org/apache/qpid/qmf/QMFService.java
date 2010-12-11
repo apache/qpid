@@ -700,6 +700,18 @@ public class QMFService implements ConfigStore.ConfigEventListener, Closeable
             return factory.createResponseCommand(CompletionCode.NOT_IMPLEMENTED);
         }
 
+        public BrokerSchema.BrokerClass.GetLogLevelMethodResponseCommand getLogLevel(final BrokerSchema.BrokerClass.GetLogLevelMethodResponseCommandFactory factory)
+        {
+            // TODO: The Java broker has numerous loggers, so we can't really implement this method properly.
+            return factory.createResponseCommand(CompletionCode.NOT_IMPLEMENTED);
+        }
+
+        public BrokerSchema.BrokerClass.SetLogLevelMethodResponseCommand setLogLevel(final BrokerSchema.BrokerClass.SetLogLevelMethodResponseCommandFactory factory, String level)
+        {
+            // TODO: The Java broker has numerous loggers, so we can't really implement this method properly.
+            return factory.createResponseCommand(CompletionCode.NOT_IMPLEMENTED);
+        }
+
         public UUID getId()
         {
             return _obj.getId();
