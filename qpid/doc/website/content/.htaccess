@@ -17,4 +17,4 @@
 # under the License.
 #
 Redirect /download.html http://qpid.apache.org/download.cgi
-Redirect /licence.html http://www.apache.org/licences/
+Redirect /licence.html http://www.apache.org/licenses/
