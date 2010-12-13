@@ -824,7 +824,7 @@ void ManagementAgent::periodicProcessing (void)
                     key << "console.obj.1.0." << packageName << "." << className;
                     msgBuffer.reset();
                     sendBufferLH(msgBuffer, contentSize, mExchange, key.str());   // UNLOCKS USERLOCK
-                    QPID_LOG(trace, "SEND V1 Multicast ContentInd to=" << key.str() << " props=" << pcount << " stats=" << scount);
+                    QPID_LOG(trace, "SEND V1 Multicast ContentInd to=" << key.str() << " props=" << pcount << " stats=" << scount << " len=" << contentSize);
                 }
             }
 
@@ -893,7 +893,7 @@ void ManagementAgent::periodicProcessing (void)
                     key << "console.obj.1.0." << packageName << "." << className;
                     msgBuffer.reset();
                     sendBufferLH(msgBuffer, contentSize, mExchange, key.str());   // UNLOCKS USERLOCK
-                    QPID_LOG(trace, "SEND V1 Multicast ContentInd V1 (delete) to=" << key.str());
+                    QPID_LOG(trace, "SEND V1 Multicast ContentInd V1 (delete) to=" << key.str() << " len=" << contentSize);
                 }
 
                 if (!(*lIter)->encodedV2.empty()) {
@@ -934,7 +934,7 @@ void ManagementAgent::periodicProcessing (void)
                 key << "console.obj.1.0." << packageName << "." << className;
                 msgBuffer.reset();
                 sendBufferLH(msgBuffer, contentSize, mExchange, key.str());   // UNLOCKS USERLOCK
-                QPID_LOG(trace, "SEND V1 Multicast ContentInd V1 (delete) to=" << key.str());
+                QPID_LOG(trace, "SEND V1 Multicast ContentInd V1 (delete) to=" << key.str() << " len=" << contentSize);
             }
 
             if (!list_.empty()) {
@@ -1987,12 +1987,12 @@ void ManagementAgent::handleGetQueryLH(const string& body, const string& replyTo
             ListCodec::encode(_list.front().asList(), content);
             sendBufferLH(content, cid, headers, "amqp/list", v2Direct, replyTo);
             _list.pop_front();
-            QPID_LOG(trace, "SENT QueryResponse (partial, query by schema_id) to=" << replyTo << " size=" << content.length());
+            QPID_LOG(trace, "SENT QueryResponse (partial, query by schema_id) to=" << replyTo << " len=" << content.length());
         }
         headers.erase("partial");
         ListCodec::encode(_list.size() ? _list.front().asList() : Variant::List(), content);
         sendBufferLH(content, cid, headers, "amqp/list", v2Direct, replyTo);
-        QPID_LOG(trace, "SENT QueryResponse (query by schema_id) to=" << replyTo << " size=" << content.length());
+        QPID_LOG(trace, "SENT QueryResponse (query by schema_id) to=" << replyTo << " len=" << content.length());
         return;
     }
 
