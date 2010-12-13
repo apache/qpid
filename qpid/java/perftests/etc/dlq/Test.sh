@@ -22,7 +22,7 @@
 VERSION=0.5
 
 # Setup Java CLASSPATH
-CLASSPATH=${QPID_HOME}/lib/qpid-all.jar
+CLASSPATH=.:${QPID_HOME}/lib/qpid-all.jar
 CLASSPATH=${CLASSPATH}:${QPID_HOME}/lib/qpid-perftests-${VERSION}.jar
 CLASSPATH=${CLASSPATH}:${QPID_HOME}/lib/slf4j-api-1.4.0.jar
 CLASSPATH=${CLASSPATH}:${QPID_HOME}/lib/slf4j-log4j12-1.4.0.jar
@@ -30,5 +30,5 @@ CLASSPATH=${CLASSPATH}:${QPID_HOME}/lib/log4j-1.2.12.jar
 CLASSPATH=${CLASSPATH}:${QPID_HOME}/lib/geronimo-jms_1.1_spec-1.0.jar
 
 # Run Performance Test Framework
-echo "Running DLQ Performance Tests"
+echo "Running DLQ Performance Test"
 java -cp ${CLASSPATH} org.apache.qpid.perftests.dlq.test.PerformanceTest $*

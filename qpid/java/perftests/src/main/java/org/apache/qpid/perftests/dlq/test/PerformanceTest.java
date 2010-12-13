@@ -28,7 +28,7 @@ import org.slf4j.LoggerFactory;
  */
 public class PerformanceTest
 {
-    private static final Logger _log = LoggerFactory.getLogger(PerformanceFramework.class);
+    private static final Logger _log = LoggerFactory.getLogger(PerformanceTest.class);
     
     private static CountDownLatch _latch;
     
@@ -42,13 +42,7 @@ public class PerformanceTest
     private long _started = 0;
     private long _finished = 0;
     
-    private String _session;
     private int _count;
-    private int _reject;
-    private int _rejectCount;
-    private int _maxRedelivery;
-    private boolean _messageIds;
-    private boolean _listener;
 
     public PerformanceTest(File propertyFile)
     {
@@ -84,12 +78,6 @@ public class PerformanceTest
         _threads = Integer.parseInt(_props.getProperty(THREADS));
         _size = Integer.parseInt(_props.getProperty(SIZE));
         _count = Integer.parseInt(_props.getProperty(COUNT));
-        _reject = Integer.parseInt(_props.getProperty(REJECT));
-        _rejectCount = Integer.parseInt(_props.getProperty(REJECT_COUNT));
-        _maxRedelivery = Integer.parseInt(_props.getProperty(MAX_REDELIVERY));
-        _session = _props.getProperty(SESSION);
-        _listener = Boolean.parseBoolean(_props.getProperty(LISTENER));
-        _messageIds = Boolean.parseBoolean(_props.getProperty(MESSAGE_IDS));
         _latch = new CountDownLatch(1);
         _started = System.nanoTime();
         

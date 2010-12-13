@@ -98,7 +98,7 @@ public class Receiver extends Client
 	        int number = msg.getIntProperty("number");
 	        if (number % 100 == 0)
 	        {
-	            _log.info("client " + _client + " got message " + number);
+	            _log.debug("client " + _client + " got message " + number);
 	        }
 	        
 	        boolean rejectMessage = (number % _reject) == 0;
@@ -116,7 +116,7 @@ public class Receiver extends Client
 		            if (rejectCount == _maxRedelivery)
 		            {
 		                _rejectedCount.incrementAndGet();
-		                _log.info("client " + _client + " rejecting message (" + rejectCount + ") " + msg.getJMSMessageID());
+		                _log.debug("client " + _client + " rejecting message (" + rejectCount + ") " + msg.getJMSMessageID());
 		            }
                     if (rejectCount > _maxRedelivery)
                     {
@@ -154,7 +154,7 @@ public class Receiver extends Client
 
             if (_totalConsumedCount.get() >= _consumedCheck && _rejectedCount.get() >= _rejectedCheck)
             {
-                _log.info("stopping receivers after " + _totalConsumedCount.get() + " received and " + _rejectedCount.get() + " rejected");
+                _log.debug("stopping receivers after " + _totalConsumedCount.get() + " received and " + _rejectedCount.get() + " rejected");
                 _stopped = true;
                 _finished.countDown();
             }

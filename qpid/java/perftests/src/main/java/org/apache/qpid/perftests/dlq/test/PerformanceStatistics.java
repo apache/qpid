@@ -93,6 +93,7 @@ public class PerformanceStatistics
                 {
                     return false;
                 }
+		        _log.info("completed individual test run " + i);
             }
         }
         catch (Exception e)
