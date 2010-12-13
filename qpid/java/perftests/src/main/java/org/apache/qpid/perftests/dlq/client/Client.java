@@ -16,6 +16,14 @@ import org.apache.qpid.client.configuration.ClientProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Parent abstract class for all performance test clients that connect to a
+ * broker and perform test operations. All clients are {@link Callable}
+ * objects that return an integer value, or throw an exception. The
+ * {@link #connect()} method returns a boolean to indicate whether the
+ * broker connection succeeded, and can be used to abort tests if there is
+ * no available broker.
+ */
 public abstract class Client implements Callable<Integer>
 {
     protected static final Logger _log = LoggerFactory.getLogger(Client.class);
@@ -102,7 +110,7 @@ public abstract class Client implements Callable<Integer>
         throw new RuntimeException("session property not recognised: " + sessionType);
     }
     
-    public void connect()
+    public boolean connect()
     {
         String url = "amqp://guest:guest@" + _client + "/test?brokerlist='" + _broker + "'&maxprefetch='" + _maxPrefetch + "'&maxdeliverycount='" + _maxRedelivery + "'";
         System.setProperty(ClientProperties.MAX_DELIVERY_RECORDS_PROP_NAME, Integer.toString(_maxRecords));
@@ -120,11 +128,12 @@ public abstract class Client implements Callable<Integer>
                     System.exit(0);
                 }
             });
+            return true;
         }
         catch (Exception e)
         {
             _log.error("Unable to setup connection, client and producer on broker", e);
-            throw new RuntimeException(e);
+            return false;
         }
     }
     

@@ -8,7 +8,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintStream;
-import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Properties;
@@ -16,6 +15,10 @@ import java.util.Properties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Run a series of different performance tests, based on a set of variations of
+ * configuration properties, and collect the results and generated statistics.
+ */
 public class PerformanceFramework
 {
     private static final Logger _log = LoggerFactory.getLogger(PerformanceFramework.class);
@@ -69,7 +72,10 @@ public class PerformanceFramework
 				            out.println(_id + "," + maxRedelivery + "," + rejectCount + "," +
 				            		Boolean.toString(messageIds == 0) + "," + Boolean.toString(listener == 0) +
 				            		"," + SESSION_VALUES[session]);
-					        runOnce(_id);
+					        if (!runOnce(_id))
+					        {
+					            return;
+					        }
 		                }
 		            }
 	            }
@@ -77,21 +83,29 @@ public class PerformanceFramework
         }
     }
     
-    public void runOnce(int id)
+    public boolean runOnce(int id)
     {
         PerformanceStatistics stats = new PerformanceStatistics(_props);
         try
         {
             _log.info("starting test id " + id);
             String fileId = String.format("%04d", id);
-	        stats.series(new File(_dir, fileId + "-series.csv"));
-            _log.info("test id " + id + " completed ok");
-	        stats.statistics(new File(_dir, fileId + "-statistics.csv"));
+	        if (stats.series(new File(_dir, fileId + "-series.csv")))
+	        {
+	            _log.info("test id " + id + " completed ok");
+		        stats.statistics(new File(_dir, fileId + "-statistics.csv"));
+	        }
+	        else
+	        {
+	            _log.error("connection failure, test series aborted");
+	            return false;
+	        }
         }
         catch (Exception e)
         {
             _log.error("failed test id " + id + " with error", e);
         }
+        return true;
     }
 
     public static void main(String[] argv) throws Exception

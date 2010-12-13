@@ -31,4 +31,4 @@ CLASSPATH=${CLASSPATH}:${QPID_HOME}/lib/geronimo-jms_1.1_spec-1.0.jar
 
 # Run Performance Test Framework
 echo "Running DLQ Performance Tests"
-java -cp ${CLASSPATH} org.apache.qpid.perftests.dlq.test.PerformanceFramework $*
+java -cp ${CLASSPATH} org.apache.qpid.perftests.dlq.test.PerformanceStatistics $*
