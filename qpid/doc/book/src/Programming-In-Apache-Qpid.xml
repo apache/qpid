@@ -274,11 +274,17 @@ finally:
     <section>
       <title>A Simple Messaging Program in .NET C#</title>
 
-      <para>The following .NET C# program shows how to create a connection,
+      <para>The following .NET C# 
+	<footnote>
+	  <para>
+	    The .NET binding for the Qpid C++ Messaging API
+            applies to all .NET Framework managed code languages. C# was chosen
+            for illustration purposes only.
+	  </para>
+	  </footnote>
+	program shows how to create a connection,
         create a session, send messages using a sender, and receive
-        messages using a receiver. The .NET binding for the Qpid C++ Messaging API
-        applies to all .NET Framework managed code languages. C# was chosen
-        for illustration purposes only.
+        messages using a receiver.
       </para>
 
 	<example>
@@ -323,7 +329,7 @@ namespace Org.Apache.Qpid.Messaging {
 
       <calloutlist>
 	<callout id="callout-csharp-using" arearefs="hello-csharp-using">
-	  <para>Selects the Qpid Messaging namespace. A project reference to the Org.Apache.Qpid.Messaging dll defines the Qpid Messaging namespace objects and methods.</para>
+	  <para> Permits use of Org.Apache.Qpid.Messaging types and methods without explicit namespace qualification. Any .NET project must have a project reference to the assembly file <literal>Org.Apache.Qpid.Messaging.dll</literal> in order to obtain the definitions of the .NET Binding for Qpid Messaging namespace.</para>
 	</callout>
 	<callout id="callout-csharp-open" arearefs="hello-csharp-open">
 	  <para>Establishes the connection with the messaging broker.</para>
@@ -1517,7 +1523,7 @@ options := map
       the Qpid Messaging API, a program can ask a session for
       the <quote>next receiver</quote>; that is, the receiver that is
       responsible for the next available message. The following
-      example shows how this is done in C++, Python, and .NET C#.
+      examples show how this is done in C++, Python, and .NET C#.
       </para>
 
       <para>Note that to use this pattern you must enable prefetching
@@ -1599,6 +1605,19 @@ if (smellsOk())
 else 
    session.rollback();
    ]]></programlisting>
+			 <para>
+				.NET C#:
+			</para>
+			 
+<programlisting>
+Connection connection = new Connection(broker);
+Session session =  connection.CreateTransactionalSession();
+...
+if (smellsOk())
+   session.Commit();
+else 
+   session.Rollback();
+</programlisting>
 <!--
 	<para>Python</para>
 	<programlisting><![CDATA[
@@ -1620,7 +1639,7 @@ else
       </para>
 
 	<example>
-	  <title>Specifying Connection Options in C++ and Python</title>
+	  <title>Specifying Connection Options in C++, Python, and .NET</title>
 
 	  <para>In C++, these options can be set using <function>Connection::setOption()</function> or by passing in a set of options to the constructor. The options can be passed in as a map or in string form:</para>
 
@@ -1660,6 +1679,27 @@ try:
   connection.open()
   !!! SNIP !!!
   ]]></programlisting>
+			 <para>
+				In .NET, these options can be set using <function>Connection.SetOption()</function> or by passing in a set of options to the constructor. The options can be passed in as a map or in string form:
+			</para>
+			 
+<programlisting>
+Connection connection= new Connection(&#34;localhost:5672&#34;, &#34;{reconnect: true}&#34;);
+try {
+    connection.Open();
+    !!! SNIP !!!
+</programlisting>
+			 <para>
+				or
+			</para>
+			 
+<programlisting>
+Connection connection = new Connection(&#34;localhost:5672&#34;);
+connection.SetOption(&#34;reconnect&#34;, true);
+try {
+    connection.Open();
+    !!! SNIP !!!
+</programlisting>
 
 	  <para>See the reference documentation for details in each language.</para>
 	</example>
@@ -1744,7 +1784,7 @@ try:
 	      </row>
 	      <row>
 		<entry>
-		  reconnect_timeout
+		  <literal>reconnect_timeout&nbsp;[Python]</literal> <literal>reconnect-timeout&nbsp;[C++]</literal>
 		</entry>
 		<entry>
 		  integer
@@ -1755,7 +1795,7 @@ try:
 	      </row>
 	      <row>
 		<entry>
-		  reconnect_limit
+		  <literal>reconnect_limit&nbsp;[Python]</literal> <literal>reconnect-limit&nbsp;[C++]</literal>
 		</entry>
 		<entry>
 		  integer
@@ -1766,7 +1806,7 @@ try:
 	      </row>
 	      <row>
 		<entry>
-		  reconnect_interval_min
+		  <literal>reconnect_interval_min&nbsp;[Python]</literal> <literal>reconnect-interval-min&nbsp;[C++]</literal>
 		</entry>
 		<entry>
 		  integer representing time in seconds
@@ -1777,7 +1817,7 @@ try:
 	      </row>
 	      <row>
 		<entry>
-		  reconnect_interval_max
+		  <literal>reconnect_interval_max&nbsp;[Python]</literal> <literal>reconnect-interval-max&nbsp;[C++]</literal>
 		</entry>
 		<entry>
 		  integer representing time in seconds
@@ -1788,7 +1828,7 @@ try:
 	      </row>
 	      <row>
 		<entry>
-		  reconnect_interval
+		  <literal>reconnect_interval&nbsp;[Python]</literal> <literal>reconnect-interval&nbsp;[C++]</literal>
 		</entry>
 		<entry>
 		  integer representing time in seconds
@@ -1840,33 +1880,60 @@ try:
     </section>
 
     <section id="section-Maps">
-      <title>Maps in Message Content</title>
+      <title>Maps and Lists in Message Content</title>
       
       <para>Many messaging applications need to exchange data across
       languages and platforms, using the native datatypes of each
       programming language.</para> 
 
-      <para>The Qpid Messaging API supports maps in message
-      content. 
+      <para>The Qpid Messaging API supports <classname>map</classname> and <classname>list</classname> in message content. 
 
       <footnote><para>Unlike JMS, there is not a specific message type for
       map messages.</para></footnote>
 
-      These maps are supported in each language using
-      the conventions of the language. In Java, we implement the
-      <classname>MapMessage</classname> interface
-  
-      <footnote><para>Note that the Qpid JMS client supports
-      MapMessages whose values can be nested maps or lists. This is
-      not standard JMS behaviour.</para></footnote>
-
-      ; in Python, we
-      support <classname>dict</classname> and
-      <classname>list</classname> in message content; in C++, we
-      provide the <classname>Variant::Map</classname> and
-      <classname>Variant::List</classname> classes to represent maps
-      and lists. In all languages, messages are encoded using AMQP's
-      portable datatypes.
+			<footnote> 
+			  <para>
+				Note that the Qpid JMS client supports MapMessages whose values can be nested maps or lists. This is not standard JMS behaviour.
+			  </para>
+			</footnote> 
+			Specific language support for <classname>map</classname> and <classname>list</classname> objects are shown in the following table.
+		 </para>
+			<table id="tabl-Programming_in_Apache_Qpid-Qpid_Maps_in_Message_Content">
+				<title>Map and List Representation in Supported Languages</title>
+				<tgroup cols="3">
+				  <thead>
+				    <row>
+				      <entry>Language</entry>
+				      <entry>map</entry>
+				      <entry>list</entry>
+				    </row>
+				  </thead>
+				  <tbody>
+				    <row>
+				      <entry>Python</entry>
+				      <entry><classname>dict</classname></entry>
+				      <entry><classname>list</classname></entry>
+				    </row>
+				    <row>
+				      <entry>C++</entry>
+				      <entry><classname>Variant::Map</classname></entry>
+				      <entry><classname>Variant::List</classname></entry>
+				    </row>
+				    <row>
+				      <entry>Java</entry>
+				      <entry><classname>MapMessage</classname></entry>
+				      <entry><classname>&nbsp;</classname></entry>
+				    </row>
+				    <row>
+				      <entry>.NET</entry>
+				      <entry><classname>Dictionary&#60;string, object&#62;</classname></entry>
+				      <entry><classname>Collection&#60;object&#62;</classname></entry>
+				    </row>
+				  </tbody>
+				</tgroup>
+			</table>
+			<para>
+			In all languages, messages are encoded using AMQP&#39;s portable datatypes.
       </para>
 
       <tip>
@@ -1878,12 +1945,12 @@ try:
       </tip>
 
       <section id="section-Python-Maps">
-	<title>Qpid Maps in Python</title>
+	<title>Qpid Maps and Lists in Python</title>
 
 	<para>In Python, Qpid supports the <classname>dict</classname> and <classname>list</classname> types directly in message content. The following code shows how to send these structures in a message:</para>
 
 	<example>
-	  <title>Sending Qpid Maps in Python</title>
+	  <title>Sending Qpid Maps and Lists in Python</title>
 	  <programlisting><![CDATA[
 from qpid.messaging import *
 # !!! SNIP !!!
@@ -1934,7 +2001,7 @@ sender.send(message)
 
 
       <section id="section-cpp-Maps">
-	<title>Qpid Maps in C++</title>
+	<title>Qpid Maps and Lists in C++</title>
 
 
 	<para>In C++, Qpid defines the the
@@ -1944,7 +2011,7 @@ sender.send(message)
 	send these structures in a message:</para>
 
 	<example>
-	  <title>Sending Qpid Maps in C++</title>
+	  <title>Sending Qpid Maps and Lists in C++</title>
 	<programlisting><![CDATA[
 using namespace qpid::types;
 
@@ -2027,7 +2094,7 @@ sender.send(message, true);
       </section>
 
       <section id="section-dotnet-Maps">
-	<title>Qpid Maps in .NET</title>
+	<title>Qpid Maps and Lists in .NET</title>
 
 
 	<para>
@@ -2037,7 +2104,7 @@ sender.send(message, true);
 	</para>
 
 	<example>
-	  <title>Sending Qpid Maps in .NET C#</title>
+	  <title>Sending Qpid Maps and Lists in .NET C#</title>
 	<programlisting><![CDATA[
 using System;
 using Org.Apache.Qpid.Messaging;
@@ -2306,6 +2373,20 @@ try:
   auto_fetch_reconnect_urls(connection)
 ]]>
 	</programlisting>
+			 <para>
+				In .NET C#:
+			</para>
+			 
+<programlisting>
+using Org.Apache.Qpid.Messaging;
+...
+connection = new Connection(&#34;localhost:5672&#34;);
+connection.SetOption("reconnect", true);
+try {
+  connection.Open();
+  FailoverUpdates failover = new FailoverUpdates(connection);
+
+</programlisting>
 
 
 	</example>
@@ -2321,24 +2402,32 @@ try:
 
       <section>
 	<title>Logging in C++</title>
-	<para>The Qpidd broker and C++ clients can both use environment
-	variables to enable logging. Use QPID_LOG_ENABLE to set the
-	level of logging you are interested in (trace, debug, info,
-	notice, warning, error, or critical):</para>
-
+			 <para>
+				The Qpidd broker and C++ clients can both use environment variables to enable logging. Linux and Windows systems use the same named environment variables and values.
+			 </para>
+			 <para>Use QPID_LOG_ENABLE to set the level of logging you are interested in (trace, debug, info, notice, warning, error, or critical):
+			</para>
+			 
 <screen>
-$ export QPID_LOG_ENABLE="warning+"
+export QPID_LOG_ENABLE=&#34;warning+&#34;
+</screen>
+			 <para>
+				The Qpidd broker and C++ clients use QPID_LOG_OUTPUT to determine where logging output should be sent. This is either a file name or the special values stderr, stdout, or syslog:
+			</para>
+			 
+<screen>
+export QPID_LOG_TO_FILE=&#34;/tmp/myclient.out&#34;
 </screen>
 
-      <para>The Qpidd broker and C++ clients use QPID_LOG_OUTPUT to
-      determine where logging output should be sent. This is either a
-      file name or the special values stderr, stdout, or syslog:</para>
-
+			 <para>
+				From a Windows command prompt, use the following command format to set the environment variables:
+			</para>
+			 
 <screen>
-export QPID_LOG_TO_FILE="/tmp/myclient.out"
+set QPID_LOG_ENABLE=warning+
+set QPID_LOG_TO_FILE=D:\tmp\myclient.out
 </screen>
-
-      </section>
+     </section>
 	
 	<section>
 		<title>Logging in Python</title>
@@ -2512,7 +2601,15 @@ enable("qpid.messaging.io", DEBUG)
 	    <colspec colnum="3" colname="AMPQ 0-10 Property" colwidth="6*"/>
 	    <row>
 	      <entry>Python API</entry>
-	      <entry>C++ API</entry>
+	      <entry>C++ API
+		<footnote>
+		  <para>
+		    The .NET Binding for C++ Messaging provides all the 
+		    message and delivery properties described in the C++ API. 
+		    See  <xref linkend="table-Dotnet-Binding-Message" /> . 
+	          </para>
+	        </footnote>
+	      </entry>
 	      <entry>AMQP 0-10 Property<footnote><para>In these entries, <literal>mp</literal> refers to an AMQP message property, and <literal>dp</literal> refers to an AMQP delivery property.</para></footnote></entry>
 	    </row>
           </thead>
@@ -3762,22 +3859,20 @@ using (TransactionScope ts = new TransactionScope())
   <chapter>
     <title>The .NET Binding for the C++ Messaging Client</title>
     <para>
-      The .NET Binding for the C++ Qpid Messaging Client is an intermediary program designed
-      to make access to C++ Qpid Messaging methods simple and in a way familiar to the programmer.
-      The .NET Binding creates and manipulates actual C++ Qpid Messaging API objects so that a .NET
-      program will operate the same as if the program were written in native C++.
+      The .NET Binding for the C++ Qpid Messaging Client is a library that gives 
+      any .NET program access to Qpid C++ Messaging objects and methods.
     </para>
     <section>
       <title>.NET Binding for the C++ Messaging Client Component Architecture</title>
       <programlisting><![CDATA[
                       +----------------------------+
-                      | Dotnet examples           |
+                      | Dotnet examples            |
                       | Managed C#                 |
                       +------+---------------+-----+
                              |               |
                              V               |
         +---------------------------+        |
-        | Managed Callback          |        |
+        | .NET Managed Callback     |        |
         | org.apache.qpid.messaging.|        |
         | sessionreceiver.dll       |        |
         +----------------------+----+        |
@@ -3824,19 +3919,20 @@ and the hierarchical relationships between them.
 	    </row>
 	    <row>
 	      <entry>.NET Messaging Binding Library</entry>
-	      <entry>The .NET Messaging library provides interoprability between managed .NET
-		programs and the unmanaged, native Messaging C++ run time system. .NET programs
-		create a Reference to this library thereby exposing all of the native C++
-		Messaging functionality to programs written in any .NET language.</entry>
+	      <entry>The .NET Messaging Binding library provides interoprability between
+		managed .NET programs and the unmanaged, native Qpid Messaging C++ core 
+		run time system. .NET programs create a Reference to this library thereby 
+		exposing all of the native C++ Messaging functionality to programs 
+		written in any .NET language.</entry>
 	    </row>
 	    <row>
 	      <entry>.NET Messaging Managed Callback Library</entry>
 	      <entry>An extension of the .NET Messaging Binding Library that provides message
-		callbacks in a managed .NET environment. This component is written purely in C#.</entry>
+		callbacks in a managed .NET environment.</entry>
 	    </row>
 	    <row>
 	      <entry>Managed C# .NET Example Source Programs</entry>
-	      <entry>Various C# example programs that illustrate using .NET Messaging Binding in the .NET environment.</entry>
+	      <entry>Various C# example programs that illustrate using .NET Binding for C++ Messaging in the .NET environment.</entry>
 	    </row>
 	  </tbody>
 	</tgroup>
@@ -3856,8 +3952,8 @@ and the hierarchical relationships between them.
           <colspec colname="c2"/>
           <thead>
             <row>
-              <entry>Example</entry>
-	      <entry>Client - Server</entry>
+              <entry>Example Name</entry>
+	      <entry>Example Description</entry>
             </row>
           </thead>
           <tbody>
@@ -3883,8 +3979,8 @@ and the hierarchical relationships between them.
           <colspec colname="c2"/>
           <thead>
             <row>
-              <entry>Example</entry>
-	      <entry>Map Sender - Map Receiver</entry>
+              <entry>Example Name</entry>
+	      <entry>Example Description</entry>
             </row>
           </thead>
           <tbody>
@@ -3910,8 +4006,8 @@ and the hierarchical relationships between them.
           <colspec colname="c2"/>
           <thead>
             <row>
-              <entry>Example</entry>
-	      <entry>Spout - Drain</entry>
+              <entry>Example Name</entry>
+	      <entry>Example Description</entry>
             </row>
           </thead>
           <tbody>
@@ -3937,8 +4033,8 @@ and the hierarchical relationships between them.
           <colspec colname="c2"/>
           <thead>
             <row>
-              <entry>Example</entry>
-	      <entry>Map Callback Sender - Map Callback Receiver</entry>
+              <entry>Example Name</entry>
+	      <entry>Example Description</entry>
             </row>
           </thead>
           <tbody>
@@ -3966,8 +4062,8 @@ and the hierarchical relationships between them.
           <colspec colname="c2"/>
           <thead>
             <row>
-              <entry>Example</entry>
-	      <entry>Declare Queues</entry>
+              <entry>Example Name</entry>
+	      <entry>Example Description</entry>
             </row>
           </thead>
           <tbody>
@@ -3987,8 +4083,8 @@ and the hierarchical relationships between them.
           <colspec colname="c2"/>
           <thead>
             <row>
-              <entry>Example</entry>
-	      <entry>Direct Sender - Direct Receiver</entry>
+              <entry>Example Name</entry>
+	      <entry>Example Description</entry>
             </row>
           </thead>
           <tbody>
@@ -4012,8 +4108,8 @@ and the hierarchical relationships between them.
           <colspec colname="c2"/>
           <thead>
             <row>
-              <entry>Example</entry>
-	      <entry>Hello World</entry>
+              <entry>Example Name</entry>
+	      <entry>Example Description</entry>
             </row>
           </thead>
           <tbody>
@@ -4036,8 +4132,8 @@ and the hierarchical relationships between them.
       <table id="table-Dotnet-Binding-Address">
         <title>.NET Binding for the C++ Messaging API Class: Address</title>
         <tgroup cols="2">
-          <colspec colname="c1"/>
-          <colspec colname="c2"/>
+          <colspec colname="c1" colwidth="1*"/>
+          <colspec colname="c2" colwidth="7*"/>
           <thead>
             <row>
               <entry namest="c1" nameend="c2" align="center">.NET Binding Class: Address</entry>
@@ -4243,8 +4339,8 @@ and the hierarchical relationships between them.
       <table id="table-Dotnet-Binding-Connection">
         <title>.NET Binding for the C++ Messaging API Class: Connection</title>
         <tgroup cols="2">
-          <colspec colname="c1"/>
-          <colspec colname="c2"/>
+          <colspec colname="c1" colwidth="1*"/>
+          <colspec colname="c2" colwidth="7*"/>
           <thead>
             <row>
               <entry namest="c1" nameend="c2" align="center">.NET Binding Class: Connection</entry>
@@ -4283,7 +4379,7 @@ and the hierarchical relationships between them.
             </row>
             <row>
              <entry>.NET</entry>
-             <entry>TODO:</entry>
+             <entry>n/a</entry>
             </row>
             <row>
               <entry namest="c1" nameend="c2" align="center">Constructor</entry>
@@ -4460,8 +4556,8 @@ and the hierarchical relationships between them.
       <table id="table-Dotnet-Binding-Duration">
         <title>.NET Binding for the C++ Messaging API Class: Duration</title>
         <tgroup cols="2">
-          <colspec colname="c1"/>
-          <colspec colname="c2"/>
+          <colspec colname="c1" colwidth="1*"/>
+          <colspec colname="c2" colwidth="7*"/>
           <thead>
             <row>
               <entry namest="c1" nameend="c2" align="center">.NET Binding Class: Duration</entry>
@@ -4610,8 +4706,8 @@ and the hierarchical relationships between them.
       <table id="table-Dotnet-Binding-FailoverUpdates">
         <title>.NET Binding for the C++ Messaging API Class: FailoverUpdates</title>
         <tgroup cols="2">
-          <colspec colname="c1"/>
-          <colspec colname="c2"/>
+          <colspec colname="c1" colwidth="1*"/>
+          <colspec colname="c2" colwidth="7*"/>
           <thead>
             <row>
               <entry namest="c1" nameend="c2" align="center">.NET Binding Class: FailoverUpdates</entry>
@@ -4672,8 +4768,8 @@ and the hierarchical relationships between them.
       <table id="table-Dotnet-Binding-Message">
         <title>.NET Binding for the C++ Messaging API Class: Message</title>
         <tgroup cols="2">
-          <colspec colname="c1"/>
-          <colspec colname="c2"/>
+          <colspec colname="c1" colwidth="1*"/>
+          <colspec colname="c2" colwidth="7*"/>
           <thead>
             <row>
               <entry namest="c1" nameend="c2" align="center">.NET Binding Class: Message</entry>
@@ -5040,7 +5136,7 @@ and the hierarchical relationships between them.
             </row>
             <row>
              <entry>.NET</entry>
-             <entry>TODO:</entry>
+             <entry>n/a</entry>
             </row>
             <row>
               <entry namest="c1" nameend="c2" align="center">Method: encode</entry>
@@ -5055,7 +5151,7 @@ and the hierarchical relationships between them.
             </row>
             <row>
              <entry>.NET</entry>
-             <entry>TODO:</entry>
+             <entry>n/a</entry>
             </row>
             <row>
               <entry namest="c1" nameend="c2" align="center">Method: AsString</entry>
@@ -5085,8 +5181,8 @@ and the hierarchical relationships between them.
       <table id="table-Dotnet-Binding-Receiver">
         <title>.NET Binding for the C++ Messaging API Class: Receiver</title>
         <tgroup cols="2">
-          <colspec colname="c1"/>
-          <colspec colname="c2"/>
+          <colspec colname="c1" colwidth="1*"/>
+          <colspec colname="c2" colwidth="7*"/>
           <thead>
             <row>
               <entry namest="c1" nameend="c2" align="center">.NET Binding Class: Receiver</entry>
@@ -5306,8 +5402,8 @@ and the hierarchical relationships between them.
       <table id="table-Dotnet-Binding-Sender">
         <title>.NET Binding for the C++ Messaging API Class: Sender</title>
         <tgroup cols="2">
-          <colspec colname="c1"/>
-          <colspec colname="c2"/>
+          <colspec colname="c1" colwidth="1*"/>
+          <colspec colname="c2" colwidth="7*"/>
           <thead>
             <row>
               <entry namest="c1" nameend="c2" align="center">.NET Binding Class: Sender</entry>
@@ -5471,8 +5567,8 @@ and the hierarchical relationships between them.
       <table id="table-Dotnet-Binding-Session">
         <title>.NET Binding for the C++ Messaging API Class: Session</title>
         <tgroup cols="2">
-          <colspec colname="c1"/>
-          <colspec colname="c2"/>
+          <colspec colname="c1" colwidth="1*"/>
+          <colspec colname="c2" colwidth="7*"/>
           <thead>
             <row>
               <entry namest="c1" nameend="c2" align="center">.NET Binding Class: Session</entry>
@@ -5795,7 +5891,7 @@ and the hierarchical relationships between them.
       </table>
     </section>
     <section>
-      <title>.NET Binding for the C++ Messaging API Class: SessionReceiver</title>
+      <title>.NET Binding Class: SessionReceiver</title>
       <para>
 	The SessionReceiver class provides a convenient callback
 	mechanism for Messages received by all Receivers on a given
