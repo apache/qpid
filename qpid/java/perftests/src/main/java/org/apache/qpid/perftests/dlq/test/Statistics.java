@@ -12,6 +12,9 @@ public class Statistics
     private double _min = Double.MAX_VALUE;
     private double _max = Double.MIN_VALUE;
     
+    // Actually calculated using =TINV() in Excel, but see Students t-Test
+    // in any good statistics reference and you should find these values.
+    // These are for a 95% confidence interval for n-2 (note) samples.
     private List<Double> tDistribution95 = Arrays.asList(
         12.70620473d, 4.30265273d, 3.182446305d, 2.776445105d, 2.570581835d,
         2.446911846d, 2.364624251d, 2.306004133d, 2.262157158d, 2.228138842d,
@@ -80,7 +83,7 @@ public class Statistics
     
     public double getInterval()
     {
-        return 2.0d + _tValue;
+        return 2.0d * _tValue;
     }
     
     public double getRange()
