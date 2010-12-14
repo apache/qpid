@@ -42,16 +42,19 @@ public class Check extends Client
     public Integer call() throws Exception {
         start();
         
-        Message msg;
-        while ((msg = _consumer.receive(1000)) != null)
+        if (_dlq)
         {
-	        int number = msg.getIntProperty("number");
-	        boolean rejectMessage = (number % _reject) == 0;
-	        if (!rejectMessage)
-	        {
-	            throw new RuntimeException("unexpected message on dlq: " + number);
-	        }
-	        _check++;
+            Message msg;
+            while ((msg = _consumer.receive(1000)) != null)
+            {
+    	        int number = msg.getIntProperty("number");
+    	        boolean rejectMessage = (number % _reject) == 0;
+    	        if (!rejectMessage)
+    	        {
+    	            throw new RuntimeException("unexpected message on dlq: " + number);
+    	        }
+    	        _check++;
+            }
         }
         return Integer.valueOf(_check);
     }

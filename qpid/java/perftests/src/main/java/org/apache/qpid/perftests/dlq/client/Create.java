@@ -41,7 +41,7 @@ public class Create extends Client
         _queue = new AMQQueue(burl);
 
         final Map<String,Object> arguments = new HashMap<String, Object>();
-        arguments.put(AMQQueueFactory.X_QPID_DLQ_ENABLED.asString(), true);
+        arguments.put(AMQQueueFactory.X_QPID_DLQ_ENABLED.asString(), _dlq);
         
         ((AMQSession<?,?>) _session).createQueue(new AMQShortString(_queueName), false, false, false, arguments);
         ((AMQSession<?,?>) _session).declareAndBind((AMQDestination) new AMQQueue("amq.direct", _queueName));
@@ -50,9 +50,12 @@ public class Create extends Client
         while (_consumer.receive(1000) != null);
         _consumer.close();
         
-        _queue = _session.createQueue(_queueName + AMQQueueFactory.DEFAULT_DLQ_NAME_SUFFIX);
-        _consumer = _session.createConsumer(_queue);
-        while (_consumer.receive(1000) != null);
+        if (_dlq)
+        {
+	        _queue = _session.createQueue(_queueName + AMQQueueFactory.DEFAULT_DLQ_NAME_SUFFIX);
+	        _consumer = _session.createConsumer(_queue);
+	        while (_consumer.receive(1000) != null);
+        }
     }
 }
 

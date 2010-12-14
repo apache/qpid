@@ -40,7 +40,7 @@ public class Sender extends Client
     {
         _producer = _session.createProducer(_queue);
         _producer.setDeliveryMode(_persistent ? DeliveryMode.PERSISTENT : DeliveryMode.NON_PERSISTENT);
-        _producer.setDisableMessageID(_messageIds);
+        _producer.setDisableMessageID(_messageIdsDisabled);
 
         _connection.start();
     }

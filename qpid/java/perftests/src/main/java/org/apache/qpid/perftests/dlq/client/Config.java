@@ -17,6 +17,7 @@ public interface Config
     String REJECT = "reject";
     String REJECT_COUNT = "rejectCount";
     String REPEAT = "repeat";
+    String DLQ = "dlq";
     
     String SESSION_TRANSACTED = "SESSION_TRANSACTED";
     String AUTO_ACKNOWLEDGE = "AUTO_ACKNOWLEDGE";

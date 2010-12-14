@@ -38,11 +38,12 @@ public abstract class Client implements Callable<Integer>
     protected boolean _clientAck;
     protected String _queueName;
     protected int _count;
-    protected boolean _messageIds;
+    protected boolean _messageIdsDisabled;
     protected boolean _persistent;
     protected int _size;
     protected int _threads;
     protected int _maxRecords;
+    protected boolean _dlq;
     
     protected Connection _connection;
     protected Session _session;
@@ -68,9 +69,10 @@ public abstract class Client implements Callable<Integer>
         _persistent = Boolean.parseBoolean(_props.getProperty(PERSISTENT));
         _count = Integer.parseInt(_props.getProperty(COUNT));
         _size = Integer.parseInt(_props.getProperty(SIZE));
-        _messageIds = !Boolean.parseBoolean(_props.getProperty(MESSAGE_IDS));
+        _messageIdsDisabled = !Boolean.parseBoolean(_props.getProperty(MESSAGE_IDS));
         _threads = Integer.parseInt(_props.getProperty(THREADS));
         _maxRecords = Integer.parseInt(_props.getProperty(MAX_RECORDS));
+        _dlq = Boolean.parseBoolean(_props.getProperty(DLQ));
     }
     
     public void shutdown()

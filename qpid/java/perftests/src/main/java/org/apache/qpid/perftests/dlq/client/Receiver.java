@@ -32,6 +32,7 @@ public class Receiver extends Client
     private static AtomicInteger _rejectedCount;
     private static int _consumedCheck;
     private static int _rejectedCheck;
+    private static boolean _sessionOk;
      
     public Receiver(Properties props)
     {
@@ -57,10 +58,10 @@ public class Receiver extends Client
         _reject = Integer.parseInt(_props.getProperty(REJECT));
         _rejectCount = Integer.parseInt(_props.getProperty(REJECT_COUNT));
 
-        boolean sessionOk = (_transacted || _clientAck) ||
+        _sessionOk = (_transacted || _clientAck) ||
                 ((_sessionType == Session.AUTO_ACKNOWLEDGE || _sessionType == Session.DUPS_OK_ACKNOWLEDGE) && _listener);
-        _rejectedCheck = (!sessionOk || _messageIds || _maxRedelivery == 0 || _rejectCount < _maxRedelivery) ? 0 : _count / _reject;
-        _consumedCheck = (_count - _rejectedCheck); // + (sessionOk ? ((_count / _reject) * _rejectCount) : 0);
+        _rejectedCheck = (!_sessionOk || _messageIdsDisabled || _maxRedelivery == 0 || _rejectCount < _maxRedelivery) ? 0 : _count / _reject;
+        _consumedCheck = (_count - _rejectedCheck); // + (_sessionOk ? ((_count / _reject) * _rejectCount) : 0);
             
         _consumer = _session.createConsumer(_queue);
         
@@ -111,25 +112,28 @@ public class Receiver extends Client
 	            }
                 rejectCount = _rejected.get(number) + 1;
 	            _rejected.put(number, rejectCount);
-	            if (rejectCount <= _rejectCount)
+	            if (rejectCount <= _rejectCount && rejectCount <=_maxRedelivery)
 	            {
-		            if (rejectCount == _maxRedelivery)
+		            if (_dlq && _sessionOk && rejectCount == _maxRedelivery)
 		            {
 		                _rejectedCount.incrementAndGet();
 		                _log.debug("client " + _client + " rejecting message (" + rejectCount + ") " + msg.getJMSMessageID());
 		            }
-                    if (rejectCount > _maxRedelivery)
-                    {
-                        throw new RuntimeException("client " + _client + " received message " + msg.getJMSMessageID() +
-                                " " + rejectCount + " times");
-                    }
 		            if (_transacted)
 		            {
+		                _log.debug("client " + _client + " rollback of message (" + rejectCount + ") " + msg.getJMSMessageID());
 		                _session.rollback();
 		            }
 		            else
 		            {
-		                _session.recover();
+		                if (_sessionOk)
+		                {
+			                _session.recover();
+		                }
+		                else
+		                {
+			                rejectMessage = false;
+		                }
 		            }
 	            }
 	            else
@@ -142,6 +146,7 @@ public class Receiver extends Client
 	        {
 	            _receivedCount++;
 		        _totalConsumedCount.incrementAndGet();
+                _log.debug("client " + _client + " consumed message " + _receivedCount + " of " + _totalConsumedCount.get());
 	            if (_transacted)
 	            {
 		            _session.commit();

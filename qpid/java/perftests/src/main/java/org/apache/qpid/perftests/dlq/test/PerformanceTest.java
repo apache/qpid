@@ -104,7 +104,7 @@ public class PerformanceTest
 	        for (Future<Integer> receive : receives)
 	        {
 		        _consumed += receive.get();
-	        }    
+	        }
 
 	        Client check = new Check(_props);
 	        check.connect();
