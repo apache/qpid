@@ -44,7 +44,7 @@ op.add_option("--receive-rate", default=0, metavar="N",
               help="receive rate limited to N messages/second, 0 means no limit (default %default)")
 op.add_option("--content-size", default=1024, type="int", metavar="BYTES",
               help="message size in bytes (default %default)")
-op.add_option("--ack-frequency", default=0, metavar="N", type="int",
+op.add_option("--ack-frequency", default=100, metavar="N", type="int",
               help="receiver ack's every N messages, 0 means unconfirmed (default %default)")
 op.add_option("--no-report-header", dest="report_header", default=True,
               action="store_false", help="don't print header on report")
@@ -63,8 +63,10 @@ op.add_option("--no-timestamp", dest="timestamp", default=True,
               action="store_false", help="don't add a timestamp, no latency results")
 op.add_option("--connection-options", type="str",
               help="Connection options for senders & receivers")
-single_quote_re = re.compile("'")
+op.add_option("--flow-control", default=0, type="int", metavar="N",
+              help="Flow control each sender to limit queue depth to 2*N. 0 means no flow control.")
 
+single_quote_re = re.compile("'")
 def posix_quote(string):
     """ Quote a string for use as an argument in a posix shell"""
     return "'" + single_quote_re.sub("\\'", string) + "'";
@@ -85,12 +87,13 @@ def start_receive(queue, opts, ready_queue, broker, host):
                "--report-total",
                "--ack-frequency", str(opts.ack_frequency),
                "--ready-address", ready_queue,
-               "--report-header=no"]
+               "--report-header=no"
+               ]
     command += opts.receive_arg
     if opts.connection_options:
         command += ["--connection-options",opts.connection_options]
     if host: command = ssh_command(host, command)
-    return Popen(command, stdout=PIPE, stderr=STDOUT)
+    return Popen(command, stdout=PIPE)
 
 def start_send(queue, opts, broker, host):
     address="%s;{%s}"%(queue,",".join(opts.send_option))
@@ -104,12 +107,14 @@ def start_send(queue, opts, broker, host):
                "--report-total",
                "--report-header=no",
                "--timestamp=%s"%(opts.timestamp and "yes" or "no"),
-               "--sequence=no"]
+               "--sequence=no",
+               "--flow-control", str(opts.flow_control)
+               ]
     command += opts.send_arg
     if opts.connection_options:
         command += ["--connection-options",opts.connection_options]
     if host: command = ssh_command(host, command)
-    return Popen(command, stdout=PIPE, stderr=STDOUT)
+    return Popen(command, stdout=PIPE)
 
 def first_line(p):
     out,err=p.communicate()
