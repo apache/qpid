@@ -291,7 +291,7 @@ int main(int argc, char ** argv)
             if (opts.sendRate) interval = qpid::sys::TIME_SEC/opts.sendRate;
 
             Receiver flowControlReceiver;
-            Address flowControlAddress(Uuid(true).str()+";{create:always}");
+            Address flowControlAddress("flow-"+Uuid(true).str()+";{create:always,delete:always}");
             uint flowSent = 0;
             if (opts.flowControl) {
                 flowControlReceiver = session.createReceiver(flowControlAddress);
@@ -322,7 +322,7 @@ int main(int argc, char ** argv)
                 if (opts.messages && sent >= opts.messages) break;
 
                 if (opts.flowControl && flowSent == 2) {
-                    flowControlReceiver.get(Duration::SECOND*1);
+                    flowControlReceiver.get(Duration::SECOND);
                     --flowSent;
                 }
 
@@ -333,11 +333,13 @@ int main(int argc, char ** argv)
                 }
                 msg = Message(); // Clear out contents and properties for next iteration
             }
+            for ( ; flowSent>0; --flowSent)
+                flowControlReceiver.get(Duration::SECOND);
             if (opts.reportTotal) reporter.report();
             for (uint i = opts.sendEos; i > 0; --i) {
                 if (opts.sequence)
                     msg.getProperties()[SN] = ++sent;
-                msg.setContent(EOS);//TODO: add in ability to send digest or similar
+                msg.setContent(EOS); //TODO: add in ability to send digest or similar
                 sender.send(msg);
             }
             if (opts.tx) {
