@@ -191,8 +191,7 @@ int main(int argc, char ** argv)
             int64_t interval = 0;
             if (opts.receiveRate) interval = qpid::sys::TIME_SEC/opts.receiveRate;
 
-            Address replyToAddress;
-            Sender replyToSender;
+            std::map<std::string,Sender> replyTo;
 
             while (!done && receiver.fetch(msg, timeout)) {
                 reporter.message(msg);
@@ -227,12 +226,12 @@ int main(int argc, char ** argv)
                     session.acknowledge();
                 }
                 if (msg.getReplyTo()) { // Echo message back to reply-to address.
-                    if (msg.getReplyTo() != replyToAddress) {
-                        replyToSender = session.createSender(msg.getReplyTo());
-                        replyToSender.setCapacity(opts.capacity);
-                        replyToAddress = msg.getReplyTo();
+                    Sender& s = replyTo[msg.getReplyTo().str()];
+                    if (s.isNull()) {
+                        s = session.createSender(msg.getReplyTo());
+                        s.setCapacity(opts.capacity);
                     }
-                    replyToSender.send(msg);
+                    s.send(msg);
                 }
                 if (opts.receiveRate) {
                     qpid::sys::AbsTime waitTill(start, count*interval);
