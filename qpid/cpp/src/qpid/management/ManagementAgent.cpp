@@ -507,7 +507,7 @@ void ManagementAgent::sendBufferLH(Buffer&  buf,
                                    string   routingKey)
 {
     if (suppressed) {
-        QPID_LOG(trace, "Suppressed management message to " << routingKey);
+        QPID_LOG(trace, "Suppressing management message to " << routingKey);
         return;
     }
     if (exchange.get() == 0) return;
@@ -562,7 +562,7 @@ void ManagementAgent::sendBufferLH(const string& data,
     Variant::Map::const_iterator i;
 
     if (suppressed) {
-        QPID_LOG(trace, "Suppressed management message to " << routingKey);
+        QPID_LOG(trace, "Suppressing management message to " << routingKey);
         return;
     }
     if (exchange.get() == 0) return;

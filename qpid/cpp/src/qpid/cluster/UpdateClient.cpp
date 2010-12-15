@@ -205,22 +205,12 @@ void UpdateClient::updateManagementSetupState()
     management::ManagementAgent* agent = updaterBroker.getManagementAgent();
     if (!agent) return;
 
-    //
-    // Bash the state of the slave into conformance with ours.  The
-    // goal here is to get his state arranged so as to mimic our
-    // state, w/r/t object ID creation.  Currently, that means that we
-    // propagate our boot seq and object UID counter to him so that
-    // subsequently created objects on his side will track what's on
-    // our side.
-    //
-    qmf::org::apache::qpid::broker::ManagementSetupState mss(agent, 0);
-    mss.set_objectNum(agent->getNextObjectId());
-    mss.set_bootSequence(agent->getBootSequence());
-    QPID_LOG(debug, updaterId << " updating management-setup-state "
-             << mss.get_objectNum()
-             << " " << mss.get_bootSequence() << "\n");
+    QPID_LOG(debug, updaterId << " updating management setup-state.");
+    std::string vendor, product, instance;
+    agent->getName(vendor, product, instance);
     ClusterConnectionProxy(session).managementSetupState(
-        mss.get_objectNum(), mss.get_bootSequence());
+        agent->getNextObjectId(), agent->getBootSequence(), agent->getUuid(),
+        vendor, product, instance);
 }
 
 void UpdateClient::updateManagementAgent()
