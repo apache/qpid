@@ -31,6 +31,8 @@ nobase_qmfpython_DATA = \
 	qmfgen/templates/Makefile.mk \
 	qmfgen/templates/Package.cpp \
 	qmfgen/templates/Package.h \
+	qmfgen/templates/V2Package.cpp \
+	qmfgen/templates/V2Package.h \
 	qmfgen/management-types.xml
 
 EXTRA_DIST = $(nobase_qmfpython_DATA) CMakeLists.txt

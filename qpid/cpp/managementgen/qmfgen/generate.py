@@ -346,6 +346,14 @@ class Generator:
     path = self.packagePath + "Package" + extension
     return path
 
+  def targetV2PackageFile (self, schema, templateFile):
+    dot = templateFile.find(".")
+    if dot == -1:
+      raise ValueError ("Invalid template file name %s" % templateFile)
+    extension = templateFile[dot:len (templateFile)]
+    path = self.packagePath + "QmfPackage" + extension
+    return path
+
   def targetClassFile (self, _class, templateFile):
     dot = templateFile.find(".")
     if dot == -1:
@@ -445,6 +453,17 @@ class Generator:
         self.setVariable(arg, vars[arg])
     self.templateFiles.append (templateFile)
     target = self.targetPackageFile (schema, templateFile)
+    stream = template.expand (schema)
+    self.writeIfChanged (stream, target, force)
+
+  def makeV2PackageFile (self, templateFile, schema, force=False, vars=None):
+    """ Generate a QMFv2 package definition file """
+    template = Template (self.input + templateFile, self)
+    if vars:
+      for arg in vars:
+        self.setVariable(arg, vars[arg])
+    self.templateFiles.append (templateFile)
+    target = self.targetV2PackageFile (schema, templateFile)
     stream = template.expand (schema)
     self.writeIfChanged (stream, target, force)
 
