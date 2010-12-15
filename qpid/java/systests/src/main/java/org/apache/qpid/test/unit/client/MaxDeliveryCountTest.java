@@ -42,6 +42,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
+import org.apache.qpid.client.CustomJMSXProperty;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.test.utils.QpidTestCase;
@@ -402,6 +403,10 @@ public class MaxDeliveryCountTest extends QpidTestCase
                         }
 
                         _deliveryAttempts++; //increment count of times the current rolled back/recovered message(s) have been seen
+                        
+                        //verify JMSXDeliveryCount                       
+                        assertEquals("Value for JMSXDeliveryCount was not as expected", 
+                                        _deliveryAttempts, message.getIntProperty("JMSXDeliveryCount"));
 
                         switch(deliveryMode)
                         {
@@ -540,6 +545,10 @@ public class MaxDeliveryCountTest extends QpidTestCase
                     }
 
                     _deliveryAttempts++; //increment count of times the current rolled back/recovered message(s) have been seen
+
+                    //verify JMSXDeliveryCount                       
+                    assertEquals("Value for JMSXDeliveryCount was not as expected",
+                                    _deliveryAttempts, message.getIntProperty("JMSXDeliveryCount"));
 
                     switch(deliveryMode)
                     {

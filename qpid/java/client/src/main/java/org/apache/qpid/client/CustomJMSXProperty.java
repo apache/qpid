@@ -32,6 +32,7 @@ public enum CustomJMSXProperty
     JMS_QPID_DESTTYPE,
     JMSXGroupID,
     JMSXGroupSeq,
+    JMSXDeliveryCount,
     JMSXUserID;
 
 

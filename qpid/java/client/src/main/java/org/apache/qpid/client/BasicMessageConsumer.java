@@ -756,12 +756,16 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
             msgId = message.getJMSMessageID();
             if(msgId != null)
             {
-                _tracker.recordMessage(msgId, message.getDeliveryTag());
+                int count = _tracker.recordMessage(msgId, message.getDeliveryTag());
+                if(count != 0)
+                {
+                    message.setJMSXDeliveryCount(count);
+                }
             }
         }
         catch (JMSException e)
         {
-            _logger.warn("Exception while retrieving JMSMessageID from message" +
+            _logger.error("Exception while retrieving JMSMessageID from message" +
                     " with deliveryTag '" + message.getDeliveryTag() + "': " + e, e);
         }
     }

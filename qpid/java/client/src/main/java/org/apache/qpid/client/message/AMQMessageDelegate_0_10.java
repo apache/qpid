@@ -912,4 +912,18 @@ public class AMQMessageDelegate_0_10 extends AbstractAMQMessageDelegate
         return _deliveryProps;
     }
 
+    public void setJMSXDeliveryCount(Integer count) throws JMSException
+    {
+        String propName = CustomJMSXProperty.JMSXDeliveryCount.toString();
+
+        if(count !=null)
+        {
+            setApplicationHeader(propName, count);
+        }
+        else
+        {
+            removeProperty(propName);
+        }
+    }
+
 }

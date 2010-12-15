@@ -155,4 +155,29 @@ public class DeliveryCountTrackerTest extends TestCase
             }
         }
     }
+
+    /**
+     * Test the count value return as message ID's are tracked
+     */
+    public void testCountReturnedWhenTracking() throws Exception
+    {
+        //check the value is 0 when provided with a null instead of a String id
+        assertEquals("value should have been 0", 0, _tracker.recordMessage(null, 0));
+
+        //check the value is 0 when provided with a null instead of a String id
+        //and the same delivery tag as before
+        assertEquals("value should have been 0", 0, _tracker.recordMessage(null, 0));
+
+        //check the value is 1 when provided with an id for the first time
+        for(int id=1 ; id <= CAPACITY; id ++)
+        {
+            assertEquals("value should have been 1", 1, _tracker.recordMessage(String.valueOf(id), id));
+        }
+
+        //check the value is 2 when provided with an id for the second time
+        for(int id=1 ; id <= CAPACITY; id ++)
+        {
+            assertEquals("value should have been 2", 2, _tracker.recordMessage(String.valueOf(id), id));
+        }
+    }
 }

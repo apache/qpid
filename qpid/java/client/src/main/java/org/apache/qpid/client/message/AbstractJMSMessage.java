@@ -534,4 +534,8 @@ public abstract class AbstractJMSMessage implements org.apache.qpid.jms.Message
         _delegate.removeProperty(propertyName);
     }
 
+    public void setJMSXDeliveryCount(Integer count) throws JMSException
+    {
+        _delegate.setJMSXDeliveryCount(count);
+    }
 }

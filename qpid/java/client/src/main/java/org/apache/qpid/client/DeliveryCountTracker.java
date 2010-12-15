@@ -90,44 +90,46 @@ public class DeliveryCountTracker
      *
      * @param msgID the JMSMessageID of the message to track
      * @param deliveryTag the delivery tag of the most recent encounter of the message
+     * @return the count of how many times the message has now been seen, or 0 if unknown.
      */
-    public synchronized void recordMessage(String msgID, long deliveryTag)
+    public synchronized int recordMessage(String msgID, long deliveryTag)
     {
-        try
+        int count = 0;
+
+        if(msgID == null)
         {
-            if(msgID == null)
-            {
-                //we can't distinguish between different
-                //messages without a JMSMessageID, so skip
-                return;
-            }
-
-            _jmsIDtoDeliverTag.put(msgID, deliveryTag);
-
-            Integer count = _receivedMsgIDs.get(msgID);
-
-            if(count != null)
-            {
-                ++count;
-                if (_logger.isDebugEnabled())
-                {
-                    _logger.debug("Incrementing count for JMSMessageID: '" + msgID + "', value now: " + count);
-                }
-                _receivedMsgIDs.put(msgID, count);
-            }
-            else
-            {
-                if (_logger.isDebugEnabled())
-                {
-                    _logger.debug("Recording first sighting of JMSMessageID '" + msgID + "'");
-                }
-                _receivedMsgIDs.put(msgID, 1);
-            }
+            //we can't distinguish between different
+            //messages without a JMSMessageID, so skip
+            return count;
         }
-        catch(Exception e)
+
+        _jmsIDtoDeliverTag.put(msgID, deliveryTag);
+
+        //using Integer to allow null check for the count map
+        Integer mapCount = _receivedMsgIDs.get(msgID);
+
+        if(mapCount != null)
         {
-            _logger.warn("Exception recording delivery count for message: " + msgID, e);
+            count = ++mapCount;
+
+            if (_logger.isDebugEnabled())
+            {
+                _logger.debug("Incrementing count for JMSMessageID: '" + msgID + "', value now: " + count);
+            }
+            _receivedMsgIDs.put(msgID, count);
         }
+        else
+        {
+            count = 1;
+
+            if (_logger.isDebugEnabled())
+            {
+                _logger.debug("Recording first sighting of JMSMessageID '" + msgID + "'");
+            }
+            _receivedMsgIDs.put(msgID, count);
+        }
+
+        return count;
     }
 
     /**

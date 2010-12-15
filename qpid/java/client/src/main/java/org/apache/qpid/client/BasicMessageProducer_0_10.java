@@ -82,6 +82,9 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
 
         // On the receiving side, this will be read in to the JMSXUserID as well.
         messageProps.setUserId(userIDBytes);
+        
+        //ensure JMSXDeliverCount is cleared
+        delegate.setJMSXDeliveryCount(null);
                 
         if (messageId != null)
         {

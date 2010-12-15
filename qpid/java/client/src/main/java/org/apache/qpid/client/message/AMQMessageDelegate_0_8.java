@@ -574,5 +574,17 @@ public class AMQMessageDelegate_0_8 extends AbstractAMQMessageDelegate
         return _deliveryTag;
     }
 
+    public void setJMSXDeliveryCount(Integer count) throws JMSException
+    {
+        String propName = CustomJMSXProperty.JMSXDeliveryCount.toString();
 
+        if(count !=null)
+        {
+            getJmsHeaders().setInteger(propName, count);
+        }
+        else
+        {
+            removeProperty(propName);
+        }
+    }
 }

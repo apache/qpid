@@ -134,4 +134,13 @@ public interface AMQMessageDelegate
     long getDeliveryTag();
 
     void setJMSMessageID(final UUID messageId) throws JMSException;
+    
+    /**
+     * Set the JMSXDeliveryCount property to the given value.
+     * 
+     * If the value given is null, the JMSXDeliveryCount property is removed.
+     * 
+     * @param count the value to set
+     */
+    void setJMSXDeliveryCount(final Integer count) throws JMSException;
 }

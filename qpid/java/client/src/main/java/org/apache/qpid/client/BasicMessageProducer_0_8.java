@@ -125,6 +125,9 @@ public class BasicMessageProducer_0_8 extends BasicMessageProducer
 
         contentHeaderProperties.setDeliveryMode((byte) deliveryMode);
         contentHeaderProperties.setPriority((byte) priority);
+        
+        //ensure JMSXDeliveryCount is cleared
+        delegate.setJMSXDeliveryCount(null);
 
         final int size = (payload != null) ? payload.limit() : 0;
         final int contentBodyFrameCount = calculateContentBodyFrameCount(payload);
