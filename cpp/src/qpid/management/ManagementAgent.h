@@ -113,8 +113,6 @@ public:
                           const bool topic,
                           int qmfVersion);
 
-    const framing::Uuid& getUuid() const { return uuid; }
-
     /** Disallow a method. Attempts to call it will receive an exception with message. */
     void disallow(const std::string& className, const std::string& methodName, const std::string& message);
 
@@ -138,7 +136,10 @@ public:
     void setNextObjectId(uint64_t o) { nextObjectId = o; }
 
     uint16_t getBootSequence(void) { return bootSequence; }
-    void setBootSequence(uint16_t b) { bootSequence = b; }
+    void setBootSequence(uint16_t b) { bootSequence = b; writeData(); }
+
+    const framing::Uuid& getUuid() const { return uuid; }
+    void setUuid(const framing::Uuid& id) { uuid = id; writeData(); }
 
     // TODO: remove these when Variant API moved into common library.
     static types::Variant::Map toMap(const framing::FieldTable& from);
