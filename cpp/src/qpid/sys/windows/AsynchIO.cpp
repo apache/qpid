@@ -630,10 +630,11 @@ void AsynchIO::readComplete(AsynchReadResult *result) {
         // No data read, so put the buffer back. It may be partially filled,
         // so "unread" it back to the front of the queue.
         unread(result->getBuff());
-        if (status == 0)
-            notifyEof();
-        else
+        notifyEof();
+        if (status != 0)
+        {
             notifyDisconnect();
+        }
     }
 }
 
