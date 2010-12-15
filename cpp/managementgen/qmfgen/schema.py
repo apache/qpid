@@ -1483,6 +1483,9 @@ class SchemaClass:
     for method in self.methods:
       method.genSchemaMap(stream, variables)
 
+  def genName (self, stream, variables):
+    stream.write (self.name)
+
   def genNameCap (self, stream, variables):
     stream.write (capitalize(self.name))
 
@@ -1647,6 +1650,9 @@ class SchemaPackage:
     up = "_".join(self.packageName.split("."))
     stream.write (up.upper())
 
+  def genPackageName (self, stream, variables):
+    stream.write(self.packageName)
+
   def genNamePackageLower (self, stream, variables):
     stream.write (self.packageName.lower ())
 
@@ -1670,6 +1676,139 @@ class SchemaPackage:
       _event.genNameCap(stream, variables)
       stream.write("::registerSelf(agent);\n")
 
+  def genV2ClassMembers(self, stream, variables):
+      for _class in self.classes:
+          stream.write("    ::qmf::Schema data_%s;\n" % _class.name)
+      for _event in self.events:
+          stream.write("    ::qmf::Schema event_%s;\n" % _event.name)
+
+  def genV2ClassDefines(self, stream, variables):
+      for _class in self.classes:
+          stream.write("\n    //\n    // Data: %s\n    //\n" % _class.name)
+          stream.write("    data_%s = qmf::Schema(SCHEMA_TYPE_DATA, package, \"%s\");\n" % (_class.name, _class.name))
+
+          for prop in _class.properties:
+              typeName, subType = self.qmfv2Type(prop.type)
+              access = self.qmfv2Access(prop.access)
+              stream.write("    {\n")
+              stream.write("        qmf::SchemaProperty prop(\"%s\", %s);\n" % (prop.name, typeName))
+              if subType:
+                  stream.write("        prop.setSubtype(\"%s\");\n" % subType)
+              stream.write("        prop.setAccess(%s);\n" % access)
+              if prop.isIndex == 1:
+                  stream.write("        prop.setIndex(true);\n")
+              if prop.isOptional == 1:
+                  stream.write("        prop.setOptional(true);\n")
+              if prop.unit:
+                  stream.write("        prop.setUnit(\"%s\");\n" % prop.unit)
+              if prop.desc:
+                  stream.write("        prop.setDesc(\"%s\");\n" % prop.desc)
+              stream.write("        data_%s.addProperty(prop);\n" % _class.name)
+              stream.write("    }\n\n")
+
+          for stat in _class.statistics:
+              typeName, subType = self.qmfv2Type(stat.type)
+              stream.write("    {\n")
+              stream.write("        qmf::SchemaProperty prop(\"%s\", %s);\n" % (stat.name, typeName))
+              if subType:
+                  stream.write("        prop.setSubtype(\"%s\");\n" % subType)
+              if stat.unit:
+                  stream.write("        prop.setUnit(\"%s\");\n" % stat.unit)
+              if stat.desc:
+                  stream.write("        prop.setDesc(\"%s\");\n" % stat.desc)
+              stream.write("        data_%s.addProperty(prop);\n" % _class.name)
+              stream.write("    }\n\n")
+
+          for method in _class.methods:
+              stream.write("    {\n")
+              stream.write("        qmf::SchemaMethod method(\"%s\");\n" % method.name)
+              if method.desc:
+                  stream.write("        method.setDesc(\"%s\");\n" % method.desc)
+                  
+              for arg in method.args:
+                  typeName, subType = self.qmfv2Type(arg.type)
+                  stream.write("        {\n")
+                  stream.write("            qmf::SchemaProperty arg(\"%s\", %s);\n" % (arg.name, typeName))
+                  if subType:
+                      stream.write("            arg.setSubtype(\"%s\");\n" % subType)
+                  if stat.unit:
+                      stream.write("            arg.setUnit(\"%s\");\n" % arg.unit)
+                  if stat.desc:
+                      stream.write("            arg.setDesc(\"%s\");\n" % arg.desc)
+                  stream.write("            arg.setDirection(%s);\n" % self.qmfv2Dir(arg.dir))
+                  stream.write("            method.addArgument(arg);\n")
+                  stream.write("        }\n\n")
+                  
+              stream.write("        data_%s.addMethod(method);\n" % _class.name)
+              stream.write("    }\n\n")
+
+          stream.write("    session.registerSchema(data_%s);\n" % _class.name)
+
+      for _event in self.events:
+          stream.write("\n    //\n    // Event: %s\n    //\n" % _event.name)
+          stream.write("    event_%s = qmf::Schema(SCHEMA_TYPE_EVENT, package, \"%s\");\n" % (_event.name, _event.name))
+          stream.write("    event_%s.setDefaultSeverity(%s);\n" % (_event.name, self.qmfv2Severity(_event.sev)))
+          for prop in _event.args:
+              typeName, subType = self.qmfv2Type(prop.type)
+              stream.write("    {\n")
+              stream.write("        qmf::SchemaProperty prop(\"%s\", %s);\n" % (prop.name, typeName))
+              if subType:
+                  stream.write("        prop.setSubtype(\"%s\");\n" % subType)
+              if prop.unit:
+                  stream.write("        prop.setUnit(\"%s\");\n" % prop.unit)
+              if prop.desc:
+                  stream.write("        prop.setDesc(\"%s\");\n" % prop.desc)
+              stream.write("        event_%s.addProperty(prop);\n" % _event.name)
+              stream.write("    }\n\n")
+
+          stream.write("    session.registerSchema(event_%s);\n" % _event.name)
+              
+
+  def qmfv2Type(self, typecode):
+      base = typecode.type.base
+      if base == "REF"       : return ("qmf::SCHEMA_DATA_MAP", "reference")
+      if base == "U8"        : return ("qmf::SCHEMA_DATA_INT", None)
+      if base == "U16"       : return ("qmf::SCHEMA_DATA_INT", None)
+      if base == "U32"       : return ("qmf::SCHEMA_DATA_INT", None)
+      if base == "U64"       : return ("qmf::SCHEMA_DATA_INT", None)
+      if base == "S8"        : return ("qmf::SCHEMA_DATA_INT", None)
+      if base == "S16"       : return ("qmf::SCHEMA_DATA_INT", None)
+      if base == "S32"       : return ("qmf::SCHEMA_DATA_INT", None)
+      if base == "S64"       : return ("qmf::SCHEMA_DATA_INT", None)
+      if base == "BOOL"      : return ("qmf::SCHEMA_DATA_BOOL", None)
+      if base == "SSTR"      : return ("qmf::SCHEMA_DATA_STRING", None)
+      if base == "LSTR"      : return ("qmf::SCHEMA_DATA_STRING", None)
+      if base == "ABSTIME"   : return ("qmf::SCHEMA_DATA_INT", "abstime")
+      if base == "DELTATIME" : return ("qmf::SCHEMA_DATA_INT", "deltatime")
+      if base == "FLOAT"     : return ("qmf::SCHEMA_DATA_FLOAT", None)
+      if base == "DOUBLE"    : return ("qmf::SCHEMA_DATA_FLOAT", None)
+      if base == "UUID"      : return ("qmf::SCHEMA_DATA_UUID", None)
+      if base == "FTABLE"    : return ("qmf::SCHEMA_DATA_MAP", None)
+      if base == "LIST"      : return ("qmf::SCHEMA_DATA_LIST", None)
+      raise ValueError("Unknown base type %s" % base)
+
+  def qmfv2Access(self, code):
+      if code == "RC": return "qmf::ACCESS_READ_CREATE"
+      if code == "RO": return "qmf::ACCESS_READ_ONLY"
+      if code == "RW": return "qmf::ACCESS_READ_WRITE"
+      raise ValueError("Unknown access type %s" % code)
+
+  def qmfv2Dir(self, code):
+      if code == "I" : return "qmf::DIR_IN"
+      if code == "O" : return "qmf::DIR_OUT"
+      if code == "IO": return "qmf::DIR_IN_OUT"
+      raise ValueError("Unknown direction type %s" % code)
+
+  def qmfv2Severity(self, code):
+      if code == 0 : return "qmf::SEV_EMERG"
+      if code == 1 : return "qmf::SEV_ALERT"
+      if code == 2 : return "qmf::SEV_CRIT"
+      if code == 3 : return "qmf::SEV_ERROR"
+      if code == 4 : return "qmf::SEV_WARN"
+      if code == 5 : return "qmf::SEV_NOTICE"
+      if code == 6 : return "qmf::SEV_INFORM"
+      if code == 7 : return "qmf::SEV_DEBUG"
+      raise ValueError("Out of Range Severity %d" % code)
 
 #=====================================================================================
 # Utility Functions
