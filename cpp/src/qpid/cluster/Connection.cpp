@@ -632,15 +632,23 @@ void Connection::addQueueListener(const std::string& q, uint32_t listener) {
 //
 // This is the handler for incoming managementsetup messages.
 //
-void Connection::managementSetupState(uint64_t objectNum, uint16_t bootSequence)
+void Connection::managementSetupState(
+    uint64_t objectNum, uint16_t bootSequence, const framing::Uuid& id,
+    const std::string& vendor, const std::string& product, const std::string& instance)
 {
-    QPID_LOG(debug, "Running managementsetup state handler, new objectnum "
-	     << objectNum << " seq " << bootSequence);
+    QPID_LOG(debug, cluster << " updated management: object number="
+	     << objectNum << " boot sequence=" << bootSequence
+             << " broker-id=" << id
+             << " vendor=" << vendor
+             << " product=" << product
+             << " instance=" << instance);
     management::ManagementAgent* agent = cluster.getBroker().getManagementAgent();
     if (!agent)
         throw Exception(QPID_MSG("Management schema update but management not enabled."));
     agent->setNextObjectId(objectNum);
     agent->setBootSequence(bootSequence);
+    agent->setUuid(id);
+    agent->setName(vendor, product, instance);
 }
 }} // Namespace qpid::cluster
 

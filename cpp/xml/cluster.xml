@@ -267,6 +267,10 @@
     <control name="management-setup-state" code="0x36">
       <field name="objectNum" type="uint64"/>
       <field name="bootSequence" type="uint16"/>
+      <field name="broker-id" type="uuid"/>
+      <field name="vendor" type="str32"/>
+      <field name="product" type="str32"/>
+      <field name="instance" type="str32"/>
     </control>
   </class>
 </amqp>
