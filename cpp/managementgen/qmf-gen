@@ -47,12 +47,15 @@ parser.add_option("-q", "--qpid-broker", dest="qpidbroker", default=False, actio
                   help="Generate makefile for Qpid broker")
 parser.add_option("-b", "--broker-plugin", dest="brokerplugin", default=False, action="store_true",
                   help="Generate code for use in a qpid broker plugin")
+parser.add_option("-2", "--v2-style", dest="v2_style", default=False, action="store_true",
+                  help="Generate code for use with the QMFv2 Agent API")
 
 (opts, args) = parser.parse_args()
 
 typefile    = opts.typefile
 templatedir = opts.templatedir
 outdir      = opts.outputdir
+v2_style    = opts.v2_style
 gen         = Generator(outdir, templatedir)
 
 if len(args) == 0:
@@ -70,14 +73,19 @@ else:
 for schemafile in args:
   package = SchemaPackage(typefile, schemafile, opts)
 
-  gen.setPackage      (package.packageName)
-  gen.makeClassFiles  ("Class.h",     package, vars=vargs)
-  gen.makeClassFiles  ("Class.cpp",   package, vars=vargs)
-  gen.makeMethodFiles ("Args.h",      package, vars=vargs)
-  gen.makeEventFiles  ("Event.h",     package, vars=vargs)
-  gen.makeEventFiles  ("Event.cpp",   package, vars=vargs)
-  gen.makePackageFile ("Package.h",   package, vars=vargs)
-  gen.makePackageFile ("Package.cpp", package, vars=vargs)
+  gen.setPackage(package.packageName)
+
+  if v2_style:
+    gen.makeV2PackageFile("V2Package.h",   package, vars=vargs)
+    gen.makeV2PackageFile("V2Package.cpp", package, vars=vargs)
+  else:
+    gen.makeClassFiles  ("Class.h",     package, vars=vargs)
+    gen.makeClassFiles  ("Class.cpp",   package, vars=vargs)
+    gen.makeMethodFiles ("Args.h",      package, vars=vargs)
+    gen.makeEventFiles  ("Event.h",     package, vars=vargs)
+    gen.makeEventFiles  ("Event.cpp",   package, vars=vargs)
+    gen.makePackageFile ("Package.h",   package, vars=vargs)
+    gen.makePackageFile ("Package.cpp", package, vars=vargs)
 
 if opts.makefile != None:
   args = {}
