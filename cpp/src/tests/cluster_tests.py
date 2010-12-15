@@ -354,6 +354,8 @@ class LongTests(BrokerTest):
 
         # def test_management
         args += ["--mgmt-pub-interval", 1] # Publish management information every second.
+        # FIXME aconway 2010-12-15: extra debugging
+        args += ["--log-enable=trace+:management"]
         # Use store if present.
         if BrokerTest.store_lib: args +=["--load-module", BrokerTest.store_lib]
         cluster = self.cluster(3, args)
