@@ -239,9 +239,9 @@ void ConnectionHandler::Handler::start(const FieldTable& serverProperties,
                                        const framing::Array& /*locales*/)
 {
     string requestedMechanism = connection.getAuthMechanism();
-    string response  = connection.getAuthCredentials();
 
     std::string username = connection.getUsername();
+
     std::string password = connection.getPassword();
     std::string host     = connection.getHost();
     std::string service("qpidd");
@@ -298,19 +298,17 @@ void ConnectionHandler::Handler::start(const FieldTable& serverProperties,
     ft.setInt(QPID_FED_LINK,1);
     ft.setString(QPID_FED_TAG, connection.getBroker().getFederationTag());
 
+    string response;
     if (sasl.get()) {
-        string response =
-            sasl->start ( requestedMechanism.empty()
-                              ? supportedMechanismsList
-                              : requestedMechanism,
-                          getSecuritySettings 
-                              ? getSecuritySettings()
-                              : 0
-                        );
+        const qpid::sys::SecuritySettings& ss = connection.getExternalSecuritySettings();
+        response = sasl->start ( requestedMechanism.empty()
+                                 ? supportedMechanismsList
+                                 : requestedMechanism,
+                                 & ss );
         proxy.startOk ( ft, sasl->getMechanism(), response, en_US );
     }
     else {
-        string response = ((char)0) + username + ((char)0) + password;
+        response = ((char)0) + username + ((char)0) + password;
         proxy.startOk ( ft, requestedMechanism, response, en_US );
     }
 

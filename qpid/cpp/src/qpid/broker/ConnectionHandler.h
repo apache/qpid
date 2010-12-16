@@ -91,7 +91,6 @@ class ConnectionHandler : public framing::FrameHandler
 
         std::auto_ptr<Sasl> sasl;
         typedef boost::function<const qpid::sys::SecuritySettings*()> GetSecuritySettings;
-        GetSecuritySettings  getSecuritySettings;     /* query the transport for its security details */
         std::string saslUserId;
         uint16_t maxFrameSize;
     };
