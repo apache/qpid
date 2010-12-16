@@ -29,7 +29,7 @@
 using namespace std;
 using namespace qmf::/*MGEN:Schema.Namespace*/;
 
-PackageDefinition::PackageDefinition(::qmf::AgentSession& session)
+void PackageDefinition::configure(::qmf::AgentSession& session)
 {
     string package("/*MGEN:Schema.PackageName*/");
 /*MGEN:Schema.V2ClassDefines*/
