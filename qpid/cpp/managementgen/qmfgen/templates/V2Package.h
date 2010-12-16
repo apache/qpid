@@ -25,6 +25,8 @@
 
 #include <qmf/AgentSession.h>
 #include <qmf/Schema.h>
+#include <qmf/Data.h>
+#include <qmf/DataAddr.h>
 
 namespace qmf {
 /*MGEN:Class.OpenNamespaces*/
@@ -32,8 +34,8 @@ namespace qmf {
 class PackageDefinition
 {
   public:
-    PackageDefinition (::qmf::AgentSession& session);
-    ~PackageDefinition () {}
+    ~PackageDefinition() {}
+    void configure(::qmf::AgentSession& session);
 
 /*MGEN:Schema.V2ClassMembers*/
 };
