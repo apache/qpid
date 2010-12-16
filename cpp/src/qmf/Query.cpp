@@ -50,7 +50,7 @@ const Variant::List& Query::getPredicate() const { return impl->getPredicate(); 
 bool Query::matchesPredicate(const qpid::types::Variant::Map& map) const { return impl->matchesPredicate(map); }
 
 
-QueryImpl::QueryImpl(const Variant::Map& map)
+QueryImpl::QueryImpl(const Variant::Map& map) : predicateCompiled(false)
 {
     Variant::Map::const_iterator iter;
     
