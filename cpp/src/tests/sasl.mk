@@ -32,7 +32,7 @@ sasl_version_LDADD=$(lib_client)
 
 TESTS += run_cluster_authentication_test sasl_fed sasl_fed_ex
 LONG_TESTS += run_cluster_authentication_soak
-EXTRA_DIST += run_cluster_authentication_test sasl_fed run_cluster_authentication_soak
+EXTRA_DIST += run_cluster_authentication_test sasl_fed sasl_fed_ex run_cluster_authentication_soak
 
 
 endif # HAVE_SASL
