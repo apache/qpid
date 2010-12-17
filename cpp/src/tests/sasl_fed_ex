@@ -77,7 +77,7 @@ create_certs || error "Could not create test certificate"
 sasl_config_file=$builddir/sasl_config
 
 my_random_number=$RANDOM
-tmp_root=/tmp/sasl_fed/$my_random_number
+tmp_root=/tmp/sasl_fed_$my_random_number
 mkdir -p $tmp_root
 
 SRC_SSL_PORT=6667
@@ -239,7 +239,7 @@ if [ "$dst_message_count" -eq  "$n_messages" ]; then
   #echo "good: |$dst_message_count| == |$n_messages|"
   exit 0
 else
-   #echo "not ideal: |$broker_2_message_count| != |$n_messages|"
+   #echo "not ideal: |$dst_message_count| != |$n_messages|"
   exit 1
 fi
 

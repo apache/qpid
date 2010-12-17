@@ -43,7 +43,7 @@ fi
 sasl_config_file=$builddir/sasl_config
 
 my_random_number=$RANDOM
-tmp_root=/tmp/sasl_fed/$my_random_number
+tmp_root=/tmp/sasl_fed_$my_random_number
 mkdir -p $tmp_root
 
 
