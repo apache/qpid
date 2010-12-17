@@ -20,7 +20,8 @@
 #
 
 import os
-import optparse
+import optparse 
+from optparse import IndentedHelpFormatter
 import sys
 import socket
 from time import time, strftime, gmtime, sleep
@@ -39,20 +40,43 @@ class EventConsole(Console):
     print strftime("%c", gmtime(time())), "NOTIC qpid-printevents:brokerDisconnected broker=%s" % broker.getUrl()
     sys.stdout.flush()
 
-##
-## Main Program
-##
-def main():
-  _usage = "%prog [options] [broker-addr]..."
-  _description = \
-"""Collect and print events from one or more Qpid message brokers.  If no broker-addr is
-supplied, %prog will connect to 'localhost:5672'.
-broker-addr is of the form:  [username/password@] hostname | ip-address [:<port>]
-ex: localhost, 10.1.1.7:10000, broker-host:10000, guest/guest@localhost
-"""
-  p = optparse.OptionParser(usage=_usage, description=_description)
+class JHelpFormatter(IndentedHelpFormatter):
+    """Format usage and description without stripping newlines from usage strings
+    """
 
-  options, arguments = p.parse_args()
+    def format_usage(self, usage):
+        return usage
+
+    def format_description(self, description):
+        if description:
+            return description + "\n"
+        else:
+            return ""
+
+_usage = "%prog [options] [broker-addr]..."
+
+_description = \
+"""
+Collect and print events from one or more Qpid message brokers.  
+
+If no broker-addr is supplied, %prog connects to 'localhost:5672'.
+
+[broker-addr] syntax:   
+
+          [username/password@] hostname
+          ip-address [:<port>]
+
+Examples:
+
+$ %prog localhost:5672
+$ %prog 10.1.1.7:10000
+$ %prog guest/guest@broker-host:10000
+"""
+
+def main(argv=None):
+  p = optparse.OptionParser(usage=_usage, description=_description, formatter=JHelpFormatter())
+
+  options, arguments = p.parse_args(args=argv)
   if len(arguments) == 0:
     arguments.append("localhost")
 
@@ -74,5 +98,4 @@ ex: localhost, 10.1.1.7:10000, broker-host:10000, guest/guest@localhost
       session.delBroker(b)
 
 if __name__ == '__main__':
-  main()
-
+  sys.exit(main())

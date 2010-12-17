@@ -124,12 +124,12 @@ class BrokerManager(Console):
 ##
 ## Main Program
 ##
-def main():
+def main(argv=None):
   p = optparse.OptionParser()
   p.add_option('--broker-address','-a', default='localhost' , help='broker-addr is in the form:  [username/password@] hostname | ip-address [:<port>] \n ex:  localhost, 10.1.1.7:10000, broker-host:10000, guest/guest@localhost')
   p.add_option('--filter','-f' ,default=None ,help='a list of comma separated queue names (regex are accepted) to show')
 
-  options, arguments = p.parse_args()
+  options, arguments = p.parse_args(args=argv)
 
   host = options.broker_address
   filter = []
@@ -142,5 +142,5 @@ def main():
   bm.Display()
  
 if __name__ == '__main__':
-  main()
+  sys.exit(main())
 
