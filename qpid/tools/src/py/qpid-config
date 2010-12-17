@@ -25,25 +25,29 @@ import sys
 import locale
 from qmf.console import Session
 
-_recursive         = False
-_host              = "localhost"
-_connTimeout       = 10
-_altern_ex         = None
-_passive           = False
-_durable           = False
-_clusterDurable    = False
-_if_empty          = True
-_if_unused         = True
-_fileCount         = 8
-_fileSize          = 24
-_maxQueueSize      = None
-_maxQueueCount     = None
-_limitPolicy       = None
-_order             = None
-_msgSequence       = False
-_ive               = False
-_eventGeneration   = None
-_file              = None
+class Config:
+    def __init__(self):
+        self._recursive         = False
+        self._host              = "localhost"
+        self._connTimeout       = 10
+        self._altern_ex         = None
+        self._passive           = False
+        self._durable           = False
+        self._clusterDurable    = False
+        self._if_empty          = True
+        self._if_unused         = True
+        self._fileCount         = 8
+        self._fileSize          = 24
+        self._maxQueueSize      = None
+        self._maxQueueCount     = None
+        self._limitPolicy       = None
+        self._order             = None
+        self._msgSequence       = False
+        self._ive               = False
+        self._eventGeneration   = None
+        self._file              = None
+
+config = Config()
 
 FILECOUNT = "qpid.file_count"
 FILESIZE  = "qpid.file_size"
@@ -57,6 +61,176 @@ MSG_SEQUENCE = "qpid.msg_sequence"
 IVE = "qpid.ive"
 QUEUE_EVENT_GENERATION = "qpid.queue_event_generation"
 
+class JHelpFormatter(IndentedHelpFormatter):
+    """Format usage and description without stripping newlines from usage strings
+    """
+
+    def format_usage(self, usage):
+        return usage
+
+
+    def format_description(self, description):
+        if description:
+            return description + "\n"
+        else:
+            return ""
+
+def Usage():
+    print "qpid-config: invalid arguments. Try $ qpid-config --help"
+    exit(-1)
+
+def OptionsAndArguments(argv):
+    """ Set global variables for options, return arguments """
+
+    global config
+
+    usage = """
+    Usage:  qpid-config [OPTIONS]
+            qpid-config [OPTIONS] exchanges [filter-string]
+            qpid-config [OPTIONS] queues    [filter-string]
+            qpid-config [OPTIONS] add exchange <type> <name> [AddExchangeOptions]
+            qpid-config [OPTIONS] del exchange <name>
+            qpid-config [OPTIONS] add queue <name> [AddQueueOptions]
+            qpid-config [OPTIONS] del queue <name> [DelQueueOptions]
+            qpid-config [OPTIONS] bind   <exchange-name> <queue-name> [binding-key]
+                      <for type xml>     [-f -|filename]
+                      <for type header>  [all|any] k1=v1 [, k2=v2...]
+            qpid-config [OPTIONS] unbind <exchange-name> <queue-name> [binding-key]"""
+
+    description = """
+    ADDRESS syntax:   
+
+          [username/password@] hostname
+          ip-address [:<port>]
+
+    Examples:
+
+    $ qpid-config add queue q
+    $ qpid-config add exchange direct d localhost:5672
+    $ qpid-config exchanges 10.1.1.7:10000
+    $ qpid-config queues guest/guest@broker-host:10000
+
+    Add Exchange <type> values:
+
+        direct     Direct exchange for point-to-point communication
+        fanout     Fanout exchange for broadcast communication
+        topic      Topic exchange that routes messages using binding keys with wildcards
+        headers    Headers exchange that matches header fields against the binding keys
+        xml        XML Exchange - allows content filtering using an XQuery
+
+
+    Queue Limit Actions
+
+        none (default) - Use broker's default policy
+        reject         - Reject enqueued messages
+        flow-to-disk   - Page messages to disk
+        ring           - Replace oldest unacquired message with new
+        ring-strict    - Replace oldest message, reject if oldest is acquired
+
+    Queue Ordering Policies
+
+        fifo (default) - First in, first out
+        lvq            - Last Value Queue ordering, allows queue browsing
+        lvq-no-browse  - Last Value Queue ordering, browsing clients may lose data"""
+
+    parser = OptionParser(usage=usage,
+                          description=description,
+                          formatter=JHelpFormatter())
+
+    group1 = OptionGroup(parser, "General Options")
+    group1.add_option("-t", "--timeout", action="store", type="int", default=10, metavar="SECS", help="Maximum time to wait for broker connection (in seconds)")
+    group1.add_option("-b", "--bindings", action="store_true", help="Show bindings in queue or exchange list")
+    group1.add_option("-a", "--broker-addr", action="store", type="string", default="localhost:5672", metavar="ADDRESS", help="Maximum time to wait for broker connection (in seconds)")
+    parser.add_option_group(group1)
+
+    group2 = OptionGroup(parser, "Options for Adding Exchanges and Queues")
+    group2.add_option("--alternate-exchange", action="store", type="string", metavar="NAME", help="Name of the alternate-exchange for the new queue or exchange. Exchanges route messages to the alternate exchange if they are unable to route them elsewhere. Queues route messages to the alternate exchange if they are rejected by a subscriber or orphaned by queue deletion.")
+    group2.add_option("--passive", "--dry-run", action="store_true", help="Do not actually add the exchange or queue, ensure that all parameters and permissions are correct and would allow it to be created.")
+    group2.add_option("--durable", action="store_true", help="The new queue or exchange is durable.")
+    parser.add_option_group(group2)
+
+    group3 = OptionGroup(parser, "Options for Adding Queues")
+    group3.add_option("--cluster-durable", action="store_true", help="The new queue becomes durable if there is only one functioning cluster node")
+    group3.add_option("--file-count", action="store", type="int", default=8, metavar="N", help="Number of files in queue's persistence journal")
+    group3.add_option("--file-size", action="store", type="int", default=24, metavar="N", help="File size in pages (64Kib/page)")
+    group3.add_option("--max-queue-size", action="store", type="int", metavar="N", help="Number of files in queue's persistence journal")
+    group3.add_option("--max-queue-count", action="store", type="int", metavar="N", help="Number of files in queue's persistence journal")
+    group3.add_option("--limit-policy", action="store", choices=["none", "reject", "flow-to-disk", "ring", "ring-strict"], metavar="CHOICE", help="Action to take when queue limit is reached")
+    group3.add_option("--order", action="store", choices=["fifo", "lvq", "lvq-no-browse"], metavar="CHOICE", help="Queue ordering policy")
+    group3.add_option("--generate-queue-events", action="store", type="int", metavar="N", help="If set to 1, every enqueue will generate an event that can be processed by registered listeners (e.g. for replication). If set to 2, events will be generated for enqueues and dequeues.")
+    # no option for declaring an exclusive queue - which can only be used by the session that creates it.
+    parser.add_option_group(group3)
+
+    group4 = OptionGroup(parser, "Options for Adding Exchanges")
+    group4.add_option("--sequence", action="store_true", help="Exchange will insert a 'qpid.msg_sequence' field in the message header")
+    group4.add_option("--ive", action="store_true", help="Exchange will behave as an 'initial-value-exchange', keeping a reference  to the last message forwarded and enqueuing that message to newly bound queues.")
+    parser.add_option_group(group4)
+
+    group5 = OptionGroup(parser, "Options for Deleting Queues")
+    group5.add_option("--force", action="store_true", help="Force delete of queue even if it's currently used or it's not empty")
+    group5.add_option("--force-if-not-empty", action="store_true", help="Force delete of queue even if it's not empty")
+    group5.add_option("--force-if-not-used", action="store_true", help="Force delete of queue even if it's currently used")
+    parser.add_option_group(group5)
+
+    group6 = OptionGroup(parser, "Options for Declaring Bindings")
+    group6.add_option("-f", "--file", action="store", type="string", metavar="FILE.xq", help="For XML Exchange bindings - specifies the name of a file containing an XQuery.")
+    parser.add_option_group(group6)
+
+    opts, encArgs = parser.parse_args(args=argv)
+
+    try:
+        encoding = locale.getpreferredencoding()
+        args = [a.decode(encoding) for a in encArgs]
+    except:
+        args = encArgs
+
+    if opts.bindings:
+        config._recursive = True
+    if opts.broker_addr:
+        config._host = opts.broker_addr
+    if opts.timeout:
+        config._connTimeout = opts.timeout
+        if config._connTimeout == 0:
+            config._connTimeout = None
+    if opts.alternate_exchange:
+        config._altern_ex = opts.alternate_exchange
+    if opts.passive:
+        config._passive = True
+    if opts.durable:
+        config._durable = True
+    if opts.cluster_durable:
+        config._clusterDurable = True
+    if opts.file:
+        config._file = opts.file
+    if opts.file_count:
+        config._fileCount = opts.file_count
+    if opts.file_size:
+        config._fileSize = opts.file_size
+    if opts.max_queue_size:
+        config._maxQueueSize = opts.max_queue_size
+    if opts.max_queue_count:
+        config._maxQueueCount = opts.max_queue_count
+    if opts.limit_policy:
+           config._limitPolicy = opts.limit_policy
+    if opts.order:
+        config._order = opts.order
+    if opts.sequence:
+        config._msgSequence = True
+    if opts.ive:
+        config._ive = True
+    if opts.generate_queue_events:
+        config._eventGeneration = opts.generate_queue_events
+    if opts.force:
+        config._if_empty = False
+        config._if_unused = False
+    if opts.force_if_not_empty:
+        config._if_empty = False
+    if opts.force_if_not_used:
+        config._if_unused = False
+
+    return args
+
+
 #
 # helpers for the arg parsing in bind().  return multiple values; "ok"
 # followed by the resultant args
@@ -67,13 +241,13 @@ QUEUE_EVENT_GENERATION = "qpid.queue_event_generation"
 # passed to the xml binding.
 #
 def snarf_xquery_args():
-    if not _file:
+    if not config._file:
         print "Invalid args to bind xml:  need an input file or stdin"
         return [False]
-    if _file == "-":
+    if config._file == "-":
         res = sys.stdin.read()
     else:
-        f = open(_file)   # let this signal if it can't find it
+        f = open(config._file)   # let this signal if it can't find it
         res = f.read()
         f.close()
     return [True, res]
@@ -106,7 +280,7 @@ class BrokerManager:
     def SetBroker (self, brokerUrl):
         self.url = brokerUrl
         self.qmf = Session()
-        self.broker = self.qmf.addBroker(brokerUrl, _connTimeout)
+        self.broker = self.qmf.addBroker(brokerUrl, config._connTimeout)
         agents = self.qmf.getAgents()
         for a in agents:
             if a.getAgentBank() == '0':
@@ -131,12 +305,12 @@ class BrokerManager:
 
         print
         print "   Total Queues: %d" % len (queues)
-        _durable = 0
+        durable = 0
         for queue in queues:
             if queue.durable:
-                _durable = _durable + 1
-        print "        durable: %d" % _durable
-        print "    non-durable: %d" % (len (queues) - _durable)
+                durable = durable + 1
+        print "        durable: %d" % durable
+        print "    non-durable: %d" % (len (queues) - durable)
 
     def ExchangeList (self, filter):
         exchanges = self.qmf.getObjects(_class="exchange", _agent=self.brokerAgent)
@@ -232,77 +406,77 @@ class BrokerManager:
 
     def AddExchange (self, args):
         if len (args) < 2:
-            Usage(parser)
+            Usage()
         etype = args[0]
         ename = args[1]
         declArgs = {}
-        if _msgSequence:
+        if config._msgSequence:
             declArgs[MSG_SEQUENCE] = 1
-        if _ive:
+        if config._ive:
             declArgs[IVE] = 1
-        if _altern_ex != None:
-            self.broker.getAmqpSession().exchange_declare (exchange=ename, type=etype, alternate_exchange=_altern_ex, passive=_passive, durable=_durable, arguments=declArgs)
+        if  config._altern_ex != None:
+            self.broker.getAmqpSession().exchange_declare (exchange=ename, type=etype, alternate_exchange=config._altern_ex, passive=config._passive, durable=config._durable, arguments=declArgs)
         else:
-            self.broker.getAmqpSession().exchange_declare (exchange=ename, type=etype, passive=_passive, durable=_durable, arguments=declArgs)
+            self.broker.getAmqpSession().exchange_declare (exchange=ename, type=etype, passive=config._passive, durable=config._durable, arguments=declArgs)
 
     def DelExchange (self, args):
         if len (args) < 1:
-            Usage(parser)
+            Usage()
         ename = args[0]
         self.broker.getAmqpSession().exchange_delete (exchange=ename)
 
     def AddQueue (self, args):
         if len (args) < 1:
-            Usage(parser)
+            Usage()
         qname    = args[0]
         declArgs = {}
-        if _durable:
-            declArgs[FILECOUNT] = _fileCount
-            declArgs[FILESIZE]  = _fileSize
+        if config._durable:
+            declArgs[FILECOUNT] = config._fileCount
+            declArgs[FILESIZE]  = config._fileSize
 
-        if _maxQueueSize:
-            declArgs[MAX_QUEUE_SIZE]  = _maxQueueSize
-        if _maxQueueCount:
-            declArgs[MAX_QUEUE_COUNT]  = _maxQueueCount
-        if _limitPolicy:
-            if _limitPolicy == "none":
+        if config._maxQueueSize:
+            declArgs[MAX_QUEUE_SIZE]  = config._maxQueueSize
+        if config._maxQueueCount:
+            declArgs[MAX_QUEUE_COUNT]  = config._maxQueueCount
+        if config._limitPolicy:
+            if config._limitPolicy == "none":
                 pass
-            elif _limitPolicy == "reject":
+            elif config._limitPolicy == "reject":
                 declArgs[POLICY_TYPE] = "reject"
-            elif _limitPolicy == "flow-to-disk":
+            elif config._limitPolicy == "flow-to-disk":
                 declArgs[POLICY_TYPE] = "flow_to_disk"
-            elif _limitPolicy == "ring":
+            elif config._limitPolicy == "ring":
                 declArgs[POLICY_TYPE] = "ring"
-            elif _limitPolicy == "ring-strict":
+            elif config._limitPolicy == "ring-strict":
                 declArgs[POLICY_TYPE] = "ring_strict"
 
-        if _clusterDurable:
+        if  config._clusterDurable:
             declArgs[CLUSTER_DURABLE] = 1
-        if _order:
-            if _order == "fifo":
+        if config._order:
+            if config._order == "fifo":
                 pass
-            elif _order == "lvq":
+            elif config._order == "lvq":
                 declArgs[LVQ] = 1
-            elif _order == "lvq-no-browse":
+            elif config._order == "lvq-no-browse":
                 declArgs[LVQNB] = 1
-        if _eventGeneration:
-            declArgs[QUEUE_EVENT_GENERATION]  = _eventGeneration
+        if config._eventGeneration:
+            declArgs[QUEUE_EVENT_GENERATION]  = config._eventGeneration
 
-        if _altern_ex != None:
-            self.broker.getAmqpSession().queue_declare (queue=qname, alternate_exchange=_altern_ex, passive=_passive, durable=_durable, arguments=declArgs)
+        if config._altern_ex != None:
+            self.broker.getAmqpSession().queue_declare (queue=qname, alternate_exchange=config._altern_ex, passive=config._passive, durable=config._durable, arguments=declArgs)
         else:
-            self.broker.getAmqpSession().queue_declare (queue=qname, passive=_passive, durable=_durable, arguments=declArgs)
+            self.broker.getAmqpSession().queue_declare (queue=qname, passive=config._passive, durable=config._durable, arguments=declArgs)
 
     def DelQueue (self, args):
         if len (args) < 1:
-            Usage(parser)
+            Usage()
         qname = args[0]
-        self.broker.getAmqpSession().queue_delete (queue=qname, if_empty=_if_empty, if_unused=_if_unused)
+        self.broker.getAmqpSession().queue_delete (queue=qname, if_empty=config._if_empty, if_unused=config._if_unused)
 
 
     def Bind (self, args):
         if len (args) < 2:
-            Usage(parser)
+            Usage()
         ename = args[0]
         qname = args[1]
         key   = ""
@@ -340,7 +514,7 @@ class BrokerManager:
 
     def Unbind (self, args):
         if len (args) < 2:
-            Usage(parser)
+            Usage()
         ename = args[0]
         qname = args[1]
         key   = ""
@@ -366,236 +540,79 @@ def YN (bool):
         return 'Y'
     return 'N'
 
-class JHelpFormatter(IndentedHelpFormatter):
-    """Format usage and description without stripping newlines from usage strings
-    """
 
-    def format_usage(self, usage):
-        return usage
+def main(argv=None):
+    args = OptionsAndArguments(argv)
+    bm   = BrokerManager ()
 
-
-    def format_description(self, description):
-        if description:
-            return description + "\n"
-        else:
-            return ""
-
-def Usage(parser):
-    parser.print_usage()
-    exit(-1)
-
-##
-## Main Program
-##
-
-usage = """
-Usage:  qpid-config [OPTIONS]
-        qpid-config [OPTIONS] exchanges [filter-string]
-        qpid-config [OPTIONS] queues    [filter-string]
-        qpid-config [OPTIONS] add exchange <type> <name> [AddExchangeOptions]
-        qpid-config [OPTIONS] del exchange <name>
-        qpid-config [OPTIONS] add queue <name> [AddQueueOptions]
-        qpid-config [OPTIONS] del queue <name> [DelQueueOptions]
-        qpid-config [OPTIONS] bind   <exchange-name> <queue-name> [binding-key]
-                  <for type xml>     [-f -|filename]
-                  <for type header>  [all|any] k1=v1 [, k2=v2...]
-        qpid-config [OPTIONS] unbind <exchange-name> <queue-name> [binding-key]"""
-
-description = """
-ADDRESS syntax:   
-
-      [username/password@] hostname
-      ip-address [:<port>]
-         
-Examples:
-
-$ qpid-config add queue q
-$ qpid-config add exchange direct d localhost:5672
-$ qpid-config exchanges 10.1.1.7:10000
-$ qpid-config queues guest/guest@broker-host:10000
-
-Add Exchange <type> values:
-
-    direct     Direct exchange for point-to-point communication
-    fanout     Fanout exchange for broadcast communication
-    topic      Topic exchange that routes messages using binding keys with wildcards
-    headers    Headers exchange that matches header fields against the binding keys
-    xml        XML Exchange - allows content filtering using an XQuery
-
-
-Queue Limit Actions
-                             
-    none (default) - Use broker's default policy
-    reject         - Reject enqueued messages
-    flow-to-disk   - Page messages to disk
-    ring           - Replace oldest unacquired message with new
-    ring-strict    - Replace oldest message, reject if oldest is acquired
-
-Queue Ordering Policies
-
-    fifo (default) - First in, first out
-    lvq            - Last Value Queue ordering, allows queue browsing
-    lvq-no-browse  - Last Value Queue ordering, browsing clients may lose data"""
-
-parser = OptionParser(usage=usage,
-                      description=description,
-                      formatter=JHelpFormatter())
-
-group1 = OptionGroup(parser, "General Options")
-group1.add_option("-t", "--timeout", action="store", type="int", default=10, metavar="SECS", help="Maximum time to wait for broker connection (in seconds)")
-group1.add_option("-b", "--bindings", action="store_true", help="Show bindings in queue or exchange list")
-group1.add_option("-a", "--broker-addr", action="store", type="string", default="localhost:5672", metavar="ADDRESS", help="Maximum time to wait for broker connection (in seconds)")
-parser.add_option_group(group1)
-
-group2 = OptionGroup(parser, "Options for Adding Exchanges and Queues")
-group2.add_option("--alternate-exchange", action="store", type="string", metavar="NAME", help="Name of the alternate-exchange for the new queue or exchange. Exchanges route messages to the alternate exchange if they are unable to route them elsewhere. Queues route messages to the alternate exchange if they are rejected by a subscriber or orphaned by queue deletion.")
-group2.add_option("--passive", "--dry-run", action="store_true", help="Do not actually add the exchange or queue, ensure that all parameters and permissions are correct and would allow it to be created.")
-group2.add_option("--durable", action="store_true", help="The new queue or exchange is durable.")
-parser.add_option_group(group2)
-
-group3 = OptionGroup(parser, "Options for Adding Queues")
-group3.add_option("--cluster-durable", action="store_true", help="The new queue becomes durable if there is only one functioning cluster node")
-group3.add_option("--file-count", action="store", type="int", default=8, metavar="N", help="Number of files in queue's persistence journal")
-group3.add_option("--file-size", action="store", type="int", default=24, metavar="N", help="File size in pages (64Kib/page)")
-group3.add_option("--max-queue-size", action="store", type="int", metavar="N", help="Number of files in queue's persistence journal")
-group3.add_option("--max-queue-count", action="store", type="int", metavar="N", help="Number of files in queue's persistence journal")
-group3.add_option("--limit-policy", action="store", choices=["none", "reject", "flow-to-disk", "ring", "ring-strict"], metavar="CHOICE", help="Action to take when queue limit is reached")
-group3.add_option("--order", action="store", choices=["fifo", "lvq", "lvq-no-browse"], metavar="CHOICE", help="Queue ordering policy")
-group3.add_option("--generate-queue-events", action="store", type="int", metavar="N", help="If set to 1, every enqueue will generate an event that can be processed by registered listeners (e.g. for replication). If set to 2, events will be generated for enqueues and dequeues.")
-# no option for declaring an exclusive queue - which can only be used by the session that creates it.
-parser.add_option_group(group3)
-
-group4 = OptionGroup(parser, "Options for Adding Exchanges")
-group4.add_option("--sequence", action="store_true", help="Exchange will insert a 'qpid.msg_sequence' field in the message header")
-group4.add_option("--ive", action="store_true", help="Exchange will behave as an 'initial-value-exchange', keeping a reference  to the last message forwarded and enqueuing that message to newly bound queues.")
-parser.add_option_group(group4)
-
-group5 = OptionGroup(parser, "Options for Deleting Queues")
-group5.add_option("--force", action="store_true", help="Force delete of queue even if it's currently used or it's not empty")
-group5.add_option("--force-if-not-empty", action="store_true", help="Force delete of queue even if it's not empty")
-group5.add_option("--force-if-not-used", action="store_true", help="Force delete of queue even if it's currently used")
-parser.add_option_group(group5)
-
-group6 = OptionGroup(parser, "Options for Declaring Bindings")
-group6.add_option("-f", "--file", action="store", type="string", metavar="FILE.xq", help="For XML Exchange bindings - specifies the name of a file containing an XQuery.")
-parser.add_option_group(group6)
-
-opts, encArgs = parser.parse_args()
-
-try:
-    encoding = locale.getpreferredencoding()
-    args = [a.decode(encoding) for a in encArgs]
-except:
-    args = encArgs
-
-if opts.bindings:
-    _recursive = True
-if opts.broker_addr:
-    _host = opts.broker_addr
-if opts.timeout:
-    _connTimeout = opts.timeout
-    if _connTimeout == 0:
-        _connTimeout = None
-if opts.alternate_exchange:
-    _altern_ex = opts.alternate_exchange
-if opts.passive:
-    _passive = True
-if opts.durable:
-    _durable = True
-if opts.cluster_durable:
-    _clusterDurable = True
-if opts.file:
-    _file = opts.file
-if opts.file_count:
-    _fileCount = opts.file_count
-if opts.file_size:
-    _fileSize = opts.file_size
-if opts.max_queue_size:
-    _maxQueueSize = opts.max_queue_size
-if opts.max_queue_count:
-    _maxQueueCount = opts.max_queue_count
-if opts.limit_policy:
-        _limitPolicy = opts.limit_policy
-if opts.order:
-    _order = opts.order
-if opts.sequence:
-    _msgSequence = True
-if opts.ive:
-    _ive = True
-if opts.generate_queue_events:
-    _eventGeneration = opts.generate_queue_events
-if opts.force:
-    _if_empty = False
-    _if_unused = False
-if opts.force_if_not_empty:
-    _if_empty = False
-if opts.force_if_not_used:
-    _if_unused = False
-
-bm    = BrokerManager ()
-
-try:
-    bm.SetBroker(_host)
-    if len(args) == 0:
-        bm.Overview ()
-    else:
-        cmd = args[0]
-        modifier = ""
-        if len(args) > 1:
-            modifier = args[1]
-        if cmd == "exchanges":
-            if _recursive:
-                bm.ExchangeListRecurse (modifier)
-            else:
-                bm.ExchangeList (modifier)
-        elif cmd == "queues":
-            if _recursive:
-                bm.QueueListRecurse (modifier)
-            else:
-                bm.QueueList (modifier)
-        elif cmd == "add":
-            if modifier == "exchange":
-                bm.AddExchange (args[2:])
-            elif modifier == "queue":
-                bm.AddQueue (args[2:])
-            else:
-                Usage(parser)
-        elif cmd == "del":
-            if modifier == "exchange":
-                bm.DelExchange (args[2:])
-            elif modifier == "queue":
-                bm.DelQueue (args[2:])
-            else:
-                Usage(parser)
-        elif cmd == "bind":
-            bm.Bind (args[1:])
-        elif cmd == "unbind":
-            bm.Unbind (args[1:])
-        else:
-            Usage(parser)
-except KeyboardInterrupt:
-    print
-except IOError, e:
-    print e
-    bm.Disconnect()
-    sys.exit(1)
-except SystemExit, e:
-    bm.Disconnect()
-    sys.exit(1)
-except Exception,e:
-    if e.__class__.__name__ != "Timeout":
-        # ignore Timeout exception, handle in the loop below
-        print "Failed: %s: %s" % (e.__class__.__name__, e)
-        bm.Disconnect()
-        sys.exit(1)
- 
-while True:
-    # some commands take longer than the default amqp timeout to complete,
-    # so attempt to disconnect until successful, ignoring Timeouts
     try:
+        bm.SetBroker(config._host)
+        if len(args) == 0:
+            bm.Overview ()
+        else:
+            cmd = args[0]
+            modifier = ""
+            if len(args) > 1:
+                modifier = args[1]
+            if cmd == "exchanges":
+                if config._recursive:
+                    bm.ExchangeListRecurse (modifier)
+                else:
+                    bm.ExchangeList (modifier)
+            elif cmd == "queues":
+                if config._recursive:
+                    bm.QueueListRecurse (modifier)
+                else:
+                    bm.QueueList (modifier)
+            elif cmd == "add":
+                if modifier == "exchange":
+                    bm.AddExchange (args[2:])
+                elif modifier == "queue":
+                    bm.AddQueue (args[2:])
+                else:
+                    Usage()
+            elif cmd == "del":
+                if modifier == "exchange":
+                    bm.DelExchange (args[2:])
+                elif modifier == "queue":
+                    bm.DelQueue (args[2:])
+                else:
+                    Usage()
+            elif cmd == "bind":
+                bm.Bind (args[1:])
+            elif cmd == "unbind":
+                bm.Unbind (args[1:])
+            else:
+                Usage()
+    except KeyboardInterrupt:
+        print
+    except IOError, e:
+        print e
         bm.Disconnect()
-        break
-    except Exception, e:
+        return 1
+    except SystemExit, e:
+        bm.Disconnect()
+        return 1
+    except Exception,e:
         if e.__class__.__name__ != "Timeout":
+            # ignore Timeout exception, handle in the loop below
             print "Failed: %s: %s" % (e.__class__.__name__, e)
-            sys.exit(1)
+            bm.Disconnect()
+            return 1
+
+    while True:
+        # some commands take longer than the default amqp timeout to complete,
+        # so attempt to disconnect until successful, ignoring Timeouts
+        try:
+            bm.Disconnect()
+            break
+        except Exception, e:
+            if e.__class__.__name__ != "Timeout":
+                print "Failed: %s: %s" % (e.__class__.__name__, e)
+                return 1
+
+    return 0
+
+if __name__ == "__main__":
+        sys.exit(main())
+        

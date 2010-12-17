@@ -19,6 +19,7 @@
 # under the License.
 #
 
+
 from  qpid.datatypes import uuid4, UUID, parseUUID
 import optparse, os.path, sys, string
 
@@ -61,8 +62,8 @@ class ClusterStoreStatus:
         self.shutdown_id = uuid4()
         self.write()
 
-def main():
-    opts, args = op.parse_args()
+def main(argv=None):
+    opts, args = op.parse_args(args=argv)
     if len(args) != 1: op.error("incorrect number of arguments")
     try: status = ClusterStoreStatus(args[0]+"/cluster/store.status")
     except Exception,e: print e; return 1
@@ -70,4 +71,5 @@ def main():
     if opts.mark_clean: status.mark_clean(); print status
     return 0
 
-if __name__ == "__main__": sys.exit(main())
+if __name__ == "__main__": 
+    sys.exit(main())
