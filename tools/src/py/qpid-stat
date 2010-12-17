@@ -21,6 +21,7 @@
 
 import os
 from optparse import OptionParser, OptionGroup
+from time import sleep ### debug
 import sys
 import locale
 import socket
@@ -28,13 +29,68 @@ import re
 from qmf.console import Session, Console
 from qpid.disp import Display, Header, Sorter
 
-_host = "localhost"
-_connTimeout = 10
-_types = ""
-_limit = 50
-_increasing = False
-_sortcol = None
-_cluster_detail = False
+class Config:
+    def __init__(self):
+        self._host = "localhost"
+        self._connTimeout = 10
+        self._types = ""
+        self._limit = 50
+        self._increasing = False
+        self._sortcol = None
+        self._cluster_detail = False
+
+config = Config()
+
+def OptionsAndArguments(argv):
+    """ Set global variables for options, return arguments """
+
+    global config
+
+    parser = OptionParser(usage="usage: %prog [options] BROKER",
+                          description="Example: $ qpid-stat -q  broker-host:10000")
+
+    group1 = OptionGroup(parser, "General Options")
+    group1.add_option("-t", "--timeout", action="store", type="int", default=10, metavar="SECS", help="Maximum time to wait for broker connection (in seconds)")
+
+    parser.add_option_group(group1)
+
+    group2 = OptionGroup(parser, "Display Options")
+    group2.add_option("-b", "--broker", help="Show Brokers", 
+                      action="store_const", const="b", dest="show")
+    group2.add_option("-c", "--connections", help="Show Connections",
+                      action="store_const", const="c", dest="show")
+    group2.add_option("-e", "--exchanges", help="Show Exchanges",
+                      action="store_const", const="e", dest="show")
+    group2.add_option("-q", "--queues", help="Show Queues",
+                      action="store_const", const="q", dest="show")
+    group2.add_option("-u", "--subscriptions", help="Show Subscriptions",
+                      action="store_const", const="u", dest="show")
+    group2.add_option("-S", "--sort-by",  metavar="COLNAME",
+                      help="Sort by column name")
+    group2.add_option("-I", "--increasing", action="store_true", default=False,
+                      help="Sort by increasing value (default = decreasing)")
+    group2.add_option("-L", "--limit", default=50, metavar="NUM",
+                      help="Limit output to NUM rows")
+    group2.add_option("-C", "--cluster", action="store_true", default=False,
+                      help="Display per-broker cluster detail.")
+    parser.add_option_group(group2)
+
+    opts, args = parser.parse_args(args=argv)
+
+    if not opts.show:
+        parser.error("You must specify one of these options: -b, -c, -e, -q. or -u. For details, try $ qpid-stat --help")
+
+    config._types = opts.show
+    config._sortcol = opts.sort_by
+    config._connTimeout = opts.timeout
+    config._increasing = opts.increasing
+    config._limit = opts.limit
+    config._cluster_detail = opts.cluster
+
+    if args:
+        config._host = args[0]
+
+    return args
 
 class IpAddr:
     def __init__(self, text):
@@ -125,7 +181,7 @@ class BrokerManager(Console):
     def SetBroker(self, brokerUrl):
         self.url = brokerUrl
         self.qmf = Session()
-        self.broker = self.qmf.addBroker(brokerUrl, _connTimeout)
+        self.broker = self.qmf.addBroker(brokerUrl, config._connTimeout)
         agents = self.qmf.getAgents()
         for a in agents:
             if a.getAgentBank() == '0':
@@ -157,7 +213,7 @@ class BrokerManager(Console):
 
     def _getHostList(self, urlList):
         hosts = []
-        hostAddr = IpAddr(_host)
+        hostAddr = IpAddr(config._host)
         for url in urlList:
             if url.find("amqp:") != 0:
                 raise Exception("Invalid URL 1")
@@ -223,8 +279,8 @@ class BrokerManager(Console):
                    len(broker.exchanges), len(broker.queues))
             rows.append(row)
         title = "Brokers"
-        if _sortcol:
-            sorter = Sorter(heads, rows, _sortcol, _limit, _increasing)
+        if config._sortcol:
+            sorter = Sorter(heads, rows, config._sortcol, config._limit, config._increasing)
             dispRows = sorter.getSorted()
         else:
             dispRows = rows
@@ -263,8 +319,8 @@ class BrokerManager(Console):
         title = "Connections"
         if self.cluster:
             title += " for cluster '%s'" % self.cluster.clusterName
-        if _sortcol:
-            sorter = Sorter(heads, rows, _sortcol, _limit, _increasing)
+        if config._sortcol:
+            sorter = Sorter(heads, rows, config._sortcol, config._limit, config._increasing)
             dispRows = sorter.getSorted()
         else:
             dispRows = rows
@@ -309,8 +365,8 @@ class BrokerManager(Console):
         title = "Exchanges"
         if self.cluster:
             title += " for cluster '%s'" % self.cluster.clusterName
-        if _sortcol:
-            sorter = Sorter(heads, rows, _sortcol, _limit, _increasing)
+        if config._sortcol:
+            sorter = Sorter(heads, rows, config._sortcol, config._limit, config._increasing)
             dispRows = sorter.getSorted()
         else:
             dispRows = rows
@@ -356,8 +412,8 @@ class BrokerManager(Console):
         title = "Queues"
         if self.cluster:
             title += " for cluster '%s'" % self.cluster.clusterName
-        if _sortcol:
-            sorter = Sorter(heads, rows, _sortcol, _limit, _increasing)
+        if config._sortcol:
+            sorter = Sorter(heads, rows, config._sortcol, config._limit, config._increasing)
             dispRows = sorter.getSorted()
         else:
             dispRows = rows
@@ -403,8 +459,8 @@ class BrokerManager(Console):
         title = "Subscriptions"
         if self.cluster:
             title += " for cluster '%s'" % self.cluster.clusterName
-        if _sortcol:
-            sorter = Sorter(heads, rows, _sortcol, _limit, _increasing)
+        if config._sortcol:
+            sorter = Sorter(heads, rows, config._sortcol, config._limit, config._increasing)
             dispRows = sorter.getSorted()
         else:
             dispRows = rows
@@ -419,7 +475,7 @@ class BrokerManager(Console):
         elif main == 'u': self.displaySubscriptions(subs)
 
     def display(self):
-        if _cluster_detail or _types[0] == 'b':
+        if config._cluster_detail or config._types[0] == 'b':
             # always show cluster detail when dumping broker stats
             self._getCluster()
         if self.cluster:
@@ -427,77 +483,36 @@ class BrokerManager(Console):
             hostList = self._getHostList(memberList)
             self.qmf.delBroker(self.broker)
             self.broker = None
-            if _host.find("@") > 0:
-                authString = _host.split("@")[0] + "@"
+            if config._host.find("@") > 0:
+                authString = config._host.split("@")[0] + "@"
             else:
                 authString = ""
             for host in hostList:
-                b = self.qmf.addBroker(authString + host, _connTimeout)
+                b = self.qmf.addBroker(authString + host, config._connTimeout)
                 self.brokers.append(Broker(self.qmf, b))
         else:
             self.brokers.append(Broker(self.qmf, self.broker))
 
-        self.displayMain(_types[0], _types[1:])
+        self.displayMain(config._types[0], config._types[1:])
 
 
-##
-## Main Program
-##
+def main(argv=None):
 
-parser = OptionParser(usage="usage: %prog [options] BROKER",
-                      description="Example: $ qpid-stat -q  broker-host:10000")
+    args = OptionsAndArguments(argv)
+    bm   = BrokerManager()
 
-group1 = OptionGroup(parser, "General Options")
-group1.add_option("-t", "--timeout", action="store", type="int", default=10, metavar="SECS", help="Maximum time to wait for broker connection (in seconds)")
-parser.add_option_group(group1)
+    try:
+        bm.SetBroker(config._host)
+        bm.display()
+        bm.Disconnect()
+        return 0
+    except KeyboardInterrupt:
+        print
+    except Exception,e:
+        print "Failed: %s - %s" % (e.__class__.__name__, e)
 
-group2 = OptionGroup(parser, "Display Options")
-group2.add_option("-b", "--broker", help="Show Brokers", 
-                  action="store_const", const="b", dest="show")
-group2.add_option("-c", "--connections", help="Show Connections",
-                  action="store_const", const="c", dest="show")
-group2.add_option("-e", "--exchanges", help="Show Exchanges",
-                  action="store_const", const="e", dest="show")
-group2.add_option("-q", "--queues", help="Show Queues",
-                  action="store_const", const="q", dest="show")
-group2.add_option("-u", "--subscriptions", help="Show Subscriptions",
-                  action="store_const", const="u", dest="show")
-group2.add_option("-S", "--sort-by",  metavar="COLNAME",
-                  help="Sort by column name")
-group2.add_option("-I", "--increasing", action="store_true", default=False,
-                  help="Sort by increasing value (default = decreasing)")
-group2.add_option("-L", "--limit", default=50, metavar="NUM",
-                  help="Limit output to NUM rows")
-group2.add_option("-C", "--cluster", action="store_true", default=False,
-                  help="Display per-broker cluster detail.")
-parser.add_option_group(group2)
-
-opts, args = parser.parse_args()
-
-if not opts.show:
-    parser.error("You must specify one of these options: -b, -c, -e, -q. or -u. For details, try $ qpid-stat --help")
-
-_types = opts.show
-_sortcol = opts.sort_by
-_connTimeout = opts.timeout
-_increasing = opts.increasing
-_limit = opts.limit
-_cluster_detail = opts.cluster
-
-if args:
-    _host = args[0]
-
-bm    = BrokerManager()
-
-try:
-    bm.SetBroker(_host)
-    bm.display()
-except KeyboardInterrupt:
-    print
-except Exception,e:
-    print "Failed: %s - %s" % (e.__class__.__name__, e)
     bm.Disconnect()   # try to deallocate brokers
-    raise                               # FIXME aconway 2010-03-03: 
-    sys.exit(1)
+    return 1
 
-bm.Disconnect()
+if __name__ == "__main__":
+        sys.exit(main())

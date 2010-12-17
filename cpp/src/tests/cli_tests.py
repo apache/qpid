@@ -20,10 +20,28 @@
 
 import sys
 import os
+import imp
 from qpid.testlib import TestBase010
+# from qpid.brokertest import import_script, checkenv 
 from qpid.datatypes import Message
 from qpid.queue import Empty
 from time import sleep
+
+def import_script(path):
+    """
+    Import executable script at path as a module.
+    Requires some trickery as scripts are not in standard module format
+    """
+    f = open(path)
+    try:
+        name=os.path.split(path)[1].replace("-","_")
+        return imp.load_module(name, f, path, ("", "r", imp.PY_SOURCE))
+    finally: f.close()
+
+def checkenv(name):
+    value = os.getenv(name)
+    if not value: raise Exception("Environment variable %s is not set" % name)
+    return value
 
 class CliTests(TestBase010):
 
@@ -36,8 +54,12 @@ class CliTests(TestBase010):
     def cli_dir(self):
         return self.defines["cli-dir"]
 
-    def makeQueue(self, qname, arguments):
-        ret = os.system(self.command(" add queue " + qname + " " + arguments))
+    def makeQueue(self, qname, arguments, api=False):
+        if api:
+            ret = self.qpid_config_api(" add queue " + qname + " " + arguments)
+        else:
+            ret = os.system(self.qpid_config_command(" add queue " + qname  + " " + arguments))
+
         self.assertEqual(ret, 0)
         queues = self.qmf.getObjects(_class="queue")
         for queue in queues:
@@ -75,12 +97,44 @@ class CliTests(TestBase010):
         assert LVQNB not in queue7.arguments
         assert LVQNB     in queue8.arguments
 
+
+    def test_queue_params_api(self):
+        self.startQmf()
+        queue1 = self.makeQueue("test_queue_params1", "--limit-policy none", True)
+        queue2 = self.makeQueue("test_queue_params2", "--limit-policy reject", True)
+        queue3 = self.makeQueue("test_queue_params3", "--limit-policy flow-to-disk", True)
+        queue4 = self.makeQueue("test_queue_params4", "--limit-policy ring", True)
+        queue5 = self.makeQueue("test_queue_params5", "--limit-policy ring-strict", True)
+
+        LIMIT = "qpid.policy_type"
+        assert LIMIT not in queue1.arguments
+        self.assertEqual(queue2.arguments[LIMIT], "reject")
+        self.assertEqual(queue3.arguments[LIMIT], "flow_to_disk")
+        self.assertEqual(queue4.arguments[LIMIT], "ring")
+        self.assertEqual(queue5.arguments[LIMIT], "ring_strict")
+
+        queue6 = self.makeQueue("test_queue_params6", "--order fifo", True)
+        queue7 = self.makeQueue("test_queue_params7", "--order lvq", True)
+        queue8 = self.makeQueue("test_queue_params8", "--order lvq-no-browse", True)
+
+        LVQ = "qpid.last_value_queue"
+        LVQNB = "qpid.last_value_queue_no_browse"
+
+        assert LVQ not in queue6.arguments
+        assert LVQ     in queue7.arguments
+        assert LVQ not in queue8.arguments
+
+        assert LVQNB not in queue6.arguments
+        assert LVQNB not in queue7.arguments
+        assert LVQNB     in queue8.arguments
+
+
     def test_qpid_config(self):
         self.startQmf();
         qmf = self.qmf
         qname = "test_qpid_config"
 
-        ret = os.system(self.command(" add queue " + qname))
+        ret = os.system(self.qpid_config_command(" add queue " + qname))
         self.assertEqual(ret, 0)
         queues = qmf.getObjects(_class="queue")
         found = False
@@ -90,7 +144,31 @@ class CliTests(TestBase010):
                 found = True
         self.assertEqual(found, True)
 
-        ret = os.system(self.command(" del queue " + qname))
+        ret = os.system(self.qpid_config_command(" del queue " + qname))
+        self.assertEqual(ret, 0)
+        queues = qmf.getObjects(_class="queue")
+        found = False
+        for queue in queues:
+            if queue.name == qname:
+                found = True
+        self.assertEqual(found, False)
+
+    def test_qpid_config_api(self):
+        self.startQmf();
+        qmf = self.qmf
+        qname = "test_qpid_config_api"
+
+        ret = self.qpid_config_api(" add queue " + qname)
+        self.assertEqual(ret, 0)
+        queues = qmf.getObjects(_class="queue")
+        found = False
+        for queue in queues:
+            if queue.name == qname:
+                self.assertEqual(queue.durable, False)
+                found = True
+        self.assertEqual(found, True)
+
+        ret = self.qpid_config_api(" del queue " + qname)
         self.assertEqual(ret, 0)
         queues = qmf.getObjects(_class="queue")
         found = False
@@ -111,14 +189,14 @@ class CliTests(TestBase010):
         self.assertEqual(found, expected)
 
     def helper_create_exchange(self, xchgname, typ="direct", opts=""):
-        foo = self.command(opts + " add exchange " + typ + " " + xchgname)
+        foo = self.qpid_config_command(opts + " add exchange " + typ + " " + xchgname)  
         # print foo
         ret = os.system(foo)
         self.assertEqual(ret, 0)
         self.helper_find_exchange(xchgname, typ, True)
 
     def helper_destroy_exchange(self, xchgname):
-        foo = self.command(" del exchange " + xchgname)
+        foo = self.qpid_config_command(" del exchange " + xchgname) 
         # print foo
         ret = os.system(foo)
         self.assertEqual(ret, 0)
@@ -134,14 +212,14 @@ class CliTests(TestBase010):
         self.assertEqual(found, expected)
 
     def helper_create_queue(self, qname):
-        foo = self.command(" add queue " + qname)
+        foo = self.qpid_config_command(" add queue " + qname)
         # print foo
         ret = os.system(foo)
         self.assertEqual(ret, 0)
         self.helper_find_queue(qname, True)
 
     def helper_destroy_queue(self, qname):
-        foo = self.command(" del queue " + qname)
+        foo = self.qpid_config_command(" del queue " + qname)
         # print foo
         ret = os.system(foo)
         self.assertEqual(ret, 0)
@@ -162,14 +240,14 @@ class CliTests(TestBase010):
         self.helper_create_queue(qname)
 
         # now bind the queue to the xchg
-        foo = self.command(" bind " + xchgname + " " + qname + 
+        foo = self.qpid_config_command(" bind " + xchgname + " " + qname + 
                                      " key all foo=bar baz=quux")
         # print foo
         ret = os.system(foo)
         self.assertEqual(ret, 0)
 
         # he likes it, mikey.  Ok, now tear it all down.  first the binding
-        ret = os.system(self.command(" unbind " + xchgname + " " + qname +
+        ret = os.system(self.qpid_config_command(" unbind " + xchgname + " " + qname +
                                      " key"))
         self.assertEqual(ret, 0)
 
@@ -179,7 +257,7 @@ class CliTests(TestBase010):
         # then the exchange
         self.helper_destroy_exchange(xchgname)
 
-        # test the bind-queue-xml-filter functionality
+
     def test_qpid_config_xml(self):
         self.startQmf();
         qmf = self.qmf
@@ -193,13 +271,13 @@ class CliTests(TestBase010):
         self.helper_create_queue(qname)
 
         # now bind the queue to the xchg
-        foo = self.command("-f test.xquery bind " + xchgname + " " + qname)
+        foo = self.qpid_config_command("-f test.xquery bind " + xchgname + " " + qname)
         # print foo
         ret = os.system(foo)
         self.assertEqual(ret, 0)
 
         # he likes it, mikey.  Ok, now tear it all down.  first the binding
-        ret = os.system(self.command(" unbind " + xchgname + " " + qname +
+        ret = os.system(self.qpid_config_command(" unbind " + xchgname + " " + qname +
                                      " key"))
         self.assertEqual(ret, 0)
 
@@ -214,7 +292,7 @@ class CliTests(TestBase010):
         qmf = self.qmf
         qname = "test_qpid_config"
 
-        ret = os.system(self.command(" add queue --durable " + qname))
+        ret = os.system(self.qpid_config_command(" add queue --durable " + qname))
         self.assertEqual(ret, 0)
         queues = qmf.getObjects(_class="queue")
         found = False
@@ -224,7 +302,7 @@ class CliTests(TestBase010):
                 found = True
         self.assertEqual(found, True)
 
-        ret = os.system(self.command(" del queue " + qname))
+        ret = os.system(self.qpid_config_command(" del queue " + qname))
         self.assertEqual(ret, 0)
         queues = qmf.getObjects(_class="queue")
         found = False
@@ -240,7 +318,7 @@ class CliTests(TestBase010):
         qName = "testqalt"
         altName = "amq.direct"
 
-        ret = os.system(self.command(" add exchange topic %s --alternate-exchange=%s" % (exName, altName)))
+        ret = os.system(self.qpid_config_command(" add exchange topic %s --alternate-exchange=%s" % (exName, altName)))
         self.assertEqual(ret, 0)
 
         exchanges = qmf.getObjects(_class="exchange")
@@ -256,7 +334,7 @@ class CliTests(TestBase010):
                 self.assertEqual(exchange._altExchange_.name, altName)
         self.assertEqual(found, True)
 
-        ret = os.system(self.command(" add queue %s --alternate-exchange=%s" % (qName, altName)))
+        ret = os.system(self.qpid_config_command(" add queue %s --alternate-exchange=%s" % (qName, altName)))
         self.assertEqual(ret, 0)
 
         queues = qmf.getObjects(_class="queue")
@@ -285,6 +363,25 @@ class CliTests(TestBase010):
                 found = True
         self.assertEqual(found, True)
 
+    def test_qpid_route_api(self):
+        self.startQmf();
+        qmf = self.qmf
+
+        ret = self.qpid_route_api("dynamic add "
+                                  + "guest/guest@localhost:"+str(self.broker.port) + " "
+                                  + str(self.remote_host())+":"+str(self.remote_port()) + " "
+                                  +"amq.direct")
+
+        self.assertEqual(ret, 0)
+
+        links = qmf.getObjects(_class="link")
+        found = False
+        for link in links:
+            if link.port == self.remote_port():
+                found = True
+        self.assertEqual(found, True)
+
+
     def getProperty(self, msg, name):
         for h in msg.headers:
             if hasattr(h, name): return getattr(h, name)
@@ -296,5 +393,14 @@ class CliTests(TestBase010):
             return headers[name]
         return None
 
-    def command(self, arg = ""):
+    def qpid_config_command(self, arg = ""):
         return self.cli_dir() + "/qpid-config -a localhost:%d" % self.broker.port + " " + arg
+
+    def qpid_config_api(self, arg = ""):
+        script = import_script(checkenv("QPID_CONFIG_EXEC"))
+        broker = ["-a", "localhost:"+str(self.broker.port)]
+        return script.main(broker + arg.split())
+
+    def qpid_route_api(self, arg = ""):
+        script = import_script(checkenv("QPID_ROUTE_EXEC"))
+        return script.main(arg.split())

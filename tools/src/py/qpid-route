@@ -26,14 +26,113 @@ import os
 import locale
 from qmf.console import Session, BrokerURL
 
-_verbose   = False
-_quiet     = False
-_durable   = False
-_dellink   = False
-_srclocal  = False
-_transport = "tcp"
-_ack       = 0
-_connTimeout = 10
+class Config:
+    def __init__(self):
+        self._verbose   = False
+        self._quiet     = False
+        self._durable   = False
+        self._dellink   = False
+        self._srclocal  = False
+        self._transport = "tcp"
+        self._ack       = 0
+        self._connTimeout = 10
+
+config = Config()
+
+class JHelpFormatter(IndentedHelpFormatter):
+    """Format usage and description without stripping newlines from usage strings
+    """
+
+    def format_usage(self, usage):
+        return usage
+
+
+    def format_description(self, description):
+        if description:
+            return description + "\n"
+        else:
+            return ""
+
+def usage(parser):
+    parser.print_help()
+    exit(-1)
+
+usage = """
+Usage:  qpid-route [OPTIONS] dynamic add <dest-broker> <src-broker> <exchange> [tag] [exclude-list]
+        qpid-route [OPTIONS] dynamic del <dest-broker> <src-broker> <exchange>
+
+        qpid-route [OPTIONS] route add   <dest-broker> <src-broker> <exchange> <routing-key> [tag] [exclude-list] [mechanism]
+        qpid-route [OPTIONS] route del   <dest-broker> <src-broker> <exchange> <routing-key>
+        qpid-route [OPTIONS] queue add   <dest-broker> <src-broker> <exchange> <queue>
+        qpid-route [OPTIONS] queue del   <dest-broker> <src-broker> <exchange> <queue>
+        qpid-route [OPTIONS] route list  [<dest-broker>]
+        qpid-route [OPTIONS] route flush [<dest-broker>]
+        qpid-route [OPTIONS] route map   [<broker>]
+
+        qpid-route [OPTIONS] link add  <dest-broker> <src-broker>
+        qpid-route [OPTIONS] link del  <dest-broker> <src-broker>
+        qpid-route [OPTIONS] link list [<dest-broker>]"""
+
+description = """
+ADDRESS syntax:   
+
+      [username/password@] hostname
+      ip-address [:<port>]"""
+
+
+def OptionsAndArguments(argv):
+         
+    parser = OptionParser(usage=usage,
+                          description=description,
+                          formatter=JHelpFormatter())
+
+    parser.add_option("--timeout", action="store", type="int", default=10, metavar="SECS", help="Maximum time to wait for broker connection (in seconds)")
+    parser.add_option("-v", "--verbose", action="store_true", help="Verbose output")
+    parser.add_option("-q", "--quiet", action="store_true", help="Quiet output, don't print duplicate warnings")
+    parser.add_option("-d", "--durable", action="store_true", help="Added configuration shall be durable")
+
+    parser.add_option("-e", "--del-empty-link", action="store_true", help="Delete link after deleting last route on the link")
+    parser.add_option("-s", "--src-local", action="store_true", help="Make connection to source broker (push route)")
+
+    parser.add_option("--ack", action="store", type="int", metavar="N", help="Acknowledge transfers over the bridge in batches of N")
+    parser.add_option("-t", "--transport", action="store", type="string", default="tcp", metavar="<transport>", help="Transport to use for links, defaults to tcp")
+
+    opts, encArgs = parser.parse_args(args=argv)
+
+    try:
+        encoding = locale.getpreferredencoding()
+        args = [a.decode(encoding) for a in encArgs]
+    except:
+        args = encArgs
+
+    if opts.timeout:
+        config._connTimeout = opts.timeout
+        if config._connTimeout == 0:
+            config._connTimeout = None
+
+    if opts.verbose:
+        config._verbose = True
+
+    if opts.quiet:
+        config._quiet = True
+
+    if opts.durable:
+        config._durable = True
+
+    if opts.del_empty_link:
+        config._dellink = True
+
+    if opts.src_local:
+        config._srclocal = true
+
+    if opts.transport:
+        config._transport = opts.transport
+
+    if opts.ack:
+        config._ack = opts.ack
+
+    return args
+
 
 class RouteManager:
     def __init__(self, localBroker):
@@ -41,7 +140,7 @@ class RouteManager:
         self.local = BrokerURL(localBroker)
         self.remote  = None
         self.qmf = Session()
-        self.broker = self.qmf.addBroker(localBroker, _connTimeout)
+        self.broker = self.qmf.addBroker(localBroker, config._connTimeout)
         self.broker._waitForStable()
         self.agent = self.broker.getBrokerAgent()
 
@@ -73,10 +172,10 @@ class RouteManager:
         broker = brokers[0]
         link = self.getLink()
         if link == None:
-            res = broker.connect(self.remote.host, self.remote.port, _durable,
+            res = broker.connect(self.remote.host, self.remote.port, config._durable,
                                  mech, self.remote.authName or "", self.remote.authPass or "",
-                                 _transport)
-            if _verbose:
+                                 config._transport)
+            if config._verbose:
                 print "Connect method returned:", res.status, res.text
 
     def delLink(self, remoteBroker):
@@ -88,7 +187,7 @@ class RouteManager:
             raise Exception("Link not found")
 
         res = link.close()
-        if _verbose:
+        if config._verbose:
             print "Close method returned:", res.status, res.text
 
     def listLinks(self):
@@ -119,7 +218,7 @@ class RouteManager:
                 if url.name() not in self.brokerList:
                     print "    %s..." % url.name(),
                     try:
-                        b = self.qmf.addBroker("%s:%d" % (link.host, link.port), _connTimeout)
+                        b = self.qmf.addBroker("%s:%d" % (link.host, link.port), config._connTimeout)
                         self.brokerList[url.name()] = b
                         added = True
                         print "Ok"
@@ -194,7 +293,7 @@ class RouteManager:
                 self.qmf.delBroker(b[1])
 
     def addRoute(self, remoteBroker, exchange, routingKey, tag, excludes, mech="PLAIN", dynamic=False):
-        if dynamic and _srclocal:
+        if dynamic and config._srclocal:
             raise Exception("--src-local is not permitted on dynamic routes")
 
         self.addLink(remoteBroker, mech)
@@ -206,16 +305,16 @@ class RouteManager:
         for bridge in bridges:
             if bridge.linkRef == link.getObjectId() and \
                     bridge.dest == exchange and bridge.key == routingKey and not bridge.srcIsQueue:
-                if not _quiet:
+                if not config._quiet:
                     raise Exception("Duplicate Route - ignoring: %s(%s)" % (exchange, routingKey))
                 sys.exit(0)
 
-        if _verbose:
+        if config._verbose:
             print "Creating inter-broker binding..."
-        res = link.bridge(_durable, exchange, exchange, routingKey, tag, excludes, False, _srclocal, dynamic, _ack)
+        res = link.bridge(config._durable, exchange, exchange, routingKey, tag, excludes, False, config._srclocal, dynamic, config._ack)
         if res.status != 0:
             raise Exception(res.text)
-        if _verbose:
+        if config._verbose:
             print "Bridge method returned:", res.status, res.text
 
     def addQueueRoute(self, remoteBroker, exchange, queue):
@@ -228,23 +327,23 @@ class RouteManager:
         for bridge in bridges:
             if bridge.linkRef == link.getObjectId() and \
                     bridge.dest == exchange and bridge.src == queue and bridge.srcIsQueue:
-                if not _quiet:
+                if not config._quiet:
                     raise Exception("Duplicate Route - ignoring: %s(%s)" % (exchange, queue))
                 sys.exit(0)
 
-        if _verbose:
+        if config._verbose:
             print "Creating inter-broker binding..."
-        res = link.bridge(_durable, queue, exchange, "", "", "", True, _srclocal, False, _ack)
+        res = link.bridge(config._durable, queue, exchange, "", "", "", True, config._srclocal, False, config._ack)
         if res.status != 0:
             raise Exception(res.text)
-        if _verbose:
+        if config._verbose:
             print "Bridge method returned:", res.status, res.text
 
     def delQueueRoute(self, remoteBroker, exchange, queue):
         self.remote = BrokerURL(remoteBroker)
         link = self.getLink()
         if link == None:
-            if not _quiet:
+            if not config._quiet:
                 raise Exception("No link found from %s to %s" % (self.remote.name(), self.local.name()))
             sys.exit(0)
 
@@ -252,29 +351,29 @@ class RouteManager:
         for bridge in bridges:
             if bridge.linkRef == link.getObjectId() and \
                     bridge.dest == exchange and bridge.src == queue and bridge.srcIsQueue:
-                if _verbose:
+                if config._verbose:
                     print "Closing bridge..."
                 res = bridge.close()
                 if res.status != 0:
                     raise Exception("Error closing bridge: %d - %s" % (res.status, res.text))
-                if len(bridges) == 1 and _dellink:
+                if len(bridges) == 1 and config._dellink:
                     link = self.getLink()
                     if link == None:
                         sys.exit(0)
-                    if _verbose:
+                    if config._verbose:
                         print "Last bridge on link, closing link..."
                     res = link.close()
                     if res.status != 0:
                         raise Exception("Error closing link: %d - %s" % (res.status, res.text))
                 sys.exit(0)
-        if not _quiet:
+        if not config._quiet:
             raise Exception("Route not found")
 
     def delRoute(self, remoteBroker, exchange, routingKey, dynamic=False):
         self.remote = BrokerURL(remoteBroker)
         link = self.getLink()
         if link == None:
-            if not _quiet:
+            if not config._quiet:
                 raise Exception("No link found from %s to %s" % (self.remote.name(), self.local.name()))
             sys.exit(0)
 
@@ -282,22 +381,22 @@ class RouteManager:
         for bridge in bridges:
             if bridge.linkRef == link.getObjectId() and bridge.dest == exchange and bridge.key == routingKey \
                     and bridge.dynamic == dynamic:
-                if _verbose:
+                if config._verbose:
                     print "Closing bridge..."
                 res = bridge.close()
                 if res.status != 0:
                     raise Exception("Error closing bridge: %d - %s" % (res.status, res.text))
-                if len(bridges) == 1 and _dellink:
+                if len(bridges) == 1 and config._dellink:
                     link = self.getLink()
                     if link == None:
                         sys.exit(0)
-                    if _verbose:
+                    if config._verbose:
                         print "Last bridge on link, closing link..."
                     res = link.close()
                     if res.status != 0:
                         raise Exception("Error closing link: %d - %s" % (res.status, res.text))
                 return
-        if not _quiet:
+        if not config._quiet:
             raise Exception("Route not found")
 
     def listRoutes(self):
@@ -322,7 +421,7 @@ class RouteManager:
         bridges = self.qmf.getObjects(_class="bridge")
 
         for bridge in bridges:
-            if _verbose:
+            if config._verbose:
                 myLink = None
                 for link in links:
                     if bridge.linkRef == link.getObjectId():
@@ -333,18 +432,18 @@ class RouteManager:
             res = bridge.close()
             if res.status != 0:
                 print "Error: %d - %s" % (res.status, res.text)
-            elif _verbose:
+            elif config._verbose:
                 print "Ok"
 
-        if _dellink:
+        if config._dellink:
             links = self.qmf.getObjects(_class="link")
             for link in links:
-                if _verbose:
+                if config._verbose:
                     print "Deleting Link: %s:%d... " % (link.host, link.port),
                 res = link.close()
                 if res.status != 0:
                     print "Error: %d - %s" % (res.status, res.text)
-                elif _verbose:
+                elif config._verbose:
                     print "Ok"
 
 class RoutePair:
@@ -374,190 +473,104 @@ def YN(val):
         return 'Y'
     return 'N'
 
-##
-## Main Program
-##
 
+def main(argv=None):
 
-class JHelpFormatter(IndentedHelpFormatter):
-    """Format usage and description without stripping newlines from usage strings
-    """
+    args = OptionsAndArguments(argv)
+    nargs = len(args)
+    if nargs < 2:
+        usage(parser)
 
-    def format_usage(self, usage):
-        return usage
-
-
-    def format_description(self, description):
-        if description:
-            return description + "\n"
-        else:
-            return ""
-
-def usage(parser):
-    parser.print_help()
-    exit(-1)
-
-usage = """
-Usage:  qpid-route [OPTIONS] dynamic add <dest-broker> <src-broker> <exchange> [tag] [exclude-list]
-        qpid-route [OPTIONS] dynamic del <dest-broker> <src-broker> <exchange>
-
-        qpid-route [OPTIONS] route add   <dest-broker> <src-broker> <exchange> <routing-key> [tag] [exclude-list] [mechanism]
-        qpid-route [OPTIONS] route del   <dest-broker> <src-broker> <exchange> <routing-key>
-        qpid-route [OPTIONS] queue add   <dest-broker> <src-broker> <exchange> <queue>
-        qpid-route [OPTIONS] queue del   <dest-broker> <src-broker> <exchange> <queue>
-        qpid-route [OPTIONS] route list  [<dest-broker>]
-        qpid-route [OPTIONS] route flush [<dest-broker>]
-        qpid-route [OPTIONS] route map   [<broker>]
-
-        qpid-route [OPTIONS] link add  <dest-broker> <src-broker>
-        qpid-route [OPTIONS] link del  <dest-broker> <src-broker>
-        qpid-route [OPTIONS] link list [<dest-broker>]"""
-
-description = """
-ADDRESS syntax:   
-
-      [username/password@] hostname
-      ip-address [:<port>]"""
-         
-parser = OptionParser(usage=usage,
-                      description=description,
-                      formatter=JHelpFormatter())
-
-parser.add_option("--timeout", action="store", type="int", default=10, metavar="SECS", help="Maximum time to wait for broker connection (in seconds)")
-parser.add_option("-v", "--verbose", action="store_true", help="Verbose output")
-parser.add_option("-q", "--quiet", action="store_true", help="Quiet output, don't print duplicate warnings")
-parser.add_option("-d", "--durable", action="store_true", help="Added configuration shall be durable")
-
-parser.add_option("-e", "--del-empty-link", action="store_true", help="Delete link after deleting last route on the link")
-parser.add_option("-s", "--src-local", action="store_true", help="Make connection to source broker (push route)")
-
-parser.add_option("--ack", action="store", type="int", metavar="N", help="Acknowledge transfers over the bridge in batches of N")
-parser.add_option("-t", "--transport", action="store", type="string", default="tcp", metavar="<transport>", help="Transport to use for links, defaults to tcp")
-
-opts, encArgs = parser.parse_args()
-
-try:
-    encoding = locale.getpreferredencoding()
-    args = [a.decode(encoding) for a in encArgs]
-except:
-    args = encArgs
-
-if opts.timeout:
-    _connTimeout = opts.timeout
-    if _connTimeout == 0:
-        _connTimeout = None
-    
-if opts.verbose:
-    _verbose = True
-
-if opts.quiet:
-    _quiet = True
-
-if opts.durable:
-    _durable = True
-
-if opts.del_empty_link:
-    _dellink = True
-
-if opts.src_local:
-    _srclocal = true
-
-if opts.transport:
-    _transport = opts.transport
-
-if opts.ack:
-    _ack = opts.ack
-
-nargs = len(args)
-if nargs < 2:
-    usage(parser)
-
-if nargs == 2:
-    localBroker = socket.gethostname()
-else:
-    if _srclocal:
-        localBroker = args[3]
-        remoteBroker = args[2]
+    if nargs == 2:
+        localBroker = socket.gethostname()
     else:
-        localBroker = args[2]
-        if nargs > 3:
-            remoteBroker = args[3]
+        if config._srclocal:
+            localBroker = args[3]
+            remoteBroker = args[2]
+        else:
+            localBroker = args[2]
+            if nargs > 3:
+                remoteBroker = args[3]
 
-group = args[0]
-cmd   = args[1]
+    group = args[0]
+    cmd   = args[1]
 
-rm = None
-try:
-    rm = RouteManager(localBroker)
-    if group == "link":
-        if cmd == "add":
-            if nargs != 4:
-                usage(parser)
-            rm.addLink(remoteBroker)
-        elif cmd == "del":
-            if nargs != 4:
-                usage(parser)
-            rm.delLink(remoteBroker)
-        elif cmd == "list":
-            rm.listLinks()
+    rm = None
+    try:
+        rm = RouteManager(localBroker)
+        if group == "link":
+            if cmd == "add":
+                if nargs != 4:
+                    usage(parser)
+                rm.addLink(remoteBroker)
+            elif cmd == "del":
+                if nargs != 4:
+                    usage(parser)
+                rm.delLink(remoteBroker)
+            elif cmd == "list":
+                rm.listLinks()
 
-    elif group == "dynamic":
-        if cmd == "add":
-            if nargs < 5 or nargs > 7:
-                usage(parser)
+        elif group == "dynamic":
+            if cmd == "add":
+                if nargs < 5 or nargs > 7:
+                    usage(parser)
 
-            tag = ""
-            excludes = ""
-            mech = "PLAIN"
-            if nargs > 5: tag = args[5]     
-            if nargs > 6: excludes = args[6]     
-            rm.addRoute(remoteBroker, args[4], "", tag, excludes, mech, dynamic=True)
-        elif cmd == "del":
-            if nargs != 5:
-                usage(parser)
+                tag = ""
+                excludes = ""
+                mech = "PLAIN"
+                if nargs > 5: tag = args[5]     
+                if nargs > 6: excludes = args[6]     
+                rm.addRoute(remoteBroker, args[4], "", tag, excludes, mech, dynamic=True)
+            elif cmd == "del":
+                if nargs != 5:
+                    usage(parser)
+                else:
+                    rm.delRoute(remoteBroker, args[4], "", dynamic=True)
+
+        elif group == "route":
+            if cmd == "add":
+                if nargs < 6 or nargs > 9:
+                    usage(parser)
+
+                tag = ""
+                excludes = ""
+                mech = "PLAIN"
+                if nargs > 6: tag = args[6]     
+                if nargs > 7: excludes = args[7]
+                if nargs > 8: mech = args[8]
+                rm.addRoute(remoteBroker, args[4], args[5], tag, excludes, mech, dynamic=False)
+            elif cmd == "del":
+                if nargs != 6:
+                    usage(parser)
+                rm.delRoute(remoteBroker, args[4], args[5], dynamic=False)
+            elif cmd == "map":
+                rm.mapRoutes()
             else:
-                rm.delRoute(remoteBroker, args[4], "", dynamic=True)
+                if cmd == "list":
+                    rm.listRoutes()
+                elif cmd == "flush":
+                    rm.clearAllRoutes()
+                else:
+                    usage(parser)
 
-    elif group == "route":
-        if cmd == "add":
-            if nargs < 6 or nargs > 9:
-                usage(parser)
-
-            tag = ""
-            excludes = ""
-            mech = "PLAIN"
-            if nargs > 6: tag = args[6]     
-            if nargs > 7: excludes = args[7]
-            if nargs > 8: mech = args[8]
-            rm.addRoute(remoteBroker, args[4], args[5], tag, excludes, mech, dynamic=False)
-        elif cmd == "del":
+        elif group == "queue":
             if nargs != 6:
                 usage(parser)
-            rm.delRoute(remoteBroker, args[4], args[5], dynamic=False)
-        elif cmd == "map":
-            rm.mapRoutes()
-        else:
-            if cmd == "list":
-                rm.listRoutes()
-            elif cmd == "flush":
-                rm.clearAllRoutes()
+            if cmd == "add":
+                rm.addQueueRoute(remoteBroker, exchange=args[4], queue=args[5])
+            elif cmd == "del":
+                rm.delQueueRoute(remoteBroker, exchange=args[4], queue=args[5])
             else:
                 usage(parser)
 
-    elif group == "queue":
-        if nargs != 6:
-            usage(parser)
-        if cmd == "add":
-            rm.addQueueRoute(remoteBroker, exchange=args[4], queue=args[5])
-        elif cmd == "del":
-            rm.delQueueRoute(remoteBroker, exchange=args[4], queue=args[5])
-        else:
-            usage(parser)
+    except Exception,e:
+        if rm:
+            rm.disconnect()  # try to release broker resources
+        print "Failed: %s - %s" % (e.__class__.__name__, e)
+        return 1
 
-except Exception,e:
-    if rm:
-        rm.disconnect()  # try to release broker resources
-    print "Failed: %s - %s" % (e.__class__.__name__, e)
-    sys.exit(1)
+    rm.disconnect()
+    return 0
 
-rm.disconnect()
+if __name__ == "__main__":
+        sys.exit(main())
