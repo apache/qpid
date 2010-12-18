@@ -475,7 +475,7 @@ WARN_LOGFILE           = doxygen.log
 # directories like "/usr/src/myproject". Separate the files or directories 
 # with spaces.
 
-INPUT = @top_srcdir@/docs/api @top_srcdir@/include @top_builddir@/include
+INPUT = @top_srcdir@/docs/api/doxygen_mainpage.h @top_srcdir@/include @top_builddir@/include
 
 
 # If the value of the INPUT tag contains directories, you can use the 
