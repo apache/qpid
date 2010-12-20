@@ -61,15 +61,16 @@ public class AbstractJMSMessageTest extends TestCase
             //expected, ignore.
         }
 
-        //set the value, verify retrieval
+        //set the value, verify retrieval and existence
         abstractMessage.setJMSXDeliveryCount(5);
         assertEquals("Value was incorrect", 5, abstractMessage.getIntProperty("JMSXDeliveryCount"));
+        assertTrue("property should exist", abstractMessage.propertyExists("JMSXDeliveryCount"));
 
         //remove the property
         abstractMessage.setJMSXDeliveryCount(null);
 
         //verify property is cleared
-        assertFalse("property should not yet exist", abstractMessage.propertyExists("JMSXDeliveryCount"));
+        assertFalse("property should not exist", abstractMessage.propertyExists("JMSXDeliveryCount"));
 
         //check that retrieving the property now throws the expected NFE
         try 
