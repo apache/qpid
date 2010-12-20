@@ -116,6 +116,7 @@ public class StatisticsCounter
      */
     public void reset()
     {
+        _log.info("Resetting statistics for counter: " + _name);
         _peak = 0L;
         _rate = 0L;
         _total = 0L;
