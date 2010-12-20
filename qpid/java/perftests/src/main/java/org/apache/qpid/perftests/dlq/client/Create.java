@@ -37,7 +37,8 @@ public class Create extends Client
     {
         _connection.start();
         
-        BindingURL burl = new AMQBindingURL("direct://amq.direct//" + _queueName + "?maxdeliverycount='" + _maxRedelivery + "'");
+        BindingURL burl = new AMQBindingURL("direct://amq.direct//" + _queueName +
+							                (_dlq ? "?maxdeliverycount='" + _maxRedelivery + "'" : ""));
         _queue = new AMQQueue(burl);
 
         final Map<String,Object> arguments = new HashMap<String, Object>();
@@ -55,6 +56,7 @@ public class Create extends Client
 	        _queue = _session.createQueue(_queueName + AMQQueueFactory.DEFAULT_DLQ_NAME_SUFFIX);
 	        _consumer = _session.createConsumer(_queue);
 	        while (_consumer.receive(1000) != null);
+	        _consumer.close();
         }
     }
 }

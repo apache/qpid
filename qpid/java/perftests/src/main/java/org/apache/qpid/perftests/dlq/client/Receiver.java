@@ -60,7 +60,7 @@ public class Receiver extends Client
 
         _sessionOk = (_transacted || _clientAck) ||
                 ((_sessionType == Session.AUTO_ACKNOWLEDGE || _sessionType == Session.DUPS_OK_ACKNOWLEDGE) && _listener);
-        _rejectedCheck = (!_sessionOk || _messageIdsDisabled || _maxRedelivery == 0 || _rejectCount < _maxRedelivery) ? 0 : _count / _reject;
+        _rejectedCheck = (!_dlq || !_sessionOk || _messageIdsDisabled || _maxRedelivery == 0 || _rejectCount < _maxRedelivery) ? 0 : _count / _reject;
         _consumedCheck = (_count - _rejectedCheck); // + (_sessionOk ? ((_count / _reject) * _rejectCount) : 0);
             
         _consumer = _session.createConsumer(_queue);
