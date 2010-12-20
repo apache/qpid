@@ -82,6 +82,11 @@ public class ClientProperties
      * per-consumer for use in enforcing maximum delivery count.
      */
     public static final String MAX_DELIVERY_RECORDS_PROP_NAME = "qpid.max.delivery.records";
+    
+    /**
+     * System property to override whether max delivery count is disabled when using autodelete queues.
+     */
+    public static final String MAX_DELIVERY_AUTODELETE_PROP_NAME = "qpid.max.delivery.autodelete";
 
      /**
      * ==========================================================

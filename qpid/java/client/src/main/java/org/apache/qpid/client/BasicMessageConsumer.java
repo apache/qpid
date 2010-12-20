@@ -115,7 +115,8 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
 
     private int _maxDeliveryAttempts = 0;
     private boolean _maxRedeliverEnabled = false;
-
+    private boolean _maxDeliveryAutodeleteEnabled = 
+        Boolean.getBoolean(ClientProperties.MAX_DELIVERY_AUTODELETE_PROP_NAME);
     private final DeliveryCountTracker _tracker;
 
     /**
@@ -179,7 +180,7 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
         int idMapSize = Integer.getInteger(ClientProperties.MAX_DELIVERY_RECORDS_PROP_NAME, Math.max(2 * _prefetchHigh, 20));
         Integer maxDeliveries = destination.getMaxDeliveryCount();
         _maxDeliveryAttempts = maxDeliveries == null ? connection.getMaxDeliveryCount() : maxDeliveries;
-        _maxRedeliverEnabled = _maxDeliveryAttempts > 0 && !destination.isAutoDelete();
+        _maxRedeliverEnabled = _maxDeliveryAttempts > 0 && (!destination.isAutoDelete() || _maxDeliveryAutodeleteEnabled);
         _tracker = isMaxDeliveryCountEnforced() ? new DeliveryCountTracker(idMapSize) : null;
     }
 
