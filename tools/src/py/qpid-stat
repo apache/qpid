@@ -38,6 +38,7 @@ class Config:
         self._increasing = False
         self._sortcol = None
         self._cluster_detail = False
+        self._sasl_mechanism = None
 
 config = Config()
 
@@ -47,11 +48,11 @@ def OptionsAndArguments(argv):
     global config
 
     parser = OptionParser(usage="usage: %prog [options] BROKER",
-                          description="Example: $ qpid-stat -q  broker-host:10000")
+                      description="Example: $ qpid-stat -q  broker-host:10000")
 
     group1 = OptionGroup(parser, "General Options")
-    group1.add_option("-t", "--timeout", action="store", type="int", default=10, metavar="SECS", help="Maximum time to wait for broker connection (in seconds)")
-
+    group1.add_option("-t", "--timeout", action="store", type="int", default=10, metavar="<secs>", help="Maximum time to wait for broker connection (in seconds)")
+    group1.add_option("--sasl-mechanism", action="store", choices=["EXTERNAL","ANONYMOUS","PLAIN","CRAM-MD5","DIGEST-MD5","GSSAPI"], metavar="<mech>", help="SASL mechanism for authentication. SASL automatically picks the most secure available mechanism - use this option to override.")
     parser.add_option_group(group1)
 
     group2 = OptionGroup(parser, "Display Options")
@@ -62,17 +63,17 @@ def OptionsAndArguments(argv):
     group2.add_option("-e", "--exchanges", help="Show Exchanges",
                       action="store_const", const="e", dest="show")
     group2.add_option("-q", "--queues", help="Show Queues",
-                      action="store_const", const="q", dest="show")
+                  action="store_const", const="q", dest="show")
     group2.add_option("-u", "--subscriptions", help="Show Subscriptions",
-                      action="store_const", const="u", dest="show")
-    group2.add_option("-S", "--sort-by",  metavar="COLNAME",
-                      help="Sort by column name")
+                  action="store_const", const="u", dest="show")
+    group2.add_option("-S", "--sort-by",  metavar="<colname>",
+                  help="Sort by column name")
     group2.add_option("-I", "--increasing", action="store_true", default=False,
-                      help="Sort by increasing value (default = decreasing)")
-    group2.add_option("-L", "--limit", default=50, metavar="NUM",
-                      help="Limit output to NUM rows")
+                  help="Sort by increasing value (default = decreasing)")
+    group2.add_option("-L", "--limit", default=50, metavar="<n>",
+                  help="Limit output to n rows")
     group2.add_option("-C", "--cluster", action="store_true", default=False,
-                      help="Display per-broker cluster detail.")
+                  help="Display per-broker cluster detail.")
     parser.add_option_group(group2)
 
     opts, args = parser.parse_args(args=argv)
@@ -86,6 +87,7 @@ def OptionsAndArguments(argv):
     config._increasing = opts.increasing
     config._limit = opts.limit
     config._cluster_detail = opts.cluster
+    config._sasl_mechanism = opts.sasl_mechanism
 
     if args:
         config._host = args[0]
@@ -178,10 +180,11 @@ class BrokerManager(Console):
         self.brokers    = []
         self.cluster    = None
 
-    def SetBroker(self, brokerUrl):
+    def SetBroker(self, brokerUrl, mechanism):
         self.url = brokerUrl
         self.qmf = Session()
-        self.broker = self.qmf.addBroker(brokerUrl, config._connTimeout)
+        self.mechanism = mechanism
+        self.broker = self.qmf.addBroker(brokerUrl, config._connTimeout, mechanism)
         agents = self.qmf.getAgents()
         for a in agents:
             if a.getAgentBank() == '0':
@@ -502,7 +505,7 @@ def main(argv=None):
     bm   = BrokerManager()
 
     try:
-        bm.SetBroker(config._host)
+        bm.SetBroker(config._host, config._sasl_mechanism)
         bm.display()
         bm.Disconnect()
         return 0

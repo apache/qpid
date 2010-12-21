@@ -27,6 +27,7 @@ import socket
 from time import time, strftime, gmtime, sleep
 from qmf.console import Console, Session
 
+
 class EventConsole(Console):
   def event(self, broker, event):
     print event
@@ -75,17 +76,19 @@ $ %prog guest/guest@broker-host:10000
 
 def main(argv=None):
   p = optparse.OptionParser(usage=_usage, description=_description, formatter=JHelpFormatter())
+  p.add_option("--heartbeats", action="store_true", default=False, help="Use heartbeats.")
+  p.add_option("--sasl-mechanism", action="store", choices=["EXTERNAL","ANONYMOUS","PLAIN","CRAM-MD5","DIGEST-MD5","GSSAPI"], metavar="<mech>", help="SASL mechanism for authentication. SASL automatically picks the most secure available mechanism - use this option to override.")
 
   options, arguments = p.parse_args(args=argv)
   if len(arguments) == 0:
     arguments.append("localhost")
 
   console = EventConsole()
-  session = Session(console, rcvObjects=False, rcvHeartbeats=False, manageConnections=True)
+  session = Session(console, rcvObjects=False, rcvHeartbeats=options.heartbeats, manageConnections=True)
   brokers = []
   try:
     for host in arguments:
-      brokers.append(session.addBroker(host))
+      brokers.append(session.addBroker(host, None, options.sasl_mechanism))
     try:
       while (True):
         sleep(10)

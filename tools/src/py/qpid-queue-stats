@@ -32,13 +32,13 @@ from qpid.connection import Connection, ConnectionFailed
 from time            import sleep
 
 class BrokerManager(Console):
-  def __init__(self, host):
+  def __init__(self, host, mechanism):
     self.url = host
     self.objects = {}
     self.filter  = None
     self.session = Session(self, rcvEvents=False, rcvHeartbeats=False,
                            userBindings=True, manageConnections=True)
-    self.broker  = self.session.addBroker(self.url)
+    self.broker  = self.session.addBroker(self.url, None, mechanism)
     self.firstError = True
 
   def setFilter(self,filter):
@@ -121,13 +121,11 @@ class BrokerManager(Console):
       print
     self.session.delBroker(self.broker)
 
-##
-## Main Program
-##
 def main(argv=None):
   p = optparse.OptionParser()
   p.add_option('--broker-address','-a', default='localhost' , help='broker-addr is in the form:  [username/password@] hostname | ip-address [:<port>] \n ex:  localhost, 10.1.1.7:10000, broker-host:10000, guest/guest@localhost')
   p.add_option('--filter','-f' ,default=None ,help='a list of comma separated queue names (regex are accepted) to show')
+  p.add_option("--sasl-mechanism", action="store", choices=["EXTERNAL","ANONYMOUS","PLAIN","CRAM-MD5","DIGEST-MD5","GSSAPI"], metavar="<mech>", help="SASL mechanism for authentication. SASL automatically picks the most secure available mechanism - use this option to override.")
 
   options, arguments = p.parse_args(args=argv)
 
@@ -137,7 +135,7 @@ def main(argv=None):
     for s in options.filter.split(","):
         filter.append(re.compile(s))
 
-  bm = BrokerManager(host)
+  bm = BrokerManager(host, options.sasl_mechanism)
   bm.setFilter(filter)
   bm.Display()
  
