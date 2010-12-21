@@ -46,6 +46,7 @@ class Config:
         self._ive               = False
         self._eventGeneration   = None
         self._file              = None
+        self._sasl_mechanism    = None
 
 config = Config()
 
@@ -138,26 +139,27 @@ def OptionsAndArguments(argv):
                           formatter=JHelpFormatter())
 
     group1 = OptionGroup(parser, "General Options")
-    group1.add_option("-t", "--timeout", action="store", type="int", default=10, metavar="SECS", help="Maximum time to wait for broker connection (in seconds)")
+    group1.add_option("-t", "--timeout", action="store", type="int", default=10, metavar="<secs>", help="Maximum time to wait for broker connection (in seconds)")
     group1.add_option("-b", "--bindings", action="store_true", help="Show bindings in queue or exchange list")
-    group1.add_option("-a", "--broker-addr", action="store", type="string", default="localhost:5672", metavar="ADDRESS", help="Maximum time to wait for broker connection (in seconds)")
+    group1.add_option("-a", "--broker-addr", action="store", type="string", default="localhost:5672", metavar="<address>", help="Maximum time to wait for broker connection (in seconds)")
+    group1.add_option("--sasl-mechanism", action="store", choices=["EXTERNAL","ANONYMOUS","PLAIN","CRAM-MD5","DIGEST-MD5","GSSAPI"], metavar="<mech>", help="SASL mechanism for authentication. SASL automatically picks the most secure available mechanism - use this option to override.")
     parser.add_option_group(group1)
 
     group2 = OptionGroup(parser, "Options for Adding Exchanges and Queues")
-    group2.add_option("--alternate-exchange", action="store", type="string", metavar="NAME", help="Name of the alternate-exchange for the new queue or exchange. Exchanges route messages to the alternate exchange if they are unable to route them elsewhere. Queues route messages to the alternate exchange if they are rejected by a subscriber or orphaned by queue deletion.")
+    group2.add_option("--alternate-exchange", action="store", type="string", metavar="<aexname>", help="Name of the alternate-exchange for the new queue or exchange. Exchanges route messages to the alternate exchange if they are unable to route them elsewhere. Queues route messages to the alternate exchange if they are rejected by a subscriber or orphaned by queue deletion.")
     group2.add_option("--passive", "--dry-run", action="store_true", help="Do not actually add the exchange or queue, ensure that all parameters and permissions are correct and would allow it to be created.")
     group2.add_option("--durable", action="store_true", help="The new queue or exchange is durable.")
     parser.add_option_group(group2)
 
     group3 = OptionGroup(parser, "Options for Adding Queues")
     group3.add_option("--cluster-durable", action="store_true", help="The new queue becomes durable if there is only one functioning cluster node")
-    group3.add_option("--file-count", action="store", type="int", default=8, metavar="N", help="Number of files in queue's persistence journal")
-    group3.add_option("--file-size", action="store", type="int", default=24, metavar="N", help="File size in pages (64Kib/page)")
-    group3.add_option("--max-queue-size", action="store", type="int", metavar="N", help="Number of files in queue's persistence journal")
-    group3.add_option("--max-queue-count", action="store", type="int", metavar="N", help="Number of files in queue's persistence journal")
-    group3.add_option("--limit-policy", action="store", choices=["none", "reject", "flow-to-disk", "ring", "ring-strict"], metavar="CHOICE", help="Action to take when queue limit is reached")
-    group3.add_option("--order", action="store", choices=["fifo", "lvq", "lvq-no-browse"], metavar="CHOICE", help="Queue ordering policy")
-    group3.add_option("--generate-queue-events", action="store", type="int", metavar="N", help="If set to 1, every enqueue will generate an event that can be processed by registered listeners (e.g. for replication). If set to 2, events will be generated for enqueues and dequeues.")
+    group3.add_option("--file-count", action="store", type="int", default=8, metavar="<n>", help="Number of files in queue's persistence journal")
+    group3.add_option("--file-size", action="store", type="int", default=24, metavar="<n>", help="File size in pages (64Kib/page)")
+    group3.add_option("--max-queue-size", action="store", type="int", metavar="<n>", help="Number of files in queue's persistence journal")
+    group3.add_option("--max-queue-count", action="store", type="int", metavar="<n>", help="Number of files in queue's persistence journal")
+    group3.add_option("--limit-policy", action="store", choices=["none", "reject", "flow-to-disk", "ring", "ring-strict"], metavar="<policy>", help="Action to take when queue limit is reached")
+    group3.add_option("--order", action="store", choices=["fifo", "lvq", "lvq-no-browse"], metavar="<ordering>", help="Queue ordering policy")
+    group3.add_option("--generate-queue-events", action="store", type="int", metavar="<n>", help="If set to 1, every enqueue will generate an event that can be processed by registered listeners (e.g. for replication). If set to 2, events will be generated for enqueues and dequeues.")
     # no option for declaring an exclusive queue - which can only be used by the session that creates it.
     parser.add_option_group(group3)
 
@@ -173,7 +175,7 @@ def OptionsAndArguments(argv):
     parser.add_option_group(group5)
 
     group6 = OptionGroup(parser, "Options for Declaring Bindings")
-    group6.add_option("-f", "--file", action="store", type="string", metavar="FILE.xq", help="For XML Exchange bindings - specifies the name of a file containing an XQuery.")
+    group6.add_option("-f", "--file", action="store", type="string", metavar="<file.xq>", help="For XML Exchange bindings - specifies the name of a file containing an XQuery.")
     parser.add_option_group(group6)
 
     opts, encArgs = parser.parse_args(args=argv)
@@ -227,7 +229,8 @@ def OptionsAndArguments(argv):
         config._if_empty = False
     if opts.force_if_not_used:
         config._if_unused = False
-
+    if opts.sasl_mechanism:
+        config._sasl_mechanism = opts.sasl_mechanism
     return args
 
 
@@ -272,15 +275,16 @@ def snarf_header_args(args):
         return [False]
 
 class BrokerManager:
-    def __init__ (self):
+    def __init__(self):
         self.brokerName = None
         self.qmf        = None
         self.broker     = None
+        self.mechanism  = None 
 
-    def SetBroker (self, brokerUrl):
+    def SetBroker(self, brokerUrl, mechanism):
         self.url = brokerUrl
         self.qmf = Session()
-        self.broker = self.qmf.addBroker(brokerUrl, config._connTimeout)
+        self.broker = self.qmf.addBroker(brokerUrl, config._connTimeout, mechanism)
         agents = self.qmf.getAgents()
         for a in agents:
             if a.getAgentBank() == '0':
@@ -290,7 +294,7 @@ class BrokerManager:
         if self.broker:
             self.qmf.delBroker(self.broker)
 
-    def Overview (self):
+    def Overview(self):
         exchanges = self.qmf.getObjects(_class="exchange", _agent=self.brokerAgent)
         queues    = self.qmf.getObjects(_class="queue", _agent=self.brokerAgent)
         print "Total Exchanges: %d" % len (exchanges)
@@ -312,7 +316,7 @@ class BrokerManager:
         print "        durable: %d" % durable
         print "    non-durable: %d" % (len (queues) - durable)
 
-    def ExchangeList (self, filter):
+    def ExchangeList(self, filter):
         exchanges = self.qmf.getObjects(_class="exchange", _agent=self.brokerAgent)
         caption1 = "Type      "
         caption2 = "Exchange Name"
@@ -327,7 +331,7 @@ class BrokerManager:
         print line
 
         for ex in exchanges:
-            if self.match (ex.name, filter):
+            if self.match(ex.name, filter):
                 print "%-10s%-*s " % (ex.type, maxNameLen, ex.name),
                 args = ex.arguments
                 if ex.durable:    print "--durable",
@@ -337,29 +341,29 @@ class BrokerManager:
                     print "--alternate-exchange=%s" % ex._altExchange_.name,
                 print
 
-    def ExchangeListRecurse (self, filter):
+    def ExchangeListRecurse(self, filter):
         exchanges = self.qmf.getObjects(_class="exchange", _agent=self.brokerAgent)
         bindings  = self.qmf.getObjects(_class="binding", _agent=self.brokerAgent)
         queues    = self.qmf.getObjects(_class="queue", _agent=self.brokerAgent)
         for ex in exchanges:
-            if self.match (ex.name, filter):
+            if self.match(ex.name, filter):
                 print "Exchange '%s' (%s)" % (ex.name, ex.type)
                 for bind in bindings:
                     if bind.exchangeRef == ex.getObjectId():
                         qname = "<unknown>"
-                        queue = self.findById (queues, bind.queueRef)
+                        queue = self.findById(queues, bind.queueRef)
                         if queue != None:
                             qname = queue.name
                         print "    bind [%s] => %s" % (bind.bindingKey, qname)
             
 
-    def QueueList (self, filter):
+    def QueueList(self, filter):
         queues = self.qmf.getObjects(_class="queue", _agent=self.brokerAgent)
 
         caption = "Queue Name"
         maxNameLen = len(caption)
         for q in queues:
-            if self.match (q.name, filter):
+            if self.match(q.name, filter):
                 if len(q.name) > maxNameLen:  maxNameLen = len(q.name)
         print "%-*s  Attributes" % (maxNameLen, caption)
         line = ""
@@ -368,7 +372,7 @@ class BrokerManager:
         print line
 
         for q in queues:
-            if self.match (q.name, filter):
+            if self.match(q.name, filter):
                 print "%-*s " % (maxNameLen, q.name),
                 args = q.arguments
                 if q.durable:    print "--durable",
@@ -387,25 +391,25 @@ class BrokerManager:
                     print "--alternate-exchange=%s" % q._altExchange_.name,
                 print
 
-    def QueueListRecurse (self, filter):
+    def QueueListRecurse(self, filter):
         exchanges = self.qmf.getObjects(_class="exchange", _agent=self.brokerAgent)
         bindings  = self.qmf.getObjects(_class="binding", _agent=self.brokerAgent)
         queues    = self.qmf.getObjects(_class="queue", _agent=self.brokerAgent)
         for queue in queues:
-            if self.match (queue.name, filter):
+            if self.match(queue.name, filter):
                 print "Queue '%s'" % queue.name
                 for bind in bindings:
                     if bind.queueRef == queue.getObjectId():
                         ename = "<unknown>"
-                        ex    = self.findById (exchanges, bind.exchangeRef)
+                        ex    = self.findById(exchanges, bind.exchangeRef)
                         if ex != None:
                             ename = ex.name
                             if ename == "":
                                 ename = "''"
                         print "    bind [%s] => %s" % (bind.bindingKey, ename)
 
-    def AddExchange (self, args):
-        if len (args) < 2:
+    def AddExchange(self, args):
+        if len(args) < 2:
             Usage()
         etype = args[0]
         ename = args[1]
@@ -415,18 +419,18 @@ class BrokerManager:
         if config._ive:
             declArgs[IVE] = 1
         if  config._altern_ex != None:
-            self.broker.getAmqpSession().exchange_declare (exchange=ename, type=etype, alternate_exchange=config._altern_ex, passive=config._passive, durable=config._durable, arguments=declArgs)
+            self.broker.getAmqpSession().exchange_declare(exchange=ename, type=etype, alternate_exchange=config._altern_ex, passive=config._passive, durable=config._durable, arguments=declArgs)
         else:
-            self.broker.getAmqpSession().exchange_declare (exchange=ename, type=etype, passive=config._passive, durable=config._durable, arguments=declArgs)
+            self.broker.getAmqpSession().exchange_declare(exchange=ename, type=etype, passive=config._passive, durable=config._durable, arguments=declArgs)
 
-    def DelExchange (self, args):
-        if len (args) < 1:
+    def DelExchange(self, args):
+        if len(args) < 1:
             Usage()
         ename = args[0]
-        self.broker.getAmqpSession().exchange_delete (exchange=ename)
+        self.broker.getAmqpSession().exchange_delete(exchange=ename)
 
-    def AddQueue (self, args):
-        if len (args) < 1:
+    def AddQueue(self, args):
+        if len(args) < 1:
             Usage()
         qname    = args[0]
         declArgs = {}
@@ -463,24 +467,24 @@ class BrokerManager:
             declArgs[QUEUE_EVENT_GENERATION]  = config._eventGeneration
 
         if config._altern_ex != None:
-            self.broker.getAmqpSession().queue_declare (queue=qname, alternate_exchange=config._altern_ex, passive=config._passive, durable=config._durable, arguments=declArgs)
+            self.broker.getAmqpSession().queue_declare(queue=qname, alternate_exchange=config._altern_ex, passive=config._passive, durable=config._durable, arguments=declArgs)
         else:
-            self.broker.getAmqpSession().queue_declare (queue=qname, passive=config._passive, durable=config._durable, arguments=declArgs)
+            self.broker.getAmqpSession().queue_declare(queue=qname, passive=config._passive, durable=config._durable, arguments=declArgs)
 
-    def DelQueue (self, args):
-        if len (args) < 1:
+    def DelQueue(self, args):
+        if len(args) < 1:
             Usage()
         qname = args[0]
-        self.broker.getAmqpSession().queue_delete (queue=qname, if_empty=config._if_empty, if_unused=config._if_unused)
+        self.broker.getAmqpSession().queue_delete(queue=qname, if_empty=config._if_empty, if_unused=config._if_unused)
 
 
-    def Bind (self, args):
-        if len (args) < 2:
+    def Bind(self, args):
+        if len(args) < 2:
             Usage()
         ename = args[0]
         qname = args[1]
         key   = ""
-        if len (args) > 2:
+        if len(args) > 2:
             key = args[2]
 
         # query the exchange to determine its type.
@@ -507,35 +511,35 @@ class BrokerManager:
         if not ok:
             sys.exit(1)
 
-        self.broker.getAmqpSession().exchange_bind (queue=qname,
+        self.broker.getAmqpSession().exchange_bind(queue=qname,
                                                     exchange=ename,
                                                     binding_key=key,
                                                     arguments=_args)
 
-    def Unbind (self, args):
-        if len (args) < 2:
+    def Unbind(self, args):
+        if len(args) < 2:
             Usage()
         ename = args[0]
         qname = args[1]
         key   = ""
-        if len (args) > 2:
+        if len(args) > 2:
             key = args[2]
-        self.broker.getAmqpSession().exchange_unbind (queue=qname, exchange=ename, binding_key=key)
+        self.broker.getAmqpSession().exchange_unbind(queue=qname, exchange=ename, binding_key=key)
 
-    def findBId (self, items, id):
+    def findBId(self, items, id):
         for item in items:
             if item.getObjectId() == id:
                 return item
         return None
 
-    def match (self, name, filter):
+    def match(self, name, filter):
         if filter == "":
             return True
-        if name.find (filter) == -1:
+        if name.find(filter) == -1:
             return False
         return True
 
-def YN (bool):
+def YN(bool):
     if bool:
         return 'Y'
     return 'N'
@@ -543,12 +547,12 @@ def YN (bool):
 
 def main(argv=None):
     args = OptionsAndArguments(argv)
-    bm   = BrokerManager ()
+    bm   = BrokerManager()
 
     try:
-        bm.SetBroker(config._host)
+        bm.SetBroker(config._host, config._sasl_mechanism)
         if len(args) == 0:
-            bm.Overview ()
+            bm.Overview()
         else:
             cmd = args[0]
             modifier = ""
@@ -556,32 +560,32 @@ def main(argv=None):
                 modifier = args[1]
             if cmd == "exchanges":
                 if config._recursive:
-                    bm.ExchangeListRecurse (modifier)
+                    bm.ExchangeListRecurse(modifier)
                 else:
-                    bm.ExchangeList (modifier)
+                    bm.ExchangeList(modifier)
             elif cmd == "queues":
                 if config._recursive:
-                    bm.QueueListRecurse (modifier)
+                    bm.QueueListRecurse(modifier)
                 else:
-                    bm.QueueList (modifier)
+                    bm.QueueList(modifier)
             elif cmd == "add":
                 if modifier == "exchange":
-                    bm.AddExchange (args[2:])
+                    bm.AddExchange(args[2:])
                 elif modifier == "queue":
-                    bm.AddQueue (args[2:])
+                    bm.AddQueue(args[2:])
                 else:
                     Usage()
             elif cmd == "del":
                 if modifier == "exchange":
-                    bm.DelExchange (args[2:])
+                    bm.DelExchange(args[2:])
                 elif modifier == "queue":
-                    bm.DelQueue (args[2:])
+                    bm.DelQueue(args[2:])
                 else:
                     Usage()
             elif cmd == "bind":
-                bm.Bind (args[1:])
+                bm.Bind(args[1:])
             elif cmd == "unbind":
-                bm.Unbind (args[1:])
+                bm.Unbind(args[1:])
             else:
                 Usage()
     except KeyboardInterrupt:

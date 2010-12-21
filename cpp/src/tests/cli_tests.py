@@ -177,6 +177,24 @@ class CliTests(TestBase010):
                 found = True
         self.assertEqual(found, False)
 
+
+    def test_qpid_config_sasl_plain_expect_succeed(self):
+        self.startQmf();
+        qmf = self.qmf
+        qname = "test_qpid_config_sasl_plain_expect_succeed"
+        cmd = " --sasl-mechanism PLAIN -a guest/guest@localhost:"+str(self.broker.port) + " add queue " + qname
+        ret = self.qpid_config_api(cmd)
+        self.assertEqual(ret, 0)
+
+    def test_qpid_config_sasl_plain_expect_fail(self):
+        """Fails because no user name and password is supplied"""
+        self.startQmf();
+        qmf = self.qmf
+        qname = "test_qpid_config_sasl_plain_expect_succeed"
+        cmd = " --sasl-mechanism PLAIN -a localhost:"+str(self.broker.port) + " add queue " + qname
+        ret = self.qpid_config_api(cmd)
+        assert ret != 0
+
         # helpers for some of the test methods
     def helper_find_exchange(self, xchgname, typ, expected=True):
         xchgs = self.qmf.getObjects(_class = "exchange")
@@ -380,6 +398,37 @@ class CliTests(TestBase010):
             if link.port == self.remote_port():
                 found = True
         self.assertEqual(found, True)
+
+
+    def test_qpid_route_api(self):
+        self.startQmf();
+        qmf = self.qmf
+
+        ret = self.qpid_route_api("dynamic add "
+                                  + " --sasl-mechanism PLAIN "
+                                  + "guest/guest@localhost:"+str(self.broker.port) + " "
+                                  + str(self.remote_host())+":"+str(self.remote_port()) + " "
+                                  +"amq.direct")
+
+        self.assertEqual(ret, 0)
+
+        links = qmf.getObjects(_class="link")
+        found = False
+        for link in links:
+            if link.port == self.remote_port():
+                found = True
+        self.assertEqual(found, True)
+
+    def test_qpid_route_api_expect_fail(self):
+        self.startQmf();
+        qmf = self.qmf
+
+        ret = self.qpid_route_api("dynamic add "
+                                  + " --sasl-mechanism PLAIN "
+                                  + "localhost:"+str(self.broker.port) + " "
+                                  + str(self.remote_host())+":"+str(self.remote_port()) + " "
+                                  +"amq.direct")
+        assert ret != 0
 
 
     def getProperty(self, msg, name):
