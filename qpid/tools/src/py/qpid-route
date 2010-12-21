@@ -36,6 +36,7 @@ class Config:
         self._transport = "tcp"
         self._ack       = 0
         self._connTimeout = 10
+        self._sasl_mechanism = None
 
 config = Config()
 
@@ -86,7 +87,7 @@ def OptionsAndArguments(argv):
                           description=description,
                           formatter=JHelpFormatter())
 
-    parser.add_option("--timeout", action="store", type="int", default=10, metavar="SECS", help="Maximum time to wait for broker connection (in seconds)")
+    parser.add_option("--timeout", action="store", type="int", default=10, metavar="<secs>", help="Maximum time to wait for broker connection (in seconds)")
     parser.add_option("-v", "--verbose", action="store_true", help="Verbose output")
     parser.add_option("-q", "--quiet", action="store_true", help="Quiet output, don't print duplicate warnings")
     parser.add_option("-d", "--durable", action="store_true", help="Added configuration shall be durable")
@@ -94,8 +95,10 @@ def OptionsAndArguments(argv):
     parser.add_option("-e", "--del-empty-link", action="store_true", help="Delete link after deleting last route on the link")
     parser.add_option("-s", "--src-local", action="store_true", help="Make connection to source broker (push route)")
 
-    parser.add_option("--ack", action="store", type="int", metavar="N", help="Acknowledge transfers over the bridge in batches of N")
+    parser.add_option("--ack", action="store", type="int", metavar="<n>", help="Acknowledge transfers over the bridge in batches of N")
     parser.add_option("-t", "--transport", action="store", type="string", default="tcp", metavar="<transport>", help="Transport to use for links, defaults to tcp")
+
+    parser.add_option("--sasl-mechanism", action="store", choices=["EXTERNAL","ANONYMOUS","PLAIN","CRAM-MD5","DIGEST-MD5","GSSAPI"], metavar="<mech>", help="SASL mechanism for authentication. Used when the client connects to the destination broker (not for authentication between the source and destination brokers - that is specified using the [mechanisms] argument to 'add route'). SASL automatically picks the most secure available mechanism - use this option to override.")
 
     opts, encArgs = parser.parse_args(args=argv)
 
@@ -131,6 +134,9 @@ def OptionsAndArguments(argv):
     if opts.ack:
         config._ack = opts.ack
 
+    if opts.sasl_mechanism:
+        config._sasl_mechanism = opts.sasl_mechanism
+
     return args
 
 
@@ -140,7 +146,7 @@ class RouteManager:
         self.local = BrokerURL(localBroker)
         self.remote  = None
         self.qmf = Session()
-        self.broker = self.qmf.addBroker(localBroker, config._connTimeout)
+        self.broker = self.qmf.addBroker(localBroker, config._connTimeout, config._sasl_mechanism)
         self.broker._waitForStable()
         self.agent = self.broker.getBrokerAgent()
 
