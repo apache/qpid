@@ -101,7 +101,7 @@ module Qmf2
     def set_agent_filter(filter)  @impl.setAgentFilter(filter) end
 
     def open()   @impl.open  end
-    def close()  @imp.close  end
+    def close()  @impl.close  end
 
     def agents
       result = []
@@ -134,7 +134,7 @@ module Qmf2
     def set_instance(val)       @impl.setInstance(val)         end
     def set_attribute(key, val) @impl.setAttribute(key, val)   end
     def open()                  @impl.open                     end
-    def close()                 @imp.close                     end
+    def close()                 @impl.close                    end
     def register_schema(cls)    @impl.registerSchema(cls.impl) end
 
     def add_data(data, name="", persistent=:false)
