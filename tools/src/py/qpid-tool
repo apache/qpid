@@ -30,6 +30,7 @@ from time        import strftime, gmtime
 from qpid.disp   import Display
 from qpid.peer   import Closed
 from qmf.console import Session, Console, SchemaClass, ObjectId
+import qpid.log
 
 class Mcli(Cmd):
   """ Management Command Interpreter """
@@ -677,6 +678,8 @@ def Usage():
 # Main Program
 #=========================================================
 
+qpid.log.getLogger("qpid.qmf").setLevel(qpid.log.ERROR)
+
 # Get host name and port if specified on the command line
 cargs = sys.argv[1:]
 _host = "localhost"
@@ -691,6 +694,7 @@ if _host[0] == '-':
   sys.exit(1)
 
 disp = Display()
+
 
 # Attempt to make a connection to the target broker
 try:
