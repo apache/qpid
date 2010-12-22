@@ -31,6 +31,7 @@ cqmf2.cpp: $(srcdir)/ruby.i $(srcdir)/../qmf2.i $(srcdir)/../../swig_ruby_typema
 
 rubylibarchdir = $(RUBY_LIB_ARCH)
 rubylibarch_LTLIBRARIES = cqmf2.la
+dist_rubylib_DATA = qmf2.rb
 
 cqmf2_la_LDFLAGS = -avoid-version -module -shrext ".$(RUBY_DLEXT)"
 cqmf2_la_LIBADD = $(RUBY_LIBS) -L$(top_builddir)/src/.libs -lqmf2 $(top_builddir)/src/libqmf2.la
