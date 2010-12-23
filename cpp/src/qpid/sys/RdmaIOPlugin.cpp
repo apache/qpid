@@ -301,6 +301,7 @@ bool RdmaIOProtocolFactory::request(Rdma::Connection::intrusive_ptr ci, const Rd
         RdmaIOHandler* async = new RdmaIOHandler(ci, f);
         Rdma::AsynchIO* aio =
             new Rdma::AsynchIO(ci->getQueuePair(),
+                cp.rdmaProtocolVersion,
                 cp.maxRecvBufferSize, cp.initialXmitCredit, Rdma::DEFAULT_WR_ENTRIES,
                 boost::bind(&RdmaIOHandler::readbuff, async, _1, _2),
                 boost::bind(&RdmaIOHandler::idle, async, _1),

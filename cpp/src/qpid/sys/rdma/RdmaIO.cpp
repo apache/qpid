@@ -71,6 +71,7 @@ namespace Rdma {
 
     AsynchIO::AsynchIO(
             QueuePair::intrusive_ptr q,
+            int version,
             int size,
             int xCredit,
             int rCount,
@@ -79,6 +80,7 @@ namespace Rdma {
             FullCallback fc,
             ErrorCallback ec
     ) :
+        protocolVersion(version),
         bufferSize(size),
         recvCredit(0),
         xmitCredit(xCredit),

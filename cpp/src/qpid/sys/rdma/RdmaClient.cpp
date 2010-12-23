@@ -164,6 +164,7 @@ void connected(Poller::shared_ptr poller, Rdma::Connection::intrusive_ptr& ci, c
     Rdma::QueuePair::intrusive_ptr q = ci->getQueuePair();
 
     Rdma::AsynchIO* aio = new Rdma::AsynchIO(ci->getQueuePair(),
+        cp.rdmaProtocolVersion,
         cp.maxRecvBufferSize, cp.initialXmitCredit , Rdma::DEFAULT_WR_ENTRIES,
         boost::bind(&data, poller, _1, _2),
         boost::bind(&idle, poller, _1),
