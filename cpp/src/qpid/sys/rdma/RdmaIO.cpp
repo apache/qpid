@@ -491,6 +491,7 @@ namespace Rdma {
         case RDMA_CM_EVENT_CONNECT_REQUEST: {
             // Make sure peer has sent params we can use
             if (!conn_param.private_data || conn_param.private_data_len < sizeof(NConnectionParams)) {
+                QPID_LOG(warning, "Rdma: rejecting connection attempt: unusable connection parameters");
                 id->reject();
                 break;
             }
@@ -499,7 +500,14 @@ namespace Rdma {
             ConnectionParams cp = *rcp;
 
             // Reject if requested msg size is bigger than we allow
-            if (cp.maxRecvBufferSize > checkConnectionParams.maxRecvBufferSize) {
+            if (
+                cp.maxRecvBufferSize > checkConnectionParams.maxRecvBufferSize ||
+                cp.initialXmitCredit > checkConnectionParams.initialXmitCredit
+            ) {
+                QPID_LOG(warning, "Rdma: rejecting connection attempt: connection parameters out of range: ("
+                  << cp.maxRecvBufferSize << ">" << checkConnectionParams.maxRecvBufferSize << " || "
+                  << cp.initialXmitCredit << ">" << checkConnectionParams.initialXmitCredit
+                  << ")");
                 id->reject(&checkConnectionParams);
                 break;
             }
@@ -514,6 +522,7 @@ namespace Rdma {
                 id->accept(conn_param, rcp);
             } else {
                 // Reject connection
+                QPID_LOG(warning, "Rdma: rejecting connection attempt: application policy");
                 id->reject();
             }
             break;
