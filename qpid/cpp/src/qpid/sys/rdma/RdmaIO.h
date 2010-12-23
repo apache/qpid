@@ -45,6 +45,7 @@ namespace Rdma {
         typedef boost::function2<void, AsynchIO&, Buffer*> FullCallback;
         typedef boost::function1<void, AsynchIO&> NotifyCallback;
 
+        int protocolVersion;
         int bufferSize;
         int recvCredit;
         int xmitCredit;
@@ -73,6 +74,7 @@ namespace Rdma {
         // locked memory
         AsynchIO(
             QueuePair::intrusive_ptr q,
+            int version,
             int size,
             int xCredit,
             int rCount,

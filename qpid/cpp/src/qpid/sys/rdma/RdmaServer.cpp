@@ -145,6 +145,7 @@ bool connectionRequest(Rdma::Connection::intrusive_ptr& ci,  const Rdma::Connect
         ConRec* cr = new ConRec(ci);
         Rdma::AsynchIO* aio =
             new Rdma::AsynchIO(ci->getQueuePair(),
+                cp.rdmaProtocolVersion,
                 cp.maxRecvBufferSize, cp.initialXmitCredit, Rdma::DEFAULT_WR_ENTRIES,
                 boost::bind(data, cr, _1, _2),
                 boost::bind(idle, cr, _1),
