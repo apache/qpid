@@ -349,14 +349,16 @@ void RdmaConnector::send(AMQFrame& frame) {
 void RdmaConnector::writebuff(Rdma::AsynchIO&) {
     // It's possible to be disconnected and be writable
     Mutex::ScopedLock l(dataConnectedLock);
-    if (!dataConnected)
+    if (!dataConnected) {
         return;
-
+    }
     Codec* codec = securityLayer.get() ? (Codec*) securityLayer.get() : (Codec*) this;
-    if (codec->canEncode()) {
-        Rdma::Buffer* buffer = aio->getBuffer();
+    if (!codec->canEncode()) {
+        return;
+    }
+    Rdma::Buffer* buffer = aio->getBuffer();
+    if (buffer) {
         size_t encoded = codec->encode(buffer->bytes(), buffer->byteCount());
-
         buffer->dataCount(encoded);
         aio->queueWrite(buffer);
     }
@@ -366,7 +368,7 @@ bool RdmaConnector::canEncode()
 {
     Mutex::ScopedLock l(lock);
     //have at least one full frameset or a whole buffers worth of data
-    return aio->writable() && aio->bufferAvailable() && (lastEof || currentSize >= maxFrameSize);
+    return aio->writable() && (lastEof || currentSize >= maxFrameSize);
 }
 
 size_t RdmaConnector::encode(const char* buffer, size_t size)

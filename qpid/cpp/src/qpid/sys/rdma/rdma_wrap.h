@@ -144,9 +144,6 @@ namespace Rdma {
         // Return buffer to pool after use
         void returnBuffer(Buffer* b);
 
-        // Check whether any buffers are available
-        bool bufferAvailable() const;
-
         // Create and post recv buffers
         void allocateRecvBuffers(int recvBufferCount, int bufferSize);
 

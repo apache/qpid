@@ -87,7 +87,6 @@ namespace Rdma {
 
         void start(qpid::sys::Poller::shared_ptr poller);
         bool writable() const;
-        bool bufferAvailable() const;
         void queueWrite(Buffer* buff);
         void notifyPendingWrite();
         void drainWriteQueue(NotifyCallback);
@@ -132,10 +131,6 @@ namespace Rdma {
 
     inline int AsynchIO::incompletedWrites() const {
         return outstandingWrites;
-    }
-
-    inline bool AsynchIO::bufferAvailable() const {
-        return qp->bufferAvailable();
     }
 
     inline Buffer* AsynchIO::getBuffer() {
