@@ -184,9 +184,12 @@ namespace Rdma {
 
     Buffer* QueuePair::getBuffer() {
         qpid::sys::ScopedLock<qpid::sys::Mutex> l(bufferLock);
-        assert(!freeBuffers.empty());
-        Buffer* b = &sendBuffers[freeBuffers.back()];
+        if (freeBuffers.empty())
+            return 0;
+        int i = freeBuffers.back();
         freeBuffers.pop_back();
+        assert(i >= 0 && i < int(sendBuffers.size()));
+        Buffer* b = &sendBuffers[i];
         b->dataCount(0);
         return b;
     }
@@ -196,10 +199,6 @@ namespace Rdma {
         int i = b - &sendBuffers[0];
         assert(i >= 0 && i < int(sendBuffers.size()));
         freeBuffers.push_back(i);
-    }
-
-    bool QueuePair::bufferAvailable() const {
-        return !freeBuffers.empty();
     }
 
     void QueuePair::allocateRecvBuffers(int recvBufferCount, int bufferSize)

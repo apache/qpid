@@ -93,8 +93,9 @@ Xor128Generator output;
 Xor128Generator input;
 
 void write(Rdma::AsynchIO& aio) {
-    while (aio.writable() && aio.bufferAvailable() && smsgs < target) {
+    while (aio.writable() && smsgs < target) {
         Rdma::Buffer* b = aio.getBuffer();
+        if (!b) break;
         b->dataCount(msgsize);
         uint32_t* ip = reinterpret_cast<uint32_t*>(b->bytes());
         uint32_t* lip = ip + b->dataCount() / sizeof(uint32_t);
