@@ -182,7 +182,7 @@ namespace Rdma {
         }
     }
 
-    Buffer* QueuePair::getBuffer() {
+    Buffer* QueuePair::getSendBuffer() {
         qpid::sys::ScopedLock<qpid::sys::Mutex> l(bufferLock);
         if (freeBuffers.empty())
             return 0;
@@ -194,7 +194,7 @@ namespace Rdma {
         return b;
     }
 
-    void QueuePair::returnBuffer(Buffer* b) {
+    void QueuePair::returnSendBuffer(Buffer* b) {
         qpid::sys::ScopedLock<qpid::sys::Mutex> l(bufferLock);
         int i = b - &sendBuffers[0];
         assert(i >= 0 && i < int(sendBuffers.size()));

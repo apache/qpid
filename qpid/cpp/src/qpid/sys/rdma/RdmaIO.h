@@ -93,8 +93,8 @@ namespace Rdma {
         void stop(NotifyCallback);
         void requestCallback(RequestCallback);
         int incompletedWrites() const;
-        Buffer* getBuffer();
-        void returnBuffer(Buffer*);
+        Buffer* getSendBuffer();
+        void returnSendBuffer(Buffer*);
 
     private:
         const static int maxSupportedProtocolVersion = 1;
@@ -133,12 +133,12 @@ namespace Rdma {
         return outstandingWrites;
     }
 
-    inline Buffer* AsynchIO::getBuffer() {
-        return qp->getBuffer();
+    inline Buffer* AsynchIO::getSendBuffer() {
+        return qp->getSendBuffer();
     }
 
-    inline void AsynchIO::returnBuffer(Buffer* b) {
-        qp->returnBuffer(b);
+    inline void AsynchIO::returnSendBuffer(Buffer* b) {
+        qp->returnSendBuffer(b);
     }
 
     // These are the parameters necessary to start the conversation

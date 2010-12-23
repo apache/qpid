@@ -356,7 +356,7 @@ void RdmaConnector::writebuff(Rdma::AsynchIO&) {
     if (!codec->canEncode()) {
         return;
     }
-    Rdma::Buffer* buffer = aio->getBuffer();
+    Rdma::Buffer* buffer = aio->getSendBuffer();
     if (buffer) {
         size_t encoded = codec->encode(buffer->bytes(), buffer->byteCount());
         buffer->dataCount(encoded);
@@ -415,7 +415,7 @@ size_t RdmaConnector::decode(const char* buffer, size_t size)
 }
 
 void RdmaConnector::writeDataBlock(const AMQDataBlock& data) {
-    Rdma::Buffer* buff = aio->getBuffer();
+    Rdma::Buffer* buff = aio->getSendBuffer();
     framing::Buffer out(buff->bytes(), buff->byteCount());
     data.encode(out);
     buff->dataCount(data.encodedSize());
