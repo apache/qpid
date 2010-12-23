@@ -172,18 +172,45 @@ namespace Rdma {
         notifyCallback = nc;
     }
 
+    void AsynchIO::queueBuffer(Buffer* buff, int credit) {
+        if (!buff) {
+            Buffer* ob = getBuffer();
+            // Have to send something as adapters hate it when you try to transfer 0 bytes
+            *reinterpret_cast< uint32_t* >(ob->bytes()) = htonl(credit);
+            ob->dataCount(sizeof(uint32_t));
+            qp->postSend(credit | IgnoreData, ob);        
+        } else if (credit > 0) {
+            qp->postSend(credit, buff);
+        } else {
+            qp->postSend(buff);
+        }
+    }
+    
+    Buffer* AsynchIO::extractBuffer(const QueuePairEvent& e) {
+        // Get our xmitCredit if it was sent
+        bool dataPresent = true;
+        if (e.immPresent() ) {
+            assert(xmitCredit>=0);
+            xmitCredit += (e.getImm() & ~FlagsMask);
+            dataPresent = ((e.getImm() & IgnoreData) == 0);
+            assert(xmitCredit>0);
+        }
+        
+        Buffer* b = e.getBuffer();
+        if (!dataPresent) {
+            b->dataCount(0);
+        }
+        return b;
+    }
+
     void AsynchIO::queueWrite(Buffer* buff) {
         // Make sure we don't overrun our available buffers
         // either at our end or the known available at the peers end
         if (writable()) {
             // TODO: We might want to batch up sending credit
-            if (recvCredit > 0) {
-                int creditSent = recvCredit & ~FlagsMask;
-                qp->postSend(creditSent, buff);
-                recvCredit -= creditSent;
-            } else {
-                qp->postSend(buff);
-            }
+            int creditSent = recvCredit & ~FlagsMask;
+            queueBuffer(buff, creditSent);
+            recvCredit -= creditSent;
             ++outstandingWrites;
             --xmitCredit;
             assert(xmitCredit>=0);
@@ -315,22 +342,14 @@ namespace Rdma {
 
             // Test if recv (or recv with imm)
             //::ibv_wc_opcode eventType = e.getEventType();
-            Buffer* b = e.getBuffer();
             QueueDirection dir = e.getDirection();
             if (dir == RECV) {
                 ++recvEvents;
 
-                // Get our xmitCredit if it was sent
-                bool dataPresent = true;
-                if (e.immPresent() ) {
-                    assert(xmitCredit>=0);
-                    xmitCredit += (e.getImm() & ~FlagsMask);
-                    dataPresent = ((e.getImm() & IgnoreData) == 0);
-                    assert(xmitCredit>0);
-                }
+                Buffer* b = extractBuffer(e);
 
                 // if there was no data sent then the message was only to update our credit
-                if ( dataPresent ) {
+                if ( b->dataCount() > 0 ) {
                     readCallback(*this, b);
                 }
 
@@ -347,13 +366,8 @@ namespace Rdma {
                     // but this is a little unlikely, as to get in this state we have to have received messages without sending any
                     // for a while so its likely we've received an credit update from the far side.
                     if (writable()) {
-                        Buffer* ob = getBuffer();
-                        // Have to send something as adapters hate it when you try to transfer 0 bytes
-                        *reinterpret_cast< uint32_t* >(ob->bytes()) = htonl(recvCredit);
-                        ob->dataCount(sizeof(uint32_t));
-
                         int creditSent = recvCredit & ~FlagsMask;
-                        qp->postSend(creditSent | IgnoreData, ob);
+                        queueBuffer(0, creditSent);
                         recvCredit -= creditSent;
                         ++outstandingWrites;
                         --xmitCredit;
@@ -363,6 +377,7 @@ namespace Rdma {
                     }
                 }
             } else {
+                Buffer* b = e.getBuffer();
                 ++sendEvents;
                 returnBuffer(b);
                 --outstandingWrites;

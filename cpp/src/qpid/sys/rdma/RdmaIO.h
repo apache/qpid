@@ -103,7 +103,7 @@ namespace Rdma {
         // Constants for the peer-peer command messages
         // These are sent in the high bits if the imm data of an rdma message
         // The low bits are used to send the credit
-        const static int FlagsMask = 0x10000000; // Mask for all flag bits - be sure to update this if you add more command bits
+        const static int FlagsMask = 0xF0000000; // Mask for all flag bits - be sure to update this if you add more command bits
         const static int IgnoreData = 0x10000000; // Message contains no application data
 
         void dataEvent();
@@ -112,6 +112,9 @@ namespace Rdma {
         void doWriteCallback();
         void checkDrained();
         void doStoppedCallback();
+        
+        void queueBuffer(Buffer* buff, int credit);
+        Buffer* extractBuffer(const QueuePairEvent& e);
     };
 
     // We're only writable if:
