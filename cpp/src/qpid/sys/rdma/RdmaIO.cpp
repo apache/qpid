@@ -198,7 +198,7 @@ namespace Rdma {
         switch (protocolVersion) {
         case 0:
             if (!buff) {
-                Buffer* ob = getBuffer();
+                Buffer* ob = getSendBuffer();
                 // Have to send something as adapters hate it when you try to transfer 0 bytes
                 *reinterpret_cast< uint32_t* >(ob->bytes()) = htonl(credit);
                 ob->dataCount(sizeof(uint32_t));
@@ -210,7 +210,7 @@ namespace Rdma {
             }
             break;
         case 1:
-            Buffer* ob = buff ? buff : getBuffer();
+            Buffer* ob = buff ? buff : getSendBuffer();
             // Add FrameHeader after frame data
             FrameHeader header(credit);
             ::memcpy(ob->bytes()+ob->dataCount(), &header, FrameHeaderSize);
@@ -266,7 +266,7 @@ namespace Rdma {
                 fullCallback(*this, buff);
             } else {
                 QPID_LOG(error, "RDMA: qp=" << qp << ": Write queue full, but no callback, throwing buffer away");
-                returnBuffer(buff);
+                returnSendBuffer(buff);
             }
         }
     }
@@ -375,7 +375,7 @@ namespace Rdma {
                     if (dir == SEND) {
                         Buffer* b = e.getBuffer();
                         ++sendEvents;
-                        returnBuffer(b);
+                        returnSendBuffer(b);
                         --outstandingWrites;
                     } else {
                         ++recvEvents;
@@ -426,7 +426,7 @@ namespace Rdma {
             } else {
                 Buffer* b = e.getBuffer();
                 ++sendEvents;
-                returnBuffer(b);
+                returnSendBuffer(b);
                 --outstandingWrites;
             }
         } while (true);
