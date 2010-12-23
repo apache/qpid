@@ -80,7 +80,7 @@ void dataError(Rdma::AsynchIO&) {
 void idle(ConRec* cr, Rdma::AsynchIO& a) {
     // Need to make sure full is not called as it would reorder messages
     while (!cr->queuedWrites.empty() && a.writable()) {
-        Rdma::Buffer* rbuf = a.getBuffer();
+        Rdma::Buffer* rbuf = a.getSendBuffer();
         if (!rbuf) break;
         Buffer* buf = cr->queuedWrites.front();
         cr->queuedWrites.pop();
@@ -95,7 +95,7 @@ void data(ConRec* cr, Rdma::AsynchIO& a, Rdma::Buffer* b) {
     // Echo data back
     Rdma::Buffer* buf = 0;
     if (cr->queuedWrites.empty() && a.writable()) {
-        buf = a.getBuffer();
+        buf = a.getSendBuffer();
     }
     if (buf) {
         std::copy(b->bytes(), b->bytes()+b->dataCount(), buf->bytes());

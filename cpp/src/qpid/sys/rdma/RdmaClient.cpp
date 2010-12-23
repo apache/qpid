@@ -94,7 +94,7 @@ Xor128Generator input;
 
 void write(Rdma::AsynchIO& aio) {
     while (aio.writable() && smsgs < target) {
-        Rdma::Buffer* b = aio.getBuffer();
+        Rdma::Buffer* b = aio.getSendBuffer();
         if (!b) break;
         b->dataCount(msgsize);
         uint32_t* ip = reinterpret_cast<uint32_t*>(b->bytes());
@@ -143,7 +143,7 @@ void full(Rdma::AsynchIO& a, Rdma::Buffer* b) {
     sbytes -= b->dataCount();
 
     // Give buffer back
-    a.returnBuffer(b);
+    a.returnSendBuffer(b);
 }
 
 void idle(Poller::shared_ptr p, Rdma::AsynchIO& aio) {

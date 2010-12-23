@@ -139,10 +139,10 @@ namespace Rdma {
         void createSendBuffers(int sendBufferCount, int bufferSize);
 
         // Get a send buffer
-        Buffer* getBuffer();
+        Buffer* getSendBuffer();
 
         // Return buffer to pool after use
-        void returnBuffer(Buffer* b);
+        void returnSendBuffer(Buffer* b);
 
         // Create and post recv buffers
         void allocateRecvBuffers(int recvBufferCount, int bufferSize);

@@ -116,7 +116,7 @@ void RdmaIOHandler::start(Poller::shared_ptr poller) {
 void RdmaIOHandler::write(const framing::ProtocolInitiation& data)
 {
     QPID_LOG(debug, "Rdma: SENT [" << identifier << "] INIT(" << data << ")");
-    Rdma::Buffer* buff = aio->getBuffer();
+    Rdma::Buffer* buff = aio->getSendBuffer();
     assert(buff);
     framing::Buffer out(buff->bytes(), buff->byteCount());
     data.encode(out);
@@ -146,7 +146,7 @@ void RdmaIOHandler::idle(Rdma::AsynchIO&) {
     if (!codec->canEncode()) {
         return;
     }
-    Rdma::Buffer* buff = aio->getBuffer();
+    Rdma::Buffer* buff = aio->getSendBuffer();
     if (buff) {
         size_t encoded=codec->encode(buff->bytes(), buff->byteCount());
         buff->dataCount(encoded);
