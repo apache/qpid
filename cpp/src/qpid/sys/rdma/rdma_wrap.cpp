@@ -119,13 +119,16 @@ namespace Rdma {
         scq->cq_context = this;
         rcq->cq_context = this;
 
+        ::ibv_device_attr dev_attr;
+        CHECK(::ibv_query_device(i->verbs, &dev_attr));
+
         ::ibv_qp_init_attr qp_attr = {};
 
         // TODO: make a default struct for this
         qp_attr.cap.max_send_wr  = DEFAULT_WR_ENTRIES;
-        qp_attr.cap.max_send_sge = 4;
+        qp_attr.cap.max_send_sge = 1;
         qp_attr.cap.max_recv_wr  = DEFAULT_WR_ENTRIES;
-        qp_attr.cap.max_recv_sge = 4;
+        qp_attr.cap.max_recv_sge = 1;
 
         qp_attr.send_cq      = scq.get();
         qp_attr.recv_cq      = rcq.get();
