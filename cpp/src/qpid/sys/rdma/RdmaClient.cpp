@@ -64,13 +64,41 @@ AbsTime startTime;
 Duration sendingDuration(TIME_INFINITE);
 Duration fullTestDuration(TIME_INFINITE);
 
-vector<char> testString;
+// Random generator
+// This is an RNG designed by George Marsaglia see http://en.wikipedia.org/wiki/Xorshift
+class Xor128Generator {
+    uint32_t x;
+    uint32_t y;
+    uint32_t z;
+    uint32_t w; 
+
+public:
+    Xor128Generator() :
+      x(123456789),y(362436069),z(521288629),w(88675123)
+    {++(*this);}
+    
+    Xor128Generator& operator++() {
+        uint32_t t = x ^ (x << 11);
+        x = y; y = z; z = w;
+        w = w ^ (w >> 19) ^ t ^ (t >> 8);
+        return *this;
+    }
+
+    uint32_t operator*() {
+        return w;
+    }
+};
+
+Xor128Generator output;
+Xor128Generator input;
 
 void write(Rdma::AsynchIO& aio) {
     while (aio.writable() && aio.bufferAvailable() && smsgs < target) {
         Rdma::Buffer* b = aio.getBuffer();
-        std::copy(testString.begin(), testString.end(), b->bytes());
         b->dataCount(msgsize);
+        uint32_t* ip = reinterpret_cast<uint32_t*>(b->bytes());
+        uint32_t* lip = ip + b->dataCount() / sizeof(uint32_t);
+        while (ip != lip) {*ip++ = *output; ++output;}
         aio.queueWrite(b);
         ++smsgs;
         sbytes += msgsize;
@@ -84,6 +112,16 @@ void dataError(Rdma::AsynchIO&) {
 void data(Poller::shared_ptr p, Rdma::AsynchIO& aio, Rdma::Buffer* b) {
     ++rmsgs;
     rbytes += b->dataCount();
+    
+    // Check message is unaltered
+    bool match = true;
+    uint32_t* ip = reinterpret_cast<uint32_t*>(b->bytes());
+    uint32_t* lip = ip + b->dataCount() / sizeof(uint32_t);
+    while (ip != lip) { if (*ip++ != *input) {match = false; break;} ++input;}
+    if (!match) {
+        cout << "Data doesn't match: at msg " << rmsgs << " byte " << rbytes-b->dataCount() << " (ish)\n";
+        exit(1);
+    }
 
     // When all messages have been recvd stop
     if (rmsgs < target) {
@@ -166,12 +204,6 @@ int main(int argc, char* argv[]) {
     if (args.size() > 3)
         msgsize = atoi(args[3].c_str());
     cout << "Message size: " << msgsize << "\n";
-
-    // Make a random message of that size
-    testString.resize(msgsize);
-    for (int i = 0; i < msgsize; ++i) {
-        testString[i] = 32 + (rand() & 0x3f);
-    }
 
     try {
         boost::shared_ptr<Poller> p(new Poller());
