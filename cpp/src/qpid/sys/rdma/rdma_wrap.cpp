@@ -277,7 +277,7 @@ namespace Rdma {
         rwr.num_sge = 1;
 
         ::ibv_recv_wr* badrwr = 0;
-        CHECK_IBV(::ibv_post_recv(qp.get(), &rwr, &badrwr));
+        CHECK(::ibv_post_recv(qp.get(), &rwr, &badrwr));
         if (badrwr)
             throw std::logic_error("ibv_post_recv(): Bad rwr");
     }
@@ -292,7 +292,7 @@ namespace Rdma {
         swr.num_sge = 1;
 
         ::ibv_send_wr* badswr = 0;
-        CHECK_IBV(::ibv_post_send(qp.get(), &swr, &badswr));
+        CHECK(::ibv_post_send(qp.get(), &swr, &badswr));
         if (badswr)
             throw std::logic_error("ibv_post_send(): Bad swr");
     }
@@ -308,7 +308,7 @@ namespace Rdma {
         swr.num_sge = 1;
 
         ::ibv_send_wr* badswr = 0;
-        CHECK_IBV(::ibv_post_send(qp.get(), &swr, &badswr));
+        CHECK(::ibv_post_send(qp.get(), &swr, &badswr));
         if (badswr)
             throw std::logic_error("ibv_post_send(): Bad swr");
     }
