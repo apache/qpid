@@ -98,6 +98,8 @@ namespace Rdma {
         void returnBuffer(Buffer*);
 
     private:
+        const static int maxSupportedProtocolVersion = 0;
+
         // Constants for the peer-peer command messages
         // These are sent in the high bits if the imm data of an rdma message
         // The low bits are used to send the credit

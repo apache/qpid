@@ -22,7 +22,7 @@
 
 #include "qpid/log/Statement.h"
 
-#include <iostream>
+#include <string>
 #include <boost/bind.hpp>
 
 using qpid::sys::SocketAddress;
@@ -69,6 +69,18 @@ namespace Rdma {
     };
 #   pragma pack(pop)
 
+    class IOException : public std::exception {
+        std::string s;
+
+    public:
+        IOException(std::string s0): s(s0) {}
+        ~IOException() throw() {}
+        
+        const char* what() const throw() {
+            return s.c_str();
+        }
+    };
+
     AsynchIO::AsynchIO(
             QueuePair::intrusive_ptr q,
             int version,
@@ -97,6 +109,8 @@ namespace Rdma {
         errorCallback(ec),
         pendingWriteAction(boost::bind(&AsynchIO::writeEvent, this))
     {
+        if (protocolVersion > maxSupportedProtocolVersion)
+             throw IOException("Unsupported Rdma Protocol");
         qp->nonblocking();
         qp->notifyRecv();
         qp->notifySend();
