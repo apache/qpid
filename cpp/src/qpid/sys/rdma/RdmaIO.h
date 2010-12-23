@@ -98,7 +98,7 @@ namespace Rdma {
         void returnBuffer(Buffer*);
 
     private:
-        const static int maxSupportedProtocolVersion = 0;
+        const static int maxSupportedProtocolVersion = 1;
 
         // Constants for the peer-peer command messages
         // These are sent in the high bits if the imm data of an rdma message
@@ -154,8 +154,8 @@ namespace Rdma {
         uint16_t initialXmitCredit;
         uint16_t rdmaProtocolVersion;
 
-	// Default to protocol version 0
-        ConnectionParams(uint32_t s, uint16_t c, uint16_t v = 0) :
+	// Default to protocol version 1
+        ConnectionParams(uint32_t s, uint16_t c, uint16_t v = 1) :
             maxRecvBufferSize(s),
             initialXmitCredit(c),
             rdmaProtocolVersion(v)

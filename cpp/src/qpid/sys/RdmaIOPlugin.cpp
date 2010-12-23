@@ -298,6 +298,9 @@ void RdmaIOProtocolFactory::established(Poller::shared_ptr poller, Rdma::Connect
 bool RdmaIOProtocolFactory::request(Rdma::Connection::intrusive_ptr ci, const Rdma::ConnectionParams& cp,
         ConnectionCodec::Factory* f) {
     try {
+        if (cp.rdmaProtocolVersion == 0) {
+            QPID_LOG(warning, "Rdma: connection from protocol version 0 client");
+        }
         RdmaIOHandler* async = new RdmaIOHandler(ci, f);
         Rdma::AsynchIO* aio =
             new Rdma::AsynchIO(ci->getQueuePair(),

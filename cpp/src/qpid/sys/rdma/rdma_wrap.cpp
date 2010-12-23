@@ -187,6 +187,7 @@ namespace Rdma {
         assert(!freeBuffers.empty());
         Buffer* b = &sendBuffers[freeBuffers.back()];
         freeBuffers.pop_back();
+        b->dataCount(0);
         return b;
     }
 
