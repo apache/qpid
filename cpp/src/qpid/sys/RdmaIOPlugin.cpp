@@ -117,6 +117,7 @@ void RdmaIOHandler::write(const framing::ProtocolInitiation& data)
 {
     QPID_LOG(debug, "Rdma: SENT [" << identifier << "] INIT(" << data << ")");
     Rdma::Buffer* buff = aio->getBuffer();
+    assert(buff);
     framing::Buffer out(buff->bytes(), buff->byteCount());
     data.encode(out);
     buff->dataCount(data.encodedSize());
@@ -138,25 +139,29 @@ void RdmaIOHandler::activateOutput() {
 void RdmaIOHandler::idle(Rdma::AsynchIO&) {
     // TODO: Shouldn't need this test as idle() should only ever be called when
     // the connection is writable anyway
-    if ( !(aio->writable() && aio->bufferAvailable()) ) {
+    if ( !aio->writable() ) {
         return;
     }
     if (codec == 0) return;
-    if (codec->canEncode()) {
-        Rdma::Buffer* buff = aio->getBuffer();
+    if (!codec->canEncode()) {
+        return;
+    }
+    Rdma::Buffer* buff = aio->getBuffer();
+    if (buff) {
         size_t encoded=codec->encode(buff->bytes(), buff->byteCount());
         buff->dataCount(encoded);
         aio->queueWrite(buff);
+        if (codec->isClosed()) {
+            close();
+        }
     }
-    if (codec->isClosed())
-        close();
 }
 
 void RdmaIOHandler::initProtocolOut() {
     // We mustn't have already started the conversation
     // but we must be able to send
     assert( codec == 0 );
-    assert( aio->writable() && aio->bufferAvailable() );
+    assert( aio->writable() );
     codec = factory->create(*this, identifier, SecuritySettings());
     write(framing::ProtocolInitiation(codec->getVersion()));
 }
