@@ -22,7 +22,6 @@
 
 #include "qpid/log/Statement.h"
 
-
 #include <iostream>
 #include <boost/bind.hpp>
 
@@ -33,6 +32,43 @@ using qpid::sys::ScopedLock;
 using qpid::sys::Mutex;
 
 namespace Rdma {
+    // Set packing as this is 'on the wire' structure
+#   pragma pack(push, 1)
+    // Structure for Connection Parameters on the network
+    //
+    // The original version (now called 0) of these parameters had a couple of mistakes:
+    // * No way to version the protocol (need to introduce a new protocol for iWarp)
+    // * Used host order int32 (but only deployed on LE archs as far as we know)
+    //   so effectively was LE on the wire which is the opposite of network order.
+    //
+    // Fortunately the values sent were sufficiently restricted that a 16 bit short could
+    // be carved out to indicate the protocol version as these bits were always sent as 0.
+    //
+    // So the current version of parameters uses the last 2 bytes to indicate the protocol
+    // version, if this is 0 then we interpret the rest of the struct without byte swapping
+    // to remain compatible with the previous protocol.
+    struct NConnectionParams {
+        uint32_t maxRecvBufferSize;
+        uint16_t initialXmitCredit;
+        uint16_t rdmaProtocolVersion;
+
+        NConnectionParams(const ConnectionParams& c) :
+            maxRecvBufferSize(c.rdmaProtocolVersion ? htonl(c.maxRecvBufferSize) : c.maxRecvBufferSize),
+            initialXmitCredit(c.rdmaProtocolVersion ? htons(c.initialXmitCredit) : c.initialXmitCredit),
+            // 0 is the same with/without byteswapping!
+            rdmaProtocolVersion(htons(c.rdmaProtocolVersion))
+        {}
+        
+        operator ConnectionParams() const {
+            return 
+            	ConnectionParams(
+            	    rdmaProtocolVersion ? ntohl(maxRecvBufferSize) : maxRecvBufferSize,
+            	    rdmaProtocolVersion ? ntohs(initialXmitCredit) : initialXmitCredit,
+            	    ntohs(rdmaProtocolVersion));
+        }
+    };
+#   pragma pack(pop)
+
     AsynchIO::AsynchIO(
             QueuePair::intrusive_ptr q,
             int size,
@@ -454,11 +490,13 @@ namespace Rdma {
         switch (eventType) {
         case RDMA_CM_EVENT_CONNECT_REQUEST: {
             // Make sure peer has sent params we can use
-            if (!conn_param.private_data || conn_param.private_data_len < sizeof(ConnectionParams)) {
+            if (!conn_param.private_data || conn_param.private_data_len < sizeof(NConnectionParams)) {
                 id->reject();
                 break;
-            } 
-            ConnectionParams cp = *static_cast<const ConnectionParams*>(conn_param.private_data);
+            }
+            
+            const NConnectionParams* rcp = static_cast<const NConnectionParams*>(conn_param.private_data);
+            ConnectionParams cp = *rcp;
 
             // Reject if requested msg size is bigger than we allow
             if (cp.maxRecvBufferSize > checkConnectionParams.maxRecvBufferSize) {
@@ -473,7 +511,7 @@ namespace Rdma {
             if (accept) {
                 // Accept connection
                 cp.initialXmitCredit = checkConnectionParams.initialXmitCredit;
-                id->accept(conn_param, &cp);
+                id->accept(conn_param, rcp);
             } else {
                 // Reject connection
                 id->reject();
@@ -536,10 +574,12 @@ namespace Rdma {
             // RESOLVE_ADDR
             errorCallback(ci, ADDR_ERROR);
             break;
-        case RDMA_CM_EVENT_ROUTE_RESOLVED:
+        case RDMA_CM_EVENT_ROUTE_RESOLVED: {
             // RESOLVE_ROUTE:
-            ci->connect(&connectionParams);
+            NConnectionParams rcp(connectionParams);
+            ci->connect(&rcp);
             break;
+        }
         case RDMA_CM_EVENT_ROUTE_ERROR:
             // RESOLVE_ROUTE:
             errorCallback(ci, ROUTE_ERROR);
@@ -555,16 +595,18 @@ namespace Rdma {
         case RDMA_CM_EVENT_REJECTED: {
             // CONNECTING
             // Extract private data from event
-            assert(conn_param.private_data && conn_param.private_data_len >= sizeof(ConnectionParams));
-            ConnectionParams cp = *static_cast<const ConnectionParams*>(conn_param.private_data);
+            assert(conn_param.private_data && conn_param.private_data_len >= sizeof(NConnectionParams));
+            const NConnectionParams* rcp = static_cast<const NConnectionParams*>(conn_param.private_data);
+            ConnectionParams cp = *rcp;
             rejectedCallback(ci, cp);
             break;
         }
         case RDMA_CM_EVENT_ESTABLISHED: {
             // CONNECTING
             // Extract private data from event
-            assert(conn_param.private_data && conn_param.private_data_len >= sizeof(ConnectionParams));
-            ConnectionParams cp = *static_cast<const ConnectionParams*>(conn_param.private_data);
+            assert(conn_param.private_data && conn_param.private_data_len >= sizeof(NConnectionParams));
+            const NConnectionParams* rcp = static_cast<const NConnectionParams*>(conn_param.private_data);
+            ConnectionParams cp = *rcp;
             connectedCallback(ci, cp);
             break;
         }
