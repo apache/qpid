@@ -143,12 +143,15 @@ namespace Rdma {
     // * Each peer HAS to allocate buffers of the size of the maximum receive from its peer
     // * Each peer HAS to know the initial "credit" it has for transmitting to its peer 
     struct ConnectionParams {
-        int maxRecvBufferSize;
-        int initialXmitCredit ;
+        uint32_t maxRecvBufferSize;
+        uint16_t initialXmitCredit;
+        uint16_t rdmaProtocolVersion;
 
-        ConnectionParams(int s, int c) :
+	// Default to protocol version 0
+        ConnectionParams(uint32_t s, uint16_t c, uint16_t v = 0) :
             maxRecvBufferSize(s),
-            initialXmitCredit(c)
+            initialXmitCredit(c),
+            rdmaProtocolVersion(v)
         {}
     };
 
