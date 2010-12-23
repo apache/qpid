@@ -21,6 +21,7 @@
 #include "qpid/sys/rdma/RdmaIO.h"
 #include "qpid/sys/rdma/rdma_exception.h"
 #include "qpid/sys/Time.h"
+#include "qpid/sys/Thread.h"
 
 #include <netdb.h>
 #include <arpa/inet.h>
@@ -39,6 +40,7 @@ using std::cerr;
 using std::copy;
 using std::rand;
 
+using qpid::sys::Thread;
 using qpid::sys::Poller;
 using qpid::sys::Dispatcher;
 using qpid::sys::SocketAddress;
@@ -173,7 +175,6 @@ int main(int argc, char* argv[]) {
 
     try {
         boost::shared_ptr<Poller> p(new Poller());
-        Dispatcher d(p);
 
         Rdma::Connector c(
             Rdma::ConnectionParams(msgsize, Rdma::DEFAULT_WR_ENTRIES),
@@ -185,7 +186,10 @@ int main(int argc, char* argv[]) {
         SocketAddress sa(host, port);
         cout << "Connecting to: " << sa.asString() <<"\n";
         c.start(p, sa);
-        d.run();
+
+        // The poller loop blocks all signals so run in its own thread
+        Thread t(*p);
+        t.join();
     } catch (Rdma::Exception& e) {
         int err = e.getError();
         cerr << "Error: " << e.what() << "(" << err << ")\n";
