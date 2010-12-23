@@ -634,10 +634,20 @@ namespace Rdma {
             break;
         case RDMA_CM_EVENT_REJECTED: {
             // CONNECTING
-            // Extract private data from event
-            assert(conn_param.private_data && conn_param.private_data_len >= sizeof(NConnectionParams));
-            const NConnectionParams* rcp = static_cast<const NConnectionParams*>(conn_param.private_data);
-            ConnectionParams cp = *rcp;
+            
+            // We can get this event if our peer is not running on the other side
+            // in this case we could get nearly anything in the private data:
+            // From private_data == 0 && private_data_len == 0 (Chelsio iWarp)
+            // to 148 bytes of zeros (Mellanox IB)
+            // 
+            // So assume that if the the private data is absent or not the size of 
+            // the connection parameters it isn't valid
+            ConnectionParams cp(0, 0, 0);
+            if (conn_param.private_data && conn_param.private_data_len == sizeof(NConnectionParams)) {
+                // Extract private data from event
+                const NConnectionParams* rcp = static_cast<const NConnectionParams*>(conn_param.private_data);
+                cp = *rcp;
+            }
             rejectedCallback(ci, cp);
             break;
         }
