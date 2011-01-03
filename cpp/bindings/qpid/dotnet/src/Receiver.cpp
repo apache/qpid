@@ -121,24 +121,43 @@ namespace Messaging {
     //
     // Get(message)
     //
-    // TBD
-    //bool Receiver::Get(Message ^ mmsgp)
-    //{
-    //    return Get(mmsgp, DurationConstants::FORVER);
-    //}
-    //
-    //bool Receiver::Get(Message ^ mmsgp, Duration ^ durationp)
-    //{
-    //    ::qpid::messaging::Duration dur((*durationp).Milliseconds);
-    //
-    //    ::qpid::messaging::Message tmpMsg;
-    //
-    //    bool result = receiverp->Receiver::get(tmpMsg, dur);
-    //
-    //    mmsgp = gcnew Message(tmpMsg);
-    //
-    //    return result;
-    //}
+    bool Receiver::Get(Message ^% mmsgp)
+    {
+        return Get(mmsgp, DurationConstants::FORVER);
+    }
+    
+    bool Receiver::Get(Message ^% mmsgp, Duration ^ durationp)
+    {
+        System::Exception           ^ newException = nullptr;
+
+        try 
+		{
+            ::qpid::messaging::Duration dur((*durationp).Milliseconds);
+        
+            ::qpid::messaging::Message tmpMsg;
+        
+            bool result = receiverp->Receiver::get(tmpMsg, dur);
+        
+            if (result)
+            {
+                mmsgp = gcnew Message(tmpMsg);
+            }
+        
+            return result;
+        }
+        catch (const ::qpid::types::Exception & error) 
+		{
+            String ^ errmsg = gcnew String(error.what());
+            newException    = gcnew QpidException(errmsg);
+        }
+
+		if (newException != nullptr) 
+		{
+	        throw newException;
+		}
+
+        return false;
+    }
 
     //
     // message = Get()
@@ -192,24 +211,42 @@ namespace Messaging {
     //
     // Fetch(message)
     //
-    // TBD
-    //bool Receiver::Fetch(Message ^ mmsgp)
-    //{
-    //    return Fetch(mmsgp, DurationConstants::FORVER);
-    //}
-    //
-    //bool Receiver::Fetch(Message ^ mmsgp, Duration ^ durationp)
-    //{
-    //    ::qpid::messaging::Duration dur((*durationp).Milliseconds);
-    //
-    //    ::qpid::messaging::Message tmpMsg;
-    //
-    //    bool result = receiverp->Receiver::fetch(tmpMsg, dur);
-    //
-    //    mmsgp = gcnew Message(tmpMsg);
-    //
-    //    return result;
-    //}
+    bool Receiver::Fetch(Message ^% mmsgp)
+    {
+        return Fetch(mmsgp, DurationConstants::FORVER);
+    }
+    
+    bool Receiver::Fetch(Message ^% mmsgp, Duration ^ durationp)
+    {
+        System::Exception         ^ newException = nullptr;
+
+        try
+        {
+            ::qpid::messaging::Duration dur((*durationp).Milliseconds);
+    
+            ::qpid::messaging::Message tmpMsg;
+        
+            bool result = receiverp->Receiver::fetch(tmpMsg, dur);
+        
+            if (result)
+            {
+                mmsgp = gcnew Message(tmpMsg);
+            }
+        
+            return result;
+        } 
+        catch (const ::qpid::types::Exception & error) 
+        {
+            String ^ errmsg = gcnew String(error.what());
+            newException    = gcnew QpidException(errmsg);
+        }
+        if (newException != nullptr)
+        {
+			throw newException;
+		}
+
+        return false;
+    }
     
 
     //
