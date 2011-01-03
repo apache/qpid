@@ -43,9 +43,9 @@ namespace Org.Apache.Qpid.Messaging.Examples {
                 Duration timeout = options.Forever ? 
                                    DurationConstants.FORVER : 
                                    DurationConstants.SECOND * options.Timeout;
-                Message message;
+                Message message = new Message();
 
-                while ((message = receiver.Fetch(timeout)) != null)
+                while (receiver.Fetch(ref message, timeout))
                 {
                     Dictionary<string, object> properties = new Dictionary<string, object>();
                     properties = message.Properties;

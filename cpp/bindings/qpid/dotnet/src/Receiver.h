@@ -99,18 +99,16 @@ namespace Messaging {
         }
 
         // Get(message)
-        // TBD
-        //bool Get(Message ^ mmsgp);
-        //bool Get(Message ^ mmsgp, Duration ^ durationp);
+        bool Get(Message ^% mmsgp);
+        bool Get(Message ^% mmsgp, Duration ^ durationp);
 
         // message = Get()
         Message ^ Get();
         Message ^ Get(Duration ^ durationp);
 
         // Fetch(message)
-        // TBD
-        //bool Fetch(Message ^ mmsgp);
-        //bool Fetch(Message ^ mmsgp, Duration ^ duration);
+        bool Fetch(Message ^% mmsgp);
+        bool Fetch(Message ^% mmsgp, Duration ^ duration);
 
         // message = Fetch()
         Message ^ Fetch();
