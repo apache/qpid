@@ -87,7 +87,7 @@ under the License.
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="csharp.map.recevier.cs" />
+    <Compile Include="csharp.map.receiver.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
