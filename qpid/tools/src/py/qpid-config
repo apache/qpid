@@ -527,7 +527,7 @@ class BrokerManager:
             key = args[2]
         self.broker.getAmqpSession().exchange_unbind(queue=qname, exchange=ename, binding_key=key)
 
-    def findBId(self, items, id):
+    def findById(self, items, id):
         for item in items:
             if item.getObjectId() == id:
                 return item
