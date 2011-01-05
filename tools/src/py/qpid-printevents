@@ -78,7 +78,7 @@ def main(argv=None):
 
   p = optparse.OptionParser(usage=_usage, description=_description, formatter=JHelpFormatter())
   p.add_option("--heartbeats", action="store_true", default=False, help="Use heartbeats.")
-  p.add_option("--sasl-mechanism", action="store", choices=["EXTERNAL","ANONYMOUS","PLAIN","CRAM-MD5","DIGEST-MD5","GSSAPI"], metavar="<mech>", help="SASL mechanism for authentication. SASL automatically picks the most secure available mechanism - use this option to override.")
+  p.add_option("--sasl-mechanism", action="store", type="string", metavar="<mech>", help="SASL mechanism for authentication (e.g. EXTERNAL, ANONYMOUS, PLAIN, CRAM-MD, DIGEST-MD5, GSSAPI). SASL automatically picks the most secure available mechanism - use this option to override.")
   p.add_option("--require-connection", action="store_true", help="Raise error if connection can not be established. By default, retries connections that could not be established, which allows events to be printed as brokers start and stop.")
   p.add_option("--log-level", action="store", choices=["debug", "info", "warn", "error", "critical"], metavar="<level>", help="Logging level for connections")
 
