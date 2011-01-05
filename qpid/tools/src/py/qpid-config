@@ -24,7 +24,6 @@ from optparse import OptionParser, OptionGroup, IndentedHelpFormatter
 import sys
 import locale
 from qmf.console import Session
-import qpid.log
 
 class Config:
     def __init__(self):
@@ -547,9 +546,6 @@ def YN(bool):
 
 
 def main(argv=None):
-
-    qpid.log.getLogger("qpid.qmf").setLevel(qpid.log.ERROR)
-
     args = OptionsAndArguments(argv)
     bm   = BrokerManager()
 
@@ -595,13 +591,13 @@ def main(argv=None):
     except KeyboardInterrupt:
         print
     except IOError, e:
-        print "Failed: %s: %s" % (e.__class__.__name__, e)
+        print e
         bm.Disconnect()
         return 1
     except SystemExit, e:
         bm.Disconnect()
         return 1
-    except Exception, e:
+    except Exception,e:
         if e.__class__.__name__ != "Timeout":
             # ignore Timeout exception, handle in the loop below
             print "Failed: %s: %s" % (e.__class__.__name__, e)

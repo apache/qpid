@@ -511,7 +511,7 @@ def main(argv=None):
         return 0
     except KeyboardInterrupt:
         print
-    except Exception, e:
+    except Exception,e:
         print "Failed: %s - %s" % (e.__class__.__name__, e)
 
     bm.Disconnect()   # try to deallocate brokers

@@ -39,8 +39,8 @@ from Queue           import Queue, Empty
 from time            import time, strftime, gmtime, sleep
 from cStringIO       import StringIO
 
-import qpid.log
-qpid.log.enable(name="qpid.qmf")
+#import qpid.log
+#qpid.log.enable(name="qpid.io.cmd", level=qpid.log.DEBUG)
 
 #===================================================================================================
 # CONSOLE
@@ -2509,14 +2509,6 @@ class Broker(Thread):
 
     except Exception, e:
       self.error = "Exception during connection setup: %s - %s" % (e.__class__.__name__, e)
-
-      log = qpid.log.getLogger("qpid.qmf")
-      
-      if e[0] == -2:
-          log.warning("Could not connect to broker " + self.host + ":" + str(self.port) + " " + str(e))
-      else:
-          log.error("Could not connect to broker " + self.host + ":" + str(self.port) + " " + str(e))
-
       self.conn_exc = e
       return False     # connection failed
 
