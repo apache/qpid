@@ -404,8 +404,10 @@ void ManagementAgent::raiseEvent(const ManagementEvent& event, severity_t severi
 
 
         string content;
-        MapCodec::encode(map_, content);
-        sendBufferLH(content, "", headers, "amqp/map", v2Topic, key.str());
+        Variant::List list_;
+        list_.push_back(map_);
+        ListCodec::encode(list_, content);
+        sendBufferLH(content, "", headers, "amqp/list", v2Topic, key.str());
         QPID_LOG(trace, "SEND raiseEvent (v2) class=" << event.getPackageName() << "." << event.getEventName());
     }
 
@@ -1000,9 +1002,9 @@ void ManagementAgent::periodicProcessing (void)
         headers["qmf.agent"] = name_address;
 
         map["_values"] = attrMap;
-        map["_values"].asMap()["timestamp"] = uint64_t(sys::Duration(sys::EPOCH, sys::now()));
-        map["_values"].asMap()["heartbeat_interval"] = interval;
-        map["_values"].asMap()["epoch"] = bootSequence;
+        map["_values"].asMap()["_timestamp"] = uint64_t(sys::Duration(sys::EPOCH, sys::now()));
+        map["_values"].asMap()["_heartbeat_interval"] = interval;
+        map["_values"].asMap()["_epoch"] = bootSequence;
 
         string content;
         MapCodec::encode(map, content);
@@ -2017,9 +2019,9 @@ void ManagementAgent::handleLocateRequestLH(const string&, const string& replyTo
     headers["qmf.agent"] = name_address;
 
     map["_values"] = attrMap;
-    map["_values"].asMap()["timestamp"] = uint64_t(sys::Duration(sys::EPOCH, sys::now()));
-    map["_values"].asMap()["heartbeat_interval"] = interval;
-    map["_values"].asMap()["epoch"] = bootSequence;
+    map["_values"].asMap()["_timestamp"] = uint64_t(sys::Duration(sys::EPOCH, sys::now()));
+    map["_values"].asMap()["_heartbeat_interval"] = interval;
+    map["_values"].asMap()["_epoch"] = bootSequence;
 
     string content;
     MapCodec::encode(map, content);
