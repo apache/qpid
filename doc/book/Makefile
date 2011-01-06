@@ -35,6 +35,8 @@ java: build/AMQP-Messaging-Broker-Java-Book
 
 programming: build/Programming-In-Apache-Qpid
 
+qmf: build/QmfBook
+
 build/AMQP-Messaging-Broker-CPP-Book:
 	./build-book.sh AMQP-Messaging-Broker-CPP-Book
 
@@ -43,6 +45,9 @@ build/AMQP-Messaging-Broker-Java-Book:
 
 build/Programming-In-Apache-Qpid:
 	./build-book.sh Programming-In-Apache-Qpid
+
+build/QmfBook: src/QmfBook.xml src/QmfIntroduction.xml
+	./build-book.sh QmfBook
 
 clean:
 	rm -rf build

@@ -1,0 +1,101 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+]>
+
+<!--
+   
+   Licensed to the Apache Software Foundation (ASF) under one
+   or more contributor license agreements.  See the NOTICE file
+   distributed with this work for additional information
+   regarding copyright ownership.  The ASF licenses this file
+   to you under the Apache License, Version 2.0 (the
+   "License"); you may not use this file except in compliance
+   with the License.  You may obtain a copy of the License at
+   
+   http://www.apache.org/licenses/LICENSE-2.0
+   
+   Unless required by applicable law or agreed to in writing,
+   software distributed under the License is distributed on an
+   "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+   KIND, either express or implied.  See the License for the
+   specific language governing permissions and limitations
+   under the License.
+   
+  -->
+
+<book id="qmf-book">
+  <title>QMF - The Qpid Management Framework</title>
+  <subtitle>Object and Service-Oriented Management Leveraging the Capabilities of Qpid Messaging</subtitle>
+
+  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="QmfIntroduction.xml"/>
+
+  <!-- As these chapters are fleshed out, move them into separate include files for easier text management -->
+  <chapter><title>QMF Architecture</title>
+    <section><title>Components: Agents and Consoles</title>
+    </section>
+    <section><title>QMF Domains</title>
+    </section>
+    <section><title>Data: Objects, Methods, Events, and Schemata</title>
+    </section>
+    <section><title>Agent Discovery</title>
+    </section>
+    <section><title>Data Access: Queries and Subscriptions</title>
+    </section>
+  </chapter>
+
+  <chapter><title>QMF Schema Definition</title>
+    <section><title>Packages, Objects, and Events</title>
+    </section>
+    <section><title>Data Types</title>
+    </section>
+    <section><title>Programmatic Schema Definition</title>
+    </section>
+    <section><title>XML Schema Definition</title>
+    </section>
+  </chapter>
+
+  <chapter><title>How to Write an Agent</title>
+  </chapter>
+
+  <chapter><title>How to Write a Console</title>
+  </chapter>
+
+  <chapter><title>QMF Queries</title>
+  </chapter>
+
+  <chapter><title>API Reference</title>
+    <section><title>C++ API</title>
+    </section>
+    <section><title>Python API</title>
+    </section>
+    <section><title>Ruby API</title>
+    </section>
+<!--
+    <section><title>.NET API</title>
+    </section>
+    <section><title>Java API</title>
+    </section>
+-->
+  </chapter>
+
+  <chapter><title>Scale: Large QMF Networks</title>
+  </chapter>
+
+  <chapter><title>Security</title>
+  </chapter>
+
+  <chapter><title>The QMF Protocol</title>
+    <section><title>Message Headers</title>
+    </section>
+    <section><title>Addressing</title>
+    </section>
+    <section><title>Message Protocol</title>
+    </section>
+    <section><title>Message Body Details</title>
+    </section>
+  </chapter>
+
+  <chapter><title>Using QMF Messages to Manage the Qpid Broker</title>
+  </chapter>
+
+</book>
