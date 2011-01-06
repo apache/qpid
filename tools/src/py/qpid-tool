@@ -23,6 +23,7 @@ import os
 import optparse
 import sys
 import socket
+from types       import *
 from cmd         import Cmd
 from shlex       import split
 from threading   import Lock
@@ -484,6 +485,8 @@ class QmfData(Console):
       raise ValueError ("Invalid type code: %s" % str(typecode))
 
   def valueByType(self, typecode, val):
+    if type(val) is type(None):
+      return "absent"
     if   typecode == 1:  return "%d" % val
     elif typecode == 2:  return "%d" % val
     elif typecode == 3:  return "%d" % val
