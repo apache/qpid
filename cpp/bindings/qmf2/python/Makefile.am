@@ -27,9 +27,10 @@ generated_file_list = \
 
 EXTRA_DIST = python.i
 BUILT_SOURCES = $(generated_file_list)
+SWIG_FLAGS = -w362,401
 
 $(generated_file_list): $(srcdir)/python.i $(srcdir)/../qmf2.i $(srcdir)/../../swig_python_typemaps.i
-	swig -c++ -python -Wall $(INCLUDES) $(QPID_CXXFLAGS) -I/usr/include -o cqmf2.cpp $(srcdir)/python.i
+	swig -c++ -python $(SWIG_FLAGS) $(INCLUDES) $(QPID_CXXFLAGS) -I/usr/include -o cqmf2.cpp $(srcdir)/python.i
 
 pylibdir = $(PYTHON_LIB)
 
