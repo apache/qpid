@@ -1206,11 +1206,11 @@ class Session:
     try:
       agentName = ah["qmf.agent"]
       values = content["_values"]
-      timestamp = values["timestamp"]
-      interval = values["heartbeat_interval"]
+      timestamp = values["_timestamp"]
+      interval = values["_heartbeat_interval"]
       epoch = 0
-      if 'epoch' in values:
-        epoch = values['epoch']
+      if '_epoch' in values:
+        epoch = values['_epoch']
     except Exception,e:
       return
 
@@ -1239,7 +1239,7 @@ class Session:
       agent.touch()
     if self.rcvHeartbeats and self.console and agent:
       self._heartbeatCallback(agent, timestamp)
-    agent.update_schema_timestamp(values.get("schema_timestamp", 0))
+    agent.update_schema_timestamp(values.get("_schema_updated", 0))
 
 
   def _v2HandleAgentLocateRsp(self, broker, mp, ah, content):
@@ -2573,7 +2573,7 @@ class Broker(Thread):
       for agent in to_notify:
         self.session._delAgentCallback(agent)
 
-  def _v2SendAgentLocate(self, predicate={}):
+  def _v2SendAgentLocate(self, predicate=[]):
     """
     Broadcast an agent-locate request to cause all agents in the domain to tell us who they are.
     """
@@ -2581,13 +2581,13 @@ class Broker(Thread):
     dp = self.amqpSession.delivery_properties()
     dp.routing_key = "console.request.agent_locate"
     mp = self.amqpSession.message_properties()
-    mp.content_type = "amqp/map"
+    mp.content_type = "amqp/list"
     mp.user_id = self.authUser
     mp.app_id = "qmf2"
     mp.reply_to = self.amqpSession.reply_to("qmf.default.direct", self.v2_direct_queue)
     mp.application_headers = {'qmf.opcode':'_agent_locate_request'}
     sendCodec = Codec()
-    sendCodec.write_map(predicate)
+    sendCodec.write_list(predicate)
     msg = Message(dp, mp, sendCodec.encoded)
     self._send(msg, "qmf.default.topic")
 
@@ -2855,7 +2855,7 @@ class Broker(Thread):
             content = None
         else:
           content = None
-  
+
         if content != None:
           ##
           ## Directly handle agent heartbeats and agent locate responses as these are broker-scope (they are
@@ -3368,6 +3368,9 @@ class Agent:
     Handle a QMFv2 data indication from the agent.  Note: called from context
     of the Broker thread.
     """
+    if content.__class__ != list:
+      return
+
     if mp.correlation_id:
       try:
         self.lock.acquire()
@@ -3384,8 +3387,6 @@ class Agent:
     if "qmf.content" in ah:
       kind = ah["qmf.content"]
     if kind == "_data":
-      if content.__class__ != list:
-        return
       for omap in content:
         context.addV2QueryResult(omap)
       context.processV2Data()
@@ -3393,14 +3394,15 @@ class Agent:
         context.signal()
 
     elif kind == "_event":
-      event = Event(self, v2Map=content)
-      if event.classKey is None or event.schema:
-        # schema optional or present
-        context.doEvent(event)
-      else:
-        # schema not optional and not present
-        if context.addPendingEvent(event):
-          self._v2SendSchemaRequest(event.classKey)
+      for omap in content:
+        event = Event(self, v2Map=omap)
+        if event.classKey is None or event.schema:
+          # schema optional or present
+          context.doEvent(event)
+        else:
+          # schema not optional and not present
+          if context.addPendingEvent(event):
+            self._v2SendSchemaRequest(event.classKey)
 
     elif kind == "_schema_id":
       for sid in content:

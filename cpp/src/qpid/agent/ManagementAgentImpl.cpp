@@ -339,8 +339,10 @@ void ManagementAgentImpl::raiseEvent(const ManagementEvent& event, severity_t se
     headers["qmf.content"] = "_event";
     headers["qmf.agent"] = name_address;
 
-    MapCodec::encode(map_, content);
-    connThreadBody.sendBuffer(content, "", headers, topicExchange, key.str());
+    Variant::List list;
+    list.push_back(map_);
+    ListCodec::encode(list, content);
+    connThreadBody.sendBuffer(content, "", headers, topicExchange, key.str(), "amqp/list");
 }
 
 uint32_t ManagementAgentImpl::pollCallbacks(uint32_t callLimit)
@@ -1165,10 +1167,10 @@ void ManagementAgentImpl::periodicProcessing()
 void ManagementAgentImpl::getHeartbeatContent(qpid::types::Variant::Map& map)
 {
     map["_values"] = attrMap;
-    map["_values"].asMap()["timestamp"] = uint64_t(Duration(EPOCH, now()));
-    map["_values"].asMap()["heartbeat_interval"] = interval;
-    map["_values"].asMap()["epoch"] = bootSequence;
-    map["_values"].asMap()["schema_timestamp"] = uint64_t(schemaTimestamp);
+    map["_values"].asMap()["_timestamp"] = uint64_t(Duration(EPOCH, now()));
+    map["_values"].asMap()["_heartbeat_interval"] = interval;
+    map["_values"].asMap()["_epoch"] = bootSequence;
+    map["_values"].asMap()["_schema_updated"] = uint64_t(schemaTimestamp);
 }
 
 void ManagementAgentImpl::ConnectionThread::run()
