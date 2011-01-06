@@ -28,6 +28,7 @@
 
 source ./test_env.sh
 
+
 # This minimum value corresponds to sasl version 2.1.22
 minimum_sasl_version=131350
 
@@ -152,7 +153,6 @@ $QPIDD_EXEC                                  \
   --ssl-sasl-no-dict                         \
   --ssl-require-client-authentication        \
   --sasl-config=$sasl_config_file            \
-  --config ./config.null                     \
   --no-data-dir                              \
   --no-module-dir                            \
   --load-module ${SSL_LIB}                   \
