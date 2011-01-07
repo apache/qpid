@@ -262,6 +262,7 @@ void ManagementObject::setUpdateTime()
 
 void ManagementObject::resourceDestroy()
 {
+    QPID_LOG(trace, "Management object marked deleted: " << getObjectId().getV2Key());
     destroyTime = sys::Duration(sys::EPOCH, sys::now());
     deleted     = true;
 }

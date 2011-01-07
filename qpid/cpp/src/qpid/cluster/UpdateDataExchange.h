@@ -23,6 +23,8 @@
  */
 
 #include "qpid/broker/Exchange.h"
+#include "types.h"
+#include <iosfwd>
 
 namespace qpid {
 
@@ -31,6 +33,7 @@ class ManagementAgent;
 }
 
 namespace cluster {
+class Cluster;
 
 /**
  * An exchange used to send data that is to large for a control
@@ -45,7 +48,7 @@ class UpdateDataExchange : public broker::Exchange
     static const std::string MANAGEMENT_SCHEMAS_KEY;
     static const std::string MANAGEMENT_DELETED_OBJECTS_KEY;
 
-    UpdateDataExchange(management::Manageable* parent);
+    UpdateDataExchange(Cluster& parent);
 
     void route(broker::Deliverable& msg, const std::string& routingKey,
                const framing::FieldTable* args);
@@ -71,10 +74,11 @@ class UpdateDataExchange : public broker::Exchange
     void updateManagementAgent(management::ManagementAgent* agent);
 
   private:
-
+    MemberId clusterId;
     std::string managementAgents;
     std::string managementSchemas;
     std::string managementDeletedObjects;
+  friend std::ostream& operator<<(std::ostream&, const UpdateDataExchange&);
 };
 
 }} // namespace qpid::cluster
