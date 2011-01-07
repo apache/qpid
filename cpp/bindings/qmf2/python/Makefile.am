@@ -35,6 +35,8 @@ $(generated_file_list): $(srcdir)/python.i $(srcdir)/../qmf2.i $(srcdir)/../../s
 pylibdir = $(PYTHON_LIB)
 
 lib_LTLIBRARIES = _cqmf2.la
+cqpiddir = $(pythondir)
+cqpid_PYTHON = qmf2.py cqmf2.py
 
 _cqmf2_la_LDFLAGS = -avoid-version -module -shared
 _cqmf2_la_LIBADD = $(PYTHON_LIBS) -L$(top_builddir)/src/.libs $(top_builddir)/src/libqmf2.la
