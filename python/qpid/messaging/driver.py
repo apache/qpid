@@ -82,6 +82,7 @@ class Pattern:
   # XXX: this should become part of the driver
   def _bind(self, sst, exchange, queue):
     from qpid.ops import ExchangeBind
+
     sst.write_cmd(ExchangeBind(exchange=exchange, queue=queue,
                                binding_key=self.value.replace("*", "#")))
 
@@ -244,8 +245,10 @@ class LinkIn:
                     overrides=declare)
       _rcv.on_unlink = [QueueDelete(_rcv._queue)]
       subject = _rcv.subject or SUBJECT_DEFAULTS.get(subtype)
-      sst.write_cmd(ExchangeBind(_rcv._queue, _rcv.name, subject))
       bindings = get_bindings(link_opts, _rcv._queue, _rcv.name, subject)
+      if not bindings:
+        sst.write_cmd(ExchangeBind(_rcv._queue, _rcv.name, subject))
+
     elif type == "queue":
       _rcv._queue = _rcv.name
       if _rcv.options.get("mode", "consume") == "browse":
