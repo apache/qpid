@@ -30,7 +30,7 @@
 #include "qpid/broker/SemanticState.h"
 #include "qpid/sys/Runnable.h"
 #include <boost/shared_ptr.hpp>
-
+#include <iosfwd>
 
 namespace qpid {
 
@@ -114,7 +114,10 @@ class UpdateClient : public sys::Runnable {
     boost::function<void()> done;
     boost::function<void(const std::exception& e)> failed;
     client::ConnectionSettings connectionSettings;
+
+  friend std::ostream& operator<<(std::ostream&, const UpdateClient&);
 };
+
 
 }} // namespace qpid::cluster
 

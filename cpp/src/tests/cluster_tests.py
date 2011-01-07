@@ -18,7 +18,7 @@
 # under the License.
 #
 
-import os, signal, sys, time, imp, re, subprocess
+import os, signal, sys, time, imp, re, subprocess, glob, cluster_test_logs
 from qpid import datatypes, messaging
 from qpid.brokertest import *
 from qpid.harness import Skipped
@@ -35,7 +35,7 @@ log = getLogger("qpid.cluster_tests")
 # a non-0 code. Hence the apparently inconsistent use of EXPECT_EXIT_OK
 # and EXPECT_EXIT_FAIL in some of the tests below.
 
-# FIXME aconway 2010-03-11: resolve this - ideally any exit due to an error
+# TODO aconway 2010-03-11: resolve this - ideally any exit due to an error
 # should give non-0 exit status.
 
 # Import scripts as modules
@@ -299,7 +299,10 @@ class LongTests(BrokerTest):
         for i in range(i, len(cluster)): cluster[i].kill()
 
     def test_management(self, args=[]):
-        """Stress test: Run management clients and other clients concurrently."""
+        """
+        Stress test: Run management clients and other clients concurrently
+        while killing and restarting brokers.
+        """
 
         class ClientLoop(StoppableThread):
             """Run a client executable in a loop."""
@@ -352,9 +355,9 @@ class LongTests(BrokerTest):
                 finally: self.lock.release()
                 StoppableThread.stop(self)
 
-        # def test_management
-        args += ["--mgmt-pub-interval", 1] # Publish management information every second.
-        # FIXME aconway 2010-12-15: extra debugging
+        # body of test_management()
+
+        args += ["--mgmt-pub-interval", 1]
         args += ["--log-enable=trace+:management"]
         # Use store if present.
         if BrokerTest.store_lib: args +=["--load-module", BrokerTest.store_lib]
@@ -403,6 +406,10 @@ class LongTests(BrokerTest):
             start_mclients(cluster[alive])
         for c in chain(mclients, *clients):
             c.stop()
+        # Verify that logs are consistent
+        # FIXME aconway 2010-12-21: this is currently expected to fail due to
+        # known bugs, see https://issues.apache.org/jira/browse/QPID-2982
+        self.assertRaises(Exception, cluster_test_logs.verify_logs, glob.glob("*.log"))
 
     def test_management_qmf2(self):
         self.test_management(args=["--mgmt-qmf2=yes"])
@@ -506,7 +513,7 @@ class StoreTests(BrokerTest):
         self.assertEqual(a.wait(), 0)
         self.assertEqual(c.wait(), 0)
         # Mix members from both shutdown events, they should fail
-        # FIXME aconway 2010-03-11: can't predict the exit status of these
+        # TODO aconway 2010-03-11: can't predict the exit status of these
         # as it depends on the order of delivery of initial-status messages.
         # See comment at top of this file.
         a = cluster.start("a", expect=EXPECT_UNKNOWN, wait=False)
