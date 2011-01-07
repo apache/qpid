@@ -27,16 +27,17 @@ generated_file_list = \
 
 EXTRA_DIST = python.i
 BUILT_SOURCES = $(generated_file_list)
+SWIG_FLAGS = -w362,401
 
 $(generated_file_list): $(srcdir)/python.i $(srcdir)/../qpid.i $(srcdir)/../../swig_python_typemaps.i
-	swig -c++ -python -Wall $(INCLUDES) $(QPID_CXXFLAGS) -I$(top_srcdir)/src/qmf -I/usr/include -o cqpid.cpp $(srcdir)/python.i
+	swig -c++ -python $(SWIG_FLAGS) $(INCLUDES) $(QPID_CXXFLAGS) -I$(top_srcdir)/src/qmf -I/usr/include -o cqpid.cpp $(srcdir)/python.i
 
 pylibdir = $(PYTHON_LIB)
 
 lib_LTLIBRARIES = _cqpid.la
+cqpiddir = $(pythondir)
+cqpid_PYTHON = cqpid.py
 
-#_cqpid_la_LDFLAGS = -avoid-version -module -shrext "$(PYTHON_SO)"
-#_cqpid_la_LDFLAGS = -avoid-version -module -shrext ".so"
 _cqpid_la_LDFLAGS = -avoid-version -module -shared
 _cqpid_la_LIBADD = $(PYTHON_LIBS) -L$(top_builddir)/src/.libs -lqpidmessaging -lqpidtypes $(top_builddir)/src/libqpidmessaging.la $(top_builddir)/src/libqpidtypes.la
 _cqpid_la_CXXFLAGS = $(INCLUDES) -I$(PYTHON_INC) -fno-strict-aliasing

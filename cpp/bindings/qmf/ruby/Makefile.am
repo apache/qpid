@@ -23,13 +23,14 @@ INCLUDES = -I$(top_srcdir)/include -I$(top_builddir)/include -I$(top_srcdir)/src
 
 EXTRA_DIST = ruby.i
 BUILT_SOURCES = qmfengine.cpp
+SWIG_FLAGS = -w362,401
 
 rubylibdir = $(RUBY_LIB)
 
 dist_rubylib_DATA = qmf.rb
 
 qmfengine.cpp: $(srcdir)/ruby.i $(srcdir)/../qmfengine.i
-	$(SWIG) -ruby -c++ -Wall $(INCLUDES) $(QPID_CXXFLAGS) -I/usr/include -o qmfengine.cpp $(srcdir)/ruby.i
+	$(SWIG) -ruby -c++ $(SWIG_FLAGS) $(INCLUDES) $(QPID_CXXFLAGS) -I/usr/include -o qmfengine.cpp $(srcdir)/ruby.i
 
 rubylibarchdir = $(RUBY_LIB_ARCH)
 rubylibarch_LTLIBRARIES = qmfengine.la
