@@ -265,7 +265,7 @@ Cluster::Cluster(const ClusterSettings& set, broker::Broker& b) :
                       "Error delivering frames",
                       poller),
     failoverExchange(new FailoverExchange(broker.GetVhostObject(), &broker)),
-    updateDataExchange(new UpdateDataExchange(this)),
+    updateDataExchange(new UpdateDataExchange(*this)),
     quorum(boost::bind(&Cluster::leave, this)),
     decoder(boost::bind(&Cluster::deliverFrame, this, _1)),
     discarding(true),
@@ -356,7 +356,7 @@ void Cluster::addLocalConnection(const boost::intrusive_ptr<Connection>& c) {
 
 // Called in connection thread to insert an updated shadow connection.
 void Cluster::addShadowConnection(const boost::intrusive_ptr<Connection>& c) {
-    QPID_LOG(info, *this << " new shadow connection " << c->getId());
+    QPID_LOG(debug, *this << " new shadow connection " << c->getId());
     // Safe to use connections here because we're pre-catchup, stalled
     // and discarding, so deliveredFrame is not processing any
     // connection events.
@@ -749,7 +749,7 @@ struct AppendQueue {
 std::string Cluster::debugSnapshot() {
     assertClusterSafe();
     std::ostringstream msg;
-    msg << "queue snapshot at " << map.getFrameSeq() << ":";
+    msg << "Member joined, frameSeq=" << map.getFrameSeq() << ", queue snapshot:";
     AppendQueue append(msg);
     broker.getQueues().eachQueue(append);
     return msg.str();
@@ -837,7 +837,7 @@ void Cluster::updateOffer(const MemberId& updater, uint64_t updateeInt, Lock& l)
         checkUpdateIn(l);
     }
     else {
-        QPID_LOG(debug,*this << " unstall, ignore update " << updater
+        QPID_LOG(info, *this << " unstall, ignore update " << updater
                  << " to " << updatee);
         deliverEventQueue.start(); // Not involved in update.
     }
@@ -932,15 +932,15 @@ void Cluster::checkUpdateIn(Lock& l) {
         // NB: don't updateMgmtMembership() here as we are not in the deliver
         // thread. It will be updated on delivery of the "ready" we just mcast.
         broker.setClusterUpdatee(false);
+        discarding = false;     // OK to set, we're stalled for update.
+        QPID_LOG(notice, *this << " update complete, starting catch-up.");
+        QPID_LOG(debug, debugSnapshot()); // OK to call because we're stalled.
         if (mAgent) {
             // Update management agent now, after all update activity is complete.
             updateDataExchange->updateManagementAgent(mAgent);
             mAgent->suppress(false); // Enable management output.
             mAgent->clusterUpdate();
         }
-        discarding = false;     // OK to set, we're stalled for update.
-        QPID_LOG(notice, *this << " update complete, starting catch-up.");
-        QPID_LOG(debug, debugSnapshot()); // OK to call because we're stalled.
         enableClusterSafe();    // Enable cluster-safe assertions
         deliverEventQueue.start();
     }
@@ -1111,7 +1111,7 @@ void Cluster::setClusterId(const Uuid& uuid, Lock&) {
         mgmtObject->set_clusterID(clusterId.str());
         mgmtObject->set_memberID(stream.str());
     }
-    QPID_LOG(debug, *this << " cluster-uuid = " << clusterId);
+    QPID_LOG(notice, *this << " cluster-uuid = " << clusterId);
 }
 
 void Cluster::messageExpired(const MemberId&, uint64_t id, Lock&) {
