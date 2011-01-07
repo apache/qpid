@@ -23,11 +23,12 @@ INCLUDES = -I$(top_srcdir)/include -I$(top_builddir)/include -I$(top_srcdir)/src
 
 EXTRA_DIST = ruby.i
 BUILT_SOURCES = cqpid.cpp
+SWIG_FLAGS = -w362,401
 
 rubylibdir = $(RUBY_LIB)
 
 cqpid.cpp: $(srcdir)/ruby.i $(srcdir)/../qpid.i $(srcdir)/../../swig_ruby_typemaps.i
-	$(SWIG) -ruby -c++ -Wall $(INCLUDES) $(QPID_CXXFLAGS) -I/usr/include -o cqpid.cpp $(srcdir)/ruby.i
+	$(SWIG) -ruby -c++ $(SWIG_FLAGS) $(INCLUDES) $(QPID_CXXFLAGS) -I/usr/include -o cqpid.cpp $(srcdir)/ruby.i
 
 rubylibarchdir = $(RUBY_LIB_ARCH)
 rubylibarch_LTLIBRARIES = cqpid.la
