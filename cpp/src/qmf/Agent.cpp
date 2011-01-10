@@ -27,6 +27,7 @@
 #include "qmf/Query.h"
 #include "qmf/SchemaImpl.h"
 #include "qmf/agentCapability.h"
+#include "qmf/constants.h"
 #include "qpid/messaging/Sender.h"
 #include "qpid/messaging/AddressParser.h"
 #include "qpid/management/Buffer.h"
@@ -507,9 +508,9 @@ void AgentImpl::sendQuery(const Query& query, uint32_t correlator)
     Variant::Map map;
     Variant::Map& headers(msg.getProperties());
 
-    headers["method"] = "request";
-    headers["qmf.opcode"] = "_query_request";
-    headers["x-amqp-0-10.app-id"] = "qmf2";
+    headers[protocol::HEADER_KEY_METHOD] = protocol::HEADER_METHOD_REQUEST;
+    headers[protocol::HEADER_KEY_OPCODE] = protocol::HEADER_OPCODE_QUERY_REQUEST;
+    headers[protocol::HEADER_KEY_APP_ID] = protocol::HEADER_APP_ID_QMF;
 
     msg.setReplyTo(session.replyAddress);
     msg.setCorrelationId(boost::lexical_cast<string>(correlator));
@@ -527,9 +528,9 @@ void AgentImpl::sendMethod(const string& method, const Variant::Map& args, const
     Variant::Map map;
     Variant::Map& headers(msg.getProperties());
 
-    headers["method"] = "request";
-    headers["qmf.opcode"] = "_method_request";
-    headers["x-amqp-0-10.app-id"] = "qmf2";
+    headers[protocol::HEADER_KEY_METHOD] = protocol::HEADER_METHOD_REQUEST;
+    headers[protocol::HEADER_KEY_OPCODE] = protocol::HEADER_OPCODE_METHOD_REQUEST;
+    headers[protocol::HEADER_KEY_APP_ID] = protocol::HEADER_APP_ID_QMF;
 
     map["_method_name"] = method;
     map["_object_id"] = addr.asMap();

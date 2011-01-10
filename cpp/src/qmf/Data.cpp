@@ -21,8 +21,10 @@
 
 #include "qmf/DataImpl.h"
 #include "qmf/DataAddrImpl.h"
+#include "qmf/SchemaImpl.h"
 #include "qmf/SchemaIdImpl.h"
 #include "qmf/PrivateImplRef.h"
+#include "qmf/SchemaProperty.h"
 
 using namespace std;
 using namespace qmf;
@@ -35,8 +37,7 @@ Data::Data(const Data& s) : qmf::Handle<DataImpl>() { PI::copy(*this, s); }
 Data::~Data() { PI::dtor(*this); }
 Data& Data::operator=(const Data& s) { return PI::assign(*this, s); }
 
-Data::Data(const SchemaId& s) { PI::ctor(*this, new DataImpl(s)); }
-void Data::setSchema(const SchemaId& s) { impl->setSchema(s); }
+Data::Data(const Schema& s) { PI::ctor(*this, new DataImpl(s)); }
 void Data::setAddr(const DataAddr& a) { impl->setAddr(a); }
 void Data::setProperty(const string& k, const qpid::types::Variant& v) { impl->setProperty(k, v); }
 void Data::overwriteProperties(const qpid::types::Variant::Map& m) { impl->overwriteProperties(m); }
@@ -100,6 +101,20 @@ Variant::Map DataImpl::asMap() const
     }
 
     return result;
+}
+
+
+void DataImpl::setProperty(const std::string& k, const qpid::types::Variant& v)
+{
+    if (schema.isValid()) {
+        //
+        //  If we have a valid schema, make sure that the property is included in the 
+        //  schema and that the variant type is compatible with the schema type.
+        //
+        if (!SchemaImplAccess::get(schema).isValidProperty(k, v))
+            throw QmfException("Property '" + k + "' either not in the schema or value is of incompatible type");
+    }
+    properties[k] = v;
 }
 
 
