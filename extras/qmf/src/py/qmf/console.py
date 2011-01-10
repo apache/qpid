@@ -53,6 +53,10 @@ class Console:
     """ Invoked when a connection is established to a broker """
     pass
 
+  def brokerConnectionFailed(self, broker):
+    """ Invoked when a connection to a broker fails """
+    pass
+
   def brokerDisconnected(self, broker):
     """ Invoked when the connection to a broker is lost """
     pass
@@ -2510,6 +2514,8 @@ class Broker(Thread):
     except Exception, e:
       self.error = "Exception during connection setup: %s - %s" % (e.__class__.__name__, e)
       self.conn_exc = e
+      if self.session.console:
+        self.session.console.brokerConnectionFailed(self)
       return False     # connection failed
 
   def _updateAgent(self, obj):
