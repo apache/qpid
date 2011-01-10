@@ -67,7 +67,9 @@ class Mcli(Cmd):
     print
     print "Data Commands:"
     print "    query <class-name> [<package-name>] [<predicate>] - Query for data from the agent"
-    print "    show data <id>                                    - Show details from a data object"
+    print "    list                                              - List accumulated query results"
+    print "    clear                                             - Clear accumulated query results"
+    print "    show <id>                                         - Show details from a data object"
     print "    call <id> <method> [<args>]                       - Call a method on a data object"
     print
     print "General Commands:"
@@ -93,7 +95,7 @@ class Mcli(Cmd):
       else:
         self.dataObject.do_set(data)
     except Exception, e:
-      print "Exception in set command: %r" % e
+      print "Exception in set command:", e
 
   def complete_list(self, text, line, begidx, endidx):
     tokens = split(line[:begidx])
@@ -105,19 +107,19 @@ class Mcli(Cmd):
     try:
       self.dataObject.do_list(data)
     except Exception, e:
-      print "Exception in list command: %r" % e
+      print "Exception in list command:", e
 
   def complete_show(self, text, line, begidx, endidx):
     tokens = split(line[:begidx])
     if len(tokens) == 1:
-      return [i for i in ('filter', 'agent ', 'class ', 'data ') if i.startswith(text)]
+      return [i for i in ('filter', 'agent ', 'class ') if i.startswith(text)]
     return []
 
   def do_show(self, data):
     try:
       self.dataObject.do_show(data)
     except Exception, e:
-      print "Exception in show command: %r" % e
+      print "Exception in show command:", e
 
   def complete_query(self, text, line, begidx, endidx):
     return []
@@ -126,13 +128,19 @@ class Mcli(Cmd):
     try:
       self.dataObject.do_query(data)
     except Exception, e:
-      print "Exception in query command: %r" % e
+      print "Exception in query command:", e
 
   def do_call(self, data):
     try:
       self.dataObject.do_call(data)
     except Exception, e:
-      print "Exception in call command: %r", e
+      print "Exception in call command:", e
+
+  def do_clear(self, data):
+    try:
+      self.dataObject.do_clear(data)
+    except Exception, e:
+      print "Exception in clear command:", e
 
   def do_EOF(self, data):
     print "quit"
@@ -180,6 +188,7 @@ class QmfData:
     self.next_number = 1
     self.focus_agent = None
     self.data_list = {}
+    self.next_data_index = 1
 
   #=======================
   # Methods to support CLI
@@ -197,9 +206,8 @@ class QmfData:
   def do_list(self, data):
     tokens = data.split()
     if len(tokens) == 0:
-      print "What do you want to list?  type 'help' for more information."
-      return
-    if tokens[0] == 'agents' or tokens[0] == 'agent':
+      self.listData()
+    elif tokens[0] == 'agents' or tokens[0] == 'agent':
       self.listAgents()
     elif tokens[0] == 'packages' or tokens[0] == 'package':
       self.listPackages()
@@ -248,8 +256,12 @@ class QmfData:
       self.showClass(tokens[1:])
       return
 
-    if tokens[0] == "data":
-      self.showData(tokens[1])
+    if tokens[0].isdigit():
+      self.showData(tokens[0])
+      return
+
+    print "What do you want to show?  Type 'help' for more information."
+    return
 
   def do_query(self, data):
     tokens = split(data)
@@ -270,17 +282,19 @@ class QmfData:
     if pname:
       query += ",package:'%s'" % pname
     if pred:
-      query += ",where:'%s'" % pred
+      query += ",where:%s" % pred
     query += "}"
+    if not self.focus_agent:
+      self.updateAgents()
     d_list = self.focus_agent.query(query)
-    self.data_list = {}
-    self.next_data_index = 1
+    local_data_list = {}
     for d in d_list:
-      self.data_list[self.next_data_index] = d
+      local_data_list[self.next_data_index] = d
       self.next_data_index += 1
     rows = []
-    for index,val in self.data_list.items():
+    for index,val in local_data_list.items():
       rows.append((index, val.getAddr().getName()))
+      self.data_list[index] = val
     self.disp.table("Data Objects Returned: %d:" % len(d_list), ("Number", "Data Address"), rows)
 
   def do_call(self, data):
@@ -308,6 +322,11 @@ class QmfData:
     for k,v in result.items():
       rows.append((k,v))
     self.disp.table("Output Parameters:", ("Name", "Value"), rows)
+
+  def do_clear(self, data):
+    self.data_list = {}
+    self.next_data_index = 1
+    print "Accumulated query results cleared"
 
   def do_exit(self):
     pass
@@ -481,6 +500,15 @@ class QmfData:
     for k,v in props.items():
       rows.append((k, v))
     self.disp.table("Properties:", ("Name", "Value"), rows)
+
+  def listData(self):
+    if len(self.data_list) == 0:
+      print "No Query Results - Use the 'query' command"
+      return
+    rows = []
+    for index,val in self.data_list.items():
+      rows.append((index, val.getAgent().getName(), val.getAddr().getName()))
+    self.disp.table("Accumulated Query Results:", ('Number', 'Agent', 'Data Address'), rows)
 
   def printAlignedPairs(self, rows, indent=8):
     maxlen = 0
