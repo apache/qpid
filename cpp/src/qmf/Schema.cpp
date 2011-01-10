@@ -329,7 +329,7 @@ bool SchemaImpl::isCompatibleType(int qmfType, qpid::types::VariantType qpidType
             typeValid = true;
         break;
     case qpid::types::VAR_MAP:
-        if (qmfType == SCHEMA_DATA_BOOL)
+        if (qmfType == SCHEMA_DATA_MAP)
             typeValid = true;
         break;
     case qpid::types::VAR_LIST:
