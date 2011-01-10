@@ -24,8 +24,10 @@
 #include "qpid/RefCounted.h"
 #include "qmf/Data.h"
 #include "qmf/SchemaId.h"
+#include "qmf/Schema.h"
 #include "qmf/DataAddr.h"
 #include "qmf/Agent.h"
+#include "qmf/AgentSubscription.h"
 #include "qpid/types/Variant.h"
 
 namespace qmf {
@@ -37,18 +39,21 @@ namespace qmf {
         DataImpl(const qpid::types::Variant::Map&, const Agent&);
         qpid::types::Variant::Map asMap() const;
         DataImpl() {}
+        void addSubscription(boost::shared_ptr<AgentSubscription>);
+        void delSubscription(uint64_t);
+        qpid::types::Variant::Map publishSubscription(uint64_t);
+        const Schema& getSchema() const { return schema; }
 
         //
         // Methods from API handle
         //
-        DataImpl(const SchemaId& s) : schemaId(s) {}
-        void setSchema(const SchemaId& s) { schemaId = s; }
+        DataImpl(const Schema& s) : schema(s) {}
         void setAddr(const DataAddr& a) { dataAddr = a; }
-        void setProperty(const std::string& k, const qpid::types::Variant& v) { properties[k] = v; }
+        void setProperty(const std::string& k, const qpid::types::Variant& v);
         void overwriteProperties(const qpid::types::Variant::Map& m);
-        bool hasSchema() const { return schemaId.isValid(); }
+        bool hasSchema() const { return schemaId.isValid() || schema.isValid(); }
         bool hasAddr() const { return dataAddr.isValid(); }
-        const SchemaId& getSchemaId() const { return schemaId; }
+        const SchemaId& getSchemaId() const { if (schema.isValid()) return schema.getSchemaId(); else return schemaId; }
         const DataAddr& getAddr() const { return dataAddr; }
         const qpid::types::Variant& getProperty(const std::string& k) const;
         const qpid::types::Variant::Map& getProperties() const { return properties; }
@@ -56,7 +61,14 @@ namespace qmf {
         const Agent& getAgent() const { return agent; }
 
     private:
+        struct Subscr {
+            boost::shared_ptr<AgentSubscription> subscription;
+            qpid::types::Variant::Map deltas;
+        };
+        std::map<uint64_t, boost::shared_ptr<Subscr> > subscriptions;
+
         SchemaId schemaId;
+        Schema   schema;
         DataAddr dataAddr;
         qpid::types::Variant::Map properties;
         Agent agent;

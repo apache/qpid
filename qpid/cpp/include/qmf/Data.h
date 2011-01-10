@@ -34,6 +34,7 @@ namespace qmf {
 #endif
 
     class DataImpl;
+    class Schema;
     class SchemaId;
     class DataAddr;
     class Agent;
@@ -45,8 +46,7 @@ namespace qmf {
         QMF_EXTERN Data& operator=(const Data&);
         QMF_EXTERN ~Data();
 
-        QMF_EXTERN Data(const SchemaId&);
-        QMF_EXTERN void setSchema(const SchemaId&);
+        QMF_EXTERN Data(const Schema&);
         QMF_EXTERN void setAddr(const DataAddr&);
         QMF_EXTERN void setProperty(const std::string&, const qpid::types::Variant&);
         QMF_EXTERN void overwriteProperties(const qpid::types::Variant::Map&);

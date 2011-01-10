@@ -46,6 +46,9 @@ namespace qmf {
         qpid::types::Variant::Map asMap() const;
         SchemaImpl(qpid::management::Buffer& v1Buffer);
         std::string asV1Content(uint32_t sequence) const;
+        bool isValidProperty(const std::string& k, const qpid::types::Variant& v) const;
+        bool isValidMethodInArg(const std::string& m, const std::string& k, const qpid::types::Variant& v) const;
+        bool isValidMethodOutArg(const std::string& m, const std::string& k, const qpid::types::Variant& v) const;
 
         //
         // Methods from API handle
@@ -79,6 +82,7 @@ namespace qmf {
 
         void checkFinal() const;
         void checkNotFinal() const;
+        bool isCompatibleType(int qmfType, qpid::types::VariantType qpidType) const;
     };
 
     struct SchemaImplAccess
