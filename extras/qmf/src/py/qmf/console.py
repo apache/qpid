@@ -3986,6 +3986,9 @@ class DebugConsole(Console):
   def brokerConnected(self, broker):
     print "brokerConnected:", broker
 
+  def brokerConnectionFailed(self, broker):
+    print "brokerConnectionFailed:", broker
+
   def brokerDisconnected(self, broker):
     print "brokerDisconnected:", broker
 
