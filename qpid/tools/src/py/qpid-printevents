@@ -37,6 +37,10 @@ class EventConsole(Console):
     print strftime("%c", gmtime(time())), "NOTIC qpid-printevents:brokerConnected broker=%s" % broker.getUrl()
     sys.stdout.flush()
 
+  def brokerConnectionFailed(self, broker):
+    print strftime("%c", gmtime(time())), "NOTIC qpid-printevents:brokerConnectionFailed broker=%s %s" % (broker.getUrl(), str(broker.conn_exc))
+    sys.stdout.flush()
+
   def brokerDisconnected(self, broker):
     print strftime("%c", gmtime(time())), "NOTIC qpid-printevents:brokerDisconnected broker=%s" % broker.getUrl()
     sys.stdout.flush()
