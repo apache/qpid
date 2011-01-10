@@ -51,7 +51,8 @@ QMF2_API =				\
   ../include/qmf/SchemaId.h		\
   ../include/qmf/SchemaMethod.h		\
   ../include/qmf/SchemaProperty.h	\
-  ../include/qmf/SchemaTypes.h
+  ../include/qmf/SchemaTypes.h		\
+  ../include/qmf/Subscription.h
 
 
 #
@@ -91,10 +92,14 @@ libqmf2_la_SOURCES = 		\
   qmf/AgentEventImpl.h		\
   qmf/AgentImpl.h		\
   qmf/AgentSession.cpp		\
+  qmf/AgentSubscription.cpp	\
+  qmf/AgentSubscription.h	\
   qmf/ConsoleEvent.cpp		\
   qmf/ConsoleEventImpl.h	\
   qmf/ConsoleSession.cpp	\
   qmf/ConsoleSessionImpl.h	\
+  qmf/constants.cpp		\
+  qmf/constants.h		\
   qmf/DataAddr.cpp		\
   qmf/DataAddrImpl.h		\
   qmf/Data.cpp			\
@@ -116,7 +121,9 @@ libqmf2_la_SOURCES = 		\
   qmf/SchemaMethod.cpp		\
   qmf/SchemaMethodImpl.h	\
   qmf/SchemaProperty.cpp	\
-  qmf/SchemaPropertyImpl.h
+  qmf/SchemaPropertyImpl.h	\
+  qmf/Subscription.cpp		\
+  qmf/SubscriptionImpl.h
 
 libqmfengine_la_SOURCES =			\
   $(QMF_ENGINE_API)				\

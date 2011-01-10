@@ -46,8 +46,10 @@ namespace qmf {
     CONSOLE_QUERY_RESPONSE        = 7,
     CONSOLE_METHOD_RESPONSE       = 8,
     CONSOLE_EXCEPTION             = 9,
-    CONSOLE_SUBSCRIBE_UPDATE      = 10,
-    CONSOLE_THREAD_FAILED         = 11
+    CONSOLE_SUBSCRIBE_ADD         = 10,
+    CONSOLE_SUBSCRIBE_UPDATE      = 11,
+    CONSOLE_SUBSCRIBE_DEL         = 12,
+    CONSOLE_THREAD_FAILED         = 13
     };
 
     enum AgentDelReason {

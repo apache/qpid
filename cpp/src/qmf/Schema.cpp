@@ -192,6 +192,55 @@ string SchemaImpl::asV1Content(uint32_t sequence) const
 }
 
 
+bool SchemaImpl::isValidProperty(const std::string& k, const Variant& v) const
+{
+    for (list<SchemaProperty>::const_iterator iter = properties.begin(); iter != properties.end(); iter++)
+        if (iter->getName() == k)
+            return (isCompatibleType(iter->getType(), v.getType()));
+    return false;
+}
+
+
+bool SchemaImpl::isValidMethodInArg(const std::string& m, const std::string& k, const Variant& v) const
+{
+    for (list<SchemaMethod>::const_iterator mIter = methods.begin(); mIter != methods.end(); mIter++) {
+        if (mIter->getName() == m) {
+            uint32_t count(mIter->getArgumentCount());
+            for (uint32_t i = 0; i < count; i++) {
+                const SchemaProperty prop(mIter->getArgument(i));
+                if (prop.getName() == k) {
+                    if (prop.getDirection() == DIR_IN || prop.getDirection() == DIR_IN_OUT)
+                        return (isCompatibleType(prop.getType(), v.getType()));
+                    else
+                        return false;
+                }
+            }
+        }
+    }
+    return false;
+}
+
+
+bool SchemaImpl::isValidMethodOutArg(const std::string& m, const std::string& k, const Variant& v) const
+{
+    for (list<SchemaMethod>::const_iterator mIter = methods.begin(); mIter != methods.end(); mIter++) {
+        if (mIter->getName() == m) {
+            uint32_t count(mIter->getArgumentCount());
+            for (uint32_t i = 0; i < count; i++) {
+                const SchemaProperty prop(mIter->getArgument(i));
+                if (prop.getName() == k) {
+                    if (prop.getDirection() == DIR_OUT || prop.getDirection() == DIR_IN_OUT)
+                        return (isCompatibleType(prop.getType(), v.getType()));
+                    else
+                        return false;
+                }
+            }
+        }
+    }
+    return false;
+}
+
+
 void SchemaImpl::finalize()
 {
     Hash hash;
@@ -243,6 +292,57 @@ void SchemaImpl::checkNotFinal() const
 {
     if (!finalized)
         throw QmfException("Schema is not yet finalized/registered");
+}
+
+
+bool SchemaImpl::isCompatibleType(int qmfType, qpid::types::VariantType qpidType) const
+{
+    bool typeValid(false);
+
+    switch (qpidType) {
+    case qpid::types::VAR_VOID:
+        if (qmfType == SCHEMA_DATA_VOID)
+            typeValid = true;
+        break;
+    case qpid::types::VAR_BOOL:
+        if (qmfType == SCHEMA_DATA_BOOL)
+            typeValid = true;
+        break;
+    case qpid::types::VAR_UINT8:
+    case qpid::types::VAR_UINT16:
+    case qpid::types::VAR_UINT32:
+    case qpid::types::VAR_UINT64:
+    case qpid::types::VAR_INT8:
+    case qpid::types::VAR_INT16:
+    case qpid::types::VAR_INT32:
+    case qpid::types::VAR_INT64:
+        if (qmfType == SCHEMA_DATA_INT)
+            typeValid = true;
+        break;
+    case qpid::types::VAR_FLOAT:
+    case qpid::types::VAR_DOUBLE:
+        if (qmfType == SCHEMA_DATA_FLOAT)
+            typeValid = true;
+        break;
+    case qpid::types::VAR_STRING:
+        if (qmfType == SCHEMA_DATA_STRING)
+            typeValid = true;
+        break;
+    case qpid::types::VAR_MAP:
+        if (qmfType == SCHEMA_DATA_BOOL)
+            typeValid = true;
+        break;
+    case qpid::types::VAR_LIST:
+        if (qmfType == SCHEMA_DATA_LIST)
+            typeValid = true;
+        break;
+    case qpid::types::VAR_UUID:
+        if (qmfType == SCHEMA_DATA_UUID)
+            typeValid = true;
+        break;
+    }
+
+    return typeValid;
 }
 
 

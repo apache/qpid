@@ -24,6 +24,7 @@
 #include <qmf/ImportExport.h>
 #include "qmf/Handle.h"
 #include "qmf/Agent.h"
+#include "qmf/Subscription.h"
 #include "qpid/messaging/Duration.h"
 #include "qpid/messaging/Connection.h"
 #include <string>
@@ -66,6 +67,16 @@ namespace qmf {
         QMF_EXTERN uint32_t getAgentCount() const;
         QMF_EXTERN Agent getAgent(uint32_t) const;
         QMF_EXTERN Agent getConnectedBrokerAgent() const;
+
+        /**
+         * Create a subscription that involves a subset of the known agents.  The set of known agents is defined by
+         * the session's agent-filter (see setAgentFilter).  The agentFilter argument to the subscribe method is used
+         * to further refine the set of agents.  If agentFilter is the empty string (i.e. match-all) the subscription
+         * will involve all known agents.  If agentFilter is non-empty, it will be applied only to the set of known
+         * agents.  A subscription cannot be created that involves an agent not known by the session.
+         */
+        QMF_EXTERN Subscription subscribe(const Query&,       const std::string& agentFilter = "", const std::string& options = "");
+        QMF_EXTERN Subscription subscribe(const std::string&, const std::string& agentFilter = "", const std::string& options = "");
 
 #ifndef SWIG
     private:

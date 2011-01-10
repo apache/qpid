@@ -57,11 +57,16 @@ namespace qmf {
          * The options string is of the form "{key:value,key:value}".  The following keys are supported:
          *
          *    interval:N                 - Heartbeat interval in seconds [default: 60]
-         *    external:{True,False}      - Use external data storage (queries are pass-through) [default: False]
+         *    external:{True,False}      - Use external data storage (queries and subscriptions are pass-through) [default: False]
          *    allow-queries:{True,False} - If True:  automatically allow all queries [default]
          *                                 If False: generate an AUTH_QUERY event to allow per-query authorization
          *    allow-methods:{True,False} - If True:  automatically allow all methods [default]
          *                                 If False: generate an AUTH_METHOD event to allow per-method authorization
+         *    max-subscriptions:N        - Maximum number of concurrent subscription queries permitted [default: 64]
+         *    min-sub-interval:N         - Minimum publish interval (in milliseconds) permitted for a subscription [default: 3000]
+         *    sub-lifetime:N             - Lifetime (in seconds with no keepalive) for a subscription [default: 300]
+         *    public-events:{True,False} - If True:  QMF events are sent to the topic exchange [default]
+         *                                 If False: QMF events are only sent to authorized subscribers
          */
         QMF_EXTERN AgentSession(qpid::messaging::Connection&, const std::string& options="");
 
@@ -143,7 +148,7 @@ namespace qmf {
          * authReject - Reject/forbid an authorization request.
          * raiseException - indicate failure of an operation (i.e. query or method call).
          * response - Provide data in response to a query (only for option:  external:True)
-         * complete - Indicate that the response to a query is complete (external:true only)
+         * complete - Indicate that the response to a query is complete (external:True only)
          * methodSuccess - Indicate the successful completion of a method call.
          */
         QMF_EXTERN void authAccept(AgentEvent&);

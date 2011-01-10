@@ -23,6 +23,7 @@
 
 #include <qmf/ImportExport.h>
 #include "qmf/Handle.h"
+//#include "qmf/Subscription.h"
 #include "qmf/exceptions.h"
 #include "qpid/messaging/Duration.h"
 #include "qpid/types/Variant.h"
@@ -60,6 +61,12 @@ namespace qmf {
         QMF_EXTERN ConsoleEvent query(const std::string&, qpid::messaging::Duration timeout=qpid::messaging::Duration::MINUTE);
         QMF_EXTERN uint32_t queryAsync(const Query&);
         QMF_EXTERN uint32_t queryAsync(const std::string&);
+
+        /**
+         * Create a subscription to this agent
+         */
+        //QMF_EXTERN Subscription subscribe(const Query&, const std::string& options = "");
+        //QMF_EXTERN Subscription subscribe(const std::string&, const std::string& options = "");
 
         QMF_EXTERN ConsoleEvent callMethod(const std::string&, const qpid::types::Variant::Map&, const DataAddr&,
                                            qpid::messaging::Duration timeout=qpid::messaging::Duration::MINUTE);

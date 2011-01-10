@@ -61,6 +61,8 @@ namespace qmf {
         uint32_t getAgentCount() const;
         Agent getAgent(uint32_t i) const;
         Agent getConnectedBrokerAgent() const { return connectedBrokerAgent; }
+        Subscription subscribe(const Query&, const std::string& agentFilter, const std::string& options);
+        Subscription subscribe(const std::string&, const std::string& agentFilter, const std::string& options);
 
     protected:
         mutable qpid::sys::Mutex lock;
