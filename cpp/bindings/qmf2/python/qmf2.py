@@ -385,10 +385,8 @@ class Data(object):
       self._impl = cqmf2.Data()
     elif arg.__class__ == cqmf2.Data:
       self._impl = arg
-    elif arg.__class__ == SchemaId:
-      self._impl = cqmf2.Data(arg._impl)
     elif arg.__class__ == Schema:
-      self._impl = cqmf2.Data(arg.getSchemaId()._impl)
+      self._impl = cqmf2.Data(arg._impl)
     else:
       raise Exception("Unsupported initializer for Data")
     self._schema = None
@@ -444,6 +442,7 @@ class Data(object):
     ## validate that we have the right number of arguments supplied, and marshall them
     ## into a map for transmission.
     ##
+    arglist = []
     methods = self._schema.getMethods()
     for m in methods:
       if m.getName() == name:
@@ -682,6 +681,11 @@ class SchemaProperty(object):
     """
     """
     return self._impl.getName()
+
+  def getType(self):
+    """
+    """
+    return self._impl.getType()
 
   def getAccess(self):
     """
