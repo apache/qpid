@@ -126,7 +126,7 @@ def OptionsAndArguments(argv):
         config._dellink = True
 
     if opts.src_local:
-        config._srclocal = true
+        config._srclocal = True
 
     if opts.transport:
         config._transport = opts.transport
