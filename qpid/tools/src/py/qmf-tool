@@ -78,7 +78,11 @@ class Mcli(Cmd):
 
   def complete_set(self, text, line, begidx, endidx):
     """ Command completion for the 'set' command """
-    tree = [('set', ['filter ', 'default', ('time-format', ['long', 'short'])])]
+    tokens = split(line[:begidx])
+    if len(tokens) == 1:
+      return [i for i in ('filter ', 'default ', 'time-format ') if i.startswith(text)]
+    if len(tokens) == 2 and tokens[1] == 'time-format':
+      return [i for i in ('long', 'short') if i.startswith(text)]
     return []
 
   def do_set(self, data):
@@ -89,57 +93,46 @@ class Mcli(Cmd):
       else:
         self.dataObject.do_set(data)
     except Exception, e:
-      print "Exception in do_set: %r" % e
-
-  def complete_schema(self, text, line, begidx, endidx):
-    tokens = split(line)
-    if len(tokens) > 2:
-      return []
-    return self.dataObject.classCompletions(text)
-
-  def do_schema(self, data):
-    try:
-      self.dataObject.do_schema(data)
-    except Exception, e:
-      print "Exception in do_schema: %r" % e
-
-  def do_id(self, data):
-    try:
-      self.dataObject.do_id(data)
-    except Exception, e:
-      print "Exception in do_id: %r" % e
+      print "Exception in set command: %r" % e
 
   def complete_list(self, text, line, begidx, endidx):
-    tokens = split(line)
-    if len(tokens) < 2:
-      return ["agents", "packages", "classes ", "data "]
-    elif "agents".find(text) == 0:
-      return ["agents"]
+    tokens = split(line[:begidx])
+    if len(tokens) == 1:
+      return [i for i in ('agents', 'packages', 'classes ') if i.startswith(text)]
     return []
 
   def do_list(self, data):
     try:
       self.dataObject.do_list(data)
     except Exception, e:
-      print "Exception in do_list: %r" % e
+      print "Exception in list command: %r" % e
+
+  def complete_show(self, text, line, begidx, endidx):
+    tokens = split(line[:begidx])
+    if len(tokens) == 1:
+      return [i for i in ('filter', 'agent ', 'class ', 'data ') if i.startswith(text)]
+    return []
 
   def do_show(self, data):
     try:
       self.dataObject.do_show(data)
     except Exception, e:
-      print "Exception in do_show: %r" % e
+      print "Exception in show command: %r" % e
+
+  def complete_query(self, text, line, begidx, endidx):
+    return []
 
   def do_query(self, data):
     try:
       self.dataObject.do_query(data)
     except Exception, e:
-      print "Exception in do_query: %r" % e
+      print "Exception in query command: %r" % e
 
   def do_call(self, data):
     try:
       self.dataObject.do_call(data)
     except Exception, e:
-      print "Exception in do_call: %r", e
+      print "Exception in call command: %r", e
 
   def do_EOF(self, data):
     print "quit"
@@ -201,14 +194,11 @@ class QmfData:
     except:
       pass   # we're shutting down - ignore any errors
 
-  def do_schema(self, data):
-    if data == "":
-      self.schemaSummary()
-    else:
-      self.schemaTable(data)
-
   def do_list(self, data):
     tokens = data.split()
+    if len(tokens) == 0:
+      print "What do you want to list?  type 'help' for more information."
+      return
     if tokens[0] == 'agents' or tokens[0] == 'agent':
       self.listAgents()
     elif tokens[0] == 'packages' or tokens[0] == 'package':
@@ -219,6 +209,7 @@ class QmfData:
   def do_set(self, data):
     tokens = split(data)
     if len(tokens) == 0:
+      print "What do you want to set?  type 'help' for more information."
       return
     if tokens[0] == 'filter':
       if len(tokens) == 2:
@@ -233,7 +224,7 @@ class QmfData:
   def do_show(self, data):
     tokens = split(data)
     if len(tokens) == 0:
-      print "What do you want to show?  Type 'help' for help."
+      print "What do you want to show?  Type 'help' for more information."
       return
 
     if tokens[0] == 'agent':
@@ -262,7 +253,8 @@ class QmfData:
 
   def do_query(self, data):
     tokens = split(data)
-    if len(tokens) < 1:
+    if len(tokens) == 0:
+      print "Class name not specified."
       return
     cname = tokens[0]
     pname = None
@@ -294,7 +286,7 @@ class QmfData:
   def do_call(self, data):
     tokens = split(data)
     if len(tokens) < 2:
-      print "Not enough arguments supplied"
+      print "Data ID and method-name not specified."
       return
     idx = int(tokens[0])
     methodName = tokens[1]
@@ -323,75 +315,6 @@ class QmfData:
   #====================
   # Sub-Command Methods
   #====================
-  def schemaSummary(self, package_filter=None):
-    rows = []
-    packages = self.session.getPackages()
-    for package in packages:
-      if package_filter and package_filter != package:
-        continue
-      keys = self.session.getClasses(package)
-      for key in keys:
-        kind = "object"
-        schema = self.session.getSchema(key)
-        if schema:
-          if schema.kind == SchemaClass.CLASS_KIND_EVENT:
-            kind = "event"
-          if schema.kind == SchemaClass.CLASS_KIND_TABLE:
-            #
-            # Don't display event schemata.  This will be a future feature.
-            #
-            rows.append((package, key.getClassName(), kind))
-    self.disp.table("QMF Classes:", ("Package", "Name", "Kind"), rows)
-
-  def schemaTable(self, text):
-    packages = self.session.getPackages()
-    if text in packages:
-      self.schemaSummary(package_filter=text)
-    for package in packages:
-      keys = self.session.getClasses(package)
-      for key in keys:
-        if text == key.getClassName() or text == package + ":" + key.getClassName():
-          schema = self.session.getSchema(key)
-          if schema.kind == SchemaClass.CLASS_KIND_TABLE:
-            self.schemaObject(schema)
-          else:
-            self.schemaEvent(schema)
-
-  def schemaObject(self, schema):
-    rows = []
-    title = "Object Class: %s" % schema.__repr__()
-    heads = ("Element", "Type", "Access", "Unit", "Notes", "Description")
-    for prop in schema.getProperties():
-      notes = ""
-      if prop.index    : notes += "index "
-      if prop.optional : notes += "optional "
-      row = (prop.name, self.typeName(prop.type), self.accessName(prop.access),
-             self.notNone(prop.unit), notes, self.notNone(prop.desc))
-      rows.append(row)
-    for stat in schema.getStatistics():
-      row = (stat.name, self.typeName(stat.type), "", self.notNone(prop.unit), "", self.notNone(prop.desc))
-      rows.append(row)
-    self.disp.table(title, heads, rows)
-
-    for method in schema.methods:
-      rows = []
-      heads = ("Argument", "Type", "Direction", "Unit", "Description")
-      title = "  Method: %s" % method.name
-      for arg in method.arguments:
-        row = (arg.name, self.typeName(arg.type), arg.dir, self.notNone(arg.unit), self.notNone(arg.desc))
-        rows.append(row)
-      print
-      self.disp.table(title, heads, rows)
-
-  def schemaEvent(self, schema):
-    rows = []
-    title = "Event Class: %s" % schema.__repr__()
-    heads = ("Element", "Type", "Unit", "Description")
-    for arg in schema.arguments:
-      row = (arg.name, self.typeName(arg.type), self.notNone(arg.unit), self.notNone(arg.desc))
-      rows.append(row)
-    self.disp.table(title, heads, rows)
-
   def setAgentFilter(self, filt):
     self.agent_filter = filt
     self.session.setAgentFilter(filt)
@@ -570,79 +493,6 @@ class QmfData:
         print "",
       print "%s : %s" % (first, second)
 
-  def listObjects(self, tokens):
-    ckeys = self.classKeysByToken(tokens[0])
-    show_deleted = True
-    if len(tokens) > 1 and tokens[1] == 'active':
-      show_deleted = None
-    heads = ("ID", "Created", "Destroyed", "Index")
-    rows = []
-    try:
-      self.lock.acquire()
-      for dispId in self.objects:
-        obj = self.objects[dispId]
-        if obj.getClassKey() in ckeys:
-          utime, ctime, dtime = obj.getTimestamps()
-          dtimestr = self.disp.timestamp(dtime)
-          if dtime == 0:
-            dtimestr = "-"
-          if dtime == 0 or (dtime > 0 and show_deleted):
-            row = (dispId, self.disp.timestamp(ctime), dtimestr, self.objectIndex(obj))
-            rows.append(row)
-    finally:
-      self.lock.release()
-    self.disp.table("Object Summary:", heads, rows)
-
-  def showObjectsByKey(self, key):
-    pass
-
-  def showObjectById(self, dispId):
-    heads = ("Attribute", str(dispId))
-    rows = []
-    try:
-      self.lock.acquire()
-      if dispId in self.objects:
-        obj = self.objects[dispId]
-        caption = "Object of type: %r" % obj.getClassKey()
-        for prop in obj.getProperties():
-          row = (prop[0].name, self.valueByType(prop[0].type, prop[1]))
-          rows.append(row)
-        for stat in obj.getStatistics():
-          row = (stat[0].name, self.valueByType(stat[0].type, stat[1]))
-          rows.append(row)
-      else:
-        print "No object found with ID %d" % dispId
-    finally:
-      self.lock.release()
-    self.disp.table(caption, heads, rows)
-
-  def classKeysByToken(self, token):
-    """
-    Given a token, return a list of matching class keys (if found):
-    token formats:  <class-name>
-                    <package-name>:<class-name>
-    """
-    pname = None
-    cname = None
-    parts = token.split(':')
-    if len(parts) == 1:
-      cname = parts[0]
-    elif len(parts) == 2:
-      pname = parts[0]
-      cname = parts[1]
-    else:
-      raise ValueError("Invalid Class Name: %s" % token)
-
-    keys = []
-    packages = self.session.getPackages()
-    for p in packages:
-      if pname == None or pname == p:
-        classes = self.session.getClasses(p)
-        for key in classes:
-          if key.getClassName() == cname:
-            keys.append(key)
-    return keys
-
   def classTypeName(self, code):
     if code == qmf2.SCHEMA_TYPE_DATA:   return "Data"
     if code == qmf2.SCHEMA_TYPE_EVENT:  return "Event"
@@ -745,42 +595,6 @@ class QmfData:
         result += self.valueByType(prop[0].type, prop[1])
         first = None
     return result
-
-
-  #=====================
-  # Methods from Console
-  #=====================
-  def objectProps(self, broker, record):
-    """ Invoked when an object is updated. """
-    oid = record.getObjectId()
-    dispId = self.idRegistry.displayId(oid)
-    try:
-      self.lock.acquire()
-      if dispId in self.objects:
-        self.objects[dispId].mergeUpdate(record)
-      else:
-        self.objects[dispId] = record
-    finally:
-      self.lock.release()
-
-  def objectStats(self, broker, record):
-    """ Invoked when an object is updated. """
-    oid = record.getObjectId()
-    dispId = self.idRegistry.displayId(oid)
-    try:
-      self.lock.acquire()
-      if dispId in self.objects:
-        self.objects[dispId].mergeUpdate(record)
-    finally:
-      self.lock.release()
-
-  def event(self, broker, event):
-    """ Invoked when an event is raised. """
-    pass
-
-  def methodResponse(self, broker, seq, response):
-    print response
-
 
 def Usage():
   print "Usage:  qpid-tool [[<username>/<password>@]<target-host>[:<tcp-port>]]"
