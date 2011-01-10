@@ -36,7 +36,7 @@ cat > src/managementgen.mk <<EOF
 	\$(mgen_cmd)
 EOF
 
-automake
+automake --add-missing
 autoconf
 
 # Optionally do the build as well.
