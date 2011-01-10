@@ -187,21 +187,15 @@ namespace Messaging {
     // Destructor
     Address::~Address()
     {
-        Cleanup();
+        this->!Address();
     }
 
 
     // Finalizer
     Address::!Address()
     {
-        Cleanup();
-    }
+        msclr::lock lk(this);
 
-
-    // Destroys kept object
-    // TODO: add lock
-    void Address::Cleanup()
-    {
         if (NULL != addressp)
         {
             delete addressp;

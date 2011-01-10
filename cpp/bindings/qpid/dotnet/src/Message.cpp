@@ -219,14 +219,20 @@ namespace Messaging {
     // Destructor
     Message::~Message()
     {
-        Cleanup();
+        this->!Message();
     }
 
 
     // Finalizer
     Message::!Message()
     {
-        Cleanup();
+        msclr::lock lk(this);
+
+        if (NULL != messagep)
+        {
+            delete messagep;
+            messagep = NULL;
+        }
     }
 
     // Copy constructor
@@ -249,17 +255,6 @@ namespace Messaging {
 		{
 	        throw newException;
 		}
-    }
-
-    // Destroys kept object
-    // TODO: add lock
-    void Message::Cleanup()
-    {
-        if (NULL != messagep)
-        {
-            delete messagep;
-            messagep = NULL;
-        }
     }
 
 	// Property

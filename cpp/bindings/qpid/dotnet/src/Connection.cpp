@@ -140,21 +140,15 @@ namespace Messaging {
     // Destructor
     Connection::~Connection()
     {
-        Cleanup();
+        this->!Connection();
     }
 
 
     // Finalizer
     Connection::!Connection()
     {
-        Cleanup();
-    }
+        msclr::lock lk(this);
 
-
-    // Destroys kept object
-    // TODO: add lock
-    void Connection::Cleanup()
-    {
         if (NULL != connectionp)
         {
             delete connectionp;
