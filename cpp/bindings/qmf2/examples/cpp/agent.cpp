@@ -60,7 +60,7 @@ ExampleAgent::ExampleAgent(const string& url)
     //
     // Create and open a messaging connection to a broker.
     //
-    connection = qpid::messaging::Connection(url);
+    connection = qpid::messaging::Connection(url, "{reconnect:True}");
     connection.open();
 
     //
@@ -132,7 +132,7 @@ void ExampleAgent::populateData()
     //
     // Create a control object and give it to the agent session to manage.
     //
-    control = Data(sch_control.getSchemaId());
+    control = Data(sch_control);
     control.setProperty("state", "OPERATIONAL");
     control.setProperty("methodCount", 0);
     controlAddr = session.addData(control, "singleton");
@@ -178,7 +178,7 @@ bool ExampleAgent::method(AgentEvent& event)
             if (event.getArguments()["useString"])
                 session.raiseException(event, event.getArguments()["stringVal"]);
             else {
-                Data ex(sch_exception.getSchemaId());
+                Data ex(sch_exception);
                 ex.setProperty("whatHappened", "It Failed");
                 ex.setProperty("howBad", 75);
                 ex.setProperty("details", event.getArguments()["details"]);

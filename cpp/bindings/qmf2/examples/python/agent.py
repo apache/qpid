@@ -34,7 +34,7 @@ class ExampleAgent(AgentHandler):
     ##
     ## Create and open a messaging connection to a broker.
     ##
-    self.connection = cqpid.Connection(url)
+    self.connection = cqpid.Connection(url, "{reconnect:True}")
     self.session = None
     self.connection.open()
 
@@ -42,7 +42,6 @@ class ExampleAgent(AgentHandler):
     ## Create, configure, and open a QMFv2 agent session using the connection.
     ##
     self.session = AgentSession(self.connection, "{interval:30}")
-    self.session.setDomain("test")
     self.session.setVendor('profitron.com')
     self.session.setProduct('blastinator')
     self.session.setAttribute('attr1', 1000)

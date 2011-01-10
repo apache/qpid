@@ -250,10 +250,8 @@ module Qmf2
         @impl = Cqmf2::Data.new
       elsif arg.class == Cqmf2::Data
         @impl = arg
-      elsif arg.class == SchemaId
-        @impl = Cqmf2::Data(arg.impl)
       elsif arg.class == Schema
-        @impl = Cqmf2::Data(arg.impl.getSchemaId)
+        @impl = Cqmf2::Data(arg.impl)
       else
         raise "Unsupported initializer for Data"
       end

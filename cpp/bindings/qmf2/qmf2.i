@@ -33,6 +33,7 @@
 #include <qmf/SchemaMethod.h>
 #include <qmf/SchemaProperty.h>
 #include <qmf/SchemaTypes.h>
+#include <qmf/Subscription.h>
 
 %}
 
@@ -54,6 +55,7 @@
 %include <qmf/SchemaMethod.h>
 %include <qmf/SchemaProperty.h>
 %include <qmf/SchemaTypes.h>
+%include <qmf/Subscription.h>
 
 %{
 
