@@ -47,9 +47,6 @@ namespace Messaging {
     {
 
     private:
-        // Kept object deletion code
-        void Cleanup();
-
         // The kept object in the Messaging C++ DLL
         ::qpid::messaging::Message * messagep;
 

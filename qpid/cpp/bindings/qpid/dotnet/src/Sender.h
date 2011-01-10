@@ -55,9 +55,6 @@ namespace Messaging {
         // The session that created this Sender
         Session ^ parentSession;
 
-        // Kept object deletion code
-        void Cleanup();
-
     public:
         // unmanaged clone
         Sender(const ::qpid::messaging::Sender & s,

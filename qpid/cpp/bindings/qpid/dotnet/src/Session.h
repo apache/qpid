@@ -61,9 +61,6 @@ namespace Messaging {
         // The connection that created this session
         Connection ^ parentConnectionp;
 
-        // Kept object deletion code
-        void Cleanup();
-
     public:
 
         // unmanaged clone

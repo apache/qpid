@@ -64,21 +64,15 @@ namespace Messaging {
     // Destructor
     FailoverUpdates::~FailoverUpdates()
     {
-        Cleanup();
+        this->!FailoverUpdates();
     }
 
 
     // Finalizer
     FailoverUpdates::!FailoverUpdates()
     {
-        Cleanup();
-    }
+        msclr::lock lk(this);
 
-
-    // Destroys kept object
-    // TODO: add lock
-    void FailoverUpdates::Cleanup()
-    {
         if (NULL != failoverupdatesp)
         {
             delete failoverupdatesp;

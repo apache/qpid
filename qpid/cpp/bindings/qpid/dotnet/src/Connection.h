@@ -45,9 +45,6 @@ namespace Messaging {
         // The kept object in the Messaging C++ DLL
         ::qpid::messaging::Connection * connectionp;
 
-        // Kept object deletion code
-        void Cleanup();
-
     public:
         Connection(System::String ^ url);
 

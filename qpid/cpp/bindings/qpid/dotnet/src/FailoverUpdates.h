@@ -42,9 +42,6 @@ namespace Messaging {
         // The kept object in the Messaging C++ DLL
         ::qpid::messaging::FailoverUpdates * failoverupdatesp;
 
-        // Kept object deletion code
-        void Cleanup();
-
     public:
         FailoverUpdates(Connection ^ connection);
 
