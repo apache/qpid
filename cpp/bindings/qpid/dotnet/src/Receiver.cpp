@@ -72,14 +72,20 @@ namespace Messaging {
     // Destructor
     Receiver::~Receiver()
     {
-        Cleanup();
+        this->!Receiver();
     }
 
 
     // Finalizer
     Receiver::!Receiver()
     {
-        Cleanup();
+        msclr::lock lk(this);
+
+        if (NULL != receiverp)
+        {
+            delete receiverp;
+            receiverp = NULL;
+        }
     }
 
 
@@ -106,17 +112,6 @@ namespace Messaging {
 		}
     }
 
-
-    // Destroys kept object
-    // TODO: add lock
-    void Receiver::Cleanup()
-    {
-        if (NULL != receiverp)
-        {
-            delete receiverp;
-            receiverp = NULL;
-        }
-    }
 
     //
     // Get(message)

@@ -67,15 +67,22 @@ namespace Messaging {
     // Destructor
     Sender::~Sender()
     {
-        Cleanup();
+        this->!Sender();
     }
 
 
     // Finalizer
     Sender::!Sender()
     {
-        Cleanup();
+        msclr::lock lk(this);
+
+        if (NULL != senderp)
+        {
+            delete senderp;
+            senderp = NULL;
+        }
     }
+
 
     // Copy constructor
     Sender::Sender(const Sender ^ sender)
@@ -100,17 +107,6 @@ namespace Messaging {
 		}
     }
 
-
-    // Destroys kept object
-    // TODO: add lock
-    void Sender::Cleanup()
-    {
-        if (NULL != senderp)
-        {
-            delete senderp;
-            senderp = NULL;
-        }
-    }
 
     //
     // Send(msg)

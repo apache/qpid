@@ -72,15 +72,22 @@ namespace Messaging {
     // Destructor
     Session::~Session()
     {
-        Cleanup();
+        this->!Session();
     }
 
 
     // Finalizer
     Session::!Session()
     {
-        Cleanup();
+        msclr::lock lk(this);
+
+        if (NULL != sessionp)
+        {
+            delete sessionp;
+            sessionp = NULL;
+        }
     }
+
 
     // Copy constructor
     Session::Session(const Session ^ session)
@@ -106,17 +113,6 @@ namespace Messaging {
 		}
     }
 
-
-    // Destroys kept object
-    // TODO: add lock
-    void Session::Cleanup()
-    {
-        if (NULL != sessionp)
-        {
-            delete sessionp;
-            sessionp = NULL;
-        }
-    }
 
     void Session::Close()
     {
