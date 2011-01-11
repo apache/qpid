@@ -490,3 +490,33 @@ class ManagementTest (TestBase010):
         self.assertEqual(queue.bindingCount, 1,
                          "deleted bindings not accounted for (expected 1, got %d)" % queue.bindingCount)
 
+    def test_connection_stats(self):
+        """
+        Test message in/out stats for connection
+        """
+        self.startQmf()
+        conn = self.connect()
+        session = conn.session("stats-session")
+
+        #using qmf find named session and the corresponding connection:
+        conn_qmf = self.qmf.getObjects(_class="session", name="stats-session")[0]._connectionRef_
+        
+        #send a message to a queue
+        session.queue_declare(queue="stats-q", exclusive=True, auto_delete=True)
+        session.message_transfer(message=Message(session.delivery_properties(routing_key="stats-q"), "abc"))
+        
+        #check the 'msgs sent from' stat for this connection
+        conn_qmf.update()
+        self.assertEqual(conn_qmf.msgsFromClient, 1)
+
+        #receive message from queue
+        session.message_subscribe(destination="d", queue="stats-q")
+        incoming = session.incoming("d")
+        incoming.start()
+        self.assertEqual("abc", incoming.get(timeout=1).body)
+
+        #check the 'msgs sent to' stat for this connection
+        conn_qmf.update()
+        self.assertEqual(conn_qmf.msgsToClient, 1)
+
+        

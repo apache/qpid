@@ -1249,6 +1249,18 @@ public class QMFService implements ConfigStore.ConfigEventListener, Closeable
             return 0l;
         }
 
+        public Long getMsgsFromClient()
+        {
+            // TODO
+            return 0l;
+        }
+
+        public Long getMsgsToClient()
+        {
+            // TODO
+            return 0l;
+        }
+
         public BrokerSchema.ConnectionClass.CloseMethodResponseCommand close(final BrokerSchema.ConnectionClass.CloseMethodResponseCommandFactory factory)
         {
             _obj.mgmtClose();

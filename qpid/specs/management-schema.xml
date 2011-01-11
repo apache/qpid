@@ -251,6 +251,8 @@
     <statistic name="framesToClient"   type="count64"/>
     <statistic name="bytesFromClient"  type="count64"/>
     <statistic name="bytesToClient"    type="count64"/>
+    <statistic name="msgsFromClient"  type="count64"/>
+    <statistic name="msgsToClient"    type="count64"/>
 
     <method name="close"/> 
   </class>
