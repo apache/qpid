@@ -111,8 +111,8 @@ class Connection : public sys::ConnectionInputHandler,
         ManagementMethod (uint32_t methodId, management::Args& args, std::string&);
 
     void requestIOProcessing (boost::function0<void>);
-    void recordFromServer (framing::AMQFrame& frame);
-    void recordFromClient (framing::AMQFrame& frame);
+    void recordFromServer (const framing::AMQFrame& frame);
+    void recordFromClient (const framing::AMQFrame& frame);
     std::string getAuthMechanism();
     std::string getAuthCredentials();
     std::string getUsername();
@@ -181,7 +181,29 @@ class Connection : public sys::ConnectionInputHandler,
     ErrorListener* errorListener;
     uint64_t objectId;
     bool shadow;
+    /**
+     * Chained ConnectionOutputHandler that allows outgoing frames to be
+     * tracked (for updating mgmt stats).
+     */
+    class OutboundFrameTracker : public sys::ConnectionOutputHandler
+    {
+      public:
+        OutboundFrameTracker(Connection&);
+        void close();
+        size_t getBuffered() const;
+        void abort();
+        void activateOutput();
+        void giveReadCredit(int32_t credit);
+        void send(framing::AMQFrame&);
+        void wrap(sys::ConnectionOutputHandlerPtr&);
+      private:
+        Connection& con;
+        sys::ConnectionOutputHandler* next;
+    };
+    OutboundFrameTracker outboundTracker;
+    
 
+    void sent(const framing::AMQFrame& f);
   public:
     qmf::org::apache::qpid::broker::Connection* getMgmtObject() { return mgmtObject; }
 };
