@@ -267,6 +267,16 @@
     RbToList($input, $1);
 }
 
+%typemap(in) const qpid::types::Variant::Map const & {
+    $1 = new qpid::types::Variant::Map();
+    RbToMap($input, $1);
+}
+
+%typemap(in) const qpid::types::Variant::List const & {
+    $1 = new qpid::types::Variant::List();
+    RbToList($input, $1);
+}
+
 %typemap(freearg) qpid::types::Variant& {
     delete $1;
 }
@@ -288,6 +298,14 @@
 }
 
 %typemap(typecheck) qpid::types::Variant::List& {
+    $1 = (TYPE($input) == T_ARRAY) ? 1 : 0;
+}
+
+%typemap(typecheck) qpid::types::Variant::Map const & {
+    $1 = (TYPE($input) == T_HASH) ? 1 : 0;
+}
+
+%typemap(typecheck) qpid::types::Variant::List const & {
     $1 = (TYPE($input) == T_ARRAY) ? 1 : 0;
 }
 
