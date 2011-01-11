@@ -650,16 +650,19 @@ void AgentSessionImpl::handleMethodRequest(const Variant::Map& content, const Me
             return;
         }
 
-        if (DataImplAccess::get(iter->second).getSchema().isValid())
+        Schema schema(DataImplAccess::get(iter->second).getSchema());
+        if (schema.isValid()) {
+            eventImpl->setSchema(schema);
             for (Variant::Map::const_iterator aIter = eventImpl->getArguments().begin();
                  aIter != eventImpl->getArguments().end(); aIter++) {
                 const Schema& schema(DataImplAccess::get(iter->second).getSchema());
                 if (!SchemaImplAccess::get(schema).isValidMethodInArg(eventImpl->getMethodName(), aIter->first, aIter->second)) {
-                AgentEvent event(eventImpl.release());
-                raiseException(event, "Invalid argument: " + aIter->first);
-                return;
+                    AgentEvent event(eventImpl.release());
+                    raiseException(event, "Invalid argument: " + aIter->first);
+                    return;
                 }
             }
+        }
     }
 
     enqueueEvent(AgentEvent(eventImpl.release()));
