@@ -311,7 +311,7 @@ class Agent(object):
     """
     """
     if q.__class__ == Query:
-      q_arg = Query._impl
+      q_arg = q._impl
     else:
       q_arg = q
     dur = cqpid.Duration(cqpid.Duration.SECOND.getMilliseconds() * timeout)
@@ -366,10 +366,11 @@ class Query(object):
   """
   """
 
-  def __init__(self, *kwargs):
+  def __init__(self, arg1, arg2=None, arg3=None, *kwargs):
     """
     """
-    pass
+    if arg1.__class__ == DataAddr:
+      self._impl = cqmf2.Query(arg1._impl)
 
 #===================================================================================================
 # DATA
@@ -518,8 +519,11 @@ class DataAddr(object):
   """
   """
 
-  def __init__(self, impl):
-    self._impl = impl
+  def __init__(self, arg):
+    if arg.__class__ == dict:
+      self._impl = cqmf2.DataAddr(arg)
+    else:
+      self._impl = arg
 
   def __repr__(self):
     return "%s:%s" % (self.getAgentName(), self.getName())

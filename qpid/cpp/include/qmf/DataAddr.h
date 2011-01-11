@@ -44,6 +44,7 @@ namespace qmf {
         QMF_EXTERN bool operator==(const DataAddr&);
         QMF_EXTERN bool operator<(const DataAddr&);
 
+        QMF_EXTERN DataAddr(const qpid::types::Variant::Map&);
         QMF_EXTERN DataAddr(const std::string& name, const std::string& agentName, uint32_t agentEpoch=0);
         QMF_EXTERN const std::string& getName() const;
         QMF_EXTERN const std::string& getAgentName() const;
