@@ -45,6 +45,7 @@ EXTRA_DIST +=					\
 	run_long_cluster_tests			\
 	testlib.py				\
 	cluster_tests.py			\
+	cluster_test_logs.py			\
 	long_cluster_tests.py			\
 	cluster_tests.fail
 
