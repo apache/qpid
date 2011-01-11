@@ -533,6 +533,11 @@ class DataAddr(object):
         self.getName() == other.getName() and \
         self.getAgentEpoch() == other.getAgentEpoch()
 
+  def asMap(self):
+    """
+    """
+    return self._impl.asMap()
+
   def getAgentName(self):
     """
     """
