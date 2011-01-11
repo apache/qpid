@@ -21,6 +21,7 @@
 
 #include "qmf/AgentEventImpl.h"
 #include "qmf/PrivateImplRef.h"
+#include "qmf/SchemaImpl.h"
 
 using namespace std;
 using namespace qmf;
@@ -64,6 +65,8 @@ Data AgentEventImpl::dequeueData()
 
 void AgentEventImpl::addReturnArgument(const string& key, const Variant& val, const string& subtype)
 {
+    if (schema.isValid() && !SchemaImplAccess::get(schema).isValidMethodOutArg(methodName, key, val))
+        throw QmfException("Output argument is unknown or the type is incompatible");
     outArguments[key] = val;
     if (!subtype.empty())
         outArgumentSubtypes[key] = subtype;
