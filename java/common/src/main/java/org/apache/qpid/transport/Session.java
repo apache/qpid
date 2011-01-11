@@ -260,6 +260,10 @@ public class Session extends SessionInvoker
                     m = new ExecutionSync();
                     m.setId(i);
                 }
+                else if (m instanceof MessageTransfer)
+                {
+                    ((MessageTransfer)m).getHeader().get(DeliveryProperties.class).setRedelivered(true);
+                }
                 sessionCommandPoint(m.getId(), 0);
                 send(m);
             }
