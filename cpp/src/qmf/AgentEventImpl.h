@@ -29,6 +29,7 @@
 #include "qmf/Query.h"
 #include "qmf/DataAddr.h"
 #include "qmf/Data.h"
+#include "qmf/Schema.h"
 #include <queue>
 
 namespace qmf {
@@ -45,6 +46,7 @@ namespace qmf {
         void setArguments(const qpid::types::Variant::Map& a) { arguments = a; }
         void setArgumentSubtypes(const qpid::types::Variant::Map& a) { argumentSubtypes = a; }
         void setReplyTo(const qpid::messaging::Address& r) { replyTo = r; }
+        void setSchema(const Schema& s) { schema = s; }
         const qpid::messaging::Address& getReplyTo() { return replyTo; }
         void setCorrelationId(const std::string& c) { correlationId = c; }
         const std::string& getCorrelationId() { return correlationId; }
@@ -73,6 +75,7 @@ namespace qmf {
         std::string correlationId;
         Query query;
         DataAddr dataAddr;
+        Schema schema;
         std::string methodName;
         qpid::types::Variant::Map arguments;
         qpid::types::Variant::Map argumentSubtypes;
