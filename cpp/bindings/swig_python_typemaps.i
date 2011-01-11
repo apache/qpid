@@ -271,10 +271,6 @@ typedef int Py_ssize_t;
     Py_INCREF($result);
 }
 
-%typemap(typecheck) qpid::types::Variant::Map& {
-    $1 = PyDict_Check($input) ? 1 : 0;
-}
-
 /*
  * Variant types: C++ --> Python
  */
@@ -314,6 +310,16 @@ typedef int Py_ssize_t;
     PyToList($input, $1);
 }
 
+%typemap(in) const qpid::types::Variant::Map const & {
+    $1 = new qpid::types::Variant::Map();
+    PyToMap($input, $1);
+}
+
+%typemap(in) const qpid::types::Variant::List const & {
+    $1 = new qpid::types::Variant::List();
+    PyToList($input, $1);
+}
+
 %typemap(freearg) qpid::types::Variant& {
     delete $1;
 }
@@ -334,7 +340,15 @@ typedef int Py_ssize_t;
     $1 = PyDict_Check($input) ? 1 : 0;
 }
 
-%typemap(typecheck) qpid::types::Variant::List& {
+%typemap(typecheck)  qpid::types::Variant::List& {
+    $1 = PyList_Check($input) ? 1 : 0;
+}
+
+%typemap(typecheck) const qpid::types::Variant::Map const & {
+    $1 = PyDict_Check($input) ? 1 : 0;
+}
+
+%typemap(typecheck) const qpid::types::Variant::List const & {
     $1 = PyList_Check($input) ? 1 : 0;
 }
 

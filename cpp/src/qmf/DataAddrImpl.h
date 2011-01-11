@@ -32,7 +32,6 @@ namespace qmf {
         //
         // Impl-only methods
         //
-        DataAddrImpl(const qpid::types::Variant::Map&);
         void setName(const std::string& n) { name = n; }
         void setAgent(const std::string& n, uint32_t e=0) { agentName = n; agentEpoch = e; }
 
@@ -41,6 +40,7 @@ namespace qmf {
         //
         bool operator==(const DataAddrImpl&);
         bool operator<(const DataAddrImpl&);
+        DataAddrImpl(const qpid::types::Variant::Map&);
         DataAddrImpl(const std::string& _name, const std::string& _agentName, uint32_t _agentEpoch=0) :
             agentName(_agentName), name(_name), agentEpoch(_agentEpoch) {}
         const std::string& getName() const { return name; }

@@ -233,8 +233,10 @@ module Qmf2
 
   class Query
     attr_reader :impl
-    def initialize
-      @impl = nil
+    def initialize(arg1, arg2=nil, arg3=nil)
+      if arg1.class == Qmf2::DataAddr
+        @impl = Cqmf2::Query.new(arg1.impl)
+      end
     end
   end
 
@@ -390,8 +392,12 @@ module Qmf2
   class DataAddr
     attr_reader :impl
 
-    def initialize(impl)
-      @impl = impl
+    def initialize(arg)
+      if arg.class == Hash
+        @impl = Cqmf2::DataAddr.new(arg)
+      else
+        @impl = arg
+      end
     end
 
     def ==(other)
