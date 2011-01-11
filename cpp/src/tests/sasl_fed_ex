@@ -163,7 +163,6 @@ $QPIDD_EXEC                                  \
   $COMMON_BROKER_OPTIONS                     \
   --log-to-file $tmp_root/qpidd_dst.log 2> /dev/null
 
-sleep 2
 
 # I am not randomizing these names, because this test creates its own brokers.
 QUEUE_NAME=sasl_fed_queue
@@ -184,7 +183,6 @@ $QPID_CONFIG_EXEC -a localhost:${DST_TCP_PORT} add exchange direct $EXCHANGE_NAM
 $QPID_CONFIG_EXEC -a localhost:${SRC_TCP_PORT} add queue $QUEUE_NAME
 $QPID_CONFIG_EXEC -a localhost:${DST_TCP_PORT} add queue $QUEUE_NAME
 
-sleep 5
 
 #echo "-----------------------"
 #echo "create bindings"
@@ -192,7 +190,6 @@ sleep 5
 $QPID_CONFIG_EXEC -a localhost:${SRC_TCP_PORT} bind $EXCHANGE_NAME $QUEUE_NAME $ROUTING_KEY
 $QPID_CONFIG_EXEC -a localhost:${DST_TCP_PORT} bind $EXCHANGE_NAME $QUEUE_NAME $ROUTING_KEY
 
-sleep 5
 
 #echo "-----------------------"
 #echo "qpid-route route add"
@@ -207,6 +204,7 @@ $QPID_ROUTE_EXEC route add localhost:${DST_TCP_PORT}   $TEST_HOSTNAME:${SRC_SSL_
 #echo "-----------------------"
 #$PYTHON_COMMANDS/qpid-route route list localhost:${DST_TCP_PORT} 
 
+# I don't know how to avoid this sleep yet.  It has to come after route-creation.
 sleep 5
 
 n_messages=100
@@ -214,14 +212,11 @@ n_messages=100
 ./datagen --count ${n_messages} | ./sender --broker localhost --port ${SRC_TCP_PORT} --exchange ${EXCHANGE_NAME} --routing-key ${ROUTING_KEY} --mechanism ANONYMOUS
 
 
-sleep 5
-
 #echo "-----------------------"
 #echo "Examine DST Broker"
 #echo "-----------------------"
 dst_message_count=`qpid-stat -q localhost:${DST_TCP_PORT} | grep sasl_fed_queue | awk '{print $2}'`
 
-sleep 3
 
 #echo "-----------------------"
 #echo "Asking brokers to quit."
