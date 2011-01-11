@@ -89,7 +89,7 @@ public class Session extends SessionInvoker
     private int channel;
     private SessionDelegate delegate;
     private SessionListener listener = new DefaultSessionListener();
-    private long timeout = 6000;
+    private long timeout = 60000;
     private boolean autoSync = false;
 
     private boolean incomingInit;
