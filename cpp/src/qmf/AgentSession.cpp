@@ -650,7 +650,7 @@ void AgentSessionImpl::handleMethodRequest(const Variant::Map& content, const Me
             return;
         }
 
-        Schema schema(DataImplAccess::get(iter->second).getSchema());
+        const Schema& schema(DataImplAccess::get(iter->second).getSchema());
         if (schema.isValid()) {
             eventImpl->setSchema(schema);
             for (Variant::Map::const_iterator aIter = eventImpl->getArguments().begin();
