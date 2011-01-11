@@ -167,6 +167,7 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
         if (_transacted)
         {
             _qpidSession.txSelect();
+            _qpidSession.setTransacted(true);
         }
 
         if (maxAckDelay > 0)
