@@ -88,6 +88,14 @@ class ExampleAgent(AgentHandler):
           ex.details = args['details']
           self.session.raiseException(handle, ex)
 
+      elif methodName == "create_child":
+        name = args['name']
+        child = Data(self.sch_child)
+        child.name = name
+        addr = self.session.addData(child, name)
+        handle.addReturnArgument("childAddr", addr.asMap())
+        self.session.methodSuccess(handle)
+
 
   def setupSchema(self):
     """
@@ -126,11 +134,23 @@ class ExampleAgent(AgentHandler):
     failMethod.addArgument(SchemaProperty("details", SCHEMA_DATA_MAP, direction=DIR_IN))
     self.sch_control.addMethod(failMethod)
 
+    createMethod = SchemaMethod("create_child", desc="Create Child Object")
+    createMethod.addArgument(SchemaProperty("name", SCHEMA_DATA_STRING, direction=DIR_IN))
+    createMethod.addArgument(SchemaProperty("childAddr", SCHEMA_DATA_MAP, direction=DIR_OUT))
+    self.sch_control.addMethod(createMethod)
+
+    ##
+    ## Declare a child object
+    ##
+    self.sch_child = Schema(SCHEMA_TYPE_DATA, package, "child")
+    self.sch_child.addProperty(SchemaProperty("name", SCHEMA_DATA_STRING))
+
     ##
     ## Register our schemata with the agent session.
     ##
     self.session.registerSchema(self.sch_exception)
     self.session.registerSchema(self.sch_control)
+    self.session.registerSchema(self.sch_child)
 
 
   def populateData(self):

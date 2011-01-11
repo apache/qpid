@@ -237,8 +237,16 @@
 /*
  * Variant types: C++ --> Ruby
  */
+%typemap(out) qpid::types::Variant::Map {
+    $result = MapToRb(&$1);
+}
+
 %typemap(out) qpid::types::Variant::Map& {
     $result = MapToRb($1);
+}
+
+%typemap(out) qpid::types::Variant::List {
+    $result = ListToRb(&$1);
 }
 
 %typemap(out) qpid::types::Variant::List& {
@@ -301,6 +309,15 @@
     $1 = (TYPE($input) == T_ARRAY) ? 1 : 0;
 }
 
+%typemap(typecheck) qpid::types::Variant& {
+    $1 = (TYPE($input) == T_FLOAT  ||
+          TYPE($input) == T_STRING ||
+          TYPE($input) == T_FIXNUM ||
+          TYPE($input) == T_BIGNUM ||
+          TYPE($input) == T_TRUE   ||
+          TYPE($input) == T_FALSE) ? 1 : 0;
+}
+
 %typemap(typecheck) qpid::types::Variant::Map const & {
     $1 = (TYPE($input) == T_HASH) ? 1 : 0;
 }
@@ -309,7 +326,7 @@
     $1 = (TYPE($input) == T_ARRAY) ? 1 : 0;
 }
 
-%typemap(typecheck) qpid::types::Variant& {
+%typemap(typecheck) const qpid::types::Variant const & {
     $1 = (TYPE($input) == T_FLOAT  ||
           TYPE($input) == T_STRING ||
           TYPE($input) == T_FIXNUM ||

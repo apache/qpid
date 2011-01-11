@@ -404,6 +404,7 @@ module Qmf2
       return @impl == other.impl
     end
 
+    def as_map()       @impl.asMap          end
     def agent_name()   @impl.getAgentName   end
     def name()         @impl.getName        end
     def agent_epoch()  @impl.getAgentEpoch  end
