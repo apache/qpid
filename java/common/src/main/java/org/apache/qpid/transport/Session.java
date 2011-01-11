@@ -89,7 +89,7 @@ public class Session extends SessionInvoker
     private int channel;
     private SessionDelegate delegate;
     private SessionListener listener = new DefaultSessionListener();
-    private long timeout = 60000;
+    private long timeout = 6000;
     private boolean autoSync = false;
 
     private boolean incomingInit;
@@ -116,7 +116,8 @@ public class Session extends SessionInvoker
     private Semaphore credit = new Semaphore(0);
 
     private Thread resumer = null;
-
+    private boolean transacted = false;
+    
     protected Session(Connection connection, Binary name, long expiry)
     {
         this(connection, new SessionDelegate(), name, expiry);
@@ -645,7 +646,7 @@ public class Session extends SessionInvoker
                 {
                     sessionCommandPoint(0, 0);
                 }
-                if ((!closing && m instanceof MessageTransfer) || m.hasCompletionListener())
+                if ((!closing && !transacted && m instanceof MessageTransfer) || m.hasCompletionListener())
                 {
                     commands[mod(next, commands.length)] = m;
                     commandBytes += m.getBodySize();
@@ -992,4 +993,9 @@ public class Session extends SessionInvoker
     {
         return String.format("ssn:%s", name);
     }
+    
+    public void setTransacted(boolean b) {
+        this.transacted = b;
+    }
+    
 }
