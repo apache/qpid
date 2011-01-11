@@ -48,6 +48,7 @@ private:
     AgentSession session;
     Schema sch_exception;
     Schema sch_control;
+    Schema sch_child;
     Data control;
     DataAddr controlAddr;
 
@@ -120,11 +121,23 @@ void ExampleAgent::setupSchema()
     failMethod.addArgument(SchemaProperty("details", SCHEMA_DATA_MAP, "{dir:IN}"));
     sch_control.addMethod(failMethod);
 
+    SchemaMethod createMethod("create_child", "{desc:'Create Child Object'}");
+    createMethod.addArgument(SchemaProperty("name", SCHEMA_DATA_STRING, "{dir:IN}"));
+    createMethod.addArgument(SchemaProperty("childAddr", SCHEMA_DATA_MAP, "{dir:OUT}"));
+    sch_control.addMethod(createMethod);
+
+    //
+    // Declare the child class
+    //
+    sch_child = Schema(SCHEMA_TYPE_DATA, package, "child");
+    sch_child.addProperty(SchemaProperty("name", SCHEMA_DATA_STRING));
+
     //
     // Register our schemata with the agent session.
     //
     session.registerSchema(sch_exception);
     session.registerSchema(sch_control);
+    session.registerSchema(sch_child);
 }
 
 void ExampleAgent::populateData()
@@ -184,6 +197,15 @@ bool ExampleAgent::method(AgentEvent& event)
                 ex.setProperty("details", event.getArguments()["details"]);
                 session.raiseException(event, ex);
             }
+        }
+
+        if (name == "create_child") {
+            const string& name(event.getArguments()["name"]);
+            Data child(sch_child);
+            child.setProperty("name", name);
+            DataAddr addr(session.addData(child, name));
+            event.addReturnArgument("childAddr", addr.asMap());
+            session.methodSuccess(event);
         }
     }
 
