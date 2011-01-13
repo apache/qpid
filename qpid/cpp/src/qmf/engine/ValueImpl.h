@@ -79,6 +79,7 @@ namespace engine {
         ~ValueImpl();
 
         void encode(qpid::framing::Buffer& b) const;
+        uint32_t encodedSize() const;
 
         Typecode getType() const { return typecode; }
         bool isNull() const { return !valid; }

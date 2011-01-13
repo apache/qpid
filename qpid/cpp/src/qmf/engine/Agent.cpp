@@ -356,8 +356,7 @@ void AgentImpl::heartbeat()
     QPID_LOG(trace, "SENT HeartbeatIndication");
 }
 
-void AgentImpl::methodResponse(uint32_t sequence, uint32_t status, char* text,
-                                     const Value& argMap)
+void AgentImpl::methodResponse(uint32_t sequence, uint32_t status, char* text, const Value& argMap)
 {
     Mutex::ScopedLock _lock(lock);
     map<uint32_t, AgentQueryContext::Ptr>::iterator iter = contextMap.find(sequence);
@@ -366,7 +365,32 @@ void AgentImpl::methodResponse(uint32_t sequence, uint32_t status, char* text,
     AgentQueryContext::Ptr context = iter->second;
     contextMap.erase(iter);
 
-    Buffer buffer(outputBuffer, MA_BUFFER_SIZE);
+    char* buf(outputBuffer);
+    uint32_t bufLen(114 + strlen(text)); // header(8) + status(4) + mstring(2 + size) + margin(100)
+    bool allocated(false);
+
+    if (status == 0) {
+        for (vector<const SchemaArgument*>::const_iterator aIter = context->schemaMethod->impl->arguments.begin();
+             aIter != context->schemaMethod->impl->arguments.end(); aIter++) {
+            const SchemaArgument* schemaArg = *aIter;
+            if (schemaArg->getDirection() == DIR_OUT || schemaArg->getDirection() == DIR_IN_OUT) {
+                if (argMap.keyInMap(schemaArg->getName())) {
+                    const Value* val = argMap.byKey(schemaArg->getName());
+                    bufLen += val->impl->encodedSize();
+                } else {
+                    Value val(schemaArg->getType());
+                    bufLen += val.impl->encodedSize();
+                }
+            }
+        }
+    }
+
+    if (bufLen > MA_BUFFER_SIZE) {
+        buf = (char*) malloc(bufLen);
+        allocated = true;
+    }
+
+    Buffer buffer(buf, bufLen);
     Protocol::encodeHeader(buffer, Protocol::OP_METHOD_RESPONSE, context->sequence);
     buffer.putLong(status);
     buffer.putMediumString(text);
@@ -386,6 +410,8 @@ void AgentImpl::methodResponse(uint32_t sequence, uint32_t status, char* text,
         }
     }
     sendBufferLH(buffer, context->exchange, context->key);
+    if (allocated)
+        free(buf);
     QPID_LOG(trace, "SENT MethodResponse seq=" << context->sequence << " status=" << status << " text=" << text);
 }
 
