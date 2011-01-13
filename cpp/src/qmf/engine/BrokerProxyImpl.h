@@ -142,6 +142,7 @@ namespace engine {
         void sendQuery(const Query& query, void* context, const AgentProxy* agent);
         bool sendGetRequestLH(SequenceContext::Ptr queryContext, const Query& query, const AgentProxy* agent);
         std::string encodeMethodArguments(const SchemaMethod* schema, const Value* args, qpid::framing::Buffer& buffer);
+        std::string encodedSizeMethodArguments(const SchemaMethod* schema, const Value* args, uint32_t& size);
         void sendMethodRequest(ObjectId* oid, const SchemaObjectClass* cls, const std::string& method, const Value* args, void* context);
 
         void addBinding(const std::string& exchange, const std::string& key);

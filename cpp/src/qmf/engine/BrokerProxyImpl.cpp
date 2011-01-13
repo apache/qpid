@@ -269,6 +269,31 @@ string BrokerProxyImpl::encodeMethodArguments(const SchemaMethod* schema, const 
     return string();
 }
 
+string BrokerProxyImpl::encodedSizeMethodArguments(const SchemaMethod* schema, const Value* argmap, uint32_t& size)
+{
+    int argCount = schema->getArgumentCount();
+
+    if (argmap == 0 || !argmap->isMap())
+        return string("Arguments must be in a map value");
+
+    for (int aIdx = 0; aIdx < argCount; aIdx++) {
+        const SchemaArgument* arg(schema->getArgument(aIdx));
+        if (arg->getDirection() == DIR_IN || arg->getDirection() == DIR_IN_OUT) {
+            if (argmap->keyInMap(arg->getName())) {
+                const Value* argVal(argmap->byKey(arg->getName()));
+                if (argVal->getType() != arg->getType())
+                    return string("Argument is the wrong type: ") + arg->getName();
+                size += argVal->impl->encodedSize();
+            } else {
+                Value defaultValue(arg->getType());
+                size += defaultValue.impl->encodedSize();
+            }
+        }
+    }
+
+    return string();
+}
+
 void BrokerProxyImpl::sendMethodRequest(ObjectId* oid, const SchemaObjectClass* cls,
                                         const string& methodName, const Value* args, void* userContext)
 {
@@ -280,7 +305,23 @@ void BrokerProxyImpl::sendMethodRequest(ObjectId* oid, const SchemaObjectClass* 
             Mutex::ScopedLock _lock(lock);
             SequenceContext::Ptr methodContext(new MethodContext(*this, userContext, method));
             stringstream key;
-            Buffer outBuffer(outputBuffer, MA_BUFFER_SIZE);
+            char* buf(outputBuffer);
+            uint32_t bufLen(1024);
+            bool allocated(false);
+
+            string argErrorString = encodedSizeMethodArguments(method, args, bufLen);
+            if (!argErrorString.empty()) {
+                MethodResponsePtr argError(MethodResponseImpl::factory(1, argErrorString));
+                eventQueue.push_back(eventMethodResponse(userContext, argError));
+                return;
+            }
+
+            if (bufLen > MA_BUFFER_SIZE) {
+                buf = (char*) malloc(bufLen);
+                allocated = true;
+            }
+
+            Buffer outBuffer(buf, bufLen);
             uint32_t sequence(seqMgr.reserve(methodContext));
 
             Protocol::encodeHeader(outBuffer, Protocol::OP_METHOD_REQUEST, sequence);
@@ -288,15 +329,14 @@ void BrokerProxyImpl::sendMethodRequest(ObjectId* oid, const SchemaObjectClass* 
             cls->getClassKey()->impl->encode(outBuffer);
             outBuffer.putShortString(methodName);
 
-            string argErrorString = encodeMethodArguments(method, args, outBuffer);
-            if (argErrorString.empty()) {
-                key << "agent.1." << oid->impl->getAgentBank();
-                sendBufferLH(outBuffer, QMF_EXCHANGE, key.str());
-                QPID_LOG(trace, "SENT MethodRequest seq=" << sequence << " method=" << methodName << " key=" << key.str());
-            } else {
-                MethodResponsePtr argError(MethodResponseImpl::factory(1, argErrorString));
-                eventQueue.push_back(eventMethodResponse(userContext, argError));
-            }
+            encodeMethodArguments(method, args, outBuffer);
+            key << "agent.1." << oid->impl->getAgentBank();
+            sendBufferLH(outBuffer, QMF_EXCHANGE, key.str());
+            QPID_LOG(trace, "SENT MethodRequest seq=" << sequence << " method=" << methodName << " key=" << key.str());
+
+            if (allocated)
+                free(buf);
+
             return;
         }
     }

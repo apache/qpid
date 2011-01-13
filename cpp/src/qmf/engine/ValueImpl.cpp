@@ -394,6 +394,51 @@ void ValueImpl::encode(Buffer& buf) const
     }
 }
 
+uint32_t ValueImpl::encodedSize() const
+{
+    FieldTable ft;
+    List fl;
+
+    switch (typecode) {
+    case TYPE_UINT8     :
+    case TYPE_BOOL      :
+    case TYPE_INT8      : return 1;
+ 
+    case TYPE_UINT16    :
+    case TYPE_INT16     : return 2;
+
+    case TYPE_UINT32    :
+    case TYPE_INT32     :
+    case TYPE_FLOAT     : return 4;
+
+    case TYPE_UINT64    :
+    case TYPE_INT64     :
+    case TYPE_DOUBLE    :
+    case TYPE_ABSTIME   :
+    case TYPE_DELTATIME : return 8;
+
+    case TYPE_UUID      : 
+    case TYPE_REF       : return 16;
+
+    case TYPE_SSTR      : return 1 + stringVal.size();
+    case TYPE_LSTR      : return 2 + stringVal.size();
+    case TYPE_MAP:
+        mapToFieldTable(ft);
+        return ft.encodedSize();
+
+    case TYPE_LIST:
+        listToFramingList(fl);
+        return fl.encodedSize();
+
+    case TYPE_ARRAY:
+    case TYPE_OBJECT:
+    default:
+        break;
+    }
+
+    return 0;
+}
+
 bool ValueImpl::keyInMap(const char* key) const
 {
     return typecode == TYPE_MAP && mapVal.count(key) > 0;
