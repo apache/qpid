@@ -1200,15 +1200,15 @@ class FederationTests(TestBase010):
         # @todo - restore code when QPID-2499 fixed!!
         sleep(6)
         # wait for the binding count on B1 to drop from 2 to 1
-        # retries = 0
-        # exchanges[1].update()
-        # while exchanges[1].bindingCount != 1:
-        #     retries += 1
-        #     self.failIfEqual(retries, 10,
-        #                      "unbinding failed to propagate to broker B1: %d"
-        #                      % exchanges[1].bindingCount)
-        #     sleep(1)
-        #     exchanges[1].update()
+        retries = 0
+        exchanges[1].update()
+        while exchanges[1].bindingCount != 1:
+            retries += 1
+            self.failIfEqual(retries, 10,
+                             "unbinding failed to propagate to broker B1: %d"
+                             % exchanges[1].bindingCount)
+            sleep(1)
+            exchanges[1].update()
 
         # send 10 msgs from B0
         for i in range(11, 21):
@@ -1216,13 +1216,12 @@ class FederationTests(TestBase010):
             self._brokers[0].client_session.message_transfer(destination="fedX.direct", message=Message(dp, "Message_drp %d" % i))
 
         # verify messages are forwarded to B3 only
-        # note: why exchanges[1].msgRoutes == 40???, not 20???  QPID-2499?
         retries = 0
         for ex in exchanges:
             ex.update()
         while (exchanges[0].msgReceives != 20 or exchanges[0].msgRoutes != 20 or
-               exchanges[1].msgReceives != 20 or exchanges[1].msgRoutes != 40 or
-               exchanges[2].msgReceives != 20 or exchanges[2].msgDrops != 10 or exchanges[2].msgRoutes != 10 or
+               exchanges[1].msgReceives != 20 or exchanges[1].msgRoutes != 30 or
+               exchanges[2].msgReceives != 10 or exchanges[2].msgRoutes != 10 or
                exchanges[3].msgReceives != 20 or exchanges[3].msgRoutes != 20):
             retries += 1
             self.failIfEqual(retries, 10,
@@ -1455,18 +1454,16 @@ class FederationTests(TestBase010):
         self._brokers[2].client_session.message_cancel(destination="f1")
         self._brokers[2].client_session.queue_delete(queue="fedX1")
 
-        # @todo - restore code when QPID-2499 fixed!!
-        sleep(6)
         # wait for the binding count on B1 to drop from 2 to 1
-        # retries = 0
-        # exchanges[1].update()
-        # while exchanges[1].bindingCount != 1:
-        #     retries += 1
-        #     self.failIfEqual(retries, 10,
-        #                      "unbinding failed to propagate to broker B1: %d"
-        #                      % exchanges[1].bindingCount)
-        #     sleep(1)
-        #     exchanges[1].update()
+        retries = 0
+        exchanges[1].update()
+        while exchanges[1].bindingCount != 1:
+            retries += 1
+            self.failIfEqual(retries, 10,
+                             "unbinding failed to propagate to broker B1: %d"
+                             % exchanges[1].bindingCount)
+            sleep(1)
+            exchanges[1].update()
 
         # send 10 msgs from B0
         for i in range(11, 21):
@@ -1474,13 +1471,12 @@ class FederationTests(TestBase010):
             self._brokers[0].client_session.message_transfer(destination="fedX.topic", message=Message(dp, "Message_trp %d" % i))
 
         # verify messages are forwarded to B3 only
-        # note: why exchanges[1].msgRoutes == 40???, not 20???  QPID-2499?
         retries = 0
         for ex in exchanges:
             ex.update()
         while (exchanges[0].msgReceives != 20 or exchanges[0].msgRoutes != 20 or
-               exchanges[1].msgReceives != 20 or exchanges[1].msgRoutes != 40 or
-               exchanges[2].msgReceives != 20 or exchanges[2].msgDrops != 10 or exchanges[2].msgRoutes != 10 or
+               exchanges[1].msgReceives != 20 or exchanges[1].msgRoutes != 30 or
+               exchanges[2].msgReceives != 10 or exchanges[2].msgRoutes != 10 or
                exchanges[3].msgReceives != 20 or exchanges[3].msgRoutes != 20):
             retries += 1
             self.failIfEqual(retries, 10,
@@ -1714,18 +1710,16 @@ class FederationTests(TestBase010):
         self._brokers[2].client_session.message_cancel(destination="f1")
         self._brokers[2].client_session.queue_delete(queue="fedX1")
 
-        # @todo - find a proper way to check the propagation here!
-        sleep(6)
         # wait for the binding count on B1 to drop from 2 to 1
-        # retries = 0
-        # exchanges[1].update()
-        # while exchanges[1].bindingCount != 1:
-        #     retries += 1
-        #     self.failIfEqual(retries, 10,
-        #                      "unbinding failed to propagate to broker B1: %d"
-        #                      % exchanges[1].bindingCount)
-        #     sleep(1)
-        #     exchanges[1].update()
+        retries = 0
+        exchanges[1].update()
+        while exchanges[1].bindingCount != 1:
+            retries += 1
+            self.failIfEqual(retries, 10,
+                             "unbinding failed to propagate to broker B1: %d"
+                             % exchanges[1].bindingCount)
+            sleep(1)
+            exchanges[1].update()
 
         # send 10 msgs from B0
         for i in range(11, 21):
@@ -1733,13 +1727,12 @@ class FederationTests(TestBase010):
             self._brokers[0].client_session.message_transfer(destination="fedX.fanout", message=Message(dp, "Message_frp %d" % i))
 
         # verify messages are forwarded to B3 only
-        # note: why exchanges[1].msgRoutes == 40???, not 20???  QPID-2499?
         retries = 0
         for ex in exchanges:
             ex.update()
         while (exchanges[0].msgReceives != 20 or exchanges[0].msgRoutes != 20 or
-               exchanges[1].msgReceives != 20 or exchanges[1].msgRoutes != 40 or
-               exchanges[2].msgReceives != 20 or exchanges[2].msgDrops != 10 or exchanges[2].msgRoutes != 10 or
+               exchanges[1].msgReceives != 20 or exchanges[1].msgRoutes != 30 or
+               exchanges[2].msgReceives != 10 or exchanges[2].msgRoutes != 10 or
                exchanges[3].msgReceives != 20 or exchanges[3].msgRoutes != 20):
             retries += 1
             self.failIfEqual(retries, 10,

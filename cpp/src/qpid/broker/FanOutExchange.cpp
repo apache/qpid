@@ -53,18 +53,18 @@ bool FanOutExchange::bind(Queue::shared_ptr queue, const string& /*key*/, const 
         Binding::shared_ptr binding (new Binding ("", queue, this, FieldTable(), fedOrigin));
         if (bindings.add_unless(binding, MatchQueue(queue))) {
             binding->startManagement();
-            propagate = fedBinding.addOrigin(fedOrigin);
+            propagate = fedBinding.addOrigin(queue->getName(), fedOrigin);
             if (mgmtExchange != 0) {
                 mgmtExchange->inc_bindingCount();
             }
         } else {
             // queue already present - still need to track fedOrigin
-            fedBinding.addOrigin(fedOrigin);
+            fedBinding.addOrigin(queue->getName(), fedOrigin);
             return false;
         }
     } else if (fedOp == fedOpUnbind) {
-        propagate = fedBinding.delOrigin(fedOrigin);
-        if (fedBinding.count() == 0)
+        propagate = fedBinding.delOrigin(queue->getName(), fedOrigin);
+        if (fedBinding.countFedBindings(queue->getName()) == 0)
             unbind(queue, "", 0);
     } else if (fedOp == fedOpReorigin) {
         if (fedBinding.hasLocal()) {

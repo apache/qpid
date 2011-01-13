@@ -116,12 +116,12 @@ bool HeadersExchange::bind(Queue::shared_ptr queue, const string& bindingKey, co
             BoundKey bk(binding);
             if (bindings.add_unless(bk, MatchArgs(queue, args))) {
                 binding->startManagement();
-                propagate = bk.fedBinding.addOrigin(fedOrigin);
+                propagate = bk.fedBinding.addOrigin(queue->getName(), fedOrigin);
                 if (mgmtExchange != 0) {
                     mgmtExchange->inc_bindingCount();
                 }
             } else {
-                bk.fedBinding.addOrigin(fedOrigin);
+                bk.fedBinding.addOrigin(queue->getName(), fedOrigin);
                 return false;
             }
         } // lock dropped
@@ -129,7 +129,7 @@ bool HeadersExchange::bind(Queue::shared_ptr queue, const string& bindingKey, co
     } else if (fedOp == fedOpUnbind) {
         Mutex::ScopedLock l(lock);
  
-        FedUnbindModifier modifier(fedOrigin);
+        FedUnbindModifier modifier(queue->getName(), fedOrigin);
         bindings.modify_if(MatchKey(queue, bindingKey), modifier);
         propagate = modifier.shouldPropagate;
         if (modifier.shouldUnbind) {
@@ -325,7 +325,7 @@ bool HeadersExchange::MatchKey::operator()(BoundKey & bk)
 }
 
 //----------
-HeadersExchange::FedUnbindModifier::FedUnbindModifier(string & origin) : fedOrigin(origin), shouldUnbind(false), shouldPropagate(false) {}
+HeadersExchange::FedUnbindModifier::FedUnbindModifier(const string& queueName, const string& origin) : queueName(queueName), fedOrigin(origin), shouldUnbind(false), shouldPropagate(false) {}
 HeadersExchange::FedUnbindModifier::FedUnbindModifier() : shouldUnbind(false), shouldPropagate(false) {}
 
 bool HeadersExchange::FedUnbindModifier::operator()(BoundKey & bk)
@@ -333,9 +333,9 @@ bool HeadersExchange::FedUnbindModifier::operator()(BoundKey & bk)
     if ("" == fedOrigin) {
         shouldPropagate = bk.fedBinding.delOrigin();
     } else {
-        shouldPropagate = bk.fedBinding.delOrigin(fedOrigin);
+        shouldPropagate = bk.fedBinding.delOrigin(queueName, fedOrigin);
     }
-    if (bk.fedBinding.count() == 0)
+    if (bk.fedBinding.countFedBindings(queueName) == 0)
     {
         shouldUnbind = true;
     }

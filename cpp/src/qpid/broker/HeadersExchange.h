@@ -60,11 +60,12 @@ class HeadersExchange : public virtual Exchange {
 
     struct FedUnbindModifier
     {
+        std::string queueName;
         std::string fedOrigin;
         bool shouldUnbind;
         bool shouldPropagate;
         FedUnbindModifier();
-        FedUnbindModifier(std::string & origin);
+        FedUnbindModifier(const std::string& queueName, const std::string& origin);
         bool operator()(BoundKey & bk);
     };
 
