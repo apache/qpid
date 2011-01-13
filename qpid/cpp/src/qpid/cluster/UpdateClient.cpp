@@ -188,8 +188,7 @@ void UpdateClient::update() {
     //
     sys::usleep(10*1000);
 
-    QPID_LOG(debug,  *this << " update completed to " << updateeId
-             << " at " << updateeUrl << ": " << membership);
+    QPID_LOG(debug,  *this << " update completed to " << updateeId << " at " << updateeUrl);
 }
 
 namespace {

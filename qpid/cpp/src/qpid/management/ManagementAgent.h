@@ -357,6 +357,7 @@ private:
                       const std::string& routingKey,
                       uint64_t ttl_msec = 0);
     void moveNewObjectsLH();
+    bool moveDeletedObjectsLH();
 
     bool authorizeAgentMessageLH(qpid::broker::Message& msg);
     void dispatchAgentCommandLH(qpid::broker::Message& msg, bool viaLocal=false);
@@ -399,7 +400,9 @@ private:
     size_t validateTableSchema(framing::Buffer&);
     size_t validateEventSchema(framing::Buffer&);
     ManagementObjectMap::iterator numericFind(const ObjectId& oid);
-    std::string debugSnapshot();
+
+    std::string summarizeAgents();
+    void debugSnapshot(const char* title);
 };
 
 }}

@@ -480,9 +480,10 @@ void ManagementAgent::clusterUpdate() {
     // Set clientWasAdded so that on the next periodicProcessing we will do 
     // a full update on all cluster members.
     sys::Mutex::ScopedLock l(userLock);
-    moveNewObjectsLH();         // to be consistent with updater/updatee.
+    moveNewObjectsLH();         // keep lists consistent with updater/updatee.
+    moveDeletedObjectsLH();
     clientWasAdded = true;
-    QPID_LOG(debug, "Cluster member joined, " << debugSnapshot());
+    debugSnapshot("Cluster member joined");
 }
 
 void ManagementAgent::encodeHeader (Buffer& buf, uint8_t opcode, uint32_t seq)
@@ -642,12 +643,11 @@ void ManagementAgent::periodicProcessing (void)
 {
 #define BUFSIZE   65536
 #define HEADROOM  4096
-    QPID_LOG(debug, "Management agent periodic processing");
+    debugSnapshot("Management agent periodic processing");
     sys::Mutex::ScopedLock lock (userLock);
     char                msgChars[BUFSIZE];
     uint32_t            contentSize;
     string              routingKey;
-    list<pair<ObjectId, ManagementObject*> > deleteList;
     string sBuf;
 
     uint64_t uptime = sys::Duration(startTime, sys::now());
@@ -662,11 +662,6 @@ void ManagementAgent::periodicProcessing (void)
          iter != managementObjects.end();
          iter++) {
         ManagementObject* object = iter->second;
-
-        if (object->isDeleted()) {
-            deleteList.push_back(pair<ObjectId, ManagementObject*>(iter->first, object));
-        }
-
         object->setFlags(0);
         if (clientWasAdded) {
             object->setForcePublish(true);
@@ -675,53 +670,7 @@ void ManagementAgent::periodicProcessing (void)
 
     clientWasAdded = false;
 
-    // Remove Deleted objects, and save for later publishing...
-    //
-    for (list<pair<ObjectId, ManagementObject*> >::reverse_iterator iter = deleteList.rbegin();
-         iter != deleteList.rend();
-         iter++) {
-
-        ManagementObject* delObj = iter->second;
-        DeletedObject::shared_ptr dptr(new DeletedObject());
-        std::string classkey(delObj->getPackageName() + std::string(":") + delObj->getClassName());
-        bool send_stats = (delObj->hasInst() && (delObj->getInstChanged() || delObj->getForcePublish()));
-
-        dptr->packageName = delObj->getPackageName();
-        dptr->className = delObj->getClassName();
-        stringstream oid;
-        oid << delObj->getObjectId();
-        dptr->objectId = oid.str();
-
-        if (qmf1Support) {
-            delObj->writeProperties(dptr->encodedV1Config);
-            if (send_stats) {
-                delObj->writeStatistics(dptr->encodedV1Inst);
-            }
-        }
-
-        if (qmf2Support) {
-            Variant::Map map_;
-            Variant::Map values;
-            Variant::Map oid;
-
-            delObj->getObjectId().mapEncode(oid);
-            map_["_object_id"] = oid;
-            map_["_schema_id"] = mapEncodeSchemaId(delObj->getPackageName(),
-                                                   delObj->getClassName(),
-                                                   "_data",
-                                                   delObj->getMd5Sum());
-            delObj->writeTimestamps(map_);
-            delObj->mapEncodeValues(values, true, send_stats);
-            map_["_values"] = values;
-
-            dptr->encodedV2 = map_;
-        }
-
-        pendingDeletedObjs[classkey].push_back(dptr);
-
-        delete iter->second;
-        managementObjects.erase(iter->first);
-    }
+    bool objectsDeleted = moveDeletedObjectsLH();
 
     //
     // Process the entire object map.  Remember: we drop the userLock each time we call
@@ -995,10 +944,7 @@ void ManagementAgent::periodicProcessing (void)
         }  // end map
     }
 
-    if (!deleteList.empty()) {
-        deleteList.clear();
-        deleteOrphanedAgentsLH();
-    }
+    if (objectsDeleted) deleteOrphanedAgentsLH();
 
     // heartbeat generation
 
@@ -1045,7 +991,6 @@ void ManagementAgent::periodicProcessing (void)
 
         QPID_LOG(debug, "SENT AgentHeartbeat name=" << name_address);
     }
-    QPID_LOG(debug, "periodic update " << debugSnapshot());
 }
 
 void ManagementAgent::deleteObjectNowLH(const ObjectId& oid)
@@ -2673,22 +2618,26 @@ bool isDeleted(const ManagementObjectMap::value_type& value) {
     return value.second->isDeleted();
 }
 
-void summarizeMap(std::ostream& o, const char* name, const ManagementObjectMap& map) {
+string summarizeMap(const char* name, const ManagementObjectMap& map) {
+    ostringstream o;
     size_t deleted = std::count_if(map.begin(), map.end(), isDeleted);
     o << map.size() << " " << name << " (" << deleted << " deleted), ";
+    return o.str();
 }
 
-void dumpMap(std::ostream& o, const ManagementObjectMap& map) {
+string dumpMap(const ManagementObjectMap& map) {
+    ostringstream o;
     for (ManagementObjectMap::const_iterator i = map.begin(); i != map.end(); ++i) {
-        if (!i->second->isDeleted())
-            o << endl << "   " << i->second->getObjectId().getV2Key();
+        o << endl << "   " << i->second->getObjectId().getV2Key()
+          << (i->second->isDeleted() ? " (deleted)" : "");
     }
+    return o.str();
 }
+
 } // namespace
 
-string ManagementAgent::debugSnapshot() {
+string ManagementAgent::summarizeAgents() {
     ostringstream msg;
-    msg << " management snapshot: ";
     if (!remoteAgents.empty()) {
         msg <<  remoteAgents.size() << " agents(";
         for (RemoteAgentMap::const_iterator i=remoteAgents.begin();
@@ -2696,11 +2645,22 @@ string ManagementAgent::debugSnapshot() {
             msg << " " << i->second->routingKey;
         msg << "), ";
     }
-    msg  << packages.size() << " packages, ";
-    summarizeMap(msg, "objects", managementObjects);
-    summarizeMap(msg, "new objects ", newManagementObjects);
-    msg << pendingDeletedObjs.size() << " pending deletes" ;
     return msg.str();
+}
+
+
+void ManagementAgent::debugSnapshot(const char* title) {
+    QPID_LOG(debug, title << ": management snapshot: "
+             << packages.size() << " packages, "
+             << summarizeMap("objects", managementObjects)
+             << summarizeMap("new objects ", newManagementObjects)
+             << pendingDeletedObjs.size() << " pending deletes"
+             << summarizeAgents());
+
+    QPID_LOG_IF(trace, managementObjects.size(),
+                title << ": objects" << dumpMap(managementObjects));
+    QPID_LOG_IF(trace, newManagementObjects.size(),
+                title << ": new objects" << dumpMap(newManagementObjects));
 }
 
 Variant::Map ManagementAgent::toMap(const FieldTable& from)
@@ -2905,70 +2865,11 @@ void ManagementAgent::exportDeletedObjects(DeletedObjectList& outList)
     outList.clear();
 
     sys::Mutex::ScopedLock lock (userLock);
-    list<pair<ObjectId, ManagementObject*> > deleteList;
 
     moveNewObjectsLH();
-
-    for (ManagementObjectMap::iterator iter = managementObjects.begin();
-         iter != managementObjects.end();
-         iter++) {
-        ManagementObject* object = iter->second;
-
-        if (object->isDeleted()) {
-            deleteList.push_back(pair<ObjectId, ManagementObject*>(iter->first, object));
-        }
-    }
-
-    // Remove Deleted objects, and save for later publishing...
-    //
-    for (list<pair<ObjectId, ManagementObject*> >::reverse_iterator iter = deleteList.rbegin();
-         iter != deleteList.rend();
-         iter++) {
-
-        ManagementObject* delObj = iter->second;
-        DeletedObject::shared_ptr dptr(new DeletedObject());
-        std::string classkey(delObj->getPackageName() + std::string(":") + delObj->getClassName());
-        bool send_stats = (delObj->hasInst() && (delObj->getInstChanged() || delObj->getForcePublish()));
-
-        dptr->packageName = delObj->getPackageName();
-        dptr->className = delObj->getClassName();
-        stringstream oid;
-        oid << delObj->getObjectId();
-        dptr->objectId = oid.str();
-
-        if (qmf1Support) {
-            delObj->writeProperties(dptr->encodedV1Config);
-            if (send_stats) {
-                delObj->writeStatistics(dptr->encodedV1Inst);
-            }
-        }
-
-        if (qmf2Support) {
-            Variant::Map map_;
-            Variant::Map values;
-            Variant::Map oid;
-
-            delObj->getObjectId().mapEncode(oid);
-            map_["_object_id"] = oid;
-            map_["_schema_id"] = mapEncodeSchemaId(delObj->getPackageName(),
-                                                   delObj->getClassName(),
-                                                   "_data",
-                                                   delObj->getMd5Sum());
-            delObj->writeTimestamps(map_);
-            delObj->mapEncodeValues(values, true, send_stats);
-            map_["_values"] = values;
-
-            dptr->encodedV2 = map_;
-        }
-
-        pendingDeletedObjs[classkey].push_back(dptr);
-
-        delete iter->second;
-        managementObjects.erase(iter->first);
-    }
+    moveDeletedObjectsLH();
 
     // now copy the pending deletes into the outList
-
     for (PendingDeletedObjsMap::iterator mIter = pendingDeletedObjs.begin();
          mIter != pendingDeletedObjs.end(); mIter++) {
         for (DeletedObjectList::iterator lIter = mIter->second.begin();
@@ -2987,6 +2888,7 @@ void ManagementAgent::importDeletedObjects(const DeletedObjectList& inList)
     moveNewObjectsLH();
     pendingDeletedObjs.clear();
     ManagementObjectMap::iterator i = managementObjects.begin();
+    // Silently drop any deleted objects left over from receiving the update.
     while (i != managementObjects.end()) {
         ManagementObject* object = i->second;
         if (object->isDeleted()) {
@@ -3038,4 +2940,65 @@ void ManagementAgent::DeletedObject::encode(std::string& toBuffer)
     map_["_v2_data"] = encodedV2;
 
     MapCodec::encode(map_, toBuffer);
+}
+
+// Remove Deleted objects, and save for later publishing...
+bool ManagementAgent::moveDeletedObjectsLH() {
+    typedef vector<pair<ObjectId, ManagementObject*> > DeleteList;
+    DeleteList deleteList;
+    for (ManagementObjectMap::iterator iter = managementObjects.begin();
+         iter != managementObjects.end();
+         ++iter)
+    {
+        ManagementObject* object = iter->second;
+        if (object->isDeleted()) deleteList.push_back(*iter);
+    }
+
+    // Iterate in reverse over deleted object list
+    for (DeleteList::reverse_iterator iter = deleteList.rbegin();
+         iter != deleteList.rend();
+         iter++)
+    {
+        ManagementObject* delObj = iter->second;
+        assert(delObj->isDeleted());
+        DeletedObject::shared_ptr dptr(new DeletedObject());
+        std::string classkey(delObj->getPackageName() + std::string(":") + delObj->getClassName());
+        bool send_stats = (delObj->hasInst() && (delObj->getInstChanged() || delObj->getForcePublish()));
+
+        dptr->packageName = delObj->getPackageName();
+        dptr->className = delObj->getClassName();
+        stringstream oid;
+        oid << delObj->getObjectId();
+        dptr->objectId = oid.str();
+
+        if (qmf1Support) {
+            delObj->writeProperties(dptr->encodedV1Config);
+            if (send_stats) {
+                delObj->writeStatistics(dptr->encodedV1Inst);
+            }
+        }
+
+        if (qmf2Support) {
+            Variant::Map map_;
+            Variant::Map values;
+            Variant::Map oid;
+
+            delObj->getObjectId().mapEncode(oid);
+            map_["_object_id"] = oid;
+            map_["_schema_id"] = mapEncodeSchemaId(delObj->getPackageName(),
+                                                   delObj->getClassName(),
+                                                   "_data",
+                                                   delObj->getMd5Sum());
+            delObj->writeTimestamps(map_);
+            delObj->mapEncodeValues(values, true, send_stats);
+            map_["_values"] = values;
+
+            dptr->encodedV2 = map_;
+        }
+
+        pendingDeletedObjs[classkey].push_back(dptr);
+        managementObjects.erase(iter->first);
+        delete iter->second;
+    }
+    return !deleteList.empty();
 }

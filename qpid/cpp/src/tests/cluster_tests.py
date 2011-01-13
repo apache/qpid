@@ -406,10 +406,10 @@ class LongTests(BrokerTest):
             start_mclients(cluster[alive])
         for c in chain(mclients, *clients):
             c.stop()
+
         # Verify that logs are consistent
-        # FIXME aconway 2010-12-21: this is currently expected to fail due to
-        # known bugs, see https://issues.apache.org/jira/browse/QPID-2982
-        self.assertRaises(Exception, cluster_test_logs.verify_logs, glob.glob("*.log"))
+        # FIXME aconway 2011-01-11: disabled due to known bugs, see QPID-2982
+        # cluster_test_logs.verify_logs(glob.glob("*.log"))
 
     def test_management_qmf2(self):
         self.test_management(args=["--mgmt-qmf2=yes"])
