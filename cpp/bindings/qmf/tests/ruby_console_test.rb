@@ -354,6 +354,43 @@ class ConsoleTest < ConsoleTestBase
     end
   end
 
+  def test_H_map_list_method_call_big
+    parent = @qmfc.object(:class => "parent")
+    assert(parent, "Number of 'parent' objects")
+
+    big_string = ""
+    segment = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    for idx in 1...1500
+      big_string = big_string + segment
+    end
+
+    inMap = {'aLong' => 9999999999,
+             'aInt'  => 54321,
+             'aSigned' => -666,
+             'aString' => big_string,
+             'another' => big_string,
+             'aFloat' => 3.1415,
+             'aList' => ['x', -1, 'y', 2],
+             'abool' => false}
+
+    inList = ['aString', 1, -1, 2.7182, {'aMap'=> -8}, true]
+
+    result = parent.test_map_list(inMap, inList)
+    assert_equal(result.status, 0)
+    assert_equal(result.text, "OK")
+
+    # verify returned values
+    assert_equal(inMap.length, result.args['outMap'].length)
+    result.args['outMap'].each do |k,v|
+      assert_equal(inMap[k], v)
+    end
+
+    assert_equal(inList.length, result.args['outList'].length)
+    for idx in 0...inList.length
+      assert_equal(inList[idx], result.args['outList'][idx])
+    end
+  end
+
 end
 
 app = ConsoleTest.new
