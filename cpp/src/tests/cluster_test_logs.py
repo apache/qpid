@@ -50,14 +50,15 @@ def filter_log(log):
         # Lines to skip entirely
         skip = "|".join([
             'local connection',         # Only on local broker
-            'UPDATER|UPDATEE|OFFER',    # Ignore update process
+            'UPDATER|UPDATEE',          # Ignore update process
             'stall for update|unstall, ignore update|cancelled offer .* unstall',
             'caught up',
             'active for links|Passivating links|Activating links',
             'info Connection.* connected to', # UpdateClient connection
             'warning Broker closed connection: 200, OK',
             'task late',
-            'task overran'
+            'task overran',
+            'warning CLOSING .* unsent data'
             ])
         if re.compile(skip).search(l): continue
 
@@ -66,17 +67,19 @@ def filter_log(log):
 
         # Regular expression substitutions to remove expected differences
         for pattern,subst in [
-            (r'\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d', ''), # Remove timestamp
+            (r'\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d ', ''), # Remove timestamp
             (r'cluster\([0-9.: ]*', 'cluster('), # Remove cluster node id
             (r' local\)| shadow\)', ')'), # Remove local/shadow indication
             (r'CATCHUP', 'READY'), # Treat catchup as equivalent to ready.
-            # System UUID
+            (r'OFFER', 'READY'), # Treat offer as equivalent to ready.
+            # System UUID expected to be different
             (r'(org.apache.qpid.broker:system[:(])%s(\)?)'%(uuid), r'\1UUID\2'),
 
             # FIXME aconway 2010-12-20: substitutions to mask known problems
-            #(r' len=\d+', ' len=NN'),   # buffer lengths
-            #(r' map={.*_object_name:([^,}]*)[,}].*', r' \1'), # V2 map - just keep name
-            #(r'\d+-\d+-\d+--\d+', 'X-X-X--X'), # V1 Object IDs
+            # See https://issues.apache.org/jira/browse/QPID-2982
+            (r' len=\d+', ' len=NN'),   # buffer lengths
+            (r' map={.*_object_name:([^,}]*)[,}].*', r' \1'), # V2 map - just keep name
+            (r'\d+-\d+-\d+--\d+', 'X-X-X--X'), # V1 Object IDs
             ]: l = re.sub(pattern,subst,l)
         out.write(l)
     out.close()
