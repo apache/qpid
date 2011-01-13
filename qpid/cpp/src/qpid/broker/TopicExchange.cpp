@@ -236,7 +236,7 @@ bool TopicExchange::bind(Queue::shared_ptr queue, const string& routingKey, cons
             for (q = qv.begin(); q != qv.end(); q++) {
                 if ((*q)->queue == queue) {
                     // already bound, but may be from a different fedOrigin
-                    bk->fedBinding.addOrigin(fedOrigin);
+                    bk->fedBinding.addOrigin(queue->getName(), fedOrigin);
                     return false;
                 }
             }
@@ -245,7 +245,7 @@ bool TopicExchange::bind(Queue::shared_ptr queue, const string& routingKey, cons
             binding->startManagement();
             bk->bindingVector.push_back(binding);
             nBindings++;
-            propagate = bk->fedBinding.addOrigin(fedOrigin);
+            propagate = bk->fedBinding.addOrigin(queue->getName(), fedOrigin);
             if (mgmtExchange != 0) {
                 mgmtExchange->inc_bindingCount();
             }
@@ -258,8 +258,8 @@ bool TopicExchange::bind(Queue::shared_ptr queue, const string& routingKey, cons
             RWlock::ScopedWlock l(lock);
             BindingKey* bk = bindingTree.getBindingKey(routingPattern);
             if (bk) {
-                propagate = bk->fedBinding.delOrigin(fedOrigin);
-                reallyUnbind = bk->fedBinding.count() == 0;
+                propagate = bk->fedBinding.delOrigin(queue->getName(), fedOrigin);
+                reallyUnbind = bk->fedBinding.countFedBindings(queue->getName()) == 0;
             }
         }
         if (reallyUnbind)
