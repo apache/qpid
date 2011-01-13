@@ -2018,8 +2018,13 @@ bool ManagementAgent::authorizeAgentMessageLH(Message& msg)
     string  methodName;
     string cid;
 
+    //
+    // If the message is larger than our working buffer size, we can't determine if it's
+    // authorized or not.  In this case, return true (authorized) if there is no ACL in place,
+    // otherwise return false;
+    //
     if (msg.encodedSize() > MA_BUFFER_SIZE)
-        return false;
+        return broker->getAcl() == 0;
 
     msg.encodeContent(inBuffer);
     uint32_t bufferLen = inBuffer.getPosition();
