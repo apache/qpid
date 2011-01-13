@@ -76,13 +76,13 @@ bool DirectExchange::bind(Queue::shared_ptr queue, const string& routingKey, con
 
         if (bk.queues.add_unless(b, MatchQueue(queue))) {
             b->startManagement();
-            propagate = bk.fedBinding.addOrigin(fedOrigin);
+            propagate = bk.fedBinding.addOrigin(queue->getName(), fedOrigin);
             if (mgmtExchange != 0) {
                 mgmtExchange->inc_bindingCount();
             }
         } else {
             // queue already present - still need to track fedOrigin
-            bk.fedBinding.addOrigin(fedOrigin);
+            bk.fedBinding.addOrigin(queue->getName(), fedOrigin);
             return false;
         }
     } else if (fedOp == fedOpUnbind) {
@@ -90,11 +90,12 @@ bool DirectExchange::bind(Queue::shared_ptr queue, const string& routingKey, con
         BoundKey& bk = bindings[routingKey];
 
         QPID_LOG(debug, "Bind - fedOpUnbind key [" << routingKey << "] queue " << queue->getName()
-                 << " (origin=" << fedOrigin << ")");
+                 << " (origin=" << fedOrigin << ")" << " (count=" << bk.fedBinding.count() << ")");
 
-        propagate = bk.fedBinding.delOrigin(fedOrigin);
-        if (bk.fedBinding.count() == 0)
+        propagate = bk.fedBinding.delOrigin(queue->getName(), fedOrigin);
+        if (bk.fedBinding.countFedBindings(queue->getName()) == 0)
             unbind(queue, routingKey, 0);
+
     } else if (fedOp == fedOpReorigin) {
         /** gather up all the keys that need rebinding in a local vector
          * while holding the lock.  Then propagate once the lock is
@@ -142,6 +143,7 @@ bool DirectExchange::unbind(Queue::shared_ptr queue, const string& routingKey, c
         }
     }
 
+    // If I delete my local binding, propagate this unbind to any upstream brokers
     if (propagate)
         propagateFedOp(routingKey, string(), fedOpUnbind, string());
     return true;

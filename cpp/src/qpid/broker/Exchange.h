@@ -95,46 +95,61 @@ protected:
         bool operator()(Exchange::Binding::shared_ptr b);
     };
 
+    /** A FedBinding keeps track of information that Federation needs
+        to know when to propagate changes.
+
+        Dynamic federation needs to know which exchanges have at least
+        one local binding. The bindings on these exchanges need to be
+        propagated.
+
+        Federated binds and unbinds need to know which federation
+        origins are associated with the bindings for each queue. When
+        origins are added or deleted, the corresponding bindings need
+        to be propagated.
+
+        fedBindings[queueName] contains the origins associated with
+        the given queue.
+    */
+
     class FedBinding {
         uint32_t localBindings;
-        std::set<std::string> originSet;
+
+        typedef std::set<std::string> originSet;
+        std::map<std::string, originSet> fedBindings;
+
     public:
         FedBinding() : localBindings(0) {}
         bool hasLocal() const { return localBindings != 0; }
 
-        /**
-         *  Returns 'true' if and only if this is the first local
-         *  binding.
-         *
-         *  The first local binding may need to be propagated.
-         */
-        bool addOrigin(const std::string& origin) {
+        /** Returns true if propagation is needed. */
+        bool addOrigin(const std::string& queueName, const std::string& origin) {
             if (origin.empty()) {
                 localBindings++;
                 return localBindings == 1;
             }
-            originSet.insert(origin);
-            return true;
-        }
-        bool delOrigin(const std::string& origin) {
-            originSet.erase(origin);
+            fedBindings[queueName].insert(origin);
             return true;
         }
 
-        /**
-         *  Returns 'true' if and only if the last local binding is
-         *  deleted.
-         *
-         *  When the last local binding is deleted, it may need to
-         *  be propagated.
-         */
+        /** Returns true if propagation is needed. */
+        bool delOrigin(const std::string& queueName, const std::string& origin){
+            fedBindings[queueName].erase(origin);
+            return true;
+        }
+
+        /** Returns true if propagation is needed. */
         bool delOrigin() {
             if (localBindings > 0)
                 localBindings--;
             return localBindings == 0;
         }
+
         uint32_t count() {
-            return localBindings + originSet.size();
+            return localBindings + fedBindings.size();
+        }
+
+        uint32_t countFedBindings(const std::string& queueName) {
+            return  fedBindings[queueName].size();
         }
     };
 
