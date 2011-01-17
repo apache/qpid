@@ -38,11 +38,9 @@ template <class> class PrivateImplRef;
 class Address;
 class Connection;
 class Message;
-class MessageListener;
 class Sender;
 class Receiver;
 class SessionImpl;
-class Subscription;
 
 /** \ingroup messaging 
  * A session represents a distinct 'conversation' which can involve
