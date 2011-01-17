@@ -174,18 +174,6 @@ void Link::closed (int, std::string text)
         destroy();
 }
 
-void Link::checkClosePermission()
-{
-    Mutex::ScopedLock mutex(lock);
-    
-    AclModule* acl = getBroker()->getAcl();
-    std::string userID = getUsername() + "@" + getBroker()->getOptions().realm;
-    if (acl && !acl->authorise(userID,acl::ACT_DELETE,acl::OBJ_LINK,"")){
-        throw UnauthorizedAccessException("ACL denied delete link request");
-    }
-}
-
-
 void Link::destroy ()
 {
     Bridges toDelete;
@@ -415,7 +403,6 @@ Manageable::status_t Link::ManagementMethod (uint32_t op, Args& args, string& te
     switch (op)
     {
     case _qmf::Link::METHOD_CLOSE :
-        checkClosePermission();
         if (!closing) {
 	    closing = true;
 	    if (state != STATE_CONNECTING && connection) {
