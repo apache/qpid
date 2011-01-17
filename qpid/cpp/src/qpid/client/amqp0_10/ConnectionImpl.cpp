@@ -166,7 +166,7 @@ void ConnectionImpl::detach()
     connection.close();
 }
 
-bool ConnectionImpl::isOpen()
+bool ConnectionImpl::isOpen() const
 {
     qpid::sys::Mutex::ScopedLock l(lock);
     return connection.isOpen();

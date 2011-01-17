@@ -90,6 +90,7 @@ class Connection : public qpid::messaging::Handle<ConnectionImpl>
     QPID_MESSAGING_EXTERN void setOption(const std::string& name, const qpid::types::Variant& value);
     QPID_MESSAGING_EXTERN void open();
     QPID_MESSAGING_EXTERN bool isOpen();
+    QPID_MESSAGING_EXTERN bool isOpen() const;
     /**
      * Closes a connection and all sessions associated with it. An
      * opened connection must be closed before the last handle is

@@ -63,6 +63,7 @@ Connection::Connection()
 
 void Connection::open() { impl->open(); }
 bool Connection::isOpen() { return impl->isOpen(); }
+bool Connection::isOpen() const { return impl->isOpen(); }
 void Connection::close() { impl->close(); }
 Session Connection::createSession(const std::string& name) { return impl->newSession(false, name); }
 Session Connection::createTransactionalSession(const std::string& name)
