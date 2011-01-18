@@ -187,10 +187,6 @@ void ObjectId::setV2Key(const ManagementObject& object)
     v2Key = oname.str();
 }
 
-void ObjectId::disambiguate()
-{
-    v2Key = v2Key + "_";
-}
 
 // encode as V2-format map
 void ObjectId::mapEncode(types::Variant::Map& map) const
