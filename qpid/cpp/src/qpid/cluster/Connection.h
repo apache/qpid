@@ -183,7 +183,9 @@ class Connection :
                               const std::string& vendor,
                               const std::string& product,
                               const std::string& instance);
-    
+
+    void config(const std::string& encoded);
+
     void setSecureConnection ( broker::SecureConnection * sc );
 
   private:

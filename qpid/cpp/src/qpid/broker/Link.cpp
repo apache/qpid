@@ -30,6 +30,7 @@
 #include "qpid/framing/enum.h"
 #include "qpid/framing/reply_exceptions.h"
 #include "qpid/broker/AclModule.h"
+#include "qpid/sys/ClusterSafe.h"
 
 using namespace qpid::broker;
 using qpid::framing::Buffer;
@@ -130,9 +131,12 @@ void Link::established ()
 {
     stringstream addr;
     addr << host << ":" << port;
-
     QPID_LOG (info, "Inter-broker link established to " << addr.str());
-    agent->raiseEvent(_qmf::EventBrokerLinkUp(addr.str()));
+
+    // Don't raise the management event in a cluster, other members wont't get this call.
+    if (!sys::isCluster()) 
+        agent->raiseEvent(_qmf::EventBrokerLinkUp(addr.str()));
+
     {
         Mutex::ScopedLock mutex(lock);
         setStateLH(STATE_OPERATIONAL);
@@ -150,11 +154,13 @@ void Link::closed (int, std::string text)
 
     connection = 0;
 
+    // Don't raise the management event in a cluster, other members wont't get this call.
     if (state == STATE_OPERATIONAL) {
         stringstream addr;
         addr << host << ":" << port;
         QPID_LOG (warning, "Inter-broker link disconnected from " << addr.str());
-        agent->raiseEvent(_qmf::EventBrokerLinkDown(addr.str()));
+        if (!sys::isCluster())
+            agent->raiseEvent(_qmf::EventBrokerLinkDown(addr.str()));
     }
 
     for (Bridges::iterator i = active.begin(); i != active.end(); i++) {

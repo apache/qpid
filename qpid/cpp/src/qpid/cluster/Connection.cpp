@@ -32,6 +32,8 @@
 #include "qpid/broker/RecoveredEnqueue.h"
 #include "qpid/broker/RecoveredDequeue.h"
 #include "qpid/broker/Exchange.h"
+#include "qpid/broker/Link.h"
+#include "qpid/broker/Bridge.h"
 #include "qpid/broker/Queue.h"
 #include "qpid/framing/enum.h"
 #include "qpid/framing/AMQFrame.h"
@@ -346,13 +348,12 @@ size_t Connection::decode(const char* data, size_t size) {
 // returns true if the header is complete or already read.
 bool Connection::checkProtocolHeader(const char*& data, size_t size) {
     if (expectProtocolHeader) {
-        //If this is an outgoing link, we will receive a protocol
-        //header which needs to be decoded first
+        // This is an outgoing link connection, we will receive a protocol
+        // header which needs to be decoded first
         framing::ProtocolInitiation pi;
         Buffer buf(const_cast<char*&>(data), size);
         if (pi.decode(buf)) {
             //TODO: check the version is correct
-            QPID_LOG(debug, "Outgoing clustered link connection received INIT(" << pi << ")");
             expectProtocolHeader = false;
             data += pi.encodedSize();
         } else {
@@ -650,5 +651,25 @@ void Connection::managementSetupState(
     agent->setUuid(id);
     agent->setName(vendor, product, instance);
 }
+
+void Connection::config(const std::string& encoded) {
+    Buffer buf(const_cast<char*>(encoded.data()), encoded.size());
+    string kind;
+    buf.getShortString (kind);
+    if (kind == "link") {
+        broker::Link::shared_ptr link =
+            broker::Link::decode(cluster.getBroker().getLinks(), buf);
+        QPID_LOG(debug, cluster << " updated link "
+                 << link->getHost() << ":" << link->getPort());
+    }
+    else if (kind == "bridge") {
+        broker::Bridge::shared_ptr bridge =
+            broker::Bridge::decode(cluster.getBroker().getLinks(), buf);
+        QPID_LOG(debug, cluster << " updated bridge " << bridge->getName());
+    }
+    else throw Exception(QPID_MSG("Update failed, invalid kind of config: " << kind));
+}
+
+
 }} // Namespace qpid::cluster
 

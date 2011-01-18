@@ -34,6 +34,9 @@
 #include "qpid/broker/Broker.h"
 #include "qpid/broker/Queue.h"
 #include "qpid/broker/QueueRegistry.h"
+#include "qpid/broker/LinkRegistry.h"
+#include "qpid/broker/Bridge.h"
+#include "qpid/broker/Link.h"
 #include "qpid/broker/Message.h"
 #include "qpid/broker/Exchange.h"
 #include "qpid/broker/ExchangeRegistry.h"
@@ -167,7 +170,7 @@ void UpdateClient::update() {
     b.getQueues().eachQueue(boost::bind(&UpdateClient::updateQueueListeners, this, _1));
 
     ClusterConnectionProxy(session).expiryId(expiry.getId());
-
+    updateLinks();
     updateManagementAgent();
 
     session.close();
@@ -197,6 +200,14 @@ template <class T> std::string encode(const T& t) {
     encoded.resize(t.encodedSize());
     framing::Buffer buf(const_cast<char*>(encoded.data()), encoded.size());
     t.encode(buf);
+    return encoded;
+}
+
+template <class T> std::string encode(const T& t, bool encodeKind) {
+    std::string encoded;
+    encoded.resize(t.encodedSize());
+    framing::Buffer buf(const_cast<char*>(encoded.data()), encoded.size());
+    t.encode(buf, encodeKind);
     return encoded;
 }
 } // namespace
@@ -581,6 +592,23 @@ void UpdateClient::updateQueueListener(std::string& q,
     if (n >= consumerNumbering.size())
         throw Exception(QPID_MSG("Unexpected listener on queue " << q));
     ClusterConnectionProxy(session).addQueueListener(q, n);
+}
+
+void UpdateClient::updateLinks() {
+    broker::LinkRegistry& links = updaterBroker.getLinks();
+    links.eachLink(boost::bind(&UpdateClient::updateLink, this, _1));
+    links.eachBridge(boost::bind(&UpdateClient::updateBridge, this, _1));
+}
+
+void UpdateClient::updateLink(const boost::shared_ptr<broker::Link>& link) {
+    QPID_LOG(debug, *this << " updating link "
+             << link->getHost() << ":" << link->getPort());
+    ClusterConnectionProxy(session).config(encode(*link));
+}
+
+void UpdateClient::updateBridge(const boost::shared_ptr<broker::Bridge>& bridge) {
+    QPID_LOG(debug, *this << " updating bridge " << bridge->getName());
+    ClusterConnectionProxy(session).config(encode(*bridge));
 }
 
 }} // namespace qpid::cluster

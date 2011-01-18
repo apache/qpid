@@ -60,8 +60,7 @@ Bridge::Bridge(Link* _link, framing::ChannelId _id, CancellationListener l,
             (agent, this, link, id, args.i_durable, args.i_src, args.i_dest,
              args.i_key, args.i_srcIsQueue, args.i_srcIsLocal,
              args.i_tag, args.i_excludes, args.i_dynamic, args.i_sync);
-        if (!args.i_durable)
-            agent->addObject(mgmtObject);
+        agent->addObject(mgmtObject);
     }
     QPID_LOG(debug, "Bridge created from " << args.i_src << " to " << args.i_dest);
 }
@@ -167,10 +166,6 @@ void Bridge::destroy()
 
 void Bridge::setPersistenceId(uint64_t pId) const
 {
-    if (mgmtObject != 0 && persistenceId == 0) {
-        ManagementAgent* agent = link->getBroker()->getManagementAgent();
-        agent->addObject (mgmtObject, pId);
-    }
     persistenceId = pId;
 }
 

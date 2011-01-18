@@ -58,7 +58,8 @@ def filter_log(log):
             'warning Broker closed connection: 200, OK',
             'task late',
             'task overran',
-            'warning CLOSING .* unsent data'
+            'warning CLOSING .* unsent data',
+            'Inter-broker link '
             ])
         if re.compile(skip).search(l): continue
 
