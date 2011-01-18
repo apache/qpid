@@ -379,3 +379,12 @@ void LinkRegistry::setPassive(bool p)
     passive = p;
     //will activate or passivate links on maintenance visit
 }
+
+void LinkRegistry::eachLink(boost::function<void(boost::shared_ptr<Link>)> f) {
+    for (LinkMap::iterator i = links.begin(); i != links.end(); ++i) f(i->second);
+}
+
+void LinkRegistry::eachBridge(boost::function<void(boost::shared_ptr<Bridge>)> f) {
+    for (BridgeMap::iterator i = bridges.begin(); i != bridges.end(); ++i) f(i->second);
+}
+
