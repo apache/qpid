@@ -31,6 +31,7 @@
 #include "qpid/management/Manageable.h"
 #include <boost/shared_ptr.hpp>
 #include <boost/intrusive_ptr.hpp>
+#include <boost/function.hpp>
 
 namespace qpid {
 namespace broker {
@@ -148,6 +149,12 @@ namespace broker {
          * bridges won't therefore pull or push any messages.
          */
         void setPassive(bool);
+
+        
+        /** Iterate over each link in the registry. Used for cluster updates. */
+        void eachLink(boost::function<void(boost::shared_ptr<Link>)> f);
+        /** Iterate over each bridge in the registry. Used for cluster updates. */
+        void eachBridge(boost::function<void(boost::shared_ptr< Bridge>)> f);
     };
 }
 }

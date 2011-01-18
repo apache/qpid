@@ -26,6 +26,7 @@ from qpid.messaging import Message, Empty
 from threading import Thread, Lock
 from logging import getLogger
 from itertools import chain
+from tempfile import NamedTemporaryFile
 
 log = getLogger("qpid.cluster_tests")
 
@@ -263,6 +264,45 @@ acl allow all all
         time.sleep(.1)
         cluster.start()
         self.assertRaises(Empty, cluster[1].connect().session().receiver("q1").fetch,0)
+
+    def test_route_update(self):
+        """Regression test for https://issues.apache.org/jira/browse/QPID-2982
+        Links and bridges associated with routes were not replicated on update.
+        This meant extra management objects and caused an exit if a management
+        client was attached.
+        """
+        args=["--mgmt-pub-interval=1","--log-enable=trace+:management"]
+        cluster0 = self.cluster(1, args=args)
+        cluster1 = self.cluster(1, args=args)
+        assert 0 == subprocess.call(
+            ["qpid-route", "route", "add", cluster0[0].host_port(),
+             cluster1[0].host_port(), "dummy-exchange", "dummy-key", "-d"])
+        cluster0.start()
+
+        # Wait for qpid-tool:list on cluster0[0] to generate expected output.
+        pattern = re.compile("org.apache.qpid.broker.*link")
+        qpid_tool = subprocess.Popen(["qpid-tool", cluster0[0].host_port()],
+                                     stdin=subprocess.PIPE, stdout=subprocess.PIPE)
+        class Scanner(Thread):
+            def __init__(self): self.found = False; Thread.__init__(self)
+            def run(self):
+                for l in qpid_tool.stdout:
+                    if pattern.search(l): self.found = True; return
+        scanner = Scanner()
+        scanner.start()
+        start = time.time()        
+        try:
+            # Wait up to 5 second timeout for scanner to find expected output
+            while not scanner.found and time.time() < start + 5:
+                qpid_tool.stdin.write("list\n") # Ask qpid-tool to list
+                for b in cluster0: b.ready() # Raise if any brokers are down
+        finally:
+            qpid_tool.stdin.write("quit\n")
+            qpid_tool.wait()
+            scanner.join()
+        assert scanner.found
+        # Verify logs are consistent
+        cluster_test_logs.verify_logs(glob.glob("*.log"))
 
 class LongTests(BrokerTest):
     """Tests that can run for a long time if -DDURATION=<minutes> is set"""

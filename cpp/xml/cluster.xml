@@ -272,5 +272,9 @@
       <field name="product" type="str32"/>
       <field name="instance" type="str32"/>
     </control>
+
+    <!-- Replicate encoded config objects - e.g. links and bridges. -->
+    <control name="config" code="0x37"><field name="encoded" type="str32"/></control>
   </class>
+
 </amqp>
