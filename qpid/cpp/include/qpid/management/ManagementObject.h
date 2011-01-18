@@ -82,7 +82,6 @@ public:
     QPID_COMMON_EXTERN bool equalV1(const ObjectId &other) const;
     QPID_COMMON_EXTERN void setV2Key(const std::string& _key) { v2Key = _key; }
     QPID_COMMON_EXTERN void setV2Key(const ManagementObject& object);
-    QPID_COMMON_EXTERN void disambiguate();
     QPID_COMMON_EXTERN void setAgentName(const std::string& _name) { agentName = _name; }
     QPID_COMMON_EXTERN const std::string& getAgentName() const { return agentName; }
     QPID_COMMON_EXTERN const std::string& getV2Key() const { return v2Key; }

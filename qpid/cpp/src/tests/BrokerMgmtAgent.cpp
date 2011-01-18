@@ -24,8 +24,12 @@
 #include "qpid/management/Buffer.h"
 #include "qpid/messaging/Message.h"
 #include "qpid/amqp_0_10/Codecs.h"
+#include "qpid/log/Logger.h"
+#include "qpid/log/Options.h"
 
 #include "qmf/org/apache/qpid/broker/mgmt/test/TestObject.h"
+
+#include <iomanip>
 
 
 using           qpid::management::Mutex;
@@ -53,9 +57,10 @@ namespace qpid {
                 MessagingFixture *mFix;
 
             public:
-                AgentFixture( unsigned int pubInterval=10, bool qmfV2=false )
+                AgentFixture( unsigned int pubInterval=10,
+                              bool qmfV2=false,
+                              qpid::broker::Broker::Options opts = qpid::broker::Broker::Options())
                 {
-                    qpid::broker::Broker::Options opts = qpid::broker::Broker::Options();
                     opts.enableMgmt=true;
                     opts.qmf2Support=qmfV2;
                     opts.mgmtPubInterval=pubInterval;
@@ -99,12 +104,15 @@ namespace qpid {
             class TestManageable : public qpid::management::Manageable
             {
                 management::ManagementObject*  mgmtObj;
+                const std::string key;
             public:
-                TestManageable(management::ManagementAgent *agent) {
+                TestManageable(management::ManagementAgent *agent, std::string _key)
+                    : key(_key)
+                {
                     _qmf::TestObject *tmp = new _qmf::TestObject(agent, this);
 
                     // seed it with some default values...
-                    tmp->set_string1("This is a test string!");
+                    tmp->set_string1(key);
                     tmp->set_bool1(true);
                     qpid::types::Variant::Map vMap;
                     vMap["one"] = qpid::types::Variant(1);
@@ -118,8 +126,8 @@ namespace qpid {
                 management::ManagementObject* GetManagementObject() const { return mgmtObj; };
                 static void validateTestObjectProperties(_qmf::TestObject& to)
                 {
-                    // verify the default values are as expected
-                    BOOST_CHECK(to.get_string1() == std::string("This is a test string!"));
+                    // verify the default values are as expected.  We don't check 'string1',
+                    // as it is the object key, and is unique for each object (no default value).
                     BOOST_CHECK(to.get_bool1() == true);
                     BOOST_CHECK(to.get_map1().size() == 3);
                     qpid::types::Variant::Map mappy = to.get_map1();
@@ -200,7 +208,7 @@ namespace qpid {
             agent = fix->getBrokerAgent();
 
             // create a manageable test object
-            TestManageable *tm = new TestManageable(agent);
+            TestManageable *tm = new TestManageable(agent, std::string("obj1"));
             uint32_t objLen = tm->GetManagementObject()->writePropertiesSize();
 
             Receiver r1 = fix->createV1DataIndRcvr("org.apache.qpid.broker.mgmt.test", "#");
@@ -262,7 +270,7 @@ namespace qpid {
             management::ManagementAgent* agent;
             agent = fix->getBrokerAgent();
 
-            TestManageable *tm = new TestManageable(agent);
+            TestManageable *tm = new TestManageable(agent, std::string("obj2"));
 
             Receiver r1 = fix->createV2DataIndRcvr(tm->GetManagementObject()->getPackageName(), "#");
 
@@ -326,7 +334,7 @@ namespace qpid {
             agent = fix->getBrokerAgent();
 
             // create a manageable test object
-            TestManageable *tm = new TestManageable(agent);
+            TestManageable *tm = new TestManageable(agent, std::string("myObj"));
             uint32_t objLen = tm->GetManagementObject()->writePropertiesSize();
 
             Receiver r1 = fix->createV1DataIndRcvr("org.apache.qpid.broker.mgmt.test", "#");
@@ -390,7 +398,7 @@ namespace qpid {
             agent = fix->getBrokerAgent();
 
             // create a manageable test object
-            TestManageable *tm = new TestManageable(agent);
+            TestManageable *tm = new TestManageable(agent, std::string("anObj"));
             uint32_t objLen = tm->GetManagementObject()->writePropertiesSize();
 
             Receiver r1 = fix->createV1DataIndRcvr("org.apache.qpid.broker.mgmt.test", "#");
@@ -465,7 +473,7 @@ namespace qpid {
             agent = fix->getBrokerAgent();
 
             // create a manageable test object
-            TestManageable *tm = new TestManageable(agent);
+            TestManageable *tm = new TestManageable(agent, std::string("objectifyMe"));
 
             // add, then immediately delete and export the object...
 
@@ -496,7 +504,13 @@ namespace qpid {
             uint32_t objLen;
 
             for (size_t i = 0; i < objCount; i++) {
-                TestManageable *tm = new TestManageable(agent);
+                std::stringstream key;
+                key << "testobj-" << std::setfill('x') << std::setw(4) << i;
+                // (no, seriously, I didn't just do that.)
+                // Note well: we have to keep the key string length EXACTLY THE SAME
+                // FOR ALL OBJECTS, so objLen will be the same.  Otherwise the
+                // decodeV1ObjectUpdates() will fail (v1 lacks explict encoded length).
+                TestManageable *tm = new TestManageable(agent, key.str());
                 objLen = tm->GetManagementObject()->writePropertiesSize();
                 agent->addObject(tm->GetManagementObject(), i + 1);
                 tmv.push_back(tm);
@@ -590,7 +604,7 @@ namespace qpid {
             for (size_t i = 0; i < objCount; i++) {
                 std::stringstream key;
                 key << "testobj-" << i;
-                TestManageable *tm = new TestManageable(agent);
+                TestManageable *tm = new TestManageable(agent, key.str());
                 objLen = tm->GetManagementObject()->writePropertiesSize();
                 agent->addObject(tm->GetManagementObject(), key.str());
                 tmv.push_back(tm);
@@ -663,6 +677,112 @@ namespace qpid {
 
             r1.close();
             delete fix;
+        }
+
+        // See QPID-2997
+        QPID_AUTO_TEST_CASE(v2RapidRestoreObj)
+        {
+            AgentFixture* fix = new AgentFixture(3, true);
+            management::ManagementAgent* agent;
+            agent = fix->getBrokerAgent();
+
+            // two objects, same ObjID
+            TestManageable *tm1 = new TestManageable(agent, std::string("obj2"));
+            TestManageable *tm2 = new TestManageable(agent, std::string("obj2"));
+
+            Receiver r1 = fix->createV2DataIndRcvr(tm1->GetManagementObject()->getPackageName(), "#");
+
+            // add, then immediately delete and re-add a copy of the object
+            agent->addObject(tm1->GetManagementObject(), "testobj-1");
+            tm1->GetManagementObject()->resourceDestroy();
+            agent->addObject(tm2->GetManagementObject(), "testobj-1");
+
+            // expect: a delete notification, then an update notification
+            TestObjectVector objs;
+            bool isDeleted = false;
+            bool isAdvertised = false;
+            size_t count = 0;
+            Message m1;
+            while (r1.fetch(m1, Duration::SECOND * 6)) {
+
+                decodeV2ObjectUpdates(m1, objs);
+                BOOST_CHECK(objs.size() > 0);
+
+                for (TestObjectVector::iterator oIter = objs.begin(); oIter != objs.end(); oIter++) {
+                    count++;
+                    TestManageable::validateTestObjectProperties(**oIter);
+
+                    qpid::types::Variant::Map mappy;
+                    (*oIter)->writeTimestamps(mappy);
+                    if (mappy["_delete_ts"].asUint64() != 0) {
+                        isDeleted = true;
+                        BOOST_CHECK(isAdvertised == false);  // delete must be first
+                    } else {
+                        isAdvertised = true;
+                        BOOST_CHECK(isDeleted == true);     // delete must be first
+                    }
+                }
+            }
+
+            BOOST_CHECK(isDeleted);
+            BOOST_CHECK(isAdvertised);
+            BOOST_CHECK(count == 2);
+
+            r1.close();
+            delete fix;
+            delete tm1;
+            delete tm2;
+        }
+
+        // See QPID-2997
+        QPID_AUTO_TEST_CASE(v2DuplicateErrorObj)
+        {
+            AgentFixture* fix = new AgentFixture(3, true);
+            management::ManagementAgent* agent;
+            agent = fix->getBrokerAgent();
+
+            // turn off the expected error log message
+            qpid::log::Options logOpts;
+            logOpts.selectors.clear();
+            logOpts.selectors.push_back("critical+");
+            qpid::log::Logger::instance().configure(logOpts);
+
+            // two objects, same ObjID
+            TestManageable *tm1 = new TestManageable(agent, std::string("obj2"));
+            TestManageable *tm2 = new TestManageable(agent, std::string("obj2"));
+            // Keep a pointer to the ManagementObject.  This test simulates a user-caused error
+            // case (duplicate objects) where the broker has no choice but to leak a management
+            // object (safest assumption).  To prevent valgrind from flagging this leak, we
+            // manually clean up the object at the end of the test.
+            management::ManagementObject *save = tm2->GetManagementObject();
+
+            Receiver r1 = fix->createV2DataIndRcvr(tm1->GetManagementObject()->getPackageName(), "#");
+
+            // add, then immediately delete and re-add a copy of the object
+            agent->addObject(tm1->GetManagementObject(), "testobj-1");
+            agent->addObject(tm2->GetManagementObject(), "testobj-1");
+
+            TestObjectVector objs;
+            size_t count = 0;
+            Message m1;
+            while (r1.fetch(m1, Duration::SECOND * 6)) {
+
+                decodeV2ObjectUpdates(m1, objs);
+                BOOST_CHECK(objs.size() > 0);
+
+                for (TestObjectVector::iterator oIter = objs.begin(); oIter != objs.end(); oIter++) {
+                    count++;
+                    TestManageable::validateTestObjectProperties(**oIter);
+                }
+            }
+
+            BOOST_CHECK(count == 1);    // only one should be accepted.
+
+            r1.close();
+            delete fix;
+            delete tm1;
+            delete tm2;
+            delete save;
         }
 
         QPID_AUTO_TEST_SUITE_END()

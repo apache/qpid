@@ -159,13 +159,17 @@ public:
     class DeletedObject {
       public:
         typedef boost::shared_ptr<DeletedObject> shared_ptr;
-        DeletedObject() {};
+        DeletedObject(ManagementObject *, bool v1, bool v2);
         DeletedObject( const std::string &encoded );
         ~DeletedObject() {};
         void encode( std::string& toBuffer );
+        const std::string getKey() const {
+            // used to batch up objects of the same class type
+            return std::string(packageName + std::string(":") + className);
+        }
 
       private:
-      friend class ManagementAgent;
+        friend class ManagementAgent;
 
         std::string packageName;
         std::string className;
@@ -280,7 +284,7 @@ private:
     //
     // Protected by addLock
     //
-    ManagementObjectMap          newManagementObjects;
+    ManagementObjectVector       newManagementObjects;
 
     framing::Uuid                uuid;
 
