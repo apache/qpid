@@ -163,7 +163,7 @@ void SchemaMethodImpl::encodeV1(qpid::management::Buffer& buffer) const
     Variant::Map map;
 
     map["name"] = name;
-    map["argCount"] = arguments.size();
+    map["argCount"] = (uint64_t) arguments.size();
     if (!desc.empty())
         map["desc"] = desc;
 
