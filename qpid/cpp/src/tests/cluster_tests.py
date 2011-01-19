@@ -448,8 +448,7 @@ class LongTests(BrokerTest):
             c.stop()
 
         # Verify that logs are consistent
-        # FIXME aconway 2011-01-11: disabled due to known bugs, see QPID-2982
-        # cluster_test_logs.verify_logs(glob.glob("*.log"))
+        cluster_test_logs.verify_logs(glob.glob("*.log"))
 
     def test_management_qmf2(self):
         self.test_management(args=["--mgmt-qmf2=yes"])
