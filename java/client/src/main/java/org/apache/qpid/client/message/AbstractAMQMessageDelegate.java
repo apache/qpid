@@ -95,6 +95,11 @@ public abstract class AbstractAMQMessageDelegate implements AMQMessageDelegate
         AMQDestination dest;
         ExchangeInfo exchangeInfo = _exchangeMap.get(exchange.asString());
         
+        if (exchangeInfo == null)
+        {
+            exchangeInfo = new ExchangeInfo(exchange.asString(),"",AMQDestination.UNKNOWN_TYPE);
+        }
+        
         if ("topic".equals(exchangeInfo.exchangeType))
         {
             dest = new AMQTopic(exchange, routingKey, null);
