@@ -35,6 +35,7 @@
 #include "qpid/types/Variant.h"
 #include <qpid/framing/AMQFrame.h>
 #include <qpid/framing/FieldValue.h>
+#include <qpid/framing/ResizableBuffer.h>
 #include <memory>
 #include <string>
 #include <map>
@@ -330,7 +331,7 @@ private:
 
     // Maximum # of objects allowed in a single V2 response
     // message.
-    uint32_t maxV2ReplyObjs;
+    uint32_t maxReplyObjs;
 
     // list of objects that have been deleted, but have yet to be published
     // one final time.
@@ -343,6 +344,7 @@ private:
     char inputBuffer[MA_BUFFER_SIZE];
     char outputBuffer[MA_BUFFER_SIZE];
     char eventBuffer[MA_BUFFER_SIZE];
+    framing::ResizableBuffer msgBuffer;
 
     void writeData ();
     void periodicProcessing (void);
