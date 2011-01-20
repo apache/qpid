@@ -59,7 +59,8 @@ def filter_log(log):
             'task late',
             'task overran',
             'warning CLOSING .* unsent data',
-            'Inter-broker link '
+            'Inter-broker link ',
+            'Running in a cluster, marking store'
             ])
         if re.compile(skip).search(l): continue
 
@@ -85,7 +86,7 @@ def filter_log(log):
         out.write(l)
     out.close()
 
-def verify_logs(logs):
+def verify_logs():
     """Compare log files from cluster brokers, verify that they correspond correctly."""
     # FIXME aconway 2011-01-19: disable when called from unit tests
     # Causing sporadic failures, see https://issues.apache.org/jira/browse/QPID-3007
@@ -110,4 +111,4 @@ def verify_logs(logs):
 
 # Can be run as a script.
 if __name__ == "__main__":
-    verify_logs(glob.glob("*.log"))
+    verify_logs()
