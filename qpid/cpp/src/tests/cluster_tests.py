@@ -302,7 +302,7 @@ acl allow all all
             scanner.join()
         assert scanner.found
         # Verify logs are consistent
-        cluster_test_logs.verify_logs(glob.glob("*.log"))
+        cluster_test_logs.verify_logs()
 
 class LongTests(BrokerTest):
     """Tests that can run for a long time if -DDURATION=<minutes> is set"""
@@ -448,10 +448,19 @@ class LongTests(BrokerTest):
             c.stop()
 
         # Verify that logs are consistent
-        cluster_test_logs.verify_logs(glob.glob("*.log"))
+        cluster_test_logs.verify_logs()
 
     def test_management_qmf2(self):
         self.test_management(args=["--mgmt-qmf2=yes"])
+
+    def test_connect_consistent(self):   # FIXME aconway 2011-01-18:
+        args=["--mgmt-pub-interval=1","--log-enable=trace+:management"]
+        cluster = self.cluster(2, args=args)
+        end = time.time() + self.duration()
+        while (time.time() < end):  # Get a management interval
+            for i in xrange(1000): cluster[0].connect().close()
+            cluster_test_logs.verify_logs()
+        
 
 class StoreTests(BrokerTest):
     """
