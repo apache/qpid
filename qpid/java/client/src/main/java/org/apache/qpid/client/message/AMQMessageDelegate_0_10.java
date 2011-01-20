@@ -115,15 +115,28 @@ public class AMQMessageDelegate_0_10 extends AbstractAMQMessageDelegate
         if (deliveryProps != null)
         {
             String exchange = deliveryProps.getExchange();
+            checkAndUpdateExchange(exchange,session);
+                    
+        }
+        
+        MessageProperties msgProps = header.get(MessageProperties.class);
+        if (msgProps != null && msgProps.getReplyTo() != null)
+        {
+            String exchange = msgProps.getReplyTo().getExchange();
+            checkAndUpdateExchange(exchange,session);
+                    
+        }
+    }
+    
+    private static void checkAndUpdateExchange(String exchange, org.apache.qpid.transport.Session session)
+    {
+        if (exchange != null && !exchangeMapContains(exchange))
+        {
+            Future<ExchangeQueryResult> future =
+                    session.exchangeQuery(exchange.toString());
+            ExchangeQueryResult res = future.get();
 
-            if (exchange != null && !exchangeMapContains(exchange))
-            {
-                Future<ExchangeQueryResult> future =
-                        session.exchangeQuery(exchange.toString());
-                ExchangeQueryResult res = future.get();
-
-                updateExchangeType(exchange, res.getType());
-            }
+            updateExchangeType(exchange, res.getType());
         }
     }
 
