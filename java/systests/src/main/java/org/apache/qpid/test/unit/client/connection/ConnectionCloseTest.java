@@ -47,7 +47,7 @@ public class ConnectionCloseTest extends QpidBrokerTestCase
     {
         Map<Thread,StackTraceElement[]> before = Thread.getAllStackTraces();
 
-        for (int i = 0; i < 500; i++)
+        for (int i = 0; i < 50; i++)
         {
             if ((i % 10) == 0)
             {
