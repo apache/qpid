@@ -22,7 +22,7 @@
  *
  */
 
-#include "Buffer.h"
+#include "qpid/framing/Buffer.h"
 #include <vector>
 
 namespace qpid {
