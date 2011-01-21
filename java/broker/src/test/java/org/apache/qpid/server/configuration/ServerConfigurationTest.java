@@ -630,34 +630,6 @@ public class ServerConfigurationTest extends InternalBrokerBaseCase
         assertEquals(true, serverConfig.getEnableExecutorPool());
     }
 
-    public void testGetEnablePooledAllocator() throws ConfigurationException
-    {
-        // Check default
-        ServerConfiguration serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(false, serverConfig.getEnablePooledAllocator());
-
-        // Check value we set
-        _config.setProperty("advanced.enablePooledAllocator", true);
-        serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(true, serverConfig.getEnablePooledAllocator());
-    }
-
-    public void testGetEnableDirectBuffers() throws ConfigurationException
-    {
-        // Check default
-        ServerConfiguration serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(false, serverConfig.getEnableDirectBuffers());
-
-        // Check value we set
-        _config.setProperty("advanced.enableDirectBuffers", true);
-        serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(true, serverConfig.getEnableDirectBuffers());
-    }
-
     public void testGetEnableSSL() throws ConfigurationException
     {
         // Check default
