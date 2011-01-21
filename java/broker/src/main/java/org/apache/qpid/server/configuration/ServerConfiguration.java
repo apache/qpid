@@ -704,16 +704,6 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
         return getBooleanValue("advanced.filterchain[@enableExecutorPool]");
     }
 
-    public boolean getEnablePooledAllocator()
-    {
-        return getBooleanValue("advanced.enablePooledAllocator");
-    }
-
-    public boolean getEnableDirectBuffers()
-    {
-        return getBooleanValue("advanced.enableDirectBuffers");
-    }
-
     public boolean getEnableSSL()
     {
         return getBooleanValue("connector.ssl.enabled");
