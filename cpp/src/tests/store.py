@@ -19,7 +19,7 @@
 #
 
 import errno, os, time
-from qpid.brokertest import *
+from brokertest import *
 from qpid import compat, session
 from qpid.util import connect
 from qpid.connection import Connection
