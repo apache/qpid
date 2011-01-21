@@ -20,7 +20,7 @@
 
 import os, signal, sys, time, imp, re, subprocess, glob, cluster_test_logs
 from qpid import datatypes, messaging
-from qpid.brokertest import *
+from brokertest import *
 from qpid.harness import Skipped
 from qpid.messaging import Message, Empty
 from threading import Thread, Lock
