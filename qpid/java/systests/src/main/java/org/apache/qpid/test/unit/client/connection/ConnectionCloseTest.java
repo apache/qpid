@@ -45,6 +45,10 @@ public class ConnectionCloseTest extends QpidBrokerTestCase
 
     public void testSendReceiveClose() throws Exception
     {
+        //Create an initial connection to ensure any necessary thread pools
+        //are initialised before the test really begins.
+        Connection intialConnection = getConnection();
+        
         Map<Thread,StackTraceElement[]> before = Thread.getAllStackTraces();
 
         for (int i = 0; i < 50; i++)
@@ -72,6 +76,8 @@ public class ConnectionCloseTest extends QpidBrokerTestCase
             assertEquals(m.getText(), "test");
             receiver.close();
         }
+        
+        intialConnection.close();
 
         // The finalizer is notifying connector thread waiting on a selector key.
         // This should leave the finalizer enough time to notify those threads 
