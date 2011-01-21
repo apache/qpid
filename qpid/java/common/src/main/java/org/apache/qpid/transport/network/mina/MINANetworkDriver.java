@@ -83,6 +83,14 @@ public class MINANetworkDriver extends IoHandlerAdapter implements NetworkDriver
 
     private static final Logger _logger = LoggerFactory.getLogger(MINANetworkDriver.class);
 
+    static
+    {
+        org.apache.mina.common.ByteBuffer.setUseDirectBuffers(Boolean.getBoolean("amqj.enableDirectBuffers"));
+
+        //override the MINA defaults to prevent use of the PooledByteBufferAllocator 
+        org.apache.mina.common.ByteBuffer.setAllocator(new SimpleByteBufferAllocator());
+    }
+
     public MINANetworkDriver(boolean useNIO, int processors, boolean executorPool, boolean protectIO)
     {
         _useNIO = useNIO;
@@ -207,14 +215,6 @@ public class MINANetworkDriver extends IoHandlerAdapter implements NetworkDriver
         {
             _socketConnector = new SocketConnector(1, new QpidThreadExecutor()); // non-blocking
                                                                                  // connector
-        }
-
-        org.apache.mina.common.ByteBuffer.setUseDirectBuffers(Boolean.getBoolean("amqj.enableDirectBuffers"));
-        // the MINA default is currently to use the pooled allocator although this may change in future
-        // once more testing of the performance of the simple allocator has been done
-        if (!Boolean.getBoolean("amqj.enablePooledAllocator"))
-        {
-            org.apache.mina.common.ByteBuffer.setAllocator(new SimpleByteBufferAllocator());
         }
 
         SocketConnectorConfig cfg = (SocketConnectorConfig) _socketConnector.getDefaultConfig();
