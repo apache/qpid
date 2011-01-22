@@ -26,6 +26,31 @@ import os
 import locale
 from qmf.console import Session, BrokerURL
 
+usage = """
+Usage:  qpid-route [OPTIONS] dynamic add <dest-broker> <src-broker> <exchange> [tag] [exclude-list]
+        qpid-route [OPTIONS] dynamic del <dest-broker> <src-broker> <exchange>
+
+        qpid-route [OPTIONS] route add   <dest-broker> <src-broker> <exchange> <routing-key> [tag] [exclude-list] [mechanism]
+        qpid-route [OPTIONS] route del   <dest-broker> <src-broker> <exchange> <routing-key>
+        qpid-route [OPTIONS] queue add   <dest-broker> <src-broker> <exchange> <queue>
+        qpid-route [OPTIONS] queue del   <dest-broker> <src-broker> <exchange> <queue>
+        qpid-route [OPTIONS] route list  [<dest-broker>]
+        qpid-route [OPTIONS] route flush [<dest-broker>]
+        qpid-route [OPTIONS] route map   [<broker>]
+
+        qpid-route [OPTIONS] link add  <dest-broker> <src-broker>
+        qpid-route [OPTIONS] link del  <dest-broker> <src-broker>
+        qpid-route [OPTIONS] link list [<dest-broker>]"""
+
+description = """
+ADDRESS syntax:
+
+      [username/password@] hostname
+      ip-address [:<port>]"""
+
+def Usage():
+    print usage
+
 class Config:
     def __init__(self):
         self._verbose   = False
@@ -54,35 +79,7 @@ class JHelpFormatter(IndentedHelpFormatter):
         else:
             return ""
 
-def usage(parser):
-    parser.print_help()
-    exit(-1)
-
-usage = """
-Usage:  qpid-route [OPTIONS] dynamic add <dest-broker> <src-broker> <exchange> [tag] [exclude-list]
-        qpid-route [OPTIONS] dynamic del <dest-broker> <src-broker> <exchange>
-
-        qpid-route [OPTIONS] route add   <dest-broker> <src-broker> <exchange> <routing-key> [tag] [exclude-list] [mechanism]
-        qpid-route [OPTIONS] route del   <dest-broker> <src-broker> <exchange> <routing-key>
-        qpid-route [OPTIONS] queue add   <dest-broker> <src-broker> <exchange> <queue>
-        qpid-route [OPTIONS] queue del   <dest-broker> <src-broker> <exchange> <queue>
-        qpid-route [OPTIONS] route list  [<dest-broker>]
-        qpid-route [OPTIONS] route flush [<dest-broker>]
-        qpid-route [OPTIONS] route map   [<broker>]
-
-        qpid-route [OPTIONS] link add  <dest-broker> <src-broker>
-        qpid-route [OPTIONS] link del  <dest-broker> <src-broker>
-        qpid-route [OPTIONS] link list [<dest-broker>]"""
-
-description = """
-ADDRESS syntax:   
-
-      [username/password@] hostname
-      ip-address [:<port>]"""
-
-
 def OptionsAndArguments(argv):
-         
     parser = OptionParser(usage=usage,
                           description=description,
                           formatter=JHelpFormatter())
@@ -472,7 +469,7 @@ class RoutePair:
             self.bidir = True
             return True
         return False
-        
+
 
 def YN(val):
     if val == 1:
@@ -485,7 +482,8 @@ def main(argv=None):
     args = OptionsAndArguments(argv)
     nargs = len(args)
     if nargs < 2:
-        usage(parser)
+        Usage()
+        return(-1)
 
     if nargs == 2:
         localBroker = socket.gethostname()
@@ -507,11 +505,13 @@ def main(argv=None):
         if group == "link":
             if cmd == "add":
                 if nargs != 4:
-                    usage(parser)
+                    Usage()
+                    return(-1)
                 rm.addLink(remoteBroker)
             elif cmd == "del":
                 if nargs != 4:
-                    usage(parser)
+                    Usage()
+                    return(-1)
                 rm.delLink(remoteBroker)
             elif cmd == "list":
                 rm.listLinks()
@@ -519,35 +519,39 @@ def main(argv=None):
         elif group == "dynamic":
             if cmd == "add":
                 if nargs < 5 or nargs > 7:
-                    usage(parser)
+                    Usage()
+                    return(-1)
 
                 tag = ""
                 excludes = ""
                 mech = "PLAIN"
-                if nargs > 5: tag = args[5]     
-                if nargs > 6: excludes = args[6]     
+                if nargs > 5: tag = args[5]
+                if nargs > 6: excludes = args[6]
                 rm.addRoute(remoteBroker, args[4], "", tag, excludes, mech, dynamic=True)
             elif cmd == "del":
                 if nargs != 5:
-                    usage(parser)
+                    Usage()
+                    return(-1)
                 else:
                     rm.delRoute(remoteBroker, args[4], "", dynamic=True)
 
         elif group == "route":
             if cmd == "add":
                 if nargs < 6 or nargs > 9:
-                    usage(parser)
+                    Usage()
+                    return(-1)
 
                 tag = ""
                 excludes = ""
                 mech = "PLAIN"
-                if nargs > 6: tag = args[6]     
+                if nargs > 6: tag = args[6]
                 if nargs > 7: excludes = args[7]
                 if nargs > 8: mech = args[8]
                 rm.addRoute(remoteBroker, args[4], args[5], tag, excludes, mech, dynamic=False)
             elif cmd == "del":
                 if nargs != 6:
-                    usage(parser)
+                    Usage()
+                    return(-1)
                 rm.delRoute(remoteBroker, args[4], args[5], dynamic=False)
             elif cmd == "map":
                 rm.mapRoutes()
@@ -557,17 +561,20 @@ def main(argv=None):
                 elif cmd == "flush":
                     rm.clearAllRoutes()
                 else:
-                    usage(parser)
+                    Usage()
+                    return(-1)
 
         elif group == "queue":
             if nargs != 6:
-                usage(parser)
+                Usage()
+                return(-1)
             if cmd == "add":
                 rm.addQueueRoute(remoteBroker, exchange=args[4], queue=args[5])
             elif cmd == "del":
                 rm.delQueueRoute(remoteBroker, exchange=args[4], queue=args[5])
             else:
-                usage(parser)
+                Usage()
+                return(-1)
 
     except Exception,e:
         if rm:

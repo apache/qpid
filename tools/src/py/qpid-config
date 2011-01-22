@@ -25,6 +25,56 @@ import sys
 import locale
 from qmf.console import Session
 
+usage = """
+Usage:  qpid-config [OPTIONS]
+        qpid-config [OPTIONS] exchanges [filter-string]
+        qpid-config [OPTIONS] queues    [filter-string]
+        qpid-config [OPTIONS] add exchange <type> <name> [AddExchangeOptions]
+        qpid-config [OPTIONS] del exchange <name>
+        qpid-config [OPTIONS] add queue <name> [AddQueueOptions]
+        qpid-config [OPTIONS] del queue <name> [DelQueueOptions]
+        qpid-config [OPTIONS] bind   <exchange-name> <queue-name> [binding-key]
+                  <for type xml>     [-f -|filename]
+                  <for type header>  [all|any] k1=v1 [, k2=v2...]
+        qpid-config [OPTIONS] unbind <exchange-name> <queue-name> [binding-key]"""
+
+description = """
+ADDRESS syntax:
+
+      [username/password@] hostname
+      ip-address [:<port>]
+
+Examples:
+
+$ qpid-config add queue q
+$ qpid-config add exchange direct d localhost:5672
+$ qpid-config exchanges 10.1.1.7:10000
+$ qpid-config queues guest/guest@broker-host:10000
+
+Add Exchange <type> values:
+
+    direct     Direct exchange for point-to-point communication
+    fanout     Fanout exchange for broadcast communication
+    topic      Topic exchange that routes messages using binding keys with wildcards
+    headers    Headers exchange that matches header fields against the binding keys
+    xml        XML Exchange - allows content filtering using an XQuery
+
+
+Queue Limit Actions
+
+    none (default) - Use broker's default policy
+    reject         - Reject enqueued messages
+    flow-to-disk   - Page messages to disk
+    ring           - Replace oldest unacquired message with new
+    ring-strict    - Replace oldest message, reject if oldest is acquired
+
+Queue Ordering Policies
+
+    fifo (default) - First in, first out
+    lvq            - Last Value Queue ordering, allows queue browsing
+    lvq-no-browse  - Last Value Queue ordering, browsing clients may lose data"""
+
+
 class Config:
     def __init__(self):
         self._recursive         = False
@@ -77,7 +127,7 @@ class JHelpFormatter(IndentedHelpFormatter):
             return ""
 
 def Usage():
-    print "qpid-config: invalid arguments. Try $ qpid-config --help"
+    print usage
     exit(-1)
 
 def OptionsAndArguments(argv):
@@ -85,54 +135,6 @@ def OptionsAndArguments(argv):
 
     global config
 
-    usage = """
-    Usage:  qpid-config [OPTIONS]
-            qpid-config [OPTIONS] exchanges [filter-string]
-            qpid-config [OPTIONS] queues    [filter-string]
-            qpid-config [OPTIONS] add exchange <type> <name> [AddExchangeOptions]
-            qpid-config [OPTIONS] del exchange <name>
-            qpid-config [OPTIONS] add queue <name> [AddQueueOptions]
-            qpid-config [OPTIONS] del queue <name> [DelQueueOptions]
-            qpid-config [OPTIONS] bind   <exchange-name> <queue-name> [binding-key]
-                      <for type xml>     [-f -|filename]
-                      <for type header>  [all|any] k1=v1 [, k2=v2...]
-            qpid-config [OPTIONS] unbind <exchange-name> <queue-name> [binding-key]"""
-
-    description = """
-    ADDRESS syntax:   
-
-          [username/password@] hostname
-          ip-address [:<port>]
-
-    Examples:
-
-    $ qpid-config add queue q
-    $ qpid-config add exchange direct d localhost:5672
-    $ qpid-config exchanges 10.1.1.7:10000
-    $ qpid-config queues guest/guest@broker-host:10000
-
-    Add Exchange <type> values:
-
-        direct     Direct exchange for point-to-point communication
-        fanout     Fanout exchange for broadcast communication
-        topic      Topic exchange that routes messages using binding keys with wildcards
-        headers    Headers exchange that matches header fields against the binding keys
-        xml        XML Exchange - allows content filtering using an XQuery
-
-
-    Queue Limit Actions
-
-        none (default) - Use broker's default policy
-        reject         - Reject enqueued messages
-        flow-to-disk   - Page messages to disk
-        ring           - Replace oldest unacquired message with new
-        ring-strict    - Replace oldest message, reject if oldest is acquired
-
-    Queue Ordering Policies
-
-        fifo (default) - First in, first out
-        lvq            - Last Value Queue ordering, allows queue browsing
-        lvq-no-browse  - Last Value Queue ordering, browsing clients may lose data"""
 
     parser = OptionParser(usage=usage,
                           description=description,
@@ -240,7 +242,7 @@ def OptionsAndArguments(argv):
 
 #
 # accept -f followed by either
-# a filename or "-", for stdin.  pull the bits into a string, to be 
+# a filename or "-", for stdin.  pull the bits into a string, to be
 # passed to the xml binding.
 #
 def snarf_xquery_args():
@@ -254,7 +256,7 @@ def snarf_xquery_args():
         res = f.read()
         f.close()
     return [True, res]
-    
+
 #
 # look for "any"/"all" and grok the rest of argv into a map
 #
@@ -279,7 +281,7 @@ class BrokerManager:
         self.brokerName = None
         self.qmf        = None
         self.broker     = None
-        self.mechanism  = None 
+        self.mechanism  = None
 
     def SetBroker(self, brokerUrl, mechanism):
         self.url = brokerUrl
@@ -355,7 +357,7 @@ class BrokerManager:
                         if queue != None:
                             qname = queue.name
                         print "    bind [%s] => %s" % (bind.bindingKey, qname)
-            
+
 
     def QueueList(self, filter):
         queues = self.qmf.getObjects(_class="queue", _agent=self.brokerAgent)
@@ -502,7 +504,7 @@ class BrokerManager:
             # this checks/imports the -f arg
             [ok, xquery] = snarf_xquery_args()
             _args = { "xquery" : xquery }
-        else:            
+        else:
             if res.type == "headers":
                 [ok, op, kv] = snarf_header_args(args[3:])
                 _args = kv
@@ -619,4 +621,4 @@ def main(argv=None):
 
 if __name__ == "__main__":
         sys.exit(main())
-        
+
