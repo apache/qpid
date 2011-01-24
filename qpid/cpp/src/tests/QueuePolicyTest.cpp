@@ -53,6 +53,8 @@ QPID_AUTO_TEST_CASE(testCount)
     BOOST_CHECK_EQUAL((uint64_t) 0, policy->getMaxSize());
     BOOST_CHECK_EQUAL((uint32_t) 5, policy->getMaxCount());
 
+    BOOST_CHECK(!policy->monitorFlowControl());
+
     QueuedMessage msg = createMessage(10);
     for (size_t i = 0; i < 5; i++) {
         policy->tryEnqueue(msg.payload);
@@ -395,6 +397,213 @@ QPID_AUTO_TEST_CASE(testCapacityConversion)
         BOOST_FAIL("expecting ResourceLimitExceededException.");
     } catch (const ResourceLimitExceededException&) {}
 }
+
+
+QPID_AUTO_TEST_CASE(testFlowCount)
+{
+    std::auto_ptr<QueuePolicy> policy(QueuePolicy::createQueuePolicy("test", 10, 0, QueuePolicy::REJECT,
+                                                                     7, // flowStop
+                                                                     5));   // flowResume
+    BOOST_CHECK_EQUAL((uint32_t) 7, policy->getFlowStopCount());
+    BOOST_CHECK_EQUAL((uint32_t) 5, policy->getFlowResumeCount());
+    BOOST_CHECK_EQUAL((uint32_t) 0, policy->getFlowStopSize());
+    BOOST_CHECK_EQUAL((uint32_t) 0, policy->getFlowResumeSize());
+    BOOST_CHECK(!policy->isFlowControlActive());
+    BOOST_CHECK(policy->monitorFlowControl());
+
+    QueuedMessage msg = createMessage(10);
+    for (size_t i = 0; i < 6; i++) {
+        policy->tryEnqueue(msg.payload);
+        BOOST_CHECK(!policy->isFlowControlActive());
+    }
+    BOOST_CHECK(!policy->isFlowControlActive());  // 6 on queue
+    policy->tryEnqueue(msg.payload);
+    BOOST_CHECK(!policy->isFlowControlActive());  // 7 on queue
+
+    policy->tryEnqueue(msg.payload);
+    BOOST_CHECK(policy->isFlowControlActive());   // 8 on queue, ON
+    policy->tryEnqueue(msg.payload);
+    BOOST_CHECK(policy->isFlowControlActive());   // 9 on queue
+
+    policy->dequeued(msg);
+    BOOST_CHECK(policy->isFlowControlActive());   // 8 on queue
+    policy->dequeued(msg);
+    BOOST_CHECK(policy->isFlowControlActive());   // 7 on queue
+    policy->dequeued(msg);
+    BOOST_CHECK(policy->isFlowControlActive());   // 6 on queue
+    policy->dequeued(msg);
+    BOOST_CHECK(policy->isFlowControlActive());   // 5 on queue
+
+    policy->dequeued(msg);
+    BOOST_CHECK(!policy->isFlowControlActive());  // 4 on queue, OFF
+}
+
+
+QPID_AUTO_TEST_CASE(testFlowSize)
+{
+    std::auto_ptr<QueuePolicy> policy(QueuePolicy::createQueuePolicy("test", 10, 0, QueuePolicy::REJECT,
+                                                                     0, 0,     // flow-Count
+                                                                     70,    // flowStopSize
+                                                                     50));  // flowResumeSize
+    BOOST_CHECK_EQUAL((uint32_t) 0, policy->getFlowStopCount());
+    BOOST_CHECK_EQUAL((uint32_t) 0, policy->getFlowResumeCount());
+    BOOST_CHECK_EQUAL((uint32_t) 70, policy->getFlowStopSize());
+    BOOST_CHECK_EQUAL((uint32_t) 50, policy->getFlowResumeSize());
+    BOOST_CHECK(!policy->isFlowControlActive());
+    BOOST_CHECK(policy->monitorFlowControl());
+
+    QueuedMessage msg = createMessage(10);
+    for (size_t i = 0; i < 6; i++) {
+        policy->tryEnqueue(msg.payload);
+        BOOST_CHECK(!policy->isFlowControlActive());
+    }
+    BOOST_CHECK(!policy->isFlowControlActive());  // 60 on queue
+    policy->tryEnqueue(msg.payload);
+    BOOST_CHECK(!policy->isFlowControlActive());  // 70 on queue
+
+    QueuedMessage tinyMsg = createMessage(1);
+    policy->tryEnqueue(tinyMsg.payload);
+    BOOST_CHECK(policy->isFlowControlActive());   // 71 on queue, ON
+    policy->tryEnqueue(msg.payload);
+    BOOST_CHECK(policy->isFlowControlActive());   // 81 on queue
+
+    policy->dequeued(msg);
+    BOOST_CHECK(policy->isFlowControlActive());   // 71 on queue
+    policy->dequeued(msg);
+    BOOST_CHECK(policy->isFlowControlActive());   // 61 on queue
+    policy->dequeued(msg);
+    BOOST_CHECK(policy->isFlowControlActive());   // 51 on queue
+
+    policy->dequeued(tinyMsg);
+    BOOST_CHECK(policy->isFlowControlActive());   // 50 on queue
+    policy->dequeued(tinyMsg);
+    BOOST_CHECK(!policy->isFlowControlActive());  // 49 on queue, OFF
+    policy->dequeued(msg);
+    BOOST_CHECK(!policy->isFlowControlActive());  // 39 on queue
+}
+
+QPID_AUTO_TEST_CASE(testFlowArgs)
+{
+    FieldTable args;
+    const uint64_t stop(0x2FFFFFFFF);
+    const uint64_t resume(0x1FFFFFFFF);
+    args.setInt(QueuePolicy::flowStopCountKey, 30);
+    args.setInt(QueuePolicy::flowResumeCountKey, 21);
+    args.setUInt64(QueuePolicy::flowStopSizeKey, stop);
+    args.setUInt64(QueuePolicy::flowResumeSizeKey, resume);
+    args.setUInt64(QueuePolicy::maxSizeKey, stop + 1);      // needed to pass stop < max validation
+
+    std::auto_ptr<QueuePolicy> policy(QueuePolicy::createQueuePolicy("test", args));
+
+    BOOST_CHECK_EQUAL((uint32_t) 30, policy->getFlowStopCount());
+    BOOST_CHECK_EQUAL((uint32_t) 21, policy->getFlowResumeCount());
+    BOOST_CHECK_EQUAL(stop, policy->getFlowStopSize());
+    BOOST_CHECK_EQUAL(resume, policy->getFlowResumeSize());
+    BOOST_CHECK(!policy->isFlowControlActive());
+    BOOST_CHECK(policy->monitorFlowControl());
+}
+
+
+QPID_AUTO_TEST_CASE(testFlowCombo)
+{
+    FieldTable args;
+    args.setInt(QueuePolicy::flowStopCountKey, 10);
+    args.setInt(QueuePolicy::flowResumeCountKey, 5);
+    args.setUInt64(QueuePolicy::flowStopSizeKey, 200);
+    args.setUInt64(QueuePolicy::flowResumeSizeKey, 100);
+
+    QueuedMessage msg_1 = createMessage(1);
+    QueuedMessage msg_10 = createMessage(10);
+    QueuedMessage msg_50 = createMessage(50);
+    QueuedMessage msg_100 = createMessage(100);
+
+    std::auto_ptr<QueuePolicy> policy(QueuePolicy::createQueuePolicy("test", args));
+    BOOST_CHECK(!policy->isFlowControlActive());        // count:0  size:0
+
+    // verify flow control comes ON when only count passes its stop point.
+
+    for (size_t i = 0; i < 10; i++) {
+        policy->tryEnqueue(msg_10.payload);
+        BOOST_CHECK(!policy->isFlowControlActive());
+    }
+    // count:10 size:100
+
+    policy->tryEnqueue(msg_1.payload);  // count:11 size: 101  ->ON
+    BOOST_CHECK(policy->isFlowControlActive());
+
+    for (size_t i = 0; i < 6; i++) {
+        policy->dequeued(msg_10);
+        BOOST_CHECK(policy->isFlowControlActive());
+    }
+    // count:5 size: 41
+
+    policy->dequeued(msg_1);        // count: 4 size: 40  ->OFF
+    BOOST_CHECK(!policy->isFlowControlActive());
+
+    for (size_t i = 0; i < 4; i++) {
+        policy->dequeued(msg_10);
+        BOOST_CHECK(!policy->isFlowControlActive());
+    }
+    // count:0 size:0
+
+    // verify flow control comes ON when only size passes its stop point.
+
+    policy->tryEnqueue(msg_100.payload);  // count:1 size: 100
+    BOOST_CHECK(!policy->isFlowControlActive());
+
+    policy->tryEnqueue(msg_50.payload);   // count:2 size: 150
+    BOOST_CHECK(!policy->isFlowControlActive());
+
+    policy->tryEnqueue(msg_50.payload);   // count:3 size: 200
+    BOOST_CHECK(!policy->isFlowControlActive());
+
+    policy->tryEnqueue(msg_1.payload);   // count:4 size: 201  ->ON
+    BOOST_CHECK(policy->isFlowControlActive());
+
+    policy->dequeued(msg_100);              // count:3 size:101
+    BOOST_CHECK(policy->isFlowControlActive());
+
+    policy->dequeued(msg_1);                // count:2 size:100
+    BOOST_CHECK(policy->isFlowControlActive());
+
+    policy->dequeued(msg_50);               // count:1 size:50  ->OFF
+    BOOST_CHECK(!policy->isFlowControlActive());
+
+    // verify flow control remains ON until both thresholds drop below their
+    // resume point.
+
+    for (size_t i = 0; i < 8; i++) {
+        policy->tryEnqueue(msg_10.payload);
+        BOOST_CHECK(!policy->isFlowControlActive());
+    }
+    // count:9 size:130
+
+    policy->tryEnqueue(msg_10.payload);   // count:10 size: 140
+    BOOST_CHECK(!policy->isFlowControlActive());
+
+    policy->tryEnqueue(msg_1.payload);   // count:11 size: 141  ->ON
+    BOOST_CHECK(policy->isFlowControlActive());
+
+    policy->tryEnqueue(msg_100.payload);   // count:12 size: 241  (both thresholds crossed)
+    BOOST_CHECK(policy->isFlowControlActive());
+
+    // at this point: 9@10 + 1@50 + 1@100 + 1@1 == 12@241
+
+    policy->dequeued(msg_50);               // count:11 size:191
+    BOOST_CHECK(policy->isFlowControlActive());
+
+    for (size_t i = 0; i < 9; i++) {
+        policy->dequeued(msg_10);
+        BOOST_CHECK(policy->isFlowControlActive());
+    }
+    // count:2 size:101
+    policy->dequeued(msg_1);                // count:1 size:100
+    BOOST_CHECK(policy->isFlowControlActive());   // still active due to size
+
+    policy->dequeued(msg_100);               // count:0 size:0  ->OFF
+    BOOST_CHECK(!policy->isFlowControlActive());
+}
+
 
 QPID_AUTO_TEST_SUITE_END()
 
