@@ -114,7 +114,6 @@ public class ServerConnectionDelegate extends ServerDelegate
             else
             {
 	            sconn.invoke(new ConnectionOpenOk(Collections.emptyList()));
-                CurrentActor.set(GenericActor.getInstance(sconn));
 	            sconn.setState(Connection.State.OPEN);
             }
         }
