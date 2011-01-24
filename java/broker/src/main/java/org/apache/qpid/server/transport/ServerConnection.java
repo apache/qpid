@@ -27,6 +27,7 @@ import java.text.MessageFormat;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.configuration.ConnectionConfig;
+import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.GenericActor;
@@ -43,10 +44,11 @@ public class ServerConnection extends Connection implements AMQConnectionModel, 
 {
     private ConnectionConfig _config;
     private Runnable _onOpenTask;
+    private LogActor _actor = GenericActor.getInstance(this);
 
     public ServerConnection()
     {
-        CurrentActor.set(GenericActor.getInstance(this));
+
     }
 
     @Override
@@ -66,7 +68,7 @@ public class ServerConnection extends Connection implements AMQConnectionModel, 
             {
                 _onOpenTask.run();    
             }
-            CurrentActor.get().message(ConnectionMessages.OPEN(getClientId(), "0-10", true, true));
+            _actor.message(ConnectionMessages.OPEN(getClientId(), "0-10", true, true));
         }
         
         if (state == State.CLOSED)
@@ -167,4 +169,8 @@ public class ServerConnection extends Connection implements AMQConnectionModel, 
         }
     }
 
+    public LogActor getLogActor()
+    {
+        return _actor;
+    }
 }
