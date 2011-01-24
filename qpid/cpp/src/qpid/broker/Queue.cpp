@@ -157,13 +157,8 @@ void Queue::deliver(boost::intrusive_ptr<Message> msg){
         //drop message
         QPID_LOG(info, "Dropping excluded message from " << getName());
     } else {
-        // if no store then mark as enqueued
-        if (!enqueue(0, msg)){
-            push(msg);
-            msg->enqueueComplete();
-        }else {
-            push(msg);
-        }
+        enqueue(0, msg);
+        push(msg);
         mgntEnqStats(msg);
         QPID_LOG(debug, "Message " << msg << " enqueued on " << name);
     }
@@ -688,7 +683,7 @@ uint32_t Queue::getEnqueueCompleteMessageCount() const
         //NOTE: don't need to use checkLvqReplace() here as it
         //is only relevant for LVQ which does not support persistence
         //so the enqueueComplete check has no effect
-        if ( i->payload->isEnqueueComplete() ) count ++;
+        if ( i->payload->isReceiveComplete() ) count ++;
     }
     
     return count;

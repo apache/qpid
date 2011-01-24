@@ -548,8 +548,7 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/HandlerImpl.h \
   qpid/broker/HeadersExchange.cpp \
   qpid/broker/HeadersExchange.h \
-  qpid/broker/IncompleteMessageList.cpp \
-  qpid/broker/IncompleteMessageList.h \
+  qpid/broker/AsyncCompletion.h \
   qpid/broker/Link.cpp \
   qpid/broker/Link.h \
   qpid/broker/LinkRegistry.cpp \

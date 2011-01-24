@@ -87,7 +87,6 @@ unit_test_SOURCES= unit_test.cpp unit_test.h \
 	InlineVector.cpp \
 	SequenceSet.cpp \
 	StringUtils.cpp \
-	IncompleteMessageList.cpp \
 	RangeSet.cpp \
 	AtomicValue.cpp \
 	QueueTest.cpp \

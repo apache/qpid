@@ -34,7 +34,6 @@ class MessageStore;
 PersistableMessage::~PersistableMessage() {}
 
 PersistableMessage::PersistableMessage() :
-    asyncEnqueueCounter(0), 
     asyncDequeueCounter(0),
     store(0)
 {}
@@ -68,24 +67,6 @@ bool PersistableMessage::isContentReleased() const
     return contentReleaseState.released;
 }
        
-bool PersistableMessage::isEnqueueComplete() {
-    sys::ScopedLock<sys::Mutex> l(asyncEnqueueLock);
-    return asyncEnqueueCounter == 0;
-}
-
-void PersistableMessage::enqueueComplete() {
-    bool notify = false;
-    {
-        sys::ScopedLock<sys::Mutex> l(asyncEnqueueLock);
-        if (asyncEnqueueCounter > 0) {
-            if (--asyncEnqueueCounter == 0) {
-                notify = true;
-            }
-        }
-    }
-    if (notify) 
-        allEnqueuesComplete();
-}
 
 bool PersistableMessage::isStoredOnQueue(PersistableQueue::shared_ptr queue){
     if (store && (queue->getPersistenceId()!=0)) {
@@ -109,12 +90,7 @@ void PersistableMessage::addToSyncList(PersistableQueue::shared_ptr queue, Messa
 
 void PersistableMessage::enqueueAsync(PersistableQueue::shared_ptr queue, MessageStore* _store) { 
     addToSyncList(queue, _store);
-    enqueueAsync();
-}
-
-void PersistableMessage::enqueueAsync() { 
-    sys::ScopedLock<sys::Mutex> l(asyncEnqueueLock);
-    asyncEnqueueCounter++; 
+    enqueueStart();
 }
 
 bool PersistableMessage::isDequeueComplete() { 
