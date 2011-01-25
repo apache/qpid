@@ -56,7 +56,7 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
 
     BasicMessageProducer_0_10(AMQConnection connection, AMQDestination destination, boolean transacted, int channelId,
                               AMQSession session, AMQProtocolHandler protocolHandler, long producerId,
-                              boolean immediate, boolean mandatory, boolean waitUntilSent)
+                              boolean immediate, boolean mandatory, boolean waitUntilSent) throws AMQException
     {
         super(connection, destination, transacted, channelId, session, protocolHandler, producerId, immediate,
               mandatory, waitUntilSent);
@@ -64,7 +64,7 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
         userIDBytes = Strings.toUTF8(_userID);
     }
 
-    void declareDestination(AMQDestination destination)
+    void declareDestination(AMQDestination destination) throws AMQException
     {
         if (destination.getDestSyntax() == DestSyntax.BURL)
         {
@@ -83,8 +83,8 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
             }
             catch(Exception e)
             {
-                // Idealy this should be thrown to the JMS layer.
-                _logger.warn("Exception occured while verifying destination",e);
+                AMQException ex = new AMQException("Exception occured while verifying destination",e);                
+                throw ex;                
             }
         }
     }

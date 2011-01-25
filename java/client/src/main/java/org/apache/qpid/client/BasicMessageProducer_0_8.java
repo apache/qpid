@@ -28,6 +28,7 @@ import javax.jms.Topic;
 import javax.jms.Queue;
 
 import org.apache.mina.common.ByteBuffer;
+import org.apache.qpid.AMQException;
 import org.apache.qpid.client.message.AbstractJMSMessage;
 import org.apache.qpid.client.message.AMQMessageDelegate;
 import org.apache.qpid.client.message.AMQMessageDelegate_0_8;
@@ -46,7 +47,7 @@ public class BasicMessageProducer_0_8 extends BasicMessageProducer
 
     BasicMessageProducer_0_8(AMQConnection connection, AMQDestination destination, boolean transacted, int channelId,
             AMQSession session, AMQProtocolHandler protocolHandler, long producerId, boolean immediate, boolean mandatory,
-            boolean waitUntilSent)
+            boolean waitUntilSent) throws AMQException
     {
         super(connection, destination,transacted,channelId,session, protocolHandler, producerId, immediate, mandatory,waitUntilSent);
     }
