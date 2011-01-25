@@ -253,8 +253,6 @@ public class ServerSessionDelegate extends SessionDelegate
                                                                   filterManager,
                                                                   method.getArguments());
 
-                    CurrentActor.set(GenericActor.getInstance(sub));
-
                     ((ServerSession)session).register(destination, sub);
                     try
                     {
