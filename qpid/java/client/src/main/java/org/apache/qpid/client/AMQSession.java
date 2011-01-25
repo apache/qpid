@@ -2566,7 +2566,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     }
 
     public abstract P createMessageProducer(final Destination destination, final boolean mandatory,
-                                                               final boolean immediate, final boolean waitUntilSent, long producerId);
+                                                               final boolean immediate, final boolean waitUntilSent, long producerId) throws JMSException;
 
     private void declareExchange(AMQDestination amqd, AMQProtocolHandler protocolHandler, boolean nowait) throws AMQException
     {
