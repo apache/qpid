@@ -32,11 +32,11 @@ typedef int Py_ssize_t;
     void PyToList(PyObject*, qpid::types::Variant::List*);
 
     qpid::types::Variant PyToVariant(PyObject* value) {
+        if (PyBool_Check(value))   return qpid::types::Variant(bool(PyInt_AS_LONG(value) ? true : false));
         if (PyFloat_Check(value))  return qpid::types::Variant(PyFloat_AS_DOUBLE(value));
-        if (PyString_Check(value)) return qpid::types::Variant(std::string(PyString_AS_STRING(value)));
         if (PyInt_Check(value))    return qpid::types::Variant(int64_t(PyInt_AS_LONG(value)));
         if (PyLong_Check(value))   return qpid::types::Variant(int64_t(PyLong_AsLongLong(value)));
-        if (PyBool_Check(value))   return qpid::types::Variant(bool(PyInt_AS_LONG(value) ? true : false));
+        if (PyString_Check(value)) return qpid::types::Variant(std::string(PyString_AS_STRING(value)));
         if (PyDict_Check(value)) {
             qpid::types::Variant::Map map;
             PyToMap(value, &map);
