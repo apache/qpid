@@ -709,6 +709,20 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
     }
 
     /**
+     * deletes an exchange 
+     */
+    public void sendExchangeDelete(final String name, final boolean nowait)
+                throws AMQException, FailoverException
+    {
+        getQpidSession().exchangeDelete(name);
+        // We need to sync so that we get notify of an error.
+        if (!nowait)
+        {
+            sync();
+        }
+    }
+
+    /**
      * Declare a queue with the given queueName
      */
     public void sendQueueDeclare(final AMQDestination amqd, final AMQProtocolHandler protocolHandler,
