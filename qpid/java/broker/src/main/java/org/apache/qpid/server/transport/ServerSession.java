@@ -32,6 +32,7 @@ import org.apache.qpid.server.configuration.ConfiguredObject;
 import org.apache.qpid.server.configuration.ConnectionConfig;
 import org.apache.qpid.server.configuration.SessionConfig;
 import org.apache.qpid.server.configuration.SessionConfigType;
+import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.GenericActor;
@@ -57,7 +58,6 @@ import org.apache.qpid.transport.Range;
 import org.apache.qpid.transport.RangeSet;
 import org.apache.qpid.transport.Session;
 import org.apache.qpid.transport.SessionDelegate;
-import org.apache.qpid.transport.Session.State;
 
 import java.lang.ref.WeakReference;
 import java.security.Principal;
@@ -81,6 +81,7 @@ public class ServerSession extends Session implements PrincipalHolder, SessionCo
     private final UUID _id;
     private ConnectionConfig _connectionConfig;
     private long _createTime = System.currentTimeMillis();
+    private LogActor _actor = GenericActor.getInstance(this);
 
     public static interface MessageDispositionChangeListener
     {
@@ -130,7 +131,7 @@ public class ServerSession extends Session implements PrincipalHolder, SessionCo
 
         if (state == State.OPEN)
         {
-	        GenericActor.getInstance(this).message(ChannelMessages.CREATE());
+	        _actor.message(ChannelMessages.CREATE());
         }
     }
 
@@ -595,6 +596,11 @@ public class ServerSession extends Session implements PrincipalHolder, SessionCo
         return getConnection().getClientId();
     }
 
+    public LogActor getLogActor()
+    {
+        return _actor;
+    }
+
     public LogSubject getLogSubject()
     {
         return (LogSubject) this;
@@ -603,7 +609,7 @@ public class ServerSession extends Session implements PrincipalHolder, SessionCo
     @Override
     public String toLogString()
     {
-       return " [" +
+       return "[" +
                MessageFormat.format(CHANNEL_FORMAT,
                                    getConnection().getConnectionId(),
                                    getClientID(),

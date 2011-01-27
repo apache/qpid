@@ -434,7 +434,7 @@ public class Connection extends ConnectionInvoker
         }
     }
 
-    Session getSession(int channel)
+    protected Session getSession(int channel)
     {
         synchronized (lock)
         {

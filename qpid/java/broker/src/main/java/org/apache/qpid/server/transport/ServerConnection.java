@@ -23,6 +23,7 @@ package org.apache.qpid.server.transport;
 import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.*;
 
 import java.text.MessageFormat;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.protocol.AMQConstant;
@@ -39,11 +40,13 @@ import org.apache.qpid.transport.Connection;
 import org.apache.qpid.transport.ExecutionErrorCode;
 import org.apache.qpid.transport.ExecutionException;
 import org.apache.qpid.transport.Method;
+import org.apache.qpid.transport.ProtocolEvent;
 
 public class ServerConnection extends Connection implements AMQConnectionModel, LogSubject
 {
     private ConnectionConfig _config;
     private Runnable _onOpenTask;
+    private AtomicBoolean _logClosed = new AtomicBoolean(false);
     private LogActor _actor = GenericActor.getInstance(this);
 
     public ServerConnection()
@@ -72,6 +75,14 @@ public class ServerConnection extends Connection implements AMQConnectionModel, 
         }
         
         if (state == State.CLOSED)
+        {
+            logClosed();
+        }
+    }
+
+    protected void logClosed()
+    {
+        if(_logClosed.compareAndSet(false, true))
         {
             CurrentActor.get().message(this, ConnectionMessages.CLOSE());
         }
@@ -135,13 +146,36 @@ public class ServerConnection extends Connection implements AMQConnectionModel, 
         ((ServerSession)session).close();
     }
 
-    public String toLogString() {
+    @Override
+    public void received(ProtocolEvent event)
+    {
+        ServerSession channel = (ServerSession) getSession(event.getChannel());
+        LogActor channelActor = null;
+
+        if (channel != null)
+        {
+            channelActor = channel.getLogActor();
+        }
+
+        CurrentActor.set(channelActor == null ? _actor : channelActor);
+        try
+        {
+            super.received(event);
+        }
+        finally
+        {
+            CurrentActor.remove();
+        }
+    }
+
+    public String toLogString()
+    {
         boolean hasVirtualHost = (null != this.getVirtualHost());
         boolean hasPrincipal = (null != getAuthorizationID());
 
         if (hasPrincipal && hasVirtualHost)
         {
-            return " [" +
+            return "[" +
                     MessageFormat.format(CONNECTION_FORMAT,
                                          getConnectionId(),
                                          getClientId(),
@@ -151,7 +185,7 @@ public class ServerConnection extends Connection implements AMQConnectionModel, 
         }
         else if (hasPrincipal)
         {
-            return " [" +
+            return "[" +
                     MessageFormat.format(USER_FORMAT,
                                          getConnectionId(),
                                          getClientId(),
@@ -161,7 +195,7 @@ public class ServerConnection extends Connection implements AMQConnectionModel, 
         }
         else
         {
-            return " [" +
+            return "[" +
                     MessageFormat.format(SOCKET_FORMAT,
                                          getConnectionId(),
                                          getConfig().getAddress())

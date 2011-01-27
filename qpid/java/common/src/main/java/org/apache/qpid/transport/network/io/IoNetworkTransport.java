@@ -52,7 +52,6 @@ public class IoNetworkTransport implements NetworkTransport, IoContext
     private long timeout = 60000; 
     private ConnectionSettings settings;    
     
-    @Override
     public void init(ConnectionSettings settings)
     {
         try
@@ -84,20 +83,17 @@ public class IoNetworkTransport implements NetworkTransport, IoContext
         }
     }
 
-    @Override
     public void receiver(Receiver<ByteBuffer> delegate)
     {
         receiver = new IoReceiver(this, delegate,
                 2*settings.getReadBufferSize() , timeout);
     }
 
-    @Override
     public Sender<ByteBuffer> sender()
     {
         return new IoSender(this, 2*settings.getWriteBufferSize(), timeout);
     }
-    
-    @Override
+
     public void close()
     {
         

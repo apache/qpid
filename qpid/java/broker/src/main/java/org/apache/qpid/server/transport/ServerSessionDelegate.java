@@ -1223,7 +1223,6 @@ public class ServerSessionDelegate extends SessionDelegate
     @Override
     public void closed(Session session)
     {
-        super.closed(session);
         for(Subscription_0_10 sub : getSubscriptions(session))
         {
             ((ServerSession)session).unregister(sub);
