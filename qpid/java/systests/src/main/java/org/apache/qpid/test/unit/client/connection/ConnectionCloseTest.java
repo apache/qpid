@@ -45,10 +45,6 @@ public class ConnectionCloseTest extends QpidBrokerTestCase
 
     public void testSendReceiveClose() throws Exception
     {
-        //Create an initial connection to ensure any necessary thread pools
-        //are initialised before the test really begins.
-        Connection intialConnection = getConnection();
-        
         Map<Thread,StackTraceElement[]> before = Thread.getAllStackTraces();
 
         for (int i = 0; i < 50; i++)
@@ -76,8 +72,6 @@ public class ConnectionCloseTest extends QpidBrokerTestCase
             assertEquals(m.getText(), "test");
             receiver.close();
         }
-        
-        intialConnection.close();
 
         // The finalizer is notifying connector thread waiting on a selector key.
         // This should leave the finalizer enough time to notify those threads 
@@ -87,7 +81,7 @@ public class ConnectionCloseTest extends QpidBrokerTestCase
         }
 
         Map<Thread,StackTraceElement[]> after = Thread.getAllStackTraces();
-
+        
         Map<Thread,StackTraceElement[]> delta = new HashMap<Thread,StackTraceElement[]>(after);
         for (Thread t : before.keySet())
         {
@@ -96,9 +90,12 @@ public class ConnectionCloseTest extends QpidBrokerTestCase
 
         dumpStacks(delta);
 
+        int deltaThreshold = (isExternalBroker()? 1 : 2) //InVM creates more thread pools in the same VM
+                            * (Runtime.getRuntime().availableProcessors() + 1) + 5; 
+
         assertTrue("Spurious thread creation exceeded threshold, " +
                    delta.size() + " threads created.",
-                   delta.size() < 10);
+                   delta.size() < deltaThreshold);
     }
 
     private void dumpStacks(Map<Thread,StackTraceElement[]> map)
