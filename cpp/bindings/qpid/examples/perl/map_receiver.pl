@@ -1,3 +1,4 @@
+#! /usr/bin/perl5
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -16,22 +17,31 @@
 # specific language governing permissions and limitations
 # under the License.
 #
+use strict;
+use warnings;
+use Data::Dumper;
 
-if HAVE_SWIG
+use cqpid;
 
-EXTRA_DIST = qpid.i
-SUBDIRS =
+my $url               = ( @ARGV > 0 ) ? $ARGV[0] : "amqp:tcp:127.0.0.1:5672";
+my $address           = ( @ARGV > 1 ) ? $ARGV[0] : "message_queue; {create: always}";
+my $connectionOptions = ( @ARGV > 2 ) ? $ARGV[1] : "";
 
-if HAVE_RUBY_DEVEL
-SUBDIRS += ruby
-endif
+my $connection = new cqpid::Connection($url, $connectionOptions);
 
-if HAVE_PYTHON_DEVEL
-SUBDIRS += python
-endif
+eval {
+    $connection->open();
+    my $session  = $connection->createSession();
+    my $receiver = $session->createReceiver($address);
 
-if HAVE_PERL_DEVEL
-SUBDIRS += perl
-endif
+    my $content = cqpid::decodeMap($receiver->fetch());
+    #my $content = cqpid::decodeList($receiver->fetch());
+   
+    print Dumper($content);
 
-endif
+    $session->acknowledge();
+    $receiver->close();
+    $connection->close();
+};
+
+die $@ if ($@);

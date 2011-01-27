@@ -1,4 +1,3 @@
-#
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
 # distributed with this work for additional information
@@ -15,23 +14,13 @@
 # KIND, either express or implied.  See the License for the
 # specific language governing permissions and limitations
 # under the License.
-#
 
-if HAVE_SWIG
 
-EXTRA_DIST = qpid.i
-SUBDIRS =
+The examples in this directory are written against the raw Perl
+binding ("cqpid").  This binding is identical to the C++ messaging (in
+namespace qpid::messaging).
 
-if HAVE_RUBY_DEVEL
-SUBDIRS += ruby
-endif
+It is desired that a layer will be written over this interface (called
+"qpid") that provides a more Perl-specific API.  When this occurs,
+these examples will be changed to use the new Perl API.
 
-if HAVE_PYTHON_DEVEL
-SUBDIRS += python
-endif
-
-if HAVE_PERL_DEVEL
-SUBDIRS += perl
-endif
-
-endif
