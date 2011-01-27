@@ -84,7 +84,22 @@ public class ServerConnectionDelegate extends ServerDelegate
 
     }
 
-    @Override public void connectionOpen(Connection conn, ConnectionOpen open)
+    @Override
+    public void connectionClose(Connection conn, ConnectionClose close)
+    {
+        try
+        {
+            ((ServerConnection) conn).logClosed();
+        }
+        finally
+        {
+            super.connectionClose(conn, close);
+        }
+        
+    }
+
+    @Override
+    public void connectionOpen(Connection conn, ConnectionOpen open)
     {
         ServerConnection sconn = (ServerConnection) conn;
         
