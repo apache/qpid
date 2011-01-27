@@ -20,25 +20,20 @@
  */
 package org.apache.qpid.server.logging;
 
-import org.apache.qpid.server.configuration.ServerConfiguration;
-import org.apache.qpid.server.configuration.VirtualHostConfiguration;
-import org.apache.qpid.server.logging.actors.CurrentActor;
-import org.apache.qpid.server.logging.actors.TestLogActor;
-import org.apache.qpid.server.logging.subjects.AbstractTestLogSubject;
-import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.store.SkeletonMessageStore;
-import org.apache.qpid.server.util.InternalBrokerBaseCase;
-import org.apache.qpid.server.util.TestApplicationRegistry;
-import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.test.utils.QpidBrokerTestCase;
-import org.apache.qpid.util.LogMonitor;
-
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+
+import org.apache.commons.configuration.ConfigurationException;
+import org.apache.qpid.server.configuration.ServerConfiguration;
+import org.apache.qpid.server.logging.subjects.AbstractTestLogSubject;
+import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.util.InternalBrokerBaseCase;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
+import org.apache.qpid.util.LogMonitor;
 
 /**
  * Abstract superclass for logging test set up and utility methods.
@@ -50,7 +45,6 @@ public class AbstractTestLogging extends QpidBrokerTestCase
     public static final long DEFAULT_LOG_WAIT = 2000;
     public static final String TEST_LOG_PREFIX = "MESSAGE";
     protected LogMonitor _monitor;
-    ServerConfiguration _serverConfiguration;
 
     InternalBrokerBaseCase _configLoader;
 
@@ -61,61 +55,32 @@ public class AbstractTestLogging extends QpidBrokerTestCase
         
         super.setUp();
         _monitor = new LogMonitor(_outputFile);
+    }
 
+    protected ServerConfiguration getServerConfig() throws ConfigurationException
+    {
+        ServerConfiguration _serverConfiguration;
         if (isExternalBroker())
         {
-            _serverConfiguration = new ServerConfiguration(_configFile);
-
-            _configLoader = new InternalBrokerBaseCase()
+            _serverConfiguration = new ServerConfiguration(_configFile)
             {
                 @Override
-                protected void createBroker() throws Exception
+                public void initialise() throws ConfigurationException
                 {
-                    setStarted(true);
-                    CurrentActor.set(new TestLogActor(new SystemOutMessageLogger()));
-
-                    // Prevent the InVM broker from logging and spoiling tests.
-                    _serverConfiguration.getConfig().setProperty(ServerConfiguration.STATUS_UPDATES, "off");
-
-                    setConfiguration(_serverConfiguration);
-                    setRegistry(new TestApplicationRegistry(getConfiguration())
-                    {
-                        /**
-                         * Create a virtualhost with a {@link org.apache.qpid.server.store.SkeletonMessageStore} instead
-                         * of the configured one, but remember the original configuration.
-                         */
-                        @Override
-                        public VirtualHost createVirtualHost(final VirtualHostConfiguration vhostConfig) throws Exception
-                        {
-                            String oldClass = vhostConfig.getMessageStoreClass();
-                            vhostConfig.setMessageStoreClass(SkeletonMessageStore.class.getName());
-                            VirtualHost host = super.createVirtualHost(vhostConfig);
-                            vhostConfig.setMessageStoreClass(oldClass);
-                            return host;
-                        }
-                    });
-                    ApplicationRegistry.initialise(getRegistry());
-
-                }
-
-                @Override
-                protected void stopBroker()
-                {
-                    ApplicationRegistry.remove();
+                    //Overriding initialise to only setup the vhosts and not
+                    //perform the ConfigurationPlugin setup, removing need for
+                    //an ApplicationRegistry to be loaded.
+                    setupVirtualHosts(getConfig());
                 }
             };
-
-            // Set the test name as this will be used to define some default queues
-            // VirtualHost, use test as this is a default vhost name.
-            _configLoader.setName("test");
-
-            _configLoader.setUp();
+            _serverConfiguration.initialise();
         }
         else
         {
             _serverConfiguration = ApplicationRegistry.getInstance().getConfiguration();
         }
 
+        return _serverConfiguration;
     }
 
     protected void setLogMessagePrefix()

@@ -212,7 +212,7 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
      * both, as a fix for QPID-2360 and QPID-2361.
      */
     @SuppressWarnings("unchecked")
-    private void setupVirtualHosts(Configuration conf) throws ConfigurationException
+    protected void setupVirtualHosts(Configuration conf) throws ConfigurationException
     {
         List<String> vhostFiles = conf.getList("virtualhosts");
         Configuration vhostConfig = conf.subset("virtualhosts");

@@ -92,7 +92,7 @@ public class MemoryMessageStoreLoggingTest extends AbstractTestLogging
         results = waitAndFindMatches("MST-1001");
 
         // Load VirtualHost list from file.
-        List<String> vhosts = Arrays.asList(_serverConfiguration.getVirtualHosts());
+        List<String> vhosts = Arrays.asList(getServerConfig().getVirtualHosts());
 
         assertEquals("Each vhost did not create a store.", vhosts.size(), results.size());
 
@@ -105,7 +105,7 @@ public class MemoryMessageStoreLoggingTest extends AbstractTestLogging
             String vhostName = AbstractTestLogSubject.getSlice("vh", result).substring(1);
 
             // Get the store class used in the configuration for the virtualhost.
-            String fullStoreName = _serverConfiguration.getVirtualHostConfig(vhostName).getMessageStoreClass();
+            String fullStoreName = getServerConfig().getVirtualHostConfig(vhostName).getMessageStoreClass();
 
             // Get the Simple class name from the expected class name of o.a.q.s.s.MMS
             String storeName = fullStoreName.substring(fullStoreName.lastIndexOf(".") + 1);
