@@ -17,21 +17,26 @@
 # under the License.
 #
 
-if HAVE_SWIG
-
-EXTRA_DIST = qpid.i
-SUBDIRS =
-
-if HAVE_RUBY_DEVEL
-SUBDIRS += ruby
-endif
-
-if HAVE_PYTHON_DEVEL
-SUBDIRS += python
-endif
-
 if HAVE_PERL_DEVEL
-SUBDIRS += perl
-endif
 
-endif
+INCLUDES = -I$(top_srcdir)/include -I$(top_builddir)/include -I$(top_srcdir)/src -I$(top_builddir)/src
+
+EXTRA_DIST = perl.i
+BUILT_SOURCES = cqpid.cpp
+SWIG_FLAGS = -w362,401
+
+cqpid.cpp: $(srcdir)/perl.i $(srcdir)/../qpid.i $(srcdir)/../../swig_perl_typemaps.i
+	$(SWIG) -perl -c++ $(SWIG_FLAGS) $(INCLUDES) $(QPID_CXXFLAGS) -I/usr/include -o cqpid.cpp $(srcdir)/perl.i
+
+lib_LTLIBRARIES = cqpid.la
+cqpid_PERL = cqpid.pm
+
+cqpid_la_LDFLAGS = -avoid-version -module -shared
+cqpid_la_LIBADD = -L$(top_builddir)/src/.libs -lqpidmessaging -lqpidtypes \
+	$(top_builddir)/src/libqpidmessaging.la $(top_builddir)/src/libqpidtypes.la
+cqpid_la_CXXFLAGS = $(INCLUDES) $(PERL_INC)
+nodist_cqpid_la_SOURCES = cqpid.cpp
+
+CLEANFILES = cqpid.cpp cqpid.pm
+
+endif # HAVE_PERL_DEVEL
