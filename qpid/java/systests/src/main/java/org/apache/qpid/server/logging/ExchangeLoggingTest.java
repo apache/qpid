@@ -21,6 +21,7 @@
 package org.apache.qpid.server.logging;
 
 import org.apache.qpid.client.AMQConnection;
+import org.apache.qpid.client.AMQSession_0_10;
 import org.apache.qpid.framing.AMQFrame;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ExchangeDeleteBody;
@@ -65,7 +66,7 @@ public class ExchangeLoggingTest extends AbstractTestLogging
         _session = _connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
         _type = "direct";
-        _name = "testName";
+        _name = getTestQueueName()+ "-exchange";
 
         _queue = _session.createQueue(_type + "://" + _name + "/queue/queue");
 
@@ -177,15 +178,24 @@ public class ExchangeLoggingTest extends AbstractTestLogging
         //Ignore broker startup messages
         _monitor.reset();
 
+        //create the exchange by creating a consumer
         _session.createConsumer(_queue);
 
-        MethodRegistry_8_0 registry = new MethodRegistry_8_0();
+        //now delete the exchange
+        if(isBroker010())
+        {
+            ((AMQSession_0_10) _session).sendExchangeDelete(_name, false);
+        }
+        else
+        {
+            MethodRegistry_8_0 registry = new MethodRegistry_8_0();
 
-        ExchangeDeleteBody body = registry.createExchangeDeleteBody(0, new AMQShortString(_name), false, true);
+            ExchangeDeleteBody body = registry.createExchangeDeleteBody(0, new AMQShortString(_name), false, true);
 
-        AMQFrame exchangeDeclare = body.generateFrame(0);
+            AMQFrame exchangeDeclare = body.generateFrame(0);
 
-        ((AMQConnection) _connection).getProtocolHandler().syncWrite(exchangeDeclare, ExchangeDeleteOkBody.class);
+            ((AMQConnection) _connection).getProtocolHandler().syncWrite(exchangeDeclare, ExchangeDeleteOkBody.class);
+        }
 
         //Wait and ensure we get our last EXH-1002 msg
         waitForMessage("EXH-1002");

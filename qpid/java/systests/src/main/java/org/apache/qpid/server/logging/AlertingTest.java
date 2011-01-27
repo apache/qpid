@@ -132,6 +132,7 @@ public class AlertingTest extends AbstractTestLogging
     {
         sendMessage(_session, _destination, _numMessages + 1);
         _session.commit();
+        _connection.close();
         stopBroker();
 
         // Rest the monitoring clearing the current output file.
