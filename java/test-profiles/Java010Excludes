@@ -40,26 +40,10 @@ org.apache.qpid.server.exchange.ReturnUnroutableMandatoryMessageTest#*
 // QPID-1727 , QPID-1726 :c++ broker does not support flow to disk on transient queues. Also it requries a persistent store impl. for Apache
 org.apache.qpid.test.client.QueueBrowsingFlowToDiskTest#*
 
-// 0-10 Broker does not follow the same Logging convention as the Java broker
-org.apache.qpid.server.logging.AccessControlLoggingTest#*
-org.apache.qpid.server.logging.AlertingTest#*
-org.apache.qpid.server.logging.BindingLoggingTest#*
-org.apache.qpid.server.logging.BrokerLoggingTest#*
+// 0-10 and 0-9 connections dont generate the exact same logging due to protocol differences
 org.apache.qpid.server.logging.ChannelLoggingTest#testChannelStartsFlowStopped
 org.apache.qpid.server.logging.ChannelLoggingTest#testChannelStartConsumerFlowStarted
-org.apache.qpid.server.logging.ChannelLoggingTest#testChannelStartConsumerFlowStarted
-org.apache.qpid.server.logging.DerbyMessageStoreLoggingTest#*
-org.apache.qpid.server.logging.DurableQueueLoggingTest#*
-org.apache.qpid.server.logging.ExchangeLoggingTest#*
-org.apache.qpid.server.logging.ManagementLoggingTest#*
-org.apache.qpid.server.logging.MemoryMessageStoreLoggingTest#*
-org.apache.qpid.server.logging.QueueLoggingTest#*
-org.apache.qpid.server.logging.SubscriptionLoggingTest#*
-org.apache.qpid.server.logging.TransientQueueLoggingTest#*
-org.apache.qpid.server.logging.VirtualHostLoggingTest#*
-org.apache.qpid.server.logging.messages.*
-org.apache.qpid.server.logging.subjects.*
-org.apache.qpid.server.logging.actors.*
+org.apache.qpid.server.logging.SubscriptionLoggingTest#testSubscriptionSuspend
 
 // 0-10 Broker does not have a JMX connection MBean
 org.apache.qpid.management.jmx.ManagementActorLoggingTest#testConnectionCloseViaManagement
