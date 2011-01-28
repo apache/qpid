@@ -19,7 +19,7 @@
 
 if HAVE_PERL_DEVEL
 
-INCLUDES = -I$(top_srcdir)/include -I$(top_builddir)/include -I$(top_srcdir)/src -I$(top_builddir)/src
+INCLUDES = -I$(top_srcdir)/include -I$(top_builddir)/include -I$(top_srcdir)/src -I$(top_builddir)/src -I$(PERL_INC)
 
 EXTRA_DIST = perl.i
 BUILT_SOURCES = cqpid.cpp
@@ -34,7 +34,7 @@ cqpid_PERL = cqpid.pm
 cqpid_la_LDFLAGS = -avoid-version -module -shared
 cqpid_la_LIBADD = -L$(top_builddir)/src/.libs -lqpidmessaging -lqpidtypes \
 	$(top_builddir)/src/libqpidmessaging.la $(top_builddir)/src/libqpidtypes.la
-cqpid_la_CXXFLAGS = $(INCLUDES) $(PERL_INC)
+cqpid_la_CXXFLAGS = $(INCLUDES)
 nodist_cqpid_la_SOURCES = cqpid.cpp
 
 CLEANFILES = cqpid.cpp cqpid.pm

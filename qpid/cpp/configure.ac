@@ -233,9 +233,9 @@ AM_CONDITIONAL([HAVE_PYTHON_DEVEL], [test -f $PYTHON_INC/Python.h && test -n "$S
 
 AC_CHECK_PROG([H2XS], [h2xs], [h2xs])
 if test -n "$H2XS" ; then
-   AC_CHECK_FILE("$libdir/perl5/CORE/perl.h", [AC_SUBST([PERL_INC], "-I$libdir/perl5/CORE")])
+   AC_CHECK_FILE("$libdir/perl5/CORE/perl.h", [AC_SUBST([PERL_INC], "$libdir/perl5/CORE")])
 fi
-AM_CONDITIONAL([HAVE_PERL_DEVEL], [test -n "$H2XS" && test -n "$SWIG"])
+AM_CONDITIONAL([HAVE_PERL_DEVEL], [test -n "$H2XS" && test -n "$SWIG" && test -n "$PERL_INC"])
 
 
 specdir=`pwd`/$srcdir/../specs
