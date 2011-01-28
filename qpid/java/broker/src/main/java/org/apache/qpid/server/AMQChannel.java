@@ -281,7 +281,7 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
             routeCurrentMessage();
 
 
-            _transaction.addPostCommitAction(new ServerTransaction.Action()
+            _transaction.addPostTransactionAction(new ServerTransaction.Action()
             {
 
                 public void postCommit()
@@ -313,7 +313,7 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
 
                 if(!checkMessageUserId(_currentMessage.getContentHeader()))
                 {
-                    _transaction.addPostCommitAction(new WriteReturnAction(AMQConstant.ACCESS_REFUSED, "Access Refused", _currentMessage));
+                    _transaction.addPostTransactionAction(new WriteReturnAction(AMQConstant.ACCESS_REFUSED, "Access Refused", _currentMessage));
                 }
                 else
                 {
@@ -321,7 +321,7 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
                     {
                         if (_currentMessage.isMandatory() || _currentMessage.isImmediate())
                         {
-                            _transaction.addPostCommitAction(new WriteReturnAction(AMQConstant.NO_ROUTE, "No Route for message", _currentMessage));
+                            _transaction.addPostTransactionAction(new WriteReturnAction(AMQConstant.NO_ROUTE, "No Route for message", _currentMessage));
                         }
                         else
                         {
