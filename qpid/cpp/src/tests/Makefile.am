@@ -98,6 +98,7 @@ unit_test_SOURCES= unit_test.cpp unit_test.h \
 	MessageTest.cpp \
 	QueueRegistryTest.cpp \
 	QueuePolicyTest.cpp \
+	QueueFlowLimitTest.cpp \
 	FramingTest.cpp \
 	HeaderTest.cpp \
 	SequenceNumberTest.cpp \

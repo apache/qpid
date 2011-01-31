@@ -27,6 +27,7 @@
 #include "qpid/broker/MessageStore.h"
 #include "qpid/broker/NullMessageStore.h"
 #include "qpid/broker/QueueRegistry.h"
+#include "qpid/broker/QueueFlowLimit.h"
 
 #include "qpid/StringUtils.h"
 #include "qpid/log/Statement.h"
@@ -166,11 +167,11 @@ void Queue::deliver(boost::intrusive_ptr<Message> msg){
 
 void Queue::recoverPrepared(boost::intrusive_ptr<Message>& msg)
 {
-    if (policy.get()) policy->recoverEnqueued(msg);
+    if (policy.get()) policy->recoverEnqueued(msg);  // KAG INC COUNTERS
 }
 
 void Queue::recover(boost::intrusive_ptr<Message>& msg){
-    if (policy.get()) policy->recoverEnqueued(msg);
+    if (policy.get()) policy->recoverEnqueued(msg); // KAG INC COUNTERS
 
     push(msg, true);
     if (store){ 
@@ -351,7 +352,7 @@ bool Queue::browseNextMessage(QueuedMessage& m, Consumer::shared_ptr c)
                 //consumer wants the message
                 c->position = msg.position;
                 m = msg;
-                if (!lastValueQueueNoBrowse) clearLVQIndex(msg);
+                if (!lastValueQueueNoBrowse) clearLVQIndex(msg);    // prevent this msg from being replaced by LVQ
                 if (lastValueQueue) {
                     boost::intrusive_ptr<Message> replacement = msg.payload->getReplacementMessage(this);
                     if (replacement.get()) m.payload = replacement;
@@ -642,8 +643,9 @@ void Queue::push(boost::intrusive_ptr<Message>& msg, bool isRecovery){
             else QPID_LOG(warning, "Enqueue manager not set, events not generated for " << getName());
         }
         if (policy.get()) {
-            policy->enqueued(qm);
+            policy->enqueued(qm);  // KAG STORE COPY
         }
+        if (flowLimit.get()) flowLimit->consume(qm);
     }
     copy.notify();
 }
@@ -746,7 +748,7 @@ bool Queue::enqueue(TransactionContext* ctxt, boost::intrusive_ptr<Message>& msg
         Messages dequeues;
         {
             Mutex::ScopedLock locker(messageLock);
-            policy->tryEnqueue(msg);
+            policy->tryEnqueue(msg);    // KAG INC COUNTERS
             policy->getPendingDequeues(dequeues);
         }
         //depending on policy, may have some dequeues that need to performed without holding the lock
@@ -784,7 +786,7 @@ bool Queue::enqueue(TransactionContext* ctxt, boost::intrusive_ptr<Message>& msg
 void Queue::enqueueAborted(boost::intrusive_ptr<Message> msg)
 {
     Mutex::ScopedLock locker(messageLock);
-    if (policy.get()) policy->enqueueAborted(msg);       
+    if (policy.get()) policy->enqueueAborted(msg);       // KAG DEC COUNTERS
 }
 
 // return true if store exists, 
@@ -841,7 +843,8 @@ void Queue::popAndDequeue()
  */
 void Queue::dequeued(const QueuedMessage& msg)
 {
-    if (policy.get()) policy->dequeued(msg);
+    if (policy.get()) policy->dequeued(msg);    // KAG REMOVE COPY, DEC COUNTERS
+    if (flowLimit.get()) flowLimit->replenish(msg);
     mgntDeqStats(msg.payload);
     if (eventMode == ENQUEUE_AND_DEQUEUE && eventMgr) {
         eventMgr->dequeued(msg);
@@ -902,6 +905,8 @@ void Queue::configure(const FieldTable& _settings, bool recovering)
 
     FieldTable::ValuePtr p =_settings.get(qpidInsertSequenceNumbers);
     if (p && p->convertsTo<std::string>()) insertSequenceNumbers(p->get<std::string>());
+
+    flowLimit = QueueFlowLimit::createQueueFlowLimit(this, _settings);
 
     if (mgmtObject != 0)
         mgmtObject->set_arguments(ManagementAgent::toMap(_settings));
@@ -1176,9 +1181,10 @@ void Queue::enqueued(const QueuedMessage& m)
 {
     if (m.payload) {
         if (policy.get()) {
-            policy->recoverEnqueued(m.payload);
-            policy->enqueued(m);
+            policy->recoverEnqueued(m.payload); // KAG INC COUNTERS
+            policy->enqueued(m);                // KAG STORE COPY
         }
+        if (flowLimit.get()) flowLimit->consume(m);
         mgntEnqStats(m.payload);
         boost::intrusive_ptr<Message> payload = m.payload;
         enqueue ( 0, payload, true );
