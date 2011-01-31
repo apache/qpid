@@ -61,6 +61,7 @@ QPID_AUTO_TEST_CASE(testFlowCount)
     BOOST_CHECK(!flow->isFlowControlActive());
     BOOST_CHECK(flow->monitorFlowControl());
 
+    bool fc;
     std::deque<QueuedMessage> msgs;
     for (size_t i = 0; i < 6; i++) {
         msgs.push_back(createMessage(10));
@@ -72,11 +73,11 @@ QPID_AUTO_TEST_CASE(testFlowCount)
     flow->consume(msgs.back());
     BOOST_CHECK(!flow->isFlowControlActive());  // 7 on queue
     msgs.push_back(createMessage(10));
-    flow->consume(msgs.back());
-    BOOST_CHECK(flow->isFlowControlActive());   // 8 on queue, ON
+    fc = flow->consume(msgs.back());
+    BOOST_CHECK(fc && flow->isFlowControlActive());   // 8 on queue, ON
     msgs.push_back(createMessage(10));
-    flow->consume(msgs.back());
-    BOOST_CHECK(flow->isFlowControlActive());   // 9 on queue
+    fc = flow->consume(msgs.back());
+    BOOST_CHECK(!fc && flow->isFlowControlActive());   // 9 on queue, no change to flow control
 
     flow->replenish(msgs.front());
     msgs.pop_front();
@@ -87,13 +88,13 @@ QPID_AUTO_TEST_CASE(testFlowCount)
     flow->replenish(msgs.front());
     msgs.pop_front();
     BOOST_CHECK(flow->isFlowControlActive());   // 6 on queue
-    flow->replenish(msgs.front());
+    fc = flow->replenish(msgs.front());
     msgs.pop_front();
-    BOOST_CHECK(flow->isFlowControlActive());   // 5 on queue
+    BOOST_CHECK(!fc && flow->isFlowControlActive());   // 5 on queue, no change
 
-    flow->replenish(msgs.front());
+    fc = flow->replenish(msgs.front());
     msgs.pop_front();
-    BOOST_CHECK(!flow->isFlowControlActive());  // 4 on queue, OFF
+    BOOST_CHECK(fc && !flow->isFlowControlActive());  // 4 on queue, OFF
 }
 
 

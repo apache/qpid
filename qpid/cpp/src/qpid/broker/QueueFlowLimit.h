@@ -43,6 +43,7 @@ namespace broker {
  */
 class QueueFlowLimit
 {
+    Queue *queue;
     std::string queueName;
 
     uint32_t flowStopCount;
@@ -63,10 +64,10 @@ class QueueFlowLimit
 
     virtual ~QueueFlowLimit() {}
 
-    /** the queue has added QueuedMessage */
-    void consume(const QueuedMessage&);
-    /** the queue has removed QueuedMessage */
-    void replenish(const QueuedMessage&);
+    /** the queue has added QueuedMessage.  Returns true if flow state changes */
+    bool consume(const QueuedMessage&);
+    /** the queue has removed QueuedMessage.  Returns true if flow state changes */
+    bool replenish(const QueuedMessage&);
 
     uint32_t getFlowStopCount() const { return flowStopCount; }
     uint32_t getFlowResumeCount() const { return flowResumeCount; }

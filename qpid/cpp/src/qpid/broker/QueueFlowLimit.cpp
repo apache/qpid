@@ -86,16 +86,17 @@ namespace {
 QueueFlowLimit::QueueFlowLimit(Queue *_queue,
                                uint32_t _flowStopCount, uint32_t _flowResumeCount,
                                uint64_t _flowStopSize,  uint64_t _flowResumeSize)
-    : queueName("<unknown>"), flowStopCount(_flowStopCount), flowResumeCount(_flowResumeCount),
+    : queue(_queue), queueName("<unknown>"),
+      flowStopCount(_flowStopCount), flowResumeCount(_flowResumeCount),
       flowStopSize(_flowStopSize), flowResumeSize(_flowResumeSize),
       flowStopped(false), count(0), size(0)
 {
     uint32_t maxCount(0);
     uint64_t maxSize(0);
 
-    if (_queue) {
+    if (queue) {
         queueName = _queue->getName();
-        if (_queue->getPolicy()) {
+        if (queue->getPolicy()) {
             maxSize = _queue->getPolicy()->getMaxSize();
             maxCount = _queue->getPolicy()->getMaxCount();
         }
@@ -109,9 +110,11 @@ QueueFlowLimit::QueueFlowLimit(Queue *_queue,
 
 
 
-void QueueFlowLimit::consume(const QueuedMessage& msg)
+bool QueueFlowLimit::consume(const QueuedMessage& msg)
 {
-    if (!msg.payload) return;
+    bool flowChanged(false);
+
+    if (!msg.payload) return false;
 
     sys::Mutex::ScopedLock l(pendingFlowLock);
 
@@ -119,32 +122,36 @@ void QueueFlowLimit::consume(const QueuedMessage& msg)
     size += msg.payload->contentSize();
 
     if (flowStopCount && !flowStopped && count > flowStopCount) {
-        flowStopped = true;
+        flowChanged = flowStopped = true;
         QPID_LOG(info, "Queue \"" << queueName << "\": has reached " << flowStopCount << " enqueued messages. Producer flow control activated." );
     }
 
     if (flowStopSize && !flowStopped && size > flowStopSize) {
-        flowStopped = true;
+        flowChanged = flowStopped = true;
         QPID_LOG(info, "Queue \"" << queueName << "\": has reached " << flowStopSize << " enqueued bytes. Producer flow control activated." );
     }
 
-    // KAG: test
+    // KAG: test - REMOVE ONCE STABLE
     if (index.find(msg.payload) != index.end()) {
         QPID_LOG(error, "Queue \"" << queueName << "\": has enqueued a msg twice: " << msg.position);
     }
-    
+
     if (flowStopped || !pendingFlow.empty()) {
         msg.payload->getReceiveCompletion().startCompleter();    // don't complete until flow resumes
         pendingFlow.push_back(msg.payload);
         index.insert(msg.payload);
     }
+
+    return flowChanged;
 }
 
 
 
-void QueueFlowLimit::replenish(const QueuedMessage& msg)
+bool QueueFlowLimit::replenish(const QueuedMessage& msg)
 {
-    if (!msg.payload) return;
+    bool flowChanged(false);
+
+    if (!msg.payload) return false;
 
     sys::Mutex::ScopedLock l(pendingFlowLock);
 
@@ -165,6 +172,7 @@ void QueueFlowLimit::replenish(const QueuedMessage& msg)
         (flowResumeSize == 0 || size < flowResumeSize) &&
         (flowResumeCount == 0 || count < flowResumeCount)) {
         flowStopped = false;
+        flowChanged = true;
         QPID_LOG(info, "Queue \"" << queueName << "\": has drained below the flow control resume level. Producer flow control deactivated." );
     }
 
@@ -197,6 +205,8 @@ void QueueFlowLimit::replenish(const QueuedMessage& msg)
             pendingFlow.pop_front();
         }
     }
+
+    return flowChanged;
 }
 
 

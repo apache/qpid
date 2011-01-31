@@ -645,7 +645,11 @@ void Queue::push(boost::intrusive_ptr<Message>& msg, bool isRecovery){
         if (policy.get()) {
             policy->enqueued(qm);
         }
-        if (flowLimit.get()) flowLimit->consume(qm);
+        if (flowLimit.get()) {
+            bool fc = flowLimit->consume(qm);
+            if (fc && mgmtObject)
+                mgmtObject->set_flowStopped(true);
+        }
     }
     copy.notify();
 }
@@ -844,7 +848,11 @@ void Queue::popAndDequeue()
 void Queue::dequeued(const QueuedMessage& msg)
 {
     if (policy.get()) policy->dequeued(msg);
-    if (flowLimit.get()) flowLimit->replenish(msg);
+    if (flowLimit.get()) {
+        bool fc = flowLimit->replenish(msg);
+        if (fc && mgmtObject)
+            mgmtObject->set_flowStopped(false);
+    }
     mgntDeqStats(msg.payload);
     if (eventMode == ENQUEUE_AND_DEQUEUE && eventMgr) {
         eventMgr->dequeued(msg);
@@ -908,8 +916,16 @@ void Queue::configure(const FieldTable& _settings, bool recovering)
 
     flowLimit = QueueFlowLimit::createQueueFlowLimit(this, _settings);
 
-    if (mgmtObject != 0)
+    if (mgmtObject != 0) {
         mgmtObject->set_arguments(ManagementAgent::toMap(_settings));
+        if (flowLimit.get()) {
+            mgmtObject->set_flowStopCount(flowLimit->getFlowStopCount());
+            mgmtObject->set_flowResumeCount(flowLimit->getFlowResumeCount());
+            mgmtObject->set_flowStopSize(flowLimit->getFlowStopSize());
+            mgmtObject->set_flowResumeSize(flowLimit->getFlowResumeSize());
+            mgmtObject->set_flowStopped(flowLimit->isFlowControlActive());
+        }
+    }
 
     if ( isDurable() && ! getPersistenceId() && ! recovering )
       store->create(*this, _settings);
@@ -1184,7 +1200,11 @@ void Queue::enqueued(const QueuedMessage& m)
             policy->recoverEnqueued(m.payload);
             policy->enqueued(m);
         }
-        if (flowLimit.get()) flowLimit->consume(m);
+        if (flowLimit.get()) {
+            bool fc = flowLimit->consume(m);
+            if (fc && mgmtObject)
+                mgmtObject->set_flowStopped(true);
+        }
         mgntEnqStats(m.payload);
         boost::intrusive_ptr<Message> payload = m.payload;
         enqueue ( 0, payload, true );
