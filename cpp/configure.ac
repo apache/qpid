@@ -232,11 +232,13 @@ AM_CONDITIONAL([HAVE_PYTHON_DEVEL], [test -f $PYTHON_INC/Python.h && test -n "$S
 # Perl bindings:
 
 AC_CHECK_PROG([H2XS], [h2xs], [h2xs])
-if test -n "$H2XS" ; then
-   AC_CHECK_FILE("$libdir/perl5/CORE/perl.h", [AC_SUBST([PERL_INC], "$libdir/perl5/CORE")])
-fi
-AM_CONDITIONAL([HAVE_PERL_DEVEL], [test -n "$H2XS" && test -n "$SWIG" && test -n "$PERL_INC"])
-
+AC_CHECK_PROG([PERL], [perl], [perl])
+if test -n "$PERL"; then
+    PERL_ARCHLIB=`perl -MConfig -e 'print "$Config{archlib}";'`
+    AC_CHECK_FILE( ["$PERL_ARCHLIB/CORE/perl.h"],
+            [AC_SUBST([PERL_INC], ["$PERL_ARCHLIB/CORE"])] )
+fi 
+AM_CONDITIONAL([HAVE_PERL_DEVEL], [test -n "$PERL" && test -n "$H2XS" && test -n "$SWIG" && test -n "$PERL_INC"])
 
 specdir=`pwd`/$srcdir/../specs
 AMQP_FINAL_XML=$specdir/amqp.0-10-qpid-errata.xml
