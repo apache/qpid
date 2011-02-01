@@ -184,7 +184,8 @@ bool isMessage(const AMQMethodBody* method)
 
 void Connection::recordFromServer(const framing::AMQFrame& frame)
 {
-    if (mgmtObject != 0)
+    // Don't record management stats in cluster-unsafe contexts
+    if (mgmtObject != 0 && isClusterSafe())
     {
         mgmtObject->inc_framesToClient();
         mgmtObject->inc_bytesToClient(frame.encodedSize());
@@ -196,7 +197,8 @@ void Connection::recordFromServer(const framing::AMQFrame& frame)
 
 void Connection::recordFromClient(const framing::AMQFrame& frame)
 {
-    if (mgmtObject != 0)
+    // Don't record management stats in cluster-unsafe contexts
+    if (mgmtObject != 0 && isClusterSafe())
     {
         mgmtObject->inc_framesFromClient();
         mgmtObject->inc_bytesFromClient(frame.encodedSize());
