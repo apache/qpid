@@ -255,8 +255,17 @@ MessageStore* LinkRegistry::getStore() const {
     return store;
 }
 
-Link::shared_ptr LinkRegistry::findLink(const std::string& key)
+Link::shared_ptr LinkRegistry::findLink(const std::string& keyOrMgmtId)
 {
+    // Convert keyOrMgmtId to a host:port key.
+    //
+    // TODO aconway 2011-02-01: centralize code that constructs/parses
+    // connection management IDs. Currently sys:: protocol factories
+    // and IO plugins construct the IDs and LinkRegistry parses them.
+    size_t separator = keyOrMgmtId.find('-');
+    if (separator == std::string::npos) separator = 0;
+    std::string key =  keyOrMgmtId.substr(separator+1, std::string::npos);
+
     Mutex::ScopedLock locker(lock);
     LinkMap::iterator l = links.find(key);
     if (l != links.end()) return l->second;
