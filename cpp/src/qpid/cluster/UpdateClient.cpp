@@ -497,7 +497,7 @@ void UpdateClient::updateConsumer(
         ci->isNotifyEnabled(),
         ci->position
     );
-    consumerNumbering.add(ci);
+    consumerNumbering.add(ci.get());
 
     QPID_LOG(debug, *this << " updated consumer " << ci->getName()
              << " on " << shadowSession.getId());
@@ -584,10 +584,9 @@ void UpdateClient::updateQueueListeners(const boost::shared_ptr<broker::Queue>& 
 }
 
 void UpdateClient::updateQueueListener(std::string& q,
-                                  const boost::shared_ptr<broker::Consumer>& c)
+                                       const boost::shared_ptr<broker::Consumer>& c)
 {
-    const boost::shared_ptr<SemanticState::ConsumerImpl> ci =
-        boost::dynamic_pointer_cast<SemanticState::ConsumerImpl>(c);
+    SemanticState::ConsumerImpl* ci = dynamic_cast<SemanticState::ConsumerImpl*>(c.get());
     size_t n = consumerNumbering[ci];
     if (n >= consumerNumbering.size())
         throw Exception(QPID_MSG("Unexpected listener on queue " << q));
