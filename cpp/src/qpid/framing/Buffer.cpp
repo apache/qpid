@@ -246,6 +246,7 @@ void Buffer::putShortString(const string& s){
     size_t slen = s.length();
     if (slen <= std::numeric_limits<uint8_t>::max()) {
         uint8_t len = (uint8_t) slen;
+        checkAvailable(slen + 1);
         putOctet(len);
         s.copy(data + position, len);
         position += len;
@@ -258,6 +259,7 @@ void Buffer::putMediumString(const string& s){
     size_t slen = s.length();
     if (slen <= std::numeric_limits<uint16_t>::max()) {
         uint16_t len = (uint16_t) slen;
+        checkAvailable(slen + 2);
         putShort(len);
         s.copy(data + position, len);
         position += len;
@@ -268,6 +270,7 @@ void Buffer::putMediumString(const string& s){
 
 void Buffer::putLongString(const string& s){
     uint32_t len = s.length();
+    checkAvailable(len + 4);
     putLong(len);
     s.copy(data + position, len);
     position += len;    
@@ -301,6 +304,7 @@ void Buffer::getBin128(uint8_t* b){
 
 void Buffer::putRawData(const string& s){
     uint32_t len = s.length();
+    checkAvailable(len);
     s.copy(data + position, len);
     position += len;    
 }
@@ -312,6 +316,7 @@ void Buffer::getRawData(string& s, uint32_t len){
 }
 
 void Buffer::putRawData(const uint8_t* s, size_t len){
+    checkAvailable(len);
     memcpy(data + position, s, len);
     position += len;    
 }
