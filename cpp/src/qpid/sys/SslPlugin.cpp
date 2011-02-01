@@ -121,7 +121,7 @@ SslProtocolFactory::SslProtocolFactory(const SslServerOptions& options, int back
 
 void SslProtocolFactory::established(Poller::shared_ptr poller, const qpid::sys::ssl::SslSocket& s,
                                           ConnectionCodec::Factory* f, bool isClient) {
-    qpid::sys::ssl::SslHandler* async = new qpid::sys::ssl::SslHandler(s.getPeerAddress(), f, nodict);
+    qpid::sys::ssl::SslHandler* async = new qpid::sys::ssl::SslHandler(s.getFullAddress(), f, nodict);
 
     if (tcpNoDelay) {
         s.setTcpNoDelay(tcpNoDelay);
