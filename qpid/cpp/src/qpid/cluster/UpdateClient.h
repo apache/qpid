@@ -106,7 +106,7 @@ class UpdateClient : public sys::Runnable {
     void updateBridge(const boost::shared_ptr<broker::Bridge>&);
 
 
-    Numbering<broker::SemanticState::ConsumerImpl::shared_ptr> consumerNumbering;
+    Numbering<broker::SemanticState::ConsumerImpl*> consumerNumbering;
     MemberId updaterId;
     MemberId updateeId;
     Url updateeUrl;
