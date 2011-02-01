@@ -274,6 +274,7 @@ namespace Rdma {
         QueuePair::intrusive_ptr getQueuePair();
         std::string getLocalName() const;
         std::string getPeerName() const;
+        std::string getFullName() const { return getLocalName()+"-"+getPeerName(); }
     };
 }
 

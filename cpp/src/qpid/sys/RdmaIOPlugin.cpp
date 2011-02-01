@@ -84,7 +84,7 @@ class RdmaIOHandler : public OutputControl {
 };
 
 RdmaIOHandler::RdmaIOHandler(Rdma::Connection::intrusive_ptr c, qpid::sys::ConnectionCodec::Factory* f) :
-    identifier(c->getPeerName()),
+    identifier(c->getFullName()),
     factory(f),
     codec(0),
     readError(false),

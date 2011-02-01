@@ -91,6 +91,11 @@ public:
      */
     std::string getLocalAddress() const;
 
+    /**
+     * Returns the full address of the connection: local and remote host and port.
+     */
+    std::string getFullAddress() const { return getLocalAddress()+"-"+getPeerAddress(); }
+
     uint16_t getLocalPort() const;
     uint16_t getRemotePort() const;
 

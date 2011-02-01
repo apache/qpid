@@ -81,7 +81,7 @@ AsynchIOProtocolFactory::AsynchIOProtocolFactory(int16_t port, int backlog, bool
 
 void AsynchIOProtocolFactory::established(Poller::shared_ptr poller, const Socket& s,
                                           ConnectionCodec::Factory* f, bool isClient) {
-    AsynchIOHandler* async = new AsynchIOHandler(s.getPeerAddress(), f);
+    AsynchIOHandler* async = new AsynchIOHandler(s.getFullAddress(), f);
 
     if (tcpNoDelay) {
         s.setTcpNoDelay();
