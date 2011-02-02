@@ -1,0 +1,1197 @@
+<?xml version='1.0' encoding='utf-8' ?>
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd">
+<section id="chap-Messaging_User_Guide-Security">
+	<title>Security</title>
+	 <para>
+		This chapter describes how authentication, rule-based authorization, encryption, and digital signing can be accomplished using Qpid. Authentication is the process of verifying the identity of a user; in Qpid, this is done using the SASL framework. Rule-based authorization is a mechanism for specifying the actions that each user is allowed to perform; in Qpid, this is done using an Access Control List (ACL) that is part of the Qpid broker. Encryption is used to ensure that data is not transferred in a plain-text format that could be intercepted and read. Digital signatures provide proof that a given message was sent by a known sender. Encryption and signing are done using SSL (they can also be done using SASL, but SSL provides stronger encryption).
+	</para>
+	 <section id="sect-Messaging_User_Guide-Security-User_Authentication">
+		<title>User Authentication</title>
+		 <para>
+			AMQP uses Simple Authentication and Security Layer (SASL) to authenticate client connections to the broker. SASL is a framework that supports a variety of authentication methods. For secure applications, we suggest <command>CRAM-MD5</command>, <command>DIGEST-MD5</command>, or <command>GSSAPI</command>. The <command>ANONYMOUS</command> method is not secure. The <command>PLAIN</command> method is secure only when used together with SSL.
+		</para>
+		 <para>
+			Both the Qpid broker and Qpid clients use the <ulink url="http://cyrusimap.web.cmu.edu/">Cyrus SASL library</ulink>, a full-featured authentication framework, which offers many configuration options. This section shows how to configure users for authentication with SASL, which is sufficient when using <command>SASL PLAIN</command>. If you are not using SSL, you should configure SASL to use <command>CRAM-MD5</command>, <command>DIGEST-MD5</command>, or <command>GSSAPI</command> (which provides Kerberos authentication). For information on configuring these and other options in SASL, see the Cyrus SASL documentation<!-- at <filename>/usr/share/doc/cyrus-sasl-lib-2.1.22/index.html</filename> for &RHEL5; or <filename>/usr/share/doc/cyrus-sasl-2.1.19/index.html</filename> for &RHEL4;-->.
+		</para>
+		 <important>
+			<title>Important</title>
+			 <para>
+				The <command>SASL PLAIN</command> method sends passwords in cleartext, and is vulnerable to man-in-the-middle attacks unless SSL (Secure Socket Layer) is also used (see <xref linkend="sect-Messaging_User_Guide-Security-Encryption_using_SSL" />).
+			</para>
+			 <para>
+				If you are not using SSL, we recommend that you disable <command>PLAIN</command> authentication in the broker.
+			</para>
+
+		</important>
+		 <para>
+			The Qpid broker uses the <command>auth yes|no</command> option to determine whether to use SASL authentication. Turn on authentication by setting <command>auth</command> to <command>yes</command> in <filename>/etc/qpidd.conf</filename>:
+		</para>
+
+<programlisting>
+# /etc/qpidd.conf
+#
+# Set auth to &#39;yes&#39; or &#39;no&#39;
+
+auth=yes
+</programlisting>
+		 <section id="sect-Messaging_User_Guide-User_Authentication-Configuring_SASL">
+			<title>Configuring SASL</title>
+			 <para>
+				On Linux systems, the SASL configuration file is generally found in <filename>/etc/sasl2/qpidd.conf</filename> <!-- for &RHEL5; and-->or <filename>/usr/lib/sasl2/qpidd.conf</filename><!-- for &RHEL4;-->.
+			</para>
+			 <para>
+				The SASL database contains user names and passwords for SASL. In SASL, a user may be associated with a <firstterm>realm</firstterm>. The Qpid broker authenticates users in the <command>QPID</command> realm by default, but it can be set to a different realm using the <command>realm</command> option:
+			</para>
+
+<programlisting>
+# /etc/qpidd.conf
+#
+# Set the SASL realm using &#39;realm=&#39;
+
+auth=yes
+realm=QPID
+</programlisting>
+			 <para>
+				The SASL database is installed at <filename>/var/lib/qpidd/qpidd.sasldb</filename>; initially, it has one user named <command>guest</command> in the <command>QPID</command> realm, and the password for this user is <command>guest</command>.
+			</para>
+			 <note>
+				<title>Note</title>
+				 <para>
+					The user database is readable only by the <systemitem class="username">qpidd</systemitem> user. When run as a daemon, Qpid always runs as the <systemitem class="username">qpidd</systemitem> user. If you start the broker from a user other than the <systemitem class="username">qpidd</systemitem> user, you will need to either reconfigure SASL or turn authentication off.
+				</para>
+
+			</note>
+			 <important>
+				<title>Important</title>
+				 <para>
+					The SASL database stores user names and passwords in plain text. If it is compromised so are all of the passwords that it stores. This is the reason that the <systemitem class="username">qpidd</systemitem> user is the only user that can read the database. If you modify permissions, be careful not to expose the SASL database.
+				</para>
+
+			</important>
+			 <para>
+				Add new users to the database by using the <command>saslpasswd2</command> command, which specifies a realm and a user ID. A user ID takes the form <command><replaceable>user-id</replaceable>@<replaceable>domain</replaceable>.</command>.
+			</para>
+
+<screen># saslpasswd2 -f /var/lib/qpidd/qpidd.sasldb -u <replaceable>realm</replaceable> <replaceable>new_user_name</replaceable></screen>
+			 <para>
+				To list the users in the SASL database, use <command>sasldblistusers2</command>:
+			</para>
+
+<screen># sasldblistusers2 -f /var/lib/qpidd/qpidd.sasldb
+</screen>
+			 <para>
+				If you are using <command>PLAIN</command> authentication, users who are in the database can now connect with their user name and password. This is secure only if you are using SSL. If you are using a more secure form of authentication, please consult your SASL documentation for information on configuring the options you need.
+			</para>
+
+		</section>
+
+		 <section id="sect-Messaging_User_Guide-User_Authentication-Kerberos">
+			<title>Kerberos</title>
+			 <para>
+				Both the Qpid broker and Qpid users are &#39;principals&#39; of the Kerberos server, which means that they are both clients of the Kerberos authentication services.
+			</para>
+			 <para>
+				To use Kerberos, both the Qpid broker and each Qpid user must be authenticated on the Kerberos server:
+			</para>
+			 <procedure>
+				<step>
+					<para>
+						Install the Kerberos workstation software and Cyrus SASL GSSAPI on each machine that runs a qpidd broker or a qpidd messaging client:
+					</para>
+
+<screen>$ sudo yum install cyrus-sasl-gssapi krb5-workstation</screen>
+
+				</step>
+				 <step>
+					<para>
+						Make sure that the Qpid broker is registered in the Kerberos database.
+					</para>
+					 <para>
+						Traditionally, a Kerberos principal is divided into three parts: the primary, the instance, and the realm. A typical Kerberos V5 has the format <literal>primary/instance@REALM</literal>. For a Qpid broker, the primary is <literal>qpidd</literal>, the instance is the fully qualified domain name, which you can obtain using <command>hostname --fqdn</command>, and the REALM is the Kerberos domain realm. By default, this realm is <literal>QPID</literal>, but a different realm can be specified in qpid.conf, e.g.:
+<screen>realm=EXAMPLE.COM</screen>
+
+					</para>
+					 <para>
+						For instance, if the fully qualified domain name is <literal>dublduck.example.com</literal> and the Kerberos domain realm is <literal>EXAMPLE.COM</literal>, then the principal name is <literal>qpidd/dublduck.example.com@EXAMPLE.COM</literal>.
+					</para>
+					 <para>
+						The following script creates a principal for qpidd:
+					</para>
+
+<programlisting>
+FDQN=`hostname --fqdn`
+REALM=&#34;EXAMPLE.COM&#34;
+kadmin -r $REALM  -q &#34;addprinc -randkey -clearpolicy qpidd/$FQDN&#34;
+</programlisting>
+					 <para>
+						Now create a Kerberos keytab file for the Qpid broker. The Qpid broker must have read access to the keytab file. The following script creates a keytab file and allows the broker read access:
+					</para>
+
+<programlisting>
+QPIDD_GROUP=&#34;qpidd&#34;
+kadmin -r $REALM  -q &#34;ktadd -k /etc/qpidd.keytab qpidd/$FQDN@$REALM&#34;
+chmod g+r /etc/qpidd.keytab
+chgrp $QPIDD_GROUP /etc/qpidd.keytab
+</programlisting>
+					 <para>
+						The default location for the keytab file is <filename>/etc/krb5.keytab</filename>. If a different keytab file is used, the KRB5_KTNAME environment variable must contain the name of the file, e.g.:
+					</para>
+
+<programlisting>
+export KRB5_KTNAME=/etc/qpidd.keytab
+</programlisting>
+					 <para>
+						If this is correctly configured, you can now enable kerberos support on the Qpid broker by setting the <varname>auth</varname> and <varname>realm</varname> options in <filename>/etc/qpidd.conf</filename>:
+					</para>
+
+<programlisting>
+# /etc/qpidd.conf
+auth=yes
+realm=EXAMPLE.COM
+</programlisting>
+					 <para>
+						Restart the broker to activate these settings.
+					</para>
+
+				</step>
+				 <step>
+					<para>
+						Make sure that each Qpid user is registered in the Kerberos database, and that Kerberos is correctly configured on the client machine. The Qpid user is the account from which a Qpid messaging client is run. If it is correctly configured, the following command should succeed:
+					</para>
+
+<screen>$ kinit user@REALM.COM</screen>
+
+				</step>
+
+			</procedure>
+
+			 <para>
+				Java JMS clients require a few additional steps.
+			</para>
+			 <procedure>
+				<step>
+					<para>
+						The Java JVM must be run with the following arguments:
+					</para>
+					 <variablelist>
+						<varlistentry>
+							<term>-Djavax.security.auth.useSubjectCredsOnly=false</term>
+							 <listitem>
+								<para>
+									Forces the SASL GASSPI client to obtain the kerberos credentials explicitly instead of obtaining from the &#34;subject&#34; that owns the current thread.
+								</para>
+
+							</listitem>
+
+						</varlistentry>
+						 <varlistentry>
+							<term>-Djava.security.auth.login.config=myjas.conf</term>
+							 <listitem>
+								<para>
+									Specifies the jass configuration file. Here is a sample JASS configuration file:
+								</para>
+
+<programlisting>
+com.sun.security.jgss.initiate {
+    com.sun.security.auth.module.Krb5LoginModule required useTicketCache=true;
+};
+</programlisting>
+
+							</listitem>
+
+						</varlistentry>
+						 <varlistentry>
+							<term>-Dsun.security.krb5.debug=true</term>
+							 <listitem>
+								<para>
+									Enables detailed debug info for troubleshooting
+								</para>
+
+							</listitem>
+
+						</varlistentry>
+
+					</variablelist>
+
+				</step>
+				 <step>
+					<para>
+						The client&#39;s Connection URL must specify the following Kerberos-specific broker properties:
+					</para>
+					 <itemizedlist>
+						<listitem>
+							<para>
+								<varname>sasl_mechs</varname> must be set to <literal>GSSAPI</literal>.
+							</para>
+
+						</listitem>
+						 <listitem>
+							<para>
+								<varname>sasl_protocol</varname> must be set to the principal for the qpidd broker, e.g. <literal>qpidd</literal>/
+							</para>
+
+						</listitem>
+						 <listitem>
+							<para>
+								<varname>sasl_server</varname> must be set to the host for the SASL server, e.g. <literal>sasl.com</literal>.
+							</para>
+
+						</listitem>
+
+					</itemizedlist>
+					 <para>
+						Here is a sample connection URL for a Kerberos connection:
+					</para>
+
+<screen>amqp://guest@clientid/testpath?brokerlist=&#39;tcp://localhost:5672?sasl_mechs=&#39;GSSAPI&#39;&amp;sasl_protocol=&#39;qpidd&#39;&amp;sasl_server=&#39;&#60;server-host-name&#62;&#39;&#39;</screen>
+
+				</step>
+
+			</procedure>
+<!--
+			 <para>
+				Please refer to the following documentation for more detail on using Kerberos:
+			</para>
+			 <variablelist>
+				<varlistentry>
+					<term>RHEL5</term>
+					 <listitem>
+						<para>
+							<ulink url="http://www.redhat.com/docs/manuals/enterprise/RHEL-5-manual/Deployment_Guide-en-US/ch-kerberos.html"> Red Hat Enterprise Linux 5: Deployment Guide </ulink>
+						</para>
+
+					</listitem>
+
+				</varlistentry>
+				 <varlistentry>
+					<term>RHEL4</term>
+					 <listitem>
+						<para>
+							<ulink url="http://www.redhat.com/docs/manuals/enterprise/RHEL-4-Manual/ref-guide/ch-kerberos.html"> Red Hat Enterprise Linux 4: Reference Guide </ulink>
+						</para>
+
+					</listitem>
+
+				</varlistentry>
+				 <varlistentry>
+					<term>Java</term>
+					 <listitem>
+						<para>
+							<ulink url="http://java.sun.com/j2se/1.5.0/docs/guide/security/jgss/tutorials/index.html"> Introduction to JAAS and Java GSS-API Tutorials </ulink>
+						</para>
+
+					</listitem>
+
+				</varlistentry>
+
+			</variablelist>
+            -->
+
+		</section>
+
+
+	</section>
+
+	 <!--          ###################################################          --> <section id="sect-Messaging_User_Guide-Security-Authorization">
+		<title>Authorization</title>
+		 <para>
+			In Qpid, Authorization specifies which actions can be performed by each authenticated user using an Access Control List (ACL). Use the <command>--acl-file</command> command to load the access control list. The filename should have a <filename>.acl</filename> extension:
+		</para>
+
+<screen>
+$ qpidd --acl-file <replaceable>./aclfilename.acl</replaceable></screen>
+		 <para>
+			Each line in an ACL file grants or denies specific rights to a user. If the last line in an ACL file is <literal>acl deny all all</literal>, the ACL uses <firstterm>deny mode</firstterm>, and only those rights that are explicitly allowed are granted:
+		</para>
+
+<programlisting>
+acl allow rajith@QPID all all
+acl deny all all
+</programlisting>
+		 <para>
+			On this server, <literal>rajith@QPID</literal> can perform any action, but nobody else can. Deny mode is the default, so the previous example is equivalent to the following ACL file:
+		</para>
+
+<programlisting>
+acl allow rajith@QPID all all
+</programlisting>
+		 <para>
+			In deny mode, denying rights to an action is redundant and has no effect.
+		</para>
+
+<programlisting>
+acl allow rajith@QPID all all
+acl deny jonathan@QPID all all # This rule is redundant, and has no effect
+acl deny all all
+</programlisting>
+		 <para>
+			If the last line in an ACL file is <literal>acl allow all all</literal>, ACL uses <firstterm>allow mode</firstterm>, and all rights are granted except those that are explicitly denied. The following ACL file allows everyone else to perform any action, but denies <literal>jonathan@QPID</literal> all permissions.
+		</para>
+
+<programlisting>
+acl deny jonathan@QPID all all
+acl allow all all
+</programlisting>
+		 <para>
+			In allow mode, allowing rights to an action is redundant and has no effect.
+		</para>
+
+<programlisting>
+acl allow rajith@QPID all all # This rule is redundant, and has no effect
+acl deny jonathan@QPID all all
+acl allow all all
+</programlisting>
+		 <important>
+			<title>Important</title>
+			 <para>
+				ACL processing ends when one of the following lines is encountered:
+			</para>
+
+<programlisting>
+acl allow all all
+</programlisting>
+
+<programlisting>
+acl deny all all
+</programlisting>
+			 <para>
+				Any lines that occur after one of these statements will be ignored:
+			</para>
+
+<programlisting>
+acl allow all all
+acl deny jonathan@QPID all all # This line is ignored !!!
+</programlisting>
+
+		</important>
+		 <para>
+			ACL syntax allows fine-grained access rights for specific actions:
+		</para>
+
+<programlisting>
+acl allow carlt@QPID create exchange name=carl.*
+acl allow fred@QPID create all
+acl allow all consume queue
+acl allow all bind exchange
+acl deny all all
+</programlisting>
+		 <para>
+			An ACL file can define user groups, and assign permissions to them:
+		</para>
+
+<programlisting>
+group admin ted@QPID martin@QPID
+acl allow admin create all
+acl deny all all
+</programlisting>
+		 <!--          ########          --> <section id="sect-Messaging_User_Guide-Authorization-ACL_Syntax">
+			<title>ACL Syntax</title>
+			 <para>
+				ACL rules must be on a single line and follow this syntax:
+<programlisting>acl permission {&#60;group-name&#62;|&#60;user-name&#62;|&#34;all&#34;} {action|&#34;all&#34;} [object|&#34;all&#34;] [property=&#60;property-value&#62;]
+</programlisting>
+				 ACL rules can also include a single object name (or the keyword <parameter>all</parameter>) and one or more property name value pairs in the form <command>property=value</command>
+			</para>
+			 <para>
+				The following tables show the possible values for <command>permission</command>, <command>action</command>, <command>object</command>, and <command>property</command> in an ACL rules file.
+			</para>
+			 <table id="tabl-Messaging_User_Guide-ACL_Syntax-ACL_Rules_permission">
+				<title>ACL Rules: permission</title>
+				 <tgroup cols="2">
+					<tbody>
+						<row>
+							<entry>
+								<command>allow</command>
+							</entry>
+							 <entry>
+								<para>
+									Allow the action <!--          ### rule => the action          -->
+								</para>
+
+							</entry>
+
+						</row>
+						 <row>
+							<entry>
+								<command>allow-log</command>
+							</entry>
+							 <entry>
+								<para>
+									Allow the action and log the action in the event log
+								</para>
+
+							</entry>
+
+						</row>
+						 <row>
+							<entry>
+								<command>deny</command>
+							</entry>
+							 <entry>
+								<para>
+									Deny the action
+								</para>
+
+							</entry>
+
+						</row>
+						 <row>
+							<entry>
+								<command>deny-log</command>
+							</entry>
+							 <entry>
+								<para>
+									Deny the action and log the action in the event log
+								</para>
+
+							</entry>
+
+						</row>
+
+					</tbody>
+
+				</tgroup>
+
+			</table>
+			 <!--          Actions          --> <table id="tabl-Messaging_User_Guide-ACL_Syntax-ACL_Rulesaction">
+				<title>ACL Rules:action</title>
+				 <tgroup cols="2">
+					<tbody>
+						<row>
+							<entry>
+								<command>consume</command>
+							</entry>
+							 <entry>
+								<para>
+									Applied when subscriptions are created
+								</para>
+
+							</entry>
+
+						</row>
+						 <row>
+							<entry>
+								<command>publish</command>
+							</entry>
+							 <entry>
+								<para>
+									Applied on a per message basis on publish message transfers, this rule consumes the most resources
+								</para>
+
+							</entry>
+
+						</row>
+						 <row>
+							<entry>
+								<command>create</command>
+							</entry>
+							 <entry>
+								<para>
+									Applied when an object is created, such as bindings, queues, exchanges, links
+								</para>
+
+							</entry>
+
+						</row>
+						 <row>
+							<entry>
+								<command>access</command>
+							</entry>
+							 <entry>
+								<para>
+									Applied when an object is read or accessed
+								</para>
+
+							</entry>
+
+						</row>
+						 <row>
+							<entry>
+								<command>bind</command>
+							</entry>
+							 <entry>
+								<para>
+									Applied when objects are bound together
+								</para>
+
+							</entry>
+
+						</row>
+						 <row>
+							<entry>
+								<command>unbind</command>
+							</entry>
+							 <entry>
+								<para>
+									Applied when objects are unbound
+								</para>
+
+							</entry>
+
+						</row>
+						 <row>
+							<entry>
+								<command>delete</command>
+							</entry>
+							 <entry>
+								<para>
+									Applied when objects are deleted
+								</para>
+
+							</entry>
+
+						</row>
+						 <row>
+							<entry>
+								<command>purge</command>
+							</entry>
+							 <entry>
+								<para>
+									Similar to delete but the action is performed on more than one object
+								</para>
+
+							</entry>
+
+						</row>
+						 <row>
+							<entry>
+								<command>update</command>
+							</entry>
+							 <entry>
+								<para>
+									Applied when an object is updated
+								</para>
+
+							</entry>
+
+						</row>
+
+					</tbody>
+
+				</tgroup>
+
+			</table>
+			 <!--          object types          --> <table id="tabl-Messaging_User_Guide-ACL_Syntax-ACL_Rulesobject">
+				<title>ACL Rules:object</title>
+				 <tgroup cols="2">
+					<tbody>
+						<row>
+							<entry>
+								<command>queue</command>
+							</entry>
+							 <entry>
+								<para>
+									A queue
+								</para>
+
+							</entry>
+
+						</row>
+						 <row>
+							<entry>
+								<command>exchange</command>
+							</entry>
+							 <entry>
+								<para>
+									An exchange
+								</para>
+
+							</entry>
+
+						</row>
+						 <row>
+							<entry>
+								<command>broker</command>
+							</entry>
+							 <entry>
+								<para>
+									The broker
+								</para>
+
+							</entry>
+
+						</row>
+						 <row>
+							<entry>
+								<command>link</command>
+							</entry>
+							 <entry>
+								<para>
+									A federation or inter-broker link
+								</para>
+
+							</entry>
+
+						</row>
+						 <row>
+							<entry>
+								<command>method</command>
+							</entry>
+							 <entry>
+								<para>
+									Management or agent or broker method
+								</para>
+
+							</entry>
+
+						</row>
+
+					</tbody>
+
+				</tgroup>
+
+			</table>
+			 <!--
+        <para>
+          Wild cards can be used on properties that are a string. The following properties are supported:          --> <table id="tabl-Messaging_User_Guide-ACL_Syntax-ACL_Rulesproperty">
+				<title>ACL Rules:property</title>
+				 <tgroup cols="2">
+					<tbody>
+						<row>
+							<entry>
+								<command>name</command>
+							</entry>
+							 <entry>
+								<para>
+									String. Object name, such as a queue name or exchange name.
+								</para>
+
+							</entry>
+
+						</row>
+						 <row>
+							<entry>
+								<command>durable</command>
+							</entry>
+							 <entry>
+								<para>
+									Boolean. Indicates the object is durable
+								</para>
+
+							</entry>
+
+						</row>
+						 <row>
+							<entry>
+								<command>routingkey</command>
+							</entry>
+							 <entry>
+								<para>
+									Sring. Specifies routing key
+								</para>
+
+							</entry>
+
+						</row>
+						 <row>
+							<entry>
+								<command>passive</command>
+							</entry>
+							 <entry>
+								<para>
+									Boolean. Indicates the presence of a <parameter>passive</parameter> flag
+								</para>
+
+							</entry>
+
+						</row>
+						 <row>
+							<entry>
+								<command>autodelete</command>
+							</entry>
+							 <entry>
+								<para>
+									Boolean. Indicates whether or not the object gets deleted when the connection is closed
+								</para>
+
+							</entry>
+
+						</row>
+						 <row>
+							<entry>
+								<command>exclusive</command>
+							</entry>
+							 <entry>
+								<para>
+									Boolean. Indicates the presence of an <parameter>exclusive</parameter> flag
+								</para>
+
+							</entry>
+
+						</row>
+						 <row>
+							<entry>
+								<command>type</command>
+							</entry>
+							 <entry>
+								<para>
+									String. Type of object, such as topic, fanout, or xml
+								</para>
+
+							</entry>
+
+						</row>
+						 <row>
+							<entry>
+								<command>alternate</command>
+							</entry>
+							 <entry>
+								<para>
+									String. Name of the alternate exchange
+								</para>
+
+							</entry>
+
+						</row>
+						 <row>
+							<entry>
+								<command>queuename</command>
+							</entry>
+							 <entry>
+								<para>
+									String. Name of the queue (used only when the object is something other than <parameter>queue</parameter>
+								</para>
+
+							</entry>
+
+						</row>
+						 <row>
+							<entry>
+								<command>schemapackage</command>
+							</entry>
+							 <entry>
+								<para>
+									String. QMF schema package name
+								</para>
+
+							</entry>
+
+						</row>
+						 <row>
+							<entry>
+								<command>schemaclass</command>
+							</entry>
+							 <entry>
+								<para>
+									String. QMF schema class name
+								</para>
+
+							</entry>
+
+						</row>
+
+					</tbody>
+
+				</tgroup>
+
+			</table>
+
+		</section>
+
+		 <section id="sect-Messaging_User_Guide-Authorization-ACL_Syntactic_Conventions">
+			<title>ACL Syntactic Conventions</title>
+			 <para>
+				In ACL files, the following syntactic conventions apply:
+				<itemizedlist>
+					<listitem>
+						<para>
+							A line starting with the <command>#</command> character is considered a comment and is ignored.
+						</para>
+
+					</listitem>
+					 <listitem>
+						<para>
+							Empty lines and lines that contain only whitespace are ignored
+						</para>
+
+					</listitem>
+					 <listitem>
+						<para>
+							All tokens are case sensitive. <parameter>name1</parameter> is not the same as <parameter>Name1</parameter> and <parameter>create</parameter> is not the same as <parameter>CREATE</parameter>
+						</para>
+
+					</listitem>
+					 <listitem>
+						<para>
+							Group lists can be extended to the following line by terminating the line with the <command>\</command> character
+						</para>
+
+					</listitem>
+					 <listitem>
+						<para>
+							Additional whitespace - that is, where there is more than one whitespace character - between and after tokens is ignored. Group and ACL definitions must start with either <command>group</command> or <command>acl</command> and with no preceding whitespace.
+						</para>
+
+					</listitem>
+					 <listitem>
+						<para>
+							All ACL rules are limited to a single line
+						</para>
+
+					</listitem>
+					 <listitem>
+						<para>
+							Rules are interpreted from the top of the file down until the name match is obtained; at which point processing stops.
+						</para>
+
+					</listitem>
+					 <listitem>
+						<para>
+							The keyword <parameter>all</parameter> matches all individuals, groups and actions
+						</para>
+
+					</listitem>
+					 <listitem>
+						<para>
+							The last line of the file - whether present or not - will be assumed to be <command>acl deny all all</command>. If present in the file, all lines below it are ignored.
+						</para>
+
+					</listitem>
+					 <listitem>
+						<para>
+							Names and group names may contain only <parameter>a-z</parameter>, <parameter>A-Z</parameter>, <parameter>0-9</parameter>, <parameter>-</parameter> and <parameter>_</parameter>
+						</para>
+
+					</listitem>
+					 <listitem>
+						<para>
+							Rules must be preceded by any group definitions they can use. Any name not defined as a group will be assumed to be that of an individual.
+						</para>
+
+					</listitem>
+
+				</itemizedlist>
+
+			</para>
+
+		</section>
+
+		 <section id="sect-Messaging_User_Guide-Authorization-Specifying_ACL_Permissions">
+			<title>Specifying ACL Permissions</title>
+			 <para>
+				Now that we have seen the ACL syntax, we will provide representative examples and guidelines for ACL files.
+			</para>
+			 <para>
+				Most ACL files begin by defining groups:
+			</para>
+
+<programlisting>
+group admin ted@QPID martin@QPID
+group user-consume martin@QPID ted@QPID
+group group2 kim@QPID user-consume rob@QPID
+group publisher group2 \
+tom@QPID andrew@QPID debbie@QPID
+</programlisting>
+			 <para>
+				Rules in an ACL file grant or deny specific permissions to users or groups:
+			</para>
+
+<programlisting>
+acl allow carlt@QPID create exchange name=carl.*
+acl allow rob@QPID create queue
+acl allow guest@QPID bind exchange name=amq.topic routingkey=stocks.rht.#
+acl allow user-consume create queue name=tmp.*
+
+acl allow publisher publish all durable=false
+acl allow publisher create queue name=RequestQueue
+acl allow consumer consume queue durable=true
+acl allow fred@QPID create all
+acl allow bob@QPID all queue
+acl allow admin all
+acl allow all consume queue
+acl allow all bind exchange
+acl deny all all
+</programlisting>
+			 <para>
+				In the previous example, the last line, <literal>acl deny all all</literal>, denies all authorizations that have not been specifically granted. This is the default, but it is useful to include it explicitly on the last line for the sake of clarity. If you want to grant all rights by default, you can specify <literal>acl allow all all</literal> in the last line.
+			</para>
+			 <para>
+				Do not allow <parameter>guest</parameter> to access and log QMF management methods that could cause security breaches:
+			</para>
+
+<programlisting>
+group allUsers guest@QPID
+....
+acl deny-log allUsers create link
+acl deny-log allUsers access method name=connect
+acl deny-log allUsers access method name=echo
+acl allow all all
+</programlisting>
+
+		</section>
+
+
+	</section>
+
+	 <!--          ###########################          --> <section id="sect-Messaging_User_Guide-Security-Encryption_using_SSL">
+		<title>Encryption using SSL</title>
+		 <para>
+			Encryption and certificate management for <command>qpidd</command> is provided by Mozilla&#39;s Network Security Services Library (NSS).
+		</para>
+		 <orderedlist id="orde-Messaging_User_Guide-Encryption_using_SSL-Enabling_SSL_for_the_RHM_broker">
+			<title>Enabling SSL for the Qpid broker</title>
+			 <listitem>
+				<para>
+					You will need a certificate that has been signed by a Certification Authority (CA). This certificate will also need to be trusted by your client. If you require client authentication in addition to server authentication, the client&#39;s certificate will also need to be signed by a CA and trusted by the broker.
+				</para>
+				 <para>
+					In the broker, SSL is provided through the <command>ssl.so</command> module. This module is installed and loaded by default in Qpid. To enable the module, you need to specify the location of the database containing the certificate and key to use. This is done using the <command>ssl-cert-db</command> option.
+				</para>
+				 <para>
+					The certificate database is created and managed by the Mozilla Network Security Services (NSS) <command>certutil</command> tool. Information on this utility can be found on the <ulink url="http://www.mozilla.org/projects/security/pki/nss/tools/certutil.html">Mozilla website</ulink>, including tutorials on setting up and testing SSL connections. The certificate database will generally be password protected. The safest way to specify the password is to place it in a protected file, use the password file when creating the database, and specify the password file with the <command>ssl-cert-password-file</command> option when starting the broker.
+				</para>
+				 <para>
+					The following script shows how to create a certificate database using certutil:
+				</para>
+				 <!--   TODO: improve description   -->
+<programlisting>
+mkdir ${CERT_DIR}
+certutil -N -d ${CERT_DIR} -f ${CERT_PW_FILE}
+certutil -S -d ${CERT_DIR} -n ${NICKNAME} -s &#34;CN=${NICKNAME}&#34; -t &#34;CT,,&#34; -x -f ${CERT_PW_FILE} -z /usr/bin/certutil
+</programlisting>
+				 <para>
+					When starting the broker, set <command>ssl-cert-password-file</command> to the value of <command>${CERT_PW_FILE}</command>, set <command>ssl-cert-db</command> to the value of <command>${CERT_DIR}</command>, and set <command>ssl-cert-name</command> to the value of <command>${NICKNAME}</command>.
+				</para>
+
+			</listitem>
+			 <!--          SSL options          --> <listitem>
+				<para>
+					The following SSL options can be used when starting the broker:
+					<variablelist>
+						<varlistentry>
+							<term><command>--ssl-use-export-policy</command></term>
+							 <listitem>
+								<para>
+									Use NSS export policy
+								</para>
+
+							</listitem>
+
+						</varlistentry>
+						 <varlistentry>
+							<term><command>--ssl-cert-password-file <replaceable>PATH</replaceable></command></term>
+							 <listitem>
+								<para>
+									Required. Plain-text file containing password to use for accessing certificate database.
+								</para>
+
+							</listitem>
+
+						</varlistentry>
+						 <varlistentry>
+							<term><command>--ssl-cert-db <replaceable>PATH</replaceable></command></term>
+							 <listitem>
+								<para>
+									Required. Path to directory containing certificate database.
+								</para>
+
+							</listitem>
+
+						</varlistentry>
+						 <varlistentry>
+							<term><command>--ssl-cert-name <replaceable>NAME</replaceable></command></term>
+							 <listitem>
+								<para>
+									Name of the certificate to use. Default is <literal>localhost.localdomain</literal>.
+								</para>
+
+							</listitem>
+
+						</varlistentry>
+						 <varlistentry>
+							<term><command>--ssl-port <replaceable>NUMBER</replaceable></command></term>
+							 <listitem>
+								<para>
+									Port on which to listen for SSL connections. If no port is specified, port 5671 is used.
+								</para>
+
+							</listitem>
+
+						</varlistentry>
+						 <varlistentry>
+							<term><command>--ssl-require-client-authentication</command></term>
+							 <listitem>
+								<para>
+									Require SSL client authentication (i.e. verification of a client certificate) during the SSL handshake. This occurs before SASL authentication, and is independent of SASL.
+								</para>
+								 <para>
+									This option enables the <literal>EXTERNAL</literal> SASL mechanism for SSL connections. If the client chooses the <literal>EXTERNAL</literal> mechanism, the client&#39;s identity is taken from the validated SSL certificate, using the <literal>CN</literal>literal&#62;, and appending any <literal>DC</literal>literal&#62;s to create the domain. For instance, if the certificate contains the properties <literal>CN=bob</literal>, <literal>DC=acme</literal>, <literal>DC=com</literal>, the client&#39;s identity is <literal>bob@acme.com</literal>.
+								</para>
+								 <para>
+									If the client chooses a different SASL mechanism, the identity take from the client certificate will be replaced by that negotiated during the SASL handshake.
+								</para>
+
+							</listitem>
+
+						</varlistentry>
+						 <varlistentry>
+							<term><command>--ssl-sasl-no-dict</command></term>
+							 <listitem>
+								<para>
+									Do not accept SASL mechanisms that can be compromised by dictionary attacks. This prevents a weaker mechanism being selected instead of <literal>EXTERNAL</literal>, which is not vulnerable to dictionary attacks.
+								</para>
+
+							</listitem>
+
+						</varlistentry>
+
+					</variablelist>
+					 Also relevant is the <command>--require-encryption</command> broker option. This will cause <command>qpidd</command> to only accept encrypted connections.
+				</para>
+
+			</listitem>
+
+		</orderedlist>
+		 <!--                 --> <variablelist id="vari-Messaging_User_Guide-Encryption_using_SSL-Enabling_SSL_in_Clients">
+			<title>Enabling SSL in Clients</title>
+			 <varlistentry>
+				<term>C++ clients:</term>
+				 <listitem>
+					<para>
+						<orderedlist>
+							<listitem>
+								<para>
+									In C++ clients, SSL is implemented in the <command>sslconnector.so</command> module. This module is installed and loaded by default in Qpid.
+								</para>
+								 <para>
+									The following options can be specified for C++ clients using environment variables:
+								</para>
+								 <table frame="all" id="tabl-Messaging_User_Guide-Enabling_SSL_in_Clients-SSL_Client_Environment_Variables_for_C_clients">
+									<title>SSL Client Environment Variables for C++ clients</title>
+									 <tgroup align="left" cols="2" colsep="1" rowsep="1">
+										<colspec colname="c1"></colspec>
+										 <colspec colname="c2"></colspec>
+										 <thead>
+											<row>
+												<entry align="center" nameend="c2" namest="c1">
+													SSL Client Options for C++ clients
+												</entry>
+
+											</row>
+
+										</thead>
+										 <tbody>
+											<row>
+												<entry>
+													<command>QPID_SSL_USE_EXPORT_POLICY</command>
+												</entry>
+												 <entry>
+													Use NSS export policy
+												</entry>
+
+											</row>
+											 <row>
+												<entry>
+													<command>QPID_SSL_CERT_PASSWORD_FILE <replaceable>PATH</replaceable></command>
+												</entry>
+												 <entry>
+													File containing password to use for accessing certificate database
+												</entry>
+
+											</row>
+											 <row>
+												<entry>
+													<command>QPID_SSL_CERT_DB <replaceable>PATH</replaceable></command>
+												</entry>
+												 <entry>
+													Path to directory containing certificate database
+												</entry>
+
+											</row>
+											 <row>
+												<entry>
+													<command>QPID_SSL_CERT_NAME <replaceable>NAME</replaceable></command>
+												</entry>
+												 <entry>
+													Name of the certificate to use. When SSL client authentication is enabled, a certificate name should normally be provided.
+												</entry>
+
+											</row>
+
+										</tbody>
+
+									</tgroup>
+
+								</table>
+								 <!--         ########         -->
+							</listitem>
+							 <listitem>
+								<para>
+									When using SSL connections, clients must specify the location of the certificate database, a directory that contains the client&#39;s certificate and the public key of the Certificate Authority. This can be done by setting the environment variable <command>QPID_SSL_CERT_DB</command> to the full pathname of the directory. If a connection uses SSL client authentication, the client&#39;s password is also needed&mdash;the password should be placed in a protected file, and the <command>QPID_SSL_CERT_PASSWORD_FILE</command> variable should be set to the location of the file containing this password.
+								</para>
+
+							</listitem>
+							 <listitem>
+								<para>
+									To open an SSL enabled connection in the Qpid Messaging API, set the <parameter>protocol</parameter> connection option to <parameter>ssl</parameter>.
+								</para>
+
+							</listitem>
+
+						</orderedlist>
+
+					</para>
+
+				</listitem>
+
+			</varlistentry>
+			 <varlistentry>
+				<term>Java clients:</term>
+				 <listitem>
+					<para>
+						<orderedlist>
+							<listitem>
+								<para>
+									For both server and client authentication, import the trusted CA to your trust store and keystore and generate keys for them. Create a certificate request using the generated keys and then create a certificate using the request. You can then import the signed certificate into your keystore. Pass the following arguments to the Java JVM when starting your client:
+<programlisting>
+-Djavax.net.ssl.keyStore=/home/bob/ssl_test/keystore.jks
+-Djavax.net.ssl.keyStorePassword=password
+-Djavax.net.ssl.trustStore=/home/bob/ssl_test/certstore.jks
+-Djavax.net.ssl.trustStorePassword=password
+</programlisting>
+
+								</para>
+
+							</listitem>
+							 <listitem>
+								<para>
+									For server side authentication only, import the trusted CA to your trust store and pass the following arguments to the Java JVM when starting your client:
+<programlisting>
+-Djavax.net.ssl.trustStore=/home/bob/ssl_test/certstore.jks
+-Djavax.net.ssl.trustStorePassword=password
+</programlisting>
+
+								</para>
+
+							</listitem>
+							 <listitem>
+								<para>
+									Java clients must use the SSL option in the connection URL to enable SSL encryption, e.g.
+								</para>
+
+<programlisting>amqp://username:password@clientid/test?brokerlist=&#39;tcp://localhost:5672?ssl=&#39;true&#39;&#39;
+</programlisting>
+
+							</listitem>
+							 <listitem>
+								<para>
+									If you need to debug problems in an SSL connection, enable Java&#39;s SSL debugging by passing the argument <literal>-Djavax.net.debug=ssl</literal> to the Java JVM when starting your client.
+								</para>
+
+							</listitem>
+
+						</orderedlist>
+
+					</para>
+
+				</listitem>
+
+			</varlistentry>
+
+		</variablelist>
+
+	</section>
+
+
+</section>
+
