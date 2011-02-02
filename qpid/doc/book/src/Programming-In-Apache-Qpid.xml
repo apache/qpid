@@ -1,6 +1,5 @@
 <?xml version='1.0' encoding='utf-8' ?>
-<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
-]>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd">
 
 <!--
 
@@ -3442,7 +3441,7 @@ log4j.appender.console.layout.ConversionPattern=%t %d %p [%c{4}] %m%n
 
           <table >
             <title>Config Options For Connection Behaviour</title>
-            <tgroup cols="3">
+            <tgroup cols="4">
               <thead>
 	            <row>
 	              <entry>Property Name</entry>
@@ -3479,7 +3478,7 @@ log4j.appender.console.layout.ConversionPattern=%t %d %p [%c{4}] %m%n
 
           <table >
             <title>Config Options For Session Behaviour</title>
-            <tgroup cols="3">
+            <tgroup cols="4">
               <thead>
 	            <row>
 	              <entry>Property Name</entry>
@@ -3515,7 +3514,7 @@ log4j.appender.console.layout.ConversionPattern=%t %d %p [%c{4}] %m%n
 
           <table >
             <title>Config Options For Consumer Behaviour</title>
-            <tgroup cols="3">
+            <tgroup cols="4">
               <thead>
 	            <row>
 	              <entry>Property Name</entry>
@@ -3558,7 +3557,7 @@ log4j.appender.console.layout.ConversionPattern=%t %d %p [%c{4}] %m%n
 
           <table >
             <title>Config Options For Producer Behaviour</title>
-            <tgroup cols="3">
+            <tgroup cols="4">
               <thead>
 	            <row>
 	              <entry>Property Name</entry>
@@ -3580,7 +3579,7 @@ log4j.appender.console.layout.ConversionPattern=%t %d %p [%c{4}] %m%n
 
           <table >
             <title>Config Options For Threading</title>
-            <tgroup cols="3">
+            <tgroup cols="4">
               <thead>
 	            <row>
 	              <entry>Property Name</entry>
@@ -3609,7 +3608,7 @@ log4j.appender.console.layout.ConversionPattern=%t %d %p [%c{4}] %m%n
 
           <table >
             <title>Config Options For I/O</title>
-            <tgroup cols="3">
+            <tgroup cols="4">
               <thead>
 	            <row>
 	              <entry>Property Name</entry>
@@ -3638,7 +3637,7 @@ log4j.appender.console.layout.ConversionPattern=%t %d %p [%c{4}] %m%n
 
           <table >
             <title>Config Options For Security</title>
-            <tgroup cols="3">
+            <tgroup cols="4">
               <thead>
 	            <row>
 	              <entry>Property Name</entry>
@@ -3674,7 +3673,7 @@ log4j.appender.console.layout.ConversionPattern=%t %d %p [%c{4}] %m%n
 
           <table>
             <title>Config Options For Security - Standard JVM properties needed when using GSSAPI as the SASL mechanism.<footnote><para>Please refer to the Java security documentation for a complete understanding of the above properties.</para></footnote></title>
-            <tgroup cols="3">
+            <tgroup cols="4">
               <thead>
 	            <row>
 	              <entry>Property Name</entry>
@@ -3710,7 +3709,7 @@ log4j.appender.console.layout.ConversionPattern=%t %d %p [%c{4}] %m%n
 
           <table>
             <title>Config Options For Security - Using SSL for securing connections or using EXTERNAL as the SASL mechanism.</title>
-            <tgroup cols="3">
+            <tgroup cols="4">
               <thead>
 	            <row>
 	              <entry>Property Name</entry>
@@ -3746,7 +3745,7 @@ log4j.appender.console.layout.ConversionPattern=%t %d %p [%c{4}] %m%n
 
           <table>
             <title>Config Options For Security - Standard JVM properties needed when Using SSL for securing connections or using EXTERNAL as the SASL mechanism.<footnote><para>Qpid allows you to have per connection key and trust stores if required. If specified per connection, the JVM arguments are ignored.</para></footnote></title>
-            <tgroup cols="3">
+            <tgroup cols="4">
               <thead>
 	            <row>
 	              <entry>Property Name</entry>
@@ -4250,37 +4249,6 @@ using (TransactionScope ts = new TransactionScope())
     </para>
     <section>
       <title>.NET Binding for the C++ Messaging Client Component Architecture</title>
-      <programlisting><![CDATA[
-                      +----------------------------+
-                      | Dotnet examples            |
-                      | Managed C#                 |
-                      +------+---------------+-----+
-                             |               |
-                             V               |
-        +---------------------------+        |
-        | .NET Managed Callback     |        |
-        | org.apache.qpid.messaging.|        |
-        | sessionreceiver.dll       |        |
-        +----------------------+----+        |
-                               |             |
-managed                        V             V
-(.NET)                 +--------------------------------+
-:::::::::::::::::::::::| .NET Binding Library           |::::::::::::
-unmanaged              | org.apache.qpid.messaging.dll  |
-(Native Win32/64)      +---------------+----------------+
-                                       |
-                                       |
-      +----------------+               |
-      | Native examples|               |
-      | Unmanaged C++  |               |
-      +--------+-------+               |
-               |                       |
-               V                       V
-          +----------------------------------+
-          | QPID Messaging C++ Libraries     |
-          | qpid*.dll qmf*.dll               |
-          +--------+--------------+----------+
-]]></programlisting>
 
 <para>This diagram illustrates the code and library components of the binding
 and the hierarchical relationships between them.</para>
