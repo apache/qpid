@@ -79,12 +79,12 @@ public:
      * Returns an address (host and port) for the local end of the
      * socket
      */
-    std::string getLocalAddress() const;
+    QPID_COMMON_EXTERN std::string getLocalAddress() const;
 
     /**
      * Returns the full address of the connection: local and remote host and port.
      */
-    std::string getFullAddress() const { return getLocalAddress()+"-"+getPeerAddress(); }
+    QPID_COMMON_EXTERN std::string getFullAddress() const { return getLocalAddress()+"-"+getPeerAddress(); }
 
     QPID_COMMON_EXTERN uint16_t getLocalPort() const;
     uint16_t getRemotePort() const;
