@@ -8,9 +8,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -26,6 +26,7 @@ CONFIG=$(dirname $0)/config.null
 CERT_DIR=`pwd`/test_cert_db
 CERT_PW_FILE=`pwd`/cert.password
 TEST_HOSTNAME=127.0.0.1
+TEST_CLIENT_CERT=rumplestiltskin
 COUNT=10
 
 trap cleanup EXIT
@@ -36,7 +37,8 @@ create_certs() {
     #create certificate and key databases with single, simple, self-signed certificate in it
     mkdir ${CERT_DIR}
     certutil -N -d ${CERT_DIR} -f ${CERT_PW_FILE}
-    certutil -S -d ${CERT_DIR} -n ${TEST_HOSTNAME} -s "CN=${TEST_HOSTNAME}" -t "CT,," -x -f ${CERT_PW_FILE} -z /usr/bin/certutil 
+    certutil -S -d ${CERT_DIR} -n ${TEST_HOSTNAME} -s "CN=${TEST_HOSTNAME}" -t "CT,," -x -f ${CERT_PW_FILE} -z /usr/bin/certutil
+    certutil -S -d ${CERT_DIR} -n ${TEST_CLIENT_CERT} -s "CN=${TEST_CLIENT_CERT}" -t "CT,," -x -f ${CERT_PW_FILE} -z /usr/bin/certutil
 }
 
 delete_certs() {
@@ -46,11 +48,19 @@ delete_certs() {
 }
 
 COMMON_OPTS="--daemon --no-data-dir --no-module-dir --auth no --config $CONFIG --load-module $SSL_LIB --ssl-cert-db $CERT_DIR --ssl-cert-password-file $CERT_PW_FILE --ssl-cert-name $TEST_HOSTNAME --require-encryption"
-start_broker() { ../qpidd --transport ssl --port 0 --ssl-port 0 $COMMON_OPTS; }
+start_broker() { # $1 = extra opts
+    ../qpidd --transport ssl --port 0 --ssl-port 0 $COMMON_OPTS $1;
+}
 
-cleanup() {
+stop_brokers() {
     test -n "$PORT" && ../qpidd --no-module-dir -qp $PORT
     test -n "$PORT2" && ../qpidd --no-module-dir -qp $PORT2
+    PORT=""
+    PORT2=""
+}
+
+cleanup() {
+    stop_brokers
     delete_certs
 }
 
@@ -76,10 +86,28 @@ export QPID_SSL_CERT_PASSWORD_FILE=${CERT_PW_FILE}
 ./qpid-perftest --count ${COUNT} --port ${PORT} -P ssl -b $TEST_HOSTNAME --summary
 
 ## Test connection with a URL
-URL=amqp:ssl:$TEST_HOSTNAME:$PORT 
+URL=amqp:ssl:$TEST_HOSTNAME:$PORT
 ./qpid-send -b $URL --content-string=hello -a "foo;{create:always}"
 MSG=`./qpid-receive -b $URL -a "foo;{create:always}" --messages 1`
 test "$MSG" = "hello" || { echo "receive failed '$MSG' != 'hello'"; exit 1; }
+
+#### Client Authentication tests
+
+PORT2=`start_broker --ssl-require-client-authentication`  || error "Could not start broker"
+echo "Running SSL client authentication test on port $PORT2"
+URL=amqp:ssl:$TEST_HOSTNAME:$PORT2
+
+## See if you can set the SSL cert-name for the connection
+./qpid-send -b $URL --connection-options "{ssl-cert-name: $TEST_CLIENT_CERT }"  --content-string=hello -a "bar;{create:always}"
+MSG2=`./qpid-receive -b $URL  --connection-options "{ssl-cert-name: $TEST_CLIENT_CERT }" -a "bar;{create:always}" --messages 1`
+test "$MSG2" = "hello" || { echo "receive failed '$MSG2' != 'hello'"; exit 1; }
+
+## Make sure that connect fails with an invalid SSL cert-name
+./qpid-send -b $URL --connection-options "{ssl-cert-name: pignose }" --content-string=hello -a "baz;{create:always}" 2>/dev/null 1>/dev/null
+MSG3=`./qpid-receive -b $URL  --connection-options "{ssl-cert-name: pignose }" -a "baz;{create:always}" --messages 1 2>/dev/null`
+test "$MSG3" = "" || { echo "receive succeeded without valid ssl cert '$MSG3' != ''"; exit 1; }
+
+stop_brokers
 
 test -z $CLUSTER_LIB && exit 0	# Exit if cluster not supported.
 
