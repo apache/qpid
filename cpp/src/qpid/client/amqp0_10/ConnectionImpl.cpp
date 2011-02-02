@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -42,7 +42,7 @@ using qpid::framing::Uuid;
 void convert(const Variant::List& from, std::vector<std::string>& to)
 {
     for (Variant::List::const_iterator i = from.begin(); i != from.end(); ++i) {
-        to.push_back(i->asString());                
+        to.push_back(i->asString());
     }
 }
 
@@ -108,9 +108,11 @@ void convert(const Variant::Map& from, ConnectionSettings& to)
     setIfFound(from, "bounds", to.bounds);
 
     setIfFound(from, "transport", to.protocol);
+
+    setIfFound(from, "ssl-cert-name", to.sslCertName);
 }
 
-ConnectionImpl::ConnectionImpl(const std::string& url, const Variant::Map& options) : 
+ConnectionImpl::ConnectionImpl(const std::string& url, const Variant::Map& options) :
     reconnect(false), timeout(-1), limit(-1),
     minReconnectInterval(3), maxReconnectInterval(60),
     retries(0), reconnectOnLimitExceeded(true)
@@ -135,7 +137,7 @@ void ConnectionImpl::setOptions(const Variant::Map& options)
         setIfFound(options, "reconnect-interval-max", maxReconnectInterval);
     }
     setIfFound(options, "reconnect-urls", urls);
-    setIfFound(options, "x-reconnect-on-limit-exceeded", reconnectOnLimitExceeded);    
+    setIfFound(options, "x-reconnect-on-limit-exceeded", reconnectOnLimitExceeded);
 }
 
 void ConnectionImpl::setOption(const std::string& name, const Variant& value)
@@ -216,7 +218,7 @@ qpid::messaging::Session ConnectionImpl::newSession(bool transactional, const st
         } catch (const qpid::SessionException& e) {
             throw qpid::messaging::SessionError(e.what());
         } catch (const std::exception& e) {
-            throw qpid::messaging::MessagingException(e.what());            
+            throw qpid::messaging::MessagingException(e.what());
         }
     }
     return impl;

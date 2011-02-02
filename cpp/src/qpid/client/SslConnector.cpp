@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -130,7 +130,7 @@ class SslConnector : public Connector
 
 public:
     SslConnector(Poller::shared_ptr p, framing::ProtocolVersion pVersion,
-              const ConnectionSettings&, 
+              const ConnectionSettings&,
               ConnectionImpl*);
 };
 
@@ -170,7 +170,7 @@ SslConnector::SslConnector(Poller::shared_ptr p,
                      const ConnectionSettings& settings,
                      ConnectionImpl* cimpl)
     : maxFrameSize(settings.maxFrameSize),
-      version(ver), 
+      version(ver),
       initiated(false),
       closed(true),
       shutdownHandler(0),
@@ -179,8 +179,11 @@ SslConnector::SslConnector(Poller::shared_ptr p,
       poller(p)
 {
     QPID_LOG(debug, "SslConnector created for " << version.toString());
-    //TODO: how do we want to handle socket configuration with ssl?
-    //settings.configureSocket(socket);
+
+    if (settings.sslCertName != "") {
+        QPID_LOG(debug, "ssl-cert-name = " << settings.sslCertName);
+        socket.setCertName(settings.sslCertName);
+    }
 }
 
 SslConnector::~SslConnector() {
@@ -244,14 +247,14 @@ void SslConnector::setShutdownHandler(ShutdownHandler* handler){
 }
 
 OutputHandler* SslConnector::getOutputHandler() {
-    return this; 
+    return this;
 }
 
 sys::ShutdownHandler* SslConnector::getShutdownHandler() const {
     return shutdownHandler;
 }
 
-const std::string& SslConnector::getIdentifier() const { 
+const std::string& SslConnector::getIdentifier() const {
     return identifier;
 }
 
@@ -271,7 +274,7 @@ void SslConnector::Writer::init(std::string id, sys::ssl::SslIO* a) {
     aio = a;
     newBuffer();
 }
-void SslConnector::Writer::handle(framing::AMQFrame& frame) { 
+void SslConnector::Writer::handle(framing::AMQFrame& frame) {
     Mutex::ScopedLock l(lock);
     frames.push_back(frame);
     if (frame.getEof() || (bounds && bounds->getCurrentSize() >= maxFrameSize)) {
@@ -372,7 +375,7 @@ const SecuritySettings* SslConnector::getSecuritySettings()
 {
     securitySettings.ssf = socket.getKeyLen();
     securitySettings.authid = "dummy";//set to non-empty string to enable external authentication
-    return &securitySettings; 
+    return &securitySettings;
 }
 
 }} // namespace qpid::client
