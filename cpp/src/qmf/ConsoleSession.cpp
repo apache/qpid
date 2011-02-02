@@ -36,6 +36,7 @@ using namespace qmf;
 using qpid::messaging::Address;
 using qpid::messaging::Connection;
 using qpid::messaging::Receiver;
+using qpid::messaging::Sender;
 using qpid::messaging::Duration;
 using qpid::messaging::Message;
 using qpid::types::Variant;
@@ -82,6 +83,14 @@ ConsoleSessionImpl::ConsoleSessionImpl(Connection& c, const string& options) :
         iter = optMap.find("max-agent-age");
         if (iter != optMap.end())
             maxAgentAgeMinutes = iter->second.asUint32();
+
+        iter = optMap.find("listen-on-direct");
+        if (iter != optMap.end())
+            listenOnDirect = iter->second.asBool();
+
+        iter = optMap.find("strict-security");
+        if (iter != optMap.end())
+            strictSecurity = iter->second.asBool();
     }
 }
 
@@ -148,24 +157,26 @@ void ConsoleSessionImpl::open()
     directBase = "qmf." + domain + ".direct";
     topicBase = "qmf." + domain + ".topic";
 
-    string myKey("qmf-console-" + qpid::types::Uuid(true).str());
+    string myKey("direct-console." + qpid::types::Uuid(true).str());
 
-    replyAddress = Address(directBase + "/" + myKey + ";{node:{type:topic}}");
+    replyAddress = Address(topicBase + "/" + myKey + ";{node:{type:topic}}");
 
     // Create AMQP session, receivers, and senders
     session = connection.createSession();
     Receiver directRx = session.createReceiver(replyAddress);
     Receiver topicRx = session.createReceiver(topicBase + "/agent.#"); // TODO: be more discriminating
-    Receiver legacyRx = session.createReceiver("amq.direct/" + myKey + ";{node:{type:topic}}");
+    if (!strictSecurity) {
+        Receiver legacyRx = session.createReceiver("amq.direct/" + myKey + ";{node:{type:topic}}");
+        legacyRx.setCapacity(64);
+        directSender = session.createSender(directBase + ";{create:never,node:{type:topic}}");
+        directSender.setCapacity(128);
+    }
 
     directRx.setCapacity(64);
     topicRx.setCapacity(128);
-    legacyRx.setCapacity(64);
 
-    directSender = session.createSender(directBase + ";{create:never,node:{type:topic}}");
     topicSender = session.createSender(topicBase + ";{create:never,node:{type:topic}}");
 
-    directSender.setCapacity(64);
     topicSender.setCapacity(128);
 
     // Start the receiver thread
@@ -371,7 +382,9 @@ void ConsoleSessionImpl::sendBrokerLocate()
     msg.setCorrelationId("broker-locate");
     msg.setSubject("broker");
 
-    directSender.send(msg);
+    Sender sender = session.createSender(directBase + ";{create:never,node:{type:topic}}");
+    sender.send(msg);
+    sender.close();
 
     QPID_LOG(trace, "SENT AgentLocate to broker");
 }
