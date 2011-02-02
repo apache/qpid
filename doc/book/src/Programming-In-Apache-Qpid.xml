@@ -4250,6 +4250,39 @@ using (TransactionScope ts = new TransactionScope())
     <section>
       <title>.NET Binding for the C++ Messaging Client Component Architecture</title>
 
+      <programlisting><![CDATA[
+                      +----------------------------+
+                      | Dotnet examples            |
+                      | Managed C#                 |
+                      +------+---------------+-----+
+                             |               |
+                             V               |
+        +---------------------------+        |
+        | .NET Managed Callback     |        |
+        | org.apache.qpid.messaging.|        |
+        | sessionreceiver.dll       |        |
+        +----------------------+----+        |
+                               |             |
+managed                        V             V
+(.NET)                 +--------------------------------+
+:::::::::::::::::::::::| .NET Binding Library           |::::::::::::
+unmanaged              | org.apache.qpid.messaging.dll  |
+(Native Win32/64)      +---------------+----------------+
+                                       |
+                                       |
+      +----------------+               |
+      | Native examples|               |
+      | Unmanaged C++  |               |
+      +--------+-------+               |
+               |                       |
+               V                       V
+          +----------------------------------+
+          | QPID Messaging C++ Libraries     |
+          | qpid*.dll qmf*.dll               |
+          +--------+--------------+----------+
+]]></programlisting>
+
+
 <para>This diagram illustrates the code and library components of the binding
 and the hierarchical relationships between them.</para>
 
