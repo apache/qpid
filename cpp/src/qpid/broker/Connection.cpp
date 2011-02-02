@@ -160,7 +160,10 @@ void Connection::received(framing::AMQFrame& frame) {
     if (frame.getChannel() == 0 && frame.getMethod()) {
         adapter.handle(frame);
     } else {
-        getChannel(frame.getChannel()).in(frame);
+        if (adapter.isOpen())
+            getChannel(frame.getChannel()).in(frame);
+        else
+            close(connection::CLOSE_CODE_FRAMING_ERROR, "Connection not yet open, invalid frame received.");
     }
 
     if (isLink) //i.e. we are acting as the client to another broker
