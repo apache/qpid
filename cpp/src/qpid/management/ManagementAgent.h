@@ -354,12 +354,23 @@ private:
     void sendBufferLH(framing::Buffer&             buf,
                       uint32_t                     length,
                       qpid::broker::Exchange::shared_ptr exchange,
-                      std::string                  routingKey);
+                      const std::string&           routingKey);
+    void sendBufferLH(framing::Buffer&             buf,
+                      uint32_t                     length,
+                      const std::string&           exchange,
+                      const std::string&           routingKey);
     void sendBufferLH(const std::string&     data,
                       const std::string&     cid,
                       const qpid::types::Variant::Map& headers,
                       const std::string&     content_type,
                       qpid::broker::Exchange::shared_ptr exchange,
+                      const std::string& routingKey,
+                      uint64_t ttl_msec = 0);
+    void sendBufferLH(const std::string& data,
+                      const std::string& cid,
+                      const qpid::types::Variant::Map& headers,
+                      const std::string& content_type,
+                      const std::string& exchange,
                       const std::string& routingKey,
                       uint64_t ttl_msec = 0);
     void moveNewObjectsLH();
@@ -386,20 +397,20 @@ private:
     void deleteOrphanedAgentsLH();
     void sendCommandCompleteLH(const std::string& replyToKey, uint32_t sequence,
                               uint32_t code = 0, const std::string& text = "OK");
-    void sendExceptionLH(const std::string& replyToKey, const std::string& cid, const std::string& text, uint32_t code=1, bool viaLocal=false);
+    void sendExceptionLH(const std::string& rte, const std::string& rtk, const std::string& cid, const std::string& text, uint32_t code=1, bool viaLocal=false);
     void handleBrokerRequestLH  (framing::Buffer& inBuffer, const std::string& replyToKey, uint32_t sequence);
     void handlePackageQueryLH   (framing::Buffer& inBuffer, const std::string& replyToKey, uint32_t sequence);
     void handlePackageIndLH     (framing::Buffer& inBuffer, const std::string& replyToKey, uint32_t sequence);
     void handleClassQueryLH     (framing::Buffer& inBuffer, const std::string& replyToKey, uint32_t sequence);
     void handleClassIndLH       (framing::Buffer& inBuffer, const std::string& replyToKey, uint32_t sequence);
-    void handleSchemaRequestLH  (framing::Buffer& inBuffer, const std::string& replyToKey, uint32_t sequence);
+    void handleSchemaRequestLH  (framing::Buffer& inBuffer, const std::string& replyToEx, const std::string& replyToKey, uint32_t sequence);
     void handleSchemaResponseLH (framing::Buffer& inBuffer, const std::string& replyToKey, uint32_t sequence);
     void handleAttachRequestLH  (framing::Buffer& inBuffer, const std::string& replyToKey, uint32_t sequence, const qpid::broker::ConnectionToken* connToken);
     void handleGetQueryLH       (framing::Buffer& inBuffer, const std::string& replyToKey, uint32_t sequence);
     void handleMethodRequestLH  (framing::Buffer& inBuffer, const std::string& replyToKey, uint32_t sequence, const qpid::broker::ConnectionToken* connToken);
-    void handleGetQueryLH       (const std::string& body, const std::string& replyToKey, const std::string& cid, bool viaLocal);
-    void handleMethodRequestLH  (const std::string& body, const std::string& replyToKey, const std::string& cid, const qpid::broker::ConnectionToken* connToken, bool viaLocal);
-    void handleLocateRequestLH  (const std::string& body, const std::string &replyToKey, const std::string& cid);
+    void handleGetQueryLH       (const std::string& body, const std::string& replyToEx, const std::string& replyToKey, const std::string& cid, bool viaLocal);
+    void handleMethodRequestLH  (const std::string& body, const std::string& replyToEx, const std::string& replyToKey, const std::string& cid, const qpid::broker::ConnectionToken* connToken, bool viaLocal);
+    void handleLocateRequestLH  (const std::string& body, const std::string& replyToEx, const std::string &replyToKey, const std::string& cid);
 
 
     size_t validateSchema(framing::Buffer&, uint8_t kind);
