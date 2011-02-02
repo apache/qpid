@@ -73,6 +73,8 @@ namespace qmf {
         qpid::messaging::Sender topicSender;
         std::string domain;
         uint32_t maxAgentAgeMinutes;
+        bool listenOnDirect;
+        bool strictSecurity;
         Query agentQuery;
         bool opened;
         std::queue<ConsoleEvent> eventQueue;

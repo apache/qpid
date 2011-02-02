@@ -71,8 +71,8 @@ Schema Agent::getSchema(const SchemaId& s, Duration t) { return impl->getSchema(
 
 
 AgentImpl::AgentImpl(const std::string& n, uint32_t e, ConsoleSessionImpl& s) :
-    name(n), epoch(e), session(s), touched(true), untouchedCount(0), capability(0),
-    nextCorrelator(1), schemaCache(s.schemaCache)
+    name(n), directSubject(n), epoch(e), session(s), touched(true), untouchedCount(0), capability(0),
+    sender(session.directSender), nextCorrelator(1), schemaCache(s.schemaCache)
 {
 }
 
@@ -82,6 +82,11 @@ void AgentImpl::setAttribute(const std::string& k, const qpid::types::Variant& v
     if (k == "qmf.agent_capability")
         try {
             capability = v.asUint32();
+        } catch (std::exception&) {}
+    if (k == "_direct_subject")
+        try {
+            directSubject = v.asString();
+            sender = session.topicSender;
         } catch (std::exception&) {}
 }
 
@@ -514,9 +519,10 @@ void AgentImpl::sendQuery(const Query& query, uint32_t correlator)
 
     msg.setReplyTo(session.replyAddress);
     msg.setCorrelationId(boost::lexical_cast<string>(correlator));
-    msg.setSubject(name);
+    msg.setSubject(directSubject);
     encode(QueryImplAccess::get(query).asMap(), msg);
-    session.directSender.send(msg);
+    if (sender.isValid())
+        sender.send(msg);
 
     QPID_LOG(trace, "SENT QueryRequest to=" << name);
 }
@@ -538,9 +544,10 @@ void AgentImpl::sendMethod(const string& method, const Variant::Map& args, const
 
     msg.setReplyTo(session.replyAddress);
     msg.setCorrelationId(boost::lexical_cast<string>(correlator));
-    msg.setSubject(name);
+    msg.setSubject(directSubject);
     encode(map, msg);
-    session.directSender.send(msg);
+    if (sender.isValid())
+        sender.send(msg);
 
     QPID_LOG(trace, "SENT MethodRequest method=" << method << " to=" << name);
 }
@@ -578,8 +585,9 @@ void AgentImpl::sendSchemaRequest(const SchemaId& id)
     Message msg;
     msg.setReplyTo(session.replyAddress);
     msg.setContent(content);
-    msg.setSubject(name);
-    session.directSender.send(msg);
+    msg.setSubject(directSubject);
+    if (sender.isValid())
+        sender.send(msg);
 
     QPID_LOG(trace, "SENT V1SchemaRequest to=" << name);
 }

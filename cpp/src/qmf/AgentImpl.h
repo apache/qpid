@@ -29,6 +29,7 @@
 #include "qmf/SchemaCache.h"
 #include "qpid/messaging/Session.h"
 #include "qpid/messaging/Message.h"
+#include "qpid/messaging/Sender.h"
 #include "qpid/sys/Mutex.h"
 #include "qpid/sys/Condition.h"
 #include <boost/shared_ptr.hpp>
@@ -90,11 +91,13 @@ namespace qmf {
 
         mutable qpid::sys::Mutex lock;
         std::string name;
+        std::string directSubject;
         uint32_t epoch;
         ConsoleSessionImpl& session;
         bool touched;
         uint32_t untouchedCount;
         uint32_t capability;
+        qpid::messaging::Sender sender;
         qpid::types::Variant::Map attributes;
         uint32_t nextCorrelator;
         std::map<uint32_t, boost::shared_ptr<SyncContext> > contextMap;
