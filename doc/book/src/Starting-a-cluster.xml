@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
- 
+
  Licensed to the Apache Software Foundation (ASF) under one
  or more contributor license agreements.  See the NOTICE file
  distributed with this work for additional information
@@ -8,16 +8,16 @@
  to you under the Apache License, Version 2.0 (the
  "License"); you may not use this file except in compliance
  with the License.  You may obtain a copy of the License at
- 
+
    http://www.apache.org/licenses/LICENSE-2.0
- 
+
  Unless required by applicable law or agreed to in writing,
  software distributed under the License is distributed on an
  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  KIND, either express or implied.  See the License for the
  specific language governing permissions and limitations
  under the License.
- 
+
 -->
 
 <section id="chap-Messaging_User_Guide-High_Availability_Messaging_Clusters">
@@ -32,7 +32,7 @@
 		An OpenAIS daemon runs on every machine in the cluster, and these daemons communicate using multicast on a particular address. Every qpidd process in a cluster joins a named group that is automatically synchronized using OpenAIS Closed Process Groups (CPG) — the qpidd processes multicast events to the named group, and CPG ensures that each qpidd process receives all the events in the same sequence. All members get an identical sequence of events, so they can all update their state consistently.
 	</para>
 	 <para>
-		Two messaging brokers are in the same cluster if 
+		Two messaging brokers are in the same cluster if
 		<orderedlist>
 			<listitem>
 				<para>
@@ -62,13 +62,13 @@
 		 <para>
 			Clustering is implemented using the <filename>cluster.so</filename> module, which is loaded by default when you start a broker. To run brokers in a cluster, make sure they all use the same OpenAIS mcastaddr, mcastport, and bindnetaddr. All brokers in a cluster must also have the same cluster name — specify the cluster name in <filename>qpidd.conf</filename>:
 		</para>
-		 
+
 <screen>cluster-name=&#34;local_test_cluster&#34;
 </screen>
 		 <para>
 			On RHEL6, you must create the file <filename>/etc/corosync/uidgid.d/qpidd</filename> to tell Corosync the name of the user running the broker.By default, the user is qpidd:
 		</para>
-		 
+
 <programlisting>
 uidgid {
    uid: qpidd
@@ -78,13 +78,13 @@ uidgid {
 		 <para>
 			On RHEL5, the primary group for the process running qpidd must be the ais group. If you are running qpidd as a service, it is run as the <command>qpidd</command> user, which is already in the ais group. If you are running the broker from the command line, you must ensure that the primary group for the user running qpidd is ais. You can set the primary group using <command>newgrp</command>:
 		</para>
-		 
+
 <screen>$ newgrp ais
 </screen>
 		 <para>
 			You can then run the broker from the command line, specifying the cluster name as an option.
 		</para>
-		 
+
 <screen>[jonathan@localhost]$ qpidd --cluster-name=&#34;local_test_cluster&#34;
 </screen>
 		 <para>
@@ -117,9 +117,9 @@ uidgid {
 		 <para>
 			The qpid log contains entries that record significant clustering events, e.g. when a broker becomes a member of a cluster, the membership of a cluster is changed, or an old journal is moved out of the way. For instance, the following message states that a broker has been added to a cluster as the first node:
 		</para>
-		 
+
 <screen>
-2009-07-09 18:13:41 info 127.0.0.1:1410(READY) member update: 127.0.0.1:1410(member) 
+2009-07-09 18:13:41 info 127.0.0.1:1410(READY) member update: 127.0.0.1:1410(member)
 2009-07-09 18:13:41 notice 127.0.0.1:1410(READY) first in cluster
 </screen>
 		 <note>
@@ -134,8 +134,8 @@ uidgid {
 		 <table frame="all" id="tabl-Messaging_User_Guide-Starting_a_Broker_in_a_Cluster-Options_for_High_Availability_Messaging_Cluster">
 			<title>Options for High Availability Messaging Cluster</title>
 			 <tgroup align="left" cols="2" colsep="1" rowsep="1">
-				<colspec colname="c1"></colspec>
-				 <colspec colname="c2"></colspec>
+				<colspec colname="c1" colwidth="1*"></colspec>
+				 <colspec colname="c2" colwidth="4*"></colspec>
 				 <thead>
 					<row>
 						<entry align="center" nameend="c2" namest="c1">
@@ -169,7 +169,7 @@ uidgid {
 							<command>--cluster-url <replaceable>URL</replaceable></command>
 						</entry>
 						 <entry>
-							An AMQP URL containing the local address that the broker advertizes to clients for fail-over connections. This is different for each host. By default, all local addresses for the broker are advertized. You only need to set this if 
+							An AMQP URL containing the local address that the broker advertizes to clients for fail-over connections. This is different for each host. By default, all local addresses for the broker are advertized. You only need to set this if
 							<orderedlist>
 								<listitem>
 									<para>
@@ -185,7 +185,16 @@ uidgid {
 								</listitem>
 
 							</orderedlist>
-							 Each broker in the cluster is specified using the form: <command> url = [&#34;amqp:&#34;][ user [&#34;/&#34; password] &#34;@&#34; ] protocol_addr *(&#34;,&#34; protocol_addr) protocol_addr = tcp_addr / rmda_addr / ssl_addr / ... tcp_addr = [&#34;tcp:&#34;] host [&#34;:&#34; port] rdma_addr = &#34;rdma:&#34; host [&#34;:&#34; port] ssl_addr = &#34;ssl:&#34; host [&#34;:&#34; port]</command> In most cases, only one address is advertized, but more than one address can be specified in if the machine running the broker has more than one network interface card, and you want to allow clients to connect using multiple network interfaces. Use a comma delimiter (&#34;,&#34;) to separate brokers in the URL. Examples: 
+							<para>Each broker in the cluster is specified using the following form:</para>
+
+<programlisting>url = [&#34;amqp:&#34;][ user [&#34;/&#34; password] &#34;@&#34; ] protocol_addr
+         (&#34;,&#34; protocol_addr)*
+protocol_addr = tcp_addr / rmda_addr / ssl_addr / ...
+tcp_addr = [&#34;tcp:&#34;] host [&#34;:&#34; port]
+rdma_addr = &#34;rdma:&#34; host [&#34;:&#34; port]
+ssl_addr = &#34;ssl:&#34; host [&#34;:&#34; port]</programlisting>
+
+                            <para>In most cases, only one address is advertized, but more than one address can be specified in if the machine running the broker has more than one network interface card, and you want to allow clients to connect using multiple network interfaces. Use a comma delimiter (&#34;,&#34;) to separate brokers in the URL. Examples:</para>
 							<itemizedlist>
 								<listitem>
 									<para>
@@ -214,7 +223,7 @@ uidgid {
 								CMAN protects against the &#34;split-brain&#34; condition, in which a network failure splits the cluster into two sub-clusters that cannot communicate with each other. When &#34;split-brain&#34; occurs, each of the sub-clusters can access shared resources without knowledge of the other sub-cluster, resulting in corrupted cluster integrity.
 							</para>
 							 <para>
-								To avoid &#34;split-brain&#34;, CMAN uses the notion of a &#34;quorum&#34;. If more than half the cluster nodes are active, the cluster has quorum and can act. If half (or fewer) nodes are active, the cluster does not have quorum, and all cluster activity is stopped. There are other ways to define the quorum for particular use cases (e.g. a cluster of only 2 members), see the <ulink url="http://sources.redhat.com/cluster/wiki">CMAN Wiki</ulink> 
+								To avoid &#34;split-brain&#34;, CMAN uses the notion of a &#34;quorum&#34;. If more than half the cluster nodes are active, the cluster has quorum and can act. If half (or fewer) nodes are active, the cluster does not have quorum, and all cluster activity is stopped. There are other ways to define the quorum for particular use cases (e.g. a cluster of only 2 members), see the <ulink url="http://sources.redhat.com/cluster/wiki">CMAN Wiki</ulink>
 for more detail.
 							</para>
 							 <para>
@@ -260,7 +269,7 @@ for more detail.
 		 <para>
 			If a broker is unable to establish a connection to another broker in the cluster, the log will contain SASL errors, e.g:
 		</para>
-		 
+
 <screen>2009-aug-04 10:17:37 info SASL: Authentication failed: SASL(-13): user not found: Password verification failed
 </screen>
 		 <para>
@@ -274,16 +283,16 @@ for more detail.
 		</para>
 
 	</section>
-	
+
 	 <section id="sect-Messaging_User_Guide-High_Availability_Messaging_Clusters-qpid_cluster">
 		<title>qpid-cluster</title>
 		 <para>
 			<command>qpid-cluster</command> is a command-line utility that allows you to view information on a cluster and its brokers, disconnect a client connection, shut down a broker in a cluster, or shut down the entire cluster. You can see the options using the <command>--help</command> option:
 		</para>
-		 
+
 <screen>$ ./qpid-cluster --help
 </screen>
-		 
+
 <screen>Usage:  qpid-cluster [OPTIONS] [broker-addr]
 
              broker-addr is in the form:   [username/password@] hostname | ip-address [:&#60;port&#62;]
@@ -302,14 +311,14 @@ Options:
 		 <para>
 			Let&#39;s connect to a cluster and display basic information about the cluser and its brokers. When you connect to the cluster using <command>qpid-tool</command>, you can use the host and port for any broker in the cluster. For instance, if a broker in the cluster is running on <filename>localhost</filename> on port 6664, you can start <command>qpid-tool</command> like this:
 		</para>
-		 
+
 <screen>
 $ qpid-cluster localhost:6664
 </screen>
 		 <para>
 			Here is the output:
 		</para>
-		 
+
 <screen>
   Cluster Name: local_test_cluster
 Cluster Status: ACTIVE
@@ -321,12 +330,12 @@ Cluster Status: ACTIVE
 		 <para>
 			The ID for each broker in cluster is given on the left. For instance, the ID for the first broker in the cluster is <command>127.0.0.1:13143</command>. The URL in the output is the broker&#39;s advertized address. Let&#39;s use the ID to shut the broker down using the <command>--stop</command> command:
 		</para>
-		 
+
 <screen>$ ./qpid-cluster localhost:6664 --stop 127.0.0.1:13143
 </screen>
 
 	</section>
-	
+
 	 <section id="sect-Messaging_User_Guide-High_Availability_Messaging_Clusters-Failover_in_Clients">
 		<title>Failover in Clients</title>
 		 <para>
@@ -349,7 +358,7 @@ Cluster Status: ACTIVE
 			 <para>
 				You can configure a connection to use failover using the <command>failover</command> property:
 			</para>
-			 
+
 <screen>
 connectionfactory.qpidConnectionfactory = amqp://guest:guest@clientid/test?brokerlist=&#39;tcp://localhost:5672&#39;&amp;failover=&#39;failover_exchange&#39;
 </screen>
@@ -393,13 +402,13 @@ connectionfactory.qpidConnectionfactory = amqp://guest:guest@clientid/test?broke
 			 <para>
 				In a Connection URL, heartbeat is set using the <command>idle_timeout</command> property, which is an integer corresponding to the heartbeat period in seconds. For instance, the following line from a JNDI properties file sets the heartbeat time out to 3 seconds:
 			</para>
-			 
+
 <screen>
 connectionfactory.qpidConnectionfactory = amqp://guest:guest@clientid/test?brokerlist=&#39;tcp://localhost:5672&#39;,idle_timeout=3
 </screen>
 
 		</section>
-		
+
 		 <section id="sect-Messaging_User_Guide-Failover_in_Clients-Failover_and_the_Qpid_Messaging_API">
 			<title>Failover and the Qpid Messaging API</title>
 			 <para>
@@ -413,10 +422,10 @@ connectionfactory.qpidConnectionfactory = amqp://guest:guest@clientid/test?broke
 			</para>
 
 		</section>
-		
+
 
 	</section>
-	
+
 	 <section id="sect-Messaging_User_Guide-High_Availability_Messaging_Clusters-Error_handling_in_Clusters">
 		<title>Error handling in Clusters</title>
 		 <para>
@@ -439,7 +448,7 @@ connectionfactory.qpidConnectionfactory = amqp://guest:guest@clientid/test?broke
 		</para>
 		 <!--                "Bad case" for cluster matrix - things we will fix, or things users may encounter long term?                -->
 	</section>
-	
+
 	 <section id="sect-Messaging_User_Guide-High_Availability_Messaging_Clusters-Persistence_in_High_Availability_Message_Clusters">
 		<title>Persistence in High Availability Message Clusters</title>
 		 <para>
@@ -461,7 +470,7 @@ connectionfactory.qpidConnectionfactory = amqp://guest:guest@clientid/test?broke
 			</para>
 
 		</section>
-		
+
 		 <section id="sect-Messaging_User_Guide-Persistence_in_High_Availability_Message_Clusters-Starting_a_persistent_cluster">
 			<title>Starting a persistent cluster</title>
 			 <para>
@@ -493,7 +502,7 @@ connectionfactory.qpidConnectionfactory = amqp://guest:guest@clientid/test?broke
 			</para>
 
 		</section>
-		
+
 		 <section id="sect-Messaging_User_Guide-Persistence_in_High_Availability_Message_Clusters-Stopping_a_persistent_cluster">
 			<title>Stopping a persistent cluster</title>
 			 <para>
@@ -501,7 +510,7 @@ connectionfactory.qpidConnectionfactory = amqp://guest:guest@clientid/test?broke
 			</para>
 
 		</section>
-		
+
 		 <section id="sect-Messaging_User_Guide-Persistence_in_High_Availability_Message_Clusters-Starting_a_persistent_cluster_with_no_clean_store">
 			<title>Starting a persistent cluster with no clean store</title>
 			 <para>
@@ -512,7 +521,7 @@ connectionfactory.qpidConnectionfactory = amqp://guest:guest@clientid/test?broke
 					<para>
 						Move the latest store backup into place in the brokers data-directory. The backups end in a 4 digit number, the latest backup is the highest number.
 					</para>
-					 
+
 <screen>
  cd &#60;data-dir&#62;
  mv rhm rhm.bak
@@ -522,7 +531,7 @@ connectionfactory.qpidConnectionfactory = amqp://guest:guest@clientid/test?broke
 				</step>
 				 <step>
 					<para>
-						Mark the store as clean: 
+						Mark the store as clean:
 <screen>qpid-cluster-store -c &#60;data-dir&#62;</screen>
 
 					</para>
@@ -530,13 +539,13 @@ connectionfactory.qpidConnectionfactory = amqp://guest:guest@clientid/test?broke
 				</step>
 
 			</procedure>
-			
+
 			 <para>
 				Now you can start the cluster, all members will be initialized from the store you marked as clean.
 			</para>
 
 		</section>
-		
+
 		 <section id="sect-Messaging_User_Guide-Persistence_in_High_Availability_Message_Clusters-Isolated_failures_in_a_persistent_cluster">
 			<title>Isolated failures in a persistent cluster</title>
 			 <para>
@@ -544,9 +553,9 @@ connectionfactory.qpidConnectionfactory = amqp://guest:guest@clientid/test?broke
 			</para>
 
 		</section>
-		
+
 
 	</section>
-	
+
 
 </section>
