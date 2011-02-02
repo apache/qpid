@@ -128,11 +128,12 @@ class ManagementAgentImpl : public ManagementAgent, public client::MessageListen
     };
 
     struct QueuedMethod {
-    QueuedMethod(const std::string& _cid, const std::string& _reply, const std::string& _body, const std::string& _uid) :
-        cid(_cid), replyTo(_reply), body(_body), userId(_uid) {}
+    QueuedMethod(const std::string& _cid, const std::string& _rte, const std::string& _rtk, const std::string& _body, const std::string& _uid) :
+        cid(_cid), replyToExchange(_rte), replyToKey(_rtk), body(_body), userId(_uid) {}
 
         std::string cid;
-        std::string replyTo;
+        std::string replyToExchange;
+        std::string replyToKey;
         std::string body;
         std::string userId;
     };
@@ -278,16 +279,16 @@ class ManagementAgentImpl : public ManagementAgent, public client::MessageListen
                                                 uint8_t type=ManagementItem::CLASS_KIND_TABLE);
     bool checkHeader  (framing::Buffer& buf, uint8_t *opcode, uint32_t *seq);
     void sendHeartbeat();
-    void sendException(const std::string& replyToKey, const std::string& cid,
+    void sendException(const std::string& replyToExchange, const std::string& replyToKey, const std::string& cid,
                        const std::string& text, uint32_t code=1);
     void handlePackageRequest (qpid::framing::Buffer& inBuffer);
     void handleClassQuery     (qpid::framing::Buffer& inBuffer);
-    void handleSchemaRequest  (qpid::framing::Buffer& inBuffer, uint32_t sequence, const std::string& replyTo);
-    void invokeMethodRequest  (const std::string& body, const std::string& cid, const std::string& replyTo, const std::string& userId);
+    void handleSchemaRequest  (qpid::framing::Buffer& inBuffer, uint32_t sequence, const std::string& rte, const std::string& rtk);
+    void invokeMethodRequest  (const std::string& body, const std::string& cid, const std::string& rte, const std::string& rtk, const std::string& userId);
 
-    void handleGetQuery       (const std::string& body, const std::string& cid, const std::string& replyTo);
-    void handleLocateRequest  (const std::string& body, const std::string& sequence, const std::string& replyTo);
-    void handleMethodRequest  (const std::string& body, const std::string& sequence, const std::string& replyTo, const std::string& userId);
+    void handleGetQuery       (const std::string& body, const std::string& cid, const std::string& rte, const std::string& rtk);
+    void handleLocateRequest  (const std::string& body, const std::string& sequence, const std::string& rte, const std::string& rtk);
+    void handleMethodRequest  (const std::string& body, const std::string& sequence, const std::string& rte, const std::string& rtk, const std::string& userId);
     void handleConsoleAddedIndication();
     void getHeartbeatContent  (qpid::types::Variant::Map& map);
 };

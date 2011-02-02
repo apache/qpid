@@ -362,7 +362,7 @@ uint32_t ManagementAgentImpl::pollCallbacks(uint32_t callLimit)
         methodQueue.pop_front();
         {
             sys::Mutex::ScopedUnlock unlock(agentLock);
-            invokeMethodRequest(item->body, item->cid, item->replyTo, item->userId);
+            invokeMethodRequest(item->body, item->cid, item->replyToExchange, item->replyToKey, item->userId);
             delete item;
         }
     }
@@ -497,7 +497,7 @@ void ManagementAgentImpl::sendHeartbeat()
     QPID_LOG(trace, "SENT AgentHeartbeat name=" << name_address);
 }
 
-void ManagementAgentImpl::sendException(const string& replyToKey, const string& cid,
+void ManagementAgentImpl::sendException(const string& rte, const string& rtk, const string& cid,
                                         const string& text, uint32_t code)
 {
     Variant::Map map;
@@ -514,12 +514,12 @@ void ManagementAgentImpl::sendException(const string& replyToKey, const string& 
     map["_values"] = values;
 
     MapCodec::encode(map, content);
-    connThreadBody.sendBuffer(content, cid, headers, directExchange, replyToKey);
+    connThreadBody.sendBuffer(content, cid, headers, rte, rtk);
 
     QPID_LOG(trace, "SENT Exception code=" << code <<" text=" << text);
 }
 
-void ManagementAgentImpl::handleSchemaRequest(Buffer& inBuffer, uint32_t sequence, const string& replyTo)
+void ManagementAgentImpl::handleSchemaRequest(Buffer& inBuffer, uint32_t sequence, const string& rte, const string& rtk)
 {
     sys::Mutex::ScopedLock lock(agentLock);
     string packageName;
@@ -546,7 +546,7 @@ void ManagementAgentImpl::handleSchemaRequest(Buffer& inBuffer, uint32_t sequenc
             outBuffer.putRawData(body);
             outLen = MA_BUFFER_SIZE - outBuffer.available();
             outBuffer.reset();
-            connThreadBody.sendBuffer(outBuffer, outLen, "amq.direct", replyTo);
+            connThreadBody.sendBuffer(outBuffer, outLen, rte, rtk);
 
             QPID_LOG(trace, "SENT SchemaInd: package=" << packageName << " class=" << key.name);
         }
@@ -561,7 +561,7 @@ void ManagementAgentImpl::handleConsoleAddedIndication()
     QPID_LOG(trace, "RCVD ConsoleAddedInd");
 }
 
-void ManagementAgentImpl::invokeMethodRequest(const string& body, const string& cid, const string& replyTo, const string& userId)
+void ManagementAgentImpl::invokeMethodRequest(const string& body, const string& cid, const string& rte, const string& rtk, const string& userId)
 {
     string  methodName;
     bool    failed = false;
@@ -572,11 +572,9 @@ void ManagementAgentImpl::invokeMethodRequest(const string& body, const string& 
 
     MapCodec::decode(body, inMap);
 
-    outMap["_values"] = Variant::Map();
-
     if ((oid = inMap.find("_object_id")) == inMap.end() ||
         (mid = inMap.find("_method_name")) == inMap.end()) {
-        sendException(replyTo, cid, Manageable::StatusText(Manageable::STATUS_PARAMETER_INVALID),
+        sendException(rte, rtk, cid, Manageable::StatusText(Manageable::STATUS_PARAMETER_INVALID),
                       Manageable::STATUS_PARAMETER_INVALID);
         failed = true;
     } else {
@@ -595,6 +593,8 @@ void ManagementAgentImpl::invokeMethodRequest(const string& body, const string& 
                 inArgs = (mid->second).asMap();
             }
 
+            QPID_LOG(trace, "Invoking Method: name=" << methodName << " args=" << inArgs);
+
             boost::shared_ptr<ManagementObject> oPtr;
             {
                 sys::Mutex::ScopedLock lock(agentLock);
@@ -604,7 +604,7 @@ void ManagementAgentImpl::invokeMethodRequest(const string& body, const string& 
             }
 
             if (oPtr.get() == 0) {
-                sendException(replyTo, cid, Manageable::StatusText(Manageable::STATUS_UNKNOWN_OBJECT),
+                sendException(rte, rtk, cid, Manageable::StatusText(Manageable::STATUS_UNKNOWN_OBJECT),
                               Manageable::STATUS_UNKNOWN_OBJECT);
                 failed = true;
             } else {
@@ -617,13 +617,13 @@ void ManagementAgentImpl::invokeMethodRequest(const string& body, const string& 
                         if (iter->first != "_status_code" && iter->first != "_status_text")
                             outMap["_arguments"].asMap()[iter->first] = iter->second;
                 } else {
-                    sendException(replyTo, cid, callMap["_status_text"], callMap["_status_code"]);
+                    sendException(rte, rtk, cid, callMap["_status_text"], callMap["_status_code"]);
                     failed = true;
                 }
             }
 
         } catch(types::InvalidConversion& e) {
-            sendException(replyTo, cid, e.what(), Manageable::STATUS_EXCEPTION);
+            sendException(rte, rtk, cid, e.what(), Manageable::STATUS_EXCEPTION);
             failed = true;
         }
     }
@@ -635,11 +635,11 @@ void ManagementAgentImpl::invokeMethodRequest(const string& body, const string& 
         headers["qmf.opcode"] = "_method_response";
         QPID_LOG(trace, "SENT MethodResponse map=" << outMap);
         MapCodec::encode(outMap, content);
-        connThreadBody.sendBuffer(content, cid, headers, directExchange, replyTo);
+        connThreadBody.sendBuffer(content, cid, headers, rte, rtk);
     }
 }
 
-void ManagementAgentImpl::handleGetQuery(const string& body, const string& cid, const string& replyTo)
+void ManagementAgentImpl::handleGetQuery(const string& body, const string& cid, const string& rte, const string& rtk)
 {
     moveNewObjectsLH();
 
@@ -666,12 +666,12 @@ void ManagementAgentImpl::handleGetQuery(const string& body, const string& cid, 
      */
     i = inMap.find("_what");
     if (i == inMap.end()) {
-        sendException(replyTo, cid, "_what element missing in Query");
+        sendException(rte, rtk, cid, "_what element missing in Query");
         return;
     }
 
     if (i->second.getType() != qpid::types::VAR_STRING) {
-        sendException(replyTo, cid, "_what element is not a string");
+        sendException(rte, rtk, cid, "_what element is not a string");
         return;
     }
 
@@ -709,8 +709,8 @@ void ManagementAgentImpl::handleGetQuery(const string& body, const string& cid, 
                 headers.erase("partial");
 
                 ListCodec::encode(list_, content);
-                connThreadBody.sendBuffer(content, cid, headers, directExchange, replyTo, "amqp/list");
-                QPID_LOG(trace, "SENT QueryResponse (query by object_id) to=" << replyTo);
+                connThreadBody.sendBuffer(content, cid, headers, rte, rtk, "amqp/list");
+                QPID_LOG(trace, "SENT QueryResponse (query by object_id) to=" << rte << "/" << rtk);
                 return;
             }
         } else { // match using schema_id, if supplied
@@ -771,8 +771,8 @@ void ManagementAgentImpl::handleGetQuery(const string& body, const string& cid, 
                         if (++objCount >= maxV2ReplyObjs) {
                             objCount = 0;
                             ListCodec::encode(list_, content);
-                            connThreadBody.sendBuffer(content, cid, headers, directExchange, replyTo, "amqp/list");
-                            QPID_LOG(trace, "SENT QueryResponse (query by schema_id) to=" << replyTo);
+                            connThreadBody.sendBuffer(content, cid, headers, rte, rtk, "amqp/list");
+                            QPID_LOG(trace, "SENT QueryResponse (query by schema_id) to=" << rte << "/" << rtk);
                             content.clear();
                             list_.clear();
                         }
@@ -784,8 +784,8 @@ void ManagementAgentImpl::handleGetQuery(const string& body, const string& cid, 
         // Send last "non-partial" message to indicate CommandComplete
         headers.erase("partial");
         ListCodec::encode(list_, content);
-        connThreadBody.sendBuffer(content, cid, headers, directExchange, replyTo, "amqp/list");
-        QPID_LOG(trace, "SENT QueryResponse (empty with no 'partial' indicator) to=" << replyTo);
+        connThreadBody.sendBuffer(content, cid, headers, rte, rtk, "amqp/list");
+        QPID_LOG(trace, "SENT QueryResponse (last message, no 'partial' indicator) to=" << rte << "/" << rtk);
 
     } else if (i->second.asString() == "SCHEMA_ID") {
         headers["qmf.content"] = "_schema_id";
@@ -806,16 +806,16 @@ void ManagementAgentImpl::handleGetQuery(const string& body, const string& cid, 
 
         headers.erase("partial");
         ListCodec::encode(list_, content);
-        connThreadBody.sendBuffer(content, cid, headers, directExchange, replyTo, "amqp/list");
-        QPID_LOG(trace, "SENT QueryResponse (SchemaId) to=" << replyTo);
+        connThreadBody.sendBuffer(content, cid, headers, rte, rtk, "amqp/list");
+        QPID_LOG(trace, "SENT QueryResponse (SchemaId) to=" << rte << "/" << rtk);
 
     } else {
         // Unknown query target
-        sendException(replyTo, cid, "Query for _what => '" + i->second.asString() + "' not supported");
+        sendException(rte, rtk, cid, "Query for _what => '" + i->second.asString() + "' not supported");
     }
 }
 
-void ManagementAgentImpl::handleLocateRequest(const string&, const string& cid, const string& replyTo)
+void ManagementAgentImpl::handleLocateRequest(const string&, const string& cid, const string& rte, const string& rtk)
 {
     QPID_LOG(trace, "RCVD AgentLocateRequest");
 
@@ -829,9 +829,9 @@ void ManagementAgentImpl::handleLocateRequest(const string&, const string& cid, 
 
     getHeartbeatContent(map);
     MapCodec::encode(map, content);
-    connThreadBody.sendBuffer(content, cid, headers, directExchange, replyTo);
+    connThreadBody.sendBuffer(content, cid, headers, rte, rtk);
 
-    QPID_LOG(trace, "SENT AgentLocateResponse replyTo=" << replyTo);
+    QPID_LOG(trace, "SENT AgentLocateResponse replyTo=" << rte << "/" << rtk);
 
     {
         sys::Mutex::ScopedLock lock(agentLock);
@@ -839,12 +839,12 @@ void ManagementAgentImpl::handleLocateRequest(const string&, const string& cid, 
     }
 }
 
-void ManagementAgentImpl::handleMethodRequest(const string& body, const string& cid, const string& replyTo, const string& userId)
+void ManagementAgentImpl::handleMethodRequest(const string& body, const string& cid, const string& rte, const string& rtk, const string& userId)
 {
     if (extThread) {
         sys::Mutex::ScopedLock lock(agentLock);
 
-        methodQueue.push_back(new QueuedMethod(cid, replyTo, body, userId));
+        methodQueue.push_back(new QueuedMethod(cid, rte, rtk, body, userId));
         if (pipeHandle != 0) {
             pipeHandle->write("X", 1);
         } else if (notifyable != 0) {
@@ -863,7 +863,7 @@ void ManagementAgentImpl::handleMethodRequest(const string& body, const string& 
             inCallback = false;
         }
     } else {
-        invokeMethodRequest(body, cid, replyTo, userId);
+        invokeMethodRequest(body, cid, rte, rtk, userId);
     }
 
     QPID_LOG(trace, "RCVD MethodRequest");
@@ -871,10 +871,12 @@ void ManagementAgentImpl::handleMethodRequest(const string& body, const string& 
 
 void ManagementAgentImpl::received(Message& msg)
 {
+    string   replyToExchange;
     string   replyToKey;
     framing::MessageProperties mp = msg.getMessageProperties();
     if (mp.hasReplyTo()) {
         const framing::ReplyTo& rt = mp.getReplyTo();
+        replyToExchange = rt.getExchange();
         replyToKey = rt.getRoutingKey();
     }
 
@@ -887,9 +889,9 @@ void ManagementAgentImpl::received(Message& msg)
         string opcode = mp.getApplicationHeaders().getAsString("qmf.opcode");
         string cid = msg.getMessageProperties().getCorrelationId();
 
-        if      (opcode == "_agent_locate_request") handleLocateRequest(msg.getData(), cid, replyToKey);
-        else if (opcode == "_method_request")       handleMethodRequest(msg.getData(), cid, replyToKey, userId);
-        else if (opcode == "_query_request")        handleGetQuery(msg.getData(), cid, replyToKey);
+        if      (opcode == "_agent_locate_request") handleLocateRequest(msg.getData(), cid, replyToExchange, replyToKey);
+        else if (opcode == "_method_request")       handleMethodRequest(msg.getData(), cid, replyToExchange, replyToKey, userId);
+        else if (opcode == "_query_request")        handleGetQuery(msg.getData(), cid, replyToExchange, replyToKey);
         else {
             QPID_LOG(warning, "Support for QMF V2 Opcode [" << opcode << "] TBD!!!");
         }
@@ -906,7 +908,7 @@ void ManagementAgentImpl::received(Message& msg)
 
     if (checkHeader(inBuffer, &opcode, &sequence))
     {
-        if      (opcode == 'S') handleSchemaRequest(inBuffer, sequence, replyToKey);
+        if      (opcode == 'S') handleSchemaRequest(inBuffer, sequence, replyToExchange, replyToKey);
         else if (opcode == 'x') handleConsoleAddedIndication();
         else
             QPID_LOG(warning, "Ignoring old-format QMF Request! opcode=" << char(opcode));
