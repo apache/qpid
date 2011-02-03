@@ -265,8 +265,8 @@ template <class T> void RangeSet<T>::removeRange(const Range<T>& r) {
         }
         for (j = i; j != ranges.end() && r.contains(*j); ++j)
             ;                   // Ranges to erase.
-        if (j != ranges.end() && j->end() > r.end())
-            j->begin(r.end());   // Truncate j
+        if (j != ranges.end() && r.end() > j->begin())
+            j->begin(r.end()); // Truncate j
         ranges.erase(i,j);
     }
 }
