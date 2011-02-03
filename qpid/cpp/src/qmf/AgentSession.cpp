@@ -85,6 +85,7 @@ namespace qmf {
         void complete(AgentEvent& e);
         void methodSuccess(AgentEvent& e);
         void raiseEvent(const Data& d);
+        void raiseEvent(const Data& d, int s);
 
     private:
         typedef map<DataAddr, Data, DataAddrCompare> DataIndex;
@@ -171,6 +172,7 @@ void AgentSession::response(AgentEvent& e, const Data& d) { impl->response(e, d)
 void AgentSession::complete(AgentEvent& e) { impl->complete(e); }
 void AgentSession::methodSuccess(AgentEvent& e) { impl->methodSuccess(e); }
 void AgentSession::raiseEvent(const Data& d) { impl->raiseEvent(d); }
+void AgentSession::raiseEvent(const Data& d, int s) { impl->raiseEvent(d, s); }
 
 //========================================================================================
 // Impl Method Bodies
@@ -526,24 +528,50 @@ void AgentSessionImpl::methodSuccess(AgentEvent& event)
 
 void AgentSessionImpl::raiseEvent(const Data& data)
 {
+    int severity(SEV_NOTICE);
+    if (data.hasSchema()) {
+        const Schema& schema(DataImplAccess::get(data).getSchema());
+        if (schema.isValid())
+            severity = schema.getDefaultSeverity();
+    }
+
+    raiseEvent(data, severity);
+}
+
+
+void AgentSessionImpl::raiseEvent(const Data& data, int severity)
+{
     Message msg;
     Variant::Map map;
     Variant::Map& headers(msg.getProperties());
+    string subject("agent.ind.event");
 
-    // TODO: add severity.package.class to key
-    //       or modify to send only to subscriptions with matching queries
+    if (data.hasSchema()) {
+        const SchemaId& schemaId(data.getSchemaId());
+        if (schemaId.getType() != SCHEMA_TYPE_EVENT)
+            throw QmfException("Cannot call raiseEvent on data that is not an Event");
+        subject = subject + "." + schemaId.getPackageName() + "." + schemaId.getName();
+    }
+
+    if (severity < SEV_EMERG || severity > SEV_DEBUG)
+        throw QmfException("Invalid severity value");
 
     headers[protocol::HEADER_KEY_METHOD] = protocol::HEADER_METHOD_INDICATION;
     headers[protocol::HEADER_KEY_OPCODE] = protocol::HEADER_OPCODE_DATA_INDICATION;
     headers[protocol::HEADER_KEY_CONTENT] = protocol::HEADER_CONTENT_EVENT;
     headers[protocol::HEADER_KEY_AGENT] = agentName;
     headers[protocol::HEADER_KEY_APP_ID] = protocol::HEADER_APP_ID_QMF;
-    msg.setSubject("agent.ind.event");
+    msg.setSubject(subject);
 
-    encode(DataImplAccess::get(data).asMap(), msg);
+    Variant::List list;
+    Variant::Map dataAsMap(DataImplAccess::get(data).asMap());
+    dataAsMap["_severity"] = severity;
+    dataAsMap["_timestamp"] = uint64_t(qpid::sys::Duration(qpid::sys::EPOCH, qpid::sys::now()));
+    list.push_back(dataAsMap);
+    encode(list, msg);
     topicSender.send(msg);
 
-    QPID_LOG(trace, "SENT EventIndication to=agent.ind.event");
+    QPID_LOG(trace, "SENT EventIndication to=" << subject);
 }
 
 
