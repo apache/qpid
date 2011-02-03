@@ -85,8 +85,9 @@ class QueueFlowLimit
 
  protected:
     // msgs waiting for flow to become available.
-    std::list< boost::intrusive_ptr<Message> > pendingFlow;     // ordered, oldest @front
     std::set< boost::intrusive_ptr<Message> > index;
+    // KAG: is this necessary?  Not if we release all pending when level < low (?)
+    // std::list< boost::intrusive_ptr<Message> > pendingFlow;     // ordered, oldest @front
     qpid::sys::Mutex pendingFlowLock;
 
     QueueFlowLimit(Queue *queue,

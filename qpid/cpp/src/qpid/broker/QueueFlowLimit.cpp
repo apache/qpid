@@ -136,9 +136,9 @@ bool QueueFlowLimit::consume(const QueuedMessage& msg)
         QPID_LOG(error, "Queue \"" << queueName << "\": has enqueued a msg twice: " << msg.position);
     }
 
-    if (flowStopped || !pendingFlow.empty()) {
+    if (flowStopped || !index.empty()) {
         msg.payload->getReceiveCompletion().startCompleter();    // don't complete until flow resumes
-        pendingFlow.push_back(msg.payload);
+        //pendingFlow.push_back(msg.payload);
         index.insert(msg.payload);
     }
 
@@ -176,33 +176,30 @@ bool QueueFlowLimit::replenish(const QueuedMessage& msg)
         QPID_LOG(info, "Queue \"" << queueName << "\": has drained below the flow control resume level. Producer flow control deactivated." );
     }
 
-    if (!flowStopped && !pendingFlow.empty()) {
-        // if msg is flow controlled, release it.
-        std::set< boost::intrusive_ptr<Message> >::iterator itr = index.find(msg.payload);
-        if (itr != index.end()) {
-            (*itr)->getReceiveCompletion().finishCompleter();
-            index.erase(itr);
-            // stupid:
-            std::list< boost::intrusive_ptr<Message> >::iterator itr2 = find(pendingFlow.begin(),
-                                                                             pendingFlow.end(),
-                                                                             msg.payload);
-            if (itr2 == pendingFlow.end()) {
-                QPID_LOG(error, "Queue \"" << queueName << "\": indexed msg missing in list: " << msg.position);
-            } else {
-                pendingFlow.erase(itr2);
-            }
-        }
-
-        // for now, just release the oldest also
-        if (!pendingFlow.empty()) {
-            pendingFlow.front()->getReceiveCompletion().finishCompleter();
-            itr = index.find(pendingFlow.front());
-            if (itr == index.end()) {
-                QPID_LOG(error, "Queue \"" << queueName << "\": msg missing in index: " << pendingFlow.front());
-            } else {
+    if (!index.empty()) {
+        if (!flowStopped) {
+            // flow enabled - release all pending msgs
+            while (!index.empty()) {
+                std::set< boost::intrusive_ptr<Message> >::iterator itr = index.begin();
+                (*itr)->getReceiveCompletion().finishCompleter();
                 index.erase(itr);
             }
-            pendingFlow.pop_front();
+        } else {
+            // even if flow controlled, we must release this msg as it is being dequeued
+            std::set< boost::intrusive_ptr<Message> >::iterator itr = index.find(msg.payload);
+            if (itr != index.end()) {       // this msg is flow controlled, release it:
+                (*itr)->getReceiveCompletion().finishCompleter();
+                index.erase(itr);
+                //// stupid: (hopefully this is the next pending msg)
+                //std::list< boost::intrusive_ptr<Message> >::iterator itr2 = find(pendingFlow.begin(),
+                //                                                                 pendingFlow.end(),
+                //                                                                 msg.payload);
+                //if (itr2 == pendingFlow.end()) {
+                //    QPID_LOG(error, "Queue \"" << queueName << "\": indexed msg missing in list: " << msg.position);
+                //} else {
+                //    pendingFlow.erase(itr2);
+                //}
+            }
         }
     }
 
