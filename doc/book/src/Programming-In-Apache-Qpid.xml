@@ -2103,6 +2103,7 @@ sender.send(message, true);
 	</para>
 
 	<example>
+      <?dbfo keep-together="auto" ?>
 	  <title>Sending Qpid Maps and Lists in .NET C#</title>
 	<programlisting><![CDATA[
 using System;
