@@ -49,6 +49,7 @@ private:
     Schema sch_exception;
     Schema sch_control;
     Schema sch_child;
+    Schema sch_event;
     Data control;
     DataAddr controlAddr;
 
@@ -115,6 +116,11 @@ void ExampleAgent::setupSchema()
     echoMethod.addArgument(SchemaProperty("map", SCHEMA_DATA_MAP, "{dir:INOUT}"));
     sch_control.addMethod(echoMethod);
 
+    SchemaMethod eventMethod("event", "{desc:'Raise an Event'}");
+    eventMethod.addArgument(SchemaProperty("text", SCHEMA_DATA_STRING, "{dir:IN}"));
+    eventMethod.addArgument(SchemaProperty("severity", SCHEMA_DATA_INT, "{dir:IN}"));
+    sch_control.addMethod(eventMethod);
+
     SchemaMethod failMethod("fail", "{desc:'Expected to Fail'}");
     failMethod.addArgument(SchemaProperty("useString", SCHEMA_DATA_BOOL, "{dir:IN}"));
     failMethod.addArgument(SchemaProperty("stringVal", SCHEMA_DATA_STRING, "{dir:IN}"));
@@ -133,11 +139,18 @@ void ExampleAgent::setupSchema()
     sch_child.addProperty(SchemaProperty("name", SCHEMA_DATA_STRING));
 
     //
+    // Declare the event class
+    //
+    sch_event = Schema(SCHEMA_TYPE_EVENT, package, "event");
+    sch_event.addProperty(SchemaProperty("text", SCHEMA_DATA_STRING));
+
+    //
     // Register our schemata with the agent session.
     //
     session.registerSchema(sch_exception);
     session.registerSchema(sch_control);
     session.registerSchema(sch_child);
+    session.registerSchema(sch_event);
 }
 
 void ExampleAgent::populateData()
@@ -173,40 +186,55 @@ bool ExampleAgent::method(AgentEvent& event)
     const string& name(event.getMethodName());
     control.setProperty("methodCount", control.getProperty("methodCount").asUint32() + 1);
 
-    if (controlAddr == event.getDataAddr()) {
-        if (name == "stop") {
-            cout << "Stopping: message=" << event.getArguments()["message"] << endl;
-            session.methodSuccess(event);
-            return false;
-        }
+    try {
+        if (controlAddr == event.getDataAddr()) {
+            if (name == "stop") {
+                cout << "Stopping: message=" << event.getArguments()["message"] << endl;
+                session.methodSuccess(event);
+                return false;
+            }
 
-        if (name == "echo") {
-            event.addReturnArgument("sequence", event.getArguments()["sequence"]);
-            event.addReturnArgument("map", event.getArguments()["map"]);
-            session.methodSuccess(event);
-            return true;
-        }
+            if (name == "echo") {
+                event.addReturnArgument("sequence", event.getArguments()["sequence"]);
+                event.addReturnArgument("map", event.getArguments()["map"]);
+                session.methodSuccess(event);
+                return true;
+            }
 
-        if (name == "fail") {
-            if (event.getArguments()["useString"])
-                session.raiseException(event, event.getArguments()["stringVal"]);
-            else {
-                Data ex(sch_exception);
-                ex.setProperty("whatHappened", "It Failed");
-                ex.setProperty("howBad", 75);
-                ex.setProperty("details", event.getArguments()["details"]);
-                session.raiseException(event, ex);
+            if (name == "event") {
+                Data ev(sch_event);
+                ev.setProperty("text", event.getArguments()["text"]);
+                session.raiseEvent(ev, event.getArguments()["severity"]);
+                session.methodSuccess(event);
+                return true;
+            }
+
+            if (name == "fail") {
+                if (event.getArguments()["useString"])
+                    session.raiseException(event, event.getArguments()["stringVal"]);
+                else {
+                    Data ex(sch_exception);
+                    ex.setProperty("whatHappened", "It Failed");
+                    ex.setProperty("howBad", 75);
+                    ex.setProperty("details", event.getArguments()["details"]);
+                    session.raiseException(event, ex);
+                }
+            }
+
+            if (name == "create_child") {
+                const string& name(event.getArguments()["name"]);
+                Data child(sch_child);
+                child.setProperty("name", name);
+                DataAddr addr(session.addData(child, name));
+                event.addReturnArgument("childAddr", addr.asMap());
+                session.methodSuccess(event);
             }
         }
-
-        if (name == "create_child") {
-            const string& name(event.getArguments()["name"]);
-            Data child(sch_child);
-            child.setProperty("name", name);
-            DataAddr addr(session.addData(child, name));
-            event.addReturnArgument("childAddr", addr.asMap());
-            session.methodSuccess(event);
-        }
+    } catch (const exception& e) {
+        //
+        // Pass the exception on to the caller.
+        //
+        session.raiseException(event, e.what());
     }
 
     return true;

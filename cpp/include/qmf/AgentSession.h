@@ -165,8 +165,14 @@ namespace qmf {
 
         /**
          * Raise an event to be sent into the QMF network.
+         *
+         * @param data - A data object that contains the event contents.
+         * @param severity - Explicit severity (from qmf/SchemaTypes.h).  If omitted, the severity is set to
+         *        the default severity for the data's schema.  If the data has no schema, the severity defaults
+         *        to SEV_NOTICE.
          */
-        QMF_EXTERN void raiseEvent(const Data&);
+        QMF_EXTERN void raiseEvent(const Data& data);
+        QMF_EXTERN void raiseEvent(const Data& data, int severity);
 
 #ifndef SWIG
     private:
