@@ -310,8 +310,11 @@ class QmfData:
       ## If the argument is a map, list, boolean, integer, or floating (one decimal point),
       ## run it through the Python evaluator so it is converted to the correct type.
       ##
-      if arg[0] == '{' or arg[0] == '[' or arg == "True" or arg == "False" \
-            or (arg.count('.') < 2 and arg.replace('.','').isdigit()):
+      ## TODO: use a regex for this instead of this convoluted logic
+      if arg[0] == '{' or arg[0] == '[' or arg == "True" or arg == "False" or \
+            ((arg.count('.') < 2 and (arg.count('-') == 0 or \
+            (arg.count('-') == 1 and  arg[0] == '-')) and \
+            arg.replace('.','').replace('-','').isdigit())):
         args.append(eval(arg))
       else:
         args.append(arg)
