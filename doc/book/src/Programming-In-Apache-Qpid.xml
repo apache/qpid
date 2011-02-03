@@ -3808,7 +3808,7 @@ log4j.appender.console.layout.ConversionPattern=%t %d %p [%c{4}] %m%n
       "hello_service_node" has been created and configured on the AMQP
       broker.</para>
 
-      <example>
+      <example><?dbfo keep-together="auto" ?>
 	<title>Traditional service model "Hello world!" example</title>
 	<programlisting><![CDATA[
 namespace Apache.Qpid.Documentation.HelloService
@@ -3901,7 +3901,7 @@ namespace Apache.Qpid.Documentation.HelloService
       contains the raw content and is identical and fully interoperable with
       the Qpid C++ "Hello world!"  example.</para>
 
-      <example>
+      <example><?dbfo keep-together="auto" ?>
 	<title>Binary  "Hello world!" example using the channel model</title>
 	<programlisting><![CDATA[
 namespace Apache.Qpid.Samples.Channel.HelloWorld
