@@ -119,7 +119,9 @@ ConsoleEvent AgentImpl::query(const Query& query, Duration timeout)
                 context->cond.wait(context->lock,
                                    qpid::sys::AbsTime(qpid::sys::now(),
                                                       qpid::sys::Duration(milliseconds * qpid::sys::TIME_MSEC)));
-            if (context->response.isValid() && context->response.isFinal())
+            if (context->response.isValid() &&
+                ((context->response.getType() == CONSOLE_QUERY_RESPONSE && context->response.isFinal()) ||
+                 (context->response.getType() == CONSOLE_EXCEPTION)))
                 result = context->response;
             else {
                 auto_ptr<ConsoleEventImpl> impl(new ConsoleEventImpl(CONSOLE_EXCEPTION));
@@ -520,6 +522,8 @@ void AgentImpl::sendQuery(const Query& query, uint32_t correlator)
     msg.setReplyTo(session.replyAddress);
     msg.setCorrelationId(boost::lexical_cast<string>(correlator));
     msg.setSubject(directSubject);
+    if (!session.authUser.empty())
+        msg.setUserId(session.authUser);
     encode(QueryImplAccess::get(query).asMap(), msg);
     if (sender.isValid())
         sender.send(msg);
@@ -545,6 +549,8 @@ void AgentImpl::sendMethod(const string& method, const Variant::Map& args, const
     msg.setReplyTo(session.replyAddress);
     msg.setCorrelationId(boost::lexical_cast<string>(correlator));
     msg.setSubject(directSubject);
+    if (!session.authUser.empty())
+        msg.setUserId(session.authUser);
     encode(map, msg);
     if (sender.isValid())
         sender.send(msg);
@@ -586,6 +592,8 @@ void AgentImpl::sendSchemaRequest(const SchemaId& id)
     msg.setReplyTo(session.replyAddress);
     msg.setContent(content);
     msg.setSubject(directSubject);
+    if (!session.authUser.empty())
+        msg.setUserId(session.authUser);
     if (sender.isValid())
         sender.send(msg);
 
