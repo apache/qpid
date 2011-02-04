@@ -138,6 +138,50 @@ QPID_AUTO_TEST_CASE(testRemove) {
     RangeExpectations().expect(3, 5).expect(7, 7).expect(9, 10).check(t);
 }
 
+
+QPID_AUTO_TEST_CASE(testOutOfOrderRemove) {
+
+    SequenceSet s(2, 20);
+
+    // test remove from middle:
+    s.remove(7);
+    RangeExpectations().expect(2, 6).expect(8, 20).check(s);
+    s.remove(14);
+    RangeExpectations().expect(2, 6).expect(8, 13).expect(15, 20).check(s);
+
+    // remove from front of subrange:
+    s.remove(8, 8);
+    RangeExpectations().expect(2, 6).expect(9, 13).expect(15, 20).check(s);
+
+    // remove from tail of subrange:
+    s.remove(6);
+    RangeExpectations().expect(2, 5).expect(9, 13).expect(15, 20).check(s);
+
+    // remove across subrange:
+    s.remove(13, 15);
+    RangeExpectations().expect(2, 5).expect(9, 12).expect(16, 20).check(s);
+
+    // remove within subrange:
+    s.remove(6, 8);
+    RangeExpectations().expect(2, 5).expect(9, 12).expect(16, 20).check(s);
+
+    // remove overlap subrange tail:
+    s.remove(11, 15);
+    RangeExpectations().expect(2, 5).expect(9, 10).expect(16, 20).check(s);
+
+    // remove overlap subrange head:
+    s.remove(14, 17);
+    RangeExpectations().expect(2, 5).expect(9, 10).expect(18, 20).check(s);
+
+    // remove overlap sequence tail:
+    s.remove(20, 22);
+    RangeExpectations().expect(2, 5).expect(9, 10).expect(18, 19).check(s);
+
+    // remove overlap sequence head:
+    s.remove(1, 3);
+    RangeExpectations().expect(4, 5).expect(9, 10).expect(18, 19).check(s);
+}
+
 QPID_AUTO_TEST_SUITE_END()
 
 }} // namespace qpid::tests
