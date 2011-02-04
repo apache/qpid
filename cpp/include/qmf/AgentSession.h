@@ -69,7 +69,7 @@ namespace qmf {
          *                                 If False: QMF events are only sent to authorized subscribers
          *    listen-on-direct:{True,False} - If True:  Listen on legacy direct-exchange address for backward compatibility [default]
          *                                    If False: Listen only on the routable direct address
-         *    strict-security:{True,False}  - If True:  Cooperate with the broker to enforce string access control to the network
+         *    strict-security:{True,False}  - If True:  Cooperate with the broker to enforce strict access control to the network
          *                                  - If False: Operate more flexibly with regard to use of messaging facilities [default]
          */
         QMF_EXTERN AgentSession(qpid::messaging::Connection&, const std::string& options="");
