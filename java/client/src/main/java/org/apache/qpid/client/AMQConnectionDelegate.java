@@ -59,6 +59,8 @@ public interface AMQConnectionDelegate
     <T, E extends Exception> T executeRetrySupport(FailoverProtectedOperation<T,E> operation) throws E;
     
     int getMaxChannelID();
-    
+
+    int getMinChannelID();
+
     ProtocolVersion getProtocolVersion();
 }

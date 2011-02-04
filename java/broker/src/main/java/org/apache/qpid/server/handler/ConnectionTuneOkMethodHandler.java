@@ -23,7 +23,6 @@ package org.apache.qpid.server.handler;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.ConnectionTuneOkBody;
-import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.state.AMQState;
 import org.apache.qpid.server.state.AMQStateManager;
@@ -51,5 +50,9 @@ public class ConnectionTuneOkMethodHandler implements StateAwareMethodListener<C
         stateManager.changeState(AMQState.CONNECTION_NOT_OPENED);
         session.initHeartbeats(body.getHeartbeat());
         session.setMaxFrameSize(body.getFrameMax());
+        
+        long maxChannelNumber = body.getChannelMax();
+        //0 means no implied limit, except that forced by protocol limitations (0xFFFF)
+        session.setMaximumNumberOfChannels( maxChannelNumber == 0 ? 0xFFFFL : maxChannelNumber);
     }
 }

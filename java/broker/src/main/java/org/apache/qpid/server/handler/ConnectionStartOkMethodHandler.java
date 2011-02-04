@@ -113,7 +113,7 @@ public class ConnectionStartOkMethodHandler implements StateAwareMethodListener<
 
                     stateManager.changeState(AMQState.CONNECTION_NOT_TUNED);
 
-                    ConnectionTuneBody tuneBody = methodRegistry.createConnectionTuneBody(0xFFFF,
+                    ConnectionTuneBody tuneBody = methodRegistry.createConnectionTuneBody(ApplicationRegistry.getInstance().getConfiguration().getMaxChannelCount(),
                                                                                           getConfiguredFrameSize(),
                                                                                           ApplicationRegistry.getInstance().getConfiguration().getHeartBeatDelay());
                     session.writeFrame(tuneBody.generateFrame(0));

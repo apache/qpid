@@ -59,6 +59,9 @@ public class Connection extends ConnectionInvoker
 
     protected static final Logger log = Logger.get(Connection.class);
 
+    //Usable channels are numbered 0 to <ChannelMax> - 1
+    public static final int MAX_CHANNEL_MAX = 0xFFFF;
+    public static final int MIN_USABLE_CHANNEL_NUM = 0;
 
     public enum State { NEW, CLOSED, OPENING, OPEN, CLOSING, CLOSE_RCVD }
 
@@ -404,7 +407,8 @@ public class Connection extends ConnectionInvoker
     {
         synchronized (lock)
         {
-            for (int i = 1; i <= getChannelMax(); i++)
+            //For a negotiated channelMax N, there are channels 0 to N-1 available.
+            for (int i = 0; i < getChannelMax(); i++)
             {
                 if (!channels.containsKey(i))
                 {

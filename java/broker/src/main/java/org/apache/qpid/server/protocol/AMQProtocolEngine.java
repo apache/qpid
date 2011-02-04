@@ -136,7 +136,7 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
     protected volatile boolean _closed;
     
     // maximum number of channels this session should have
-    private long _maxNoOfChannels = 1000;
+    private long _maxNoOfChannels = ApplicationRegistry.getInstance().getConfiguration().getMaxChannelCount();
 
     /* AMQP Version for this session */
     private ProtocolVersion _protocolVersion = ProtocolVersion.getLatestSupportedVersion();

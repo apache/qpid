@@ -108,6 +108,7 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
         envVarMap.put("QPID_MAXIMUMMESSAGECOUNT", "maximumMessageCount");
         envVarMap.put("QPID_MAXIMUMQUEUEDEPTH", "maximumQueueDepth");
         envVarMap.put("QPID_MAXIMUMMESSAGESIZE", "maximumMessageSize");
+        envVarMap.put("QPID_MAXIMUMCHANNELCOUNT", "maximumChannelCount");
         envVarMap.put("QPID_MINIMUMALERTREPEATGAP", "minimumAlertRepeatGap");
         envVarMap.put("QPID_QUEUECAPACITY", "capacity");
         envVarMap.put("QPID_FLOWRESUMECAPACITY", "flowResumeCapacity");
@@ -817,5 +818,10 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
                 return null;
             }
         };
+    }
+
+    public int getMaxChannelCount()
+    {
+        return getIntValue("maximumChannelCount", 256);
     }
 }

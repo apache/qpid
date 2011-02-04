@@ -30,6 +30,8 @@ import javax.security.sasl.Sasl;
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * ServerDelegate
@@ -38,8 +40,8 @@ import javax.security.sasl.SaslServer;
 
 public class ServerDelegate extends ConnectionDelegate
 {
+    protected static final Logger _logger = LoggerFactory.getLogger(ServerDelegate.class);
 
-    private SaslServer saslServer;
     private List<Object> _locales;
     private List<Object> _mechanisms;
     private Map<String, Object> _clientProperties;
@@ -47,7 +49,7 @@ public class ServerDelegate extends ConnectionDelegate
 
     public ServerDelegate()
     {
-        this(null, Collections.EMPTY_LIST, Collections.singletonList((Object)"utf8"));
+        this(null, Collections.emptyList(), Collections.singletonList((Object)"utf8"));
     }
 
     protected ServerDelegate(Map<String, Object> clientProperties, List<Object> mechanisms, List<Object> locales)
@@ -64,7 +66,8 @@ public class ServerDelegate extends ConnectionDelegate
         conn.connectionStart(_clientProperties, _mechanisms, _locales);
     }
 
-    @Override public void connectionStartOk(Connection conn, ConnectionStartOk ok)
+    @Override
+    public void connectionStartOk(Connection conn, ConnectionStartOk ok)
     {
         conn.setLocale(ok.getLocale());
         String mechanism = ok.getMechanism();
@@ -75,9 +78,9 @@ public class ServerDelegate extends ConnectionDelegate
         if (mechanism == null || mechanism.length() == 0)
         {
             conn.connectionTune
-                (Integer.MAX_VALUE,
+                (getChannelMax(),
                  org.apache.qpid.transport.network.ConnectionBinding.MAX_FRAME_SIZE,
-                 0, Integer.MAX_VALUE);
+                 0, getHeartbeatMax());
             return;
         }
 
@@ -118,7 +121,7 @@ public class ServerDelegate extends ConnectionDelegate
             {
                 ss.dispose();
                 conn.connectionTune
-                    (Integer.MAX_VALUE,
+                    (getChannelMax(),
                      org.apache.qpid.transport.network.ConnectionBinding.MAX_FRAME_SIZE,
                      0, getHeartbeatMax());
                 conn.setAuthorizationID(ss.getAuthorizationID());
@@ -140,19 +143,42 @@ public class ServerDelegate extends ConnectionDelegate
         return Integer.MAX_VALUE;
     }
 
-    @Override public void connectionSecureOk(Connection conn, ConnectionSecureOk ok)
+    protected int getChannelMax()
+    {
+        return Integer.MAX_VALUE;
+    }
+
+    @Override
+    public void connectionSecureOk(Connection conn, ConnectionSecureOk ok)
     {
         secure(conn, ok.getResponse());
     }
 
-    @Override public void connectionTuneOk(Connection conn, ConnectionTuneOk ok)
+    @Override
+    public void connectionTuneOk(Connection conn, ConnectionTuneOk ok)
     {
+        int okChannelMax = ok.getChannelMax();
         
+        if (okChannelMax > getChannelMax())
+        {
+            _logger.error("Connection '" + conn.getConnectionId() + "' being severed, " +
+                    "client connectionTuneOk returned a channelMax (" + okChannelMax +
+                    ") above the servers offered limit (" + getChannelMax() +")");
+
+            //Due to the error we must forcefully close the connection without negotiation
+            conn.getSender().close();
+            return;
+        }
+
+        //0 means no implied limit, except available server resources
+        //(or that forced by protocol limitations [0xFFFF])
+        conn.setChannelMax(okChannelMax == 0 ? Connection.MAX_CHANNEL_MAX : okChannelMax);
     }
 
-    @Override public void connectionOpen(Connection conn, ConnectionOpen open)
+    @Override
+    public void connectionOpen(Connection conn, ConnectionOpen open)
     {
-        conn.connectionOpenOk(Collections.EMPTY_LIST);
+        conn.connectionOpenOk(Collections.emptyList());
 
         conn.setState(OPEN);
     }
@@ -168,7 +194,8 @@ public class ServerDelegate extends ConnectionDelegate
         return new Session(conn, new Binary(atc.getName()), 0);
     }
 
-    @Override public void sessionAttach(Connection conn, SessionAttach atc)
+    @Override
+    public void sessionAttach(Connection conn, SessionAttach atc)
     {
         Session ssn = getSession(conn, atc);
         conn.map(ssn, atc.getChannel());
