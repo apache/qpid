@@ -481,6 +481,7 @@ void ConsoleSessionImpl::handleAgentUpdate(const string& agentName, const Varian
             //
             // This is a refresh of an agent we are already tracking.
             //
+            bool detectedRestart(false);
             agent = aIter->second;
             AgentImpl& impl(AgentImplAccess::get(agent));
             impl.touch();
@@ -493,6 +494,7 @@ void ConsoleSessionImpl::handleAgentUpdate(const string& agentName, const Varian
                 auto_ptr<ConsoleEventImpl> eventImpl(new ConsoleEventImpl(CONSOLE_AGENT_RESTART));
                 eventImpl->setAgent(agent);
                 enqueueEventLH(ConsoleEvent(eventImpl.release()));
+                detectedRestart = true;
             }
 
             iter = attrs.find(protocol::AGENT_ATTR_SCHEMA_UPDATED_TIMESTAMP);
@@ -501,12 +503,14 @@ void ConsoleSessionImpl::handleAgentUpdate(const string& agentName, const Varian
                 if (ts > impl.getAttribute(protocol::AGENT_ATTR_SCHEMA_UPDATED_TIMESTAMP).asUint64()) {
                     //
                     // The agent has added new schema entries since we last heard from it.
-                    // Enqueue a notification.
+                    // Update the attribute and, if this doesn't accompany a restart, enqueue a notification.
                     //
-                    auto_ptr<ConsoleEventImpl> eventImpl(new ConsoleEventImpl(CONSOLE_AGENT_SCHEMA_UPDATE));
-                    eventImpl->setAgent(agent);
-                    impl.setAttribute(iter->first, iter->second);
-                    enqueueEventLH(ConsoleEvent(eventImpl.release()));
+                    if (!detectedRestart) {
+                        auto_ptr<ConsoleEventImpl> eventImpl(new ConsoleEventImpl(CONSOLE_AGENT_SCHEMA_UPDATE));
+                        eventImpl->setAgent(agent);
+                        enqueueEventLH(ConsoleEvent(eventImpl.release()));
+                    }
+                    impl.setAttribute(protocol::AGENT_ATTR_SCHEMA_UPDATED_TIMESTAMP, iter->second);
                 }
             }
         }
