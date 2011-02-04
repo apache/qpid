@@ -377,9 +377,43 @@ void AgentImpl::handleMethodResponse(const Variant::Map& response, const Message
 }
 
 
-void AgentImpl::handleDataIndication(const Variant::List&, const Message&)
+void AgentImpl::handleDataIndication(const Variant::List& list, const Message& msg)
 {
-    // TODO
+    Variant::Map::const_iterator aIter;
+    const Variant::Map& props(msg.getProperties());
+    boost::shared_ptr<SyncContext> context;
+
+    aIter = props.find("qmf.content");
+    if (aIter == props.end())
+        return;
+
+    string content_type(aIter->second.asString());
+    if (content_type != "_event")
+        return;
+
+    for (Variant::List::const_iterator lIter = list.begin(); lIter != list.end(); lIter++) {
+        const Variant::Map& eventMap(lIter->asMap());
+        Data data(new DataImpl(eventMap, this));
+        int severity(SEV_NOTICE);
+        uint64_t timestamp(0);
+
+        aIter = eventMap.find("_severity");
+        if (aIter != eventMap.end())
+            severity = int(aIter->second.asInt8());
+
+        aIter = eventMap.find("_timestamp");
+        if (aIter != eventMap.end())
+            timestamp = aIter->second.asUint64();
+
+        auto_ptr<ConsoleEventImpl> eventImpl(new ConsoleEventImpl(CONSOLE_EVENT));
+        eventImpl->setAgent(this);
+        eventImpl->addData(data);
+        eventImpl->setSeverity(severity);
+        eventImpl->setTimestamp(timestamp);
+        if (data.hasSchema())
+            learnSchemaId(data.getSchemaId());
+        session.enqueueEvent(eventImpl.release());
+    }
 }
 
 

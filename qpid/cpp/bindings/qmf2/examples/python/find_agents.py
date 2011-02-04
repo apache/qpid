@@ -37,6 +37,9 @@ class FindAgents(qmf2.ConsoleHandler):
   def agentSchemaUpdated(self, agent):
     print "Agent Schema Updated: %r" % agent
 
+  def eventRaised(self, agent, data, timestamp, severity):
+    print "Event: data=%r time=%d sev=%d" % (data.getProperties(), timestamp, severity)
+
 
 
 url     = "localhost"
