@@ -1,4 +1,3 @@
-package org.apache.qpid.thread;
 /*
  * 
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -20,29 +19,25 @@ package org.apache.qpid.thread;
  * 
  */
 
+package org.apache.qpid.thread;
+
+
 
 public class DefaultThreadFactory implements ThreadFactory
 {
 
-    private static class QpidThread extends Thread
-    {
-        private QpidThread(final Runnable target)
-        {
-            super(target);
-        }
-
-    }
-
-
+    private final LoggingUncaughtExceptionHandler _loggingUncaughtExceptionHandler = new LoggingUncaughtExceptionHandler();
 
     public Thread createThread(Runnable r)
     {
-        return new Thread(r);
+        Thread t = new Thread(r);
+        t.setUncaughtExceptionHandler(_loggingUncaughtExceptionHandler);
+        return t;
     }
 
     public Thread createThread(Runnable r, int priority)
     {
-        Thread t = new Thread(r);
+        Thread t = createThread(r);
         t.setPriority(priority);
         return t;
     }

@@ -22,9 +22,11 @@ package org.apache.qpid.pool;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.LinkedBlockingQueue;
+
 
 /**
  * ReferenceCountingExecutorService wraps an ExecutorService in order to provide shared reference to it. It counts
@@ -36,7 +38,7 @@ import java.util.concurrent.LinkedBlockingQueue;
  *
  * <p/><table id="crc><caption>CRC Card</caption>
  * <tr><th> Responsibilities <th> Collaborations
- * <tr><td> Provide a shared exector service. <td> {@link Executors}
+ * <tr><td> Provide a shared executor service. <td> {@link Executors}
  * <tr><td> Shutdown the executor service when not needed. <td> {@link ExecutorService}
  * <tr><td> Track references to the executor service.
  * <tr><td> Provide configuration of the executor service.
@@ -53,13 +55,15 @@ import java.util.concurrent.LinkedBlockingQueue;
  * @todo {@link #_poolSize} should be static?
  *
  * @todo The {@link #getPool()} method breaks the encapsulation of the reference counter. Generally when getPool is used
- *       further checks are applied to ensure that the exector service has not been shutdown. This passes responsibility
+ *       further checks are applied to ensure that the executor service has not been shutdown. This passes responsibility
  *       for managing the lifecycle of the reference counted object onto the caller rather than neatly encapsulating it
  *       here. Could think about adding more state to the lifecycle, to mark ref counted objects as invalid, and have an
  *       isValid method, or could make calling code deal with RejectedExecutionException raised by shutdown executors.
  */
 public class ReferenceCountingExecutorService
 {
+
+
     /** Defines the smallest thread pool that will be allocated, irrespective of the number of processors. */
     private static final int MINIMUM_POOL_SIZE = 4;
 
@@ -86,6 +90,11 @@ public class ReferenceCountingExecutorService
 
     /** Holds the number of executor threads to create. */
     private int _poolSize = Integer.getInteger("amqj.read_write_pool_size", DEFAULT_POOL_SIZE);
+
+    /** Thread Factory used to create thread of the pool.   Uses the default implementation provided by
+     *  {@link java.util.concurrent.Executors#defaultThreadFactory()} unless reset by the caller.
+     */
+    private ThreadFactory _threadFactory = Executors.defaultThreadFactory();
 
     private final boolean _useBiasedPool = Boolean.getBoolean("org.apache.qpid.use_write_biased_pool");
 
@@ -116,19 +125,23 @@ public class ReferenceCountingExecutorService
         {
             if (_refCount++ == 0)
             {
-//                _pool = Executors.newFixedThreadPool(_poolSize);
-
                 // Use a job queue that biases to writes
                 if(_useBiasedPool)
                 {
                     _pool =  new ThreadPoolExecutor(_poolSize, _poolSize,
                                           0L, TimeUnit.MILLISECONDS,
-                                          new ReadWriteJobQueue());
+                                          new ReadWriteJobQueue(),
+                                          _threadFactory);
+
                 }
                 else
                 {
-                    _pool = Executors.newFixedThreadPool(_poolSize);
+                    _pool = new ThreadPoolExecutor(_poolSize, _poolSize,
+                            0L, TimeUnit.MILLISECONDS,
+                            new LinkedBlockingQueue<Runnable>(),
+                            _threadFactory);
                 }
+
             }
 
 
@@ -137,7 +150,7 @@ public class ReferenceCountingExecutorService
     }
 
     /**
-     * Releases a reference to a shared executor service, decrementing the reference count. If the refence count falls
+     * Releases a reference to a shared executor service, decrementing the reference count. If the reference count falls
      * to zero, the executor service is shut down.
      */
     public void releaseExecutorService()
@@ -169,4 +182,34 @@ public class ReferenceCountingExecutorService
     {
         return _refCount;
     }
+
+    /**
+     *
+     * Return the thread factory used by the {@link ThreadPoolExecutor} to create new threads.
+     *
+     * @return thread factory
+     */
+    public ThreadFactory getThreadFactory()
+    {
+        return _threadFactory;
+    }
+
+    /**
+     * Sets the thread factory used by the {@link ThreadPoolExecutor} to create new threads.
+     * <p>
+     * If the pool has been already created, the change will have no effect until
+     * {@link #getReferenceCount()} reaches zero and the pool recreated.  For this reason,
+     * callers must invoke this method <i>before</i> calling {@link #acquireExecutorService()}.
+     *
+     * @param threadFactory thread factory
+     */
+    public void setThreadFactory(final ThreadFactory threadFactory)
+    {
+        if (threadFactory == null)
+        {
+            throw new NullPointerException("threadFactory cannot be null");
+        }
+        _threadFactory = threadFactory;
+    }
+
 }
