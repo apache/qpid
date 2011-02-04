@@ -25,6 +25,8 @@ import java.lang.reflect.Constructor;
 
 public class RealtimeThreadFactory implements ThreadFactory
 {
+    private final LoggingUncaughtExceptionHandler _loggingUncaughtExceptionHandler = new LoggingUncaughtExceptionHandler();
+
     private Class threadClass;
     private Constructor threadConstructor;
     private Constructor priorityParameterConstructor;
@@ -62,7 +64,9 @@ public class RealtimeThreadFactory implements ThreadFactory
     public Thread createThread(Runnable r, int priority) throws Exception
     {
         Object priorityParams = priorityParameterConstructor.newInstance(priority);
-        return (Thread)threadConstructor.newInstance(priorityParams,null,null,null,null,r);
+        Thread thread = (Thread)threadConstructor.newInstance(priorityParams,null,null,null,null,r);
+        thread.setUncaughtExceptionHandler(_loggingUncaughtExceptionHandler);
+        return thread;
     }
 
 }

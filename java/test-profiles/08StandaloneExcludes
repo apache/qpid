@@ -34,6 +34,6 @@ org.apache.qpid.test.client.queue.QueuePolicyTest#testRejectPolicy
 
 // Those tests are written against the 0.10 path
 org.apache.qpid.test.unit.message.UTF8Test#*
-org.apache.qpid.client.MessageListenerTest#testSynchronousRecieveNoWait
+org.apache.qpid.client.MessageListenerTest#testSynchronousReceiveNoWait
 
 org.apache.qpid.test.unit.client.connection.ConnectionTest#testUnsupportedSASLMechanism

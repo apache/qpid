@@ -28,6 +28,7 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.mina.filter.codec.ProtocolCodecException;
@@ -63,6 +64,7 @@ import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.protocol.AMQMethodListener;
 import org.apache.qpid.protocol.ProtocolEngine;
+import org.apache.qpid.thread.Threading;
 import org.apache.qpid.transport.NetworkDriver;
 import org.apache.qpid.transport.network.io.IoTransport;
 import org.slf4j.Logger;
@@ -100,7 +102,7 @@ import org.slf4j.LoggerFactory;
  * connection is shutdown and a new one created. For this reason, an AMQProtocolHandler is created per AMQConnection
  * and the protocol session data is held outside of the MINA IOSession.
  *
- * <p/>This handler is responsibile for setting up the filter chain to filter all events for this handler through.
+ * <p/>This handler is responsible for setting up the filter chain to filter all events for this handler through.
  * The filter chain is set up as a stack of event handers that perform the following functions (working upwards from
  * the network traffic at the bottom), handing off incoming events to an asynchronous thread pool to do the work,
  * optionally handling secure sockets encoding/decoding, encoding/decoding the AMQP format itself.
@@ -114,8 +116,8 @@ import org.slf4j.LoggerFactory;
  * @todo Use a single handler instance, by shifting everything to do with the 'protocol session' state, including
  * failover state, into AMQProtocolSession, and tracking that from AMQConnection? The lifecycles of
  * AMQProtocolSesssion and AMQConnection will be the same, so if there is high cohesion between them, they could
- * be merged, although there is sense in keeping the session model seperate. Will clarify things by having data
- * held per protocol handler, per protocol session, per network connection, per channel, in seperate classes, so
+ * be merged, although there is sense in keeping the session model separate. Will clarify things by having data
+ * held per protocol handler, per protocol session, per network connection, per channel, in separate classes, so
  * that lifecycles of the fields match lifecycles of their containing objects.
  */
 public class AMQProtocolHandler implements ProtocolEngine
@@ -158,7 +160,7 @@ public class AMQProtocolHandler implements ProtocolEngine
     /** Used to provide a condition to wait upon for operations that are required to wait for failover to complete. */
     private CountDownLatch _failoverLatch;
 
-    /** The last failover exception that occured */
+    /** The last failover exception that occurred */
     private FailoverException _lastFailoverException;
 
     /** Defines the default timeout to use for synchronous protocol commands. */
@@ -187,6 +189,21 @@ public class AMQProtocolHandler implements ProtocolEngine
         _protocolSession = new AMQProtocolSession(this, _connection);
         _stateManager = new AMQStateManager(_protocolSession);
         _codecFactory = new AMQCodecFactory(false, _protocolSession);
+        _poolReference.setThreadFactory(new ThreadFactory()
+        {
+
+            public Thread newThread(final Runnable runnable)
+            {
+                try
+                {
+                    return Threading.getThreadFactory().createThread(runnable);
+                }
+                catch (Exception e)
+                {
+                    throw new RuntimeException("Failed to create thread", e);
+                }
+            }
+        });
         _readJob = new Job(_poolReference, Job.MAX_JOB_EVENTS, true);
         _writeJob = new Job(_poolReference, Job.MAX_JOB_EVENTS, false);
         _poolReference.acquireExecutorService();
@@ -275,7 +292,15 @@ public class AMQProtocolHandler implements ProtocolEngine
     {
         if(!_connection.isClosed())
         {
-            Thread failoverThread = new Thread(_failoverHandler);
+            final Thread failoverThread;
+            try
+            {
+                failoverThread = Threading.getThreadFactory().createThread(_failoverHandler);
+            }
+            catch (Exception e)
+            {
+                throw new RuntimeException("Failed to create thread", e);
+            }
             failoverThread.setName("Failover");
             // Do not inherit daemon-ness from current thread as this can be a daemon
             // thread such as a AnonymousIoService thread.
@@ -369,7 +394,7 @@ public class AMQProtocolHandler implements ProtocolEngine
     }
 
     /**
-     * This caters for the case where we only need to propogate an exception to the the frame listeners to interupt any
+     * This caters for the case where we only need to propagate an exception to the the frame listeners to interupt any
      * protocol level waits.
      *
      * This will would normally be used to notify all Frame Listeners that Failover is about to occur and they should
@@ -407,7 +432,7 @@ public class AMQProtocolHandler implements ProtocolEngine
         }
 
         //Only notify the Frame listeners that failover is going to occur as the State listeners shouldn't be
-        // interupted unless failover cannot restore the state.
+        // interrupted unless failover cannot restore the state.
         propagateExceptionToFrameListeners(_lastFailoverException);
     }
 
