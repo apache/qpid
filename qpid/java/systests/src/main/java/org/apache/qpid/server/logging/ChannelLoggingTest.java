@@ -75,7 +75,7 @@ public class ChannelLoggingTest extends AbstractTestLogging
         String log = getLogMessage(results, 0);
         //  MESSAGE [con:0(guest@anonymous(3273383)/test)/ch:1] CHN-1001 : Create
         validateMessageID("CHN-1001", log);
-        assertEquals("Incorrect Channel in actor:"+fromActor(log), 1, getChannelID(fromActor(log)));
+        assertEquals("Incorrect Channel in actor:"+fromActor(log), isBroker010()? 0 : 1, getChannelID(fromActor(log)));
 
         if (isBroker08())
         {
@@ -89,7 +89,7 @@ public class ChannelLoggingTest extends AbstractTestLogging
             log = getLogMessage(results, 0);
             //  MESSAGE [con:0(guest@anonymous(3273383)/test)/ch:1] CHN-1004 : Prefetch Size (bytes) {0,number} : Count {1,number}
             validateMessageID("CHN-1004", log);
-            assertEquals("Incorrect Channel in actor:"+fromActor(log), 1, getChannelID(fromActor(log)));
+            assertEquals("Incorrect Channel in actor:"+fromActor(log), isBroker010()? 0 : 1, getChannelID(fromActor(log)));
             assertTrue("Prefetch Count not correct",getMessageString(fromMessage(log)).endsWith("Count "+PREFETCH));
         }
 
@@ -306,7 +306,7 @@ public class ChannelLoggingTest extends AbstractTestLogging
         validateMessageID("CHN-1001", open);
         validateMessageID("CHN-1003", close);
         assertEquals("Message should be Close", "Close", getMessageString(fromMessage(close)));
-        assertEquals("Incorrect Channel ID closed", 1, getChannelID(fromSubject(close)));
+        assertEquals("Incorrect Channel ID closed", isBroker010()? 0 : 1, getChannelID(fromSubject(close)));
         assertEquals("Channel IDs should be the same", getChannelID(fromActor(open)), getChannelID(fromSubject(close)));
         assertEquals("Connection IDs should be the same", getConnectionID(fromActor(open)), getConnectionID(fromSubject(close)));
     }

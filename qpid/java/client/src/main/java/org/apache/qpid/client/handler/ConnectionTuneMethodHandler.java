@@ -55,9 +55,12 @@ public class ConnectionTuneMethodHandler implements StateAwareMethodListener<Con
         {
             params = new ConnectionTuneParameters();
         }
+        
+        int maxChannelNumber = frame.getChannelMax();
+        //0 implies no limit, except that forced by protocol limitations (0xFFFF)
+        params.setChannelMax(maxChannelNumber == 0 ? AMQProtocolSession.MAX_CHANNEL_MAX : maxChannelNumber);
 
         params.setFrameMax(frame.getFrameMax());
-        params.setChannelMax(frame.getChannelMax());
         params.setHeartbeat(Integer.getInteger("amqj.heartbeat.delay", frame.getHeartbeat()));
         session.setConnectionTuneParameters(params);
 

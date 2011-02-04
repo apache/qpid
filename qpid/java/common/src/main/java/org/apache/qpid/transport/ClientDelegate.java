@@ -86,7 +86,8 @@ public class ClientDelegate extends ConnectionDelegate
         }
     }
 
-    @Override public void connectionStart(Connection conn, ConnectionStart start)
+    @Override
+    public void connectionStart(Connection conn, ConnectionStart start)
     {
         Map<String,Object> clientProperties = new HashMap<String,Object>();
 
@@ -156,7 +157,8 @@ public class ClientDelegate extends ConnectionDelegate
         }
     }
 
-    @Override public void connectionSecure(Connection conn, ConnectionSecure secure)
+    @Override
+    public void connectionSecure(Connection conn, ConnectionSecure secure)
     {
         SaslClient sc = conn.getSaslClient();
         try
@@ -170,9 +172,9 @@ public class ClientDelegate extends ConnectionDelegate
         }
     }
 
-    @Override public void connectionTune(Connection conn, ConnectionTune tune)
+    @Override
+    public void connectionTune(Connection conn, ConnectionTune tune)
     {
-        conn.setChannelMax(tune.getChannelMax());
         int hb_interval = calculateHeartbeatInterval(conSettings.getHeartbeatInterval(),
                                                      tune.getHeartbeatMin(),
                                                      tune.getHeartbeatMax()
@@ -182,10 +184,17 @@ public class ClientDelegate extends ConnectionDelegate
                               hb_interval);
         // The idle timeout is twice the heartbeat amount (in milisecs)
         conn.setIdleTimeout(hb_interval*1000*2);
+
+        int channelMax = tune.getChannelMax();
+        //0 means no implied limit, except available server resources
+        //(or that forced by protocol limitations [0xFFFF])
+        conn.setChannelMax(channelMax == 0 ? Connection.MAX_CHANNEL_MAX : channelMax);
+
         conn.connectionOpen(conSettings.getVhost(), null, Option.INSIST);
     }
 
-    @Override public void connectionOpenOk(Connection conn, ConnectionOpenOk ok)
+    @Override
+    public void connectionOpenOk(Connection conn, ConnectionOpenOk ok)
     {
         SaslClient sc = conn.getSaslClient();
         if (sc != null)
@@ -210,12 +219,14 @@ public class ClientDelegate extends ConnectionDelegate
         conn.setState(OPEN);
     }
 
-    @Override public void connectionRedirect(Connection conn, ConnectionRedirect redir)
+    @Override
+    public void connectionRedirect(Connection conn, ConnectionRedirect redir)
     {
         throw new UnsupportedOperationException();
     }
 
-    @Override public void connectionHeartbeat(Connection conn, ConnectionHeartbeat hearbeat)
+    @Override
+    public void connectionHeartbeat(Connection conn, ConnectionHeartbeat hearbeat)
     {
         conn.connectionHeartbeat();
     }

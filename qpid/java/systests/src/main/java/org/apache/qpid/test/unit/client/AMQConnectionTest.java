@@ -266,19 +266,22 @@ public class AMQConnectionTest extends QpidBrokerTestCase
         }
     }
     
-    public void testGetChannelID()
+    public void testGetChannelID() throws Exception
     {
-        int maxChannelID = 65536;
+        long maxChannelID = _connection.getMaximumChannelCount();
         if (isBroker010())
         {
-            maxChannelID = Integer.MAX_VALUE+1;
+            //Usable numbers are 0 to N-1 when using 0-10
+            //and 1 to N for 0-8/0-9
+            maxChannelID = maxChannelID-1;
         }
         for (int j = 0; j < 3; j++)
         {
-            for (int i = 1; i < maxChannelID; i++)
+            int i = isBroker010() ? 0 : 1;
+            for ( ; i <= maxChannelID; i++)
             {
                 int id = _connection.getNextChannelID();
-                assertEquals("On iterartion "+j, i, id);
+                assertEquals("Unexpected number on iteration "+j, i, id);
                 _connection.deregisterSession(id);
             }
         }

@@ -37,6 +37,7 @@ import org.apache.qpid.client.failover.FailoverProtectedOperation;
 import org.apache.qpid.configuration.ClientProperties;
 import org.apache.qpid.framing.ProtocolVersion;
 import org.apache.qpid.jms.BrokerDetails;
+import org.apache.qpid.jms.ChannelLimitReachedException;
 import org.apache.qpid.jms.Session;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.transport.Connection;
@@ -82,6 +83,12 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
             throws JMSException
     {
         _conn.checkNotClosed();
+
+        if (_conn.channelLimitReached())
+        {
+            throw new ChannelLimitReachedException(_conn.getMaximumChannelCount());
+        }
+
         int channelId = _conn.getNextChannelID();
         AMQSession session;
         try
@@ -120,6 +127,12 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
     public XASession createXASession(int prefetchHigh, int prefetchLow) throws JMSException
     {
         _conn.checkNotClosed();
+
+        if (_conn.channelLimitReached())
+        {
+            throw new ChannelLimitReachedException(_conn.getMaximumChannelCount());
+        }
+
         int channelId = _conn.getNextChannelID();
         XASessionImpl session;
         try
@@ -165,6 +178,7 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
 
             _conn._connected = true;
             _conn.setUsername(_qpidConnection.getUserID());
+            _conn.setMaximumChannelCount(_qpidConnection.getChannelMax());
             _conn._failoverPolicy.attainedConnection();
         }
         catch (ProtocolVersionException pe)
@@ -293,7 +307,13 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
 
     public int getMaxChannelID()
     {
-       return Integer.MAX_VALUE;
+        //For a negotiated channelMax N, there are channels 0 to N-1 available.
+        return _qpidConnection.getChannelMax() - 1;
+    }
+
+    public int getMinChannelID()
+    {
+        return Connection.MIN_USABLE_CHANNEL_NUM;
     }
 
     public ProtocolVersion getProtocolVersion()
