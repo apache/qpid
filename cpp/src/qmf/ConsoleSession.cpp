@@ -65,9 +65,9 @@ Subscription ConsoleSession::subscribe(const string& q, const string& f, const s
 //========================================================================================
 
 ConsoleSessionImpl::ConsoleSessionImpl(Connection& c, const string& options) :
-    connection(c), domain("default"), maxAgentAgeMinutes(5), opened(false),
-    thread(0), threadCanceled(false),
-    lastVisit(0), lastAgePass(0), connectedBrokerInAgentList(false), schemaCache(new SchemaCache())
+    connection(c), domain("default"), authUser(c.getAuthenticatedUsername()), maxAgentAgeMinutes(5),
+    opened(false), thread(0), threadCanceled(false), lastVisit(0), lastAgePass(0),
+    connectedBrokerInAgentList(false), schemaCache(new SchemaCache())
 {
     if (!options.empty()) {
         qpid::messaging::AddressParser parser(options);
