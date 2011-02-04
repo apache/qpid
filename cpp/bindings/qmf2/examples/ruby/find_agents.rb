@@ -41,6 +41,10 @@ class FindAgents < Qmf2::ConsoleHandler
   def agent_schema_updated(agent)
     puts "Agent with new Schemata: #{agent.to_s}"
   end
+
+  def event_raised(agent, data, timestamp, severity)
+    puts "Event Raised time=#{timestamp} sev=#{severity} data=#{data.properties}"
+  end
 end
 
 

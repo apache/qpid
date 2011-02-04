@@ -42,6 +42,8 @@ namespace qmf {
         void addSchemaId(const SchemaId& s) { newSchemaIds.push_back(SchemaId(s)); }
         void setFinal() { final = true; }
         void setArguments(const qpid::types::Variant::Map& a) { arguments = a; }
+        void setSeverity(int s) { severity = s; }
+        void setTimestamp(uint64_t t) { timestamp = t; }
 
         //
         // Methods from API handle
@@ -56,6 +58,8 @@ namespace qmf {
         Data getData(uint32_t i) const;
         bool isFinal() const { return final; }
         const qpid::types::Variant::Map& getArguments() const { return arguments; }
+        int getSeverity() const { return severity; }
+        uint64_t getTimestamp() const { return timestamp; }
 
     private:
         const ConsoleEventCode eventType;
@@ -66,6 +70,8 @@ namespace qmf {
         std::list<Data> dataList;
         std::list<SchemaId> newSchemaIds;
         qpid::types::Variant::Map arguments;
+        int severity;
+        uint64_t timestamp;
     };
 
     struct ConsoleEventImplAccess
