@@ -119,7 +119,6 @@ import org.slf4j.LoggerFactory;
  */
 public abstract class AMQSession<C extends BasicMessageConsumer, P extends BasicMessageProducer> extends Closeable implements Session, QueueSession, TopicSession
 {
-
     public static final class IdToConsumerMap<C extends BasicMessageConsumer>
     {
         private final BasicMessageConsumer[] _fastAccessConsumers = new BasicMessageConsumer[16];
@@ -363,7 +362,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
     /**
      * Set when recover is called. This is to handle the case where recover() is called by application code during
-     * onMessage() processing to enure that an auto ack is not sent.
+     * onMessage() processing to ensure that an auto ack is not sent.
      */
     private boolean _inRecovery;
 
@@ -383,7 +382,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     private final Object _suspensionLock = new Object();
 
     /**
-     * Used to ensure that onlt the first call to start the dispatcher can unsuspend the channel.
+     * Used to ensure that only the first call to start the dispatcher can unsuspend the channel.
      *
      * @todo This is accessed only within a synchronized method, so does not need to be atomic.
      */
@@ -429,7 +428,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
      * @param con                     The connection on which to create the session.
      * @param channelId               The unique identifier for the session.
      * @param transacted              Indicates whether or not the session is transactional.
-     * @param acknowledgeMode         The acknoledgement mode for the session.
+     * @param acknowledgeMode         The acknowledgement mode for the session.
      * @param messageFactoryRegistry  The message factory factory for the session.
      * @param defaultPrefetchHighMark The maximum number of messages to prefetched before suspending the session.
      * @param defaultPrefetchLowMark  The number of prefetched messages at which to resume the session.
@@ -475,7 +474,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                                                              // flow control
                                                              if (!(_thisSession.isClosed() || _thisSession.isClosing()))
                                                              {   
-                                                                 // Only executute change if previous state
+                                                                 // Only execute change if previous state
                                                                  // was False
                                                                  if (!_suspendState.getAndSet(true))
                                                                  {
@@ -485,7 +484,14 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                                                                                  "Above threshold(" + _prefetchHighMark
                                                                                  + ") so suspending channel. Current value is " + currentValue);
                                                                      }
-                                                                     new Thread(new SuspenderRunner(_suspendState)).start();
+                                                                     try
+                                                                     {
+                                                                         Threading.getThreadFactory().createThread(new SuspenderRunner(_suspendState)).start();
+                                                                     }
+                                                                     catch (Exception e)
+                                                                     {
+                                                                         throw new RuntimeException("Failed to create thread", e);
+                                                                     }
                                                                  }
                                                              }
                                                          }
@@ -496,7 +502,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                                                              // flow control
                                                              if (!(_thisSession.isClosed() || _thisSession.isClosing()))
                                                              {
-                                                                 // Only executute change if previous state
+                                                                 // Only execute change if previous state
                                                                  // was true
                                                                  if (_suspendState.getAndSet(false))
                                                                  {
@@ -507,7 +513,14 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                                                                                  "Below threshold(" + _prefetchLowMark
                                                                                  + ") so unsuspending channel. Current value is " + currentValue);
                                                                      }
-                                                                    new Thread(new SuspenderRunner(_suspendState)).start();
+                                                                     try
+                                                                     {
+                                                                         Threading.getThreadFactory().createThread(new SuspenderRunner(_suspendState)).start();
+                                                                     }
+                                                                     catch (Exception e)
+                                                                     {
+                                                                         throw new RuntimeException("Failed to create thread", e);
+                                                                     }
                                                                  }
                                                              }
                                                          }
@@ -531,7 +544,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
      * @param con                 The connection on which to create the session.
      * @param channelId           The unique identifier for the session.
      * @param transacted          Indicates whether or not the session is transactional.
-     * @param acknowledgeMode     The acknoledgement mode for the session.
+     * @param acknowledgeMode     The acknowledgement mode for the session.
      * @param defaultPrefetchHigh The maximum number of messages to prefetched before suspending the session.
      * @param defaultPrefetchLow  The number of prefetched messages at which to resume the session.
      */
@@ -562,7 +575,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         }
         catch (IllegalStateException ise)
         {
-            // if the Connection has closed then we should throw any exception that has occured that we were not waiting for
+            // if the Connection has closed then we should throw any exception that has occurred that we were not waiting for
             AMQStateManager manager = _connection.getProtocolHandler().getStateManager();
 
             if (manager.getCurrentState().equals(AMQState.CONNECTION_CLOSED) && manager.getLastException() != null)
@@ -677,11 +690,11 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     /**
      * Closes the session.
      *
-     * <p/>Note that this operation succeeds automatically if a fail-over interupts the sycnronous request to close
+     * <p/>Note that this operation succeeds automatically if a fail-over interrupts the synchronous request to close
      * the channel. This is because the channel is marked as closed before the request to close it is made, so the
      * fail-over should not re-open it.
      *
-     * @param timeout The timeout in milliseconds to wait for the session close acknoledgement from the broker.
+     * @param timeout The timeout in milliseconds to wait for the session close acknowledgement from the broker.
      *
      * @throws JMSException If the JMS provider fails to close the session due to some internal error.
      * @todo Be aware of possible changes to parameter order as versions change.

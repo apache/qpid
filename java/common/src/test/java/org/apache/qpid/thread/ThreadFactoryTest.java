@@ -1,4 +1,3 @@
-package org.apache.qpid.thread;
 /*
  * 
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -20,18 +19,22 @@ package org.apache.qpid.thread;
  * 
  */
 
+package org.apache.qpid.thread;
 
 import junit.framework.TestCase;
 
+/**
+ * Tests the ThreadFactory.
+ */
 public class ThreadFactoryTest extends TestCase
 {
     public void testThreadFactory()
     {
-        Class threadFactoryClass = null;
+        Class<? extends ThreadFactory> threadFactoryClass = null;
         try
         {
             threadFactoryClass = Class.forName(System.getProperty("qpid.thread_factory",
-                    "org.apache.qpid.thread.DefaultThreadFactory"));            
+                    "org.apache.qpid.thread.DefaultThreadFactory")).asSubclass(ThreadFactory.class);
         }
         // If the thread factory class was wrong it will flagged way before it gets here.
         catch(Exception e)
@@ -41,20 +44,19 @@ public class ThreadFactoryTest extends TestCase
         
         assertEquals(threadFactoryClass, Threading.getThreadFactory().getClass());
     }
-    
-    public void testThreadCreate()
+
+    /**
+     * Tests creating a thread without a priority.   Also verifies that the factory sets the
+     * uncaught exception handler so uncaught exceptions are logged to SLF4J.
+     */
+    public void testCreateThreadWithDefaultPriority()
     {
-        Runnable r = new Runnable(){
-          
-            public void run(){
-                
-            }            
-        };
+        Runnable r = createRunnable();
         
         Thread t = null;
         try
         {
-            t = Threading.getThreadFactory().createThread(r,5);
+            t = Threading.getThreadFactory().createThread(r);
         }
         catch(Exception e)
         {
@@ -62,6 +64,41 @@ public class ThreadFactoryTest extends TestCase
         }
         
         assertNotNull(t);
-        assertEquals(5,t.getPriority());
+        assertEquals(Thread.NORM_PRIORITY, t.getPriority());
+        assertTrue(t.getUncaughtExceptionHandler() instanceof LoggingUncaughtExceptionHandler);
+    }
+
+    /**
+     * Tests creating thread with a priority.   Also verifies that the factory sets the
+     * uncaught exception handler so uncaught exceptions are logged to SLF4J.
+     */
+    public void testCreateThreadWithSpecifiedPriority()
+    {
+        Runnable r = createRunnable();
+
+        Thread t = null;
+        try
+        {
+            t = Threading.getThreadFactory().createThread(r, 4);
+        }
+        catch(Exception e)
+        {
+            fail("Error creating thread using Qpid thread factory");
+        }
+
+        assertNotNull(t);
+        assertEquals(4, t.getPriority());
+        assertTrue(t.getUncaughtExceptionHandler() instanceof LoggingUncaughtExceptionHandler);
+    }
+
+    private Runnable createRunnable()
+    {
+        Runnable r = new Runnable(){
+
+            public void run(){
+
+            }
+        };
+        return r;
     }
 }
