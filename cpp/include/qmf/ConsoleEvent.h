@@ -74,6 +74,8 @@ namespace qmf {
         QMF_EXTERN Data getData(uint32_t) const;
         QMF_EXTERN bool isFinal() const;
         QMF_EXTERN const qpid::types::Variant::Map& getArguments() const;
+        QMF_EXTERN int getSeverity() const;
+        QMF_EXTERN uint64_t getTimestamp() const;
 
 #ifndef SWIG
     private:

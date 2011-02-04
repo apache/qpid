@@ -173,6 +173,9 @@ class ConsoleHandler(Thread):
         elif event.getType() == cqmf2.CONSOLE_AGENT_SCHEMA_UPDATE:
           self.agentSchemaUpdated(Agent(event.getAgent()))
 
+        elif event.getType() == cqmf2.CONSOLE_EVENT:
+          self.eventRaised(Agent(event.getAgent()), Data(event.getData(0)), event.getTimestamp(), event.getSeverity())
+
   ##
   ## The following methods are intended to be overridden in a sub-class.  They are
   ## handlers for events that occur on QMF consoles.

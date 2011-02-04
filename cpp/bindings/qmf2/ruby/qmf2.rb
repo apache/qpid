@@ -297,6 +297,9 @@ module Qmf2
           when Cqmf2::CONSOLE_AGENT_SCHEMA_UPDATE
             agent_schema_updated(Agent.new(event.getAgent))
 
+          when Cqmf2::CONSOLE_EVENT
+            event_raised(Agent.new(event.getAgent), Data.new(event.getData(0)), event.getTimestamp, event.getSeverity)
+
           end
         end
       end
