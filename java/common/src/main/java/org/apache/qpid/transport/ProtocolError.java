@@ -60,6 +60,11 @@ public final class ProtocolError implements NetworkEvent, ProtocolEvent
         return track;
     }
 
+    public boolean isConnectionControl()
+    {
+        return false;
+    }
+
     public String getMessage()
     {
         return String.format(format, args);
