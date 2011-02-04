@@ -36,6 +36,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.client.failover.FailoverException;
 import org.apache.qpid.client.failover.FailoverProtectedOperation;
 import org.apache.qpid.client.failover.FailoverRetrySupport;
+import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.apache.qpid.client.state.AMQState;
 import org.apache.qpid.client.state.StateWaiter;
 import org.apache.qpid.client.transport.TransportConnection;
@@ -134,7 +135,7 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
 
         if (_conn.channelLimitReached())
         {
-            throw new ChannelLimitReachedException(_conn._maximumChannelCount);
+            throw new ChannelLimitReachedException(_conn.getMaximumChannelCount());
         }
 
         return new FailoverRetrySupport<org.apache.qpid.jms.Session, JMSException>(
@@ -307,7 +308,14 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
 
     public int getMaxChannelID()
     {
-        return (int) (Math.pow(2, 16)-1);
+        ConnectionTuneParameters params = _conn.getProtocolHandler().getProtocolSession().getConnectionTuneParameters();
+
+        return params == null ? AMQProtocolSession.MAX_CHANNEL_MAX : params.getChannelMax();
+    }
+
+    public int getMinChannelID()
+    {
+        return AMQProtocolSession.MIN_USABLE_CHANNEL_NUM;
     }
 
     public ProtocolVersion getProtocolVersion()

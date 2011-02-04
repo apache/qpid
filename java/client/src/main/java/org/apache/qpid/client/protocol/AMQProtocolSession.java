@@ -54,6 +54,10 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
 
     public static final String PROTOCOL_INITIATION_RECEIVED = "ProtocolInitiatiionReceived";
 
+    //Usable channels are numbered 1 to <ChannelMax>
+    public static final int MAX_CHANNEL_MAX = 0xFFFF;
+    public static final int MIN_USABLE_CHANNEL_NUM = 1;
+
     protected static final String CONNECTION_TUNE_PARAMETERS = "ConnectionTuneParameters";
 
     protected static final String AMQ_CONNECTION = "AMQConnection";
@@ -178,6 +182,7 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
     {
         _connectionTuneParameters = params;
         AMQConnection con = getAMQConnection();
+
         con.setMaximumChannelCount(params.getChannelMax());
         con.setMaximumFrameSize(params.getFrameMax());
         _protocolHandler.initHeartbeats((int) params.getHeartbeat());

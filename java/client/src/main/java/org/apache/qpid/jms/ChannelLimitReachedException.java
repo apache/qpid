@@ -33,9 +33,9 @@ public class ChannelLimitReachedException extends ResourceAllocationException
 
     public ChannelLimitReachedException(long limit)
     {
-        super("Unable to create session since maximum number of sessions per connection is " +
-              limit + ". Either close one or more sessions or increase the " +
-              "maximum number of sessions per connection (or contact your AMQP administrator.", ERROR_CODE);
+        super("Unable to create session, the maximum number of sessions per connection is " +
+              limit + ". You must either close one or more sessions or increase the " +
+              "maximum number of sessions available per connection.", ERROR_CODE);
         _limit = limit;
     }
 

@@ -26,6 +26,7 @@ import org.apache.qpid.server.logging.actors.GenericActor;
 import org.apache.qpid.common.ClientProperties;
 import org.apache.qpid.protocol.ProtocolEngine;
 import org.apache.qpid.server.security.SecurityManager;
+import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
@@ -144,5 +145,11 @@ public class ServerConnectionDelegate extends ServerDelegate
     {
         //TODO: implement broker support for actually sending heartbeats
         return 0;
+    }
+
+    @Override
+    protected int getChannelMax()
+    {
+        return ApplicationRegistry.getInstance().getConfiguration().getMaxChannelCount();
     }
 }
