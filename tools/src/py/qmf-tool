@@ -128,12 +128,16 @@ class Mcli(Cmd):
     try:
       self.dataObject.do_query(data)
     except Exception, e:
+      if e.message.__class__ == qmf2.Data:
+        e = e.message.getProperties()
       print "Exception in query command:", e
 
   def do_call(self, data):
     try:
       self.dataObject.do_call(data)
     except Exception, e:
+      if e.message.__class__ == qmf2.Data:
+        e = e.message.getProperties()
       print "Exception in call command:", e
 
   def do_clear(self, data):
