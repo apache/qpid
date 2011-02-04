@@ -88,6 +88,11 @@ public final class ProtocolHeader implements NetworkEvent, ProtocolEvent
         return Frame.L1;
     }
 
+    public boolean isConnectionControl()
+    {
+        return false;
+    }
+
     public ByteBuffer toByteBuffer()
     {
         ByteBuffer buf = ByteBuffer.allocate(8);

@@ -37,4 +37,5 @@ public interface ProtocolEvent
 
     <C> void delegate(C context, ProtocolDelegate<C> delegate);
 
+    boolean isConnectionControl();
 }

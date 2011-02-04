@@ -149,15 +149,23 @@ public class ServerConnection extends Connection implements AMQConnectionModel, 
     @Override
     public void received(ProtocolEvent event)
     {
-        ServerSession channel = (ServerSession) getSession(event.getChannel());
-        LogActor channelActor = null;
-
-        if (channel != null)
+        if (event.isConnectionControl())
         {
-            channelActor = channel.getLogActor();
+            CurrentActor.set(_actor);
+        }
+        else
+        {
+            ServerSession channel = (ServerSession) getSession(event.getChannel());
+            LogActor channelActor = null;
+
+            if (channel != null)
+            {
+                channelActor = channel.getLogActor();
+            }
+
+            CurrentActor.set(channelActor == null ? _actor : channelActor);
         }
 
-        CurrentActor.set(channelActor == null ? _actor : channelActor);
         try
         {
             super.received(event);
