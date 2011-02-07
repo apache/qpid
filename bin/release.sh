@@ -208,7 +208,7 @@ fi
 
 if [ "JAVA" == "$JAVA" ] ; then
   pushd qpid-${VER}/java
-  ant build release release-bin -Dsvnversion.output=${REV}
+  ant build release release-bin release-mvn -Dsvnversion.output=${REV}
   popd
 
   cp qpid-${VER}/java/release/*.tar.gz  artifacts/qpid-java-${VER}.tar.gz
@@ -216,6 +216,10 @@ if [ "JAVA" == "$JAVA" ] ; then
   cp qpid-${VER}/java/client/release/*.tar.gz artifacts/qpid-java-client-${VER}.tar.gz
   #cp qpid-${VER}/java/client/example/release/*.tar.gz 
   cp qpid-${VER}/java/management/eclipse-plugin/release/*.tar.gz qpid-${VER}/java/management/eclipse-plugin/release/*.zip artifacts/
+
+  # copy the Maven artifacts
+  cp qpid-${VER}/java/client/release/maven artifacts/
+  cp qpid-${VER}/java/common/release/maven artifacts/
 fi
 
 if [ "DOTNET" == "$DOTNET" ] ; then
