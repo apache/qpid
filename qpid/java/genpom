@@ -32,6 +32,8 @@ parser.add_option("-a", "--artifact")
 parser.add_option("-v", "--version")
 parser.add_option("-d", "--description", default="")
 parser.add_option("-u", "--url", default="")
+parser.add_option("-m", "--modules", help="modules dependencies")
+parser.add_option("-p", "--prefix", help="prefix of the project's artifacts names")
 parser.add_option("-i", "--ignore", action="store_true", help="ignore missing poms")
 parser.add_option("-s", "--search-path", action="append",
                   help="the path to search for poms")
@@ -62,6 +64,9 @@ if opts.version is None:
 if opts.name is None and opts.artifact is None:
   die("one of name or artifact must be supplied")
 
+if opts.prefix is not None:
+  opts.artifact = opts.prefix + "-" + opts.artifact
+
 if opts.name is None:
   opts.name = opts.artifact
 
@@ -90,6 +95,24 @@ for s in opts.scope:
   scopes[m.group(1)] = m.group(2)
 
 deps = []
+module_depends = []
+if opts.modules is not None:
+  module_depends = opts.modules.replace("/", "-").split();
+  
+for module in module_depends:
+  if opts.prefix is None:
+     artifactId = module
+  else:
+     artifactId = opts.prefix + "-" + module
+  
+  deps.append("""
+    <dependency>
+      <groupId>%s</groupId>
+      <artifactId>%s</artifactId>
+      <version>%s</version>
+    </dependency>
+""" % (opts.group, artifactId, opts.version))
+
 for jar in jars:
   base, ext = os.path.splitext(os.path.basename(jar))
   pom = search(expanded_path, "%s.pom" % base)
@@ -119,22 +142,27 @@ TEMPLATE = """<?xml version="1.0" encoding="UTF-8"?>
   <groupId>%(group)s</groupId>
   <artifactId>%(artifact)s</artifactId>
   <version>%(version)s</version>
+
   <name>%(name)s</name>
   <url>%(url)s</url>
   <description>%(description)s</description>
+
   <organization>
     <name>The Apache Software Foundation</name>
     <url>http://www.apache.org</url>
   </organization>
+
   <licenses>
     <license>
       <name>The Apache Software License, Version 2.0</name>
-      <url>/LICENSE.txt</url>
+      <url>http://www.apache.org/licenses/LICENSE-2.0.html</url>
     </license>
   </licenses>
+
   <dependencies>
     %(dependencies)s
   </dependencies>
+
 </project>
 """
 
