@@ -66,6 +66,10 @@
     <iterate target="pom"/>
   </target>
 
+  <target name="release-mvn" description="Install the artifacts into the local repository">
+    <iterate target="release-mvn"/>
+  </target>
+
   <target name="compile" description="compile sources">
     <iterate target="compile"/>
   </target>
