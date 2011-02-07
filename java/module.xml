@@ -220,9 +220,12 @@
         <arg line='"${project.root}/genpom"'/>
         <arg line='-s "${project.root}/lib/poms"'/>
         <arg line='-o "${build}/qpid-${module.name}.pom"'/>
+        <arg line="-u http://qpid.apache.org"/>
         <arg line="-g org.apache.qpid"/>
-        <arg line="-a qpid-${module.name}"/>
         <arg line="-v ${project.version}"/>
+        <arg line="-p qpid"/>
+        <arg line='-m "${module.depends}"'/>
+        <arg line="-a ${module.name}"/>
         <arg line="${module.genpom.args}"/>
         <arg line="${module.libs}"/>
       </args>
