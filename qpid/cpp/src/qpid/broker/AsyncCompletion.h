@@ -92,9 +92,12 @@ namespace qpid {
                 qpid::sys::Mutex::ScopedLock l(callbackLock);
                 inCallback = true;
                 if (handler) {
-                    qpid::sys::Mutex::ScopedUnlock ul(callbackLock);
-                    (*handler)(sync);
-                    handler.reset();
+                    boost::shared_ptr<CompletionHandler> tmp;
+                    tmp.swap(handler);
+                    {
+                        qpid::sys::Mutex::ScopedUnlock ul(callbackLock);
+                        (*tmp)(sync);
+                    }
                 }
                 inCallback = false;
                 callbackLock.notifyAll();
@@ -142,7 +145,6 @@ namespace qpid {
             /** called by initiator after all potential completers have called
              * startCompleter().
              */
-            //void end(CompletionHandler::shared_ptr& _handler)
             void end(boost::shared_ptr<CompletionHandler> _handler)
             {
                 assert(completionsNeeded.get() > 0);    // ensure begin() has been called!

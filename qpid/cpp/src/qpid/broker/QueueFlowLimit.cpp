@@ -116,7 +116,7 @@ bool QueueFlowLimit::consume(const QueuedMessage& msg)
 
     if (!msg.payload) return false;
 
-    sys::Mutex::ScopedLock l(pendingFlowLock);
+    sys::Mutex::ScopedLock l(indexLock);
 
     ++count;
     size += msg.payload->contentSize();
@@ -153,7 +153,7 @@ bool QueueFlowLimit::replenish(const QueuedMessage& msg)
 
     if (!msg.payload) return false;
 
-    sys::Mutex::ScopedLock l(pendingFlowLock);
+    sys::Mutex::ScopedLock l(indexLock);
 
     if (count > 0) {
         --count;
@@ -190,15 +190,6 @@ bool QueueFlowLimit::replenish(const QueuedMessage& msg)
             if (itr != index.end()) {       // this msg is flow controlled, release it:
                 (*itr)->getReceiveCompletion().finishCompleter();
                 index.erase(itr);
-                //// stupid: (hopefully this is the next pending msg)
-                //std::list< boost::intrusive_ptr<Message> >::iterator itr2 = find(pendingFlow.begin(),
-                //                                                                 pendingFlow.end(),
-                //                                                                 msg.payload);
-                //if (itr2 == pendingFlow.end()) {
-                //    QPID_LOG(error, "Queue \"" << queueName << "\": indexed msg missing in list: " << msg.position);
-                //} else {
-                //    pendingFlow.erase(itr2);
-                //}
             }
         }
     }
@@ -274,14 +265,3 @@ std::ostream& operator<<(std::ostream& out, const QueueFlowLimit& f)
     }
 }
 
-/**
- * TBD:
- * - Is there a direct way to determine if QM is on pendingFlow list?
- * - Rate limit the granting of flow.
- * - What about LVQ?  A newer msg may replace the older one.
- * - What about queueing during a recovery?
- * - What about queue purge?
- * - What about message move?
- * - How do we treat orphaned messages?
- * -- Xfer a message to an alternate exchange - do we ack?
- */

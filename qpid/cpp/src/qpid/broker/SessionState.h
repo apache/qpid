@@ -131,6 +131,9 @@ class SessionState : public qpid::SessionState,
 
     void handleCommand(framing::AMQMethodBody* method, const framing::SequenceNumber& id);
     void handleContent(framing::AMQFrame& frame, const framing::SequenceNumber& id);
+
+    // indicate that the given ingress msg has been completely received by the
+    // broker, and the msg's message.transfer command can be considered completed.
     void completeRcvMsg(boost::intrusive_ptr<qpid::broker::Message> msg);
 
     void handleIn(framing::AMQFrame& frame);
@@ -169,21 +172,38 @@ class SessionState : public qpid::SessionState,
     std::queue<SequenceNumber> pendingExecutionSyncs;
     bool currentCommandComplete;
 
+    // A list of ingress messages whose message.transfer command is pending
+    // completion.  These messages are awaiting some set of asynchronous
+    // operations to complete (eg: store, flow-control, etc). before
+    // the message.transfer can be completed.
     class IncompleteRcvMsg : public AsyncCompletion::CompletionHandler
     {
   public:
         IncompleteRcvMsg(SessionState& _session, boost::intrusive_ptr<Message> _msg)
           : session(&_session), msg(_msg) {}
-        virtual void operator() (bool sync);
+        virtual void operator() (bool sync);    // invoked when msg is completed.
         void cancel();   // cancel pending incomplete callback [operator() above].
+
+        typedef boost::shared_ptr<IncompleteRcvMsg>  shared_ptr;
+        typedef std::deque<shared_ptr> deque;
 
   private:
         SessionState *session;
         boost::intrusive_ptr<Message> msg;
-        static void scheduledCompleter( boost::shared_ptr<IncompleteRcvMsg> incompleteMsg );
+
+        static void scheduledCompleter(boost::shared_ptr<deque>);
     };
-    std::list< boost::shared_ptr<IncompleteRcvMsg> > incompleteRcvMsgs;
+    std::map<const IncompleteRcvMsg *, IncompleteRcvMsg::shared_ptr> incompleteRcvMsgs;  // msgs pending completion
     qpid::sys::Mutex incompleteRcvMsgsLock;
+    boost::shared_ptr<IncompleteRcvMsg> createPendingMsg(boost::intrusive_ptr<Message>& msg) {
+        boost::shared_ptr<IncompleteRcvMsg> pending(new IncompleteRcvMsg(*this, msg));
+        qpid::sys::ScopedLock<qpid::sys::Mutex> l(incompleteRcvMsgsLock);
+        incompleteRcvMsgs[pending.get()] = pending;
+        return pending;
+    }
+
+    // holds msgs waiting for IO thread to run scheduledCompleter()
+    boost::shared_ptr<IncompleteRcvMsg::deque> scheduledRcvMsgs;
 
     friend class SessionManager;
     friend class IncompleteRcvMsg;

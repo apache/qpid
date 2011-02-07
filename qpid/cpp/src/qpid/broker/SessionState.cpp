@@ -60,7 +60,8 @@ SessionState::SessionState(
       adapter(semanticState),
       msgBuilder(&broker.getStore()),
       mgmtObject(0),
-      rateFlowcontrol(0)
+      rateFlowcontrol(0),
+      scheduledRcvMsgs(new IncompleteRcvMsg::deque)
 {
     uint32_t maxRate = broker.getOptions().maxSessionRate;
     if (maxRate) {
@@ -95,16 +96,19 @@ SessionState::~SessionState() {
         flowControlTimer->cancel();
 
     // clean up any outstanding incomplete receive messages
-
     qpid::sys::ScopedLock<Mutex> l(incompleteRcvMsgsLock);
-    while (!incompleteRcvMsgs.empty()) {
-        boost::shared_ptr<IncompleteRcvMsg> ref(incompleteRcvMsgs.front());
-        incompleteRcvMsgs.pop_front();
+    std::map<const IncompleteRcvMsg *, IncompleteRcvMsg::shared_ptr> copy(incompleteRcvMsgs);
+    incompleteRcvMsgs.clear();
+    while (!copy.empty()) {
+        boost::shared_ptr<IncompleteRcvMsg> ref(copy.begin()->second);
+        copy.erase(copy.begin());
         {
+            // note: need to drop lock, as callback may attempt to take it.
             qpid::sys::ScopedUnlock<Mutex> ul(incompleteRcvMsgsLock);
             ref->cancel();
         }
     }
+    scheduledRcvMsgs->clear();  // no need to lock - shared with IO thread.
 }
 
 AMQP_ClientProxy& SessionState::getProxy() {
@@ -264,21 +268,7 @@ void SessionState::handleContent(AMQFrame& frame, const SequenceNumber& id)
         msg->getReceiveCompletion().begin();
         semanticState.handle(msg);
         msgBuilder.end();
-        if (msg->getReceiveCompletion().getPendingCompleters() == 1) {
-            // There are no other pending receive completers (just this SessionState).
-            // Mark the message as completed.
-            completeRcvMsg( msg );
-        } else {
-            // There are outstanding receive completers.  Save the message until
-            // they are all done.
-            QPID_LOG(debug, getId() << ": delaying completion of msg seq=" << msg->getCommandId());
-            boost::shared_ptr<IncompleteRcvMsg> pendingMsg(new IncompleteRcvMsg(*this, msg));
-            {
-                qpid::sys::ScopedLock<Mutex> l(incompleteRcvMsgsLock);
-                incompleteRcvMsgs.push_back(pendingMsg);
-            }
-            msg->getReceiveCompletion().end( pendingMsg );   // allows others to complete
-        }
+        msg->getReceiveCompletion().end( createPendingMsg(msg) );   // allows msg to complete
     }
 
     // Handle producer session flow control
@@ -453,40 +443,45 @@ void SessionState::addPendingExecutionSync()
 void SessionState::IncompleteRcvMsg::operator() (bool sync)
 {
     QPID_LOG(debug, ": async completion callback for msg seq=" << msg->getCommandId() << " sync=" << sync);
-    boost::shared_ptr<IncompleteRcvMsg> tmp;
-    {
-        qpid::sys::ScopedLock<Mutex> l(session->incompleteRcvMsgsLock);
-        for (std::list< boost::shared_ptr<IncompleteRcvMsg> >::iterator i = session->incompleteRcvMsgs.begin();
-             i != session->incompleteRcvMsgs.end(); ++i) {
-            if (i->get() == this) {
-                tmp.swap(*i);
-                session->incompleteRcvMsgs.remove(*i);
-                break;
-            }
-        }
-    }
 
-    if (session->isAttached()) {
-        if (sync) {
-            QPID_LOG(debug, ": receive completed for msg seq=" << msg->getCommandId());
-            session->completeRcvMsg(msg);
-        } else {    // potentially called from a different thread
-            QPID_LOG(debug, ": scheduling completion for msg seq=" << msg->getCommandId());
-            session->getConnection().requestIOProcessing(boost::bind(&SessionState::IncompleteRcvMsg::scheduledCompleter, tmp));
+    qpid::sys::ScopedLock<Mutex> l(session->incompleteRcvMsgsLock);
+    std::map<const IncompleteRcvMsg *, IncompleteRcvMsg::shared_ptr>::iterator i = session->incompleteRcvMsgs.find(this);
+    if (i != session->incompleteRcvMsgs.end()) {
+        boost::shared_ptr<IncompleteRcvMsg> tmp(i->second);
+        session->incompleteRcvMsgs.erase(i);
+
+        if (session->isAttached()) {
+            if (sync) {
+                qpid::sys::ScopedUnlock<Mutex> ul(session->incompleteRcvMsgsLock);
+                QPID_LOG(debug, ": receive completed for msg seq=" << msg->getCommandId());
+                session->completeRcvMsg(msg);
+                return;
+            } else {    // potentially called from a different thread
+                QPID_LOG(debug, ": scheduling completion for msg seq=" << msg->getCommandId());
+                session->scheduledRcvMsgs->push_back(tmp);
+                if (session->scheduledRcvMsgs->size() == 1) {
+                    session->getConnection().requestIOProcessing(boost::bind(&scheduledCompleter,
+                                                                             session->scheduledRcvMsgs));
+                }
+            }
         }
     }
 }
 
 
-/** Scheduled from IncompleteRcvMsg callback, completes the message receive
- * asynchronously
+/** Scheduled from IncompleteRcvMsg callback, completes all pending message
+ * receives asynchronously.
  */
-void SessionState::IncompleteRcvMsg::scheduledCompleter(boost::shared_ptr<SessionState::IncompleteRcvMsg> iMsg)
+void SessionState::IncompleteRcvMsg::scheduledCompleter(boost::shared_ptr<deque> msgs)
 {
-    QPID_LOG(debug, ": scheduled completion for msg seq=" << iMsg->msg->getCommandId());
-    if (iMsg->session && iMsg->session->isAttached()) {
-        QPID_LOG(debug, iMsg->session->getId() << ": receive completed for msg seq=" << iMsg->msg->getCommandId());
-        iMsg->session->completeRcvMsg(iMsg->msg);
+    while (!msgs->empty()) {
+        boost::shared_ptr<IncompleteRcvMsg> iMsg = msgs->front();
+        msgs->pop_front();
+        QPID_LOG(debug, ": scheduled completion for msg seq=" << iMsg->msg->getCommandId());
+        if (iMsg->session && iMsg->session->isAttached()) {
+            QPID_LOG(debug, iMsg->session->getId() << ": receive completed for msg seq=" << iMsg->msg->getCommandId());
+            iMsg->session->completeRcvMsg(iMsg->msg);
+        }
     }
 }
 
