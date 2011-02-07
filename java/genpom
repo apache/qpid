@@ -34,9 +34,9 @@ parser.add_option("-d", "--description", default="")
 parser.add_option("-u", "--url", default="")
 parser.add_option("-m", "--modules", help="modules dependencies")
 parser.add_option("-p", "--prefix", help="prefix of the project's artifacts names")
-parser.add_option("-i", "--ignore", action="store_true", help="ignore missing poms")
+parser.add_option("-i", "--ignore", action="store_true", help="ignore missing deps")
 parser.add_option("-s", "--search-path", action="append",
-                  help="the path to search for poms")
+                  help="the path to search for deps")
 parser.add_option("-S", "--scope", metavar="ARTIFACT=SCOPE", action="append",
                   default=[],
                   help="specify scope for an artifact")
@@ -73,10 +73,9 @@ if opts.name is None:
 if opts.artifact is None:
   opts.artifact = opts.name
 
-def lookup(pom, attr):
-  nd = pom["project"][attr]
+def lookup(dep, attr):
+  nd = dep["dep"][attr]
   if nd is None:
-    nd = pom["project/parent"][attr]
     if nd is None:
       return None
   return nd.text()
@@ -115,15 +114,15 @@ for module in module_depends:
 
 for jar in jars:
   base, ext = os.path.splitext(os.path.basename(jar))
-  pom = search(expanded_path, "%s.pom" % base)
-  if pom is None:
+  dep = search(expanded_path, "%s.xml" % base)
+  if dep is None:
     if opts.ignore:
       continue
     else:
-      die("unable to locate pom for %s" % jar)
-  group = lookup(pom, "groupId")
-  artifactId = lookup(pom, "artifactId")
-  version = lookup(pom, "version")
+      die("unable to locate xml for %s" % jar)
+  group = lookup(dep, "groupId")
+  artifactId = lookup(dep, "artifactId")
+  version = lookup(dep, "version")
   deps.append("""
     <dependency>
       <groupId>%s</groupId>
