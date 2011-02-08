@@ -128,12 +128,16 @@ class Mcli(Cmd):
     try:
       self.dataObject.do_query(data)
     except Exception, e:
+      if e.message.__class__ == qmf2.Data:
+        e = e.message.getProperties()
       print "Exception in query command:", e
 
   def do_call(self, data):
     try:
       self.dataObject.do_call(data)
     except Exception, e:
+      if e.message.__class__ == qmf2.Data:
+        e = e.message.getProperties()
       print "Exception in call command:", e
 
   def do_clear(self, data):
@@ -306,7 +310,15 @@ class QmfData:
     methodName = tokens[1]
     args = []
     for arg in tokens[2:]:
-      if arg[0] == '{' or arg[0] == '[' or arg.isdigit():
+      ##
+      ## If the argument is a map, list, boolean, integer, or floating (one decimal point),
+      ## run it through the Python evaluator so it is converted to the correct type.
+      ##
+      ## TODO: use a regex for this instead of this convoluted logic
+      if arg[0] == '{' or arg[0] == '[' or arg == "True" or arg == "False" or \
+            ((arg.count('.') < 2 and (arg.count('-') == 0 or \
+            (arg.count('-') == 1 and  arg[0] == '-')) and \
+            arg.replace('.','').replace('-','').isdigit())):
         args.append(eval(arg))
       else:
         args.append(arg)

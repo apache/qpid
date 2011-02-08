@@ -253,8 +253,6 @@ public class ServerSessionDelegate extends SessionDelegate
                                                                   filterManager,
                                                                   method.getArguments());
 
-                    CurrentActor.set(GenericActor.getInstance(sub));
-
                     ((ServerSession)session).register(destination, sub);
                     try
                     {
@@ -1225,7 +1223,6 @@ public class ServerSessionDelegate extends SessionDelegate
     @Override
     public void closed(Session session)
     {
-        super.closed(session);
         for(Subscription_0_10 sub : getSubscriptions(session))
         {
             ((ServerSession)session).unregister(sub);

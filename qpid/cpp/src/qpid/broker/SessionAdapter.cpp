@@ -372,7 +372,8 @@ void SessionAdapter::QueueHandlerImpl::declare(const string& name, const string&
             }
 
             //apply settings & create persistent record if required
-            queue_created.first->create(arguments);
+            try { queue_created.first->create(arguments); }
+            catch (...) { getBroker().getQueues().destroy(name); throw; }
 
             //add default binding:
             getBroker().getExchanges().getDefault()->bind(queue, name, 0);

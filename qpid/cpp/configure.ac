@@ -198,7 +198,7 @@ if test -n "$RUBY" ; then
 fi
 AM_CONDITIONAL([HAVE_RUBY_DEVEL], [test -f $RUBY_INC/ruby.h && test -n "$SWIG"])
 
-# Python bindings: To build python wrappers, the ruby-devel files must be present.
+# Python bindings: To build python wrappers, the python-devel files must be present.
 
 AM_PATH_PYTHON()
 if test -n "$PYTHON" ; then
@@ -227,6 +227,17 @@ if test -n "$PYTHON" ; then
     AC_MSG_RESULT([$PYTHON_LIBS])
 fi
 AM_CONDITIONAL([HAVE_PYTHON_DEVEL], [test -f $PYTHON_INC/Python.h && test -n "$SWIG"])
+
+
+# Perl bindings:
+
+AC_CHECK_PROG([PERL], [perl], [perl])
+if test -n "$PERL"; then
+    PERL_ARCHLIB=`perl -MConfig -e 'print "$Config{archlib}";'`
+    AC_CHECK_FILE( ["$PERL_ARCHLIB/CORE/perl.h"],
+            [AC_SUBST([PERL_INC], ["$PERL_ARCHLIB/CORE"])] )
+fi 
+AM_CONDITIONAL([HAVE_PERL_DEVEL], [test -n "$PERL" && test -n "$SWIG" && test -n "$PERL_INC"])
 
 specdir=`pwd`/$srcdir/../specs
 AMQP_FINAL_XML=$specdir/amqp.0-10-qpid-errata.xml
@@ -526,6 +537,7 @@ AC_CONFIG_FILES([
   bindings/qpid/Makefile
   bindings/qpid/ruby/Makefile
   bindings/qpid/python/Makefile
+  bindings/qpid/perl/Makefile
   bindings/qmf/Makefile
   bindings/qmf/ruby/Makefile
   bindings/qmf/python/Makefile

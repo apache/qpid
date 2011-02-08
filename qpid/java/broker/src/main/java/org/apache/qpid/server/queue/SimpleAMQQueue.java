@@ -54,7 +54,6 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import javax.management.JMException;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -742,12 +741,12 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
     private void deliverMessage(final Subscription sub, final QueueEntry entry)
             throws AMQException
     {
+        setLastSeenEntry(sub, entry);
+
         _deliveredMessages.incrementAndGet();
         incrementUnackedMsgCount();
 
         sub.send(entry);
-
-        setLastSeenEntry(sub,entry);
     }
 
     private boolean subscriptionReadyAndHasInterest(final Subscription sub, final QueueEntry entry) throws AMQException

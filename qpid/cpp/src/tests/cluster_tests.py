@@ -7,9 +7,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -20,7 +20,7 @@
 
 import os, signal, sys, time, imp, re, subprocess, glob, cluster_test_logs
 from qpid import datatypes, messaging
-from qpid.brokertest import *
+from brokertest import *
 from qpid.harness import Skipped
 from qpid.messaging import Message, Empty
 from threading import Thread, Lock
@@ -290,7 +290,7 @@ acl allow all all
                     if pattern.search(l): self.found = True; return
         scanner = Scanner()
         scanner.start()
-        start = time.time()        
+        start = time.time()
         try:
             # Wait up to 5 second timeout for scanner to find expected output
             while not scanner.found and time.time() < start + 5:
@@ -302,7 +302,7 @@ acl allow all all
             scanner.join()
         assert scanner.found
         # Verify logs are consistent
-        cluster_test_logs.verify_logs(glob.glob("*.log"))
+        cluster_test_logs.verify_logs()
 
 class LongTests(BrokerTest):
     """Tests that can run for a long time if -DDURATION=<minutes> is set"""
@@ -402,7 +402,7 @@ class LongTests(BrokerTest):
         # Use store if present.
         if BrokerTest.store_lib: args +=["--load-module", BrokerTest.store_lib]
         cluster = self.cluster(3, args)
-        
+
         clients = [] # Per-broker list of clients that only connect to one broker.
         mclients = [] # Management clients that connect to every broker in the cluster.
 
@@ -422,18 +422,20 @@ class LongTests(BrokerTest):
             mclients.append(ClientLoop(broker, cmd))
 
         endtime = time.time() + self.duration()
+        runtime = self.duration() / 4   # First run is longer, use quarter of duration.
         alive = 0                       # First live cluster member
         for i in range(len(cluster)): start_clients(cluster[i])
         start_mclients(cluster[alive])
 
         while time.time() < endtime:
-            time.sleep(5)
+            time.sleep(runtime)
+            runtime = 5                 # Remaining runs 5 seconds, frequent broker kills
             for b in cluster[alive:]: b.ready() # Check if a broker crashed.
-            # Kill the first broker, expect the clients to fail. 
+            # Kill the first broker, expect the clients to fail.
             b = cluster[alive]
             b.expect = EXPECT_EXIT_FAIL
             b.kill()
-            # Stop the brokers clients and all the mclients. 
+            # Stop the brokers clients and all the mclients.
             for c in clients[alive] + mclients:
                 try: c.stop()
                 except: pass            # Ignore expected errors due to broker shutdown.
@@ -448,17 +450,26 @@ class LongTests(BrokerTest):
             c.stop()
 
         # Verify that logs are consistent
-        cluster_test_logs.verify_logs(glob.glob("*.log"))
+        cluster_test_logs.verify_logs()
 
     def test_management_qmf2(self):
         self.test_management(args=["--mgmt-qmf2=yes"])
+
+    def test_connect_consistent(self):   # FIXME aconway 2011-01-18:
+        args=["--mgmt-pub-interval=1","--log-enable=trace+:management"]
+        cluster = self.cluster(2, args=args)
+        end = time.time() + self.duration()
+        while (time.time() < end):  # Get a management interval
+            for i in xrange(1000): cluster[0].connect().close()
+            cluster_test_logs.verify_logs()
+
 
 class StoreTests(BrokerTest):
     """
     Cluster tests that can only be run if there is a store available.
     """
     def args(self):
-        assert BrokerTest.store_lib 
+        assert BrokerTest.store_lib
         return ["--load-module", BrokerTest.store_lib]
 
     def test_store_loaded(self):
@@ -523,7 +534,7 @@ class StoreTests(BrokerTest):
         b = cluster.start("b", wait=False)
         c = cluster.start("c", wait=True)
         self.assertEqual(a.get_message("q").content, "clean")
-        
+
     def test_wrong_cluster_id(self):
         # Start a cluster1 broker, then try to restart in cluster2
         cluster1 = self.cluster(0, args=self.args())
@@ -582,16 +593,16 @@ class StoreTests(BrokerTest):
         c = cluster.start("c", expect=EXPECT_EXIT_FAIL)
         self.assertEqual(b.store_state(), "dirty")
         self.assertEqual(c.store_state(), "dirty")
-        retry(lambda: a.store_state() == "dirty") 
+        retry(lambda: a.store_state() == "dirty")
 
         a.send_message("q", Message("x", durable=True))
         a.kill()
         b.kill()                # c is last man, will mark store clean
-        retry(lambda: c.store_state() == "clean") 
+        retry(lambda: c.store_state() == "clean")
         a = cluster.start("a", expect=EXPECT_EXIT_FAIL) # c no longer last man
-        retry(lambda: c.store_state() == "dirty") 
+        retry(lambda: c.store_state() == "dirty")
         c.kill()                        # a is now last man
-        retry(lambda: a.store_state() == "clean") 
+        retry(lambda: a.store_state() == "clean")
         a.kill()
         self.assertEqual(a.store_state(), "clean")
         self.assertEqual(b.store_state(), "dirty")

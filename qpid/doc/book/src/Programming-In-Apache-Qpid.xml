@@ -1,9 +1,8 @@
 <?xml version='1.0' encoding='utf-8' ?>
-<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
-]>
+<!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd">
 
 <!--
-   
+
    Licensed to the Apache Software Foundation (ASF) under one
    or more contributor license agreements.  See the NOTICE file
    distributed with this work for additional information
@@ -11,16 +10,16 @@
    to you under the Apache License, Version 2.0 (the
    "License"); you may not use this file except in compliance
    with the License.  You may obtain a copy of the License at
-   
+
    http://www.apache.org/licenses/LICENSE-2.0
-   
+
    Unless required by applicable law or agreed to in writing,
    software distributed under the License is distributed on an
    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
    KIND, either express or implied.  See the License for the
    specific language governing permissions and limitations
    under the License.
-   
+
   -->
 
 <book id="client-api-tutorial">
@@ -29,7 +28,7 @@
 
   <chapter>
     <title>Introduction</title>
-    
+
     <para>Apache Qpid is a reliable, asynchronous messaging system that
       supports the AMQP messaging protocol in several common programming
       languages. Qpid is supported on most common platforms.
@@ -40,7 +39,7 @@
 	<para>
 	  On the Java platform, Qpid uses the
 	  established <ulink url="http://java.sun.com/products/jms/">Java JMS
-	  API</ulink>. 
+	  API</ulink>.
 	</para>
       </listitem>
       <listitem>
@@ -50,7 +49,7 @@
 	  conceptually similar in each.
 	</para>
 	<para>
-	  On the .NET platform, Qpid also provides a WCF binding. 
+	  On the .NET platform, Qpid also provides a WCF binding.
 	</para>
       </listitem>
       <listitem>
@@ -82,14 +81,14 @@
           message).
         </para>
       </listitem>
-      
+
       <listitem>
         <para>
           A <firstterm>connection</firstterm> represents a network
           connection to a remote endpoint.
         </para>
       </listitem>
-      
+
       <listitem>
         <para>
           A <firstterm>session</firstterm> provides a sequentially
@@ -98,7 +97,7 @@
           connection.
         </para>
       </listitem>
-      
+
       <listitem>
         <para>
 	  A <firstterm>sender</firstterm> sends messages to a target
@@ -106,7 +105,7 @@
 	  obtained from a session for a given target address.
         </para>
       </listitem>
-      
+
       <listitem>
         <para>
 	  A <firstterm>receiver</firstterm> receives messages from a
@@ -115,7 +114,7 @@
 	  address.
         </para>
       </listitem>
-      
+
     </itemizedlist>
 
     <para>
@@ -147,7 +146,7 @@ int main(int argc, char** argv) {
     std::string broker = argc > 1 ? argv[1] : "localhost:5672";
     std::string address = argc > 2 ? argv[2] : "amq.topic";
     std::string connectionOptions = argc > 3 ? argv[3] : "";
-    
+
     Connection connection(broker, connectionOptions);
     try {
         connection.open();  <co id="hello-cpp-open" linkends="callout-cpp-open"/>
@@ -161,13 +160,13 @@ int main(int argc, char** argv) {
         Message message = receiver.fetch(Duration::SECOND * 1); <co id="hello-cpp-fetch" linkends="callout-cpp-fetch"/>
         <![CDATA[std::cout << message.getContent() << std::endl;]]>
         session.acknowledge(); <co id="hello-cpp-acknowledge" linkends="callout-cpp-acknowledge"/>
-        
+
         connection.close(); <co id="hello-cpp-close" linkends="callout-cpp-close"/>
         return 0;
     } catch(const std::exception&amp; error) {
         <![CDATA[std::cerr << error.what() << std::endl;]]>
         connection.close();
-        return 1;   
+        return 1;
     }
 }</programlisting>
 
@@ -274,7 +273,7 @@ finally:
     <section>
       <title>A Simple Messaging Program in .NET C#</title>
 
-      <para>The following .NET C# 
+      <para>The following .NET C#
 	<footnote>
 	  <para>
 	    The .NET binding for the Qpid C++ Messaging API
@@ -367,15 +366,15 @@ namespace Org.Apache.Qpid.Messaging {
 
     <section id="section-addresses">
       <title>Addresses</title>
-      
+
       <para>An <firstterm>address</firstterm> is the name of a message
-      target or message source. 
+      target or message source.
 
       <footnote><para>In the programs we have just seen, we used
       <literal>amq.topic</literal> as the default address if none is
       passed in. This is the name of a standard exchange that always
       exists on an AMQP 0-10 messaging broker.</para></footnote>
-      
+
       The methods that create senders and receivers require an
       address. The details of sending to a particular target or
       receiving from a particular source are then handled by the
@@ -408,7 +407,7 @@ namespace Org.Apache.Qpid.Messaging {
       A topic immediately delivers a message to all eligible
       receivers; if there are no eligible receivers, it discards the
       message.  In the AMQP 0-10 implementation of the API,
-      
+
           <footnote><para>The AMQP 0-10 implementation is the only one
           that currently exists.</para></footnote>
 
@@ -435,7 +434,7 @@ namespace Org.Apache.Qpid.Messaging {
       language. These programs can use any address string as a source
       or a destination, and have many command line options to
       configure behavior&mdash;use the <command>-h</command> option
-      for documentation on these options. 
+      for documentation on these options.
 
       <footnote><para>Currently, the C++, Python, and .NET C#
       implementations of <command>drain</command> and
@@ -518,7 +517,7 @@ $
         <screen>
 $ ./drain -t 30 hello-word
         </screen>
-        
+
 
         <para><emphasis>Second Window:</emphasis></para>
 
@@ -548,14 +547,14 @@ Message(properties={spout-id:7da2d27d-93e6-4803-8a61-536d87b8d93f:0}, content=''
 	string</firstterm> can also contain a
 	<firstterm>subject</firstterm> and
 	<firstterm>options</firstterm>.</para>
-      
+
 	<para>The syntax for an address string is:</para>
-      
+
 	<programlisting><![CDATA[
 address_string ::=  <address> [ / <subject> ] [ ; <options> ]
 options ::=  { <key> : <value>, ... }
 ]]></programlisting>
-      
+
 	<para>Addresses, subjects, and keys are strings.  Values can
 	be numbers, strings (with optional single or double quotes),
 	maps, or lists. A complete BNF for address strings appears in
@@ -578,7 +577,7 @@ options ::=  { <key> : <value>, ... }
 	message's subject is null. For convenience, address strings
 	also allow a subject. If a sender's address contains a
 	subject, it is used as the default subject for the messages
-	it sends. 
+	it sends.
 
 	If a receiver's address contains a subject, it is used to
 	select only messages that match the subject&mdash;the matching
@@ -639,7 +638,7 @@ Message(properties={qpid.subject:sports, spout-id:9441674e-a157-4780-a78e-f7ccea
           <command>drain</command> receive the messages for that
           subject.</para>
       </example>
-        
+
 
         <para>The AMQP exchange type we are using here,
         <literal>amq.topic</literal>, can also do more sophisticated
@@ -650,11 +649,11 @@ Message(properties={qpid.subject:sports, spout-id:9441674e-a157-4780-a78e-f7ccea
 	application, the sender might use subjects like
 	<literal>usa.news</literal>, <literal>usa.weather</literal>,
 	<literal>europe.news</literal>, or
-	<literal>europe.weather</literal>. 
+	<literal>europe.weather</literal>.
 
 	The receiver's subject can include wildcard characters&mdash;
 	<quote>#</quote> matches one or more words in the message's
-	subject, <quote>*</quote> matches a single word. 
+	subject, <quote>*</quote> matches a single word.
 
 	For instance, if the subject in the source address is
 	<literal>*.news</literal>, it matches messages with the
@@ -676,7 +675,7 @@ Message(properties={qpid.subject:sports, spout-id:9441674e-a157-4780-a78e-f7ccea
 	    <literal>news</literal>.</para>
 
 	    <para><emphasis>First Window:</emphasis></para>
-	
+
 	    <screen>
 $ ./drain -t 30 news-service/*.news
 	    </screen>
@@ -767,7 +766,7 @@ Message(properties={qpid.subject:usa.faux.news, spout-id:6029430a-cfcb-4700-8e9b
             Policies for automatically creating or deleting the node to which an address refers.
 	  </para>
 	  <para>
-	    For instance, in the address string <literal>xoxox ; {create: always}</literal>, 
+	    For instance, in the address string <literal>xoxox ; {create: always}</literal>,
 	    the queue <literal>xoxox</literal> is created, if it does
 	    not exist, before the address is resolved.
           </para>
@@ -801,7 +800,7 @@ Message(properties={qpid.subject:usa.faux.news, spout-id:6029430a-cfcb-4700-8e9b
         address string options affect the behavior of senders and
         receives.
       </para>
-      
+
       <section>
 	<title>assert</title>
       <para>
@@ -821,7 +820,7 @@ Message(properties={qpid.subject:usa.faux.news, spout-id:6029430a-cfcb-4700-8e9b
 $ qpid-config add queue my-queue
 $ qpid-config add exchange topic my-topic
 	</screen>
-      
+
 	<para>
         We can now use the address specified to drain to assert that it is
         of a particular type:
@@ -839,7 +838,7 @@ Exchange my-queue does not exist
         queue. The second attempt however failed; my-queue is not a
         topic.
 	</para>
-      
+
 	<para>
         We can do the same thing for my-topic:
 	</para>
@@ -877,7 +876,7 @@ Queue my-topic does not exist
 
 	<para><emphasis>Second Window:</emphasis></para>
 	<screen>$ ./spout "xoxox ; {create: always}"</screen>
-	
+
 	<para>Returning to the first window, we see that <command>drain</command> has received this message:</para>
 
 	<screen>Message(properties={spout-id:1a1a3842-1a8b-4f88-8940-b4096e615a7d:0}, content='')</screen>
@@ -906,7 +905,7 @@ $ ./spout my-queue --content one
 $ ./spout my-queue --content two
 $ ./spout my-queue --content three
         </screen>
-        
+
         <para>Now we use drain to get those messages, using the browse option:</para>
         <screen>
 $ ./drain 'my-queue; {mode: browse}'
@@ -914,7 +913,7 @@ Message(properties={spout-id:fbb93f30-0e82-4b6d-8c1d-be60eb132530:0}, content='o
 Message(properties={spout-id:ab9e7c31-19b0-4455-8976-34abe83edc5f:0}, content='two')
 Message(properties={spout-id:ea75d64d-ea37-47f9-96a9-d38e01c97925:0}, content='three')
         </screen>
-        
+
         <para>We can confirm the messages are still on the queue by repeating the drain:</para>
         <screen>
 $ ./drain 'my-queue; {mode: browse}'
@@ -960,9 +959,9 @@ $ qpid-config add exchange xml xml
 
       <programlisting><![CDATA[
 xml; {
- link: { 
-  x-bindings: [{exchange:xml, key:weather, arguments:{xquery:"./weather"} }] 
- } 
+ link: {
+  x-bindings: [{exchange:xml, key:weather, arguments:{xquery:"./weather"} }]
+ }
 }
   ]]></programlisting>
 
@@ -978,8 +977,8 @@ xml; {
 
 	<programlisting>
 	  <![CDATA[
-let $w := ./weather 
-return $w/station = 'Raleigh-Durham International Airport (KRDU)' 
+let $w := ./weather
+return $w/station = 'Raleigh-Durham International Airport (KRDU)'
    and $w/temperature_f > 50
    and $w/temperature_f - $w/dewpoint > 5
    and $w/wind_speed_mph > 7
@@ -989,9 +988,9 @@ return $w/station = 'Raleigh-Durham International Airport (KRDU)'
 	<para>We can specify this query in an x-binding to listen to messages that meet the criteria specified by the query:</para>
 
 	<para><emphasis>First Window:</emphasis></para>
-      
+
 	<screen>
-$ ./drain -f "xml; {link:{x-bindings:[{key:'weather', 
+$ ./drain -f "xml; {link:{x-bindings:[{key:'weather',
 arguments:{xquery:\"$(cat rdu.xquery )\"}}]}}"
 	</screen>
 
@@ -1015,9 +1014,9 @@ spout --content "$(cat rdu.xml)" xml/weather
 	</screen>
 
 	<para>Returning to the first window, we see that the message has been received:</para>
-	
+
 	<screen><![CDATA[$ ./drain -f "xml; {link:{x-bindings:[{exchange:'xml', key:'weather', arguments:{xquery:\"$(cat rdu.xquery )\"}}]}}"
-Message(properties={qpid.subject:weather, spout-id:31c431de-593f-4bec-a3dd-29717bd945d3:0}, 
+Message(properties={qpid.subject:weather, spout-id:31c431de-593f-4bec-a3dd-29717bd945d3:0},
 content='<weather>
   <station>Raleigh-Durham International Airport (KRDU)</station>
   <wind_speed_mph>16</wind_speed_mph>
@@ -1172,7 +1171,7 @@ spout - -content "$(cat rdu.xml | sed -e 's/70/45/')" xml/weather
 	    <row>
 	      <entry>
 	        durable
-	      </entry>	       
+	      </entry>
 	      <entry>
 	        True, False
 	      </entry>
@@ -1212,9 +1211,9 @@ spout - -content "$(cat rdu.xml | sed -e 's/70/45/')" xml/weather
   exchange: <exchange>,
   queue: <queue>,
   key: <key>,
-  arguments: { 
-    <key_1>: <value_1>, 
-    ..., 
+  arguments: {
+    <key_1>: <value_1>,
+    ...,
     <key_n>: <value_n> }
  },
  ...
@@ -1277,7 +1276,7 @@ spout - -content "$(cat rdu.xml | sed -e 's/70/45/')" xml/weather
 	    <row>
 	      <entry>
 	        durable
-	      </entry>	       
+	      </entry>
 	      <entry>
 	        True, False
 	      </entry>
@@ -1514,7 +1513,7 @@ options := map
 
 </section>
 
-    
+
     <section>
       <title>Receiving Messages from Multiple Sources</title>
 
@@ -1602,20 +1601,20 @@ Session session =  connection.createTransactionalSession();
 ...
 if (smellsOk())
    session.commit();
-else 
+else
    session.rollback();
    ]]></programlisting>
 			 <para>
 				.NET C#:
 			</para>
-			 
+
 <programlisting>
 Connection connection = new Connection(broker);
 Session session =  connection.CreateTransactionalSession();
 ...
 if (smellsOk())
    session.Commit();
-else 
+else
    session.Rollback();
 </programlisting>
 <!--
@@ -1670,7 +1669,7 @@ try:
   !!! SNIP !!!
   ]]></programlisting>
 
-or 
+<para>or</para>
 
 	  <programlisting><![CDATA[
 connection = Connection("localhost:5672")
@@ -1682,7 +1681,7 @@ try:
 			 <para>
 				In .NET, these options can be set using <function>Connection.SetOption()</function> or by passing in a set of options to the constructor. The options can be passed in as a map or in string form:
 			</para>
-			 
+
 <programlisting>
 Connection connection= new Connection(&#34;localhost:5672&#34;, &#34;{reconnect: true}&#34;);
 try {
@@ -1692,7 +1691,7 @@ try {
 			 <para>
 				or
 			</para>
-			 
+
 <programlisting>
 Connection connection = new Connection(&#34;localhost:5672&#34;);
 connection.SetOption(&#34;reconnect&#34;, true);
@@ -1881,21 +1880,21 @@ try {
 
     <section id="section-Maps">
       <title>Maps and Lists in Message Content</title>
-      
+
       <para>Many messaging applications need to exchange data across
       languages and platforms, using the native datatypes of each
-      programming language.</para> 
+      programming language.</para>
 
-      <para>The Qpid Messaging API supports <classname>map</classname> and <classname>list</classname> in message content. 
+      <para>The Qpid Messaging API supports <classname>map</classname> and <classname>list</classname> in message content.
 
       <footnote><para>Unlike JMS, there is not a specific message type for
       map messages.</para></footnote>
 
-			<footnote> 
+			<footnote>
 			  <para>
 				Note that the Qpid JMS client supports MapMessages whose values can be nested maps or lists. This is not standard JMS behaviour.
 			  </para>
-			</footnote> 
+			</footnote>
 			Specific language support for <classname>map</classname> and <classname>list</classname> objects are shown in the following table.
 		 </para>
 			<table id="tabl-Programming_in_Apache_Qpid-Qpid_Maps_in_Message_Content">
@@ -1959,8 +1958,8 @@ content = {'Id' : 987654321, 'name' : 'Widget', 'percent' : 0.99}
 content['colours'] = ['red', 'green', 'white']
 content['dimensions'] = {'length' : 10.2, 'width' : 5.1,'depth' : 2.0};
 content['parts'] = [ [1,2,5], [8,2,5] ]
-content['specs'] = {'colors' : content['colours'], 
-                    'dimensions' : content['dimensions'], 
+content['specs'] = {'colors' : content['colours'],
+                    'dimensions' : content['dimensions'],
                     'parts' : content['parts'] }
 message = Message(content=content)
 sender.send(message)
@@ -1970,7 +1969,7 @@ sender.send(message)
 
       <para>The following table shows the datatypes that can be sent in a Python map message,
  and the corresponding datatypes that will be received by clients in Java or C++.</para>
-      
+
 
 	<table id="table-Python-Maps" >
 	<title>Python Datatypes in Maps</title>
@@ -2000,7 +1999,7 @@ sender.send(message)
 
 
 
-      <section id="section-cpp-Maps">
+    <section id="section-cpp-Maps">
 	<title>Qpid Maps and Lists in C++</title>
 
 
@@ -2032,27 +2031,27 @@ Variant::Map dimensions;
 dimensions["length"] = 10.2;
 dimensions["width"] = 5.1;
 dimensions["depth"] = 2.0;
-content["dimensions"]= dimensions; 
+content["dimensions"]= dimensions;
 
 Variant::List part1;
 part1.push_back(Variant(1));
 part1.push_back(Variant(2));
 part1.push_back(Variant(5));
- 
+
 Variant::List part2;
 part2.push_back(Variant(8));
 part2.push_back(Variant(2));
 part2.push_back(Variant(5));
- 
+
 Variant::List parts;
 parts.push_back(part1);
 parts.push_back(part2);
-content["parts"]= parts; 
+content["parts"]= parts;
 
 Variant::Map specs;
-specs["colours"] = colours; 
-specs["dimensions"] = dimensions; 
-specs["parts"] = parts; 
+specs["colours"] = colours;
+specs["dimensions"] = dimensions;
+specs["parts"] = parts;
 content["specs"] = specs;
 
 encode(content, message);
@@ -2063,7 +2062,7 @@ sender.send(message, true);
 	<para>The following table shows the datatypes that can be sent
 	in a C++ map message, and the corresponding datatypes that
 	will be received by clients in Java and Python.</para>
-      
+
 	<table  id="table-cpp-Maps">
 	<title>C++ Datatypes in Maps</title>
 	<tgroup cols="3">
@@ -2104,6 +2103,7 @@ sender.send(message, true);
 	</para>
 
 	<example>
+      <?dbfo keep-together="auto" ?>
 	  <title>Sending Qpid Maps and Lists in .NET C#</title>
 	<programlisting><![CDATA[
 using System;
@@ -2176,47 +2176,47 @@ Send(message, true);
 	<para>
 	  The following table shows the mapping between datatypes in .NET and C++.
 	</para>
-      
+
 	<table  id="table-dotnet-Maps">
-	<title>Datatype Mapping between C++ and .NET binding</title>
-	<tgroup cols="2">
-	  <thead>
-	    <row>
-	      <entry>C++ Datatype</entry>
-	      <entry>&rarr; .NET binding</entry>
-	    </row>
-	  </thead>
-	  <tbody>
-   	    <row><entry>void</entry><entry>nullptr</entry></row>
-   	    <row><entry>bool</entry><entry>bool</entry></row>
-   	    <row><entry>uint8</entry><entry>byte</entry></row>
-	    <row><entry>uint16</entry><entry>UInt16</entry></row>
-	    <row><entry>uint32</entry><entry>UInt32</entry></row>
-	    <row><entry>uint64</entry><entry>UInt64</entry></row>
-   	    <row><entry>uint8</entry><entry>char</entry></row>
-	    <row><entry>int16</entry><entry>Int16</entry></row>
-	    <row><entry>int32</entry><entry>Int32</entry></row>
-	    <row><entry>int64</entry><entry>Int64</entry></row>
-	    <row><entry>float</entry><entry>Single</entry></row>
-	    <row><entry>double</entry><entry>Double</entry></row>
-	    <row><entry>string</entry><entry>string  <co id="mapping-dotnet-string" linkends="callout-dotnet-string"/></entry></row>
-	    <row><entry>qpid::types::Uuid</entry><entry>Guid</entry></row>
-	    <row><entry>Variant::Map</entry><entry><![CDATA[Dictionary<string, object>]]>  <co id="mapping-dotnet-dict-index" linkends="callout-dotnet-string"/></entry></row>
-	    <row><entry>Variant::List</entry><entry><![CDATA[Collection<object>]]>  <co id="mapping-dotnet-list-value" linkends="callout-dotnet-string"/></entry></row>
-	  </tbody>
-	</tgroup>
-      </table>
+      <title>Datatype Mapping between C++ and .NET binding</title>
+      <tgroup cols="2">
+        <thead>
+          <row>
+            <entry>C++ Datatype</entry>
+            <entry>&rarr; .NET binding</entry>
+          </row>
+        </thead>
+        <tbody>
+          <row><entry>void</entry><entry>nullptr</entry></row>
+          <row><entry>bool</entry><entry>bool</entry></row>
+          <row><entry>uint8</entry><entry>byte</entry></row>
+          <row><entry>uint16</entry><entry>UInt16</entry></row>
+          <row><entry>uint32</entry><entry>UInt32</entry></row>
+          <row><entry>uint64</entry><entry>UInt64</entry></row>
+          <row><entry>uint8</entry><entry>char</entry></row>
+          <row><entry>int16</entry><entry>Int16</entry></row>
+          <row><entry>int32</entry><entry>Int32</entry></row>
+          <row><entry>int64</entry><entry>Int64</entry></row>
+          <row><entry>float</entry><entry>Single</entry></row>
+          <row><entry>double</entry><entry>Double</entry></row>
+          <row><entry>string</entry><entry>string
+          <footnote id="callout-dotnet-string">
+            <para>Strings are currently interpreted only with UTF-8 encoding.</para>
+          </footnote></entry></row>
+          <row><entry>qpid::types::Uuid</entry><entry>Guid</entry></row>
+          <row><entry>Variant::Map</entry><entry><![CDATA[Dictionary<string, object>]]>
+          <footnoteref linkend="callout-dotnet-string"/></entry></row>
+          <row><entry>Variant::List</entry><entry><![CDATA[Collection<object>]]>
+          <footnoteref linkend="callout-dotnet-string"/></entry></row>
+        </tbody>
+      </tgroup>
+    </table>
 
-      <calloutlist>
-	<callout id="callout-dotnet-string" arearefs="mapping-dotnet-string">
-	  <para>Strings are currently interpreted only with UTF-8 encoding.</para>
-	</callout>
-      </calloutlist>
 
-      </section>
+ </section>
 
-      
-</section> 
+
+</section>
 
     <section>
       <title>The Request / Response Pattern</title>
@@ -2347,8 +2347,8 @@ std::cout << request.getContent() << " -> " << response.getContent() << std::end
 
 	<example>
 	  <title>Tracking cluster membership</title>
-  
-            <para>In C++:</para> 
+
+            <para>In C++:</para>
 
 	    <programlisting><![CDATA[
 #include <qpid/messaging/FailoverUpdates.h>
@@ -2361,7 +2361,7 @@ try {
 ]]>
 	</programlisting>
 
-            <para>In python:</para> 
+            <para>In python:</para>
 
 	    <programlisting><![CDATA[
 import qpid.messaging.util
@@ -2376,7 +2376,7 @@ try:
 			 <para>
 				In .NET C#:
 			</para>
-			 
+
 <programlisting>
 using Org.Apache.Qpid.Messaging;
 ...
@@ -2407,14 +2407,14 @@ try {
 			 </para>
 			 <para>Use QPID_LOG_ENABLE to set the level of logging you are interested in (trace, debug, info, notice, warning, error, or critical):
 			</para>
-			 
+
 <screen>
 export QPID_LOG_ENABLE=&#34;warning+&#34;
 </screen>
 			 <para>
 				The Qpidd broker and C++ clients use QPID_LOG_OUTPUT to determine where logging output should be sent. This is either a file name or the special values stderr, stdout, or syslog:
 			</para>
-			 
+
 <screen>
 export QPID_LOG_TO_FILE=&#34;/tmp/myclient.out&#34;
 </screen>
@@ -2422,26 +2422,26 @@ export QPID_LOG_TO_FILE=&#34;/tmp/myclient.out&#34;
 			 <para>
 				From a Windows command prompt, use the following command format to set the environment variables:
 			</para>
-			 
+
 <screen>
 set QPID_LOG_ENABLE=warning+
 set QPID_LOG_TO_FILE=D:\tmp\myclient.out
 </screen>
      </section>
-	
+
 	<section>
 		<title>Logging in Python</title>
 		<para>
 			The Python client library supports logging using the standard Python logging module. The easiest way to do logging is to use the <command>basicConfig()</command>, which reports all warnings and errors:
 		</para>
-		
+
 <programlisting>from logging import basicConfig
 basicConfig()
 </programlisting>
 		<para>
 			Qpidd also provides a convenience method that makes it easy to specify the level of logging desired. For instance, the following code enables logging at the <command>DEBUG</command> level:
 		</para>
-		
+
 <programlisting>from qpid.log import enable, DEBUG
 enable("qpid.messaging.io", DEBUG)
 </programlisting>
@@ -2604,9 +2604,9 @@ enable("qpid.messaging.io", DEBUG)
 	      <entry>C++ API
 		<footnote>
 		  <para>
-		    The .NET Binding for C++ Messaging provides all the 
-		    message and delivery properties described in the C++ API. 
-		    See  <xref linkend="table-Dotnet-Binding-Message" /> . 
+		    The .NET Binding for C++ Messaging provides all the
+		    message and delivery properties described in the C++ API.
+		    See  <xref linkend="table-Dotnet-Binding-Message" /> .
 	          </para>
 	        </footnote>
 	      </entry>
@@ -2660,7 +2660,7 @@ enable("qpid.messaging.io", DEBUG)
       same manner. In addition the routing key on incoming transfers
       will be exposed directly via the custom property with key
       <literal>x-amqp-0-10.routing-key</literal>.</para>
-      
+
     </section>
   </chapter>
 
@@ -2669,7 +2669,7 @@ enable("qpid.messaging.io", DEBUG)
     <title>Using the Qpid JMS client</title>
     <section>
       <title>A Simple Messaging Program in Java JMS</title>
-      
+
       <para>The following program shows how to send and receive a
       message using the Qpid JMS client. JMS programs typically use
       JNDI to obtain connection factory and destination objects which
@@ -2710,7 +2710,7 @@ public class Hello {
       properties.load(this.getClass().getResourceAsStream("hello.properties"));  <co id="hello-java-properties" linkends="callout-java-properties"/>
       Context context = new InitialContext(properties);   <co id="hello-java-context" linkends="callout-java-context"/>
 
-      ConnectionFactory connectionFactory 
+      ConnectionFactory connectionFactory
           = (ConnectionFactory) context.lookup("qpidConnectionfactory"); <co id="hello-java-connection-factory" linkends="callout-java-connection-factory"/>
       Connection connection = connectionFactory.createConnection();  <co id="hello-java-connection" linkends="callout-java-connection"/>
       connection.start();  <co id="hello-java-start" linkends="callout-java-start"/>
@@ -2782,11 +2782,11 @@ public class Hello {
       <example>
 	<title>JNDI Properties File for "Hello world!" example</title>
       <programlisting>
-java.naming.factory.initial 
+java.naming.factory.initial
   = org.apache.qpid.jndi.PropertiesFileInitialContextFactory
 
 # connectionfactory.[jndiname] = [ConnectionURL]
-connectionfactory.qpidConnectionfactory 
+connectionfactory.qpidConnectionfactory
   = amqp://guest:guest@clientid/test?brokerlist='tcp://localhost:5672' <co id="hello-properties-connectionfactory" linkends="callout-hello-properties-connectionfactory"/>
 # destination.[jndiname] = [address_string]
 destination.topicExchange = amq.topic <co id="hello-properties-destination" linkends="callout-hello-properties-destination"/>
@@ -2824,11 +2824,11 @@ destination.topicExchange = amq.topic <co id="hello-properties-destination" link
       <example>
 	<title>JNDI Properties File</title>
     <programlisting><![CDATA[
-java.naming.factory.initial 
+java.naming.factory.initial
   = org.apache.qpid.jndi.PropertiesFileInitialContextFactory
 
 # connectionfactory.[jndiname] = [ConnectionURL]
-connectionfactory.qpidConnectionfactory 
+connectionfactory.qpidConnectionfactory
   = amqp://guest:guest@clientid/test?brokerlist='tcp://localhost:5672'
 # destination.[jndiname] = [address_string]
 destination.topicExchange = amq.topic
@@ -2837,7 +2837,7 @@ destination.topicExchange = amq.topic
 
       <para>The following sections describe the JNDI properties that Qpid uses.</para>
 
-      
+
       <section>
         <title>JNDI Properties for Apache Qpid</title>
         <para>
@@ -2895,7 +2895,7 @@ destination.topicExchange = amq.topic
 		  <para>
 		    Can be used for defining all amq destinations,
 		    queues, topics and header matching, using an
-		    address string.  
+		    address string.
 
 		    <footnote><para>Binding URLs, which were used in
 		    earlier versions of the Qpid Java JMS client, can
@@ -2908,19 +2908,19 @@ destination.topicExchange = amq.topic
 	  </tgroup>
         </table>
       </section>
-      
+
       <section id="section-jms-connection-url">
         <title>Connection URLs</title>
         <para>
 	  In JNDI properties, a Connection URL specifies properties for a connection. The format for a Connection URL is:
         </para>
-        
+
         <programlisting>amqp://[&lt;user&gt;:&lt;pass&gt;@][&lt;clientid&gt;]&lt;virtualhost&gt;[?&lt;option&gt;=&#39;&lt;value&gt;&#39;[&amp;&lt;option&gt;=&#39;&lt;value&gt;&#39;]]
         </programlisting>
         <para>
 	  For instance, the following Connection URL specifies a user name, a password, a client ID, a virtual host ("test"), a broker list with a single broker, and a TCP host with the host name <quote>localhost</quote> using port 5672:
         </para>
-        
+
         <programlisting>amqp://username:password@clientid/test?brokerlist=&#39;tcp://localhost:5672&#39;
         </programlisting>
         <para>
@@ -3016,12 +3016,12 @@ destination.topicExchange = amq.topic
         <para>
 	  Broker lists are specified using a URL in this format:
         </para>
-        
+
         <programlisting>brokerlist=&lt;transport&gt;://&lt;host&gt;[:&lt;port&gt;](?&lt;param>=&lt;value>)?(&amp;&lt;param>=&lt;value>)*</programlisting>
         <para>
 	  For instance, this is a typical broker list:
         </para>
-        
+
         <programlisting>brokerlist=&#39;tcp://localhost:5672&#39;
         </programlisting>
 
@@ -3100,7 +3100,7 @@ amqp://guest:guest@test/test?sync_ack='true'
 		  sasl_encryption
 	        </entry>
 	        <entry>
-          Boolean  
+          Boolean
 	        </entry>
 	        <entry>
           If <literal>sasl_encryption='true'</literal>, the JMS client attempts to negotiate a security layer with the broker using GSSAPI to encrypt the connection. Note that for this to happen, GSSAPI must be selected as the sasl_mech.
@@ -3226,7 +3226,7 @@ amqp://guest:guest@test/test?sync_ack='true'
 	  </tgroup>
 	</table>
       </section>
-    </section>  
+    </section>
 
     <section>
       <title>Java JMS Message Properties</title>
@@ -3287,7 +3287,7 @@ amqp://guest:guest@test/test?sync_ack='true'
           </tbody>
         </tgroup>
       </table>
-      
+
     </section>
 
     <section id="section-JMS-MapMessage">
@@ -3326,7 +3326,7 @@ m.setDoubleProperty("price", 0.99);
 List<String> colors = new ArrayList<String>();
 colors.add("red");
 colors.add("green");
-colors.add("white");        
+colors.add("white");
 m.setObject("colours", colors);
 
 Map<String,Double> dimensions = new HashMap<String,Double>();
@@ -3351,7 +3351,7 @@ producer.send(m);
       </example>
 
       <para>The following table shows the datatypes that can be sent in a <classname>MapMessage</classname>, and the corresponding datatypes that will be received by clients in Python or C++.</para>
-      
+
       <table id="table-Java-Maps">
 	<title>Java Datatypes in Maps</title>
 	<tgroup cols="3">
@@ -3378,7 +3378,7 @@ producer.send(m);
       </table>
 
     </section>
-    
+
     <section id="section-JMS-Logging">
       <title>JMS Client Logging</title>
       <para>The JMS Client logging is handled using the Simple Logging Facade for Java (<ulink url="http://www.slf4j.org/">SLF4J</ulink>). As the name implies, slf4j is a facade that delegates to other logging systems like log4j or JDK 1.4 logging. For more information on how to configure slf4j for specific logging systems, please consult the slf4j documentation.</para>
@@ -3399,7 +3399,7 @@ log4j.appender.console.Threshold=all
 log4j.appender.console.layout=org.apache.log4j.PatternLayout
 log4j.appender.console.layout.ConversionPattern=%t %d %p [%c{4}] %m%n
 ]]></programlisting>
-      </example> 
+      </example>
 
     </section>
 
@@ -3407,13 +3407,13 @@ log4j.appender.console.layout.ConversionPattern=%t %d %p [%c{4}] %m%n
       <title>Configuring the JMS Client</title>
 
       <para>The Qpid JMS Client allows several configuration options to customize it's behaviour at different levels of granualarity.</para>
-      
+
       <itemizedlist>
         <listitem>
           <para>
             JVM level using JVM arguments : Configuration that affects all connections, sessions, consumers and producers created within that JVM.
 	      </para>
-          <para>Ex. <varname>-Dmax_prefetch=1000</varname> property specifies the message credits to use.</para> 
+          <para>Ex. <varname>-Dmax_prefetch=1000</varname> property specifies the message credits to use.</para>
         </listitem>
 
         <listitem>
@@ -3422,7 +3422,7 @@ log4j.appender.console.layout.ConversionPattern=%t %d %p [%c{4}] %m%n
 	      </para>
           <para>Ex. <varname>amqp://guest:guest@test/test?max_prefetch='1000'
     &amp;brokerlist='tcp://localhost:5672'
-</varname> property specifies the message credits to use. This overrides any value specified via the JVM argument <varname>max_prefetch</varname>.</para> 
+</varname> property specifies the message credits to use. This overrides any value specified via the JVM argument <varname>max_prefetch</varname>.</para>
           <para>Please refer to the <xref linkend="section-jms-connection-url"/> section for a complete list of all properties and how to use them.</para>
         </listitem>
 
@@ -3430,11 +3430,11 @@ log4j.appender.console.layout.ConversionPattern=%t %d %p [%c{4}] %m%n
           <para>
             Destination level using Addressing options : Affects the producer(s) and consumer(s) created using the respective destination.
 	      </para>
-          <para>Ex. <varname>my-queue; {create: always, link:{capacity: 10}}</varname>, where <varname>capacity</varname> option specifies the message credits to use. This overrides any connection level configuration.</para> 
+          <para>Ex. <varname>my-queue; {create: always, link:{capacity: 10}}</varname>, where <varname>capacity</varname> option specifies the message credits to use. This overrides any connection level configuration.</para>
           <para>Please refer to the <xref linkend="section-addresses"/> section for a complete understanding of addressing and it's various options.</para>
         </listitem>
       </itemizedlist>
- 
+
 <para>Some of these config options are available at all three levels (Ex. <varname>max_prefetch</varname>), while others are available only at JVM or connection level.</para>
 
       <section>
@@ -3442,7 +3442,7 @@ log4j.appender.console.layout.ConversionPattern=%t %d %p [%c{4}] %m%n
 
           <table >
             <title>Config Options For Connection Behaviour</title>
-            <tgroup cols="3">
+            <tgroup cols="4">
               <thead>
 	            <row>
 	              <entry>Property Name</entry>
@@ -3479,7 +3479,7 @@ log4j.appender.console.layout.ConversionPattern=%t %d %p [%c{4}] %m%n
 
           <table >
             <title>Config Options For Session Behaviour</title>
-            <tgroup cols="3">
+            <tgroup cols="4">
               <thead>
 	            <row>
 	              <entry>Property Name</entry>
@@ -3515,7 +3515,7 @@ log4j.appender.console.layout.ConversionPattern=%t %d %p [%c{4}] %m%n
 
           <table >
             <title>Config Options For Consumer Behaviour</title>
-            <tgroup cols="3">
+            <tgroup cols="4">
               <thead>
 	            <row>
 	              <entry>Property Name</entry>
@@ -3538,8 +3538,8 @@ log4j.appender.console.layout.ConversionPattern=%t %d %p [%c{4}] %m%n
 	              <entry>1000 (ms)</entry>
                   <entry><para>Timer interval to flush message acks in buffer when using AUTO_ACK and DUPS_OK.</para> <para>When using the above ack modes, message acks are batched and sent if one of the following conditions are met (which ever happens first).
                             <itemizedlist>
-                                    <listitem>When the ack timer fires.</listitem>          
-                                    <listitem>if un_acked_msg_count > max_prefetch/2.</listitem>          
+                                    <listitem><para>When the ack timer fires.</para></listitem>
+                                    <listitem><para>if un_acked_msg_count > max_prefetch/2.</para></listitem>
                             </itemizedlist>
                         </para>
                         <para>The ack timer can be disabled by setting it to 0.</para>
@@ -3558,7 +3558,7 @@ log4j.appender.console.layout.ConversionPattern=%t %d %p [%c{4}] %m%n
 
           <table >
             <title>Config Options For Producer Behaviour</title>
-            <tgroup cols="3">
+            <tgroup cols="4">
               <thead>
 	            <row>
 	              <entry>Property Name</entry>
@@ -3580,7 +3580,7 @@ log4j.appender.console.layout.ConversionPattern=%t %d %p [%c{4}] %m%n
 
           <table >
             <title>Config Options For Threading</title>
-            <tgroup cols="3">
+            <tgroup cols="4">
               <thead>
 	            <row>
 	              <entry>Property Name</entry>
@@ -3609,7 +3609,7 @@ log4j.appender.console.layout.ConversionPattern=%t %d %p [%c{4}] %m%n
 
           <table >
             <title>Config Options For I/O</title>
-            <tgroup cols="3">
+            <tgroup cols="4">
               <thead>
 	            <row>
 	              <entry>Property Name</entry>
@@ -3638,7 +3638,7 @@ log4j.appender.console.layout.ConversionPattern=%t %d %p [%c{4}] %m%n
 
           <table >
             <title>Config Options For Security</title>
-            <tgroup cols="3">
+            <tgroup cols="4">
               <thead>
 	            <row>
 	              <entry>Property Name</entry>
@@ -3673,8 +3673,8 @@ log4j.appender.console.layout.ConversionPattern=%t %d %p [%c{4}] %m%n
           </table>
 
           <table>
-            <title>Config Options For Security - Standard JVM properties needed when using GSSAPI as the SASL mechanism.<footnote>Please refer to the Java security documentation for a complete understanding of the above properties.</footnote></title>
-            <tgroup cols="3">
+            <title>Config Options For Security - Standard JVM properties needed when using GSSAPI as the SASL mechanism.<footnote><para>Please refer to the Java security documentation for a complete understanding of the above properties.</para></footnote></title>
+            <tgroup cols="4">
               <thead>
 	            <row>
 	              <entry>Property Name</entry>
@@ -3710,7 +3710,7 @@ log4j.appender.console.layout.ConversionPattern=%t %d %p [%c{4}] %m%n
 
           <table>
             <title>Config Options For Security - Using SSL for securing connections or using EXTERNAL as the SASL mechanism.</title>
-            <tgroup cols="3">
+            <tgroup cols="4">
               <thead>
 	            <row>
 	              <entry>Property Name</entry>
@@ -3745,8 +3745,8 @@ log4j.appender.console.layout.ConversionPattern=%t %d %p [%c{4}] %m%n
           </table>
 
           <table>
-            <title>Config Options For Security - Standard JVM properties needed when Using SSL for securing connections or using EXTERNAL as the SASL mechanism.<footnote>Qpid allows you to have per connection key and trust stores if required. If specified per connection, the JVM arguments are ignored.</footnote></title>
-            <tgroup cols="3">
+            <title>Config Options For Security - Standard JVM properties needed when Using SSL for securing connections or using EXTERNAL as the SASL mechanism.<footnote><para>Qpid allows you to have per connection key and trust stores if required. If specified per connection, the JVM arguments are ignored.</para></footnote></title>
+            <tgroup cols="4">
               <thead>
 	            <row>
 	              <entry>Property Name</entry>
@@ -3808,7 +3808,7 @@ log4j.appender.console.layout.ConversionPattern=%t %d %p [%c{4}] %m%n
       "hello_service_node" has been created and configured on the AMQP
       broker.</para>
 
-      <example>
+      <example><?dbfo keep-together="auto" ?>
 	<title>Traditional service model "Hello world!" example</title>
 	<programlisting><![CDATA[
 namespace Apache.Qpid.Documentation.HelloService
@@ -3901,7 +3901,7 @@ namespace Apache.Qpid.Documentation.HelloService
       contains the raw content and is identical and fully interoperable with
       the Qpid C++ "Hello world!"  example.</para>
 
-      <example>
+      <example><?dbfo keep-together="auto" ?>
 	<title>Binary  "Hello world!" example using the channel model</title>
 	<programlisting><![CDATA[
 namespace Apache.Qpid.Samples.Channel.HelloWorld
@@ -3915,7 +3915,7 @@ namespace Apache.Qpid.Samples.Channel.HelloWorld
   using Apache.Qpid.Channel;
 
   public class HelloWorld
-  {  
+  {
     static void Main(string[] args)
     {
       String broker = "localhost";
@@ -4245,11 +4245,12 @@ using (TransactionScope ts = new TransactionScope())
   <chapter>
     <title>The .NET Binding for the C++ Messaging Client</title>
     <para>
-      The .NET Binding for the C++ Qpid Messaging Client is a library that gives 
+      The .NET Binding for the C++ Qpid Messaging Client is a library that gives
       any .NET program access to Qpid C++ Messaging objects and methods.
     </para>
     <section>
       <title>.NET Binding for the C++ Messaging Client Component Architecture</title>
+
       <programlisting><![CDATA[
                       +----------------------------+
                       | Dotnet examples            |
@@ -4281,8 +4282,10 @@ unmanaged              | org.apache.qpid.messaging.dll  |
           | qpid*.dll qmf*.dll               |
           +--------+--------------+----------+
 ]]></programlisting>
-This diagram illustrates the code and library components of the binding
-and the hierarchical relationships between them.  
+
+
+<para>This diagram illustrates the code and library components of the binding
+and the hierarchical relationships between them.</para>
 
 	<table id="table-Dotnet-Binding-Component-Architecture" >
 	<title>.NET Binding for the C++ Messaging Client Component Architecture</title>
@@ -4290,7 +4293,7 @@ and the hierarchical relationships between them.
 	  <thead>
 	    <row>
 	      <entry>Component Name</entry>
-	      <entry>Component Function</entry>	      
+	      <entry>Component Function</entry>
 	    </row>
 	  </thead>
 	  <tbody>
@@ -4306,9 +4309,9 @@ and the hierarchical relationships between them.
 	    <row>
 	      <entry>.NET Messaging Binding Library</entry>
 	      <entry>The .NET Messaging Binding library provides interoprability between
-		managed .NET programs and the unmanaged, native Qpid Messaging C++ core 
-		run time system. .NET programs create a Reference to this library thereby 
-		exposing all of the native C++ Messaging functionality to programs 
+		managed .NET programs and the unmanaged, native Qpid Messaging C++ core
+		run time system. .NET programs create a Reference to this library thereby
+		exposing all of the native C++ Messaging functionality to programs
 		written in any .NET language.</entry>
 	    </row>
 	    <row>
@@ -4328,8 +4331,8 @@ and the hierarchical relationships between them.
     <section>
       <title>.NET Binding for the C++ Messaging Client Examples</title>
 
-      This chapter describes the various sample programs that are available to 
-      illustrate common Qpid Messaging usage.
+      <para>This chapter describes the various sample programs that
+      are available to illustrate common Qpid Messaging usage.</para>
 
       <table id="table-Dotnet-Binding-Example-Client-Server">
         <title>Example : Client - Server</title>
@@ -4511,8 +4514,11 @@ and the hierarchical relationships between them.
 
     <section>
       <title>.NET Binding Class Mapping to Underlying C++ Messaging API</title>
-      This chapter describes the specific mappings between classes in the .NET
-      Binding and the underlying C++ Messaging API.
+
+      <para>This chapter describes the specific mappings between
+      classes in the .NET Binding and the underlying C++ Messaging
+      API.</para>
+
     <section>
       <title>.NET Binding for the C++ Messaging API Class: Address</title>
       <table id="table-Dotnet-Binding-Address">
@@ -6308,10 +6314,10 @@ namespace Org.Apache.Qpid.Messaging.SessionReceiver
       <para>
 	To use this class a client program includes references to both
 	Org.Apache.Qpid.Messaging and Org.Apache.Qpid.Messaging.SessionReceiver.
-	The calling program creates a function that implements the 
+	The calling program creates a function that implements the
 	ISessionReceiver interface. This function will be called whenever
 	message is received by the session. The callback process is started
-	by creating a CallbackServer and will continue to run until the 
+	by creating a CallbackServer and will continue to run until the
 	client program calls the CallbackServer.Close function.
       </para>
       <para>

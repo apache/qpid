@@ -127,7 +127,7 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
 
     protected BasicMessageProducer(AMQConnection connection, AMQDestination destination, boolean transacted, int channelId,
                                    AMQSession session, AMQProtocolHandler protocolHandler, long producerId, boolean immediate, boolean mandatory,
-                                   boolean waitUntilSent)
+                                   boolean waitUntilSent) throws AMQException
     {
         _connection = connection;
         _destination = destination;
@@ -175,7 +175,7 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
         }
     }
 
-    abstract void declareDestination(AMQDestination destination);
+    abstract void declareDestination(AMQDestination destination) throws AMQException;
 
     public void setDisableMessageID(boolean b) throws JMSException
     {
@@ -434,7 +434,18 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
         AMQDestination amqDestination = (AMQDestination) destination;
         if(!amqDestination.isExchangeExistsChecked())
         {
-            declareDestination(amqDestination);
+            try
+            {
+                declareDestination(amqDestination);
+            }
+            catch(Exception e)
+            {
+                JMSException ex = new JMSException("Error validating destination");
+                ex.initCause(e);
+                ex.setLinkedException(e);
+                
+                throw ex;
+            }
             amqDestination.setExchangeExistsChecked(true);
         }
     }

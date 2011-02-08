@@ -71,8 +71,8 @@ Schema Agent::getSchema(const SchemaId& s, Duration t) { return impl->getSchema(
 
 
 AgentImpl::AgentImpl(const std::string& n, uint32_t e, ConsoleSessionImpl& s) :
-    name(n), epoch(e), session(s), touched(true), untouchedCount(0), capability(0),
-    nextCorrelator(1), schemaCache(s.schemaCache)
+    name(n), directSubject(n), epoch(e), session(s), touched(true), untouchedCount(0), capability(0),
+    sender(session.directSender), nextCorrelator(1), schemaCache(s.schemaCache)
 {
 }
 
@@ -82,6 +82,11 @@ void AgentImpl::setAttribute(const std::string& k, const qpid::types::Variant& v
     if (k == "qmf.agent_capability")
         try {
             capability = v.asUint32();
+        } catch (std::exception&) {}
+    if (k == "_direct_subject")
+        try {
+            directSubject = v.asString();
+            sender = session.topicSender;
         } catch (std::exception&) {}
 }
 
@@ -114,7 +119,9 @@ ConsoleEvent AgentImpl::query(const Query& query, Duration timeout)
                 context->cond.wait(context->lock,
                                    qpid::sys::AbsTime(qpid::sys::now(),
                                                       qpid::sys::Duration(milliseconds * qpid::sys::TIME_MSEC)));
-            if (context->response.isValid() && context->response.isFinal())
+            if (context->response.isValid() &&
+                ((context->response.getType() == CONSOLE_QUERY_RESPONSE && context->response.isFinal()) ||
+                 (context->response.getType() == CONSOLE_EXCEPTION)))
                 result = context->response;
             else {
                 auto_ptr<ConsoleEventImpl> impl(new ConsoleEventImpl(CONSOLE_EXCEPTION));
@@ -370,9 +377,43 @@ void AgentImpl::handleMethodResponse(const Variant::Map& response, const Message
 }
 
 
-void AgentImpl::handleDataIndication(const Variant::List&, const Message&)
+void AgentImpl::handleDataIndication(const Variant::List& list, const Message& msg)
 {
-    // TODO
+    Variant::Map::const_iterator aIter;
+    const Variant::Map& props(msg.getProperties());
+    boost::shared_ptr<SyncContext> context;
+
+    aIter = props.find("qmf.content");
+    if (aIter == props.end())
+        return;
+
+    string content_type(aIter->second.asString());
+    if (content_type != "_event")
+        return;
+
+    for (Variant::List::const_iterator lIter = list.begin(); lIter != list.end(); lIter++) {
+        const Variant::Map& eventMap(lIter->asMap());
+        Data data(new DataImpl(eventMap, this));
+        int severity(SEV_NOTICE);
+        uint64_t timestamp(0);
+
+        aIter = eventMap.find("_severity");
+        if (aIter != eventMap.end())
+            severity = int(aIter->second.asInt8());
+
+        aIter = eventMap.find("_timestamp");
+        if (aIter != eventMap.end())
+            timestamp = aIter->second.asUint64();
+
+        auto_ptr<ConsoleEventImpl> eventImpl(new ConsoleEventImpl(CONSOLE_EVENT));
+        eventImpl->setAgent(this);
+        eventImpl->addData(data);
+        eventImpl->setSeverity(severity);
+        eventImpl->setTimestamp(timestamp);
+        if (data.hasSchema())
+            learnSchemaId(data.getSchemaId());
+        session.enqueueEvent(eventImpl.release());
+    }
 }
 
 
@@ -514,9 +555,12 @@ void AgentImpl::sendQuery(const Query& query, uint32_t correlator)
 
     msg.setReplyTo(session.replyAddress);
     msg.setCorrelationId(boost::lexical_cast<string>(correlator));
-    msg.setSubject(name);
+    msg.setSubject(directSubject);
+    if (!session.authUser.empty())
+        msg.setUserId(session.authUser);
     encode(QueryImplAccess::get(query).asMap(), msg);
-    session.directSender.send(msg);
+    if (sender.isValid())
+        sender.send(msg);
 
     QPID_LOG(trace, "SENT QueryRequest to=" << name);
 }
@@ -538,9 +582,12 @@ void AgentImpl::sendMethod(const string& method, const Variant::Map& args, const
 
     msg.setReplyTo(session.replyAddress);
     msg.setCorrelationId(boost::lexical_cast<string>(correlator));
-    msg.setSubject(name);
+    msg.setSubject(directSubject);
+    if (!session.authUser.empty())
+        msg.setUserId(session.authUser);
     encode(map, msg);
-    session.directSender.send(msg);
+    if (sender.isValid())
+        sender.send(msg);
 
     QPID_LOG(trace, "SENT MethodRequest method=" << method << " to=" << name);
 }
@@ -578,8 +625,11 @@ void AgentImpl::sendSchemaRequest(const SchemaId& id)
     Message msg;
     msg.setReplyTo(session.replyAddress);
     msg.setContent(content);
-    msg.setSubject(name);
-    session.directSender.send(msg);
+    msg.setSubject(directSubject);
+    if (!session.authUser.empty())
+        msg.setUserId(session.authUser);
+    if (sender.isValid())
+        sender.send(msg);
 
     QPID_LOG(trace, "SENT V1SchemaRequest to=" << name);
 }

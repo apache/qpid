@@ -122,6 +122,11 @@ struct ConnectionSettings {
      * layer. 0 means no security layer allowed.
      */
     unsigned int maxSsf;
+    /**
+     * SSL cert-name for the connection. Overrides global SSL
+     * settings. Used only when a client connects to the broker.
+     */
+    std::string sslCertName;
 };
 
 }} // namespace qpid::client

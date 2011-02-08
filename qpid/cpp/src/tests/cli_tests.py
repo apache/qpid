@@ -22,7 +22,7 @@ import sys
 import os
 import imp
 from qpid.testlib import TestBase010
-# from qpid.brokertest import import_script, checkenv 
+# from brokertest import import_script, checkenv 
 from qpid.datatypes import Message
 from qpid.queue import Empty
 from time import sleep

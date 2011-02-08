@@ -24,6 +24,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.AMQMessage;
+import org.apache.qpid.server.message.ServerMessage;
 
 public class MockQueueEntry implements QueueEntry
 {
@@ -100,7 +101,7 @@ public class MockQueueEntry implements QueueEntry
         return false;
     }
 
-    public AMQMessage getMessage()
+    public ServerMessage getMessage()
     {
         return _message;
     }

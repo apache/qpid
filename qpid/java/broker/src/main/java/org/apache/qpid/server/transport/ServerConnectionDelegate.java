@@ -26,6 +26,7 @@ import org.apache.qpid.server.logging.actors.GenericActor;
 import org.apache.qpid.common.ClientProperties;
 import org.apache.qpid.protocol.ProtocolEngine;
 import org.apache.qpid.server.security.SecurityManager;
+import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
@@ -84,7 +85,22 @@ public class ServerConnectionDelegate extends ServerDelegate
 
     }
 
-    @Override public void connectionOpen(Connection conn, ConnectionOpen open)
+    @Override
+    public void connectionClose(Connection conn, ConnectionClose close)
+    {
+        try
+        {
+            ((ServerConnection) conn).logClosed();
+        }
+        finally
+        {
+            super.connectionClose(conn, close);
+        }
+        
+    }
+
+    @Override
+    public void connectionOpen(Connection conn, ConnectionOpen open)
     {
         ServerConnection sconn = (ServerConnection) conn;
         
@@ -114,7 +130,6 @@ public class ServerConnectionDelegate extends ServerDelegate
             else
             {
 	            sconn.invoke(new ConnectionOpenOk(Collections.emptyList()));
-                CurrentActor.set(GenericActor.getInstance(sconn));
 	            sconn.setState(Connection.State.OPEN);
             }
         }
@@ -130,5 +145,11 @@ public class ServerConnectionDelegate extends ServerDelegate
     {
         //TODO: implement broker support for actually sending heartbeats
         return 0;
+    }
+
+    @Override
+    protected int getChannelMax()
+    {
+        return ApplicationRegistry.getInstance().getConfiguration().getMaxChannelCount();
     }
 }

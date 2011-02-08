@@ -41,7 +41,7 @@ public class ConfigurationFileApplicationRegistry extends ApplicationRegistry
     public void close()
     {
         //Set the Actor for Broker Shutdown
-        CurrentActor.set(new BrokerActor(_registryName, _rootMessageLogger));
+        CurrentActor.set(new BrokerActor(_rootMessageLogger));
         try
         {
             super.close();

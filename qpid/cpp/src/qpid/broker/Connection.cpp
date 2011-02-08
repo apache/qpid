@@ -160,7 +160,10 @@ void Connection::received(framing::AMQFrame& frame) {
     if (frame.getChannel() == 0 && frame.getMethod()) {
         adapter.handle(frame);
     } else {
-        getChannel(frame.getChannel()).in(frame);
+        if (adapter.isOpen())
+            getChannel(frame.getChannel()).in(frame);
+        else
+            close(connection::CLOSE_CODE_FRAMING_ERROR, "Connection not yet open, invalid frame received.");
     }
 
     if (isLink) //i.e. we are acting as the client to another broker
@@ -184,7 +187,8 @@ bool isMessage(const AMQMethodBody* method)
 
 void Connection::recordFromServer(const framing::AMQFrame& frame)
 {
-    if (mgmtObject != 0)
+    // Don't record management stats in cluster-unsafe contexts
+    if (mgmtObject != 0 && isClusterSafe())
     {
         mgmtObject->inc_framesToClient();
         mgmtObject->inc_bytesToClient(frame.encodedSize());
@@ -196,7 +200,8 @@ void Connection::recordFromServer(const framing::AMQFrame& frame)
 
 void Connection::recordFromClient(const framing::AMQFrame& frame)
 {
-    if (mgmtObject != 0)
+    // Don't record management stats in cluster-unsafe contexts
+    if (mgmtObject != 0 && isClusterSafe())
     {
         mgmtObject->inc_framesFromClient();
         mgmtObject->inc_bytesFromClient(frame.encodedSize());

@@ -46,51 +46,48 @@ def filter_log(log):
     to differ between brokers in a cluster. Filtered log contents between
     the same checkpoints should match across the cluster."""
     out = open("%s.filter"%(log), 'w')
+    # Lines to skip entirely, expected differences
+    skip = "|".join([
+        'local connection',         # Only on local broker
+        'UPDATER|UPDATEE',          # Ignore update process
+        'stall for update|unstall, ignore update|cancelled offer .* unstall',
+        'caught up',
+        'active for links|Passivating links|Activating links',
+        'info Connection.* connected to', # UpdateClient connection
+        'warning Connection [\d+ [0-9.:]+] closed', # UpdateClient connection
+        'warning Broker closed connection: 200, OK',
+        'task late',
+        'task overran',
+        'warning CLOSING .* unsent data',
+        'Inter-broker link ',
+        'Running in a cluster, marking store'
+        ])
+    skip_re = re.compile(skip)
+    # Regex to match a UUID
+    uuid='\w\w\w\w\w\w\w\w-\w\w\w\w-\w\w\w\w-\w\w\w\w-\w\w\w\w\w\w\w\w\w\w\w\w'
+    # Substitutions to remove expected differences
+    subs = [
+        (r'\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d ', ''), # Remove timestamp
+        (r'cluster\([0-9.: ]*', 'cluster('), # Remove cluster node id
+        (r' local\)| shadow\)', ')'), # Remove local/shadow indication
+        (r'CATCHUP', 'READY'), # Treat catchup as equivalent to ready.
+        (r'OFFER', 'READY'), # Treat offer as equivalent to ready.
+        # System UUID expected to be different
+        (r'(org.apache.qpid.broker:system[:(])%s(\)?)'%(uuid), r'\1UUID\2'),
+
+        # TODO aconway 2010-12-20: review if these should be expected:
+        (r' len=\d+', ' len=NN'),   # buffer lengths
+        (r' map={.*_object_name:([^,}]*)[,}].*', r' \1'), # V2 map - just keep name
+        (r'\d+-\d+-\d+--\d+', 'X-X-X--X'), # V1 Object IDs
+        ]
     for l in open(log):
-        # Lines to skip entirely
-        skip = "|".join([
-            'local connection',         # Only on local broker
-            'UPDATER|UPDATEE',          # Ignore update process
-            'stall for update|unstall, ignore update|cancelled offer .* unstall',
-            'caught up',
-            'active for links|Passivating links|Activating links',
-            'info Connection.* connected to', # UpdateClient connection
-            'warning Broker closed connection: 200, OK',
-            'task late',
-            'task overran',
-            'warning CLOSING .* unsent data',
-            'Inter-broker link '
-            ])
-        if re.compile(skip).search(l): continue
-
-        # Regex to match a UUID
-        uuid='\w\w\w\w\w\w\w\w-\w\w\w\w-\w\w\w\w-\w\w\w\w-\w\w\w\w\w\w\w\w\w\w\w\w'
-
-        # Regular expression substitutions to remove expected differences
-        for pattern,subst in [
-            (r'\d\d\d\d-\d\d-\d\d \d\d:\d\d:\d\d ', ''), # Remove timestamp
-            (r'cluster\([0-9.: ]*', 'cluster('), # Remove cluster node id
-            (r' local\)| shadow\)', ')'), # Remove local/shadow indication
-            (r'CATCHUP', 'READY'), # Treat catchup as equivalent to ready.
-            (r'OFFER', 'READY'), # Treat offer as equivalent to ready.
-            # System UUID expected to be different
-            (r'(org.apache.qpid.broker:system[:(])%s(\)?)'%(uuid), r'\1UUID\2'),
-
-            # FIXME aconway 2010-12-20: substitutions to mask known problems
-            # See https://issues.apache.org/jira/browse/QPID-2982
-            (r' len=\d+', ' len=NN'),   # buffer lengths
-            (r' map={.*_object_name:([^,}]*)[,}].*', r' \1'), # V2 map - just keep name
-            (r'\d+-\d+-\d+--\d+', 'X-X-X--X'), # V1 Object IDs
-            ]: l = re.sub(pattern,subst,l)
+        if skip_re.search(l): continue
+        for pattern,subst in subs: l = re.sub(pattern,subst,l)
         out.write(l)
     out.close()
 
-def verify_logs(logs):
+def verify_logs():
     """Compare log files from cluster brokers, verify that they correspond correctly."""
-    # FIXME aconway 2011-01-19: disable when called from unit tests
-    # Causing sporadic failures, see https://issues.apache.org/jira/browse/QPID-3007
-    if __name__ != "__main__": return
-    
     for l in glob.glob("*.log"): filter_log(l)
     checkpoints = set()
     for l in glob.glob("*.filter"): checkpoints = checkpoints.union(set(split_log(l)))
@@ -110,4 +107,4 @@ def verify_logs(logs):
 
 # Can be run as a script.
 if __name__ == "__main__":
-    verify_logs(glob.glob("*.log"))
+    verify_logs()

@@ -62,8 +62,6 @@
     </management>
     <advanced>
         <filterchain enableExecutorPool="true"/>
-        <enablePooledAllocator>false</enablePooledAllocator>
-        <enableDirectBuffers>false</enableDirectBuffers>
         <framesize>65535</framesize>
         <compressBufferOnQueue>false</compressBufferOnQueue>
         <enableJMSXUserID>false</enableJMSXUserID>

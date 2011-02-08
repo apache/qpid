@@ -47,7 +47,7 @@ public class ConnectionCloseTest extends QpidBrokerTestCase
     {
         Map<Thread,StackTraceElement[]> before = Thread.getAllStackTraces();
 
-        for (int i = 0; i < 500; i++)
+        for (int i = 0; i < 50; i++)
         {
             if ((i % 10) == 0)
             {
@@ -81,7 +81,7 @@ public class ConnectionCloseTest extends QpidBrokerTestCase
         }
 
         Map<Thread,StackTraceElement[]> after = Thread.getAllStackTraces();
-
+        
         Map<Thread,StackTraceElement[]> delta = new HashMap<Thread,StackTraceElement[]>(after);
         for (Thread t : before.keySet())
         {
@@ -90,9 +90,12 @@ public class ConnectionCloseTest extends QpidBrokerTestCase
 
         dumpStacks(delta);
 
+        int deltaThreshold = (isExternalBroker()? 1 : 2) //InVM creates more thread pools in the same VM
+                            * (Runtime.getRuntime().availableProcessors() + 1) + 5; 
+
         assertTrue("Spurious thread creation exceeded threshold, " +
                    delta.size() + " threads created.",
-                   delta.size() < 10);
+                   delta.size() < deltaThreshold);
     }
 
     private void dumpStacks(Map<Thread,StackTraceElement[]> map)

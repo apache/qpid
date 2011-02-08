@@ -191,6 +191,16 @@ public class BindingLoggingTest extends AbstractTestLogging
         // and so unbind.
         _session.createConsumer(_session.createTemporaryQueue()).close();
 
+        if(isBroker010())
+        {
+            //auto-delete is at session close for 0-10
+            _session.close();
+        }
+
+        //wait for the deletion messages to be logged
+        waitForMessage("BND-1002");
+
+        //gather all the BND messages
         List<String> results = waitAndFindMatches(BND_PREFIX);
 
         // We will have two binds as we bind all queues to the default exchange

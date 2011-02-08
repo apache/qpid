@@ -44,6 +44,8 @@ uint32_t ConsoleEvent::getDataCount() const { return impl->getDataCount(); }
 Data ConsoleEvent::getData(uint32_t i) const { return impl->getData(i); }
 bool ConsoleEvent::isFinal() const { return impl->isFinal(); }
 const Variant::Map& ConsoleEvent::getArguments() const { return impl->getArguments(); }
+int ConsoleEvent::getSeverity() const { return impl->getSeverity(); }
+uint64_t ConsoleEvent::getTimestamp() const { return impl->getTimestamp(); }
 
 
 SchemaId ConsoleEventImpl::getSchemaId(uint32_t i) const

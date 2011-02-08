@@ -44,6 +44,8 @@ cls = klass(type)["@name"]
 
 segments = type["segments"]
 
+connectioncontrol="false"
+
 if type.name in ("control", "command"):
   base = "Method"
   size = 0
@@ -54,6 +56,7 @@ if type.name in ("control", "command"):
     payload = "false"
   if type.name == "control" and cls == "connection":
     track = "Frame.L1"
+    connectioncontrol="true"
   elif cls == "session" and type["@name"] in ("attach", "attached", "detach", "detached"):
     track = "Frame.L2"
   elif type.name == "command":
@@ -98,6 +101,11 @@ public final class $name extends $base {
 
     public final byte getEncodedTrack() {
         return $track;
+    }
+
+    public final boolean isConnectionControl()
+    {
+        return $connectioncontrol;
     }
 
 ${

@@ -36,6 +36,7 @@ import org.apache.qpid.server.flow.WindowCreditManager;
 import org.apache.qpid.server.flow.FlowCreditManager_0_10;
 import org.apache.qpid.server.filter.FilterManager;
 import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.logging.actors.GenericActor;
 import org.apache.qpid.server.logging.messages.SubscriptionMessages;
 import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.LogSubject;
@@ -179,12 +180,13 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
         _trace = (String) arguments.get("qpid.trace.id");
         _id = getConfigStore().createId();
         getConfigStore().addConfiguredObject(this);
-	String filterLogString = null;
-	LogActor _logActor = CurrentActor.get();
-        if (_logActor.getRootMessageLogger().isMessageEnabled(_logActor, this, SubscriptionMessages.CREATE_LOG_HIERARCHY))
+        String filterLogString = null;
+
+        _logActor = GenericActor.getInstance(this);
+        if (CurrentActor.get().getRootMessageLogger().isMessageEnabled(_logActor, this, SubscriptionMessages.CREATE_LOG_HIERARCHY))
         {
             filterLogString = getFilterLogString();
-            _logActor.message(SubscriptionMessages.CREATE(filterLogString, queue.isDurable() && exclusive,
+            CurrentActor.get().message(this, SubscriptionMessages.CREATE(filterLogString, queue.isDurable() && exclusive,
                     filterLogString.length() > 0));
         }
  

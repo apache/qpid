@@ -78,7 +78,8 @@ Variant::Map SchemaIdImpl::asMap() const
         result["_type"] = "_data";
     else
         result["_type"] = "_event";
-    result["_hash"] = hash;
+    if (!hash.isNull())
+        result["_hash"] = hash;
     return result;
 }
 

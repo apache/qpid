@@ -373,6 +373,7 @@ libqpidcommon_la_SOURCES +=			\
   qpid/framing/BodyHandler.cpp			\
   qpid/framing/BodyHandler.h			\
   qpid/framing/Buffer.cpp			\
+  qpid/framing/ResizableBuffer.h		\
   qpid/framing/ChannelHandler.h			\
   qpid/framing/Endian.cpp			\
   qpid/framing/Endian.h				\

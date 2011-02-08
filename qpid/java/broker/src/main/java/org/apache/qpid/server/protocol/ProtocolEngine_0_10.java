@@ -58,8 +58,8 @@ public class ProtocolEngine_0_10  extends InputHandler implements ProtocolEngine
         _appRegistry = appRegistry;
 
         // FIXME Two log messages to maintain compatinbility with earlier protocol versions
-        CurrentActor.get().message(ConnectionMessages.OPEN(null, null, false, false));
-        CurrentActor.get().message(ConnectionMessages.OPEN(null, "0-10", false, true));
+        _connection.getLogActor().message(ConnectionMessages.OPEN(null, null, false, false));
+        _connection.getLogActor().message(ConnectionMessages.OPEN(null, "0-10", false, true));
     }
 
     public void setNetworkDriver(NetworkDriver driver)

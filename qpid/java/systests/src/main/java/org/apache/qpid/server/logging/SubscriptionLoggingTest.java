@@ -181,7 +181,10 @@ public class SubscriptionLoggingTest extends AbstractTestLogging
 
         String message = getMessageString(fromMessage(log));
         assertTrue("Browser not on log message:" + message, message.contains("Browser"));
-        assertTrue("AutoClose not on log message:" + message, message.contains("AutoClose"));
+        if(!isBroker010())
+        {
+            assertTrue("AutoClose not on log message:" + message, message.contains("AutoClose"));
+        }
 
         // Beacause it is an auto close and we have no messages on the queue we
         // will get a close message

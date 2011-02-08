@@ -10,9 +10,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -60,26 +60,31 @@ public:
     QPID_COMMON_EXTERN int listen(uint16_t port = 0, int backlog = 10) const;
     QPID_COMMON_EXTERN int listen(const SocketAddress&, int backlog = 10) const;
 
-    /** Returns the "socket name" ie the address bound to 
+    /** Returns the "socket name" ie the address bound to
      * the near end of the socket
      */
     QPID_COMMON_EXTERN std::string getSockname() const;
 
-    /** Returns the "peer name" ie the address bound to 
+    /** Returns the "peer name" ie the address bound to
      * the remote end of the socket
      */
     std::string getPeername() const;
 
-    /** 
+    /**
      * Returns an address (host and port) for the remote end of the
      * socket
      */
     QPID_COMMON_EXTERN std::string getPeerAddress() const;
-    /** 
+    /**
      * Returns an address (host and port) for the local end of the
      * socket
      */
-    std::string getLocalAddress() const;
+    QPID_COMMON_EXTERN std::string getLocalAddress() const;
+
+    /**
+     * Returns the full address of the connection: local and remote host and port.
+     */
+    QPID_COMMON_EXTERN std::string getFullAddress() const { return getLocalAddress()+"-"+getPeerAddress(); }
 
     QPID_COMMON_EXTERN uint16_t getLocalPort() const;
     uint16_t getRemotePort() const;
@@ -95,7 +100,7 @@ public:
      */
     QPID_COMMON_EXTERN Socket* accept() const;
 
-    // TODO The following are raw operations, maybe they need better wrapping? 
+    // TODO The following are raw operations, maybe they need better wrapping?
     QPID_COMMON_EXTERN int read(void *buf, size_t count) const;
     QPID_COMMON_EXTERN int write(const void *buf, size_t count) const;
 

@@ -1,4 +1,3 @@
-package org.apache.qpid.server.queue;
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -20,6 +19,7 @@ package org.apache.qpid.server.queue;
  *
  */
 
+package org.apache.qpid.server.queue;
 
 import org.apache.commons.configuration.PropertiesConfiguration;
 
@@ -36,6 +36,7 @@ import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.exchange.DirectExchange;
 import org.apache.qpid.server.message.AMQMessage;
 import org.apache.qpid.server.message.MessageMetaData;
+import org.apache.qpid.server.queue.BaseQueue.PostEnqueueAction;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.store.StoredMessage;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
@@ -170,7 +171,7 @@ public class SimpleAMQQueueTest extends InternalBrokerBaseCase
 
     }
 
-    public void testSubscription() throws AMQException
+    public void testRegisterSubscriptionThenEnqueueMessage() throws AMQException
     {
         // Check adding a subscription adds it to the queue
         _queue.registerSubscription(_subscription, false);
@@ -185,6 +186,7 @@ public class SimpleAMQQueueTest extends InternalBrokerBaseCase
         AMQMessage messageA = createMessage(new Long(24));
         _queue.enqueue(messageA);
         assertEquals(messageA, _subscription.getQueueContext().getLastSeenEntry().getMessage());
+        assertNull(((QueueContext)_subscription.getQueueContext())._releasedEntry);
 
         // Check removing the subscription removes it's information from the queue
         _queue.unregisterSubscription(_subscription);
@@ -199,13 +201,269 @@ public class SimpleAMQQueueTest extends InternalBrokerBaseCase
 
     }
 
-    public void testQueueNoSubscriber() throws AMQException, InterruptedException
+    public void testEnqueueMessageThenRegisterSubscription() throws AMQException, InterruptedException
     {
         AMQMessage messageA = createMessage(new Long(24));
         _queue.enqueue(messageA);
         _queue.registerSubscription(_subscription, false);
         Thread.sleep(150);
         assertEquals(messageA, _subscription.getQueueContext().getLastSeenEntry().getMessage());
+        assertNull("There should be no releasedEntry after an enqueue", ((QueueContext)_subscription.getQueueContext())._releasedEntry);
+    }
+
+    /**
+     * Tests enqueuing two messages.
+     */
+    public void testEnqueueTwoMessagesThenRegisterSubscription() throws Exception
+    {
+        AMQMessage messageA = createMessage(new Long(24));
+        AMQMessage messageB = createMessage(new Long(25));
+        _queue.enqueue(messageA);
+        _queue.enqueue(messageB);
+        _queue.registerSubscription(_subscription, false);
+        Thread.sleep(150);
+        assertEquals(messageB, _subscription.getQueueContext().getLastSeenEntry().getMessage());
+        assertNull("There should be no releasedEntry after enqueues", ((QueueContext)_subscription.getQueueContext())._releasedEntry);
+    }
+
+    /**
+     * Tests that a re-queued message is resent to the subscriber.  Verifies also that the
+     * QueueContext._releasedEntry is reset to null after the entry has been reset.
+     */
+    public void testRequeuedMessageIsResentToSubscriber() throws Exception
+    {
+        _queue.registerSubscription(_subscription, false);
+
+        final ArrayList<QueueEntry> queueEntries = new ArrayList<QueueEntry>();
+        PostEnqueueAction postEnqueueAction = new PostEnqueueAction()
+        {
+            public void onEnqueue(QueueEntry entry)
+            {
+                queueEntries.add(entry);
+            }
+        };
+
+        AMQMessage messageA = createMessage(new Long(24));
+        AMQMessage messageB = createMessage(new Long(25));
+        AMQMessage messageC = createMessage(new Long(26));
+
+        /* Enqueue three messages */
+
+        _queue.enqueue(messageA, postEnqueueAction);
+        _queue.enqueue(messageB, postEnqueueAction);
+        _queue.enqueue(messageC, postEnqueueAction);
+
+        Thread.sleep(150);  // Work done by SubFlushRunner Thread
+
+        assertEquals("Unexpected total number of messages sent to subscription", 3, _subscription.getMessages().size());
+        assertFalse("Redelivery flag should not be set", queueEntries.get(0).isRedelivered());
+        assertFalse("Redelivery flag should not be set", queueEntries.get(1).isRedelivered());
+        assertFalse("Redelivery flag should not be set", queueEntries.get(2).isRedelivered());
+
+        /* Now requeue the first message only */
+
+        queueEntries.get(0).release();
+        _queue.requeue(queueEntries.get(0));
+
+        Thread.sleep(150); // Work done by SubFlushRunner Thread
+
+        assertEquals("Unexpected total number of messages sent to subscription", 4, _subscription.getMessages().size());
+        assertTrue("Redelivery flag should now be set", queueEntries.get(0).isRedelivered());
+        assertFalse("Redelivery flag should remain be unset", queueEntries.get(1).isRedelivered());
+        assertFalse("Redelivery flag should remain be unset",queueEntries.get(2).isRedelivered());
+        assertNull("releasedEntry should be cleared after requeue processed", ((QueueContext)_subscription.getQueueContext())._releasedEntry);
+    }
+
+    /**
+     * Tests that a re-queued message that becomes expired is not resent to the subscriber.
+     * This tests ensures that SimpleAMQQueueEntry.getNextAvailableEntry avoids expired entries.
+     * Verifies also that the QueueContext._releasedEntry is reset to null after the entry has been reset.
+     */
+    public void testRequeuedMessageThatBecomesExpiredIsNotRedelivered() throws Exception
+    {
+        _queue.registerSubscription(_subscription, false);
+
+        final ArrayList<QueueEntry> queueEntries = new ArrayList<QueueEntry>();
+        PostEnqueueAction postEnqueueAction = new PostEnqueueAction()
+        {
+            public void onEnqueue(QueueEntry entry)
+            {
+                queueEntries.add(entry);
+            }
+        };
+
+        /* Enqueue one message with expiration set for a short time in the future */
+
+        AMQMessage messageA = createMessage(new Long(24));
+        int messageExpirationOffset = 200;
+        messageA.setExpiration(System.currentTimeMillis() + messageExpirationOffset);
+
+        _queue.enqueue(messageA, postEnqueueAction);
+
+        int subFlushWaitTime = 150;
+        Thread.sleep(subFlushWaitTime); // Work done by SubFlushRunner Thread
+
+        assertEquals("Unexpected total number of messages sent to subscription", 1, _subscription.getMessages().size());
+        assertFalse("Redelivery flag should not be set", queueEntries.get(0).isRedelivered());
+
+        /* Wait a little more to be sure that message will have expired, then requeue it */
+        Thread.sleep(messageExpirationOffset - subFlushWaitTime + 10);
+        queueEntries.get(0).release();
+        _queue.requeue(queueEntries.get(0));
+
+        Thread.sleep(subFlushWaitTime); // Work done by SubFlushRunner Thread
+
+        assertTrue("Expecting the queue entry to be now expired", queueEntries.get(0).expired());
+        assertEquals("Total number of messages sent should not have changed", 1, _subscription.getMessages().size());
+        assertFalse("Redelivery flag should not be set", queueEntries.get(0).isRedelivered());
+        assertNull("releasedEntry should be cleared after requeue processed", ((QueueContext)_subscription.getQueueContext())._releasedEntry);
+
+    }
+
+    /**
+     * Tests that if a client requeues messages 'out of order' (the order
+     * used by QueueEntryImpl.compareTo) that messages are still resent
+     * successfully.  Specifically this test ensures the {@see SimpleAMQQueue#requeue()}
+     * can correctly move the _releasedEntry to an earlier position in the QueueEntry list.
+     */
+    public void testMessagesRequeuedOutOfComparableOrderAreDelivered() throws Exception
+    {
+        _queue.registerSubscription(_subscription, false);
+
+        final ArrayList<QueueEntry> queueEntries = new ArrayList<QueueEntry>();
+        PostEnqueueAction postEnqueueAction = new PostEnqueueAction()
+        {
+            public void onEnqueue(QueueEntry entry)
+            {
+                queueEntries.add(entry);
+            }
+        };
+
+        AMQMessage messageA = createMessage(new Long(24));
+        AMQMessage messageB = createMessage(new Long(25));
+        AMQMessage messageC = createMessage(new Long(26));
+
+        /* Enqueue three messages */
+
+        _queue.enqueue(messageA, postEnqueueAction);
+        _queue.enqueue(messageB, postEnqueueAction);
+        _queue.enqueue(messageC, postEnqueueAction);
+
+        Thread.sleep(150);  // Work done by SubFlushRunner Thread
+
+        assertEquals("Unexpected total number of messages sent to subscription", 3, _subscription.getMessages().size());
+        assertFalse("Redelivery flag should not be set", queueEntries.get(0).isRedelivered());
+        assertFalse("Redelivery flag should not be set", queueEntries.get(1).isRedelivered());
+        assertFalse("Redelivery flag should not be set", queueEntries.get(2).isRedelivered());
+
+        /* Now requeue the third and first message only */
+
+        queueEntries.get(2).release();
+        queueEntries.get(0).release();
+        _queue.requeue(queueEntries.get(2));
+        _queue.requeue(queueEntries.get(0));
+
+        Thread.sleep(150); // Work done by SubFlushRunner Thread
+
+        assertEquals("Unexpected total number of messages sent to subscription", 5, _subscription.getMessages().size());
+        assertTrue("Redelivery flag should now be set", queueEntries.get(0).isRedelivered());
+        assertFalse("Redelivery flag should remain be unset", queueEntries.get(1).isRedelivered());
+        assertTrue("Redelivery flag should now be set",queueEntries.get(2).isRedelivered());
+        assertNull("releasedEntry should be cleared after requeue processed", ((QueueContext)_subscription.getQueueContext())._releasedEntry);
+    }
+
+
+    /**
+     * Tests a requeue for a queue with multiple subscriptions.  Verifies that a
+     * requeue resends a message to a <i>single</i> subscriber.
+     */
+    public void testRequeueForQueueWithMultipleSubscriptions() throws Exception
+    {
+        MockSubscription subscription1 = new MockSubscription();
+        MockSubscription subscription2 = new MockSubscription();
+
+        _queue.registerSubscription(subscription1, false);
+        _queue.registerSubscription(subscription2, false);
+
+        final ArrayList<QueueEntry> queueEntries = new ArrayList<QueueEntry>();
+        PostEnqueueAction postEnqueueAction = new PostEnqueueAction()
+        {
+            public void onEnqueue(QueueEntry entry)
+            {
+                queueEntries.add(entry);
+            }
+        };
+
+        AMQMessage messageA = createMessage(new Long(24));
+        AMQMessage messageB = createMessage(new Long(25));
+
+        /* Enqueue two messages */
+
+        _queue.enqueue(messageA, postEnqueueAction);
+        _queue.enqueue(messageB, postEnqueueAction);
+
+        Thread.sleep(150);  // Work done by SubFlushRunner Thread
+
+        assertEquals("Unexpected total number of messages sent to subscription1 after enqueue", 1, subscription1.getMessages().size());
+        assertEquals("Unexpected total number of messages sent to subscription2 after enqueue", 1, subscription2.getMessages().size());
+
+        /* Now requeue a message (for any subscription) */
+
+        queueEntries.get(0).release();
+        _queue.requeue((QueueEntryImpl)queueEntries.get(0));
+
+        Thread.sleep(150); // Work done by SubFlushRunner Thread
+
+        assertEquals("Unexpected total number of messages sent to all subscriptions after requeue", 3, subscription1.getMessages().size() + subscription2.getMessages().size());
+        assertNull("releasedEntry should be cleared after requeue processed", ((QueueContext)subscription1.getQueueContext())._releasedEntry);
+        assertNull("releasedEntry should be cleared after requeue processed", ((QueueContext)subscription2.getQueueContext())._releasedEntry);
+    }
+
+    /**
+     * Tests a requeue for a queue with multiple subscriptions.  Verifies that a
+     * subscriber specific requeue resends the message to <i>that</i> subscriber.
+     */
+    public void testSubscriptionSpecificRequeueForQueueWithMultipleSubscriptions() throws Exception
+    {
+        MockSubscription subscription1 = new MockSubscription();
+        MockSubscription subscription2 = new MockSubscription();
+
+        _queue.registerSubscription(subscription1, false);
+        _queue.registerSubscription(subscription2, false);
+
+        final ArrayList<QueueEntry> queueEntries = new ArrayList<QueueEntry>();
+        PostEnqueueAction postEnqueueAction = new PostEnqueueAction()
+        {
+            public void onEnqueue(QueueEntry entry)
+            {
+                queueEntries.add(entry);
+            }
+        };
+
+        AMQMessage messageA = createMessage(new Long(24));
+        AMQMessage messageB = createMessage(new Long(25));
+
+        /* Enqueue two messages */
+
+        _queue.enqueue(messageA, postEnqueueAction);
+        _queue.enqueue(messageB, postEnqueueAction);
+
+        Thread.sleep(150);  // Work done by SubFlushRunner Thread
+
+        assertEquals("Unexpected total number of messages sent to subscription1 after enqueue", 1, subscription1.getMessages().size());
+        assertEquals("Unexpected total number of messages sent to subscription2 after enqueue", 1, subscription2.getMessages().size());
+
+        /* Now requeue a message (for first subscription) */
+
+        queueEntries.get(0).release();
+        _queue.requeue((QueueEntryImpl)queueEntries.get(0), subscription1);
+
+        Thread.sleep(150); // Work done by SubFlushRunner Thread
+
+        assertEquals("Unexpected total number of messages sent to subscription1 after requeue", 2, subscription1.getMessages().size());
+        assertEquals("Unexpected total number of messages sent to subscription2 after requeue", 1, subscription2.getMessages().size());
+        assertNull("releasedEntry should be cleared after requeue processed", ((QueueContext)subscription1.getQueueContext())._releasedEntry);
+        assertNull("releasedEntry should be cleared after requeue processed", ((QueueContext)subscription2.getQueueContext())._releasedEntry);
     }
 
     public void testExclusiveConsumer() throws AMQException

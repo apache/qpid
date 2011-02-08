@@ -194,7 +194,7 @@ void SslProtocolFactory::established(sys::Poller::shared_ptr poller,
                                      const qpid::sys::Socket& s,
                                      sys::ConnectionCodec::Factory* f,
                                      bool isClient) {
-    sys::AsynchIOHandler* async = new sys::AsynchIOHandler(s.getPeerAddress(), f);
+    sys::AsynchIOHandler* async = new sys::AsynchIOHandler(s.getFullAddress(), f);
 
     if (tcpNoDelay) {
         s.setTcpNoDelay();

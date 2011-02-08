@@ -30,4 +30,8 @@ if HAVE_PYTHON_DEVEL
 SUBDIRS += python
 endif
 
+if HAVE_PERL_DEVEL
+SUBDIRS += perl
+endif
+
 endif

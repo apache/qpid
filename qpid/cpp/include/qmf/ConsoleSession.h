@@ -57,6 +57,10 @@ namespace qmf {
          *    domain:NAME                - QMF Domain to join [default: "default"]
          *    max-agent-age:N            - Maximum time, in minutes, that we will tolerate not hearing from
          *                                 an agent before deleting it [default: 5]
+         *    listen-on-direct:{True,False} - If True:  Listen on legacy direct-exchange address for backward compatibility [default]
+         *                                    If False: Listen only on the routable direct address
+         *    strict-security:{True,False}  - If True:  Cooperate with the broker to enforce strict access control to the network
+         *                                  - If False: Operate more flexibly with regard to use of messaging facilities [default]
          */
         QMF_EXTERN ConsoleSession(qpid::messaging::Connection&, const std::string& options="");
         QMF_EXTERN void setDomain(const std::string&);

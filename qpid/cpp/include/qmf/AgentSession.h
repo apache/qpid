@@ -67,6 +67,10 @@ namespace qmf {
          *    sub-lifetime:N             - Lifetime (in seconds with no keepalive) for a subscription [default: 300]
          *    public-events:{True,False} - If True:  QMF events are sent to the topic exchange [default]
          *                                 If False: QMF events are only sent to authorized subscribers
+         *    listen-on-direct:{True,False} - If True:  Listen on legacy direct-exchange address for backward compatibility [default]
+         *                                    If False: Listen only on the routable direct address
+         *    strict-security:{True,False}  - If True:  Cooperate with the broker to enforce strict access control to the network
+         *                                  - If False: Operate more flexibly with regard to use of messaging facilities [default]
          */
         QMF_EXTERN AgentSession(qpid::messaging::Connection&, const std::string& options="");
 
@@ -161,8 +165,14 @@ namespace qmf {
 
         /**
          * Raise an event to be sent into the QMF network.
+         *
+         * @param data - A data object that contains the event contents.
+         * @param severity - Explicit severity (from qmf/SchemaTypes.h).  If omitted, the severity is set to
+         *        the default severity for the data's schema.  If the data has no schema, the severity defaults
+         *        to SEV_NOTICE.
          */
-        QMF_EXTERN void raiseEvent(const Data&);
+        QMF_EXTERN void raiseEvent(const Data& data);
+        QMF_EXTERN void raiseEvent(const Data& data, int severity);
 
 #ifndef SWIG
     private:

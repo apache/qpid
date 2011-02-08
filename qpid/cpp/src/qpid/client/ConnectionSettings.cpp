@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -30,7 +30,7 @@ namespace client {
 
 ConnectionSettings::ConnectionSettings() :
     protocol("tcp"),
-    host("localhost"), 
+    host("localhost"),
     port(5672),
     locale("en_US"),
     heartbeat(0),
@@ -40,7 +40,8 @@ ConnectionSettings::ConnectionSettings() :
     tcpNoDelay(false),
     service(qpid::saslName),
     minSsf(0),
-    maxSsf(256)
+    maxSsf(256),
+    sslCertName("")
 {}
 
 ConnectionSettings::~ConnectionSettings() {}

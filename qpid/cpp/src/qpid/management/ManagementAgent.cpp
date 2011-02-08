@@ -106,7 +106,8 @@ ManagementAgent::ManagementAgent (const bool qmfV1, const bool qmfV2) :
     startTime(sys::now()),
     suppressed(false), disallowAllV1Methods(false),
     vendorNameKey(defaultVendorName), productNameKey(defaultProductName),
-    qmf1Support(qmfV1), qmf2Support(qmfV2), maxV2ReplyObjs(100)
+    qmf1Support(qmfV1), qmf2Support(qmfV2), maxReplyObjs(100),
+    msgBuffer(MA_BUFFER_SIZE)
 {
     nextObjectId   = 1;
     brokerBank     = 1;
@@ -502,7 +503,7 @@ bool ManagementAgent::checkHeader (Buffer& buf, uint8_t *opcode, uint32_t *seq)
 void ManagementAgent::sendBufferLH(Buffer&  buf,
                                    uint32_t length,
                                    qpid::broker::Exchange::shared_ptr exchange,
-                                   string   routingKey)
+                                   const string&  routingKey)
 {
     if (suppressed) {
         QPID_LOG(debug, "Suppressing management message to " << routingKey);
@@ -544,6 +545,17 @@ void ManagementAgent::sendBufferLH(Buffer&  buf,
         } catch(exception&) {}
     }
     buf.reset();
+}
+
+
+void ManagementAgent::sendBufferLH(Buffer&  buf,
+                                   uint32_t length,
+                                   const string& exchange,
+                                   const string& routingKey)
+{
+    qpid::broker::Exchange::shared_ptr ex(broker->getExchanges().get(exchange));
+    if (ex.get() != 0)
+        sendBufferLH(buf, length, ex, routingKey);
 }
 
 
@@ -611,6 +623,20 @@ void ManagementAgent::sendBufferLH(const string& data,
 }
 
 
+void ManagementAgent::sendBufferLH(const string& data,
+                                   const string& cid,
+                                   const Variant::Map& headers,
+                                   const string& content_type,
+                                   const string& exchange,
+                                   const string& routingKey,
+                                   uint64_t ttl_msec)
+{
+    qpid::broker::Exchange::shared_ptr ex(broker->getExchanges().get(exchange));
+    if (ex.get() != 0)
+        sendBufferLH(data, cid, headers, content_type, ex, routingKey, ttl_msec);
+}
+
+
 /** Objects that have been added since the last periodic poll are temporarily
  * saved in the newManagementObjects list.  This allows objects to be
  * added without needing to block on the userLock (addLock is used instead).
@@ -663,7 +689,6 @@ void ManagementAgent::periodicProcessing (void)
 #define HEADROOM  4096
     debugSnapshot("Management agent periodic processing");
     sys::Mutex::ScopedLock lock (userLock);
-    char                msgChars[BUFSIZE];
     uint32_t            contentSize;
     string              routingKey;
     string sBuf;
@@ -704,7 +729,7 @@ void ManagementAgent::periodicProcessing (void)
         for (PendingDeletedObjsMap::iterator mIter = tmp.begin(); mIter != tmp.end(); mIter++) {
             std::string packageName;
             std::string className;
-            Buffer msgBuffer(msgChars, BUFSIZE);
+            msgBuffer.reset();
             uint32_t v1Objs = 0;
             uint32_t v2Objs = 0;
             Variant::List list_;
@@ -715,6 +740,7 @@ void ManagementAgent::periodicProcessing (void)
 
             for (DeletedObjectList::iterator lIter = mIter->second.begin();
                  lIter != mIter->second.end(); lIter++) {
+                msgBuffer.makeAvailable(HEADROOM); // Make sure there's buffer space.
                 std::string oid = (*lIter)->objectId;
                 if (!(*lIter)->encodedV1Config.empty()) {
                     encodeHeader(msgBuffer, 'c');
@@ -730,9 +756,9 @@ void ManagementAgent::periodicProcessing (void)
                              << " len=" <<  (*lIter)->encodedV1Inst.size());
                     v1Objs++;
                 }
-                if (v1Objs && msgBuffer.available() < HEADROOM) {
+                if (v1Objs >= maxReplyObjs) {
                     v1Objs = 0;
-                    contentSize = BUFSIZE - msgBuffer.available();
+                    contentSize = msgBuffer.getSize();
                     stringstream key;
                     key << "console.obj.1.0." << packageName << "." << className;
                     msgBuffer.reset();
@@ -744,7 +770,7 @@ void ManagementAgent::periodicProcessing (void)
                 if (!(*lIter)->encodedV2.empty()) {
                     QPID_LOG(trace, "Deleting V2 " << "map=" << (*lIter)->encodedV2);
                     list_.push_back((*lIter)->encodedV2);
-                    if (++v2Objs >= maxV2ReplyObjs) {
+                    if (++v2Objs >= maxReplyObjs) {
                         v2Objs = 0;
 
                         string content;
@@ -815,11 +841,11 @@ void ManagementAgent::periodicProcessing (void)
     // sendBuffer() call, so always restart the search after a sendBuffer() call
     //
     while (1) {
-        Buffer msgBuffer(msgChars, BUFSIZE);
+        msgBuffer.reset();
         Variant::List list_;
         uint32_t pcount;
         uint32_t scount;
-        uint32_t v2Objs;
+        uint32_t v1Objs, v2Objs;
         ManagementObjectMap::iterator baseIter;
         std::string packageName;
         std::string className;
@@ -842,6 +868,7 @@ void ManagementAgent::periodicProcessing (void)
             break;  // done - all objects processed
 
         pcount = scount = 0;
+        v1Objs = 0;
         v2Objs = 0;
         list_.clear();
         msgBuffer.reset();
@@ -849,6 +876,7 @@ void ManagementAgent::periodicProcessing (void)
         for (ManagementObjectMap::iterator iter = baseIter;
              iter != managementObjects.end();
              iter++) {
+            msgBuffer.makeAvailable(HEADROOM); // Make sure there's buffer space
             ManagementObject* baseObject = baseIter->second;
             ManagementObject* object = iter->second;
             bool send_stats, send_props;
@@ -875,6 +903,7 @@ void ManagementAgent::periodicProcessing (void)
                     QPID_LOG(trace, "Changed V1 properties "
                              << object->getObjectId().getV2Key()
                              << " len=" << msgBuffer.getPosition()-pos);
+                    ++v1Objs;
                 }
 
                 if (send_stats && qmf1Support) {
@@ -886,7 +915,7 @@ void ManagementAgent::periodicProcessing (void)
                     QPID_LOG(trace, "Changed V1 statistics "
                              << object->getObjectId().getV2Key()
                              << " len=" << msgBuffer.getPosition()-pos);
-
+                    ++v1Objs;
                 }
 
                 if ((send_stats || send_props) && qmf2Support) {
@@ -916,8 +945,8 @@ void ManagementAgent::periodicProcessing (void)
 
                 object->setForcePublish(false);
 
-                if ((qmf1Support && (msgBuffer.available() < HEADROOM)) ||
-                    (qmf2Support && (v2Objs >= maxV2ReplyObjs)))
+                if ((qmf1Support && (v1Objs >= maxReplyObjs)) ||
+                    (qmf2Support && (v2Objs >= maxReplyObjs)))
                     break;  // have enough objects, send an indication...
             }
         }
@@ -1102,7 +1131,7 @@ void ManagementAgent::sendCommandCompleteLH(const string& replyToKey, uint32_t s
              replyToKey << " seq=" << sequence);
 }
 
-void ManagementAgent::sendExceptionLH(const string& replyToKey, const string& cid,
+void ManagementAgent::sendExceptionLH(const string& rte, const string& rtk, const string& cid,
                                       const string& text, uint32_t code, bool viaLocal)
 {
     static const string addr_exchange("qmf.default.direct");
@@ -1121,7 +1150,7 @@ void ManagementAgent::sendExceptionLH(const string& replyToKey, const string& ci
     map["_values"] = values;
 
     MapCodec::encode(map, content);
-    sendBufferLH(content, cid, headers, "amqp/map", v2Direct, replyToKey);
+    sendBufferLH(content, cid, headers, "amqp/map", rte, rtk);
 
     QPID_LOG(debug, "SENT Exception code=" << code <<" text=" << text);
 }
@@ -1291,7 +1320,7 @@ void ManagementAgent::handleMethodRequestLH(Buffer& inBuffer, const string& repl
 }
 
 
-void ManagementAgent::handleMethodRequestLH (const string& body, const string& replyTo,
+void ManagementAgent::handleMethodRequestLH (const string& body, const string& rte, const string& rtk,
                                              const string& cid, const ConnectionToken* connToken, bool viaLocal)
 {
     moveNewObjectsLH();
@@ -1313,7 +1342,7 @@ void ManagementAgent::handleMethodRequestLH (const string& body, const string& r
 
     if ((oid = inMap.find("_object_id")) == inMap.end() ||
         (mid = inMap.find("_method_name")) == inMap.end()) {
-        sendExceptionLH(replyTo, cid, Manageable::StatusText(Manageable::STATUS_PARAMETER_INVALID),
+        sendExceptionLH(rte, rtk, cid, Manageable::StatusText(Manageable::STATUS_PARAMETER_INVALID),
                         Manageable::STATUS_PARAMETER_INVALID, viaLocal);
         return;
     }
@@ -1332,7 +1361,7 @@ void ManagementAgent::handleMethodRequestLH (const string& body, const string& r
             inArgs = (mid->second).asMap();
         }
     } catch(exception& e) {
-        sendExceptionLH(replyTo, cid, e.what(), Manageable::STATUS_EXCEPTION, viaLocal);
+        sendExceptionLH(rte, rtk, cid, e.what(), Manageable::STATUS_EXCEPTION, viaLocal);
         return;
     }
 
@@ -1341,7 +1370,7 @@ void ManagementAgent::handleMethodRequestLH (const string& body, const string& r
     if (iter == managementObjects.end() || iter->second->isDeleted()) {
         stringstream estr;
         estr << "No object found with ID=" << objId;
-        sendExceptionLH(replyTo, cid, estr.str(), 1, viaLocal);
+        sendExceptionLH(rte, rtk, cid, estr.str(), 1, viaLocal);
         return;
     }
 
@@ -1351,7 +1380,7 @@ void ManagementAgent::handleMethodRequestLH (const string& body, const string& r
 
     i = disallowed.find(make_pair(iter->second->getClassName(), methodName));
     if (i != disallowed.end()) {
-        sendExceptionLH(replyTo, cid, i->second, Manageable::STATUS_FORBIDDEN, viaLocal);
+        sendExceptionLH(rte, rtk, cid, i->second, Manageable::STATUS_FORBIDDEN, viaLocal);
         return;
     }
 
@@ -1362,7 +1391,7 @@ void ManagementAgent::handleMethodRequestLH (const string& body, const string& r
         params[acl::PROP_SCHEMACLASS]   = iter->second->getClassName();
 
         if (!acl->authorise(userId, acl::ACT_ACCESS, acl::OBJ_METHOD, methodName, &params)) {
-            sendExceptionLH(replyTo, cid, Manageable::StatusText(Manageable::STATUS_FORBIDDEN),
+            sendExceptionLH(rte, rtk, cid, Manageable::StatusText(Manageable::STATUS_FORBIDDEN),
                             Manageable::STATUS_FORBIDDEN, viaLocal);
             return;
         }
@@ -1372,7 +1401,7 @@ void ManagementAgent::handleMethodRequestLH (const string& body, const string& r
 
     QPID_LOG(debug, "RECV MethodRequest (v2) class=" << iter->second->getPackageName()
              << ":" << iter->second->getClassName() << " method=" <<
-             methodName << " replyTo=" << replyTo << " objId=" << objId << " inArgs=" << inArgs);
+             methodName << " replyTo=" << rte << "/" << rtk << " objId=" << objId << " inArgs=" << inArgs);
 
     try {
         sys::Mutex::ScopedUnlock u(userLock);
@@ -1387,18 +1416,18 @@ void ManagementAgent::handleMethodRequestLH (const string& body, const string& r
         } else
             error = callMap["_status_text"].asString();
     } catch(exception& e) {
-        sendExceptionLH(replyTo, cid, e.what(), Manageable::STATUS_EXCEPTION, viaLocal);
+        sendExceptionLH(rte, rtk, cid, e.what(), Manageable::STATUS_EXCEPTION, viaLocal);
         return;
     }
 
     if (errorCode != 0) {
-        sendExceptionLH(replyTo, cid, error, errorCode, viaLocal);
+        sendExceptionLH(rte, rtk, cid, error, errorCode, viaLocal);
         return;
     }
 
     MapCodec::encode(outMap, content);
-    sendBufferLH(content, cid, headers, "amqp/map", v2Direct, replyTo);
-    QPID_LOG(debug, "SEND MethodResponse (v2) to=" << replyTo << " seq=" << cid << " map=" << outMap);
+    sendBufferLH(content, cid, headers, "amqp/map", rte, rtk);
+    QPID_LOG(debug, "SEND MethodResponse (v2) to=" << rte << "/" << rtk << " seq=" << cid << " map=" << outMap);
 }
 
 
@@ -1545,7 +1574,7 @@ void ManagementAgent::SchemaClass::appendSchema(Buffer& buf)
         buf.putRawData(reinterpret_cast<uint8_t*>(&data[0]), data.size());
 }
 
-void ManagementAgent::handleSchemaRequestLH(Buffer& inBuffer, const string& replyToKey, uint32_t sequence)
+void ManagementAgent::handleSchemaRequestLH(Buffer& inBuffer, const string& rte, const string& rtk, uint32_t sequence)
 {
     string         packageName;
     SchemaClassKey key;
@@ -1554,7 +1583,7 @@ void ManagementAgent::handleSchemaRequestLH(Buffer& inBuffer, const string& repl
     key.decode(inBuffer);
 
     QPID_LOG(debug, "RECV SchemaRequest class=" << packageName << ":" << key.name << "(" << Uuid(key.hash) <<
-             "), replyTo=" << replyToKey << " seq=" << sequence);
+             "), replyTo=" << rte << "/" << rtk << " seq=" << sequence);
 
     PackageMap::iterator pIter = packages.find(packageName);
     if (pIter != packages.end()) {
@@ -1570,17 +1599,17 @@ void ManagementAgent::handleSchemaRequestLH(Buffer& inBuffer, const string& repl
                 classInfo.appendSchema(outBuffer);
                 outLen = MA_BUFFER_SIZE - outBuffer.available();
                 outBuffer.reset();
-                sendBufferLH(outBuffer, outLen, dExchange, replyToKey);
-                QPID_LOG(debug, "SEND SchemaResponse to=" << replyToKey << " seq=" << sequence);
+                sendBufferLH(outBuffer, outLen, rte, rtk);
+                QPID_LOG(debug, "SEND SchemaResponse to=" << rte << "/" << rtk << " seq=" << sequence);
             }
             else
-                sendCommandCompleteLH(replyToKey, sequence, 1, "Schema not available");
+                sendCommandCompleteLH(rtk, sequence, 1, "Schema not available");
         }
         else
-            sendCommandCompleteLH(replyToKey, sequence, 1, "Class key not found");
+            sendCommandCompleteLH(rtk, sequence, 1, "Class key not found");
     }
     else
-        sendCommandCompleteLH(replyToKey, sequence, 1, "Package not found");
+        sendCommandCompleteLH(rtk, sequence, 1, "Package not found");
 }
 
 void ManagementAgent::handleSchemaResponseLH(Buffer& inBuffer, const string& /*replyToKey*/, uint32_t sequence)
@@ -1840,7 +1869,7 @@ void ManagementAgent::handleGetQueryLH(Buffer& inBuffer, const string& replyToKe
 }
 
 
-void ManagementAgent::handleGetQueryLH(const string& body, const string& replyTo, const string& cid, bool viaLocal)
+void ManagementAgent::handleGetQueryLH(const string& body, const string& rte, const string& rtk, const string& cid, bool viaLocal)
 {
     moveNewObjectsLH();
 
@@ -1861,17 +1890,17 @@ void ManagementAgent::handleGetQueryLH(const string& body, const string& replyTo
      */
     i = inMap.find("_what");
     if (i == inMap.end()) {
-        sendExceptionLH(replyTo, cid, "_what element missing in Query");
+        sendExceptionLH(rte, rtk, cid, "_what element missing in Query");
         return;
     }
 
     if (i->second.getType() != qpid::types::VAR_STRING) {
-        sendExceptionLH(replyTo, cid, "_what element is not a string");
+        sendExceptionLH(rte, rtk, cid, "_what element is not a string");
         return;
     }
 
     if (i->second.asString() != "OBJECT") {
-        sendExceptionLH(replyTo, cid, "Query for _what => '" + i->second.asString() + "' not supported");
+        sendExceptionLH(rte, rtk, cid, "Query for _what => '" + i->second.asString() + "' not supported");
         return;
     }
 
@@ -1930,8 +1959,8 @@ void ManagementAgent::handleGetQueryLH(const string& body, const string& replyTo
             string content;
 
             ListCodec::encode(list_, content);
-            sendBufferLH(content, cid, headers, "amqp/list", v2Direct, replyTo);
-            QPID_LOG(debug, "SENT QueryResponse (query by object_id) to=" << replyTo);
+            sendBufferLH(content, cid, headers, "amqp/list", rte, rtk);
+            QPID_LOG(debug, "SENT QueryResponse (query by object_id) to=" << rte << "/" << rtk);
             return;
         }
     } else {
@@ -1967,7 +1996,7 @@ void ManagementAgent::handleGetQueryLH(const string& body, const string& replyTo
                                                            "_data",
                                                            object->getMd5Sum());
                     _subList.push_back(map_);
-                    if (++objCount >= maxV2ReplyObjs) {
+                    if (++objCount >= maxReplyObjs) {
                         objCount = 0;
                         _list.push_back(_subList);
                         _subList.clear();
@@ -1983,27 +2012,26 @@ void ManagementAgent::handleGetQueryLH(const string& body, const string& replyTo
         string content;
         while (_list.size() > 1) {
             ListCodec::encode(_list.front().asList(), content);
-            sendBufferLH(content, cid, headers, "amqp/list", v2Direct, replyTo);
+            sendBufferLH(content, cid, headers, "amqp/list", rte, rtk);
             _list.pop_front();
-            QPID_LOG(debug, "SENT QueryResponse (partial, query by schema_id) to=" << replyTo << " len=" << content.length());
+            QPID_LOG(debug, "SENT QueryResponse (partial, query by schema_id) to=" << rte << "/" << rtk << " len=" << content.length());
         }
         headers.erase("partial");
         ListCodec::encode(_list.size() ? _list.front().asList() : Variant::List(), content);
-        sendBufferLH(content, cid, headers, "amqp/list", v2Direct, replyTo);
-        QPID_LOG(debug, "SENT QueryResponse (query by schema_id) to=" << replyTo << " len=" << content.length());
+        sendBufferLH(content, cid, headers, "amqp/list", rte, rtk);
+        QPID_LOG(debug, "SENT QueryResponse (query by schema_id) to=" << rte << "/" << rtk << " len=" << content.length());
         return;
     }
 
     // Unrecognized query - Send empty message to indicate CommandComplete
     string content;
     ListCodec::encode(Variant::List(), content);
-    sendBufferLH(content, cid, headers, "amqp/list", v2Direct, replyTo);
-    QPID_LOG(debug, "SENT QueryResponse (empty) to=" << replyTo);
+    sendBufferLH(content, cid, headers, "amqp/list", rte, rtk);
+    QPID_LOG(debug, "SENT QueryResponse (empty) to=" << rte << "/" << rtk);
 }
 
 
-void ManagementAgent::handleLocateRequestLH(const string&, const string& replyTo,
-                                            const string& cid)
+void ManagementAgent::handleLocateRequestLH(const string&, const string& rte, const string& rtk, const string& cid)
 {
     QPID_LOG(debug, "RCVD AgentLocateRequest");
 
@@ -2021,10 +2049,10 @@ void ManagementAgent::handleLocateRequestLH(const string&, const string& replyTo
 
     string content;
     MapCodec::encode(map, content);
-    sendBufferLH(content, cid, headers, "amqp/map", v2Direct, replyTo);
+    sendBufferLH(content, cid, headers, "amqp/map", rte, rtk);
     clientWasAdded = true;
 
-    QPID_LOG(debug, "SENT AgentLocateResponse replyTo=" << replyTo);
+    QPID_LOG(debug, "SENT AgentLocateResponse replyTo=" << rte << "/" << rtk);
 }
 
 
@@ -2151,13 +2179,14 @@ bool ManagementAgent::authorizeAgentMessageLH(Message& msg)
             msg.getFrames().getHeaders()->get<framing::MessageProperties>();
         if (p && p->hasReplyTo()) {
             const framing::ReplyTo& rt = p->getReplyTo();
-            string replyToKey = rt.getRoutingKey();
+            string rte = rt.getExchange();
+            string rtk = rt.getRoutingKey();
             string cid;
             if (p && p->hasCorrelationId())
                 cid = p->getCorrelationId();
 
             if (mapMsg) {
-                sendExceptionLH(replyToKey, cid, Manageable::StatusText(Manageable::STATUS_FORBIDDEN),
+                sendExceptionLH(rte, rtk, cid, Manageable::StatusText(Manageable::STATUS_FORBIDDEN),
                                 Manageable::STATUS_FORBIDDEN, false);
             } else {
 
@@ -2169,7 +2198,7 @@ bool ManagementAgent::authorizeAgentMessageLH(Message& msg)
                 outBuffer.putMediumString(Manageable::StatusText(Manageable::STATUS_FORBIDDEN));
                 outLen = MA_BUFFER_SIZE - outBuffer.available();
                 outBuffer.reset();
-                sendBufferLH(outBuffer, outLen, dExchange, replyToKey);
+                sendBufferLH(outBuffer, outLen, rte, rtk);
             }
 
             QPID_LOG(debug, "SEND MethodResponse status=FORBIDDEN" << " seq=" << sequence);
@@ -2183,12 +2212,14 @@ bool ManagementAgent::authorizeAgentMessageLH(Message& msg)
 
 void ManagementAgent::dispatchAgentCommandLH(Message& msg, bool viaLocal)
 {
-    string   replyToKey;
+    string   rte;
+    string   rtk;
     const framing::MessageProperties* p =
         msg.getFrames().getHeaders()->get<framing::MessageProperties>();
     if (p && p->hasReplyTo()) {
         const framing::ReplyTo& rt = p->getReplyTo();
-        replyToKey = rt.getRoutingKey();
+        rte = rt.getExchange();
+        rtk = rt.getRoutingKey();
     }
     else
         return;
@@ -2220,11 +2251,11 @@ void ManagementAgent::dispatchAgentCommandLH(Message& msg, bool viaLocal)
         }
 
         if (opcode == "_method_request")
-            return handleMethodRequestLH(body, replyToKey, cid, msg.getPublisher(), viaLocal);
+            return handleMethodRequestLH(body, rte, rtk, cid, msg.getPublisher(), viaLocal);
         else if (opcode == "_query_request")
-            return handleGetQueryLH(body, replyToKey, cid, viaLocal);
+            return handleGetQueryLH(body, rte, rtk, cid, viaLocal);
         else if (opcode == "_agent_locate_request")
-            return handleLocateRequestLH(body, replyToKey, cid);
+            return handleLocateRequestLH(body, rte, rtk, cid);
 
         QPID_LOG(warning, "Support for QMF Opcode [" << opcode << "] TBD!!!");
         return;
@@ -2237,16 +2268,16 @@ void ManagementAgent::dispatchAgentCommandLH(Message& msg, bool viaLocal)
         if (!checkHeader(inBuffer, &opcode, &sequence))
             return;
 
-        if      (opcode == 'B') handleBrokerRequestLH  (inBuffer, replyToKey, sequence);
-        else if (opcode == 'P') handlePackageQueryLH   (inBuffer, replyToKey, sequence);
-        else if (opcode == 'p') handlePackageIndLH     (inBuffer, replyToKey, sequence);
-        else if (opcode == 'Q') handleClassQueryLH     (inBuffer, replyToKey, sequence);
-        else if (opcode == 'q') handleClassIndLH       (inBuffer, replyToKey, sequence);
-        else if (opcode == 'S') handleSchemaRequestLH  (inBuffer, replyToKey, sequence);
-        else if (opcode == 's') handleSchemaResponseLH (inBuffer, replyToKey, sequence);
-        else if (opcode == 'A') handleAttachRequestLH  (inBuffer, replyToKey, sequence, msg.getPublisher());
-        else if (opcode == 'G') handleGetQueryLH       (inBuffer, replyToKey, sequence);
-        else if (opcode == 'M') handleMethodRequestLH  (inBuffer, replyToKey, sequence, msg.getPublisher());
+        if      (opcode == 'B') handleBrokerRequestLH  (inBuffer, rtk, sequence);
+        else if (opcode == 'P') handlePackageQueryLH   (inBuffer, rtk, sequence);
+        else if (opcode == 'p') handlePackageIndLH     (inBuffer, rtk, sequence);
+        else if (opcode == 'Q') handleClassQueryLH     (inBuffer, rtk, sequence);
+        else if (opcode == 'q') handleClassIndLH       (inBuffer, rtk, sequence);
+        else if (opcode == 'S') handleSchemaRequestLH  (inBuffer, rte, rtk, sequence);
+        else if (opcode == 's') handleSchemaResponseLH (inBuffer, rtk, sequence);
+        else if (opcode == 'A') handleAttachRequestLH  (inBuffer, rtk, sequence, msg.getPublisher());
+        else if (opcode == 'G') handleGetQueryLH       (inBuffer, rtk, sequence);
+        else if (opcode == 'M') handleMethodRequestLH  (inBuffer, rtk, sequence, msg.getPublisher());
     }
 }
 
