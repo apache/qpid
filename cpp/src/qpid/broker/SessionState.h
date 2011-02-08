@@ -72,7 +72,8 @@ class SessionState : public qpid::SessionState,
                      public framing::FrameHandler::InOutHandler
 {
   public:
-    SessionState(Broker&, SessionHandler&, const SessionId&, const SessionState::Configuration&);
+    SessionState(Broker&, SessionHandler&, const SessionId&,
+                 const SessionState::Configuration&, bool delayManagement=false);
     ~SessionState();
     bool isAttached() const { return handler; }
 
@@ -122,8 +123,11 @@ class SessionState : public qpid::SessionState,
 
     const SessionId& getSessionId() const { return getId(); }
 
-  private:
+    // Used to delay creation of management object for sessions
+    // belonging to inter-broker bridges
+    void addManagementObject();
 
+  private:
     void handleCommand(framing::AMQMethodBody* method, const framing::SequenceNumber& id);
     void handleContent(framing::AMQFrame& frame, const framing::SequenceNumber& id);
     void enqueued(boost::intrusive_ptr<Message> msg);
