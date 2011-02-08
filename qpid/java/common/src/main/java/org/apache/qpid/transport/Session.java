@@ -532,11 +532,21 @@ public class Session extends SessionInvoker
     {
         if (m.getEncodedTrack() == Frame.L4)
         {
+            
+            if (state == DETACHED && transacted)
+            {
+                state = CLOSED;
+                connection.removeSession(this);
+                throw new SessionException(
+                        "Session failed over, possibly in the middle of a transaction. " +
+                        "Closing the session. Any Transaction in progress will be rolledback.");
+            }
+            
             if (m.hasPayload())
             {
                 acquireCredit();
             }
-
+            
             synchronized (commands)
             {
                 if (state == DETACHED && m.isUnreliable())
