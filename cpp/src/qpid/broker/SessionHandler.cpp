@@ -33,7 +33,7 @@ using namespace qpid::sys;
 
 SessionHandler::SessionHandler(Connection& c, ChannelId ch)
     : amqp_0_10::SessionHandler(&c.getOutput(), ch),
-      connection(c), 
+      connection(c),
       proxy(out),
       clusterOrderProxy(c.getClusterOrderOutput() ? new SetChannelProxy(ch, c.getClusterOrderOutput()) : 0)
 {}
@@ -69,7 +69,7 @@ void SessionHandler::handleDetach() {
     if (session.get())
         connection.getBroker().getSessionManager().detach(session);
     assert(!session.get());
-    connection.closeChannel(channel.get()); 
+    connection.closeChannel(channel.get());
 }
 
 void SessionHandler::setState(const std::string& name, bool force) {
@@ -78,7 +78,7 @@ void SessionHandler::setState(const std::string& name, bool force) {
     session = connection.broker.getSessionManager().attach(*this, id, force);
 }
 
-void SessionHandler::detaching() 
+void SessionHandler::detaching()
 {
     assert(session.get());
     session->disableOutput();
@@ -98,7 +98,10 @@ void SessionHandler::attachAs(const std::string& name)
 {
     SessionId id(connection.getUserId(), name);
     SessionState::Configuration config = connection.broker.getSessionManager().getSessionConfig();
-    session.reset(new SessionState(connection.getBroker(), *this, id, config));
+    // Delay creating management object till attached(). In a cluster,
+    // only the active link broker calls attachAs but all brokers
+    // receive the subsequent attached() call.
+    session.reset(new SessionState(connection.getBroker(), *this, id, config, true));
     sendAttach(false);
 }
 
@@ -109,6 +112,7 @@ void SessionHandler::attachAs(const std::string& name)
 void SessionHandler::attached(const std::string& name)
 {
     if (session.get()) {
+        session->addManagementObject(); // Delayed from attachAs()
         amqp_0_10::SessionHandler::attached(name);
     } else {
         SessionId id(connection.getUserId(), name);
@@ -117,5 +121,5 @@ void SessionHandler::attached(const std::string& name)
         markReadyToSend();
     }
 }
-    
+
 }} // namespace qpid::broker
