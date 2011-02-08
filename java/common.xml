@@ -70,6 +70,13 @@
     </fileset>
   </path>
 
+  <property name="maven.local.repo"      value="${build.scratch}/maven-local-repo"/>
+  <property name="maven.unique.version"  value="false"/>
+  <property name="maven.snapshot"        value="true"/>
+  <condition property="maven.version.suffix" value="" else="-SNAPSHOT">
+    <isfalse value="${maven.snapshot}"/>
+  </condition>
+
   <macrodef name="indirect">
     <attribute name="name"/>
     <attribute name="variable"/>
