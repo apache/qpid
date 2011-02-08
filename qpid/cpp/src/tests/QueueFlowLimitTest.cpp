@@ -61,40 +61,39 @@ QPID_AUTO_TEST_CASE(testFlowCount)
     BOOST_CHECK(!flow->isFlowControlActive());
     BOOST_CHECK(flow->monitorFlowControl());
 
-    bool fc;
     std::deque<QueuedMessage> msgs;
     for (size_t i = 0; i < 6; i++) {
         msgs.push_back(createMessage(10));
-        flow->consume(msgs.back());
+        flow->enqueued(msgs.back());
         BOOST_CHECK(!flow->isFlowControlActive());
     }
     BOOST_CHECK(!flow->isFlowControlActive());  // 6 on queue
     msgs.push_back(createMessage(10));
-    flow->consume(msgs.back());
+    flow->enqueued(msgs.back());
     BOOST_CHECK(!flow->isFlowControlActive());  // 7 on queue
     msgs.push_back(createMessage(10));
-    fc = flow->consume(msgs.back());
-    BOOST_CHECK(fc && flow->isFlowControlActive());   // 8 on queue, ON
+    flow->enqueued(msgs.back());
+    BOOST_CHECK(flow->isFlowControlActive());   // 8 on queue, ON
     msgs.push_back(createMessage(10));
-    fc = flow->consume(msgs.back());
-    BOOST_CHECK(!fc && flow->isFlowControlActive());   // 9 on queue, no change to flow control
+    flow->enqueued(msgs.back());
+    BOOST_CHECK(flow->isFlowControlActive());   // 9 on queue, no change to flow control
 
-    flow->replenish(msgs.front());
+    flow->dequeued(msgs.front());
     msgs.pop_front();
     BOOST_CHECK(flow->isFlowControlActive());   // 8 on queue
-    flow->replenish(msgs.front());
+    flow->dequeued(msgs.front());
     msgs.pop_front();
     BOOST_CHECK(flow->isFlowControlActive());   // 7 on queue
-    flow->replenish(msgs.front());
+    flow->dequeued(msgs.front());
     msgs.pop_front();
     BOOST_CHECK(flow->isFlowControlActive());   // 6 on queue
-    fc = flow->replenish(msgs.front());
+    flow->dequeued(msgs.front());
     msgs.pop_front();
-    BOOST_CHECK(!fc && flow->isFlowControlActive());   // 5 on queue, no change
+    BOOST_CHECK(flow->isFlowControlActive());   // 5 on queue, no change
 
-    fc = flow->replenish(msgs.front());
+    flow->dequeued(msgs.front());
     msgs.pop_front();
-    BOOST_CHECK(fc && !flow->isFlowControlActive());  // 4 on queue, OFF
+    BOOST_CHECK(!flow->isFlowControlActive());  // 4 on queue, OFF
 }
 
 
@@ -116,45 +115,45 @@ QPID_AUTO_TEST_CASE(testFlowSize)
     std::deque<QueuedMessage> msgs;
     for (size_t i = 0; i < 6; i++) {
         msgs.push_back(createMessage(10));
-        flow->consume(msgs.back());
+        flow->enqueued(msgs.back());
         BOOST_CHECK(!flow->isFlowControlActive());
     }
     BOOST_CHECK(!flow->isFlowControlActive());  // 60 on queue
     QueuedMessage msg_9 = createMessage(9);
-    flow->consume(msg_9);
+    flow->enqueued(msg_9);
     BOOST_CHECK(!flow->isFlowControlActive());  // 69 on queue
     QueuedMessage tinyMsg_1 = createMessage(1);
-    flow->consume(tinyMsg_1);
+    flow->enqueued(tinyMsg_1);
     BOOST_CHECK(!flow->isFlowControlActive());   // 70 on queue
 
     QueuedMessage tinyMsg_2 = createMessage(1);
-    flow->consume(tinyMsg_2);
+    flow->enqueued(tinyMsg_2);
     BOOST_CHECK(flow->isFlowControlActive());   // 71 on queue, ON
     msgs.push_back(createMessage(10));
-    flow->consume(msgs.back());
+    flow->enqueued(msgs.back());
     BOOST_CHECK(flow->isFlowControlActive());   // 81 on queue
 
-    flow->replenish(msgs.front());
+    flow->dequeued(msgs.front());
     msgs.pop_front();
     BOOST_CHECK(flow->isFlowControlActive());   // 71 on queue
-    flow->replenish(msgs.front());
+    flow->dequeued(msgs.front());
     msgs.pop_front();
     BOOST_CHECK(flow->isFlowControlActive());   // 61 on queue
-    flow->replenish(msgs.front());
+    flow->dequeued(msgs.front());
     msgs.pop_front();
     BOOST_CHECK(flow->isFlowControlActive());   // 51 on queue
 
-    flow->replenish(tinyMsg_1);
+    flow->dequeued(tinyMsg_1);
     BOOST_CHECK(flow->isFlowControlActive());   // 50 on queue
-    flow->replenish(tinyMsg_2);
+    flow->dequeued(tinyMsg_2);
     BOOST_CHECK(!flow->isFlowControlActive());   // 49 on queue, OFF
 
-    flow->replenish(msg_9);
+    flow->dequeued(msg_9);
     BOOST_CHECK(!flow->isFlowControlActive());  // 40 on queue
-    flow->replenish(msgs.front());
+    flow->dequeued(msgs.front());
     msgs.pop_front();
     BOOST_CHECK(!flow->isFlowControlActive());  // 30 on queue
-    flow->replenish(msgs.front());
+    flow->dequeued(msgs.front());
     msgs.pop_front();
     BOOST_CHECK(!flow->isFlowControlActive());  // 20 on queue
 }
@@ -202,28 +201,28 @@ QPID_AUTO_TEST_CASE(testFlowCombo)
 
     for (size_t i = 0; i < 10; i++) {
         msgs_10.push_back(createMessage(10));
-        flow->consume(msgs_10.back());
+        flow->enqueued(msgs_10.back());
         BOOST_CHECK(!flow->isFlowControlActive());
     }
     // count:10 size:100
 
     msgs_1.push_back(createMessage(1));
-    flow->consume(msgs_1.back());  // count:11 size: 101  ->ON
+    flow->enqueued(msgs_1.back());  // count:11 size: 101  ->ON
     BOOST_CHECK(flow->isFlowControlActive());
 
     for (size_t i = 0; i < 6; i++) {
-        flow->replenish(msgs_10.front());
+        flow->dequeued(msgs_10.front());
         msgs_10.pop_front();
         BOOST_CHECK(flow->isFlowControlActive());
     }
     // count:5 size: 41
 
-    flow->replenish(msgs_1.front());        // count: 4 size: 40  ->OFF
+    flow->dequeued(msgs_1.front());        // count: 4 size: 40  ->OFF
     msgs_1.pop_front();
     BOOST_CHECK(!flow->isFlowControlActive());
 
     for (size_t i = 0; i < 4; i++) {
-        flow->replenish(msgs_10.front());
+        flow->dequeued(msgs_10.front());
         msgs_10.pop_front();
         BOOST_CHECK(!flow->isFlowControlActive());
     }
@@ -232,30 +231,30 @@ QPID_AUTO_TEST_CASE(testFlowCombo)
     // verify flow control comes ON when only size passes its stop point.
 
     msgs_100.push_back(createMessage(100));
-    flow->consume(msgs_100.back());  // count:1 size: 100
+    flow->enqueued(msgs_100.back());  // count:1 size: 100
     BOOST_CHECK(!flow->isFlowControlActive());
 
     msgs_50.push_back(createMessage(50));
-    flow->consume(msgs_50.back());   // count:2 size: 150
+    flow->enqueued(msgs_50.back());   // count:2 size: 150
     BOOST_CHECK(!flow->isFlowControlActive());
 
     msgs_50.push_back(createMessage(50));
-    flow->consume(msgs_50.back());   // count:3 size: 200
+    flow->enqueued(msgs_50.back());   // count:3 size: 200
     BOOST_CHECK(!flow->isFlowControlActive());
 
     msgs_1.push_back(createMessage(1));
-    flow->consume(msgs_1.back());   // count:4 size: 201  ->ON
+    flow->enqueued(msgs_1.back());   // count:4 size: 201  ->ON
     BOOST_CHECK(flow->isFlowControlActive());
 
-    flow->replenish(msgs_100.front());              // count:3 size:101
+    flow->dequeued(msgs_100.front());              // count:3 size:101
     msgs_100.pop_front();
     BOOST_CHECK(flow->isFlowControlActive());
 
-    flow->replenish(msgs_1.front());                // count:2 size:100
+    flow->dequeued(msgs_1.front());                // count:2 size:100
     msgs_1.pop_front();
     BOOST_CHECK(flow->isFlowControlActive());
 
-    flow->replenish(msgs_50.front());               // count:1 size:50  ->OFF
+    flow->dequeued(msgs_50.front());               // count:1 size:50  ->OFF
     msgs_50.pop_front();
     BOOST_CHECK(!flow->isFlowControlActive());
 
@@ -264,40 +263,40 @@ QPID_AUTO_TEST_CASE(testFlowCombo)
 
     for (size_t i = 0; i < 8; i++) {
         msgs_10.push_back(createMessage(10));
-        flow->consume(msgs_10.back());
+        flow->enqueued(msgs_10.back());
         BOOST_CHECK(!flow->isFlowControlActive());
     }
     // count:9 size:130
 
     msgs_10.push_back(createMessage(10));
-    flow->consume(msgs_10.back());              // count:10 size: 140
+    flow->enqueued(msgs_10.back());              // count:10 size: 140
     BOOST_CHECK(!flow->isFlowControlActive());
 
     msgs_1.push_back(createMessage(1));
-    flow->consume(msgs_1.back());               // count:11 size: 141  ->ON
+    flow->enqueued(msgs_1.back());               // count:11 size: 141  ->ON
     BOOST_CHECK(flow->isFlowControlActive());
 
     msgs_100.push_back(createMessage(100));
-    flow->consume(msgs_100.back());     // count:12 size: 241  (both thresholds crossed)
+    flow->enqueued(msgs_100.back());     // count:12 size: 241  (both thresholds crossed)
     BOOST_CHECK(flow->isFlowControlActive());
 
     // at this point: 9@10 + 1@50 + 1@100 + 1@1 == 12@241
 
-    flow->replenish(msgs_50.front());               // count:11 size:191
+    flow->dequeued(msgs_50.front());               // count:11 size:191
     msgs_50.pop_front();
     BOOST_CHECK(flow->isFlowControlActive());
 
     for (size_t i = 0; i < 9; i++) {
-        flow->replenish(msgs_10.front());
+        flow->dequeued(msgs_10.front());
         msgs_10.pop_front();
         BOOST_CHECK(flow->isFlowControlActive());
     }
     // count:2 size:101
-    flow->replenish(msgs_1.front());                // count:1 size:100
+    flow->dequeued(msgs_1.front());                // count:1 size:100
     msgs_1.pop_front();
     BOOST_CHECK(flow->isFlowControlActive());   // still active due to size
 
-    flow->replenish(msgs_100.front());               // count:0 size:0  ->OFF
+    flow->dequeued(msgs_100.front());               // count:0 size:0  ->OFF
     msgs_100.pop_front();
     BOOST_CHECK(!flow->isFlowControlActive());
 }

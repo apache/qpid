@@ -31,6 +31,15 @@
 #include "qpid/sys/AtomicValue.h"
 #include "qpid/sys/Mutex.h"
 
+namespace qmf {
+namespace org {
+namespace apache {
+namespace qpid {
+namespace broker {
+    class Queue;
+}}}}}
+namespace _qmfBroker = qmf::org::apache::qpid::broker;
+
 namespace qpid {
 namespace broker {
 
@@ -65,9 +74,9 @@ class QueueFlowLimit
     virtual ~QueueFlowLimit() {}
 
     /** the queue has added QueuedMessage.  Returns true if flow state changes */
-    bool consume(const QueuedMessage&);
+    void enqueued(const QueuedMessage&);
     /** the queue has removed QueuedMessage.  Returns true if flow state changes */
-    bool replenish(const QueuedMessage&);
+    void dequeued(const QueuedMessage&);
 
     uint32_t getFlowStopCount() const { return flowStopCount; }
     uint32_t getFlowResumeCount() const { return flowResumeCount; }
@@ -75,6 +84,8 @@ class QueueFlowLimit
     uint64_t getFlowResumeSize() const { return flowResumeSize; }
     bool isFlowControlActive() const { return flowStopped; }
     bool monitorFlowControl() const { return flowStopCount || flowStopSize; }
+
+    void setManagementObject(_qmfBroker::Queue *q);
 
     void encode(framing::Buffer& buffer) const;
     void decode(framing::Buffer& buffer);
@@ -87,6 +98,8 @@ class QueueFlowLimit
     // msgs waiting for flow to become available.
     std::set< boost::intrusive_ptr<Message> > index;
     qpid::sys::Mutex indexLock;
+
+    _qmfBroker::Queue *queueMgmtObj;
 
     QueueFlowLimit(Queue *queue,
                    uint32_t flowStopCount, uint32_t flowResumeCount,
