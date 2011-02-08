@@ -18,9 +18,14 @@
  - under the License.
  -
  -->
-<project name="module">
+<project name="module" xmlns:artifact="antlib:org.apache.maven.artifact.ant">
 
   <import file="common.xml"/>
+
+  <path id="maven-ant-tasks.classpath" path="${project.root}/lib/maven-ant-tasks-2.1.1.jar" />
+  <typedef resource="org/apache/maven/artifact/ant/antlib.xml"
+           uri="antlib:org.apache.maven.artifact.ant"
+           classpathref="maven-ant-tasks.classpath" />
 
   <map property="module" value="${basedir}" split="${path.separator}">
     <globmapper from="${project.root}${file.separator}*" to="*"/>
@@ -105,6 +110,9 @@
   <property name="module.test.jar"
             location="${build.lib}/${project.name}-${module.name}-tests-${project.version}.jar"/>
 
+  <property name="module.source.jar"
+            location="${build.lib}/${project.name}-${module.name}-${project.version}-sources.jar"/>
+
   <!-- module.depends and module.test.depends are supplied by the importing file -->
   <property name="module.depends"       value=""/>
   <property name="module.test.depends"  value=""/>
@@ -167,16 +175,35 @@
   <target name="pom" depends="prepare" if="module.genpom">
     <jython path="${mllib.dir}">
       <args>
-        <arg line="${project.root}/genpom"/>
-        <arg line="-s ${project.root}/lib/poms"/>
-        <arg line="-o ${build}/${module.name}.pom"/>
+        <arg line='"${project.root}/genpom"'/>
+        <arg line='-s "${project.root}/lib/poms"'/>
+        <arg line='-o "${build.scratch}/qpid-${module.name}.pom"'/>
+        <arg line="-u http://qpid.apache.org"/>
         <arg line="-g org.apache.qpid"/>
+        <arg line="-v ${project.version}${maven.version.suffix}"/>
+        <arg line="-p qpid"/>
+        <arg line='-m "${module.depends}"'/>
         <arg line="-a ${module.name}"/>
-        <arg line="-v ${project.version}"/>
         <arg line="${module.genpom.args}"/>
         <arg line="${module.libs}"/>
       </args>
     </jython>
+  </target>
+
+  <target name="release-mvn" depends="pom" if="module.genpom" description="Install the artifacts into the local repository and prepare the release">
+    <antcall target="build"/>
+
+    <artifact:pom id="module.pom" file="${build.scratch}/qpid-${module.name}.pom"/>
+
+    <artifact:install file="${module.jar}" pomRefId="module.pom">
+        <localRepository path="${maven.local.repo}"/>
+    </artifact:install>
+
+    <artifact:deploy file="${module.jar}" pomRefId="module.pom" uniqueVersion="${maven.unique.version}">
+      <attach file="${module.source.jar}" classifier="sources"/>
+      <localRepository path="${maven.local.repo}"/>
+      <remoteRepository url="file://${module.release.base}/maven"/>
+    </artifact:deploy>
   </target>
 
   <target name="precompile"/>
@@ -350,7 +377,7 @@
 
   <target name="postbuild" description="run after a build"/>
 
-  <target name="build" depends="jar,jar-tests,libs,copy-bin,copy-etc,postbuild" description="compile and copy resources into build tree"/>
+  <target name="build" depends="jar,jar-tests,jar-sources,libs,copy-bin,copy-etc,postbuild" description="compile and copy resources into build tree"/>
   <target name="jar.manifest" depends="compile" if="module.manifest">
     <jar destfile="${module.jar}" basedir="${module.classes}" manifest="${module.manifest}"/>
   </target>
@@ -369,6 +396,17 @@
 
   <target name="libs" description="copy dependencies into build tree">
     <copylist todir="${build.lib}" dir="${project.root}" files="${module.libs}"/>
+  </target>
+
+  <target name="jar-sources" depends="prepare" description="create sources jar">
+    <jar destfile="${module.source.jar}">
+      <fileset dir="${project.root}/resources">
+        <include name="LICENSE"/>
+        <include name="NOTICE"/>
+      </fileset>
+      <fileset dir="${module.src}" includes="**/*.java"/>
+      <fileset dir="${module.precompiled}" includes="**/*.java"/>
+    </jar>
   </target>
 
   <map property="module.depends.jars" value="${module.depends}" join=",">
