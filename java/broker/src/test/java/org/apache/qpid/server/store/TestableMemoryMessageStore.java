@@ -20,17 +20,12 @@
  */
 package org.apache.qpid.server.store;
 
+import java.nio.ByteBuffer;
+import java.util.HashMap;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.message.MessageMetaData;
-import org.apache.qpid.framing.abstraction.ContentChunk;
-
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.HashMap;
-import java.util.List;
-import java.nio.ByteBuffer;
 
 /**
  * Adds some extra methods to the memory message store for testing purposes.
@@ -52,8 +47,11 @@ public class TestableMemoryMessageStore extends MemoryMessageStore
 
     }
 
-
-
+    @Override
+    public void close() throws Exception
+    {
+        // Not required to do anything
+    }
 
     @Override
     public StoredMessage addMessage(StorableMessageMetaData metaData)
