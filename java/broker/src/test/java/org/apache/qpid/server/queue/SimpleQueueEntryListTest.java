@@ -51,6 +51,21 @@ public class SimpleQueueEntryListTest extends TestCase
         }
     }
     
+    /**
+     * Tests the behavior of the next(QueuyEntry) method.
+     */
+    public void testNext() throws Exception
+    {
+        SimpleQueueEntryList sqel = new SimpleQueueEntryList(null);
+        int i = 0;
+
+        QueueEntry queueEntry1 = sqel.add(new MockAMQMessage(i++));
+        QueueEntry queueEntry2 = sqel.add(new MockAMQMessage(i++));
+
+        assertSame(queueEntry2, sqel.next(queueEntry1));
+        assertNull(sqel.next(queueEntry2));
+    }
+
     public void testScavenge() throws Exception
     {
         SimpleQueueEntryList sqel = new SimpleQueueEntryList(null);

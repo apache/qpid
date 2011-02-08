@@ -21,19 +21,18 @@ package org.apache.qpid.server.subscription;
 *
 */
 
-import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.server.AMQChannel;
-import org.apache.qpid.server.logging.LogActor;
-import org.apache.qpid.server.filter.FilterManager;
-import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.QueueEntry;
-import org.apache.qpid.server.queue.QueueEntry.SubscriptionAcquiredState;
-
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+
+import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.logging.LogActor;
+import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.queue.QueueEntry;
+import org.apache.qpid.server.queue.QueueEntry.SubscriptionAcquiredState;
 
 public class MockSubscription implements Subscription
 {
@@ -137,12 +136,11 @@ public class MockSubscription implements Subscription
 
     public void set(String key, Object value)
     {
-        //To change body of implemented methods use File | Settings | File Templates.
     }
 
     public Object get(String key)
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return null;
     }
 
     public boolean isAutoClose()
@@ -194,12 +192,15 @@ public class MockSubscription implements Subscription
 
     public void restoreCredit(QueueEntry queueEntry)
     {
-        //To change body of implemented methods use File | Settings | File Templates.
     }
 
-    public void send(QueueEntry msg) throws AMQException
+    public void send(QueueEntry entry) throws AMQException
     {
-        messages.add(msg);
+        if (messages.contains(entry))
+        {
+            entry.setRedelivered();
+        }
+        messages.add(entry);
     }
 
     public void setQueueContext(AMQQueue.Context queueContext)
