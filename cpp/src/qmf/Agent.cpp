@@ -339,7 +339,7 @@ void AgentImpl::handleMethodResponse(const Variant::Map& response, const Message
     uint32_t correlator;
     boost::shared_ptr<SyncContext> context;
 
-    QPID_LOG(trace, "RCVD MethodResponse map=" << response);
+    QPID_LOG(trace, "RCVD MethodResponse cid=" << cid << " map=" << response);
 
     aIter = response.find("_arguments");
     if (aIter != response.end())
@@ -559,10 +559,10 @@ void AgentImpl::sendQuery(const Query& query, uint32_t correlator)
     if (!session.authUser.empty())
         msg.setUserId(session.authUser);
     encode(QueryImplAccess::get(query).asMap(), msg);
-    if (sender.isValid())
+    if (sender.isValid()) {
         sender.send(msg);
-
-    QPID_LOG(trace, "SENT QueryRequest to=" << name);
+        QPID_LOG(trace, "SENT QueryRequest to=" << sender.getName() << "/" << directSubject << " cid=" << correlator);
+    }
 }
 
 
@@ -586,10 +586,10 @@ void AgentImpl::sendMethod(const string& method, const Variant::Map& args, const
     if (!session.authUser.empty())
         msg.setUserId(session.authUser);
     encode(map, msg);
-    if (sender.isValid())
+    if (sender.isValid()) {
         sender.send(msg);
-
-    QPID_LOG(trace, "SENT MethodRequest method=" << method << " to=" << name);
+        QPID_LOG(trace, "SENT MethodRequest method=" << method << " to=" << sender.getName() << "/" << directSubject << " content=" << map << " cid=" << correlator);
+    }
 }
 
 void AgentImpl::sendSchemaRequest(const SchemaId& id)
@@ -628,10 +628,10 @@ void AgentImpl::sendSchemaRequest(const SchemaId& id)
     msg.setSubject(directSubject);
     if (!session.authUser.empty())
         msg.setUserId(session.authUser);
-    if (sender.isValid())
+    if (sender.isValid()) {
         sender.send(msg);
-
-    QPID_LOG(trace, "SENT V1SchemaRequest to=" << name);
+        QPID_LOG(trace, "SENT V1SchemaRequest to=" << sender.getName() << "/" << directSubject);
+    }
 }
 
 
