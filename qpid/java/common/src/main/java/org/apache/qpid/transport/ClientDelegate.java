@@ -28,6 +28,7 @@ import org.ietf.jgss.Oid;
 
 import org.apache.qpid.security.UsernamePasswordCallbackHandler;
 import static org.apache.qpid.transport.Connection.State.OPEN;
+import static org.apache.qpid.transport.Connection.State.RESUMING;
 import org.apache.qpid.transport.util.Logger;
 
 import javax.security.sasl.Sasl;
@@ -216,7 +217,14 @@ public class ClientDelegate extends ConnectionDelegate
             }
         }
         
-        conn.setState(OPEN);
+        if (conn.isConnectionResuming())
+        {
+            conn.setState(RESUMING);
+        }
+        else
+        {
+            conn.setState(OPEN);
+        }
     }
 
     @Override
