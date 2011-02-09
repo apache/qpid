@@ -313,6 +313,17 @@ public class Connection extends ConnectionInvoker
     {
         synchronized (lock)
         {
+            Waiter w = new Waiter(lock, timeout);
+            while (w.hasTime() && state != OPEN && error == null)
+            {
+                w.await();                
+            }
+            
+            if (state != OPEN)
+            {
+                throw new ConnectionException("Timed out waiting for connection to be ready. Current state is :" + state);
+            }
+            
             Session ssn = _sessionFactory.newSession(this, name, expiry);
             sessions.put(name, ssn);
             map(ssn);
