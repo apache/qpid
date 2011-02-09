@@ -463,9 +463,17 @@ public class Connection extends ConnectionInvoker
         {
             for (Session ssn : sessions.values())
             {
-                map(ssn);
-                ssn.attach();
-                ssn.resume();
+                if (ssn.isTransacted())
+                {                    
+                    removeSession(ssn);
+                    ssn.setState(Session.State.CLOSED);
+                }
+                else
+                {                
+                    map(ssn);
+                    ssn.attach();
+                    ssn.resume();
+                }
             }
         }
     }
