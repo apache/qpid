@@ -27,7 +27,7 @@
 #include <boost/intrusive_ptr.hpp>
 
 namespace qpid {
-// FIXME aconway 2008-09-06: easy to add alignment
+
 /**
  * Reference-counted byte buffer.
  * No alignment guarantees.
@@ -51,7 +51,7 @@ public:
         pointer(const pointer&);
         ~pointer();
         pointer& operator=(const pointer&);
-        
+
         char* get() { return cp(); }
         operator char*() { return cp(); }
         char& operator*() { return *cp(); }
@@ -62,7 +62,7 @@ public:
         const char& operator*() const { return *cp(); }
         const char& operator[](size_t i) const { return cp()[i]; }
     };
-    
+
     /** Create a reference counted buffer of size n */
     static pointer create(size_t n);
 
