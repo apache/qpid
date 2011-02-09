@@ -67,6 +67,10 @@ Optional SSL support requires:
 * nss <http://www.mozilla.org/projects/security/pki/nss/>
 * nspr <http://www.mozilla.org/projects/nspr/>
 
+Optional binding support for ruby requires:
+* ruby and ruby devel <http://www.ruby-lang.org/en/>
+* swig <http://www.swig.org/>
+
 Qpid has been built using the GNU C++ compiler:
  * gcc     <http://gcc.gnu.org/>            		(3.4.6)
 
@@ -123,6 +127,9 @@ For SASL and SSL, include
 For the XML Exchange, include:
 
  # yum install xqilla-devel xerces-c-devel
+
+Optional ruby binding support include:
+ # yum install ruby ruby-devel swig
 
 Follow the manual installation instruction below for any packages not
 available through your distributions packaging tool.
