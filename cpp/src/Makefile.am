@@ -24,6 +24,7 @@ SUBDIRS = . tests
 # using Visual Studio solutions/projects.
 windows_dist = \
   qpid/client/windows/SaslFactory.cpp \
+  qpid/client/windows/SslConnector.cpp \
   qpid/log/windows/SinkOptions.cpp \
   qpid/log/windows/SinkOptions.h \
   ../include/qpid/sys/windows/check.h \
@@ -42,6 +43,8 @@ windows_dist = \
   qpid/sys/windows/Shlib.cpp \
   qpid/sys/windows/SocketAddress.cpp \
   qpid/sys/windows/Socket.cpp \
+  qpid/sys/windows/SslAsynchIO.cpp \
+  qpid/sys/windows/SslAsynchIO.h \
   qpid/sys/windows/StrError.cpp \
   qpid/sys/windows/SystemInfo.cpp \
   qpid/sys/windows/Thread.cpp \
@@ -51,7 +54,9 @@ windows_dist = \
   qpid/sys/windows/uuid.h \
   windows/QpiddBroker.cpp \
   qpid/broker/windows/BrokerDefaults.cpp \
-  qpid/broker/windows/SaslAuthenticator.cpp
+  qpid/broker/windows/SaslAuthenticator.cpp \
+  qpid/broker/windows/SslProtocolFactory.cpp \
+  qpid/messaging/HandleInstantiator.cpp
 
 EXTRA_DIST= $(platform_dist) $(rgen_srcs) $(windows_dist)
 

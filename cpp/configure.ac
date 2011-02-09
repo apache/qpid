@@ -16,7 +16,7 @@ AC_INIT([qpidc],
 	[dev@qpid.apache.org])
 
 AC_CONFIG_AUX_DIR([build-aux])
-AM_INIT_AUTOMAKE([dist-bzip2 subdir-objects])
+AM_INIT_AUTOMAKE([dist-bzip2 subdir-objects tar-ustar])
 
 # Minimum Autoconf version required.
 AC_PREREQ(2.59)
@@ -538,6 +538,7 @@ AC_CONFIG_FILES([
   bindings/qpid/ruby/Makefile
   bindings/qpid/python/Makefile
   bindings/qpid/perl/Makefile
+  bindings/qpid/dotnet/Makefile
   bindings/qmf/Makefile
   bindings/qmf/ruby/Makefile
   bindings/qmf/python/Makefile

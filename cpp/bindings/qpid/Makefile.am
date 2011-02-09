@@ -17,10 +17,11 @@
 # under the License.
 #
 
+SUBDIRS = dotnet
+
 if HAVE_SWIG
 
 EXTRA_DIST = qpid.i
-SUBDIRS =
 
 if HAVE_RUBY_DEVEL
 SUBDIRS += ruby
