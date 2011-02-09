@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -186,7 +186,7 @@ struct SessionImpl::CreateReceiver : Command
 {
     qpid::messaging::Receiver result;
     const qpid::messaging::Address& address;
-    
+
     CreateReceiver(SessionImpl& i, const qpid::messaging::Address& a) :
         Command(i), address(a) {}
     void operator()() { result = impl.createReceiverImpl(address); }
@@ -212,7 +212,7 @@ struct SessionImpl::CreateSender : Command
 {
     qpid::messaging::Sender result;
     const qpid::messaging::Address& address;
-    
+
     CreateSender(SessionImpl& i, const qpid::messaging::Address& a) :
         Command(i), address(a) {}
     void operator()() { result = impl.createSenderImpl(address); }
@@ -242,7 +242,7 @@ Sender SessionImpl::getSender(const std::string& name) const
         throw KeyError(name);
     } else {
         return i->second;
-    }    
+    }
 }
 
 Receiver SessionImpl::getReceiver(const std::string& name) const
@@ -296,8 +296,8 @@ bool SessionImpl::getNextReceiver(Receiver* receiver, IncomingMessages::MessageT
     }
 }
 
-bool SessionImpl::accept(ReceiverImpl* receiver, 
-                         qpid::messaging::Message* message, 
+bool SessionImpl::accept(ReceiverImpl* receiver,
+                         qpid::messaging::Message* message,
                          IncomingMessages::MessageTransfer& transfer)
 {
     if (receiver->getName() == transfer.getDestination()) {
@@ -359,7 +359,7 @@ bool SessionImpl::nextReceiver(qpid::messaging::Receiver& receiver, qpid::messag
         } catch (const qpid::ConnectionException& e) {
             throw qpid::messaging::ConnectionError(e.what());
         } catch (const qpid::ChannelException& e) {
-            throw qpid::messaging::MessagingException(e.what());            
+            throw qpid::messaging::MessagingException(e.what());
         }
     }
 }
@@ -385,7 +385,7 @@ struct SessionImpl::Receivable : Command
 {
     const std::string* destination;
     uint32_t result;
-    
+
     Receivable(SessionImpl& i, const std::string* d) : Command(i), destination(d), result(0) {}
     void operator()() { result = impl.getReceivableImpl(destination); }
 };
@@ -414,7 +414,7 @@ struct SessionImpl::UnsettledAcks : Command
 {
     const std::string* destination;
     uint32_t result;
-    
+
     UnsettledAcks(SessionImpl& i, const std::string* d) : Command(i), destination(d), result(0) {}
     void operator()() { result = impl.getUnsettledAcksImpl(destination); }
 };
@@ -451,10 +451,10 @@ void SessionImpl::rollbackImpl()
         getImplPtr<Receiver, ReceiverImpl>(i->second)->stop();
     }
     //ensure that stop has been processed and all previously sent
-    //messages are available for release:                   
+    //messages are available for release:
     session.sync();
     incoming.releaseAll();
-    session.txRollback();    
+    session.txRollback();
 
     for (Receivers::iterator i = receivers.begin(); i != receivers.end(); ++i) {
         getImplPtr<Receiver, ReceiverImpl>(i->second)->start();
@@ -495,6 +495,12 @@ void SessionImpl::receiverCancelled(const std::string& name)
     incoming.releasePending(name);
 }
 
+void SessionImpl::releasePending(const std::string& name)
+{
+    ScopedLock l(lock);
+    incoming.releasePending(name);
+}
+
 void SessionImpl::senderCancelled(const std::string& name)
 {
     ScopedLock l(lock);
@@ -503,12 +509,12 @@ void SessionImpl::senderCancelled(const std::string& name)
 
 void SessionImpl::reconnect()
 {
-    connection->open();    
+    connection->open();
 }
 
 bool SessionImpl::backoff()
 {
-    return connection->backoff();    
+    return connection->backoff();
 }
 
 qpid::messaging::Connection SessionImpl::getConnection() const

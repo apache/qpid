@@ -404,7 +404,7 @@ struct QueueCreatePolicyFixture : public MessagingFixture
 
     ~QueueCreatePolicyFixture()
     {
-        admin.deleteQueue(address.getName());    
+        admin.deleteQueue(address.getName());
     }
 };
 
@@ -448,7 +448,7 @@ struct ExchangeCreatePolicyFixture : public MessagingFixture
 
     ~ExchangeCreatePolicyFixture()
     {
-        admin.deleteExchange(address.getName());    
+        admin.deleteExchange(address.getName());
     }
 };
 
@@ -597,7 +597,7 @@ QPID_AUTO_TEST_CASE(testAssertPolicyQueue)
     s1.close();
     Receiver r1 = fix.session.createReceiver(a1);
     r1.close();
-    
+
     std::string a2 = "q; {assert:receiver, node:{durable:true, x-declare:{arguments:{qpid.max-count:100}}}}";
     Sender s2 = fix.session.createSender(a2);
     s2.close();
@@ -711,7 +711,7 @@ QPID_AUTO_TEST_CASE(testOptionVerification)
 {
     MessagingFixture fix;
     fix.session.createReceiver("my-queue; {create: always, assert: always, delete: always, node: {type: queue, durable: false, x-declare: {arguments: {a: b}}, x-bindings: [{exchange: amq.fanout}]}, link: {name: abc, durable: false, reliability: exactly-once, x-subscribe: {arguments:{a:b}}, x-bindings:[{exchange: amq.fanout}]}, mode: browse}");
-    BOOST_CHECK_THROW(fix.session.createReceiver("my-queue; {invalid-option:blah}"), qpid::messaging::AddressError);    
+    BOOST_CHECK_THROW(fix.session.createReceiver("my-queue; {invalid-option:blah}"), qpid::messaging::AddressError);
 }
 
 QPID_AUTO_TEST_CASE(testReceiveSpecialProperties)
@@ -775,19 +775,48 @@ QPID_AUTO_TEST_CASE(testExclusiveSubscriber)
 QPID_AUTO_TEST_CASE(testExclusiveQueueSubscriberAndBrowser)
 {
     MessagingFixture fix;
-    
+
     std::string address =       "exclusive-queue; { create: receiver, node : { x-declare : { auto-delete: true, exclusive: true } } }";
     std::string browseAddress = "exclusive-queue; { mode: browse }";
 
     Receiver receiver = fix.session.createReceiver(address);
     fix.session.sync();
 
-    Connection c2 = fix.newConnection();    
+    Connection c2 = fix.newConnection();
     c2.open();
     Session s2 = c2.createSession();
-   
+
     BOOST_CHECK_NO_THROW(Receiver browser = s2.createReceiver(browseAddress));
-    c2.close();    
+    c2.close();
+}
+
+
+QPID_AUTO_TEST_CASE(testDeleteQueueWithUnackedMessages)
+{
+    MessagingFixture fix;
+    const uint capacity = 5;
+
+    Sender sender = fix.session.createSender("test.ex;{create:always,node:{type:topic}}");
+	Receiver receiver2 = fix.session.createReceiver("alternate.ex;{create:always,node:{type:topic}}");
+	Receiver receiver1 = fix.session.createReceiver("test.q;{create:always, delete:always,node:{type:queue, x-declare:{alternate-exchange:alternate.ex}},link:{x-bindings:[{exchange:test.ex,queue:test.q,key:#}]}}");
+
+	receiver1.setCapacity(capacity);
+	receiver2.setCapacity(capacity*2);
+
+    Message out("test-message");
+    for (uint i = 0; i < capacity*2; ++i) {
+        sender.send(out);
+    }
+
+	receiver1.close();
+
+    // Make sure all pending messages were sent to the alternate
+    // exchange when the queue was deleted.
+    Message in;
+    for (uint i = 0; i < capacity*2; ++i) {
+        in = receiver2.fetch(Duration::SECOND * 5);
+        BOOST_CHECK_EQUAL(in.getContent(), out.getContent());
+    }
 }
 
 QPID_AUTO_TEST_CASE(testAuthenticatedUsername)
@@ -828,7 +857,7 @@ QPID_AUTO_TEST_CASE(testAcknowledge)
         messages.push_back(msg);
     }
     const uint batch(10); //acknowledge first 10 messages only
-    for (uint i = 0; i < batch; ++i) {    
+    for (uint i = 0; i < batch; ++i) {
         other.acknowledge(messages[i]);
     }
     messages.clear();
@@ -836,7 +865,7 @@ QPID_AUTO_TEST_CASE(testAcknowledge)
     other.close();
 
     other = fix.connection.createSession();
-    receiver = other.createReceiver(fix.queue);    
+    receiver = other.createReceiver(fix.queue);
     for (uint i = 0; i < (count-batch); ++i) {
         Message msg = receiver.fetch();
         BOOST_CHECK_EQUAL(msg.getContent(), (boost::format("Message_%1%") % (i+1+batch)).str());
@@ -847,7 +876,7 @@ QPID_AUTO_TEST_CASE(testAcknowledge)
 
     //check unacknowledged messages are still enqueued
     other = fix.connection.createSession();
-    receiver = other.createReceiver(fix.queue);    
+    receiver = other.createReceiver(fix.queue);
     for (uint i = 0; i < ((count-batch)/2); ++i) {
         Message msg = receiver.fetch();
         BOOST_CHECK_EQUAL(msg.getContent(), (boost::format("Message_%1%") % ((i*2)+1+batch)).str());
