@@ -119,6 +119,7 @@ set(unit_tests_to_build
     MessageTest
     QueueRegistryTest
     QueuePolicyTest
+    QueueFlowLimitTest
     FramingTest
     HeaderTest
     SequenceNumberTest

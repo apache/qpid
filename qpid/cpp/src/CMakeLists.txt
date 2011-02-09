@@ -975,7 +975,6 @@ set (qpidbroker_SOURCES
      qpid/broker/ExchangeRegistry.cpp
      qpid/broker/FanOutExchange.cpp
      qpid/broker/HeadersExchange.cpp
-     qpid/broker/IncompleteMessageList.cpp
      qpid/broker/Link.cpp
      qpid/broker/LinkRegistry.cpp
      qpid/broker/Message.cpp
@@ -988,6 +987,7 @@ set (qpidbroker_SOURCES
      qpid/broker/QueueEvents.cpp
      qpid/broker/QueuePolicy.cpp
      qpid/broker/QueueRegistry.cpp
+     qpid/broker/QueueFlowLimit.cpp
      qpid/broker/RateTracker.cpp
      qpid/broker/RecoveryManagerImpl.cpp
      qpid/broker/RecoveredEnqueue.cpp
