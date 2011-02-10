@@ -20,6 +20,7 @@
  */
 #include "qpid/broker/QueuePolicy.h"
 #include "qpid/broker/Queue.h"
+#include "qpid/broker/PriorityQueue.h"
 #include "qpid/Exception.h"
 #include "qpid/framing/FieldValue.h"
 #include "qpid/framing/reply_exceptions.h"
@@ -213,7 +214,10 @@ RingQueuePolicy::RingQueuePolicy(const std::string& _name,
 
 bool before(const QueuedMessage& a, const QueuedMessage& b)
 {
-    return a.position < b.position;
+    int priorityA = PriorityQueue::getPriority(a);
+    int priorityB = PriorityQueue::getPriority(b);
+    if (priorityA == priorityB) return a.position < b.position;
+    else return priorityA < priorityB;
 }
 
 void RingQueuePolicy::enqueued(const QueuedMessage& m)
