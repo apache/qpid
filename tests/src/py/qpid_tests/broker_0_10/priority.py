@@ -44,7 +44,7 @@ class PriorityTests (Base):
         for m in msgs: snd.send(m)
 
         rcv = self.ssn.receiver(snd.target)
-        for expected in sorted(msgs, key=lambda m: priority_level(m.priority,levels), reverse=True):
+        for expected in sorted_(msgs, key=lambda m: priority_level(m.priority,levels), reverse=True):
             msg = rcv.fetch(0)
             #print "expected priority %s got %s" % (expected.priority, msg.priority)
             assert msg.content == expected.content
@@ -68,7 +68,7 @@ class PriorityTests (Base):
             limit_function = lambda x : limits.get(x, 0)
         else:
             limit_function = lambda x : default_limit
-        for expected in fairshare(sorted(msgs, key=lambda m: priority_level(m.priority,levels), reverse=True), 
+        for expected in fairshare(sorted_(msgs, key=lambda m: priority_level(m.priority,levels), reverse=True), 
                                   limit_function, levels):
             msg = rcv.fetch(0)
             #print "expected priority %s got %s" % (expected.priority, msg.priority)
@@ -123,7 +123,7 @@ class PriorityTests (Base):
         expected = []
         for m in msgs:
             while len(expected) > 9:
-                expected.sort(key=lambda x: priority_level(x.priority,10))
+                expected=sorted_(expected, key=lambda x: priority_level(x.priority,10))
                 expected.pop(0)
             expected.append(m)
         #print "sent %s; expected %s; got %s" % ([m.content for m in msgs], [m.content for m in expected], [m.content for m in received])        
@@ -160,7 +160,7 @@ class PriorityTests (Base):
 
         #now test delivery works as expected after that
         rcv = self.ssn.receiver(snd.target)
-        for expected in sorted(msgs, key=lambda m: priority_level(m.priority,10), reverse=True):
+        for expected in sorted_(msgs, key=lambda m: priority_level(m.priority,10), reverse=True):
             msg = rcv.fetch(0)
             #print "expected priority %s got %s" % (expected.priority, msg.priority)
             assert msg.content == expected.content
@@ -219,3 +219,17 @@ def priority_level(value, levels):
     """
     offset = 5-math.ceil(levels/2.0)
     return min(max(value - offset, 0), levels-1)
+
+def sorted_(msgs, key=None, reverse=False):
+    """
+    Workaround lack of sorted builtin function in python 2.3
+    """
+    temp = msgs
+    temp.sort(cmp=key_to_cmp(key), reverse=reverse)
+    return temp
+
+def key_to_cmp(key):
+    if key:
+        return lambda a, b: cmp(key(a), key(b))
+    else:
+        return None
