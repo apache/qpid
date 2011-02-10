@@ -22,6 +22,7 @@
 #include "qpid/broker/Queue.h"
 #include "qpid/broker/QueuedMessage.h"
 #include "qpid/framing/reply_exceptions.h"
+#include <cmath>
 
 namespace qpid {
 namespace broker {
