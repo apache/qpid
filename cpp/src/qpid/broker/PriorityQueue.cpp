@@ -171,7 +171,7 @@ uint PriorityQueue::getPriorityLevel(const QueuedMessage& m) const
     uint priority = m.payload->getPriority();
     //Use AMQP 0-10 approach to mapping priorities to a fixed level
     //(see rule priority-level-implementation)
-    const uint firstLevel = 5 - std::min(5.0, ceil((double) levels/2.0));
+    const uint firstLevel = 5 - uint(std::min(5.0, std::ceil((double) levels/2.0)));
     if (priority <= firstLevel) return 0;
     return std::min(priority - firstLevel, (uint)levels-1);
 }
