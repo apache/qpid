@@ -76,6 +76,18 @@ public class MessageConverterTest extends TestCase
         assertEquals("Converted message text mismatch", ((JMSTextMessage) newMessage).getText(), testTextMessage.getText());
     }
 
+    /**
+     * Test for QPID-1830 issue in {@link AbstractBytesMessage#toBodyString()}.
+     * 
+     * @throws Exception if test failes
+     */
+    public void testBytesMessageToBodyString() throws Exception
+    {
+        BytesMessage newMessage =  _session.createBytesMessage();
+        newMessage.writeBytes(new byte[] { 0x00, 0x10, 0x20, 0x40 });
+        newMessage.toString();
+    }
+
     public void testJMSMapMessageConversion() throws Exception
     {
         AbstractJMSMessage newMessage = new MessageConverter(_session, (MapMessage) testMapMessage).getConvertedMessage();

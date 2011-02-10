@@ -86,10 +86,13 @@ public abstract class AbstractBytesMessage extends AbstractJMSMessage
 
     public String toBodyString() throws JMSException
     {  
-        checkReadable();
         try
         {
-            return Functions.str(_data.buf(), 100);
+            if (_data == null)
+            {
+                return "";
+            }
+            return Functions.str(_data.buf(), 100, 0);
         }
         catch (Exception e)
         {
