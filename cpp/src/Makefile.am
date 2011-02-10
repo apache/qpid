@@ -548,6 +548,8 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/ExchangeRegistry.h \
   qpid/broker/ExpiryPolicy.cpp \
   qpid/broker/ExpiryPolicy.h \
+  qpid/broker/Fairshare.h \
+  qpid/broker/Fairshare.cpp \
   qpid/broker/FanOutExchange.cpp \
   qpid/broker/FanOutExchange.h \
   qpid/broker/FedOps.h \
@@ -556,6 +558,8 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/HeadersExchange.h \
   qpid/broker/IncompleteMessageList.cpp \
   qpid/broker/IncompleteMessageList.h \
+  qpid/broker/LegacyLVQ.h \
+  qpid/broker/LegacyLVQ.cpp \
   qpid/broker/Link.cpp \
   qpid/broker/Link.h \
   qpid/broker/LinkRegistry.cpp \
@@ -566,9 +570,16 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/MessageAdapter.h \
   qpid/broker/MessageBuilder.cpp \
   qpid/broker/MessageBuilder.h \
+  qpid/broker/MessageDeque.h \
+  qpid/broker/MessageDeque.cpp \
+  qpid/broker/MessageMap.h \
+  qpid/broker/MessageMap.cpp \
+  qpid/broker/Messages.h \
   qpid/broker/MessageStore.h \
   qpid/broker/MessageStoreModule.cpp \
   qpid/broker/MessageStoreModule.h \
+  qpid/broker/PriorityQueue.h \
+  qpid/broker/PriorityQueue.cpp \
   qpid/broker/NameGenerator.cpp \
   qpid/broker/NameGenerator.h \
   qpid/broker/NullMessageStore.cpp \

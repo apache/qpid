@@ -206,6 +206,7 @@ int main(int argc, char ** argv)
                             if (msg.getCorrelationId().size()) std::cout << "CorrelationId: " << msg.getCorrelationId() << std::endl;
                             if (msg.getUserId().size()) std::cout << "UserId: " << msg.getUserId() << std::endl;
                             if (msg.getTtl().getMilliseconds()) std::cout << "TTL: " << msg.getTtl().getMilliseconds() << std::endl;
+                            if (msg.getPriority()) std::cout << "Priority: " << msg.getPriority() << std::endl;
                             if (msg.getDurable()) std::cout << "Durable: true" << std::endl;
                             if (msg.getRedelivered()) std::cout << "Redelivered: true" << std::endl;
                             std::cout << "Properties: " << msg.getProperties() << std::endl;
