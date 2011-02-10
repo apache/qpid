@@ -1191,5 +1191,41 @@ QPID_AUTO_TEST_CASE(testUpdateConsumerPosition) {
     BOOST_CHECK_EQUAL(c0.session.queueQuery("q").getMessageCount(), 0u);
 }
 
+QPID_AUTO_TEST_CASE(testFairsharePriorityDelivery) {
+    ClusterFixture::Args args;
+    prepareArgs(args, durableFlag);
+    ClusterFixture cluster(1, args, -1);
+    Client c0(cluster[0], "c0");
+
+    FieldTable arguments;
+    arguments.setInt("x-qpid-priorities", 10);
+    arguments.setInt("x-qpid-fairshare", 5);
+    c0.session.queueDeclare("q", arg::durable=durableFlag, arg::arguments=arguments);
+
+    //send messages of different priorities
+    for (int i = 0; i < 20; i++) {
+        Message msg = makeMessage((boost::format("msg-%1%") % i).str(), "q", durableFlag);
+        msg.getDeliveryProperties().setPriority(i % 2 ? 9 : 5);
+        c0.session.messageTransfer(arg::content=msg);
+    }
+
+    //pull off a couple of the messages (first four should be the top priority messages
+    for (int i = 0; i < 4; i++) {
+        BOOST_CHECK_EQUAL((boost::format("msg-%1%") % ((i*2)+1)).str(), c0.subs.get("q", TIMEOUT).getData());
+    }
+
+    // Add another member
+    cluster.add();
+    Client c1(cluster[1], "c1");
+
+    //pull off some more messages
+    BOOST_CHECK_EQUAL((boost::format("msg-%1%") % 9).str(), c0.subs.get("q", TIMEOUT).getData());
+    BOOST_CHECK_EQUAL((boost::format("msg-%1%") % 0).str(), c1.subs.get("q", TIMEOUT).getData());
+    BOOST_CHECK_EQUAL((boost::format("msg-%1%") % 2).str(), c0.subs.get("q", TIMEOUT).getData());
+
+    //check queue has same content on both nodes
+    BOOST_CHECK_EQUAL(browse(c0, "q", 12), browse(c1, "q", 12));
+}
+
 QPID_AUTO_TEST_SUITE_END()
 }} // namespace qpid::tests

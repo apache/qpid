@@ -32,6 +32,7 @@
 #include "qpid/broker/RecoveredEnqueue.h"
 #include "qpid/broker/RecoveredDequeue.h"
 #include "qpid/broker/Exchange.h"
+#include "qpid/broker/Fairshare.h"
 #include "qpid/broker/Link.h"
 #include "qpid/broker/Bridge.h"
 #include "qpid/broker/Queue.h"
@@ -546,6 +547,13 @@ void Connection::deliveryRecord(const string& qname,
 
 void Connection::queuePosition(const string& qname, const SequenceNumber& position) {
     findQueue(qname)->setPosition(position);
+}
+
+void Connection::queueFairshareState(const std::string& qname, const uint8_t priority, const uint8_t count)
+{
+    if (!qpid::broker::Fairshare::setState(findQueue(qname)->getMessages(), priority, count)) {
+        QPID_LOG(error, "Failed to set fair share state on queue " << qname << "; this will result in inconsistencies.");
+    }
 }
 
 void Connection::expiryId(uint64_t id) {

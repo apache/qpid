@@ -56,6 +56,7 @@ struct Options : public qpid::Options
     uint sendEos;
     bool durable;
     uint ttl;
+    uint priority;
     std::string userid;
     std::string correlationid;
     string_vector properties;
@@ -84,6 +85,7 @@ struct Options : public qpid::Options
           sendEos(0),
           durable(false),
           ttl(0),
+          priority(0),
           contentString(),
           contentSize(0),
           contentStdin(false),
@@ -110,6 +112,7 @@ struct Options : public qpid::Options
             ("send-eos", qpid::optValue(sendEos, "N"), "Send N EOS messages to mark end of input")
             ("durable", qpid::optValue(durable, "yes|no"), "Mark messages as durable.")
 	    ("ttl", qpid::optValue(ttl, "msecs"), "Time-to-live for messages, in milliseconds")
+	    ("priority", qpid::optValue(priority, "PRIORITY"), "Priority for messages (higher value implies higher priority)")
             ("property,P", qpid::optValue(properties, "NAME=VALUE"), "specify message property")
             ("correlation-id", qpid::optValue(correlationid, "ID"), "correlation-id for message")
             ("user-id", qpid::optValue(userid, "USERID"), "userid for message")
@@ -265,6 +268,9 @@ int main(int argc, char ** argv)
             msg.setDurable(opts.durable);
             if (opts.ttl) {
                 msg.setTtl(Duration(opts.ttl));
+            }
+            if (opts.priority) {
+                msg.setPriority(opts.priority);
             }
             if (!opts.replyto.empty()) msg.setReplyTo(Address(opts.replyto));
             if (!opts.userid.empty()) msg.setUserId(opts.userid);

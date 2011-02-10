@@ -275,6 +275,13 @@
 
     <!-- Replicate encoded config objects - e.g. links and bridges. -->
     <control name="config" code="0x37"><field name="encoded" type="str32"/></control>
+
+    <!-- Set the fairshare delivery related state of a replicated queue. -->
+    <control name="queue-fairshare-state" code="0x38">
+      <field name="queue" type="str8"/>
+      <field name="position" type="uint8"/>
+      <field name="count" type="uint8"/>
+    </control>
   </class>
 
 </amqp>
