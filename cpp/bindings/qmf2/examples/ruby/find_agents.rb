@@ -27,7 +27,7 @@ class FindAgents < Qmf2::ConsoleHandler
   end
 
   def agent_added(agent)
-    puts "Agent Added: #{agent.to_s}"
+    puts "Agent Added: #{agent.name}"
   end
 
   def agent_deleted(agent, reason)
