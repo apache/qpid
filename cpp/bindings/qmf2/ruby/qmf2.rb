@@ -433,6 +433,14 @@ module Qmf2
     def del_data(addr)
       @impl.del_data(addr.impl)
     end
+
+    def raise_event(data, severity=nil)
+      if !severity
+        @impl.raiseEvent(data.impl)
+      else
+        @impl.raiseEvent(data.impl, severity)
+      end
+    end
   end
 
   ##==============================================================================
