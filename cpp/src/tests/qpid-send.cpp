@@ -272,7 +272,11 @@ int main(int argc, char ** argv)
             if (opts.priority) {
                 msg.setPriority(opts.priority);
             }
-            if (!opts.replyto.empty()) msg.setReplyTo(Address(opts.replyto));
+            if (!opts.replyto.empty()) {
+                if (opts.flowControl)
+                    throw Exception("Can't use reply-to and flow-control together");
+                msg.setReplyTo(Address(opts.replyto));
+            }
             if (!opts.userid.empty()) msg.setUserId(opts.userid);
             if (!opts.correlationid.empty()) msg.setCorrelationId(opts.correlationid);
             opts.setProperties(msg);
@@ -311,13 +315,17 @@ int main(int argc, char ** argv)
                 if (opts.timestamp)
                     msg.getProperties()[TS] = int64_t(
                         qpid::sys::Duration(qpid::sys::EPOCH, qpid::sys::now()));
-                if (opts.flowControl && ((sent % opts.flowControl) == 0)) {
-                    msg.setReplyTo(flowControlAddress);
-                    ++flowSent;
+                if (opts.flowControl) {
+                    if ((sent % opts.flowControl) == 0) {
+                        msg.setReplyTo(flowControlAddress);
+                        ++flowSent;
+                    }
+                    else
+                        msg.setReplyTo(Address()); // Clear the reply address.
                 }
-
                 sender.send(msg);
                 reporter.message(msg);
+
                 if (opts.tx && (sent % opts.tx == 0)) {
                     if (opts.rollbackFrequency &&
                         (++txCount % opts.rollbackFrequency == 0))
@@ -337,7 +345,6 @@ int main(int argc, char ** argv)
                     int64_t delay = qpid::sys::Duration(qpid::sys::now(), waitTill);
                     if (delay > 0) qpid::sys::usleep(delay/qpid::sys::TIME_USEC);
                 }
-                msg = Message(); // Clear out contents and properties for next iteration
             }
             for ( ; flowSent>0; --flowSent)
                 flowControlReceiver.get(Duration::SECOND);
