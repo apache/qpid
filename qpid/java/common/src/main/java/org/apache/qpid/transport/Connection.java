@@ -121,7 +121,7 @@ public class Connection extends ConnectionInvoker
     
     private static final AtomicLong idGenerator = new AtomicLong(0);
     private final long _connectionId = idGenerator.incrementAndGet();
-    private static final AtomicBoolean connectionLost = new AtomicBoolean(false);
+    private final AtomicBoolean connectionLost = new AtomicBoolean(false);
     
     public Connection() {}
 
