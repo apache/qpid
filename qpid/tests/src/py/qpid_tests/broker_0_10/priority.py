@@ -222,14 +222,16 @@ def priority_level(value, levels):
 
 def sorted_(msgs, key=None, reverse=False):
     """
-    Workaround lack of sorted builtin function in python 2.3
+    Workaround lack of sorted builtin function in python 2.3 and lack
+    of keyword arguments to list.sort()
     """
     temp = msgs
-    temp.sort(cmp=key_to_cmp(key), reverse=reverse)
+    temp.sort(key_to_cmp(key, reverse=reverse))
     return temp
 
-def key_to_cmp(key):
+def key_to_cmp(key, reverse=False):
     if key:
-        return lambda a, b: cmp(key(a), key(b))
+        if reverse: return lambda a, b: cmp(key(b), key(a))
+        else: return lambda a, b: cmp(key(a), key(b))  
     else:
         return None
