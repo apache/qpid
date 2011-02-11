@@ -69,32 +69,41 @@ class ExampleAgent(AgentHandler):
     if addr == self.controlAddr:
       self.control.methodCount += 1
 
-      if methodName == "stop":
-        self.session.methodSuccess(handle)
-        self.cancel()
+      try:
+        if methodName == "stop":
+          self.session.methodSuccess(handle)
+          self.cancel()
 
-      elif methodName == "echo":
-        handle.addReturnArgument("sequence", args["sequence"])
-        handle.addReturnArgument("map", args["map"])
-        self.session.methodSuccess(handle)
+        elif methodName == "echo":
+          handle.addReturnArgument("sequence", args["sequence"])
+          handle.addReturnArgument("map", args["map"])
+          self.session.methodSuccess(handle)
 
-      elif methodName == "fail":
-        if args['useString']:
-          self.session.raiseException(handle, args['stringVal'])
-        else:
-          ex = Data(self.sch_exception)
-          ex.whatHappened = "It Failed"
-          ex.howBad = 75
-          ex.details = args['details']
-          self.session.raiseException(handle, ex)
+        elif methodName == "event":
+          ev = Data(self.sch_event)
+          ev.text = args['text']
+          self.session.raiseEvent(ev, args['severity'])
+          self.session.methodSuccess(handle)
 
-      elif methodName == "create_child":
-        name = args['name']
-        child = Data(self.sch_child)
-        child.name = name
-        addr = self.session.addData(child, name)
-        handle.addReturnArgument("childAddr", addr.asMap())
-        self.session.methodSuccess(handle)
+        elif methodName == "fail":
+          if args['useString']:
+            self.session.raiseException(handle, args['stringVal'])
+          else:
+            ex = Data(self.sch_exception)
+            ex.whatHappened = "It Failed"
+            ex.howBad = 75
+            ex.details = args['details']
+            self.session.raiseException(handle, ex)
+
+        elif methodName == "create_child":
+          name = args['name']
+          child = Data(self.sch_child)
+          child.name = name
+          addr = self.session.addData(child, name)
+          handle.addReturnArgument("childAddr", addr.asMap())
+          self.session.methodSuccess(handle)
+      except BaseException, e:
+        self.session.raiseException(handle, "%r" % e)
 
 
   def setupSchema(self):
@@ -128,6 +137,11 @@ class ExampleAgent(AgentHandler):
     echoMethod.addArgument(SchemaProperty("map", SCHEMA_DATA_MAP, direction=DIR_IN_OUT))
     self.sch_control.addMethod(echoMethod)
 
+    eventMethod = SchemaMethod("event", desc="Raise an Event")
+    eventMethod.addArgument(SchemaProperty("text", SCHEMA_DATA_STRING, direction=DIR_IN))
+    eventMethod.addArgument(SchemaProperty("severity", SCHEMA_DATA_INT, direction=DIR_IN))
+    self.sch_control.addMethod(eventMethod)
+
     failMethod = SchemaMethod("fail", desc="Expected to Fail")
     failMethod.addArgument(SchemaProperty("useString", SCHEMA_DATA_BOOL, direction=DIR_IN))
     failMethod.addArgument(SchemaProperty("stringVal", SCHEMA_DATA_STRING, direction=DIR_IN))
@@ -146,11 +160,18 @@ class ExampleAgent(AgentHandler):
     self.sch_child.addProperty(SchemaProperty("name", SCHEMA_DATA_STRING))
 
     ##
+    ## Declare the event class
+    ##
+    self.sch_event = Schema(SCHEMA_TYPE_EVENT, package, "event")
+    self.sch_event.addProperty(SchemaProperty("text", SCHEMA_DATA_STRING))
+
+    ##
     ## Register our schemata with the agent session.
     ##
     self.session.registerSchema(self.sch_exception)
     self.session.registerSchema(self.sch_control)
     self.session.registerSchema(self.sch_child)
+    self.session.registerSchema(self.sch_event)
 
 
   def populateData(self):

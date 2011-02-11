@@ -373,6 +373,16 @@ class AgentSession(object):
     else:
       self._impl.raiseException(handle, data)
 
+  def raiseEvent(self, data, severity=None):
+    """
+    """
+    if not severity:
+      self._impl.raiseEvent(data._impl)
+    else:
+      if (severity.__class__ != int and severity.__class__ != long) or severity < 0 or severity > 7:
+        raise Exception("Severity must be an int between 0..7")
+      self._impl.raiseEvent(data._impl, severity);
+
 
 #===================================================================================================
 # AGENT PROXY
