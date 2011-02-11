@@ -556,8 +556,9 @@ void AgentImpl::sendQuery(const Query& query, uint32_t correlator)
     msg.setReplyTo(session.replyAddress);
     msg.setCorrelationId(boost::lexical_cast<string>(correlator));
     msg.setSubject(directSubject);
-    if (!session.authUser.empty())
-        msg.setUserId(session.authUser);
+    string userId(session.connection.getAuthenticatedUsername());
+    if (!userId.empty())
+        msg.setUserId(userId);
     encode(QueryImplAccess::get(query).asMap(), msg);
     if (sender.isValid()) {
         sender.send(msg);
@@ -583,8 +584,9 @@ void AgentImpl::sendMethod(const string& method, const Variant::Map& args, const
     msg.setReplyTo(session.replyAddress);
     msg.setCorrelationId(boost::lexical_cast<string>(correlator));
     msg.setSubject(directSubject);
-    if (!session.authUser.empty())
-        msg.setUserId(session.authUser);
+    string userId(session.connection.getAuthenticatedUsername());
+    if (!userId.empty())
+        msg.setUserId(userId);
     encode(map, msg);
     if (sender.isValid()) {
         sender.send(msg);
@@ -626,8 +628,9 @@ void AgentImpl::sendSchemaRequest(const SchemaId& id)
     msg.setReplyTo(session.replyAddress);
     msg.setContent(content);
     msg.setSubject(directSubject);
-    if (!session.authUser.empty())
-        msg.setUserId(session.authUser);
+    string userId(session.connection.getAuthenticatedUsername());
+    if (!userId.empty())
+        msg.setUserId(userId);
     if (sender.isValid()) {
         sender.send(msg);
         QPID_LOG(trace, "SENT V1SchemaRequest to=" << sender.getName() << "/" << directSubject);
