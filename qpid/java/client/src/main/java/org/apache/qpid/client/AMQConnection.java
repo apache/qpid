@@ -304,7 +304,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         else
         {
             // use the default value set for all connections
-            _syncPublish = System.getProperty((ClientProperties.SYNC_ACK_PROP_NAME),_syncPublish);
+            _syncPublish = System.getProperty((ClientProperties.SYNC_PUBLISH_PROP_NAME),_syncPublish);
         }
         
         if (connectionURL.getOption(ConnectionURL.OPTIONS_USE_LEGACY_MAP_MESSAGE_FORMAT) != null)
