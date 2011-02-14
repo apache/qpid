@@ -22,6 +22,7 @@
  *
  */
 #include "qpid/broker/Messages.h"
+#include "qpid/sys/IntegerTypes.h"
 #include <deque>
 #include <vector>
 
