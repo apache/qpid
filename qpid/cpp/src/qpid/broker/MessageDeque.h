@@ -22,6 +22,7 @@
  *
  */
 #include "qpid/broker/Messages.h"
+#include "qpid/broker/QueuedMessage.h"
 #include <deque>
 
 namespace qpid {
