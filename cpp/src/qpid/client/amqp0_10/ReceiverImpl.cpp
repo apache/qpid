@@ -193,7 +193,7 @@ void ReceiverImpl::closeImpl()
     sys::Mutex::ScopedLock l(lock);
     if (state != CANCELLED) {
         state = CANCELLED;
-        session.messageStop(destination);
+        sync(session).messageStop(destination);
         parent->releasePending(destination);
         source->cancel(session, destination);
         parent->receiverCancelled(destination);
