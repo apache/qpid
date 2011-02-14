@@ -30,6 +30,9 @@ import javax.jms.Session;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 
+import org.apache.qpid.client.AMQAnyDestination;
+import org.apache.qpid.client.AMQConnection;
+
 public class PerfBase
 {
     TestParams params;
@@ -45,48 +48,21 @@ public class PerfBase
     }
 
     public void setUp() throws Exception
-    {
-        Hashtable<String,String> env = new Hashtable<String,String>();
-        env.put(Context.INITIAL_CONTEXT_FACTORY, params.getInitialContextFactory());
-        env.put(Context.PROVIDER_URL, params.getProviderURL());
+    {        
 
-        Context ctx = null;
-        try
+        if (params.getHost().equals("") || params.getPort() == -1)
         {
-            ctx = new InitialContext(env);
+            con = new AMQConnection(params.getUrl());
         }
-        catch(Exception e)
+        else
         {
-            throw new Exception("Error initializing JNDI",e);
-
+            con = new AMQConnection(params.getHost(),params.getPort(),"guest","guest","test","test");
         }
-
-        ConnectionFactory conFac = null;
-        try
-        {
-            conFac = (ConnectionFactory)ctx.lookup(params.getConnectionFactory());
-        }
-        catch(Exception e)
-        {
-            throw new Exception("Error looking up connection factory",e);
-        }
-
-        con = conFac.createConnection();
         con.start();
         session = con.createSession(params.isTransacted(),
                                     params.isTransacted()? Session.SESSION_TRANSACTED:params.getAckMode());
 
-        try
-        {
-            dest = (Destination)ctx.lookup( params.isDurable()?
-                                            params.getDurableDestination():
-                                            params.getTransientDestination()
-                                           );
-        }
-        catch(Exception e)
-        {
-            throw new Exception("Error looking up destination",e);
-        }
+        dest = new AMQAnyDestination(params.getAddress());
     }
 
     public void handleError(Exception e,String msg)
