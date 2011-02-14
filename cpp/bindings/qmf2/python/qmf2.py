@@ -165,7 +165,7 @@ class ConsoleHandler(Thread):
           reason = 'filter'
           if event.getAgentDelReason() == cqmf2.AGENT_DEL_AGED:
             reason = 'aged'
-          self.agentDeleted(Agent(event.getAgent(), reason))
+          self.agentDeleted(Agent(event.getAgent()), reason)
 
         elif event.getType() == cqmf2.CONSOLE_AGENT_RESTART:
           self.agentRestarted(Agent(event.getAgent()))
