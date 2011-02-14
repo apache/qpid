@@ -65,6 +65,8 @@ op.add_option("--connection-options", type="str",
               help="Connection options for senders & receivers")
 op.add_option("--flow-control", default=0, type="int", metavar="N",
               help="Flow control each sender to limit queue depth to 2*N. 0 means no flow control.")
+op.add_option("--durable", default=False, action="store_true",
+              help="Use durable queues and messages")
 
 single_quote_re = re.compile("'")
 def posix_quote(string):
@@ -76,7 +78,9 @@ def ssh_command(host, command):
     return ["ssh", host] + [posix_quote(arg) for arg in command]
 
 def start_receive(queue, index, opts, ready_queue, broker, host):
-    address="%s;{%s}"%(queue,",".join(["create:always"]+opts.receive_option))
+    address_opts=["create:receiver"] + opts.receive_option
+    if opts.durable: address_opts += ["node:{durable:true}"]
+    address="%s;{%s}"%(queue,",".join(address_opts))
     msg_total=opts.senders*opts.messages
     messages = msg_total/opts.receivers;
     if (index < msg_total%opts.receivers): messages += 1
@@ -111,7 +115,8 @@ def start_send(queue, opts, broker, host):
                "--report-header=no",
                "--timestamp=%s"%(opts.timestamp and "yes" or "no"),
                "--sequence=no",
-               "--flow-control", str(opts.flow_control)
+               "--flow-control", str(opts.flow_control),
+               "--durable", str(opts.durable)
                ]
     command += opts.send_arg
     if opts.connection_options:
@@ -140,12 +145,12 @@ def print_header(timestamp):
 def parse(parser, lines):               # Parse sender/receiver output
     for l in lines:
         fn_val = zip(parser, l)
-        
+
     return [map(lambda p: p[0](p[1]), zip(parser,line.split())) for line in lines]
 
 def parse_senders(senders):
     return parse([int],[first_line(p) for p in senders])
-    
+
 def parse_receivers(receivers):
     return parse([int,float,float,float],[first_line(p) for p in receivers if p])
 
@@ -168,7 +173,7 @@ def print_summary(send_stats, recv_stats):
         l_avg = sum(l[3] for l in recv_stats)/len(recv_stats)
         summary += "\t%.2f\t%.2f\t%.2f"%(l_min, l_max, l_avg)
     print summary
-    
+
 
 class ReadyReceiver:
     """A receiver for ready messages"""
@@ -177,7 +182,7 @@ class ReadyReceiver:
         self.connection = qpid.messaging.Connection(broker)
         self.connection.open()
         self.receiver = self.connection.session().receiver(
-            "%s;{create:always,delete:always}"%(queue))
+            "%s;{create:receiver,delete:receiver,node:{durable:false}}"%(queue))
         self.receiver.session.sync()
         self.timeout=2
 
