@@ -24,15 +24,22 @@ import javax.jms.Session;
 
 public class TestParams
 {
-    private String initialContextFactory = "org.apache.qpid.jndi.PropertiesFileInitialContextFactory";
+    /*
+     * By default the connection URL is used. 
+     * This allows a user to easily specify a fully fledged URL any given property.
+     * Ex. SSL parameters
+     *  
+     * By providing a host & port allows a user to simply override the URL.
+     * This allows to create multiple clients in test scripts easily,
+     * without having to deal with the long URL format. 
+     */
+    private String url = "amqp://guest:guest@clientid/testpath?brokerlist='tcp://localhost:5672'";
+    
+    private String host = "";
+    
+    private int port = -1;
 
-    private String providerURL = System.getenv("QPID_TEST_HOME") + "/etc/jndi.properties";
-
-    private String connectionFactory = "connectionFactory";
-
-    private String transientDest = "transientQueue";
-
-    private String durableDest = "durableQueue";
+    private String address = "queue; {create : always}";
 
     private int msg_size = 1024;
 
@@ -60,11 +67,11 @@ public class TestParams
 
     public TestParams()
     {
-        initialContextFactory = System.getProperty("java.naming.factory.initial",initialContextFactory);
-        providerURL = System.getProperty("java.naming.provider.url",providerURL);
-
-        transientDest = System.getProperty("transDest",transientDest);
-        durableDest = System.getProperty("durableDest",durableDest);
+     
+        url = System.getProperty("url",url);
+        host = System.getProperty("host","");
+        port = Integer.getInteger("port", -1);
+        address = System.getProperty("address","queue");
 
         msg_size  = Integer.getInteger("msg_size", 1024);
         msg_type = Integer.getInteger("msg_type",1);
@@ -80,29 +87,29 @@ public class TestParams
         random_msg_size = Boolean.getBoolean("random_msg_size");
     }
 
+    public String getUrl()
+    {
+        return url;
+    }
+
+    public String getHost()
+    {
+        return host;
+    }
+
+    public int getPort()
+    {
+        return port;
+    }
+
+    public String getAddress()
+    {
+        return address;
+    }
+
     public int getAckMode()
     {
         return ack_mode;
-    }
-
-    public String getConnectionFactory()
-    {
-        return connectionFactory;
-    }
-
-    public String getTransientDestination()
-    {
-        return transientDest;
-    }
-
-    public String getDurableDestination()
-    {
-        return durableDest;
-    }
-
-    public String getInitialContextFactory()
-    {
-        return initialContextFactory;
     }
 
     public int getMsgCount()
@@ -123,11 +130,6 @@ public class TestParams
     public boolean isDurable()
     {
         return durable;
-    }
-
-    public String getProviderURL()
-    {
-        return providerURL;
     }
 
     public boolean isTransacted()
