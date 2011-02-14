@@ -31,6 +31,7 @@
 #include "qpid/broker/TopicExchange.h"
 #include "qpid/broker/Link.h"
 #include "qpid/broker/ExpiryPolicy.h"
+#include "qpid/broker/QueueFlowLimit.h"
 
 #include "qmf/org/apache/qpid/broker/Package.h"
 #include "qmf/org/apache/qpid/broker/ArgsBrokerEcho.h"
@@ -102,7 +103,9 @@ Broker::Options::Options(const std::string& name) :
     requireEncrypted(false),
     maxSessionRate(0),
     asyncQueueEvents(false),     // Must be false in a cluster.
-    qmf2Support(false)
+    qmf2Support(false),
+    queueFlowStopRatio(80),
+    queueFlowResumeRatio(70)
 {
     int c = sys::SystemInfo::concurrency();
     workerThreads=c+1;
@@ -134,7 +137,9 @@ Broker::Options::Options(const std::string& name) :
         ("known-hosts-url", optValue(knownHosts, "URL or 'none'"), "URL to send as 'known-hosts' to clients ('none' implies empty list)")
         ("sasl-config", optValue(saslConfigPath, "FILE"), "gets sasl config from nonstandard location")
         ("max-session-rate", optValue(maxSessionRate, "MESSAGES/S"), "Sets the maximum message rate per session (0=unlimited)")
-        ("async-queue-events", optValue(asyncQueueEvents, "yes|no"), "Set Queue Events async, used for services like replication");
+        ("async-queue-events", optValue(asyncQueueEvents, "yes|no"), "Set Queue Events async, used for services like replication")
+        ("default-flow-stop-threshold", optValue(queueFlowStopRatio, "%MESSAGES"), "Queue capacity level at which flow control is activated.")
+        ("default-flow-resume-threshold", optValue(queueFlowResumeRatio, "%MESSAGES"), "Queue capacity level at which flow control is de-activated.");
 }
 
 const std::string empty;
@@ -219,6 +224,7 @@ Broker::Broker(const Broker::Options& conf) :
     }
 
     QueuePolicy::setDefaultMaxSize(conf.queueLimit);
+    QueueFlowLimit::setDefaults(conf.queueLimit, conf.queueFlowStopRatio, conf.queueFlowResumeRatio);
     queues.setQueueEvents(&queueEvents);
 
     // Early-Initialize plugins

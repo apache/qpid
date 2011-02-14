@@ -52,6 +52,10 @@ namespace broker {
  */
 class QueueFlowLimit
 {
+    static uint64_t defaultMaxSize;
+    static uint defaultFlowStopRatio;
+    static uint defaultFlowResumeRatio;
+
     Queue *queue;
     std::string queueName;
 
@@ -92,6 +96,8 @@ class QueueFlowLimit
     uint32_t encodedSize() const;
 
     static QPID_BROKER_EXTERN std::auto_ptr<QueueFlowLimit> createQueueFlowLimit(Queue *queue, const qpid::framing::FieldTable& settings);
+    static QPID_BROKER_EXTERN void setDefaults(uint64_t defaultMaxSize, uint defaultFlowStopRatio, uint defaultFlowResumeRatio);
+
     friend QPID_BROKER_EXTERN std::ostream& operator<<(std::ostream&, const QueueFlowLimit&);
 
  protected:

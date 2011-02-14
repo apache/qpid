@@ -23,6 +23,7 @@
 #include "unit_test.h"
 #include "test_tools.h"
 
+#include "qpid/broker/QueuePolicy.h"
 #include "qpid/broker/QueueFlowLimit.h"
 #include "qpid/sys/Time.h"
 #include "qpid/framing/reply_exceptions.h"
@@ -299,6 +300,106 @@ QPID_AUTO_TEST_CASE(testFlowCombo)
     flow->dequeued(msgs_100.front());               // count:0 size:0  ->OFF
     msgs_100.pop_front();
     BOOST_CHECK(!flow->isFlowControlActive());
+}
+
+
+QPID_AUTO_TEST_CASE(testFlowDefaultArgs)
+{
+    QueueFlowLimit::setDefaults(2950001, // max queue byte count
+                                80,     // 80% stop threshold
+                                70);    // 70% resume threshold
+    FieldTable args;
+    std::auto_ptr<QueueFlowLimit> flow(QueueFlowLimit::createQueueFlowLimit(0, args));
+
+    BOOST_CHECK_EQUAL((uint64_t) 2360001, flow->getFlowStopSize());
+    BOOST_CHECK_EQUAL((uint64_t) 2065000, flow->getFlowResumeSize());
+    BOOST_CHECK_EQUAL( 0, flow->getFlowStopCount());
+    BOOST_CHECK_EQUAL( 0, flow->getFlowResumeCount());
+    BOOST_CHECK(!flow->isFlowControlActive());
+    BOOST_CHECK(flow->monitorFlowControl());
+}
+
+
+QPID_AUTO_TEST_CASE(testFlowOverrideArgs)
+{
+    QueueFlowLimit::setDefaults(2950001, // max queue byte count
+                                80,     // 80% stop threshold
+                                70);    // 70% resume threshold
+    {
+        FieldTable args;
+        args.setInt(QueueFlowLimit::flowStopCountKey, 35000);
+        args.setInt(QueueFlowLimit::flowResumeCountKey, 30000);
+        std::auto_ptr<QueueFlowLimit> flow(QueueFlowLimit::createQueueFlowLimit(0, args));
+
+        BOOST_CHECK_EQUAL((uint32_t) 35000, flow->getFlowStopCount());
+        BOOST_CHECK_EQUAL((uint32_t) 30000, flow->getFlowResumeCount());
+        BOOST_CHECK_EQUAL((uint64_t) 0, flow->getFlowStopSize());
+        BOOST_CHECK_EQUAL((uint64_t) 0, flow->getFlowResumeSize());
+        BOOST_CHECK(!flow->isFlowControlActive());
+        BOOST_CHECK(flow->monitorFlowControl());
+    }
+    {
+        FieldTable args;
+        args.setInt(QueueFlowLimit::flowStopSizeKey, 350000);
+        args.setInt(QueueFlowLimit::flowResumeSizeKey, 300000);
+        std::auto_ptr<QueueFlowLimit> flow(QueueFlowLimit::createQueueFlowLimit(0, args));
+
+        BOOST_CHECK_EQUAL((uint32_t) 0, flow->getFlowStopCount());
+        BOOST_CHECK_EQUAL((uint32_t) 0, flow->getFlowResumeCount());
+        BOOST_CHECK_EQUAL((uint64_t) 350000, flow->getFlowStopSize());
+        BOOST_CHECK_EQUAL((uint64_t) 300000, flow->getFlowResumeSize());
+        BOOST_CHECK(!flow->isFlowControlActive());
+        BOOST_CHECK(flow->monitorFlowControl());
+    }
+    {
+        FieldTable args;
+        args.setInt(QueueFlowLimit::flowStopCountKey, 35000);
+        args.setInt(QueueFlowLimit::flowResumeCountKey, 30000);
+        args.setInt(QueueFlowLimit::flowStopSizeKey, 350000);
+        args.setInt(QueueFlowLimit::flowResumeSizeKey, 300000);
+        std::auto_ptr<QueueFlowLimit> flow(QueueFlowLimit::createQueueFlowLimit(0, args));
+
+        BOOST_CHECK_EQUAL((uint32_t) 35000, flow->getFlowStopCount());
+        BOOST_CHECK_EQUAL((uint32_t) 30000, flow->getFlowResumeCount());
+        BOOST_CHECK_EQUAL((uint64_t) 350000, flow->getFlowStopSize());
+        BOOST_CHECK_EQUAL((uint64_t) 300000, flow->getFlowResumeSize());
+        BOOST_CHECK(!flow->isFlowControlActive());
+        BOOST_CHECK(flow->monitorFlowControl());
+    }
+}
+
+
+QPID_AUTO_TEST_CASE(testFlowOverrideDefaults)
+{
+    QueueFlowLimit::setDefaults(2950001, // max queue byte count
+                                97,     // stop threshold
+                                73);    // resume threshold
+    FieldTable args;
+    std::auto_ptr<QueueFlowLimit> flow(QueueFlowLimit::createQueueFlowLimit(0, args));
+
+    BOOST_CHECK_EQUAL((uint32_t) 2861501, flow->getFlowStopSize());
+    BOOST_CHECK_EQUAL((uint32_t) 2153500, flow->getFlowResumeSize());
+    BOOST_CHECK(!flow->isFlowControlActive());
+    BOOST_CHECK(flow->monitorFlowControl());
+}
+
+
+QPID_AUTO_TEST_CASE(testFlowDisable)
+{
+    {
+        FieldTable args;
+        args.setInt(QueueFlowLimit::flowStopCountKey, 0);
+        std::auto_ptr<QueueFlowLimit> flow(QueueFlowLimit::createQueueFlowLimit(0, args));
+
+        BOOST_CHECK(!flow.get());
+    }
+    {
+        FieldTable args;
+        args.setInt(QueueFlowLimit::flowStopSizeKey, 0);
+        std::auto_ptr<QueueFlowLimit> flow(QueueFlowLimit::createQueueFlowLimit(0, args));
+
+        BOOST_CHECK(!flow.get());
+    }
 }
 
 

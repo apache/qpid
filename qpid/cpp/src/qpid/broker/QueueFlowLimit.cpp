@@ -219,7 +219,7 @@ void QueueFlowLimit::encode(Buffer& buffer) const
 }
 
 
-void QueueFlowLimit::decode ( Buffer& buffer ) 
+void QueueFlowLimit::decode ( Buffer& buffer )
 {
   flowStopCount   = buffer.getLong();
   flowResumeCount = buffer.getLong();
@@ -244,21 +244,58 @@ const std::string QueueFlowLimit::flowStopCountKey("qpid.flow_stop_count");
 const std::string QueueFlowLimit::flowResumeCountKey("qpid.flow_resume_count");
 const std::string QueueFlowLimit::flowStopSizeKey("qpid.flow_stop_size");
 const std::string QueueFlowLimit::flowResumeSizeKey("qpid.flow_resume_size");
+uint64_t QueueFlowLimit::defaultMaxSize;
+uint QueueFlowLimit::defaultFlowStopRatio;
+uint QueueFlowLimit::defaultFlowResumeRatio;
+
+
+void QueueFlowLimit::setDefaults(uint64_t maxQueueSize, uint flowStopRatio, uint flowResumeRatio)
+{
+    defaultMaxSize = maxQueueSize;
+    defaultFlowStopRatio = flowStopRatio;
+    defaultFlowResumeRatio = flowResumeRatio;
+
+    /** @todo Verify valid range on Broker::Options instead of here */
+    if (flowStopRatio > 100 || flowResumeRatio > 100)
+        throw InvalidArgumentException(QPID_MSG("Default queue flow ratios must be between 0 and 100, inclusive:"
+                                                << " flowStopRatio=" << flowStopRatio
+                                                << " flowResumeRatio=" << flowResumeRatio));
+    if (flowResumeRatio > flowStopRatio)
+        throw InvalidArgumentException(QPID_MSG("Default queue flow stop ratio must be >= flow resume ratio:"
+                                                << " flowStopRatio=" << flowStopRatio
+                                                << " flowResumeRatio=" << flowResumeRatio));
+}
 
 
 std::auto_ptr<QueueFlowLimit> QueueFlowLimit::createQueueFlowLimit(Queue *queue, const qpid::framing::FieldTable& settings)
 {
-    uint32_t flowStopCount = getCapacity(settings, flowStopCountKey, 0);
-    uint32_t flowResumeCount = getCapacity(settings, flowResumeCountKey, 0);
-    uint64_t flowStopSize = getCapacity(settings, flowStopSizeKey, 0);
-    uint64_t flowResumeSize = getCapacity(settings, flowResumeSizeKey, 0);
+    std::string type(QueuePolicy::getType(settings));
 
-    if (flowStopCount || flowResumeCount || flowStopSize || flowResumeSize) {
-        return std::auto_ptr<QueueFlowLimit>(new QueueFlowLimit(queue, flowStopCount, flowResumeCount,
-                                                                flowStopSize, flowResumeSize));
-    } else {
+    if (type == QueuePolicy::RING || type == QueuePolicy::RING_STRICT) {
+        // The size of a RING queue is limited by design - no need for flow control.
         return std::auto_ptr<QueueFlowLimit>();
     }
+
+    if (settings.get(flowStopCountKey) || settings.get(flowStopSizeKey)) {
+        uint32_t flowStopCount = getCapacity(settings, flowStopCountKey, 0);
+        uint32_t flowResumeCount = getCapacity(settings, flowResumeCountKey, 0);
+        uint64_t flowStopSize = getCapacity(settings, flowStopSizeKey, 0);
+        uint64_t flowResumeSize = getCapacity(settings, flowResumeSizeKey, 0);
+        if (flowStopCount == 0 && flowStopSize == 0) {   // disable flow control
+            return std::auto_ptr<QueueFlowLimit>();
+        }
+        return std::auto_ptr<QueueFlowLimit>(new QueueFlowLimit(queue, flowStopCount, flowResumeCount,
+                                                                flowStopSize, flowResumeSize));
+    }
+
+    if (defaultFlowStopRatio) {
+        uint64_t maxByteCount = getCapacity(settings, QueuePolicy::maxSizeKey, defaultMaxSize);
+        uint64_t flowStopSize = (uint64_t)(maxByteCount * (defaultFlowStopRatio/100.0) + 0.5);
+        uint64_t flowResumeSize = (uint64_t)(maxByteCount * (defaultFlowResumeRatio/100.0));
+
+        return std::auto_ptr<QueueFlowLimit>(new QueueFlowLimit(queue, 0, 0, flowStopSize, flowResumeSize));
+    }
+    return std::auto_ptr<QueueFlowLimit>();
 }
 
 

@@ -115,6 +115,8 @@ public:
         uint32_t maxSessionRate;
         bool asyncQueueEvents;
         bool qmf2Support;
+        uint queueFlowStopRatio;    // producer flow control: on
+        uint queueFlowResumeRatio;  // producer flow control: off
 
       private:
         std::string getHome();

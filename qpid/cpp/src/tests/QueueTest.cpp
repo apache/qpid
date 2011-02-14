@@ -36,6 +36,9 @@
 #include "qpid/framing/AMQFrame.h"
 #include "qpid/framing/MessageTransferBody.h"
 #include "qpid/framing/reply_exceptions.h"
+#include "qpid/broker/QueuePolicy.h"
+#include "qpid/broker/QueueFlowLimit.h"
+
 #include <iostream>
 #include "boost/format.hpp"
 
@@ -508,6 +511,8 @@ QPID_AUTO_TEST_CASE(testLVQAcquire){
     client::QueueOptions args;
     // set queue mode
     args.setOrdering(client::LVQ);
+    // disable flow control, as this test violates the enqueue/dequeue sequence.
+    args.setInt(QueueFlowLimit::flowStopCountKey, 0);
 
     Queue::shared_ptr queue(new Queue("my-queue", true ));
     queue->configure(args);
