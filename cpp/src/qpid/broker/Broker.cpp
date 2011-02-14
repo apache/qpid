@@ -102,7 +102,8 @@ Broker::Options::Options(const std::string& name) :
     requireEncrypted(false),
     maxSessionRate(0),
     asyncQueueEvents(false),     // Must be false in a cluster.
-    qmf2Support(false)
+    qmf2Support(true),
+    qmf1Support(true)
 {
     int c = sys::SystemInfo::concurrency();
     workerThreads=c+1;
@@ -122,7 +123,8 @@ Broker::Options::Options(const std::string& name) :
         ("max-connections", optValue(maxConnections, "N"), "Sets the maximum allowed connections")
         ("connection-backlog", optValue(connectionBacklog, "N"), "Sets the connection backlog limit for the server socket")
         ("mgmt-enable,m", optValue(enableMgmt,"yes|no"), "Enable Management")
-        ("mgmt-qmf2", optValue(qmf2Support,"yes|no"), "Use QMF v2 for Broker Management")
+        ("mgmt-qmf2", optValue(qmf2Support,"yes|no"), "Enable broadcast of management information over QMF v2")
+        ("mgmt-qmf1", optValue(qmf1Support,"yes|no"), "Enable broadcast of management information over QMF v1")
         ("mgmt-pub-interval", optValue(mgmtPubInterval, "SECONDS"), "Management Publish Interval")
         ("queue-purge-interval", optValue(queueCleanInterval, "SECONDS"),
          "Interval between attempts to purge any expired messages from queues")
@@ -148,7 +150,7 @@ const std::string knownHostsNone("none");
 Broker::Broker(const Broker::Options& conf) :
     poller(new Poller),
     config(conf),
-    managementAgent(conf.enableMgmt ? new ManagementAgent(!conf.qmf2Support,
+    managementAgent(conf.enableMgmt ? new ManagementAgent(conf.qmf1Support,
                                                           conf.qmf2Support)
                                     : 0),
     store(new NullMessageStore),
