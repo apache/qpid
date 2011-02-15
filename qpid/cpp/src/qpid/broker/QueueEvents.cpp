@@ -19,6 +19,8 @@
  *
  */
 #include "qpid/broker/QueueEvents.h"
+#include "qpid/broker/Queue.h"
+#include "qpid/broker/QueueObserver.h"
 #include "qpid/Exception.h"
 #include "qpid/log/Statement.h"
 
@@ -113,6 +115,29 @@ void QueueEvents::disable()
 bool QueueEvents::isSync()
 {
     return sync;
+}
+
+class EventGenerator : public QueueObserver
+{
+  public:
+    EventGenerator(QueueEvents& mgr, bool enqOnly) : manager(mgr), enqueueOnly(enqOnly) {}
+    void enqueued(const QueuedMessage& m)
+    {
+        manager.enqueued(m);
+    }
+    void dequeued(const QueuedMessage& m)
+    {
+        if (!enqueueOnly) manager.dequeued(m);
+    }
+  private:
+    QueueEvents& manager;
+    const bool enqueueOnly;
+};
+
+void QueueEvents::observe(Queue& queue, bool enqueueOnly)
+{
+    boost::shared_ptr<QueueObserver> observer(new EventGenerator(*this, enqueueOnly));
+    queue.addObserver(observer);
 }
 
 
