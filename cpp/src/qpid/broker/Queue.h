@@ -36,6 +36,7 @@
 
 #include "qpid/framing/FieldTable.h"
 #include "qpid/sys/Monitor.h"
+#include "qpid/sys/Timer.h"
 #include "qpid/management/Manageable.h"
 #include "qmf/org/apache/qpid/broker/Queue.h"
 #include "qpid/framing/amqp_types.h"
@@ -126,6 +127,8 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     Broker* broker;
     bool deleted;
     UsageBarrier barrier;
+    int autoDeleteTimeout;
+    boost::intrusive_ptr<qpid::sys::TimerTask> autoDeleteTask;
 
     void push(boost::intrusive_ptr<Message>& msg, bool isRecovery=false);
     void setPolicy(std::auto_ptr<QueuePolicy> policy);

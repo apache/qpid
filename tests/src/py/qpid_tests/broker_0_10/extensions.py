@@ -1,5 +1,3 @@
-# Do not delete - marks this directory as a python package.
-
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -18,18 +16,22 @@
 # specific language governing permissions and limitations
 # under the License.
 #
+from qpid.client import Client, Closed
+from qpid.queue import Empty
+from qpid.content import Content
+from qpid.testlib import TestBase010
+from time import sleep
 
-from alternate_exchange import *
-from broker import *
-from dtx import *
-from example import *
-from exchange import *
-from management import *
-from message import *
-from query import *
-from queue import *
-from tx import *
-from lvq import *
-from priority import *
-from threshold import *
-from extensions import *
+class ExtensionTests(TestBase010):
+    """Tests for various extensions to AMQP 0-10"""
+
+    def test_timed_autodelete(self):
+        session = self.session
+        session2 = self.conn.session("another-session")
+        session2.queue_declare(queue="my-queue", exclusive=True, auto_delete=True, arguments={"qpid.auto_delete_timeout":5})
+        session2.close()
+        result = session.queue_query(queue="my-queue")
+        self.assertEqual("my-queue", result.queue)
+        sleep(5)
+        result = session.queue_query(queue="my-queue")
+        self.assert_(not result.queue)
