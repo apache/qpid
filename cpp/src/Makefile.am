@@ -603,6 +603,7 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/QueueEvents.h \
   qpid/broker/QueueListeners.cpp \
   qpid/broker/QueueListeners.h \
+  qpid/broker/QueueObserver.h \
   qpid/broker/QueuePolicy.cpp \
   qpid/broker/QueuePolicy.h \
   qpid/broker/QueueRegistry.cpp \
@@ -649,6 +650,8 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/SignalHandler.h \
   qpid/broker/System.cpp \
   qpid/broker/System.h \
+  qpid/broker/ThresholdAlerts.cpp \
+  qpid/broker/ThresholdAlerts.h \
   qpid/broker/TopicExchange.cpp \
   qpid/broker/TopicExchange.h \
   qpid/broker/TransactionalStore.h \

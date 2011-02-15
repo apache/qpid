@@ -96,8 +96,6 @@ class QueueRegistry {
      */
     std::string generateName();
 
-    void setQueueEvents(QueueEvents*);
-
     /**
      * Set the store to use.  May only be called once.
      */

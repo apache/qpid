@@ -221,7 +221,6 @@ Broker::Broker(const Broker::Options& conf) :
     }
 
     QueuePolicy::setDefaultMaxSize(conf.queueLimit);
-    queues.setQueueEvents(&queueEvents);
 
     // Early-Initialize plugins
     Plugin::earlyInitAll(*this);

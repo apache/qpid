@@ -1011,6 +1011,7 @@ set (qpidbroker_SOURCES
      qpid/broker/SessionHandler.h
      qpid/broker/SessionHandler.cpp
      qpid/broker/System.cpp
+     qpid/broker/ThresholdAlerts.cpp
      qpid/broker/TopicExchange.cpp
      qpid/broker/TxAccept.cpp
      qpid/broker/TxBuffer.cpp
