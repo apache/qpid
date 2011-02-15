@@ -128,9 +128,9 @@ void ThresholdAlerts::observe(Queue& queue, qpid::management::ManagementAgent& a
     //If no explicit threshold settings were given use 80% of any
     //limit from the policy.
     const QueuePolicy* policy = queue.getPolicy();
-    Option<uint32_t> countThreshold("qpid.alert_count", policy ? policy->getMaxCount()*0.8 : 0);
+    Option<uint32_t> countThreshold("qpid.alert_count", (uint32_t) (policy ? policy->getMaxCount()*0.8 : 0));
     countThreshold.addAlias("x-qpid-maximum-message-count");
-    Option<uint64_t> sizeThreshold("qpid.alert_size", policy ? policy->getMaxSize()*0.8 : 0);
+    Option<uint64_t> sizeThreshold("qpid.alert_size", (uint64_t) (policy ? policy->getMaxSize()*0.8 : 0));
     sizeThreshold.addAlias("x-qpid-maximum-message-size");
 
     observe(queue, agent, countThreshold.get(settings), sizeThreshold.get(settings), repeatInterval.get(settings));
