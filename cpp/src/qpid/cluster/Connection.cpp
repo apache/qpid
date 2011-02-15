@@ -529,7 +529,7 @@ void Connection::deliveryRecord(const string& qname,
             m = getUpdateMessage();
             m.queue = queue.get();
             m.position = position;
-            if (enqueued) queue->enqueued(m); //inform queue of the message 
+            if (enqueued) queue->updateEnqueued(m); //inform queue of the message 
         } else {                // Message at original position in original queue
             m = queue->find(position);
         }

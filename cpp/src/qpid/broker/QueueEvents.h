@@ -63,6 +63,7 @@ class QueueEvents
     QPID_BROKER_EXTERN void unregisterListener(const std::string& id);
     void enable();
     void disable();
+    void observe(Queue&, bool enqueueOnly);
     //process all outstanding events
     QPID_BROKER_EXTERN void shutdown();
     QPID_BROKER_EXTERN bool isSync();

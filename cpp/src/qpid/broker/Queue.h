@@ -31,6 +31,7 @@
 #include "qpid/broker/QueuePolicy.h"
 #include "qpid/broker/QueueBindings.h"
 #include "qpid/broker/QueueListeners.h"
+#include "qpid/broker/QueueObserver.h"
 #include "qpid/broker/RateTracker.h"
 
 #include "qpid/framing/FieldTable.h"
@@ -47,6 +48,7 @@
 #include <vector>
 #include <memory>
 #include <deque>
+#include <set>
 #include <algorithm>
 
 namespace qpid {
@@ -86,6 +88,7 @@ class Queue : public boost::enable_shared_from_this<Queue>,
         ~ScopedUse() { if (acquired) barrier.release(); }
     };
             
+    typedef std::set< boost::shared_ptr<QueueObserver> > Observers;
     enum ConsumeCode {NO_MESSAGES=0, CANT_CONSUME=1, CONSUMED=2};
 
 
@@ -117,7 +120,7 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     qmf::org::apache::qpid::broker::Queue* mgmtObject;
     RateTracker dequeueTracker;
     int eventMode;
-    QueueEvents* eventMgr;
+    Observers observers;
     bool insertSeqNo;
     std::string seqNoKey;
     Broker* broker;
@@ -136,11 +139,13 @@ class Queue : public boost::enable_shared_from_this<Queue>,
 
     bool isExcluded(boost::intrusive_ptr<Message>& msg);
 
+    void enqueued(const QueuedMessage& msg);
     void dequeued(const QueuedMessage& msg);
     void pop();
     void popAndDequeue();
     QueuedMessage getFront();
     void forcePersistent(QueuedMessage& msg);
+    int getEventMode();
 
     inline void mgntEnqStats(const boost::intrusive_ptr<Message>& msg)
     {
@@ -270,7 +275,7 @@ class Queue : public boost::enable_shared_from_this<Queue>,
      * thus are still logically on the queue) - used in
      * clustered broker.  
      */ 
-    void enqueued(const QueuedMessage& msg);
+    void updateEnqueued(const QueuedMessage& msg);
 
     /**
      * Test whether the specified message (identified by its
@@ -331,8 +336,7 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     /** return current position sequence number for the next message on the queue.
      */
     QPID_BROKER_EXTERN framing::SequenceNumber getPosition();
-    int getEventMode();
-    void setQueueEventManager(QueueEvents&);
+    void addObserver(boost::shared_ptr<QueueObserver>);
     QPID_BROKER_EXTERN void insertSequenceNumbers(const std::string& key);
     /**
      * Notify queue that recovery has completed.
