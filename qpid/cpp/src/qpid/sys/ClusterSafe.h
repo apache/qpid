@@ -52,9 +52,6 @@ QPID_COMMON_EXTERN void assertClusterSafe();
  */
 QPID_COMMON_EXTERN bool isClusterSafe();
 
-/** Return true in a clustered broker */
-QPID_COMMON_EXTERN bool isCluster();
-
 /**
  * Base class for classes that encapsulate state which is replicated
  * to all members of a cluster. Acts as a marker for clustered state

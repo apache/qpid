@@ -60,7 +60,6 @@
 #include "qpid/StringUtils.h"
 #include "qpid/Url.h"
 #include "qpid/Version.h"
-#include "qpid/sys/ClusterSafe.h"
 
 #include <boost/bind.hpp>
 #include <boost/format.hpp>
@@ -171,8 +170,9 @@ Broker::Broker(const Broker::Options& conf) :
             conf.replayHardLimit*1024),
         *this),
     queueCleaner(queues, timer),
-    queueEvents(poller,!conf.asyncQueueEvents), 
+    queueEvents(poller,!conf.asyncQueueEvents),
     recovery(true),
+    inCluster(false),
     clusterUpdatee(false),
     expiryPolicy(new ExpiryPolicy),
     connectionCounter(conf.maxConnections),
@@ -230,8 +230,8 @@ Broker::Broker(const Broker::Options& conf) :
     // Early-Initialize plugins
     Plugin::earlyInitAll(*this);
 
-    /** todo KAG - remove once cluster support for flow control done + (and ClusterSafe.h include above). */
-    if (sys::isCluster()) {
+    /** todo KAG - remove once cluster support for flow control done */
+    if (isInCluster()) {
         QPID_LOG(warning, "Producer Flow Control TBD for clustered brokers - queue flow control disabled by default.");
         QueueFlowLimit::setDefaults(0, 0, 0);
     } else {
@@ -239,7 +239,7 @@ Broker::Broker(const Broker::Options& conf) :
     }
 
     // If no plugin store module registered itself, set up the null store.
-    if (NullMessageStore::isNullStore(store.get())) 
+    if (NullMessageStore::isNullStore(store.get()))
         setStore();
 
     exchanges.declare(empty, DirectExchange::typeName); // Default exchange.
@@ -358,14 +358,14 @@ void Broker::run() {
         Dispatcher d(poller);
         int numIOThreads = config.workerThreads;
         std::vector<Thread> t(numIOThreads-1);
-        
+
         // Run n-1 io threads
         for (int i=0; i<numIOThreads-1; ++i)
             t[i] = Thread(d);
-        
+
         // Run final thread
         d.run();
-        
+
         // Now wait for n-1 io threads to exit
         for (int i=0; i<numIOThreads-1; ++i) {
             t[i].join();
@@ -412,9 +412,9 @@ Manageable::status_t Broker::ManagementMethod (uint32_t methodId,
     {
     case _qmf::Broker::METHOD_ECHO :
         QPID_LOG (debug, "Broker::echo("
-                  << dynamic_cast<_qmf::ArgsBrokerEcho&>(args).io_sequence 
-                  << ", " 
-                  << dynamic_cast<_qmf::ArgsBrokerEcho&>(args).io_body 
+                  << dynamic_cast<_qmf::ArgsBrokerEcho&>(args).io_sequence
+                  << ", "
+                  << dynamic_cast<_qmf::ArgsBrokerEcho&>(args).io_body
                   << ")");
         status = Manageable::STATUS_OK;
         break;
@@ -479,7 +479,7 @@ std::string Broker::getLogLevel()
     const std::vector<std::string>& selectors = qpid::log::Logger::instance().getOptions().selectors;
     for (std::vector<std::string>::const_iterator i = selectors.begin(); i != selectors.end(); ++i) {
         if (i != selectors.begin()) level += std::string(",");
-        level += *i;        
+        level += *i;
     }
     return level;
 }

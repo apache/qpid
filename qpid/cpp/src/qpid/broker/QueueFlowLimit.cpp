@@ -320,11 +320,10 @@ std::auto_ptr<QueueFlowLimit> QueueFlowLimit::createQueueFlowLimit(Queue *queue,
             return std::auto_ptr<QueueFlowLimit>();
         }
         /** todo KAG - remove once cluster support for flow control done. */
-        if (sys::isCluster()) {
-            if (queue) {
-                QPID_LOG(warning, "Producer Flow Control TBD for clustered brokers - queue flow control disabled for queue "
-                         << queue->getName());
-            }
+        // TODO aconway 2011-02-16: is queue==0 only in tests?
+        if (queue && queue->getBroker() && queue->getBroker()->isInCluster()) {
+            QPID_LOG(warning, "Producer Flow Control TBD for clustered brokers - queue flow control disabled for queue "
+                     << queue->getName());
             return std::auto_ptr<QueueFlowLimit>();
         }
         return std::auto_ptr<QueueFlowLimit>(new QueueFlowLimit(queue, flowStopCount, flowResumeCount,
@@ -337,11 +336,9 @@ std::auto_ptr<QueueFlowLimit> QueueFlowLimit::createQueueFlowLimit(Queue *queue,
         uint64_t flowResumeSize = (uint64_t)(maxByteCount * (defaultFlowResumeRatio/100.0));
 
         /** todo KAG - remove once cluster support for flow control done. */
-        if (sys::isCluster()) {
-            if (queue) {
-                QPID_LOG(warning, "Producer Flow Control TBD for clustered brokers - queue flow control disabled for queue "
-                         << queue->getName());
-            }
+        if (queue && queue->getBroker() && queue->getBroker()->isInCluster()) {
+            QPID_LOG(warning, "Producer Flow Control TBD for clustered brokers - queue flow control disabled for queue "
+                     << queue->getName());
             return std::auto_ptr<QueueFlowLimit>();
         }
 
