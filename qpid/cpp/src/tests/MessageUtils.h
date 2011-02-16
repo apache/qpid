@@ -20,6 +20,7 @@
  */
 
 #include "qpid/broker/Message.h"
+#include "qpid/broker/AsyncCompletion.h"
 #include "qpid/framing/AMQFrame.h"
 #include "qpid/framing/MessageTransferBody.h"
 #include "qpid/framing/Uuid.h"
@@ -27,6 +28,17 @@
 using namespace qpid;
 using namespace broker;
 using namespace framing;
+
+namespace {
+    class DummyCompletion : public AsyncCompletion
+    {
+  public:
+        DummyCompletion() {}
+        virtual ~DummyCompletion() {}
+  protected:
+        void completed(bool) {}
+    };
+}
 
 namespace qpid {
 namespace tests {
@@ -50,6 +62,8 @@ struct MessageUtils
         msg->getFrames().getHeaders()->get<DeliveryProperties>(true)->setRoutingKey(routingKey);
         if (durable)
             msg->getFrames().getHeaders()->get<DeliveryProperties>(true)->setDeliveryMode(2);
+        boost::shared_ptr<AsyncCompletion>dc(new DummyCompletion());
+        msg->setIngressCompletion(dc);
         return msg;
     }
 

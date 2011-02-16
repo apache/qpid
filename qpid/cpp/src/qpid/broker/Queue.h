@@ -362,6 +362,8 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     void recoverPrepared(boost::intrusive_ptr<Message>& msg);
 
     void flush();
+
+    const Broker* getBroker();
 };
 }
 }

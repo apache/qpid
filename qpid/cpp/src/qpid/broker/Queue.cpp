@@ -686,7 +686,7 @@ uint32_t Queue::getEnqueueCompleteMessageCount() const
         //NOTE: don't need to use checkLvqReplace() here as it
         //is only relevant for LVQ which does not support persistence
         //so the enqueueComplete check has no effect
-        if ( i->payload->isReceiveComplete() ) count ++;
+        if ( i->payload->isIngressComplete() ) count ++;
     }
     
     return count;
@@ -1218,6 +1218,12 @@ void Queue::flush()
     ScopedUse u(barrier);
     if (u.acquired && store) store->flush(*this);
 }
+
+const Broker* Queue::getBroker()
+{
+    return broker;
+}
+
 
 Queue::UsageBarrier::UsageBarrier(Queue& q) : parent(q), count(0) {}
 

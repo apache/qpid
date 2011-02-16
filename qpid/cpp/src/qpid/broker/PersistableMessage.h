@@ -48,14 +48,15 @@ class PersistableMessage : public Persistable
     sys::Mutex storeLock;
 
     /**
+     * "Ingress" messages == messages sent _to_ the broker.
      * Tracks the number of outstanding asynchronous operations that must
-     * complete before the message can be considered safely received by the
+     * complete before an inbound message can be considered fully received by the
      * broker.  E.g. all enqueues have completed, the message has been written
      * to store, credit has been replenished, etc. Once all outstanding
      * operations have completed, the transfer of this message from the client
      * may be considered complete.
      */
-    AsyncCompletion receiveCompletion;
+    boost::shared_ptr<AsyncCompletion> ingressCompletion;
 
     /**
      * Tracks the number of outstanding asynchronous dequeue
@@ -113,9 +114,13 @@ class PersistableMessage : public Persistable
 
     virtual QPID_BROKER_EXTERN bool isPersistent() const = 0;
 
-    QPID_BROKER_EXTERN bool isReceiveComplete() { return receiveCompletion.isDone(); }
-    QPID_BROKER_EXTERN void enqueueStart() { receiveCompletion.startCompleter(); }
-    QPID_BROKER_EXTERN void enqueueComplete() { receiveCompletion.finishCompleter(); }
+    /** track the progress of a message received by the broker - see ingressCompletion above */
+    QPID_BROKER_EXTERN bool isIngressComplete() { return !ingressCompletion || ingressCompletion->isDone(); }
+    QPID_BROKER_EXTERN boost::shared_ptr<AsyncCompletion>& getIngressCompletion() { return ingressCompletion; }
+    QPID_BROKER_EXTERN void setIngressCompletion(boost::shared_ptr<AsyncCompletion>& ic) { ingressCompletion = ic; }
+
+    QPID_BROKER_EXTERN void enqueueStart() { if (ingressCompletion) ingressCompletion->startCompleter(); }
+    QPID_BROKER_EXTERN void enqueueComplete() { if (ingressCompletion) ingressCompletion->finishCompleter(); }
 
     QPID_BROKER_EXTERN void enqueueAsync(PersistableQueue::shared_ptr queue,
                                          MessageStore* _store);
@@ -131,8 +136,6 @@ class PersistableMessage : public Persistable
     bool isStoredOnQueue(PersistableQueue::shared_ptr queue);
     
     void addToSyncList(PersistableQueue::shared_ptr queue, MessageStore* _store);
-
-    QPID_BROKER_EXTERN AsyncCompletion& getReceiveCompletion() { return receiveCompletion; }
 };
 
 }}

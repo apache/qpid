@@ -43,6 +43,8 @@ namespace _qmfBroker = qmf::org::apache::qpid::broker;
 namespace qpid {
 namespace broker {
 
+class Broker;
+
 /**
  * Producer flow control: when level is > flowStop*, flow control is ON.
  * then level is < flowResume*, flow control is OFF.  If == 0, flow control
@@ -82,6 +84,11 @@ class QueueFlowLimit
     /** the queue has removed QueuedMessage.  Returns true if flow state changes */
     void dequeued(const QueuedMessage&);
 
+    /** for clustering: */
+    /** true if the given message is flow controlled, and cannot be completed. */
+    bool getState(const QueuedMessage&) const;
+    void setState(const QueuedMessage&, bool blocked);
+
     uint32_t getFlowStopCount() const { return flowStopCount; }
     uint32_t getFlowResumeCount() const { return flowResumeCount; }
     uint64_t getFlowStopSize() const { return flowStopSize; }
@@ -103,9 +110,11 @@ class QueueFlowLimit
  protected:
     // msgs waiting for flow to become available.
     std::set< boost::intrusive_ptr<Message> > index;
-    qpid::sys::Mutex indexLock;
+    mutable qpid::sys::Mutex indexLock;
 
     _qmfBroker::Queue *queueMgmtObj;
+
+    const Broker *broker;
 
     QueueFlowLimit(Queue *queue,
                    uint32_t flowStopCount, uint32_t flowResumeCount,

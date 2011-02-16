@@ -304,6 +304,180 @@ acl allow all all
         # Verify logs are consistent
         cluster_test_logs.verify_logs()
 
+    def test_queue_flowlimit(self):
+        """Verify that the queue's flowlimit configuration and state are
+        correctly replicated.
+        """
+        return;  # @todo enable once flow control works in clusters
+        # start a cluster of two brokers
+        args = ["--log-enable=info+:broker"]
+        cluster = self.cluster(2, args)
+
+        # configure a queue with a specific flow limit on broker 0
+        ssn0 = cluster[0].connect().session()
+        s0 = ssn0.sender("flq; {create:always, node:{type:queue, x-declare:{arguments:{'qpid.max-count':99, 'qpid.flow_stop_count':5, 'qpid.flow_resume_count':3}}}}")
+        cluster[0].startQmf()
+        for q in cluster[0].qmf_session.getObjects(_class="queue"):
+            if q.name == "flq":
+                oid = q.getObjectId()
+                break
+        self.assertEqual(q.name, "flq")
+        self.assertEqual(q.flowStopCount, 5)
+        self.assertEqual(q.flowResumeCount, 3)
+        self.assertFalse(q.flowStopped)
+
+        # verify both brokers in cluster have same configuration
+        cluster[1].startQmf()
+        qs = cluster[1].qmf_session.getObjects(_objectId=oid)
+        self.assertEqual(len(qs), 1)
+        q = qs[0]
+        self.assertEqual(q.name, "flq")
+        self.assertEqual(q.flowStopCount, 5)
+        self.assertEqual(q.flowResumeCount, 3)
+        self.assertFalse(q.flowStopped)
+
+        # fill the queue on one broker until flow control is active
+        class BlockedSender(Thread):
+            def __init__(self): Thread.__init__(self)
+            def run(self):
+                for x in range(6):
+                    s0.send(Message(str(x)))
+
+        sender = BlockedSender()
+        sender.start()
+
+        start = time.time()
+        while time.time() < start + 5:
+            q = cluster[0].qmf_session.getObjects(_objectId=oid)[0]
+            if q.flowStopped:
+                break;
+        self.assertTrue(q.flowStopped)
+
+        # verify flow control is active on other broker.
+        q = cluster[1].qmf_session.getObjects(_objectId=oid)[0]
+        self.assertTrue(q.flowStopped)
+
+        # now drain the queue using a session to the other broker
+        ssn1 = cluster[1].connect().session()
+        r1 = ssn1.receiver("flq", capacity=6)
+        try:
+            while r1.fetch(timeout=0):
+                ssn1.acknowledge()
+        except Empty:
+            pass
+        sender.join()
+
+        # and verify both brokers see an unblocked queue
+        q = cluster[0].qmf_session.getObjects(_objectId=oid)[0]
+        self.assertFalse(q.flowStopped)
+        q = cluster[1].qmf_session.getObjects(_objectId=oid)[0]
+        self.assertFalse(q.flowStopped)
+
+        ssn0.connection.close()
+        ssn1.connection.close()
+        cluster_test_logs.verify_logs()
+
+
+    def test_queue_flowlimit_join(self):
+        """Verify that the queue's flowlimit configuration and state are
+        correctly replicated to a newly joined broker.
+        """
+        return;  # @todo enable once flow control works in clusters
+        # start a cluster of two brokers
+        #args = ["--log-enable=info+:broker"]
+        args = ["--log-enable=debug"]
+        cluster = self.cluster(2, args)
+
+        # configure a queue with a specific flow limit on broker 0
+        ssn0 = cluster[0].connect().session()
+        s0 = ssn0.sender("flq; {create:always, node:{type:queue, x-declare:{arguments:{'qpid.max-count':99, 'qpid.flow_stop_count':5, 'qpid.flow_resume_count':3}}}}")
+        cluster[0].startQmf()
+        for q in cluster[0].qmf_session.getObjects(_class="queue"):
+            if q.name == "flq":
+                oid = q.getObjectId()
+                break
+        self.assertEqual(q.name, "flq")
+        self.assertEqual(q.flowStopCount, 5)
+        self.assertEqual(q.flowResumeCount, 3)
+        self.assertFalse(q.flowStopped)
+
+        # verify both brokers in cluster have same configuration
+        cluster[1].startQmf()
+        qs = cluster[1].qmf_session.getObjects(_objectId=oid)
+        self.assertEqual(len(qs), 1)
+        q = qs[0]
+        self.assertEqual(q.name, "flq")
+        self.assertEqual(q.flowStopCount, 5)
+        self.assertEqual(q.flowResumeCount, 3)
+        self.assertFalse(q.flowStopped)
+
+        # fill the queue on one broker until flow control is active
+        class BlockedSender(Thread):
+            def __init__(self): Thread.__init__(self)
+            def run(self):
+                for x in range(6):
+                    s0.send(Message(str(x)))
+
+        sender = BlockedSender()
+        sender.start()
+
+        start = time.time()
+        while time.time() < start + 5:
+            q = cluster[0].qmf_session.getObjects(_objectId=oid)[0]
+            if q.flowStopped:
+                break;
+        self.assertTrue(q.flowStopped)
+
+        # verify flow control is active on other broker.
+        q = cluster[1].qmf_session.getObjects(_objectId=oid)[0]
+        self.assertTrue(q.flowStopped)
+
+        # add a new broker to the cluster
+        print("Start")
+        cluster.start()
+        print("Start Done")
+        
+        # todo: enable verification:
+        # cluster[2].startQmf()
+        # qs = cluster[2].qmf_session.getObjects(_objectId=oid)
+        # self.assertEqual(len(qs), 1)
+        # q = qs[0]
+        # self.assertEqual(q.name, "flq")
+        # self.assertEqual(q.flowStopCount, 5)
+        # self.assertEqual(q.flowResumeCount, 3)
+        # self.assertEqual(q.msgDepth, 5)
+        # self.assertFalse(q.flowStopped)
+        # q = cluster[2].qmf_session.getObjects(_objectId=oid)[0]
+        # self.assertTrue(q.flowStopped)
+
+        # verify new member's queue config
+        # verify new member's queue flow setting
+
+
+
+
+        # now drain the queue using a session to the other broker
+        ssn1 = cluster[1].connect().session()
+        r1 = ssn1.receiver("flq", capacity=6)
+        try:
+            while r1.fetch(timeout=1):
+                ssn1.acknowledge()
+        except Empty:
+            pass
+        sender.join()
+
+        # and verify both brokers see an unblocked queue
+        q = cluster[0].qmf_session.getObjects(_objectId=oid)[0]
+        self.assertFalse(q.flowStopped)
+        q = cluster[1].qmf_session.getObjects(_objectId=oid)[0]
+        self.assertFalse(q.flowStopped)
+
+        ssn0.connection.close()
+        ssn1.connection.close()
+        cluster_test_logs.verify_logs()
+
+
+
 class LongTests(BrokerTest):
     """Tests that can run for a long time if -DDURATION=<minutes> is set"""
     def duration(self):

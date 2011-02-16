@@ -134,7 +134,7 @@ class SessionState : public qpid::SessionState,
 
     // indicate that the given ingress msg has been completely received by the
     // broker, and the msg's message.transfer command can be considered completed.
-    void completeRcvMsg(boost::intrusive_ptr<qpid::broker::Message> msg);
+    void completeRcvMsg(SequenceNumber id, bool requiresAccept, bool requiresSync);
 
     void handleIn(framing::AMQFrame& frame);
     void handleOut(framing::AMQFrame& frame);
@@ -172,41 +172,65 @@ class SessionState : public qpid::SessionState,
     std::queue<SequenceNumber> pendingExecutionSyncs;
     bool currentCommandComplete;
 
-    // A list of ingress messages whose message.transfer command is pending
-    // completion.  These messages are awaiting some set of asynchronous
-    // operations to complete (eg: store, flow-control, etc). before
-    // the message.transfer can be completed.
-    class IncompleteRcvMsg : public AsyncCompletion::CompletionHandler
+    /** Abstract class that represents a command that is pending
+     * completion.
+     */
+    class IncompleteCommandContext : public AsyncCompletion
     {
-  public:
-        IncompleteRcvMsg(SessionState& _session, boost::intrusive_ptr<Message> _msg)
-          : session(&_session), msg(_msg) {}
-        virtual void operator() (bool sync);    // invoked when msg is completed.
-        void cancel();   // cancel pending incomplete callback [operator() above].
+     public:
+        IncompleteCommandContext( SessionState *ss, SequenceNumber _id )
+          : id(_id), session(ss) {}
+        virtual ~IncompleteCommandContext() {}
 
-        typedef boost::shared_ptr<IncompleteRcvMsg>  shared_ptr;
-        typedef std::deque<shared_ptr> deque;
+        /* allows manual invokation of completion, used by IO thread to
+         * complete a command that was originally finished on a different
+         * thread.
+         */
+        void do_completion() { completed(true); }
 
-  private:
-        SessionState *session;
-        boost::intrusive_ptr<Message> msg;
-
-        static void scheduledCompleter(boost::shared_ptr<deque>);
+     protected:
+        SequenceNumber id;
+        SessionState    *session;
     };
-    std::map<const IncompleteRcvMsg *, IncompleteRcvMsg::shared_ptr> incompleteRcvMsgs;  // msgs pending completion
-    qpid::sys::Mutex incompleteRcvMsgsLock;
-    boost::shared_ptr<IncompleteRcvMsg> createPendingMsg(boost::intrusive_ptr<Message>& msg) {
-        boost::shared_ptr<IncompleteRcvMsg> pending(new IncompleteRcvMsg(*this, msg));
-        qpid::sys::ScopedLock<qpid::sys::Mutex> l(incompleteRcvMsgsLock);
-        incompleteRcvMsgs[pending.get()] = pending;
-        return pending;
-    }
 
-    // holds msgs waiting for IO thread to run scheduledCompleter()
-    boost::shared_ptr<IncompleteRcvMsg::deque> scheduledRcvMsgs;
+    /** incomplete Message.transfer commands - inbound to broker from client
+     */
+    class IncompleteIngressMsgXfer : public SessionState::IncompleteCommandContext
+    {
+     public:
+        IncompleteIngressMsgXfer( SessionState *ss,
+                                  SequenceNumber _id,
+                                  boost::intrusive_ptr<Message> msg )
+          : IncompleteCommandContext(ss, _id),
+          requiresAccept(msg->requiresAccept()),
+          requiresSync(msg->getFrames().getMethod()->isSync()) {};
+        virtual ~IncompleteIngressMsgXfer() {};
+
+     protected:
+        virtual void completed(bool);
+
+     private:
+        /** meta-info required to complete the message */
+        bool requiresAccept;
+        bool requiresSync;  // method's isSync() flag
+    };
+    /** creates a command context suitable for use as an AsyncCompletion in a message */
+    boost::shared_ptr<SessionState::IncompleteIngressMsgXfer> createIngressMsgXferContext( boost::intrusive_ptr<Message> msg);
+
+    /* A list of commands that are pending completion.  These commands are
+     * awaiting some set of asynchronous operations to finish (eg: store,
+     * flow-control, etc). before the command can be completed to the client
+     */
+    std::map<SequenceNumber, boost::shared_ptr<IncompleteCommandContext> > incompleteCmds;
+    // identifies those commands in incompleteCmds that are waiting for IO thread to run in order to be completed.
+    boost::shared_ptr< std::list<SequenceNumber> > scheduledCmds;
+    qpid::sys::Mutex incompleteCmdsLock;  // locks both above containers
+
+    /** runs in IO thread, completes commands that where finished asynchronously. */
+    static void scheduledCompleter(boost::shared_ptr< std::list<SequenceNumber> > scheduledCmds,
+                                   SessionState *session);
 
     friend class SessionManager;
-    friend class IncompleteRcvMsg;
 };
 
 

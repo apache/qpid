@@ -19,12 +19,15 @@
  *
  */
 #include "qpid/broker/QueueFlowLimit.h"
+#include "qpid/broker/Broker.h"
 #include "qpid/broker/Queue.h"
 #include "qpid/Exception.h"
 #include "qpid/framing/FieldValue.h"
 #include "qpid/framing/reply_exceptions.h"
 #include "qpid/log/Statement.h"
 #include "qpid/sys/Mutex.h"
+#include "qpid/broker/SessionState.h"
+#include "qpid/sys/ClusterSafe.h"
 
 #include "qmf/org/apache/qpid/broker/Queue.h"
 
@@ -92,7 +95,7 @@ QueueFlowLimit::QueueFlowLimit(Queue *_queue,
     : queue(_queue), queueName("<unknown>"),
       flowStopCount(_flowStopCount), flowResumeCount(_flowResumeCount),
       flowStopSize(_flowStopSize), flowResumeSize(_flowResumeSize),
-      flowStopped(false), count(0), size(0), queueMgmtObj(0)
+      flowStopped(false), count(0), size(0), queueMgmtObj(0), broker(0)
 {
     uint32_t maxCount(0);
     uint64_t maxSize(0);
@@ -103,6 +106,7 @@ QueueFlowLimit::QueueFlowLimit(Queue *_queue,
             maxSize = _queue->getPolicy()->getMaxSize();
             maxCount = _queue->getPolicy()->getMaxCount();
         }
+        broker = queue->getBroker();
     }
     validateFlowConfig( maxCount, flowStopCount, flowResumeCount, "count", queueName );
     validateFlowConfig( maxSize, flowStopSize, flowResumeSize, "size", queueName );
@@ -140,7 +144,13 @@ void QueueFlowLimit::enqueued(const QueuedMessage& msg)
     }
 
     if (flowStopped || !index.empty()) {
-        msg.payload->getReceiveCompletion().startCompleter();    // don't complete until flow resumes
+        // ignore flow control if we are populating the queue due to cluster replication:
+        if (broker && broker->isClusterUpdatee()) {
+            QPID_LOG(error, "KAG: Queue \"" << queueName << "\": ignoring flow control for msg pos=" << msg.position);
+            return;
+        }
+        QPID_LOG(trace, "Queue \"" << queueName << "\": setting flow control for msg pos=" << msg.position);
+        msg.payload->getIngressCompletion()->startCompleter();    // don't complete until flow resumes
         index.insert(msg.payload);
     }
 }
@@ -180,17 +190,46 @@ void QueueFlowLimit::dequeued(const QueuedMessage& msg)
             // flow enabled - release all pending msgs
             while (!index.empty()) {
                 std::set< boost::intrusive_ptr<Message> >::iterator itr = index.begin();
-                (*itr)->getReceiveCompletion().finishCompleter();
+                (*itr)->getIngressCompletion()->finishCompleter();
                 index.erase(itr);
             }
         } else {
             // even if flow controlled, we must release this msg as it is being dequeued
             std::set< boost::intrusive_ptr<Message> >::iterator itr = index.find(msg.payload);
             if (itr != index.end()) {       // this msg is flow controlled, release it:
-                (*itr)->getReceiveCompletion().finishCompleter();
+                (*itr)->getIngressCompletion()->finishCompleter();
                 index.erase(itr);
             }
         }
+    }
+}
+
+
+/** used by clustering: is the given message's completion blocked due to flow
+ * control?  True if message is blocked. (for the clustering updater: done
+ * after msgs have been replicated to the updatee).
+ */
+bool QueueFlowLimit::getState(const QueuedMessage& msg) const
+{
+    sys::Mutex::ScopedLock l(indexLock);
+    return (index.find(msg.payload) != index.end());
+}
+
+
+/** artificially force the flow control state of a given message
+ * (for the clustering updatee: done after msgs have been replicated to
+ * the updatee's queue)
+ */
+void QueueFlowLimit::setState(const QueuedMessage& msg, bool blocked)
+{
+    if (blocked && msg.payload) {
+
+        sys::Mutex::ScopedLock l(indexLock);
+        assert(index.find(msg.payload) == index.end());
+
+        QPID_LOG(error, "KAG TBD!!!: Queue \"" << queue->getName() << "\": forcing flow control for msg pos=" << msg.position << " for CLUSTER SYNC");
+        // KAG TBD!!!
+        index.insert(msg.payload);
     }
 }
 
@@ -284,6 +323,14 @@ std::auto_ptr<QueueFlowLimit> QueueFlowLimit::createQueueFlowLimit(Queue *queue,
         if (flowStopCount == 0 && flowStopSize == 0) {   // disable flow control
             return std::auto_ptr<QueueFlowLimit>();
         }
+        /** todo KAG - remove once cluster support for flow control done. */
+        if (sys::isCluster()) {
+            if (queue) {
+                QPID_LOG(warning, "Producer Flow Control TBD for clustered brokers - queue flow control disabled for queue "
+                         << queue->getName());
+            }
+            return std::auto_ptr<QueueFlowLimit>();
+        }
         return std::auto_ptr<QueueFlowLimit>(new QueueFlowLimit(queue, flowStopCount, flowResumeCount,
                                                                 flowStopSize, flowResumeSize));
     }
@@ -292,6 +339,15 @@ std::auto_ptr<QueueFlowLimit> QueueFlowLimit::createQueueFlowLimit(Queue *queue,
         uint64_t maxByteCount = getCapacity(settings, QueuePolicy::maxSizeKey, defaultMaxSize);
         uint64_t flowStopSize = (uint64_t)(maxByteCount * (defaultFlowStopRatio/100.0) + 0.5);
         uint64_t flowResumeSize = (uint64_t)(maxByteCount * (defaultFlowResumeRatio/100.0));
+
+        /** todo KAG - remove once cluster support for flow control done. */
+        if (sys::isCluster()) {
+            if (queue) {
+                QPID_LOG(warning, "Producer Flow Control TBD for clustered brokers - queue flow control disabled for queue "
+                         << queue->getName());
+            }
+            return std::auto_ptr<QueueFlowLimit>();
+        }
 
         return std::auto_ptr<QueueFlowLimit>(new QueueFlowLimit(queue, 0, 0, flowStopSize, flowResumeSize));
     }

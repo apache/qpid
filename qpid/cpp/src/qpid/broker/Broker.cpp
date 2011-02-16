@@ -60,6 +60,7 @@
 #include "qpid/StringUtils.h"
 #include "qpid/Url.h"
 #include "qpid/Version.h"
+#include "qpid/sys/ClusterSafe.h"
 
 #include <boost/bind.hpp>
 #include <boost/format.hpp>
@@ -224,11 +225,18 @@ Broker::Broker(const Broker::Options& conf) :
     }
 
     QueuePolicy::setDefaultMaxSize(conf.queueLimit);
-    QueueFlowLimit::setDefaults(conf.queueLimit, conf.queueFlowStopRatio, conf.queueFlowResumeRatio);
     queues.setQueueEvents(&queueEvents);
 
     // Early-Initialize plugins
     Plugin::earlyInitAll(*this);
+
+    /** todo KAG - remove once cluster support for flow control done + (and ClusterSafe.h include above). */
+    if (sys::isCluster()) {
+        QPID_LOG(warning, "Producer Flow Control TBD for clustered brokers - queue flow control disabled by default.");
+        QueueFlowLimit::setDefaults(0, 0, 0);
+    } else {
+        QueueFlowLimit::setDefaults(conf.queueLimit, conf.queueFlowStopRatio, conf.queueFlowResumeRatio);
+    }
 
     // If no plugin store module registered itself, set up the null store.
     if (NullMessageStore::isNullStore(store.get())) 
