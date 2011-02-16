@@ -143,11 +143,6 @@
     <property name="exclusive"   type="bool"  access="RC"/>
     <property name="arguments"   type="map"   access="RO" desc="Arguments supplied in queue.declare"/>
     <property name="altExchange" type="objId" references="Exchange" access="RO" optional="y"/>
-    <property name="flowStopCount"   type="uint32" access="RO" optional="y" desc="Flow control: # messages to force flow control."/>
-    <property name="flowResumeCount" type="uint32" access="RO" optional="y" desc="Flow control: # messages to release flow control."/>
-    <property name="flowStopSize"    type="uint64" access="RO" optional="y" desc="Flow control: # enqueued bytes to force flow control."/>
-    <property name="flowResumeSize"  type="uint64" access="RO" optional="y" desc="Flow control: # enqueued bytes to release flow control."/>
-
 
     <statistic name="msgTotalEnqueues"    type="count64"  unit="message"     desc="Total messages enqueued"/>
     <statistic name="msgTotalDequeues"    type="count64"  unit="message"     desc="Total messages dequeued"/>

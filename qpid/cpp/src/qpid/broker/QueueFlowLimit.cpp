@@ -238,10 +238,6 @@ void QueueFlowLimit::setManagementObject(_qmfBroker::Queue *mgmtObject)
 {
     queueMgmtObj = mgmtObject;
     if (queueMgmtObj) {
-        queueMgmtObj->set_flowStopCount(getFlowStopCount());
-        queueMgmtObj->set_flowResumeCount(getFlowResumeCount());
-        queueMgmtObj->set_flowStopSize(getFlowStopSize());
-        queueMgmtObj->set_flowResumeSize(getFlowResumeSize());
         queueMgmtObj->set_flowStopped(isFlowControlActive());
     }
 }

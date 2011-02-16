@@ -53,13 +53,13 @@ class QueueFlowLimitTests(TestBase010):
             if i.name == name:
                 # verify flow settings
                 if (stop_count is not None):
-                    self.assertEqual(i.flowStopCount, stop_count)
+                    self.assertEqual(i.arguments.get("qpid.flow_stop_count"), stop_count)
                 if (resume_count is not None):
-                    self.assertEqual(i.flowResumeCount, resume_count)
+                    self.assertEqual(i.arguments.get("qpid.flow_resume_count"), resume_count)
                 if (stop_size is not None):
-                    self.assertEqual(i.flowStopSize, stop_size)
+                    self.assertEqual(i.arguments.get("qpid.flow_stop_size"), stop_size)
                 if (resume_size is not None):
-                    self.assertEqual(i.flowResumeSize, resume_size)
+                    self.assertEqual(i.arguments.get("qpid.flow_resume_size"), resume_size)
                 self.assertFalse(i.flowStopped)
                 return i.getObjectId()
         self.fail("Unable to create queue '%s'" % name)
@@ -123,10 +123,10 @@ class QueueFlowLimitTests(TestBase010):
             qs = self.qmf.getObjects(_class="queue")
             for i in qs:
                 if i.name == "test01":
-                    self.assertEqual(i.flowStopCount, 999)
-                    self.assertEqual(i.flowResumeCount, 55)
-                    self.assertEqual(i.flowStopSize, 5000000)
-                    self.assertEqual(i.flowResumeSize, 100000)
+                    self.assertEqual(i.arguments.get("qpid.flow_stop_count"), 999)
+                    self.assertEqual(i.arguments.get("qpid.flow_resume_count"), 55)
+                    self.assertEqual(i.arguments.get("qpid.flow_stop_size"), 5000000)
+                    self.assertEqual(i.arguments.get("qpid.flow_resume_size"), 100000)
                     self.assertFalse(i.flowStopped)
                     break;
             self.assertEqual(i.name, "test01")
