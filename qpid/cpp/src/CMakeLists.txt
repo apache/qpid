@@ -313,6 +313,10 @@ if (NOT Boost_FILESYSTEM_LIBRARY)
   set(Boost_FILESYSTEM_LIBRARY boost_filesystem)
 endif (NOT Boost_FILESYSTEM_LIBRARY)
 
+if (NOT Boost_SYSTEM_LIBRARY)
+  set(Boost_SYSTEM_LIBRARY boost_system)
+endif (NOT Boost_SYSTEM_LIBRARY)
+
 if (NOT Boost_UNIT_TEST_FRAMEWORK_LIBRARY)
   set(Boost_UNIT_TEST_FRAMEWORK_LIBRARY boost_unit_test_framework)
 endif (NOT Boost_UNIT_TEST_FRAMEWORK_LIBRARY)
@@ -487,6 +491,7 @@ endif (BUILD_SASL)
 CHECK_LIBRARY_EXISTS (xerces-c _init "" HAVE_XERCES)
 CHECK_INCLUDE_FILE_CXX (xercesc/framework/MemBufInputSource.hpp HAVE_XERCES_H)
 CHECK_INCLUDE_FILE_CXX (xqilla/xqilla-simple.hpp HAVE_XQILLA_H)
+CHECK_INCLUDE_FILE_CXX (xqilla/ast/XQEffectiveBooleanValue.hpp HAVE_XQ_EBV)
 
 set (xml_default ${xml_force})
 if (CMAKE_SYSTEM_NAME STREQUAL Windows)
@@ -509,6 +514,10 @@ if (BUILD_XML)
   if (NOT HAVE_XQILLA_H)
     message(FATAL_ERROR "XML Exchange support requested but XQilla headers not found")
   endif (NOT HAVE_XQILLA_H)
+
+  if (HAVE_XQ_EBV)
+    add_definitions(-DXQ_EFFECTIVE_BOOLEAN_VALUE_HPP)
+  endif (HAVE_XQ_EBV)
 
   add_library (xml MODULE
                qpid/xml/XmlExchange.cpp
@@ -1212,6 +1221,8 @@ install (TARGETS replication_exchange
 # are all on cmake only. This is because cmake builds always have a config.h
 # file whereas older builds only have config.h on autoconf-generated builds.
 add_definitions(-DHAVE_CONFIG_H)
+
+add_definitions(-DBOOST_FILESYSTEM_VERSION=2)
 
 # Now create the config file from all the info learned above.
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/config.h.cmake
