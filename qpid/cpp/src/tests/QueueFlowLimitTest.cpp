@@ -38,6 +38,7 @@ namespace tests {
 
 QPID_AUTO_TEST_SUITE(QueueFlowLimitTestSuite)
 
+namespace {
 QueuedMessage createMessage(uint32_t size)
 {
     QueuedMessage msg;
@@ -45,7 +46,7 @@ QueuedMessage createMessage(uint32_t size)
     MessageUtils::addContent(msg.payload, std::string (size, 'x'));
     return msg;
 }
-
+}
 
 QPID_AUTO_TEST_CASE(testFlowCount)
 {
@@ -313,8 +314,8 @@ QPID_AUTO_TEST_CASE(testFlowDefaultArgs)
 
     BOOST_CHECK_EQUAL((uint64_t) 2360001, flow->getFlowStopSize());
     BOOST_CHECK_EQUAL((uint64_t) 2065000, flow->getFlowResumeSize());
-    BOOST_CHECK_EQUAL( 0, flow->getFlowStopCount());
-    BOOST_CHECK_EQUAL( 0, flow->getFlowResumeCount());
+    BOOST_CHECK_EQUAL( 0u, flow->getFlowStopCount());
+    BOOST_CHECK_EQUAL( 0u, flow->getFlowResumeCount());
     BOOST_CHECK(!flow->isFlowControlActive());
     BOOST_CHECK(flow->monitorFlowControl());
 }
