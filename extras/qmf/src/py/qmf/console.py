@@ -380,7 +380,8 @@ class Object(object):
           dp.routing_key = self.getV2RoutingKey()
           mp = self._broker.amqpSession.message_properties()
           mp.content_type = "amqp/map"
-          mp.user_id = self._broker.authUser
+          if self._broker.saslUser:
+            mp.user_id = self._broker.saslUser
           mp.correlation_id = str(seq)
           mp.app_id = "qmf2"
           mp.reply_to = self._broker.amqpSession.reply_to("qmf.default.direct", self._broker.v2_direct_queue)
@@ -1492,7 +1493,8 @@ class Session:
           dp.routing_key = objectId.getV2RoutingKey()
           mp = broker.amqpSession.message_properties()
           mp.content_type = "amqp/map"
-          mp.user_id = broker.authUser
+          if broker.saslUser:
+            mp.user_id = broker.saslUser
           mp.correlation_id = str(seq)
           mp.app_id = "qmf2"
           mp.reply_to = broker.amqpSession.reply_to("qmf.default.direct", broker.v2_direct_queue)
@@ -2236,6 +2238,7 @@ class Broker(Thread):
     self.connTimeout = connTimeout
     self.authUser = authUser
     self.authPass = authPass
+    self.saslUser = None
     self.cv = Condition()
     self.seqToAgentMap = {}
     self.error = None
@@ -2409,6 +2412,11 @@ class Broker(Thread):
       self.conn.start()
       sock.settimeout(oldTimeout)
       self.conn.aborted = oldAborted
+      uid = self.conn.user_id
+      if uid.__class__ == tuple and len(uid) == 2:
+        self.saslUser = uid[1]
+      else:
+        self.saslUser = None
 
       # prevent topic queues from filling up (and causing the agents to
       # disconnect) by discarding the oldest queued messages when full.
@@ -2588,7 +2596,8 @@ class Broker(Thread):
     dp.routing_key = "console.request.agent_locate"
     mp = self.amqpSession.message_properties()
     mp.content_type = "amqp/list"
-    mp.user_id = self.authUser
+    if self.saslUser:
+      mp.user_id = self.saslUser
     mp.app_id = "qmf2"
     mp.reply_to = self.amqpSession.reply_to("qmf.default.direct", self.v2_direct_queue)
     mp.application_headers = {'qmf.opcode':'_agent_locate_request'}
@@ -2630,7 +2639,8 @@ class Broker(Thread):
       dp.ttl = ttl
     mp = self.amqpSession.message_properties()
     mp.content_type = "x-application/qmf"
-    mp.user_id = self.authUser
+    if self.saslUser:
+      mp.user_id = self.saslUser
     mp.reply_to = self.amqpSession.reply_to("amq.direct", self.replyName)
     return Message(dp, mp, body)
 
@@ -3543,7 +3553,8 @@ class Agent:
     dp.routing_key = self.getV2RoutingKey()
     mp = self.broker.amqpSession.message_properties()
     mp.content_type = "amqp/map"
-    mp.user_id = self.broker.authUser
+    if self.broker.saslUser:
+      mp.user_id = self.broker.saslUser
     mp.correlation_id = str(sequence)
     mp.app_id = "qmf2"
     mp.reply_to = self.broker.amqpSession.reply_to("qmf.default.direct", self.broker.v2_direct_queue)
