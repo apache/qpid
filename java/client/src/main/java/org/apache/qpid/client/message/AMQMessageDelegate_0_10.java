@@ -21,6 +21,7 @@
 
 package org.apache.qpid.client.message;
 
+import java.lang.ref.SoftReference;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -38,7 +39,6 @@ import javax.jms.Session;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQPInvalidClassException;
-import org.apache.qpid.collections.ReferenceMap;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.AMQSession_0_10;
@@ -61,7 +61,7 @@ import org.apache.qpid.transport.ReplyTo;
  */
 public class AMQMessageDelegate_0_10 extends AbstractAMQMessageDelegate
 {
-    private static final Map<ReplyTo, Destination> _destinationCache = Collections.synchronizedMap(new ReferenceMap());
+    private static final Map<ReplyTo, SoftReference<Destination>> _destinationCache = Collections.synchronizedMap(new HashMap<ReplyTo, SoftReference<Destination>>());
 
     public static final String JMS_TYPE = "x-jms-type";
 
@@ -229,22 +229,19 @@ public class AMQMessageDelegate_0_10 extends AbstractAMQMessageDelegate
         }
         else
         {
-            Destination dest = _destinationCache.get(replyTo);
+            Destination dest = null;
+            SoftReference<Destination> ref = _destinationCache.get(replyTo);
+            if (ref != null)
+            {
+	            dest = ref.get();
+            }
             if (dest == null)
             {
                 String exchange = replyTo.getExchange();
                 String routingKey = replyTo.getRoutingKey();
 
-                dest = generateDestination(exchange == null ? new AMQShortString("") : 
-                                                              new AMQShortString(exchange),
-                                           routingKey == null ? new AMQShortString(""):
-                                                                new AMQShortString(routingKey));
-
-
-
-
-
-                _destinationCache.put(replyTo, dest);
+                dest = generateDestination(new AMQShortString(exchange), new AMQShortString(routingKey));
+                _destinationCache.put(replyTo, new SoftReference<Destination>(dest));
             }
 
             return dest;
@@ -291,7 +288,7 @@ public class AMQMessageDelegate_0_10 extends AbstractAMQMessageDelegate
         }
         
         final ReplyTo replyTo = new ReplyTo(amqd.getExchangeName().toString(), amqd.getRoutingKey().toString());
-        _destinationCache.put(replyTo, destination);
+        _destinationCache.put(replyTo, new SoftReference<Destination>(destination));
         _messageProps.setReplyTo(replyTo);
 
     }
