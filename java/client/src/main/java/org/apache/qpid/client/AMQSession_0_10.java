@@ -942,6 +942,7 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
 
     protected Long requestQueueDepth(AMQDestination amqd)
     {
+        flushAcknowledgments();
         return getQpidSession().queueQuery(amqd.getQueueName()).get().getMessageCount();
     }
 
