@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 
 import javax.jms.ExceptionListener;
 import javax.jms.JMSException;
@@ -211,14 +212,12 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
     public void resubscribeSessions() throws JMSException, AMQException, FailoverException
     {
         List<AMQSession> sessions = new ArrayList<AMQSession>(_conn.getSessions().values());
-        _logger.info(String.format("Resubscribing sessions = %s sessions.size=%s", sessions, sessions.size()));
+        _logger.info(String.format("Resubscribing sessions = %s sessions.size=%d", sessions, sessions.size()));
         for (AMQSession s : sessions)
         {
-            ((AMQSession_0_10) s)._qpidConnection = _qpidConnection;
             s.resubscribe();
         }
     }
-
 
     public void closeConnection(long timeout) throws JMSException, AMQException
     {
@@ -257,12 +256,14 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
         ConnectionClose close = exc.getClose();
         if (close == null)
         {
+            _conn.getProtocolHandler().setFailoverLatch(new CountDownLatch(1));
+            
             try
             {
                 if (_conn.firePreFailover(false) && _conn.attemptReconnection())
                 {
                     _conn.failoverPrep();
-                    _qpidConnection.resume();
+                    _conn.resubscribeSessions();
                     _conn.fireFailoverComplete();
                     return;
                 }
@@ -270,6 +271,11 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
             catch (Exception e)
             {
                 _logger.error("error during failover", e);
+            }
+            finally
+            {
+                _conn.getProtocolHandler().getFailoverLatch().countDown();
+                _conn.getProtocolHandler().setFailoverLatch(null);
             }
         }
 
