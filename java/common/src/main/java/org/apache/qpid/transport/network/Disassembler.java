@@ -54,7 +54,7 @@ public final class Disassembler implements Sender<ProtocolEvent>,
     private final int maxPayload;
     private final ByteBuffer header;
     private final Object sendlock = new Object();
-    private final ThreadLocal<BBEncoder> encoder = new ThreadLocal<BBEncoder>()
+    private final static ThreadLocal<BBEncoder> _encoder = new ThreadLocal<BBEncoder>()
     {
         public BBEncoder initialValue()
         {
@@ -183,7 +183,7 @@ public final class Disassembler implements Sender<ProtocolEvent>,
 
     private void method(Method method, SegmentType type)
     {
-        BBEncoder enc = encoder.get();
+        BBEncoder enc = _encoder.get();
         enc.init();
         enc.writeUint16(method.getEncodedType());
         if (type == SegmentType.COMMAND)
