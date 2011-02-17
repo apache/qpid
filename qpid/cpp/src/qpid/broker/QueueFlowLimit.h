@@ -27,6 +27,7 @@
 #include <memory>
 #include "qpid/broker/BrokerImportExport.h"
 #include "qpid/broker/QueuedMessage.h"
+#include "qpid/broker/QueueObserver.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/sys/AtomicValue.h"
 #include "qpid/sys/Mutex.h"
@@ -52,7 +53,7 @@ class Broker;
  * passing _either_ level may turn flow control ON, but _both_ must be
  * below level before flow control will be turned OFF.
  */
-class QueueFlowLimit
+ class QueueFlowLimit : public QueueObserver
 {
     static uint64_t defaultMaxSize;
     static uint defaultFlowStopRatio;
@@ -93,16 +94,17 @@ class QueueFlowLimit
     uint32_t getFlowResumeCount() const { return flowResumeCount; }
     uint64_t getFlowStopSize() const { return flowStopSize; }
     uint64_t getFlowResumeSize() const { return flowResumeSize; }
+
+    uint32_t getFlowCount() const { return count; }
+    uint64_t getFlowSize() const { return size; }
     bool isFlowControlActive() const { return flowStopped; }
     bool monitorFlowControl() const { return flowStopCount || flowStopSize; }
-
-    void setManagementObject(_qmfBroker::Queue *q);
 
     void encode(framing::Buffer& buffer) const;
     void decode(framing::Buffer& buffer);
     uint32_t encodedSize() const;
 
-    static QPID_BROKER_EXTERN std::auto_ptr<QueueFlowLimit> createQueueFlowLimit(Queue *queue, const qpid::framing::FieldTable& settings);
+    static QPID_BROKER_EXTERN void observe(Queue& queue, const qpid::framing::FieldTable& settings);
     static QPID_BROKER_EXTERN void setDefaults(uint64_t defaultMaxSize, uint defaultFlowStopRatio, uint defaultFlowResumeRatio);
 
     friend QPID_BROKER_EXTERN std::ostream& operator<<(std::ostream&, const QueueFlowLimit&);
@@ -119,6 +121,7 @@ class QueueFlowLimit
     QueueFlowLimit(Queue *queue,
                    uint32_t flowStopCount, uint32_t flowResumeCount,
                    uint64_t flowStopSize,  uint64_t flowResumeSize);
+    static QueueFlowLimit *createLimit(Queue *queue, const qpid::framing::FieldTable& settings);
 };
 
 }}

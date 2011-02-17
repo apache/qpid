@@ -60,7 +60,6 @@ class QueueEvents;
 class QueueRegistry;
 class TransactionContext;
 class Exchange;
-class QueueFlowLimit;
 
 /**
  * The brokers representation of an amqp queue. Messages are
@@ -114,7 +113,6 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     mutable uint64_t persistenceId;
     framing::FieldTable settings;
     std::auto_ptr<QueuePolicy> policy;
-    std::auto_ptr<QueueFlowLimit> flowLimit;
     bool policyExceeded;
     QueueBindings bindings;
     std::string alternateExchangeName;

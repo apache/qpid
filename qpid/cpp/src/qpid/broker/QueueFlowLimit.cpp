@@ -107,6 +107,10 @@ QueueFlowLimit::QueueFlowLimit(Queue *_queue,
             maxCount = _queue->getPolicy()->getMaxCount();
         }
         broker = queue->getBroker();
+        queueMgmtObj = dynamic_cast<_qmfBroker::Queue*> (queue->GetManagementObject());
+        if (queueMgmtObj) {
+            queueMgmtObj->set_flowStopped(isFlowControlActive());
+        }
     }
     validateFlowConfig( maxCount, flowStopCount, flowResumeCount, "count", queueName );
     validateFlowConfig( maxSize, flowStopSize, flowResumeSize, "size", queueName );
@@ -234,15 +238,6 @@ void QueueFlowLimit::setState(const QueuedMessage& msg, bool blocked)
 }
 
 
-void QueueFlowLimit::setManagementObject(_qmfBroker::Queue *mgmtObject)
-{
-    queueMgmtObj = mgmtObject;
-    if (queueMgmtObj) {
-        queueMgmtObj->set_flowStopped(isFlowControlActive());
-    }
-}
-
-
 void QueueFlowLimit::encode(Buffer& buffer) const
 {
   buffer.putLong(flowStopCount);
@@ -302,13 +297,23 @@ void QueueFlowLimit::setDefaults(uint64_t maxQueueSize, uint flowStopRatio, uint
 }
 
 
-std::auto_ptr<QueueFlowLimit> QueueFlowLimit::createQueueFlowLimit(Queue *queue, const qpid::framing::FieldTable& settings)
+void QueueFlowLimit::observe(Queue& queue, const qpid::framing::FieldTable& settings)
+{
+    QueueFlowLimit *ptr = createLimit( &queue, settings );
+    if (ptr) {
+        boost::shared_ptr<QueueFlowLimit> observer(ptr);
+        queue.addObserver(observer);
+    }
+}
+
+/** returns ptr to a QueueFlowLimit, else 0 if no limit */
+QueueFlowLimit *QueueFlowLimit::createLimit(Queue *queue, const qpid::framing::FieldTable& settings)
 {
     std::string type(QueuePolicy::getType(settings));
 
     if (type == QueuePolicy::RING || type == QueuePolicy::RING_STRICT) {
         // The size of a RING queue is limited by design - no need for flow control.
-        return std::auto_ptr<QueueFlowLimit>();
+        return 0;
     }
 
     if (settings.get(flowStopCountKey) || settings.get(flowStopSizeKey)) {
@@ -317,17 +322,16 @@ std::auto_ptr<QueueFlowLimit> QueueFlowLimit::createQueueFlowLimit(Queue *queue,
         uint64_t flowStopSize = getCapacity(settings, flowStopSizeKey, 0);
         uint64_t flowResumeSize = getCapacity(settings, flowResumeSizeKey, 0);
         if (flowStopCount == 0 && flowStopSize == 0) {   // disable flow control
-            return std::auto_ptr<QueueFlowLimit>();
+            return 0;
         }
         /** todo KAG - remove once cluster support for flow control done. */
         // TODO aconway 2011-02-16: is queue==0 only in tests?
         if (queue && queue->getBroker() && queue->getBroker()->isInCluster()) {
             QPID_LOG(warning, "Producer Flow Control TBD for clustered brokers - queue flow control disabled for queue "
                      << queue->getName());
-            return std::auto_ptr<QueueFlowLimit>();
+            return 0;
         }
-        return std::auto_ptr<QueueFlowLimit>(new QueueFlowLimit(queue, flowStopCount, flowResumeCount,
-                                                                flowStopSize, flowResumeSize));
+        return new QueueFlowLimit(queue, flowStopCount, flowResumeCount, flowStopSize, flowResumeSize);
     }
 
     if (defaultFlowStopRatio) {
@@ -339,12 +343,12 @@ std::auto_ptr<QueueFlowLimit> QueueFlowLimit::createQueueFlowLimit(Queue *queue,
         if (queue && queue->getBroker() && queue->getBroker()->isInCluster()) {
             QPID_LOG(warning, "Producer Flow Control TBD for clustered brokers - queue flow control disabled for queue "
                      << queue->getName());
-            return std::auto_ptr<QueueFlowLimit>();
+            return 0;
         }
 
-        return std::auto_ptr<QueueFlowLimit>(new QueueFlowLimit(queue, 0, 0, flowStopSize, flowResumeSize));
+        return new QueueFlowLimit(queue, 0, 0, flowStopSize, flowResumeSize);
     }
-    return std::auto_ptr<QueueFlowLimit>();
+    return 0;
 }
 
 

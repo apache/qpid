@@ -708,9 +708,6 @@ void Queue::popAndDequeue()
 void Queue::dequeued(const QueuedMessage& msg)
 {
     if (policy.get()) policy->dequeued(msg);
-    /** todo KAG make flowLimit an observer */
-    if (flowLimit.get())
-        flowLimit->dequeued(msg);
     mgntDeqStats(msg.payload);
     for (Observers::const_iterator i = observers.begin(); i != observers.end(); ++i) {
         try{
@@ -814,20 +811,18 @@ void Queue::configure(const FieldTable& _settings, bool recovering)
     FieldTable::ValuePtr p =_settings.get(qpidInsertSequenceNumbers);
     if (p && p->convertsTo<std::string>()) insertSequenceNumbers(p->get<std::string>());
 
-    flowLimit = QueueFlowLimit::createQueueFlowLimit(this, _settings);
-
     autoDeleteTimeout = getIntegerSetting(_settings, qpidAutoDeleteTimeout);
     if (autoDeleteTimeout) 
         QPID_LOG(debug, "Configured queue " << getName() << " with qpid.auto_delete_timeout=" << autoDeleteTimeout); 
 
     if (mgmtObject != 0) {
         mgmtObject->set_arguments(ManagementAgent::toMap(_settings));
-        if (flowLimit.get())
-            flowLimit->setManagementObject( mgmtObject );
     }
 
     if ( isDurable() && ! getPersistenceId() && ! recovering )
       store->create(*this, _settings);
+
+    QueueFlowLimit::observe(*this, _settings);
 }
 
 void Queue::destroy()
@@ -1135,9 +1130,6 @@ void Queue::enqueued(const QueuedMessage& m)
     if (policy.get()) {
         policy->enqueued(m);
     }
-    /** todo make flowlimit an observer */
-    if (flowLimit.get())
-        flowLimit->enqueued(m);
     mgntEnqStats(m.payload);
 }
 

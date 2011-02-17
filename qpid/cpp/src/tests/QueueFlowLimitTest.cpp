@@ -39,6 +39,40 @@ namespace tests {
 QPID_AUTO_TEST_SUITE(QueueFlowLimitTestSuite)
 
 namespace {
+
+class TestFlow : public QueueFlowLimit
+{
+public:
+    TestFlow(uint32_t flowStopCount, uint32_t flowResumeCount,
+             uint64_t flowStopSize, uint64_t flowResumeSize) :
+        QueueFlowLimit(0, flowStopCount, flowResumeCount, flowStopSize, flowResumeSize)
+    {}
+    virtual ~TestFlow() {}
+
+    static TestFlow *createTestFlow(const qpid::framing::FieldTable& settings)
+    {
+        FieldTable::ValuePtr v;
+
+        v = settings.get(flowStopCountKey);
+        uint32_t flowStopCount = (v) ? (uint32_t)v->get<int64_t>() : 0;
+        v = settings.get(flowResumeCountKey);
+        uint32_t flowResumeCount = (v) ? (uint32_t)v->get<int64_t>() : 0;
+        v = settings.get(flowStopSizeKey);
+        uint64_t flowStopSize = (v) ? (uint64_t)v->get<int64_t>() : 0;
+        v = settings.get(flowResumeSizeKey);
+        uint64_t flowResumeSize = (v) ? (uint64_t)v->get<int64_t>() : 0;
+
+        return new TestFlow(flowStopCount, flowResumeCount, flowStopSize, flowResumeSize);
+    }
+
+    static QueueFlowLimit *getQueueFlowLimit(const qpid::framing::FieldTable& settings)
+    {
+        return QueueFlowLimit::createLimit(0, settings);
+    }
+};
+
+
+
 QueuedMessage createMessage(uint32_t size)
 {
     QueuedMessage msg;
@@ -54,7 +88,7 @@ QPID_AUTO_TEST_CASE(testFlowCount)
     args.setInt(QueueFlowLimit::flowStopCountKey, 7);
     args.setInt(QueueFlowLimit::flowResumeCountKey, 5);
 
-    std::auto_ptr<QueueFlowLimit> flow(QueueFlowLimit::createQueueFlowLimit(0, args));
+    std::auto_ptr<TestFlow> flow(TestFlow::createTestFlow(args));
 
     BOOST_CHECK_EQUAL((uint32_t) 7, flow->getFlowStopCount());
     BOOST_CHECK_EQUAL((uint32_t) 5, flow->getFlowResumeCount());
@@ -105,7 +139,7 @@ QPID_AUTO_TEST_CASE(testFlowSize)
     args.setUInt64(QueueFlowLimit::flowStopSizeKey, 70);
     args.setUInt64(QueueFlowLimit::flowResumeSizeKey, 50);
 
-    std::auto_ptr<QueueFlowLimit> flow(QueueFlowLimit::createQueueFlowLimit(0, args));
+    std::auto_ptr<TestFlow> flow(TestFlow::createTestFlow(args));
 
     BOOST_CHECK_EQUAL((uint32_t) 0, flow->getFlowStopCount());
     BOOST_CHECK_EQUAL((uint32_t) 0, flow->getFlowResumeCount());
@@ -121,6 +155,9 @@ QPID_AUTO_TEST_CASE(testFlowSize)
         BOOST_CHECK(!flow->isFlowControlActive());
     }
     BOOST_CHECK(!flow->isFlowControlActive());  // 60 on queue
+    BOOST_CHECK_EQUAL(6, flow->getFlowCount());
+    BOOST_CHECK_EQUAL(60, flow->getFlowSize());
+
     QueuedMessage msg_9 = createMessage(9);
     flow->enqueued(msg_9);
     BOOST_CHECK(!flow->isFlowControlActive());  // 69 on queue
@@ -134,6 +171,8 @@ QPID_AUTO_TEST_CASE(testFlowSize)
     msgs.push_back(createMessage(10));
     flow->enqueued(msgs.back());
     BOOST_CHECK(flow->isFlowControlActive());   // 81 on queue
+    BOOST_CHECK_EQUAL(10, flow->getFlowCount());
+    BOOST_CHECK_EQUAL(81, flow->getFlowSize());
 
     flow->dequeued(msgs.front());
     msgs.pop_front();
@@ -158,6 +197,8 @@ QPID_AUTO_TEST_CASE(testFlowSize)
     flow->dequeued(msgs.front());
     msgs.pop_front();
     BOOST_CHECK(!flow->isFlowControlActive());  // 20 on queue
+    BOOST_CHECK_EQUAL(2, flow->getFlowCount());
+    BOOST_CHECK_EQUAL(20, flow->getFlowSize());
 }
 
 QPID_AUTO_TEST_CASE(testFlowArgs)
@@ -170,7 +211,7 @@ QPID_AUTO_TEST_CASE(testFlowArgs)
     args.setUInt64(QueueFlowLimit::flowStopSizeKey, stop);
     args.setUInt64(QueueFlowLimit::flowResumeSizeKey, resume);
 
-    std::auto_ptr<QueueFlowLimit> flow(QueueFlowLimit::createQueueFlowLimit(0, args));
+    std::auto_ptr<TestFlow> flow(TestFlow::createTestFlow(args));
 
     BOOST_CHECK_EQUAL((uint32_t) 30, flow->getFlowStopCount());
     BOOST_CHECK_EQUAL((uint32_t) 21, flow->getFlowResumeCount());
@@ -196,7 +237,7 @@ QPID_AUTO_TEST_CASE(testFlowCombo)
 
     QueuedMessage msg;
 
-    std::auto_ptr<QueueFlowLimit> flow(QueueFlowLimit::createQueueFlowLimit(0, args));
+    std::auto_ptr<TestFlow> flow(TestFlow::createTestFlow(args));
     BOOST_CHECK(!flow->isFlowControlActive());        // count:0  size:0
 
     // verify flow control comes ON when only count passes its stop point.
@@ -310,8 +351,10 @@ QPID_AUTO_TEST_CASE(testFlowDefaultArgs)
                                 80,     // 80% stop threshold
                                 70);    // 70% resume threshold
     FieldTable args;
-    std::auto_ptr<QueueFlowLimit> flow(QueueFlowLimit::createQueueFlowLimit(0, args));
+    QueueFlowLimit *ptr = TestFlow::getQueueFlowLimit(args);
 
+    BOOST_CHECK(ptr);
+    std::auto_ptr<QueueFlowLimit> flow(ptr);
     BOOST_CHECK_EQUAL((uint64_t) 2360001, flow->getFlowStopSize());
     BOOST_CHECK_EQUAL((uint64_t) 2065000, flow->getFlowResumeSize());
     BOOST_CHECK_EQUAL( 0u, flow->getFlowStopCount());
@@ -330,7 +373,10 @@ QPID_AUTO_TEST_CASE(testFlowOverrideArgs)
         FieldTable args;
         args.setInt(QueueFlowLimit::flowStopCountKey, 35000);
         args.setInt(QueueFlowLimit::flowResumeCountKey, 30000);
-        std::auto_ptr<QueueFlowLimit> flow(QueueFlowLimit::createQueueFlowLimit(0, args));
+
+        QueueFlowLimit *ptr = TestFlow::getQueueFlowLimit(args);
+        BOOST_CHECK(ptr);
+        std::auto_ptr<QueueFlowLimit> flow(ptr);
 
         BOOST_CHECK_EQUAL((uint32_t) 35000, flow->getFlowStopCount());
         BOOST_CHECK_EQUAL((uint32_t) 30000, flow->getFlowResumeCount());
@@ -343,7 +389,10 @@ QPID_AUTO_TEST_CASE(testFlowOverrideArgs)
         FieldTable args;
         args.setInt(QueueFlowLimit::flowStopSizeKey, 350000);
         args.setInt(QueueFlowLimit::flowResumeSizeKey, 300000);
-        std::auto_ptr<QueueFlowLimit> flow(QueueFlowLimit::createQueueFlowLimit(0, args));
+
+        QueueFlowLimit *ptr = TestFlow::getQueueFlowLimit(args);
+        BOOST_CHECK(ptr);
+        std::auto_ptr<QueueFlowLimit> flow(ptr);
 
         BOOST_CHECK_EQUAL((uint32_t) 0, flow->getFlowStopCount());
         BOOST_CHECK_EQUAL((uint32_t) 0, flow->getFlowResumeCount());
@@ -358,7 +407,10 @@ QPID_AUTO_TEST_CASE(testFlowOverrideArgs)
         args.setInt(QueueFlowLimit::flowResumeCountKey, 30000);
         args.setInt(QueueFlowLimit::flowStopSizeKey, 350000);
         args.setInt(QueueFlowLimit::flowResumeSizeKey, 300000);
-        std::auto_ptr<QueueFlowLimit> flow(QueueFlowLimit::createQueueFlowLimit(0, args));
+
+        QueueFlowLimit *ptr = TestFlow::getQueueFlowLimit(args);
+        BOOST_CHECK(ptr);
+        std::auto_ptr<QueueFlowLimit> flow(ptr);
 
         BOOST_CHECK_EQUAL((uint32_t) 35000, flow->getFlowStopCount());
         BOOST_CHECK_EQUAL((uint32_t) 30000, flow->getFlowResumeCount());
@@ -376,7 +428,9 @@ QPID_AUTO_TEST_CASE(testFlowOverrideDefaults)
                                 97,     // stop threshold
                                 73);    // resume threshold
     FieldTable args;
-    std::auto_ptr<QueueFlowLimit> flow(QueueFlowLimit::createQueueFlowLimit(0, args));
+    QueueFlowLimit *ptr = TestFlow::getQueueFlowLimit(args);
+    BOOST_CHECK(ptr);
+    std::auto_ptr<QueueFlowLimit> flow(ptr);
 
     BOOST_CHECK_EQUAL((uint32_t) 2861501, flow->getFlowStopSize());
     BOOST_CHECK_EQUAL((uint32_t) 2153500, flow->getFlowResumeSize());
@@ -390,16 +444,14 @@ QPID_AUTO_TEST_CASE(testFlowDisable)
     {
         FieldTable args;
         args.setInt(QueueFlowLimit::flowStopCountKey, 0);
-        std::auto_ptr<QueueFlowLimit> flow(QueueFlowLimit::createQueueFlowLimit(0, args));
-
-        BOOST_CHECK(!flow.get());
+        QueueFlowLimit *ptr = TestFlow::getQueueFlowLimit(args);
+        BOOST_CHECK(!ptr);
     }
     {
         FieldTable args;
         args.setInt(QueueFlowLimit::flowStopSizeKey, 0);
-        std::auto_ptr<QueueFlowLimit> flow(QueueFlowLimit::createQueueFlowLimit(0, args));
-
-        BOOST_CHECK(!flow.get());
+        QueueFlowLimit *ptr = TestFlow::getQueueFlowLimit(args);
+        BOOST_CHECK(!ptr);
     }
 }
 
