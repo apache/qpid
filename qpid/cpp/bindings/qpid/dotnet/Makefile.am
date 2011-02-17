@@ -81,6 +81,7 @@ EXTRA_DIST = winsdk_sources/winsdk_dotnet_examples.sln \
   configure-windows.ps1 \
   ReadMe.txt \
   org.apache.qpid.messaging.sln \
+  org.apache.qpid.messaging.sessionreceiver.sln \
   test/messaging.test/messaging.test.address.cs \
   test/messaging.test/messaging.test.duration.cs \
   test/messaging.test/messaging.test.cs \
