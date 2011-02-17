@@ -41,6 +41,11 @@ public final class BBDecoder extends AbstractDecoder
         this.in.order(ByteOrder.BIG_ENDIAN);
     }
 
+    public void releaseBuffer()
+    {
+        in = null;
+    }
+
     protected byte doGet()
     {
         return in.get();
