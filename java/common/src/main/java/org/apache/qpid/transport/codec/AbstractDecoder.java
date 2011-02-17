@@ -143,10 +143,18 @@ abstract class AbstractDecoder implements Decoder
         short size = readUint8();
         Binary bin = get(size);
         String str = str8cache.get(bin);
+
         if (str == null)
         {
             str = decode(bin.array(), bin.offset(), bin.size(), "UTF-8");
-            str8cache.put(bin, str);
+            if(bin.hasExcessCapacity())
+            {
+                str8cache.put(bin.copy(), str);
+            }
+            else
+            {
+                str8cache.put(bin, str);
+            }
         }
         return str;
     }

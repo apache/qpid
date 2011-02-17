@@ -142,4 +142,13 @@ public final class Binary
         return str(ByteBuffer.wrap(bytes, offset, size));
     }
 
+    public boolean hasExcessCapacity()
+    {
+        return size != bytes.length;
+    }
+
+    public Binary copy()
+    {
+        return new Binary(getBytes());
+    }
 }
