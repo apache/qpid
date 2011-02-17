@@ -101,20 +101,23 @@ public final class Disassembler implements Sender<ProtocolEvent>,
     {
         synchronized (sendlock)
         {
-            header.put(0, flags);
-            header.put(1, type);
-            header.putShort(2, (short) (size + HEADER_SIZE));
-            header.put(5, track);
-            header.putShort(6, (short) channel);
-
-            header.rewind();
-
-            sender.send(header);
+            ByteBuffer data = ByteBuffer.allocate(size + HEADER_SIZE);
+            data.order(ByteOrder.BIG_ENDIAN);
+            
+            data.put(0, flags);
+            data.put(1, type);
+            data.putShort(2, (short) (size + HEADER_SIZE));
+            data.put(5, track);
+            data.putShort(6, (short) channel);
+            data.position(HEADER_SIZE);
 
             int limit = buf.limit();
             buf.limit(buf.position() + size);
-            sender.send(buf);
+            data.put(buf);
             buf.limit(limit);
+ 
+            data.rewind();
+            sender.send(data);
         }
     }
 
