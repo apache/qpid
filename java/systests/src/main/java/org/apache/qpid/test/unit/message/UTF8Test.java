@@ -34,16 +34,14 @@ import java.io.*;
 
 
 /**
- * @author Apache Software Foundation
- *         This test makes sure that utf8 characters can be used for
- *         specifying exchange, queue name and routing key.
+ * This test makes sure that utf8 characters can be used for
+ * specifying exchange, queue name and routing key.
  *
  * those tests are related to qpid-1384
  */
 public class UTF8Test extends QpidBrokerTestCase
 {
     private static final Logger _logger = LoggerFactory.getLogger(UTF8Test.class);
-
 
     public void testPlainEn() throws Exception
     {
@@ -56,7 +54,6 @@ public class UTF8Test extends QpidBrokerTestCase
         invoke("UTF8Jp");
     }
 
-
     private void invoke(String name) throws Exception
     {
         String path = System.getProperties().getProperty("QPID_HOME");
@@ -65,6 +62,7 @@ public class UTF8Test extends QpidBrokerTestCase
         runTest(in.readLine(), in.readLine(), in.readLine(), in.readLine());
         in.close();
     }
+
     private void runTest(String exchangeName, String queueName, String routingKey, String data) throws Exception
     {
         _logger.info("Running test for exchange: " + exchangeName
@@ -89,26 +87,17 @@ public class UTF8Test extends QpidBrokerTestCase
 
     private void declareQueue(String exch, String routkey, String qname) throws Exception
     {
-            Connection conn = new Connection();
-            if (!_broker.equals(QpidBrokerTestCase.EXTERNAL) && !isBroker08())
-            {
-                conn.connect("localhost", QpidBrokerTestCase.DEFAULT_PORT, "test", "guest", "guest",false);
-            }
-            else
-            {
-                throw new Exception("unsupported test " +
-                        "configuration. broker: " + _broker + " version > 0.10 "+ !isBroker08() + " This test must be run on a local broker using protocol 0.10 or higher.");
-            }
-            Session sess = conn.createSession(0);
-            sess.exchangeDeclare(exch, "direct", null, null);
-            sess.queueDeclare(qname, null, null);
-            sess.exchangeBind(qname, exch, routkey, null);
-            sess.sync();
-            conn.close();        
+        Connection conn = new Connection();
+        conn.connect("localhost", QpidBrokerTestCase.DEFAULT_PORT, "test", "guest", "guest",false);
+        Session sess = conn.createSession(0);
+        sess.exchangeDeclare(exch, "direct", null, null);
+        sess.queueDeclare(qname, null, null);
+        sess.exchangeBind(qname, exch, routkey, null);
+        sess.sync();
+        conn.close();        
     }
 
-    private Destination getDestination(String exch, String routkey, String qname)
-            throws Exception
+    private Destination getDestination(String exch, String routkey, String qname) throws Exception
     {
         Properties props = new Properties();
         props.setProperty("destination.directUTF8Queue",
