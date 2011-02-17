@@ -32,6 +32,7 @@
 #include "qpid/client/ConnectionImpl.h"
 #include "qpid/client/Future.h"
 #include "qpid/broker/Broker.h"
+#include "qpid/broker/Fairshare.h"
 #include "qpid/broker/Queue.h"
 #include "qpid/broker/QueueRegistry.h"
 #include "qpid/broker/LinkRegistry.h"
@@ -352,6 +353,10 @@ void UpdateClient::updateQueue(client::AsyncSession& s, const boost::shared_ptr<
     q->eachMessage(boost::bind(&MessageUpdater::updateQueuedMessage, &updater, _1));
     q->eachBinding(boost::bind(&UpdateClient::updateBinding, this, s, q->getName(), _1));
     ClusterConnectionProxy(s).queuePosition(q->getName(), q->getPosition());
+    uint priority, count;
+    if (qpid::broker::Fairshare::getState(q->getMessages(), priority, count)) {
+        ClusterConnectionProxy(s).queueFairshareState(q->getName(), priority, count);
+    }
 }
 
 void UpdateClient::updateExclusiveQueue(const boost::shared_ptr<broker::Queue>& q) {

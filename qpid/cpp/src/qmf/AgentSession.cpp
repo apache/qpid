@@ -571,7 +571,7 @@ void AgentSessionImpl::raiseEvent(const Data& data, int severity)
     encode(list, msg);
     topicSender.send(msg);
 
-    QPID_LOG(trace, "SENT EventIndication to=" << subject);
+    QPID_LOG(trace, "SENT EventIndication to=" << topicSender.getName() << "/" << subject);
 }
 
 
@@ -625,7 +625,7 @@ void AgentSessionImpl::setAgentName()
 
 void AgentSessionImpl::handleLocateRequest(const Variant::List& predicate, const Message& msg)
 {
-    QPID_LOG(trace, "RCVD AgentLocateRequest");
+    QPID_LOG(trace, "RCVD AgentLocateRequest from=" << msg.getReplyTo());
 
     if (!predicate.empty()) {
         Query agentQuery(QUERY_OBJECT);
@@ -659,7 +659,7 @@ void AgentSessionImpl::handleLocateRequest(const Variant::List& predicate, const
 
 void AgentSessionImpl::handleMethodRequest(const Variant::Map& content, const Message& msg)
 {
-    QPID_LOG(trace, "RCVD MethodRequest map=" << content << " from=" << msg.getReplyTo());
+    QPID_LOG(trace, "RCVD MethodRequest map=" << content << " from=" << msg.getReplyTo() << " cid=" << msg.getCorrelationId());
 
     //
     // Construct an AgentEvent to be sent to the application.
@@ -719,7 +719,7 @@ void AgentSessionImpl::handleMethodRequest(const Variant::Map& content, const Me
 
 void AgentSessionImpl::handleQueryRequest(const Variant::Map& content, const Message& msg)
 {
-    QPID_LOG(trace, "RCVD QueryRequest query=" << content << " from=" << msg.getReplyTo());
+    QPID_LOG(trace, "RCVD QueryRequest query=" << content << " from=" << msg.getReplyTo() << " cid=" << msg.getCorrelationId());
 
     //
     // Construct an AgentEvent to be sent to the application or directly handled by the agent.

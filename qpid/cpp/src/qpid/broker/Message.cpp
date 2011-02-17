@@ -400,22 +400,6 @@ bool Message::hasExpired()
     return expiryPolicy && expiryPolicy->hasExpired(*this);
 }
 
-boost::intrusive_ptr<Message>& Message::getReplacementMessage(const Queue* qfor) const
-{
-    sys::Mutex::ScopedLock l(lock);
-    Replacement::iterator i = replacement.find(qfor);
-    if (i != replacement.end()){
-        return i->second;
-    }           
-    return empty;
-}
-
-void Message::setReplacementMessage(boost::intrusive_ptr<Message> msg, const Queue* qfor)
-{
-    sys::Mutex::ScopedLock l(lock);
-    replacement[qfor] = msg;
-}
-
 namespace {
 struct ScopedSet {
     sys::Monitor& lock;

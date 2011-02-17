@@ -65,7 +65,7 @@ Subscription ConsoleSession::subscribe(const string& q, const string& f, const s
 //========================================================================================
 
 ConsoleSessionImpl::ConsoleSessionImpl(Connection& c, const string& options) :
-    connection(c), domain("default"), authUser(c.getAuthenticatedUsername()), maxAgentAgeMinutes(5),
+    connection(c), domain("default"), maxAgentAgeMinutes(5),
     opened(false), thread(0), threadCanceled(false), lastVisit(0), lastAgePass(0),
     connectedBrokerInAgentList(false), schemaCache(new SchemaCache())
 {
@@ -394,6 +394,7 @@ void ConsoleSessionImpl::sendAgentLocate()
 {
     Message msg;
     Variant::Map& headers(msg.getProperties());
+    static const string subject("console.request.agent_locate");
 
     headers[protocol::HEADER_KEY_METHOD] = protocol::HEADER_METHOD_REQUEST;
     headers[protocol::HEADER_KEY_OPCODE] = protocol::HEADER_OPCODE_AGENT_LOCATE_REQUEST;
@@ -401,12 +402,12 @@ void ConsoleSessionImpl::sendAgentLocate()
 
     msg.setReplyTo(replyAddress);
     msg.setCorrelationId("agent-locate");
-    msg.setSubject("console.request.agent_locate");
+    msg.setSubject(subject);
     encode(agentQuery.getPredicate(), msg);
 
     topicSender.send(msg);
 
-    QPID_LOG(trace, "SENT AgentLocate to topic");
+    QPID_LOG(trace, "SENT AgentLocate to=" << topicSender.getName() << "/" << subject);
 }
 
 

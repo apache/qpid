@@ -165,7 +165,7 @@ class ConsoleHandler(Thread):
           reason = 'filter'
           if event.getAgentDelReason() == cqmf2.AGENT_DEL_AGED:
             reason = 'aged'
-          self.agentDeleted(Agent(event.getAgent(), reason))
+          self.agentDeleted(Agent(event.getAgent()), reason)
 
         elif event.getType() == cqmf2.CONSOLE_AGENT_RESTART:
           self.agentRestarted(Agent(event.getAgent()))
@@ -372,6 +372,16 @@ class AgentSession(object):
       self._impl.raiseException(handle, data._impl)
     else:
       self._impl.raiseException(handle, data)
+
+  def raiseEvent(self, data, severity=None):
+    """
+    """
+    if not severity:
+      self._impl.raiseEvent(data._impl)
+    else:
+      if (severity.__class__ != int and severity.__class__ != long) or severity < 0 or severity > 7:
+        raise Exception("Severity must be an int between 0..7")
+      self._impl.raiseEvent(data._impl, severity);
 
 
 #===================================================================================================

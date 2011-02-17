@@ -208,7 +208,7 @@ fi
 
 if [ "JAVA" == "$JAVA" ] ; then
   pushd qpid-${VER}/java
-  ant build release release-bin release-mvn -Dsvnversion.output=${REV}
+  ant build release release-bin release-mvn -Dsvnversion.output=${REV} -Dmaven.snapshot=false
   popd
 
   cp qpid-${VER}/java/release/*.tar.gz  artifacts/qpid-java-${VER}.tar.gz

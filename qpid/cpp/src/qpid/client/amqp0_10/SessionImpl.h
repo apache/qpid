@@ -10,9 +10,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -79,8 +79,9 @@ class SessionImpl : public qpid::messaging::SessionImpl
     void checkError();
     bool hasError();
 
-    bool get(ReceiverImpl& receiver, qpid::messaging::Message& message, qpid::messaging::Duration timeout);    
+    bool get(ReceiverImpl& receiver, qpid::messaging::Message& message, qpid::messaging::Duration timeout);
 
+    void releasePending(const std::string& destination);
     void receiverCancelled(const std::string& name);
     void senderCancelled(const std::string& name);
 
@@ -110,7 +111,7 @@ class SessionImpl : public qpid::messaging::SessionImpl
         } catch (const qpid::ConnectionException& e) {
             throw qpid::messaging::ConnectionError(e.what());
         } catch (const qpid::ChannelException& e) {
-            throw qpid::messaging::MessagingException(e.what());            
+            throw qpid::messaging::MessagingException(e.what());
         }
     }
 
@@ -206,11 +207,11 @@ class SessionImpl : public qpid::messaging::SessionImpl
     struct Acknowledge1 : Command
     {
         qpid::messaging::Message& message;
-        
+
         Acknowledge1(SessionImpl& i, qpid::messaging::Message& m) : Command(i), message(m) {}
         void operator()() { impl.acknowledgeImpl(message); }
     };
-    
+
     struct CreateSender;
     struct CreateReceiver;
     struct UnsettledAcks;
@@ -222,12 +223,12 @@ class SessionImpl : public qpid::messaging::SessionImpl
         F f(*this);
         return execute(f);
     }
-    
+
     template <class F> void retry()
     {
         while (!execute<F>()) {}
     }
-    
+
     template <class F, class P> bool execute1(P p)
     {
         F f(*this, p);

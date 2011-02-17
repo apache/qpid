@@ -62,7 +62,7 @@ endif (MSVC)
 
 # Like this to work with cmake 2.4 on Unix
 set (qpid_test_boost_libs 
-     ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY})
+     ${Boost_UNIT_TEST_FRAMEWORK_LIBRARY} ${Boost_SYSTEM_LIBRARY})
 
 # Macro to make it easier to remember where the tests are built
 macro(remember_location testname)

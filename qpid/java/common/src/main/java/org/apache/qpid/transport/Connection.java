@@ -25,6 +25,7 @@ import static org.apache.qpid.transport.Connection.State.CLOSING;
 import static org.apache.qpid.transport.Connection.State.NEW;
 import static org.apache.qpid.transport.Connection.State.OPEN;
 import static org.apache.qpid.transport.Connection.State.OPENING;
+import static org.apache.qpid.transport.Connection.State.RESUMING;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -32,6 +33,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 import javax.security.sasl.SaslClient;
@@ -63,7 +65,7 @@ public class Connection extends ConnectionInvoker
     public static final int MAX_CHANNEL_MAX = 0xFFFF;
     public static final int MIN_USABLE_CHANNEL_NUM = 0;
 
-    public enum State { NEW, CLOSED, OPENING, OPEN, CLOSING, CLOSE_RCVD }
+    public enum State { NEW, CLOSED, OPENING, OPEN, CLOSING, CLOSE_RCVD, RESUMING }
 
     static class DefaultConnectionListener implements ConnectionListener
     {
@@ -119,7 +121,8 @@ public class Connection extends ConnectionInvoker
     
     private static final AtomicLong idGenerator = new AtomicLong(0);
     private final long _connectionId = idGenerator.incrementAndGet();
-
+    private final AtomicBoolean connectionLost = new AtomicBoolean(false);
+    
     public Connection() {}
 
     public void setConnectionDelegate(ConnectionDelegate delegate)
@@ -270,6 +273,8 @@ public class Connection extends ConnectionInvoker
                 close();
                 throw new ConnectionException("connect() timed out");
             case OPEN:
+            case RESUMING:
+                connectionLost.set(false);
                 break;
             case CLOSED:
                 throw new ConnectionException("connect() aborted");
@@ -313,6 +318,17 @@ public class Connection extends ConnectionInvoker
     {
         synchronized (lock)
         {
+            Waiter w = new Waiter(lock, timeout);
+            while (w.hasTime() && state != OPEN && error == null)
+            {
+                w.await();                
+            }
+            
+            if (state != OPEN)
+            {
+                throw new ConnectionException("Timed out waiting for connection to be ready. Current state is :" + state);
+            }
+            
             Session ssn = _sessionFactory.newSession(this, name, expiry);
             sessions.put(name, ssn);
             map(ssn);
@@ -452,15 +468,25 @@ public class Connection extends ConnectionInvoker
         {
             for (Session ssn : sessions.values())
             {
-                map(ssn);
-                ssn.attach();
-                ssn.resume();
+                if (ssn.isTransacted())
+                {                    
+                    removeSession(ssn);
+                    ssn.setState(Session.State.CLOSED);
+                }
+                else
+                {                
+                    map(ssn);
+                    ssn.attach();
+                    ssn.resume();
+                }
             }
+            setState(OPEN);
         }
     }
 
     public void exception(ConnectionException e)
     {
+        connectionLost.set(true);
         synchronized (lock)
         {
             switch (state)
@@ -662,6 +688,11 @@ public class Connection extends ConnectionInvoker
     public SecurityLayer getSecurityLayer()
     {
         return securityLayer;
+    }
+    
+    public boolean isConnectionResuming()
+    {
+        return connectionLost.get();
     }
 
 }

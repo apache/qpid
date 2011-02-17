@@ -5,7 +5,7 @@
  * distributed with this work for additional information
  * regarding copyright ownership.  The ASF licenses this file
  * to you under the Apache License, Version 2.0 (the
- * "License"); you may not use this file except in compliance
+ * "License "); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
  *
  *   http://www.apache.org/licenses/LICENSE-2.0
@@ -32,6 +32,25 @@ using boost::intrusive_ptr;
 using std::max;
 using sys::Timer;
 using sys::TimerTask;
+
+//
+// Note on use of Broker::getTimer() rather than getClusterTime in broker code.
+// The following uses of getTimer() are cluster safe:
+//
+// LinkRegistry: maintenance visits in timer can call Bridge::create/cancel
+// but these don't modify any management state.
+//
+// broker::Connection:
+// - Heartbeats use ClusterOrderOutput to ensure consistency
+// - timeout: aborts connection in timer, cluster does an orderly connection close.
+//
+// SessionState: scheduledCredit - uses ClusterOrderProxy
+// Broker::queueCleaner: cluster implements ExpiryPolicy for consistent expiry.
+//
+// Broker::dtxManager:  dtx disabled with cluster.
+//
+// requestIOProcessing: called in doOutput.
+//
 
 
 ClusterTimer::ClusterTimer(Cluster& c) : cluster(c) {

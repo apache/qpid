@@ -115,6 +115,7 @@ public:
         uint32_t maxSessionRate;
         bool asyncQueueEvents;
         bool qmf2Support;
+        bool qmf1Support;
         uint queueFlowStopRatio;    // producer flow control: on
         uint queueFlowResumeRatio;  // producer flow control: off
 

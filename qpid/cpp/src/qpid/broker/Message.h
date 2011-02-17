@@ -153,8 +153,6 @@ public:
        void forcePersistent();
        bool isForcedPersistent();
     
-    boost::intrusive_ptr<Message>& getReplacementMessage(const Queue* qfor) const;
-    void setReplacementMessage(boost::intrusive_ptr<Message> msg, const Queue* qfor);
 
     /** Call cb when dequeue is complete, may call immediately. Holds cb by reference. */
     void setDequeueCompleteCallback(MessageCallback& cb);
@@ -163,8 +161,6 @@ public:
     uint8_t getPriority() const;
 
   private:
-    typedef std::map<const Queue*,boost::intrusive_ptr<Message> > Replacement;
-
     MessageAdapter& getAdapter() const;
     void allDequeuesComplete();
 
@@ -183,7 +179,6 @@ public:
 
     static TransferAdapter TRANSFER;
 
-    mutable Replacement replacement;
     mutable boost::intrusive_ptr<Message> empty;
 
     sys::Monitor callbackLock;

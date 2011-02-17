@@ -53,7 +53,8 @@ using qpid::sys::AbsTime;
 namespace _qmf = qmf::org::apache::qpid::broker;
 
 SessionState::SessionState(
-    Broker& b, SessionHandler& h, const SessionId& id, const SessionState::Configuration& config)
+    Broker& b, SessionHandler& h, const SessionId& id,
+    const SessionState::Configuration& config, bool delayManagement)
     : qpid::SessionState(id, config),
       broker(b), handler(&h),
       semanticState(*this, *this),
@@ -71,6 +72,12 @@ SessionState::SessionState(
             QPID_LOG(warning, getId() << ": Unable to flow control client - client doesn't support");
         }
     }
+    if (!delayManagement) addManagementObject();
+    attach(h);
+}
+
+void SessionState::addManagementObject() {
+    if (GetManagementObject()) return; // Already added.
     Manageable* parent = broker.GetVhostObject ();
     if (parent != 0) {
         ManagementAgent* agent = getBroker().getManagementAgent();
@@ -80,11 +87,11 @@ SessionState::SessionState(
             mgmtObject->set_attached (0);
             mgmtObject->set_detachedLifespan (0);
             mgmtObject->clr_expireTime();
-            if (rateFlowcontrol) mgmtObject->set_maxClientRate(maxRate);
+            if (rateFlowcontrol)
+                mgmtObject->set_maxClientRate(rateFlowcontrol->getRate());
             agent->addObject(mgmtObject);
         }
     }
-    attach(h);
 }
 
 SessionState::~SessionState() {

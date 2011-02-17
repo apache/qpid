@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -43,15 +43,15 @@ void ReceiverImpl::received(qpid::messaging::Message&)
         window = capacity;
     }
 }
-    
-qpid::messaging::Message ReceiverImpl::get(qpid::messaging::Duration timeout) 
+
+qpid::messaging::Message ReceiverImpl::get(qpid::messaging::Duration timeout)
 {
     qpid::messaging::Message result;
     if (!get(result, timeout)) throw NoMessageAvailable();
     return result;
 }
-    
-qpid::messaging::Message ReceiverImpl::fetch(qpid::messaging::Duration timeout) 
+
+qpid::messaging::Message ReceiverImpl::fetch(qpid::messaging::Duration timeout)
 {
     qpid::messaging::Message result;
     if (!fetch(result, timeout)) throw NoMessageAvailable();
@@ -72,8 +72,8 @@ bool ReceiverImpl::fetch(qpid::messaging::Message& message, qpid::messaging::Dur
     return f.result;
 }
 
-void ReceiverImpl::close() 
-{ 
+void ReceiverImpl::close()
+{
     execute<Close>();
 }
 
@@ -143,10 +143,10 @@ uint32_t ReceiverImpl::getUnsettled()
     return parent->getUnsettledAcks(destination);
 }
 
-ReceiverImpl::ReceiverImpl(SessionImpl& p, const std::string& name, 
-                           const qpid::messaging::Address& a) : 
+ReceiverImpl::ReceiverImpl(SessionImpl& p, const std::string& name,
+                           const qpid::messaging::Address& a) :
 
-    parent(&p), destination(name), address(a), byteCredit(0xFFFFFFFF), 
+    parent(&p), destination(name), address(a), byteCredit(0xFFFFFFFF),
     state(UNRESOLVED), capacity(0), window(0) {}
 
 bool ReceiverImpl::getImpl(qpid::messaging::Message& message, qpid::messaging::Duration timeout)
@@ -188,11 +188,13 @@ bool ReceiverImpl::fetchImpl(qpid::messaging::Message& message, qpid::messaging:
     }
 }
 
-void ReceiverImpl::closeImpl() 
-{ 
+void ReceiverImpl::closeImpl()
+{
     sys::Mutex::ScopedLock l(lock);
     if (state != CANCELLED) {
         state = CANCELLED;
+        sync(session).messageStop(destination);
+        parent->releasePending(destination);
         source->cancel(session, destination);
         parent->receiverCancelled(destination);
     }

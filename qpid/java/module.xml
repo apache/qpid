@@ -219,10 +219,10 @@
       <args>
         <arg line='"${project.root}/genpom"'/>
         <arg line='-s "${project.root}/lib/poms"'/>
-        <arg line='-o "${build}/qpid-${module.name}.pom"'/>
+        <arg line='-o "${build.scratch}/qpid-${module.name}.pom"'/>
         <arg line="-u http://qpid.apache.org"/>
         <arg line="-g org.apache.qpid"/>
-        <arg line="-v ${project.version}"/>
+        <arg line="-v ${project.version}${maven.version.suffix}"/>
         <arg line="-p qpid"/>
         <arg line='-m "${module.depends}"'/>
         <arg line="-a ${module.name}"/>
@@ -235,12 +235,15 @@
   <target name="release-mvn" depends="pom" if="module.genpom" description="Install the artifacts into the local repository and prepare the release">
     <antcall target="build"/>
 
-    <artifact:pom id="module.pom" file="${build}/qpid-${module.name}.pom"/>
+    <artifact:pom id="module.pom" file="${build.scratch}/qpid-${module.name}.pom"/>
 
-    <artifact:install file="${module.jar}" pomRefId="module.pom"/>
+    <artifact:install file="${module.jar}" pomRefId="module.pom">
+        <localRepository path="${maven.local.repo}"/>
+    </artifact:install>
 
-    <artifact:deploy file="${module.jar}" pomRefId="module.pom">
+    <artifact:deploy file="${module.jar}" pomRefId="module.pom" uniqueVersion="${maven.unique.version}">
       <attach file="${module.source.jar}" classifier="sources"/>
+      <localRepository path="${maven.local.repo}"/>
       <remoteRepository url="file://${module.release.base}/maven"/>
     </artifact:deploy>
   </target>

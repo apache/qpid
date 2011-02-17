@@ -381,6 +381,8 @@
     <arg name="reason"  type="lstr"   desc="Reason for a failure"/>
     <arg name="rhost"   type="sstr"   desc="Address (i.e. DNS name, IP address, etc.) of a remotely connected host"/>
     <arg name="user"    type="sstr"   desc="Authentication identity"/>
+    <arg name="msgDepth" type="count32" desc="Current size of queue in messages"/>
+    <arg name="byteDepth" type="count32" desc="Current size of queue in bytes"/>
   </eventArguments>
 
   <event name="clientConnect"     sev="inform" args="rhost, user"/>
@@ -396,5 +398,6 @@
   <event name="unbind"            sev="inform" args="rhost, user, exName, qName, key"/>
   <event name="subscribe"         sev="inform" args="rhost, user, qName, dest, excl, args"/>
   <event name="unsubscribe"       sev="inform" args="rhost, user, dest"/>
+  <event name="queueThresholdExceeded"       sev="warn" args="qName, msgDepth, byteDepth"/>
 </schema>
 

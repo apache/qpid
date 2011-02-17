@@ -339,7 +339,7 @@ void AgentImpl::handleMethodResponse(const Variant::Map& response, const Message
     uint32_t correlator;
     boost::shared_ptr<SyncContext> context;
 
-    QPID_LOG(trace, "RCVD MethodResponse map=" << response);
+    QPID_LOG(trace, "RCVD MethodResponse cid=" << cid << " map=" << response);
 
     aIter = response.find("_arguments");
     if (aIter != response.end())
@@ -556,13 +556,14 @@ void AgentImpl::sendQuery(const Query& query, uint32_t correlator)
     msg.setReplyTo(session.replyAddress);
     msg.setCorrelationId(boost::lexical_cast<string>(correlator));
     msg.setSubject(directSubject);
-    if (!session.authUser.empty())
-        msg.setUserId(session.authUser);
+    string userId(session.connection.getAuthenticatedUsername());
+    if (!userId.empty())
+        msg.setUserId(userId);
     encode(QueryImplAccess::get(query).asMap(), msg);
-    if (sender.isValid())
+    if (sender.isValid()) {
         sender.send(msg);
-
-    QPID_LOG(trace, "SENT QueryRequest to=" << name);
+        QPID_LOG(trace, "SENT QueryRequest to=" << sender.getName() << "/" << directSubject << " cid=" << correlator);
+    }
 }
 
 
@@ -583,13 +584,14 @@ void AgentImpl::sendMethod(const string& method, const Variant::Map& args, const
     msg.setReplyTo(session.replyAddress);
     msg.setCorrelationId(boost::lexical_cast<string>(correlator));
     msg.setSubject(directSubject);
-    if (!session.authUser.empty())
-        msg.setUserId(session.authUser);
+    string userId(session.connection.getAuthenticatedUsername());
+    if (!userId.empty())
+        msg.setUserId(userId);
     encode(map, msg);
-    if (sender.isValid())
+    if (sender.isValid()) {
         sender.send(msg);
-
-    QPID_LOG(trace, "SENT MethodRequest method=" << method << " to=" << name);
+        QPID_LOG(trace, "SENT MethodRequest method=" << method << " to=" << sender.getName() << "/" << directSubject << " content=" << map << " cid=" << correlator);
+    }
 }
 
 void AgentImpl::sendSchemaRequest(const SchemaId& id)
@@ -626,12 +628,13 @@ void AgentImpl::sendSchemaRequest(const SchemaId& id)
     msg.setReplyTo(session.replyAddress);
     msg.setContent(content);
     msg.setSubject(directSubject);
-    if (!session.authUser.empty())
-        msg.setUserId(session.authUser);
-    if (sender.isValid())
+    string userId(session.connection.getAuthenticatedUsername());
+    if (!userId.empty())
+        msg.setUserId(userId);
+    if (sender.isValid()) {
         sender.send(msg);
-
-    QPID_LOG(trace, "SENT V1SchemaRequest to=" << name);
+        QPID_LOG(trace, "SENT V1SchemaRequest to=" << sender.getName() << "/" << directSubject);
+    }
 }
 
 

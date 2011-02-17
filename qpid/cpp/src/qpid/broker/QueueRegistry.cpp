@@ -47,7 +47,6 @@ QueueRegistry::declare(const string& declareName, bool durable,
         Queue::shared_ptr queue(new Queue(name, autoDelete, durable ? store : 0, owner, parent, broker));
         queues[name] = queue;
         if (lastNode) queue->setLastNodeFailure();
-        if (events) queue->setQueueEventManager(*events);
 
         return std::pair<Queue::shared_ptr, bool>(queue, true);
     } else {
@@ -107,9 +106,4 @@ void QueueRegistry::updateQueueClusterState(bool _lastNode)
         }
     }
     lastNode = _lastNode;
-}
-
-void QueueRegistry::setQueueEvents(QueueEvents* e)
-{
-    events = e;
 }

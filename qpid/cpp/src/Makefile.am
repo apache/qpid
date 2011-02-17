@@ -24,6 +24,7 @@ SUBDIRS = . tests
 # using Visual Studio solutions/projects.
 windows_dist = \
   qpid/client/windows/SaslFactory.cpp \
+  qpid/client/windows/SslConnector.cpp \
   qpid/log/windows/SinkOptions.cpp \
   qpid/log/windows/SinkOptions.h \
   ../include/qpid/sys/windows/check.h \
@@ -42,6 +43,8 @@ windows_dist = \
   qpid/sys/windows/Shlib.cpp \
   qpid/sys/windows/SocketAddress.cpp \
   qpid/sys/windows/Socket.cpp \
+  qpid/sys/windows/SslAsynchIO.cpp \
+  qpid/sys/windows/SslAsynchIO.h \
   qpid/sys/windows/StrError.cpp \
   qpid/sys/windows/SystemInfo.cpp \
   qpid/sys/windows/Thread.cpp \
@@ -51,7 +54,9 @@ windows_dist = \
   qpid/sys/windows/uuid.h \
   windows/QpiddBroker.cpp \
   qpid/broker/windows/BrokerDefaults.cpp \
-  qpid/broker/windows/SaslAuthenticator.cpp
+  qpid/broker/windows/SaslAuthenticator.cpp \
+  qpid/broker/windows/SslProtocolFactory.cpp \
+  qpid/messaging/HandleInstantiator.cpp
 
 EXTRA_DIST= $(platform_dist) $(rgen_srcs) $(windows_dist)
 
@@ -121,6 +126,8 @@ qpidtest_PROGRAMS =
 qpidtest_SCRIPTS =
 tmoduledir = $(libdir)/qpid/tests
 tmodule_LTLIBRARIES=
+
+AM_CXXFLAGS += -DBOOST_FILESYSTEM_VERSION=2
 
 ## Automake macros to build libraries and executables.
 qpidd_CXXFLAGS = $(AM_CXXFLAGS) -DQPIDD_MODULE_DIR=\"$(dmoduledir)\" -DQPIDD_CONF_FILE=\"$(sysconfdir)/qpidd.conf\"
@@ -543,6 +550,8 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/ExchangeRegistry.h \
   qpid/broker/ExpiryPolicy.cpp \
   qpid/broker/ExpiryPolicy.h \
+  qpid/broker/Fairshare.h \
+  qpid/broker/Fairshare.cpp \
   qpid/broker/FanOutExchange.cpp \
   qpid/broker/FanOutExchange.h \
   qpid/broker/FedOps.h \
@@ -550,6 +559,8 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/HeadersExchange.cpp \
   qpid/broker/HeadersExchange.h \
   qpid/broker/AsyncCompletion.h \
+  qpid/broker/LegacyLVQ.h \
+  qpid/broker/LegacyLVQ.cpp \
   qpid/broker/Link.cpp \
   qpid/broker/Link.h \
   qpid/broker/LinkRegistry.cpp \
@@ -560,9 +571,16 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/MessageAdapter.h \
   qpid/broker/MessageBuilder.cpp \
   qpid/broker/MessageBuilder.h \
+  qpid/broker/MessageDeque.h \
+  qpid/broker/MessageDeque.cpp \
+  qpid/broker/MessageMap.h \
+  qpid/broker/MessageMap.cpp \
+  qpid/broker/Messages.h \
   qpid/broker/MessageStore.h \
   qpid/broker/MessageStoreModule.cpp \
   qpid/broker/MessageStoreModule.h \
+  qpid/broker/PriorityQueue.h \
+  qpid/broker/PriorityQueue.cpp \
   qpid/broker/NameGenerator.cpp \
   qpid/broker/NameGenerator.h \
   qpid/broker/NullMessageStore.cpp \
@@ -584,6 +602,7 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/QueueEvents.h \
   qpid/broker/QueueListeners.cpp \
   qpid/broker/QueueListeners.h \
+  qpid/broker/QueueObserver.h \
   qpid/broker/QueuePolicy.cpp \
   qpid/broker/QueuePolicy.h \
   qpid/broker/QueueRegistry.cpp \
@@ -632,6 +651,8 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/SignalHandler.h \
   qpid/broker/System.cpp \
   qpid/broker/System.h \
+  qpid/broker/ThresholdAlerts.cpp \
+  qpid/broker/ThresholdAlerts.h \
   qpid/broker/TopicExchange.cpp \
   qpid/broker/TopicExchange.h \
   qpid/broker/TransactionalStore.h \

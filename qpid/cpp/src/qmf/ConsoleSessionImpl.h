@@ -72,7 +72,6 @@ namespace qmf {
         qpid::messaging::Sender directSender;
         qpid::messaging::Sender topicSender;
         std::string domain;
-        std::string authUser;
         uint32_t maxAgentAgeMinutes;
         bool listenOnDirect;
         bool strictSecurity;
