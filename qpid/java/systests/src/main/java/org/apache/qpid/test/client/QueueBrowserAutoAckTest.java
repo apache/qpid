@@ -20,8 +20,8 @@
  */
 package org.apache.qpid.test.client;
 
-import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.test.utils.FailoverBaseCase;
@@ -41,8 +41,6 @@ import java.util.Random;
 
 public class QueueBrowserAutoAckTest extends FailoverBaseCase
 {
-    private static final Logger _logger = Logger.getLogger(QueueBrowserAutoAckTest.class);
-
     protected Connection _clientConnection;
     protected Session _clientSession;
     protected Queue _queue;
@@ -53,10 +51,8 @@ public class QueueBrowserAutoAckTest extends FailoverBaseCase
     {
         super.setUp();
 
-
         //Create Client
         _clientConnection = getConnection();
-
         _clientConnection.start();
 
         setupSession();
@@ -395,7 +391,6 @@ public class QueueBrowserAutoAckTest extends FailoverBaseCase
         closeBrowserBeforeAfterGetNext(10);
 
         validate(messages);
-
     }
 
     /**
@@ -454,19 +449,15 @@ public class QueueBrowserAutoAckTest extends FailoverBaseCase
     {
         int messages = 5;
 
-
         sendMessages("connection1", messages);
         if (!CLUSTERED)
         {
             sendMessages("connection2", messages);
         }
 
-
         checkQueueDepth(messages);
 
-
         _logger.info("Creating Queue Browser");
-
         QueueBrowser queueBrowser = _clientSession.createBrowser(_queue);
 
         long queueDepth = 0;
@@ -477,19 +468,17 @@ public class QueueBrowserAutoAckTest extends FailoverBaseCase
         }
         catch (AMQException e)
         {
+            fail("Caught exception getting queue depth: " + e.getMessage());
         }
 
         assertEquals("Session reports Queue depth not as expected", messages, queueDepth);
 
-
         int msgCount = 0;
-
         int failPoint = 0;
 
         failPoint = new Random().nextInt(messages) + 1;
 
         Enumeration msgs = queueBrowser.getEnumeration();
-
         while (msgs.hasMoreElements())
         {
             msgs.nextElement();
@@ -536,5 +525,4 @@ public class QueueBrowserAutoAckTest extends FailoverBaseCase
         //Validate all messages still on Broker 1
         validate(messages);
     }
-
 }
