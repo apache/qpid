@@ -313,10 +313,6 @@ if (NOT Boost_FILESYSTEM_LIBRARY)
   set(Boost_FILESYSTEM_LIBRARY boost_filesystem)
 endif (NOT Boost_FILESYSTEM_LIBRARY)
 
-if (NOT Boost_SYSTEM_LIBRARY)
-  set(Boost_SYSTEM_LIBRARY boost_system)
-endif (NOT Boost_SYSTEM_LIBRARY)
-
 if (NOT Boost_UNIT_TEST_FRAMEWORK_LIBRARY)
   set(Boost_UNIT_TEST_FRAMEWORK_LIBRARY boost_unit_test_framework)
 endif (NOT Boost_UNIT_TEST_FRAMEWORK_LIBRARY)
