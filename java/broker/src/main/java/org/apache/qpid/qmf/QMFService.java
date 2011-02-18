@@ -712,6 +712,25 @@ public class QMFService implements ConfigStore.ConfigEventListener, Closeable
             return factory.createResponseCommand(CompletionCode.NOT_IMPLEMENTED);
         }
 
+        public BrokerSchema.BrokerClass.CreateMethodResponseCommand create(final BrokerSchema.BrokerClass.CreateMethodResponseCommandFactory factory,
+                                                                           final String type,
+                                                                           final String name,
+                                                                           final Map properties,
+                                                                           final java.lang.Boolean lenient)
+        {
+            //TODO:
+            return factory.createResponseCommand(CompletionCode.NOT_IMPLEMENTED);
+        }
+
+        public BrokerSchema.BrokerClass.DeleteMethodResponseCommand delete(final BrokerSchema.BrokerClass.DeleteMethodResponseCommandFactory factory,
+                                                                           final String type,
+                                                                           final String name,
+                                                                           final Map options)
+        {
+            //TODO:
+            return factory.createResponseCommand(CompletionCode.NOT_IMPLEMENTED);
+        }
+
         public UUID getId()
         {
             return _obj.getId();
