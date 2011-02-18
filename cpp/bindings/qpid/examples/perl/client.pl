@@ -20,13 +20,13 @@
 use strict;
 use warnings;
 
-use cqpid;
+use cqpid_perl;
 
 my $url = ( @ARGV == 1 ) ? $ARGV[0] : "amqp:tcp:127.0.0.1:5672";
 my $connectionOptions =  ( @ARGV > 1 ) ? $ARGV[1] : ""; 
 
 
-my $connection = new cqpid::Connection($url, $connectionOptions);
+my $connection = new cqpid_perl::Connection($url, $connectionOptions);
 
 eval {
 $connection->open();
@@ -35,7 +35,7 @@ my $session = $connection->createSession();
 my $sender = $session->createSender("service_queue");
 
 #create temp queue & receiver...
-my $responseQueue = new cqpid::Address("#response-queue; {create:always, delete:always}");
+my $responseQueue = new cqpid_perl::Address("#response-queue; {create:always, delete:always}");
 my $receiver = $session->createReceiver($responseQueue);
 
 #Now send some messages...
@@ -47,7 +47,7 @@ my @s = (
       "And the mome raths outgrabe."
      );
 
-my $request = new cqpid::Message();
+my $request = new cqpid_perl::Message();
 $request->setReplyTo($responseQueue);
 for (my $i=0; $i<4; $i++) {
     $request->setContent($s[$i]);

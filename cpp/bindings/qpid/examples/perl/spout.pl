@@ -20,7 +20,7 @@
 use strict;
 use warnings;
 
-use cqpid;
+use cqpid_perl;
 use Getopt::Long;
 use Time::Local;
 
@@ -77,19 +77,19 @@ sub setProperties {
     }
 }
 
-my $connection = new cqpid::Connection($url, $connectionOptions);
+my $connection = new cqpid_perl::Connection($url, $connectionOptions);
 
 eval {
     $connection->open();
     my $session  = $connection->createSession();
     my $sender = $session->createSender($address);
 
-    my $message = new cqpid::Message();
+    my $message = new cqpid_perl::Message();
     setProperties($message) if (@properties);
     if (@entries) {
         my $content = {};
         setEntries($content);
-        cqpid::encode($content, $message);
+        cqpid_perl::encode($content, $message);
     }
     elsif ($content) {
         $message->setContent($content);
@@ -98,7 +98,7 @@ eval {
 
     my $receiver;
     if ($replyto) {
-        my $responseQueue = new cqpid::Address($replyto);
+        my $responseQueue = new cqpid_perl::Address($replyto);
         $receiver = $session->createReceiver($responseQueue);
         $message->setReplyTo($responseQueue);
     }

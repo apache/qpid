@@ -21,13 +21,13 @@ use strict;
 use warnings;
 use Data::Dumper;
 
-use cqpid;
+use cqpid_perl;
 
 my $broker            = ( @ARGV > 0 ) ? $ARGV[0] : "localhost:5672";
 my $address           = ( @ARGV > 1 ) ? $ARGV[0] : "amq.topic";
 my $connectionOptions = ( @ARGV > 2 ) ? $ARGV[1] : "";
 
-my $connection = new cqpid::Connection($broker, $connectionOptions);
+my $connection = new cqpid_perl::Connection($broker, $connectionOptions);
 
 eval {
     $connection->open();
@@ -36,12 +36,12 @@ eval {
     my $receiver = $session->createReceiver($address);
     my $sender   = $session->createSender($address);
 
-    $sender->send(new cqpid::Message("Hello world!"));
+    $sender->send(new cqpid_perl::Message("Hello world!"));
 
-    #my $duration = new cqpid::Duration(1000);
+    #my $duration = new cqpid_perl::Duration(1000);
     #print ">>>" . $duration->getMilliseconds() . "\n";
 
-    my $message = $receiver->fetch($cqpid::Duration::SECOND);
+    my $message = $receiver->fetch($cqpid_perl::Duration::SECOND);
 
     #$message->setDurable(1);
     #print "Durable: " . $message->getDurable() . "\n";
