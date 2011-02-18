@@ -233,7 +233,7 @@ Broker::Broker(const Broker::Options& conf) :
 
     /** todo KAG - remove once cluster support for flow control done */
     if (isInCluster()) {
-        QPID_LOG(warning, "Producer Flow Control TBD for clustered brokers - queue flow control disabled by default.");
+        QPID_LOG(info, "Producer Flow Control TBD for clustered brokers - queue flow control disabled by default.");
         QueueFlowLimit::setDefaults(0, 0, 0);
     } else {
         QueueFlowLimit::setDefaults(conf.queueLimit, conf.queueFlowStopRatio, conf.queueFlowResumeRatio);
