@@ -155,8 +155,8 @@ QPID_AUTO_TEST_CASE(testFlowSize)
         BOOST_CHECK(!flow->isFlowControlActive());
     }
     BOOST_CHECK(!flow->isFlowControlActive());  // 60 on queue
-    BOOST_CHECK_EQUAL(6, flow->getFlowCount());
-    BOOST_CHECK_EQUAL(60, flow->getFlowSize());
+    BOOST_CHECK_EQUAL(6u, flow->getFlowCount());
+    BOOST_CHECK_EQUAL(60u, flow->getFlowSize());
 
     QueuedMessage msg_9 = createMessage(9);
     flow->enqueued(msg_9);
@@ -171,8 +171,8 @@ QPID_AUTO_TEST_CASE(testFlowSize)
     msgs.push_back(createMessage(10));
     flow->enqueued(msgs.back());
     BOOST_CHECK(flow->isFlowControlActive());   // 81 on queue
-    BOOST_CHECK_EQUAL(10, flow->getFlowCount());
-    BOOST_CHECK_EQUAL(81, flow->getFlowSize());
+    BOOST_CHECK_EQUAL(10u, flow->getFlowCount());
+    BOOST_CHECK_EQUAL(81u, flow->getFlowSize());
 
     flow->dequeued(msgs.front());
     msgs.pop_front();
@@ -197,8 +197,8 @@ QPID_AUTO_TEST_CASE(testFlowSize)
     flow->dequeued(msgs.front());
     msgs.pop_front();
     BOOST_CHECK(!flow->isFlowControlActive());  // 20 on queue
-    BOOST_CHECK_EQUAL(2, flow->getFlowCount());
-    BOOST_CHECK_EQUAL(20, flow->getFlowSize());
+    BOOST_CHECK_EQUAL(2u, flow->getFlowCount());
+    BOOST_CHECK_EQUAL(20u, flow->getFlowSize());
 }
 
 QPID_AUTO_TEST_CASE(testFlowArgs)
