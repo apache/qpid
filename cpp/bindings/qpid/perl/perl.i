@@ -17,7 +17,7 @@
  * under the License.
  */
 
-%module cqpid
+%module cqpid_perl
 %include "std_string.i"
 %include "../../swig_perl_typemaps.i"
 

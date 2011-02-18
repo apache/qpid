@@ -21,13 +21,13 @@ use strict;
 use warnings;
 use Data::Dumper;
 
-use cqpid;
+use cqpid_perl;
 
 my $url               = ( @ARGV > 0 ) ? $ARGV[0] : "amqp:tcp:127.0.0.1:5672";
 my $address           = ( @ARGV > 1 ) ? $ARGV[1] : "message_queue; {create: always}";
 my $connectionOptions = ( @ARGV > 2 ) ? $ARGV[2] : "";
 
-my $connection = new cqpid::Connection($url, $connectionOptions);
+my $connection = new cqpid_perl::Connection($url, $connectionOptions);
 
 eval {
     $connection->open();
@@ -35,13 +35,13 @@ eval {
     my $session = $connection->createSession();
     my $sender  = $session->createSender($address);
 
-    my $message = new cqpid::Message();
+    my $message = new cqpid_perl::Message();
     my $content = { id   => 987654321, 
                     name => "Widget", 
                     percent => sprintf("%.2f", 0.99), 
                     colours => [ qw (red green white) ], 
                    };
-    cqpid::encode($content, $message);
+    cqpid_perl::encode($content, $message);
     $sender->send($message, 1);
 
     $connection->close();

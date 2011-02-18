@@ -20,13 +20,13 @@
 use strict;
 use warnings;
 
-use cqpid;
+use cqpid_perl;
 
 my $url = ( @ARGV == 1 ) ? $ARGV[0] : "amqp:tcp:127.0.0.1:5672";
 my $connectionOptions =  ( @ARGV > 1 ) ? $ARGV[1] : ""; 
 
 
-my $connection = new cqpid::Connection($url, $connectionOptions);
+my $connection = new cqpid_perl::Connection($url, $connectionOptions);
 
 eval {
     $connection->open();
@@ -41,7 +41,7 @@ eval {
             my $sender = $session->createSender($address);
             my $s = $request->getContent();
             $s = uc($s);
-            my $response = new cqpid::Message($s);
+            my $response = new cqpid_perl::Message($s);
             $sender->send($response);
             print "Processed request: " . $request->getContent() . " -> " . $response->getContent() . "\n";
             $session->acknowledge();

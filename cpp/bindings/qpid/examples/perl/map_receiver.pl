@@ -21,21 +21,21 @@ use strict;
 use warnings;
 use Data::Dumper;
 
-use cqpid;
+use cqpid_perl;
 
 my $url               = ( @ARGV > 0 ) ? $ARGV[0] : "amqp:tcp:127.0.0.1:5672";
 my $address           = ( @ARGV > 1 ) ? $ARGV[0] : "message_queue; {create: always}";
 my $connectionOptions = ( @ARGV > 2 ) ? $ARGV[1] : "";
 
-my $connection = new cqpid::Connection($url, $connectionOptions);
+my $connection = new cqpid_perl::Connection($url, $connectionOptions);
 
 eval {
     $connection->open();
     my $session  = $connection->createSession();
     my $receiver = $session->createReceiver($address);
 
-    my $content = cqpid::decodeMap($receiver->fetch());
-    #my $content = cqpid::decodeList($receiver->fetch());
+    my $content = cqpid_perl::decodeMap($receiver->fetch());
+    #my $content = cqpid_perl::decodeList($receiver->fetch());
    
     print Dumper($content);
 
