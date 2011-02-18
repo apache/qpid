@@ -92,7 +92,10 @@ try:
   arguments = {}
   for a in args:
     name, val = nameval(a)
-    arguments[name] = val
+    if val[0] == '{' or val[0] == '[':
+      arguments[name] = eval(val)
+    else:
+      arguments[name] = val
   content = {
              "_object_id": {"_object_name": object_name},
              "_method_name": method_name,
