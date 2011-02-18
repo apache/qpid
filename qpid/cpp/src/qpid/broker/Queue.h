@@ -172,8 +172,9 @@ class Queue : public boost::enable_shared_from_this<Queue>,
             }
         }
     }
-            
+
     void checkNotDeleted();
+    void notifyDeleted();
 
   public:
 
@@ -196,13 +197,17 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     // "recovering" means we are doing a MessageStore recovery.
     QPID_BROKER_EXTERN void configure(const qpid::framing::FieldTable& settings,
                                       bool recovering = false);
-    void destroy();
-    void notifyDeleted();
+    void destroyed();
     QPID_BROKER_EXTERN void bound(const std::string& exchange,
                                   const std::string& key,
                                   const qpid::framing::FieldTable& args);
-    QPID_BROKER_EXTERN void unbind(ExchangeRegistry& exchanges,
-                                   Queue::shared_ptr shared_ref);
+    //TODO: get unbind out of the public interface; only there for purposes of one unit test
+    void unbind(ExchangeRegistry& exchanges);
+    /**
+     * Bind self to specified exchange, and record that binding for unbinding on delete.
+     */
+    bool bind(boost::shared_ptr<Exchange> exchange, const std::string& key,
+              const qpid::framing::FieldTable& arguments=qpid::framing::FieldTable());
 
     QPID_BROKER_EXTERN bool acquire(const QueuedMessage& msg);
     QPID_BROKER_EXTERN bool acquireMessageAt(const qpid::framing::SequenceNumber& position, QueuedMessage& message);

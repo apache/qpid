@@ -31,6 +31,7 @@
 #include <qpid/broker/Message.h>
 #include "qpid/framing/MessageTransferBody.h"
 #include "qpid/sys/Time.h"
+#include "qpid/sys/Thread.h"
 #include "qpid/broker/ConnectionState.h"
 #include "qpid/broker/AclModule.h"
 #include "qpid/types/Variant.h"
@@ -2237,6 +2238,7 @@ void ManagementAgent::dispatchAgentCommandLH(Message& msg, bool viaLocal)
     uint32_t bufferLen = inBuffer.getPosition();
     inBuffer.reset();
 
+    setManagementExecutionContext((const qpid::broker::ConnectionState*) msg.getPublisher());
     const framing::FieldTable *headers = msg.getApplicationHeaders();
     if (headers && msg.getAppId() == "qmf2")
     {
@@ -3085,3 +3087,21 @@ bool ManagementAgent::moveDeletedObjectsLH() {
     }
     return !deleteList.empty();
 }
+
+namespace qpid {
+namespace management {
+
+namespace {
+QPID_TSS const qpid::broker::ConnectionState* executionContext = 0;
+}
+
+void setManagementExecutionContext(const qpid::broker::ConnectionState* ctxt)
+{
+    executionContext = ctxt;
+}
+const qpid::broker::ConnectionState* getManagementExecutionContext()
+{
+    return executionContext;
+}
+
+}}

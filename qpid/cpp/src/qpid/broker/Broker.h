@@ -10,9 +10,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -49,6 +49,7 @@
 #include "qpid/framing/ProtocolInitiation.h"
 #include "qpid/sys/Runnable.h"
 #include "qpid/sys/Timer.h"
+#include "qpid/types/Variant.h"
 #include "qpid/RefCounted.h"
 #include "qpid/broker/AclModule.h"
 #include "qpid/sys/Mutex.h"
@@ -57,7 +58,7 @@
 #include <string>
 #include <vector>
 
-namespace qpid { 
+namespace qpid {
 
 namespace sys {
     class ProtocolFactory;
@@ -68,6 +69,7 @@ struct Url;
 
 namespace broker {
 
+class ConnectionState;
 class ExpiryPolicy;
 class Message;
 
@@ -80,7 +82,7 @@ struct NoSuchTransportException : qpid::Exception
 };
 
 /**
- * A broker instance. 
+ * A broker instance.
  */
 class Broker : public sys::Runnable, public Plugin::Target,
                public management::Manageable,
@@ -148,6 +150,10 @@ public:
     void setStore ();
     void setLogLevel(const std::string& level);
     std::string getLogLevel();
+    void createObject(const std::string& type, const std::string& name,
+                      const qpid::types::Variant::Map& properties, bool lenient, const ConnectionState* context);
+    void deleteObject(const std::string& type, const std::string& name,
+                      const qpid::types::Variant::Map& options, const ConnectionState* context);
 
     boost::shared_ptr<sys::Poller> poller;
     sys::Timer timer;
@@ -179,7 +185,7 @@ public:
     bool clusterUpdatee;
     boost::intrusive_ptr<ExpiryPolicy> expiryPolicy;
     ConnectionCounter connectionCounter;
-    
+
   public:
     virtual ~Broker();
 
@@ -277,7 +283,7 @@ public:
     bool isClusterUpdatee() const { return clusterUpdatee; }
 
     management::ManagementAgent* getManagementAgent() { return managementAgent.get(); }
-    
+
     ConnectionCounter& getConnectionCounter() {return connectionCounter;}
 
     /**
@@ -290,6 +296,42 @@ public:
                           const boost::intrusive_ptr<Message>& msg)> deferDelivery;
 
     bool isAuthenticating ( ) { return config.auth; }
+
+    typedef boost::function1<void, boost::shared_ptr<Queue> > QueueFunctor;
+
+    std::pair<boost::shared_ptr<Queue>, bool> createQueue(
+        const std::string& name,
+        bool durable,
+        bool autodelete,
+        const OwnershipToken* owner,
+        const std::string& alternateExchange,
+        const qpid::framing::FieldTable& arguments,
+        const std::string& userId,
+        const std::string& connectionId);
+    void deleteQueue(const std::string& name,
+                     const std::string& userId,
+                     const std::string& connectionId,
+                     QueueFunctor check = QueueFunctor());
+    std::pair<Exchange::shared_ptr, bool> createExchange(
+        const std::string& name,
+        const std::string& type,
+        bool durable,
+        const std::string& alternateExchange,
+        const qpid::framing::FieldTable& args,
+        const std::string& userId, const std::string& connectionId);
+    void deleteExchange(const std::string& name, const std::string& userId,
+                        const std::string& connectionId);
+    void bind(const std::string& queue,
+              const std::string& exchange,
+              const std::string& key,
+              const qpid::framing::FieldTable& arguments,
+              const std::string& userId,
+              const std::string& connectionId);
+    void unbind(const std::string& queue,
+                const std::string& exchange,
+                const std::string& key,
+                const std::string& userId,
+                const std::string& connectionId);
 };
 
 }}
