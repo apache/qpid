@@ -351,7 +351,7 @@ void SessionState::completeRcvMsg(SequenceNumber id,
     // completion of this msg?  If so, complete them.
     while (!pendingExecutionSyncs.empty() &&
            receiverGetIncomplete().front() >= pendingExecutionSyncs.front()) {
-        const SequenceNumber& id = pendingExecutionSyncs.front();
+        const SequenceNumber id = pendingExecutionSyncs.front();
         pendingExecutionSyncs.pop();
         QPID_LOG(debug, getId() << ": delayed execution.sync " << id << " is completed.");
         receiverCompleted(id);
