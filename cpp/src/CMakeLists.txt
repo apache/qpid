@@ -435,6 +435,7 @@ if (MSVC)
    set(Boost_THREAD_LIBRARY "")
    set(Boost_PROGRAM_OPTIONS_LIBRARY "")
    set(Boost_FILESYSTEM_LIBRARY "")
+   set(Boost_SYSTEM_LIBRARY "")
    set(Boost_UNIT_TEST_FRAMEWORK_LIBRARY "")
    set(Boost_REGEX_LIBRARY "")
    include_directories( ${CMAKE_CURRENT_SOURCE_DIR}/windows/resources )
@@ -1064,13 +1065,15 @@ endif (CPACK_GENERATOR STREQUAL "NSIS")
 #  REVISION => Version of underlying implementation.
 #              Bump if implementation changes but API/ABI doesn't
 #  AGE      => Number of API/ABI versions this is backward compatible with
-set (qmf_version 1.0.0)
+set (qmf_version 2.0.0)
+set (qmf2_version 1.0.0)
 set (qmfengine_version 1.0.0)
 
 set (qmf_SOURCES
     qpid/agent/ManagementAgentImpl.cpp
     qpid/agent/ManagementAgentImpl.h
     )
+
 add_msvc_version (qmf library dll)
 add_library (qmf SHARED ${qmf_SOURCES})
 target_link_libraries (qmf qpidclient)
@@ -1080,6 +1083,81 @@ install (TARGETS qmf OPTIONAL
          DESTINATION ${QPID_INSTALL_LIBDIR}
          COMPONENT ${QPID_COMPONENT_QMF})
 install_pdb (qmf ${QPID_COMPONENT_QMF})
+
+set (qmf2_HEADERS
+    ../include/qmf/AgentEvent.h
+    ../include/qmf/Agent.h
+    ../include/qmf/AgentSession.h
+    ../include/qmf/ConsoleEvent.h
+    ../include/qmf/ConsoleSession.h
+    ../include/qmf/DataAddr.h
+    ../include/qmf/Data.h
+    ../include/qmf/exceptions.h
+    ../include/qmf/Handle.h
+    ../include/qmf/ImportExport.h
+    ../include/qmf/Query.h
+    ../include/qmf/Schema.h
+    ../include/qmf/SchemaId.h
+    ../include/qmf/SchemaMethod.h
+    ../include/qmf/SchemaProperty.h
+    ../include/qmf/SchemaTypes.h
+    ../include/qmf/Subscription.h
+    )
+
+set (qmf2_SOURCES
+    ${qmf2_HEADERS}
+    qmf/agentCapability.h
+    qmf/Agent.cpp
+    qmf/AgentEvent.cpp
+    qmf/AgentEventImpl.h
+    qmf/AgentImpl.h
+    qmf/AgentSession.cpp
+    qmf/AgentSubscription.cpp
+    qmf/AgentSubscription.h
+    qmf/ConsoleEvent.cpp
+    qmf/ConsoleEventImpl.h
+    qmf/ConsoleSession.cpp
+    qmf/ConsoleSessionImpl.h
+    qmf/constants.cpp
+    qmf/constants.h
+    qmf/DataAddr.cpp
+    qmf/DataAddrImpl.h
+    qmf/Data.cpp
+    qmf/DataImpl.h
+    qmf/exceptions.cpp
+    qmf/Expression.cpp
+    qmf/Expression.h
+    qmf/Hash.cpp
+    qmf/Hash.h
+    qmf/PrivateImplRef.h
+    qmf/Query.cpp
+    qmf/QueryImpl.h
+    qmf/Schema.cpp
+    qmf/SchemaCache.cpp
+    qmf/SchemaCache.h
+    qmf/SchemaId.cpp
+    qmf/SchemaIdImpl.h
+    qmf/SchemaImpl.h
+    qmf/SchemaMethod.cpp
+    qmf/SchemaMethodImpl.h
+    qmf/SchemaProperty.cpp
+    qmf/SchemaPropertyImpl.h
+    qmf/Subscription.cpp
+    qmf/SubscriptionImpl.h
+    )
+
+add_msvc_version (qmf2 library dll)
+add_library (qmf2 SHARED ${qmf2_SOURCES})
+target_link_libraries (qmf2 qpidmessaging qpidtypes)
+set_target_properties (qmf2 PROPERTIES
+                       VERSION ${qmf2_version})
+install (TARGETS qmf2 OPTIONAL
+         DESTINATION ${QPID_INSTALL_LIBDIR}
+         COMPONENT ${QPID_COMPONENT_QMF})
+install (FILES ${qmf2_HEADERS}
+         DESTINATION ${QPID_INSTALL_INCLUDEDIR}/qmf
+         COMPONENT ${QPID_COMPONENT_QMF})
+install_pdb (qmf2 ${QPID_COMPONENT_QMF})
 
 set (qmfengine_SOURCES
      qmf/engine/Agent.cpp
