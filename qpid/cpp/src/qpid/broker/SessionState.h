@@ -226,13 +226,29 @@ class SessionState : public qpid::SessionState,
      * flow-control, etc). before the command can be completed to the client
      */
     std::map<SequenceNumber, boost::shared_ptr<IncompleteCommandContext> > incompleteCmds;
-    // identifies those commands in incompleteCmds that are waiting for IO thread to run in order to be completed.
-    boost::shared_ptr< std::list<SequenceNumber> > scheduledCmds;
-    qpid::sys::Mutex incompleteCmdsLock;  // locks both above containers
+    qpid::sys::Mutex incompleteCmdsLock;  // locks above container
 
-    /** runs in IO thread, completes commands that where finished asynchronously. */
-    static void scheduledCompleter(boost::shared_ptr< std::list<SequenceNumber> > scheduledCmds,
-                                   SessionState *session);
+    /** This context is shared between the SessionState and scheduledCompleter,
+     * holds the sequence numbers of all commands that have completed asynchronously.
+     */
+    class ScheduledCompleterContext {
+    private:
+        std::list<SequenceNumber> completedCmds;
+        // ordering: take this lock first, then incompleteCmdsLock
+        qpid::sys::Mutex completedCmdsLock;
+        SessionState *session;
+    public:
+        ScheduledCompleterContext(SessionState *s) : session(s) {};
+        bool scheduleCompletion(SequenceNumber cmd);
+        void completeCommands();
+        void cancel();
+    };
+    boost::shared_ptr<ScheduledCompleterContext> scheduledCompleterContext;
+
+    /** The following method runs the in IO thread and completes commands that
+     * where finished asynchronously.
+     */
+    static void scheduledCompleter(boost::shared_ptr<ScheduledCompleterContext>);
 
     friend class SessionManager;
 };
