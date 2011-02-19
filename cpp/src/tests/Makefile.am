@@ -87,7 +87,6 @@ unit_test_SOURCES= unit_test.cpp unit_test.h \
 	InlineVector.cpp \
 	SequenceSet.cpp \
 	StringUtils.cpp \
-	IncompleteMessageList.cpp \
 	RangeSet.cpp \
 	AtomicValue.cpp \
 	QueueTest.cpp \
@@ -99,6 +98,7 @@ unit_test_SOURCES= unit_test.cpp unit_test.h \
 	MessageTest.cpp \
 	QueueRegistryTest.cpp \
 	QueuePolicyTest.cpp \
+	QueueFlowLimitTest.cpp \
 	FramingTest.cpp \
 	HeaderTest.cpp \
 	SequenceNumberTest.cpp \
@@ -310,7 +310,9 @@ TESTS_ENVIRONMENT = \
     $(srcdir)/run_test 
 
 system_tests = qpid-client-test quick_perftest quick_topictest run_header_test quick_txtest
-TESTS += start_broker $(system_tests) python_tests stop_broker run_federation_tests run_acl_tests run_cli_tests replication_test dynamic_log_level_test
+TESTS += start_broker $(system_tests) python_tests stop_broker run_federation_tests \
+  run_acl_tests run_cli_tests replication_test dynamic_log_level_test \
+  run_queue_flow_limit_tests
 
 EXTRA_DIST +=								\
   run_test vg_check							\
@@ -349,7 +351,8 @@ EXTRA_DIST +=								\
   run_test.ps1								\
   start_broker.ps1							\
   stop_broker.ps1							\
-  topictest.ps1
+  topictest.ps1                                                         \
+  run_queue_flow_limit_tests
 
 check_LTLIBRARIES += libdlclose_noop.la
 libdlclose_noop_la_LDFLAGS = -module -rpath $(abs_builddir)

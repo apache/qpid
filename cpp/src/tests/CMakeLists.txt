@@ -107,7 +107,6 @@ set(unit_tests_to_build
     MessagingSessionTests
     SequenceSet
     StringUtils
-    IncompleteMessageList
     RangeSet
     AtomicValue
     QueueTest
@@ -119,6 +118,7 @@ set(unit_tests_to_build
     MessageTest
     QueueRegistryTest
     QueuePolicyTest
+    QueueFlowLimitTest
     FramingTest
     HeaderTest
     SequenceNumberTest
