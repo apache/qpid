@@ -24,6 +24,7 @@
 #include "qpid/log/Statement.h"
 #include "qpid/framing/SequenceSet.h"
 #include "qpid/management/ManagementAgent.h"
+#include "qpid/broker/SessionState.h"
 #include "qmf/org/apache/qpid/broker/EventExchangeDeclare.h"
 #include "qmf/org/apache/qpid/broker/EventExchangeDelete.h"
 #include "qmf/org/apache/qpid/broker/EventQueueDeclare.h"
@@ -509,7 +510,12 @@ framing::MessageResumeResult SessionAdapter::MessageHandlerImpl::resume(const st
     
 
 
-void SessionAdapter::ExecutionHandlerImpl::sync() {} //essentially a no-op
+void SessionAdapter::ExecutionHandlerImpl::sync()
+{
+    session.addPendingExecutionSync();
+    /** @todo KAG - need a generic mechanism to allow a command to returning "not completed" status back to SessionState */
+
+}
 
 void SessionAdapter::ExecutionHandlerImpl::result(const SequenceNumber& /*commandId*/, const string& /*value*/)
 {

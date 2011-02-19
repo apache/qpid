@@ -175,6 +175,7 @@
     <statistic name="bindingCount"        type="hilo32"   unit="binding"     desc="Current bindings"/>
     <statistic name="unackedMessages"     type="hilo32"   unit="message"     desc="Messages consumed but not yet acked"/>
     <statistic name="messageLatency"      type="mmaTime"  unit="nanosecond"  desc="Broker latency through this queue"/>
+    <statistic name="flowStopped"         type="bool"     desc="Flow control active."/>
 
     <method name="purge" desc="Discard all or some messages on a queue">
       <arg name="request" dir="I" type="uint32" desc="0 for all messages or n>0 for n messages"/>

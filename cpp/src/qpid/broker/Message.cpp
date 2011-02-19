@@ -50,14 +50,15 @@ TransferAdapter Message::TRANSFER;
 Message::Message(const framing::SequenceNumber& id) :
     frames(id), persistenceId(0), redelivered(false), loaded(false),
     staged(false), forcePersistentPolicy(false), publisher(0), adapter(0), 
-    expiration(FAR_FUTURE), enqueueCallback(0), dequeueCallback(0),
-    inCallback(false), requiredCredit(0) {}
+    expiration(FAR_FUTURE), dequeueCallback(0),
+    inCallback(false), requiredCredit(0)
+{}
 
 Message::Message(const Message& original) :
     PersistableMessage(), frames(original.frames), persistenceId(0), redelivered(false), loaded(false),
     staged(false), forcePersistentPolicy(false), publisher(0), adapter(0), 
-    expiration(original.expiration), enqueueCallback(0), dequeueCallback(0),
-    inCallback(false), requiredCredit(0) 
+    expiration(original.expiration), dequeueCallback(0),
+    inCallback(false), requiredCredit(0)
 {
     setExpiryPolicy(original.expiryPolicy);
 }
@@ -415,28 +416,10 @@ struct ScopedSet {
 };
 }
 
-void Message::allEnqueuesComplete() {
-    ScopedSet ss(callbackLock, inCallback);
-    MessageCallback* cb = enqueueCallback;
-    if (cb && *cb) (*cb)(intrusive_ptr<Message>(this));
-}
-
 void Message::allDequeuesComplete() {
     ScopedSet ss(callbackLock, inCallback);
     MessageCallback* cb = dequeueCallback;
     if (cb && *cb) (*cb)(intrusive_ptr<Message>(this));
-}
-
-void Message::setEnqueueCompleteCallback(MessageCallback& cb) {
-    sys::Mutex::ScopedLock l(callbackLock);
-    while (inCallback) callbackLock.wait();
-    enqueueCallback = &cb;
-}
-
-void Message::resetEnqueueCompleteCallback() {
-    sys::Mutex::ScopedLock l(callbackLock);
-    while (inCallback) callbackLock.wait();
-    enqueueCallback = 0;
 }
 
 void Message::setDequeueCompleteCallback(MessageCallback& cb) {

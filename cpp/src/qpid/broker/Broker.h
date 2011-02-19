@@ -118,29 +118,31 @@ public:
         bool asyncQueueEvents;
         bool qmf2Support;
         bool qmf1Support;
+        uint queueFlowStopRatio;    // producer flow control: on
+        uint queueFlowResumeRatio;  // producer flow control: off
 
       private:
         std::string getHome();
     };
-    
+
     class ConnectionCounter {
             int maxConnections;
             int connectionCount;
             sys::Mutex connectionCountLock;
         public:
             ConnectionCounter(int mc): maxConnections(mc),connectionCount(0) {};
-            void inc_connectionCount() {    
-                sys::ScopedLock<sys::Mutex> l(connectionCountLock); 
+            void inc_connectionCount() {
+                sys::ScopedLock<sys::Mutex> l(connectionCountLock);
                 connectionCount++;
-            } 
-            void dec_connectionCount() {    
-                sys::ScopedLock<sys::Mutex> l(connectionCountLock); 
+            }
+            void dec_connectionCount() {
+                sys::ScopedLock<sys::Mutex> l(connectionCountLock);
                 connectionCount--;
             }
             bool allowConnection() {
-                sys::ScopedLock<sys::Mutex> l(connectionCountLock); 
+                sys::ScopedLock<sys::Mutex> l(connectionCountLock);
                 return (maxConnections <= connectionCount);
-            } 
+            }
     };
 
   private:
@@ -182,7 +184,7 @@ public:
                            const boost::intrusive_ptr<Message>& msg);
     std::string federationTag;
     bool recovery;
-    bool clusterUpdatee;
+    bool inCluster, clusterUpdatee;
     boost::intrusive_ptr<ExpiryPolicy> expiryPolicy;
     ConnectionCounter connectionCounter;
 
@@ -241,7 +243,7 @@ public:
     QPID_BROKER_EXTERN void accept();
 
     /** Create a connection to another broker. */
-    void connect(const std::string& host, uint16_t port, 
+    void connect(const std::string& host, uint16_t port,
                  const std::string& transport,
                  boost::function2<void, int, std::string> failed,
                  sys::ConnectionCodec::Factory* =0);
@@ -253,9 +255,9 @@ public:
     /** Move messages from one queue to another.
         A zero quantity means to move all messages
     */
-    uint32_t queueMoveMessages( const std::string& srcQueue, 
+    uint32_t queueMoveMessages( const std::string& srcQueue,
 			    const std::string& destQueue,
-			    uint32_t  qty); 
+			    uint32_t  qty);
 
     boost::shared_ptr<sys::ProtocolFactory> getProtocolFactory(const std::string& name = TCP_TRANSPORT) const;
 
@@ -279,8 +281,17 @@ public:
     void setRecovery(bool set) { recovery = set; }
     bool getRecovery() const { return recovery; }
 
-    void setClusterUpdatee(bool set) { clusterUpdatee = set; }
+    /** True of this broker is part of a cluster.
+     * Only valid after early initialization of plugins is complete.
+     */
+    bool isInCluster() const { return inCluster; }
+    void setInCluster(bool set) { inCluster = set; }
+
+    /** True if this broker is joining a cluster and in the process of
+     * receiving a state update.
+     */
     bool isClusterUpdatee() const { return clusterUpdatee; }
+    void setClusterUpdatee(bool set) { clusterUpdatee = set; }
 
     management::ManagementAgent* getManagementAgent() { return managementAgent.get(); }
 

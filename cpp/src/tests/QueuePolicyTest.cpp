@@ -23,6 +23,7 @@
 #include "test_tools.h"
 
 #include "qpid/broker/QueuePolicy.h"
+#include "qpid/broker/QueueFlowLimit.h"
 #include "qpid/client/QueueOptions.h"
 #include "qpid/sys/Time.h"
 #include "qpid/framing/reply_exceptions.h"
@@ -38,6 +39,7 @@ namespace tests {
 
 QPID_AUTO_TEST_SUITE(QueuePolicyTestSuite)
 
+namespace {
 QueuedMessage createMessage(uint32_t size)
 {
     QueuedMessage msg;
@@ -45,7 +47,7 @@ QueuedMessage createMessage(uint32_t size)
     MessageUtils::addContent(msg.payload, std::string (size, 'x'));
     return msg;
 }
-
+}
 
 QPID_AUTO_TEST_CASE(testCount)
 {
@@ -340,6 +342,8 @@ QPID_AUTO_TEST_CASE(testFlowToDiskWithNoStore)
     //fallback to rejecting messages
     QueueOptions args;
     args.setSizePolicy(FLOW_TO_DISK, 0, 5);
+    // Disable flow control, or else we'll never hit the max limit
+    args.setInt(QueueFlowLimit::flowStopCountKey, 0);
 
     ProxySessionFixture f;
     std::string q("my-queue");
