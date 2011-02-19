@@ -49,6 +49,7 @@
 #include "qpid/framing/ProtocolInitiation.h"
 #include "qpid/sys/Runnable.h"
 #include "qpid/sys/Timer.h"
+#include "qpid/types/Variant.h"
 #include "qpid/RefCounted.h"
 #include "qpid/broker/AclModule.h"
 #include "qpid/sys/Mutex.h"
@@ -68,6 +69,7 @@ struct Url;
 
 namespace broker {
 
+class ConnectionState;
 class ExpiryPolicy;
 class Message;
 
@@ -150,6 +152,10 @@ public:
     void setStore ();
     void setLogLevel(const std::string& level);
     std::string getLogLevel();
+    void createObject(const std::string& type, const std::string& name,
+                      const qpid::types::Variant::Map& properties, bool lenient, const ConnectionState* context);
+    void deleteObject(const std::string& type, const std::string& name,
+                      const qpid::types::Variant::Map& options, const ConnectionState* context);
 
     boost::shared_ptr<sys::Poller> poller;
     sys::Timer timer;
@@ -301,6 +307,42 @@ public:
                           const boost::intrusive_ptr<Message>& msg)> deferDelivery;
 
     bool isAuthenticating ( ) { return config.auth; }
+
+    typedef boost::function1<void, boost::shared_ptr<Queue> > QueueFunctor;
+
+    std::pair<boost::shared_ptr<Queue>, bool> createQueue(
+        const std::string& name,
+        bool durable,
+        bool autodelete,
+        const OwnershipToken* owner,
+        const std::string& alternateExchange,
+        const qpid::framing::FieldTable& arguments,
+        const std::string& userId,
+        const std::string& connectionId);
+    void deleteQueue(const std::string& name,
+                     const std::string& userId,
+                     const std::string& connectionId,
+                     QueueFunctor check = QueueFunctor());
+    std::pair<Exchange::shared_ptr, bool> createExchange(
+        const std::string& name,
+        const std::string& type,
+        bool durable,
+        const std::string& alternateExchange,
+        const qpid::framing::FieldTable& args,
+        const std::string& userId, const std::string& connectionId);
+    void deleteExchange(const std::string& name, const std::string& userId,
+                        const std::string& connectionId);
+    void bind(const std::string& queue,
+              const std::string& exchange,
+              const std::string& key,
+              const qpid::framing::FieldTable& arguments,
+              const std::string& userId,
+              const std::string& connectionId);
+    void unbind(const std::string& queue,
+                const std::string& exchange,
+                const std::string& key,
+                const std::string& userId,
+                const std::string& connectionId);
 };
 
 }}

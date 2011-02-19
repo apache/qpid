@@ -20,6 +20,7 @@
  */
 
 #include "qpid/broker/Broker.h"
+#include "qpid/broker/ConnectionState.h"
 #include "qpid/broker/DirectExchange.h"
 #include "qpid/broker/FanOutExchange.h"
 #include "qpid/broker/HeadersExchange.h"
@@ -34,10 +35,19 @@
 #include "qpid/broker/QueueFlowLimit.h"
 
 #include "qmf/org/apache/qpid/broker/Package.h"
+#include "qmf/org/apache/qpid/broker/ArgsBrokerCreate.h"
+#include "qmf/org/apache/qpid/broker/ArgsBrokerDelete.h"
 #include "qmf/org/apache/qpid/broker/ArgsBrokerEcho.h"
 #include "qmf/org/apache/qpid/broker/ArgsBrokerGetLogLevel.h"
 #include "qmf/org/apache/qpid/broker/ArgsBrokerQueueMoveMessages.h"
 #include "qmf/org/apache/qpid/broker/ArgsBrokerSetLogLevel.h"
+#include "qmf/org/apache/qpid/broker/EventExchangeDeclare.h"
+#include "qmf/org/apache/qpid/broker/EventExchangeDelete.h"
+#include "qmf/org/apache/qpid/broker/EventQueueDeclare.h"
+#include "qmf/org/apache/qpid/broker/EventQueueDelete.h"
+#include "qmf/org/apache/qpid/broker/EventBind.h"
+#include "qmf/org/apache/qpid/broker/EventUnbind.h"
+#include "qpid/amqp_0_10/Codecs.h"
 #include "qpid/management/ManagementDirectExchange.h"
 #include "qpid/management/ManagementTopicExchange.h"
 #include "qpid/log/Logger.h"
@@ -45,7 +55,9 @@
 #include "qpid/log/Statement.h"
 #include "qpid/log/posix/SinkOptions.h"
 #include "qpid/framing/AMQFrame.h"
+#include "qpid/framing/FieldTable.h"
 #include "qpid/framing/ProtocolInitiation.h"
+#include "qpid/framing/reply_exceptions.h"
 #include "qpid/framing/Uuid.h"
 #include "qpid/sys/ProtocolFactory.h"
 #include "qpid/sys/Poller.h"
@@ -77,7 +89,10 @@ using qpid::management::ManagementAgent;
 using qpid::management::ManagementObject;
 using qpid::management::Manageable;
 using qpid::management::Args;
+using qpid::management::getManagementExecutionContext;
+using qpid::types::Variant;
 using std::string;
+using std::make_pair;
 
 namespace _qmf = qmf::org::apache::qpid::broker;
 
@@ -457,6 +472,20 @@ Manageable::status_t Broker::ManagementMethod (uint32_t methodId,
         QPID_LOG (debug, "Broker::getLogLevel()");
         status = Manageable::STATUS_OK;
         break;
+    case _qmf::Broker::METHOD_CREATE :
+      {
+          _qmf::ArgsBrokerCreate& a = dynamic_cast<_qmf::ArgsBrokerCreate&>(args);
+          createObject(a.i_type, a.i_name, a.i_properties, a.i_strict, getManagementExecutionContext());
+          status = Manageable::STATUS_OK;
+          break;
+      }
+    case _qmf::Broker::METHOD_DELETE :
+      {
+          _qmf::ArgsBrokerDelete& a = dynamic_cast<_qmf::ArgsBrokerDelete&>(args);
+          deleteObject(a.i_type, a.i_name, a.i_options, getManagementExecutionContext());
+          status = Manageable::STATUS_OK;
+          break;
+      }
    default:
         QPID_LOG (debug, "Broker ManagementMethod not implemented: id=" << methodId << "]");
         status = Manageable::STATUS_NOT_IMPLEMENTED;
@@ -464,6 +493,169 @@ Manageable::status_t Broker::ManagementMethod (uint32_t methodId,
     }
 
     return status;
+}
+
+namespace
+{
+const std::string TYPE_QUEUE("queue");
+const std::string TYPE_EXCHANGE("exchange");
+const std::string TYPE_TOPIC("topic");
+const std::string TYPE_BINDING("binding");
+const std::string DURABLE("durable");
+const std::string AUTO_DELETE("auto-delete");
+const std::string ALTERNATE_EXCHANGE("alternate-exchange");
+const std::string EXCHANGE_TYPE("exchange-type");
+const std::string QUEUE_NAME("queue");
+const std::string EXCHANGE_NAME("exchange");
+
+const std::string TRUE("true");
+const std::string FALSE("false");
+}
+
+struct InvalidBindingIdentifier : public qpid::Exception
+{
+    InvalidBindingIdentifier(const std::string& name) : qpid::Exception(name) {}
+    std::string getPrefix() const { return "invalid binding"; }
+};
+
+struct BindingIdentifier
+{
+    std::string exchange;
+    std::string queue;
+    std::string key;
+
+    BindingIdentifier(const std::string& name)
+    {
+        std::vector<std::string> path;
+        split(path, name, "/");
+        switch (path.size()) {
+          case 1:
+            queue = path[0];
+            break;
+          case 2:
+            exchange = path[0];
+            queue = path[1];
+            break;
+          case 3:
+            exchange = path[0];
+            queue = path[1];
+            key = path[2];
+            break;
+          default:
+            throw InvalidBindingIdentifier(name);
+        }
+    }
+};
+
+struct ObjectAlreadyExists : public qpid::Exception
+{
+    ObjectAlreadyExists(const std::string& name) : qpid::Exception(name) {}
+    std::string getPrefix() const { return "object already exists"; }
+};
+
+struct UnknownObjectType : public qpid::Exception
+{
+    UnknownObjectType(const std::string& type) : qpid::Exception(type) {}
+    std::string getPrefix() const { return "unknown object type"; }
+};
+
+void Broker::createObject(const std::string& type, const std::string& name,
+                          const Variant::Map& properties, bool /*strict*/, const ConnectionState* context)
+{
+    std::string userId;
+    std::string connectionId;
+    if (context) {
+        userId = context->getUserId();
+        connectionId = context->getUrl();
+    }
+    //TODO: implement 'strict' option (check there are no unrecognised properties)
+    QPID_LOG (debug, "Broker::create(" << type << ", " << name << "," << properties << ")");
+    if (type == TYPE_QUEUE) {
+        bool durable(false);
+        bool autodelete(false);
+        std::string alternateExchange;
+        Variant::Map extensions;
+        for (Variant::Map::const_iterator i = properties.begin(); i != properties.end(); ++i) {
+            // extract durable, auto-delete and alternate-exchange properties
+            if (i->first == DURABLE) durable = i->second;
+            else if (i->first == AUTO_DELETE) autodelete = i->second;
+            else if (i->first == ALTERNATE_EXCHANGE) alternateExchange = i->second.asString();
+            //treat everything else as extension properties
+            else extensions[i->first] = i->second;
+        }
+        framing::FieldTable arguments;
+        amqp_0_10::translate(extensions, arguments);
+
+        std::pair<boost::shared_ptr<Queue>, bool> result =
+            createQueue(name, durable, autodelete, 0, alternateExchange, arguments, userId, connectionId);
+        if (!result.second) {
+            throw ObjectAlreadyExists(name);
+        }
+    } else if (type == TYPE_EXCHANGE || type == TYPE_TOPIC) {
+        bool durable(false);
+        std::string exchangeType;
+        std::string alternateExchange;
+        Variant::Map extensions;
+        for (Variant::Map::const_iterator i = properties.begin(); i != properties.end(); ++i) {
+            // extract durable, auto-delete and alternate-exchange properties
+            if (i->first == DURABLE) durable = i->second;
+            else if (i->first == EXCHANGE_TYPE) exchangeType = i->second.asString();
+            else if (i->first == ALTERNATE_EXCHANGE) alternateExchange = i->second.asString();
+            //treat everything else as extension properties
+            else extensions[i->first] = i->second;
+        }
+        framing::FieldTable arguments;
+        amqp_0_10::translate(extensions, arguments);
+
+        try {
+            std::pair<boost::shared_ptr<Exchange>, bool> result =
+                createExchange(name, exchangeType, durable, alternateExchange, arguments, userId, connectionId);
+            if (!result.second) {
+                throw ObjectAlreadyExists(name);
+            }
+        } catch (const UnknownExchangeTypeException&) {
+            throw Exception(QPID_MSG("Invalid exchange type: " << exchangeType));
+        }
+    } else if (type == TYPE_BINDING) {
+        BindingIdentifier binding(name);
+        std::string exchangeType("topic");
+        Variant::Map extensions;
+        for (Variant::Map::const_iterator i = properties.begin(); i != properties.end(); ++i) {
+            // extract durable, auto-delete and alternate-exchange properties
+            if (i->first == EXCHANGE_TYPE) exchangeType = i->second.asString();
+            //treat everything else as extension properties
+            else extensions[i->first] = i->second;
+        }
+        framing::FieldTable arguments;
+        amqp_0_10::translate(extensions, arguments);
+
+        bind(binding.queue, binding.exchange, binding.key, arguments, userId, connectionId);
+    } else {
+        throw UnknownObjectType(type);
+    }
+}
+
+void Broker::deleteObject(const std::string& type, const std::string& name,
+                          const Variant::Map& options, const ConnectionState* context)
+{
+    std::string userId;
+    std::string connectionId;
+    if (context) {
+        userId = context->getUserId();
+        connectionId = context->getUrl();
+    }
+    QPID_LOG (debug, "Broker::delete(" << type << ", " << name << "," << options << ")");
+    if (type == TYPE_QUEUE) {
+        deleteQueue(name, userId, connectionId);
+    } else if (type == TYPE_EXCHANGE || type == TYPE_TOPIC) {
+        deleteExchange(name, userId, connectionId);
+    } else if (type == TYPE_BINDING) {
+        BindingIdentifier binding(name);
+        unbind(binding.queue, binding.exchange, binding.key, userId, connectionId);
+    } else {
+        throw UnknownObjectType(type);
+    }
+
 }
 
 void Broker::setLogLevel(const std::string& level)
@@ -565,6 +757,222 @@ void Broker::setClusterTimer(std::auto_ptr<sys::Timer> t) {
 }
 
 const std::string Broker::TCP_TRANSPORT("tcp");
+
+
+std::pair<boost::shared_ptr<Queue>, bool> Broker::createQueue(
+    const std::string& name,
+    bool durable,
+    bool autodelete,
+    const OwnershipToken* owner,
+    const std::string& alternateExchange,
+    const qpid::framing::FieldTable& arguments,
+    const std::string& userId,
+    const std::string& connectionId)
+{
+    if (acl) {
+        std::map<acl::Property, std::string> params;
+        params.insert(make_pair(acl::PROP_ALTERNATE, alternateExchange));
+        params.insert(make_pair(acl::PROP_PASSIVE, FALSE));
+        params.insert(make_pair(acl::PROP_DURABLE, durable ? TRUE : FALSE));
+        params.insert(make_pair(acl::PROP_EXCLUSIVE, owner ? TRUE : FALSE));
+        params.insert(make_pair(acl::PROP_AUTODELETE, autodelete ? TRUE : FALSE));
+        params.insert(make_pair(acl::PROP_POLICYTYPE, arguments.getAsString("qpid.policy_type")));
+        params.insert(make_pair(acl::PROP_MAXQUEUECOUNT, boost::lexical_cast<string>(arguments.getAsInt("qpid.max_count"))));
+        params.insert(make_pair(acl::PROP_MAXQUEUESIZE, boost::lexical_cast<string>(arguments.getAsInt64("qpid.max_size"))));
+
+        if (!acl->authorise(userId,acl::ACT_CREATE,acl::OBJ_QUEUE,name,&params) )
+            throw framing::UnauthorizedAccessException(QPID_MSG("ACL denied queue create request from " << userId));
+    }
+
+    Exchange::shared_ptr alternate;
+    if (!alternateExchange.empty()) {
+        alternate = exchanges.get(alternateExchange);
+        if (!alternate) framing::NotFoundException(QPID_MSG("Alternate exchange does not exist: " << alternateExchange));
+    }
+
+    std::pair<Queue::shared_ptr, bool> result = queues.declare(name, durable, autodelete, owner);
+    if (result.second) {
+        if (alternate) {
+            result.first->setAlternateExchange(alternate);
+            alternate->incAlternateUsers();
+        }
+
+        //apply settings & create persistent record if required
+        result.first->create(arguments);
+        //add default binding:
+        result.first->bind(exchanges.getDefault(), name);
+
+        if (managementAgent.get()) {
+            //TODO: debatable whether we should raise an event here for
+            //create when this is a 'declare' event; ideally add a create
+            //event instead?
+            managementAgent->raiseEvent(
+                _qmf::EventQueueDeclare(connectionId, userId, name,
+                                        durable, owner, autodelete,
+                                        ManagementAgent::toMap(arguments),
+                                        "created"));
+        }
+    }
+    return result;
+}
+
+void Broker::deleteQueue(const std::string& name, const std::string& userId,
+                         const std::string& connectionId, QueueFunctor check)
+{
+    if (acl && !acl->authorise(userId,acl::ACT_DELETE,acl::OBJ_QUEUE,name,NULL)) {
+        throw framing::UnauthorizedAccessException(QPID_MSG("ACL denied queue delete request from " << userId));
+    }
+
+    Queue::shared_ptr queue = queues.find(name);
+    if (queue) {
+        if (check) check(queue);
+        queues.destroy(name);
+        queue->destroyed();
+    } else {
+        throw framing::NotFoundException(QPID_MSG("Delete failed. No such queue: " << name));
+    }
+
+    if (managementAgent.get())
+        managementAgent->raiseEvent(_qmf::EventQueueDelete(connectionId, userId, name));
+
+}
+
+std::pair<Exchange::shared_ptr, bool> Broker::createExchange(
+    const std::string& name,
+    const std::string& type,
+    bool durable,
+    const std::string& alternateExchange,
+    const qpid::framing::FieldTable& arguments,
+    const std::string& userId,
+    const std::string& connectionId)
+{
+    if (acl) {
+        std::map<acl::Property, std::string> params;
+        params.insert(make_pair(acl::PROP_TYPE, type));
+        params.insert(make_pair(acl::PROP_ALTERNATE, alternateExchange));
+        params.insert(make_pair(acl::PROP_PASSIVE, FALSE));
+        params.insert(make_pair(acl::PROP_DURABLE, durable ? TRUE : FALSE));
+        if (!acl->authorise(userId,acl::ACT_CREATE,acl::OBJ_EXCHANGE,name,&params) )
+            throw framing::UnauthorizedAccessException(QPID_MSG("ACL denied exchange create request from " << userId));
+    }
+
+    Exchange::shared_ptr alternate;
+    if (!alternateExchange.empty()) {
+        alternate = exchanges.get(alternateExchange);
+        if (!alternate) framing::NotFoundException(QPID_MSG("Alternate exchange does not exist: " << alternateExchange));
+    }
+
+    std::pair<Exchange::shared_ptr, bool> result;
+    result = exchanges.declare(name, type, durable, arguments);
+    if (result.second) {
+        if (alternate) {
+            result.first->setAlternate(alternate);
+            alternate->incAlternateUsers();
+        }
+        if (durable) {
+            store->create(*result.first, arguments);
+        }
+        if (managementAgent.get()) {
+            //TODO: debatable whether we should raise an event here for
+            //create when this is a 'declare' event; ideally add a create
+            //event instead?
+            managementAgent->raiseEvent(_qmf::EventExchangeDeclare(connectionId,
+                                                         userId,
+                                                         name,
+                                                         type,
+                                                         alternateExchange,
+                                                         durable,
+                                                         false,
+                                                         ManagementAgent::toMap(arguments),
+                                                         "created"));
+        }
+    }
+    return result;
+}
+
+void Broker::deleteExchange(const std::string& name, const std::string& userId,
+                           const std::string& connectionId)
+{
+    if (acl) {
+        if (!acl->authorise(userId,acl::ACT_DELETE,acl::OBJ_EXCHANGE,name,NULL) )
+            throw framing::UnauthorizedAccessException(QPID_MSG("ACL denied exchange delete request from " << userId));
+    }
+
+    Exchange::shared_ptr exchange(exchanges.get(name));
+    if (!exchange) throw framing::NotFoundException(QPID_MSG("Delete failed. No such exchange: " << name));
+    if (exchange->inUseAsAlternate()) throw framing::NotAllowedException(QPID_MSG("Exchange in use as alternate-exchange."));
+    if (exchange->isDurable()) store->destroy(*exchange);
+    if (exchange->getAlternate()) exchange->getAlternate()->decAlternateUsers();
+    exchanges.destroy(name);
+
+    if (managementAgent.get())
+        managementAgent->raiseEvent(_qmf::EventExchangeDelete(connectionId, userId, name));
+
+}
+
+void Broker::bind(const std::string& queueName,
+                  const std::string& exchangeName,
+                  const std::string& key,
+                  const qpid::framing::FieldTable& arguments,
+                  const std::string& userId,
+                  const std::string& connectionId)
+{
+    if (acl) {
+        std::map<acl::Property, std::string> params;
+        params.insert(make_pair(acl::PROP_QUEUENAME, queueName));
+        params.insert(make_pair(acl::PROP_ROUTINGKEY, key));
+
+        if (!acl->authorise(userId,acl::ACT_BIND,acl::OBJ_EXCHANGE,exchangeName,&params))
+            throw framing::UnauthorizedAccessException(QPID_MSG("ACL denied exchange bind request from " << userId));
+    }
+
+    Queue::shared_ptr queue = queues.find(queueName);
+    Exchange::shared_ptr exchange = exchanges.get(exchangeName);
+    if (!queue) {
+        throw framing::NotFoundException(QPID_MSG("Bind failed. No such queue: " << queueName));
+    } else if (!exchange) {
+        throw framing::NotFoundException(QPID_MSG("Bind failed. No such exchange: " << exchangeName));
+    } else {
+        if (queue->bind(exchange, key, arguments)) {
+            if (managementAgent.get()) {
+                managementAgent->raiseEvent(_qmf::EventBind(connectionId, userId, exchangeName,
+                                                  queueName, key, ManagementAgent::toMap(arguments)));
+            }
+        }
+    }
+}
+
+void Broker::unbind(const std::string& queueName,
+                    const std::string& exchangeName,
+                    const std::string& key,
+                    const std::string& userId,
+                    const std::string& connectionId)
+{
+    if (acl) {
+        std::map<acl::Property, std::string> params;
+        params.insert(make_pair(acl::PROP_QUEUENAME, queueName));
+        params.insert(make_pair(acl::PROP_ROUTINGKEY, key));
+        if (!acl->authorise(userId,acl::ACT_UNBIND,acl::OBJ_EXCHANGE,exchangeName,&params) )
+            throw framing::UnauthorizedAccessException(QPID_MSG("ACL denied exchange unbind request from " << userId));
+    }
+
+    Queue::shared_ptr queue = queues.find(queueName);
+    Exchange::shared_ptr exchange = exchanges.get(exchangeName);
+    if (!queue) {
+        throw framing::NotFoundException(QPID_MSG("Bind failed. No such queue: " << queueName));
+    } else if (!exchange) {
+        throw framing::NotFoundException(QPID_MSG("Bind failed. No such exchange: " << exchangeName));
+    } else {
+        if (exchange->unbind(queue, key, 0)) {
+            if (exchange->isDurable() && queue->isDurable()) {
+                store->unbind(*exchange, *queue, key, qpid::framing::FieldTable());
+            }
+            if (managementAgent.get()) {
+                managementAgent->raiseEvent(_qmf::EventUnbind(connectionId, userId, exchangeName, queueName, key));
+            }
+        }
+    }
+}
 
 }} // namespace qpid::broker
 

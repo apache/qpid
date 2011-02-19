@@ -142,7 +142,7 @@ void QueueFlowLimit::enqueued(const QueuedMessage& msg)
             queueMgmtObj->set_flowStopped(true);
     }
 
-    // KAG: test - REMOVE ONCE STABLE
+    /** @todo KAG: - REMOVE ONCE STABLE */
     if (index.find(msg.payload) != index.end()) {
         QPID_LOG(error, "Queue \"" << queueName << "\": has enqueued a msg twice: " << msg.position);
     }
@@ -150,7 +150,7 @@ void QueueFlowLimit::enqueued(const QueuedMessage& msg)
     if (flowStopped || !index.empty()) {
         // ignore flow control if we are populating the queue due to cluster replication:
         if (broker && broker->isClusterUpdatee()) {
-            QPID_LOG(error, "KAG: Queue \"" << queueName << "\": ignoring flow control for msg pos=" << msg.position);
+            QPID_LOG(trace, "Queue \"" << queueName << "\": ignoring flow control for msg pos=" << msg.position);
             return;
         }
         QPID_LOG(trace, "Queue \"" << queueName << "\": setting flow control for msg pos=" << msg.position);
@@ -231,8 +231,7 @@ void QueueFlowLimit::setState(const QueuedMessage& msg, bool blocked)
         sys::Mutex::ScopedLock l(indexLock);
         assert(index.find(msg.payload) == index.end());
 
-        QPID_LOG(error, "KAG TBD!!!: Queue \"" << queue->getName() << "\": forcing flow control for msg pos=" << msg.position << " for CLUSTER SYNC");
-        // KAG TBD!!!
+        QPID_LOG(debug, "Queue \"" << queue->getName() << "\": forcing flow control for msg pos=" << msg.position << " for CLUSTER SYNC");
         index.insert(msg.payload);
     }
 }
@@ -324,8 +323,9 @@ QueueFlowLimit *QueueFlowLimit::createLimit(Queue *queue, const qpid::framing::F
         if (flowStopCount == 0 && flowStopSize == 0) {   // disable flow control
             return 0;
         }
-        /** todo KAG - remove once cluster support for flow control done. */
+        /** @todo KAG - remove once cluster support for flow control done. */
         // TODO aconway 2011-02-16: is queue==0 only in tests?
+        // TODO kgiusti 2011-02-19: yes!  The unit tests test this class in isolation */
         if (queue && queue->getBroker() && queue->getBroker()->isInCluster()) {
             QPID_LOG(warning, "Producer Flow Control TBD for clustered brokers - queue flow control disabled for queue "
                      << queue->getName());
