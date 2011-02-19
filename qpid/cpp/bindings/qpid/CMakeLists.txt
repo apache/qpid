@@ -1,4 +1,3 @@
-#! /usr/bin/perl5
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -17,31 +16,24 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-use strict;
-use warnings;
-use Data::Dumper;
 
-use cqpid_perl;
 
-my $url               = ( @ARGV > 0 ) ? $ARGV[0] : "amqp:tcp:127.0.0.1:5672";
-my $address           = ( @ARGV > 1 ) ? $ARGV[0] : "message_queue; {create: always}";
-my $connectionOptions = ( @ARGV > 2 ) ? $ARGV[1] : "";
+include(FindSWIG)
+include(UseSWIG)
+include(FindRuby)
+include(FindPythonLibs)
+include(FindPerlLibs)
 
-my $connection = new cqpid_perl::Connection($url, $connectionOptions);
+if (SWIG_FOUND)
+    if (PYTHONLIBS_FOUND)
+        add_subdirectory(python)
+    endif (PYTHONLIBS_FOUND)
 
-eval {
-    $connection->open();
-    my $session  = $connection->createSession();
-    my $receiver = $session->createReceiver($address);
+    if (RUBY_FOUND)
+        add_subdirectory(ruby)
+    endif (RUBY_FOUND)
 
-    my $content = cqpid_perl::decodeMap($receiver->fetch());
-    #my $content = cqpid_perl::decodeList($receiver->fetch());
-   
-    print Dumper($content);
-
-    $session->acknowledge();
-    $receiver->close();
-    $connection->close();
-};
-
-die $@ if ($@);
+    if (PERLLIBS_FOUND)
+        add_subdirectory(perl)
+    endif (PERLLIBS_FOUND)
+endif (SWIG_FOUND)

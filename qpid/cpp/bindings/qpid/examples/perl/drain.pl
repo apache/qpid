@@ -20,7 +20,7 @@
 use strict;
 use warnings;
 
-use cqpid;
+use cqpid_perl;
 use Getopt::Long;
 
 my $url = "127.0.0.1";
@@ -47,11 +47,11 @@ if ($#ARGV ge 0) {
 }
 
 sub getTimeout {
-   return ($forever) ? $cqpid::Duration::FOREVER : new cqpid::Duration($timeout*1000);
+   return ($forever) ? $cqpid_perl::Duration::FOREVER : new cqpid_perl::Duration($timeout*1000);
 }
 
 
-my $connection = new cqpid::Connection($url, $connectionOptions);
+my $connection = new cqpid_perl::Connection($url, $connectionOptions);
 
 eval {
     $connection->open();
@@ -59,13 +59,13 @@ eval {
     my $receiver = $session->createReceiver($address);
     my $timeout  = getTimeout();
 
-    my $message = new cqpid::Message();
+    my $message = new cqpid_perl::Message();
     my $i = 0;
 
     while($receiver->fetch($message, $timeout)) {
         print "Message(properties=" . $message->getProperties() . ",content='";
         if ($message->getContentType() eq "amqp/map") {
-            my $content = cqpid::decodeMap($message);
+            my $content = cqpid_perl::decodeMap($message);
             map{ print "\n$_ => $content->{$_}"; } keys %{$content};
         }
         else {
@@ -77,7 +77,7 @@ eval {
         if ($replyto->getName()) {
             print "Replying to " . $message->getReplyTo()->str() . "...\n";
             my $sender = $session->createSender($replyto);
-            my $response = new cqpid::Message("received by the server.");
+            my $response = new cqpid_perl::Message("received by the server.");
             $sender->send($response);
         }
         $session->acknowledge();

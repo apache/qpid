@@ -21,9 +21,6 @@
 package org.apache.qpid.server.logging.actors;
 
 import org.apache.qpid.server.logging.LogActor;
-import org.apache.qpid.server.logging.LogSubject;
-import org.apache.qpid.server.logging.LogMessage;
-import org.apache.qpid.server.logging.RootMessageLogger;
 
 import java.util.EmptyStackException;
 import java.util.Stack;
@@ -72,7 +69,7 @@ public class CurrentActor
     private static LogActor _defaultActor;
 
     /**
-     * Set a new LogActor to be the Current Actor
+     * Set a new {@link LogActor} to be the Current Actor
      * <p/>
      * This pushes the Actor in to the LIFO Queue
      *
@@ -85,7 +82,16 @@ public class CurrentActor
     }
 
     /**
-     * Remove the current LogActor.
+     * Remove all {@link LogActor}s
+     */
+    public static void removeAll()
+    {
+        Stack<LogActor> stack = _currentActor.get();
+        stack.clear();
+    }
+
+    /**
+     * Remove the current {@link LogActor}.
      * <p/>
      * Calling remove without calling set will result in an EmptyStackException.
      */
@@ -96,9 +102,7 @@ public class CurrentActor
     }
 
     /**
-     * Return the current head of the list of LogActors.
-     * <p/>
-     * If there has been no set call then this will return Null.
+     * Return the current head of the list of {@link LogActor}s.
      *
      * @return Current LogActor
      */

@@ -102,6 +102,19 @@
       <arg name="level"     dir="O" type="sstr"/>
     </method>
 
+    <method name="create" desc="Create an object of the specified type">
+      <arg name="type" dir="I" type="sstr" desc="The type of object to create"/>
+      <arg name="name" dir="I" type="sstr" desc="The name of the object to create"/> 
+      <arg name="properties" dir="I" type="map" desc="Type specific object properties"/> 
+      <arg name="strict" dir="I" type="bool" desc="If specified, treat unrecognised object properties as an error"/> 
+    </method>
+
+    <method name="delete" desc="Delete an object of the specified type">
+      <arg name="type" dir="I" type="sstr" desc="The type of object to delete"/>
+      <arg name="name" dir="I" type="sstr" desc="The name of the object to delete"/> 
+      <arg name="options" dir="I" type="map" desc="Type specific object options for deletion"/> 
+    </method>
+
   </class>
 
   <!--

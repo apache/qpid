@@ -56,7 +56,10 @@ windows_dist = \
   qpid/broker/windows/BrokerDefaults.cpp \
   qpid/broker/windows/SaslAuthenticator.cpp \
   qpid/broker/windows/SslProtocolFactory.cpp \
-  qpid/messaging/HandleInstantiator.cpp
+  qpid/messaging/HandleInstantiator.cpp \
+  windows/resources/template-resource.rc \
+  windows/resources/version-resource.h \
+  windows/resources/qpid-icon.ico
 
 EXTRA_DIST= $(platform_dist) $(rgen_srcs) $(windows_dist)
 

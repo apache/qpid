@@ -890,6 +890,53 @@ QPID_AUTO_TEST_CASE(testAcknowledge)
     BOOST_CHECK(!fix.session.createReceiver(fix.queue).fetch(m, Duration::IMMEDIATE));
 }
 
+QPID_AUTO_TEST_CASE(testQmfCreateAndDelete)
+{
+    MessagingFixture fix(Broker::Options(), true/*enable management*/);
+    MethodInvoker control(fix.session);
+    control.createQueue("my-queue");
+    control.createExchange("my-exchange", "topic");
+    control.bind("my-exchange", "my-queue", "subject1");
+
+    Sender sender = fix.session.createSender("my-exchange");
+    Receiver receiver = fix.session.createReceiver("my-queue");
+    Message out;
+    out.setSubject("subject1");
+    out.setContent("one");
+    sender.send(out);
+    Message in;
+    BOOST_CHECK(receiver.fetch(in, Duration::SECOND*5));
+    BOOST_CHECK_EQUAL(out.getContent(), in.getContent());
+    control.unbind("my-exchange", "my-queue", "subject1");
+    control.bind("my-exchange", "my-queue", "subject2");
+
+    out.setContent("two");
+    sender.send(out);//should be dropped
+
+    out.setSubject("subject2");
+    out.setContent("three");
+    sender.send(out);//should not be dropped
+
+    BOOST_CHECK(receiver.fetch(in, Duration::SECOND*5));
+    BOOST_CHECK_EQUAL(out.getContent(), in.getContent());
+    BOOST_CHECK(!receiver.fetch(in, Duration::IMMEDIATE));
+    sender.close();
+    receiver.close();
+
+    control.deleteExchange("my-exchange");
+    messaging::Session other = fix.connection.createSession();
+    {
+    ScopedSuppressLogging sl;
+    BOOST_CHECK_THROW(other.createSender("my-exchange"), qpid::messaging::NotFound);
+    }
+    control.deleteQueue("my-queue");
+    other = fix.connection.createSession();
+    {
+    ScopedSuppressLogging sl;
+    BOOST_CHECK_THROW(other.createReceiver("my-queue"), qpid::messaging::NotFound);
+    }
+}
+
 QPID_AUTO_TEST_SUITE_END()
 
 }} // namespace qpid::tests

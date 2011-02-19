@@ -149,10 +149,7 @@ public class InternalBrokerBaseCase extends QpidTestCase
         {
             super.tearDown();
             // Purge Any erroneously added actors
-            while (CurrentActor.get() != null)
-            {
-                CurrentActor.remove();
-            }
+            CurrentActor.removeAll();
         }
     }
 

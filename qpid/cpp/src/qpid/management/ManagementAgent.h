@@ -41,6 +41,9 @@
 #include <map>
 
 namespace qpid {
+namespace broker {
+class ConnectionState;
+}
 namespace management {
 
 class ManagementAgent
@@ -422,6 +425,8 @@ private:
     void debugSnapshot(const char* title);
 };
 
+void setManagementExecutionContext(const qpid::broker::ConnectionState*);
+const qpid::broker::ConnectionState* getManagementExecutionContext();
 }}
-            
+
 #endif  /*!_ManagementAgent_*/

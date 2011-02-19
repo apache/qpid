@@ -249,7 +249,7 @@ QPID_AUTO_TEST_CASE(testBound){
     exchange2.reset();
 
     //unbind the queue from all exchanges it knows it has been bound to:
-    queue->unbind(exchanges, queue);
+    queue->unbind(exchanges);
 
     //ensure the remaining exchanges don't still have the queue bound to them:
     FailOnDeliver deliverable;

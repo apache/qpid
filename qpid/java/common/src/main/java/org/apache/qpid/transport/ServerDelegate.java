@@ -35,9 +35,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  * ServerDelegate
- *
  */
-
 public class ServerDelegate extends ConnectionDelegate
 {
     protected static final Logger _logger = LoggerFactory.getLogger(ServerDelegate.class);
@@ -140,12 +138,12 @@ public class ServerDelegate extends ConnectionDelegate
 
     protected int getHeartbeatMax()
     {
-        return Integer.MAX_VALUE;
+        return 0xFFFF;
     }
 
     protected int getChannelMax()
     {
-        return Integer.MAX_VALUE;
+        return 0xFFFF;
     }
 
     @Override
@@ -202,5 +200,4 @@ public class ServerDelegate extends ConnectionDelegate
         ssn.sessionAttached(atc.getName());
         ssn.setState(Session.State.OPEN);
     }
-
 }

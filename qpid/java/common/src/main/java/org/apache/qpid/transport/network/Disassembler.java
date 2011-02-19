@@ -40,21 +40,15 @@ import static java.lang.Math.min;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
-
 /**
  * Disassembler
- *
  */
-
-public final class Disassembler implements Sender<ProtocolEvent>,
-                                           ProtocolDelegate<Void>
+public final class Disassembler implements Sender<ProtocolEvent>, ProtocolDelegate<Void>
 {
-
     private final Sender<ByteBuffer> sender;
     private final int maxPayload;
-    private final ByteBuffer header;
     private final Object sendlock = new Object();
-    private final ThreadLocal<BBEncoder> encoder = new ThreadLocal<BBEncoder>()
+    private final static ThreadLocal<BBEncoder> _encoder = new ThreadLocal<BBEncoder>()
     {
         public BBEncoder initialValue()
         {
@@ -66,14 +60,10 @@ public final class Disassembler implements Sender<ProtocolEvent>,
     {
         if (maxFrame <= HEADER_SIZE || maxFrame >= 64*1024)
         {
-            throw new IllegalArgumentException
-                ("maxFrame must be > HEADER_SIZE and < 64K: " + maxFrame);
+            throw new IllegalArgumentException("maxFrame must be > HEADER_SIZE and < 64K: " + maxFrame);
         }
         this.sender = sender;
         this.maxPayload  = maxFrame - HEADER_SIZE;
-        this.header =  ByteBuffer.allocate(HEADER_SIZE);
-        this.header.order(ByteOrder.BIG_ENDIAN);
-
     }
 
     public void send(ProtocolEvent event)
@@ -101,25 +91,27 @@ public final class Disassembler implements Sender<ProtocolEvent>,
     {
         synchronized (sendlock)
         {
-            header.put(0, flags);
-            header.put(1, type);
-            header.putShort(2, (short) (size + HEADER_SIZE));
-            header.put(5, track);
-            header.putShort(6, (short) channel);
-
-            header.rewind();
-
-            sender.send(header);
+            ByteBuffer data = ByteBuffer.allocate(size + HEADER_SIZE);
+            data.order(ByteOrder.BIG_ENDIAN);
+            
+            data.put(0, flags);
+            data.put(1, type);
+            data.putShort(2, (short) (size + HEADER_SIZE));
+            data.put(5, track);
+            data.putShort(6, (short) channel);
+            data.position(HEADER_SIZE);
 
             int limit = buf.limit();
             buf.limit(buf.position() + size);
-            sender.send(buf);
+            data.put(buf);
             buf.limit(limit);
+ 
+            data.rewind();
+            sender.send(data);
         }
     }
 
-    private void fragment(byte flags, SegmentType type, ProtocolEvent event,
-                          ByteBuffer buf)
+    private void fragment(byte flags, SegmentType type, ProtocolEvent event, ByteBuffer buf)
     {
         byte typeb = (byte) type.getValue();
         byte track = event.getEncodedTrack() == Frame.L4 ? (byte) 1 : (byte) 0;
@@ -170,17 +162,9 @@ public final class Disassembler implements Sender<ProtocolEvent>,
         method(method, SegmentType.COMMAND);
     }
 
-    private ByteBuffer copy(ByteBuffer src)
-    {
-        ByteBuffer buf = ByteBuffer.allocate(src.remaining());
-        buf.put(src);
-        buf.flip();
-        return buf;
-    }
-
     private void method(Method method, SegmentType type)
     {
-        BBEncoder enc = encoder.get();
+        BBEncoder enc = _encoder.get();
         enc.init();
         enc.writeUint16(method.getEncodedType());
         if (type == SegmentType.COMMAND)
@@ -227,8 +211,7 @@ public final class Disassembler implements Sender<ProtocolEvent>,
             if (payload)
             {
                 ByteBuffer body = method.getBody();
-                fragment(body == null ? LAST_SEG : 0x0, SegmentType.HEADER,
-                         method, headerSeg);
+                fragment(body == null ? LAST_SEG : 0x0, SegmentType.HEADER, method, headerSeg);
                 if (body != null)
                 {
                     fragment(LAST_SEG, SegmentType.BODY, method, body);
@@ -240,7 +223,7 @@ public final class Disassembler implements Sender<ProtocolEvent>,
 
     public void error(Void v, ProtocolError error)
     {
-        throw new IllegalArgumentException("" + error);
+        throw new IllegalArgumentException(String.valueOf(error));
     }
 
     public void setIdleTimeout(int i)

@@ -892,14 +892,6 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
     public void resumed(Session ssn)
     {
         _qpidConnection = ssn.getConnection();
-        try
-        {
-            resubscribe();
-        }
-        catch (AMQException e)
-        {
-            throw new RuntimeException(e);
-        }
     }
 
     public void message(Session ssn, MessageTransfer xfr)
@@ -942,6 +934,7 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
 
     protected Long requestQueueDepth(AMQDestination amqd)
     {
+        flushAcknowledgments();
         return getQpidSession().queueQuery(amqd.getQueueName()).get().getMessageCount();
     }
 
