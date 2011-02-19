@@ -134,7 +134,7 @@ void Link::established ()
     QPID_LOG (info, "Inter-broker link established to " << addr.str());
 
     // Don't raise the management event in a cluster, other members wont't get this call.
-    if (!sys::isCluster()) 
+    if (broker && !broker->isInCluster())
         agent->raiseEvent(_qmf::EventBrokerLinkUp(addr.str()));
 
     {
@@ -159,7 +159,7 @@ void Link::closed (int, std::string text)
         stringstream addr;
         addr << host << ":" << port;
         QPID_LOG (warning, "Inter-broker link disconnected from " << addr.str());
-        if (!sys::isCluster())
+        if (broker && !broker->isInCluster())
             agent->raiseEvent(_qmf::EventBrokerLinkDown(addr.str()));
     }
 

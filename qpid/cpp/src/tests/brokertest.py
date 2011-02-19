@@ -29,6 +29,7 @@ from unittest import TestCase
 from copy import copy
 from threading import Thread, Lock, Condition
 from logging import getLogger
+import qmf.console
 
 log = getLogger("qpid.brokertest")
 
@@ -326,6 +327,10 @@ class Broker(Popen):
         self._host = "127.0.0.1"
         log.debug("Started broker %s (%s, %s)" % (self.name, self.pname, self.log))
         self._log_ready = False
+
+    def startQmf(self, handler=None):
+        self.qmf_session = qmf.console.Session(handler)
+        self.qmf_broker = self.qmf_session.addBroker("%s:%s" % (self.host(), self.port()))
 
     def host(self): return self._host
 

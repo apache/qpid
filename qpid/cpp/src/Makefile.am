@@ -561,8 +561,7 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/HandlerImpl.h \
   qpid/broker/HeadersExchange.cpp \
   qpid/broker/HeadersExchange.h \
-  qpid/broker/IncompleteMessageList.cpp \
-  qpid/broker/IncompleteMessageList.h \
+  qpid/broker/AsyncCompletion.h \
   qpid/broker/LegacyLVQ.h \
   qpid/broker/LegacyLVQ.cpp \
   qpid/broker/Link.cpp \
@@ -612,6 +611,8 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/QueueRegistry.cpp \
   qpid/broker/QueueRegistry.h \
   qpid/broker/QueuedMessage.h \
+  qpid/broker/QueueFlowLimit.h \
+  qpid/broker/QueueFlowLimit.cpp \
   qpid/broker/RateFlowcontrol.h \
   qpid/broker/RateTracker.cpp \
   qpid/broker/RateTracker.h \

@@ -154,10 +154,6 @@ public:
        bool isForcedPersistent();
     
 
-    /** Call cb when enqueue is complete, may call immediately. Holds cb by reference. */
-    void setEnqueueCompleteCallback(MessageCallback& cb);
-    void resetEnqueueCompleteCallback();
-
     /** Call cb when dequeue is complete, may call immediately. Holds cb by reference. */
     void setDequeueCompleteCallback(MessageCallback& cb);
     void resetDequeueCompleteCallback();
@@ -166,7 +162,6 @@ public:
 
   private:
     MessageAdapter& getAdapter() const;
-    void allEnqueuesComplete();
     void allDequeuesComplete();
 
     mutable sys::Mutex lock;
@@ -187,7 +182,6 @@ public:
     mutable boost::intrusive_ptr<Message> empty;
 
     sys::Monitor callbackLock;
-    MessageCallback* enqueueCallback;
     MessageCallback* dequeueCallback;
     bool inCallback;
 
