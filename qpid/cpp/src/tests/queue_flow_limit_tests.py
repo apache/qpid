@@ -25,8 +25,7 @@ from qpid.messaging import Message, Empty
 from threading import Thread, Lock
 from logging import getLogger
 from time import sleep
-from subprocess import Popen, PIPE
-from os import environ
+from os import environ, popen
 
 class QueueFlowLimitTests(TestBase010):
 
@@ -81,30 +80,25 @@ class QueueFlowLimitTests(TestBase010):
     def _start_qpid_send(self, queue, count, content="X", capacity=10):
         """ Use the qpid-send client to generate traffic to a queue.
         """
-        command = ["qpid-send",
-                   "-b", "%s:%s" % (self.broker.host, self.broker.port),
-                   "-a", str(queue),
-                   "--messages", str(count),
-                   "--content-string", str(content),
-                   "--capacity", str(capacity)
-                   ]
-
-        return Popen(command, stdout=PIPE)
+        command = "qpid-send" + \
+                   " -b" +  " %s:%s" % (self.broker.host, self.broker.port) \
+                   + " -a " + str(queue) \
+                   + " --messages " +  str(count) \
+                   + " --content-string " + str(content) \
+                   + " --capacity " + str(capacity)
+        return popen(command)
 
     def _start_qpid_receive(self, queue, count, timeout=5):
         """ Use the qpid-receive client to consume from a queue.
         Note well: prints one line of text to stdout for each consumed msg.
         """
-        command = ["qpid-receive",
-                   "-b", "%s:%s" % (self.broker.host, self.broker.port),
-                   "-a", str(queue),
-                   "--messages", str(count),
-                   "--timeout", str(timeout),
-                   "--print-content", "yes"
-                   ]
-        return Popen(command, stdout=PIPE)
-
-
+        command = "qpid-receive" + \
+                   " -b" +  "%s:%s" % (self.broker.host, self.broker.port) \
+                   + " -a " + str(queue) \
+                   + " --messages " + str(count) \
+                   + " --timeout " + str(timeout) \
+                   + " --print-content yes"
+        return popen(command)
 
     def test_qpid_config_cmd(self):
         """ Test the qpid-config command's ability to configure a queue's flow
@@ -112,17 +106,14 @@ class QueueFlowLimitTests(TestBase010):
         """
         tool = environ.get("QPID_CONFIG_EXEC")
         if tool:
-            command = [tool,
-                       "--broker-addr=%s:%s" % (self.broker.host, self.broker.port),
-                       "add", "queue", "test01",
-                       "--flow-stop-count=999",
-                       "--flow-resume-count=55",
-                       "--flow-stop-size=5000000",
-                       "--flow-resume-size=100000"]
-            #cmd = Popen(command, stdout=PIPE)
-            cmd = Popen(command)
-            cmd.wait()
-            self.assertEqual(cmd.returncode, 0)
+            command = tool + \
+                " --broker-addr=%s:%s " % (self.broker.host, self.broker.port) \
+                + "add queue test01 --flow-stop-count=999" \
+                + " --flow-resume-count=55 --flow-stop-size=5000000" \
+                + " --flow-resume-size=100000"
+            cmd = popen(command)
+            rc = cmd.close()
+            self.assertEqual(rc, None)
 
             # now verify the settings
             self.startQmf();
@@ -177,15 +168,15 @@ class QueueFlowLimitTests(TestBase010):
         rcvr = self._start_qpid_receive("test-q",
                                         count=totalMsgs)
         count = 0;
-        x = rcvr.stdout.readline()    # prints a line for each received msg
+        x = rcvr.readline()    # prints a line for each received msg
         while x:
             count += 1;
-            x = rcvr.stdout.readline()
+            x = rcvr.readline()
 
-        sndr1.wait();
-        sndr2.wait();
-        sndr3.wait();
-        rcvr.wait();
+        sndr1.close();
+        sndr2.close();
+        sndr3.close();
+        rcvr.close();
 
         self.assertEqual(count, totalMsgs)
         self.assertFalse(self.qmf.getObjects(_objectId=oid)[0].flowStopped)
@@ -231,15 +222,15 @@ class QueueFlowLimitTests(TestBase010):
         rcvr = self._start_qpid_receive("test-q",
                                         count=totalMsgs)
         count = 0;
-        x = rcvr.stdout.readline()    # prints a line for each received msg
+        x = rcvr.readline()    # prints a line for each received msg
         while x:
             count += 1;
-            x = rcvr.stdout.readline()
+            x = rcvr.readline()
 
-        sndr1.wait();
-        sndr2.wait();
-        sndr3.wait();
-        rcvr.wait();
+        sndr1.close();
+        sndr2.close();
+        sndr3.close();
+        rcvr.close();
 
         self.assertEqual(count, totalMsgs)
         self.assertFalse(self.qmf.getObjects(_objectId=oid)[0].flowStopped)
