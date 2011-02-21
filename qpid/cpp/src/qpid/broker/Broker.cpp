@@ -508,8 +508,8 @@ const std::string EXCHANGE_TYPE("exchange-type");
 const std::string QUEUE_NAME("queue");
 const std::string EXCHANGE_NAME("exchange");
 
-const std::string TRUE("true");
-const std::string FALSE("false");
+const std::string _TRUE("true");
+const std::string _FALSE("false");
 }
 
 struct InvalidBindingIdentifier : public qpid::Exception
@@ -772,10 +772,10 @@ std::pair<boost::shared_ptr<Queue>, bool> Broker::createQueue(
     if (acl) {
         std::map<acl::Property, std::string> params;
         params.insert(make_pair(acl::PROP_ALTERNATE, alternateExchange));
-        params.insert(make_pair(acl::PROP_PASSIVE, FALSE));
-        params.insert(make_pair(acl::PROP_DURABLE, durable ? TRUE : FALSE));
-        params.insert(make_pair(acl::PROP_EXCLUSIVE, owner ? TRUE : FALSE));
-        params.insert(make_pair(acl::PROP_AUTODELETE, autodelete ? TRUE : FALSE));
+        params.insert(make_pair(acl::PROP_PASSIVE, _FALSE));
+        params.insert(make_pair(acl::PROP_DURABLE, durable ? _TRUE : _FALSE));
+        params.insert(make_pair(acl::PROP_EXCLUSIVE, owner ? _TRUE : _FALSE));
+        params.insert(make_pair(acl::PROP_AUTODELETE, autodelete ? _TRUE : _FALSE));
         params.insert(make_pair(acl::PROP_POLICYTYPE, arguments.getAsString("qpid.policy_type")));
         params.insert(make_pair(acl::PROP_MAXQUEUECOUNT, boost::lexical_cast<string>(arguments.getAsInt("qpid.max_count"))));
         params.insert(make_pair(acl::PROP_MAXQUEUESIZE, boost::lexical_cast<string>(arguments.getAsInt64("qpid.max_size"))));
@@ -850,8 +850,8 @@ std::pair<Exchange::shared_ptr, bool> Broker::createExchange(
         std::map<acl::Property, std::string> params;
         params.insert(make_pair(acl::PROP_TYPE, type));
         params.insert(make_pair(acl::PROP_ALTERNATE, alternateExchange));
-        params.insert(make_pair(acl::PROP_PASSIVE, FALSE));
-        params.insert(make_pair(acl::PROP_DURABLE, durable ? TRUE : FALSE));
+        params.insert(make_pair(acl::PROP_PASSIVE, _FALSE));
+        params.insert(make_pair(acl::PROP_DURABLE, durable ? _TRUE : _FALSE));
         if (!acl->authorise(userId,acl::ACT_CREATE,acl::OBJ_EXCHANGE,name,&params) )
             throw framing::UnauthorizedAccessException(QPID_MSG("ACL denied exchange create request from " << userId));
     }
