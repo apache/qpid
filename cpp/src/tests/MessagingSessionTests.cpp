@@ -937,6 +937,47 @@ QPID_AUTO_TEST_CASE(testQmfCreateAndDelete)
     }
 }
 
+QPID_AUTO_TEST_CASE(testRejectAndCredit)
+{
+    //Ensure credit is restored on completing rejected messages
+    QueueFixture fix;
+    Sender sender = fix.session.createSender(fix.queue);
+    Receiver receiver = fix.session.createReceiver(fix.queue);
+
+    const uint count(10);
+    receiver.setCapacity(count);
+    for (uint i = 0; i < count; i++) {
+        sender.send(Message((boost::format("Message_%1%") % (i+1)).str()));
+    }
+
+    Message in;
+    for (uint i = 0; i < count; ++i) {
+        if (receiver.fetch(in, Duration::SECOND)) {
+            BOOST_CHECK_EQUAL(in.getContent(), (boost::format("Message_%1%") % (i+1)).str());
+            fix.session.reject(in);
+        } else {
+            BOOST_FAIL((boost::format("Message_%1% not received as expected") % (i+1)).str());
+            break;
+        }
+    }
+    //send another batch of messages
+    for (uint i = 0; i < count; i++) {
+        sender.send(Message((boost::format("Message_%1%") % (i+count)).str()));
+    }
+
+    for (uint i = 0; i < count; ++i) {
+        if (receiver.fetch(in, Duration::SECOND)) {
+            BOOST_CHECK_EQUAL(in.getContent(), (boost::format("Message_%1%") % (i+count)).str());
+        } else {
+            BOOST_FAIL((boost::format("Message_%1% not received as expected") % (i+count)).str());
+            break;
+        }
+    }
+    fix.session.acknowledge();
+    receiver.close();
+    sender.close();
+}
+
 QPID_AUTO_TEST_SUITE_END()
 
 }} // namespace qpid::tests

@@ -697,8 +697,11 @@ void SemanticState::reject(DeliveryId first, DeliveryId last)
 {
     AckRange range = findRange(first, last);
     for_each(range.start, range.end, mem_fun_ref(&DeliveryRecord::reject));
-    //need to remove the delivery records as well
-    unacked.erase(range.start, range.end);
+    //may need to remove the delivery records as well
+    for (DeliveryRecords::iterator i = range.start; i != unacked.end() && i->getId() <= last; ) {
+        if (i->isRedundant()) i = unacked.erase(i);
+        else i++;
+    }
 }
 
 bool SemanticState::ConsumerImpl::doOutput()
