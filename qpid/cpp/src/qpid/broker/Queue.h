@@ -202,7 +202,7 @@ class Queue : public boost::enable_shared_from_this<Queue>,
                                   const std::string& key,
                                   const qpid::framing::FieldTable& args);
     //TODO: get unbind out of the public interface; only there for purposes of one unit test
-    void unbind(ExchangeRegistry& exchanges);
+    QPID_BROKER_EXTERN void unbind(ExchangeRegistry& exchanges);
     /**
      * Bind self to specified exchange, and record that binding for unbinding on delete.
      */
