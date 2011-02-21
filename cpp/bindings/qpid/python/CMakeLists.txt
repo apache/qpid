@@ -20,7 +20,6 @@
 ##------------------------------------------------------
 ## Use Swig to generate a literal binding to the C++ API
 ##------------------------------------------------------
-set(CMAKE_SWIG_FLAGS "-w361,362,401,467")
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/python.i PROPERTIES CPLUSPLUS ON)
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/python.i PROPERTIES SWIG_FLAGS "-I${qpid-cpp_SOURCE_DIR}/include")
 
