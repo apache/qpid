@@ -204,8 +204,8 @@ QPID_AUTO_TEST_CASE(testFlowSize)
 QPID_AUTO_TEST_CASE(testFlowArgs)
 {
     FieldTable args;
-    const uint64_t stop(0x2FFFFFFFF);
-    const uint64_t resume(0x1FFFFFFFF);
+    const uint64_t stop(0x2FFFFFFFFull);
+    const uint64_t resume(0x1FFFFFFFFull);
     args.setInt(QueueFlowLimit::flowStopCountKey, 30);
     args.setInt(QueueFlowLimit::flowResumeCountKey, 21);
     args.setUInt64(QueueFlowLimit::flowStopSizeKey, stop);
