@@ -131,18 +131,20 @@ void DeliveryRecord::committed() const{
 
 void DeliveryRecord::reject() 
 {    
-    Exchange::shared_ptr alternate = queue->getAlternateExchange();
-    if (alternate) {
-        DeliverableMessage delivery(msg.payload);
-        alternate->route(delivery, msg.payload->getRoutingKey(), msg.payload->getApplicationHeaders());
-        QPID_LOG(info, "Routed rejected message from " << queue->getName() << " to " 
-                 << alternate->getName());
-    } else {
-        //just drop it
-        QPID_LOG(info, "Dropping rejected message from " << queue->getName());
+    if (acquired && !ended) {
+        Exchange::shared_ptr alternate = queue->getAlternateExchange();
+        if (alternate) {
+            DeliverableMessage delivery(msg.payload);
+            alternate->route(delivery, msg.payload->getRoutingKey(), msg.payload->getApplicationHeaders());
+            QPID_LOG(info, "Routed rejected message from " << queue->getName() << " to "
+                     << alternate->getName());
+        } else {
+            //just drop it
+            QPID_LOG(info, "Dropping rejected message from " << queue->getName());
+        }
+        dequeue();
+        setEnded();
     }
-
-    dequeue();
 }
 
 uint32_t DeliveryRecord::getCredit() const
