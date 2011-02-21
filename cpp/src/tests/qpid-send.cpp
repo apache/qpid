@@ -104,7 +104,7 @@ struct Options : public qpid::Options
     {
         addOptions()
             ("broker,b", qpid::optValue(url, "URL"), "url of broker to connect to")
-            ("address,a", qpid::optValue(address, "ADDRESS"), "address to drain from")
+            ("address,a", qpid::optValue(address, "ADDRESS"), "address to send to")
             ("connection-options", qpid::optValue(connectionOptions, "OPTIONS"), "options for the connection")
             ("messages,m", qpid::optValue(messages, "N"), "stop after N messages have been sent, 0 means no limit")
             ("id,i", qpid::optValue(id, "ID"), "use the supplied id instead of generating one")

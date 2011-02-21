@@ -92,7 +92,7 @@ struct Options : public qpid::Options
             ("broker,b", qpid::optValue(url, "URL"), "url of broker to connect to")
             ("address,a", qpid::optValue(address, "ADDRESS"), "address to receive from")
             ("connection-options", qpid::optValue(connectionOptions, "OPTIONS"), "options for the connection")
-            ("timeout,t", qpid::optValue(timeout, "TIMEOUT"), "timeout in seconds to wait before exiting")
+            ("timeout", qpid::optValue(timeout, "TIMEOUT"), "timeout in seconds to wait before exiting")
             ("forever,f", qpid::optValue(forever), "ignore timeout and wait forever")
             ("messages,m", qpid::optValue(messages, "N"), "Number of messages to receive; 0 means receive indefinitely")
             ("ignore-duplicates", qpid::optValue(ignoreDuplicates), "Detect and ignore duplicates (by checking 'sn' header)")
