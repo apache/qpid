@@ -30,6 +30,12 @@ from os import environ
 
 class QueueFlowLimitTests(TestBase010):
 
+    def __getattr__(self, name):
+        if name == "assertGreater":
+            return lambda a, b: self.assertTrue(a > b)
+        else:
+            raise AttributeError
+
     def _create_queue(self, name,
                      stop_count=None, resume_count=None,
                      stop_size=None, resume_size=None):
