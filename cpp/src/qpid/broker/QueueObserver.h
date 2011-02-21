@@ -24,7 +24,7 @@
 namespace qpid {
 namespace broker {
 
-class QueuedMessage;
+struct QueuedMessage;
 /**
  * Interface for notifying classes who want to act as 'observers' of a
  * queue of particular events.
