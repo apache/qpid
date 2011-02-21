@@ -31,7 +31,7 @@ class QueueFlowLimitTests(TestBase010):
 
     def __getattr__(self, name):
         if name == "assertGreater":
-            return lambda a, b: self.assertTrue(a > b)
+            return lambda a, b: self.failUnless(a > b)
         else:
             raise AttributeError
 
@@ -65,7 +65,7 @@ class QueueFlowLimitTests(TestBase010):
                     self.assertEqual(i.arguments.get("qpid.flow_stop_size"), stop_size)
                 if (resume_size is not None):
                     self.assertEqual(i.arguments.get("qpid.flow_resume_size"), resume_size)
-                self.assertFalse(i.flowStopped)
+                self.failIf(i.flowStopped)
                 return i.getObjectId()
         self.fail("Unable to create queue '%s'" % name)
         return None
@@ -93,7 +93,7 @@ class QueueFlowLimitTests(TestBase010):
         Note well: prints one line of text to stdout for each consumed msg.
         """
         command = "qpid-receive" + \
-                   " -b" +  "%s:%s" % (self.broker.host, self.broker.port) \
+                   " -b " +  "%s:%s" % (self.broker.host, self.broker.port) \
                    + " -a " + str(queue) \
                    + " --messages " + str(count) \
                    + " --timeout " + str(timeout) \
@@ -124,7 +124,7 @@ class QueueFlowLimitTests(TestBase010):
                     self.assertEqual(i.arguments.get("qpid.flow_resume_count"), 55)
                     self.assertEqual(i.arguments.get("qpid.flow_stop_size"), 5000000)
                     self.assertEqual(i.arguments.get("qpid.flow_resume_size"), 100000)
-                    self.assertFalse(i.flowStopped)
+                    self.failIf(i.flowStopped)
                     break;
             self.assertEqual(i.name, "test01")
             self._delete_queue("test01")
@@ -150,7 +150,7 @@ class QueueFlowLimitTests(TestBase010):
                 count < 10:
             sleep(1);
             count += 1;
-        self.assertTrue(self.qmf.getObjects(_objectId=oid)[0].flowStopped)
+        self.failUnless(self.qmf.getObjects(_objectId=oid)[0].flowStopped)
         depth = self.qmf.getObjects(_objectId=oid)[0].msgDepth
         self.assertGreater(depth, 373)
 
@@ -179,7 +179,7 @@ class QueueFlowLimitTests(TestBase010):
         rcvr.close();
 
         self.assertEqual(count, totalMsgs)
-        self.assertFalse(self.qmf.getObjects(_objectId=oid)[0].flowStopped)
+        self.failIf(self.qmf.getObjects(_objectId=oid)[0].flowStopped)
 
         self._delete_queue("test-q")
 
@@ -204,7 +204,7 @@ class QueueFlowLimitTests(TestBase010):
                 count < 10:
             sleep(1);
             count += 1;
-        self.assertTrue(self.qmf.getObjects(_objectId=oid)[0].flowStopped)
+        self.failUnless(self.qmf.getObjects(_objectId=oid)[0].flowStopped)
         self.assertGreater(self.qmf.getObjects(_objectId=oid)[0].byteDepth, 351133)
 
         # now wait until the enqueues stop happening - ensure that
@@ -233,7 +233,7 @@ class QueueFlowLimitTests(TestBase010):
         rcvr.close();
 
         self.assertEqual(count, totalMsgs)
-        self.assertFalse(self.qmf.getObjects(_objectId=oid)[0].flowStopped)
+        self.failIf(self.qmf.getObjects(_objectId=oid)[0].flowStopped)
 
         self._delete_queue("test-q")
 
