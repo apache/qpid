@@ -81,9 +81,9 @@ class Broker;
     virtual ~QueueFlowLimit() {}
 
     /** the queue has added QueuedMessage.  Returns true if flow state changes */
-    void enqueued(const QueuedMessage&);
+    QPID_BROKER_EXTERN void enqueued(const QueuedMessage&);
     /** the queue has removed QueuedMessage.  Returns true if flow state changes */
-    void dequeued(const QueuedMessage&);
+    QPID_BROKER_EXTERN void dequeued(const QueuedMessage&);
 
     /** for clustering: */
     /** true if the given message is flow controlled, and cannot be completed. */
@@ -118,10 +118,10 @@ class Broker;
 
     const Broker *broker;
 
-    QueueFlowLimit(Queue *queue,
+    QPID_BROKER_EXTERN QueueFlowLimit(Queue *queue,
                    uint32_t flowStopCount, uint32_t flowResumeCount,
                    uint64_t flowStopSize,  uint64_t flowResumeSize);
-    static QueueFlowLimit *createLimit(Queue *queue, const qpid::framing::FieldTable& settings);
+    static QPID_BROKER_EXTERN QueueFlowLimit *createLimit(Queue *queue, const qpid::framing::FieldTable& settings);
 };
 
 }}
