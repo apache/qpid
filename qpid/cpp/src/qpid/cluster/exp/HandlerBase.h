@@ -1,3 +1,6 @@
+#ifndef QPID_CLUSTER_HANDLERBASE_H
+#define QPID_CLUSTER_HANDLERBASE_H
+
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -18,30 +21,34 @@
  * under the License.
  *
  */
-#ifndef _QueuedMessage_
-#define _QueuedMessage_
-
-#include "qpid/broker/Message.h"
+#include "qpid/cluster/types.h"
 
 namespace qpid {
-namespace broker {
 
-class Queue;
+namespace framing {
+class AMQBody;
+}
 
-struct QueuedMessage
+namespace cluster {
+class EventHandler;
+
+/**
+ * Base class for handlers of events, children of the EventHandler.
+ */
+class HandlerBase
 {
-    boost::intrusive_ptr<Message> payload;
-    framing::SequenceNumber position;
-    Queue* queue;
+  public:
+    HandlerBase(EventHandler&);
+    virtual ~HandlerBase();
 
-    QueuedMessage(Queue* q=0) : position(0), queue(q) {}
-    QueuedMessage(Queue* q, boost::intrusive_ptr<Message> msg, framing::SequenceNumber sn) :
-        payload(msg), position(sn), queue(q) {}
+    virtual bool invoke(const framing::AMQBody& body) = 0;
 
+  protected:
+    EventHandler& eventHandler;
+    MemberId sender();
+    MemberId self();
 };
-    inline bool operator<(const QueuedMessage& a, const QueuedMessage& b) { return a.position < b.position; }
 
-}}
+}} // namespace qpid::cluster
 
-
-#endif
+#endif  /*!QPID_CLUSTER_HANDLERBASE_H*/

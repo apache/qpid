@@ -284,4 +284,62 @@
     </control>
   </class>
 
+
+  <!-- TODO aconway 2010-10-20: Experimental classes for new cluster. -->
+
+  <!-- Message delivery and disposition -->
+  <class name="cluster-message" code="0x82">
+    <!-- FIXME aconway 2010-10-19: create message in fragments -->
+    <control name="routing" code="0x1">
+      <field name="routing-id" type="uint32"/>
+      <field name="message" type="str32"/>
+    </control>
+
+    <control name="enqueue" code="0x2">
+      <field name="routing-id" type="uint32"/>
+      <field name="queue" type="queue.name"/>
+    </control>
+
+    <control name="routed" code="0x3">
+      <field name="routing-id" type="uint32"/>
+    </control>
+
+    <control name="dequeue" code="0x4">
+      <field name="queue" type="queue.name"/>
+      <field name="position" type="uint32"/>
+    </control>
+  </class>
+
+  <class name="cluster-wiring" code="0x83">
+    <control name="create-queue" code="0x1">
+      <field name="data" type="str32"/>
+    </control>
+
+    <control name="destroy-queue" code="0x2">
+      <field name="name" type="queue.name"/>
+    </control>
+
+    <control name="create-exchange" code="0x3">
+      <field name="data" type="str32"/>
+    </control>
+
+    <control name="destroy-exchange" code="0x4">
+      <field name="name" type="exchange.name"/>
+    </control>
+
+    <control name="bind" code="0x5">
+      <field name="queue" type="queue.name"/>
+      <field name="exchange" type="exchange.name"/>
+      <field name="binding-key" type="str8"/>
+      <field name="arguments" type="map"/>
+    </control>
+
+    <control name="unbind" code="0x6">
+      <field name="queue" type="queue.name"/>
+      <field name="exchange" type="exchange.name"/>
+      <field name="binding-key" type="str8"/>
+      <field name="arguments" type="map"/>
+    </control>
+
+  </class>
 </amqp>

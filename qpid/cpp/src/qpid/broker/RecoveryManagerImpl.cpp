@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -62,7 +62,7 @@ class RecoverableQueueImpl : public RecoverableQueue
 public:
     RecoverableQueueImpl(const boost::shared_ptr<Queue>& _queue) : queue(_queue) {}
     ~RecoverableQueueImpl() {};
-    void setPersistenceId(uint64_t id);    
+    void setPersistenceId(uint64_t id);
 	uint64_t getPersistenceId() const;
     const std::string& getName() const;
     void setExternalQueueStore(ExternalQueueStore* inst);
@@ -80,6 +80,7 @@ public:
     RecoverableExchangeImpl(Exchange::shared_ptr _exchange, QueueRegistry& _queues) : exchange(_exchange), queues(_queues) {}
     void setPersistenceId(uint64_t id);
     void bind(const std::string& queue, const std::string& routingKey, qpid::framing::FieldTable& args);
+    const std::string& getName() const;
 };
 
 class RecoverableConfigImpl : public RecoverableConfig
@@ -133,7 +134,7 @@ RecoverableMessage::shared_ptr RecoveryManagerImpl::recoverMessage(framing::Buff
     return RecoverableMessage::shared_ptr(new RecoverableMessageImpl(message));
 }
 
-RecoverableTransaction::shared_ptr RecoveryManagerImpl::recoverTransaction(const std::string& xid, 
+RecoverableTransaction::shared_ptr RecoveryManagerImpl::recoverTransaction(const std::string& xid,
                                                                            std::auto_ptr<TPCTransactionContext> txn)
 {
     DtxBuffer::shared_ptr buffer(new DtxBuffer());
@@ -202,7 +203,7 @@ void RecoverableQueueImpl::setPersistenceId(uint64_t id)
 {
     queue->setPersistenceId(id);
 }
-       
+
 uint64_t RecoverableQueueImpl::getPersistenceId() const
 {
 	return queue->getPersistenceId();
@@ -212,7 +213,7 @@ const std::string& RecoverableQueueImpl::getName() const
 {
     return queue->getName();
 }
-    
+
 void RecoverableQueueImpl::setExternalQueueStore(ExternalQueueStore* inst)
 {
     queue->setExternalQueueStore(inst);
@@ -243,6 +244,11 @@ void RecoverableExchangeImpl::bind(const string& queueName,
     Queue::shared_ptr queue = queues.find(queueName);
     exchange->bind(queue, key, &args);
     queue->bound(exchange->getName(), key, args);
+}
+
+const std::string& RecoverableExchangeImpl::getName() const
+{
+    return exchange->getName();
 }
 
 void RecoverableMessageImpl::dequeue(DtxBuffer::shared_ptr buffer, Queue::shared_ptr queue)

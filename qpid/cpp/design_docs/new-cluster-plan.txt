@@ -146,10 +146,6 @@ reject(QueuedMessage):
   isRejecting = true
   mcast reject(qmsg)
 
-# FIXME no longer needed?
-drop(QueuedMessage)
-  cleanup(qmsg)
-
 *** MessageHandler and mcast messages
 Types:
 - struct QueueEntry { QueuedMessage qmsg; NodeId acquired; }
@@ -348,6 +344,9 @@ For 0-10 can use channel numbers & send whole frames packed into larger buffer.
 Extend broker::Cluster interface to capture transaction context and completion.
 Sequence number to generate per-node tx IDs.
 Replicate transaction completion.
+** TODO [#B] Management support
+- Replicate management methods that modify queues - e.g. move, purge.
+- Report connections - local only or cluster-wide?
 ** TODO [#B] Batch CPG multicast messages
 The new cluster design involves a lot of small multicast messages,
 they need to be batched into larger CPG messages for efficiency.

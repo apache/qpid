@@ -24,6 +24,9 @@
 #include "qpid/broker/FanOutExchange.h"
 #include "qpid/broker/HeadersExchange.h"
 #include "qpid/broker/TopicExchange.h"
+#include "qpid/broker/Broker.h"
+#include "qpid/broker/Cluster.h"
+#include "qpid/log/Statement.h"
 #include "qpid/management/ManagementDirectExchange.h"
 #include "qpid/management/ManagementTopicExchange.h"
 #include "qpid/framing/reply_exceptions.h"
@@ -87,11 +90,15 @@ void ExchangeRegistry::destroy(const string& name){
 }
 
 Exchange::shared_ptr ExchangeRegistry::get(const string& name){
+    Exchange::shared_ptr ex = find(name);
+    if (!ex) throw framing::NotFoundException(QPID_MSG("Exchange not found: " << name));
+    return ex;
+}
+
+Exchange::shared_ptr ExchangeRegistry::find(const string& name){
     RWlock::ScopedRlock locker(lock);
     ExchangeMap::iterator i =  exchanges.find(name);
-    if (i == exchanges.end())
-        throw framing::NotFoundException(QPID_MSG("Exchange not found: " << name));
-    return i->second;
+    return (i == exchanges.end()) ? Exchange::shared_ptr() : i->second;
 }
 
 bool ExchangeRegistry::registerExchange(const Exchange::shared_ptr& ex) {

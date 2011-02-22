@@ -92,7 +92,7 @@ cluster_test_SOURCES =				\
 	PartialFailure.cpp			\
 	ClusterFailover.cpp
 
-cluster_test_LDADD=$(lib_client) $(lib_broker) ../cluster.la -lboost_unit_test_framework
+cluster_test_LDADD=$(lib_client) $(lib_broker) $(lib_messaging) ../cluster.la -lboost_unit_test_framework
 
 qpidtest_SCRIPTS += run_cluster_tests brokertest.py cluster_tests.py cluster_test_logs.py run_long_cluster_tests long_cluster_tests.py testlib.py cluster_tests.fail
 qpidtest_SCRIPTS += $(CLUSTER_TEST_SCRIPTS_LIST)

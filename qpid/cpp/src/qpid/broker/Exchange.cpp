@@ -23,6 +23,7 @@
 #include "qpid/broker/ExchangeRegistry.h"
 #include "qpid/broker/FedOps.h"
 #include "qpid/broker/Broker.h"
+#include "qpid/broker/Cluster.h"
 #include "qpid/management/ManagementAgent.h"
 #include "qpid/broker/Queue.h"
 #include "qpid/log/Statement.h"
@@ -70,10 +71,23 @@ Exchange::PreRoute::~PreRoute(){
     }
 }
 
+// Bracket a scope with calls to Cluster::routing and Cluster::routed
+struct ScopedClusterRouting {
+    Broker* broker;
+    boost::intrusive_ptr<Message> message;
+    ScopedClusterRouting(Broker* b, boost::intrusive_ptr<Message> m)
+        : broker(b), message(m) {
+        if (broker) broker->getCluster().routing(message);
+    }
+    ~ScopedClusterRouting() {
+        if (broker) broker->getCluster().routed(message);
+    }
+};
+
 void Exchange::doRoute(Deliverable& msg, ConstBindingList b)
 {
+    ScopedClusterRouting scr(broker, &msg.getMessage());
     int count = 0;
-
     if (b.get()) {
         // Block the content release if the message is transient AND there is more than one binding
         if (!msg.getMessage().isPersistent() && b->size() > 1) {
