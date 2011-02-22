@@ -60,7 +60,9 @@ def filter_log(log):
         'task overran',
         'warning CLOSING .* unsent data',
         'Inter-broker link ',
-        'Running in a cluster, marking store'
+        'Running in a cluster, marking store',
+        'debug Sending keepalive signal to watchdog',
+        'last broker standing joined by 1 replicas, updating queue policies.'
         ])
     skip_re = re.compile(skip)
     # Regex to match a UUID
