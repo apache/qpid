@@ -19,6 +19,7 @@
  *
  */
 using System;
+using System.Threading;
 using log4net;
 using Apache.Qpid.Messaging;
 using Apache.Qpid.Client.Qms;
@@ -46,6 +47,12 @@ namespace Apache.Qpid.Client.Tests.interop
 
         /// <summary> Holds the producer to send report messages on. </summary>
         private IMessagePublisher publisher;
+
+        /// <summary> A monitor used to wait for shutdown. </summary>
+        private AutoResetEvent shutdownReceivedEvt = new AutoResetEvent(false);
+
+        /// <summary> Holds the default test timeout for communications . </summary>
+        const int TIMEOUT = 60000;
 
         /// <summary> Holds a flag to indicate that a timer has begun on the first message. Reset when report is sent. </summary> */
         private bool init;
@@ -85,6 +92,15 @@ namespace Apache.Qpid.Client.Tests.interop
 
             connection.Start();
             Console.WriteLine("Waiting for messages...");
+
+            if (shutdownReceivedEvt.WaitOne(TIMEOUT, true))
+            {
+                Console.WriteLine("Shutting down - shut down message was received");
+            }
+            else 
+            {
+                Console.WriteLine("Shutting down - timeout elapsed");
+            }
         }
 
         public static void Main(String[] argv)
@@ -185,6 +201,8 @@ namespace Apache.Qpid.Client.Tests.interop
             connection.Stop();
             channel.Dispose();
             connection.Dispose();
+
+            shutdownReceivedEvt.Set();
         }
 
         /// <summary> Sends the report message to the response location. </summary>
