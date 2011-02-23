@@ -42,6 +42,11 @@ const char *QPIDD_MODULE_DIR = ".";
 
 using namespace qpid::broker;
 
+// Service support
+#include "Service.h"
+Service	s_service( "qpidd" );
+
+
 BootstrapOptions::BootstrapOptions(const char* argv0)
   : qpid::Options("Options"),
     common("", QPIDD_CONF_FILE),
@@ -225,9 +230,39 @@ struct ProcessControlOptions : public qpid::Options {
     }
 };
 
+struct DaemonOptions : public qpid::Options {
+	bool install;
+	bool start;
+	bool stop;
+	bool uninstall;
+	bool daemon;
+	string startType;
+	string account;
+	string password;
+	string depends;
+
+	DaemonOptions() 
+	:	qpid::Options("Service options"), install(false), start(false), stop(false), uninstall(false), daemon(false),
+		startType("demand")
+	{
+        addOptions()
+			("install", qpid::optValue(install), "Install as service")
+			("start-type", qpid::optValue(startType,"auto|demand|disabled"), "Service start type\nApplied at install time only.")
+			("account", qpid::optValue(account,"(LocalService)"), "Account to run as, default is LocalService\nApplied at install time only.")
+			("password", qpid::optValue(password,"PASSWORD"), "Account password, if needed\nApplied at install time only.")
+			("depends", qpid::optValue(depends,"(comma delimited list)"), "Names of services that must start before this service\nApplied at install time only.")
+            ("start", qpid::optValue(start), "Start the service.")
+            ("stop", qpid::optValue(stop), "Stop the service.")
+            ("uninstall", qpid::optValue(uninstall), "Uninstall the service.")
+            ("daemon", qpid::optValue(daemon), "Run as a daemon service (internal use only");
+	}
+};
+
 struct QpiddWindowsOptions : public QpiddOptionsPrivate {
     ProcessControlOptions control;
+    DaemonOptions daemon;
     QpiddWindowsOptions(QpiddOptions *parent) : QpiddOptionsPrivate(parent) {
+        parent->add(daemon);
         parent->add(control);
     }
 };
@@ -252,12 +287,88 @@ void QpiddOptions::usage() const {
               << *this << std::endl;
 }
 
+void WINAPI ShutdownProc( void *pContext )
+{
+	if( pContext )
+		reinterpret_cast<Broker*>(pContext)->shutdown();
+}
+
+int __cdecl main(int argc, char* argv[]);
+
+void WINAPI main2( DWORD argc, char* argv[] )
+{
+	(void)main( argc, argv );
+}
+
 int QpiddBroker::execute (QpiddOptions *options) {
     // Options that affect a running daemon.
     QpiddWindowsOptions *myOptions =
       reinterpret_cast<QpiddWindowsOptions *>(options->platform.get());
     if (myOptions == 0)
         throw qpid::Exception("Internal error obtaining platform options");
+
+	if( myOptions->daemon.install )
+	{
+		size_t p;
+
+		// Handle start type
+		DWORD startType;
+		if( myOptions->daemon.startType.compare( "demand" ) == 0 )
+			startType = SERVICE_DEMAND_START;
+		else if( myOptions->daemon.startType.compare( "auto" ) == 0 )
+			startType = SERVICE_AUTO_START;
+		else if( myOptions->daemon.startType.compare( "disabled" ) == 0 )
+			startType = SERVICE_DISABLED;
+		else if( !  myOptions->daemon.startType.empty() )
+			throw qpid::Exception( "Invalid service start type: " + myOptions->daemon.startType );
+
+		// Get original command line arguments and substitute daemon for install...
+		string args( ::GetCommandLineA() );
+		if( args[0] == '\"' )											// if OS prepended w/ fully qualified path
+		{
+			if( ( p = args.find_first_of( "\"", 1 ) ) != args.npos )
+				args = args.substr( p + 2 );							// trim .exe
+		}
+		else
+		{
+			if( ( p = args.find_first_of( " ", 1 ) ) != args.npos )
+				args = args.substr( p + 1 );							// trim .exe
+		}
+		if( ( p = args.find( "install" ) ) == args.npos )
+	        throw qpid::Exception("Internal error relocating install argument for service");
+		string args2 = args.substr( 0, p );
+		args2 += "daemon";
+		args2 += args.substr( p + 7 );
+
+		// Install service and exit
+		WinService::install( "qpidd", args2, startType, myOptions->daemon.account, myOptions->daemon.password, myOptions->daemon.depends );
+		return 0;
+	}
+
+	if( myOptions->daemon.start )
+	{
+		WinService::start( "qpidd" );
+		return 0;
+	}
+
+	else if( myOptions->daemon.stop )
+	{
+		WinService::stop( "qpidd" );
+		return 0;
+	}
+
+	else if( myOptions->daemon.uninstall )
+	{
+		WinService::uninstall( "qpidd" );
+		return 0;
+	}
+
+	// Detect daemon special argument
+	else if( myOptions->daemon.daemon )
+	{
+		WinService::getInstance()->run( main2 );
+		return 1;
+	}
 
     if (myOptions->control.check || myOptions->control.quit) {
         // Relies on port number being set via --port or QPID_PORT env variable.
@@ -281,6 +392,9 @@ int QpiddBroker::execute (QpiddOptions *options) {
 
     boost::intrusive_ptr<Broker> brokerPtr(new Broker(options->broker));
 
+	// Enable shutdown
+	s_service.setShutdownProc( ShutdownProc, brokerPtr.get() );
+
     // Need the correct port number to use in the pid file name.
     if (options->broker.port == 0)
         options->broker.port = brokerPtr->getPort(myOptions->control.transport);
@@ -302,7 +416,11 @@ int QpiddBroker::execute (QpiddOptions *options) {
     brokerPtr->accept();
     std::cout << options->broker.port << std::endl;
     brokerPtr->run();
-    waitShut.signal();   // In case we shut down some other way
+
+	// Now disable shutdown 
+	s_service.setShutdownProc(0,0);
+
+	waitShut.signal();   // In case we shut down some other way
     waitThr.join();
 
     // CloseHandle(h);
