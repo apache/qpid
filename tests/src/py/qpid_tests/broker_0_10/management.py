@@ -242,6 +242,38 @@ class ManagementTest (TestBase010):
         pq = self.qmf.getObjects(_class="queue", name="purge-queue")[0]
         self.assertEqual (pq.msgDepth,0)
 
+    def test_reroute_priority_queue(self):
+        self.startQmf()
+        session = self.session
+
+        #setup test queue supporting multiple priority levels
+        session.queue_declare(queue="test-queue", exclusive=True, auto_delete=True, arguments={'x-qpid-priorities':10})
+
+        #send some messages of varying priority to that queue:
+        for i in range(0, 5):
+            deliveryProps = session.delivery_properties(routing_key="test-queue", priority=i+5)
+            session.message_transfer(message=Message(deliveryProps, "Message %d" % (i+1)))
+
+
+        #declare and bind a queue to amq.fanout through which rerouted
+        #messages can be verified:
+        session.queue_declare(queue="rerouted", exclusive=True, auto_delete=True, arguments={'x-qpid-priorities':10})
+        session.exchange_bind(queue="rerouted", exchange="amq.fanout")
+
+        #reroute messages from test queue to amq.fanout (and hence to
+        #rerouted queue):
+        pq = self.qmf.getObjects(_class="queue", name="test-queue")[0]
+        result = pq.reroute(0, False, "amq.fanout")
+        self.assertEqual(result.status, 0) 
+
+        #verify messages are all rerouted:
+        self.subscribe(destination="incoming", queue="rerouted")
+        incoming = session.incoming("incoming")
+        for i in range(0, 5):
+            msg = incoming.get(timeout=1)
+            self.assertEqual("Message %d" % (5-i), msg.body)
+
+
     def test_reroute_queue(self):
         """
         Test ability to reroute messages from the head of a queue.
