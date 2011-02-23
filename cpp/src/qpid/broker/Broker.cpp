@@ -593,7 +593,7 @@ void Broker::createObject(const std::string& type, const std::string& name,
         }
     } else if (type == TYPE_EXCHANGE || type == TYPE_TOPIC) {
         bool durable(false);
-        std::string exchangeType;
+        std::string exchangeType("topic");
         std::string alternateExchange;
         Variant::Map extensions;
         for (Variant::Map::const_iterator i = properties.begin(); i != properties.end(); ++i) {
@@ -787,7 +787,7 @@ std::pair<boost::shared_ptr<Queue>, bool> Broker::createQueue(
     Exchange::shared_ptr alternate;
     if (!alternateExchange.empty()) {
         alternate = exchanges.get(alternateExchange);
-        if (!alternate) framing::NotFoundException(QPID_MSG("Alternate exchange does not exist: " << alternateExchange));
+        if (!alternate) throw framing::NotFoundException(QPID_MSG("Alternate exchange does not exist: " << alternateExchange));
     }
 
     std::pair<Queue::shared_ptr, bool> result = queues.declare(name, durable, autodelete, owner);
@@ -859,7 +859,7 @@ std::pair<Exchange::shared_ptr, bool> Broker::createExchange(
     Exchange::shared_ptr alternate;
     if (!alternateExchange.empty()) {
         alternate = exchanges.get(alternateExchange);
-        if (!alternate) framing::NotFoundException(QPID_MSG("Alternate exchange does not exist: " << alternateExchange));
+        if (!alternate) throw framing::NotFoundException(QPID_MSG("Alternate exchange does not exist: " << alternateExchange));
     }
 
     std::pair<Exchange::shared_ptr, bool> result;
