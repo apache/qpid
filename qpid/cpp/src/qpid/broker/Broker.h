@@ -153,7 +153,7 @@ public:
     void setLogLevel(const std::string& level);
     std::string getLogLevel();
     void createObject(const std::string& type, const std::string& name,
-                      const qpid::types::Variant::Map& properties, bool lenient, const ConnectionState* context);
+                      const qpid::types::Variant::Map& properties, bool strict, const ConnectionState* context);
     void deleteObject(const std::string& type, const std::string& name,
                       const qpid::types::Variant::Map& options, const ConnectionState* context);
 
