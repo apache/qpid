@@ -21,7 +21,7 @@ SUBDIRS = dotnet
 
 if HAVE_SWIG
 
-EXTRA_DIST = qpid.i
+EXTRA_DIST = CMakeLists.txt qpid.i
 
 if HAVE_RUBY_DEVEL
 SUBDIRS += ruby
