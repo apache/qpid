@@ -816,7 +816,7 @@ class ACLTests(TestBase010):
             self.fail("ACL should deny exchange delete request for my-exchange");
         except Exception, e:
             self.assertEqual(7,e.args[0]["error_code"])
-            self.assertTrue(e.args[0]["error_text"].find("unauthorized-access") == 0)
+            assert e.args[0]["error_text"].find("unauthorized-access") == 0
         admin = BrokerAdmin(self.config.broker, "admin", "admin")
         admin.delete_exchange("my-exchange") #should pass
 
@@ -826,7 +826,7 @@ class ACLTests(TestBase010):
             self.fail("ACL should deny exchange create request for another-exchange");
         except Exception, e:
             self.assertEqual(7,e.args[0]["error_code"])
-            self.assertTrue(e.args[0]["error_text"].find("unauthorized-access") == 0)
+            assert e.args[0]["error_text"].find("unauthorized-access") == 0
 
 
    #=====================================
