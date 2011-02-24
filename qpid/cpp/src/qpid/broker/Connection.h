@@ -153,12 +153,15 @@ class Connection : public sys::ConnectionInputHandler,
     void addManagementObject();
 
     const qpid::sys::SecuritySettings& getExternalSecuritySettings() const
-    { 
+    {
         return securitySettings;
     }
 
     /** @return true if the initial connection negotiation is complete. */
     bool isOpen();
+
+    // Used by cluster during catch-up, see cluster::OutputInterceptor
+    void doIoCallbacks();
 
   private:
     typedef boost::ptr_map<framing::ChannelId, SessionHandler> ChannelMap;
@@ -201,7 +204,7 @@ class Connection : public sys::ConnectionInputHandler,
         sys::ConnectionOutputHandler* next;
     };
     OutboundFrameTracker outboundTracker;
-    
+
 
     void sent(const framing::AMQFrame& f);
   public:

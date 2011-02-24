@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -66,11 +66,14 @@ void OutputInterceptor::giveReadCredit(int32_t credit) {
 }
 
 // Called in write thread when the IO layer has no more data to write.
-// We do nothing in the write thread, we run doOutput only on delivery
-// of doOutput requests.
-bool OutputInterceptor::doOutput() { return false; }
+// We only process IO callbacks in the write thread during catch-up.
+// Normally we run doOutput only on delivery of doOutput requests.
+bool OutputInterceptor::doOutput() {
+    parent.doCatchupIoCallbacks();
+    return false;
+}
 
-// Send output up to limit, calculate new limit. 
+// Send output up to limit, calculate new limit.
 void OutputInterceptor::deliverDoOutput(uint32_t limit) {
     sentDoOutput = false;
     sendMax = limit;
@@ -78,7 +81,7 @@ void OutputInterceptor::deliverDoOutput(uint32_t limit) {
     if (parent.isLocal()) {
         size_t buffered = getBuffered();
         if (buffered == 0 && sent == sendMax) // Could have sent more, increase the limit.
-            newLimit = sendMax*2; 
+            newLimit = sendMax*2;
         else if (buffered > 0 && sent > 1) // Data left unsent, reduce the limit.
             newLimit = (sendMax + sent) / 2;
     }
