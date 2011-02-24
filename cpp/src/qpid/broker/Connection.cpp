@@ -345,17 +345,21 @@ void Connection::closed(){ // Physically closed, suspend open sessions.
     }
 }
 
+void Connection::doIoCallbacks() {
+    {
+        ScopedLock<Mutex> l(ioCallbackLock);
+        while (!ioCallbacks.empty()) {
+            boost::function0<void> cb = ioCallbacks.front();
+            ioCallbacks.pop();
+            ScopedUnlock<Mutex> ul(ioCallbackLock);
+            cb(); // Lend the IO thread for management processing
+        }
+    }
+}
+
 bool Connection::doOutput() {
     try {
-        {
-            ScopedLock<Mutex> l(ioCallbackLock);
-            while (!ioCallbacks.empty()) {
-                boost::function0<void> cb = ioCallbacks.front();
-                ioCallbacks.pop();
-                ScopedUnlock<Mutex> ul(ioCallbackLock);
-                cb(); // Lend the IO thread for management processing
-            }
-        }
+        doIoCallbacks();
         if (mgmtClosing) {
             closed();
             close(connection::CLOSE_CODE_CONNECTION_FORCED, "Closed by Management Request");
@@ -475,8 +479,8 @@ void Connection::OutboundFrameTracker::abort() { next->abort(); }
 void Connection::OutboundFrameTracker::activateOutput() { next->activateOutput(); }
 void Connection::OutboundFrameTracker::giveReadCredit(int32_t credit) { next->giveReadCredit(credit); }
 void Connection::OutboundFrameTracker::send(framing::AMQFrame& f)
-{ 
-    next->send(f); 
+{
+    next->send(f);
     con.sent(f);
 }
 void Connection::OutboundFrameTracker::wrap(sys::ConnectionOutputHandlerPtr& p)

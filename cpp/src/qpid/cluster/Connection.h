@@ -10,9 +10,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -62,7 +62,7 @@ class Connection :
         public sys::ConnectionInputHandler,
         public framing::AMQP_AllOperations::ClusterConnectionHandler,
         private broker::Connection::ErrorListener
-        
+
 {
   public:
 
@@ -73,7 +73,7 @@ class Connection :
     Connection(Cluster&, sys::ConnectionOutputHandler& out, const std::string& mgmtId, const ConnectionId& id,
                const qpid::sys::SecuritySettings& external);
     ~Connection();
-    
+
     ConnectionId getId() const { return self; }
     broker::Connection* getBrokerConnection() { return connection.get(); }
     const broker::Connection* getBrokerConnection() const { return connection.get(); }
@@ -108,9 +108,9 @@ class Connection :
     void deliveredFrame(const EventFrame&);
 
     void consumerState(const std::string& name, bool blocked, bool notifyEnabled, const qpid::framing::SequenceNumber& position);
-    
+
     // ==== Used in catch-up mode to build initial state.
-    // 
+    //
     // State update methods.
     void shadowPrepare(const std::string&);
 
@@ -123,9 +123,9 @@ class Connection :
                       const framing::SequenceNumber& received,
                       const framing::SequenceSet& unknownCompleted,
                       const SequenceSet& receivedIncomplete);
-    
+
     void outputTask(uint16_t channel, const std::string& name);
-    
+
     void shadowReady(uint64_t memberId,
                      uint64_t connectionId,
                      const std::string& managementId,
@@ -189,6 +189,8 @@ class Connection :
 
     void setSecureConnection ( broker::SecureConnection * sc );
 
+    void doCatchupIoCallbacks();
+
   private:
     struct NullFrameHandler : public framing::FrameHandler {
         void handle(framing::AMQFrame&) {}
@@ -233,7 +235,7 @@ class Connection :
     // Error listener functions
     void connectionError(const std::string&);
     void sessionError(uint16_t channel, const std::string&);
-    
+
     void init();
     bool checkUnsupported(const framing::AMQBody& body);
     void deliverDoOutput(uint32_t limit);
