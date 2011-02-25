@@ -245,9 +245,19 @@ class MessageTests(TestBase010):
             self.fail("Got message after cancellation: " + msg)
         except Empty: None
 
-        #cancellation of non-existant consumers should be handled without error
-        session.message_cancel(destination="my-consumer")
-        session.message_cancel(destination="this-never-existed")
+        #cancellation of non-existant consumers should be result in 404s
+        try:
+            session.message_cancel(destination="my-consumer")
+            self.fail("Expected 404 for recancellation of subscription.")
+        except SessionException, e:
+            self.assertEquals(404, e.args[0].error_code)
+
+        session = self.conn.session("alternate-session", timeout=10)
+        try:
+            session.message_cancel(destination="this-never-existed")
+            self.fail("Expected 404 for cancellation of unknown subscription.")
+        except SessionException, e:
+            self.assertEquals(404, e.args[0].error_code)
 
 
     def test_ack(self):
