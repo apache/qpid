@@ -304,6 +304,36 @@ acl allow all all
         # Verify logs are consistent
         cluster_test_logs.verify_logs()
 
+    def test_redelivered(self):
+        """Verify that redelivered flag is set correctly on replayed messages"""
+        cluster = self.cluster(2, expect=EXPECT_EXIT_FAIL)
+        url = "amqp:tcp:%s,tcp:%s" % (cluster[0].host_port(), cluster[1].host_port())
+        queue = "my-queue"
+        cluster[0].declare_queue(queue)
+        self.sender = self.popen(
+            ["qpid-send",
+             "--broker", url,
+             "--address", queue,
+             "--sequence=true",
+             "--send-eos=1",
+             "--messages=100000",
+             "--connection-options={reconnect:true}"
+             ])
+        self.receiver = self.popen(
+            ["qpid-receive",
+             "--broker", url,
+             "--address", queue,
+             "--ignore-duplicates",
+             "--check-redelivered",
+             "--connection-options={reconnect:true}",
+             "--forever"
+             ])
+        time.sleep(1)#give sender enough time to have some messages to replay
+        cluster[0].kill()
+        self.sender.wait()
+        self.receiver.wait()
+        cluster[1].kill()
+
     class BlockedSend(Thread):
         """Send a message, send is expected to block.
         Verify that it does block (for a given timeout), then allow
