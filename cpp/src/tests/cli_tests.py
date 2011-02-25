@@ -365,6 +365,26 @@ class CliTests(TestBase010):
                 self.assertEqual(queue._altExchange_.name, altName)
         self.assertEqual(found, True)
 
+    def test_qpid_config_list_queues_arguments(self):
+        """
+        Test to verify that when the type of a policy limit is
+        actually a string (though still a valid value), it does not
+        upset qpid-config
+        """
+        self.startQmf();
+        qmf = self.qmf
+
+        names = ["queue_capacity%s" % (i) for i in range(1, 6)]
+        for name in names:
+            self.session.queue_declare(queue=name, exclusive=True,
+                                       arguments={'qpid.max_count' : str(i), 'qpid.max_size': '100'})
+
+        output = os.popen(self.qpid_config_command(" queues")).readlines()
+        queues = [line.split()[0] for line in output[2:len(output)]] #ignore first two lines (header)
+
+        for name in names:
+            assert name in queues, "%s not in %s" % (name, queues)
+
     def test_qpid_route(self):
         self.startQmf();
         qmf = self.qmf
