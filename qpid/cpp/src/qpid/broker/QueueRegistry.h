@@ -24,6 +24,7 @@
 #include "qpid/broker/BrokerImportExport.h"
 #include "qpid/sys/Mutex.h"
 #include "qpid/management/Manageable.h"
+#include "qpid/framing/FieldTable.h"
 #include <boost/bind.hpp>
 #include <boost/shared_ptr.hpp>
 #include <algorithm>
@@ -60,7 +61,8 @@ class QueueRegistry {
         const std::string& name,
         bool durable = false,
         bool autodelete = false, 
-        const OwnershipToken* owner = 0);
+        const OwnershipToken* owner = 0,
+        const qpid::framing::FieldTable& args = framing::FieldTable());
 
     /**
      * Destroy the named queue.

@@ -36,7 +36,8 @@ QueueRegistry::~QueueRegistry(){}
 
 std::pair<Queue::shared_ptr, bool>
 QueueRegistry::declare(const string& declareName, bool durable, 
-                       bool autoDelete, const OwnershipToken* owner)
+                       bool autoDelete, const OwnershipToken* owner,
+                       const framing::FieldTable& arguments)
 {
     RWlock::ScopedWlock locker(lock);
     string name = declareName.empty() ? generateName() : declareName;
@@ -45,6 +46,8 @@ QueueRegistry::declare(const string& declareName, bool durable,
 
     if (i == queues.end()) {
         Queue::shared_ptr queue(new Queue(name, autoDelete, durable ? store : 0, owner, parent, broker));
+        //apply settings & create persistent record if required
+        queue->create(arguments);
         queues[name] = queue;
         if (lastNode) queue->setLastNodeFailure();
 

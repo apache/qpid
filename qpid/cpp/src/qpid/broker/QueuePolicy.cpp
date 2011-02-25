@@ -136,11 +136,10 @@ uint32_t QueuePolicy::getCapacity(const FieldTable& settings, const std::string&
         string s(v->get<string>());
         QPID_LOG(debug, "Got string value for " << key << ": " << s);
         std::istringstream convert(s);
-        if (convert >> result && result >= 0) return result;
+        if (convert >> result && result >= 0 && convert.eof()) return result;
     }
 
-    QPID_LOG(warning, "Cannot convert " << key << " to unsigned integer, using default (" << defaultValue << ")");
-    return defaultValue;
+    throw IllegalArgumentException(QPID_MSG("Cannot convert " << key << " to unsigned integer: " << *v));
 }
 
 std::string QueuePolicy::getType(const FieldTable& settings)
