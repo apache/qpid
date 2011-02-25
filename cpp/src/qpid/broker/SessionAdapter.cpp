@@ -114,7 +114,7 @@ void SessionAdapter::ExchangeHandlerImpl::declare(const string& exchange, const 
                                                                  "existing"));
             }
         }catch(UnknownExchangeTypeException& /*e*/){
-            throw CommandInvalidException(QPID_MSG("Exchange type not implemented: " << type));
+            throw NotFoundException(QPID_MSG("Exchange type not implemented: " << type));
         }
     }
 }
