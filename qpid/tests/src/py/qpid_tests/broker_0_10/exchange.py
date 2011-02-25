@@ -448,9 +448,9 @@ class MiscellaneousErrorsTests(TestHelper):
     def testTypeNotKnown(self):
         try:
             self.session.exchange_declare(exchange="test_type_not_known_exchange", type="invalid_type")
-            self.fail("Expected 503 for declaration of unknown exchange type.")
+            self.fail("Expected 404 for declaration of unknown exchange type.")
         except SessionException, e:
-            self.assertEquals(503, e.args[0].error_code)
+            self.assertEquals(404, e.args[0].error_code)
 
     def testDifferentDeclaredType(self):
         self.exchange_declare(exchange="test_different_declared_type_exchange", type="direct")
