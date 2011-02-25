@@ -431,7 +431,9 @@ SessionAdapter::MessageHandlerImpl::subscribe(const string& queueName,
 void
 SessionAdapter::MessageHandlerImpl::cancel(const string& destination )
 {
-    state.cancel(destination);
+    if (!state.cancel(destination)) {
+        throw NotFoundException(QPID_MSG("No such subscription: " << destination));
+    }
 
     ManagementAgent* agent = getBroker().getManagementAgent();
     if (agent)

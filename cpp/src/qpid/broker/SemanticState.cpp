@@ -116,7 +116,8 @@ void SemanticState::consume(const string& tag,
     consumers[tag] = c;
 }
 
-void SemanticState::cancel(const string& tag){
+bool SemanticState::cancel(const string& tag)
+{
     ConsumerImplMap::iterator i = consumers.find(tag);
     if (i != consumers.end()) {
         cancel(i->second);
@@ -124,7 +125,9 @@ void SemanticState::cancel(const string& tag){
         //should cancel all unacked messages for this consumer so that
         //they are not redelivered on recovery
         for_each(unacked.begin(), unacked.end(), boost::bind(&DeliveryRecord::cancel, _1, tag));
-        
+        return true;
+    } else {
+        return false;
     }
 }
 
