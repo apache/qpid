@@ -321,8 +321,13 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     void encode(framing::Buffer& buffer) const;
     uint32_t encodedSize() const;
 
-    // "recovering" means we are doing a MessageStore recovery.
-    static Queue::shared_ptr decode(QueueRegistry& queues, framing::Buffer& buffer, bool recovering = false );
+    /**
+     * Restores a queue from encoded data (used in recovery)
+     *
+     * Note: restored queue will be neither auto-deleted or have an
+     * exclusive owner
+     */
+    static Queue::shared_ptr restore(QueueRegistry& queues, framing::Buffer& buffer);
     static void tryAutoDelete(Broker& broker, Queue::shared_ptr);
 
     virtual void setExternalQueueStore(ExternalQueueStore* inst);

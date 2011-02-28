@@ -252,7 +252,6 @@
 
     <!-- Replicate encoded exchanges/queues. -->
     <control name="exchange" code="0x31"><field name="encoded" type="str32"/></control>
-    <control name="queue" code="0x32"><field name="encoded" type="str32"/></control>
 
     <!-- Set expiry-id for subsequent messages. -->
     <control name="expiry-id" code="0x33"><field name="expiry-id" type="uint64"/></control>
