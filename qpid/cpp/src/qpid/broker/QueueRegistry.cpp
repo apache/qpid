@@ -37,7 +37,7 @@ QueueRegistry::~QueueRegistry(){}
 std::pair<Queue::shared_ptr, bool>
 QueueRegistry::declare(const string& declareName, bool durable, 
                        bool autoDelete, const OwnershipToken* owner,
-                       const framing::FieldTable& arguments)
+                       const qpid::framing::FieldTable& arguments)
 {
     RWlock::ScopedWlock locker(lock);
     string name = declareName.empty() ? generateName() : declareName;
