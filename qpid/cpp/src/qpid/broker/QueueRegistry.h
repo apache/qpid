@@ -35,6 +35,7 @@ namespace broker {
 
 class Queue;
 class QueueEvents;
+class Exchange;
 class OwnershipToken;
 class Broker;
 class MessageStore;
@@ -62,7 +63,9 @@ class QueueRegistry {
         bool durable = false,
         bool autodelete = false, 
         const OwnershipToken* owner = 0,
-        const qpid::framing::FieldTable& args = framing::FieldTable());
+        boost::shared_ptr<Exchange> alternateExchange = boost::shared_ptr<Exchange>(),
+        const qpid::framing::FieldTable& args = framing::FieldTable(),
+        bool recovering = false);
 
     /**
      * Destroy the named queue.

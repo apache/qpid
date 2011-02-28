@@ -149,6 +149,7 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     QueuedMessage getFront();
     void forcePersistent(QueuedMessage& msg);
     int getEventMode();
+    void configureImpl(const qpid::framing::FieldTable& settings);
 
     inline void mgntEnqStats(const boost::intrusive_ptr<Message>& msg)
     {
@@ -192,11 +193,17 @@ class Queue : public boost::enable_shared_from_this<Queue>,
 
     QPID_BROKER_EXTERN bool dispatch(Consumer::shared_ptr);
 
+    /**
+     * Used to configure a new queue and create a persistent record
+     * for it in store if required.
+     */
     void create(const qpid::framing::FieldTable& settings);
 
-    // "recovering" means we are doing a MessageStore recovery.
-    QPID_BROKER_EXTERN void configure(const qpid::framing::FieldTable& settings,
-                                      bool recovering = false);
+    /**
+     * Used to reconfigure a recovered queue (does not create
+     * persistent record in store).
+     */
+    QPID_BROKER_EXTERN void configure(const qpid::framing::FieldTable& settings);
     void destroyed();
     QPID_BROKER_EXTERN void bound(const std::string& exchange,
                                   const std::string& key,
