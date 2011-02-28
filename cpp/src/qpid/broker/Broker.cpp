@@ -790,13 +790,8 @@ std::pair<boost::shared_ptr<Queue>, bool> Broker::createQueue(
         if (!alternate) throw framing::NotFoundException(QPID_MSG("Alternate exchange does not exist: " << alternateExchange));
     }
 
-    std::pair<Queue::shared_ptr, bool> result = queues.declare(name, durable, autodelete, owner, arguments);
+    std::pair<Queue::shared_ptr, bool> result = queues.declare(name, durable, autodelete, owner, alternate, arguments);
     if (result.second) {
-        if (alternate) {
-            result.first->setAlternateExchange(alternate);
-            alternate->incAlternateUsers();
-        }
-
         //add default binding:
         result.first->bind(exchanges.getDefault(), name);
 

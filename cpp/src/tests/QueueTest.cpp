@@ -637,7 +637,7 @@ QPID_AUTO_TEST_CASE(testLVQRecover){
 
     Queue::shared_ptr queue1(new Queue("my-queue", true, &testStore));
     intrusive_ptr<Message> received;
-    queue1->configure(args);
+    queue1->create(args);
 
     intrusive_ptr<Message> msg1 = create_message("e", "A");
     intrusive_ptr<Message> msg2 = create_message("e", "A");
@@ -709,9 +709,9 @@ QPID_AUTO_TEST_CASE(testMultiQueueLastNode){
     args.setPersistLastNode();
 
     Queue::shared_ptr queue1(new Queue("queue1", true, &testStore ));
-    queue1->configure(args);
+    queue1->create(args);
     Queue::shared_ptr queue2(new Queue("queue2", true, &testStore ));
-    queue2->configure(args);
+    queue2->create(args);
 
     intrusive_ptr<Message> msg1 = create_message("e", "A");
 
@@ -797,7 +797,7 @@ not requeued to the store.
 
     Queue::shared_ptr queue1(new Queue("my-queue", true, &testStore));
     intrusive_ptr<Message> received;
-    queue1->configure(args);
+    queue1->create(args);
 
     // check requeue 1
     intrusive_ptr<Message> msg1 = create_message("e", "C");

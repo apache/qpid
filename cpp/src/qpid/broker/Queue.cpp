@@ -725,7 +725,7 @@ void Queue::create(const FieldTable& _settings)
     if (store) {
         store->create(*this, _settings);
     }
-    configure(_settings);
+    configureImpl(_settings);
 }
 
 
@@ -750,9 +750,14 @@ int getIntegerSetting(const qpid::framing::FieldTable& settings, const std::stri
     }
 }
 
-void Queue::configure(const FieldTable& _settings, bool recovering)
+void Queue::configure(const FieldTable& _settings)
 {
+    settings = _settings;
+    configureImpl(settings);
+}
 
+void Queue::configureImpl(const FieldTable& _settings)
+{
     eventMode = _settings.getAsInt(qpidQueueEventGeneration);
     if (eventMode && broker) {
         broker->getQueueEvents().observe(*this, eventMode == ENQUEUE_ONLY);
@@ -818,9 +823,6 @@ void Queue::configure(const FieldTable& _settings, bool recovering)
     if (mgmtObject != 0) {
         mgmtObject->set_arguments(ManagementAgent::toMap(_settings));
     }
-
-    if ( isDurable() && ! getPersistenceId() && ! recovering )
-      store->create(*this, _settings);
 
     QueueFlowLimit::observe(*this, _settings);
 }
@@ -919,9 +921,10 @@ Queue::shared_ptr Queue::decode ( QueueRegistry& queues, Buffer& buffer, bool re
 {
     string name;
     buffer.getShortString(name);
-    std::pair<Queue::shared_ptr, bool> result = queues.declare(name, true);
-    buffer.get(result.first->settings);
-    result.first->configure(result.first->settings, recovering );
+    FieldTable settings;
+    buffer.get(settings);
+    boost::shared_ptr<Exchange> alternate;
+    std::pair<Queue::shared_ptr, bool> result = queues.declare(name, true, false, 0, alternate, settings, recovering);
     if (result.first->policy.get() && buffer.available() >= result.first->policy->encodedSize()) {
         buffer.get ( *(result.first->policy) );
     }
