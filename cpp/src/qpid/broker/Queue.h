@@ -197,7 +197,7 @@ class Queue : public boost::enable_shared_from_this<Queue>,
      * Used to configure a new queue and create a persistent record
      * for it in store if required.
      */
-    void create(const qpid::framing::FieldTable& settings);
+    QPID_BROKER_EXTERN void create(const qpid::framing::FieldTable& settings);
 
     /**
      * Used to reconfigure a recovered queue (does not create
