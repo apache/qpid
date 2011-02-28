@@ -21,6 +21,7 @@
 #include "qpid/broker/Queue.h"
 #include "qpid/broker/QueueRegistry.h"
 #include "qpid/broker/QueueEvents.h"
+#include "qpid/broker/Exchange.h"
 #include "qpid/log/Statement.h"
 #include <sstream>
 #include <assert.h>
@@ -37,7 +38,12 @@ QueueRegistry::~QueueRegistry(){}
 std::pair<Queue::shared_ptr, bool>
 QueueRegistry::declare(const string& declareName, bool durable, 
                        bool autoDelete, const OwnershipToken* owner,
-                       const qpid::framing::FieldTable& arguments)
+                       boost::shared_ptr<Exchange> alternate,
+                       const qpid::framing::FieldTable& arguments,
+                       bool recovering/*true if this declare is a
+                                        result of recovering queue
+                                        definition from persistente
+                                        record*/)
 {
     RWlock::ScopedWlock locker(lock);
     string name = declareName.empty() ? generateName() : declareName;
@@ -46,8 +52,17 @@ QueueRegistry::declare(const string& declareName, bool durable,
 
     if (i == queues.end()) {
         Queue::shared_ptr queue(new Queue(name, autoDelete, durable ? store : 0, owner, parent, broker));
-        //apply settings & create persistent record if required
-        queue->create(arguments);
+        if (alternate) {
+            queue->setAlternateExchange(alternate);//need to do this *before* create
+            alternate->incAlternateUsers();
+        }
+        if (!recovering) {
+            //apply settings & create persistent record if required
+            queue->create(arguments);
+        } else {
+            //i.e. recovering a queue for which we already have a persistent record
+            queue->configure(arguments);
+        }
         queues[name] = queue;
         if (lastNode) queue->setLastNodeFailure();
 
