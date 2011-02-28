@@ -27,18 +27,18 @@ import locale
 from qmf.console import Session, BrokerURL
 
 usage = """
-Usage:  qpid-route [OPTIONS] dynamic add <dest-broker> <src-broker> <exchange> [tag] [exclude-list]
+Usage:  qpid-route [OPTIONS] dynamic add <dest-broker> <src-broker> <exchange> [tag] [exclude-list] [mechanism]
         qpid-route [OPTIONS] dynamic del <dest-broker> <src-broker> <exchange>
 
         qpid-route [OPTIONS] route add   <dest-broker> <src-broker> <exchange> <routing-key> [tag] [exclude-list] [mechanism]
         qpid-route [OPTIONS] route del   <dest-broker> <src-broker> <exchange> <routing-key>
-        qpid-route [OPTIONS] queue add   <dest-broker> <src-broker> <exchange> <queue>
+        qpid-route [OPTIONS] queue add   <dest-broker> <src-broker> <exchange> <queue> [mechanism]
         qpid-route [OPTIONS] queue del   <dest-broker> <src-broker> <exchange> <queue>
         qpid-route [OPTIONS] route list  [<dest-broker>]
         qpid-route [OPTIONS] route flush [<dest-broker>]
         qpid-route [OPTIONS] route map   [<broker>]
 
-        qpid-route [OPTIONS] link add  <dest-broker> <src-broker>
+        qpid-route [OPTIONS] link add  <dest-broker> <src-broker> [mechanism]
         qpid-route [OPTIONS] link del  <dest-broker> <src-broker>
         qpid-route [OPTIONS] link list [<dest-broker>]"""
 
@@ -61,7 +61,7 @@ class Config:
         self._transport = "tcp"
         self._ack       = 0
         self._connTimeout = 10
-        self._sasl_mechanism = None
+        self._client_sasl_mechanism = None
 
 config = Config()
 
@@ -95,7 +95,7 @@ def OptionsAndArguments(argv):
     parser.add_option("--ack", action="store", type="int", metavar="<n>", help="Acknowledge transfers over the bridge in batches of N")
     parser.add_option("-t", "--transport", action="store", type="string", default="tcp", metavar="<transport>", help="Transport to use for links, defaults to tcp")
 
-    parser.add_option("--sasl-mechanism", action="store", type="string", metavar="<mech>", help="SASL mechanism for authentication (e.g. EXTERNAL, ANONYMOUS, PLAIN, CRAM-MD, DIGEST-MD5, GSSAPI). Used when the client connects to the destination broker (not for authentication between the source and destination brokers - that is specified using the [mechanisms] argument to 'add route'). SASL automatically picks the most secure available mechanism - use this option to override.")
+    parser.add_option("--client-sasl-mechanism", action="store", type="string", metavar="<mech>", help="SASL mechanism for authentication (e.g. EXTERNAL, ANONYMOUS, PLAIN, CRAM-MD, DIGEST-MD5, GSSAPI). Used when the client connects to the destination broker (not for authentication between the source and destination brokers - that is specified using the [mechanisms] argument to 'add route'). SASL automatically picks the most secure available mechanism - use this option to override.")
 
     opts, encArgs = parser.parse_args(args=argv)
 
@@ -131,8 +131,8 @@ def OptionsAndArguments(argv):
     if opts.ack:
         config._ack = opts.ack
 
-    if opts.sasl_mechanism:
-        config._sasl_mechanism = opts.sasl_mechanism
+    if opts.client_sasl_mechanism:
+        config._client_sasl_mechanism = opts.client_sasl_mechanism
 
     return args
 
@@ -143,7 +143,7 @@ class RouteManager:
         self.local = BrokerURL(localBroker)
         self.remote  = None
         self.qmf = Session()
-        self.broker = self.qmf.addBroker(localBroker, config._connTimeout, config._sasl_mechanism)
+        self.broker = self.qmf.addBroker(localBroker, config._connTimeout, config._client_sasl_mechanism)
         self.broker._waitForStable()
         self.agent = self.broker.getBrokerAgent()
 
@@ -166,7 +166,7 @@ class RouteManager:
                 return link
         return None
 
-    def addLink(self, remoteBroker, mech="PLAIN"):
+    def addLink(self, remoteBroker, interbroker_mechanism=""):
         self.remote = BrokerURL(remoteBroker)
         if self.local.match(self.remote.host, self.remote.port):
             raise Exception("Linking broker to itself is not permitted")
@@ -176,7 +176,7 @@ class RouteManager:
         link = self.getLink()
         if link == None:
             res = broker.connect(self.remote.host, self.remote.port, config._durable,
-                                 mech, self.remote.authName or "", self.remote.authPass or "",
+                                 interbroker_mechanism, self.remote.authName or "", self.remote.authPass or "",
                                  config._transport)
             if config._verbose:
                 print "Connect method returned:", res.status, res.text
@@ -295,11 +295,11 @@ class RouteManager:
             if b[0] != self.local.name():
                 self.qmf.delBroker(b[1])
 
-    def addRoute(self, remoteBroker, exchange, routingKey, tag, excludes, mech="PLAIN", dynamic=False):
+    def addRoute(self, remoteBroker, exchange, routingKey, tag, excludes, interbroker_mechanism="", dynamic=False):
         if dynamic and config._srclocal:
             raise Exception("--src-local is not permitted on dynamic routes")
 
-        self.addLink(remoteBroker, mech)
+        self.addLink(remoteBroker, interbroker_mechanism)
         link = self.getLink()
         if link == None:
             raise Exception("Link failed to create")
@@ -320,8 +320,8 @@ class RouteManager:
         if config._verbose:
             print "Bridge method returned:", res.status, res.text
 
-    def addQueueRoute(self, remoteBroker, exchange, queue):
-        self.addLink(remoteBroker)
+    def addQueueRoute(self, remoteBroker, interbroker_mechanism, exchange, queue ):
+        self.addLink(remoteBroker, interbroker_mechanism)
         link = self.getLink()
         if link == None:
             raise Exception("Link failed to create")
@@ -504,10 +504,12 @@ def main(argv=None):
         rm = RouteManager(localBroker)
         if group == "link":
             if cmd == "add":
-                if nargs != 4:
+                if nargs < 3 or nargs > 5:
                     Usage()
                     return(-1)
-                rm.addLink(remoteBroker)
+                interbroker_mechanism = ""
+                if nargs > 4: interbroker_mechanism = args[4]
+                rm.addLink(remoteBroker, interbroker_mechanism)
             elif cmd == "del":
                 if nargs != 4:
                     Usage()
@@ -518,16 +520,17 @@ def main(argv=None):
 
         elif group == "dynamic":
             if cmd == "add":
-                if nargs < 5 or nargs > 7:
+                if nargs < 5 or nargs > 8:
                     Usage()
                     return(-1)
 
                 tag = ""
                 excludes = ""
-                mech = "PLAIN"
+                interbroker_mechanism = ""
                 if nargs > 5: tag = args[5]
                 if nargs > 6: excludes = args[6]
-                rm.addRoute(remoteBroker, args[4], "", tag, excludes, mech, dynamic=True)
+                if nargs > 7: interbroker_mechanism = args[7]
+                rm.addRoute(remoteBroker, args[4], "", tag, excludes, interbroker_mechanism, dynamic=True)
             elif cmd == "del":
                 if nargs != 5:
                     Usage()
@@ -543,11 +546,11 @@ def main(argv=None):
 
                 tag = ""
                 excludes = ""
-                mech = "PLAIN"
+                interbroker_mechanism = ""
                 if nargs > 6: tag = args[6]
                 if nargs > 7: excludes = args[7]
-                if nargs > 8: mech = args[8]
-                rm.addRoute(remoteBroker, args[4], args[5], tag, excludes, mech, dynamic=False)
+                if nargs > 8: interbroker_mechanism = args[8]
+                rm.addRoute(remoteBroker, args[4], args[5], tag, excludes, interbroker_mechanism, dynamic=False)
             elif cmd == "del":
                 if nargs != 6:
                     Usage()
@@ -565,11 +568,13 @@ def main(argv=None):
                     return(-1)
 
         elif group == "queue":
-            if nargs != 6:
+            if nargs < 6 or nargs > 7:
                 Usage()
                 return(-1)
             if cmd == "add":
-                rm.addQueueRoute(remoteBroker, exchange=args[4], queue=args[5])
+                interbroker_mechanism = ""
+                if nargs > 6: interbroker_mechanism = args[6]
+                rm.addQueueRoute(remoteBroker, interbroker_mechanism, exchange=args[4], queue=args[5] )
             elif cmd == "del":
                 rm.delQueueRoute(remoteBroker, exchange=args[4], queue=args[5])
             else:

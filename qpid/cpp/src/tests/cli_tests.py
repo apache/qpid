@@ -425,7 +425,7 @@ class CliTests(TestBase010):
         qmf = self.qmf
 
         ret = self.qpid_route_api("dynamic add "
-                                  + " --sasl-mechanism PLAIN "
+                                  + " --client-sasl-mechanism PLAIN "
                                   + "guest/guest@localhost:"+str(self.broker.port) + " "
                                   + str(self.remote_host())+":"+str(self.remote_port()) + " "
                                   +"amq.direct")
@@ -444,7 +444,7 @@ class CliTests(TestBase010):
         qmf = self.qmf
 
         ret = self.qpid_route_api("dynamic add "
-                                  + " --sasl-mechanism PLAIN "
+                                  + " --client-sasl-mechanism PLAIN "
                                   + "localhost:"+str(self.broker.port) + " "
                                   + str(self.remote_host())+":"+str(self.remote_port()) + " "
                                   +"amq.direct")

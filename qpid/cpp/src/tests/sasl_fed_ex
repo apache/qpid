@@ -21,12 +21,35 @@
 
 
 #===============================================================================
-# This test creates a federated link between two brokers using SASL security.
+# These tests create federated links between two brokers using SASL security.
 # The SASL mechanism used is EXTERNAL, which is satisfied by SSL
 # transport-layer security.
 #===============================================================================
 
 source ./test_env.sh
+
+script_name=`basename $0`
+
+if [ $# -ne 1 ]
+then
+  echo
+  # These are the four different ways of creating links ( or routes+links ) 
+  # that the qpid-route command provides.
+  echo "Usage: ${script_name} dynamic|link|queue|route"
+  echo
+  exit 1
+fi
+
+qpid_route_method=$1
+
+debug=
+
+function print {
+  if [ "$debug" ]; then
+    echo "${script_name}: $1"
+  fi
+}
+
 
 
 # This minimum value corresponds to sasl version 2.1.22
@@ -34,7 +57,7 @@ minimum_sasl_version=131350
 
 sasl_version=`$QPID_TEST_EXEC_DIR/sasl_version`
 
-# This test is necessary becasue this sasl version is the first one that permits 
+# This test is necessary because this sasl version is the first one that permits 
 # redirection of the sasl config file path.
 if [ "$sasl_version" -lt  "$minimum_sasl_version" ]; then
   echo "sasl_fed: must have sasl version 2.1.22 or greater.  ( Integer value: $minimum_sasl_version )  Version is: $sasl_version"
@@ -118,9 +141,7 @@ export QPID_SSL_CERT_NAME=${TEST_HOSTNAME}
 
 
 
-#echo "-----------------------"
-#echo "Starting SRC broker"
-#echo "-----------------------"
+print "Starting SRC broker"
 $QPIDD_EXEC                                  \
   --port=${SRC_TCP_PORT}                     \
   --ssl-port ${SRC_SSL_PORT}                 \
@@ -141,9 +162,7 @@ $QPIDD_EXEC                                  \
   --log-to-file $tmp_root/qpidd_src.log 2> /dev/null
 
 
-#echo "-----------------------"
-#echo "Starting DST broker"
-#echo "-----------------------"
+print "Starting DST broker"
 $QPIDD_EXEC                                  \
   --port=${DST_TCP_PORT}                     \
   --ssl-port ${DST_SSL_PORT}                 \
@@ -170,76 +189,75 @@ ROUTING_KEY=sasl_fed_queue
 EXCHANGE_NAME=sasl_fedex
 
 
-#echo "-----------------------"
-#echo "add exchanges"
-#echo "-----------------------"
+print "add exchanges"
 $QPID_CONFIG_EXEC -a localhost:${SRC_TCP_PORT} add exchange direct $EXCHANGE_NAME
 $QPID_CONFIG_EXEC -a localhost:${DST_TCP_PORT} add exchange direct $EXCHANGE_NAME
 
 
-#echo "-----------------------"
-#echo "add queues"
-#echo "-----------------------"
+print "add queues"
 $QPID_CONFIG_EXEC -a localhost:${SRC_TCP_PORT} add queue $QUEUE_NAME
 $QPID_CONFIG_EXEC -a localhost:${DST_TCP_PORT} add queue $QUEUE_NAME
 
 
-#echo "-----------------------"
-#echo "create bindings"
-#echo "-----------------------"
+print "create bindings"
 $QPID_CONFIG_EXEC -a localhost:${SRC_TCP_PORT} bind $EXCHANGE_NAME $QUEUE_NAME $ROUTING_KEY
 $QPID_CONFIG_EXEC -a localhost:${DST_TCP_PORT} bind $EXCHANGE_NAME $QUEUE_NAME $ROUTING_KEY
 
 
-#echo "-----------------------"
-#echo "qpid-route route add"
-#echo "-----------------------"
+#
 # NOTE: The SRC broker *must* be referred to as $TEST_HOSTNAME, and not as "localhost".
 #       It must be referred to by the exact string given as the Common Name (CN) in the cert,
 #       which was created in the function create_certs, above.
-$QPID_ROUTE_EXEC route add localhost:${DST_TCP_PORT}   $TEST_HOSTNAME:${SRC_SSL_PORT} -t ssl $EXCHANGE_NAME $ROUTING_KEY "" "" EXTERNAL
 
-#echo "-----------------------"
-#echo "view the route :"
-#echo "-----------------------"
-#$PYTHON_COMMANDS/qpid-route route list localhost:${DST_TCP_PORT} 
 
-# I don't know how to avoid this sleep yet.  It has to come after route-creation.
+
+if   [ ${qpid_route_method} == "dynamic" ]; then
+  print "dynamic add"
+  $QPID_ROUTE_EXEC -t ssl dynamic add localhost:${DST_TCP_PORT} $TEST_HOSTNAME:${SRC_SSL_PORT} $EXCHANGE_NAME "" "" EXTERNAL
+elif [ ${qpid_route_method} == "link"   ];  then
+  print "link add"
+  $QPID_ROUTE_EXEC -t ssl link add localhost:${DST_TCP_PORT} $TEST_HOSTNAME:${SRC_SSL_PORT}  EXTERNAL
+elif [ ${qpid_route_method} == "queue" ];   then
+  print "queue add"
+  $QPID_ROUTE_EXEC -t ssl queue add localhost:${DST_TCP_PORT}   $TEST_HOSTNAME:${SRC_SSL_PORT} $EXCHANGE_NAME $ROUTING_KEY EXTERNAL
+elif [ ${qpid_route_method} == "route" ];   then
+  print "route add"
+  $QPID_ROUTE_EXEC -t ssl route add localhost:${DST_TCP_PORT}   $TEST_HOSTNAME:${SRC_SSL_PORT} $EXCHANGE_NAME $ROUTING_KEY "" "" EXTERNAL
+else
+  echo "unknown method: |${qpid_route_method}|"
+  echo " choices are: dynamic|link|queue|route "
+  print "Asking brokers to quit."
+  $QPIDD_EXEC --port ${SRC_TCP_PORT} --quit
+  $QPIDD_EXEC --port ${DST_TCP_PORT} --quit
+  exit 2
+fi
+
+# I don't know how to avoid this sleep yet.  It has to come after route-creation 
+# to avoid false negatives.
 sleep 5
 
-n_messages=100
-
-./datagen --count ${n_messages} | ./sender --broker localhost --port ${SRC_TCP_PORT} --exchange ${EXCHANGE_NAME} --routing-key ${ROUTING_KEY} --mechanism ANONYMOUS
-
-
-#echo "-----------------------"
-#echo "Examine DST Broker"
-#echo "-----------------------"
-dst_message_count=`qpid-stat -q localhost:${DST_TCP_PORT} | grep sasl_fed_queue | awk '{print $2}'`
+print "check the link"
+link_status=$($QPID_ROUTE_EXEC link list localhost:${DST_TCP_PORT} | tail -1 | awk '{print $5}')
+print "link_status == ${link_status}"
 
 
-#echo "-----------------------"
-#echo "Asking brokers to quit."
-#echo "-----------------------"
+print "Asking brokers to quit."
 $QPIDD_EXEC --port ${SRC_TCP_PORT} --quit
 $QPIDD_EXEC --port ${DST_TCP_PORT} --quit
 
+sleep 1
 
-#echo "-----------------------"
-#echo   "Removing temporary directory $tmp_root"
-#echo "-----------------------"
+print "Removing temporary directory $tmp_root"
 rm -rf $tmp_root
 
-if [ "$dst_message_count" -eq  "$n_messages" ]; then
-  #echo "good: |$dst_message_count| == |$n_messages|"
+
+if [ ${link_status} == "Operational" ]; then
+  print "result: good"
   exit 0
-else
-   #echo "not ideal: |$dst_message_count| != |$n_messages|"
-  exit 1
 fi
 
-
-
+print "result: fail"
+exit 3
 
 
 
