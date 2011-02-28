@@ -917,14 +917,14 @@ uint32_t Queue::encodedSize() const
         + (policy.get() ? (*policy).encodedSize() : 0);
 }
 
-Queue::shared_ptr Queue::decode ( QueueRegistry& queues, Buffer& buffer, bool recovering )
+Queue::shared_ptr Queue::restore( QueueRegistry& queues, Buffer& buffer )
 {
     string name;
     buffer.getShortString(name);
     FieldTable settings;
     buffer.get(settings);
     boost::shared_ptr<Exchange> alternate;
-    std::pair<Queue::shared_ptr, bool> result = queues.declare(name, true, false, 0, alternate, settings, recovering);
+    std::pair<Queue::shared_ptr, bool> result = queues.declare(name, true, false, 0, alternate, settings, true);
     if (result.first->policy.get() && buffer.available() >= result.first->policy->encodedSize()) {
         buffer.get ( *(result.first->policy) );
     }
