@@ -29,7 +29,7 @@ class ExtensionTests(TestBase010):
     def test_timed_autodelete(self):
         session = self.session
         session2 = self.conn.session("another-session")
-        session2.queue_declare(queue="my-queue", exclusive=True, auto_delete=True, arguments={"qpid.auto_delete_timeout":5})
+        session2.queue_declare(queue="my-queue", exclusive=True, auto_delete=True, arguments={"qpid.auto_delete_timeout":3})
         session2.close()
         result = session.queue_query(queue="my-queue")
         self.assertEqual("my-queue", result.queue)
