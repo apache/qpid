@@ -30,9 +30,9 @@ check_PROGRAMS+=sasl_version
 sasl_version_SOURCES=sasl_version.cpp
 sasl_version_LDADD=$(lib_client)
 
-TESTS += run_cluster_authentication_test sasl_fed sasl_fed_ex
+TESTS += run_cluster_authentication_test sasl_fed sasl_fed_ex_dynamic sasl_fed_ex_link sasl_fed_ex_queue sasl_fed_ex_route
 LONG_TESTS += run_cluster_authentication_soak
-EXTRA_DIST += run_cluster_authentication_test sasl_fed sasl_fed_ex run_cluster_authentication_soak
+EXTRA_DIST += run_cluster_authentication_test sasl_fed sasl_fed_ex run_cluster_authentication_soak sasl_fed_ex_dynamic sasl_fed_ex_link sasl_fed_ex_queue sasl_fed_ex_route
 
 
 endif # HAVE_SASL
