@@ -108,7 +108,6 @@ class VariantImpl
     } value;
     std::string encoding;//optional encoding for variable length data
 
-    std::string getTypeName(VariantType type) const;
     template<class T> T convertFromString() const
     {
         std::string* s = reinterpret_cast<std::string*>(value.v);
@@ -582,7 +581,7 @@ const std::string& VariantImpl::getString() const
 void VariantImpl::setEncoding(const std::string& s) { encoding = s; }
 const std::string& VariantImpl::getEncoding() const { return encoding; }
 
-std::string VariantImpl::getTypeName(VariantType type) const
+std::string getTypeName(VariantType type)
 {
     switch (type) {
       case VAR_VOID: return "void";
