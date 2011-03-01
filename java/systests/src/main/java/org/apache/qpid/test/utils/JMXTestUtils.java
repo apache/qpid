@@ -232,7 +232,8 @@ public class JMXTestUtils
     {
         // Get the name of the test manager
         AllObjects allObject = new AllObjects(_mbsc);
-        allObject.querystring = "org.apache.qpid:type=VirtualHost.VirtualHostManager,VirtualHost=" + vhostName + ",*";
+        allObject.querystring = "org.apache.qpid:type=VirtualHost.VirtualHostManager,VirtualHost="
+                                + ObjectName.quote(vhostName) + ",*";
 
         Set<ObjectName> objectNames = allObject.returnObjects();
 
@@ -259,7 +260,9 @@ public class JMXTestUtils
     {
         // Get the name of the test manager
         AllObjects allObject = new AllObjects(_mbsc);
-        allObject.querystring = "org.apache.qpid:type=VirtualHost.Queue,VirtualHost=" + virtualHostName + ",name=" + queue + ",*";
+        allObject.querystring = "org.apache.qpid:type=VirtualHost.Queue,VirtualHost="
+                                 + ObjectName.quote(virtualHostName) + ",name="
+                                 + ObjectName.quote(queue) + ",*";
 
         Set<ObjectName> objectNames = allObject.returnObjects();
 
@@ -287,7 +290,9 @@ public class JMXTestUtils
     {
         // Get the name of the test manager
         AllObjects allObject = new AllObjects(_mbsc);
-        allObject.querystring = "org.apache.qpid:type=VirtualHost.Exchange,VirtualHost=" + virtualHostName + ",name=" + exchange + ",*";
+        allObject.querystring = "org.apache.qpid:type=VirtualHost.Exchange,VirtualHost="
+                                + ObjectName.quote(virtualHostName) + ",name="
+                                + ObjectName.quote(exchange) + ",*";
 
         Set<ObjectName> objectNames = allObject.returnObjects();
 

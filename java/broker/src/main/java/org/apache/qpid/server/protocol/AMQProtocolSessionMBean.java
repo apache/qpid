@@ -56,6 +56,7 @@ import javax.management.MBeanException;
 import javax.management.MBeanNotificationInfo;
 import javax.management.NotCompliantMBeanException;
 import javax.management.Notification;
+import javax.management.ObjectName;
 import javax.management.monitor.MonitorNotification;
 import javax.management.openmbean.CompositeData;
 import javax.management.openmbean.CompositeDataSupport;
@@ -94,8 +95,7 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
         super(ManagedConnection.class, ManagedConnection.TYPE);
         _protocolSession = amqProtocolSession;
         String remote = getRemoteAddress();
-        remote = "anonymous".equals(remote) ? (remote + hashCode()) : remote;
-        _name = jmxEncode(new StringBuffer(remote), 0).toString();
+        _name = "anonymous".equals(remote) ? (remote + hashCode()) : remote;
         init();
     }
 
@@ -175,7 +175,7 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
 
     public String getObjectInstanceName()
     {
-        return _name;
+        return ObjectName.quote(_name);
     }
 
     /**
