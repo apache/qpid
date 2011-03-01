@@ -186,6 +186,9 @@ class ConnectionTests(Base):
   def setup_connection(self):
     return Connection.establish(self.broker, **self.connection_options())
 
+  def testCheckClosed(self):
+    assert not self.conn.check_closed()
+
   def testSessionAnon(self):
     ssn1 = self.conn.session()
     ssn2 = self.conn.session()
