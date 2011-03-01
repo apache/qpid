@@ -32,7 +32,7 @@ trap "$qpidd -q" exit
 QPID_PORT=`$qpidd -dp0 $broker_args` || { echo "Can't run qpidd" ; exit 1; }
 export QPID_PORT
 
-find="find $topsrcdir/cpp/examples"
+find="find $topsrcdir/cpp/examples/old_api"
 find="$find -mindepth 2 -name verify"
 all_examples=`$find`
 
