@@ -213,6 +213,20 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler, Notificati
             ObjectName object = (ObjectName) args[0];
             String vhost = object.getKeyProperty("VirtualHost");
             
+            if(vhost != null)
+            {
+                try
+                {
+                    //if the name is quoted in the ObjectName, unquote it
+                    vhost = ObjectName.unquote(vhost);
+                }
+                catch(IllegalArgumentException e)
+                {
+                    //ignore, this just means the name is not quoted
+                    //and can be left unchanged
+                }
+            }
+
             return vhost;
         }
         return null;
