@@ -549,6 +549,37 @@ public class ConnectionURLTest extends TestCase
         assertTrue("String representation should contain options and values", url.toString().contains("maxprefetch='12345'"));
     }
 
+    public void testHostNamesWithUnderScore() throws URLSyntaxException
+    {
+        String url = "amqp://guest:guest@clientid/test?brokerlist='tcp://under_score:6672'";
+
+        ConnectionURL connectionurl = new AMQConnectionURL(url);
+
+        assertTrue(connectionurl.getUsername().equals("guest"));
+        assertTrue(connectionurl.getPassword().equals("guest"));
+        assertTrue(connectionurl.getVirtualHost().equals("/test"));
+
+        assertTrue(connectionurl.getBrokerCount() == 1);
+        BrokerDetails service = connectionurl.getBrokerDetails(0);
+        assertTrue(service.getTransport().equals("tcp"));        
+        assertTrue(service.getHost().equals("under_score"));
+        assertTrue(service.getPort() == 6672);
+        
+        url = "amqp://guest:guest@clientid/test?brokerlist='tcp://under_score'";
+
+        connectionurl = new AMQConnectionURL(url);
+
+        assertTrue(connectionurl.getUsername().equals("guest"));
+        assertTrue(connectionurl.getPassword().equals("guest"));
+        assertTrue(connectionurl.getVirtualHost().equals("/test"));
+
+        assertTrue(connectionurl.getBrokerCount() == 1);
+        service = connectionurl.getBrokerDetails(0);
+        assertTrue(service.getTransport().equals("tcp"));        
+        assertTrue(service.getHost().equals("under_score"));
+        assertTrue(service.getPort() == 5672);
+    }
+    
     public static junit.framework.Test suite()
     {
         return new junit.framework.TestSuite(ConnectionURLTest.class);
