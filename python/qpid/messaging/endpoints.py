@@ -197,7 +197,7 @@ class Connection(Endpoint):
     return result
 
   def check_closed(self):
-    if self.closed:
+    if not self._connected:
       self._condition.gc()
       raise ConnectionClosed()
 
