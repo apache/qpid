@@ -353,12 +353,12 @@ void SessionAdapter::QueueHandlerImpl::checkDelete(Queue::shared_ptr queue, bool
     } else if(ifUnused && queue->getConsumerCount() > 0) {
         throw PreconditionFailedException(QPID_MSG("Cannot delete queue "
                                                    << queue->getName() << "; queue in use"));
-    } else if (queue->isExclusiveOwner(&getConnection())) {
+    } else if (queue->isExclusiveOwner(&session)) {
         //remove the queue from the list of exclusive queues if necessary
-        QueueVector::iterator i = std::find(getConnection().exclusiveQueues.begin(),
-                                            getConnection().exclusiveQueues.end(),
+        QueueVector::iterator i = std::find(exclusiveQueues.begin(),
+                                            exclusiveQueues.end(),
                                             queue);
-        if (i < getConnection().exclusiveQueues.end()) getConnection().exclusiveQueues.erase(i);
+        if (i < exclusiveQueues.end()) exclusiveQueues.erase(i);
     }    
 }
         
