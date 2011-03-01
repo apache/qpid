@@ -31,6 +31,7 @@ import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import javax.management.NotCompliantMBeanException;
+import javax.management.ObjectName;
 
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
@@ -161,12 +162,12 @@ public class VirtualHostImpl implements VirtualHost
 
         public String getObjectInstanceName()
         {
-            return _name.toString();
+            return ObjectName.quote(_name);
         }
 
         public String getName()
         {
-            return _name.toString();
+            return _name;
         }
 
         public VirtualHostImpl getVirtualHost()

@@ -42,7 +42,7 @@ public interface ServerInformation
      *  Qpid JMX API 1.1 can be assumed.
      */
     int QPID_JMX_API_MAJOR_VERSION = 2;
-    int QPID_JMX_API_MINOR_VERSION = 0;
+    int QPID_JMX_API_MINOR_VERSION = 1;
     
     
     /**
