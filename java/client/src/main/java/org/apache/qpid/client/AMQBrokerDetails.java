@@ -105,6 +105,21 @@ public class AMQBrokerDetails implements BrokerDetails
             if (host == null)
             {
                 host = "";
+                
+                String auth = connection.getAuthority();
+                if (auth != null)
+                {
+                    // contains both host & port myhost:5672                
+                    if (auth.contains(":"))
+                    {
+                        host = auth.substring(0,auth.indexOf(":"));
+                    }
+                    else
+                    {
+                        host = auth;
+                    }
+                }
+
             }
 
             setHost(host);
