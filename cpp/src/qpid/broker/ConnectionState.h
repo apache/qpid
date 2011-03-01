@@ -79,7 +79,6 @@ class ConnectionState : public ConnectionToken, public management::Manageable
     Broker& getBroker() { return broker; }
 
     Broker& broker;
-    std::vector<boost::shared_ptr<Queue> > exclusiveQueues;
 
     //contained output tasks
     sys::AggregateOutput outputTasks;
