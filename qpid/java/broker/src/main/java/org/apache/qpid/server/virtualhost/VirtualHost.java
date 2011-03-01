@@ -27,6 +27,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 import javax.management.NotCompliantMBeanException;
+import javax.management.ObjectName;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.log4j.Logger;
@@ -133,12 +134,12 @@ public class VirtualHost implements Accessable, StatisticsGatherer
 
         public String getObjectInstanceName()
         {
-            return _name.toString();
+            return ObjectName.quote(_name);
         }
 
         public String getName()
         {
-            return _name.toString();
+            return _name;
         }
 
         public VirtualHost getVirtualHost()

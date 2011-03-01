@@ -42,6 +42,7 @@ import javax.management.JMException;
 import javax.management.MBeanException;
 import javax.management.MBeanNotificationInfo;
 import javax.management.Notification;
+import javax.management.ObjectName;
 import javax.management.OperationsException;
 import javax.management.monitor.MonitorNotification;
 import javax.management.openmbean.ArrayType;
@@ -102,7 +103,7 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
     {
         super(ManagedQueue.class, ManagedQueue.TYPE);
         _queue = queue;
-        _queueName = jmxEncode(new StringBuffer(queue.getName()), 0).toString();
+        _queueName = _queue.getName().toString();
     }
 
     public ManagedObject getParentObject()
@@ -150,7 +151,7 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
 
     public String getObjectInstanceName()
     {
-        return _queueName;
+        return ObjectName.quote(_queueName);
     }
 
     public String getName()

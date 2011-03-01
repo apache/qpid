@@ -104,7 +104,7 @@ public abstract class AbstractExchange implements Exchange, Managable
 
         public String getObjectInstanceName()
         {
-            return _name.toString();
+            return ObjectName.quote(_name.toString());
         }
 
         public String getName()
