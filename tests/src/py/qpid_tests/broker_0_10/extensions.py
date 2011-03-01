@@ -21,6 +21,7 @@ from qpid.queue import Empty
 from qpid.content import Content
 from qpid.testlib import TestBase010
 from qpid.session import SessionException
+from qpid.datatypes import uuid4
 from time import sleep
 
 class ExtensionTests(TestBase010):
@@ -52,10 +53,10 @@ class ExtensionTests(TestBase010):
         for i in range(1, 3):
             try:
                 self.session.queue_declare(queue=name, arguments=args)
-                #self.session.queue_delete(queue=name) # cleanup
+                self.session.queue_delete(queue=name) # cleanup
                 self.fail("declare with invalid policy args suceeded: %s (iteration %d)" % (args, i))
             except SessionException, e:
-                self.session = self.conn.session("replacement", 2)
+                self.session = self.conn.session(str(uuid4()))
 
     def test_policy_max_size_as_valid_string(self):
         self.valid_policy_args({"qpid.max_size":"3"})
