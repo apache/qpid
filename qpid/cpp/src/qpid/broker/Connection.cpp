@@ -331,14 +331,6 @@ void Connection::closed(){ // Physically closed, suspend open sessions.
     try {
         while (!channels.empty())
             ptr_map_ptr(channels.begin())->handleDetach();
-        while (!exclusiveQueues.empty()) {
-            boost::shared_ptr<Queue> q(exclusiveQueues.front());
-            q->releaseExclusiveOwnership();
-            if (q->canAutoDelete()) {
-                Queue::tryAutoDelete(broker, q);
-            }
-            exclusiveQueues.erase(exclusiveQueues.begin());
-        }
     } catch(std::exception& e) {
         QPID_LOG(error, QPID_MSG("While closing connection: " << e.what()));
         assert(0);
