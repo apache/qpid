@@ -943,6 +943,10 @@ void Cluster::checkUpdateIn(Lock& l) {
             mAgent->suppress(false); // Enable management output.
             mAgent->clusterUpdate();
         }
+        // Restore alternate exchange settings on exchanges.
+        broker.getExchanges().eachExchange(
+            boost::bind(&broker::Exchange::recoveryComplete, _1,
+                        boost::ref(broker.getExchanges())));
         enableClusterSafe();    // Enable cluster-safe assertions
         deliverEventQueue.start();
     }
