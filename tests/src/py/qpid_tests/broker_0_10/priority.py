@@ -33,13 +33,13 @@ class PriorityTests (Base):
     def setup_session(self):
         return self.conn.session()
 
-    def prioritised_delivery(self, priorities, levels=10):
+    def prioritised_delivery(self, priorities, levels=10, key="x-qpid-priorities"):
         """
         Test that message on a queue are delivered in priority order.
         """
         msgs = [Message(content=str(uuid4()), priority = p) for p in priorities]
 
-        snd = self.ssn.sender("priority-queue; {create: sender, delete: receiver, node: {x-declare:{arguments:{x-qpid-priorities:%s}}}}" % levels,
+        snd = self.ssn.sender("priority-queue; {create: sender, delete: receiver, node: {x-declare:{arguments:{'%s':%s}}}}" % (key, levels),
                               durable=self.durable())
         for m in msgs: snd.send(m)
 
@@ -50,16 +50,16 @@ class PriorityTests (Base):
             assert msg.content == expected.content
             self.ssn.acknowledge(msg)
 
-    def fairshare_delivery(self, priorities, default_limit=5, limits=None, levels=10):
+    def fairshare_delivery(self, priorities, default_limit=5, limits=None, levels=10, level_key="x-qpid-priorities", fairshare_key="x-qpid-fairshare"):
         msgs = [Message(content=str(uuid4()), priority = p) for p in priorities]
 
-        limit_policy = "x-qpid-fairshare:%s" % default_limit
+        limit_policy = "'%s':%s" % (fairshare_key, default_limit)
         if limits:
             for k, v in limits.items():
-                limit_policy += ", x-qpid-fairshare-%s:%s" % (k, v)
+                limit_policy += ", '%s-%s':%s" % (fairshare_key, k, v)
 
-        snd = self.ssn.sender("priority-queue; {create: sender, delete: receiver, node: {x-declare:{arguments:{x-qpid-priorities:%s, %s}}}}"
-                              % (levels, limit_policy),
+        snd = self.ssn.sender("priority-queue; {create: sender, delete: receiver, node: {x-declare:{arguments:{'%s':%s, %s}}}}"
+                              % (level_key, levels, limit_policy),
                               durable=self.durable())
         for m in msgs: snd.send(m)
 
@@ -79,11 +79,17 @@ class PriorityTests (Base):
     def test_prioritised_delivery_1(self):
         self.prioritised_delivery(priorities = [8,9,5,1,2,2,3,4,15,7,8,10,10,2], levels = 10)
 
+    def test_prioritised_delivery_with_alias(self):
+        self.prioritised_delivery(priorities = [8,9,5,1,2,2,3,4,15,7,8,10,10,2], levels = 10, key="qpid.priorities")
+
     def test_prioritised_delivery_2(self):
         self.prioritised_delivery(priorities = [8,9,5,1,2,2,3,4,15,7,8,10,10,2], levels = 5)
 
     def test_fairshare_1(self):
         self.fairshare_delivery(priorities = [4,5,3,6,10,10,2,10,2,10,10,1,10,10,10,3,3,3,10,10,3,10,3,10,10,10,10,10,10,2,3])
+
+    def test_fairshare_with_alias(self):
+        self.fairshare_delivery(priorities = [4,5,3,6,10,10,2,10,2,10,10,1,10,10,10,3,3,3,10,10,2,3], level_key="qpid.priorities", fairshare_key="qpid.fairshare")
 
     def test_fairshare_2(self):
         self.fairshare_delivery(priorities = [10 for i in range(30)])
