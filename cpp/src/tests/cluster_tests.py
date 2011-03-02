@@ -22,7 +22,7 @@ import os, signal, sys, time, imp, re, subprocess, glob, cluster_test_logs
 from qpid import datatypes, messaging
 from brokertest import *
 from qpid.harness import Skipped
-from qpid.messaging import Message, Empty
+from qpid.messaging import Message, Empty, Disposition, REJECTED
 from threading import Thread, Lock, Condition
 from logging import getLogger
 from itertools import chain
@@ -440,6 +440,33 @@ acl allow all all
                 if len(cluster) == 1: cluster.start()
                 return cluster[1]
         self.queue_flowlimit_test(Brokers())
+
+    def test_alternate_exchange_update(self):
+        """Verify that alternate-exchange on exchanges and queues is propagated to new members of a cluster. """
+        cluster = self.cluster(1)
+        s0 = cluster[0].connect().session()
+        # create alt queue bound to amq.fanout exchange, will be destination for alternate exchanges
+        self.evaluate_address(s0, "alt;{create:always,node:{x-bindings:[{exchange:'amq.fanout',queue:alt}]}}")
+        # create direct exchange ex with alternate-exchange amq.fanout and no queues bound
+        self.evaluate_address(s0, "ex;{create:always,node:{type:topic, x-declare:{type:'direct', alternate-exchange:'amq.fanout'}}}")
+        # create queue q with alternate-exchange amq.fanout
+        self.evaluate_address(s0, "q;{create:always,node:{type:queue, x-declare:{alternate-exchange:'amq.fanout'}}}")
+
+        def verify(broker):
+            s = broker.connect().session()
+            # Verify unmatched message goes to ex's alternate.
+            s.sender("ex").send("foo")
+            self.assertEqual("foo", s.receiver("alt").fetch(timeout=0).content)
+            # Verify rejected message goes to q's alternate.
+            s.sender("q").send("bar")
+            msg = s.receiver("q").fetch(timeout=0)
+            self.assertEqual("bar", msg.content)
+            s.acknowledge(msg, Disposition(REJECTED)) # Reject the message
+            self.assertEqual("bar", s.receiver("alt").fetch(timeout=0).content)
+
+        verify(cluster[0])
+        cluster.start()
+        verify(cluster[1])
 
 class LongTests(BrokerTest):
     """Tests that can run for a long time if -DDURATION=<minutes> is set"""
