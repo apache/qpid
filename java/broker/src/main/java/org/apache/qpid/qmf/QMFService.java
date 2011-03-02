@@ -1096,6 +1096,11 @@ public class QMFService implements ConfigStore.ConfigEventListener, Closeable
             return Boolean.FALSE;
         }
 
+        public Long getFlowStoppedCount()
+        {
+            return 0L;
+        }
+
         public BrokerSchema.QueueClass.PurgeMethodResponseCommand purge(final BrokerSchema.QueueClass.PurgeMethodResponseCommandFactory factory,
                                                                         final Long request)
         {
