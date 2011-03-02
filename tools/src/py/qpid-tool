@@ -259,7 +259,24 @@ class QmfData(Console):
       return
     displayId = long(tokens[0])
     methodName = tokens[1]
-    args = tokens[2:]
+    args = []
+    for arg in tokens[2:]:
+      ##
+      ## If the argument is a map, list, boolean, integer, or floating (one decimal point),
+      ## run it through the Python evaluator so it is converted to the correct type.
+      ##
+      ## TODO: use a regex for this instead of this convoluted logic,
+      ## or even consider passing all args through eval() [which would
+      ## be a minor change to the nterface as string args would then
+      ## always need to be quoted as strings within a map/list would
+      ## now]
+      if arg[0] == '{' or arg[0] == '[' or arg == "True" or arg == "False" or \
+            ((arg.count('.') < 2 and (arg.count('-') == 0 or \
+            (arg.count('-') == 1 and  arg[0] == '-')) and \
+            arg.replace('.','').replace('-','').isdigit())):
+         args.append(eval(arg))
+      else:
+         args.append(arg)
 
     obj = None
     try:
