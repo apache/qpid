@@ -372,6 +372,7 @@ class BrokerManager:
             if self.match(ex.name, filter):
                 print "%-10s%-*s " % (ex.type, maxNameLen, ex.name),
                 args = ex.arguments
+                if not args: args = {}
                 if ex.durable:    print "--durable",
                 if MSG_SEQUENCE in args and args[MSG_SEQUENCE] == 1: print "--sequence",
                 if IVE in args and args[IVE] == 1: print "--ive",
@@ -413,6 +414,7 @@ class BrokerManager:
             if self.match(q.name, filter):
                 print "%-*s " % (maxNameLen, q.name),
                 args = q.arguments
+                if not args: args = {}
                 if q.durable:    print "--durable",
                 if CLUSTER_DURABLE in args and args[CLUSTER_DURABLE] == 1: print "--cluster-durable",
                 if q.autoDelete: print "auto-del",
