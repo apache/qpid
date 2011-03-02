@@ -138,8 +138,10 @@ void QueueFlowLimit::enqueued(const QueuedMessage& msg)
             flowStopped = true;
             QPID_LOG(info, "Queue \"" << queueName << "\": has reached " << flowStopSize << " enqueued bytes. Producer flow control activated." );
         }
-        if (flowStopped && queueMgmtObj)
+        if (flowStopped && queueMgmtObj) {
             queueMgmtObj->set_flowStopped(true);
+            queueMgmtObj->inc_flowStoppedCount();
+        }
     }
 
     /** @todo KAG: - REMOVE ONCE STABLE */
