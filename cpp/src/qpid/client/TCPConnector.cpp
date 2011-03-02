@@ -117,7 +117,7 @@ void TCPConnector::connected(const Socket&) {
 
 void TCPConnector::start(sys::AsynchIO* aio_) {
     aio = aio_;
-    for (int i = 0; i < 32; i++) {
+    for (int i = 0; i < 4; i++) {
         aio->queueReadBuffer(new Buff(maxFrameSize));
     }
 
