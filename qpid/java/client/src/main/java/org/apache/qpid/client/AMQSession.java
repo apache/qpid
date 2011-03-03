@@ -2930,6 +2930,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     private void resubscribeConsumers() throws AMQException
     {
         ArrayList<C> consumers = new ArrayList<C>(_consumers.values());
+        _logger.info(String.format("Resubscribing consumers = %s consumers.size=%d", consumers, consumers.size()));
         _consumers.clear();
 
         for (C consumer : consumers)
@@ -2943,7 +2944,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     private void resubscribeProducers() throws AMQException
     {
         ArrayList producers = new ArrayList(_producers.values());
-        _logger.info(MessageFormat.format("Resubscribing producers = {0} producers.size={1}", producers, producers.size())); // FIXME: removeKey
+        _logger.info(String.format("Resubscribing producers = %s producers.size=%d", producers, producers.size()));
         for (Iterator it = producers.iterator(); it.hasNext();)
         {
             P producer = (P) it.next();
