@@ -22,10 +22,12 @@
 package org.apache.qpid.client.message;
 
 import java.lang.ref.SoftReference;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -670,7 +672,19 @@ public class AMQMessageDelegate_0_10 extends AbstractAMQMessageDelegate
 
     public Enumeration getPropertyNames() throws JMSException
     {
-        return java.util.Collections.enumeration(getApplicationHeaders().keySet());
+        List<String> props = new ArrayList<String>();
+        Map<String, Object> propertyMap = getApplicationHeaders();
+        for (String prop: getApplicationHeaders().keySet())
+        {
+            Object value = propertyMap.get(prop);
+            if (value instanceof Boolean || value instanceof Number 
+                || value instanceof String)
+            {
+                props.add(prop);
+            }
+        }
+        
+        return java.util.Collections.enumeration(props);        
     }
 
     public void setBooleanProperty(String propertyName, boolean b) throws JMSException
