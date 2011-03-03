@@ -231,7 +231,7 @@ public class AMQConnectionTest extends QpidBrokerTestCase
             }
             
             MessageConsumer consumerB = null;
-            if (isBroker08())
+            if (!isBroker010())
             {
                 Session consSessB = _connection.createSession(true, Session.AUTO_ACKNOWLEDGE);
                 consumerB = consSessB.createConsumer(_queue);

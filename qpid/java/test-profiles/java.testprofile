@@ -16,13 +16,14 @@
 # specific language governing permissions and limitations
 # under the License.
 #
+
+broker.version=0-9-1
+qpid.amqp.version=0-10
+
 broker.language=java
 broker=${project.root}/build/bin/qpid-server -p @PORT -m @MPORT --exclude-0-10 @PORT -c @CONFIG_FILE -l ${test.profiles}/log4j-test.xml
 broker.clean=${test.profiles}/clean-dir ${build.data} ${project.root}/build/work
 broker.ready=BRK-1004
 broker.stopped=Exception
-#
-# Do not enable. Allow client to attempt 0-10 and negotiate downwards 
-#
-#qpid.amqp.version=0-91
+
 profile.excludes=JavaTransientExcludes JavaStandaloneExcludes 08StandaloneExcludes

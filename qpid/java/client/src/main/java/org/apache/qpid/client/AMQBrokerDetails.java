@@ -26,7 +26,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.qpid.jms.BrokerDetails;
-import org.apache.qpid.jms.ConnectionURL;
+import org.apache.qpid.transport.network.Transport;
 import org.apache.qpid.url.URLHelper;
 import org.apache.qpid.url.URLSyntaxException;
 
@@ -42,23 +42,26 @@ public class AMQBrokerDetails implements BrokerDetails
 
     public AMQBrokerDetails(){}
     
+    /**
+     * URL in format {@link BrokerDetails#URL_FORMAT_EXAMPLE}.
+     *
+     * @throws URLSyntaxException
+     */
     public AMQBrokerDetails(String url) throws URLSyntaxException
     {        
-      
-        // URL should be of format tcp://host:port?option='value',option='value'
         try
         {
             URI connection = new URI(url);
 
+            // FIXME transport and scheme are not necessarily the same thing
             String transport = connection.getScheme();
 
             // Handles some defaults to minimise changes to existing broker URLS e.g. localhost
             if (transport != null)
             {
-                //todo this list of valid transports should be enumerated somewhere
-                if ((!(transport.equalsIgnoreCase(BrokerDetails.VM) ||
-                       transport.equalsIgnoreCase(BrokerDetails.TCP) ||
-                       transport.equalsIgnoreCase(BrokerDetails.SOCKET))))
+                if ((!(transport.equalsIgnoreCase(Transport.VM) ||
+                       transport.equalsIgnoreCase(Transport.TCP) ||
+                       transport.equalsIgnoreCase(Transport.SOCKET))))
                 {
                     if (transport.equalsIgnoreCase("localhost"))
                     {
@@ -69,7 +72,7 @@ public class AMQBrokerDetails implements BrokerDetails
                     {
                         if (url.charAt(transport.length()) == ':' && url.charAt(transport.length() + 1) != '/')
                         {
-                            //Then most likely we have a host:port value
+                            // Then most likely we have a host:port value
                             connection = new URI(DEFAULT_TRANSPORT + "://" + url);
                             transport = connection.getScheme();
                         }
@@ -81,20 +84,19 @@ public class AMQBrokerDetails implements BrokerDetails
                 }
                 else if (url.indexOf("//") == -1)
                 {
-                    throw new URLSyntaxException(url, "Missing '//' after the transport In broker URL",transport.length()+1,1);
+                    throw new URLSyntaxException(url, "Missing '//' after the transport In broker URI", transport.length() + 1, 1);
                 }
             }
             else
             {
-                //Default the transport
+                // Default the transport
                 connection = new URI(DEFAULT_TRANSPORT + "://" + url);
                 transport = connection.getScheme();
             }
 
             if (transport == null)
             {
-                throw URLHelper.parseError(-1, "Unknown transport in broker URL:'"
-                        + url + "' Format: " + URL_FORMAT_EXAMPLE, "");
+                throw URLHelper.parseError(-1, "Unknown transport in broker URI:'" + url + "' Format: " + URL_FORMAT_EXAMPLE, "");
             }
 
             setTransport(transport);
@@ -122,7 +124,7 @@ public class AMQBrokerDetails implements BrokerDetails
                     int end = start;
                     boolean looking = true;
                     boolean found = false;
-                    // Throw an URL exception if the port number is not specified
+                    // Throw a URL exception if the port number is not specified
                     if (start == auth.length())
                     {
                         throw URLHelper.parseError(connection.toString().indexOf(auth) + end - 1,
@@ -167,7 +169,7 @@ public class AMQBrokerDetails implements BrokerDetails
             }
             else
             {
-                if (!_transport.equalsIgnoreCase(SOCKET))
+                if (!_transport.equalsIgnoreCase(Transport.SOCKET))
                 {
                     setPort(port);
                 }
@@ -287,12 +289,12 @@ public class AMQBrokerDetails implements BrokerDetails
         sb.append(_transport);
         sb.append("://");
 
-        if (!(_transport.equalsIgnoreCase(VM)))
+        if (!(_transport.equalsIgnoreCase(Transport.VM)))
         {
             sb.append(_host);
         }
 
-        if (!(_transport.equalsIgnoreCase(SOCKET)))
+        if (!(_transport.equalsIgnoreCase(Transport.SOCKET)))
         {
             sb.append(':');
             sb.append(_port);
@@ -303,6 +305,7 @@ public class AMQBrokerDetails implements BrokerDetails
         return sb.toString();
     }
 
+    @Override
     public boolean equals(Object o)
     {
         if (!(o instanceof BrokerDetails))
@@ -336,16 +339,9 @@ public class AMQBrokerDetails implements BrokerDetails
 
         if (!(_options.isEmpty()))
         {
-
             for (String key : _options.keySet())
             {
-                optionsURL.append(key);
-
-                optionsURL.append("='");
-
-                optionsURL.append(_options.get(key));
-
-                optionsURL.append("'");
+                optionsURL.append(key).append("='").append(_options.get(key)).append("'");
 
                 optionsURL.append(URLHelper.DEFAULT_OPTION_SEPERATOR);
             }

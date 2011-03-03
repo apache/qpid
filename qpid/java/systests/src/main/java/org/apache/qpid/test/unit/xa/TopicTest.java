@@ -96,7 +96,7 @@ public class TopicTest extends AbstractXATestCase
 
     public void tearDown() throws Exception
     {
-        if (!isBroker08())
+        if (isBroker010())
         {
             try
             {
@@ -116,7 +116,7 @@ public class TopicTest extends AbstractXATestCase
      */
     public void init()
     {
-        if (!isBroker08())
+        if (isBroker010())
         {
             // lookup test queue
             try
@@ -179,7 +179,7 @@ public class TopicTest extends AbstractXATestCase
      */
     public void testProducer()
     {
-        if (!isBroker08())
+        if (isBroker010())
         {
             _logger.debug("testProducer");
             Xid xid1 = getNewXid();
@@ -352,7 +352,7 @@ public class TopicTest extends AbstractXATestCase
      */
     public void testDurSub()
     {
-        if (!isBroker08())
+        if (isBroker010())
         {
             Xid xid1 = getNewXid();
             Xid xid2 = getNewXid();
@@ -506,7 +506,7 @@ public class TopicTest extends AbstractXATestCase
      */
     public void testMultiMessagesDurSub()
     {
-        if (!isBroker08())
+        if (isBroker010())
         {
             Xid xid1 = getNewXid();
             Xid xid2 = getNewXid();
@@ -732,7 +732,7 @@ public class TopicTest extends AbstractXATestCase
      */
     public void testMultiMessagesDurSubCrash()
     {
-        if (!isBroker08())
+        if (isBroker010())
         {
             Xid xid1 = getNewXid();
             Xid xid2 = getNewXid();
@@ -1047,7 +1047,7 @@ public class TopicTest extends AbstractXATestCase
      */
     public void testDurSubCrash()
     {
-        if (!isBroker08())
+        if (isBroker010())
         {
             Xid xid1 = getNewXid();
             Xid xid2 = getNewXid();
@@ -1237,7 +1237,7 @@ public class TopicTest extends AbstractXATestCase
      */
     public void testRecover()
     {
-        if (!isBroker08())
+        if (isBroker010())
         {
             Xid xid1 = getNewXid();
             String durSubName = "test1";
@@ -1389,7 +1389,7 @@ public class TopicTest extends AbstractXATestCase
      */
     public void testMigrateDurableSubscriber()
     {
-        if (!isBroker08())
+        if (isBroker010())
         {
             Xid xid1 = getNewXid();
             Xid xid2 = getNewXid();

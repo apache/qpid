@@ -26,6 +26,7 @@ import org.apache.qpid.client.AMQBrokerDetails;
 import org.apache.qpid.client.AMQConnectionURL;
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.jms.ConnectionURL;
+import org.apache.qpid.transport.network.Transport;
 import org.apache.qpid.url.URLSyntaxException;
 
 public class ConnectionURLTest extends TestCase
@@ -497,10 +498,9 @@ public class ConnectionURLTest extends TestCase
             assertNotNull(curl);
             assertEquals(1, curl.getBrokerCount());
             assertNotNull(curl.getBrokerDetails(0));
-            assertEquals(BrokerDetails.SOCKET, curl.getBrokerDetails(0).getTransport());
+            assertEquals(Transport.SOCKET, curl.getBrokerDetails(0).getTransport());
             assertEquals("VM-Unique-socketID", curl.getBrokerDetails(0).getHost());
-            assertEquals("URL does not toString as expected",
-                         url.replace(":guest", ":********"), curl.toString());
+            assertEquals("URL does not toString as expected", url.replace(":guest", ":********"), curl.toString());
         }
         catch (URLSyntaxException e)
         {

@@ -88,7 +88,7 @@ public class QueueTest extends AbstractXATestCase
 
     public void tearDown() throws Exception
     {
-        if (!isBroker08())
+        if (isBroker010())
         {
             try
             {
@@ -108,7 +108,7 @@ public class QueueTest extends AbstractXATestCase
      */
     public void init()
     {
-        if (!isBroker08())
+        if (isBroker010())
         {
             // lookup test queue
             try
@@ -173,7 +173,7 @@ public class QueueTest extends AbstractXATestCase
      */
     public void testProducer()
     {
-        if (!isBroker08())
+        if (isBroker010())
         {
             _logger.debug("running testProducer");
             Xid xid1 = getNewXid();
@@ -324,7 +324,7 @@ public class QueueTest extends AbstractXATestCase
      */
     public void testSendAndRecover()
     {
-        if (!isBroker08())
+        if (isBroker010())
         {
             _logger.debug("running testSendAndRecover");
             Xid xid1 = getNewXid();
@@ -454,7 +454,7 @@ public class QueueTest extends AbstractXATestCase
      */
     public void testRecover()
     {
-        if (!isBroker08())
+        if (isBroker010())
         {
             _logger.debug("running testRecover");
             Xid xid1 = getNewXid();

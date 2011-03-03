@@ -23,6 +23,7 @@ package org.apache.qpid.jms;
 import java.util.Map;
 
 import org.apache.qpid.client.SSLConfiguration;
+import org.apache.qpid.transport.network.Transport;
 
 public interface BrokerDetails
 {
@@ -52,21 +53,13 @@ public interface BrokerDetails
     
     public static final int DEFAULT_PORT = 5672;
 
-    public static final String SOCKET = "socket";
-    public static final String TCP = "tcp";
-    public static final String VM = "vm";
-
-    public static final String DEFAULT_TRANSPORT = TCP;
+    public static final String DEFAULT_TRANSPORT = Transport.TCP;
 
     public static final String URL_FORMAT_EXAMPLE =
             "<transport>://<hostname>[:<port Default=\"" + DEFAULT_PORT + "\">][?<option>='<value>'[,<option>='<value>']]";
 
     public static final long DEFAULT_CONNECT_TIMEOUT = 30000L;
     public static final boolean USE_SSL_DEFAULT = false;
-
-    // pulled these properties from the new BrokerDetails class in the qpid package
-    public static final String PROTOCOL_TCP = "tcp";
-    public static final String PROTOCOL_TLS = "tls";
 
     public static final String VIRTUAL_HOST = "virtualhost";
     public static final String CLIENT_ID = "client_id";
@@ -90,18 +83,16 @@ public interface BrokerDetails
     void setProperty(String key, String value);
 
     /**
-     * Ex: keystore path
-     *
-     * @return the Properties associated with this connection.
+     * Return the properties associated with this connection.
      */
     public Map<String,String> getProperties();
 
     /**
-     * Sets the properties associated with this connection
+     * Sets the properties associated with this connection.
      *
-     * @param props the new p[roperties.
+     * @param props the new properties.
      */
-    public void setProperties(Map<String,String> props);
+    public void setProperties(Map<String, String> props);
 
     long getTimeout();
 

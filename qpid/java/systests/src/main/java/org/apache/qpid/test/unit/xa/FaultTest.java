@@ -94,7 +94,7 @@ public class FaultTest extends AbstractXATestCase
 
     public void tearDown() throws Exception
     {
-        if (!isBroker08())
+        if (isBroker010())
         {
             _xaqueueConnection.close();
             _queueConnection.close();
@@ -107,7 +107,7 @@ public class FaultTest extends AbstractXATestCase
      */
     public void init() throws Exception
     {
-        if (!isBroker08())
+        if (isBroker010())
         {
             _queue = (Queue) getInitialContext().lookup(QUEUENAME);
             _queueFactory = getConnectionFactory();

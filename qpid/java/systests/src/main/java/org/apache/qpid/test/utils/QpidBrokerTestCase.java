@@ -125,6 +125,12 @@ public class QpidBrokerTestCase extends QpidTestCase
     private static final String VERSION_08 = "0-8";
     private static final String VERSION_010 = "0-10";
 
+	private static final String VERSION_0_8 = "0-8";
+	private static final String VERSION_0_9 = "0-9";
+	private static final String VERSION_0_9_1 = "0-9-1";
+	private static final String VERSION_0_91 = "0-91";
+	private static final String VERSION_0_10 = "0-10";
+
     protected static final String QPID_HOME = "QPID_HOME";
 
     public static final int DEFAULT_VM_PORT = 1;

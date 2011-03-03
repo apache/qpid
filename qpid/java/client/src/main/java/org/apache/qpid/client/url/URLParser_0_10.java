@@ -23,30 +23,32 @@ import java.util.List;
 
 import org.apache.qpid.client.AMQBrokerDetails;
 import org.apache.qpid.jms.BrokerDetails;
+import org.apache.qpid.transport.network.Transport;
 
 /**
  * The format Qpid URL is based on the AMQP one.
  * The grammar is as follows:
- * <p> qpid_url          = "qpid:" [client_props "@"] port_addr_list ["/" future-parameters]
- * <p> port_addr_list 	 = [port_addr ","]* port_addr
- * <p> port_addr         = tcp_port_addr | tls_prot_addr | future_prot_addr
- * <p> tcp_port_addr     = tcp_id tcp_addr
- * <p> tcp_id            = "tcp:" | ""
- * <p> tcp_addr          = host [":" port]
- * <p> host              = <as per http://www.apps.ietf.org/>
- * <p> port              = number
- * <p> tls_prot_addr     = tls_id tls_addr
- * <p> tls_id            = "tls:" | ""
- * <p> tls_addr          = host [":" port]
- * <p> future_prot_addr  = future_prot_id future_prot_addr
- * <p> future_prot_id    = <placeholder, must end in ":". Example "sctp:">
- * <p> future_prot_addr  = <placeholder, protocl-specific address>
- * <p> future_parameters = <placeholder, not used in failover addresses>
- * <p> client_props      = [client_prop ";"]*  client_prop
- * <p> client_prop       = prop "=" val
- * <p> prop              = chars as per <as per http://www.apps.ietf.org/>
- * <p> val               = valid as per <as per http://www.apps.ietf.org/>
- * <p/>
+ * <ul>
+ * <li><em>qpid_url</em> = "qpid:" [client_props "@"] port_addr_list ["/" future-parameters]
+ * <li><em>port_addr_list</em> = [port_addr ","]* port_addr
+ * <li><em>port_addr</em> = tcp_port_addr | tls_prot_addr | future_prot_addr
+ * <li><em>tcp_port_addr</em> = tcp_id tcp_addr
+ * <li><em>tcp_id</em> = "tcp:" | ""
+ * <li><em>tcp_addr</em> = host [":" port]
+ * <li><em>host</em> = <as per http://www.apps.ietf.org/>
+ * <li><em>port</em> = number
+ * <li><em>tls_prot_addr</em> = tls_id tls_addr
+ * <li><em>tls_id</em> = "tls:" | ""
+ * <li><em>tls_addr</em> = host [":" port]
+ * <li><em>future_prot_addr</em> = future_prot_id future_prot_addr
+ * <li><em>future_prot_id</em> = <placeholder, must end in ":". Example "sctp:">
+ * <li><em>future_prot_addr</em> = <placeholder, protocl-specific address>
+ * <li><em>future_parameters</em> = <placeholder, not used in failover addresses>
+ * <li><em>client_props</em> = [client_prop ";"]*  client_prop
+ * <li><em>client_prop</em> = prop "=" val
+ * <li><em>prop</em> = chars as per <as per http://www.apps.ietf.org/>
+ * <li><em>val</em> = valid as per <as per http://www.apps.ietf.org/>
+ * </ul>
  * Ex: qpid:virtualhost=tcp:host-foo,test,client_id=foo@tcp:myhost.com:5672,virtualhost=prod;
  * keystore=/opt/keystore@client_id2@tls:mysecurehost.com:5672
  */
@@ -280,14 +282,13 @@ public class URLParser_0_10
 
     private URLParserState extractTransport()
     {
-        String transport = buildUntil(TRANSPORT_HOST_SEPARATOR_CHAR);
-        if (transport.trim().equals(""))
+        String transport = buildUntil(TRANSPORT_HOST_SEPARATOR_CHAR).trim();
+        if (transport.equals(""))
         {
             _error = "Transport cannot be empty";
             return URLParserState.ERROR;
         }
-        else if (!(transport.trim().equals(BrokerDetails.PROTOCOL_TCP) || transport.trim()
-                .equals(BrokerDetails.PROTOCOL_TLS)))
+        else if (!(transport.equalsIgnoreCase(Transport.TCP) || transport.equalsIgnoreCase(Transport.TLS)))
         {
             _error = "Transport cannot be " + transport + " value must be tcp or tls";
             return URLParserState.ERROR;
