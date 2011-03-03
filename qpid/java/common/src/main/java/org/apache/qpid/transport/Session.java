@@ -421,7 +421,10 @@ public class Session extends SessionInvoker
             {
                 return;
             }
-            sessionCompleted(copy, options);
+            if (copy.size() > 0)
+            {
+	            sessionCompleted(copy, options);
+            }
         }
     }
 

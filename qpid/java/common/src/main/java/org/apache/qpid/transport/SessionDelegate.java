@@ -92,7 +92,7 @@ public class SessionDelegate
             known = new RangeSet();
         }
 
-        if (ranges != null)
+        if (ranges != null && ranges.size() > 0)
         {
             for (Range range : ranges)
             {
@@ -104,7 +104,7 @@ public class SessionDelegate
             }
         }
 
-        if (known != null)
+        if (known != null && known.size() > 0)
         {
             ssn.sessionKnownCompleted(known);
         }
