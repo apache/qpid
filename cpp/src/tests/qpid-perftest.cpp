@@ -423,8 +423,10 @@ struct Controller : public Client {
                 process(opts.totalSubs, subDone, fqn("sub_done"), boost::ref(subRates));
 
                 AbsTime end=now();
-
                 double time=secs(start, end);
+		if (time <= 0.0) {
+		  throw Exception("ERROR: Test completed in zero seconds. Try again with a larger message count.");
+		}
                 double txrate=opts.transfers/time;
                 double mbytes=(txrate*opts.size)/(1024*1024);
 
@@ -543,6 +545,9 @@ struct PublishThread : public Client {
                 if (opts.confirm) session.sync();
                 AbsTime end=now();
                 double time=secs(start,end);
+		if (time <= 0.0) {
+		  throw Exception("ERROR: Test completed in zero seconds. Try again with a larger message count.");
+		}
 
                 // Send result to controller.
                 Message report(lexical_cast<string>(opts.count/time), fqn("pub_done"));
