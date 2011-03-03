@@ -342,3 +342,12 @@ bool Exchange::MatchQueue::operator()(Exchange::Binding::shared_ptr b)
 void Exchange::setProperties(const boost::intrusive_ptr<Message>& msg) {
     msg->getProperties<DeliveryProperties>()->setExchange(getName());
 }
+
+bool Exchange::routeWithAlternate(Deliverable& msg)
+{
+    route(msg, msg.getMessage().getRoutingKey(), msg.getMessage().getApplicationHeaders());
+    if (!msg.delivered && alternate) {
+        alternate->route(msg, msg.getMessage().getRoutingKey(), msg.getMessage().getApplicationHeaders());
+    }
+    return msg.delivered;
+}

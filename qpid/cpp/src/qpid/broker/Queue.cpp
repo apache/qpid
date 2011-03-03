@@ -834,8 +834,7 @@ void Queue::destroyed()
         Mutex::ScopedLock locker(messageLock);
         while(!messages->empty()){
             DeliverableMessage msg(messages->front().payload);
-            alternateExchange->route(msg, msg.getMessage().getRoutingKey(),
-                                     msg.getMessage().getApplicationHeaders());
+            alternateExchange->routeWithAlternate(msg);
             popAndDequeue();
         }
         alternateExchange->decAlternateUsers();
