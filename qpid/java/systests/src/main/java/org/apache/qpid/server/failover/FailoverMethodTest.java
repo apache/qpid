@@ -53,7 +53,7 @@ public class FailoverMethodTest extends InternalBrokerBaseCase implements Except
     @Override
     public void stopBroker()
     {
-        VmBroker.killVMBrokers();
+        VmBroker.killVMBroker();
         super.stopBroker();
     }
 
