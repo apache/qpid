@@ -30,6 +30,7 @@ import javax.jms.JMSException;
 import javax.jms.Message;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.client.AMQDestination.AddressOption;
 import org.apache.qpid.client.AMQDestination.DestSyntax;
 import org.apache.qpid.client.message.AMQMessageDelegate_0_10;
 import org.apache.qpid.client.message.AbstractJMSMessage;
@@ -238,6 +239,22 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
     public boolean isBound(AMQDestination destination) throws JMSException
     {
         return _session.isQueueBound(destination);
+    }
+    
+    @Override
+    public void close()
+    {
+        super.close();
+        AMQDestination dest = _destination;
+        if (dest.getDestSyntax() == AMQDestination.DestSyntax.ADDR)
+        {
+            if (dest.getDelete() == AddressOption.ALWAYS ||
+                dest.getDelete() == AddressOption.SENDER )
+            {
+                ((AMQSession_0_10) getSession()).getQpidSession().queueDelete(
+                        _destination.getQueueName());
+            }
+        }
     }
 }
 

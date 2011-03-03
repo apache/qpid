@@ -56,6 +56,7 @@ import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.transport.ExchangeBoundResult;
 import org.apache.qpid.transport.ExchangeQueryResult;
+import org.apache.qpid.transport.ExecutionErrorCode;
 import org.apache.qpid.transport.ExecutionException;
 import org.apache.qpid.transport.MessageAcceptMode;
 import org.apache.qpid.transport.MessageAcquireMode;
@@ -1068,22 +1069,37 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
         return match;
     }
     
-    public boolean isQueueExist(AMQDestination dest,QueueNode node,boolean assertNode)
+    public boolean isQueueExist(AMQDestination dest,QueueNode node,boolean assertNode) throws AMQException
     {
         boolean match = true;
-        QueueQueryResult result = getQpidSession().queueQuery(dest.getAddressName(), Option.NONE).get();
-        match = dest.getAddressName().equals(result.getQueue());
-        
-        if (match && assertNode)
+        try
         {
-            match = (result.getDurable() == node.isDurable()) && 
-                     (result.getAutoDelete() == node.isAutoDelete()) &&
-                     (result.getExclusive() == node.isExclusive()) &&
-                     (matchProps(result.getArguments(),node.getDeclareArgs()));
+            QueueQueryResult result = getQpidSession().queueQuery(dest.getAddressName(), Option.NONE).get();
+            match = dest.getAddressName().equals(result.getQueue());
+            
+            if (match && assertNode)
+            {
+                match = (result.getDurable() == node.isDurable()) && 
+                         (result.getAutoDelete() == node.isAutoDelete()) &&
+                         (result.getExclusive() == node.isExclusive()) &&
+                         (matchProps(result.getArguments(),node.getDeclareArgs()));
+            }
+            else if (match)
+            {
+                // should I use the queried details to update the local data structure.
+            }
         }
-        else if (match)
+        catch(SessionException e)
         {
-            // should I use the queried details to update the local data structure.
+            if (e.getException().getErrorCode() == ExecutionErrorCode.RESOURCE_DELETED)
+            {
+                match = false;
+            }
+            else
+            {
+                throw new AMQException(AMQConstant.getConstant(e.getException().getErrorCode().getValue()),
+                        "Error querying queue",e);
+            }
         }
         
         return match;
