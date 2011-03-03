@@ -58,6 +58,7 @@ namespace qmf {
         void open();
         void close();
         bool nextEvent(ConsoleEvent& e, qpid::messaging::Duration t);
+        int pendingEvents() const;
         uint32_t getAgentCount() const;
         Agent getAgent(uint32_t i) const;
         Agent getConnectedBrokerAgent() const { return connectedBrokerAgent; }
