@@ -54,10 +54,10 @@ import org.apache.qpid.server.security.auth.database.ConfigurationFilePrincipalD
 import org.apache.qpid.server.security.auth.database.PrincipalDatabaseManager;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 import org.apache.qpid.server.security.auth.manager.PrincipalDatabaseAuthenticationManager;
-import org.apache.qpid.server.transport.QpidAcceptor;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
+import org.apache.qpid.transport.network.NetworkTransport;
 
 /**
  * An abstract application registry that provides access to configuration information and handles the
@@ -75,7 +75,7 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
     public static final int DEFAULT_INSTANCE = 1;
 
-    protected final Map<InetSocketAddress, QpidAcceptor> _acceptors = new HashMap<InetSocketAddress, QpidAcceptor>();
+    protected final Map<Integer, NetworkTransport> _transports = new HashMap<Integer, NetworkTransport>();
 
     protected ManagedObjectRegistry _managedObjectRegistry;
 
@@ -393,22 +393,20 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
     private void unbind()
     {
-        synchronized (_acceptors)
+        synchronized (_transports)
         {
-            for (InetSocketAddress bindAddress : _acceptors.keySet())
+            for (Integer port: _transports.keySet())
             {
-                QpidAcceptor acceptor = _acceptors.get(bindAddress);
-
+                NetworkTransport transport = _transports.get(port);
                 try
                 {
-                    acceptor.getNetworkDriver().close();
+                    transport.close();
                 }
                 catch (Throwable e)
                 {
                     _logger.error("Unable to close network driver due to:" + e.getMessage());
                 }
-
-               CurrentActor.get().message(BrokerMessages.SHUTTING_DOWN(acceptor.toString(), bindAddress.getPort()));
+                CurrentActor.get().message(BrokerMessages.SHUTTING_DOWN(transport.getAddress().toString(), port));
             }
         }
     }
@@ -418,11 +416,11 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
         return _configuration;
     }
 
-    public void addAcceptor(InetSocketAddress bindAddress, QpidAcceptor acceptor)
+    public void registerTransport(int port, NetworkTransport transport)
     {
-        synchronized (_acceptors)
+        synchronized (_transports)
         {
-            _acceptors.put(bindAddress, acceptor);
+            _transports.put(port, transport);
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- *
+*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -20,61 +20,55 @@
  */
 package org.apache.qpid.transport.network.mina;
 
-import org.apache.mina.common.ByteBuffer;
-import org.apache.mina.common.CloseFuture;
+import java.net.SocketAddress;
+import java.nio.ByteBuffer;
+
 import org.apache.mina.common.IoSession;
-import org.apache.mina.common.WriteFuture;
 import org.apache.qpid.transport.Sender;
+import org.apache.qpid.transport.network.NetworkConnection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * MinaSender
- */
-public class MinaSender implements Sender<java.nio.ByteBuffer>
+public class MinaNetworkConnection implements NetworkConnection
 {
-    private static final Logger _log = LoggerFactory.getLogger(MinaSender.class);
-    
-    private final IoSession _session;
-    private WriteFuture _lastWrite;
-    private int _idleTimeout = 0;
+    private static final Logger _log = LoggerFactory.getLogger(MinaNetworkConnection.class);
 
-    public MinaSender(IoSession session)
+    private IoSession _session;
+    private Sender<ByteBuffer> _sender;
+    
+    public MinaNetworkConnection(IoSession session)
     {
         _session = session;
+        _sender = new MinaSender(_session);
     }
 
-    public synchronized void send(java.nio.ByteBuffer msg)
+    public Sender<ByteBuffer> getSender()
     {
-        ByteBuffer mina = ByteBuffer.allocate(msg.limit());
-        mina.put(msg);
-        mina.flip();
-        _lastWrite = _session.write(mina);
+        return _sender;
     }
-
-    public synchronized void flush()
-    {
-        if (_lastWrite != null)
-        {
-            _lastWrite.join();
-        }
-    }
-
+    
     public void close()
     {
-        // MINA will sometimes throw away in-progress writes when you ask it to close
-        flush();
-        CloseFuture closed = _session.close();
-        closed.join();
+        _session.close();
     }
-    
-    public void setIdleTimeout(int i)
+
+    public SocketAddress getRemoteAddress()
     {
-        _idleTimeout = i;
+        return _session.getRemoteAddress();
     }
-    
-    public long getIdleTimeout()
+
+    public SocketAddress getLocalAddress()
     {
-        return _idleTimeout;
+        return _session.getLocalAddress();
+    }
+
+    public long getReadBytes()
+    {
+        return _session.getReadBytes();
+    }
+
+    public long getWrittenBytes()
+    {
+        return _session.getWrittenBytes();
     }
 }

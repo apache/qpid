@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.transport;
 
-
 import static org.apache.qpid.transport.Option.COMPLETED;
 import static org.apache.qpid.transport.Option.SYNC;
 import static org.apache.qpid.transport.Option.TIMELY_REPLY;
@@ -89,7 +88,7 @@ public class Session extends SessionInvoker
     private int channel;
     private SessionDelegate delegate;
     private SessionListener listener = new DefaultSessionListener();
-    private long timeout = 60000;
+    private long timeout = Long.getLong("amqj.default_syncwrite_timeout", 1000 * 30);
     private boolean autoSync = false;
 
     private boolean incomingInit;
@@ -676,22 +675,22 @@ public class Session extends SessionInvoker
                 {
                     send(m);
                 }
-                catch (SenderException e)
+                catch (SessionException se)
+                {
+                    se.rethrow();
+                }
+                catch (TransportException te)
                 {
                     if (!closing)
                     {
                         // if we are not closing then this will happen
                         // again on resume
-                        log.error(e, "error sending command");
+                        log.error(te, "error sending command");
                     }
                     else
                     {
-                        e.rethrow();
+                        throw new SessionClosedException(te);
                     }
-                }
-                if (autoSync)
-                {
-                    sync();
                 }
 
                 // flush every 64K commands to avoid ambiguity on
@@ -702,17 +701,21 @@ public class Session extends SessionInvoker
                     {
                         sessionFlush(COMPLETED);
                     }
-                    catch (SenderException e)
+                    catch (SessionException se)
+                    {
+                        se.rethrow();
+                    }
+                    catch (TransportException te)
                     {
                         if (!closing)
                         {
-                            // if expiry is > 0 then this will happen
+                            // if we are not closing then this will happen
                             // again on resume
-                            log.error(e, "error sending flush (periodic)");
+                            log.error(te, "error sending flush (periodic)");
                         }
                         else
                         {
-                            e.rethrow();
+                            throw new SessionClosedException(te);
                         }
                     }
                 }
@@ -757,7 +760,7 @@ public class Session extends SessionInvoker
             {
                 if (state != CLOSED)
                 {
-                    throw new SessionException(
+                    throw new SessionTimeoutException(
 		                    String.format("timed out waiting for sync: complete = %s, point = %s",
 		                            maxComplete, point));
                 }

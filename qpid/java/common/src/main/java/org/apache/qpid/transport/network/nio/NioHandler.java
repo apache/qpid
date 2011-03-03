@@ -41,7 +41,7 @@ public class NioHandler implements Runnable
     private Receiver<ByteBuffer> _receiver;
     private SocketChannel _ch;
     private ByteBuffer _readBuf;
-    private static Map<Long,NioSender> _handlers = new ConcurrentHashMap<Long,NioSender>();
+    private static Map<Integer, NioSender> _handlers = new ConcurrentHashMap<Integer, NioSender>();
 
     private NioHandler(){}
 
@@ -87,7 +87,7 @@ public class NioHandler implements Runnable
         con.setSender(new Disassembler(sender, 64*1024 - 1));
         con.setConnectionDelegate(delegate);
 
-        _handlers.put(con.getConnectionId(),sender);
+        _handlers.put(System.identityHashCode(con), sender);
 
         _receiver = new InputHandler(new Assembler(con), InputHandler.State.FRAME_HDR);
 
@@ -125,11 +125,9 @@ public class NioHandler implements Runnable
         //throw new EOFException("The underlying socket/channel has closed");
     }
 
-    public static void startBatchingFrames(int connectionId)
+    public static void startBatchingFrames(Connection con)
     {
-        NioSender sender = _handlers.get(connectionId);
+        NioSender sender = _handlers.get(System.identityHashCode(con));
         sender.setStartBatching();
     }
-
-
 }

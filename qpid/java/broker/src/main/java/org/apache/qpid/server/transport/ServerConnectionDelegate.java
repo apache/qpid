@@ -21,10 +21,6 @@
 package org.apache.qpid.server.transport;
 
 import org.apache.qpid.transport.*;
-import org.apache.qpid.server.logging.actors.CurrentActor;
-import org.apache.qpid.server.logging.actors.GenericActor;
-import org.apache.qpid.common.ClientProperties;
-import org.apache.qpid.protocol.ProtocolEngine;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
@@ -116,13 +112,11 @@ public class ServerConnectionDelegate extends ServerDelegate
         }
         vhost = _appRegistry.getVirtualHostRegistry().getVirtualHost(vhostName);
 
-        SecurityManager.setThreadPrincipal(conn.getAuthorizationID());
-        
         if(vhost != null)
         {
             sconn.setVirtualHost(vhost);
 
-            if (!vhost.getSecurityManager().accessVirtualhost(vhostName, ((ProtocolEngine) sconn.getConfig()).getRemoteAddress()))
+            if (!vhost.getSecurityManager().accessVirtualhost(vhostName, sconn.getConfig().getRemoteAddress()))
             {
                 sconn.invoke(new ConnectionClose(ConnectionCloseCode.CONNECTION_FORCED, "Permission denied '"+vhostName+"'"));
                 sconn.setState(Connection.State.CLOSING);
@@ -138,6 +132,29 @@ public class ServerConnectionDelegate extends ServerDelegate
             sconn.invoke(new ConnectionClose(ConnectionCloseCode.INVALID_PATH, "Unknown virtualhost '"+vhostName+"'"));
             sconn.setState(Connection.State.CLOSING);
         }
+    }
+
+    @Override
+    public void connectionTuneOk(Connection conn, ConnectionTuneOk ok)
+    {
+        int okChannelMax = ok.getChannelMax();
+        
+        if (okChannelMax > getChannelMax())
+        {
+            ServerConnection sconn = (ServerConnection) conn;
+            _logger.error("Connection '" + sconn.getConnectionId() + "' from '" +
+                    sconn.getConfig().getRemoteAddress() + "' being severed, " +
+                    "client connectionTuneOk returned a channelMax (" + okChannelMax +
+                    ") above the servers offered limit (" + getChannelMax() +")");
+
+            //Due to the error we must forcefully close the connection without negotiation
+            conn.getSender().close();
+            return;
+        }
+
+        //0 means no implied limit, except available server resources
+        //(or that forced by protocol limitations [0xFFFF])
+        conn.setChannelMax(okChannelMax == 0 ? Connection.MAX_CHANNEL_MAX : okChannelMax);
     }
     
     @Override

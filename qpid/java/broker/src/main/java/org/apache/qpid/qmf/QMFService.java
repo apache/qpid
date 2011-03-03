@@ -1203,7 +1203,7 @@ public class QMFService implements ConfigStore.ConfigEventListener, Closeable
 
         public String getAddress()
         {
-            return _obj.getAddress();
+            return _obj.getRemoteAddress().toString();
         }
 
         public Boolean getIncoming()

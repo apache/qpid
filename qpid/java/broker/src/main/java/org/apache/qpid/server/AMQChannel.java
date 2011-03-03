@@ -1395,7 +1395,7 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
 
     public String getSessionName()
     {
-        return getConnectionConfig().getAddress() + "/" + getChannelId();
+        return getConnectionConfig().getRemoteAddress().toString() + "/" + getChannelId();
     }
 
     public long getCreateTime()

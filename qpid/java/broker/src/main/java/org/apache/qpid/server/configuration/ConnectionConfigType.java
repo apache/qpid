@@ -63,7 +63,7 @@ public final class ConnectionConfigType extends ConfigObjectType<ConnectionConfi
     {
         public String getValue(ConnectionConfig object)
         {
-            return object.getAddress();
+            return object.getRemoteAddress().toString();
         }
     };
 

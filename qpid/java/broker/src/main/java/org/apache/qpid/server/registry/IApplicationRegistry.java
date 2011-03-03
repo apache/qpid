@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.registry;
 
-import java.net.InetSocketAddress;
 import java.util.UUID;
 
 import org.apache.qpid.qmf.QMFService;
@@ -35,9 +34,9 @@ import org.apache.qpid.server.plugins.PluginManager;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.auth.database.PrincipalDatabaseManager;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
-import org.apache.qpid.server.transport.QpidAcceptor;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
+import org.apache.qpid.transport.network.NetworkTransport;
 
 public interface IApplicationRegistry
 {
@@ -78,11 +77,9 @@ public interface IApplicationRegistry
     RootMessageLogger getRootMessageLogger();
 
     /**
-     * Register any acceptors for this registry
-     * @param bindAddress The address that the acceptor has been bound with
-     * @param acceptor The acceptor in use
+     * Register any network transports for this registry
      */
-    void addAcceptor(InetSocketAddress bindAddress, QpidAcceptor acceptor);
+    void registerTransport(int port, NetworkTransport transport);
 
     public UUID getBrokerId();
 

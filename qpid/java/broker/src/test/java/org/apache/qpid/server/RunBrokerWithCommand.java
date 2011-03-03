@@ -39,7 +39,7 @@ public class RunBrokerWithCommand
 
             // Override the first value which is the command we are going to run later.
             fudge[0] = "-v";
-            new Main(fudge).startup();
+            Main.main(fudge);
         }
         catch (Exception e)
         {

@@ -31,6 +31,10 @@ org.apache.qpid.test.testcases.MandatoryMessageTest#test_QPID_508_MandatoryFails
 org.apache.qpid.test.testcases.MandatoryMessageTest#test_QPID_508_MandatoryFailsNoRouteNoTxPubSub
 org.apache.qpid.test.testcases.MandatoryMessageTest#test_QPID_508_MandatoryFailsNoRouteTxPubSub
 
+// Failover for transacted sessions does not work (QPID-2994)
+org.apache.qpid.test.client.QueueBrowserTransactedTest#testFailoverAsQueueBrowserCreated
+org.apache.qpid.test.client.QueueBrowserTransactedTest#testFailoverWithQueueBrowser
+
 //this test checks explicitly for 0-8 flow control semantics
 org.apache.qpid.test.client.FlowControlTest#*
 
@@ -74,8 +78,11 @@ org.apache.qpid.test.unit.publish.DirtyTransactedPublishTest#*
 org.apache.qpid.test.client.RollbackOrderTest#testOrderingAfterRollbackOnMessage
 org.apache.qpid.test.unit.ack.RecoverTest#testRecoverInAutoAckListener
 
+// Mina does not suopport idle timeouts
+org.apache.qpid.transport.network.mina.MinaNetworkTransportTest#testSetReadIdle
+org.apache.qpid.transport.network.mina.MinaNetworkTransportTest#testSetWriteIdle
+
 //Temporarily adding the following until the issues are sorted out.
 //Should probably raise JIRAs for them.
-org.apache.qpid.transport.network.mina.MINANetworkDriverTest#*
 org.apache.qpid.test.client.destination.AddressBasedDestinationTest#testCreateExchange
 org.apache.qpid.test.client.destination.AddressBasedDestinationTest#testBrowseMode

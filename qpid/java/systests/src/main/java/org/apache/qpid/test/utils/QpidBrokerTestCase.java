@@ -17,6 +17,8 @@
  */
 package org.apache.qpid.test.utils;
 
+import static org.apache.qpid.client.AMQConnection.*;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -54,18 +56,20 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.BrokerOptions;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQConnectionFactory;
 import org.apache.qpid.client.AMQQueue;
-import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.jms.ConnectionURL;
 import org.apache.qpid.management.common.mbeans.ConfigurationManagement;
 import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.registry.ConfigurationFileApplicationRegistry;
 import org.apache.qpid.server.store.DerbyMessageStore;
+import org.apache.qpid.transport.network.Transport;
+import org.apache.qpid.transport.network.mina.MinaNetworkTransport;
+import org.apache.qpid.transport.vm.VmBroker;
 import org.apache.qpid.url.URLSyntaxException;
 import org.apache.qpid.util.LogMonitor;
 
@@ -82,8 +86,6 @@ public class QpidBrokerTestCase extends QpidTestCase
 
     protected long RECEIVE_TIMEOUT = 1000l;
 
-    private Map<String, String> _propertiesSetForTestOnly = new HashMap<String, String>();
-    private Map<String, String> _propertiesSetForBroker = new HashMap<String, String>();
     private Map<Logger, Level> _loggerLevelSetForTest = new HashMap<Logger, Level>();
 
     private XMLConfiguration _testConfiguration = new XMLConfiguration();
@@ -122,8 +124,6 @@ public class QpidBrokerTestCase extends QpidTestCase
     protected static final String CPP = "cpp";
     protected static final String VM = "vm";
     protected static final String EXTERNAL = "external";
-    private static final String VERSION_08 = "0-8";
-    private static final String VERSION_010 = "0-10";
 
 	private static final String VERSION_0_8 = "0-8";
 	private static final String VERSION_0_9 = "0-9";
@@ -142,7 +142,7 @@ public class QpidBrokerTestCase extends QpidTestCase
     protected String _broker = System.getProperty(BROKER, VM);
     private String _brokerClean = System.getProperty(BROKER_CLEAN, null);
     private Boolean _brokerCleanBetweenTests = Boolean.getBoolean(BROKER_CLEAN_BETWEEN_TESTS);
-    private String _brokerVersion = System.getProperty(BROKER_VERSION, VERSION_08);
+    private String _brokerVersion = System.getProperty(BROKER_VERSION, VERSION_0_8);
     protected String _output = System.getProperty(TEST_OUTPUT);
     protected Boolean _brokerPersistent = Boolean.getBoolean(BROKER_PERSITENT);
 
@@ -284,6 +284,11 @@ public class QpidBrokerTestCase extends QpidTestCase
     @Override
     protected void setUp() throws Exception
     {
+        if (isVmBroker())
+        {
+            Transport.registerOutgoingTransport(MinaNetworkTransport.class);
+        }
+
         if (!_configFile.exists())
         {
             fail("Unable to test without config file:" + _configFile);
@@ -456,26 +461,13 @@ public class QpidBrokerTestCase extends QpidTestCase
             setConfigurationProperty(ServerConfiguration.MGMT_CUSTOM_REGISTRY_SOCKET, String.valueOf(false));
             saveTestConfiguration();
             
-            // create an in_VM broker
-            final ConfigurationFileApplicationRegistry registry = new ConfigurationFileApplicationRegistry(_configFile);
-            try
-            {
-                ApplicationRegistry.initialise(registry, port);
-            }
-            catch (Exception e)
-            {
-                _logger.error("Broker initialise failed due to:",e);
-                try
-                {
-                    registry.close();
-                }
-                catch (Throwable closeE)
-                {
-                    closeE.printStackTrace();
-                }
-                throw e;
-            }
-            TransportConnection.createVMBroker(port);
+            BrokerOptions options = new BrokerOptions();
+            options.setProtocol(VM);
+            options.setBind("localhost");
+            options.setPorts(port);
+            options.setConfigFile(_configFile.getAbsolutePath());
+ 
+            VmBroker.createVMBroker(options);
         }
         else if (!_broker.equals(EXTERNAL))
         {
@@ -661,7 +653,7 @@ public class QpidBrokerTestCase extends QpidTestCase
     {
         port = getPort(port);
 
-        _logger.info("stopping broker: " + getBrokerCommand(port));
+        _logger.info("stopping broker: " + getBrokerCommand(port) + " on port " + port);
         Process process = _brokers.remove(port);
         if (process != null)
         {
@@ -671,8 +663,7 @@ public class QpidBrokerTestCase extends QpidTestCase
         }
         else if (_broker.equals(VM))
         {
-            TransportConnection.killVMBroker(port);
-            ApplicationRegistry.remove(port);
+            VmBroker.killVMBroker();
         }
     }
 
@@ -760,105 +751,6 @@ public class QpidBrokerTestCase extends QpidTestCase
     }
 
     /**
-     * Set a System property that is to be applied only to the external test
-     * broker.
-     *
-     * This is a convenience method to enable the setting of a -Dproperty=value
-     * entry in QPID_OPTS
-     *
-     * This is only useful for the External Java Broker tests.
-     *
-     * @param property the property name
-     * @param value the value to set the property to
-     */
-    protected void setBrokerOnlySystemProperty(String property, String value)
-    {
-        if (!_propertiesSetForBroker.containsKey(property))
-        {
-            _propertiesSetForBroker.put(property, value);
-        }
-
-    }
-
-    /**
-     * Set a System (-D) property for this test run.
-     *
-     * This convenience method copies the current VMs System Property
-     * for the external VM Broker.
-     *
-     * @param property the System property to set
-     */
-    protected void setSystemProperty(String property)
-    {
-        setSystemProperty(property, System.getProperty(property));
-    }
-
-    /**
-     * Set a System property for the duration of this test.
-     *
-     * When the test run is complete the value will be reverted.
-     *
-     * The values set using this method will also be propogated to the external
-     * Java Broker via a -D value defined in QPID_OPTS.
-     *
-     * If the value should not be set on the broker then use
-     * setTestClientSystemProperty().
-     *
-     * @param property the property to set
-     * @param value    the new value to use
-     */
-    protected void setSystemProperty(String property, String value)
-    {
-        // Record the value for the external broker
-        _propertiesSetForBroker.put(property, value);
-
-        //Set the value for the test client vm aswell.
-        setTestClientSystemProperty(property, value);
-    }
-
-    /**
-     * Set a System (-D) property for the external Broker of this test.
-     *
-     * @param property The property to set
-     * @param value the value to set it to.
-     */
-    protected void setTestClientSystemProperty(String property, String value)
-    {
-        if (!_propertiesSetForTestOnly.containsKey(property))
-        {
-            // Record the current value so we can revert it later.
-            _propertiesSetForTestOnly.put(property, System.getProperty(property));
-        }
-
-        System.setProperty(property, value);
-    }
-
-    /**
-     * Restore the System property values that were set before this test run.
-     */
-    protected void revertSystemProperties()
-    {
-        for (String key : _propertiesSetForTestOnly.keySet())
-        {
-            String value = _propertiesSetForTestOnly.get(key);
-            if (value != null)
-            {
-                System.setProperty(key, value);
-            }
-            else
-            {
-                System.clearProperty(key);
-            }
-        }
-
-        _propertiesSetForTestOnly.clear();
-
-        // We don't change the current VMs settings for Broker only properties
-        // so we can just clear this map
-        _propertiesSetForBroker.clear();
-    }
-
-    /**
      * Add an environtmen variable for the external broker environment
      *
      * @param property the property to set
@@ -910,27 +802,39 @@ public class QpidBrokerTestCase extends QpidTestCase
      */
     public boolean isBroker08()
     {
-        return _brokerVersion.equals(VERSION_08);
+        return _brokerVersion.equals(VERSION_0_8);
+    }
+
+    public boolean isBroker09()
+    {
+        return _brokerVersion.equals(VERSION_0_9) ||
+		        _brokerVersion.equals(VERSION_0_9_1) ||
+		        _brokerVersion.equals(VERSION_0_91);
     }
 
     public boolean isBroker010()
     {
-        return _brokerVersion.equals(VERSION_010);
+        return _brokerVersion.equals(VERSION_0_10);
+    }
+
+    protected boolean isVmBroker()
+    {
+        return _broker.equals(VM);
     }
 
     protected boolean isJavaBroker()
     {
-        return _brokerLanguage.equals("java") || _broker.equals("vm");
+        return _brokerLanguage.equals(JAVA) || _broker.equals(VM);
     }
 
     protected boolean isCppBroker()
     {
-        return _brokerLanguage.equals("cpp");
+        return _brokerLanguage.equals(CPP);
     }
 
     protected boolean isExternalBroker()
     {
-        return !_broker.equals("vm");
+        return !_broker.equals(VM);
     }
     
     protected boolean isBrokerStorePersistent()
@@ -1085,7 +989,7 @@ public class QpidBrokerTestCase extends QpidTestCase
     }
 
 
-    protected void tearDown() throws java.lang.Exception
+    protected void tearDown() throws Exception
     {
         try
         {
@@ -1095,9 +999,10 @@ public class QpidBrokerTestCase extends QpidTestCase
                 c.close();
             }
         }
-        finally{
+        finally
+        {
             // Ensure any problems with close does not interfer with property resets
-            revertSystemProperties();
+            super.tearDown();
             revertLoggingLevels();
         }
     }

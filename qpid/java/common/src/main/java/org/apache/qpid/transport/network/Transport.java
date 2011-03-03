@@ -18,11 +18,16 @@
  * under the License.
  * 
  */
-
 package org.apache.qpid.transport.network;
+
+import java.util.LinkedList;
+import java.util.List;
 
 import org.apache.qpid.transport.TransportException;
 
+/**
+ * Loads the network transport class.
+ */
 public class Transport
 {
     public static final String TCP = "tcp";
@@ -37,33 +42,85 @@ public class Transport
     public static final boolean WINDOWS = ((String) System.getProperties().get("os.name")).matches("(?i).*windows.*");
  
     public static final String IO_TRANSPORT = "org.apache.qpid.transport.network.io.IoNetworkTransport";
-    public static final String MINA_TRANSPORT = "org.apache.qpid.transport.network.mina.MinaNetworkTransport"; // TODO
+    public static final String MINA_TRANSPORT = "org.apache.qpid.transport.network.mina.MinaNetworkTransport";
     public static final String NIO_TRANSPORT = "org.apache.qpid.transport.network.nio.NioNetworkTransport"; // TODO
     public static final String NETTY_TRANSPORT = "org.apache.qpid.transport.network.netty.NettyNetworkTransport"; // TODO
 
-    private final static Class<?> transportClass;
+    public static final String OUTGOING = "outgoing";
+    public static final String INCOMING = "incoming";
+
+    private static final List<String> _outgoing = new LinkedList<String>();
+    private static final List<String> _incoming = new LinkedList<String>();
     
-    static 
+    public static void registerIncomingTransport(String transport)
     {
-        try
-        {
-            transportClass = Class.forName(System.getProperty("qpid.transport", IO_TRANSPORT));
-        }
-        catch(Exception e)
-        {
-            throw new Error("Error occured while loading Qpid Transport",e);
-        }
+        registerTransport(_incoming, transport);
     }
     
-    public static NetworkTransport getTransport() throws TransportException
+    public static void registerOutgoingTransport(Class<? extends OutgoingNetworkTransport> transport)
     {
+        registerTransport(_outgoing, transport.getName());
+    }
+    
+    public static void registerOutgoingTransport(String transport)
+    {
+        registerTransport(_outgoing, transport);
+    }
+    
+    private static void registerTransport(List<String> registered, String transport)
+    {
+        registered.add(transport);
+    }
+
+    public static IncomingNetworkTransport getIncomingTransport() throws TransportException
+    {
+        return (IncomingNetworkTransport) getTransport(INCOMING, _incoming, MINA_TRANSPORT, null);
+    }
+    
+    public static OutgoingNetworkTransport getOutgoingTransport() throws TransportException
+    {
+        return (OutgoingNetworkTransport) getTransport(OUTGOING, _outgoing, IO_TRANSPORT, null);
+    }
+    
+    public static OutgoingNetworkTransport getOutgoingTransport(String protocol) throws TransportException
+    {
+        return (OutgoingNetworkTransport) getTransport(OUTGOING, _outgoing, IO_TRANSPORT, protocol);
+    }
+    
+    private static NetworkTransport getTransport(String direction, List<String> registered, String defaultTransport, String protocol)
+    {
+        for (String transport : registered)
+        {
+            try
+            {
+                Class<?> clazz = Class.forName(transport);
+                NetworkTransport network = (NetworkTransport) clazz.newInstance();
+                if (protocol == null || network.isCompatible(protocol))
+                {
+                    return network;
+                }
+            }
+            catch (Exception e)
+            {
+                // Ignore and move to next class
+            }
+        }
+        
         try
         {
-            return (NetworkTransport)transportClass.newInstance();
+            String transport = System.getProperty("qpid.transport." + direction, defaultTransport);
+            Class<?> clazz = Class.forName(transport);
+            NetworkTransport network = (NetworkTransport) clazz.newInstance();
+            if (protocol == null || network.isCompatible(protocol))
+            {
+                return network;
+            }
         }
         catch (Exception e)
         {
-            throw new TransportException("Error while creating a new transport instance",e);
+            throw new TransportException("Error while creating a new " + direction + " transport instance", e);
         }
+        
+        throw new TransportException("Cannot create " + direction + " transport supporting " + protocol);
     }
 }

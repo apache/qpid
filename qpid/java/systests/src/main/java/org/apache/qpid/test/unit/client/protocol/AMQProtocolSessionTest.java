@@ -31,21 +31,21 @@ import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
-import org.apache.qpid.transport.TestNetworkDriver;
+import org.apache.qpid.transport.TestNetworkConnection;
+import org.apache.qpid.transport.network.NetworkConnection;
 
 public class AMQProtocolSessionTest extends QpidBrokerTestCase
 {
-    private static class AMQProtSession extends AMQProtocolSession
+    private static class TestProtocolSession extends AMQProtocolSession
     {
-
-        public AMQProtSession(AMQProtocolHandler protocolHandler, AMQConnection connection)
+        public TestProtocolSession(AMQProtocolHandler protocolHandler, AMQConnection connection)
         {
             super(protocolHandler,connection);
         }
 
-        public TestNetworkDriver getNetworkDriver()
+        public NetworkConnection getNetworkConnection()
         {
-            return (TestNetworkDriver) _protocolHandler.getNetworkDriver();
+            return new TestNetworkConnection();
         }
 
         public AMQShortString genQueueName()
@@ -54,7 +54,7 @@ public class AMQProtocolSessionTest extends QpidBrokerTestCase
         }
     }
 
-    private AMQProtSession _testSession;
+    private TestProtocolSession _testSession;
 
     protected void setUp() throws Exception
     {
@@ -62,10 +62,9 @@ public class AMQProtocolSessionTest extends QpidBrokerTestCase
 
         AMQConnection con = (AMQConnection) getConnection("guest", "guest");
         AMQProtocolHandler protocolHandler = new AMQProtocolHandler(con);
-        protocolHandler.setNetworkDriver(new TestNetworkDriver());
         
         //don't care about the values set here apart from the dummy IoSession
-        _testSession = new AMQProtSession(protocolHandler , con);
+        _testSession = new TestProtocolSession(protocolHandler , con);
     }
     
     public void testTemporaryQueueWildcard() throws UnknownHostException
@@ -100,7 +99,7 @@ public class AMQProtocolSessionTest extends QpidBrokerTestCase
     
     private void checkTempQueueName(SocketAddress address, String queueName)
     {
-        _testSession.getNetworkDriver().setLocalAddress(address);
+        ((TestNetworkConnection) _testSession.getNetworkConnection()).setAddress(address);
         assertEquals("Wrong queue name", queueName, _testSession.genQueueName().asString());
     }
 }

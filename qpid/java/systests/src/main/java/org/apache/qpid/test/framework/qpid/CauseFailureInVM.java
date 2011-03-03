@@ -20,10 +20,10 @@
  */
 package org.apache.qpid.test.framework.qpid;
 
-import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.test.framework.CauseFailure;
 import org.apache.qpid.test.framework.BrokerLifecycleAware;
+import org.apache.qpid.transport.vm.VmBroker;
 
 /**
  * <p/><table id="crc"><caption>CRC Card</caption>
@@ -64,7 +64,7 @@ public class CauseFailureInVM implements CauseFailure
     {
         int liveBroker = inVMTest.getLiveBroker();
 
-        TransportConnection.killVMBroker(liveBroker);
+        VmBroker.killVMBroker();
         ApplicationRegistry.remove(liveBroker);
     }
 }

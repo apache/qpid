@@ -34,10 +34,10 @@ import org.apache.qpid.server.output.ProtocolOutputConverter;
 import org.apache.qpid.server.message.AMQMessage;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.state.AMQState;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.message.MessageContentSource;
-import org.apache.qpid.transport.TestNetworkDriver;
+import org.apache.qpid.transport.TestNetworkConnection;
+import org.apache.qpid.transport.TestNetworkTransport;
 
 public class InternalTestProtocolSession extends AMQProtocolEngine implements ProtocolOutputConverter
 {
@@ -47,7 +47,7 @@ public class InternalTestProtocolSession extends AMQProtocolEngine implements Pr
 
     public InternalTestProtocolSession(VirtualHost virtualHost) throws AMQException
     {
-        super(ApplicationRegistry.getInstance().getVirtualHostRegistry(), new TestNetworkDriver());
+        super(ApplicationRegistry.getInstance().getVirtualHostRegistry(), new TestNetworkTransport(), new TestNetworkConnection(), null, 0);
 
         _channelDelivers = new HashMap<Integer, Map<AMQShortString, LinkedList<DeliveryPair>>>();
 

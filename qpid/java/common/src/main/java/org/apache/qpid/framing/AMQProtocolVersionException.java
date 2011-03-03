@@ -36,4 +36,9 @@ public class AMQProtocolVersionException extends AMQProtocolHeaderException
     {
         super(message, cause);
     }
+
+    public AMQProtocolVersionException(String message)
+    {
+        super(message, null);
+    }
 }

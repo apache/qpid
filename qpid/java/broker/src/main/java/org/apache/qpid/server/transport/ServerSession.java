@@ -26,7 +26,6 @@ import static org.apache.qpid.util.Serial.gt;
 import com.sun.security.auth.UserPrincipal;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.protocol.ProtocolEngine;
 import org.apache.qpid.server.configuration.ConfigStore;
 import org.apache.qpid.server.configuration.ConfiguredObject;
 import org.apache.qpid.server.configuration.ConnectionConfig;
@@ -611,9 +610,9 @@ public class ServerSession extends Session implements PrincipalHolder, SessionCo
     {
        return "[" +
                MessageFormat.format(CHANNEL_FORMAT,
-                                   getConnection().getConnectionId(),
+                                   ((ServerConnection) getConnection()).getConnectionId(),
                                    getClientID(),
-                                   ((ProtocolEngine) _connectionConfig).getRemoteAddress().toString(),
+                                   getConnectionConfig().getRemoteAddress().toString(),
                                    getVirtualHost().getName(),
                                    getChannel())
             + "] ";

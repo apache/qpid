@@ -18,27 +18,18 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.transport;
+package org.apache.qpid.protocol;
 
-import org.apache.qpid.transport.NetworkDriver;
+import java.nio.ByteBuffer;
 
-public class QpidAcceptor
-{
-    NetworkDriver _driver;
-    String _protocol;
-    public QpidAcceptor(NetworkDriver driver, String protocol)
-    {
-        _driver = driver;
-        _protocol = protocol;
-    }
+import org.apache.qpid.transport.Receiver;
+import org.apache.qpid.transport.network.NetworkConnection;
+import org.apache.qpid.transport.network.NetworkTransport;
 
-    public NetworkDriver getNetworkDriver()
-    {
-        return _driver;
-    }
-
-    public String toString()
-    {
-        return _protocol;
-    }    
-}
+public interface ReceiverFactory  
+{ 
+    /**
+     * Returns a new instance of a {@link Receiver}. 
+     */
+    Receiver<ByteBuffer> newReceiver(NetworkTransport transport, NetworkConnection network); 
+} 

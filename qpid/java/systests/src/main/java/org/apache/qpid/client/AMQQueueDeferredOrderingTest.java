@@ -30,7 +30,6 @@ import javax.jms.TextMessage;
 
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
-import org.apache.qpid.client.transport.TransportConnection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

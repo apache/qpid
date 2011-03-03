@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -18,15 +18,29 @@
  * under the License.
  *
  */
-package org.apache.qpid.client.transport;
+package org.apache.qpid.transport;
 
-import java.io.IOException;
-
-import org.apache.qpid.client.protocol.AMQProtocolHandler;
-import org.apache.qpid.jms.BrokerDetails;
-
-public interface ITransportConnection
+/**
+ * SessionTimeoutException
+ */
+public class SessionTimeoutException extends SessionException
 {
-    void connect(AMQProtocolHandler protocolHandler, BrokerDetails brokerDetail)
-            throws IOException;
+    /** serialVersionUID */
+    private static final long serialVersionUID = 1L;
+
+    public SessionTimeoutException(String message)
+    {
+        super(message);
+    }
+
+    public SessionTimeoutException(Throwable cause)
+    {
+        super("session timed out", null, cause);
+    }
+
+    @Override
+    public void rethrow()
+    {
+        throw new SessionTimeoutException(this);
+    }
 }

@@ -27,7 +27,8 @@ import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.framing.amqp_8_0.BasicRecoverOkBodyImpl;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.protocol.AMQConstant;
-import org.apache.qpid.transport.TestNetworkDriver;
+import org.apache.qpid.transport.TestNetworkConnection;
+import org.apache.qpid.transport.TestNetworkTransport;
 import org.apache.qpid.client.MockAMQConnection;
 import org.apache.qpid.client.AMQAuthenticationException;
 import org.apache.qpid.client.state.AMQState;
@@ -73,7 +74,7 @@ public class AMQProtocolHandlerTest extends TestCase
     {
         //Create a new ProtocolHandler with a fake connection.
         _handler = new AMQProtocolHandler(new MockAMQConnection("amqp://guest:guest@client/test?brokerlist='vm://:1'"));
-        _handler.setNetworkDriver(new TestNetworkDriver());
+        _handler.connect(new TestNetworkTransport(), new TestNetworkConnection());
          AMQBody body = BasicRecoverOkBodyImpl.getFactory().newInstance(null, 1);
         _blockFrame = new AMQFrame(0, body);
 

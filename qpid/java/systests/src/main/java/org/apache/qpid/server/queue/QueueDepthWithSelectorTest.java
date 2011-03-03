@@ -21,6 +21,17 @@
 
 package org.apache.qpid.server.queue;
 
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+
+import org.apache.qpid.AMQException;
+import org.apache.qpid.client.AMQDestination;
+import org.apache.qpid.client.AMQSession;
+import org.apache.qpid.jndi.PropertiesFileInitialContextFactory;
+import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.util.InternalBrokerBaseCase;
+import org.apache.qpid.transport.vm.VmBroker;
+
 import javax.jms.Connection;
 import javax.jms.JMSException;
 import javax.jms.Message;

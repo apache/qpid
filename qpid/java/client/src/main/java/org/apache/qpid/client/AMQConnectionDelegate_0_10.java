@@ -20,7 +20,6 @@ package org.apache.qpid.client;
  * 
  */
 
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -166,15 +165,15 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
         {
             if (_logger.isDebugEnabled())
             {
-                _logger.debug("connecting to host: " + brokerDetail.getHost()
-                        + " port: " + brokerDetail.getPort() + " vhost: "
-                        + _conn.getVirtualHost() + " username: "
-                        + _conn.getUsername() + " password: "
-                        + _conn.getPassword());
+                _logger.debug("connecting to host: " + brokerDetail.getHost() +
+                        " port: " + brokerDetail.getPort() +
+                        " vhost: " + _conn.getVirtualHost() +
+						" username: " + _conn.getUsername() +
+						" password: " + _conn.getPassword() +
+						" transport: " + brokerDetail.getTransport());
             }
 
-            ConnectionSettings conSettings = new ConnectionSettings();
-            retriveConnectionSettings(conSettings,brokerDetail);
+            ConnectionSettings conSettings = retriveConnectionSettings(brokerDetail);
             _qpidConnection.connect(conSettings);
 
             _conn._connected = true;
@@ -278,24 +277,9 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
                 _conn.getProtocolHandler().setFailoverLatch(null);
             }
         }
-
-        ExceptionListener listener = _conn._exceptionListener;
-        if (listener == null)
-        {
-            _logger.error("connection exception: " + conn, exc);
-        }
         else
         {
-            String code = null;
-            if (close != null)
-            {
-                code = close.getReplyCode().toString();
-            }
-
-            JMSException ex = new JMSException(exc.getMessage(), code);
-            ex.setLinkedException(exc);
-            ex.initCause(exc);
-            listener.onException(ex);
+            _conn.exceptionReceived(exc);
         }
     }
 
@@ -327,15 +311,16 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
         return ProtocolVersion.v0_10;
     }
     
-    private void retriveConnectionSettings(ConnectionSettings conSettings, BrokerDetails brokerDetail)
+    private ConnectionSettings retriveConnectionSettings(BrokerDetails brokerDetail)
     {
-
+        ConnectionSettings conSettings = new ConnectionSettings();
         conSettings.setHost(brokerDetail.getHost());
         conSettings.setPort(brokerDetail.getPort());
         conSettings.setVhost(_conn.getVirtualHost());
         conSettings.setUsername(_conn.getUsername());
         conSettings.setPassword(_conn.getPassword());
-        
+        conSettings.setProtocol(brokerDetail.getTransport());       
+ 
         // ------------ sasl options ---------------
         if (brokerDetail.getProperty(BrokerDetails.OPTIONS_SASL_MECHS) != null)
         {
@@ -417,6 +402,8 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
         }
         
         conSettings.setHeartbeatInterval(getHeartbeatInterval(brokerDetail));
+        
+        return conSettings;
     }
     
     // The idle_timeout prop is in milisecs while

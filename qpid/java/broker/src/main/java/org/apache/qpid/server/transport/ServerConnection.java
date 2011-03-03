@@ -35,6 +35,7 @@ import org.apache.qpid.server.logging.actors.GenericActor;
 import org.apache.qpid.server.logging.messages.ConnectionMessages;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
+import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.transport.Connection;
 import org.apache.qpid.transport.ExecutionErrorCode;
@@ -48,10 +49,16 @@ public class ServerConnection extends Connection implements AMQConnectionModel, 
     private Runnable _onOpenTask;
     private AtomicBoolean _logClosed = new AtomicBoolean(false);
     private LogActor _actor = GenericActor.getInstance(this);
+    private long _connectionId;
 
-    public ServerConnection()
+    public ServerConnection(long connectionId)
     {
+        _connectionId = connectionId;
+    }
 
+    public long getConnectionId()
+    {
+        return _connectionId;
     }
 
     @Override
@@ -165,6 +172,9 @@ public class ServerConnection extends Connection implements AMQConnectionModel, 
 
             CurrentActor.set(channelActor == null ? _actor : channelActor);
         }
+ 
+        // Set thread credentials
+        SecurityManager.setThreadPrincipal(getAuthorizationID());
 
         try
         {
@@ -187,7 +197,7 @@ public class ServerConnection extends Connection implements AMQConnectionModel, 
                     MessageFormat.format(CONNECTION_FORMAT,
                                          getConnectionId(),
                                          getClientId(),
-                                         getConfig().getAddress(),
+                                         getConfig().getRemoteAddress().toString(),
                                          getVirtualHost().getName())
                  + "] ";
         }
@@ -197,7 +207,7 @@ public class ServerConnection extends Connection implements AMQConnectionModel, 
                     MessageFormat.format(USER_FORMAT,
                                          getConnectionId(),
                                          getClientId(),
-                                         getConfig().getAddress())
+                                         getConfig().getRemoteAddress().toString())
                  + "] ";
 
         }
@@ -206,7 +216,7 @@ public class ServerConnection extends Connection implements AMQConnectionModel, 
             return "[" +
                     MessageFormat.format(SOCKET_FORMAT,
                                          getConnectionId(),
-                                         getConfig().getAddress())
+                                         getConfig().getRemoteAddress().toString())
                  + "] ";
         }
     }

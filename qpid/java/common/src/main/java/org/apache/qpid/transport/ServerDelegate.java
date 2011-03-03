@@ -40,6 +40,8 @@ public class ServerDelegate extends ConnectionDelegate
 {
     protected static final Logger _logger = LoggerFactory.getLogger(ServerDelegate.class);
 
+    public static final int MAX_FRAME_SIZE = 64 * 1024 - 1;
+
     private List<Object> _locales;
     private List<Object> _mechanisms;
     private Map<String, Object> _clientProperties;
@@ -75,10 +77,7 @@ public class ServerDelegate extends ConnectionDelegate
 
         if (mechanism == null || mechanism.length() == 0)
         {
-            conn.connectionTune
-                (getChannelMax(),
-                 org.apache.qpid.transport.network.ConnectionBinding.MAX_FRAME_SIZE,
-                 0, getHeartbeatMax());
+            conn.connectionTune(getChannelMax(), MAX_FRAME_SIZE, 0, getHeartbeatMax());
             return;
         }
 
@@ -118,10 +117,7 @@ public class ServerDelegate extends ConnectionDelegate
             if (ss.isComplete())
             {
                 ss.dispose();
-                conn.connectionTune
-                    (getChannelMax(),
-                     org.apache.qpid.transport.network.ConnectionBinding.MAX_FRAME_SIZE,
-                     0, getHeartbeatMax());
+                conn.connectionTune(getChannelMax(), MAX_FRAME_SIZE, 0, getHeartbeatMax());
                 conn.setAuthorizationID(ss.getAuthorizationID());
             }
             else
@@ -150,27 +146,6 @@ public class ServerDelegate extends ConnectionDelegate
     public void connectionSecureOk(Connection conn, ConnectionSecureOk ok)
     {
         secure(conn, ok.getResponse());
-    }
-
-    @Override
-    public void connectionTuneOk(Connection conn, ConnectionTuneOk ok)
-    {
-        int okChannelMax = ok.getChannelMax();
-        
-        if (okChannelMax > getChannelMax())
-        {
-            _logger.error("Connection '" + conn.getConnectionId() + "' being severed, " +
-                    "client connectionTuneOk returned a channelMax (" + okChannelMax +
-                    ") above the servers offered limit (" + getChannelMax() +")");
-
-            //Due to the error we must forcefully close the connection without negotiation
-            conn.getSender().close();
-            return;
-        }
-
-        //0 means no implied limit, except available server resources
-        //(or that forced by protocol limitations [0xFFFF])
-        conn.setChannelMax(okChannelMax == 0 ? Connection.MAX_CHANNEL_MAX : okChannelMax);
     }
 
     @Override

@@ -39,7 +39,6 @@ import org.apache.qpid.client.failover.FailoverRetrySupport;
 import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.apache.qpid.client.state.AMQState;
 import org.apache.qpid.client.state.StateWaiter;
-import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.framing.BasicQosBody;
 import org.apache.qpid.framing.BasicQosOkBody;
 import org.apache.qpid.framing.ChannelOpenBody;
@@ -49,6 +48,11 @@ import org.apache.qpid.framing.TxSelectBody;
 import org.apache.qpid.framing.TxSelectOkBody;
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.jms.ChannelLimitReachedException;
+import org.apache.qpid.ssl.SSLContextFactory;
+import org.apache.qpid.transport.ConnectionSettings;
+import org.apache.qpid.transport.network.NetworkConnection;
+import org.apache.qpid.transport.network.OutgoingNetworkTransport;
+import org.apache.qpid.transport.network.Transport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -86,22 +90,27 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
         final Set<AMQState> openOrClosedStates =
                 EnumSet.of(AMQState.CONNECTION_OPEN, AMQState.CONNECTION_CLOSED);
 
-
         StateWaiter waiter = _conn._protocolHandler.createWaiter(openOrClosedStates);
 
-        // TODO: use system property thingy for this
-        if (System.getProperty("UseTransportIo", "false").equals("false"))
+        ConnectionSettings settings = new ConnectionSettings();
+        settings.setHost(brokerDetail.getHost());
+        settings.setPort(brokerDetail.getPort());
+        settings.setProtocol(brokerDetail.getTransport());
+
+        SSLConfiguration sslConfig = _conn.getSSLConfiguration();
+        SSLContextFactory sslFactory = null;
+        if (sslConfig != null)
         {
-            TransportConnection.getInstance(brokerDetail).connect(_conn._protocolHandler, brokerDetail);
+            sslFactory = new SSLContextFactory(sslConfig.getKeystorePath(), sslConfig.getKeystorePassword(), sslConfig.getCertType());
         }
-        else
-        {
-            _conn.getProtocolHandler().createIoTransportSession(brokerDetail);
-        }
+
+        OutgoingNetworkTransport transport = Transport.getOutgoingTransport(settings.getProtocol());
+        NetworkConnection network = transport.connect(settings, _conn._protocolHandler, sslFactory);
+        _conn._protocolHandler.connect(transport, network);
         _conn._protocolHandler.getProtocolSession().init();
+
         // this blocks until the connection has been set up or when an error
         // has prevented the connection being set up
-
         AMQState state = waiter.await();
 
         if(state == AMQState.CONNECTION_OPEN)

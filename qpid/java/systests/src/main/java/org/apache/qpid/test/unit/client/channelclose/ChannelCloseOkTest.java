@@ -24,7 +24,6 @@ import junit.textui.TestRunner;
 
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
-import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 import org.slf4j.Logger;

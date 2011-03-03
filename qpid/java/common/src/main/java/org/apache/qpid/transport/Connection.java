@@ -20,13 +20,9 @@
  */
 package org.apache.qpid.transport;
 
-import static org.apache.qpid.transport.Connection.State.CLOSED;
-import static org.apache.qpid.transport.Connection.State.CLOSING;
-import static org.apache.qpid.transport.Connection.State.NEW;
-import static org.apache.qpid.transport.Connection.State.OPEN;
-import static org.apache.qpid.transport.Connection.State.OPENING;
-import static org.apache.qpid.transport.Connection.State.RESUMING;
+import static org.apache.qpid.transport.Connection.State.*;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -39,6 +35,13 @@ import java.util.concurrent.atomic.AtomicLong;
 import javax.security.sasl.SaslClient;
 import javax.security.sasl.SaslServer;
 
+import org.apache.qpid.ssl.SSLContextFactory;
+import org.apache.qpid.transport.network.Assembler;
+import org.apache.qpid.transport.network.Disassembler;
+import org.apache.qpid.transport.network.InputHandler;
+import org.apache.qpid.transport.network.NetworkConnection;
+import org.apache.qpid.transport.network.OutgoingNetworkTransport;
+import org.apache.qpid.transport.network.Transport;
 import org.apache.qpid.transport.network.security.SecurityLayer;
 import org.apache.qpid.transport.util.Logger;
 import org.apache.qpid.transport.util.Waiter;
@@ -118,9 +121,8 @@ public class Connection extends ConnectionInvoker
     private ConnectionSettings conSettings;
     private SecurityLayer securityLayer;
     private String _clientId;
+    private NetworkConnection network;
     
-    private static final AtomicLong idGenerator = new AtomicLong(0);
-    private final long _connectionId = idGenerator.incrementAndGet();
     private final AtomicBoolean connectionLost = new AtomicBoolean(false);
     
     public Connection() {}
@@ -202,16 +204,20 @@ public class Connection extends ConnectionInvoker
 
     public void connect(String host, int port, String vhost, String username, String password, boolean ssl)
     {
-        connect(host, port, vhost, username, password, ssl,"PLAIN");
+        connect(host, port, vhost, username, password, ssl, "PLAIN");
     }
 
-    public void connect(String host, int port, String vhost, String username, String password, boolean ssl,String saslMechs)
+    public void connect(String host, int port, String vhost, String username, String password, boolean ssl, String saslMechs)
     {
-        connect(host, port, vhost, username, password, ssl,saslMechs, Collections.EMPTY_MAP);
+        connect(host, port, vhost, username, password, ssl, saslMechs, "TCP", Collections.<String, Object>emptyMap());
     }
 
+    public void connect(String host, int port, String vhost, String username, String password, boolean ssl, String saslMechs, String protocol)
+    {
+        connect(host, port, vhost, username, password, ssl, saslMechs, protocol, Collections.<String, Object>emptyMap());
+    }
 
-    public void connect(String host, int port, String vhost, String username, String password, boolean ssl,String saslMechs,Map<String,Object> clientProps)
+    public void connect(String host, int port, String vhost, String username, String password, boolean ssl, String saslMechs, String protocol, Map<String,Object> clientProps)
     {
         ConnectionSettings settings = new ConnectionSettings();
         settings.setHost(host);
@@ -222,24 +228,32 @@ public class Connection extends ConnectionInvoker
         settings.setUseSSL(ssl);
         settings.setSaslMechs(saslMechs);
         settings.setClientProperties(clientProps);
+        settings.setProtocol(protocol);
         connect(settings);
     }
 
     public void connect(ConnectionSettings settings)
     {
-
         synchronized (lock)
         {
             conSettings = settings;
             state = OPENING;
             userID = settings.getUsername();
             delegate = new ClientDelegate(settings);
+            
+            securityLayer = new SecurityLayer();
+            securityLayer.init(this);
+
+            SSLContextFactory sslFactory = null;
+            if (settings.isUseSSL())
+            {
+                sslFactory = new SSLContextFactory(settings.getKeyStorePath(), settings.getKeyStorePassword(), settings.getKeyStoreCertType());
+            }
            
-            TransportBuilder transport = new TransportBuilder();
-            transport.init(this);
-            this.sender = transport.buildSenderPipe();
-            transport.buildReceiverPipe(this);
-            this.securityLayer = transport.getSecurityLayer();
+            OutgoingNetworkTransport transport = Transport.getOutgoingTransport(settings.getProtocol());
+            Receiver<ByteBuffer> receiver = securityLayer.receiver(new InputHandler(new Assembler(this)));
+            network = transport.connect(settings, receiver, sslFactory);
+            sender = new Disassembler(securityLayer.sender(network.getSender()), settings.getMaxFrameSize());
             
             send(new ProtocolHeader(1, 0, 10));
 
@@ -251,20 +265,14 @@ public class Connection extends ConnectionInvoker
 
             if (error != null)
             {
-                ConnectionException t = error;
+                ConnectionException ce = error;
                 error = null;
-                try
+                if (ce instanceof ProtocolVersionException)
                 {
-                    close();
+                    closed();
+                    ce.rethrow();
                 }
-                catch (ConnectionException ce)
-                {
-                    if (!(t instanceof ProtocolVersionException))
-                    {
-                        throw ce;
-                    }
-                }
-                t.rethrow();
+                ce.rethrow();
             }
 
             switch (state)
@@ -352,11 +360,6 @@ public class Connection extends ConnectionInvoker
         _sessionFactory = sessionFactory;
     }
 
-    public long getConnectionId()
-    {
-        return _connectionId;
-    }
-
     public ConnectionDelegate getConnectionDelegate()
     {
         return delegate;
@@ -414,7 +417,7 @@ public class Connection extends ConnectionInvoker
         return channelMax;
     }
 
-    void setChannelMax(int max)
+    public void setChannelMax(int max)
     {
         channelMax = max;
     }
@@ -437,7 +440,7 @@ public class Connection extends ConnectionInvoker
         }
     }
 
-    void map(Session ssn, int channel)
+    public void map(Session ssn, int channel)
     {
         synchronized (lock)
         {
@@ -446,7 +449,7 @@ public class Connection extends ConnectionInvoker
         }
     }
 
-    void unmap(Session ssn)
+    public void unmap(Session ssn)
     {
         synchronized (lock)
         {

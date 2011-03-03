@@ -21,11 +21,7 @@
 package org.apache.qpid.client;
 
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
-import org.apache.qpid.server.registry.ConfigurationFileApplicationRegistry;
-import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.client.transport.TransportConnection;
 
-import java.io.File;
 import java.security.Provider;
 import java.security.Security;
 import java.util.List;

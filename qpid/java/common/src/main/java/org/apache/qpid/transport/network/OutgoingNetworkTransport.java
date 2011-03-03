@@ -18,14 +18,15 @@
  * under the License.
  *
  */
-package org.apache.qpid.protocol;
+package org.apache.qpid.transport.network;
 
-import org.apache.qpid.transport.NetworkDriver;
+import java.nio.ByteBuffer;
 
-public interface ProtocolEngineFactory  
-{ 
- 
-  // Returns a new instance of a ProtocolEngine 
-  ProtocolEngine newProtocolEngine(NetworkDriver networkDriver); 
-   
-} 
+import org.apache.qpid.ssl.SSLContextFactory;
+import org.apache.qpid.transport.ConnectionSettings;
+import org.apache.qpid.transport.Receiver;
+
+public interface OutgoingNetworkTransport extends NetworkTransport
+{
+    public NetworkConnection connect(ConnectionSettings settings, Receiver<ByteBuffer> delegate, SSLContextFactory sslFactory);
+}

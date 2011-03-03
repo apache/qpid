@@ -36,6 +36,8 @@ import org.apache.qpid.transport.Session;
 import org.apache.qpid.transport.SessionDelegate;
 import org.apache.qpid.transport.TransportException;
 
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -114,9 +116,9 @@ public class BrokerLink implements LinkConfig, ConnectionListener
             return BrokerLink.this.getVirtualHost();
         }
 
-        public String getAddress()
+        public SocketAddress getRemoteAddress()
         {
-            return _host+":"+_port;
+            return new InetSocketAddress(_host, _port);
         }
 
         public Boolean isIncoming()

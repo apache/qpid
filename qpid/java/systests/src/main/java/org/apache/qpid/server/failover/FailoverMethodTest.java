@@ -26,10 +26,10 @@ import org.apache.qpid.AMQDisconnectedException;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQConnectionURL;
-import org.apache.qpid.client.transport.TransportConnection;
-import org.apache.qpid.client.vmbroker.AMQVMBrokerCreationException;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.util.InternalBrokerBaseCase;
+import org.apache.qpid.transport.vm.VMBrokerCreationException;
+import org.apache.qpid.transport.vm.VmBroker;
 import org.apache.qpid.url.URLSyntaxException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -47,13 +47,13 @@ public class FailoverMethodTest extends InternalBrokerBaseCase implements Except
     public void createBroker() throws Exception
     {
         super.createBroker();
-        TransportConnection.createVMBroker(ApplicationRegistry.DEFAULT_INSTANCE);
+        VmBroker.createVMBroker();
     }
 
     @Override
     public void stopBroker()
     {
-        TransportConnection.killVMBroker(ApplicationRegistry.DEFAULT_INSTANCE);
+        VmBroker.killVMBrokers();
         super.stopBroker();
     }
 
@@ -112,7 +112,7 @@ public class FailoverMethodTest extends InternalBrokerBaseCase implements Except
         }
     }
 
-    public void testFailoverSingleDelay() throws URLSyntaxException, AMQVMBrokerCreationException,
+    public void testFailoverSingleDelay() throws URLSyntaxException, VMBrokerCreationException,
                                                  InterruptedException, JMSException
     {
         String connectionString = "amqp://guest:guest@/test?brokerlist='vm://:1?connectdelay='2000',retries='3''";
@@ -174,7 +174,7 @@ public class FailoverMethodTest extends InternalBrokerBaseCase implements Except
      * @throws InterruptedException
      * @throws JMSException
      */
-    public void testNoFailover() throws URLSyntaxException, AMQVMBrokerCreationException,
+    public void testNoFailover() throws URLSyntaxException, VMBrokerCreationException,
                                         InterruptedException, JMSException
     {
         int CONNECT_DELAY = 2000;

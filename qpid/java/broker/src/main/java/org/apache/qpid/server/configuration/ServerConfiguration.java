@@ -42,7 +42,6 @@ import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
-import org.apache.qpid.transport.NetworkDriverConfiguration;
 
 import sun.misc.Signal;
 import sun.misc.SignalHandler;
@@ -682,7 +681,7 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
 
     public String getBind()
     {
-        return getStringValue("connector.bind", "wildcard");
+        return getStringValue("connector.bind", "*");
     }
 
     public int getReceiveBufferSize()
@@ -765,59 +764,6 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
         return getLongValue("housekeeping.checkPeriod",
                                    getLongValue("housekeeping.expiredMessageCheckPeriod",
                                                        DEFAULT_HOUSEKEEPING_PERIOD));
-    }
-
-    public NetworkDriverConfiguration getNetworkConfiguration()
-    {
-        return new NetworkDriverConfiguration()
-        {
-
-            public Integer getTrafficClass()
-            {
-                return null;
-            }
-
-            public Boolean getTcpNoDelay()
-            {
-                // Can't call parent getTcpNoDelay since it just calls this one
-                return getBooleanValue("connector.tcpNoDelay", true);
-            }
-
-            public Integer getSoTimeout()
-            {
-                return null;
-            }
-
-            public Integer getSoLinger()
-            {
-                return null;
-            }
-
-            public Integer getSendBufferSize()
-            {
-                return getBufferWriteLimit();
-            }
-
-            public Boolean getReuseAddress()
-            {
-                return null;
-            }
-
-            public Integer getReceiveBufferSize()
-            {
-                return getBufferReadLimit();
-            }
-
-            public Boolean getOOBInline()
-            {
-                return null;
-            }
-
-            public Boolean getKeepAlive()
-            {
-                return null;
-            }
-        };
     }
 
     public int getMaxChannelCount()

@@ -32,11 +32,13 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.jms.Destination;
 import javax.jms.JMSException;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.AMQTimeoutException;
 import org.apache.qpid.client.AMQDestination.AddressOption;
 import org.apache.qpid.client.AMQDestination.Binding;
 import org.apache.qpid.client.AMQDestination.DestSyntax;
@@ -69,6 +71,7 @@ import org.apache.qpid.transport.RangeSet;
 import org.apache.qpid.transport.Session;
 import org.apache.qpid.transport.SessionException;
 import org.apache.qpid.transport.SessionListener;
+import org.apache.qpid.transport.SessionTimeoutException;
 import org.apache.qpid.util.Serial;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -97,7 +100,7 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
 
         public void run() {
             AMQSession_0_10 ssn = session.get();
-            if (ssn == null)
+            if (ssn == null || ssn.getQpidSession().isClosing())
             {
                 cancel();
             }
@@ -124,8 +127,7 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
     /**
      * The latest qpid Exception that has been raised.
      */
-    private Object _currentExceptionLock = new Object();
-    private AMQException _currentException;
+    private AtomicReference<AMQException> _currentException = new AtomicReference<AMQException>(null);
 
     // a ref on the qpid connection
     protected org.apache.qpid.transport.Connection _qpidConnection;
@@ -871,19 +873,11 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
     /**
      * Get the latest thrown exception.
      *
-     * @throws SessionException get the latest thrown error.
+     * @return the latest thrown {@link AMQException}
      */
     public AMQException getCurrentException()
     {
-        AMQException amqe = null;
-        synchronized (_currentExceptionLock)
-        {
-            if (_currentException != null)
-            {
-                amqe = _currentException;
-                _currentException = null;
-            }
-        }
+        AMQException amqe = _currentException.getAndSet(null);
         return amqe;
     }
 
@@ -1011,7 +1005,12 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
 
     public void setCurrentException(SessionException se)
     {
-        synchronized (_currentExceptionLock)
+        AMQException amqe;
+        if (se instanceof SessionTimeoutException)
+        {
+            amqe = new AMQTimeoutException(se.getMessage(), se);
+        }
+        else
         {
             ExecutionException ee = se.getException();
             int code = AMQConstant.INTERNAL_ERROR.getCode();
@@ -1019,12 +1018,12 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
             {
                 code = ee.getErrorCode().getValue();
             }
-            AMQException amqe = new AMQException(AMQConstant.getConstant(code), se.getMessage(), se.getCause());
-
-            _connection.exceptionReceived(amqe);
-
-            _currentException = amqe;
+            amqe = new AMQException(AMQConstant.getConstant(code), se.getMessage(), se.getCause());
         }
+
+        _currentException.set(amqe);
+
+        _connection.exceptionReceived(amqe);
     }
 
     public AMQMessageDelegateFactory getMessageDelegateFactory()

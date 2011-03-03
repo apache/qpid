@@ -19,6 +19,7 @@
  */
 package org.apache.mina.transport.socket.nio;
 
+import edu.emory.mathcs.backport.java.util.concurrent.ConcurrentHashMap;
 import edu.emory.mathcs.backport.java.util.concurrent.Executor;
 import org.apache.mina.common.ConnectFuture;
 import org.apache.mina.common.ExceptionMonitor;
@@ -28,6 +29,9 @@ import org.apache.mina.common.IoHandler;
 import org.apache.mina.common.IoServiceConfig;
 import org.apache.mina.common.support.BaseIoConnector;
 import org.apache.mina.common.support.DefaultConnectFuture;
+import org.apache.mina.transport.socket.nio.SocketConnectorConfig;
+import org.apache.mina.transport.socket.nio.SocketIoProcessor;
+import org.apache.mina.transport.socket.nio.SocketSessionImpl;
 import org.apache.mina.util.NamePreservingRunnable;
 import org.apache.mina.util.NewThreadExecutor;
 import org.apache.mina.util.Queue;
@@ -40,6 +44,7 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -50,6 +55,8 @@ import java.util.Set;
  */
 public class ExistingSocketConnector extends BaseIoConnector
 {
+    private static final Map<String, Socket> OPEN_SOCKET_REGISTER = new ConcurrentHashMap();
+    
     /** @noinspection StaticNonFinalField */
     private static volatile int nextId = 0;
 
@@ -68,6 +75,16 @@ public class ExistingSocketConnector extends BaseIoConnector
     private int processorDistributor = 0;
     private int workerTimeout = 60;  // 1 min.
     private Socket _openSocket = null;
+
+    public static void registerOpenSocket(String socketID, Socket openSocket)
+    {
+        OPEN_SOCKET_REGISTER.put(socketID, openSocket);
+    }
+
+    public static Socket removeOpenSocket(String socketID)
+    {
+        return OPEN_SOCKET_REGISTER.remove(socketID);
+    }
 
     /** Create a connector with a single processing thread using a NewThreadExecutor */
     public ExistingSocketConnector()

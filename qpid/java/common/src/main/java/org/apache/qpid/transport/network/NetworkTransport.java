@@ -20,19 +20,19 @@
  */
 package org.apache.qpid.transport.network;
 
-import java.nio.ByteBuffer;
-
-import org.apache.qpid.transport.Receiver;
-import org.apache.qpid.transport.Sender;
-import org.apache.qpid.transport.ConnectionSettings;
+import java.net.SocketAddress;
 
 public interface NetworkTransport
 {
-    public void init(ConnectionSettings settings);
-    
-    public Sender<ByteBuffer> sender();
-    
-    public void receiver(Receiver<ByteBuffer> delegate);    
-    
     public void close();
+ 
+    /**
+     * Returns the address of the underlying socket.
+     */
+    public SocketAddress getAddress();
+    
+    /**
+     * Check whether the transport is compatible with a network protocol.
+     */
+    public boolean isCompatible(String protocol);
 }

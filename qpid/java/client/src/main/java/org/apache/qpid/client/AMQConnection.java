@@ -61,6 +61,7 @@ import org.apache.qpid.client.failover.FailoverProtectedOperation;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.configuration.ClientProperties;
 import org.apache.qpid.exchange.ExchangeDefaults;
+import org.apache.qpid.framing.AMQProtocolVersionException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicQosBody;
 import org.apache.qpid.framing.BasicQosOkBody;
@@ -83,6 +84,15 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
 {
     private static final Logger _logger = LoggerFactory.getLogger(AMQConnection.class);
 
+    public static final String VERSION_0_8 = "0-8";
+    public static final String VERSION_0_9 = "0-9";
+    public static final String VERSION_0_9_1 = "0-9-1";
+    public static final String VERSION_0_91 = "0-91";
+    public static final String VERSION_0_10 = "0-10";
+    
+    public static final String[] SUPPORTED_VERSIONS = new String[] {
+        VERSION_0_8, VERSION_0_9, VERSION_0_9_1, VERSION_0_91, VERSION_0_10
+    };
 
     /**
      * This is the "root" mutex that must be held when doing anything that could be impacted by failover. This must be
@@ -318,26 +328,32 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
             _useLegacyMapMessageFormat = Boolean.getBoolean(ClientProperties.USE_LEGACY_MAP_MESSAGE_FORMAT);
         }
         
-        String amqpVersion = System.getProperty((ClientProperties.AMQP_VERSION), "0-10");
+        String amqpVersion = System.getProperty((ClientProperties.AMQP_VERSION), VERSION_0_10).trim();
         _logger.debug("AMQP version " + amqpVersion);
         
         _failoverPolicy = new FailoverPolicy(connectionURL, this);
         BrokerDetails brokerDetails = _failoverPolicy.getCurrentBrokerDetails();
-        if (brokerDetails.getTransport().equals(BrokerDetails.VM) || "0-8".equals(amqpVersion)) 
+        
+        // Check AMQP version and set delegate accordingly
+        if (VERSION_0_8.equals(amqpVersion)) 
         {
             _delegate = new AMQConnectionDelegate_8_0(this);
         } 
-        else if ("0-9".equals(amqpVersion))
+        else if (VERSION_0_9.equals(amqpVersion))
         {
             _delegate = new AMQConnectionDelegate_0_9(this);
         }
-        else if ("0-91".equals(amqpVersion) || "0-9-1".equals(amqpVersion))
+        else if (VERSION_0_9_1.equals(amqpVersion) || VERSION_0_91.equals(amqpVersion))
         {
             _delegate = new AMQConnectionDelegate_9_1(this);
         }
-        else
+        else if (VERSION_0_10.equals(amqpVersion) || "".equals(amqpVersion))
         {
             _delegate = new AMQConnectionDelegate_0_10(this);
+        }
+        else
+        {
+            throw new AMQProtocolVersionException("AMQP version " + amqpVersion + " is not supported");
         }
 
         if (_logger.isInfoEnabled())
@@ -1255,8 +1271,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
             {
                 //Should never get here as all AMQEs are required to have an ErrorCode!
                 // Other than AMQDisconnectedEx!
-
-                if (cause instanceof AMQDisconnectedException)
+                if (cause instanceof AMQDisconnectedException && !getProtocolVersion().equals(ProtocolVersion.v0_10))
                 {
                     Exception last = _protocolHandler.getStateManager().getLastException();
                     if (last != null)
@@ -1287,7 +1302,10 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
             _closing.set(false);
             closer = !_closed.getAndSet(true);
 
-            _protocolHandler.getProtocolSession().notifyError(je);
+            if (!getProtocolVersion().equals(ProtocolVersion.v0_10))
+            {
+	            _protocolHandler.getProtocolSession().notifyError(je);
+            }
         }
 
         // get the failover mutex before trying to close

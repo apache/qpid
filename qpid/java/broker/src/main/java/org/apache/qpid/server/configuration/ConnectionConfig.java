@@ -21,11 +21,13 @@
 
 package org.apache.qpid.server.configuration;
 
+import java.net.SocketAddress;
+
 public interface ConnectionConfig extends ConfiguredObject<ConnectionConfigType, ConnectionConfig>
 {
     VirtualHostConfig getVirtualHost();
 
-    String getAddress();
+    SocketAddress getRemoteAddress();
 
     Boolean isIncoming();
 

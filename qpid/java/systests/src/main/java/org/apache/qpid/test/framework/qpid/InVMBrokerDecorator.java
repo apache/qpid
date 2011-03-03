@@ -23,11 +23,11 @@ package org.apache.qpid.test.framework.qpid;
 import junit.framework.Test;
 import junit.framework.TestResult;
 
-import org.apache.qpid.client.transport.TransportConnection;
-import org.apache.qpid.client.vmbroker.AMQVMBrokerCreationException;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.test.framework.BrokerLifecycleAware;
 import org.apache.qpid.test.framework.FrameworkBaseCase;
+import org.apache.qpid.transport.vm.VMBrokerCreationException;
+import org.apache.qpid.transport.vm.VmBroker;
 
 import org.apache.qpid.junit.extensions.SetupTaskAware;
 import org.apache.qpid.junit.extensions.WrappedSuiteTestDecorator;
@@ -89,9 +89,9 @@ public class InVMBrokerDecorator extends WrappedSuiteTestDecorator
                             try
                             {
                                 ApplicationRegistry.getInstance(1);
-                                TransportConnection.createVMBroker(1);
+                                VmBroker.createVMBroker();
                             }
-                            catch (AMQVMBrokerCreationException e)
+                            catch (VMBrokerCreationException e)
                             {
                                 throw new RuntimeException("In-VM broker creation failed: " + e.getMessage(), e);
                             }
@@ -103,7 +103,7 @@ public class InVMBrokerDecorator extends WrappedSuiteTestDecorator
                         public void run()
                         {
                             // Ensure that the in-vm broker is cleaned up so that the next test starts afresh.
-                            TransportConnection.killVMBroker(1);
+                            VmBroker.killVMBroker();
                             ApplicationRegistry.remove(1);
                         }
                     });

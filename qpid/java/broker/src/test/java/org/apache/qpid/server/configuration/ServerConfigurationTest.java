@@ -23,24 +23,19 @@ package org.apache.qpid.server.configuration;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.RandomAccessFile;
 import java.util.List;
 import java.util.Locale;
 
-import junit.framework.TestCase;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.exchange.Exchange;
-import org.apache.qpid.server.protocol.AMQProtocolEngine;
-import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.ConfigurationFileApplicationRegistry;
 import org.apache.qpid.server.util.InternalBrokerBaseCase;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
-import org.apache.qpid.transport.TestNetworkDriver;
 
 public class ServerConfigurationTest extends InternalBrokerBaseCase
 {
@@ -565,7 +560,7 @@ public class ServerConfigurationTest extends InternalBrokerBaseCase
         // Check default
         ServerConfiguration serverConfig = new ServerConfiguration(_config);
         serverConfig.initialise();
-        assertEquals("wildcard", serverConfig.getBind());
+        assertEquals("*", serverConfig.getBind());
 
         // Check value we set
         _config.setProperty("connector.bind", "a");

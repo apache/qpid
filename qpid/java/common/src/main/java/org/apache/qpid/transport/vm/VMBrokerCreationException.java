@@ -18,26 +18,27 @@
  * under the License.
  *
  */
-package org.apache.qpid.client.transport;
+package org.apache.qpid.transport.vm;
 
-import org.apache.qpid.AMQException;
-import org.apache.qpid.protocol.AMQConstant;
+import org.apache.qpid.transport.TransportException;
 
 /**
- * AMQTransportConnectionException indicates a failure to establish a connection through the transporting medium, to
- * an AMQP broker.
+ * VMBrokerCreationException represents failure to create an in VM broker on the vm transport medium.
  *
  * <p/><table id="crc"><caption>CRC Card</caption>
  * <tr><th> Responsibilities <th> Collaborations
- * <tr><td> Represent failure to connect through the transport medium.
+ * <tr><td> Represent failure to create an in VM broker.
  * </table>
- *
- * @todo Error code never used. This is not an AMQException.
  */
-public class AMQTransportConnectionException extends AMQException
+public class VMBrokerCreationException extends TransportException
 {
-    public AMQTransportConnectionException(AMQConstant errorCode, String message, Throwable cause)
+    public VMBrokerCreationException(String message)
     {
-        super(errorCode, message, cause);
+        super(message);
+    }
+
+    public VMBrokerCreationException(String message, Throwable cause)
+    {
+        super(message, cause);
     }
 }
