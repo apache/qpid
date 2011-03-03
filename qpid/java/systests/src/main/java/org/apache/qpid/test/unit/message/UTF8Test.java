@@ -22,6 +22,7 @@ package org.apache.qpid.test.unit.message;
 
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.transport.Connection;
+import org.apache.qpid.transport.ConnectionSettings;
 import org.apache.qpid.transport.Session;
 
 import org.slf4j.Logger;
@@ -31,7 +32,6 @@ import javax.naming.InitialContext;
 import javax.jms.*;
 import java.util.Properties;
 import java.io.*;
-
 
 /**
  * This test makes sure that utf8 characters can be used for
@@ -88,7 +88,13 @@ public class UTF8Test extends QpidBrokerTestCase
     private void declareQueue(String exch, String routkey, String qname) throws Exception
     {
         Connection conn = new Connection();
-        conn.connect("localhost", QpidBrokerTestCase.DEFAULT_PORT, "test", "guest", "guest",false);
+        ConnectionSettings settings = new ConnectionSettings();
+        settings.setUsername("guest");
+        settings.setPassword("guest");
+        settings.setHost(getBroker().getHost());
+        settings.setPort(getBroker().getPort());
+        settings.setProtocol(getBroker().getTransport());
+        conn.connect(settings);
         Session sess = conn.createSession(0);
         sess.exchangeDeclare(exch, "direct", null, null);
         sess.queueDeclare(qname, null, null);
