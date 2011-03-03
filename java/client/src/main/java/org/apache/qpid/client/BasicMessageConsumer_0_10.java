@@ -19,7 +19,9 @@ package org.apache.qpid.client;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.apache.qpid.client.AMQDestination.AddressOption;
 import org.apache.qpid.client.AMQDestination.DestSyntax;
+import org.apache.qpid.client.failover.FailoverException;
 import org.apache.qpid.client.message.*;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.framing.AMQShortString;
@@ -507,6 +509,20 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
         else
         {
             return _exclusive;
+        }
+    }
+    
+    void cleanupQueue() throws AMQException, FailoverException
+    {
+        AMQDestination dest = this.getDestination();
+        if (dest.getDestSyntax() == AMQDestination.DestSyntax.ADDR)
+        {
+            if (dest.getDelete() == AddressOption.ALWAYS ||
+                dest.getDelete() == AddressOption.RECEIVER )
+            {
+                ((AMQSession_0_10) getSession()).getQpidSession().queueDelete(
+                        this.getDestination().getQueueName());
+            }
         }
     }
 }

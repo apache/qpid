@@ -844,4 +844,62 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
         assertNotNull(msg);
         assertEquals("A",((TextMessage)msg).getText());
     }
+    
+    public void testDeleteOptions() throws Exception
+    {
+        Session jmsSession = _connection.createSession(false,Session.AUTO_ACKNOWLEDGE);
+        MessageConsumer cons;
+        
+        // default (create never, assert never) -------------------
+        // create never --------------------------------------------
+        String addr1 = "ADDR:testQueue1;{create: always, delete: always}";
+        AMQDestination  dest = new AMQAnyDestination(addr1);
+        try
+        {
+            cons = jmsSession.createConsumer(dest);
+            cons.close();
+        }
+        catch(JMSException e)
+        {
+            fail("Exception should not be thrown. Exception thrown is : " + e);
+        }
+        
+        assertFalse("Queue not deleted as expected",(
+                (AMQSession_0_10)jmsSession).isQueueExist(dest,(QueueNode)dest.getSourceNode(), true));  
+        
+        
+        String addr2 = "ADDR:testQueue2;{create: always, delete: receiver}";
+        dest = new AMQAnyDestination(addr2);
+        try
+        {
+            cons = jmsSession.createConsumer(dest);
+            cons.close();
+        }
+        catch(JMSException e)
+        {
+            fail("Exception should not be thrown. Exception thrown is : " + e);
+        }
+        
+        assertFalse("Queue not deleted as expected",(
+                (AMQSession_0_10)jmsSession).isQueueExist(dest,(QueueNode)dest.getSourceNode(), true));  
+
+        
+        String addr3 = "ADDR:testQueue3;{create: always, delete: sender}";
+        dest = new AMQAnyDestination(addr3);
+        try
+        {
+            cons = jmsSession.createConsumer(dest);
+            MessageProducer prod = jmsSession.createProducer(dest);
+            prod.close();
+        }
+        catch(JMSException e)
+        {
+            fail("Exception should not be thrown. Exception thrown is : " + e);
+        }
+        
+        assertFalse("Queue not deleted as expected",(
+                (AMQSession_0_10)jmsSession).isQueueExist(dest,(QueueNode)dest.getSourceNode(), true));  
+
+        
+    }
 }
