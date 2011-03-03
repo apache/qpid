@@ -459,7 +459,7 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
 
     Message receiveBrowse() throws JMSException
     {
-        return receiveNoWait();
+        return receive(-1, false);
     }
 
     @Override public void rollbackPendingMessages()

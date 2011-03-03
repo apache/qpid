@@ -384,12 +384,16 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
 
     public Message receive(long l) throws JMSException
     {
+        return receive(l, false);
+    }
 
+    public Message receive(long l, boolean immediate) throws JMSException
+    {
         checkPreConditions();
 
         try
         {
-            acquireReceiving(false);
+            acquireReceiving(immediate);
         }
         catch (InterruptedException e)
         {
@@ -447,52 +451,7 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
 
     public Message receiveNoWait() throws JMSException
     {
-        checkPreConditions();
-
-        try
-        {
-            if (!acquireReceiving(true))
-            {
-                //If we couldn't acquire the receiving thread then return null.
-                // This will occur if failing over.
-                return null;
-            }
-        }
-        catch (InterruptedException e)
-        {
-            /*
-             *  This seems slightly shoddy but should never actually be executed
-             *  since we told acquireReceiving to return immediately and it shouldn't
-             *  block on anything.
-             */
-
-            return null;
-        }
-
-        _session.startDispatcherIfNecessary();
-
-        try
-        {
-            Object o = getMessageFromQueue(-1);
-            final AbstractJMSMessage m = returnMessageOrThrow(o);
-            if (m != null)
-            {
-                preApplicationProcessing(m);
-                postDeliver(m);
-            }
-
-            return m;
-        }
-        catch (InterruptedException e)
-        {
-            _logger.warn("Interrupted: " + e);
-
-            return null;
-        }
-        finally
-        {
-            releaseReceiving();
-        }
+        return receive(-1, true);
     }
 
     /**
