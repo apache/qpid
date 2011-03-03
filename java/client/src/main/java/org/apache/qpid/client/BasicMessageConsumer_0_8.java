@@ -88,4 +88,8 @@ public class BasicMessageConsumer_0_8 extends BasicMessageConsumer<UnprocessedMe
         return receive();
     }
 
+    void cleanupQueue() throws AMQException, FailoverException
+    {
+        
+    }
 }
