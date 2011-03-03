@@ -16,18 +16,23 @@
 # specific language governing permissions and limitations
 # under the License.
 #
+
 java.naming.factory.initial=org.apache.qpid.jndi.PropertiesFileInitialContextFactory
 java.naming.provider.url=${test.profiles}/test-provider.properties
 
 broker.version=0-9-1
-qpid.amqp.version=
-broker=vm
+qpid.amqp.version=0-9-1
+
 broker.clean=${test.profiles}/clean-dir ${build.data} ${project.root}/build/work
 broker.ready=Listening on TCP port
 broker.start=${test.profiles}/start-broker
 broker.kill=${test.profiles}/kill-broker
 broker.config=${project.root}/build/etc/config-systests.xml
+broker.persistent=false
+broker.clean.between.tests=false
 messagestore.class.name=org.apache.qpid.server.store.MemoryMessageStore
+
+qpid.transport.outgoing=org.apache.qpid.transport.network.io.IoNetworkTransport
 
 max_prefetch=1000
 qpid.dest_syntax=BURL
@@ -60,3 +65,4 @@ haltonerror=no
 exclude.modules=none
 
 profile.clustered=false
+profile=vm.0.10

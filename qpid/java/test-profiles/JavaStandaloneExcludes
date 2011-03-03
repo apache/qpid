@@ -53,3 +53,5 @@ org.apache.qpid.server.persistent.NoLocalAfterRecoveryTest#*
 // Excluding here does not reduce test coverage.
 org.apache.qpid.server.configuration.ServerConfigurationFileTest#*
 
+//QPID-1950 : Commit to test this failure. This can only be tested with non 0-10 VM brokers.
+org.apache.qpid.server.failover.MessageDisappearWithIOExceptionTest#*

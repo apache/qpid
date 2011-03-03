@@ -284,11 +284,6 @@ public class QpidBrokerTestCase extends QpidTestCase
     @Override
     protected void setUp() throws Exception
     {
-        if (isVmBroker())
-        {
-            Transport.registerOutgoingTransport(MinaNetworkTransport.class);
-        }
-
         if (!_configFile.exists())
         {
             fail("Unable to test without config file:" + _configFile);

@@ -52,26 +52,25 @@ org.apache.qpid.server.logging.SubscriptionLoggingTest#testSubscriptionSuspend
 // 0-10 Broker does not have a JMX connection MBean
 org.apache.qpid.management.jmx.ManagementActorLoggingTest#testConnectionCloseViaManagement
 
-// 0-10 has different ideas about clientid and ownership of queues
+// 0-10 has many different ideas
+// Some are about clientid and ownership of queues
 org.apache.qpid.server.queue.ModelTest#*
 
 // 0-10 is not supported by the MethodRegistry
 org.apache.qpid.test.unit.close.JavaServerCloseRaceConditionTest#*
 
 // QPID-2084 : this test needs more work for 0-10
-org.apache.qpid.test.unit.client.DynamicQueueExchangeCreateTest#*
+//org.apache.qpid.test.unit.client.DynamicQueueExchangeCreateTest#*
 
 //QPID-942 : Implemented Channel.Flow based Producer Side flow control to the Java Broker (not in CPP Broker)
 org.apache.qpid.server.queue.ProducerFlowControlTest#*
 
-//QPID-1950 : Commit to test this failure. This is a MINA only failure so it cannot be tested when using 010.
-org.apache.qpid.server.failover.MessageDisappearWithIOExceptionTest#*
-
 //QPID-2471 : Issues with 0-10 recovery
-org.apache.qpid.test.unit.ack.RecoverTest#testRecoverInAutoAckListener
-org.apache.qpid.test.unit.ack.FailoverBeforeConsumingRecoverTest#testRecoverInAutoAckListener
+//org.apache.qpid.test.unit.ack.RecoverTest#testRecoverInAutoAckListener
+//org.apache.qpid.test.unit.ack.FailoverBeforeConsumingRecoverTest#testRecoverInAutoAckListener
 
-// Temporarily disabling until properly investigated.
+// Temporarily disabling until properly investigated
+// Failover from inside onMessage stalls the Dispatcher restart
 org.apache.qpid.test.unit.publish.DirtyTransactedPublishTest#*
 
 //rollback with subscriptions does not work in 0-10 yet
@@ -81,6 +80,12 @@ org.apache.qpid.test.unit.ack.RecoverTest#testRecoverInAutoAckListener
 // Mina does not suopport idle timeouts
 org.apache.qpid.transport.network.mina.MinaNetworkTransportTest#testSetReadIdle
 org.apache.qpid.transport.network.mina.MinaNetworkTransportTest#testSetWriteIdle
+
+// This test uses 0-8 channel frames
+org.apache.qpid.test.unit.client.channelclose.ChannelCloseTest#*
+
+//QPID-1950 : Commit to test this failure. This can only be tested with non 0-10 VM brokers.
+org.apache.qpid.server.failover.MessageDisappearWithIOExceptionTest#*
 
 //Temporarily adding the following until the issues are sorted out.
 //Should probably raise JIRAs for them.

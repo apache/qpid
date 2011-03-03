@@ -292,7 +292,7 @@
   </target>
 
 
-  <property name="profile" value="default"/>
+  <property name="profile" value="vm.0.10"/>
   <property name="testprofile.file" value="${test.profiles}/${profile}.testprofile"/>
   
   <available file="${testprofile.file}" property="testprofile.file.present"/>
@@ -354,6 +354,7 @@
       <sysproperty key="messagestore.class.name" value="${messagestore.class.name}" />
       <sysproperty key="test.output" value="${module.results}"/>
       <sysproperty key="qpid.amqp.version" value="${qpid.amqp.version}"/>
+      <sysproperty key="qpid.transport.outgoing" value="${qpid.transport.outgoing}" />
 
       <syspropertyset>
         <propertyref prefix="test"/>

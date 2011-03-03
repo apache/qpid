@@ -46,9 +46,14 @@ org.apache.qpid.test.unit.ack.FailoverBeforeConsumingRecoverTest#testOderingWith
 
 org.apache.qpid.test.client.queue.LVQTest#*
 
-// Session resume is not supported in the Java client
+// Session resume is not supported in the (0-10) Java client
 org.apache.qpid.transport.ConnectionTest#testResumeNonemptyReplayBuffer
+org.apache.qpid.transport.ConnectionTest#testResumeEmptyReplayBuffer
 
 //QPID-2845: The queue policy types used by the C++ broker are not currently supported by the Java broker
 org.apache.qpid.test.client.queue.QueuePolicyTest#testRingPolicy
 org.apache.qpid.test.client.queue.QueuePolicyTest#testRejectPolicy
+
+// Mina does not suopport idle timeouts
+org.apache.qpid.transport.network.mina.MinaNetworkTransportTest#testSetReadIdle
+org.apache.qpid.transport.network.mina.MinaNetworkTransportTest#testSetWriteIdle
