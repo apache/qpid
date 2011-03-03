@@ -47,6 +47,8 @@ import org.apache.qpid.client.message.AMQMessageDelegateFactory;
 import org.apache.qpid.client.message.FieldTableSupport;
 import org.apache.qpid.client.message.MessageFactoryRegistry;
 import org.apache.qpid.client.message.UnprocessedMessage_0_10;
+import org.apache.qpid.client.messaging.address.Link;
+import org.apache.qpid.client.messaging.address.Link.Reliability;
 import org.apache.qpid.client.messaging.address.Node.ExchangeNode;
 import org.apache.qpid.client.messaging.address.Node.QueueNode;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
@@ -601,10 +603,16 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
                         (Map<? extends String, ? extends Object>) consumer.getDestination().getLink().getSubscription().getArgs());
             }
             
+            boolean acceptModeNone = false;
+            
+            if (consumer.getDestination().getLink() != null)
+            {
+                acceptModeNone = consumer.getDestination().getLink().getReliability() == Link.Reliability.UNRELIABLE;
+            }
             
             getQpidSession().messageSubscribe
                 (queueName.toString(), String.valueOf(tag),
-                 getAcknowledgeMode() == NO_ACKNOWLEDGE ? MessageAcceptMode.NONE : MessageAcceptMode.EXPLICIT,
+                 acceptModeNone ? MessageAcceptMode.NONE : MessageAcceptMode.EXPLICIT,
                  preAcquire ? MessageAcquireMode.PRE_ACQUIRED : MessageAcquireMode.NOT_ACQUIRED, null, 0, arguments,
                  consumer.isExclusive() ? Option.EXCLUSIVE : Option.NONE);
         }
