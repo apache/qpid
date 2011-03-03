@@ -36,7 +36,7 @@ public interface SystemConfig extends ConfiguredObject<SystemConfigType,SystemCo
 
     String getOSArchitecture();
 
-    void addBroker(BrokerConfig broker);
+    void setBrokerConfig(BrokerConfig broker);
 
-    void removeBroker(BrokerConfig broker);
+    BrokerConfig getBrokerConfig();
 }

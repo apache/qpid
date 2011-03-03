@@ -96,7 +96,6 @@ public class MessageStoreTool
 
     public static void main(String[] args) throws Configuration.InitException
     {
-
         MessageStoreTool tool = new MessageStoreTool(args);
 
         tool.start();
@@ -124,16 +123,16 @@ public class MessageStoreTool
         _config.processCommandline(args);
     }
 
-
+    @SuppressWarnings("static-access")
     private void setOptions()
     {
         Option help = new Option("h", "help", false, "print this message");
         Option version = new Option("v", "version", false, "print the version information and exit");
         Option configFile =
                 OptionBuilder.withArgName("file").hasArg()
-                        .withDescription("use given configuration file By "
-                                         + "default looks for a file named "
-                                         + Configuration.DEFAULT_CONFIG_FILE + " in " + Configuration.QPID_HOME)
+                        .withDescription("use given configuration file By " +
+                                         "default looks for a file named " +
+                                         Configuration.DEFAULT_CONFIG_FILE + " in " + Configuration.QPID_HOME)
                         .withLongOpt("config")
                         .create("c");
 
@@ -192,11 +191,10 @@ public class MessageStoreTool
 
         if (_initialised)
         {
-            ApplicationRegistry.remove(1);
+            ApplicationRegistry.remove();
         }
 
         _console.println("...exiting");
-
         _console.close();
     }
 
@@ -218,7 +216,6 @@ public class MessageStoreTool
         }
 
         _console.println("");
-
         _console.println(BOILER_PLATE);
 
         runCLI();
@@ -227,7 +224,6 @@ public class MessageStoreTool
     private void setup()
     {
         loadDefaultVirtualHosts();
-
         loadCommands();
 
         _state.clearAll();
@@ -236,7 +232,8 @@ public class MessageStoreTool
     private void loadCommands()
     {
         _commands.clear();
-        //todo Dynamically load the classes that exis in com.redhat.etp.qpid.commands
+ 
+        // TODO Dynamically load the classes that exis in com.redhat.etp.qpid.commands
         _commands.put("close", new Clear(this));
         _commands.put("copy", new Copy(this));
         _commands.put("dump", new Dump(this));
@@ -252,14 +249,13 @@ public class MessageStoreTool
 
     private void loadDefaultVirtualHosts()
     {
-        final File configFile = _config.getConfigFile();
+        File configFile = _config.getConfigFile();
 
         loadVirtualHosts(configFile);
     }
 
     private void loadVirtualHosts(File configFile)
     {
-
         if (!configFile.exists())
         {
             _devlog.error("Config file not found:" + configFile.getAbsolutePath());
@@ -273,11 +269,8 @@ public class MessageStoreTool
         try
         {
             ConfigurationFileApplicationRegistry registry = new ConfigurationFileApplicationRegistry(configFile);
-
-            ApplicationRegistry.remove(1);
-
+            ApplicationRegistry.remove();
             ApplicationRegistry.initialise(registry);
-
             checkMessageStores();
             _initialised = true;
         }
@@ -291,8 +284,6 @@ public class MessageStoreTool
             _console.println("Unable to load configuration due to: " + e.getMessage());
             e.printStackTrace();
         }
-
-
     }
 
     private void checkMessageStores()
@@ -304,8 +295,8 @@ public class MessageStoreTool
         {
             if (vhost.getMessageStore() instanceof MemoryMessageStore)
             {
-                _console.println("WARNING: Virtualhost '" + vhost.getName() + "' is using a MemoryMessageStore. "
-                                 + "Changes will not persist.");
+                _console.println("WARNING: Virtualhost '" + vhost.getName() + "' is using a MemoryMessageStore. " +
+                                 "Changes will not persist.");
                 warning = true;
             }
         }
@@ -313,8 +304,8 @@ public class MessageStoreTool
         if (warning)
         {
             _console.println("");
-            _console.println("Please ensure you are using the correct config file currently using '"
-                             + _config.getConfigFile().getAbsolutePath() + "'");
+            _console.println("Please ensure you are using the correct config file currently using '" +
+                             _config.getConfigFile().getAbsolutePath() + "'");
             _console.println("New config file can be specifed by 'load <config file>' or -c on the commandline.");
             _console.println("");
         }
@@ -353,7 +344,6 @@ public class MessageStoreTool
         _console.print(prompt());
     }
 
-
     /**
      * Execute a script (batch mode).
      *
@@ -361,7 +351,7 @@ public class MessageStoreTool
      */
     protected void runScripts(String script)
     {
-        //Store Current State
+        // Store Current State
         boolean oldBatch = _batchMode;
         CommandParser oldParser = _console.getCommandParser();
         setBatchMode(true);
@@ -379,7 +369,7 @@ public class MessageStoreTool
             _devlog.error("Script not found: '" + script + "' due to:" + e.getMessage());
         }
 
-        //Restore previous state
+        // Restore previous state
         _console.setCommandParser(oldParser);
         setBatchMode(oldBatch);
     }
@@ -424,7 +414,6 @@ public class MessageStoreTool
         }
     }
 
-
     /**
      * Displays usage info.
      */
@@ -435,13 +424,10 @@ public class MessageStoreTool
         System.out.println("       [-c <broker config file>] : Defaults to \"$QPID_HOME/etc/config.xml\"");
     }
 
-
     /**
      * This class is used to store the current state of the tool.
      *
      * This is then interrogated by the various commands to augment their behaviour.
-     *
-     *
      */
     public static class State
     {
@@ -449,10 +435,6 @@ public class MessageStoreTool
         private AMQQueue _queue = null;
         private Exchange _exchange = null;
         private java.util.List<Long> _msgids = null;
-
-        public State()
-        {
-        }
 
         public void setQueue(AMQQueue queue)
         {
@@ -514,7 +496,6 @@ public class MessageStoreTool
 
             return status.toString();
         }
-
 
         public String printMessages()
         {
@@ -635,7 +616,6 @@ public class MessageStoreTool
                     _msgids.add(Long.parseLong(next));
                 }
             }
-
         }
 
         public void setMessages(java.util.List<Long> msgids)
@@ -647,6 +627,5 @@ public class MessageStoreTool
         {
             return _msgids;
         }
-    }//Class State
-
-}//Class MessageStoreTool
+    }
+}

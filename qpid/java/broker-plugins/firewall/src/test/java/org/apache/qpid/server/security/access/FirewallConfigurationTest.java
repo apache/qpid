@@ -45,7 +45,7 @@ public class FirewallConfigurationTest extends InternalBrokerBaseCase
         ApplicationRegistry reg = new ConfigurationFileApplicationRegistry(mainFile);
         try
         {
-            ApplicationRegistry.initialise(reg, 1);
+            ApplicationRegistry.initialise(reg);
 
             // Test config
             assertFalse(reg.getSecurityManager().accessVirtualhost("test", new InetSocketAddress("127.0.0.1", 65535)));
@@ -53,7 +53,7 @@ public class FirewallConfigurationTest extends InternalBrokerBaseCase
         }
         finally
         {
-            ApplicationRegistry.remove(1);
+            ApplicationRegistry.remove();
         }
     }
 
@@ -118,14 +118,14 @@ public class FirewallConfigurationTest extends InternalBrokerBaseCase
         ApplicationRegistry reg = new ConfigurationFileApplicationRegistry(mainFile);
         try
         {
-            ApplicationRegistry.initialise(reg, 1);
+            ApplicationRegistry.initialise(reg);
 
             // Test config
             assertFalse(reg.getSecurityManager().accessVirtualhost("test", new InetSocketAddress("127.0.0.1", 65535)));
         }
         finally
         {
-            ApplicationRegistry.remove(1);
+            ApplicationRegistry.remove();
         }
     }
 
@@ -141,7 +141,7 @@ public class FirewallConfigurationTest extends InternalBrokerBaseCase
         ApplicationRegistry reg = new ConfigurationFileApplicationRegistry(mainFile);
         try
         {
-            ApplicationRegistry.initialise(reg, 1);
+            ApplicationRegistry.initialise(reg);
 
             // Test config
             assertFalse(reg.getSecurityManager().accessVirtualhost("test", new InetSocketAddress("127.0.0.1", 65535)));
@@ -155,7 +155,7 @@ public class FirewallConfigurationTest extends InternalBrokerBaseCase
         }
         finally
         {
-            ApplicationRegistry.remove(1);
+            ApplicationRegistry.remove();
         }
     }
 
@@ -219,7 +219,7 @@ public class FirewallConfigurationTest extends InternalBrokerBaseCase
         ApplicationRegistry reg = new ConfigurationFileApplicationRegistry(mainFile);
         try
         {
-            ApplicationRegistry.initialise(reg, 1);
+            ApplicationRegistry.initialise(reg);
 
             // Test config
             assertFalse(reg.getSecurityManager().accessVirtualhost("test", new InetSocketAddress("127.0.0.1", 65535)));
@@ -256,7 +256,7 @@ public class FirewallConfigurationTest extends InternalBrokerBaseCase
         }
         finally
         {
-            ApplicationRegistry.remove(1);
+            ApplicationRegistry.remove();
         }
     }
 
@@ -346,13 +346,20 @@ public class FirewallConfigurationTest extends InternalBrokerBaseCase
 
         // Load config
         ApplicationRegistry reg = new ConfigurationFileApplicationRegistry(mainFile);
-        ApplicationRegistry.initialise(reg, 1);
-
-        // Test config
-        VirtualHostRegistry virtualHostRegistry = reg.getVirtualHostRegistry();
-        VirtualHost virtualHost = virtualHostRegistry.getVirtualHost("test");
-
-        assertEquals("Incorrect virtualhost count", 1, virtualHostRegistry.getVirtualHosts().size());
-        assertEquals("Incorrect virtualhost name", "test", virtualHost.getName());
+        try
+        {
+            ApplicationRegistry.initialise(reg);
+    
+            // Test config
+            VirtualHostRegistry virtualHostRegistry = reg.getVirtualHostRegistry();
+            VirtualHost virtualHost = virtualHostRegistry.getVirtualHost("test");
+    
+            assertEquals("Incorrect virtualhost count", 1, virtualHostRegistry.getVirtualHosts().size());
+            assertEquals("Incorrect virtualhost name", "test", virtualHost.getName());
+        }
+        finally
+        {
+            ApplicationRegistry.remove();
+        }
     }
 }

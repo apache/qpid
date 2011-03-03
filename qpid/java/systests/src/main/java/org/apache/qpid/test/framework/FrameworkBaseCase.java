@@ -252,24 +252,6 @@ public class FrameworkBaseCase extends QpidBrokerTestCase implements FrameworkTe
     }
 
     /**
-     * Sets the currently live in-vm broker.
-     *
-     * @param i The currently live in-vm broker.
-     */
-    public void setLiveBroker(int i)
-    { }
-
-    /**
-     * Reports the currently live in-vm broker.
-     *
-     * @return The currently live in-vm broker.
-     */
-    public int getLiveBroker()
-    {
-        return 0;
-    }
-
-    /**
      * Accepts a failure mechanism.
      *
      * @param failureMechanism The failure mechanism.

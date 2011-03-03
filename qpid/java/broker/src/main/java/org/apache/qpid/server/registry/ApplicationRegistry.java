@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.registry;
 
-import java.net.InetSocketAddress;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -41,7 +40,6 @@ import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.logging.CompositeStartupMessageLogger;
 import org.apache.qpid.server.logging.Log4jMessageLogger;
 import org.apache.qpid.server.logging.RootMessageLogger;
-import org.apache.qpid.server.logging.AbstractRootMessageLogger;
 import org.apache.qpid.server.logging.SystemOutMessageLogger;
 import org.apache.qpid.server.logging.actors.BrokerActor;
 import org.apache.qpid.server.logging.actors.CurrentActor;
@@ -60,16 +58,22 @@ import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 import org.apache.qpid.transport.network.NetworkTransport;
 
 /**
- * An abstract application registry that provides access to configuration information and handles the
+ * An abstract application registry.
+ *
+ * This class provides access to configuration information and handles the
  * construction and caching of configurable objects.
- * <p/>
- * Subclasses should handle the construction of the "registered objects" such as the exchange registry.
+ * <p>
+ * Subclasses should handle the construction of the <em>registered objects</em>
+ * such as the exchange registry.
+ *
+ * @see ConfigurationFileApplicationRegistry
+ * @see TestApplicationRegistry
  */
 public abstract class ApplicationRegistry implements IApplicationRegistry
 {
     protected static final Logger _logger = Logger.getLogger(ApplicationRegistry.class);
 
-    private static Map<Integer, IApplicationRegistry> _instanceMap = new HashMap<Integer, IApplicationRegistry>();
+    private static IApplicationRegistry _instance = null;
 
     protected final ServerConfiguration _configuration;
 
@@ -114,53 +118,39 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
     {
         public void run()
         {
-            removeAll();
+            remove();
         }
     }
 
     public static void initialise(IApplicationRegistry instance) throws Exception
     {
-        initialise(instance, DEFAULT_INSTANCE);
-    }
+        _logger.info("Initialising Application Registry(" + instance + ")");
+        _instance = instance;
 
-    @SuppressWarnings("finally")
-    public static void initialise(IApplicationRegistry instance, int instanceID) throws Exception
-    {
-        if (instance != null)
+        final ConfigStore store = ConfigStore.newInstance();
+        store.setRoot(new SystemConfigImpl(store));
+        instance.setConfigStore(store);
+
+        BrokerConfig broker = new BrokerConfigAdapter(instance);
+
+        SystemConfig system = (SystemConfig) store.getRoot();
+        system.setBrokerConfig(broker);
+        instance.setBrokerConfig(broker);
+
+        try
         {
-            _logger.info("Initialising Application Registry(" + instance + "):" + instanceID);
-            _instanceMap.put(instanceID, instance);
-
-            final ConfigStore store = ConfigStore.newInstance();
-            store.setRoot(new SystemConfigImpl(store));
-            instance.setConfigStore(store);
-
-            BrokerConfig broker = new BrokerConfigAdapter(instance);
-
-            SystemConfig system = (SystemConfig) store.getRoot();
-            system.addBroker(broker);
-            instance.setBroker(broker);
-
+            instance.initialise();
+        }
+        catch (Exception e)
+        {
             try
             {
-                instance.initialise(instanceID);
+                remove();
             }
-            catch (Exception e)
+            finally
             {
-                _instanceMap.remove(instanceID);
-                try
-                {
-                    system.removeBroker(broker);
-                }
-                finally
-                {
-                    throw e;
-                }
+                throw e;
             }
-        }
-        else
-        {
-            remove(instanceID);
         }
     }
 
@@ -176,57 +166,31 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
     public static boolean isConfigured()
     {
-        return isConfigured(DEFAULT_INSTANCE);
-    }
-
-    public static boolean isConfigured(int instanceID)
-    {
-        return _instanceMap.containsKey(instanceID);
+        return _instance !=  null;
     }
 
     /** Method to cleanly shutdown the default registry running in this JVM */
     public static void remove()
     {
-        remove(DEFAULT_INSTANCE);
-    }
-
-    /**
-     * Method to cleanly shutdown specified registry running in this JVM
-     *
-     * @param instanceID the instance to shutdown
-     */
-    public static void remove(int instanceID)
-    {
         try
         {
-            IApplicationRegistry instance = _instanceMap.get(instanceID);
-            if (instance != null)
+            if (isConfigured())
             {
                 if (_logger.isInfoEnabled())
                 {
-                    _logger.info("Shutting down ApplicationRegistry(" + instanceID + "):" + instance);
+                    _logger.info("Shutting down ApplicationRegistry (" + _instance + ")");
                 }
-                instance.close();
-                instance.getBroker().getSystem().removeBroker(instance.getBroker());
+                _instance.setBrokerConfig(null);
+                _instance.close();
             }
         }
         catch (Exception e)
         {
-            _logger.error("Error shutting down Application Registry(" + instanceID + "): " + e, e);
+            _logger.error("Error shutting down ApplicationRegistry (" + _instance + ") " + e.getMessage(), e);
         }
         finally
         {
-            _instanceMap.remove(instanceID);
-        }
-    }
-
-    /** Method to cleanly shutdown all registries currently running in this JVM */
-    public static void removeAll()
-    {
-        Object[] keys = _instanceMap.keySet().toArray();
-        for (Object k : keys)
-        {
-            remove((Integer) k);
+            _instance = null;
         }
     }
 
@@ -251,11 +215,11 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
         _configuration.initialise();
     }
 
-    public void initialise(int instanceID) throws Exception
+    public void initialise() throws Exception
     {
         //Create the RootLogger to be used during broker operation
         _rootMessageLogger = new Log4jMessageLogger(_configuration);
-        _registryName = String.valueOf(instanceID);
+        _registryName = _instance.getBrokerId().toString();
 
         //Create the composite (log4j+SystemOut MessageLogger to be used during startup
         RootMessageLogger[] messageLoggers = {new SystemOutMessageLogger(), _rootMessageLogger};
@@ -323,23 +287,13 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
     public static IApplicationRegistry getInstance()
     {
-        return getInstance(DEFAULT_INSTANCE);
-    }
-
-    public static IApplicationRegistry getInstance(int instanceID)
-    {
-        synchronized (IApplicationRegistry.class)
+        if (!isConfigured())
         {
-            IApplicationRegistry instance = _instanceMap.get(instanceID);
-
-            if (instance == null)
-            {
-                throw new IllegalStateException("Application Registry (" + instanceID + ") not created");
-            }
-            else
-            {
-                return instance;
-            }
+            throw new IllegalStateException("Application Registry not created");
+        }
+        else
+        {
+            return _instance;
         }
     }
 
@@ -479,12 +433,12 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
         return _qmfService;
     }
 
-    public BrokerConfig getBroker()
+    public BrokerConfig getBrokerConfig()
     {
         return _broker;
     }
 
-    public void setBroker(final BrokerConfig broker)
+    public void setBrokerConfig(final BrokerConfig broker)
     {
         _broker = broker;
     }
@@ -493,7 +447,7 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
     {
         VirtualHostImpl virtualHost = new VirtualHostImpl(this, vhostConfig);
         _virtualHostRegistry.registerVirtualHost(virtualHost);
-        getBroker().addVirtualHost(virtualHost);
+        getBrokerConfig().addVirtualHost(virtualHost);
         return virtualHost;
     }
 }

@@ -195,7 +195,7 @@ public class VirtualHostImpl implements VirtualHost
 		}
 		
         _appRegistry = appRegistry;
-        _broker = _appRegistry.getBroker();
+        _broker = _appRegistry.getBrokerConfig();
         _configuration = hostConfig;
         _name = _configuration.getName();
 

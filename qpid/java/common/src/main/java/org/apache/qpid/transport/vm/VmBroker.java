@@ -21,15 +21,8 @@
 package org.apache.qpid.transport.vm;
 
 import java.lang.reflect.Method;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
 
 import org.apache.qpid.BrokerOptions;
-import org.apache.qpid.protocol.ReceiverFactory;
-import org.apache.qpid.transport.ConnectionSettings;
-import org.apache.qpid.transport.network.NetworkTransport;
-import org.apache.qpid.transport.network.Transport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,7 +36,6 @@ public class VmBroker
     private static final Logger _logger = LoggerFactory.getLogger(VmBroker.class);
     
     private static Object _instance = null;
-    private static BrokerOptions _options = null;
     
     public static void createVMBroker() throws VMBrokerCreationException
     {

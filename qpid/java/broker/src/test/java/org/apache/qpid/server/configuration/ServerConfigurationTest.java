@@ -1040,7 +1040,7 @@ public class ServerConfigurationTest extends InternalBrokerBaseCase
 
         // Load config
         ApplicationRegistry reg = new ConfigurationFileApplicationRegistry(mainFile);
-        ApplicationRegistry.initialise(reg, 1);
+        ApplicationRegistry.initialise(reg);
 
         // Test config
         VirtualHostRegistry virtualHostRegistry = reg.getVirtualHostRegistry();
@@ -1072,7 +1072,7 @@ public class ServerConfigurationTest extends InternalBrokerBaseCase
 
         // Load config
         ApplicationRegistry reg = new ConfigurationFileApplicationRegistry(mainFile);
-        ApplicationRegistry.initialise(reg, 1);
+        ApplicationRegistry.initialise(reg);
 
         // Test config
         VirtualHostRegistry virtualHostRegistry = reg.getVirtualHostRegistry();
@@ -1106,7 +1106,7 @@ public class ServerConfigurationTest extends InternalBrokerBaseCase
 
         // Load config
         ApplicationRegistry reg = new ConfigurationFileApplicationRegistry(mainFile);
-        ApplicationRegistry.initialise(reg, 1);
+        ApplicationRegistry.initialise(reg);
 
         // Test config
         VirtualHostRegistry virtualHostRegistry = reg.getVirtualHostRegistry();
@@ -1150,7 +1150,7 @@ public class ServerConfigurationTest extends InternalBrokerBaseCase
         try
         {       
             ApplicationRegistry reg = new ConfigurationFileApplicationRegistry(mainFile);
-            ApplicationRegistry.initialise(reg, 1);
+            ApplicationRegistry.initialise(reg);
             fail("Different virtualhost XML configurations not allowed");
         }
         catch (ConfigurationException ce)
@@ -1184,7 +1184,7 @@ public class ServerConfigurationTest extends InternalBrokerBaseCase
         try
         {
             ApplicationRegistry reg = new ConfigurationFileApplicationRegistry(mainFile);
-            ApplicationRegistry.initialise(reg, 1);
+            ApplicationRegistry.initialise(reg);
             fail("Multiple virtualhost XML configurations not allowed");
         }
         catch (ConfigurationException ce)

@@ -50,8 +50,7 @@ public class CauseFailureInVM implements CauseFailure
         // Check that the test is really using in-vm brokers.
         if (!inVMTest.usingInVmBroker())
         {
-            throw new RuntimeException(
-                "Cannot create in-vm broker failure mechanism for a test that is not using in-vm brokers.");
+            throw new RuntimeException("Cannot create in-vm broker failure mechanism for a test that is not using in-vm brokers.");
         }
 
         this.inVMTest = inVMTest;
@@ -62,9 +61,11 @@ public class CauseFailureInVM implements CauseFailure
      */
     public void causeFailure()
     {
-        int liveBroker = inVMTest.getLiveBroker();
-
+        if (!inVMTest.usingInVmBroker())
+        {
+            throw new RuntimeException("Test is not using in-vm brokers.");
+        }
+ 
         VmBroker.killVMBroker();
-        ApplicationRegistry.remove(liveBroker);
     }
 }

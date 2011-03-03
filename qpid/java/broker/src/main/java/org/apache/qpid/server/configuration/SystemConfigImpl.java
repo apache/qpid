@@ -22,8 +22,6 @@
 package org.apache.qpid.server.configuration;
 
 import java.util.UUID;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
@@ -35,10 +33,8 @@ public class SystemConfigImpl implements SystemConfig
 
     private final UUID _id;
     private String _name;
-
     private final String _host;
-
-    private final Map<UUID, BrokerConfig> _brokers = new ConcurrentHashMap<UUID, BrokerConfig>();
+    private BrokerConfig _broker;
 
     private final long _createTime = System.currentTimeMillis();
     private final ConfigStore _store;
@@ -60,7 +56,7 @@ public class SystemConfigImpl implements SystemConfig
         }
         catch (UnknownHostException e)
         {
-            host="localhost";
+            host = "localhost";
         }
         _host = host;
     }
@@ -115,17 +111,16 @@ public class SystemConfigImpl implements SystemConfig
         return false;
     }
 
-    public void addBroker(final BrokerConfig broker)
+    public void setBrokerConfig(final BrokerConfig broker)
     {
         broker.setSystem(this);
         _store.addConfiguredObject(broker);
-        _brokers.put(broker.getId(), broker);
+        _broker = broker;
     }
 
-    public void removeBroker(final BrokerConfig broker)
+    public BrokerConfig getBrokerConfig()
     {
-        _brokers.remove(broker.getId());
-        _store.removeConfiguredObject(broker);
+        return _broker;
     }
 
     public long getCreateTime()

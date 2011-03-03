@@ -231,7 +231,7 @@ public class BrokerInstance
                     ReceiverFactory factory = new BrokerReceiverFactory(host, supported);
                     transport.accept(settings, factory, sslFactory);
 
-                    ApplicationRegistry.getInstance().registerTransport(port, transport);
+                    config.registerTransport(port, transport);
                     CurrentActor.get().message(BrokerMessages.LISTENING(protocol.toUpperCase(), port));
                 }
             }
@@ -245,7 +245,7 @@ public class BrokerInstance
                 ReceiverFactory factory = new BrokerReceiverFactory(host, EnumSet.allOf(VERSION.class));
                 transport.accept(settings, factory, sslFactory);
                 
-                ApplicationRegistry.getInstance().registerTransport(serverConfig.getSSLPort(), transport);
+                config.registerTransport(serverConfig.getSSLPort(), transport);
                 CurrentActor.get().message(BrokerMessages.LISTENING(protocol.toUpperCase() + "/SSL", serverConfig.getSSLPort()));
             }
 

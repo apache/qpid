@@ -46,7 +46,7 @@ public interface IApplicationRegistry
      * initialise in the constructor will lead to failures since the registry reference will not have been set.
      * @param instanceID the instanceID that we can use to identify this AR.
      */
-    void initialise(int instanceID) throws Exception;
+    void initialise() throws Exception;
 
     /**
      * Shutdown this Registry
@@ -85,9 +85,9 @@ public interface IApplicationRegistry
 
     QMFService getQMFService();
 
-    void setBroker(BrokerConfig broker);
+    void setBrokerConfig(BrokerConfig broker);
 
-    BrokerConfig getBroker();
+    BrokerConfig getBrokerConfig();
 
     VirtualHost createVirtualHost(VirtualHostConfiguration vhostConfig) throws Exception;
 

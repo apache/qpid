@@ -48,20 +48,6 @@ public interface BrokerLifecycleAware
     public boolean usingInVmBroker();
 
     /**
-     * Sets the currently live in-vm broker.
-     *
-     * @param i The currently live in-vm broker.
-     */
-    public void setLiveBroker(int i);
-
-    /**
-     * Reports the currently live in-vm broker.
-     *
-     * @return The currently live in-vm broker.
-     */
-    public int getLiveBroker();
-
-    /**
      * Accepts a failure mechanism.
      *
      * @param failureMechanism The failure mechanism.

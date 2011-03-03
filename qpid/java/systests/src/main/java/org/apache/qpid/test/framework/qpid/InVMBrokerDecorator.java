@@ -88,7 +88,6 @@ public class InVMBrokerDecorator extends WrappedSuiteTestDecorator
                             // Ensure that the in-vm broker is created.
                             try
                             {
-                                ApplicationRegistry.getInstance(1);
                                 VmBroker.createVMBroker();
                             }
                             catch (VMBrokerCreationException e)
@@ -104,7 +103,6 @@ public class InVMBrokerDecorator extends WrappedSuiteTestDecorator
                         {
                             // Ensure that the in-vm broker is cleaned up so that the next test starts afresh.
                             VmBroker.killVMBroker();
-                            ApplicationRegistry.remove(1);
                         }
                     });
 
@@ -114,7 +112,6 @@ public class InVMBrokerDecorator extends WrappedSuiteTestDecorator
                 {
                     BrokerLifecycleAware inVMTest = (BrokerLifecycleAware) test;
                     inVMTest.setInVmBrokers();
-                    inVMTest.setLiveBroker(1);
                     inVMTest.setFailureMechanism(new CauseFailureInVM(inVMTest));
                 }
             }

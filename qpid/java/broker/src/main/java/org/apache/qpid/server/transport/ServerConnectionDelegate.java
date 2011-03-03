@@ -38,7 +38,8 @@ public class ServerConnectionDelegate extends ServerDelegate
 
     public ServerConnectionDelegate(IApplicationRegistry appRegistry, String localFQDN)
     {
-        this(new HashMap<String,Object>(Collections.singletonMap("qpid.federation_tag",appRegistry.getBroker().getFederationTag())), Collections.singletonList((Object)"en_US"), appRegistry, localFQDN);
+        this(Collections.<String, Object>singletonMap("qpid.federation_tag", appRegistry.getBrokerConfig().getFederationTag()),
+                Collections.singletonList((Object) "en_US"), appRegistry, localFQDN);
     }
 
 
