@@ -152,7 +152,7 @@ Broker::Options::Options(const std::string& name) :
         ("tcp-nodelay", optValue(tcpNoDelay), "Set TCP_NODELAY on TCP connections")
         ("require-encryption", optValue(requireEncrypted), "Only accept connections that are encrypted")
         ("known-hosts-url", optValue(knownHosts, "URL or 'none'"), "URL to send as 'known-hosts' to clients ('none' implies empty list)")
-        ("sasl-config", optValue(saslConfigPath, "FILE"), "gets sasl config from nonstandard location")
+        ("sasl-config", optValue(saslConfigPath, "DIR"), "gets sasl config info from nonstandard location")
         ("max-session-rate", optValue(maxSessionRate, "MESSAGES/S"), "Sets the maximum message rate per session (0=unlimited)")
         ("async-queue-events", optValue(asyncQueueEvents, "yes|no"), "Set Queue Events async, used for services like replication")
         ("default-flow-stop-threshold", optValue(queueFlowStopRatio, "%MESSAGES"), "Queue capacity level at which flow control is activated.")
