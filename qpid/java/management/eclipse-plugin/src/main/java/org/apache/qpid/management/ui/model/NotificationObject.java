@@ -61,7 +61,7 @@ public class NotificationObject
     {
         if (_source instanceof ObjectName)
         {
-            return ((ObjectName)_source).getKeyProperty("name");
+            return unquote(((ObjectName)_source).getKeyProperty("name"));
         }
         
         return null;
@@ -71,12 +71,31 @@ public class NotificationObject
     {
         if (_source instanceof ObjectName)
         {
-            return ((ObjectName)_source).getKeyProperty(VIRTUAL_HOST);
+            return unquote(((ObjectName)_source).getKeyProperty(VIRTUAL_HOST));
         }
         
         return null;
     }
-    
+
+    private String unquote(String value)
+    {
+        if(value != null)
+        {
+            try
+            {
+                //if the value is quoted in the ObjectName, unquote it
+                value = ObjectName.unquote(value);
+            }
+            catch(IllegalArgumentException e)
+            {
+                //ignore, this just means the value is not quoted
+                //and can be left unchanged
+            }
+        }
+
+        return value;
+    }
+
     public String getMessage()
     {
         return _message;
