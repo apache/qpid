@@ -74,6 +74,9 @@ org.apache.qpid.test.unit.publish.DirtyTransactedPublishTest#*
 org.apache.qpid.test.client.RollbackOrderTest#testOrderingAfterRollbackOnMessage
 org.apache.qpid.test.unit.ack.RecoverTest#testRecoverInAutoAckListener
 
+// This test uses 0-8 channel frames
+org.apache.qpid.test.unit.client.channelclose.ChannelCloseTest#*
+
 //Temporarily adding the following until the issues are sorted out.
 //Should probably raise JIRAs for them.
 org.apache.qpid.transport.network.mina.MINANetworkDriverTest#*
