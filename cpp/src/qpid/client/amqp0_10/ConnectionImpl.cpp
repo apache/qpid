@@ -39,6 +39,7 @@ using qpid::types::Variant;
 using qpid::types::VAR_LIST;
 using qpid::framing::Uuid;
 
+namespace {
 void convert(const Variant::List& from, std::vector<std::string>& to)
 {
     for (Variant::List::const_iterator i = from.begin(); i != from.end(); ++i) {
@@ -46,19 +47,6 @@ void convert(const Variant::List& from, std::vector<std::string>& to)
     }
 }
 
-template <class T> bool setIfFound(const Variant::Map& map, const std::string& key, T& value)
-{
-    Variant::Map::const_iterator i = map.find(key);
-    if (i != map.end()) {
-        value = (T) i->second;
-        QPID_LOG(debug, "option " << key << " specified as " << i->second);
-        return true;
-    } else {
-        return false;
-    }
-}
-
-namespace {
 std::string asString(const std::vector<std::string>& v) {
     std::stringstream os;
     os << "[";
@@ -69,47 +57,6 @@ std::string asString(const std::vector<std::string>& v) {
     os << "]";
     return os.str();
 }
-}
-
-template <> bool setIfFound< std::vector<std::string> >(const Variant::Map& map,
-                                            const std::string& key,
-                                            std::vector<std::string>& value)
-{
-    Variant::Map::const_iterator i = map.find(key);
-    if (i != map.end()) {
-        value.clear();
-        if (i->second.getType() == VAR_LIST) {
-            convert(i->second.asList(), value);
-        } else {
-            value.push_back(i->second.asString());
-        }
-        QPID_LOG(debug, "option " << key << " specified as " << asString(value));
-        return true;
-    } else {
-        return false;
-    }
-}
-
-void convert(const Variant::Map& from, ConnectionSettings& to)
-{
-    setIfFound(from, "username", to.username);
-    setIfFound(from, "password", to.password);
-    setIfFound(from, "sasl-mechanism", to.mechanism);
-    setIfFound(from, "sasl-service", to.service);
-    setIfFound(from, "sasl-min-ssf", to.minSsf);
-    setIfFound(from, "sasl-max-ssf", to.maxSsf);
-
-    setIfFound(from, "heartbeat", to.heartbeat);
-    setIfFound(from, "tcp-nodelay", to.tcpNoDelay);
-
-    setIfFound(from, "locale", to.locale);
-    setIfFound(from, "max-channels", to.maxChannels);
-    setIfFound(from, "max-frame-size", to.maxFrameSize);
-    setIfFound(from, "bounds", to.bounds);
-
-    setIfFound(from, "transport", to.protocol);
-
-    setIfFound(from, "ssl-cert-name", to.sslCertName);
 }
 
 ConnectionImpl::ConnectionImpl(const std::string& url, const Variant::Map& options) :
@@ -124,27 +71,64 @@ ConnectionImpl::ConnectionImpl(const std::string& url, const Variant::Map& optio
 
 void ConnectionImpl::setOptions(const Variant::Map& options)
 {
-    sys::Mutex::ScopedLock l(lock);
-    convert(options, settings);
-    setIfFound(options, "reconnect", reconnect);
-    setIfFound(options, "reconnect-timeout", timeout);
-    setIfFound(options, "reconnect-limit", limit);
-    int64_t reconnectInterval;
-    if (setIfFound(options, "reconnect-interval", reconnectInterval)) {
-        minReconnectInterval = maxReconnectInterval = reconnectInterval;
-    } else {
-        setIfFound(options, "reconnect-interval-min", minReconnectInterval);
-        setIfFound(options, "reconnect-interval-max", maxReconnectInterval);
+    for (Variant::Map::const_iterator i = options.begin(); i != options.end(); ++i) {
+        setOption(i->first, i->second);
     }
-    setIfFound(options, "reconnect-urls", urls);
-    setIfFound(options, "x-reconnect-on-limit-exceeded", reconnectOnLimitExceeded);
 }
 
 void ConnectionImpl::setOption(const std::string& name, const Variant& value)
 {
-    Variant::Map options;
-    options[name] = value;
-    setOptions(options);
+    sys::Mutex::ScopedLock l(lock);
+    if (name == "reconnect") {
+        reconnect = value;
+    } else if (name == "reconnect-timeout" || name == "reconnect_timeout") {
+        timeout = value;
+    } else if (name == "reconnect-limit" || name == "reconnect_limit") {
+        limit = value;
+    } else if (name == "reconnect-interval" || name == "reconnect_interval") {
+        maxReconnectInterval = minReconnectInterval = value;
+    } else if (name == "reconnect-interval-min" || name == "reconnect_interval_min") {
+        minReconnectInterval = value;
+    } else if (name == "reconnect-interval-max" || name == "reconnect_interval_max") {
+        maxReconnectInterval = value;
+    } else if (name == "reconnect-urls" || name == "reconnect_urls") {
+        if (value.getType() == VAR_LIST) {
+            convert(value.asList(), urls);
+        } else {
+            urls.push_back(value.asString());
+        }
+    } else if (name == "username") {
+        settings.username = value.asString();
+    } else if (name == "password") {
+        settings.password = value.asString();
+    } else if (name == "sasl-mechanism" || name == "sasl_mechanism") {
+        //TODO: handle space separate lists of mechanisms
+        settings.mechanism = value.asString();
+    } else if (name == "sasl-service" || name == "sasl_service") {
+        settings.service = value.asString();
+    } else if (name == "sasl-min-ssf" || name == "sasl_min_ssf") {
+        settings.minSsf = value;
+    } else if (name == "sasl-max-ssf" || name == "sasl_max_ssf") {
+        settings.maxSsf = value;
+    } else if (name == "heartbeat") {
+        settings.heartbeat = value;
+    } else if (name == "tcp-nodelay" || name == "tcp_nodelay") {
+        settings.tcpNoDelay = value;
+    } else if (name == "locale") {
+        settings.locale = value.asString();
+    } else if (name == "max-channels" || name == "max_channels") {
+        settings.maxChannels = value;
+    } else if (name == "max-frame-size" || name == "max_frame_size") {
+        settings.maxFrameSize = value;
+    } else if (name == "bounds") {
+        settings.bounds = value;
+    } else if (name == "transport") {
+        settings.protocol = value.asString();
+    } else if (name == "ssl-cert-name" || name == "ssl_cert_name") {
+        settings.sslCertName = value.asString();
+    } else {
+        throw qpid::messaging::MessagingException(QPID_MSG("Invalid option: " << name << " not recognised"));
+    }
 }
 
 
