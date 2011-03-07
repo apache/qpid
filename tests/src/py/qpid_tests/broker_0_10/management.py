@@ -341,7 +341,40 @@ class ManagementTest (TestBase010):
         self.assertEqual(result.status, 0) 
         pq.update()
         self.assertEqual(pq.msgDepth,20)
-        
+
+    def test_reroute_alternate_exchange(self):
+        """
+        Test that when rerouting, the alternate-exchange is considered if relevant
+        """
+        self.startQmf()
+        session = self.session
+        # 1. Create 2 exchanges A and B (fanout) where B is the
+        # alternate exchange for A
+        session.exchange_declare(exchange="B", type="fanout")
+        session.exchange_declare(exchange="A", type="fanout", alternate_exchange="B")
+
+        # 2. Bind queue X to B
+        session.queue_declare(queue="X", exclusive=True, auto_delete=True)
+        session.exchange_bind(queue="X", exchange="B")
+
+        # 3. Send 1 message to queue Y
+        session.queue_declare(queue="Y", exclusive=True, auto_delete=True)
+        props = session.delivery_properties(routing_key="Y")
+        session.message_transfer(message=Message(props, "reroute me!"))
+
+        # 4. Call reroute on queue Y and specify that messages should
+        # be sent to exchange A
+        y = self.qmf.getObjects(_class="queue", name="Y")[0]
+        result = y.reroute(1, False, "A")
+        self.assertEqual(result.status, 0)
+
+        # 5. verify that the message is rerouted through B (as A has
+        # no matching bindings) to X
+        self.subscribe(destination="x", queue="X")
+        self.assertEqual("reroute me!", session.incoming("x").get(timeout=1).body)
+
+        # Cleanup
+        for e in ["A", "B"]: session.exchange_delete(exchange=e)
 
     def test_methods_async (self):
         """
