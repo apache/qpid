@@ -484,8 +484,7 @@ uint32_t Queue::purge(const uint32_t purge_request, boost::shared_ptr<Exchange> 
     while (!rerouteQueue.empty()) {
         DeliverableMessage msg(rerouteQueue.front());
         rerouteQueue.pop_front();
-        dest->route(msg, msg.getMessage().getRoutingKey(),
-                    msg.getMessage().getApplicationHeaders());
+        dest->routeWithAlternate(msg);
     }
 
     return count;
