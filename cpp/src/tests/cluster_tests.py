@@ -574,8 +574,10 @@ class LongTests(BrokerTest):
             """Start ordinary clients for a broker."""
             cmds=[
                 ["qpid-tool", "localhost:%s"%(broker.port())],
-                ["qpid-perftest", "--count", 50000,
+                ["qpid-perftest", "--count=5000", "--durable=yes",
                  "--base-name", str(qpid.datatypes.uuid4()), "--port", broker.port()],
+                ["qpid-txtest", "--queue-base-name", "tx-%s"%str(qpid.datatypes.uuid4()),
+                 "--port", broker.port()],
                 ["qpid-queue-stats", "-a", "localhost:%s" %(broker.port())],
                 ["testagent", "localhost", str(broker.port())] ]
             clients.append([ClientLoop(broker, cmd) for cmd in cmds])
