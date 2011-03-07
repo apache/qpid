@@ -77,14 +77,10 @@ macro(add_example subdir example)
 endmacro(add_example)
 
 install (FILES ${CMAKE_CURRENT_SOURCE_DIR}/README.txt
-               ${CMAKE_CURRENT_SOURCE_DIR}/README.verify
-               ${CMAKE_CURRENT_SOURCE_DIR}/verify
-               ${CMAKE_CURRENT_SOURCE_DIR}/verify_all
          DESTINATION ${QPID_INSTALL_EXAMPLESDIR}
          COMPONENT ${QPID_COMPONENT_EXAMPLES})
 if (MSVC)
   install (FILES ${CMAKE_CURRENT_SOURCE_DIR}/examples.sln
-				 ${CMAKE_CURRENT_SOURCE_DIR}/old-examples.sln
            DESTINATION ${QPID_INSTALL_EXAMPLESDIR}
            COMPONENT ${QPID_COMPONENT_EXAMPLES})
 endif (MSVC)
