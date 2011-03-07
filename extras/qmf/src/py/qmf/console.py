@@ -1211,11 +1211,22 @@ class Session:
     try:
       agentName = ah["qmf.agent"]
       values = content["_values"]
-      timestamp = values["_timestamp"]
-      interval = values["_heartbeat_interval"]
+
+      if '_timestamp' in values:
+        timestamp = values["_timestamp"]
+      else:
+        timestamp = values['timestamp']
+
+      if '_heartbeat_interval' in values:
+        interval = values['_heartbeat_interval']
+      else:
+        interval = values['heartbeat_interval']
+
       epoch = 0
       if '_epoch' in values:
         epoch = values['_epoch']
+      elif 'epoch' in values:
+        epoch = values['epoch']
     except Exception,e:
       return
 
@@ -2416,7 +2427,7 @@ class Broker(Thread):
       if uid.__class__ == tuple and len(uid) == 2:
         self.saslUser = uid[1]
       else:
-        self.saslUser = None
+        self.saslUser = self.authUser
 
       # prevent topic queues from filling up (and causing the agents to
       # disconnect) by discarding the oldest queued messages when full.
