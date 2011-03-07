@@ -1722,7 +1722,7 @@ try {
 
 	      <row>
 		<entry>
-		  username
+		  <literal>username</literal>
 		</entry>
 		<entry>
 		  string
@@ -1733,7 +1733,7 @@ try {
 	      </row>
 	      <row>
 		<entry>
-		  password
+		  <literal>password</literal>
 		</entry>
 		<entry>
 		  string
@@ -1744,35 +1744,22 @@ try {
 	      </row>
 	      <row>
 		<entry>
-		  sasl-mechanism
+		  <literal>sasl_mechanisms</literal>
 		</entry>
 		<entry>
 		  string
 		</entry>
 		<entry>
-		  The specific SASL mechanism to use with the c++
-		  client when authenticating to the broker. Only a
-		  single value can be specified at present. [C++ only].
-		</entry>
-	      </row>
-	      <row>
-		<entry>
-		  sasl_mechanisms
-		</entry>
-		<entry>
-		  string
-		</entry>
-		<entry>
-		  The specific SASL mechanism to use with the python
+		  The specific SASL mechanisms to use with the python
 		  client when authenticating to the broker. The value
-		  is a space separated list in order of preference. [Python only].
+		  is a space separated list.
 		</entry>
 	      </row>
 
 
 	      <row>
 		<entry>
-		  reconnect
+		  <literal>reconnect</literal>
 		</entry>
 		<entry>
 		  boolean
@@ -1783,7 +1770,7 @@ try {
 	      </row>
 	      <row>
 		<entry>
-		  <literal>reconnect_timeout&nbsp;[Python]</literal> <literal>reconnect-timeout&nbsp;[C++]</literal>
+		  <literal>reconnect_timeout</literal>
 		</entry>
 		<entry>
 		  integer
@@ -1794,7 +1781,7 @@ try {
 	      </row>
 	      <row>
 		<entry>
-		  <literal>reconnect_limit&nbsp;[Python]</literal> <literal>reconnect-limit&nbsp;[C++]</literal>
+		  <literal>reconnect_limit</literal>
 		</entry>
 		<entry>
 		  integer
@@ -1805,7 +1792,7 @@ try {
 	      </row>
 	      <row>
 		<entry>
-		  <literal>reconnect_interval_min&nbsp;[Python]</literal> <literal>reconnect-interval-min&nbsp;[C++]</literal>
+		  <literal>reconnect_interval_min</literal>
 		</entry>
 		<entry>
 		  integer representing time in seconds
@@ -1816,7 +1803,7 @@ try {
 	      </row>
 	      <row>
 		<entry>
-		  <literal>reconnect_interval_max&nbsp;[Python]</literal> <literal>reconnect-interval-max&nbsp;[C++]</literal>
+		  <literal>reconnect_interval_max</literal>
 		</entry>
 		<entry>
 		  integer representing time in seconds
@@ -1827,7 +1814,7 @@ try {
 	      </row>
 	      <row>
 		<entry>
-		  <literal>reconnect_interval&nbsp;[Python]</literal> <literal>reconnect-interval&nbsp;[C++]</literal>
+		  <literal>reconnect_interval</literal>
 		</entry>
 		<entry>
 		  integer representing time in seconds
@@ -1839,7 +1826,7 @@ try {
 
 	      <row>
 	        <entry>
-	          heartbeat
+	          <literal>heartbeat</literal>
 	        </entry>
 	        <entry>
 	          integer representing time in seconds
@@ -1852,7 +1839,7 @@ try {
 	      </row>
 	      <row>
 	        <entry>
-	          protocol
+	          <literal>protocol</literal>
 	        </entry>
 	        <entry>
 	          string
@@ -1863,7 +1850,7 @@ try {
 	      </row>
 	      <row>
 	        <entry>
-	          tcp-nodelay
+	          <literal>tcp-nodelay</literal>
 	        </entry>
 	        <entry>
 	          boolean
