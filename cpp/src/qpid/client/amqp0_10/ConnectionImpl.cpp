@@ -101,8 +101,8 @@ void ConnectionImpl::setOption(const std::string& name, const Variant& value)
         settings.username = value.asString();
     } else if (name == "password") {
         settings.password = value.asString();
-    } else if (name == "sasl-mechanism" || name == "sasl_mechanism") {
-        //TODO: handle space separate lists of mechanisms
+    } else if (name == "sasl-mechanism" || name == "sasl_mechanism" ||
+               name == "sasl-mechanisms" || name == "sasl_mechanisms") {
         settings.mechanism = value.asString();
     } else if (name == "sasl-service" || name == "sasl_service") {
         settings.service = value.asString();
