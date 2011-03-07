@@ -51,6 +51,16 @@ ClusterSafeScope::~ClusterSafeScope() {
     inContext = save;
 }
 
+ClusterUnsafeScope::ClusterUnsafeScope()  {
+    save = inContext;
+    inContext = false;
+}
+
+ClusterUnsafeScope::~ClusterUnsafeScope() {
+    assert(!inContext);
+    inContext = save;
+}
+
 void enableClusterSafe() { inCluster = true; }
 
 }} // namespace qpid::sys
