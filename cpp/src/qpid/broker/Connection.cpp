@@ -340,6 +340,9 @@ void Connection::closed(){ // Physically closed, suspend open sessions.
 void Connection::doIoCallbacks() {
     {
         ScopedLock<Mutex> l(ioCallbackLock);
+        // Although IO callbacks execute in the connection thread context, they are
+        // not cluster safe because they are queued for execution in non-IO threads.
+        ClusterUnsafeScope cus;
         while (!ioCallbacks.empty()) {
             boost::function0<void> cb = ioCallbacks.front();
             ioCallbacks.pop();
