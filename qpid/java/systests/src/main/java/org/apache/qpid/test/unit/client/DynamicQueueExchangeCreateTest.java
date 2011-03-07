@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.test.unit.client;
 
+import org.apache.qpid.AMQException;
+import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 import javax.jms.Connection;
@@ -32,11 +34,9 @@ import javax.jms.Session;
  *
  * Test to validate that setting the respective qpid.declare_queues,
  * qpid.declare_exchanges system properties functions as expected.
- * 
  */
 public class DynamicQueueExchangeCreateTest extends QpidBrokerTestCase
 {
-
     public void testQueueDeclare() throws Exception
     {
         setSystemProperty("qpid.declare_queues", "false");
@@ -53,11 +53,8 @@ public class DynamicQueueExchangeCreateTest extends QpidBrokerTestCase
             fail("JMSException should be thrown as the queue does not exist");
         }
         catch (JMSException e)
-        {           
-            assertTrue("Exception should be that the queue does not exist :" +
-                       e.getMessage(),
-                       e.getMessage().contains("does not exist"));
-
+        {
+            checkExceptionErrorCode(e, AMQConstant.NOT_FOUND);
         }
     }
 
@@ -79,10 +76,15 @@ public class DynamicQueueExchangeCreateTest extends QpidBrokerTestCase
         }
         catch (JMSException e)
         {
-            assertTrue("Exception should be that the exchange does not exist :" +
-                       e.getMessage(),
-                       e.getMessage().contains("Exchange " + EXCHANGE_TYPE + " does not exist"));
+            checkExceptionErrorCode(e, AMQConstant.NOT_FOUND);
         }
     }
 
+    private void checkExceptionErrorCode(JMSException original, AMQConstant code)
+    {
+        Exception linked = original.getLinkedException();
+        assertNotNull("Linked exception should have been set", linked);
+        assertTrue("Linked exception should be an AMQException", linked instanceof AMQException);
+        assertEquals("Error code should be " + code.getCode(), code, ((AMQException) linked).getErrorCode());
+    }
 }
