@@ -429,7 +429,23 @@ void ConsoleSessionImpl::handleAgentUpdate(const string& agentName, const Varian
     iter = content.find("_values");
     if (iter == content.end())
         return;
-    Variant::Map attrs(iter->second.asMap());
+    const Variant::Map& in_attrs(iter->second.asMap());
+    Variant::Map attrs;
+
+    //
+    // Copy the map from the message to "attrs".  Translate any old-style
+    // keys to their new key values in the process.
+    //
+    for (iter = in_attrs.begin(); iter != in_attrs.end(); iter++) {
+        if      (iter->first == "epoch")
+            attrs[protocol::AGENT_ATTR_EPOCH] = iter->second;
+        else if (iter->first == "timestamp")
+            attrs[protocol::AGENT_ATTR_TIMESTAMP] = iter->second;
+        else if (iter->first == "heartbeat_interval")
+            attrs[protocol::AGENT_ATTR_HEARTBEAT_INTERVAL] = iter->second;
+        else
+            attrs[iter->first] = iter->second;
+    }
 
     iter = attrs.find(protocol::AGENT_ATTR_EPOCH);
     if (iter != attrs.end())
