@@ -664,7 +664,12 @@ public class Session extends SessionInvoker
                 {
                     sessionCommandPoint(0, 0);
                 }
-                if ((!closing && !transacted && m instanceof MessageTransfer) || m.hasCompletionListener())
+                
+                boolean replayTransfer = !closing && !transacted &&
+                                         m instanceof MessageTransfer &&
+                                         ! m.isUnreliable();
+                
+                if ((replayTransfer) || m.hasCompletionListener())
                 {
                     commands[mod(next, commands.length)] = m;
                     commandBytes += m.getBodySize();
