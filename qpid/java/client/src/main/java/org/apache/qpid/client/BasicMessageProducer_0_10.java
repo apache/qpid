@@ -243,7 +243,7 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
     }
     
     @Override
-    public void close() throws JMSException
+    public void close()
     {
         super.close();
         AMQDestination dest = _destination;
