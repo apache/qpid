@@ -56,7 +56,7 @@ class PersistableMessage : public Persistable
      * operations have completed, the transfer of this message from the client
      * may be considered complete.
      */
-    boost::shared_ptr<AsyncCompletion> ingressCompletion;
+    AsyncCompletion ingressCompletion;
 
     /**
      * Tracks the number of outstanding asynchronous dequeue
@@ -115,12 +115,11 @@ class PersistableMessage : public Persistable
     virtual QPID_BROKER_EXTERN bool isPersistent() const = 0;
 
     /** track the progress of a message received by the broker - see ingressCompletion above */
-    QPID_BROKER_EXTERN bool isIngressComplete() { return !ingressCompletion || ingressCompletion->isDone(); }
-    QPID_BROKER_EXTERN boost::shared_ptr<AsyncCompletion>& getIngressCompletion() { return ingressCompletion; }
-    QPID_BROKER_EXTERN void setIngressCompletion(boost::shared_ptr<AsyncCompletion>& ic) { ingressCompletion = ic; }
+    QPID_BROKER_EXTERN bool isIngressComplete() { return ingressCompletion.isDone(); }
+    QPID_BROKER_EXTERN AsyncCompletion& getIngressCompletion() { return ingressCompletion; }
 
-    QPID_BROKER_EXTERN void enqueueStart() { if (ingressCompletion) ingressCompletion->startCompleter(); }
-    QPID_BROKER_EXTERN void enqueueComplete() { if (ingressCompletion) ingressCompletion->finishCompleter(); }
+    QPID_BROKER_EXTERN void enqueueStart() { ingressCompletion.startCompleter(); }
+    QPID_BROKER_EXTERN void enqueueComplete() { ingressCompletion.finishCompleter(); }
 
     QPID_BROKER_EXTERN void enqueueAsync(PersistableQueue::shared_ptr queue,
                                          MessageStore* _store);
