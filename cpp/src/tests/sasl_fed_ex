@@ -124,6 +124,10 @@ DST_TCP_PORT=5807
 SRC_TCP_PORT_2=5802
 DST_TCP_PORT_2=5803
 
+CLUSTER_1_NAME=sasl_fed_ex_cluster_1
+CLUSTER_2_NAME=sasl_fed_ex_cluster_2
+
+
 SSL_LIB=${moduledir}/ssl.so
 CLUSTER_LIB=${moduledir}/cluster.so
 
@@ -182,7 +186,7 @@ function start_brokers {
       --port=${SRC_TCP_PORT}                     \
       --ssl-port ${SRC_SSL_PORT}                 \
       ${COMMON_BROKER_OPTIONS}                   \
-      --cluster-name sasl_fed_ex_cluster         \
+      --cluster-name ${CLUSTER_1_NAME}           \
       --log-to-file $tmp_root/qpidd_src.log 2> /dev/null
 
     broker_ports[0]=${SRC_TCP_PORT}
@@ -192,7 +196,7 @@ function start_brokers {
       --port=${SRC_TCP_PORT_2}                   \
       --ssl-port ${SRC_SSL_PORT_2}               \
       ${COMMON_BROKER_OPTIONS}                   \
-      --cluster-name sasl_fed_ex_cluster         \
+      --cluster-name ${CLUSTER_1_NAME}           \
       --log-to-file $tmp_root/qpidd_src_2.log 2> /dev/null
 
     broker_ports[1]=${SRC_TCP_PORT_2}
@@ -205,7 +209,7 @@ function start_brokers {
       --port=${DST_TCP_PORT}                     \
       --ssl-port ${DST_SSL_PORT}                 \
       ${COMMON_BROKER_OPTIONS}                   \
-      --cluster-name sasl_fed_ex_cluster         \
+      --cluster-name ${CLUSTER_2_NAME}           \
       --log-to-file $tmp_root/qpidd_dst.log 2> /dev/null
 
     broker_ports[2]=${DST_TCP_PORT}
@@ -215,7 +219,7 @@ function start_brokers {
       --port=${DST_TCP_PORT_2}                   \
       --ssl-port ${DST_SSL_PORT_2}               \
       ${COMMON_BROKER_OPTIONS}                   \
-      --cluster-name sasl_fed_ex_cluster         \
+      --cluster-name ${CLUSTER_2_NAME}           \
       --log-to-file $tmp_root/qpidd_dst_2.log 2> /dev/null
 
     broker_ports[3]=${DST_TCP_PORT_2}
@@ -316,10 +320,10 @@ fi
 # to avoid false negatives.
 sleep 5
 
+# This should work the same whether or not we are running a clustered test.
 print "check the link"
 link_status=$($QPID_ROUTE_EXEC link list localhost:${DST_TCP_PORT} | tail -1 | awk '{print $5}')
 print "link_status == ${link_status}"
-
 
 halt_brokers
 
