@@ -603,7 +603,7 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
                         (Map<? extends String, ? extends Object>) consumer.getDestination().getLink().getSubscription().getArgs());
             }
             
-            boolean acceptModeNone = false;
+            boolean acceptModeNone = getAcknowledgeMode() == NO_ACKNOWLEDGE;
             
             if (consumer.getDestination().getLink() != null)
             {
