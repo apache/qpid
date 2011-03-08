@@ -30,7 +30,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -1078,19 +1077,6 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
         return (_clientVersion == null) ? null : _clientVersion.toString();
     }
 
-    public void closeIfLingeringClosedChannels()
-    {
-        for (Entry<Integer, Long>id : _closingChannelsList.entrySet())
-        {
-            if (id.getValue() + 30000 > System.currentTimeMillis())
-            {
-                // We have a channel that we closed 30 seconds ago. Client's dead, kill the connection
-                _logger.error("Closing connection as channel was closed more than 30 seconds ago and no ChannelCloseOk has been processed");
-                closeProtocolSession();
-            }
-        }
-    }
-
     public Boolean isIncoming()
     {
         return true;
@@ -1263,7 +1249,6 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
 
     public void closeSession(AMQSessionModel session, AMQConstant cause, String message) throws AMQException
     {
-
         closeChannel((Integer)session.getID());
 
         MethodRegistry methodRegistry = getMethodRegistry();
@@ -1274,5 +1259,28 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
                         0,0);
 
         writeFrame(responseBody.generateFrame((Integer)session.getID()));       
+    }
+
+    public void close(AMQConstant cause, String message) throws AMQException
+    {
+        closeConnection(0, new AMQConnectionException(cause, message, 0, 0,
+		                getProtocolOutputConverter().getProtocolMajorVersion(),
+		                getProtocolOutputConverter().getProtocolMinorVersion(),
+		                (Throwable) null), true);
+    }
+
+    public List<AMQSessionModel> getSessionModels()
+    {
+		List<AMQSessionModel> sessions = new ArrayList<AMQSessionModel>(); 
+		for (AMQChannel channel : getChannels())
+		{
+		    sessions.add((AMQSessionModel) channel);
+		}
+		return sessions;
+    }
+
+    public LogSubject getLogSubject()
+    {
+        return _logSubject;
     }       
 }

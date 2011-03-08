@@ -28,6 +28,7 @@ import static org.apache.qpid.transport.Connection.State.OPENING;
 import static org.apache.qpid.transport.Connection.State.RESUMING;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -695,4 +696,8 @@ public class Connection extends ConnectionInvoker
         return connectionLost.get();
     }
 
+    protected Collection<Session> getChannels()
+    {
+        return channels.values();
+    }
 }

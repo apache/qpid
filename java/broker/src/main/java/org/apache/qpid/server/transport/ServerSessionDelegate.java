@@ -370,7 +370,6 @@ public class ServerSessionDelegate extends SessionDelegate
         }
 
         ssn.processed(xfr);
-
     }
 
     @Override
