@@ -22,6 +22,7 @@ package org.apache.qpid.server;
 
 import org.apache.log4j.Logger;
 
+import org.apache.qpid.AMQConnectionException;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQSecurityException;
 import org.apache.qpid.framing.AMQMethodBody;
@@ -141,6 +142,7 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
     private final AtomicLong _txnCommits = new AtomicLong(0);
     private final AtomicLong _txnRejects = new AtomicLong(0);
     private final AtomicLong _txnCount = new AtomicLong(0);
+    private final AtomicLong _txnUpdateTime = new AtomicLong(0);
 
     private final AMQProtocolSession _session;
     private AtomicBoolean _closing = new AtomicBoolean(false);
@@ -198,6 +200,11 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
         // transactional context, while there could be several transactional ones in
         // theory
         return !(_transaction instanceof AutoCommitTransaction);
+    }
+    
+    public boolean inTransaction()
+    {
+        return isTransactional() && _txnUpdateTime.get() > 0 && _transaction.getTransactionStartTime() > 0;
     }
     
     private void incrementOutstandingTxnsIfNecessary()
@@ -295,7 +302,6 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
             });
 
             deliverCurrentMessageIfComplete();
-
         }
     }
 
@@ -333,6 +339,7 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
                     {
                         _transaction.enqueue(destinationQueues, _currentMessage, new MessageDeliveryAction(_currentMessage, destinationQueues, isTransactional()));
                         incrementOutstandingTxnsIfNecessary();
+			            updateTransactionalActivity();
                     }
                 }
             }
@@ -794,6 +801,7 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
     {
         Collection<QueueEntry> ackedMessages = getAckedMessages(deliveryTag, multiple);
         _transaction.dequeue(ackedMessages, new MessageAcknowledgeAction(ackedMessages));
+	    updateTransactionalActivity();
     }
 
     private Collection<QueueEntry> getAckedMessages(long deliveryTag, boolean multiple)
@@ -966,6 +974,17 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
         }
 
 
+    }
+
+    /**
+     * Update last transaction activity timestamp
+     */
+    private void updateTransactionalActivity()
+    {
+        if (isTransactional())
+        {
+            _txnUpdateTime.set(System.currentTimeMillis());
+        }
     }
 
     public String toString()
@@ -1406,5 +1425,37 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
     public void mgmtClose() throws AMQException
     {
         _session.mgmtCloseChannel(_channelId);
+    }
+    
+    public void checkTransactionStatus(long openWarn, long openClose, long idleWarn, long idleClose) throws AMQException
+    {
+        if (inTransaction())
+        {
+            long currentTime = System.currentTimeMillis();
+            long openTime = currentTime - _transaction.getTransactionStartTime();
+            long idleTime = currentTime - _txnUpdateTime.get();
+
+            // Log a warning on idle or open transactions
+            if (idleWarn > 0L && idleTime > idleWarn)
+            {
+                CurrentActor.get().message(_logSubject, ChannelMessages.IDLE_TXN(idleTime));
+                _logger.warn("IDLE TRANSACTION ALERT " + _logSubject.toString() + " " + idleTime + " ms");
+            }
+            else if (openWarn > 0L && openTime > openWarn)
+            {
+                CurrentActor.get().message(_logSubject, ChannelMessages.OPEN_TXN(openTime));
+                _logger.warn("OPEN TRANSACTION ALERT " + _logSubject.toString() + " " + openTime + " ms");
+            }
+
+            // Close connection for idle or open transactions that have timed out
+            if (idleClose > 0L && idleTime > idleClose)
+            {
+                getConnectionModel().closeSession(this, AMQConstant.RESOURCE_ERROR, "Idle transaction timed out");
+            }
+            else if (openClose > 0L && openTime > openClose)
+            {
+                getConnectionModel().closeSession(this, AMQConstant.RESOURCE_ERROR, "Open transaction timed out");
+            }
+        }
     }
 }
