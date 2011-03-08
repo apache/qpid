@@ -70,8 +70,8 @@ class ClusterSafeScope {
  */
 class ClusterUnsafeScope {
   public:
-    ClusterUnsafeScope();
-    ~ClusterUnsafeScope();
+    QPID_COMMON_EXTERN ClusterUnsafeScope();
+    QPID_COMMON_EXTERN ~ClusterUnsafeScope();
   private:
     bool save;
 };
