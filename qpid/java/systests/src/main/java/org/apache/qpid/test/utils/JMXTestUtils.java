@@ -21,6 +21,8 @@
 package org.apache.qpid.test.utils;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 import javax.management.JMException;
@@ -31,14 +33,18 @@ import javax.management.ObjectName;
 import javax.management.MalformedObjectNameException;
 import javax.management.remote.JMXConnector;
 
+import junit.framework.TestCase;
+
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.qpid.commands.objects.AllObjects;
 import org.apache.qpid.management.common.JMXConnnectionFactory;
 import org.apache.qpid.management.common.mbeans.ManagedBroker;
+import org.apache.qpid.management.common.mbeans.ManagedConnection;
 import org.apache.qpid.management.common.mbeans.ManagedExchange;
 import org.apache.qpid.management.common.mbeans.LoggingManagement;
 import org.apache.qpid.management.common.mbeans.ConfigurationManagement;
 import org.apache.qpid.management.common.mbeans.ManagedQueue;
+import org.apache.qpid.management.common.mbeans.ServerInformation;
 import org.apache.qpid.management.common.mbeans.UserManagement;
 
 /**
@@ -326,6 +332,16 @@ public class JMXTestUtils
         return MBeanServerInvocationHandler.newProxyInstance(_mbsc, objectName, managedClass, false);
     }
 
+    public <T> List<T> getManagedObjectList(Class<T> managedClass, Set<ObjectName> objectNames)
+    {
+        List<T> objects = new ArrayList<T>();
+        for (ObjectName name : objectNames)
+        {
+            objects.add(getManagedObject(managedClass, name));
+        }
+        return objects;
+    }
+
     public ManagedBroker getManagedBroker(String virtualHost)
     {
         return getManagedObject(ManagedBroker.class, getVirtualHostManagerObjectName(virtualHost));
@@ -359,5 +375,55 @@ public class JMXTestUtils
     {
 		ObjectName objectName = new ObjectName("org.apache.qpid:type=UserManagement,name=UserManagement");
         return getManagedObject(UserManagement.class, objectName);
+    }
+
+    /**
+     * Retrive {@link ServerInformation} JMX MBean.
+     */
+    public ServerInformation getServerInformation()
+    {
+        // Get the name of the test manager
+        AllObjects allObject = new AllObjects(_mbsc);
+        allObject.querystring = "org.apache.qpid:type=ServerInformation,name=ServerInformation,*";
+
+        Set<ObjectName> objectNames = allObject.returnObjects();
+
+        TestCase.assertNotNull("Null ObjectName Set returned", objectNames);
+        TestCase.assertEquals("Incorrect number of objects returned", 1, objectNames.size());
+
+        // We have verified we have only one value in objectNames so return it
+        return getManagedObject(ServerInformation.class, objectNames.iterator().next());
+    }
+
+    /**
+     * Retrive all {@link ManagedConnection} objects.
+     */
+    public List<ManagedConnection> getAllManagedConnections()
+    {
+        // Get the name of the test manager
+        AllObjects allObject = new AllObjects(_mbsc);
+        allObject.querystring = "org.apache.qpid:type=VirtualHost.Connection,VirtualHost=*,name=*";
+
+        Set<ObjectName> objectNames = allObject.returnObjects();
+
+        TestCase.assertNotNull("Null ObjectName Set returned", objectNames);
+
+        return getManagedObjectList(ManagedConnection.class, objectNames);
+    }
+
+    /**
+     * Retrive all {@link ManagedConnection} objects for a particular virtual host.
+     */
+    public List<ManagedConnection> getManagedConnections(String vhost)
+    {
+        // Get the name of the test manager
+        AllObjects allObject = new AllObjects(_mbsc);
+        allObject.querystring = "org.apache.qpid:type=VirtualHost.Connection,VirtualHost=" + ObjectName.quote(vhost) + ",name=*";
+
+        Set<ObjectName> objectNames = allObject.returnObjects();
+
+        TestCase.assertNotNull("Null ObjectName Set returned", objectNames);
+
+        return getManagedObjectList(ManagedConnection.class, objectNames);
     }
 }

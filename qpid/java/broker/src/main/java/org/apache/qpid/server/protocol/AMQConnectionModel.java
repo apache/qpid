@@ -26,8 +26,9 @@ import java.util.UUID;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.logging.LogSubject;
+import org.apache.qpid.server.stats.StatisticsGatherer;
 
-public interface AMQConnectionModel
+public interface AMQConnectionModel extends StatisticsGatherer
 {
     /**
      * get a unique id for this connection.

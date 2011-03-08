@@ -37,19 +37,8 @@
  */
 package org.apache.qpid.server.protocol;
 
-import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.ConnectionCloseBody;
-import org.apache.qpid.framing.MethodRegistry;
-import org.apache.qpid.management.common.mbeans.ManagedConnection;
-import org.apache.qpid.management.common.mbeans.annotations.MBeanConstructor;
-import org.apache.qpid.management.common.mbeans.annotations.MBeanDescription;
-import org.apache.qpid.protocol.AMQConstant;
-import org.apache.qpid.server.AMQChannel;
-import org.apache.qpid.server.logging.actors.CurrentActor;
-import org.apache.qpid.server.logging.actors.ManagementActor;
-import org.apache.qpid.server.management.AMQManagedObject;
-import org.apache.qpid.server.management.ManagedObject;
+import java.util.Date;
+import java.util.List;
 
 import javax.management.JMException;
 import javax.management.MBeanException;
@@ -67,8 +56,20 @@ import javax.management.openmbean.SimpleType;
 import javax.management.openmbean.TabularData;
 import javax.management.openmbean.TabularDataSupport;
 import javax.management.openmbean.TabularType;
-import java.util.Date;
-import java.util.List;
+
+import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.ConnectionCloseBody;
+import org.apache.qpid.framing.MethodRegistry;
+import org.apache.qpid.management.common.mbeans.ManagedConnection;
+import org.apache.qpid.management.common.mbeans.annotations.MBeanConstructor;
+import org.apache.qpid.management.common.mbeans.annotations.MBeanDescription;
+import org.apache.qpid.protocol.AMQConstant;
+import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.logging.actors.ManagementActor;
+import org.apache.qpid.server.management.AMQManagedObject;
+import org.apache.qpid.server.management.ManagedObject;
 
 /**
  * This MBean class implements the management interface. In order to make more attributes, operations and notifications
@@ -339,4 +340,78 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
         _broadcaster.sendNotification(n);
     }
 
-} // End of MBean class
+    public void resetStatistics() throws Exception
+    {
+        _protocolSession.resetStatistics();
+    }
+
+    public double getPeakMessageDeliveryRate()
+    {
+        return _protocolSession.getMessageDeliveryStatistics().getPeak();
+    }
+
+    public double getPeakDataDeliveryRate()
+    {
+        return _protocolSession.getDataDeliveryStatistics().getPeak();
+    }
+
+    public double getMessageDeliveryRate()
+    {
+        return _protocolSession.getMessageDeliveryStatistics().getRate();
+    }
+
+    public double getDataDeliveryRate()
+    {
+        return _protocolSession.getDataDeliveryStatistics().getRate();
+    }
+
+    public long getTotalMessagesDelivered()
+    {
+        return _protocolSession.getMessageDeliveryStatistics().getTotal();
+    }
+
+    public long getTotalDataDelivered()
+    {
+        return _protocolSession.getDataDeliveryStatistics().getTotal();
+    }
+
+    public double getPeakMessageReceiptRate()
+    {
+        return _protocolSession.getMessageReceiptStatistics().getPeak();
+    }
+
+    public double getPeakDataReceiptRate()
+    {
+        return _protocolSession.getDataReceiptStatistics().getPeak();
+    }
+
+    public double getMessageReceiptRate()
+    {
+        return _protocolSession.getMessageReceiptStatistics().getRate();
+    }
+
+    public double getDataReceiptRate()
+    {
+        return _protocolSession.getDataReceiptStatistics().getRate();
+    }
+
+    public long getTotalMessagesReceived()
+    {
+        return _protocolSession.getMessageReceiptStatistics().getTotal();
+    }
+
+    public long getTotalDataReceived()
+    {
+        return _protocolSession.getDataReceiptStatistics().getTotal();
+    }
+
+    public boolean isStatisticsEnabled()
+    {
+        return _protocolSession.isStatisticsEnabled();
+    }
+
+    public void setStatisticsEnabled(boolean enabled)
+    {
+        _protocolSession.setStatisticsEnabled(enabled);
+    }
+}

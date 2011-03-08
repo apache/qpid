@@ -36,8 +36,8 @@ import org.apache.qpid.management.common.mbeans.annotations.MBeanOperationParame
  * The ManagedBroker is the management interface to expose management
  * features of the Broker.
  *
- * @author   Bhupendra Bhardwaj
- * @version  0.1
+ * @version Qpid JMX API 2.1
+ * @since Qpid JMX API 1.3
  */
 public interface ManagedBroker
 {
@@ -131,4 +131,118 @@ public interface ManagedBroker
                          impact= MBeanOperationInfo.ACTION)
     void deleteQueue(@MBeanOperationParameter(name= ManagedQueue.TYPE, description="Queue Name")String queueName)
             throws IOException, JMException, MBeanException;
+    
+    /**
+     * Resets all message and data statistics for the virtual host.
+     * 
+     * @since Qpid JMX API 2.1
+     */
+    @MBeanOperation(name="resetStatistics",
+                    description="Resets all message and data statistics for the virtual host",
+                    impact= MBeanOperationInfo.ACTION)
+    void resetStatistics() throws Exception;
+
+    /**
+     * Peak rate of messages delivered per second for the virtual host.
+     * 
+     * @since Qpid JMX API 2.1
+     */
+    @MBeanAttribute(name="PeakMessageDeliveryRate", description=TYPE + " Peak Message Delivery Rate")
+    double getPeakMessageDeliveryRate();
+
+    /**
+     * Peak rate of bytes delivered per second for the virtual host.
+     * 
+     * @since Qpid JMX API 2.1
+     */
+    @MBeanAttribute(name="PeakDataDeliveryRate", description=TYPE + " Peak Data Delivery Rate")
+    double getPeakDataDeliveryRate();
+
+    /**
+     * Rate of messages delivered per second for the virtual host.
+     * 
+     * @since Qpid JMX API 2.1
+     */
+    @MBeanAttribute(name="MessageDeliveryRate", description=TYPE + " Message Delivery Rate")
+    double getMessageDeliveryRate();
+
+    /**
+     * Rate of bytes delivered per second for the virtual host.
+     * 
+     * @since Qpid JMX API 2.1
+     */
+    @MBeanAttribute(name="DataDeliveryRate", description=TYPE + " Data Delivery Rate")
+    double getDataDeliveryRate();
+
+    /**
+     * Total count of messages delivered for the virtual host.
+     * 
+     * @since Qpid JMX API 2.1
+     */
+    @MBeanAttribute(name="TotalMessagesDelivered", description=TYPE + " Total Messages Delivered")
+    long getTotalMessagesDelivered();
+
+    /**
+     * Total count of bytes for the virtual host.
+     * 
+     * @since Qpid JMX API 2.1
+     */
+    @MBeanAttribute(name="TotalDataDelivered", description=TYPE + " Total Data Delivered")
+    long getTotalDataDelivered();
+
+    /**
+     * Peak rate of messages received per second for the virtual host.
+     * 
+     * @since Qpid JMX API 2.1
+     */
+    @MBeanAttribute(name="PeakMessageReceiptRate", description=TYPE + " Peak Message Receipt Rate")
+    double getPeakMessageReceiptRate();
+
+    /**
+     * Peak rate of bytes received per second for the virtual host.
+     * 
+     * @since Qpid JMX API 2.1
+     */
+    @MBeanAttribute(name="PeakDataReceiptRate", description=TYPE + " Peak Data Receipt Rate")
+    double getPeakDataReceiptRate();
+
+    /**
+     * Rate of messages received per second for the virtual host.
+     * 
+     * @since Qpid JMX API 2.1
+     */
+    @MBeanAttribute(name="MessageReceiptRate", description=TYPE + " Message Receipt Rate")
+    double getMessageReceiptRate();
+
+    /**
+     * Rate of bytes received per second for the virtual host.
+     * 
+     * @since Qpid JMX API 2.1
+     */
+    @MBeanAttribute(name="DataReceiptRate", description=TYPE + " Data Receipt Rate")
+    double getDataReceiptRate();
+
+    /**
+     * Total count of messages received for the virtual host.
+     * 
+     * @since Qpid JMX API 2.1
+     */
+    @MBeanAttribute(name="TotalMessagesReceived", description=TYPE + " Total Messages Received")
+    long getTotalMessagesReceived();
+
+    /**
+     * Total count of bytes received for the virtual host.
+     * 
+     * @since Qpid JMX API 2.1
+     */
+    @MBeanAttribute(name="TotalDataReceived", description=TYPE + " Total Data Received")
+    long getTotalDataReceived();
+
+    /**
+     * Is statistics collection enabled for this connection.
+     * 
+     * @since Qpid JMX API 2.1
+     */
+    @MBeanAttribute(name="StatisticsEnabled", description=TYPE + " Statistics Enabled")
+    boolean isStatisticsEnabled();
 }

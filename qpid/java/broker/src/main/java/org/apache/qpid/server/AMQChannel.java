@@ -345,6 +345,9 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
             }
             finally
             {
+                long bodySize = _currentMessage.getSize();
+                long timestamp = ((BasicContentHeaderProperties) _currentMessage.getContentHeader().properties).getTimestamp();
+                _session.registerMessageReceived(bodySize, timestamp);
                 _currentMessage = null;
             }
         }
@@ -1037,6 +1040,7 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
             {
                 getProtocolSession().getProtocolOutputConverter().writeDeliver(entry, getChannelId(),
                                                                                deliveryTag, sub.getConsumerTag());
+               _session.registerMessageDelivered(entry.getMessage().getSize());
             }
 
         };

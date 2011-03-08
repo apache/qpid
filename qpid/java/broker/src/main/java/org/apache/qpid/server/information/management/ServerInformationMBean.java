@@ -22,9 +22,11 @@ package org.apache.qpid.server.information.management;
 
 import java.io.IOException;
 
+import org.apache.qpid.common.QpidProperties;
 import org.apache.qpid.management.common.mbeans.ServerInformation;
 import org.apache.qpid.management.common.mbeans.annotations.MBeanDescription;
 import org.apache.qpid.server.management.AMQManagedObject;
+import org.apache.qpid.server.registry.ApplicationRegistry;
 
 import javax.management.JMException;
 
@@ -34,12 +36,15 @@ public class ServerInformationMBean extends AMQManagedObject implements ServerIn
 {
     private String buildVersion;
     private String productVersion;
+    private ApplicationRegistry registry;
     
-    public ServerInformationMBean(String buildVersion, String productVersion) throws JMException
+    public ServerInformationMBean(ApplicationRegistry applicationRegistry) throws JMException
     {
         super(ServerInformation.class, ServerInformation.TYPE);
-        this.buildVersion = buildVersion;
-        this.productVersion = productVersion;
+
+        registry = applicationRegistry;
+        buildVersion = QpidProperties.getBuildVersion();
+        productVersion = QpidProperties.getReleaseVersion();
     }
 
     public String getObjectInstanceName()
@@ -67,5 +72,75 @@ public class ServerInformationMBean extends AMQManagedObject implements ServerIn
         return productVersion;
     }
 
+
+    public void resetStatistics() throws Exception
+    {
+        registry.resetStatistics();
+    }
+
+    public double getPeakMessageDeliveryRate()
+    {
+        return registry.getMessageDeliveryStatistics().getPeak();
+    }
+
+    public double getPeakDataDeliveryRate()
+    {
+        return registry.getDataDeliveryStatistics().getPeak();
+    }
+
+    public double getMessageDeliveryRate()
+    {
+        return registry.getMessageDeliveryStatistics().getRate();
+    }
+
+    public double getDataDeliveryRate()
+    {
+        return registry.getDataDeliveryStatistics().getRate();
+    }
+
+    public long getTotalMessagesDelivered()
+    {
+        return registry.getMessageDeliveryStatistics().getTotal();
+    }
+
+    public long getTotalDataDelivered()
+    {
+        return registry.getDataDeliveryStatistics().getTotal();
+    }
+
+    public double getPeakMessageReceiptRate()
+    {
+        return registry.getMessageReceiptStatistics().getPeak();
+    }
+
+    public double getPeakDataReceiptRate()
+    {
+        return registry.getDataReceiptStatistics().getPeak();
+    }
+
+    public double getMessageReceiptRate()
+    {
+        return registry.getMessageReceiptStatistics().getRate();
+    }
+
+    public double getDataReceiptRate()
+    {
+        return registry.getDataReceiptStatistics().getRate();
+    }
+
+    public long getTotalMessagesReceived()
+    {
+        return registry.getMessageReceiptStatistics().getTotal();
+    }
+
+    public long getTotalDataReceived()
+    {
+        return registry.getDataReceiptStatistics().getTotal();
+    }
+
+    public boolean isStatisticsEnabled()
+    {
+        return registry.isStatisticsEnabled();
+    }
     
 }
