@@ -63,7 +63,7 @@ public class PluginManager implements Closeable
     private static final Logger _logger = Logger.getLogger(PluginManager.class);
 
     private static final int FELIX_STOP_TIMEOUT = 30000;
-    private static final String QPID_VER_SUFFIX = "version=0.9,";
+    private static final String QPID_VER_SUFFIX = "version=0.10,";
 
     private Framework _felix;
 
