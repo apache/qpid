@@ -73,6 +73,7 @@ import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 import org.apache.qpid.server.security.auth.manager.PrincipalDatabaseAuthenticationManager;
+import org.apache.qpid.server.stats.StatisticsCounter;
 import org.apache.qpid.server.store.ConfigurationRecoveryHandler;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.MessageStore;
@@ -112,6 +113,8 @@ public class VirtualHostImpl implements VirtualHost
     private BrokerConfig _broker;
     private UUID _id;
 
+    private boolean _statisticsEnabled = false;
+    private StatisticsCounter _messagesDelivered, _dataDelivered, _messagesReceived, _dataReceived;
 
     private final long _createTime = System.currentTimeMillis();
     private final ConcurrentHashMap<BrokerLink,BrokerLink> _links = new ConcurrentHashMap<BrokerLink, BrokerLink>();
@@ -250,6 +253,8 @@ public class VirtualHostImpl implements VirtualHost
         _brokerMBean = new AMQBrokerManagerMBean(_virtualHostMBean);
         _brokerMBean.register();
         initialiseHouseKeeping(hostConfig.getHousekeepingExpiredMessageCheckPeriod());
+        
+        initialiseStatistics();
     }
 
 	private void initialiseHouseKeeping(long period)
@@ -638,6 +643,80 @@ public class VirtualHostImpl implements VirtualHost
     public BindingFactory getBindingFactory()
     {
         return _bindingFactory;
+    }
+    
+    public void registerMessageDelivered(long messageSize)
+    {
+        if (isStatisticsEnabled())
+        {
+            _messagesDelivered.registerEvent(1L);
+            _dataDelivered.registerEvent(messageSize);
+        }
+        _appRegistry.registerMessageDelivered(messageSize);
+    }
+    
+    public void registerMessageReceived(long messageSize, long timestamp)
+    {
+        if (isStatisticsEnabled())
+        {
+            _messagesReceived.registerEvent(1L, timestamp);
+            _dataReceived.registerEvent(messageSize, timestamp);
+        }
+        _appRegistry.registerMessageReceived(messageSize, timestamp);
+    }
+    
+    public StatisticsCounter getMessageReceiptStatistics()
+    {
+        return _messagesReceived;
+    }
+    
+    public StatisticsCounter getDataReceiptStatistics()
+    {
+        return _dataReceived;
+    }
+    
+    public StatisticsCounter getMessageDeliveryStatistics()
+    {
+        return _messagesDelivered;
+    }
+    
+    public StatisticsCounter getDataDeliveryStatistics()
+    {
+        return _dataDelivered;
+    }
+    
+    public void resetStatistics()
+    {
+        _messagesDelivered.reset();
+        _dataDelivered.reset();
+        _messagesReceived.reset();
+        _dataReceived.reset();
+        
+        for (AMQConnectionModel connection : _connectionRegistry.getConnections())
+        {
+            connection.resetStatistics();
+        }
+    }
+
+    public void initialiseStatistics()
+    {
+        setStatisticsEnabled(!StatisticsCounter.DISABLE_STATISTICS &&
+                _appRegistry.getConfiguration().isStatisticsGenerationVirtualhostsEnabled());
+        
+        _messagesDelivered = new StatisticsCounter("messages-delivered-" + getName());
+        _dataDelivered = new StatisticsCounter("bytes-delivered-" + getName());
+        _messagesReceived = new StatisticsCounter("messages-received-" + getName());
+        _dataReceived = new StatisticsCounter("bytes-received-" + getName());
+    }
+
+    public boolean isStatisticsEnabled()
+    {
+        return _statisticsEnabled;
+    }
+
+    public void setStatisticsEnabled(boolean enabled)
+    {
+        _statisticsEnabled = enabled;
     }
 
     public void createBrokerConnection(final String transport,

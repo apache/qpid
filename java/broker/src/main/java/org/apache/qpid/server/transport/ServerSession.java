@@ -166,6 +166,7 @@ public class ServerSession extends Session implements PrincipalHolder, SessionCo
 
     public void enqueue(final ServerMessage message, final ArrayList<? extends BaseQueue> queues)
     {
+        getConnectionModel().registerMessageReceived(message.getSize(), message.getArrivalTime());
         _transaction.enqueue(queues,message, new ServerTransaction.Action()
             {
 
@@ -202,6 +203,7 @@ public class ServerSession extends Session implements PrincipalHolder, SessionCo
                             Runnable postIdSettingAction)
     {
         invoke(xfr, postIdSettingAction);
+        getConnectionModel().registerMessageDelivered(xfr.getBodySize());
     }
 
     public void onMessageDispositionChange(MessageTransfer xfr, MessageDispositionChangeListener acceptListener)
