@@ -138,6 +138,7 @@ public class ServerConnectionDelegate extends ServerDelegate
             sconn.invoke(new ConnectionClose(ConnectionCloseCode.INVALID_PATH, "Unknown virtualhost '"+vhostName+"'"));
             sconn.setState(Connection.State.CLOSING);
         }
+        
     }
     
     @Override

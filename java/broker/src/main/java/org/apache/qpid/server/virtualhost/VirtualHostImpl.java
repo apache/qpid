@@ -24,7 +24,6 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.TimerTask;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -37,7 +36,6 @@ import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.AMQInternalException;
 import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
@@ -64,6 +62,8 @@ import org.apache.qpid.server.logging.messages.VirtualHostMessages;
 import org.apache.qpid.server.logging.subjects.MessageStoreLogSubject;
 import org.apache.qpid.server.management.AMQManagedObject;
 import org.apache.qpid.server.management.ManagedObject;
+import org.apache.qpid.server.protocol.AMQConnectionModel;
+import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.queue.DefaultQueueRegistry;
@@ -282,18 +282,29 @@ public class VirtualHostImpl implements VirtualHost
                             // house keeping task from running.
                         }
                     }
+                    for (AMQConnectionModel connection : getConnectionRegistry().getConnections())
+                    {
+                        _logger.debug("Checking for long running open transactions on connection " + connection);
+                        for (AMQSessionModel session : connection.getSessionModels())
+                        {
+	                        _logger.debug("Checking for long running open transactions on session " + session);
+                            try
+                            {
+                                session.checkTransactionStatus(_configuration.getTransactionTimeoutOpenWarn(),
+	                                                           _configuration.getTransactionTimeoutOpenClose(),
+	                                                           _configuration.getTransactionTimeoutIdleWarn(),
+	                                                           _configuration.getTransactionTimeoutIdleClose());
+	                            }
+                            catch (Exception e)
+                            {
+                                _logger.error("Exception in housekeeping for connection: " + connection.toString(), e);
+                            }
+                        }
+                    }
                 }
             }
 
             scheduleHouseKeepingTask(period, new ExpiredMessagesTask(this));
-
-            class ForceChannelClosuresTask extends TimerTask
-            {
-                public void run()
-                {
-                    _connectionRegistry.expireClosedChannels();
-                }
-            }
 
             Map<String, VirtualHostPluginFactory> plugins =
                 ApplicationRegistry.getInstance().getPluginManager().getVirtualHostPlugins();

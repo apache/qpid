@@ -165,6 +165,11 @@ org.apache.qpid.server.security.firewall.FirewallConfigTest#*
 org.apache.qpid.server.security.firewall.FirewallConfigurationTest#*
 org.apache.qpid.server.plugins.PluginTest#*
 
+// Transacion timeouts not implemented in CPP broker
+org.apache.qpid.test.unit.transacted.TransactionTimeoutDisabledTest#*
+org.apache.qpid.test.unit.transacted.TransactionTimeoutConfigurationTest#*
+org.apache.qpid.test.unit.transacted.TransactionTimeoutTest#*
+
 // Java broker only
 org.apache.qpid.server.logging.management.LoggingManagementMBeanTest#*
 org.apache.qpid.server.management.AMQUserManagementMBeanTest#*

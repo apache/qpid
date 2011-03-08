@@ -97,7 +97,6 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
 
     private FlowCreditManager_0_10 _creditManager;
 
-
     private StateListener _stateListener = new StateListener()
                                             {
 

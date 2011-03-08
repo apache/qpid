@@ -20,15 +20,35 @@
  */
 package org.apache.qpid.server.protocol;
 
+import org.apache.qpid.AMQException;
 import org.apache.qpid.server.logging.LogSubject;
 
 public interface AMQSessionModel
 {
-    Object getID();
+    public Object getID();
 
-    AMQConnectionModel getConnectionModel();
+    public AMQConnectionModel getConnectionModel();
 
-    String getClientID();
+    public String getClientID();
+    
+    public void close() throws AMQException;
 
-    LogSubject getLogSubject();
+    public LogSubject getLogSubject();
+    
+    /**
+     * This method is called from the housekeeping thread to check the status of
+     * transactions on this session and react appropriately.
+     * 
+     * If a transaction is open for too long or idle for too long then a warning
+     * is logged or the connection is closed, depending on the configuration. An open
+     * transaction is one that has recent activity. The transaction age is counted
+     * from the time the transaction was started. An idle transaction is one that 
+     * has had no activity, such as publishing or acknowledgeing messages.
+     * 
+     * @param openWarn time in milliseconds before alerting on open transaction
+     * @param openClose time in milliseconds before closing connection with open transaction
+     * @param idleWarn time in milliseconds before alerting on idle transaction
+     * @param idleClose time in milliseconds before closing connection with idle transaction
+     */
+    public void checkTransactionStatus(long openWarn, long openClose, long idleWarn, long idleClose) throws AMQException;
 }
