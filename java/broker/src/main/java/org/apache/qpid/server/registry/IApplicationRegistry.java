@@ -35,11 +35,12 @@ import org.apache.qpid.server.plugins.PluginManager;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.auth.database.PrincipalDatabaseManager;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
+import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.transport.QpidAcceptor;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
-public interface IApplicationRegistry
+public interface IApplicationRegistry extends StatisticsGatherer
 {
     /**
      * Initialise the application registry. All initialisation must be done in this method so that any components
@@ -97,4 +98,6 @@ public interface IApplicationRegistry
     ConfigStore getConfigStore();
 
     void setConfigStore(ConfigStore store);
+    
+    void initialiseStatisticsReporting();
 }

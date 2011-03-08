@@ -47,6 +47,7 @@ org.apache.qpid.server.logging.SubscriptionLoggingTest#testSubscriptionSuspend
 
 // 0-10 Broker does not have a JMX connection MBean
 org.apache.qpid.management.jmx.ManagementActorLoggingTest#testConnectionCloseViaManagement
+org.apache.qpid.management.jmx.MessageConnectionStatisticsTest#*
 
 // 0-10 has different ideas about clientid and ownership of queues
 org.apache.qpid.server.queue.ModelTest#*
