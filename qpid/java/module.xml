@@ -401,6 +401,15 @@
 
   </target>
 
+  <target name="report-module" description="generate junit reports for each module">
+    <junitreport todir="${module.results}">
+        <fileset dir="${module.results}">
+            <include name="TEST-*.xml"/>
+        </fileset>
+        <report format="frames" todir="${module.results}/report/html"/>
+    </junitreport> 
+  </target>
+
   <target name="touch-failed" if="test.failures">
     <touch file="${module.failed}"/>
     <touch file="${build.failed}"/>
