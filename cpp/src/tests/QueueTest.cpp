@@ -88,8 +88,6 @@ intrusive_ptr<Message> create_message(std::string exchange, std::string routingK
     msg->getFrames().append(method);
     msg->getFrames().append(header);
     msg->getFrames().getHeaders()->get<DeliveryProperties>(true)->setRoutingKey(routingKey);
-    boost::shared_ptr<AsyncCompletion>dc(new DummyCompletion());
-    msg->setIngressCompletion(dc);
     return msg;
 }
 
