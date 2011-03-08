@@ -660,8 +660,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL Windows)
 
   set (qpidd_platform_SOURCES
     windows/QpiddBroker.cpp
-    windows/Service.h
-    windows/Service.cpp
+    windows/SCM.cpp
   )
   
   set (qpidmessaging_platform_SOURCES
