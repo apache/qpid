@@ -93,6 +93,10 @@
     <fail if="failed" message="TEST SUITE FAILED"/>
 
   </target>
+  
+  <target name="report-module" description="generate junitreport for modules">
+    <iterate target="report-module"/>
+  </target>
 
   <target name="jar" description="create module jars">
     <iterate target="jar"/>
