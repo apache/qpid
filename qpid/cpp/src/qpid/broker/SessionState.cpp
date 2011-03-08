@@ -464,7 +464,7 @@ void SessionState::IncompleteIngressMsgXfer::completed(bool sync)
             session->completeRcvMsg(id, requiresAccept, requiresSync);
         }
     }
-    completerContext.reset();  // ??? KAG optional ???
+    completerContext = boost::intrusive_ptr<AsyncCommandCompleter>();
 }
 
 

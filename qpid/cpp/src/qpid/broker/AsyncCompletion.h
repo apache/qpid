@@ -103,14 +103,14 @@ class AsyncCompletion
     void invokeCallback(bool sync) {
         qpid::sys::Mutex::ScopedLock l(callbackLock);
         if (active) {
-            if (callback) {
+            if (callback.get()) {
                 inCallback = true;
                 {
                     qpid::sys::Mutex::ScopedUnlock ul(callbackLock);
                     callback->completed(sync);
                 }
                 inCallback = false;
-                callback.reset();
+                callback = boost::intrusive_ptr<Callback>();
                 callbackLock.notifyAll();
             }
             active = false;
@@ -192,7 +192,7 @@ class AsyncCompletion
     virtual void cancel() {
         qpid::sys::Mutex::ScopedLock l(callbackLock);
         while (inCallback) callbackLock.wait();
-        callback.reset();
+        callback = boost::intrusive_ptr<Callback>();
         active = false;
     }
 };
