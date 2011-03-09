@@ -65,6 +65,16 @@
                 </itemizedlist>
               </para></listitem>
             </itemizedlist>
+
+	  <para>
+            The 0.10 C++ Broker supports the following additional Queue configuration options:
+          </para>
+          <itemizedlist>
+            <listitem><para>
+              <xref linkend="producer-flow-control"/>
+            </para></listitem>
+          </itemizedlist>
+
           <section role="h3" id="CheatSheetforconfiguringQueueOptions-ApplyingQueueSizingConstraints"><title>
             Applying Queue Sizing Constraints
           </title>
