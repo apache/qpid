@@ -51,7 +51,7 @@ Message::Message(const framing::SequenceNumber& id) :
     frames(id), persistenceId(0), redelivered(false), loaded(false),
     staged(false), forcePersistentPolicy(false), publisher(0), adapter(0), 
     expiration(FAR_FUTURE), dequeueCallback(0),
-    inCallback(false), requiredCredit(0)
+    inCallback(false), requiredCredit(0), isManagementMessage(false)
 {}
 
 Message::Message(const Message& original) :
@@ -442,5 +442,8 @@ framing::FieldTable& Message::getOrInsertHeaders()
 {
     return getProperties<MessageProperties>()->getApplicationHeaders();
 }
+
+bool Message::getIsManagementMessage() const { return isManagementMessage; }
+void Message::setIsManagementMessage(bool b) { isManagementMessage = b; }
 
 }} // namespace qpid::broker
