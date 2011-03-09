@@ -159,7 +159,8 @@ public:
     void resetDequeueCompleteCallback();
 
     uint8_t getPriority() const;
-
+    bool getIsManagementMessage() const;
+    void setIsManagementMessage(bool b);
   private:
     MessageAdapter& getAdapter() const;
     void allDequeuesComplete();
@@ -186,6 +187,7 @@ public:
     bool inCallback;
 
     uint32_t requiredCredit;
+    bool isManagementMessage;
 };
 
 }}

@@ -548,6 +548,7 @@ void ManagementAgent::sendBufferLH(Buffer&  buf,
     dp->setRoutingKey(routingKey);
 
     msg->getFrames().append(content);
+    msg->setIsManagementMessage(true);
 
     {
         sys::Mutex::ScopedUnlock u(userLock);
@@ -624,6 +625,7 @@ void ManagementAgent::sendBufferLH(const string& data,
         msg->setTimestamp(broker->getExpiryPolicy());
     }
     msg->getFrames().append(content);
+    msg->setIsManagementMessage(true);
 
     {
         sys::Mutex::ScopedUnlock u(userLock);
