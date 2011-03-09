@@ -34,6 +34,7 @@ import org.apache.qpid.client.AMQDestination.AddressOption;
 import org.apache.qpid.client.AMQDestination.DestSyntax;
 import org.apache.qpid.client.message.AMQMessageDelegate_0_10;
 import org.apache.qpid.client.message.AbstractJMSMessage;
+import org.apache.qpid.client.messaging.address.Node.QueueNode;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.transport.DeliveryProperties;
 import org.apache.qpid.transport.Header;
@@ -246,7 +247,7 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
     {
         super.close();
         AMQDestination dest = _destination;
-        if (dest.getDestSyntax() == AMQDestination.DestSyntax.ADDR)
+        if (dest != null && dest.getDestSyntax() == AMQDestination.DestSyntax.ADDR)
         {
             if (dest.getDelete() == AddressOption.ALWAYS ||
                 dest.getDelete() == AddressOption.SENDER )
