@@ -19,6 +19,7 @@ package org.apache.qpid.client;
 
 import static org.apache.qpid.transport.Option.NONE;
 import static org.apache.qpid.transport.Option.SYNC;
+import static org.apache.qpid.transport.Option.UNRELIABLE;
 
 import java.nio.ByteBuffer;
 import java.util.HashMap;
@@ -34,6 +35,7 @@ import org.apache.qpid.client.AMQDestination.AddressOption;
 import org.apache.qpid.client.AMQDestination.DestSyntax;
 import org.apache.qpid.client.message.AMQMessageDelegate_0_10;
 import org.apache.qpid.client.message.AbstractJMSMessage;
+import org.apache.qpid.client.messaging.address.Link.Reliability;
 import org.apache.qpid.client.messaging.address.Node.QueueNode;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.transport.DeliveryProperties;
@@ -212,6 +214,9 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
                          deliveryMode == DeliveryMode.PERSISTENT)
                    );  
             
+            boolean unreliable = (destination.getDestSyntax() == DestSyntax.ADDR) &&
+                                 (destination.getLink().getReliability() == Reliability.UNRELIABLE);
+            
             org.apache.mina.common.ByteBuffer data = message.getData();
             ByteBuffer buffer = data == null ? ByteBuffer.allocate(0) : data.buf().slice();
             
@@ -219,7 +224,7 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
                                 MessageAcceptMode.NONE,
                                 MessageAcquireMode.PRE_ACQUIRED,
                                 new Header(deliveryProp, messageProps),
-                    buffer, sync ? SYNC : NONE);
+                    buffer, sync ? SYNC : NONE, unreliable ? UNRELIABLE : NONE);
             if (sync)
             {
                 ssn.sync();
