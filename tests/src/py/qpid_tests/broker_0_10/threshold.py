@@ -60,3 +60,18 @@ class ThresholdTests (Base):
 
     def test_alert_size_alias(self):
         self.do_threshold_test("x-qpid-maximum-message-size", 15, [Message("msg-%s" % i) for i in range(3)])
+
+    def test_alert_on_alert_queue(self):
+        rcv = self.ssn.receiver("qmf.default.topic/agent.ind.event.org_apache_qpid_broker.queueThresholdExceeded.#; {link:{x-declare:{arguments:{'qpid.alert_count':1}}}}")
+        rcvQMFv1 = self.ssn.receiver("qpid.management/console.event.#; {link:{x-declare:{arguments:{'qpid.alert_count':1}}}}")
+        snd = self.ssn.sender("ttq; {create:always, node: {x-declare:{auto_delete:True,exclusive:True,arguments:{'qpid.alert_count':1}}}}")
+        snd.send(Message("my-message"))
+        queues = []
+        for i in range(2):
+            event = rcv.fetch()
+            schema = event.content[0]["_schema_id"]
+            assert schema["_class_name"] == "queueThresholdExceeded"
+            values = event.content[0]["_values"]
+            queues.append(values["qName"])
+        assert "ttq" in queues, "expected event for ttq (%s)" % (queues)
+

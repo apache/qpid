@@ -28,6 +28,52 @@
 
 namespace qpid {
 namespace broker {
+namespace {
+const qmf::org::apache::qpid::broker::EventQueueThresholdExceeded EVENT("dummy", 0, 0);
+bool isQMFv2(const boost::intrusive_ptr<Message> message)
+{
+    const qpid::framing::MessageProperties* props = message->getProperties<qpid::framing::MessageProperties>();
+    return props && props->getAppId() == "qmf2";
+}
+
+bool isThresholdEvent(const boost::intrusive_ptr<Message> message)
+{
+    if (message->getIsManagementMessage()) {
+        //is this a qmf event? if so is it a threshold event?
+        if (isQMFv2(message)) {
+            const qpid::framing::FieldTable* headers = message->getApplicationHeaders();
+            if (headers && headers->getAsString("qmf.content") == "_event") {
+                //decode as list
+                std::string content = message->getFrames().getContent();
+                qpid::types::Variant::List list;
+                qpid::amqp_0_10::ListCodec::decode(content, list);
+                if (list.empty() || list.front().getType() != qpid::types::VAR_MAP) return false;
+                qpid::types::Variant::Map map = list.front().asMap();
+                try {
+                    std::string eventName = map["_schema_id"].asMap()["_class_name"].asString();
+                    return eventName == EVENT.getEventName();
+                } catch (const std::exception& e) {
+                    QPID_LOG(error, "Error checking for recursive threshold alert: " << e.what());
+                }
+            }
+        } else {
+            std::string content = message->getFrames().getContent();
+            qpid::framing::Buffer buffer(const_cast<char*>(content.data()), content.size());
+            if (buffer.getOctet() == 'A' && buffer.getOctet() == 'M' && buffer.getOctet() == '2' && buffer.getOctet() == 'e') {
+                buffer.getLong();//sequence
+                std::string packageName;
+                buffer.getShortString(packageName);
+                if (packageName != EVENT.getPackageName()) return false;
+                std::string eventName;
+                buffer.getShortString(eventName);
+                return eventName == EVENT.getEventName();
+            }
+        }
+    }
+    return false;
+}
+}
+
 ThresholdAlerts::ThresholdAlerts(const std::string& n,
                                  qpid::management::ManagementAgent& a,
                                  const uint32_t ct,
@@ -44,8 +90,13 @@ void ThresholdAlerts::enqueued(const QueuedMessage& m)
     if ((countThreshold && count >= countThreshold) || (sizeThreshold && size >= sizeThreshold)) {
         if ((repeatInterval == 0 && lastAlert == qpid::sys::EPOCH)
             || qpid::sys::Duration(lastAlert, qpid::sys::now()) > repeatInterval) {
-            agent.raiseEvent(qmf::org::apache::qpid::broker::EventQueueThresholdExceeded(name, count, size));
+            //Note: Raising an event may result in messages being
+            //enqueued on queues; it may even be that this event
+            //causes a message to be enqueued on the queue we are
+            //tracking, and so we need to avoid recursing
+            if (isThresholdEvent(m.payload)) return;
             lastAlert = qpid::sys::now();
+            agent.raiseEvent(qmf::org::apache::qpid::broker::EventQueueThresholdExceeded(name, count, size));
         }
     }
 }
