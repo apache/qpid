@@ -32,7 +32,18 @@ sasl_version_LDADD=$(lib_client)
 
 TESTS += run_cluster_authentication_test sasl_fed sasl_fed_ex_dynamic sasl_fed_ex_link sasl_fed_ex_queue sasl_fed_ex_route sasl_fed_ex_route_cluster sasl_fed_ex_link_cluster sasl_fed_ex_queue_cluster sasl_fed_ex_dynamic_cluster
 LONG_TESTS += run_cluster_authentication_soak
-EXTRA_DIST += run_cluster_authentication_test sasl_fed sasl_fed_ex run_cluster_authentication_soak sasl_fed_ex_dynamic sasl_fed_ex_link sasl_fed_ex_queue sasl_fed_ex_route
+EXTRA_DIST += run_cluster_authentication_test \
+              sasl_fed                        \
+              sasl_fed_ex                     \
+              run_cluster_authentication_soak \
+              sasl_fed_ex_dynamic             \
+              sasl_fed_ex_link                \
+              sasl_fed_ex_queue               \
+              sasl_fed_ex_route               \
+              sasl_fed_ex_dynamic_cluster     \
+              sasl_fed_ex_link_cluster        \
+              sasl_fed_ex_queue_cluster       \
+              sasl_fed_ex_route_cluster
 
 
 endif # HAVE_SASL
