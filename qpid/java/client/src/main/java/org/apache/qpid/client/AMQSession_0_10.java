@@ -1173,6 +1173,22 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
             
             int type = resolveAddressType(dest);
             
+            if (type == AMQDestination.QUEUE_TYPE && 
+                    dest.getLink().getReliability() == Reliability.UNSPECIFIED)
+            {
+                dest.getLink().setReliability(Reliability.AT_LEAST_ONCE);
+            }
+            else if (type == AMQDestination.TOPIC_TYPE && 
+                    dest.getLink().getReliability() == Reliability.UNSPECIFIED)
+            {
+                dest.getLink().setReliability(Reliability.UNRELIABLE);
+            }
+            else if (type == AMQDestination.TOPIC_TYPE && 
+                    dest.getLink().getReliability() == Reliability.AT_LEAST_ONCE)
+            {
+                throw new AMQException("AT-LEAST-ONCE is not yet supported for Topics");                      
+            }
+            
             switch (type)
             {
                 case AMQDestination.QUEUE_TYPE: 
