@@ -186,9 +186,6 @@ function BuildAPlatform
     	'examples/qmf-console',
     	'examples/request-response',
     	'examples/tradedemo',
-    	'examples/old-examples.sln',
-    	'examples/README.*',
-    	'examples/verify*',
     	'include',
     	'plugins')
 
