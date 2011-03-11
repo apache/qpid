@@ -905,12 +905,13 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
     }
     
     /**
-     * Test Goals : 1. Tests if the client sets the correct accept mode for unreliable
+     * Test Goals : 1. Test if the client sets the correct accept mode for unreliable
      *                and at-least-once.
-     *             2. Tests if an exception is thrown if exactly-once is used.
-     *             3. Tests if an exception is thrown if at-least-once is used with topics.
+     *             2. Test default reliability modes for Queues and Topics.
+     *             3. Test if an exception is thrown if exactly-once is used.
+     *             4. Test if an exception is thrown if at-least-once is used with topics.
      * 
-     * Test Strategy: For goal #1
+     * Test Strategy: For goal #1 & #2
      *                For unreliable and at-least-once the test tries to receives messages
      *                in client_ack mode but does not ack the messages.
      *                It will then close the session, recreate a new session
@@ -919,61 +920,25 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
      *                For at-least-once the messages should be put back onto the queue.    
      * 
      */
+   
     public void testReliabilityOptions() throws Exception
     {
-        Session jmsSession = _connection.createSession(false,Session.CLIENT_ACKNOWLEDGE);
-        MessageConsumer cons;
-        MessageProducer prod;
-        
         String addr1 = "ADDR:testQueue1;{create: always, delete : receiver, link : {reliability : unreliable}}";
-        AMQDestination  dest = new AMQAnyDestination(addr1);
-        cons = jmsSession.createConsumer(dest);
-        prod = jmsSession.createProducer(dest);
-        
-        prod.send(jmsSession.createTextMessage("A"));
-        prod.send(jmsSession.createTextMessage("B"));
-        
-        // We are only receiving one message, but both messages should be taken off the queue.
-        Message msg = cons.receive(1000);
-        assertNotNull(msg);
-        assertEquals("A",((TextMessage)msg).getText());
-        
-        jmsSession.close();
-        jmsSession = _connection.createSession(false,Session.CLIENT_ACKNOWLEDGE);
-        long queueDepth = ((AMQSession) jmsSession).getQueueDepth(dest);        
-        assertEquals(0,queueDepth);        
-        cons.close();
-        prod.close();
+        acceptModeTest(addr1,0);
         
         String addr2 = "ADDR:testQueue2;{create: always, delete : receiver, link : {reliability : at-least-once}}";
-        dest = new AMQAnyDestination(addr2);
-        cons = jmsSession.createConsumer(dest);
-        prod = jmsSession.createProducer(dest);
+        acceptModeTest(addr2,2);
         
-        // We are receiving both messages but both should be put back into the queue
-        // bcos we don't ack them.
-        prod.send(jmsSession.createTextMessage("A"));
-        prod.send(jmsSession.createTextMessage("B"));
+        // Default accept-mode for topics
+        acceptModeTest("ADDR:amq.topic/test",0);        
         
-        msg = cons.receive(1000);
-        assertNotNull(msg);
-        assertEquals("A",((TextMessage)msg).getText());
-        
-        msg = cons.receive(1000);
-        assertNotNull(msg);
-        assertEquals("B",((TextMessage)msg).getText());
-        
-        jmsSession.close();
-        jmsSession = _connection.createSession(false,Session.CLIENT_ACKNOWLEDGE);
-        queueDepth = ((AMQSession) jmsSession).getQueueDepth(dest);
-        assertEquals(2,queueDepth); 
-        cons.close();
-        prod.close();
+        // Default accept-mode for queues
+        acceptModeTest("ADDR:testQueue1;{create: always}",2);
                
         String addr3 = "ADDR:testQueue2;{create: always, delete : receiver, link : {reliability : exactly-once}}";        
         try
         {
-            dest = new AMQAnyDestination(addr3);
+            AMQAnyDestination dest = new AMQAnyDestination(addr3);
             fail("An exception should be thrown indicating it's an unsupported type");
         }
         catch(Exception e)
@@ -984,13 +949,44 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
         String addr4 = "ADDR:amq.topic/test;{link : {reliability : at-least-once}}";        
         try
         {
-            dest = new AMQAnyDestination(addr4);
-            cons = jmsSession.createConsumer(dest);
+            AMQAnyDestination dest = new AMQAnyDestination(addr4);
+            Session ssn = _connection.createSession(false,Session.CLIENT_ACKNOWLEDGE);
+            MessageConsumer cons = ssn.createConsumer(dest);
             fail("An exception should be thrown indicating it's an unsupported combination");
         }
         catch(Exception e)
         {
             assertTrue(e.getCause().getMessage().contains("AT-LEAST-ONCE is not yet supported for Topics"));
         }
+    }
+    
+    private void acceptModeTest(String address, int expectedQueueDepth) throws Exception
+    {
+        Session ssn = _connection.createSession(false,Session.CLIENT_ACKNOWLEDGE);
+        MessageConsumer cons;
+        MessageProducer prod;
+        
+        AMQDestination  dest = new AMQAnyDestination(address);
+        cons = ssn.createConsumer(dest);
+        prod = ssn.createProducer(dest);
+        
+        for (int i=0; i < expectedQueueDepth; i++)
+        {
+            prod.send(ssn.createTextMessage("Msg" + i));
+        }
+        
+        for (int i=0; i < expectedQueueDepth; i++)
+        {
+            Message msg = cons.receive(1000);
+            assertNotNull(msg);
+            assertEquals("Msg" + i,((TextMessage)msg).getText());
+        }
+        
+        ssn.close();
+        ssn = _connection.createSession(false,Session.CLIENT_ACKNOWLEDGE);
+        long queueDepth = ((AMQSession) ssn).getQueueDepth(dest);        
+        assertEquals(expectedQueueDepth,queueDepth);        
+        cons.close();
+        prod.close();        
     }
 }
