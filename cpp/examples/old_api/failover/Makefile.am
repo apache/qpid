@@ -16,7 +16,7 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-examplesdir=$(pkgdatadir)/examples/failover
+examplesdir=$(pkgdatadir)/examples/old_api/failover
 
 MAKELDFLAGS=$(CLIENTFLAGS)
 include $(top_srcdir)/examples/makedist.mk
