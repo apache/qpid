@@ -221,6 +221,7 @@ TopicExchange::TopicExchange(const std::string& _name, bool _durable,
 
 bool TopicExchange::bind(Queue::shared_ptr queue, const string& routingKey, const FieldTable* args)
 {
+	ClearCache cc(&cacheLock,&bindingCache); // clear the cache on function exit.
     string fedOp(args ? args->getAsString(qpidFedOp) : fedOpBind);
     string fedTags(args ? args->getAsString(qpidFedTags) : "");
     string fedOrigin(args ? args->getAsString(qpidFedOrigin) : "");
@@ -288,6 +289,7 @@ bool TopicExchange::bind(Queue::shared_ptr queue, const string& routingKey, cons
 }
 
 bool TopicExchange::unbind(Queue::shared_ptr queue, const string& constRoutingKey, const FieldTable* /*args*/){
+	ClearCache cc(&cacheLock,&bindingCache); // clear the cache on function exit.
     RWlock::ScopedWlock l(lock);
     string routingKey = normalize(constRoutingKey);
     BindingKey* bk = bindingTree.getBindingKey(routingKey);
@@ -333,13 +335,24 @@ bool TopicExchange::isBound(Queue::shared_ptr queue, const string& pattern)
 void TopicExchange::route(Deliverable& msg, const string& routingKey, const FieldTable* /*args*/)
 {
     // Note: PERFORMANCE CRITICAL!!!
-    BindingList b(new std::vector<boost::shared_ptr<qpid::broker::Exchange::Binding> >);
+    BindingList b;
+	std::map<std::string, BindingList>::iterator it;
+	{  // only lock the cache for read
+       RWlock::ScopedRlock cl(cacheLock);
+	   it = bindingCache.find(routingKey);
+	}
     PreRoute pr(msg, this);
-    BindingsFinderIter bindingsFinder(b);
+    if (it == bindingCache.end())  // no cache hit
     {
         RWlock::ScopedRlock l(lock);
+    	b = BindingList(new std::vector<boost::shared_ptr<qpid::broker::Exchange::Binding> >);
+        BindingsFinderIter bindingsFinder(b);
         bindingTree.iterateMatch(routingKey, bindingsFinder);
-    }
+	    RWlock::ScopedWlock cwl(cacheLock);
+		bindingCache[routingKey] = b; // update cache
+    }else {
+        b = it->second;
+     }
     doRoute(msg, b);
 }
 
