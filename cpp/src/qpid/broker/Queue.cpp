@@ -776,7 +776,7 @@ void Queue::configureImpl(const FieldTable& _settings)
         setPolicy(QueuePolicy::createQueuePolicy(getName(), _settings));
     }
     if (broker && broker->getManagementAgent()) {
-        ThresholdAlerts::observe(*this, *(broker->getManagementAgent()), _settings);
+        ThresholdAlerts::observe(*this, *(broker->getManagementAgent()), _settings, broker->getOptions().queueThresholdEventRatio);
     }
 
     //set this regardless of owner to allow use of no-local with exclusive consumers also
