@@ -526,24 +526,24 @@ class LongTests(BrokerTest):
                             if self.stopped: break
                             self.process = self.broker.test.popen(
                                 self.cmd, expect=EXPECT_UNKNOWN)
-                        finally: self.lock.release()
-                        try: exit = self.process.wait()
+                        finally:
+                            self.lock.release()
+                        try:
+                            exit = self.process.wait()
                         except OSError, e:
-                            # Seems to be a race in wait(), it throws
-                            # "no such process" during test shutdown.
-                            # Doesn't indicate a test error, ignore.
-                            return
+                            # Process may already have been killed by self.stop()
+                            break
                         except Exception, e:
                             self.process.unexpected(
                                 "client of %s: %s"%(self.broker.name, e))
                         self.lock.acquire()
                         try:
-                            # Quit and ignore errors if stopped or expecting failure.
                             if self.stopped: break
                             if exit != 0:
                                 self.process.unexpected(
                                     "client of %s exit code %s"%(self.broker.name, exit))
-                        finally: self.lock.release()
+                        finally:
+                            self.lock.release()
                 except Exception, e:
                     self.error = RethrownException("Error in ClientLoop.run")
 
@@ -588,7 +588,8 @@ class LongTests(BrokerTest):
             mclients.append(ClientLoop(broker, cmd))
 
         endtime = time.time() + self.duration()
-        runtime = self.duration() / 4   # First run is longer, use quarter of duration.
+        # For long duration, first run is a quarter of the duration.
+        runtime = max(5, self.duration() / 4.0)
         alive = 0                       # First live cluster member
         for i in range(len(cluster)): start_clients(cluster[i])
         start_mclients(cluster[alive])
@@ -614,14 +615,13 @@ class LongTests(BrokerTest):
             start_mclients(cluster[alive])
         for c in chain(mclients, *clients):
             c.stop()
-
         # Verify that logs are consistent
         cluster_test_logs.verify_logs()
 
     def test_management_qmf2(self):
         self.test_management(args=["--mgmt-qmf2=yes"])
 
-    def test_connect_consistent(self):   # FIXME aconway 2011-01-18:
+    def test_connect_consistent(self):
         args=["--mgmt-pub-interval=1","--log-enable=trace+:management"]
         cluster = self.cluster(2, args=args)
         end = time.time() + self.duration()
