@@ -246,25 +246,6 @@ acl allow all all
         session1 = cluster[1].connect().session()
         for q in queues: self.assert_browse(session1, "q1", ["foo"])
 
-    def test_dr_no_message(self):
-        """Regression test for https://bugzilla.redhat.com/show_bug.cgi?id=655141
-        Joining broker crashes with 'error deliveryRecord no update message'
-        """
-
-        cluster = self.cluster(1)
-        session0 = cluster[0].connect().session()
-        s = session0.sender("q1;{create:always}")
-        s.send(Message("a", ttl=0.05), sync=False)
-        s.send(Message("b", ttl=0.05), sync=False)
-        r1 = session0.receiver("q1")
-        self.assertEqual("a", r1.fetch(timeout=0).content)
-        r2 = session0.receiver("q1;{mode:browse}")
-        self.assertEqual("b", r2.fetch(timeout=0).content)
-        # Leave messages un-acknowledged, let the expire, then start new broker.
-        time.sleep(.1)
-        cluster.start()
-        self.assertRaises(Empty, cluster[1].connect().session().receiver("q1").fetch,0)
-
     def test_route_update(self):
         """Regression test for https://issues.apache.org/jira/browse/QPID-2982
         Links and bridges associated with routes were not replicated on update.
