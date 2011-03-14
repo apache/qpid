@@ -1004,4 +1004,20 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
         cons.close();
         prod.close();        
     }
+    
+    public void testDestinationOnSend() throws Exception
+    {
+    	Session ssn = _connection.createSession(false,Session.CLIENT_ACKNOWLEDGE);
+        MessageConsumer cons = ssn.createConsumer(ssn.createTopic("amq.topic/test"));
+        MessageProducer prod = ssn.createProducer(null);
+        
+        Queue queue = ssn.createQueue("amq.topic/test");
+        prod.send(queue,ssn.createTextMessage("A"));
+        
+        Message msg = cons.receive(1000);
+        assertNotNull(msg);
+        assertEquals("A",((TextMessage)msg).getText());
+        prod.close();
+        cons.close();
+    }
 }
