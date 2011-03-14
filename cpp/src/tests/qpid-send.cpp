@@ -368,7 +368,7 @@ int main(int argc, char ** argv)
             return 0;
         }
     } catch(const std::exception& error) {
-        std::cout << "Failed: " << error.what() << std::endl;
+        std::cerr << "qpid-send: " << error.what() << std::endl;
         connection.close();
         return 1;
     }
