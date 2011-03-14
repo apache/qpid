@@ -16,7 +16,7 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-examplesdir=$(pkgdatadir)/examples/pub-sub
+examplesdir=$(pkgdatadir)/examples/old_api/pub-sub
 
 MAKELDFLAGS=$(CLIENTFLAGS)
 include $(top_srcdir)/examples/makedist.mk

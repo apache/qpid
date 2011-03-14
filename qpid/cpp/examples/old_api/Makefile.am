@@ -34,6 +34,8 @@ $(MAKEDIST): Makefile
 	echo '	for d in $(SUBDIRS) ; do $$(MAKE) -C $$$$d $$@ ; done' ; \
 	) > $(MAKEDIST)
 
+examplesdir=$(pkgdatadir)/examples/old_api
+dist_examples_DATA = $(MAKEDIST)
 EXTRA_DIST = README.verify verify verify_all
 
 # For older versions of automake
