@@ -1225,7 +1225,6 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                 else
                 {
                     AMQQueue queue = new AMQQueue(queueName);
-                    queue.setCreate(AddressOption.ALWAYS);
                     return queue;
                     
                 }
