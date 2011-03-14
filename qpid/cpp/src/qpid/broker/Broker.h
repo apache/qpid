@@ -120,6 +120,7 @@ public:
         bool qmf1Support;
         uint queueFlowStopRatio;    // producer flow control: on
         uint queueFlowResumeRatio;  // producer flow control: off
+        uint16_t queueThresholdEventRatio;
 
       private:
         std::string getHome();
