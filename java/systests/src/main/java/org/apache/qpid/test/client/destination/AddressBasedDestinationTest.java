@@ -527,7 +527,22 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
         cons.close();
         
         // Using the ADDR method
+        // default case
         queue = ssn.createQueue("ADDR:my-queue2");
+        try
+        {
+        	prod = ssn.createProducer(queue);
+        	fail("The client should throw an exception, since there is no queue present in the broker");
+        }
+        catch(Exception e)
+        {
+        	String s = "The name 'my-queue2' supplied in the address " +
+        			"doesn't resolve to an exchange or a queue";
+        	assertEquals(s,e.getCause().getCause().getMessage());
+        }
+        
+        // explicit create case
+        queue = ssn.createQueue("ADDR:my-queue2; {create: sender}");
         prod = ssn.createProducer(queue); 
         cons = ssn.createConsumer(queue);
         assertTrue("my-queue2 was not created as expected",(
