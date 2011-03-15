@@ -339,7 +339,7 @@ public class FileUtils
         }
 
         //else we have a source directory
-        if (!dst.isDirectory() && !dst.mkdir())
+        if (!dst.isDirectory() && !dst.mkdirs())
         {
             throw new UnableToCopyException("Unable to create destination directory");
         }
