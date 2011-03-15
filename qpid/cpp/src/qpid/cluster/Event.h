@@ -23,7 +23,7 @@
  */
 
 #include "qpid/cluster/types.h"
-#include "qpid/RefCountedBuffer.h"
+#include "qpid/BufferRef.h"
 #include "qpid/framing/AMQFrame.h"
 #include <sys/uio.h>            // For iovec
 #include <iosfwd>
@@ -88,12 +88,12 @@ class Event : public EventHeader {
     static Event control(const framing::AMQFrame&, const ConnectionId&);
 
     // Data excluding header.
-    char* getData() { return store + HEADER_SIZE; }
-    const char* getData() const { return store + HEADER_SIZE; }
+    char* getData() { return store.begin() + HEADER_SIZE; }
+    const char* getData() const { return store.begin() + HEADER_SIZE; }
 
     // Store including header
-    char* getStore() { return store; }
-    const char* getStore() const { return store; }
+    char* getStore() { return store.begin(); }
+    const char* getStore() const { return store.begin(); }
 
     const framing::AMQFrame& getFrame() const;
 
@@ -104,7 +104,7 @@ class Event : public EventHeader {
   private:
     void encodeHeader() const;
 
-    RefCountedBuffer::pointer store;
+    BufferRef store;
     mutable framing::AMQFrame frame;
 };
 
