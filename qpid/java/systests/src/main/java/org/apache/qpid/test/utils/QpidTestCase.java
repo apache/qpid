@@ -64,6 +64,7 @@ import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.ConfigurationFileApplicationRegistry;
 import org.apache.qpid.server.store.DerbyMessageStore;
 import org.apache.qpid.url.URLSyntaxException;
+import org.apache.qpid.util.FileUtils;
 import org.apache.qpid.util.LogMonitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -162,6 +163,7 @@ public class QpidTestCase extends TestCase
     private static final String BROKER = "broker";
     private static final String BROKER_CLEAN = "broker.clean";
     private static final String BROKER_CLEAN_BETWEEN_TESTS = "broker.clean.between.tests";
+    private static final String BROKER_EXISTING_QPID_WORK = "broker.existing.qpid.work";
     private static final String BROKER_VERSION = "broker.version";
     protected static final String BROKER_READY = "broker.ready";
     private static final String BROKER_STOPPED = "broker.stopped";
@@ -286,6 +288,19 @@ public class QpidTestCase extends TestCase
         if (!_configFile.exists())
         {
             fail("Unable to test without config file:" + _configFile);
+        }
+
+        if(_brokerCleanBetweenTests)
+        {
+            cleanBroker();
+
+            String existingQpidWorkPath = System.getProperty(BROKER_EXISTING_QPID_WORK);
+            if(existingQpidWorkPath != null && !existingQpidWorkPath.equals(""))
+            {
+                File existing = new File(existingQpidWorkPath);
+                File qpidWork = new File(getQpidWork(_broker, getPort()));
+                FileUtils.copyRecursive(existing, qpidWork);
+            }
         }
 
         startBroker();
@@ -485,7 +500,7 @@ public class QpidTestCase extends TestCase
             // DON'T change PNAME, qpid.stop needs this value.
             env.put("QPID_PNAME", "-DPNAME=QPBRKR -DTNAME=\"" + _testName + "\"");
             // Add the port to QPID_WORK to ensure unique working dirs for multi broker tests
-            env.put("QPID_WORK", System.getProperty("QPID_WORK")+ "/" + port);
+            env.put("QPID_WORK", getQpidWork(_broker, port));
 
 
             // Use the environment variable to set amqj.logging.level for the broker
@@ -570,6 +585,20 @@ public class QpidTestCase extends TestCase
         }
 
         _brokers.put(port, process);
+    }
+
+    private String getQpidWork(String broker, int port)
+    {
+        if (broker.equals(VM))
+        {
+            return System.getProperty("QPID_WORK");
+        }
+        else if (!broker.equals(EXTERNAL))
+        {
+            return System.getProperty("QPID_WORK")+ "/" + port;
+        }
+
+        return System.getProperty("QPID_WORK");
     }
 
     public String getTestConfigFile()
