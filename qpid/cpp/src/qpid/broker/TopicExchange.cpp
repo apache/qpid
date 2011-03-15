@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -38,7 +38,7 @@ namespace _qmf = qmf::org::apache::qpid::broker;
 // - excessive string copying: should be 0 copy, match from original buffer.
 // - match/lookup: use descision tree or other more efficient structure.
 
-namespace 
+namespace
 {
 const std::string STAR("*");
 const std::string HASH("#");
@@ -110,7 +110,7 @@ public:
 // Iterate over a string of '.'-separated tokens.
 struct TopicExchange::TokenIterator {
     typedef pair<const char*,const char*> Token;
-    
+
     TokenIterator(const char* b, const char* e) : end(e), token(make_pair(b, find(b,e,'.'))) {}
 
     TokenIterator(const string& key) : end(&key[0]+key.size()), token(make_pair(&key[0], find(&key[0],end,'.'))) {}
@@ -221,7 +221,7 @@ TopicExchange::TopicExchange(const std::string& _name, bool _durable,
 
 bool TopicExchange::bind(Queue::shared_ptr queue, const string& routingKey, const FieldTable* args)
 {
-	ClearCache cc(&cacheLock,&bindingCache); // clear the cache on function exit.
+    ClearCache cc(&cacheLock,&bindingCache); // clear the cache on function exit.
     string fedOp(args ? args->getAsString(qpidFedOp) : fedOpBind);
     string fedTags(args ? args->getAsString(qpidFedTags) : "");
     string fedOrigin(args ? args->getAsString(qpidFedOrigin) : "");
@@ -282,6 +282,7 @@ bool TopicExchange::bind(Queue::shared_ptr queue, const string& routingKey, cons
         }
     }
 
+    cc.clearCache(); // clear the cache before we IVE route.
     routeIVE();
     if (propagate)
         propagateFedOp(routingKey, fedTags, fedOp, fedOrigin);
@@ -289,7 +290,7 @@ bool TopicExchange::bind(Queue::shared_ptr queue, const string& routingKey, cons
 }
 
 bool TopicExchange::unbind(Queue::shared_ptr queue, const string& constRoutingKey, const FieldTable* /*args*/){
-	ClearCache cc(&cacheLock,&bindingCache); // clear the cache on function exit.
+    ClearCache cc(&cacheLock,&bindingCache); // clear the cache on function exit.
     RWlock::ScopedWlock l(lock);
     string routingKey = normalize(constRoutingKey);
     BindingKey* bk = bindingTree.getBindingKey(routingKey);
@@ -336,23 +337,24 @@ void TopicExchange::route(Deliverable& msg, const string& routingKey, const Fiel
 {
     // Note: PERFORMANCE CRITICAL!!!
     BindingList b;
-	std::map<std::string, BindingList>::iterator it;
-	{  // only lock the cache for read
+    std::map<std::string, BindingList>::iterator it;
+    {  // only lock the cache for read
        RWlock::ScopedRlock cl(cacheLock);
-	   it = bindingCache.find(routingKey);
-	}
+       it = bindingCache.find(routingKey);
+       if (it != bindingCache.end()) {
+           b = it->second;
+       }
+    }
     PreRoute pr(msg, this);
-    if (it == bindingCache.end())  // no cache hit
+    if (!b.get())  // no cache hit
     {
         RWlock::ScopedRlock l(lock);
     	b = BindingList(new std::vector<boost::shared_ptr<qpid::broker::Exchange::Binding> >);
         BindingsFinderIter bindingsFinder(b);
         bindingTree.iterateMatch(routingKey, bindingsFinder);
-	    RWlock::ScopedWlock cwl(cacheLock);
-		bindingCache[routingKey] = b; // update cache
-    }else {
-        b = it->second;
-     }
+        RWlock::ScopedWlock cwl(cacheLock);
+        bindingCache[routingKey] = b; // update cache
+    }
     doRoute(msg, b);
 }
 

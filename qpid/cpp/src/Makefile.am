@@ -176,7 +176,7 @@ nobase_include_HEADERS +=			\
   ../include/qpid/sys/posix/Time.h		\
   ../include/qpid/sys/posix/check.h
 
-if HAVE_EPOLL 
+if HAVE_EPOLL
   poller = qpid/sys/epoll/EpollPoller.cpp
 endif
 
@@ -195,7 +195,7 @@ libqpidcommon_la_SOURCES += $(poller) $(systeminfo)
 posix_broker_src = \
   qpid/broker/posix/BrokerDefaults.cpp
 
-lib_LTLIBRARIES = libqpidtypes.la libqpidcommon.la libqpidbroker.la libqpidclient.la libqpidmessaging.la 
+lib_LTLIBRARIES = libqpidtypes.la libqpidcommon.la libqpidbroker.la libqpidclient.la libqpidmessaging.la
 
 # Definitions for client and daemon plugins
 PLUGINLDFLAGS=-no-undefined -module -avoid-version
@@ -203,7 +203,7 @@ confdir=$(sysconfdir)/qpid
 dmoduledir=$(libdir)/qpid/daemon
 cmoduledir=$(libdir)/qpid/client
 dmodule_LTLIBRARIES =
-cmodule_LTLIBRARIES = 
+cmodule_LTLIBRARIES =
 
 include cluster.mk
 include acl.mk
@@ -341,6 +341,7 @@ libqpidcommon_la_SOURCES +=			\
   qpid/RefCounted.h				\
   qpid/RefCountedBuffer.cpp			\
   qpid/RefCountedBuffer.h			\
+  qpid/BufferRef.h				\
   qpid/Sasl.h                                   \
   qpid/SaslFactory.cpp                          \
   qpid/SaslFactory.h                            \
@@ -894,6 +895,6 @@ dist-hook: $(BUILT_SOURCES)
 install-data-local:
 	$(mkinstalldirs) $(DESTDIR)/$(localstatedir)/lib/qpidd
 
-# Support for pkg-config 
+# Support for pkg-config
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = qpid.pc
