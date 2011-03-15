@@ -38,6 +38,7 @@
 
 #include <boost/noncopyable.hpp>
 #include <boost/scoped_ptr.hpp>
+#include <boost/intrusive_ptr.hpp>
 
 #include <set>
 #include <vector>
@@ -176,79 +177,84 @@ class SessionState : public qpid::SessionState,
     std::queue<SequenceNumber> pendingExecutionSyncs;
     bool currentCommandComplete;
 
-    /** Abstract class that represents a command that is pending
-     * completion.
+    /** This class provides a context for completing asynchronous commands in a thread
+     * safe manner.  Asynchronous commands save their completion state in this class.
+     * This class then schedules the completeCommands() method in the IO thread.
+     * While running in the IO thread, completeCommands() may safely complete all
+     * saved commands without the risk of colliding with other operations on this
+     * SessionState.
      */
-    class IncompleteCommandContext : public AsyncCompletion
+    class AsyncCommandCompleter : public RefCounted {
+    private:
+        SessionState *session;
+        qpid::sys::Mutex completerLock;
+
+        // special-case message.transfer commands for optimization
+        struct MessageInfo {
+            SequenceNumber cmd; // message.transfer command id
+            bool requiresAccept;
+            bool requiresSync;
+        MessageInfo(SequenceNumber c, bool a, bool s)
+        : cmd(c), requiresAccept(a), requiresSync(s) {}
+        };
+        std::vector<MessageInfo> completedMsgs;
+
+        /** complete all pending commands, runs in IO thread */
+        void completeCommands();
+
+        /** for scheduling a run of "completeCommands()" on the IO thread */
+        static void schedule(boost::intrusive_ptr<AsyncCommandCompleter>);
+
+  public:
+        AsyncCommandCompleter(SessionState *s) : session(s) {};
+        ~AsyncCommandCompleter() {};
+
+        /** schedule the completion of an ingress message.transfer command */
+        void scheduleMsgCompletion(SequenceNumber cmd,
+                                   bool requiresAccept,
+                                   bool requiresSync);
+        void cancel();  // called by SessionState destructor.
+    };
+    boost::intrusive_ptr<AsyncCommandCompleter> asyncCommandCompleter;
+
+    /** Abstract class that represents a single asynchronous command that is
+     * pending completion.
+     */
+    class AsyncCommandContext : public AsyncCompletion::Callback
     {
      public:
-        IncompleteCommandContext( SessionState *ss, SequenceNumber _id )
-          : id(_id), session(ss) {}
-        virtual ~IncompleteCommandContext() {}
-
-        /* allows manual invokation of completion, used by IO thread to
-         * complete a command that was originally finished on a different
-         * thread.
-         */
-        void do_completion() { completed(true); }
+        AsyncCommandContext( SessionState *ss, SequenceNumber _id )
+          : id(_id), completerContext(ss->asyncCommandCompleter) {}
+        virtual ~AsyncCommandContext() {}
 
      protected:
         SequenceNumber id;
-        SessionState    *session;
+        boost::intrusive_ptr<AsyncCommandCompleter> completerContext;
     };
 
     /** incomplete Message.transfer commands - inbound to broker from client
      */
-    class IncompleteIngressMsgXfer : public SessionState::IncompleteCommandContext
+    class IncompleteIngressMsgXfer : public SessionState::AsyncCommandContext
     {
      public:
         IncompleteIngressMsgXfer( SessionState *ss,
-                                  SequenceNumber _id,
-                                  boost::intrusive_ptr<Message> msg )
-          : IncompleteCommandContext(ss, _id),
-          requiresAccept(msg->requiresAccept()),
-          requiresSync(msg->getFrames().getMethod()->isSync()) {};
+                                  boost::intrusive_ptr<Message> m )
+          : AsyncCommandContext(ss, m->getCommandId()),
+            session(ss),
+            msg(m.get()),
+            requiresAccept(msg->requiresAccept()),
+            requiresSync(msg->getFrames().getMethod()->isSync()) {};
         virtual ~IncompleteIngressMsgXfer() {};
 
-     protected:
         virtual void completed(bool);
+        virtual boost::intrusive_ptr<AsyncCompletion::Callback> clone();
 
      private:
-        /** meta-info required to complete the message */
+        SessionState *session;  // only valid if sync == true
+        Message *msg;           // only valid if sync == true
         bool requiresAccept;
-        bool requiresSync;  // method's isSync() flag
+        bool requiresSync;
     };
-    /** creates a command context suitable for use as an AsyncCompletion in a message */
-    boost::shared_ptr<SessionState::IncompleteIngressMsgXfer> createIngressMsgXferContext( boost::intrusive_ptr<Message> msg);
-
-    /* A list of commands that are pending completion.  These commands are
-     * awaiting some set of asynchronous operations to finish (eg: store,
-     * flow-control, etc). before the command can be completed to the client
-     */
-    std::map<SequenceNumber, boost::shared_ptr<IncompleteCommandContext> > incompleteCmds;
-    qpid::sys::Mutex incompleteCmdsLock;  // locks above container
-
-    /** This context is shared between the SessionState and scheduledCompleter,
-     * holds the sequence numbers of all commands that have completed asynchronously.
-     */
-    class ScheduledCompleterContext {
-    private:
-        std::list<SequenceNumber> completedCmds;
-        // ordering: take this lock first, then incompleteCmdsLock
-        qpid::sys::Mutex completedCmdsLock;
-        SessionState *session;
-    public:
-        ScheduledCompleterContext(SessionState *s) : session(s) {};
-        bool scheduleCompletion(SequenceNumber cmd);
-        void completeCommands();
-        void cancel();
-    };
-    boost::shared_ptr<ScheduledCompleterContext> scheduledCompleterContext;
-
-    /** The following method runs the in IO thread and completes commands that
-     * where finished asynchronously.
-     */
-    static void scheduledCompleter(boost::shared_ptr<ScheduledCompleterContext>);
 
     friend class SessionManager;
 };

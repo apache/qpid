@@ -47,6 +47,8 @@ import org.apache.qpid.client.message.AMQMessageDelegateFactory;
 import org.apache.qpid.client.message.FieldTableSupport;
 import org.apache.qpid.client.message.MessageFactoryRegistry;
 import org.apache.qpid.client.message.UnprocessedMessage_0_10;
+import org.apache.qpid.client.messaging.address.Link;
+import org.apache.qpid.client.messaging.address.Link.Reliability;
 import org.apache.qpid.client.messaging.address.Node.ExchangeNode;
 import org.apache.qpid.client.messaging.address.Node.QueueNode;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
@@ -56,6 +58,7 @@ import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.transport.ExchangeBoundResult;
 import org.apache.qpid.transport.ExchangeQueryResult;
+import org.apache.qpid.transport.ExecutionErrorCode;
 import org.apache.qpid.transport.ExecutionException;
 import org.apache.qpid.transport.MessageAcceptMode;
 import org.apache.qpid.transport.MessageAcquireMode;
@@ -600,10 +603,16 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
                         (Map<? extends String, ? extends Object>) consumer.getDestination().getLink().getSubscription().getArgs());
             }
             
+            boolean acceptModeNone = getAcknowledgeMode() == NO_ACKNOWLEDGE;
+            
+            if (consumer.getDestination().getLink() != null)
+            {
+                acceptModeNone = consumer.getDestination().getLink().getReliability() == Link.Reliability.UNRELIABLE;
+            }
             
             getQpidSession().messageSubscribe
                 (queueName.toString(), String.valueOf(tag),
-                 getAcknowledgeMode() == NO_ACKNOWLEDGE ? MessageAcceptMode.NONE : MessageAcceptMode.EXPLICIT,
+                 acceptModeNone ? MessageAcceptMode.NONE : MessageAcceptMode.EXPLICIT,
                  preAcquire ? MessageAcquireMode.PRE_ACQUIRED : MessageAcquireMode.NOT_ACQUIRED, null, 0, arguments,
                  consumer.isExclusive() ? Option.EXCLUSIVE : Option.NONE);
         }
@@ -1068,22 +1077,37 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
         return match;
     }
     
-    public boolean isQueueExist(AMQDestination dest,QueueNode node,boolean assertNode)
+    public boolean isQueueExist(AMQDestination dest,QueueNode node,boolean assertNode) throws AMQException
     {
         boolean match = true;
-        QueueQueryResult result = getQpidSession().queueQuery(dest.getAddressName(), Option.NONE).get();
-        match = dest.getAddressName().equals(result.getQueue());
-        
-        if (match && assertNode)
+        try
         {
-            match = (result.getDurable() == node.isDurable()) && 
-                     (result.getAutoDelete() == node.isAutoDelete()) &&
-                     (result.getExclusive() == node.isExclusive()) &&
-                     (matchProps(result.getArguments(),node.getDeclareArgs()));
+            QueueQueryResult result = getQpidSession().queueQuery(dest.getAddressName(), Option.NONE).get();
+            match = dest.getAddressName().equals(result.getQueue());
+            
+            if (match && assertNode)
+            {
+                match = (result.getDurable() == node.isDurable()) && 
+                         (result.getAutoDelete() == node.isAutoDelete()) &&
+                         (result.getExclusive() == node.isExclusive()) &&
+                         (matchProps(result.getArguments(),node.getDeclareArgs()));
+            }
+            else if (match)
+            {
+                // should I use the queried details to update the local data structure.
+            }
         }
-        else if (match)
+        catch(SessionException e)
         {
-            // should I use the queried details to update the local data structure.
+            if (e.getException().getErrorCode() == ExecutionErrorCode.RESOURCE_DELETED)
+            {
+                match = false;
+            }
+            else
+            {
+                throw new AMQException(AMQConstant.getConstant(e.getException().getErrorCode().getValue()),
+                        "Error querying queue",e);
+            }
         }
         
         return match;
@@ -1148,6 +1172,22 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
             
             
             int type = resolveAddressType(dest);
+            
+            if (type == AMQDestination.QUEUE_TYPE && 
+                    dest.getLink().getReliability() == Reliability.UNSPECIFIED)
+            {
+                dest.getLink().setReliability(Reliability.AT_LEAST_ONCE);
+            }
+            else if (type == AMQDestination.TOPIC_TYPE && 
+                    dest.getLink().getReliability() == Reliability.UNSPECIFIED)
+            {
+                dest.getLink().setReliability(Reliability.UNRELIABLE);
+            }
+            else if (type == AMQDestination.TOPIC_TYPE && 
+                    dest.getLink().getReliability() == Reliability.AT_LEAST_ONCE)
+            {
+                throw new AMQException("AT-LEAST-ONCE is not yet supported for Topics");                      
+            }
             
             switch (type)
             {

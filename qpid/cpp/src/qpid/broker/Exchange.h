@@ -222,6 +222,8 @@ public:
      */
     void recoveryComplete(ExchangeRegistry& exchanges);
 
+    bool routeWithAlternate(Deliverable& message);
+
 protected:
     qpid::sys::Mutex bridgeLock;
     std::vector<DynamicBridge*> bridgeVector;

@@ -63,6 +63,7 @@ abstract class AbstractEncoder implements Encoder
         ENCODINGS.put(Double.class, Type.DOUBLE);
         ENCODINGS.put(Character.class, Type.CHAR);
         ENCODINGS.put(byte[].class, Type.VBIN32);
+        ENCODINGS.put(UUID.class, Type.UUID);
     }
 
     private final Map<String,byte[]> str8cache = new LinkedHashMap<String,byte[]>()

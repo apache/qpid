@@ -60,6 +60,8 @@ enum VariantType {
     VAR_UUID
 };
 
+std::string getTypeName(VariantType type);
+
 class VariantImpl;
 
 /**

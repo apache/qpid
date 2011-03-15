@@ -50,7 +50,7 @@ public class ConnectionSetup
     final static String QUEUE_NAME = "example.MyQueue";
 
     public static final String TOPIC_JNDI_NAME = "topic";
-    final static String TOPIC_NAME = "example.hierarical.topic";
+    final static String TOPIC_NAME = "usa.news";
 
     private Context _ctx;
 

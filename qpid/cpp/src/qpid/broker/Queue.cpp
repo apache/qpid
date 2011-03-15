@@ -517,8 +517,7 @@ uint32_t Queue::purge(const uint32_t purge_request, boost::shared_ptr<Exchange> 
     while (!rerouteQueue.empty()) {
         DeliverableMessage msg(rerouteQueue.front());
         rerouteQueue.pop_front();
-        dest->route(msg, msg.getMessage().getRoutingKey(),
-                    msg.getMessage().getApplicationHeaders());
+        dest->routeWithAlternate(msg);
     }
 
     return count;
@@ -758,7 +757,7 @@ void Queue::create(const FieldTable& _settings)
     if (store) {
         store->create(*this, _settings);
     }
-    configure(_settings);
+    configureImpl(_settings);
     if (broker) broker->getCluster().create(*this);
 }
 
@@ -784,9 +783,14 @@ int getIntegerSetting(const qpid::framing::FieldTable& settings, const std::stri
     }
 }
 
-void Queue::configure(const FieldTable& _settings, bool recovering)
+void Queue::configure(const FieldTable& _settings)
 {
+    settings = _settings;
+    configureImpl(settings);
+}
 
+void Queue::configureImpl(const FieldTable& _settings)
+{
     eventMode = _settings.getAsInt(qpidQueueEventGeneration);
     if (eventMode && broker) {
         broker->getQueueEvents().observe(*this, eventMode == ENQUEUE_ONLY);
@@ -805,7 +809,7 @@ void Queue::configure(const FieldTable& _settings, bool recovering)
         setPolicy(QueuePolicy::createQueuePolicy(getName(), _settings));
     }
     if (broker && broker->getManagementAgent()) {
-        ThresholdAlerts::observe(*this, *(broker->getManagementAgent()), _settings);
+        ThresholdAlerts::observe(*this, *(broker->getManagementAgent()), _settings, broker->getOptions().queueThresholdEventRatio);
     }
 
     //set this regardless of owner to allow use of no-local with exclusive consumers also
@@ -852,9 +856,6 @@ void Queue::configure(const FieldTable& _settings, bool recovering)
         mgmtObject->set_arguments(ManagementAgent::toMap(_settings));
     }
 
-    if ( isDurable() && ! getPersistenceId() && ! recovering )
-      store->create(*this, _settings);
-
     QueueFlowLimit::observe(*this, _settings);
 }
 
@@ -865,8 +866,7 @@ void Queue::destroyed()
         Mutex::ScopedLock locker(messageLock);
         while(!messages->empty()){
             DeliverableMessage msg(messages->front().payload);
-            alternateExchange->route(msg, msg.getMessage().getRoutingKey(),
-                                     msg.getMessage().getApplicationHeaders());
+            alternateExchange->routeWithAlternate(msg);
             popAndDequeue();
         }
         alternateExchange->decAlternateUsers();
@@ -949,13 +949,14 @@ uint32_t Queue::encodedSize() const
         + (policy.get() ? (*policy).encodedSize() : 0);
 }
 
-Queue::shared_ptr Queue::decode ( QueueRegistry& queues, Buffer& buffer, bool recovering )
+Queue::shared_ptr Queue::restore( QueueRegistry& queues, Buffer& buffer )
 {
     string name;
     buffer.getShortString(name);
-    std::pair<Queue::shared_ptr, bool> result = queues.declare(name, true);
-    buffer.get(result.first->settings);
-    result.first->configure(result.first->settings, recovering );
+    FieldTable settings;
+    buffer.get(settings);
+    boost::shared_ptr<Exchange> alternate;
+    std::pair<Queue::shared_ptr, bool> result = queues.declare(name, true, false, 0, alternate, settings, true);
     if (result.first->policy.get() && buffer.available() >= result.first->policy->encodedSize()) {
         buffer.get ( *(result.first->policy) );
     }

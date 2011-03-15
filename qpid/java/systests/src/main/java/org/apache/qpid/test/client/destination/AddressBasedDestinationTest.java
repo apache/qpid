@@ -31,13 +31,20 @@ import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
+import javax.jms.Queue;
+import javax.jms.QueueReceiver;
+import javax.jms.QueueSession;
 import javax.jms.Session;
 import javax.jms.TextMessage;
 import javax.jms.Topic;
+import javax.jms.TopicSession;
+import javax.jms.TopicSubscriber;
 import javax.naming.Context;
 
 import org.apache.qpid.client.AMQAnyDestination;
+import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQDestination;
+import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.AMQSession_0_10;
 import org.apache.qpid.client.messaging.address.Node.ExchangeNode;
 import org.apache.qpid.client.messaging.address.Node.QueueNode;
@@ -795,5 +802,191 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
         catch(Exception e)
         {            
         }
+    }
+    
+    public void testQueueReceiversAndTopicSubscriber() throws Exception
+    {
+        Queue queue = new AMQAnyDestination("ADDR:my-queue; {create: always}");
+        Topic topic = new AMQAnyDestination("ADDR:amq.topic/test");
+        
+        QueueSession qSession = ((AMQConnection)_connection).createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
+        QueueReceiver receiver = qSession.createReceiver(queue);
+        
+        TopicSession tSession = ((AMQConnection)_connection).createTopicSession(false, Session.AUTO_ACKNOWLEDGE);
+        TopicSubscriber sub = tSession.createSubscriber(topic);
+        
+        Session ssn = _connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        MessageProducer prod1 = ssn.createProducer(ssn.createQueue("ADDR:my-queue"));
+        prod1.send(ssn.createTextMessage("test1"));
+        
+        MessageProducer prod2 = ssn.createProducer(ssn.createTopic("ADDR:amq.topic/test"));
+        prod2.send(ssn.createTextMessage("test2"));
+        
+        Message msg1 = receiver.receive();
+        assertNotNull(msg1);
+        assertEquals("test1",((TextMessage)msg1).getText());
+        
+        Message msg2 = sub.receive();
+        assertNotNull(msg2);
+        assertEquals("test2",((TextMessage)msg2).getText());  
+    }
+    
+    public void testDurableSubscriber() throws Exception
+    {
+        Session ssn = _connection.createSession(false,Session.AUTO_ACKNOWLEDGE);        
+        Topic topic = ssn.createTopic("news.us");
+        
+        MessageConsumer cons = ssn.createDurableSubscriber(topic, "my-sub");
+        MessageProducer prod = ssn.createProducer(topic);
+        
+        Message m = ssn.createTextMessage("A");
+        prod.send(m);
+        Message msg = cons.receive(1000);
+        assertNotNull(msg);
+        assertEquals("A",((TextMessage)msg).getText());
+    }
+    
+    public void testDeleteOptions() throws Exception
+    {
+        Session jmsSession = _connection.createSession(false,Session.AUTO_ACKNOWLEDGE);
+        MessageConsumer cons;
+        
+        // default (create never, assert never) -------------------
+        // create never --------------------------------------------
+        String addr1 = "ADDR:testQueue1;{create: always, delete: always}";
+        AMQDestination  dest = new AMQAnyDestination(addr1);
+        try
+        {
+            cons = jmsSession.createConsumer(dest);
+            cons.close();
+        }
+        catch(JMSException e)
+        {
+            fail("Exception should not be thrown. Exception thrown is : " + e);
+        }
+        
+        assertFalse("Queue not deleted as expected",(
+                (AMQSession_0_10)jmsSession).isQueueExist(dest,(QueueNode)dest.getSourceNode(), true));  
+        
+        
+        String addr2 = "ADDR:testQueue2;{create: always, delete: receiver}";
+        dest = new AMQAnyDestination(addr2);
+        try
+        {
+            cons = jmsSession.createConsumer(dest);
+            cons.close();
+        }
+        catch(JMSException e)
+        {
+            fail("Exception should not be thrown. Exception thrown is : " + e);
+        }
+        
+        assertFalse("Queue not deleted as expected",(
+                (AMQSession_0_10)jmsSession).isQueueExist(dest,(QueueNode)dest.getSourceNode(), true));  
+
+        
+        String addr3 = "ADDR:testQueue3;{create: always, delete: sender}";
+        dest = new AMQAnyDestination(addr3);
+        try
+        {
+            cons = jmsSession.createConsumer(dest);
+            MessageProducer prod = jmsSession.createProducer(dest);
+            prod.close();
+        }
+        catch(JMSException e)
+        {
+            fail("Exception should not be thrown. Exception thrown is : " + e);
+        }
+        
+        assertFalse("Queue not deleted as expected",(
+                (AMQSession_0_10)jmsSession).isQueueExist(dest,(QueueNode)dest.getSourceNode(), true));  
+
+        
+    }
+    
+    /**
+     * Test Goals : 1. Test if the client sets the correct accept mode for unreliable
+     *                and at-least-once.
+     *             2. Test default reliability modes for Queues and Topics.
+     *             3. Test if an exception is thrown if exactly-once is used.
+     *             4. Test if an exception is thrown if at-least-once is used with topics.
+     * 
+     * Test Strategy: For goal #1 & #2
+     *                For unreliable and at-least-once the test tries to receives messages
+     *                in client_ack mode but does not ack the messages.
+     *                It will then close the session, recreate a new session
+     *                and will then try to verify the queue depth.
+     *                For unreliable the messages should have been taken off the queue.
+     *                For at-least-once the messages should be put back onto the queue.    
+     * 
+     */
+   
+    public void testReliabilityOptions() throws Exception
+    {
+        String addr1 = "ADDR:testQueue1;{create: always, delete : receiver, link : {reliability : unreliable}}";
+        acceptModeTest(addr1,0);
+        
+        String addr2 = "ADDR:testQueue2;{create: always, delete : receiver, link : {reliability : at-least-once}}";
+        acceptModeTest(addr2,2);
+        
+        // Default accept-mode for topics
+        acceptModeTest("ADDR:amq.topic/test",0);        
+        
+        // Default accept-mode for queues
+        acceptModeTest("ADDR:testQueue1;{create: always}",2);
+               
+        String addr3 = "ADDR:testQueue2;{create: always, delete : receiver, link : {reliability : exactly-once}}";        
+        try
+        {
+            AMQAnyDestination dest = new AMQAnyDestination(addr3);
+            fail("An exception should be thrown indicating it's an unsupported type");
+        }
+        catch(Exception e)
+        {
+            assertTrue(e.getCause().getMessage().contains("The reliability mode 'exactly-once' is not yet supported"));
+        }
+        
+        String addr4 = "ADDR:amq.topic/test;{link : {reliability : at-least-once}}";        
+        try
+        {
+            AMQAnyDestination dest = new AMQAnyDestination(addr4);
+            Session ssn = _connection.createSession(false,Session.CLIENT_ACKNOWLEDGE);
+            MessageConsumer cons = ssn.createConsumer(dest);
+            fail("An exception should be thrown indicating it's an unsupported combination");
+        }
+        catch(Exception e)
+        {
+            assertTrue(e.getCause().getMessage().contains("AT-LEAST-ONCE is not yet supported for Topics"));
+        }
+    }
+    
+    private void acceptModeTest(String address, int expectedQueueDepth) throws Exception
+    {
+        Session ssn = _connection.createSession(false,Session.CLIENT_ACKNOWLEDGE);
+        MessageConsumer cons;
+        MessageProducer prod;
+        
+        AMQDestination  dest = new AMQAnyDestination(address);
+        cons = ssn.createConsumer(dest);
+        prod = ssn.createProducer(dest);
+        
+        for (int i=0; i < expectedQueueDepth; i++)
+        {
+            prod.send(ssn.createTextMessage("Msg" + i));
+        }
+        
+        for (int i=0; i < expectedQueueDepth; i++)
+        {
+            Message msg = cons.receive(1000);
+            assertNotNull(msg);
+            assertEquals("Msg" + i,((TextMessage)msg).getText());
+        }
+        
+        ssn.close();
+        ssn = _connection.createSession(false,Session.CLIENT_ACKNOWLEDGE);
+        long queueDepth = ((AMQSession) ssn).getQueueDepth(dest);        
+        assertEquals(expectedQueueDepth,queueDepth);        
+        cons.close();
+        prod.close();        
     }
 }

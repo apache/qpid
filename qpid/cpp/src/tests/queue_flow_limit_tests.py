@@ -137,12 +137,12 @@ class QueueFlowLimitTests(TestBase010):
         """
         self.startQmf();
         oid = self._create_queue("test-q", stop_count=373, resume_count=229)
+        self.assertEqual(self.qmf.getObjects(_objectId=oid)[0].flowStoppedCount, 0)
 
         sndr1 = self._start_qpid_send("test-q", count=1213, content="XXX", capacity=50);
         sndr2 = self._start_qpid_send("test-q", count=797, content="Y", capacity=13);
         sndr3 = self._start_qpid_send("test-q", count=331, content="ZZZZZ", capacity=149);
         totalMsgs = 1213 + 797 + 331
-        
 
         # wait until flow control is active
         count = 0
@@ -180,6 +180,7 @@ class QueueFlowLimitTests(TestBase010):
 
         self.assertEqual(count, totalMsgs)
         self.failIf(self.qmf.getObjects(_objectId=oid)[0].flowStopped)
+        self.failUnless(self.qmf.getObjects(_objectId=oid)[0].flowStoppedCount)
 
         self._delete_queue("test-q")
 

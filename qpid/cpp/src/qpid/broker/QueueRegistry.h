@@ -24,6 +24,7 @@
 #include "qpid/broker/BrokerImportExport.h"
 #include "qpid/sys/Mutex.h"
 #include "qpid/management/Manageable.h"
+#include "qpid/framing/FieldTable.h"
 #include <boost/bind.hpp>
 #include <boost/shared_ptr.hpp>
 #include <algorithm>
@@ -34,6 +35,7 @@ namespace broker {
 
 class Queue;
 class QueueEvents;
+class Exchange;
 class OwnershipToken;
 class Broker;
 class MessageStore;
@@ -60,7 +62,10 @@ class QueueRegistry {
         const std::string& name,
         bool durable = false,
         bool autodelete = false, 
-        const OwnershipToken* owner = 0);
+        const OwnershipToken* owner = 0,
+        boost::shared_ptr<Exchange> alternateExchange = boost::shared_ptr<Exchange>(),
+        const qpid::framing::FieldTable& args = framing::FieldTable(),
+        bool recovering = false);
 
     /**
      * Destroy the named queue.

@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 #
 # Licensed to the Apache Software Foundation (ASF) under one
@@ -70,7 +70,8 @@ stop_brokers() {
 if test -d ${PYTHON_DIR} ;  then
     start_brokers
     echo "Running CLI tests using brokers on ports $LOCAL_PORT $REMOTE_PORT"
-    $QPID_PYTHON_TEST -m cli_tests -b localhost:$LOCAL_PORT -Dremote-port=$REMOTE_PORT -Dcli-dir=$CLI_DIR $targs $@
+    PYTHON_TESTS=${PYTHON_TESTS:-$*}
+    $QPID_PYTHON_TEST -m cli_tests -b localhost:$LOCAL_PORT -Dremote-port=$REMOTE_PORT -Dcli-dir=$CLI_DIR $targs $PYTHON_TESTS $@
     RETCODE=$?
     stop_brokers
     if test x$RETCODE != x0; then 

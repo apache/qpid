@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -143,7 +143,7 @@ void Connection::init() {
 // Called when we have consumed a read buffer to give credit to the
 // connection layer to continue reading.
 void Connection::giveReadCredit(int credit) {
-    if (cluster.getSettings().readMax && credit) 
+    if (cluster.getSettings().readMax && credit)
         output.giveReadCredit(credit);
 }
 
@@ -201,7 +201,7 @@ void Connection::received(framing::AMQFrame& f) {
     }
     else {             // Shadow or updated catch-up connection.
         if (f.getMethod() && f.getMethod()->isA<ConnectionCloseBody>()) {
-            if (isShadow()) 
+            if (isShadow())
                 cluster.addShadowConnection(this);
             AMQFrame ok((ConnectionCloseOkBody()));
             connection->getOutput().send(ok);
@@ -241,7 +241,7 @@ void Connection::deliverDoOutput(uint32_t limit) {
 void Connection::deliveredFrame(const EventFrame& f) {
     GiveReadCreditOnExit gc(*this, f.readCredit);
     assert(!catchUp);
-    currentChannel = f.frame.getChannel(); 
+    currentChannel = f.frame.getChannel();
     if (f.frame.getBody()       // frame can be emtpy with just readCredit
         && !framing::invoke(*this, *f.frame.getBody()).wasHandled() // Connection contol.
         && !checkUnsupported(*f.frame.getBody())) // Unsupported operation.
@@ -287,7 +287,7 @@ void Connection::deliverClose () {
     cluster.erase(self);
 }
 
-// Close the connection 
+// Close the connection
 void Connection::close() {
     if (connection.get()) {
         QPID_LOG(debug, cluster << " closed connection " << *this);
@@ -332,9 +332,9 @@ size_t Connection::decode(const char* data, size_t size) {
         if (!checkProtocolHeader(ptr, size)) // Updates ptr
             return 0; // Incomplete header
 
-        if (!connection->isOpen()) 
+        if (!connection->isOpen())
             processInitialFrames(ptr, end-ptr); // Updates ptr
-        
+
         if (connection->isOpen() && end - ptr > 0) {
             // We're multi-casting, we will give read credit on delivery.
             grc.credit = 0;
@@ -432,7 +432,7 @@ void Connection::sessionState(
         unknownCompleted,
         receivedIncomplete);
     QPID_LOG(debug, cluster << " received session state update for " << sessionState().getId());
-    // The output tasks will be added later in the update process. 
+    // The output tasks will be added later in the update process.
     connection->getOutputTasks().removeAll();
 }
 
@@ -478,7 +478,7 @@ void Connection::retractOffer() {
 
 void Connection::closeUpdated() {
     self.second = 0;      // Mark this as completed update connection.
-    if (connection.get()) 
+    if (connection.get())
         connection->close(connection::CLOSE_CODE_NORMAL, "OK");
 }
 
@@ -529,7 +529,7 @@ void Connection::deliveryRecord(const string& qname,
             m = getUpdateMessage();
             m.queue = queue.get();
             m.position = position;
-            if (enqueued) queue->updateEnqueued(m); //inform queue of the message 
+            if (enqueued) queue->updateEnqueued(m); //inform queue of the message
         } else {                // Message at original position in original queue
             m = queue->find(position);
         }
@@ -591,7 +591,7 @@ void Connection::txEnqueue(const std::string& queue) {
 
 void Connection::txPublish(const framing::Array& queues, bool delivered) {
     boost::shared_ptr<broker::TxPublish> txPub(new broker::TxPublish(getUpdateMessage().payload));
-    for (framing::Array::const_iterator i = queues.begin(); i != queues.end(); ++i) 
+    for (framing::Array::const_iterator i = queues.begin(); i != queues.end(); ++i)
         txPub->deliverTo(findQueue((*i)->get<std::string>()));
     txPub->delivered = delivered;
     txBuffer->enlist(txPub);
@@ -612,12 +612,6 @@ void Connection::exchange(const std::string& encoded) {
         cluster.getBroker().getStore().create(*(ex.get()), ex->getArgs());
     }
     QPID_LOG(debug, cluster << " updated exchange " << ex->getName());
-}
-
-void Connection::queue(const std::string& encoded) {
-    Buffer buf(const_cast<char*>(encoded.data()), encoded.size());
-    broker::Queue::shared_ptr q = broker::Queue::decode(cluster.getBroker().getQueues(), buf);
-    QPID_LOG(debug, cluster << " updated queue " << q->getName());
 }
 
 void Connection::sessionError(uint16_t , const std::string& msg) {
@@ -678,6 +672,12 @@ void Connection::config(const std::string& encoded) {
     else throw Exception(QPID_MSG("Update failed, invalid kind of config: " << kind));
 }
 
+void Connection::doCatchupIoCallbacks() {
+    // We need to process IO callbacks during the catch-up phase in
+    // order to service asynchronous completions for messages
+    // transferred during catch-up.
 
+    if (catchUp) getBrokerConnection()->doIoCallbacks();
+}
 }} // Namespace qpid::cluster
 

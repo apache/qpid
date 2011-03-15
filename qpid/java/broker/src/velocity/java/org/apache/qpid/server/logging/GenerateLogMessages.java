@@ -481,7 +481,7 @@ public class GenerateLogMessages
                     // Only check the text inside the braces '{}'
                     int typeIndexEnd = parametersString[index].indexOf("}", typeIndex);
                     String typeString = parametersString[index].substring(typeIndex, typeIndexEnd);
-                    if (typeString.contains("number"))
+                    if (typeString.contains("number") || typeString.contains("choice"))
                     {
                         type = "Number";
                     }

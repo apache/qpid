@@ -62,24 +62,6 @@ def is_running(pid):
 class BadProcessStatus(Exception):
     pass
 
-class ExceptionWrapper:
-    """Proxy object that adds a message to exceptions raised"""
-    def __init__(self, obj, msg):
-        self.obj = obj
-        self.msg = msg
-        
-    def __getattr__(self, name):
-        func = getattr(self.obj, name)
-        if type(func) != callable:
-            return func
-        return lambda *args, **kwargs: self._wrap(func, args, kwargs)
-
-    def _wrap(self, func, args, kwargs):
-        try:
-            return func(*args, **kwargs)
-        except Exception, e:
-            raise Exception("%s: %s" %(self.msg, str(e)))
-
 def error_line(filename, n=1):
     """Get the last n line(s) of filename for error messages"""
     result = []
@@ -89,7 +71,8 @@ def error_line(filename, n=1):
             for l in f:
                 if len(result) == n:  result.pop(0)
                 result.append("    "+l)
-        finally: f.close()
+        finally:
+            f.close()
     except: return ""
     return ":\n" + "".join(result)
 
@@ -97,13 +80,32 @@ def retry(function, timeout=10, delay=.01):
     """Call function until it returns True or timeout expires.
     Double the delay for each retry. Return True if function
     returns true, False if timeout expires."""
+    deadline = time.time() + timeout
     while not function():
-        if delay > timeout: delay = timeout
+        remaining = deadline - time.time()
+        if remaining <= 0: return False
+        delay = min(delay, remaining)
         time.sleep(delay)
-        timeout -= delay
-        if timeout <= 0: return False
         delay *= 2
     return True
+
+class AtomicCounter:
+    def __init__(self):
+        self.count = 0
+        self.lock = Lock()
+
+    def next(self):
+        self.lock.acquire();
+        ret = self.count
+        self.count += 1
+        self.lock.release();
+        return ret
+
+_popen_id = AtomicCounter() # Popen identifier for use in output file names.
+
+# Constants for file descriptor arguments to Popen
+FILE = "FILE"                       # Write to file named after process
+PIPE = subprocess.PIPE
 
 class Popen(subprocess.Popen):
     """
@@ -111,97 +113,52 @@ class Popen(subprocess.Popen):
     Dumps command line, stdout, stderr to data dir for debugging.
     """
 
-    class DrainThread(Thread):
-        """Thread to drain a file object and write the data to a file."""
-        def __init__(self, infile, outname):
-            Thread.__init__(self)
-            self.infile, self.outname = infile, outname
-            self.outfile = None
-
-        def run(self):
-            try:
-                for line in self.infile:
-                    if self.outfile is None:
-                        self.outfile = open(self.outname, "w")
-                    self.outfile.write(line)
-            finally:
-                self.infile.close()
-                if self.outfile is not None: self.outfile.close()
-
-    class OutStream(ExceptionWrapper):
-        """Wrapper for output streams, handles exceptions & draining output"""
-        def __init__(self, infile, outfile, msg):
-            ExceptionWrapper.__init__(self, infile, msg)
-            self.infile, self.outfile = infile, outfile
-            self.thread = None
-
-        def drain(self):
-            if self.thread is None:
-                self.thread = Popen.DrainThread(self.infile, self.outfile)
-                self.thread.start()
-
-    def outfile(self, ext): return "%s.%s" % (self.pname, ext)
-
-    def __init__(self, cmd, expect=EXPECT_EXIT_OK, drain=True):
-        """Run cmd (should be a list of arguments)
+    def __init__(self, cmd, expect=EXPECT_EXIT_OK, stdin=None, stdout=FILE, stderr=FILE):
+        """Run cmd (should be a list of program and arguments)
         expect - if set verify expectation at end of test.
-        drain  - if true (default) drain stdout/stderr to files.
+        stdout, stderr - can have the same values as for subprocess.Popen as well as
+          FILE (the default) which means write to a file named after the process.
+        stdin - like subprocess.Popen but defauts to PIPE
         """
         self._clean = False
         self._clean_lock = Lock()
         assert find_exe(cmd[0]), "executable not found: "+cmd[0]
         if type(cmd) is type(""): cmd = [cmd] # Make it a list.
         self.cmd  = [ str(x) for x in cmd ]
-        self.returncode = None
         self.expect = expect
+        self.id = _popen_id.next()
+        self.pname = "%s-%d" % (os.path.split(self.cmd[0])[1], self.id)
+        if stdout == FILE: stdout = open(self.outfile("out"), "w")
+        if stderr == FILE: stderr = open(self.outfile("err"), "w")
         try:
-            subprocess.Popen.__init__(self, self.cmd, 0, None, subprocess.PIPE, subprocess.PIPE, subprocess.PIPE, close_fds=True)
-        except ValueError:     # Windows can't do close_fds
-            subprocess.Popen.__init__(self, self.cmd, 0, None, subprocess.PIPE, subprocess.PIPE, subprocess.PIPE)
-        self.pname = "%s-%d" % (os.path.split(self.cmd[0])[1], self.pid)
-        msg = "Process %s" % self.pname
-        self.stdin = ExceptionWrapper(self.stdin, msg)
-        self.stdout = Popen.OutStream(self.stdout, self.outfile("out"), msg)
-        self.stderr = Popen.OutStream(self.stderr, self.outfile("err"), msg)
+            subprocess.Popen.__init__(self, self.cmd, bufsize=0, executable=None,
+                                      stdin=stdin, stdout=stdout, stderr=stderr,
+                                      close_fds=True)
+        except ValueError: # Windows can't do close_fds
+            subprocess.Popen.__init__(self, self.cmd, bufsize=0, executable=None,
+                                      stdin=stdin, stdout=stdout, stderr=stderr)
+
         f = open(self.outfile("cmd"), "w")
-        try: f.write(self.cmd_str())
+        try: f.write("%s\n%d"%(self.cmd_str(), self.pid))
         finally: f.close()
         log.debug("Started process %s: %s" % (self.pname, " ".join(self.cmd)))
-        if drain: self.drain()
 
-        def __str__(self): return "Popen<%s>"%(self.pname)
+    def __str__(self): return "Popen<%s>"%(self.pname)
 
-    def drain(self):
-        """Start threads to drain stdout/err"""
-        self.stdout.drain()
-        self.stderr.drain()
-
-    def _cleanup(self):
-        """Close pipes to sub-process"""
-        self._clean_lock.acquire()
-        try:
-            if self._clean: return
-            self._clean = True
-            self.stdin.close()
-            self.drain()                    # Drain output pipes.
-            self.stdout.thread.join()       # Drain thread closes pipe.
-            self.stderr.thread.join()
-        finally: self._clean_lock.release()
+    def outfile(self, ext): return "%s.%s" % (self.pname, ext)
 
     def unexpected(self,msg):
         err = error_line(self.outfile("err")) or error_line(self.outfile("out"))
         raise BadProcessStatus("%s %s%s" % (self.pname, msg, err))
-    
+
     def stop(self):                  # Clean up at end of test.
         try:
             if self.expect == EXPECT_UNKNOWN:
                 try: self.kill()            # Just make sure its dead
                 except: pass
             elif self.expect == EXPECT_RUNNING:
-                try:
-                    self.kill()
-                except:
-                    self.unexpected("expected running, exit code %d" % self.wait())
+                try: self.kill()
+                except: self.unexpected("expected running, exit code %d" % self.wait())
             else:
                 retry(lambda: self.poll() is not None)
                 if self.returncode is None: # Still haven't stopped
@@ -213,40 +170,21 @@ class Popen(subprocess.Popen):
                     self.unexpected("expected error")
         finally:
             self.wait()                 # Clean up the process.
-               
-    def communicate(self, input=None):
-        if input:
-            self.stdin.write(input)
-            self.stdin.close()
-        outerr = (self.stdout.read(), self.stderr.read())
-        self.wait()
-        return outerr
 
-    def is_running(self):
-        return self.poll() is None
+    def communicate(self, input=None):
+        ret = subprocess.Popen.communicate(self, input)
+        self.cleanup()
+        return ret
+
+    def is_running(self): return self.poll() is None
 
     def assert_running(self):
         if not self.is_running(): self.unexpected("Exit code %d" % self.returncode)
 
-    def poll(self, _deadstate=None): # _deadstate required by base class in python 2.4
-        if self.returncode is None:
-            # Pass _deadstate only if it has been set, there is no _deadstate
-            # parameter in Python 2.6 
-            if _deadstate is None: ret = subprocess.Popen.poll(self)
-            else: ret = subprocess.Popen.poll(self, _deadstate)
-
-            if (ret != -1):
-                self.returncode = ret
-                self._cleanup()
-        return self.returncode
-
     def wait(self):
-        if self.returncode is None:
-            self.drain()
-            try: self.returncode = subprocess.Popen.wait(self)
-            except OSError,e: raise OSError("Wait failed %s: %s"%(self.pname, e))
-            self._cleanup()
-        return self.returncode
+        ret = subprocess.Popen.wait(self)
+        self._cleanup()
+        return ret
 
     def terminate(self):
         try: subprocess.Popen.terminate(self)
@@ -255,7 +193,8 @@ class Popen(subprocess.Popen):
                 os.kill( self.pid , signal.SIGTERM)
             except AttributeError: # no os.kill, using taskkill.. (Windows only)
                 os.popen('TASKKILL /PID ' +str(self.pid) + ' /F')
-            
+        self._cleanup()
+
     def kill(self):
         try: subprocess.Popen.kill(self)
         except AttributeError:          # No terminate method
@@ -263,6 +202,20 @@ class Popen(subprocess.Popen):
                 os.kill( self.pid , signal.SIGKILL)
             except AttributeError: # no os.kill, using taskkill.. (Windows only)
                 os.popen('TASKKILL /PID ' +str(self.pid) + ' /F')
+        self._cleanup()
+
+    def _cleanup(self):
+        """Clean up after a dead process"""
+        self._clean_lock.acquire()
+        if not self._clean:
+            self._clean = True
+            try: self.stdin.close()
+            except: pass
+            try: self.stdout.close()
+            except: pass
+            try: self.stderr.close()
+            except: pass
+        self._clean_lock.release()
 
     def cmd_str(self): return " ".join([str(s) for s in self.cmd])
 
@@ -289,7 +242,7 @@ class Broker(Popen):
         while (os.path.exists(self.log)):
             self.log = "%s-%d.log" % (self.name, i)
             i += 1
-    
+
     def get_log(self):
         return os.path.abspath(self.log)
 
@@ -319,10 +272,10 @@ class Broker(Popen):
         cmd += ["--log-to-file", self.log]
         cmd += ["--log-to-stderr=no"]
         if log_level != None:
-            cmd += ["--log-enable=%s" % log_level] 
+            cmd += ["--log-enable=%s" % log_level]
         self.datadir = self.name
         cmd += ["--data-dir", self.datadir]
-        Popen.__init__(self, cmd, expect, drain=False)
+        Popen.__init__(self, cmd, expect, stdout=PIPE)
         test.cleanup_stop(self)
         self._host = "127.0.0.1"
         log.debug("Started broker %s (%s, %s)" % (self.name, self.pname, self.log))
@@ -362,7 +315,7 @@ class Broker(Popen):
         s = c.session(str(qpid.datatypes.uuid4()))
         s.queue_declare(queue=queue)
         c.close()
-    
+
     def _prep_sender(self, queue, durable, xprops):
         s = queue + "; {create:always, node:{durable:" + str(durable)
         if xprops != None: s += ", x-declare:{" + xprops + "}"
@@ -406,13 +359,14 @@ class Broker(Popen):
 
     def log_ready(self):
         """Return true if the log file exists and contains a broker ready message"""
-        if self._log_ready: return True
-        self._log_ready = find_in_file("notice Broker running", self.log)
+        if not self._log_ready:
+            self._log_ready = find_in_file("notice Broker running", self.log)
+        return self._log_ready
 
     def ready(self, **kwargs):
         """Wait till broker is ready to serve clients"""
         # First make sure the broker is listening by checking the log.
-        if not retry(self.log_ready, timeout=30):
+        if not retry(self.log_ready, timeout=60):
             raise Exception(
                 "Timed out waiting for broker %s%s"%(self.name, error_line(self.log,5)))
         # Create a connection and a session. For a cluster broker this will
@@ -421,17 +375,19 @@ class Broker(Popen):
             c = self.connect(**kwargs)
             try: c.session()
             finally: c.close()
-        except: raise RethrownException(
-            "Broker %s failed ready test%s"%(self.name,error_line(self.log, 5)))
+        except Exception,e: raise RethrownException(
+            "Broker %s not responding: (%s)%s"%(self.name,e,error_line(self.log, 5)))
 
     def store_state(self):
-        uuids = open(os.path.join(self.datadir, "cluster", "store.status")).readlines()
+        f = open(os.path.join(self.datadir, "cluster", "store.status"))
+        try: uuids = f.readlines()
+        finally: f.close()
         null_uuid="00000000-0000-0000-0000-000000000000\n"
         if len(uuids) < 2: return "unknown" # we looked while the file was being updated.
         if uuids[0] == null_uuid: return "empty"
         if uuids[1] == null_uuid: return "dirty"
         return "clean"
-        
+
 class Cluster:
     """A cluster of brokers in a test."""
 
@@ -495,7 +451,7 @@ class BrokerTest(TestCase):
     rootdir = os.getcwd()
 
     def configure(self, config): self.config=config
-    
+
     def setUp(self):
         outdir = self.config.defines.get("OUTDIR") or "brokertest.tmp"
         self.dir = os.path.join(self.rootdir, outdir, self.id())
@@ -516,10 +472,10 @@ class BrokerTest(TestCase):
         """Call thing.stop at end of test"""
         self.stopem.append(stopable)
 
-    def popen(self, cmd, expect=EXPECT_EXIT_OK, drain=True):
+    def popen(self, cmd, expect=EXPECT_EXIT_OK, stdin=None, stdout=FILE, stderr=FILE):
         """Start a process that will be killed at end of test, in the test dir."""
         os.chdir(self.dir)
-        p = Popen(cmd, expect, drain)
+        p = Popen(cmd, expect, stdin=stdin, stdout=stdout, stderr=stderr)
         self.cleanup_stop(p)
         return p
 
@@ -570,7 +526,7 @@ class StoppableThread(Thread):
         self.stopped = True
         self.join()
         if self.error: raise self.error
-    
+
 class NumberedSender(Thread):
     """
     Thread to run a sender client and send numbered messages until stopped.
@@ -589,7 +545,8 @@ class NumberedSender(Thread):
              "--failover-updates",
              "--content-stdin"
              ],
-            expect=EXPECT_RUNNING)
+            expect=EXPECT_RUNNING,
+            stdin=PIPE)
         self.condition = Condition()
         self.max = max_depth
         self.received = 0
@@ -629,7 +586,7 @@ class NumberedSender(Thread):
         self.join()
         self.write_message(-1)          # end-of-messages marker.
         if self.error: raise self.error
-        
+
 class NumberedReceiver(Thread):
     """
     Thread to run a receiver client and verify it receives
@@ -649,14 +606,14 @@ class NumberedReceiver(Thread):
              "--forever"
              ],
             expect=EXPECT_RUNNING,
-            drain=False)
+            stdout=PIPE)
         self.lock = Lock()
         self.error = None
         self.sender = sender
 
     def read_message(self):
         return int(self.receiver.stdout.readline())
-    
+
     def run(self):
         try:
             self.received = 0
@@ -688,7 +645,7 @@ class ErrorGenerator(StoppableThread):
         self.broker=broker
         broker.test.cleanup_stop(self)
         self.start()
-        
+
     def run(self):
         c = self.broker.connect_old()
         try:

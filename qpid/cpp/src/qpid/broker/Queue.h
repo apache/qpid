@@ -149,6 +149,7 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     QueuedMessage getFront();
     void forcePersistent(QueuedMessage& msg);
     int getEventMode();
+    void configureImpl(const qpid::framing::FieldTable& settings);
 
     inline void mgntEnqStats(const boost::intrusive_ptr<Message>& msg)
     {
@@ -192,11 +193,17 @@ class Queue : public boost::enable_shared_from_this<Queue>,
 
     QPID_BROKER_EXTERN bool dispatch(Consumer::shared_ptr);
 
-    void create(const qpid::framing::FieldTable& settings);
+    /**
+     * Used to configure a new queue and create a persistent record
+     * for it in store if required.
+     */
+    QPID_BROKER_EXTERN void create(const qpid::framing::FieldTable& settings);
 
-    // "recovering" means we are doing a MessageStore recovery.
-    QPID_BROKER_EXTERN void configure(const qpid::framing::FieldTable& settings,
-                                      bool recovering = false);
+    /**
+     * Used to reconfigure a recovered queue (does not create
+     * persistent record in store).
+     */
+    QPID_BROKER_EXTERN void configure(const qpid::framing::FieldTable& settings);
     void destroyed();
     QPID_BROKER_EXTERN void bound(const std::string& exchange,
                                   const std::string& key,
@@ -314,8 +321,13 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     void encode(framing::Buffer& buffer) const;
     uint32_t encodedSize() const;
 
-    // "recovering" means we are doing a MessageStore recovery.
-    static Queue::shared_ptr decode(QueueRegistry& queues, framing::Buffer& buffer, bool recovering = false );
+    /**
+     * Restores a queue from encoded data (used in recovery)
+     *
+     * Note: restored queue will be neither auto-deleted or have an
+     * exclusive owner
+     */
+    static Queue::shared_ptr restore(QueueRegistry& queues, framing::Buffer& buffer);
     static void tryAutoDelete(Broker& broker, Queue::shared_ptr);
 
     virtual void setExternalQueueStore(ExternalQueueStore* inst);

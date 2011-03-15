@@ -22,7 +22,7 @@ import os, signal, sys, time, imp, re, subprocess, glob, cluster_test_logs
 from qpid import datatypes, messaging
 from brokertest import *
 from qpid.harness import Skipped
-from qpid.messaging import Message, Empty
+from qpid.messaging import Message, Empty, Disposition, REJECTED
 from threading import Thread, Lock, Condition
 from logging import getLogger
 from itertools import chain
@@ -246,25 +246,6 @@ acl allow all all
         session1 = cluster[1].connect().session()
         for q in queues: self.assert_browse(session1, "q1", ["foo"])
 
-    def test_dr_no_message(self):
-        """Regression test for https://bugzilla.redhat.com/show_bug.cgi?id=655141
-        Joining broker crashes with 'error deliveryRecord no update message'
-        """
-
-        cluster = self.cluster(1)
-        session0 = cluster[0].connect().session()
-        s = session0.sender("q1;{create:always}")
-        s.send(Message("a", ttl=0.05), sync=False)
-        s.send(Message("b", ttl=0.05), sync=False)
-        r1 = session0.receiver("q1")
-        self.assertEqual("a", r1.fetch(timeout=0).content)
-        r2 = session0.receiver("q1;{mode:browse}")
-        self.assertEqual("b", r2.fetch(timeout=0).content)
-        # Leave messages un-acknowledged, let the expire, then start new broker.
-        time.sleep(.1)
-        cluster.start()
-        self.assertRaises(Empty, cluster[1].connect().session().receiver("q1").fetch,0)
-
     def test_route_update(self):
         """Regression test for https://issues.apache.org/jira/browse/QPID-2982
         Links and bridges associated with routes were not replicated on update.
@@ -303,6 +284,36 @@ acl allow all all
         assert scanner.found
         # Verify logs are consistent
         cluster_test_logs.verify_logs()
+
+    def test_redelivered(self):
+        """Verify that redelivered flag is set correctly on replayed messages"""
+        cluster = self.cluster(2, expect=EXPECT_EXIT_FAIL)
+        url = "amqp:tcp:%s,tcp:%s" % (cluster[0].host_port(), cluster[1].host_port())
+        queue = "my-queue"
+        cluster[0].declare_queue(queue)
+        self.sender = self.popen(
+            ["qpid-send",
+             "--broker", url,
+             "--address", queue,
+             "--sequence=true",
+             "--send-eos=1",
+             "--messages=100000",
+             "--connection-options={reconnect:true}"
+             ])
+        self.receiver = self.popen(
+            ["qpid-receive",
+             "--broker", url,
+             "--address", queue,
+             "--ignore-duplicates",
+             "--check-redelivered",
+             "--connection-options={reconnect:true}",
+             "--forever"
+             ])
+        time.sleep(1)#give sender enough time to have some messages to replay
+        cluster[0].kill()
+        self.sender.wait()
+        self.receiver.wait()
+        cluster[1].kill()
 
     class BlockedSend(Thread):
         """Send a message, send is expected to block.
@@ -411,6 +422,33 @@ acl allow all all
                 return cluster[1]
         self.queue_flowlimit_test(Brokers())
 
+    def test_alternate_exchange_update(self):
+        """Verify that alternate-exchange on exchanges and queues is propagated to new members of a cluster. """
+        cluster = self.cluster(1)
+        s0 = cluster[0].connect().session()
+        # create alt queue bound to amq.fanout exchange, will be destination for alternate exchanges
+        self.evaluate_address(s0, "alt;{create:always,node:{x-bindings:[{exchange:'amq.fanout',queue:alt}]}}")
+        # create direct exchange ex with alternate-exchange amq.fanout and no queues bound
+        self.evaluate_address(s0, "ex;{create:always,node:{type:topic, x-declare:{type:'direct', alternate-exchange:'amq.fanout'}}}")
+        # create queue q with alternate-exchange amq.fanout
+        self.evaluate_address(s0, "q;{create:always,node:{type:queue, x-declare:{alternate-exchange:'amq.fanout'}}}")
+
+        def verify(broker):
+            s = broker.connect().session()
+            # Verify unmatched message goes to ex's alternate.
+            s.sender("ex").send("foo")
+            self.assertEqual("foo", s.receiver("alt").fetch(timeout=0).content)
+            # Verify rejected message goes to q's alternate.
+            s.sender("q").send("bar")
+            msg = s.receiver("q").fetch(timeout=0)
+            self.assertEqual("bar", msg.content)
+            s.acknowledge(msg, Disposition(REJECTED)) # Reject the message
+            self.assertEqual("bar", s.receiver("alt").fetch(timeout=0).content)
+
+        verify(cluster[0])
+        cluster.start()
+        verify(cluster[1])
+
 class LongTests(BrokerTest):
     """Tests that can run for a long time if -DDURATION=<minutes> is set"""
     def duration(self):
@@ -469,24 +507,24 @@ class LongTests(BrokerTest):
                             if self.stopped: break
                             self.process = self.broker.test.popen(
                                 self.cmd, expect=EXPECT_UNKNOWN)
-                        finally: self.lock.release()
-                        try: exit = self.process.wait()
+                        finally:
+                            self.lock.release()
+                        try:
+                            exit = self.process.wait()
                         except OSError, e:
-                            # Seems to be a race in wait(), it throws
-                            # "no such process" during test shutdown.
-                            # Doesn't indicate a test error, ignore.
-                            return
+                            # Process may already have been killed by self.stop()
+                            break
                         except Exception, e:
                             self.process.unexpected(
                                 "client of %s: %s"%(self.broker.name, e))
                         self.lock.acquire()
                         try:
-                            # Quit and ignore errors if stopped or expecting failure.
                             if self.stopped: break
                             if exit != 0:
                                 self.process.unexpected(
                                     "client of %s exit code %s"%(self.broker.name, exit))
-                        finally: self.lock.release()
+                        finally:
+                            self.lock.release()
                 except Exception, e:
                     self.error = RethrownException("Error in ClientLoop.run")
 
@@ -517,8 +555,10 @@ class LongTests(BrokerTest):
             """Start ordinary clients for a broker."""
             cmds=[
                 ["qpid-tool", "localhost:%s"%(broker.port())],
-                ["qpid-perftest", "--count", 50000,
+                ["qpid-perftest", "--count=5000", "--durable=yes",
                  "--base-name", str(qpid.datatypes.uuid4()), "--port", broker.port()],
+                ["qpid-txtest", "--queue-base-name", "tx-%s"%str(qpid.datatypes.uuid4()),
+                 "--port", broker.port()],
                 ["qpid-queue-stats", "-a", "localhost:%s" %(broker.port())],
                 ["testagent", "localhost", str(broker.port())] ]
             clients.append([ClientLoop(broker, cmd) for cmd in cmds])
@@ -529,7 +569,8 @@ class LongTests(BrokerTest):
             mclients.append(ClientLoop(broker, cmd))
 
         endtime = time.time() + self.duration()
-        runtime = self.duration() / 4   # First run is longer, use quarter of duration.
+        # For long duration, first run is a quarter of the duration.
+        runtime = max(5, self.duration() / 4.0)
         alive = 0                       # First live cluster member
         for i in range(len(cluster)): start_clients(cluster[i])
         start_mclients(cluster[alive])
@@ -555,14 +596,13 @@ class LongTests(BrokerTest):
             start_mclients(cluster[alive])
         for c in chain(mclients, *clients):
             c.stop()
-
         # Verify that logs are consistent
         cluster_test_logs.verify_logs()
 
     def test_management_qmf2(self):
         self.test_management(args=["--mgmt-qmf2=yes"])
 
-    def test_connect_consistent(self):   # FIXME aconway 2011-01-18:
+    def test_connect_consistent(self):
         args=["--mgmt-pub-interval=1","--log-enable=trace+:management"]
         cluster = self.cluster(2, args=args)
         end = time.time() + self.duration()

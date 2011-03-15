@@ -209,25 +209,26 @@ public class ServerSessionDelegate extends SessionDelegate
                 }
                 else
                 {
-
                     if(queue.isExclusive())
                     {
+                        ServerSession s = (ServerSession) session;
+                        queue.setExclusiveOwningSession(s);
                         if(queue.getPrincipalHolder() == null)
                         {
-                            queue.setPrincipalHolder((ServerSession)session);
+                            queue.setPrincipalHolder(s);
+                            queue.setExclusiveOwningSession(s);
                             ((ServerSession) session).addSessionCloseTask(new ServerSession.Task()
                             {
-
                                 public void doTask(ServerSession session)
                                 {
                                     if(queue.getPrincipalHolder() == session)
                                     {
                                         queue.setPrincipalHolder(null);
+                                        queue.setExclusiveOwningSession(null);
                                     }
                                 }
                             });
                         }
-
 
                     }
 
@@ -369,7 +370,6 @@ public class ServerSessionDelegate extends SessionDelegate
         }
 
         ssn.processed(xfr);
-
     }
 
     @Override
@@ -969,10 +969,10 @@ public class ServerSessionDelegate extends SessionDelegate
 
                         }
 
-                        if(method.hasAutoDelete()
-                           && method.getAutoDelete()
-                           && method.hasExclusive()
-                           && method.getExclusive())
+                        if (method.hasAutoDelete()
+                            && method.getAutoDelete()
+                            && method.hasExclusive()
+                            && method.getExclusive())
                         {
                             final AMQQueue q = queue;
                             final ServerSession.Task deleteQueueTask = new ServerSession.Task()
@@ -999,12 +999,12 @@ public class ServerSessionDelegate extends SessionDelegate
                                     }
                                 });
                         }
-                        else if(method.getExclusive())
+                        if (method.hasExclusive()
+                            && method.getExclusive())
                         {
                             final AMQQueue q = queue;
                             final ServerSession.Task removeExclusive = new ServerSession.Task()
                             {
-
                                 public void doTask(ServerSession session)
                                 {
                                     q.setPrincipalHolder(null);
@@ -1012,10 +1012,10 @@ public class ServerSessionDelegate extends SessionDelegate
                                 }
                             };
                             final ServerSession s = (ServerSession) session;
+                            q.setExclusiveOwningSession(s);
                             s.addSessionCloseTask(removeExclusive);
                             queue.addQueueDeleteTask(new AMQQueue.Task()
                             {
-
                                 public void doTask(AMQQueue queue) throws AMQException
                                 {
                                     s.removeSessionCloseTask(removeExclusive);
@@ -1029,7 +1029,7 @@ public class ServerSessionDelegate extends SessionDelegate
                     }
                 }
             }
-            else if (method.getExclusive() && (queue.getPrincipalHolder() != null && !queue.getPrincipalHolder().equals(session)))
+            else if (method.getExclusive() && (queue.getExclusiveOwningSession() != null && !queue.getExclusiveOwningSession().equals(session)))
             {
                     String description = "Cannot declare queue('" + queueName + "'),"
                                                                            + " as exclusive queue with same name "

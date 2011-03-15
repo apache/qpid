@@ -30,7 +30,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
@@ -92,6 +91,7 @@ import org.apache.qpid.server.output.ProtocolOutputConverterRegistry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.state.AMQState;
 import org.apache.qpid.server.state.AMQStateManager;
+import org.apache.qpid.server.stats.StatisticsCounter;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 import org.apache.qpid.transport.NetworkDriver;
@@ -172,6 +172,10 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
     private final UUID _id;
     private final ConfigStore _configStore;
     private long _createTime = System.currentTimeMillis();
+    
+    private ApplicationRegistry _registry;
+    private boolean _statisticsEnabled = false;
+    private StatisticsCounter _messagesDelivered, _dataDelivered, _messagesReceived, _dataReceived;
 
     public ManagedObject getManagedObject()
     {
@@ -195,9 +199,10 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
         _configStore = virtualHostRegistry.getConfigStore();
         _id = _configStore.createId();
 
-
         _actor.message(ConnectionMessages.OPEN(null, null, false, false));
 
+        _registry = virtualHostRegistry.getApplicationRegistry();
+        initialiseStatistics();
     }
 
     private AMQProtocolSessionMBean createMBean() throws JMException
@@ -1078,19 +1083,6 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
         return (_clientVersion == null) ? null : _clientVersion.toString();
     }
 
-    public void closeIfLingeringClosedChannels()
-    {
-        for (Entry<Integer, Long>id : _closingChannelsList.entrySet())
-        {
-            if (id.getValue() + 30000 > System.currentTimeMillis())
-            {
-                // We have a channel that we closed 30 seconds ago. Client's dead, kill the connection
-                _logger.error("Closing connection as channel was closed more than 30 seconds ago and no ChannelCloseOk has been processed");
-                closeProtocolSession();
-            }
-        }
-    }
-
     public Boolean isIncoming()
     {
         return true;
@@ -1263,7 +1255,6 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
 
     public void closeSession(AMQSessionModel session, AMQConstant cause, String message) throws AMQException
     {
-
         closeChannel((Integer)session.getID());
 
         MethodRegistry methodRegistry = getMethodRegistry();
@@ -1274,5 +1265,97 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
                         0,0);
 
         writeFrame(responseBody.generateFrame((Integer)session.getID()));       
-    }       
+    }
+
+    public void close(AMQConstant cause, String message) throws AMQException
+    {
+        closeConnection(0, new AMQConnectionException(cause, message, 0, 0,
+		                getProtocolOutputConverter().getProtocolMajorVersion(),
+		                getProtocolOutputConverter().getProtocolMinorVersion(),
+		                (Throwable) null), true);
+    }
+
+    public List<AMQSessionModel> getSessionModels()
+    {
+		List<AMQSessionModel> sessions = new ArrayList<AMQSessionModel>(); 
+		for (AMQChannel channel : getChannels())
+		{
+		    sessions.add((AMQSessionModel) channel);
+		}
+		return sessions;
+    }
+
+    public LogSubject getLogSubject()
+    {
+        return _logSubject;
+    }
+
+    public void registerMessageDelivered(long messageSize)
+    {
+        if (isStatisticsEnabled())
+        {
+            _messagesDelivered.registerEvent(1L);
+            _dataDelivered.registerEvent(messageSize);
+        }
+        _virtualHost.registerMessageDelivered(messageSize);
+    }
+
+    public void registerMessageReceived(long messageSize, long timestamp)
+    {
+        if (isStatisticsEnabled())
+        {
+            _messagesReceived.registerEvent(1L, timestamp);
+            _dataReceived.registerEvent(messageSize, timestamp);
+        }
+        _virtualHost.registerMessageReceived(messageSize, timestamp);
+    }
+    
+    public StatisticsCounter getMessageReceiptStatistics()
+    {
+        return _messagesReceived;
+    }
+    
+    public StatisticsCounter getDataReceiptStatistics()
+    {
+        return _dataReceived;
+    }
+    
+    public StatisticsCounter getMessageDeliveryStatistics()
+    {
+        return _messagesDelivered;
+    }
+    
+    public StatisticsCounter getDataDeliveryStatistics()
+    {
+        return _dataDelivered;
+    }
+    
+    public void resetStatistics()
+    {
+        _messagesDelivered.reset();
+        _dataDelivered.reset();
+        _messagesReceived.reset();
+        _dataReceived.reset();
+    }
+
+    public void initialiseStatistics()
+    {
+        setStatisticsEnabled(!StatisticsCounter.DISABLE_STATISTICS &&
+                _registry.getConfiguration().isStatisticsGenerationConnectionsEnabled());
+        
+        _messagesDelivered = new StatisticsCounter("messages-delivered-" + getSessionID());
+        _dataDelivered = new StatisticsCounter("data-delivered-" + getSessionID());
+        _messagesReceived = new StatisticsCounter("messages-received-" + getSessionID());
+        _dataReceived = new StatisticsCounter("data-received-" + getSessionID());
+    }
+
+    public boolean isStatisticsEnabled()
+    {
+        return _statisticsEnabled;
+    }
+
+    public void setStatisticsEnabled(boolean enabled)
+    {
+        _statisticsEnabled = enabled;
+    }
 }

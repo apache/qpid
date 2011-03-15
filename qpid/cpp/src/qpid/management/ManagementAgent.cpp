@@ -75,6 +75,18 @@ namespace {
         }
         return n2;
     }
+
+struct ScopedManagementContext
+{
+    ScopedManagementContext(const qpid::broker::ConnectionState* context)
+    {
+        setManagementExecutionContext(context);
+    }
+    ~ScopedManagementContext()
+    {
+        setManagementExecutionContext(0);
+    }
+};
 }
 
 
@@ -536,6 +548,7 @@ void ManagementAgent::sendBufferLH(Buffer&  buf,
     dp->setRoutingKey(routingKey);
 
     msg->getFrames().append(content);
+    msg->setIsManagementMessage(true);
 
     {
         sys::Mutex::ScopedUnlock u(userLock);
@@ -612,6 +625,7 @@ void ManagementAgent::sendBufferLH(const string& data,
         msg->setTimestamp(broker->getExpiryPolicy());
     }
     msg->getFrames().append(content);
+    msg->setIsManagementMessage(true);
 
     {
         sys::Mutex::ScopedUnlock u(userLock);
@@ -2238,7 +2252,7 @@ void ManagementAgent::dispatchAgentCommandLH(Message& msg, bool viaLocal)
     uint32_t bufferLen = inBuffer.getPosition();
     inBuffer.reset();
 
-    setManagementExecutionContext((const qpid::broker::ConnectionState*) msg.getPublisher());
+    ScopedManagementContext context((const qpid::broker::ConnectionState*) msg.getPublisher());
     const framing::FieldTable *headers = msg.getApplicationHeaders();
     if (headers && msg.getAppId() == "qmf2")
     {

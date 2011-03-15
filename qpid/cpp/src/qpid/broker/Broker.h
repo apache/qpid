@@ -121,6 +121,7 @@ public:
         bool qmf1Support;
         uint queueFlowStopRatio;    // producer flow control: on
         uint queueFlowResumeRatio;  // producer flow control: off
+        uint16_t queueThresholdEventRatio;
 
       private:
         std::string getHome();
@@ -154,7 +155,7 @@ public:
     void setLogLevel(const std::string& level);
     std::string getLogLevel();
     void createObject(const std::string& type, const std::string& name,
-                      const qpid::types::Variant::Map& properties, bool lenient, const ConnectionState* context);
+                      const qpid::types::Variant::Map& properties, bool strict, const ConnectionState* context);
     void deleteObject(const std::string& type, const std::string& name,
                       const qpid::types::Variant::Map& options, const ConnectionState* context);
 

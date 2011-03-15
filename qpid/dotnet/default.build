@@ -62,9 +62,12 @@
 
     <!-- Other test or utility assemblies. -->
     <fileset id='other.builds'>
+        <include name="TestClient/default.build" />	
+        <!-- Examples -->
         <include name="TopicListener/default.build" />	
         <include name="TopicPublisher/default.build" />	
-        <include name="TestClient/default.build" />	
+        <include name="Consumer/default.build" />	
+        <include name="Producer/default.build" />	
     </fileset>
 
     <!-- Prepare environment for a debug build. -->

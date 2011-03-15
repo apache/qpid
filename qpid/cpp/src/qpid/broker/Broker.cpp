@@ -122,7 +122,8 @@ Broker::Options::Options(const std::string& name) :
     qmf2Support(true),
     qmf1Support(true),
     queueFlowStopRatio(80),
-    queueFlowResumeRatio(70)
+    queueFlowResumeRatio(70),
+    queueThresholdEventRatio(80)
 {
     int c = sys::SystemInfo::concurrency();
     workerThreads=c+1;
@@ -153,11 +154,12 @@ Broker::Options::Options(const std::string& name) :
         ("tcp-nodelay", optValue(tcpNoDelay), "Set TCP_NODELAY on TCP connections")
         ("require-encryption", optValue(requireEncrypted), "Only accept connections that are encrypted")
         ("known-hosts-url", optValue(knownHosts, "URL or 'none'"), "URL to send as 'known-hosts' to clients ('none' implies empty list)")
-        ("sasl-config", optValue(saslConfigPath, "FILE"), "gets sasl config from nonstandard location")
+        ("sasl-config", optValue(saslConfigPath, "DIR"), "gets sasl config info from nonstandard location")
         ("max-session-rate", optValue(maxSessionRate, "MESSAGES/S"), "Sets the maximum message rate per session (0=unlimited)")
         ("async-queue-events", optValue(asyncQueueEvents, "yes|no"), "Set Queue Events async, used for services like replication")
         ("default-flow-stop-threshold", optValue(queueFlowStopRatio, "%MESSAGES"), "Queue capacity level at which flow control is activated.")
-        ("default-flow-resume-threshold", optValue(queueFlowResumeRatio, "%MESSAGES"), "Queue capacity level at which flow control is de-activated.");
+        ("default-flow-resume-threshold", optValue(queueFlowResumeRatio, "%MESSAGES"), "Queue capacity level at which flow control is de-activated.")
+        ("default-event-threshold-ratio", optValue(queueThresholdEventRatio, "%age of limit"), "The ratio of any specified queue limit at which an event will be raised");
 }
 
 const std::string empty;
@@ -595,7 +597,7 @@ void Broker::createObject(const std::string& type, const std::string& name,
         }
     } else if (type == TYPE_EXCHANGE || type == TYPE_TOPIC) {
         bool durable(false);
-        std::string exchangeType;
+        std::string exchangeType("topic");
         std::string alternateExchange;
         Variant::Map extensions;
         for (Variant::Map::const_iterator i = properties.begin(); i != properties.end(); ++i) {
@@ -788,18 +790,11 @@ std::pair<boost::shared_ptr<Queue>, bool> Broker::createQueue(
     Exchange::shared_ptr alternate;
     if (!alternateExchange.empty()) {
         alternate = exchanges.get(alternateExchange);
-        if (!alternate) framing::NotFoundException(QPID_MSG("Alternate exchange does not exist: " << alternateExchange));
+        if (!alternate) throw framing::NotFoundException(QPID_MSG("Alternate exchange does not exist: " << alternateExchange));
     }
 
-    std::pair<Queue::shared_ptr, bool> result = queues.declare(name, durable, autodelete, owner);
+    std::pair<Queue::shared_ptr, bool> result = queues.declare(name, durable, autodelete, owner, alternate, arguments);
     if (result.second) {
-        if (alternate) {
-            result.first->setAlternateExchange(alternate);
-            alternate->incAlternateUsers();
-        }
-
-        //apply settings & create persistent record if required
-        result.first->create(arguments);
         //add default binding:
         result.first->bind(exchanges.getDefault(), name);
 
@@ -861,7 +856,7 @@ std::pair<Exchange::shared_ptr, bool> Broker::createExchange(
     Exchange::shared_ptr alternate;
     if (!alternateExchange.empty()) {
         alternate = exchanges.get(alternateExchange);
-        if (!alternate) framing::NotFoundException(QPID_MSG("Alternate exchange does not exist: " << alternateExchange));
+        if (!alternate) throw framing::NotFoundException(QPID_MSG("Alternate exchange does not exist: " << alternateExchange));
     }
 
     std::pair<Exchange::shared_ptr, bool> result;

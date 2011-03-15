@@ -41,18 +41,18 @@ class Fairshare : public PriorityQueue
     bool getState(uint& priority, uint& count) const;
     bool setState(uint priority, uint count);
     void setLimit(size_t level, uint limit);
+    bool isNull();
     static std::auto_ptr<Messages> create(const qpid::framing::FieldTable& settings);
     static bool getState(const Messages&, uint& priority, uint& count);
     static bool setState(Messages&, uint priority, uint count);
   private:
     std::vector<uint> limits;
-    
+
     uint priority;
     uint count;
-    
+
     uint currentLevel();
     uint nextLevel();
-    bool isNull();
     bool limitReached();
     bool findFrontLevel(uint& p, PriorityLevels&);
 };

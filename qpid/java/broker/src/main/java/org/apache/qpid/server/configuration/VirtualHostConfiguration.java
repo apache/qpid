@@ -313,4 +313,24 @@ public class VirtualHostConfiguration extends ConfigurationPlugin
     {
         return getIntValue("housekeeping.poolSize", Runtime.getRuntime().availableProcessors());
     }
+
+    public long getTransactionTimeoutOpenWarn()
+    {
+        return getLongValue("transactionTimeout.openWarn", 0L);
+    }
+
+    public long getTransactionTimeoutOpenClose()
+    {
+        return getLongValue("transactionTimeout.openClose", 0L);
+    }
+
+    public long getTransactionTimeoutIdleWarn()
+    {
+        return getLongValue("transactionTimeout.idleWarn", 0L);
+    }
+
+    public long getTransactionTimeoutIdleClose()
+    {
+        return getLongValue("transactionTimeout.idleClose", 0L);
+    }
 }
