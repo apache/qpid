@@ -66,7 +66,7 @@ class Attachment:
 
 # XXX
 
-DURABLE_DEFAULT=True
+DURABLE_DEFAULT=False
 
 # XXX
 
