@@ -990,7 +990,9 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
     
     public void testReplyToWithNamelessExchange() throws Exception
     {
+    	System.setProperty("qpid.declare_exchanges","false");
     	replyToTest("ADDR:my-queue;{create: always}");
+    	System.setProperty("qpid.declare_exchanges","true");
     }
     
     public void testReplyToWithCustomExchange() throws Exception
