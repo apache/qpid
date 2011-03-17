@@ -930,6 +930,7 @@ class Engine:
 
   def resolve_declare(self, sst, lnk, dir, action):
     declare = lnk.options.get("create") in ("always", dir)
+    assrt = lnk.options.get("assert") in ("always", dir)
     def do_resolved(type, subtype):
       err = None
       if type is None:
@@ -938,7 +939,12 @@ class Engine:
         else:
           err = NotFound(text="no such queue: %s" % lnk.name)
       else:
-        action(type, subtype)
+        if assrt:
+          expected = lnk.options.get("node", {}).get("type")
+          if type != expected:
+            err = AssertionFailed(text="expected %s, got %s" % (expected, type))
+        if err is None:
+          action(type, subtype)
 
       if err:
         tgt = lnk.target

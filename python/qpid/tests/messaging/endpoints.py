@@ -1186,6 +1186,13 @@ test-link-bindings-queue; {
       snd.send(m)
     self.drain(qrcv, expected=msgs)
 
+  def testAssert(self):
+    try:
+      snd = self.ssn.sender("amq.topic; {assert: always, node: {type: queue}}")
+      assert 0, "assertion failed to trigger"
+    except AssertionFailed, e:
+      pass
+
 NOSUCH_Q = "this-queue-should-not-exist"
 UNPARSEABLE_ADDR = "name/subject; {bad options"
 UNLEXABLE_ADDR = "\0x0\0x1\0x2\0x3"
