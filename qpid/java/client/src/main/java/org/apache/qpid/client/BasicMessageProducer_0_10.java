@@ -72,12 +72,15 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
     {
         if (destination.getDestSyntax() == DestSyntax.BURL)
         {
-            String name = destination.getExchangeName().toString();
-            ((AMQSession_0_10) getSession()).getQpidSession().exchangeDeclare
-                (name,
-                 destination.getExchangeClass().toString(),
-                 null, null,
-                 name.startsWith("amq.") ? Option.PASSIVE : Option.NONE);
+        	if (getSession().isDeclareExchanges())
+        	{
+	            String name = destination.getExchangeName().toString();
+	            ((AMQSession_0_10) getSession()).getQpidSession().exchangeDeclare
+	                (name,
+	                 destination.getExchangeClass().toString(),
+	                 null, null,
+	                 name.startsWith("amq.") ? Option.PASSIVE : Option.NONE);
+        	}
         }
         else
         {       
