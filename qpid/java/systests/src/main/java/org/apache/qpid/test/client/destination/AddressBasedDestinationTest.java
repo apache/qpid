@@ -474,39 +474,6 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
     }
     
     /**
-    * Test goal: Verifies that and address based destination can be used successfully 
-    *            as a reply to.
-    */
-    public void testAddressBasedReplyTo() throws Exception
-    {
-        Session jmsSession = _connection.createSession(false,Session.AUTO_ACKNOWLEDGE);
-        
-        String addr = "ADDR:amq.direct/x512; {create: receiver, " +
-                      "link : {name : 'MY.RESP.QUEUE', " + 
-                      "x-declare : { auto-delete: true, exclusive: true, " +
-                                   "arguments : {'qpid.max_size': 1000, 'qpid.policy_type': ring }} } }";
-        
-        Destination replyTo = new AMQAnyDestination(addr);
-        Destination dest =new AMQAnyDestination("ADDR:amq.direct/Hello");
-        
-        MessageConsumer cons = jmsSession.createConsumer(dest);                
-        MessageProducer prod = jmsSession.createProducer(dest);
-        Message m = jmsSession.createTextMessage("Hello");
-        m.setJMSReplyTo(replyTo);
-        prod.send(m);
-        
-        Message msg = cons.receive(1000);
-        assertNotNull("consumer should have received the message",msg);
-        
-        MessageConsumer replyToCons = jmsSession.createConsumer(replyTo);
-        MessageProducer replyToProd = jmsSession.createProducer(msg.getJMSReplyTo());
-        replyToProd.send(jmsSession.createTextMessage("reply"));
-        
-        Message replyToMsg = replyToCons.receive(1000);
-        assertNotNull("The reply to consumer should have got the message",replyToMsg);        
-    }
-    
-    /**
      * Test goal: Verifies that session.createQueue method
      *            works as expected both with the new and old addressing scheme.
      */
@@ -1019,5 +986,37 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
         assertEquals("A",((TextMessage)msg).getText());
         prod.close();
         cons.close();
+    }
+    
+    public void testReplyToWithNamelessExchange() throws Exception
+    {
+    	replyToTest("ADDR:my-queue;{create: always}");
+    }
+    
+    public void testReplyToWithCustomExchange() throws Exception
+    {
+    	replyToTest("ADDR:hello;{create:always,node:{type:topic}}");
+    }
+    
+    private void replyToTest(String replyTo) throws Exception
+    {
+		Session session = _connection.createSession(false, Session.AUTO_ACKNOWLEDGE);			
+		Destination replyToDest = AMQDestination.createDestination(replyTo);
+	    MessageConsumer replyToCons = session.createConsumer(replyToDest);
+	    		    			
+		Destination dest = session.createQueue("amq.direct/test");
+					
+		MessageConsumer cons = session.createConsumer(dest);
+		MessageProducer prod = session.createProducer(dest);
+		Message m = session.createTextMessage("test");
+		m.setJMSReplyTo(replyToDest);
+		prod.send(m);
+		
+		Message msg = cons.receive();
+		MessageProducer prodR = session.createProducer(msg.getJMSReplyTo());
+		prodR.send(session.createTextMessage("x"));
+		
+		Message m1 = replyToCons.receive();
+		assertNotNull("The reply to consumer should have received the messsage",m1);
     }
 }
