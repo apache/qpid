@@ -498,6 +498,10 @@ class BrokerTest(TestCase):
         r.close()
         self.assertEqual(expect_contents, actual_contents)
 
+def join(thread, timeout=1):
+    thread.join(timeout)
+    if thread.isAlive(): raise Exception("Timed out joining thread %s"%thread)
+
 class RethrownException(Exception):
     """Captures the stack trace of the current exception to be thrown later"""
     def __init__(self, msg=""):
@@ -515,7 +519,7 @@ class StoppableThread(Thread):
 
     def stop(self):
         self.stopped = True
-        self.join()
+        join(self)
         if self.error: raise self.error
 
 class NumberedSender(Thread):
@@ -574,7 +578,7 @@ class NumberedSender(Thread):
             self.stopped = True
             self.condition.notify()
         finally: self.condition.release()
-        self.join()
+        join(self)
         self.write_message(-1)          # end-of-messages marker.
         if self.error: raise self.error
 
@@ -621,7 +625,7 @@ class NumberedReceiver(Thread):
 
     def stop(self):
         """Returns when termination message is received"""
-        self.join()
+        join(self)
         if self.error: raise self.error
 
 class ErrorGenerator(StoppableThread):
