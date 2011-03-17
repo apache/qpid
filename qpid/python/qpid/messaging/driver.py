@@ -941,7 +941,7 @@ class Engine:
       else:
         if assrt:
           expected = lnk.options.get("node", {}).get("type")
-          if type != expected:
+          if expected and type != expected:
             err = AssertionFailed(text="expected %s, got %s" % (expected, type))
         if err is None:
           action(type, subtype)
