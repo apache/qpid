@@ -17,17 +17,22 @@
 # under the License.
 #
 
+import socket
 from qpid.util import connect
 
 TRANSPORTS = {}
 
-class tcp:
+class SocketTransport:
 
-  def __init__(self, host, port):
+  def __init__(self, conn, host, port):
     self.socket = connect(host, port)
+    if conn.tcp_nodelay:
+      self.socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
 
   def fileno(self):
     return self.socket.fileno()
+
+class tcp(SocketTransport):
 
   def reading(self, reading):
     return reading
@@ -52,16 +57,13 @@ try:
 except ImportError:
   pass
 else:
-  class tls:
+  class tls(SocketTransport):
 
-    def __init__(self, host, port):
-      self.socket = connect(host, port)
+    def __init__(self, conn, host, port):
+      SocketTransport.__init__(self, conn, host, port)
       self.tls = wrap_socket(self.socket)
       self.socket.setblocking(0)
       self.state = None
-
-    def fileno(self):
-      return self.socket.fileno()
 
     def reading(self, reading):
       if self.state is None:

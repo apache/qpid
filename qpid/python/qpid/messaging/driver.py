@@ -526,7 +526,7 @@ class Driver:
       rawlog.debug("OPEN[%s]: %s:%s", self.log_id, host, port)
       trans = transports.TRANSPORTS.get(self.connection.transport)
       if trans:
-        self._transport = trans(host, port)
+        self._transport = trans(self.connection, host, port)
       else:
         raise ConnectError("no such transport: %s" % self.connection.transport)
       if self._retrying and self._reconnect_log:
