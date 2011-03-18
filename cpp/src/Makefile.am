@@ -127,14 +127,14 @@ qpidexec_SCRIPTS =
 qpidtestdir = $(qpidexecdir)/tests
 qpidtest_PROGRAMS =
 qpidtest_SCRIPTS =
-tmoduledir = $(libdir)/qpid/tests
-tmodule_LTLIBRARIES=
+tmoduleexecdir = $(libdir)/qpid/tests
+tmoduleexec_LTLIBRARIES=
 
 AM_CXXFLAGS += -DBOOST_FILESYSTEM_VERSION=2
 
 ## Automake macros to build libraries and executables.
-qpidd_CXXFLAGS = $(AM_CXXFLAGS) -DQPIDD_MODULE_DIR=\"$(dmoduledir)\" -DQPIDD_CONF_FILE=\"$(sysconfdir)/qpidd.conf\"
-libqpidclient_la_CXXFLAGS = $(AM_CXXFLAGS) -DQPIDC_MODULE_DIR=\"$(cmoduledir)\" -DQPIDC_CONF_FILE=\"$(confdir)/qpidc.conf\"
+qpidd_CXXFLAGS = $(AM_CXXFLAGS) -DQPIDD_MODULE_DIR=\"$(dmoduleexecdir)\" -DQPIDD_CONF_FILE=\"$(sysconfdir)/qpidd.conf\"
+libqpidclient_la_CXXFLAGS = $(AM_CXXFLAGS) -DQPIDC_MODULE_DIR=\"$(cmoduleexecdir)\" -DQPIDC_CONF_FILE=\"$(confdir)/qpidc.conf\"
 
 qpidd_LDADD =					\
   libqpidbroker.la				\
@@ -200,10 +200,10 @@ lib_LTLIBRARIES = libqpidtypes.la libqpidcommon.la libqpidbroker.la libqpidclien
 # Definitions for client and daemon plugins
 PLUGINLDFLAGS=-no-undefined -module -avoid-version
 confdir=$(sysconfdir)/qpid
-dmoduledir=$(libdir)/qpid/daemon
-cmoduledir=$(libdir)/qpid/client
-dmodule_LTLIBRARIES =
-cmodule_LTLIBRARIES =
+dmoduleexecdir=$(libdir)/qpid/daemon
+cmoduleexecdir=$(libdir)/qpid/client
+dmoduleexec_LTLIBRARIES =
+cmoduleexec_LTLIBRARIES =
 
 include cluster.mk
 include acl.mk
@@ -245,7 +245,7 @@ rdma_la_LIBADD = \
 rdma_la_LDFLAGS = $(PLUGINLDFLAGS)
 rdma_la_CXXFLAGS = \
   $(AM_CXXFLAGS) -Wno-missing-field-initializers
-dmodule_LTLIBRARIES += \
+dmoduleexec_LTLIBRARIES += \
   rdma.la
 
 rdmaconnector_la_SOURCES = \
@@ -257,7 +257,7 @@ rdmaconnector_la_LIBADD = \
 rdmaconnector_la_LDFLAGS = $(PLUGINLDFLAGS)
 rdmaconnector_la_CXXFLAGS = \
   $(AM_CXXFLAGS) -Wno-missing-field-initializers
-cmodule_LTLIBRARIES += \
+cmoduleexec_LTLIBRARIES += \
   rdmaconnector.la
 
 # RDMA test/sample programs
