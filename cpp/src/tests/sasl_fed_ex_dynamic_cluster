@@ -21,7 +21,8 @@
 
 
 source ./test_env.sh
+source $srcdir/ais_check
 
-${srcdir}/sasl_fed_ex dynamic cluster
+with_ais_group ${srcdir}/sasl_fed_ex dynamic cluster
 
 
