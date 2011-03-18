@@ -18,7 +18,7 @@
 #
 #
 # Makefile fragment, conditionally included in Makefile.am
-# 
+#
 libsslcommon_la_SOURCES = \
   qpid/sys/ssl/check.h \
   qpid/sys/ssl/check.cpp \
@@ -47,7 +47,7 @@ ssl_la_CXXFLAGS=$(AM_CXXFLAGS) $(SSL_CFLAGS)
 
 ssl_la_LDFLAGS = $(PLUGINLDFLAGS)
 
-dmodule_LTLIBRARIES += ssl.la
+dmoduleexec_LTLIBRARIES += ssl.la
 
 sslconnector_la_SOURCES = \
   qpid/client/SslConnector.cpp
@@ -60,5 +60,5 @@ sslconnector_la_CXXFLAGS = $(AM_CXXFLAGS) -DQPIDC_CONF_FILE=\"$(confdir)/qpidc.c
 
 sslconnector_la_LDFLAGS = $(PLUGINLDFLAGS)
 
-cmodule_LTLIBRARIES += \
+cmoduleexec_LTLIBRARIES += \
   sslconnector.la
