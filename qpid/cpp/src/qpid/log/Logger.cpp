@@ -22,6 +22,7 @@
 #include "qpid/memory.h"
 #include "qpid/sys/Thread.h"
 #include "qpid/sys/Time.h"
+#include "qpid/DisableExceptionLogging.h"
 #include <boost/pool/detail/singleton.hpp>
 #include <boost/bind.hpp>
 #include <boost/function.hpp>
@@ -48,11 +49,16 @@ Logger& Logger::instance() {
 }
 
 Logger::Logger() : flags(0) {
+    // Disable automatic logging in Exception constructors to avoid
+    // re-entrant use of logger singleton if there is an error in
+    // option parsing.
+    DisableExceptionLogging del;
+
     // Initialize myself from env variables so all programs
     // (e.g. tests) can use logging even if they don't parse
     // command line args.
     Options opts("");
-    opts.parse(0, 0);           
+    opts.parse(0, 0);
     configure(opts);
 }
 
@@ -73,7 +79,7 @@ void Logger::log(const Statement& s, const std::string& msg) {
     std::ostringstream os;
     if (!prefix.empty())
         os << prefix << ": ";
-    if (flags&TIME) 
+    if (flags&TIME)
 		qpid::sys::outputFormattedNow(os);
     if (flags&LEVEL)
         os << LevelTraits::name(s.level) << " ";
@@ -140,7 +146,7 @@ void Logger::configure(const Options& opts) {
     Options o(opts);
     if (o.trace)
         o.selectors.push_back("trace+");
-    format(o); 
+    format(o);
     select(Selector(o));
     setPrefix(opts.prefix);
     options.sinkOptions->setup(this);
