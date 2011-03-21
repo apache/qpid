@@ -61,7 +61,8 @@ end
 class Module
   # Add trailing _ to avoid conflict with Object methods.
   def mangle(sym)
-    (Object.method_defined? sym) ? (sym.to_s+"_").intern : sym
+    sym =  (sym.to_s+"_").to_sym if (Object.method_defined?(sym) or sym == :type)
+    sym
   end
 
   # Add attribute reader for XML attribute.
