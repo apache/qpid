@@ -178,7 +178,7 @@ public class JMSPropertiesTest extends QpidBrokerTestCase
         Session ssn = (AMQSession) con.createSession(false, Session.CLIENT_ACKNOWLEDGE);
         con.start();
         
-        Topic topic = ssn.createTopic("ADDR:amq.direct/test");
+        Topic topic = ssn.createTopic("test");
         MessageConsumer consumer = ssn.createConsumer(topic);
         MessageProducer prod = ssn.createProducer(topic);
         Message m = ssn.createMessage();
