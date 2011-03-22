@@ -31,6 +31,8 @@
 # - in build-dir: cd src; make # build the broker
 # - in source-dir: cd docs/man; rm qpidd.1 # remove checked-in man page.
 # - in build-dir: cd docs/man; make # make new man page
+# - edit qpidd.1 to remove all default values referring to file/directory locations.
+#   these values will differ between builds depending on configuration.
 # - if source-dir != build-dir: copy qpidd.1 from build-dir/docs/man to source-dir/docs/man
 
 dist_man_MANS = qpidd.1
