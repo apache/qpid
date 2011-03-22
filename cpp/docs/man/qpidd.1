@@ -24,144 +24,144 @@ Options may be specified via command line, environment variable or configuration
 
 .TP
 \-h [ \-\-help ]
-Displays the 
+Displays the
 help message
 .TP
 \-v [ \-\-version ]
 Displays version
 information
 .TP
-\-\-config FILE (/home/remote/aconway/install/etc/qpidd.conf)
+\-\-config FILE
 Reads configurat
 ion from FILE
 
 .SS Module options
 .TP
-\-\-module\-dir DIR (/home/remote/aconway/install/lib/qpid/daemon)
-Load all 
-shareable 
-modules in 
+\-\-module\-dir DIR
+Load all
+shareable
+modules in
 this directo
 ry
 .TP
 \-\-load\-module FILE
-Specifies 
-additional 
+Specifies
+additional
 module(s) to
 be loaded
 .TP
 \-\-no\-module\-dir
-Don't load 
+Don't load
 modules from
-module 
+module
 directory
 
 .SS Broker Options
 .TP
-\-\-data\-dir DIR (/home/remote/aconway/.qpidd)
-Directory to contain 
+\-\-data\-dir DIR
+Directory to contain
 persistent data generated
 by the broker
 .TP
 \-\-no\-data\-dir
-Don't use a data 
+Don't use a data
 directory.  No persistent
-configuration will be 
+configuration will be
 loaded or stored
 .TP
 \-p [ \-\-port ] PORT (5672)
-Tells the broker to 
+Tells the broker to
 listen on PORT
 .TP
 \-\-worker\-threads N (9)
-Sets the broker thread 
+Sets the broker thread
 pool size
 .TP
 \-\-max\-connections N (500)
-Sets the maximum allowed 
+Sets the maximum allowed
 connections
 .TP
 \-\-connection\-backlog N (10)
-Sets the connection 
-backlog limit for the 
+Sets the connection
+backlog limit for the
 server socket
 .TP
 \-m [ \-\-mgmt\-enable ] yes|no (1)
 Enable Management
 .TP
 \-\-mgmt\-qmf2 yes|no (1)
-Enable broadcast of 
-management information 
+Enable broadcast of
+management information
 over QMF v2
 .TP
 \-\-mgmt\-qmf1 yes|no (1)
-Enable broadcast of 
-management information 
+Enable broadcast of
+management information
 over QMF v1
 .TP
 \-\-mgmt\-pub\-interval SECONDS (10)
-Management Publish 
+Management Publish
 Interval
 .TP
 \-\-queue\-purge\-interval SECONDS (600)
 Interval between attempts
-to purge any expired 
+to purge any expired
 messages from queues
 .TP
 \-\-auth yes|no (1)
 Enable authentication, if
-disabled all incoming 
-connections will be 
+disabled all incoming
+connections will be
 trusted
 .TP
 \-\-realm REALM (QPID)
-Use the given realm when 
+Use the given realm when
 performing authentication
 .TP
 \-\-default\-queue\-limit BYTES (104857600)
-Default maximum size for 
+Default maximum size for
 queues (in bytes)
 .TP
 \-\-tcp\-nodelay
-Set TCP_NODELAY on TCP 
+Set TCP_NODELAY on TCP
 connections
 .TP
 \-\-require\-encryption
-Only accept connections 
+Only accept connections
 that are encrypted
-\-\-known\-hosts\-url URL or \&'none'                     URL to send as 
-\&'known\-hosts' to clients 
-(\&'none' implies empty 
+\-\-known\-hosts\-url URL or \&'none'                     URL to send as
+\&'known\-hosts' to clients
+(\&'none' implies empty
 list)
 .TP
 \-\-sasl\-config DIR
-gets sasl config info 
+gets sasl config info
 from nonstandard location
 .TP
 \-\-max\-session\-rate MESSAGES/S (0)
-Sets the maximum message 
-rate per session 
+Sets the maximum message
+rate per session
 (0=unlimited)
 .TP
 \-\-async\-queue\-events yes|no (0)
-Set Queue Events async, 
-used for services like 
+Set Queue Events async,
+used for services like
 replication
 .TP
 \-\-default\-flow\-stop\-threshold %MESSAGES (80)
-Queue capacity level at 
-which flow control is 
+Queue capacity level at
+which flow control is
 activated.
 .TP
 \-\-default\-flow\-resume\-threshold %MESSAGES (70)
-Queue capacity level at 
-which flow control is 
+Queue capacity level at
+which flow control is
 de\-activated.
 .TP
 \-\-default\-event\-threshold\-ratio %age of limit (80)
-The ratio of any 
-specified queue limit at 
-which an event will be 
+The ratio of any
+specified queue limit at
+which an event will be
 raised
 
 .SS Logging options
@@ -170,36 +170,36 @@ raised
 Enables all logging
 .TP
 \-\-log\-enable RULE (notice+)
-Enables logging for selected levels 
-and components. RULE is in the form 
-\&'LEVEL[+][:PATTERN]' Levels are one 
-of: 
-trace debug info notice warning 
+Enables logging for selected levels
+and components. RULE is in the form
+\&'LEVEL[+][:PATTERN]' Levels are one
+of:
+trace debug info notice warning
 error critical
 For example:
-\&'\-\-log\-enable warning+' logs all 
+\&'\-\-log\-enable warning+' logs all
 warning, error and critical messages.
-\&'\-\-log\-enable debug:framing' logs 
-debug messages from the framing 
-namespace. This option can be used 
+\&'\-\-log\-enable debug:framing' logs
+debug messages from the framing
+namespace. This option can be used
 multiple times
 .TP
 \-\-log\-time yes|no (1)
 Include time in log messages
 .TP
 \-\-log\-level yes|no (1)
-Include severity level in log 
+Include severity level in log
 messages
 .TP
 \-\-log\-source yes|no (0)
-Include source file:line in log 
+Include source file:line in log
 messages
 .TP
 \-\-log\-thread yes|no (0)
 Include thread ID in log messages
 .TP
 \-\-log\-function yes|no (0)
-Include function signature in log 
+Include function signature in log
 messages
 .TP
 \-\-log\-prefix STRING
@@ -218,7 +218,7 @@ Send log output to FILE.
 .TP
 \-\-log\-to\-syslog yes|no (0)
 Send logging output to syslog;
-customize using \-\-syslog\-name and 
+customize using \-\-syslog\-name and
 \-\-syslog\-facility
 .TP
 \-\-syslog\-name NAME (lt\-qpidd)
@@ -230,27 +230,27 @@ Facility to use in syslog messages
 .SS Daemon options
 .TP
 \-d [ \-\-daemon ]
-Run as a daemon. Logs to syslog 
+Run as a daemon. Logs to syslog
 by default in this mode.
 .TP
 \-\-transport TRANSPORT (tcp)
-The transport for which to 
+The transport for which to
 return the port
 .TP
-\-\-pid\-dir DIR (/home/remote/aconway/.qpidd)
-Directory where port\-specific 
+\-\-pid\-dir DIR
+Directory where port\-specific
 PID file is stored
 .TP
 \-w [ \-\-wait ] SECONDS (600)
-Sets the maximum wait time to 
-initialize the daemon. If the 
-daemon fails to initialize, 
+Sets the maximum wait time to
+initialize the daemon. If the
+daemon fails to initialize,
 prints an error and returns 1
 .TP
 \-c [ \-\-check ]
-Prints the daemon's process ID 
-to stdout and returns 0 if the 
-daemon is running, otherwise 
+Prints the daemon's process ID
+to stdout and returns 0 if the
+daemon is running, otherwise
 returns 1
 .TP
 \-q [ \-\-quit ]
