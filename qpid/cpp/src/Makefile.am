@@ -886,10 +886,6 @@ nobase_include_HEADERS +=			\
   ../include/qpid/types/Variant.h		\
   ../include/qpid/types/ImportExport.h
 
-# Force build of qpidd during dist phase so help2man will work.
-dist-hook: $(BUILT_SOURCES)
-	$(MAKE) qpidd
-
 # Create the default data directory
 install-data-local:
 	$(mkinstalldirs) $(DESTDIR)/$(localstatedir)/lib/qpidd
