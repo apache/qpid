@@ -13,6 +13,8 @@ messages using the Advanced Message Queueing Protocol (AMQP).
 
 [OPTIONS]
 
+The options below are built-in to qpidd. Installing add-on modules provides additional options. To see the full set of options available type "qpidd --help"
+
 Options may be specified via command line, environment variable or configuration file. See FILES and ENVIRONMENT below for details.
 
 [FILES]
