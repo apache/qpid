@@ -1731,9 +1731,9 @@ class SchemaPackage:
                   stream.write("            qmf::SchemaProperty arg(\"%s\", %s);\n" % (arg.name, typeName))
                   if subType:
                       stream.write("            arg.setSubtype(\"%s\");\n" % subType)
-                  if stat.unit:
+                  if arg.unit:
                       stream.write("            arg.setUnit(\"%s\");\n" % arg.unit)
-                  if stat.desc:
+                  if arg.desc:
                       stream.write("            arg.setDesc(\"%s\");\n" % arg.desc)
                   stream.write("            arg.setDirection(%s);\n" % self.qmfv2Dir(arg.dir))
                   stream.write("            method.addArgument(arg);\n")
