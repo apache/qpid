@@ -332,6 +332,7 @@ libqpidcommon_la_SOURCES +=			\
   qpid/Address.cpp				\
   qpid/DataDir.cpp				\
   qpid/DataDir.h				\
+  qpid/DisableExceptionLogging.h		\
   qpid/Exception.cpp				\
   qpid/Modules.cpp				\
   qpid/Modules.h				\
