@@ -43,6 +43,8 @@ import javax.jms.Session;
 import javax.jms.Topic;
 
 import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author Apache Software Foundation
@@ -176,19 +178,27 @@ public class JMSPropertiesTest extends QpidBrokerTestCase
         Session ssn = (AMQSession) con.createSession(false, Session.CLIENT_ACKNOWLEDGE);
         con.start();
         
-        Topic topic = ssn.createTopic("amq.direct/test");
+        Topic topic = ssn.createTopic("ADDR:amq.direct/test");
         MessageConsumer consumer = ssn.createConsumer(topic);
         MessageProducer prod = ssn.createProducer(topic);
-        prod.send(ssn.createMessage());
+        Message m = ssn.createMessage();
+        m.setObjectProperty("x-amqp-0-10.routing-key", "routing-key".getBytes());
+        m.setObjectProperty("routing-key", "routing-key");
+        prod.send(m);
         
         Message msg = consumer.receive(1000);
         assertNotNull(msg);
         
     	Enumeration<String> enu = msg.getPropertyNames();
+    	Map<String,String> map = new HashMap<String,String>();
     	while (enu.hasMoreElements()) 
-    	{ 
+    	{    		
     		String name = enu.nextElement(); 
     		String value = msg.getStringProperty(name);
+    		map.put(name, value);
        } 
+    	
+       assertFalse("Property 'x-amqp-0-10.routing-key' should have been filtered out",map.containsKey("x-amqp-0-10.routing-key"));
+       assertTrue("Property routing-key should be present",map.containsKey("routing-key"));      
     }
 }
