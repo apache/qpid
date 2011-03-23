@@ -234,7 +234,14 @@ public class AddressHelper
     {
         if (map != null && map.get(DURABLE) != null)
         {
-            return Boolean.parseBoolean((String)map.get(DURABLE));
+        	if (map.get(DURABLE) instanceof Boolean)
+        	{
+        		return (Boolean)map.get(DURABLE);
+        	}
+        	else
+        	{
+        		return Boolean.parseBoolean((String)map.get(DURABLE));
+        	}
         }
         else
         {
