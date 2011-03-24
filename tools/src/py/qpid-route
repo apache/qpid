@@ -580,6 +580,9 @@ def main(argv=None):
             else:
                 Usage()
                 return(-1)
+        else:
+            Usage()
+            return(-1)
 
     except Exception,e:
         if rm:
