@@ -232,21 +232,9 @@ public class AddressHelper
     
     private boolean getDurability(Map map)
     {
-        if (map != null && map.get(DURABLE) != null)
-        {
-        	if (map.get(DURABLE) instanceof Boolean)
-        	{
-        		return (Boolean)map.get(DURABLE);
-        	}
-        	else
-        	{
-        		return Boolean.parseBoolean((String)map.get(DURABLE));
-        	}
-        }
-        else
-        {
-            return false;
-        }
+        Accessor access = new MapAccessor(map);
+        Boolean result = access.getBoolean(DURABLE);
+        return (result == null) ? false : result.booleanValue();
     }
 
     /**
