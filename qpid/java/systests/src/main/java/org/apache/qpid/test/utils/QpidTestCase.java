@@ -1209,7 +1209,8 @@ public class QpidTestCase extends TestCase
 
         MessageProducer producer = session.createProducer(destination);
 
-        for (int i = offset; i < (count + offset); i++)
+        int i = offset;
+        for (; i < (count + offset); i++)
         {
             Message next = createNextMessage(session, i);
 
@@ -1232,7 +1233,7 @@ public class QpidTestCase extends TestCase
         // we have no batchSize or
         // our count is not divible by batchSize. 
         if (session.getTransacted() &&
-            ( batchSize == 0 || count % batchSize != 0))
+            ( batchSize == 0 || (i-1) % batchSize != 0))
         {
             session.commit();
         }
