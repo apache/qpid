@@ -88,8 +88,18 @@ public class ServerConnection extends Connection implements AMQConnectionModel, 
                 _onOpenTask.run();    
             }
             _actor.message(ConnectionMessages.OPEN(getClientId(), "0-10", true, true));
+
+            getVirtualHost().getConnectionRegistry().registerConnection(this);
         }
-        
+
+        if (state == State.CLOSE_RCVD || state == State.CLOSED || state == State.CLOSING)
+        {
+            if(_virtualHost != null)
+            {
+                _virtualHost.getConnectionRegistry().deregisterConnection(this);
+            }
+        }
+
         if (state == State.CLOSED)
         {
             logClosed();
@@ -126,7 +136,6 @@ public class ServerConnection extends Connection implements AMQConnectionModel, 
     public void setVirtualHost(VirtualHost virtualHost)
     {
         _virtualHost = virtualHost;
-        _virtualHost.getConnectionRegistry().registerConnection(this);
         
         initialiseStatistics();
     }
@@ -253,7 +262,6 @@ public class ServerConnection extends Connection implements AMQConnectionModel, 
             // Ignore
         }
         close(replyCode, message);
-        getVirtualHost().getConnectionRegistry().deregisterConnection(this);
     }
 
     @Override
