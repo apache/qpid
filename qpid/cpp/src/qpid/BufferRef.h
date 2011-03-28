@@ -27,7 +27,11 @@
 
 namespace qpid {
 
-/** Template for mutable or const buffer references */
+/** Reference to a ref-counted buffer of T.
+ *  Template for mutable or const buffer references.
+ *  Gathers together an intrusive_ptr for refcounting and begin and end pointers
+ *  for the buffer space. For use with RefCountedBuffer and similar classes.
+ */
 template <class T> class BufferRefT {
   public:
     BufferRefT() : begin_(0), end_(0) {}
@@ -38,8 +42,15 @@ template <class T> class BufferRefT {
     template <class U> BufferRefT(const BufferRefT<U>& other) :
         counter(other.counter), begin_(other.begin_), end_(other.end_) {}
 
+    template <class U> BufferRefT& operator=(const BufferRefT<U>& other) {
+        counter = other.counter; begin_ = other.begin_; end_ = other.end_;
+    }
+
     T* begin() const { return begin_; }
     T* end() const { return end_; }
+    size_t size() const { return end_ - begin_; }
+    operator bool() const { return begin_; }
+    bool operator!() const { return !begin_; }
 
     /** Return a sub-buffer of the current buffer */
     BufferRefT sub_buffer(T* begin, T* end) {

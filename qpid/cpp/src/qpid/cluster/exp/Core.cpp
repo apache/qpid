@@ -36,7 +36,8 @@ namespace cluster {
 
 Core::Core(const Settings& s, broker::Broker& b) :
     broker(b),
-    eventHandler(new EventHandler(*this))
+    eventHandler(new EventHandler(*this)),
+    multicaster(eventHandler->getCpg(), b.getPoller(), boost::bind(&Core::fatal, this))
 {
     eventHandler->add(boost::shared_ptr<HandlerBase>(new WiringHandler(*eventHandler)));
     eventHandler->add(boost::shared_ptr<HandlerBase>(new MessageHandler(*eventHandler)));
@@ -61,15 +62,8 @@ void Core::fatal() {
 
 void Core::mcast(const framing::AMQBody& body) {
     QPID_LOG(trace, "cluster multicast: " << body);
-    // FIXME aconway 2010-10-20: use Multicaster, or bring in its features.
-    // here we multicast Frames rather than Events.
     framing::AMQFrame f(body);
-    std::string data(f.encodedSize(), char());
-    framing::Buffer buf(&data[0], data.size());
-    f.encode(buf);
-    iovec iov = { buf.getPointer(), buf.getSize() };
-    while (!eventHandler->getCpg().mcast(&iov, 1))
-        ::usleep(1000);      // FIXME aconway 2010-10-20: flow control
+    multicaster.mcast(f);
 }
 
 }} // namespace qpid::cluster

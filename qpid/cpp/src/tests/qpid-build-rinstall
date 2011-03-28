@@ -21,7 +21,7 @@
 # Run "make install"" locally then copy the install tree to each of $HOSTS
 # Must be run in a configured qpid build directory.
 #
-test -f config.status || { echo "Not in a configured build directory."; usage; }
+test -f config.status || { echo "Not in a configured build directory."; exit 1; }
 . src/tests/install_env.sh
 set -ex
 make && make -j1 install

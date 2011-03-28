@@ -118,7 +118,7 @@ def start_receive(queue, index, opts, ready_queue, broker, host):
     return clients.add(Popen(command, stdout=PIPE))
 
 def start_send(queue, opts, broker, host):
-    address="%s;{%s}"%(queue,",".join(opts.send_option))
+    address="%s;{%s}"%(queue,",".join(opts.send_option + ["create:receiver"]))
     command = ["qpid-send",
                "-b", broker,
                "-a", address,
@@ -243,7 +243,9 @@ def main():
         for i in xrange(opts.repeat):
             delete_queues(queues, opts.broker[0])
             ready_receiver = ReadyReceiver(ready_queue, opts.broker[0])
-            receivers = [start_receive(q, j, opts, ready_queue, brokers.next(), client_hosts.next())
+            time.sleep(.1) # FIXME aconway 2011-03-16: new cluster async wiring
+            receivers = [start_receive(q, j, opts, ready_queue,
+                                       brokers.next(), client_hosts.next())
                          for q in queues for j in xrange(opts.receivers)]
             ready_receiver.wait(filter(None, receivers)) # Wait for receivers to be ready.
             senders = [start_send(q, opts,brokers.next(), client_hosts.next())
@@ -253,7 +255,6 @@ def main():
             recv_stats=parse_receivers(receivers)
             if opts.summarize: print_summary(send_stats, recv_stats)
             else: print_data(send_stats, recv_stats)
-            delete_queues(queues, opts.broker[0])
     finally: clients.kill()             # No strays
 
 if __name__ == "__main__": main()
