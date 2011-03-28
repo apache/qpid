@@ -102,7 +102,7 @@ cluster_la_CXXFLAGS = $(AM_CXXFLAGS) -fno-strict-aliasing
 cluster_la_LDFLAGS = $(PLUGINLDFLAGS)
 
 # Experimental new cluster plugin
-dmodule_LTLIBRARIES += cluster2.la
+dmoduleexec_LTLIBRARIES += cluster2.la
 cluster2_la_LIBADD = -lcpg libqpidbroker.la
 cluster2_la_LDFLAGS = $(PLUGINLDFLAGS)
 cluster2_la_SOURCES =				\
