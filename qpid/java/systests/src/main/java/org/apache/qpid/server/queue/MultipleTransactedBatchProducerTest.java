@@ -34,29 +34,6 @@ import javax.jms.Session;
 import org.apache.log4j.Logger;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
-/**
- * MultipleTransactedBatchProducerTest
- *
- * Summary:
- * When there are multiple producers submitting batches of messages to a given
- * queue using transacted sessions, it is highly probable that concurrent
- * enqueue() activity will occur and attempt delivery of their message to the
- * same subscription. In this scenario it is likely that one of the attempts
- * will succeed and the other will result in use of the deliverAsync() method
- * to start a queue Runner and ensure delivery of the message.
- *
- * A defect within the processQueue() method used by the Runner would mean that
- * delivery of these messages may not occur, should the Runner stop before all
- * messages have been processed. Such a defect was discovered and found to be
- * most visible when Selectors are used such that one and only one subscription
- * can/will accept any given message, but multiple subscriptions are present,
- * and one of the earlier subscriptions receives more messages than the others.
- *
- * This test is to validate that the processQueue() method is able to correctly
- * deliver all of the messages present for asynchronous delivery to subscriptions,
- * by utilising multiple batch transacted producers to create the scenario and
- * ensure all messages are received by a consumer.
- */
 public class MultipleTransactedBatchProducerTest extends QpidBrokerTestCase
 {
     private static final Logger _logger = Logger.getLogger(MultipleTransactedBatchProducerTest.class);
@@ -70,7 +47,7 @@ public class MultipleTransactedBatchProducerTest extends QpidBrokerTestCase
     private CountDownLatch _receivedLatch;
     private String _queueName;
 
-    private String _failMsg;
+    private volatile String _failMsg;
 
     public void setUp() throws Exception
     {
@@ -83,6 +60,26 @@ public class MultipleTransactedBatchProducerTest extends QpidBrokerTestCase
         _failMsg = null;
     }
 
+    /**
+     * When there are multiple producers submitting batches of messages to a given
+     * queue using transacted sessions, it is highly probable that concurrent
+     * enqueue() activity will occur and attempt delivery of their message to the
+     * same subscription. In this scenario it is likely that one of the attempts
+     * will succeed and the other will result in use of the deliverAsync() method
+     * to start a queue Runner and ensure delivery of the message.
+     *
+     * A defect within the processQueue() method used by the Runner would mean that
+     * delivery of these messages may not occur, should the Runner stop before all
+     * messages have been processed. Such a defect was discovered and found to be
+     * most visible when Selectors are used such that one and only one subscription
+     * can/will accept any given message, but multiple subscriptions are present,
+     * and one of the earlier subscriptions receives more messages than the others.
+     *
+     * This test is to validate that the processQueue() method is able to correctly
+     * deliver all of the messages present for asynchronous delivery to subscriptions,
+     * by utilising multiple batch transacted producers to create the scenario and
+     * ensure all messages are received by a consumer.
+     */
     public void testMultipleBatchedProducersWithMultipleConsumersUsingSelectors() throws Exception
     {
         String selector1 = ("(\"" + _queueName +"\" % " + NUM_CONSUMERS + ") = 0");
@@ -138,7 +135,9 @@ public class MultipleTransactedBatchProducerTest extends QpidBrokerTestCase
     {
         Message message = super.createNextMessage(session,msgCount);
 
-        //bias at least 50% of the messages to the first consumers selector
+        //bias at least 50% of the messages to the first consumers selector because
+        //the issue presents itself primarily when an earlier subscription completes
+        //delivery after the later subscriptions
         int val;
         if (msgCount % 2 == 0)
         {
