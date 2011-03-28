@@ -3461,4 +3461,9 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     {
         return _closing.get()|| _connection.isClosing();
     }
+    
+    public boolean isDeclareExchanges()
+    {
+    	return DECLARE_EXCHANGES;
+    }
 }

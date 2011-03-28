@@ -19,14 +19,14 @@
 # Make file for building two plugins for asynchronously replicating
 # queues.
 
-dmodule_LTLIBRARIES += replicating_listener.la replication_exchange.la
+dmoduleexec_LTLIBRARIES += replicating_listener.la replication_exchange.la
 
 # a queue event listener plugin that creates messages on a replication
 # queue corresponding to enqueue and dequeue events:
 replicating_listener_la_SOURCES =  \
 	qpid/replication/constants.h \
 	qpid/replication/ReplicatingEventListener.cpp \
-	qpid/replication/ReplicatingEventListener.h 
+	qpid/replication/ReplicatingEventListener.h
 
 replicating_listener_la_LIBADD = libqpidbroker.la
 if SUNOS
@@ -41,7 +41,7 @@ replicating_listener_la_LDFLAGS = $(PLUGINLDFLAGS)
 replication_exchange_la_SOURCES =  \
 	qpid/replication/constants.h \
 	qpid/replication/ReplicationExchange.cpp \
-	qpid/replication/ReplicationExchange.h 
+	qpid/replication/ReplicationExchange.h
 
 replication_exchange_la_LIBADD = libqpidbroker.la
 

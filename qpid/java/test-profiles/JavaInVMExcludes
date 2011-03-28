@@ -41,3 +41,5 @@ org.apache.qpid.test.unit.ack.RecoverTest#testOderingWithSyncConsumer
 
 //The VM broker does not export the logging management JMX MBean
 org.apache.qpid.server.security.acl.ExternalAdminACLTest#*
+
+org.apache.qpid.test.unit.message.JMSPropertiesTest#testGetPropertyNames

@@ -323,6 +323,8 @@
   </condition>
 
   <property name="jvm.args" value=""/>
+  <property name="broker.existing.qpid.work" value=""/>
+
   <target name="test" depends="build,compile-tests" if="module.test.src.exists"
          unless="${dontruntest}" description="execute unit tests">
 
@@ -346,6 +348,7 @@
       <sysproperty key="broker" value="${broker}"/>
       <sysproperty key="broker.clean" value="${broker.clean}"/>
       <sysproperty key="broker.clean.between.tests" value="${broker.clean.between.tests}"/>
+      <sysproperty key="broker.existing.qpid.work" value="${broker.existing.qpid.work}"/>
       <sysproperty key="broker.persistent" value="${broker.persistent}"/>
       <sysproperty key="broker.version" value="${broker.version}"/>
       <sysproperty key="broker.ready" value="${broker.ready}" />

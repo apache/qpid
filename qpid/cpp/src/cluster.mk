@@ -34,7 +34,8 @@ endif
 
 if HAVE_LIBCPG
 
-dmodule_LTLIBRARIES += cluster.la
+dmoduleexec_LTLIBRARIES += cluster.la
+
 cluster_la_SOURCES =				\
   $(CMAN_SOURCES)				\
   qpid/cluster/Cluster.cpp			\
@@ -128,7 +129,7 @@ cluster2_la_SOURCES =				\
 
 
 # The watchdog plugin and helper executable
-dmodule_LTLIBRARIES += watchdog.la
+dmoduleexec_LTLIBRARIES += watchdog.la
 watchdog_la_SOURCES = qpid/cluster/WatchDogPlugin.cpp
 watchdog_la_LIBADD = libqpidbroker.la
 watchdog_la_LDFLAGS = $(PLUGINLDFLAGS)

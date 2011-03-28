@@ -46,6 +46,10 @@ class SetupTests(Base):
     self.conn.open()
     self.ping(self.conn.session())
 
+  def testTcpNodelay(self):
+    self.conn = Connection.establish(self.broker, tcp_nodelay=True)
+    assert self.conn._driver._transport.socket.getsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY)
+
   def testConnectError(self):
     try:
       # Specifying port 0 yields a bad address on Windows; port 4 is unassigned
@@ -111,8 +115,8 @@ class SetupTests(Base):
 
     class flaky:
 
-      def __init__(self, host, port):
-        self.real = real(host, port)
+      def __init__(self, conn, host, port):
+        self.real = real(conn, host, port)
         self.sent_count = 0
         self.recv_count = 0
 
@@ -251,8 +255,8 @@ class ConnectionTests(Base):
 
 class hangable:
 
-  def __init__(self, host, port):
-    self.tcp = TRANSPORTS["tcp"](host, port)
+  def __init__(self, conn, host, port):
+    self.tcp = TRANSPORTS["tcp"](conn, host, port)
     self.hung = False
 
   def hang(self):
@@ -1181,6 +1185,16 @@ test-link-bindings-queue; {
     for m in msgs:
       snd.send(m)
     self.drain(qrcv, expected=msgs)
+
+  def testAssert1(self):
+    try:
+      snd = self.ssn.sender("amq.topic; {assert: always, node: {type: queue}}")
+      assert 0, "assertion failed to trigger"
+    except AssertionFailed, e:
+      pass
+
+  def testAssert2(self):
+    snd = self.ssn.sender("amq.topic; {assert: always}")
 
 NOSUCH_Q = "this-queue-should-not-exist"
 UNPARSEABLE_ADDR = "name/subject; {bad options"

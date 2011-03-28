@@ -158,6 +158,7 @@ class Connection(Endpoint):
     self.reconnect_log = options.get("reconnect_log", True)
 
     self.address_ttl = options.get("address_ttl", 60)
+    self.tcp_nodelay = options.get("tcp_nodelay", False)
 
     self.options = options
 

@@ -131,12 +131,14 @@ void Timer::run()
                 bool warningsEnabled;
                 QPID_LOG_TEST(warning, warningsEnabled);
                 if (warningsEnabled) {
-                    if (delay > late && overrun > overran)
-                        warn.lateAndOverran(t->name, delay, overrun, Duration(start, end));
+                    if (overrun > overran) {
+                        if (delay > overran) // if delay is significant to an overrun.
+                            warn.lateAndOverran(t->name, delay, overrun, Duration(start, end));
+                        else
+                            warn.overran(t->name, overrun, Duration(start, end));
+                    }
                     else if (delay > late)
                         warn.late(t->name, delay);
-                    else if (overrun > overran)
-                        warn.overran(t->name, overrun, Duration(start, end));
                 }
                 continue;
             } else {

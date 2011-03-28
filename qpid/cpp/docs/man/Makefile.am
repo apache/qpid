@@ -16,10 +16,29 @@
 # specific language governing permissions and limitations
 # under the License.
 #
+
+# Generate makefile from qpidd --help
+#
+# Note: qiddd.1 is normally a _checked in_ pre-generated file, so that
+# make dist does not have to build the entire source just for the man page.
+#
+# To update the checked-in file (e.g. for a new release) do the following:
+#
+# - start with a completely clean checkout.
+# - make sure there are no modules installed in your configured prefix,
+#   we don't want to pick up configuration from optional modules
+# - do bootstrap; configure
+# - in build-dir: cd src; make # build the broker
+# - in source-dir: cd docs/man; rm qpidd.1 # remove checked-in man page.
+# - in build-dir: cd docs/man; make # make new man page
+# - edit qpidd.1 to remove all default values referring to file/directory locations.
+#   these values will differ between builds depending on configuration.
+# - if source-dir != build-dir: copy qpidd.1 from build-dir/docs/man to source-dir/docs/man
+
 dist_man_MANS = qpidd.1
 
-man_aux = $(dist_man_MANS:.1=.x) 
-EXTRA_DIST = $(man_aux) generate_manpage groffify_options.sed groffify_template.sed 
+man_aux = $(dist_man_MANS:.1=.x)
+EXTRA_DIST = $(man_aux) generate_manpage groffify_options.sed groffify_template.sed
 DISTCLEANFILES = $(dist_man_MANS)
 CLEANFILES=qpidd.1
 
