@@ -47,7 +47,7 @@ public class MultipleTransactedBatchProducerTest extends QpidTestCase
     private CountDownLatch _receivedLatch;
     private String _queueName;
 
-    private transient String _failMsg;
+    private volatile String _failMsg;
 
     public void setUp() throws Exception
     {
