@@ -23,6 +23,7 @@
 # Default values
 PORT="5672"
 BROKERS=`echo $HOSTS | sed "s/\>/:$PORT/g;s/ /,/g"` # Broker URL list
+BROKER=`echo $HOSTS | awk '{print $1}'`	# First broker
 COUNT=10000
 FLOW=100	      # Flow control limit on queue depth for latency.
 REPEAT=10
@@ -39,8 +40,6 @@ while getopts "p:c:f:r:t:b:" opt; do
 	*) echo "Unknown option"; exit 1;;
     esac
 done
-
-BROKER=`echo $HOSTS | sed 's/,.*//'` # First broker
 
 run_test() { echo $*; shift; "$@"; echo; echo; echo; }
 
