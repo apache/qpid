@@ -96,9 +96,9 @@ public class IncomingMessage implements Filterable, InboundMessage, EnqueableMes
     public void setExpiration()
     {
             long expiration =
-                    ((BasicContentHeaderProperties) _contentHeaderBody.properties).getExpiration();
+                    ((BasicContentHeaderProperties) _contentHeaderBody.getProperties()).getExpiration();
             long timestamp =
-                    ((BasicContentHeaderProperties) _contentHeaderBody.properties).getTimestamp();
+                    ((BasicContentHeaderProperties) _contentHeaderBody.getProperties()).getTimestamp();
 
             if (SYNCHED_CLOCKS)
             {
@@ -193,8 +193,8 @@ public class IncomingMessage implements Filterable, InboundMessage, EnqueableMes
 
     public boolean isPersistent()
     {
-        return getContentHeader().properties instanceof BasicContentHeaderProperties &&
-             ((BasicContentHeaderProperties) getContentHeader().properties).getDeliveryMode() ==
+        return getContentHeader().getProperties() instanceof BasicContentHeaderProperties &&
+             ((BasicContentHeaderProperties) getContentHeader().getProperties()).getDeliveryMode() ==
                                                              BasicContentHeaderProperties.PERSISTENT;
     }
 

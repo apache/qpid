@@ -36,7 +36,7 @@ public class ContentHeaderBody implements AMQBody
     public long bodySize;
 
     /** must never be null */
-    public ContentHeaderProperties properties;
+    private ContentHeaderProperties properties;
 
     public ContentHeaderBody()
     {
@@ -127,5 +127,15 @@ public class ContentHeaderBody implements AMQBody
     public static AMQFrame createAMQFrame(int channelId, ContentHeaderBody body)
     {
         return new AMQFrame(channelId, body);
+    }
+
+    public ContentHeaderProperties getProperties()
+    {
+        return properties;
+    }
+
+    public void setProperties(ContentHeaderProperties props)
+    {
+        properties = props;
     }
 }

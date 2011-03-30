@@ -346,7 +346,7 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
             finally
             {
                 long bodySize = _currentMessage.getSize();
-                long timestamp = ((BasicContentHeaderProperties) _currentMessage.getContentHeader().properties).getTimestamp();
+                long timestamp = ((BasicContentHeaderProperties) _currentMessage.getContentHeader().getProperties()).getTimestamp();
                 _session.registerMessageReceived(bodySize, timestamp);
                 _currentMessage = null;
             }
@@ -1079,8 +1079,8 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
     private boolean checkMessageUserId(ContentHeaderBody header)
     {
         AMQShortString userID =
-                header.properties instanceof BasicContentHeaderProperties
-                    ? ((BasicContentHeaderProperties) header.properties).getUserId()
+                header.getProperties() instanceof BasicContentHeaderProperties
+                    ? ((BasicContentHeaderProperties) header.getProperties()).getUserId()
                     : null;
 
         return (!MSG_AUTH || _session.getPrincipal().getName().equals(userID == null? "" : userID.toString()));

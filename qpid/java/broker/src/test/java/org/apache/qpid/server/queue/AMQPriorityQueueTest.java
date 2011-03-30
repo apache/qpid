@@ -96,7 +96,7 @@ public class AMQPriorityQueueTest extends SimpleAMQQueueTest
         AMQMessage msg = super.createMessage(id);
         BasicContentHeaderProperties props = new BasicContentHeaderProperties();
         props.setPriority(i);
-        msg.getContentHeaderBody().properties = props;
+        msg.getContentHeaderBody().setProperties(props);
         return msg;
     }
 
