@@ -364,7 +364,7 @@ public class Show extends AbstractCommand
             {
                 if(msg instanceof AMQMessage)
                 {
-                    headers = ((BasicContentHeaderProperties) ((AMQMessage)msg).getContentHeaderBody().properties);
+                    headers = ((BasicContentHeaderProperties) ((AMQMessage)msg).getContentHeaderBody().getProperties());
                 }
             }
             catch (AMQException e)
