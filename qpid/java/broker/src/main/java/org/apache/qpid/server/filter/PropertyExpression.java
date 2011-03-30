@@ -110,7 +110,7 @@ public class PropertyExpression<E extends Exception> implements Expression<E>
         {
 
             CommonContentHeaderProperties _properties =
-                (CommonContentHeaderProperties) message.getContentHeaderBody().properties;
+                (CommonContentHeaderProperties) message.getContentHeaderBody().getProperties();
 
             if (_logger.isDebugEnabled())
             {
@@ -165,7 +165,7 @@ public class PropertyExpression<E extends Exception> implements Expression<E>
 
             CommonContentHeaderProperties _properties =
                 (CommonContentHeaderProperties)
-                    message.getContentHeaderBody().properties;
+                    message.getContentHeaderBody().getProperties();
             AMQShortString replyTo = _properties.getReplyTo();
 
             return (replyTo == null) ? null : replyTo.toString();
@@ -180,7 +180,7 @@ public class PropertyExpression<E extends Exception> implements Expression<E>
         {
                 CommonContentHeaderProperties _properties =
                     (CommonContentHeaderProperties)
-                        message.getContentHeaderBody().properties;
+                        message.getContentHeaderBody().getProperties();
                 AMQShortString type = _properties.getType();
 
                 return (type == null) ? null : type.toString();
@@ -208,7 +208,7 @@ public class PropertyExpression<E extends Exception> implements Expression<E>
         {
             CommonContentHeaderProperties _properties =
                 (CommonContentHeaderProperties)
-                    message.getContentHeaderBody().properties;
+                    message.getContentHeaderBody().getProperties();
 
             return (int) _properties.getPriority();
         }
@@ -221,7 +221,7 @@ public class PropertyExpression<E extends Exception> implements Expression<E>
 
             CommonContentHeaderProperties _properties =
                 (CommonContentHeaderProperties)
-                    message.getContentHeaderBody().properties;
+                    message.getContentHeaderBody().getProperties();
             AMQShortString messageId = _properties.getMessageId();
 
             return (messageId == null) ? null : messageId;
@@ -235,7 +235,7 @@ public class PropertyExpression<E extends Exception> implements Expression<E>
         {
             CommonContentHeaderProperties _properties =
                 (CommonContentHeaderProperties)
-                    message.getContentHeaderBody().properties;
+                    message.getContentHeaderBody().getProperties();
 
             return _properties.getTimestamp();
         }
@@ -247,7 +247,7 @@ public class PropertyExpression<E extends Exception> implements Expression<E>
         {
             CommonContentHeaderProperties _properties =
                 (CommonContentHeaderProperties)
-                    message.getContentHeaderBody().properties;
+                    message.getContentHeaderBody().getProperties();
             AMQShortString correlationId = _properties.getCorrelationId();
 
             return (correlationId == null) ? null : correlationId.toString();
@@ -261,7 +261,7 @@ public class PropertyExpression<E extends Exception> implements Expression<E>
 
             CommonContentHeaderProperties _properties =
                 (CommonContentHeaderProperties)
-                    message.getContentHeaderBody().properties;
+                    message.getContentHeaderBody().getProperties();
 
             return _properties.getExpiration();
 

@@ -120,8 +120,8 @@ public class TransientMessageData
 
     public boolean isPersistent()
     {
-        return _contentHeaderBody.properties instanceof BasicContentHeaderProperties &&
-             ((BasicContentHeaderProperties) _contentHeaderBody.properties).getDeliveryMode() == 
+        return _contentHeaderBody.getProperties() instanceof BasicContentHeaderProperties &&
+             ((BasicContentHeaderProperties) _contentHeaderBody.getProperties()).getDeliveryMode() ==
                                                          BasicContentHeaderProperties.PERSISTENT;
     }
 }

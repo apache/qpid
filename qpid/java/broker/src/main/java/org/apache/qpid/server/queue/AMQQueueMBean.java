@@ -410,7 +410,7 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
         {
             // Create header attributes list
             CommonContentHeaderProperties headerProperties =
-                (CommonContentHeaderProperties) msg.getContentHeaderBody().properties;
+                (CommonContentHeaderProperties) msg.getContentHeaderBody().getProperties();
             String mimeType = null, encoding = null;
             if (headerProperties != null)
             {
@@ -493,7 +493,7 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
     private String[] getMessageHeaderProperties(ContentHeaderBody headerBody)
     {
         List<String> list = new ArrayList<String>();
-        BasicContentHeaderProperties headerProperties = (BasicContentHeaderProperties) headerBody.properties;
+        BasicContentHeaderProperties headerProperties = (BasicContentHeaderProperties) headerBody.getProperties();
         list.add("reply-to = " + headerProperties.getReplyToAsString());
         list.add("propertyFlags = " + headerProperties.getPropertyFlags());
         list.add("ApplicationID = " + headerProperties.getAppIdAsString());

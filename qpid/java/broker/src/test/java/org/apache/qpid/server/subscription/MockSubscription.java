@@ -25,12 +25,12 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.logging.LogActor;
-import org.apache.qpid.server.filter.FilterManager;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.queue.QueueEntry.SubscriptionAcquiredState;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -46,10 +46,20 @@ public class MockSubscription implements Subscription
     private State _state = State.ACTIVE;
     private ArrayList<QueueEntry> messages = new ArrayList<QueueEntry>();
     private final Lock _stateChangeLock = new ReentrantLock();
+    private List<QueueEntry> _acceptEntries = null;
 
     private static final AtomicLong idGenerator = new AtomicLong(0);
     // Create a simple ID that increments for ever new Subscription
     private final long _subscriptionID = idGenerator.getAndIncrement();
+
+    public MockSubscription()
+    {
+    }
+
+    public MockSubscription(List<QueueEntry> acceptEntries)
+    {
+        _acceptEntries = acceptEntries;
+    }
 
     public void close()
     {
@@ -101,8 +111,15 @@ public class MockSubscription implements Subscription
         _stateChangeLock.lock();
     }
 
-    public boolean hasInterest(QueueEntry msg)
+    public boolean hasInterest(QueueEntry entry)
     {
+        if(_acceptEntries != null)
+        {
+            //simulate selector behaviour, only signal
+            //interest in the dictated queue entries
+            return _acceptEntries.contains(entry);
+        }
+
         return true;
     }
 

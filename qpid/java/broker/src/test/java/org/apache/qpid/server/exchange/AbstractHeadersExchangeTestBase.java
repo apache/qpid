@@ -227,7 +227,7 @@ public class AbstractHeadersExchangeTestBase extends TestCase
     static ContentHeaderBody getContentHeader(FieldTable headers)
     {
         ContentHeaderBody header = new ContentHeaderBody();
-        header.properties = getProperties(headers);
+        header.setProperties(getProperties(headers));
         return header;
     }
 

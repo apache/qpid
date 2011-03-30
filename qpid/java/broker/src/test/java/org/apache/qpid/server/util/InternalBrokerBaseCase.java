@@ -193,7 +193,7 @@ public class InternalBrokerBaseCase extends TestCase
             //Make Message Persistent
             properties.setDeliveryMode((byte) 2);
 
-            _headerBody.properties = properties;
+            _headerBody.setProperties(properties);
 
             channel.publishContentHeader(_headerBody);
         }

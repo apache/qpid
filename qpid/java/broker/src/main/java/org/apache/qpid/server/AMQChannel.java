@@ -224,7 +224,7 @@ public class AMQChannel
             finally
             {
 	            long bodySize = _currentMessage.getContentHeaderBody().bodySize;
-	            long timestamp = ((BasicContentHeaderProperties) _currentMessage.getContentHeaderBody().properties).getTimestamp();
+	            long timestamp = ((BasicContentHeaderProperties) _currentMessage.getContentHeaderBody().getProperties()).getTimestamp();
 	            _session.registerMessageReceived(bodySize, timestamp);
                 // callback to allow the context to do any post message processing
                 // primary use is to allow message return processing in the non-tx case

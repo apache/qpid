@@ -351,7 +351,7 @@ public class HeadersExchange extends AbstractExchange
     {
         //what if the content type is not 'basic'? 'file' and 'stream' content classes also define headers,
         //but these are not yet implemented.
-        return ((BasicContentHeaderProperties) contentHeaderFrame.properties).getHeaders();
+        return ((BasicContentHeaderProperties) contentHeaderFrame.getProperties()).getHeaders();
     }
 
     protected ExchangeMBean createMBean() throws AMQException

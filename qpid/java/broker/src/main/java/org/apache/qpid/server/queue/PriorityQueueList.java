@@ -57,7 +57,7 @@ public class PriorityQueueList implements QueueEntryList
     {
         try
         {
-            int index = ((CommonContentHeaderProperties)((message.getContentHeaderBody().properties))).getPriority() - _priorityOffset;
+            int index = ((CommonContentHeaderProperties)((message.getContentHeaderBody().getProperties()))).getPriority() - _priorityOffset;
             if(index >= _priorities)
             {
                 index = _priorities-1;

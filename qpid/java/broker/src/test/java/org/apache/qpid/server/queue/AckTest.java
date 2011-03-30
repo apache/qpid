@@ -144,7 +144,7 @@ public class AckTest extends TestCase
                 //This is DeliveryMode.PERSISTENT
                 b.setDeliveryMode((byte) 2);
                 ContentHeaderBody cb = new ContentHeaderBody();
-                cb.properties = b;
+                cb.setProperties(b);
                 msg.setContentHeaderBody(cb);
             }
             else

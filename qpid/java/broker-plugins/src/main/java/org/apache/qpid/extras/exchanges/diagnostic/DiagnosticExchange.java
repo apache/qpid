@@ -210,9 +210,9 @@ public class DiagnosticExchange extends AbstractExchange
         Long value = new Long(SizeOf.getUsedMemory());
         AMQShortString key = new AMQShortString("memory");
         
-        FieldTable headers = ((BasicContentHeaderProperties)payload.getContentHeaderBody().properties).getHeaders();
+        FieldTable headers = ((BasicContentHeaderProperties)payload.getContentHeaderBody().getProperties()).getHeaders();
         headers.put(key, value);
-        ((BasicContentHeaderProperties)payload.getContentHeaderBody().properties).setHeaders(headers);
+        ((BasicContentHeaderProperties)payload.getContentHeaderBody().getProperties()).setHeaders(headers);
         AMQQueue q = getQueueRegistry().getQueue(new AMQShortString("diagnosticqueue"));
 
         ArrayList<AMQQueue> queues =  new ArrayList<AMQQueue>();

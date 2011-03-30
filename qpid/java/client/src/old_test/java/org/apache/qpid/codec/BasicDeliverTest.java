@@ -258,7 +258,7 @@ public class BasicDeliverTest
     static ContentHeaderBody createContentHeaderBody()
     {
         ContentHeaderBody body = new ContentHeaderBody();
-        body.properties = new BasicContentHeaderProperties();
+        body.setProperties(new BasicContentHeaderProperties());
         body.weight = 1;
         body.classId = 6;
         return body;

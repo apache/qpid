@@ -59,7 +59,7 @@ public class ConflationQueueList extends SimpleQueueEntryList
 
         try
         {
-            Object value = ((BasicContentHeaderProperties)message.getContentHeaderBody().properties).getHeaders().get(_conflationKey);            
+            Object value = ((BasicContentHeaderProperties)message.getContentHeaderBody().getProperties()).getHeaders().get(_conflationKey);
             if(value != null)
             {
                 latestValueReference = _latestValuesMap.get(value);

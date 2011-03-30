@@ -94,9 +94,9 @@ public class IncomingMessage implements InboundMessage
     public void setExpiration()
     {
             long expiration =
-                    ((BasicContentHeaderProperties) _contentHeaderBody.properties).getExpiration();
+                    ((BasicContentHeaderProperties) _contentHeaderBody.getProperties()).getExpiration();
             long timestamp =
-                    ((BasicContentHeaderProperties) _contentHeaderBody.properties).getTimestamp();
+                    ((BasicContentHeaderProperties) _contentHeaderBody.getProperties()).getTimestamp();
 
             if (SYNCHED_CLOCKS)
             {
@@ -176,8 +176,8 @@ public class IncomingMessage implements InboundMessage
             // now that it has all been received, before we attempt delivery
             _txnContext.messageFullyReceived(isPersistent());
             
-            AMQShortString userID = getContentHeaderBody().properties instanceof BasicContentHeaderProperties ?
-                     ((BasicContentHeaderProperties) getContentHeaderBody().properties).getUserId() : null; 
+            AMQShortString userID = getContentHeaderBody().getProperties() instanceof BasicContentHeaderProperties ?
+                     ((BasicContentHeaderProperties) getContentHeaderBody().getProperties()).getUserId() : null;
             
             if (MSG_AUTH && !_publisher.getAuthorizedID().getName().equals(userID == null? "" : userID.toString()))
             {
@@ -280,8 +280,8 @@ public class IncomingMessage implements InboundMessage
 
     public boolean isPersistent()
     {
-        return getContentHeaderBody().properties instanceof BasicContentHeaderProperties &&
-             ((BasicContentHeaderProperties) getContentHeaderBody().properties).getDeliveryMode() == 
+        return getContentHeaderBody().getProperties() instanceof BasicContentHeaderProperties &&
+             ((BasicContentHeaderProperties) getContentHeaderBody().getProperties()).getDeliveryMode() ==
                                                              BasicContentHeaderProperties.PERSISTENT;
     }
     
