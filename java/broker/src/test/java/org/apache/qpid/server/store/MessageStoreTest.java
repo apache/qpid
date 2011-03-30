@@ -589,7 +589,7 @@ public class MessageStoreTest extends InternalBrokerBaseCase
         headerBody.classId = BasicConsumeBodyImpl.CLASS_ID;
         headerBody.bodySize = 0;
 
-        headerBody.properties = properties;
+        headerBody.setProperties(properties);
 
         try
         {

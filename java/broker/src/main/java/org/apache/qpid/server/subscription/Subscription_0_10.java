@@ -441,7 +441,7 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
             Struct[] headers = new Struct[] { deliveryProps, messageProps };
 
             BasicContentHeaderProperties properties =
-                    (BasicContentHeaderProperties) message_0_8.getContentHeaderBody().properties;
+                    (BasicContentHeaderProperties) message_0_8.getContentHeaderBody().getProperties();
             final AMQShortString exchange = message_0_8.getMessagePublishInfo().getExchange();
             if(exchange != null)
             {
