@@ -36,7 +36,7 @@ $(MAKEDIST): Makefile
 
 examplesdir=$(pkgdatadir)/examples/old_api
 dist_examples_DATA = $(MAKEDIST)
-EXTRA_DIST = README.verify verify verify_all
+EXTRA_DIST = README.verify verify verify_all CMakeLists.txt
 
 # For older versions of automake
 abs_top_srcdir = @abs_top_srcdir@
