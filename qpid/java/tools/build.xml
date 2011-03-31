@@ -24,4 +24,14 @@
 
   <import file="../module.xml"/>
 
+  <target name="jar" depends="jar.manifest,jar.nomanifest,jar.manifest.qpidpasswordcheck" description="create jars"/>
+
+  <!-- Extra target to build QpidPasswordCheck as workaround QPID-3158 -->
+  <target name="jar.manifest.qpidpasswordcheck">
+      <jar destfile="${build.lib}/${project.name}-passwordcheck-${project.version}.jar" basedir="${module.classes}" includes="**/QpidPasswordCheck.class">
+          <manifest>
+              <attribute name="Main-Class" value="org.apache.qpid.tools.QpidPasswordCheck"/>
+          </manifest>
+      </jar>
+  </target>
 </project>
