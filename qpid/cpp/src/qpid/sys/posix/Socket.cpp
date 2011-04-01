@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -45,9 +45,9 @@ namespace sys {
 namespace {
 std::string getName(int fd, bool local, bool includeService = false)
 {
-    ::sockaddr_storage name; // big enough for any socket address    
+    ::sockaddr_storage name; // big enough for any socket address
     ::socklen_t namelen = sizeof(name);
-    
+
     int result = -1;
     if (local) {
         result = ::getsockname(fd, (::sockaddr*)&name, &namelen);
@@ -60,8 +60,8 @@ std::string getName(int fd, bool local, bool includeService = false)
     char servName[NI_MAXSERV];
     char dispName[NI_MAXHOST];
     if (includeService) {
-        if (int rc=::getnameinfo((::sockaddr*)&name, namelen, dispName, sizeof(dispName), 
-                                 servName, sizeof(servName), 
+        if (int rc=::getnameinfo((::sockaddr*)&name, namelen, dispName, sizeof(dispName),
+                                 servName, sizeof(servName),
                                  NI_NUMERICHOST | NI_NUMERICSERV) != 0)
             throw QPID_POSIX_ERROR(rc);
         return std::string(dispName) + ":" + std::string(servName);
@@ -75,9 +75,9 @@ std::string getName(int fd, bool local, bool includeService = false)
 
 std::string getService(int fd, bool local)
 {
-    ::sockaddr_storage name; // big enough for any socket address    
+    ::sockaddr_storage name; // big enough for any socket address
     ::socklen_t namelen = sizeof(name);
-    
+
     int result = -1;
     if (local) {
         result = ::getsockname(fd, (::sockaddr*)&name, &namelen);
@@ -88,8 +88,8 @@ std::string getService(int fd, bool local)
     QPID_POSIX_CHECK(result);
 
     char servName[NI_MAXSERV];
-    if (int rc=::getnameinfo((::sockaddr*)&name, namelen, 0, 0, 
-                                 servName, sizeof(servName), 
+    if (int rc=::getnameinfo((::sockaddr*)&name, namelen, 0, 0,
+                                 servName, sizeof(servName),
                                  NI_NUMERICHOST | NI_NUMERICSERV) != 0)
         throw QPID_POSIX_ERROR(rc);
     return servName;
@@ -171,6 +171,23 @@ void Socket::connect(const SocketAddress& addr) const
     if ((::connect(socket, getAddrInfo(addr).ai_addr, getAddrInfo(addr).ai_addrlen) < 0) &&
         (errno != EINPROGRESS)) {
         throw Exception(QPID_MSG(strError(errno) << ": " << connectname));
+    }
+    // When connecting to a port on the same host which no longer has
+    // a process associated with it, the OS occasionally chooses the
+    // remote port (which is unoccupied) as the port to bind the local
+    // end of the socket, resulting in a "circular" connection.
+    //
+    // This seems like something the OS should prevent but I have
+    // confirmed that sporadic hangs in
+    // cluster_tests.LongTests.test_failover on RHEL5 are caused by
+    // such a circular connection.
+    //
+    // Raise an error if we see such a connection, since we know there is
+    // no listener on the peer address.
+    //
+    if (getLocalAddress() == getPeerAddress()) {
+        close();
+        throw Exception(QPID_MSG("Connection refused: " << connectname));
     }
 }
 

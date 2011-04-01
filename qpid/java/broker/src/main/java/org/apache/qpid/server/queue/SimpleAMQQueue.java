@@ -1585,7 +1585,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
     public void deliverAsync()
     {
-        Runner runner = new Runner(_stateChangeCount.incrementAndGet());
+        QueueRunner runner = new QueueRunner(this, _stateChangeCount.incrementAndGet());
 
         if (_asynchronousRunner.compareAndSet(null, runner))
         {
@@ -1602,52 +1602,6 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             sub.set(SUB_FLUSH_RUNNER, flusher);
         }
         _asyncDelivery.execute(flusher);
-    }
-
-
-    private class Runner implements ReadWriteRunnable
-    {
-        String _name;
-        public Runner(long count)
-        {
-            _name = "QueueRunner-" + count + "-" + _logActor;
-        }
-
-        public void run()
-        {
-            String originalName = Thread.currentThread().getName();
-            try
-            {
-                Thread.currentThread().setName(_name);
-                CurrentActor.set(_logActor);
-
-                processQueue(this);
-            }
-            catch (AMQException e)
-            {
-                _logger.error(e);
-            }
-            finally
-            {
-                CurrentActor.remove();
-                Thread.currentThread().setName(originalName);
-            }
-        }
-
-        public boolean isRead()
-        {
-            return false;
-        }
-
-        public boolean isWrite()
-        {
-            return true;
-        }
-
-        public String toString()
-        {
-            return _name;
-        }
     }
 
     public void flushSubscription(Subscription sub) throws AMQException
@@ -1834,7 +1788,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
      * @param runner the Runner to schedule
      * @throws AMQException
      */
-    private void processQueue(Runnable runner) throws AMQException
+    public void processQueue(QueueRunner runner) throws AMQException
     {
         long stateChangeCount;
         long previousStateChangeCount = Long.MIN_VALUE;
@@ -2288,5 +2242,10 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
                 break;
             }
         }
+    }
+
+    public LogActor getLogActor()
+    {
+        return _logActor;
     }
 }

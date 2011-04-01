@@ -246,7 +246,7 @@ bool RingQueuePolicy::checkLimit(boost::intrusive_ptr<Message> m)
 {
 
     // If the message is bigger than the queue size, give up
-    if (m->contentSize() > getMaxSize()) {
+    if (getMaxSize() && m->contentSize() > getMaxSize()) {
         QPID_LOG(debug, "Message too large for ring queue " << name 
                  << " [" << *this  << "] "
                  << ": message size = " << m->contentSize() << " bytes"

@@ -509,7 +509,7 @@ class BrokerTest(TestCase):
         r.close()
         self.assertEqual(expect_contents, actual_contents)
 
-def join(thread, timeout=1):
+def join(thread, timeout=10):
     thread.join(timeout)
     if thread.isAlive(): raise Exception("Timed out joining thread %s"%thread)
 

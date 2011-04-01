@@ -744,7 +744,7 @@ libqpidclient_la_SOURCES =			\
 QPIDCLIENT_VERSION_INFO  = 2:0:0
 libqpidclient_la_LDFLAGS = -version-info $(QPIDCLIENT_VERSION_INFO)
 
-libqpidtypes_la_libadd=-luuid
+libqpidtypes_la_LIBADD= -luuid
 libqpidtypes_la_SOURCES=			\
   qpid/types/Exception.cpp			\
   qpid/types/Uuid.cpp				\
