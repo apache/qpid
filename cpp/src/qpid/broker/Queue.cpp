@@ -183,7 +183,6 @@ void Queue::recover(boost::intrusive_ptr<Message>& msg){
         // setup synclist for recovered messages, so they don't get re-stored on lastNodeFailure
         msg->addToSyncList(shared_from_this(), store); 
     }
-    msg->enqueueComplete(); // mark the message as enqueued
 
     if (store && (!msg->isContentLoaded() || msg->checkContentReleasable())) {
         //content has not been loaded, need to ensure that lazy loading mode is set:
@@ -210,7 +209,6 @@ void Queue::requeue(const QueuedMessage& msg){
     {    
         Mutex::ScopedLock locker(messageLock);
         if (!isEnqueued(msg)) return;
-        msg.payload->enqueueComplete(); // mark the message as enqueued
         messages->reinsert(msg);
         listeners.populate(copy);
 
@@ -632,7 +630,9 @@ bool Queue::enqueue(TransactionContext* ctxt, boost::intrusive_ptr<Message>& msg
     }
 
     if ((msg->isPersistent() || msg->checkContentReleasable()) && store) {
-        msg->enqueueAsync(shared_from_this(), store); //increment to async counter -- for message sent to more than one queue
+        // mark the message as being enqueued - the store MUST CALL msg->enqueueComplete()
+        // when it considers the message stored.
+        msg->enqueueAsync(shared_from_this(), store);
         boost::intrusive_ptr<PersistableMessage> pmsg = boost::static_pointer_cast<PersistableMessage>(msg);
         store->enqueue(ctxt, pmsg, *this);
         return true;
