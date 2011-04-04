@@ -805,24 +805,6 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
     }
 
-    public void requeue(QueueEntryImpl entry, Subscription subscription)
-    {
-        SubscriptionList.SubscriptionNodeIterator subscriberIter = _subscriptionList.iterator();
-        // iterate over all the subscribers, and if they are in advance of this queue entry then move them backwards
-        while (subscriberIter.advance())
-        {
-            Subscription sub = subscriberIter.getNode().getSubscription();
-
-            // we don't make browsers send the same stuff twice
-            if (sub.seesRequeues() && (!sub.acquires() && sub == subscription))
-            {
-                updateSubRequeueEntry(sub, entry);
-            }
-        }
-
-        deliverAsync();
-    }
-
     public void dequeue(QueueEntry entry, Subscription sub)
     {
         decrementQueueCount();
