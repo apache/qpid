@@ -27,13 +27,18 @@ import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.queue.QueueRunner;
 import org.apache.qpid.server.queue.SimpleAMQQueue;
 
-
+/**
+ * QueueRunners are Runnables used to process a queue when requiring
+ * asynchronous message delivery to subscriptions, which is necessary
+ * when straight-through delivery of a message to a subscription isn't
+ * possible during the enqueue operation.
+ */
 public class QueueRunner implements ReadWriteRunnable
 {
     private static final Logger _logger = Logger.getLogger(QueueRunner.class);
 
-    private String _name;
-    private SimpleAMQQueue _queue;
+    private final String _name;
+    private final SimpleAMQQueue _queue;
 
     public QueueRunner(SimpleAMQQueue queue, long count)
     {
@@ -53,7 +58,7 @@ public class QueueRunner implements ReadWriteRunnable
         }
         catch (AMQException e)
         {
-            _logger.error(e);
+            _logger.error("Exception during asynchronous delivery by " + _name, e);
         }
         finally
         {
