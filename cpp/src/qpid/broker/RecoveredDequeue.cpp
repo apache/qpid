@@ -43,7 +43,6 @@ void RecoveredDequeue::commit() throw()
 
 void RecoveredDequeue::rollback() throw()
 {
-    msg->enqueueComplete();
     queue->process(msg);
 }
 
