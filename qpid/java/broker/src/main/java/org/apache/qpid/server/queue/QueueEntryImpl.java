@@ -358,15 +358,6 @@ public class QueueEntryImpl implements QueueEntry
         }
     }
 
-    public void requeue(Subscription subscription)
-    {
-        getQueue().requeue(this, subscription);
-        if(_stateChangeListeners != null)
-        {
-            notifyStateChange(QueueEntry.State.ACQUIRED, QueueEntry.State.AVAILABLE);
-        }
-    }
-
     public void dequeue()
     {
         EntryState state = _state;

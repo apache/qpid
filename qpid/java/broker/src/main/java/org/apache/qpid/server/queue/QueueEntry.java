@@ -195,8 +195,6 @@ public interface QueueEntry extends Comparable<QueueEntry>, Filterable
 
     boolean isRejectedBy(Subscription subscription);
 
-    void requeue(Subscription subscription);
-
     void dequeue();
 
     void dispose();

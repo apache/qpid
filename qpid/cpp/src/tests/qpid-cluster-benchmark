@@ -22,14 +22,13 @@
 
 # Default values
 PORT="5672"
-BROKERS=`echo $HOSTS | sed "s/\>/:$PORT/g;s/ /,/g"` # Broker URL list
-BROKER=`echo $HOSTS | awk '{print $1}'`	# First broker
 COUNT=10000
 FLOW=100	      # Flow control limit on queue depth for latency.
 REPEAT=10
-SCALE=10
+QUEUES=4
+CLIENTS=3
 
-while getopts "p:c:f:r:t:b:" opt; do
+while getopts "p:c:f:r:t:b:q:c" opt; do
     case $opt in
 	p) PORT=$OPTARG;;
 	c) COUNT=$OPTARG;;
@@ -37,17 +36,22 @@ while getopts "p:c:f:r:t:b:" opt; do
 	r) REPEAT=$OPTARG;;
 	s) SCALE=$OPTARG;;
 	b) BROKERS=$OPTARG;;
+	q) QUEUES=$OPTARG;;
+	c) CLIENTS=$OPTARG;;
 	*) echo "Unknown option"; exit 1;;
     esac
 done
 
+BROKERS=${BROKERS:-$(echo $HOSTS | sed "s/\>/:$PORT/g;s/ /,/g")} # Broker URL list
+BROKER=`echo $BROKERS | awk -F, '{print $1}'` # First broker
+
 run_test() { echo $*; shift; "$@"; echo; echo; echo; }
 
 # Multiple pubs/subs connect via multiple brokers (active-active)
-run_test "multi-host-thruput" qpid-cpp-benchmark --repeat $REPEAT -b $BROKERS --no-timestamp --summarize -s$SCALE -r$SCALE -m $COUNT
+run_test "multi-host-thruput" qpid-cpp-benchmark --repeat $REPEAT -b $BROKERS --no-timestamp --summarize -q$QUEUES -s$CLIENTS -r$CLIENTS -m $COUNT
 
 # Multiple pubs/subs connect via single broker (active-passive)
-run_test "single-host-thruput" qpid-cpp-benchmark --repeat $REPEAT -b $BROKER --no-timestamp --summarize -s$SCALE -r$SCALE -m $COUNT
+run_test "single-host-thruput" qpid-cpp-benchmark --repeat $REPEAT -b $BROKER --no-timestamp --summarize -q$QUEUES -s$CLIENTS -r$CLIENTS -m $COUNT
 
 # Latency
 run_test "latency" qpid-cpp-benchmark --repeat $REPEAT -b $BROKER --connection-options '{tcp-nodelay:true}' -m $COUNT --flow-control $FLOW
