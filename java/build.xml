@@ -292,4 +292,7 @@
     </findbugs>
   </target>
 
+  <target name="eclipse" description="build eclipse project and classpath files">
+    <iterate target="eclipse"/>
+  </target>
 </project>
