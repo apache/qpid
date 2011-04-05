@@ -561,9 +561,6 @@
       <fileset dir="${module.classes}">
         <include name="**/*.class"/>
       </fileset>
-      <fileset dir="${module.test.classes}">
-        <include name="**/*.class"/>
-      </fileset>      
     </cobertura-instrument>
   </target>
 
