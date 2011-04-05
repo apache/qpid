@@ -75,6 +75,7 @@
   <property name="module.coverage"     location="${module.build}/coverage"/>
   <property name="cobertura.datafile"  location="${module.instrumented}/cobetura.ser"/>
 
+
   <available property="module.test.src.exists" file="${module.test.src}"/>
   <available property="module.etc.exists" file="${module.etc}"/>
   <available property="module.bin.exists" file="${module.bin}"/>
@@ -823,4 +824,84 @@ qpid.name=${project.name}
       <touch file="${velocity.timestamp}" />
     </target>
 
+    <target name="eclipse" depends="eclipse-setup,eclipse-project,eclipse-source-only,eclipse-source-and-test"/>
+
+    <target name="eclipse-setup">
+      <taskdef name="eclipse" classname="prantl.ant.eclipse.EclipseTask" />
+
+      <!-- Build set of directories representing the dependencies -->
+
+      <dirset id="eclipse.required.projectdirs.path" dir="${project.root}" includes="${module.depends} ${module.test.depends} neverBeEmpty">
+        <!-- Select only those projects from module.depends that contain a build.xml.  This serves to exclude dependencies that
+             don't become Eclipse projects e.g. broker-plugins and common-tests -->
+        <present targetdir="${project.root}">
+          <mapper type="glob" from="*" to="*/build.xml"/>
+        </present>
+      </dirset>
+
+      <!-- Convert from the set of directories into Eclipse project names proceeded by forward slashes -->
+
+      <pathconvert property="eclipse.required.projectnames" refid="eclipse.required.projectdirs.path" pathsep=" " dirsep="-">
+        <map from="${project.root}${file.separator}" to=''/>
+      </pathconvert>
+      <map property="eclipse.required.slashedprojectnames" value="${eclipse.required.projectnames}" join="${path.separator}">
+        <globmapper from="*" to="/*"/>
+      </map>
+
+      <echo message="Ant module dependencies : ${module.depends} ${module.test.depends} converted to Eclipse required project(s): ${eclipse.required.slashedprojectnames}"/>
+      <path id="eclipse.required.slashedprojectnames.path">
+        <pathelement path="${eclipse.required.slashedprojectnames}"/>
+      </path>
+    </target>
+
+    <!-- Create the Eclipse .project -->
+    <target name="eclipse-project">
+      <eclipse updatealways="${eclipse.updatealways}">
+        <project name="${module.name}"/>
+
+        <!-- If the Eclipse task were to ever support the generation of
+             linked resources, we would configure it to generate
+             the following:
+
+             scratch_src -> ${module.precompiled}
+
+             in each project.   This would avoid the 'linked sources'
+             manual step documented on the Wiki.
+        -->
+      </eclipse>
+    </target>
+    
+    <!-- Create the Eclipse .classpath -->
+    <target name="eclipse-source-only" unless="module.test.src.exists">
+      <eclipse updatealways="${eclipse.updatealways}">
+        <settings>
+          <jdtcore compilercompliance="${eclipse.compilercompliance}" />
+        </settings>
+        <classpath>
+          <container path="${eclipse.container}" />
+          <source path="${module.src}" />
+          <source pathref="eclipse.required.slashedprojectnames.path" />
+          <library pathref="module.libs"/>
+          <output path="classes" />
+        </classpath>
+      </eclipse>
+    </target>
+
+    <!-- Create the Eclipse .classpath -->
+    <target name="eclipse-source-and-test" if="module.test.src.exists">
+      <eclipse updatealways="${eclipse.updatealways}">
+        <settings>
+          <jdtcore compilercompliance="${eclipse.compilercompliance}" />
+        </settings>
+        <classpath>
+          <container path="${eclipse.container}" />
+          <source path="${module.src}" />
+          <source path="${module.test.src}" />
+          <source pathref="eclipse.required.slashedprojectnames.path" />
+          <library pathref="module.libs"/>
+          <library pathref="module.test.libs"/>
+          <output path="classes" />
+        </classpath>
+      </eclipse>
+    </target>
 </project>
