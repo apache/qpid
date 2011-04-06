@@ -2830,14 +2830,13 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
             {
                 declareQueue(amqd, protocolHandler, consumer.isNoLocal(), nowait);
             }
+            bindQueue(amqd.getAMQQueueName(), amqd.getRoutingKey(), consumer.getArguments(), amqd.getExchangeName(), amqd, nowait);
         }
         
         AMQShortString queueName = amqd.getAMQQueueName();
 
         // store the consumer queue name
         consumer.setQueuename(queueName);
-
-        bindQueue(queueName, amqd.getRoutingKey(), consumer.getArguments(), amqd.getExchangeName(), amqd, nowait);
 
         // If IMMEDIATE_PREFETCH is not required then suspsend the channel to delay prefetch
         if (!_immediatePrefetch)

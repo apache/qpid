@@ -317,7 +317,7 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
     public void sendQueueBind(final AMQShortString queueName, final AMQShortString routingKey,
                               final FieldTable arguments, final AMQShortString exchangeName,
                               final AMQDestination destination, final boolean nowait)
-            throws AMQException, FailoverException
+            throws AMQException
     {
         if (destination.getDestSyntax() == DestSyntax.BURL)
         {
@@ -1202,6 +1202,8 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
                     {
                         setLegacyFiledsForQueueType(dest);
                         send0_10QueueDeclare(dest,null,false,noWait);
+                        sendQueueBind(dest.getAMQQueueName(), dest.getRoutingKey(),
+                                      null,dest.getExchangeName(),dest, false);
                         break;
                     }                
                 }
@@ -1310,6 +1312,8 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
                                     dest.getQueueName(),// should have one by now
                                     dest.getSubject(),
                                     Collections.<String,Object>emptyMap()));
+        sendQueueBind(dest.getAMQQueueName(), dest.getRoutingKey(),
+                null,dest.getExchangeName(),dest, false);
     }
     
     public void setLegacyFiledsForQueueType(AMQDestination dest)
