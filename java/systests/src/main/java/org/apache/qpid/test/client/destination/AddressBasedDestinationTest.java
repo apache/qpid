@@ -194,9 +194,7 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
                     dest.getAddressName(),dest.getAddressName(), dest.getSourceNode().getDeclareArgs()));
         
     }
-    
-    // todo add tests for delete options
-    
+ 
     public void testCreateQueue() throws Exception
     {
         Session jmsSession = _connection.createSession(false,Session.AUTO_ACKNOWLEDGE);
@@ -293,34 +291,9 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
         cons = jmsSession.createConsumer(dest); 
     }
     
-    public void testBindQueueWithArgs() throws Exception
+    public void checkQueueForBindings(Session jmsSession, AMQDestination dest,String headersBinding) throws Exception
     {
-        Session jmsSession = _connection.createSession(false,Session.AUTO_ACKNOWLEDGE);
-        
-        String headersBinding = "{exchange: 'amq.match', arguments: {x-match: any, dep: sales, loc: CA}}";
-        
-        String addr = "ADDR:my-queue/hello; " + 
-                      "{ " + 
-                           "create: always, " +
-                           "node: "  + 
-                           "{" + 
-                               "durable: true ," +
-                               "x-declare: " + 
-                               "{ " + 
-                                     "auto-delete: true," +
-                                     "arguments: {'qpid.max_count': 100}" +
-                               "}, " +
-                               "x-bindings: [{exchange : 'amq.direct', key : test}, " +
-                                            "{exchange : 'amq.topic', key : 'a.#'}," + 
-                                             headersBinding + 
-                                           "]" +
-                           "}" +
-                      "}";
-
-        AMQDestination dest = new AMQAnyDestination(addr);
-        MessageConsumer cons = jmsSession.createConsumer(dest); 
-        
-        assertTrue("Queue not created as expected",(
+    	assertTrue("Queue not created as expected",(
                 (AMQSession_0_10)jmsSession).isQueueExist(dest,(QueueNode)dest.getSourceNode(), true));              
         
         assertTrue("Queue not bound as expected",(
@@ -339,6 +312,41 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
         assertTrue("Queue not bound as expected",(
                 (AMQSession_0_10)jmsSession).isQueueBound("amq.match", 
                     dest.getAddressName(),null, a.getOptions()));
+    }
+    
+    /**
+     * Test goal: Verifies that a producer and consumer creation triggers the correct
+     *            behavior for x-bindings specified in node props.
+     */
+    public void testBindQueueWithArgs() throws Exception
+    {
+        
+    	Session jmsSession = _connection.createSession(false,Session.AUTO_ACKNOWLEDGE);
+        String headersBinding = "{exchange: 'amq.match', arguments: {x-match: any, dep: sales, loc: CA}}";
+        
+        String addr = "node: "  + 
+                           "{" + 
+                               "durable: true ," +
+                               "x-declare: " + 
+                               "{ " + 
+                                     "auto-delete: true," +
+                                     "arguments: {'qpid.max_count': 100}" +
+                               "}, " +
+                               "x-bindings: [{exchange : 'amq.direct', key : test}, " +
+                                            "{exchange : 'amq.topic', key : 'a.#'}," + 
+                                             headersBinding + 
+                                           "]" +
+                           "}" +
+                      "}";
+
+        
+        AMQDestination dest1 = new AMQAnyDestination("ADDR:my-queue/hello; {create: receiver, " +addr);
+        MessageConsumer cons = jmsSession.createConsumer(dest1); 
+        checkQueueForBindings(jmsSession,dest1,headersBinding);       
+        
+        AMQDestination dest2 = new AMQAnyDestination("ADDR:my-queue2/hello; {create: sender, " +addr);
+        MessageProducer prod = jmsSession.createProducer(dest2); 
+        checkQueueForBindings(jmsSession,dest2,headersBinding);     
     }
     
     /**
