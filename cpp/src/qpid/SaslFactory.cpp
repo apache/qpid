@@ -182,16 +182,17 @@ CyrusSasl::CyrusSasl(const std::string & username, const std::string & password,
         callbacks[i].id = SASL_CB_AUTHNAME;
         callbacks[i].proc = (CallbackProc*) &getUserFromSettings;
         callbacks[i++].context = &settings;
+
+        callbacks[i].id = SASL_CB_PASS;
+        if (settings.password.empty()) {
+            callbacks[i].proc = 0;
+            callbacks[i++].context = 0;        
+        } else {
+            callbacks[i].proc = (CallbackProc*) &getPasswordFromSettings;
+            callbacks[i++].context = &settings;
+        }
     }
 
-    callbacks[i].id = SASL_CB_PASS;
-    if (settings.password.empty()) {
-        callbacks[i].proc = 0;
-        callbacks[i++].context = 0;        
-    } else {
-        callbacks[i].proc = (CallbackProc*) &getPasswordFromSettings;
-        callbacks[i++].context = &settings;
-    }
 
     callbacks[i].id = SASL_CB_LIST_END;
     callbacks[i].proc = 0;
