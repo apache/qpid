@@ -65,6 +65,7 @@ namespace Messaging {
 
         // copy constructor
         Receiver(const Receiver ^ receiver);
+        Receiver(const Receiver % receiver);
 
         // unmanaged clone
         // undefined
