@@ -114,7 +114,7 @@ namespace Messaging {
     }
 
 
-    // Copy constructor
+    // Copy constructor look-alike (C#)
     Connection::Connection(const Connection ^ connection)
     {
         System::Exception ^ newException = nullptr;
@@ -123,6 +123,28 @@ namespace Messaging {
 		{
             connectionp = new ::qpid::messaging::Connection(
                         *(const_cast<Connection ^>(connection)->NativeConnection));
+        } 
+        catch (const ::qpid::types::Exception & error) 
+		{
+            String ^ errmsg = gcnew String(error.what());
+            newException    = gcnew QpidException(errmsg);
+        }
+
+		if (newException != nullptr) 
+		{
+	        throw newException;
+		}
+    }
+
+    // Copy constructor implicitly dereferenced (C++)
+    Connection::Connection(const Connection % connection)
+    {
+        System::Exception ^ newException = nullptr;
+
+        try 
+		{
+            connectionp = new ::qpid::messaging::Connection(
+                        *(const_cast<Connection %>(connection).NativeConnection));
         } 
         catch (const ::qpid::types::Exception & error) 
 		{
