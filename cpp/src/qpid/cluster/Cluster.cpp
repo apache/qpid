@@ -235,7 +235,7 @@ struct ClusterDispatcher : public framing::AMQP_AllOperations::ClusterHandler {
         cluster.errorCheck(member, type, frameSeq, l);
     }
     void timerWakeup(const std::string& name) { cluster.timerWakeup(member, name, l); }
-    void timerDrop(const std::string& name) { cluster.timerWakeup(member, name, l); }
+    void timerDrop(const std::string& name) { cluster.timerDrop(member, name, l); }
     void shutdown(const Uuid& id) { cluster.shutdown(member, id, l); }
     void deliverToQueue(const std::string& queue, const std::string& message) {
         cluster.deliverToQueue(queue, message, l);
