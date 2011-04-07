@@ -69,6 +69,7 @@ namespace Messaging {
 
         // copy constructor
         Session(const Session ^ session);
+        Session(const Session % session);
 
         ~Session();
         !Session();
