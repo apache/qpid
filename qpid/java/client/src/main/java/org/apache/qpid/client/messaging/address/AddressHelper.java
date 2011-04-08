@@ -55,7 +55,7 @@ public class AddressHelper
     public static final String EXCLUSIVE = "exclusive";
     public static final String AUTO_DELETE = "auto-delete";
     public static final String TYPE = "type";
-    public static final String ALT_EXCHANGE = "alt-exchange";
+    public static final String ALT_EXCHANGE = "alternate-exchange";
     public static final String BINDINGS = "bindings";
     public static final String BROWSE = "browse";
     public static final String MODE = "mode";
