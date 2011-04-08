@@ -133,15 +133,15 @@ protected:
 
         /** Returns true if propagation is needed. */
         bool delOrigin(const std::string& queueName, const std::string& origin){
-            fedBindings[queueName].erase(origin);
-            return true;
-        }
-
-        /** Returns true if propagation is needed. */
-        bool delOrigin() {
-            if (localBindings > 0)
-                localBindings--;
-            return localBindings == 0;
+            if (origin.empty()) {   // no remote == local binding
+                if (localBindings > 0)
+                    localBindings--;
+                return localBindings == 0;
+            }
+            size_t match = fedBindings[queueName].erase(origin);
+            if (fedBindings[queueName].empty())
+                fedBindings.erase(queueName);
+            return match != 0;
         }
 
         uint32_t count() {
@@ -149,7 +149,11 @@ protected:
         }
 
         uint32_t countFedBindings(const std::string& queueName) {
-            return  fedBindings[queueName].size();
+            // don't use '[]' - it may increase size of fedBindings!
+            std::map<std::string, originSet>::iterator i;
+            if ((i = fedBindings.find(queueName)) != fedBindings.end())
+                return  i->second.size();
+            return 0;
         }
     };
 

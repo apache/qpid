@@ -158,12 +158,13 @@ bool HeadersExchange::bind(Queue::shared_ptr queue, const string& bindingKey, co
     return true;
 }
 
-bool HeadersExchange::unbind(Queue::shared_ptr queue, const string& bindingKey, const FieldTable*){
+bool HeadersExchange::unbind(Queue::shared_ptr queue, const string& bindingKey, const FieldTable *args){
     bool propagate = false;
+    string fedOrigin(args ? args->getAsString(qpidFedOrigin) : "");
     {
         Mutex::ScopedLock l(lock);
 
-        FedUnbindModifier modifier;
+        FedUnbindModifier modifier(queue->getName(), fedOrigin);
         MatchKey match_key(queue, bindingKey);
         bindings.modify_if(match_key, modifier);
         propagate = modifier.shouldPropagate;
@@ -330,11 +331,7 @@ HeadersExchange::FedUnbindModifier::FedUnbindModifier() : shouldUnbind(false), s
 
 bool HeadersExchange::FedUnbindModifier::operator()(BoundKey & bk)
 {
-    if ("" == fedOrigin) {
-        shouldPropagate = bk.fedBinding.delOrigin();
-    } else {
-        shouldPropagate = bk.fedBinding.delOrigin(queueName, fedOrigin);
-    }
+    shouldPropagate = bk.fedBinding.delOrigin(queueName, fedOrigin);
     if (bk.fedBinding.countFedBindings(queueName) == 0)
     {
         shouldUnbind = true;
