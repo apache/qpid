@@ -29,15 +29,19 @@ namespace qpid {
 namespace broker {
 
 class Queue;
+class QueueListeners;
 
 class Consumer {
     const bool acquires;
+    // inListeners allows QueueListeners to efficiently track if this instance is registered
+    // for notifications without having to search its containers
+    bool inListeners;
   public:
     typedef boost::shared_ptr<Consumer> shared_ptr;            
     
     framing::SequenceNumber position;
     
-    Consumer(bool preAcquires = true) : acquires(preAcquires) {}
+    Consumer(bool preAcquires = true) : acquires(preAcquires), inListeners(false) {}
     bool preAcquires() const { return acquires; }
     virtual bool deliver(QueuedMessage& msg) = 0;
     virtual void notify() = 0;
@@ -45,6 +49,7 @@ class Consumer {
     virtual bool accept(boost::intrusive_ptr<Message>) { return true; }
     virtual OwnershipToken* getSession() = 0;
     virtual ~Consumer(){}
+    friend class QueueListeners;
 };
 
 }}
