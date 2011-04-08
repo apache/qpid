@@ -267,10 +267,10 @@ class QmfData(Console):
       ##
       ## TODO: use a regex for this instead of this convoluted logic,
       ## or even consider passing all args through eval() [which would
-      ## be a minor change to the nterface as string args would then
+      ## be a minor change to the interface as string args would then
       ## always need to be quoted as strings within a map/list would
       ## now]
-      if arg[0] == '{' or arg[0] == '[' or arg == "True" or arg == "False" or \
+      if arg[0] == '{' or arg[0] == '[' or arg[0] == '"' or arg[0] == '\'' or arg == "True" or arg == "False" or \
             ((arg.count('.') < 2 and (arg.count('-') == 0 or \
             (arg.count('-') == 1 and  arg[0] == '-')) and \
             arg.replace('.','').replace('-','').isdigit())):
