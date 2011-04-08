@@ -156,7 +156,10 @@ class TopicExchange : public virtual Exchange {
 	     clearCache();
         };
     };
-    bool isBound(Queue::shared_ptr queue, const std::string& pattern);
+    BindingKey *getQueueBinding(Queue::shared_ptr queue, const std::string& pattern);
+    bool deleteBinding(Queue::shared_ptr queue,
+                       const std::string& routingKey,
+                       BindingKey *bk);
 
     class ReOriginIter;
     class BindingsFinderIter;
