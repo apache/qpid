@@ -776,7 +776,7 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
         else
         {
             QueueNode node = (QueueNode)amqd.getSourceNode();
-            getQpidSession().queueDeclare(queueName.toString(), "" ,
+            getQpidSession().queueDeclare(queueName.toString(), node.getAlternateExchange() ,
                     node.getDeclareArgs(),
                     node.isAutoDelete() ? Option.AUTO_DELETE : Option.NONE,
                     node.isDurable() ? Option.DURABLE : Option.NONE,
