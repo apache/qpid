@@ -60,13 +60,13 @@ class StateMonitor : public Waitable
     operator Enum() const { return state; }
 
     /** @pre Caller holds a ScopedLock */
-    void waitFor(Enum s) { ScopedWait(*this); while (s != state) wait(); }
+    void waitFor(Enum s) { ScopedWait w(*this); while (s != state) wait(); }
     /** @pre Caller holds a ScopedLock */
-    void waitFor(Set s) { ScopedWait(*this); while (!s.test(state)) wait(); }
+    void waitFor(Set s) { ScopedWait w(*this); while (!s.test(state)) wait(); }
     /** @pre Caller holds a ScopedLock */
-    void waitNot(Enum s) { ScopedWait(*this); while (s == state) wait(); }
+    void waitNot(Enum s) { ScopedWait w(*this); while (s == state) wait(); }
     /** @pre Caller holds a ScopedLock */
-    void waitNot(Set s) { ScopedWait(*this); while (s.test(state)) wait(); }
+    void waitNot(Set s) { ScopedWait w(*this); while (s.test(state)) wait(); }
     
   private:
     Enum state;
