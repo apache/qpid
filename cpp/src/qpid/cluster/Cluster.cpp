@@ -537,7 +537,7 @@ void Cluster::processFrame(const EventFrame& e, Lock& l) {
             connection->deliveredFrame(e);
         }
         else
-            QPID_LOG(trace, *this << " DROP (no connection): " << e);
+            throw Exception(QPID_MSG("Unknown connection: " << e));
     }
     else // Drop connection frames while state < CATCHUP
         QPID_LOG(trace, *this << " DROP (joining): " << e);
