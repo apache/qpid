@@ -187,6 +187,7 @@ class SessionState : public qpid::SessionState,
     class AsyncCommandCompleter : public RefCounted {
     private:
         SessionState *session;
+        bool isAttached;
         qpid::sys::Mutex completerLock;
 
         // special-case message.transfer commands for optimization
@@ -205,8 +206,8 @@ class SessionState : public qpid::SessionState,
         /** for scheduling a run of "completeCommands()" on the IO thread */
         static void schedule(boost::intrusive_ptr<AsyncCommandCompleter>);
 
-  public:
-        AsyncCommandCompleter(SessionState *s) : session(s) {};
+    public:
+        AsyncCommandCompleter(SessionState *s) : session(s), isAttached(s->isAttached()) {};
         ~AsyncCommandCompleter() {};
 
         /** schedule the completion of an ingress message.transfer command */
@@ -214,6 +215,8 @@ class SessionState : public qpid::SessionState,
                                    bool requiresAccept,
                                    bool requiresSync);
         void cancel();  // called by SessionState destructor.
+        void attached();  // called by SessionState on attach()
+        void detached();  // called by SessionState on detach()
     };
     boost::intrusive_ptr<AsyncCommandCompleter> asyncCommandCompleter;
 

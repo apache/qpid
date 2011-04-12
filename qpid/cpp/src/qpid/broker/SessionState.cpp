@@ -127,6 +127,7 @@ bool SessionState::isLocal(const ConnectionToken* t) const
 
 void SessionState::detach() {
     QPID_LOG(debug, getId() << ": detached on broker.");
+    asyncCommandCompleter->detached();
     disableOutput();
     handler = 0;
     if (mgmtObject != 0)
@@ -147,6 +148,7 @@ void SessionState::attach(SessionHandler& h) {
         mgmtObject->set_connectionRef (h.getConnection().GetManagementObject()->getObjectId());
         mgmtObject->set_channelId (h.getChannel());
     }
+    asyncCommandCompleter->attached();
 }
 
 void SessionState::abort() {
@@ -486,7 +488,7 @@ void SessionState::AsyncCommandCompleter::scheduleMsgCompletion(SequenceNumber c
 {
     qpid::sys::ScopedLock<qpid::sys::Mutex> l(completerLock);
 
-    if (session) {
+    if (session && isAttached) {
         MessageInfo msg(cmd, requiresAccept, requiresSync);
         completedMsgs.push_back(msg);
         if (completedMsgs.size() == 1) {
@@ -520,6 +522,24 @@ void SessionState::AsyncCommandCompleter::cancel()
 {
     qpid::sys::ScopedLock<qpid::sys::Mutex> l(completerLock);
     session = 0;
+}
+
+
+/** inform the completer that the session has attached,
+ * allows command completion scheduling from any thread */
+void SessionState::AsyncCommandCompleter::attached()
+{
+    qpid::sys::ScopedLock<qpid::sys::Mutex> l(completerLock);
+    isAttached = true;
+}
+
+
+/** inform the completer that the session has detached,
+ * disables command completion scheduling from any thread */
+void SessionState::AsyncCommandCompleter::detached()
+{
+    qpid::sys::ScopedLock<qpid::sys::Mutex> l(completerLock);
+    isAttached = false;
 }
 
 }} // namespace qpid::broker
