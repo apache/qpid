@@ -42,7 +42,10 @@ import static org.apache.qpid.util.Serial.max;
 import static org.apache.qpid.util.Strings.toUTF8;
 
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
@@ -262,7 +265,32 @@ public class Session extends SessionInvoker
                 }
                 else if (m instanceof MessageTransfer)
                 {
-                    ((MessageTransfer)m).getHeader().get(DeliveryProperties.class).setRedelivered(true);
+                	MessageTransfer xfr = (MessageTransfer)m;
+                	
+                	if (xfr.getHeader() != null)
+                	{
+                		if (xfr.getHeader().get(DeliveryProperties.class) != null)
+                		{
+                		   xfr.getHeader().get(DeliveryProperties.class).setRedelivered(true);
+                		}
+                		else
+                		{
+                			Struct[] structs = xfr.getHeader().getStructs();
+                			DeliveryProperties deliveryProps = new DeliveryProperties();
+                    		deliveryProps.setRedelivered(true);
+                    		
+                    		List<Struct> list = Arrays.asList(structs);
+                    		list.add(deliveryProps);
+                    		xfr.setHeader(new Header(list));
+                		}
+                		
+                	}
+                	else
+                	{
+                		DeliveryProperties deliveryProps = new DeliveryProperties();
+                		deliveryProps.setRedelivered(true);
+                		xfr.setHeader(new Header(deliveryProps));
+                	}
                 }
                 sessionCommandPoint(m.getId(), 0);
                 send(m);
