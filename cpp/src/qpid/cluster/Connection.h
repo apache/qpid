@@ -250,6 +250,7 @@ class Connection :
     Cluster& cluster;
     ConnectionId self;
     bool catchUp;
+    bool announced;
     OutputInterceptor output;
     framing::FrameDecoder localDecoder;
     ConnectionCtor connectionCtor;

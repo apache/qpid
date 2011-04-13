@@ -45,12 +45,11 @@ void OutputInterceptor::send(framing::AMQFrame& f) {
 }
 
 void OutputInterceptor::activateOutput() {
-    if (parent.isCatchUp()) {
-        sys::Mutex::ScopedLock l(lock);
+    sys::Mutex::ScopedLock l(lock);
+    if (parent.isCatchUp())
         next->activateOutput();
-    }
     else
-        sendDoOutput(sendMax);
+        sendDoOutput(sendMax, l);
 }
 
 void OutputInterceptor::abort() {
@@ -75,23 +74,29 @@ bool OutputInterceptor::doOutput() {
 
 // Send output up to limit, calculate new limit.
 void OutputInterceptor::deliverDoOutput(uint32_t limit) {
+    sys::Mutex::ScopedLock l(lock);
     sentDoOutput = false;
     sendMax = limit;
     size_t newLimit = limit;
     if (parent.isLocal()) {
-        size_t buffered = getBuffered();
+        size_t buffered = next->getBuffered();
         if (buffered == 0 && sent == sendMax) // Could have sent more, increase the limit.
             newLimit = sendMax*2;
         else if (buffered > 0 && sent > 1) // Data left unsent, reduce the limit.
             newLimit = (sendMax + sent) / 2;
     }
     sent = 0;
-    while (sent < limit && parent.getBrokerConnection()->doOutput())
+    while (sent < limit) {
+        {
+            sys::Mutex::ScopedUnlock u(lock);
+            if (!parent.getBrokerConnection()->doOutput()) break;
+        }
         ++sent;
-    if (sent == limit) sendDoOutput(newLimit);
+    }
+    if (sent == limit) sendDoOutput(newLimit, l);
 }
 
-void OutputInterceptor::sendDoOutput(size_t newLimit) {
+void OutputInterceptor::sendDoOutput(size_t newLimit, const sys::Mutex::ScopedLock&) {
     if (parent.isLocal() && !sentDoOutput && !closing) {
         sentDoOutput = true;
         parent.getCluster().getMulticast().mcastControl(
@@ -100,6 +105,7 @@ void OutputInterceptor::sendDoOutput(size_t newLimit) {
     }
 }
 
+// Called in connection thread when local connection closes.
 void OutputInterceptor::closeOutput() {
     sys::Mutex::ScopedLock l(lock);
     closing = true;

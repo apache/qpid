@@ -78,7 +78,7 @@ const std::string shadowPrefix("[shadow]");
 Connection::Connection(Cluster& c, sys::ConnectionOutputHandler& out,
                        const std::string& mgmtId,
                        const ConnectionId& id, const qpid::sys::SecuritySettings& external)
-    : cluster(c), self(id), catchUp(false), output(*this, out),
+    : cluster(c), self(id), catchUp(false), announced(false), output(*this, out),
       connectionCtor(&output, cluster.getBroker(), mgmtId, external, false, 0, true),
       expectProtocolHeader(false),
       mcastFrameHandler(cluster.getMulticast(), self),
@@ -90,7 +90,7 @@ Connection::Connection(Cluster& c, sys::ConnectionOutputHandler& out,
 Connection::Connection(Cluster& c, sys::ConnectionOutputHandler& out,
                        const std::string& mgmtId, MemberId member,
                        bool isCatchUp, bool isLink, const qpid::sys::SecuritySettings& external
-) : cluster(c), self(member, ++idCounter), catchUp(isCatchUp), output(*this, out),
+) : cluster(c), self(member, ++idCounter), catchUp(isCatchUp), announced(false), output(*this, out),
     connectionCtor(&output, cluster.getBroker(),
                    mgmtId,
                    external,
@@ -255,7 +255,7 @@ void Connection::deliveredFrame(const EventFrame& f) {
     }
 }
 
-// A local connection is closed by the network layer.
+// A local connection is closed by the network layer. Called in the connection thread.
 void Connection::closed() {
     try {
         if (isUpdated()) {
@@ -272,8 +272,9 @@ void Connection::closed() {
             // closed and process any outstanding frames from the cluster
             // until self-delivery of deliver-close.
             output.closeOutput();
-            cluster.getMulticast().mcastControl(
-                ClusterConnectionDeliverCloseBody(), self);
+            if (announced)
+                cluster.getMulticast().mcastControl(
+                    ClusterConnectionDeliverCloseBody(), self);
         }
     }
     catch (const std::exception& e) {
@@ -384,6 +385,7 @@ void Connection::processInitialFrames(const char*& ptr, size_t size) {
                 connection->getUserId(),
                 initialFrames),
             getId());
+        announced = true;
         initialFrames.clear();
     }
 }
