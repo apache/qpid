@@ -140,8 +140,8 @@ QPID_AUTO_TEST_CASE(testConversionsFromString)
     BOOST_CHECK_EQUAL(0u, value.asUint16());
 
     value = "-0010";
-    BOOST_CHECK_EQUAL(0, value.asInt16());
-    BOOST_CHECK_EQUAL(0u, value.asUint16());
+    BOOST_CHECK_EQUAL(-10, value.asInt16());
+    BOOST_CHECK_THROW(value.asUint16(), InvalidConversion);
 }
 
 QPID_AUTO_TEST_CASE(testSizeConversionsUint)
