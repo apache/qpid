@@ -86,6 +86,64 @@ QPID_AUTO_TEST_CASE(testConversions)
     BOOST_CHECK_THROW(value.asBool(), InvalidConversion);
 }
 
+QPID_AUTO_TEST_CASE(testConversionsFromString)
+{
+    Variant value;
+    value = "5";
+    BOOST_CHECK_EQUAL(5, value.asInt16());
+    BOOST_CHECK_EQUAL(5u, value.asUint16());
+
+    value = "-5";
+    BOOST_CHECK_EQUAL(-5, value.asInt16());
+    BOOST_CHECK_THROW(value.asUint16(), InvalidConversion);
+
+    value = "18446744073709551615";
+    BOOST_CHECK_EQUAL(18446744073709551615ull, value.asUint64());
+    BOOST_CHECK_THROW(value.asInt64(), InvalidConversion);
+
+    value = "9223372036854775808";
+    BOOST_CHECK_EQUAL(9223372036854775808ull, value.asUint64());
+    BOOST_CHECK_THROW(value.asInt64(), InvalidConversion);
+
+    value = "-9223372036854775809";
+    BOOST_CHECK_THROW(value.asUint64(), InvalidConversion);
+    BOOST_CHECK_THROW(value.asInt64(), InvalidConversion);
+
+    value = "2147483648";
+    BOOST_CHECK_EQUAL(2147483648ul, value.asUint32());
+    BOOST_CHECK_THROW(value.asInt32(), InvalidConversion);
+
+    value = "-2147483649";
+    BOOST_CHECK_THROW(value.asUint32(), InvalidConversion);
+    BOOST_CHECK_THROW(value.asInt32(), InvalidConversion);
+
+    value = "32768";
+    BOOST_CHECK_EQUAL(32768u, value.asUint16());
+    BOOST_CHECK_THROW(value.asInt16(), InvalidConversion);
+
+    value = "-32769";
+    BOOST_CHECK_THROW(value.asUint16(), InvalidConversion);
+    BOOST_CHECK_THROW(value.asInt16(), InvalidConversion);
+
+    value = "-2.5";
+    BOOST_CHECK_EQUAL(-2.5, value.asFloat());
+
+    value = "-0.875432e10";
+    BOOST_CHECK_EQUAL(-0.875432e10, value.asDouble());
+
+    value = "-0";
+    BOOST_CHECK_EQUAL(0, value.asInt16());
+    BOOST_CHECK_EQUAL(0u, value.asUint16());
+
+    value = "-000";
+    BOOST_CHECK_EQUAL(0, value.asInt16());
+    BOOST_CHECK_EQUAL(0u, value.asUint16());
+
+    value = "-0010";
+    BOOST_CHECK_EQUAL(0, value.asInt16());
+    BOOST_CHECK_EQUAL(0u, value.asUint16());
+}
+
 QPID_AUTO_TEST_CASE(testSizeConversionsUint)
 {
     Variant value;

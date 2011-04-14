@@ -111,11 +111,24 @@ class VariantImpl
     template<class T> T convertFromString() const
     {
         std::string* s = reinterpret_cast<std::string*>(value.v);
-        try {
-            return boost::lexical_cast<T>(*s);
-        } catch(const boost::bad_lexical_cast&) {
-            throw InvalidConversion(QPID_MSG("Cannot convert " << *s));
+        if (std::numeric_limits<T>::is_signed || s->find('-') != 0) {
+            //lexical_cast won't fail if string is a negative number and T is unsigned
+            try {
+                return boost::lexical_cast<T>(*s);
+            } catch(const boost::bad_lexical_cast&) {
+                //don't return, throw exception below
+            }
+        } else {
+            //T is unsigned and number starts with '-'
+            try {
+                //handle special case of negative zero
+                if (boost::lexical_cast<int>(*s) == 0) return 0;
+                //else its a non-zero negative number so throw exception at end of function
+            } catch(const boost::bad_lexical_cast&) {
+                //wasn't a valid int, therefore not a valid uint
+            }
         }
+        throw InvalidConversion(QPID_MSG("Cannot convert " << *s));
     }
 };
 
