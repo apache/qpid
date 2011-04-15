@@ -484,24 +484,18 @@ class BrokerTest(TestCase):
         cluster = Cluster(self, count, args, expect=expect, wait=wait)
         return cluster
 
-    def browse(self, session, queue, timeout=0):
-        """Assert that the contents of messages on queue (as retrieved
-        using session and timeout) exactly match the strings in
-        expect_contents"""
-        r = session.receiver("%s;{mode:browse}"%(queue))
-        try:
-            contents = []
-            try:
-                while True: contents.append(r.fetch(timeout=timeout).content)
-            except messaging.Empty: pass
-        finally: pass                   #FIXME aconway 2011-04-14: r.close()
-        return contents
-
     def assert_browse(self, session, queue, expect_contents, timeout=0):
         """Assert that the contents of messages on queue (as retrieved
         using session and timeout) exactly match the strings in
         expect_contents"""
-        actual_contents = self.browse(session, queue, timeout)
+
+        r = session.receiver("%s;{mode:browse}"%(queue))
+        actual_contents = []
+        try:
+            for c in expect_contents: actual_contents.append(r.fetch(timeout=timeout).content)
+            while True: actual_contents.append(r.fetch(timeout=0).content) # Check for extra messages.
+        except messaging.Empty: pass
+        r.close()
         self.assertEqual(expect_contents, actual_contents)
 
 def join(thread, timeout=10):
