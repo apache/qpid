@@ -97,6 +97,7 @@ void ThresholdAlerts::enqueued(const QueuedMessage& m)
             if (isThresholdEvent(m.payload)) return;
             lastAlert = qpid::sys::now();
             agent.raiseEvent(qmf::org::apache::qpid::broker::EventQueueThresholdExceeded(name, count, size));
+            QPID_LOG(info, "Threshold event triggered for " << name << ", count=" << count << ", size=" << size);
         }
     }
 }
