@@ -449,36 +449,6 @@ acl allow all all
         cluster.start()
         verify(cluster[1])
 
-    def test_binding_order(self):
-        """Regression test for binding order inconsistency in cluster"""
-        cluster = self.cluster(1)
-        c0 = cluster[0].connect()
-        s0 = c0.session()
-        # Declare multiple queues bound to same key on amq.topic
-        def declare(q,max=0):
-            if max: declare = 'x-declare:{arguments:{"qpid.max_count":%d}}'%max
-            else: declare = 'x-declare:{}'
-            bind='x-bindings:[{queue:%s,key:key,exchange:"amq.topic"}]'%(q)
-            s0.sender("%s;{create:always,node:{%s,%s}}" % (q,declare,bind))
-        declare('d',max=4)              # Only one with a limit
-        for q in ['c', 'b','a']: declare(q)
-        # Add a cluster member, send enough messages to exceed the max count
-        cluster.start()
-        try:
-            s = s0.sender('amq.topic/key')
-            for m in xrange(1,6): s.send(Message(str(m)))
-            self.fail("Expected capacity exceeded exception")
-        except messaging.exceptions.TargetCapacityExceeded: pass
-        c1 = cluster[1].connect()
-        s1 = c1.session()
-        s0 = c0.session()        # Old session s0 is broken by exception.
-        # Verify queue contents are consistent.
-        for q in ['a','b','c','d']:
-            self.assertEqual(self.browse(s0, q), self.browse(s1, q))
-        # Verify queue contents are "best effort"
-        for q in ['a','b','c']: self.assert_browse(s1,q,[str(n) for n in xrange(1,6)])
-        self.assert_browse(s1,'d',[str(n) for n in xrange(1,5)])
-
 class LongTests(BrokerTest):
     """Tests that can run for a long time if -DDURATION=<minutes> is set"""
     def duration(self):
