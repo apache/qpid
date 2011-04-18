@@ -285,17 +285,14 @@ public class QpidBrokerTestCase extends QpidTestCase
             fail("Unable to test without config file:" + _configFile);
         }
 
-        if(_brokerCleanBetweenTests)
+        String existingQpidWorkPath = System.getProperty(BROKER_EXISTING_QPID_WORK);
+        if(existingQpidWorkPath != null && !existingQpidWorkPath.equals(""))
         {
             cleanBroker();
 
-            String existingQpidWorkPath = System.getProperty(BROKER_EXISTING_QPID_WORK);
-            if(existingQpidWorkPath != null && !existingQpidWorkPath.equals(""))
-            {
-                File existing = new File(existingQpidWorkPath);
-                File qpidWork = new File(getQpidWork(_broker, getPort()));
-                FileUtils.copyRecursive(existing, qpidWork);
-            }
+            File existing = new File(existingQpidWorkPath);
+            File qpidWork = new File(getQpidWork(_broker, getPort()));
+            FileUtils.copyRecursive(existing, qpidWork);
         }
 
         startBroker();
