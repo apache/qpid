@@ -303,11 +303,11 @@ QPID_AUTO_TEST_CASE(testSeek){
 
     QueuedMessage qm;
     queue->dispatch(consumer);
-    
+
     BOOST_CHECK_EQUAL(msg3.get(), consumer->last.get());
     queue->dispatch(consumer);
     queue->dispatch(consumer); // make sure over-run is safe
- 
+
 }
 
 QPID_AUTO_TEST_CASE(testSearch){
@@ -325,15 +325,15 @@ QPID_AUTO_TEST_CASE(testSearch){
 
     SequenceNumber seq(2);
     QueuedMessage qm = queue->find(seq);
-    
+
     BOOST_CHECK_EQUAL(seq.getValue(), qm.position.getValue());
-    
+
     queue->acquire(qm);
     BOOST_CHECK_EQUAL(queue->getMessageCount(), 2u);
     SequenceNumber seq1(3);
     QueuedMessage qm1 = queue->find(seq1);
     BOOST_CHECK_EQUAL(seq1.getValue(), qm1.position.getValue());
-    
+
 }
 const std::string nullxid = "";
 
@@ -875,28 +875,40 @@ QPID_AUTO_TEST_CASE(testFlowToDiskBlocking){
 
     intrusive_ptr<Message> msg02 = mkMsg(testStore, std::string(5, 'X'));  // transient w/ content
     DeliverableMessage dmsg02(msg02);
-    BOOST_CHECK_THROW(sbtFanout1.route(dmsg02, "", 0), ResourceLimitExceededException);
+    {
+        ScopedSuppressLogging sl; // suppress expected error messages.
+        BOOST_CHECK_THROW(sbtFanout1.route(dmsg02, "", 0), ResourceLimitExceededException);
+    }
     msg02->tryReleaseContent();
     BOOST_CHECK_EQUAL(msg02->isContentReleased(), false);
     BOOST_CHECK_EQUAL(1u, tq1->getMessageCount());
 
     intrusive_ptr<Message> msg03 = mkMsg(testStore, std::string(5, 'X'), true);  // durable w/ content
     DeliverableMessage dmsg03(msg03);
-    BOOST_CHECK_THROW(sbtFanout1.route(dmsg03, "", 0), ResourceLimitExceededException);
+    {
+        ScopedSuppressLogging sl; // suppress expected error messages.
+        BOOST_CHECK_THROW(sbtFanout1.route(dmsg03, "", 0), ResourceLimitExceededException);
+    }
     msg03->tryReleaseContent();
     BOOST_CHECK_EQUAL(msg03->isContentReleased(), false);
     BOOST_CHECK_EQUAL(1u, tq1->getMessageCount());
 
     intrusive_ptr<Message> msg04 = mkMsg(testStore); // transient no content
     DeliverableMessage dmsg04(msg04);
-    BOOST_CHECK_THROW(sbtFanout1.route(dmsg04, "", 0), ResourceLimitExceededException);
+    {
+        ScopedSuppressLogging sl; // suppress expected error messages.
+        BOOST_CHECK_THROW(sbtFanout1.route(dmsg04, "", 0), ResourceLimitExceededException);
+    }
     msg04->tryReleaseContent();
     BOOST_CHECK_EQUAL(msg04->isContentReleased(), false);
     BOOST_CHECK_EQUAL(1u, tq1->getMessageCount());
 
     intrusive_ptr<Message> msg05 = mkMsg(testStore, "", true); // durable no content
     DeliverableMessage dmsg05(msg05);
-    BOOST_CHECK_THROW(sbtFanout1.route(dmsg05, "", 0), ResourceLimitExceededException);
+    {
+        ScopedSuppressLogging sl; // suppress expected error messages.
+        BOOST_CHECK_THROW(sbtFanout1.route(dmsg05, "", 0), ResourceLimitExceededException);
+    }
     msg05->tryReleaseContent();
     BOOST_CHECK_EQUAL(msg05->isContentReleased(), false);
     BOOST_CHECK_EQUAL(1u, tq1->getMessageCount());
