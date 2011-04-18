@@ -255,7 +255,7 @@ def OptionsAndArguments(argv):
         config._if_unused = False
     if opts.force_if_not_empty:
         config._if_empty = False
-    if opts.force_if_not_used:
+    if opts.force_if_used:
         config._if_unused = False
     if opts.sasl_mechanism:
         config._sasl_mechanism = opts.sasl_mechanism
