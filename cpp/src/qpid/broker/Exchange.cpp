@@ -19,16 +19,18 @@
  *
  */
 
+#include "qpid/broker/Broker.h"
+#include "qpid/broker/DeliverableMessage.h"
 #include "qpid/broker/Exchange.h"
 #include "qpid/broker/ExchangeRegistry.h"
 #include "qpid/broker/FedOps.h"
-#include "qpid/broker/Broker.h"
-#include "qpid/management/ManagementAgent.h"
 #include "qpid/broker/Queue.h"
-#include "qpid/log/Statement.h"
 #include "qpid/framing/MessageProperties.h"
 #include "qpid/framing/reply_exceptions.h"
-#include "qpid/broker/DeliverableMessage.h"
+#include "qpid/log/Statement.h"
+#include "qpid/management/ManagementAgent.h"
+#include "qpid/sys/ExceptionHolder.h"
+#include <stdexcept>
 
 using namespace qpid::broker;
 using namespace qpid::framing;
@@ -70,6 +72,36 @@ Exchange::PreRoute::~PreRoute(){
     }
 }
 
+namespace {
+/** Store information about an exception to be thrown later.
+ * If multiple exceptions are stored, save the first of the "most severe"
+ * exceptions, SESSION is les sever than CONNECTION etc.
+ */
+class  ExInfo {
+  public:
+    enum Type { NONE, SESSION, CONNECTION, OTHER };
+
+    ExInfo(string exchange) : type(NONE), exchange(exchange) {}
+    void store(Type type_, const qpid::sys::ExceptionHolder& exception_, const boost::shared_ptr<Queue>& queue) {
+        QPID_LOG(warning, "Exchange " << exchange << " cannot deliver to  queue "
+                 <<  queue->getName() << ": " << exception_.what());
+        if (type < type_) {     // Replace less severe exception
+            type = type_;
+            exception = exception_;
+        }
+    }
+
+    void raise() {
+        exception.raise();
+    }
+
+  private:
+    Type type;
+    string exchange;
+    qpid::sys::ExceptionHolder exception;
+};
+}
+
 void Exchange::doRoute(Deliverable& msg, ConstBindingList b)
 {
     int count = 0;
@@ -80,11 +112,25 @@ void Exchange::doRoute(Deliverable& msg, ConstBindingList b)
             msg.getMessage().blockContentRelease();
         }
 
+
+        ExInfo error(getName()); // Save exception to throw at the end.
         for(std::vector<Binding::shared_ptr>::const_iterator i = b->begin(); i != b->end(); i++, count++) {
-            msg.deliverTo((*i)->queue);
-            if ((*i)->mgmtBinding != 0)
-                (*i)->mgmtBinding->inc_msgMatched();
+            try {
+                msg.deliverTo((*i)->queue);
+                if ((*i)->mgmtBinding != 0)
+                    (*i)->mgmtBinding->inc_msgMatched();
+            }
+            catch (const SessionException& e) {
+                error.store(ExInfo::SESSION, framing::createSessionException(e.code, e.what()),(*i)->queue);
+            }
+            catch (const ConnectionException& e) {
+                error.store(ExInfo::CONNECTION, framing::createConnectionException(e.code, e.what()), (*i)->queue);
+            }
+            catch (const std::exception& e) {
+                error.store(ExInfo::OTHER, qpid::sys::ExceptionHolder(new Exception(e.what())), (*i)->queue);
+            }
         }
+        error.raise();
     }
 
     if (mgmtExchange != 0)
