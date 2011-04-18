@@ -10,9 +10,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -42,14 +42,11 @@ class ExceptionHolder : public Raisable {
   public:
     ExceptionHolder() {}
     // Use default copy & assign.
-    
+
     /** Take ownership of ex */
     template <class Ex> ExceptionHolder(Ex* ex) { wrap(ex); }
-    template <class Ex> ExceptionHolder(const boost::shared_ptr<Ex>& ex) { wrap(ex.release()); }
-
     template <class Ex> ExceptionHolder& operator=(Ex* ex) { wrap(ex); return *this; }
-    template <class Ex> ExceptionHolder& operator=(boost::shared_ptr<Ex> ex) { wrap(ex.release()); return *this; }
-        
+
     void raise() const { if (wrapper.get()) wrapper->raise() ; }
     std::string what() const { return wrapper.get() ? wrapper->what() : std::string(); }
     bool empty() const { return !wrapper.get(); }
@@ -66,7 +63,7 @@ class ExceptionHolder : public Raisable {
     template <class Ex> void wrap(Ex* ex) { wrapper.reset(new Wrapper<Ex>(ex)); }
     boost::shared_ptr<Raisable> wrapper;
 };
-    
+
 
 }} // namespace qpid::sys
 
