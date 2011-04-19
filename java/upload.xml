@@ -65,4 +65,26 @@
     </target>
 
     <target name="upload" depends="load-ivy, check-props-exist, perform-nexus-upload"/>
+
+    <target name="help" description="display detailed build documentation">
+        <echo>
+Ivy can be leveraged either by installing it in the Ant lib dir yourself,
+or by running the following command in qpid/java to place it in the
+qpid/java/lib/ivy lib folder:
+
+    ant -buildfile upload.xml download-ivy
+
+The publishing task should be run once the release process has otherwise
+been completed and the artifacts signed. It can be performed from the
+qpid/java directory with a command as follows:
+
+    ant -buildfile upload.xml -Dnexus.user=&lt;apache_username&gt; -Dnexus.password=&lt;password&gt;
+        -Dmaven.artifact.dir=&lt;path to maven repo structure from release process&gt;
+
+Note: if you are behind a proxy server it is necessary to give Ant the
+proxy settings by doing something like:
+
+export ANT_OPTS=&quot;-Dhttp.proxyHost=&lt;host&gt; -Dhttp.proxyPort=&lt;port&gt; -Dhttps.proxyHost=&lt;host&gt; -Dhttps.proxyPort=&lt;port&gt;&quot;
+        </echo>
+    </target>
 </project>
