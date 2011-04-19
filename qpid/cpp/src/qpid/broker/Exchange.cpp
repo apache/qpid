@@ -179,7 +179,7 @@ Exchange::Exchange (const string& _name, Manageable* parent, Broker* b) :
 Exchange::Exchange(const string& _name, bool _durable, const qpid::framing::FieldTable& _args,
                    Manageable* parent, Broker* b)
     : name(_name), durable(_durable), alternateUsers(0), persistenceId(0),
-      args(_args), sequence(false), sequenceNo(0), ive(false), mgmtExchange(0), broker(b)
+      args(_args), sequence(false), sequenceNo(0), ive(false), mgmtExchange(0), broker(b), destroyed(false)
 {
     if (parent != 0 && broker != 0)
     {
