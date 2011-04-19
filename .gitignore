@@ -55,6 +55,7 @@ generated/
 target
 qpid/java/lib/cobertura
 qpid/java/lib/findbugs
+qpid/java/lib/ivy
 # Intellij Project files
 *.iml
 *.ipr
