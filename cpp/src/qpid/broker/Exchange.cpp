@@ -201,7 +201,11 @@ Exchange::Exchange(const string& _name, bool _durable, const qpid::framing::Fiel
     }
 
     ive = _args.get(qpidIVE);
-    if (ive) QPID_LOG(debug, "Configured exchange " <<  _name  << " with Initial Value");
+    if (ive) {
+        if (broker && broker->isInCluster())
+            throw framing::NotImplementedException("Cannot use Initial Value Exchanges in a cluster");
+        QPID_LOG(debug, "Configured exchange " <<  _name  << " with Initial Value");
+    }
 }
 
 Exchange::~Exchange ()
