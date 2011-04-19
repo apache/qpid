@@ -161,7 +161,7 @@ void Exchange::routeIVE(){
 
 Exchange::Exchange (const string& _name, Manageable* parent, Broker* b) :
     name(_name), durable(false), persistenceId(0), sequence(false),
-    sequenceNo(0), ive(false), mgmtExchange(0), broker(b)
+    sequenceNo(0), ive(false), mgmtExchange(0), broker(b), destroyed(false)
 {
     if (parent != 0 && broker != 0)
     {
