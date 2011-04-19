@@ -479,6 +479,54 @@ acl allow all all
         for q in ['a','b','c']: self.assert_browse(s1,q,[str(n) for n in xrange(1,6)])
         self.assert_browse(s1,'d',[str(n) for n in xrange(1,5)])
 
+    def test_deleted_exchange(self):
+        """QPID-3215: cached exchange reference can cause cluster inconsistencies
+        if exchange is deleted/recreated
+        Verify stand-alone case
+        """
+        cluster = self.cluster()
+        # Verify we do not route message via an exchange that has been destroyed.
+        cluster.start()
+        s0 = cluster[0].connect().session()
+        self.evaluate_address(s0, "ex;{create:always,node:{type:topic}}")
+        self.evaluate_address(s0, "q;{create:always,node:{x-bindings:[{exchange:'ex',queue:q,key:foo}]}}")
+        send0 = s0.sender("ex/foo")
+        send0.send("foo")
+        self.assert_browse(s0, "q", ["foo"])
+        self.evaluate_address(s0, "ex;{delete:always}")
+        try:
+            send0.send("bar")     # Should fail, exchange is deleted.
+            self.fail("Expected not-found exception")
+        except qpid.messaging.NotFound: pass
+        # FIXME aconway 2011-04-19: s0 is broken, new session
+        self.assert_browse(cluster[0].connect().session(), "q", ["foo"])
+
+    def test_deleted_exchange_inconsistent(self):
+        """QPID-3215: cached exchange reference can cause cluster inconsistencies
+        if exchange is deleted/recreated
+
+        Verify cluster inconsistency.
+        """
+        cluster = self.cluster()
+        cluster.start()
+        s0 = cluster[0].connect().session()
+        self.evaluate_address(s0, "ex;{create:always,node:{type:topic}}")
+        self.evaluate_address(s0, "q;{create:always,node:{x-bindings:[{exchange:'ex',queue:q,key:foo}]}}")
+        send0 = s0.sender("ex/foo")
+        send0.send("foo")
+        self.assert_browse(s0, "q", ["foo"])
+
+        cluster.start()
+        s1 = cluster[1].connect().session()
+        self.evaluate_address(s0, "ex;{delete:always}")
+        try:
+            send0.send("bar")
+            self.fail("Expected not-found exception")
+        except qpid.messaging.NotFound: pass
+
+        self.assert_browse(s1, "q", ["foo"])
+
+
 class LongTests(BrokerTest):
     """Tests that can run for a long time if -DDURATION=<minutes> is set"""
     def duration(self):
