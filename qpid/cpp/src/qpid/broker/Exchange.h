@@ -10,9 +10,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -82,15 +82,15 @@ protected:
     private:
         Exchange* parent;
     };
-           
+
     typedef boost::shared_ptr<const std::vector<boost::shared_ptr<qpid::broker::Exchange::Binding> > > ConstBindingList;
     typedef boost::shared_ptr<      std::vector<boost::shared_ptr<qpid::broker::Exchange::Binding> > > BindingList;
     void doRoute(Deliverable& msg, ConstBindingList b);
     void routeIVE();
-           
+
 
     struct MatchQueue {
-        const boost::shared_ptr<Queue> queue;        
+        const boost::shared_ptr<Queue> queue;
         MatchQueue(boost::shared_ptr<Queue> q);
         bool operator()(Exchange::Binding::shared_ptr b);
     };
@@ -195,7 +195,7 @@ public:
     virtual bool isBound(boost::shared_ptr<Queue> queue, const std::string* const routingKey, const qpid::framing::FieldTable* const args) = 0;
     QPID_BROKER_EXTERN virtual void setProperties(const boost::intrusive_ptr<Message>&);
     virtual void route(Deliverable& msg, const std::string& routingKey, const qpid::framing::FieldTable* args) = 0;
-    
+
     //PersistableExchange:
     QPID_BROKER_EXTERN void setPersistenceId(uint64_t id) const;
     uint64_t getPersistenceId() const { return persistenceId; }
@@ -228,14 +228,18 @@ public:
 
     bool routeWithAlternate(Deliverable& message);
 
+    void destroy() { destroyed = true; }
+    bool isDestroyed() const { return destroyed; }
+
 protected:
     qpid::sys::Mutex bridgeLock;
     std::vector<DynamicBridge*> bridgeVector;
     Broker* broker;
+    bool destroyed;
 
     QPID_BROKER_EXTERN virtual void handleHelloRequest();
     void propagateFedOp(const std::string& routingKey, const std::string& tags,
-                        const std::string& op,         const std::string& origin, 
+                        const std::string& op,         const std::string& origin,
                         qpid::framing::FieldTable* extra_args=0);
 };
 
