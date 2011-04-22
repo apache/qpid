@@ -299,7 +299,7 @@ public class VirtualHostImpl implements VirtualHost
 	                                                           _configuration.getTransactionTimeoutOpenClose(),
 	                                                           _configuration.getTransactionTimeoutIdleWarn(),
 	                                                           _configuration.getTransactionTimeoutIdleClose());
-	                            }
+                            }
                             catch (Exception e)
                             {
                                 _logger.error("Exception in housekeeping for connection: " + connection.toString(), e);
