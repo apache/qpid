@@ -213,18 +213,6 @@ public class LocalTransaction implements ServerTransaction
 
         if(message.isPersistent())
         {
-            if(_transaction == null)
-            {
-                for(BaseQueue queue : queues)
-                {
-                    if(queue.isDurable())
-                    {
-                        beginTranIfNecessary();
-                        break;
-                    }
-                }
-            }
-
             try
             {
                 for(BaseQueue queue : queues)
