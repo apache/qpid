@@ -374,7 +374,8 @@ void Message::setTimestamp(const boost::intrusive_ptr<ExpiryPolicy>& e)
             props->setExpiration(now + (props->getTtl()/1000));
         }
         // Use higher resolution time for the internal expiry calculation.
-        expiration = AbsTime(AbsTime::now(), Duration(props->getTtl() * TIME_MSEC));
+        Duration ttl(std::min(props->getTtl() * TIME_MSEC, (uint64_t) std::numeric_limits<int64_t>::max()));//Prevent overflow
+        expiration = AbsTime(AbsTime::now(), ttl);
         setExpiryPolicy(e);
     }
 }
@@ -384,8 +385,10 @@ void Message::adjustTtl()
     DeliveryProperties* props = getProperties<DeliveryProperties>();
     if (props->getTtl()) {
         sys::Mutex::ScopedLock l(lock);
-        sys::Duration d(sys::AbsTime::now(), getExpiration());
-        props->setTtl(int64_t(d) > 0 ? int64_t(d)/1000000 : 1); // convert from ns to ms; set to 1 if expired
+        if (expiration < FAR_FUTURE) {
+            sys::Duration d(sys::AbsTime::now(), getExpiration());
+            props->setTtl(int64_t(d) > 0 ? int64_t(d)/1000000 : 1); // convert from ns to ms; set to 1 if expired
+        }
     }
 }
 
