@@ -978,6 +978,20 @@ QPID_AUTO_TEST_CASE(testRejectAndCredit)
     sender.close();
 }
 
+QPID_AUTO_TEST_CASE(testTtlForever)
+{
+    QueueFixture fix;
+    Sender sender = fix.session.createSender(fix.queue);
+    Message out("I want to live forever!");
+    out.setTtl(Duration::FOREVER);
+    sender.send(out, true);
+    Receiver receiver = fix.session.createReceiver(fix.queue);
+    Message in = receiver.fetch(Duration::IMMEDIATE);
+    fix.session.acknowledge();
+    BOOST_CHECK_EQUAL(in.getContent(), out.getContent());
+    BOOST_CHECK(in.getTtl() == Duration::FOREVER);
+}
+
 QPID_AUTO_TEST_SUITE_END()
 
 }} // namespace qpid::tests
