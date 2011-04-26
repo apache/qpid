@@ -81,7 +81,17 @@ namespace Messaging {
             Duration ^ result = gcnew Duration(multiplier * dur->Milliseconds);
             return result;
         }
-	};
+
+        static bool operator == (Duration ^ a, Duration ^ b)
+        {
+            return a->Milliseconds == b->Milliseconds;
+        }
+
+        static bool operator != (Duration ^ a, Duration ^ b)
+        {
+            return a->Milliseconds != b->Milliseconds;
+        }
+};
 
     public ref class DurationConstants sealed
     {
