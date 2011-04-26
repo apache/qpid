@@ -49,6 +49,8 @@ QPID_MESSAGING_EXTERN Duration operator*(const Duration& duration,
                                       uint64_t multiplier);
 QPID_MESSAGING_EXTERN Duration operator*(uint64_t multiplier,
                                       const Duration& duration);
+QPID_MESSAGING_EXTERN bool operator==(const Duration& a, const Duration& b);
+QPID_MESSAGING_EXTERN bool operator!=(const Duration& a, const Duration& b);
 
 }} // namespace qpid::messaging
 
