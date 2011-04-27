@@ -22,7 +22,7 @@ aclocal -I m4
 autoheader
 libtoolize --automake
 
-automake
+automake --add-missing
 autoconf
 
 if [ "$1" = "-build" -o "$1" = "--build" ] ; then
