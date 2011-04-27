@@ -24,6 +24,7 @@ nobase_include_HEADERS = ../include/saslwrapper.h
 
 lib_LTLIBRARIES = libsaslwrapper.la
 libsaslwrapper_la_SOURCES = cyrus/saslwrapper.cpp
+libsaslwrapper_la_CXXFLAGS = -fno-strict-aliasing
 
 # Library Version Information:
 #

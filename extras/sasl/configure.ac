@@ -23,7 +23,6 @@ AC_CONFIG_HEADERS([config.h])
 AC_PROG_CC_STDC
 AM_PROG_CC_C_O
 AC_PROG_CXX
-AC_USE_SYSTEM_EXTENSIONS
 AC_LANG([C++])	
 
 # Check for optional use of help2man
