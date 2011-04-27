@@ -57,8 +57,9 @@ namespace Rdma {
         void dataCount(int32_t);
 
     private:
-        Buffer(uint32_t lkey, char* bytes, const int32_t byteCount);
+        Buffer(uint32_t lkey, char* bytes, const int32_t byteCount, const int32_t reserve=0);
         int32_t bufferSize;
+        int32_t reserved;   // for framing header
         ::ibv_sge sge;
     };
 
@@ -66,8 +67,9 @@ namespace Rdma {
       return (char*) sge.addr;
     }
 
+    /** return the number of bytes available for application data */
     inline int32_t Buffer::byteCount() const {
-        return bufferSize;
+        return bufferSize - reserved;
     }
 
     inline int32_t Buffer::dataCount() const {
@@ -136,7 +138,7 @@ namespace Rdma {
         typedef boost::intrusive_ptr<QueuePair> intrusive_ptr;
 
         // Create a buffers to use for writing
-        void createSendBuffers(int sendBufferCount, int bufferSize);
+        void createSendBuffers(int sendBufferCount, int dataSize, int headerSize);
 
         // Get a send buffer
         Buffer* getSendBuffer();

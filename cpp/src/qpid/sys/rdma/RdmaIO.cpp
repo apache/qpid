@@ -141,7 +141,7 @@ namespace Rdma {
         qp->allocateRecvBuffers(recvBufferCount, bufferSize+FrameHeaderSize);
 
         // Create xmit buffers
-        qp->createSendBuffers(xmitBufferCount, bufferSize+FrameHeaderSize);
+        qp->createSendBuffers(xmitBufferCount, bufferSize, FrameHeaderSize);
     }
 
     AsynchIO::~AsynchIO() {
