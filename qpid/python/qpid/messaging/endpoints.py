@@ -1007,9 +1007,9 @@ class Receiver(Endpoint, object):
       self.draining = True
       self._wakeup()
       self._ecwait(lambda: not self.draining)
+      msg = self.session._get(self, timeout=0)
       self._grant()
       self._wakeup()
-      msg = self.session._get(self, timeout=0)
       if msg is None:
         raise Empty()
     elif self._capacity not in (0, UNLIMITED.value):
