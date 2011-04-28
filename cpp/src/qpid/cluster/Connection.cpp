@@ -35,6 +35,7 @@
 #include "qpid/broker/Fairshare.h"
 #include "qpid/broker/Link.h"
 #include "qpid/broker/Bridge.h"
+#include "qpid/broker/StatefulQueueObserver.h"
 #include "qpid/broker/Queue.h"
 #include "qpid/framing/enum.h"
 #include "qpid/framing/AMQFrame.h"
@@ -556,6 +557,48 @@ void Connection::queueFairshareState(const std::string& qname, const uint8_t pri
     if (!qpid::broker::Fairshare::setState(findQueue(qname)->getMessages(), priority, count)) {
         QPID_LOG(error, "Failed to set fair share state on queue " << qname << "; this will result in inconsistencies.");
     }
+}
+
+
+namespace {
+    // find a StatefulQueueObserver that matches a given identifier
+    class ObserverFinder {
+        const std::string id;
+        boost::shared_ptr<broker::QueueObserver> target;
+        ObserverFinder(const ObserverFinder&) {}
+    public:
+        ObserverFinder(const std::string& _id) : id(_id) {}
+        broker::StatefulQueueObserver *getObserver()
+        {
+            if (target)
+                return dynamic_cast<broker::StatefulQueueObserver *>(target.get());
+            return 0;
+        }
+        void operator() (boost::shared_ptr<broker::QueueObserver> o)
+        {
+            if (!target) {
+                broker::StatefulQueueObserver *p = dynamic_cast<broker::StatefulQueueObserver *>(o.get());
+                if (p && p->getId() == id) {
+                    target = o;
+                }
+            }
+        }
+    };
+}
+
+
+void Connection::queueObserverState(const std::string& qname, const std::string& observerId, const FieldTable& state)
+{
+    boost::shared_ptr<broker::Queue> queue(findQueue(qname));
+    ObserverFinder finder(observerId);      // find this observer
+    queue->eachObserver<ObserverFinder &>(finder);
+    broker::StatefulQueueObserver *so = finder.getObserver();
+    if (so) {
+        so->setState( state );
+        QPID_LOG(debug, "updated queue observer " << observerId << "'s state on queue " << qname << "; ...");
+        return;
+    }
+    QPID_LOG(error, "Failed to find observer " << observerId << " state on queue " << qname << "; this will result in inconsistencies.");
 }
 
 void Connection::expiryId(uint64_t id) {

@@ -281,6 +281,14 @@
       <field name="position" type="uint8"/>
       <field name="count" type="uint8"/>
     </control>
+
+    <!-- Replicate a QueueObserver for a given queue. -->
+    <control name="queue-observer-state" code="0x39">
+      <field name="queue" type="str8"/>
+      <field name="observer-id" type="str8"/>
+      <field name="state" type="map"/>    <!-- "name"=value -->
+    </control>
+
   </class>
 
 </amqp>

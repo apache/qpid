@@ -24,7 +24,7 @@ from qpid import datatypes, messaging
 from qpid.messaging import Message, Empty
 from threading import Thread, Lock
 from logging import getLogger
-from time import sleep
+from time import sleep, time
 from os import environ, popen
 
 class QueueFlowLimitTests(TestBase010):
@@ -145,11 +145,10 @@ class QueueFlowLimitTests(TestBase010):
         totalMsgs = 1213 + 797 + 331
 
         # wait until flow control is active
-        count = 0
+        deadline = time() + 10
         while self.qmf.getObjects(_objectId=oid)[0].flowStopped == False and \
-                count < 10:
-            sleep(1);
-            count += 1;
+                time() < deadline:
+            pass
         self.failUnless(self.qmf.getObjects(_objectId=oid)[0].flowStopped)
         depth = self.qmf.getObjects(_objectId=oid)[0].msgDepth
         self.assertGreater(depth, 373)
@@ -200,11 +199,10 @@ class QueueFlowLimitTests(TestBase010):
         totalBytes = 439 + 631 + 823
 
         # wait until flow control is active
-        count = 0
+        deadline = time() + 10
         while self.qmf.getObjects(_objectId=oid)[0].flowStopped == False and \
-                count < 10:
-            sleep(1);
-            count += 1;
+                time() < deadline:
+            pass
         self.failUnless(self.qmf.getObjects(_objectId=oid)[0].flowStopped)
         self.assertGreater(self.qmf.getObjects(_objectId=oid)[0].byteDepth, 351133)
 

@@ -153,6 +153,7 @@ class Connection :
 
     void queuePosition(const std::string&, const framing::SequenceNumber&);
     void queueFairshareState(const std::string&, const uint8_t priority, const uint8_t count);
+    void queueObserverState(const std::string&, const std::string&, const framing::FieldTable&);
     void expiryId(uint64_t);
 
     void txStart();
