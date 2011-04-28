@@ -49,6 +49,7 @@
 #include "qpid/broker/TxPublish.h"
 #include "qpid/broker/RecoveredDequeue.h"
 #include "qpid/broker/RecoveredEnqueue.h"
+#include "qpid/broker/StatefulQueueObserver.h"
 #include "qpid/framing/MessageTransferBody.h"
 #include "qpid/framing/ClusterConnectionMembershipBody.h"
 #include "qpid/framing/ClusterConnectionShadowReadyBody.h"
@@ -166,6 +167,9 @@ void UpdateClient::update() {
     std::for_each(connections.begin(), connections.end(),
                   boost::bind(&UpdateClient::updateConnection, this, _1));
     session.queueDelete(arg::queue=UPDATE);
+
+    // some Queue Observers need session state & msgs synced first, so sync observers now
+    b.getQueues().eachQueue(boost::bind(&UpdateClient::updateQueueObservers, this, _1));
 
     // Update queue listeners: must come after sessions so consumerNumbering is populated
     b.getQueues().eachQueue(boost::bind(&UpdateClient::updateQueueListeners, this, _1));
@@ -614,5 +618,24 @@ void UpdateClient::updateBridge(const boost::shared_ptr<broker::Bridge>& bridge)
     QPID_LOG(debug, *this << " updating bridge " << bridge->getName());
     ClusterConnectionProxy(session).config(encode(*bridge));
 }
+
+void UpdateClient::updateQueueObservers(const boost::shared_ptr<broker::Queue>& q)
+{
+    q->eachObserver(boost::bind(&UpdateClient::updateObserver, this, q, _1));
+}
+
+void UpdateClient::updateObserver(const boost::shared_ptr<broker::Queue>& q,
+                                        boost::shared_ptr<broker::QueueObserver> o)
+{
+    qpid::framing::FieldTable state;
+    broker::StatefulQueueObserver *so = dynamic_cast<broker::StatefulQueueObserver *>(o.get());
+    if (so) {
+        so->getState( state );
+        std::string id(so->getId());
+        QPID_LOG(debug, *this << " updating queue " << q->getName() << "'s observer " << id);
+        ClusterConnectionProxy(session).queueObserverState( q->getName(), id, state );
+    }
+}
+
 
 }} // namespace qpid::cluster

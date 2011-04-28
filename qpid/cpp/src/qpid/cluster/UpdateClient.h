@@ -51,6 +51,7 @@ class SemanticState;
 class Decoder;
 class Link;
 class Bridge;
+class QueueObserver;
 
 } // namespace broker
 
@@ -104,6 +105,8 @@ class UpdateClient : public sys::Runnable {
     void updateLinks();
     void updateLink(const boost::shared_ptr<broker::Link>&);
     void updateBridge(const boost::shared_ptr<broker::Bridge>&);
+    void updateQueueObservers(const boost::shared_ptr<broker::Queue>&);
+    void updateObserver(const boost::shared_ptr<broker::Queue>&, boost::shared_ptr<broker::QueueObserver>);
 
 
     Numbering<broker::SemanticState::ConsumerImpl*> consumerNumbering;
