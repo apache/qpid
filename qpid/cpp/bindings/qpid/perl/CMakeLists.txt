@@ -26,7 +26,7 @@ set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/perl.i PROPERTIES SWIG_F
 swig_add_module(cqpid_perl perl ${CMAKE_CURRENT_SOURCE_DIR}/perl.i)
 swig_link_libraries(cqpid_perl qpidmessaging qpidtypes qmf2 ${PERL_LIBRARY})
 
-set_source_files_properties(${swig_generated_file_fullname} PROPERTIES COMPILE_FLAGS "-I${PERL_INCLUDE_PATH} -I${qpid-cpp_SOURCE_DIR}/include")
+set_source_files_properties(${swig_generated_file_fullname} PROPERTIES COMPILE_FLAGS "-fno-strict-aliasing -I${PERL_INCLUDE_PATH} -I${qpid-cpp_SOURCE_DIR}/include")
 
 ##----------------------------------
 ## Install the complete Perl binding
