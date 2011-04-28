@@ -36,7 +36,7 @@ rubylibarch_LTLIBRARIES = cqpid.la
 cqpid_la_LDFLAGS = -avoid-version -module -shrext ".$(RUBY_DLEXT)"
 cqpid_la_LIBADD = $(RUBY_LIBS) -L$(top_builddir)/src/.libs -lqpidmessaging -lqpidtypes \
 	$(top_builddir)/src/libqpidmessaging.la $(top_builddir)/src/libqpidtypes.la
-cqpid_la_CXXFLAGS = $(INCLUDES) -I$(RUBY_INC) -I$(RUBY_INC_ARCH)
+cqpid_la_CXXFLAGS = $(INCLUDES) -I$(RUBY_INC) -I$(RUBY_INC_ARCH) -fno-strict-aliasing
 nodist_cqpid_la_SOURCES = cqpid.cpp
 
 CLEANFILES = cqpid.cpp

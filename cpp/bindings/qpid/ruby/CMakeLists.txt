@@ -26,7 +26,7 @@ set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/ruby.i PROPERTIES SWIG_F
 swig_add_module(cqpid ruby ${CMAKE_CURRENT_SOURCE_DIR}/ruby.i)
 swig_link_libraries(cqpid qpidmessaging qpidtypes qmf2 ${RUBY_LIBRARY})
 
-set_source_files_properties(${swig_generated_file_fullname} PROPERTIES COMPILE_FLAGS "-I${RUBY_INCLUDE_DIR} -I${qpid-cpp_SOURCE_DIR}/include")
+set_source_files_properties(${swig_generated_file_fullname} PROPERTIES COMPILE_FLAGS "-fno-strict-aliasing -I${RUBY_INCLUDE_DIR} -I${qpid-cpp_SOURCE_DIR}/include")
 
 ##----------------------------------
 ## Install the complete Ruby binding
