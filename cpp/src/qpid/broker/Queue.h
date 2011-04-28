@@ -348,6 +348,11 @@ class Queue : public boost::enable_shared_from_this<Queue>,
         bindings.eachBinding(f);
     }
 
+    /** Apply f to each Observer on the queue */
+    template <class F> void eachObserver(F f) {
+        std::for_each<Observers::iterator, F>(observers.begin(), observers.end(), f);
+    }
+
     /** Set the position sequence number  for the next message on the queue.
      * Must be >= the current sequence number.
      * Used by cluster to replicate queues.

@@ -248,13 +248,7 @@ Broker::Broker(const Broker::Options& conf) :
     // Early-Initialize plugins
     Plugin::earlyInitAll(*this);
 
-    /** todo KAG - remove once cluster support for flow control done */
-    if (isInCluster()) {
-        QPID_LOG(info, "Producer Flow Control TBD for clustered brokers - queue flow control disabled by default.");
-        QueueFlowLimit::setDefaults(0, 0, 0);
-    } else {
-        QueueFlowLimit::setDefaults(conf.queueLimit, conf.queueFlowStopRatio, conf.queueFlowResumeRatio);
-    }
+    QueueFlowLimit::setDefaults(conf.queueLimit, conf.queueFlowStopRatio, conf.queueFlowResumeRatio);
 
     // If no plugin store module registered itself, set up the null store.
     if (NullMessageStore::isNullStore(store.get()))
