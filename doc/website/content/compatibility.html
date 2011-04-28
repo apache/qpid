@@ -19,46 +19,29 @@
  -
 -->
 <div class="main_text_area_body">
-  <p><b>Qpid provides the most complete and compatible implementation of AMQP. And is the most aggressive in implementing the latest version of the specification. Qpid can be</b> <b><a href="./download.cgi" title="Download"><b>downloaded here</b></a></b></p>
+  <p><b>Qpid provides the most complete and compatible implementation of AMQP and is the most aggressive in implementing the latest version of the specification. Qpid can be</b> <b><a href="./download.cgi" title="Download"><b>downloaded here</b></a></b>.</p>
 
   <p>There are two brokers:</p>
 
-  <p>C+&#43; with support for AMQP 0-10<br/>
-    Java with support for AMQP 0-8, 0-9, and 0-10.</p>
+  <ul>
+    <li>C+&#43; with support for AMQP 0-10.</li>
+    <li>Java with support for AMQP 0-8, 0-9, and 0-10.</li>
+  </ul>
 
   <p>There are client libraries for C++, Java (JMS), .Net (written in C#), python and ruby.</p>
 
   <ul>
     <li>All clients support 0-10 and interoperate with both brokers as of 0.6.</li>
-  </ul>
-
-
-  <ul>
     <li>The JMS client supports 0-8, 0-9 and 0-10 and interoperates with both brokers.</li>
-  </ul>
-
-
-  <ul>
     <li>The python and ruby clients will also support all versions, but the API is dynamically driven by the specification used and so differs between versions. To work with the C+&#43; broker you must use 0-10. To work with the Java broker you can use any version as of 0.6, or prior to 0.6 you can use 0-8 or 0-9.</li>
-
-  </ul>
-
-
-  <ul>
-    <li>There are two separate C# clients, one for 0-8 that interoperates only with the Java broker, and one for 0-10.</li>
-  </ul>
-
-
-  <ul>
     <li>There is also a WCF channel, which wraps the 0-10 native C++ client library.</li>
   </ul>
-
 
   <p>QMF Management is supported in Ruby, Python, C++, and can be translated to Java JMX &amp; WS-DM via the QMan management tool.</p>
 
   <h3><a name="AMQPcompatibility-AMQPCompatibilityofQpidreleases%3A"></a>AMQP Compatibility of Qpid releases:</h3>
 
-  <p>Qpid implements the AMQP Specification, and as the specification has progressed Qpid is keeping up with the updates. This means that different Qpid versions support different versions of AMQP. Here is a simple guide on what use.</p>
+  <p>Qpid implements the AMQP Specification, and as the specification has progressed Qpid is keeping up with the updates. This means that different Qpid versions support different versions of AMQP. Here is a simple guide on what to use.</p>
 
   <p>Here is a matrix that describes the different versions supported by each release<br/>
     Y  = supported<br/>
@@ -270,7 +253,7 @@
 	</tr>
 	<tr>
 	  <td > Java client </td>
-	  <td > M3, M4, 0.5, 0.6, 0.8</td>
+	  <td > M3, M4, 0.5, 0.6, 0.8, 0.10</td>
 
 	  <td > Y </td>
 	  <td > Y </td>
@@ -286,7 +269,7 @@
 	</tr>
 	<tr>
 	  <td > Java broker </td>
-	  <td > 0.6, 0.8</td>
+	  <td > 0.6, 0.8, 0.10</td>
 
 	  <td > Y </td>
 	  <td > Y </td>
@@ -310,7 +293,7 @@
 	</tr>
 	<tr>
 	  <td > C+&#43; client/broker </td>
-	  <td > M3, M4, 0.5, 0.6, 0.8</td>
+	  <td > M3, M4, 0.5, 0.6, 0.8, 0.10</td>
 
 	  <td > N </td>
 	  <td > N </td>
@@ -326,7 +309,7 @@
 	</tr>
 	<tr>
 	  <td > Python client </td>
-	  <td > M3, M4, 0.5, 0.6, 0.8</td>
+	  <td > M3, M4, 0.5, 0.6, 0.8, 0.10</td>
 
 	  <td > Y </td>
 	  <td > Y </td>
@@ -374,7 +357,7 @@
 	</tr>
 	<tr>
 	  <td > WCF channel </td>
-	  <td > 0.6, 0.8</td>
+	  <td > 0.6, 0.8, 0.10</td>
 
 	  <td > N </td>
 	  <td > N </td>
@@ -383,4 +366,3 @@
     </tbody></table>
   </div>
 </div>
-
