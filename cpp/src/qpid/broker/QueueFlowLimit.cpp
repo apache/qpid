@@ -307,8 +307,8 @@ QueueFlowLimit *QueueFlowLimit::createLimit(Queue *queue, const qpid::framing::F
 namespace {
     /** pack a set of sequence number ranges into a framing::Array */
     void buildSeqRangeArray(qpid::framing::Array *seqs,
-                            const qpid::framing::SequenceNumber first,
-                            const qpid::framing::SequenceNumber last)
+                            const qpid::framing::SequenceNumber& first,
+                            const qpid::framing::SequenceNumber& last)
     {
         seqs->push_back(qpid::framing::Array::ValuePtr(new Unsigned32Value(first)));
         seqs->push_back(qpid::framing::Array::ValuePtr(new Unsigned32Value(last)));
@@ -329,7 +329,8 @@ void QueueFlowLimit::getState(qpid::framing::FieldTable& state ) const
             ss.add(itr->first);
         }
         framing::Array seqs(TYPE_CODE_UINT32);
-        ss.for_each(boost::bind(&buildSeqRangeArray, &seqs, _1, _2));
+        typedef boost::function<void(framing::SequenceNumber, framing::SequenceNumber)> arrayBuilder;
+        ss.for_each((arrayBuilder)boost::bind(&buildSeqRangeArray, &seqs, _1, _2));
         state.setArray("pendingMsgSeqs", seqs);
     }
     QPID_LOG(debug, "Queue \"" << queueName << "\": flow limit replicating pending msgs, range=" << ss);
