@@ -282,6 +282,13 @@ acl allow all all
             qpid_tool.wait()
             scanner.join()
         assert scanner.found
+        # Regression test for https://issues.apache.org/jira/browse/QPID-3235
+        # Inconsistent stats when changing elder.
+
+        # Force a change of elder
+        cluster0.start()
+        cluster0[0].kill()
+        time.sleep(2) # Allow a management interval to pass.
         # Verify logs are consistent
         cluster_test_logs.verify_logs()
 
@@ -602,7 +609,6 @@ acl allow all all
             send0.send("bar")     # Should fail, exchange is deleted.
             self.fail("Expected not-found exception")
         except qpid.messaging.NotFound: pass
-        # FIXME aconway 2011-04-19: s0 is broken, new session
         self.assert_browse(cluster[0].connect().session(), "q", ["foo"])
 
     def test_deleted_exchange_inconsistent(self):
