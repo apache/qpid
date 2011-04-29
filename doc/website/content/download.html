@@ -199,6 +199,25 @@ Other mirrors: <select name="Preferred">
     </tbody></table>
   </div>
 
+  <h3><a name="Download-Maven"></a>Maven artifacts</h3>
+ <p>The Java client is also available via the Maven central repository. To use the client in your Maven build you should add the following dependency to your POM:</p>
+ <code>
+&lt;dependency&gt;<br />
+&nbsp;&nbsp;&lt;groupId&gt;org.apache.qpid&lt;/groupId&gt;<br />
+&nbsp;&nbsp;&lt;artifactId&gt;qpid-client&lt;/artifactId&gt;<br />
+&nbsp;&nbsp;&lt;version&gt;0.10&lt;/version&gt;<br />
+&lt;/dependency&gt;
+ </code>
+
+ <p>Additionally, you must provide the JMS API if it is not already available in your compilation and/or runtime environment, an example dependency for this would be:</p>
+ <code>
+&lt;dependency&gt;<br />
+&nbsp;&nbsp;&lt;groupId&gt;org.apache.geronimo.specs&lt;/groupId&gt;<br />
+&nbsp;&nbsp;&lt;artifactId&gt;geronimo-jms_1.1_spec&lt;/artifactId&gt;<br />
+&nbsp;&nbsp;&lt;version&gt;1.0&lt;/version&gt;<br />
+&lt;/dependency&gt;
+ </code>
+
   <h2><a name="Download-PreviousRelease"></a>Previous Releases</h2>
 
   <p>Previous releases are available from <a href="http://archive.apache.org/dist/qpid/">http://archive.apache.org/dist/qpid/
