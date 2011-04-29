@@ -76,9 +76,7 @@ for arg in $* ; do
  ;;
  --all|-a)
    CPP="CPP"
-   DOTNET="DOTNET"
    JAVA="JAVA"
-   RUBY="RUBY"
    PYTHON="PYTHON"
    WCF="WCF"
    TOOLS="TOOLS"
