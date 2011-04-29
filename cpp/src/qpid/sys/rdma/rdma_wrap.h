@@ -77,6 +77,8 @@ namespace Rdma {
     }
 
     inline void Buffer::dataCount(int32_t s) {
+        // catch any attempt to overflow a buffer
+        assert(s <= bufferSize + reserved);
         sge.length = s;
     }
 
