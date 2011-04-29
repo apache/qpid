@@ -140,7 +140,7 @@ namespace Rdma {
         // Prepost recv buffers before we go any further
         qp->allocateRecvBuffers(recvBufferCount, bufferSize+FrameHeaderSize);
 
-        // Create xmit buffers
+        // Create xmit buffers, reserve space for frame header.
         qp->createSendBuffers(xmitBufferCount, bufferSize, FrameHeaderSize);
     }
 
@@ -210,12 +210,14 @@ namespace Rdma {
             }
             break;
         case 1:
-            Buffer* ob = buff ? buff : getSendBuffer();
+            if (!buff)
+                buff = getSendBuffer();
             // Add FrameHeader after frame data
             FrameHeader header(credit);
-            ::memcpy(ob->bytes()+ob->dataCount(), &header, FrameHeaderSize);
-            ob->dataCount(ob->dataCount()+FrameHeaderSize);
-            qp->postSend(ob);
+            assert(buff->dataCount() <= buff->byteCount());   // ensure app data doesn't impinge on reserved space.
+            ::memcpy(buff->bytes()+buff->dataCount(), &header, FrameHeaderSize);
+            buff->dataCount(buff->dataCount()+FrameHeaderSize);
+            qp->postSend(buff);
             break;
         }
     }
