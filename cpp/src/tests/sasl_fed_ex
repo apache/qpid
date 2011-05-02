@@ -19,7 +19,6 @@
 # under the License.
 #
 
-
 #===============================================================================
 # These tests create federated links between two brokers using SASL security.
 # The SASL mechanism used is EXTERNAL, which is satisfied by SSL
@@ -55,6 +54,8 @@ function print {
     echo "${script_name}: $1"
   fi
 }
+
+print "=========== start sasl_fed_ex $* ============"
 
 
 
@@ -102,8 +103,11 @@ if [[ !(-x $CERTUTIL) ]] ; then
 fi
 
 delete_certs
-create_certs || error "Could not create test certificate"
-
+create_certs 2> /dev/null
+if [ ! $? ]; then
+  error "Could not create test certificate"
+  exit 1
+fi
 
 sasl_config_dir=$builddir/sasl_config
 
@@ -124,9 +128,12 @@ DST_TCP_PORT=5807
 SRC_TCP_PORT_2=5802
 DST_TCP_PORT_2=5803
 
-CLUSTER_1_NAME=sasl_fed_ex_cluster_1
-CLUSTER_2_NAME=sasl_fed_ex_cluster_2
+CLUSTER_NAME_SUFFIX=`hostname | tr '.' ' ' | awk '{print $1}'`
+CLUSTER_1_NAME=sasl_fed_ex_cluster_1_${CLUSTER_NAME_SUFFIX}
+CLUSTER_2_NAME=sasl_fed_ex_cluster_2_${CLUSTER_NAME_SUFFIX}
 
+print "CLUSTER_1_NAME == ${CLUSTER_1_NAME}"
+print "CLUSTER_2_NAME == ${CLUSTER_2_NAME}"
 
 SSL_LIB=${moduledir}/ssl.so
 CLUSTER_LIB=${moduledir}/cluster.so
@@ -313,32 +320,40 @@ elif [ ${qpid_route_method} == "route" ];   then
 else
   echo "unknown method: |${qpid_route_method}|"
   echo " choices are: dynamic|link|queue|route "
-  print "Asking brokers to quit."
-  $QPIDD_EXEC --port ${SRC_TCP_PORT} --quit
-  $QPIDD_EXEC --port ${DST_TCP_PORT} --quit
-  exit 2
+  halt_brokers
+  exit 1
 fi
+
 
 # I don't know how to avoid this sleep yet.  It has to come after route-creation 
 # to avoid false negatives.
 sleep 5
 
 # This should work the same whether or not we are running a clustered test.
+# In the case of clustered tests, the status is not printed by qpid_route.
+# So in either case, I will look only at the transport field, which should be "ssl".
 print "check the link"
-link_status=$($QPID_ROUTE_EXEC link list localhost:${DST_TCP_PORT} | tail -1 | awk '{print $5}')
-print "link_status == ${link_status}"
+link_status=$($QPID_ROUTE_EXEC link list localhost:${DST_TCP_PORT} | tail -1 | awk '{print $3}')
 
 halt_brokers
 
 sleep 1
 
-if [ ${link_status} == "Operational" ]; then
+if [ ! ${link_status} ]; then
+  print "link_status is empty"
+  print "result: fail"
+  exit 2
+fi
+
+if [ ${link_status} == "ssl" ]; then
   print "result: good"
+  # Only remove the tmp_root on success, to permit debugging.
   print "Removing temporary directory $tmp_root"
   rm -rf $tmp_root
   exit 0
 fi
 
+print "link_status has a bad value: ${link_status}"
 print "result: fail"
 exit 3
 
