@@ -36,7 +36,7 @@ namespace log {
 class Logger : private boost::noncopyable {
   public:
     /** Flags indicating what to include in the log output */
-    enum FormatFlag { FILE=1, LINE=2, FUNCTION=4, LEVEL=8, TIME=16, THREAD=32};
+    enum FormatFlag { FILE=1, LINE=2, FUNCTION=4, LEVEL=8, TIME=16, THREAD=32, HIRES=64};
 
     /**
      * Logging output sink.

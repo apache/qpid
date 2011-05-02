@@ -97,4 +97,13 @@ void outputFormattedNow(std::ostream& o) {
                &timeinfo);
     o << time_string << " ";
 }
+
+void outputHiresNow(std::ostream& o) {
+// TODO: This is a stub - replace with windows code that will do the equivalent
+// of the Linux code commented out below.  (kpvdr)
+//    ::timespec time;
+//    ::clock_gettime(CLOCK_REALTIME, &time);
+//    o << time.tv_sec << "." << std::setw(9) << std::setfill('0') << time.tv_nsec << "s ";
+    o << "XXXXXXXXX.XXXXXXXXXs ";
+}
 }}

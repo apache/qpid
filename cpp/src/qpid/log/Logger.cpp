@@ -79,8 +79,12 @@ void Logger::log(const Statement& s, const std::string& msg) {
     std::ostringstream os;
     if (!prefix.empty())
         os << prefix << ": ";
-    if (flags&TIME)
-		qpid::sys::outputFormattedNow(os);
+    if (flags&TIME) {
+        if (flags&HIRES)
+            qpid::sys::outputHiresNow(os);
+        else
+		    qpid::sys::outputFormattedNow(os);
+    }
     if (flags&LEVEL)
         os << LevelTraits::name(s.level) << " ";
     if (flags&THREAD)
@@ -129,7 +133,8 @@ int Logger::format(const Options& opts) {
         bitIf(opts.time, TIME) |
         bitIf(opts.source, (FILE|LINE)) |
         bitIf(opts.function, FUNCTION) |
-        bitIf(opts.thread, THREAD);
+        bitIf(opts.thread, THREAD) |
+        bitIf(opts.hiresTs, HIRES);
     format(flags);
     return flags;
 }

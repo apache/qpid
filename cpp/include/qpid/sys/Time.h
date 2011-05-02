@@ -167,6 +167,9 @@ QPID_COMMON_EXTERN void usleep(uint64_t usecs);
 /** Output formatted date/time for now*/
 void outputFormattedNow(std::ostream&);
 
+/** Output unformatted nanosecond-resolution time for now */
+void outputHiresNow(std::ostream&);
+
 }}
 
 #endif  /*!_sys_Time_h*/
