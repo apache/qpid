@@ -21,10 +21,19 @@
 <div class="main_text_area_body">
   <h1>0.10 Release Notes</h1>
 
+<h3>Changes Requiring User Attention</h3>
+
+<ul>
+  <li>The C++ broker now enables producer flow control by default. It is controlled via the default-flow-stop-threshold and default-flow-resume-threshold broker configuration parameters. See <a href="https://issues.apache.org/jira/browse/QPID-2935">QPID-2935</a>.</li>
+  <li>In the C++ broker, when declaring an exchange with an unknown type or canceling a message on an unknown subscription, an exception with code 404 is created. See <a href="https://issues.apache.org/jira/browse/QPID-2324">QPID-2324</a> and <a href="https://issues.apache.org/jira/browse/QPID-2326">QPID-2326</a>.</li>
+  <li>The C++ broker now enables QMF version 1 and 2 event broadcasts by default. Previously only QMF version 1 events were enabled.</li>
+  <li>In the C++ broker, invalid arguments now result in a rejected queue-declare where previously they were ignored. See <a href="https://issues.apache.org/jira/browse/QPID-3087">QPID-3087</a>.</li>
+  <li>The C++ client now raises an exception if it is issued connection options that it doesn't recognize. Previously it silently ignored them. See <a href="https://issues.apache.org/jira/browse/QPID-3115">QPID-3115</a>.</li>
+</ul>
+
+<h3>Resolved Issues</h3>
+
 <p>The full list of changes in the Qpid 0.10 release incorporates both the issues worked on during the 0.9 development stream and any final touches made during the 0.10 release process. A list of these JIRA issues can be found below.</p>
-
-<h3>JIRA Issues</h3>
-
 
 <h4>New Feature</h4>
 <ul>
@@ -355,5 +364,18 @@
 <li>[<a href='https://issues.apache.org/jira/browse/QPID-3023'>QPID-3023</a>] -         logging tests unnecessarily use an InternalBrokerBaseCase to load configuration for test comparison
 </li>
 </ul>
-        
+
+<h3>Known Issues</h3>
+
+<ul>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-3182'>QPID-3182</a>] -         Node bindings not established correctly when address used for producer
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-3214'>QPID-3214</a>]* -        Deadlock between the failover mutex (in AMQConnection.java) and the current_exception_lock (in AMQSession.java)
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-3216'>QPID-3216</a>]* -        Deadlock between "_lock" (in AMQSession#DisptcherThread) and "_messageDeliveryLock" (in AMQSession.java)
+</ul>
+
+<p>*Although these deadlocks are present in the release, the changes
+that are known to trigger them were committed post-release. Therefore
+the likelihood of these deadlocks appearing in the 0.10 release is
+slim.</p>
+
 </div>
