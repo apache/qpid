@@ -120,6 +120,21 @@ QueueFlowLimit::QueueFlowLimit(Queue *_queue,
 }
 
 
+QueueFlowLimit::~QueueFlowLimit()
+{
+    sys::Mutex::ScopedLock l(indexLock);
+    if (!index.empty()) {
+        // we're gone - release all pending msgs
+        for (std::map<framing::SequenceNumber, boost::intrusive_ptr<Message> >::iterator itr = index.begin();
+             itr != index.end(); ++itr)
+            if (itr->second)
+                try {
+                    itr->second->getIngressCompletion().finishCompleter();
+                } catch (...) {}    // ignore - not safe for a destructor to throw.
+        index.clear();
+    }
+}
+
 
 void QueueFlowLimit::enqueued(const QueuedMessage& msg)
 {
