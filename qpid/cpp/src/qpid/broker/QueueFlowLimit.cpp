@@ -282,7 +282,9 @@ QueueFlowLimit *QueueFlowLimit::createLimit(Queue *queue, const qpid::framing::F
         return 0;
     }
 
-    if (settings.get(flowStopCountKey) || settings.get(flowStopSizeKey)) {
+    if (settings.get(flowStopCountKey) || settings.get(flowStopSizeKey) ||
+        settings.get(flowResumeCountKey) || settings.get(flowResumeSizeKey)) {
+        // user provided (some) flow settings manually...
         uint32_t flowStopCount = getCapacity(settings, flowStopCountKey, 0);
         uint32_t flowResumeCount = getCapacity(settings, flowResumeCountKey, 0);
         uint64_t flowStopSize = getCapacity(settings, flowStopSizeKey, 0);
@@ -293,11 +295,15 @@ QueueFlowLimit *QueueFlowLimit::createLimit(Queue *queue, const qpid::framing::F
         return new QueueFlowLimit(queue, flowStopCount, flowResumeCount, flowStopSize, flowResumeSize);
     }
 
-    if (defaultFlowStopRatio) {
+    if (defaultFlowStopRatio) {   // broker has a default ratio setup...
         uint64_t maxByteCount = getCapacity(settings, QueuePolicy::maxSizeKey, defaultMaxSize);
         uint64_t flowStopSize = (uint64_t)(maxByteCount * (defaultFlowStopRatio/100.0) + 0.5);
         uint64_t flowResumeSize = (uint64_t)(maxByteCount * (defaultFlowResumeRatio/100.0));
-        return new QueueFlowLimit(queue, 0, 0, flowStopSize, flowResumeSize);
+        uint32_t maxMsgCount = getCapacity(settings, QueuePolicy::maxCountKey, 0);  // no size by default
+        uint32_t flowStopCount = (uint32_t)(maxMsgCount * (defaultFlowStopRatio/100.0) + 0.5);
+        uint32_t flowResumeCount = (uint32_t)(maxMsgCount * (defaultFlowResumeRatio/100.0));
+
+        return new QueueFlowLimit(queue, flowStopCount, flowResumeCount, flowStopSize, flowResumeSize);
     }
     return 0;
 }

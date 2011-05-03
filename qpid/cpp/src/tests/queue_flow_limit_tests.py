@@ -129,6 +129,27 @@ class QueueFlowLimitTests(TestBase010):
             self.assertEqual(i.name, "test01")
             self._delete_queue("test01")
 
+            # now verify that the default ratios are applied if max sizing is specified:
+            command = tool + \
+                " --broker-addr=%s:%s " % (self.broker.host, self.broker.port) \
+                + "add queue test02 --max-queue-count=10000 --max-queue-size=1000000"
+            cmd = popen(command)
+            rc = cmd.close()
+            self.assertEqual(rc, None)
+
+            # now verify the settings
+            qs = self.qmf.getObjects(_class="queue")
+            for i in qs:
+                if i.name == "test02":
+                    ## @todo KAG: can't get the flow size from qmf!  Arrgh!
+                    # no way to verify...
+                    #self.assertEqual(i.arguments.get("qpid.flow_resume_count"), 55)
+                    #self.assertEqual(i.arguments.get("qpid.flow_resume_count"), 55)
+                    self.failIf(i.flowStopped)
+                    break;
+            self.assertEqual(i.name, "test02")
+            self._delete_queue("test02")
+
 
     def test_flow_count(self):
         """ Create a queue with count-based flow limit.  Spawn several

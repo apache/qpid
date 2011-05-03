@@ -567,7 +567,7 @@ acl allow all all
         s0 = c0.session()
         # Declare multiple queues bound to same key on amq.topic
         def declare(q,max=0):
-            if max: declare = 'x-declare:{arguments:{"qpid.max_count":%d}}'%max
+            if max: declare = 'x-declare:{arguments:{"qpid.max_count":%d, "qpid.flow_stop_count":0}}'%max
             else: declare = 'x-declare:{}'
             bind='x-bindings:[{queue:%s,key:key,exchange:"amq.topic"}]'%(q)
             s0.sender("%s;{create:always,node:{%s,%s}}" % (q,declare,bind))
