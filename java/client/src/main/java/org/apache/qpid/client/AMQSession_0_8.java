@@ -38,6 +38,7 @@ import org.apache.qpid.client.message.ReturnMessage;
 import org.apache.qpid.client.message.UnprocessedMessage;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.client.state.AMQState;
+import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.client.state.listener.SpecificMethodFrameListener;
 import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.framing.AMQFrame;
@@ -584,4 +585,35 @@ public final class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, B
                             queueName == null ? null : new AMQShortString(queueName),
                             bindingKey == null ? null : new AMQShortString(bindingKey));
     }
+  
+
+    public AMQException getLastException()
+    {
+        // if the Connection has closed then we should throw any exception that
+        // has occurred that we were not waiting for
+        AMQStateManager manager = _connection.getProtocolHandler()
+                .getStateManager();
+        
+        Exception e = manager.getLastException();
+        if (manager.getCurrentState().equals(AMQState.CONNECTION_CLOSED)
+                && e != null)
+        {
+            if (e instanceof AMQException)
+            {
+                return (AMQException) e;
+            } 
+            else
+            {
+                AMQException amqe = new AMQException(AMQConstant
+                        .getConstant(AMQConstant.INTERNAL_ERROR.getCode()), 
+                        e.getMessage(), e.getCause());
+                return amqe;
+            }
+        } 
+        else
+        {
+            return null;
+        }
+    }
+
 }

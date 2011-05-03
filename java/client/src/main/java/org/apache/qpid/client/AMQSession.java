@@ -567,6 +567,8 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         close(-1);
     }
 
+    public abstract AMQException getLastException();
+    
     public void checkNotClosed() throws JMSException
     {
         try
@@ -575,16 +577,20 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         }
         catch (IllegalStateException ise)
         {
-            // if the Connection has closed then we should throw any exception that has occurred that we were not waiting for
-            AMQStateManager manager = _connection.getProtocolHandler().getStateManager();
-
-            if (manager.getCurrentState().equals(AMQState.CONNECTION_CLOSED) && manager.getLastException() != null)
+            AMQException ex = getLastException();
+            if (ex != null)
             {
-                ise.setLinkedException(manager.getLastException());
-                ise.initCause(ise.getLinkedException());
-            }
+                IllegalStateException ssnClosed = new IllegalStateException(
+                        "Session has been closed", ex.getErrorCode().toString());
 
-            throw ise;
+                ssnClosed.setLinkedException(ex);
+                ssnClosed.initCause(ex);
+                throw ssnClosed;
+            } 
+            else
+            {
+                throw ise;
+            }
         }
     }
 
