@@ -1029,11 +1029,9 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
                 code = ee.getErrorCode().getValue();
             }
             AMQException amqe = new AMQException(AMQConstant.getConstant(code), se.getMessage(), se.getCause());
-
-            _connection.exceptionReceived(amqe);
-
             _currentException = amqe;
         }
+        _connection.exceptionReceived(_currentException);
     }
 
     public AMQMessageDelegateFactory getMessageDelegateFactory()
