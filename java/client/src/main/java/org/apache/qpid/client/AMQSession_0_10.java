@@ -913,7 +913,21 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
         setCurrentException(exc);
     }
 
-    public void closed(Session ssn) {}
+    public void closed(Session ssn)
+    {
+        try
+        {
+            super.closed(null);
+        } catch (Exception e)
+        {
+            _logger.error("Error closing JMS session", e);
+        }
+    }
+
+    public AMQException getLastException()
+    {
+        return getCurrentException();
+    }
 
     protected AMQShortString declareQueue(final AMQDestination amqd, final AMQProtocolHandler protocolHandler,
                                           final boolean noLocal, final boolean nowait)

@@ -1031,7 +1031,8 @@ public class Session extends SessionInvoker
 
         if(state == CLOSED)
         {
-            connection.removeSession(this);            
+            connection.removeSession(this);   
+            listener.closed(this);
         }
     }
 
