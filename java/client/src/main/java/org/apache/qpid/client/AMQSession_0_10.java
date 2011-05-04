@@ -918,6 +918,11 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
         try
         {
             super.closed(null);
+            if (flushTask != null)
+            {
+                flushTask.cancel();
+                flushTask = null;
+            }
         } catch (Exception e)
         {
             _logger.error("Error closing JMS session", e);
