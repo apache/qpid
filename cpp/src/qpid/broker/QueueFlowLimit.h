@@ -78,7 +78,7 @@ class Broker;
     static QPID_BROKER_EXTERN const std::string flowStopSizeKey;
     static QPID_BROKER_EXTERN const std::string flowResumeSizeKey;
 
-    virtual ~QueueFlowLimit();
+    QPID_BROKER_EXTERN virtual ~QueueFlowLimit();
 
     /** the queue has added QueuedMessage.  Returns true if flow state changes */
     QPID_BROKER_EXTERN void enqueued(const QueuedMessage&);
