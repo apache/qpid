@@ -325,5 +325,47 @@ class QueueFlowLimitTests(TestBase010):
         self.verify_limit(TestQ(oid))
 
 
+    def test_blocked_queue_delete(self):
+        """ Verify that blocked senders are unblocked when a queue that is flow
+        controlled is deleted.
+        """
+
+        class BlockedSender(Thread):
+            def __init__(self, tester, queue, count, capacity=10):
+                self.tester = tester
+                self.queue = queue
+                self.count = count
+                self.capacity = capacity
+                Thread.__init__(self)
+                self.done = False
+                self.start()
+            def run(self):
+                # spawn qpid-send
+                p = self.tester._start_qpid_send(self.queue,
+                                                 self.count,
+                                                 self.capacity)
+                p.close()  # waits for qpid-send to complete
+                self.done = True
+
+        self.startQmf();
+        oid = self._create_queue("kill-q", stop_size=10, resume_size=2)
+        q = self.qmf.getObjects(_objectId=oid)[0]
+        self.failIf(q.flowStopped)
+
+        sender = BlockedSender(self, "kill-q", count=100)
+        # wait for flow control
+        deadline = time() + 10
+        while (not q.flowStopped) and time() < deadline:
+            q.update()
+
+        self.failUnless(q.flowStopped)
+        self.failIf(sender.done)   # sender blocked
+
+        self._delete_queue("kill-q")
+        sender.join(5)
+        self.failIf(sender.isAlive())
+        self.failUnless(sender.done)
+
+
 
 
