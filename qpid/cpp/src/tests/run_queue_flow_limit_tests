@@ -35,8 +35,10 @@ error() {
 }
 
 start_broker() {
+    # Note: if you change the DEFAULT_THRESHOLDS, you will need to update queue_flow_limit_tests.py
+    DEFAULT_THRESHOLDS="--default-flow-stop-threshold=80 --default-flow-resume-threshold=70"
     rm -rf $LOG_FILE
-    PORT=$($QPIDD_EXEC --auth=no --no-module-dir --daemon --port=0 -t --log-to-file $LOG_FILE) || error "Could not start broker"
+    PORT=$($QPIDD_EXEC $DEFAULT_THRESHOLDS --auth=no --no-module-dir --daemon --port=0 -t --log-to-file $LOG_FILE) || error "Could not start broker"
 }
 
 stop_broker() {
