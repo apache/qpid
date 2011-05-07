@@ -27,6 +27,17 @@
 
 using namespace boost::posix_time;
 
+namespace {
+
+// High-res timing support. This will display times since program start,
+// more or less. Keep track of the start value and the conversion factor to
+// seconds.
+bool timeInitialized = false;
+LARGE_INTEGER start;
+double freq = 1.0;
+
+}
+
 namespace qpid {
 namespace sys {
 
@@ -99,11 +110,23 @@ void outputFormattedNow(std::ostream& o) {
 }
 
 void outputHiresNow(std::ostream& o) {
-// TODO: This is a stub - replace with windows code that will do the equivalent
-// of the Linux code commented out below.  (kpvdr)
-//    ::timespec time;
-//    ::clock_gettime(CLOCK_REALTIME, &time);
-//    o << time.tv_sec << "." << std::setw(9) << std::setfill('0') << time.tv_nsec << "s ";
-    o << "XXXXXXXXX.XXXXXXXXXs ";
+    if (!timeInitialized) {
+        start.QuadPart = 0;
+        LARGE_INTEGER iFreq;
+        iFreq.QuadPart = 1;
+        QueryPerformanceCounter(&start);
+        QueryPerformanceFrequency(&iFreq);
+        freq = static_cast<double>(iFreq.QuadPart);
+        timeInitialized = true;
+    }
+    LARGE_INTEGER iNow;
+    iNow.QuadPart = 0;
+    QueryPerformanceCounter(&iNow);
+    iNow.QuadPart -= start.QuadPart;
+    if (iNow.QuadPart < 0)
+        iNow.QuadPart = 0;
+    double now = static_cast<double>(iNow.QuadPart);
+    now /= freq;                 // now is seconds after this
+    o << std::fixed << std::setprecision(8) << std::setw(16) << std::setfill('0') << now << "s ";
 }
 }}
