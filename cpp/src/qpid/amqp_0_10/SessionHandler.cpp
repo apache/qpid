@@ -130,9 +130,6 @@ void SessionHandler::handleException(const qpid::SessionException& e)
 }
 
 namespace {
-bool isControl(const AMQFrame& f) {
-    return f.getMethod() && f.getMethod()->type() == framing::SEGMENT_TYPE_CONTROL;
-}
 bool isCommand(const AMQFrame& f) {
     return f.getMethod() && f.getMethod()->type() == framing::SEGMENT_TYPE_COMMAND;
 }

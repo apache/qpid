@@ -40,11 +40,6 @@ SessionHandler::SessionHandler(Connection& c, ChannelId ch)
 
 SessionHandler::~SessionHandler() {}
 
-namespace {
-ClassId classId(AMQMethodBody* m) { return m ? m->amqpMethodId() : 0; }
-MethodId methodId(AMQMethodBody* m) { return m ? m->amqpClassId() : 0; }
-} // namespace
-
 void SessionHandler::connectionException(framing::connection::CloseCode code, const std::string& msg) {
     // NOTE: must tell the error listener _before_ calling connection.close()
     if (connection.getErrorListener()) connection.getErrorListener()->connectionError(msg);
