@@ -22,7 +22,12 @@
  *
  */
 
-#if defined( __GNUC__ ) && __GNUC__ >= 4 && ( defined( __i686__ ) || defined( __x86_64__ ) )
+// Have to check for clang before gcc as clang pretends to be gcc too
+#if defined( __clang__ )
+// Use the clang doesn't support atomic builtins for 64 bit values, so use the slow versions
+#include "qpid/sys/AtomicValue_mutex.h"
+
+#elif defined( __GNUC__ ) && __GNUC__ >= 4 && ( defined( __i686__ ) || defined( __x86_64__ ) )
 // Use the Gnu C built-in atomic operations if compiling with gcc on a suitable platform.
 #include "qpid/sys/AtomicValue_gcc.h"
 
