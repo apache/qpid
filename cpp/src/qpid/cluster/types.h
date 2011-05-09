@@ -24,6 +24,7 @@
 
 #include "config.h"
 #include "qpid/Url.h"
+#include "qpid/RefCounted.h"
 #include "qpid/sys/IntegerTypes.h"
 #include <boost/intrusive_ptr.hpp>
 #include <utility>
