@@ -55,9 +55,12 @@ void SchemaHash::update(uint8_t data)
 
 void SchemaHash::update(const char* data, uint32_t len)
 {
-    uint64_t* first  = (uint64_t*) hash;
-    uint64_t* second = (uint64_t*) hash + 1;
-
+    union h {
+        uint8_t  b[16];
+        uint64_t q[2];
+    }* h = reinterpret_cast<union h*>(&hash[0]);
+    uint64_t* first  = &h->q[0];
+    uint64_t* second = &h->q[1];
     for (uint32_t idx = 0; idx < len; idx++) {
         *first = *first ^ (uint64_t) data[idx];
         *second = *second << 1;
