@@ -37,7 +37,7 @@ namespace framing {
  */
 class SendContent
 {
-    mutable FrameHandler& handler;
+    FrameHandler& handler;
     const uint16_t maxFrameSize;
     uint expectedFrameCount;
     uint frameCount;
