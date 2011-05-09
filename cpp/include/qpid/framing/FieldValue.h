@@ -98,6 +98,7 @@ class FieldValue {
     template <typename T> T get() const { throw InvalidConversionException(); }
 
     template <class T, int W> T getIntegerValue() const;
+    template <class T> T getIntegerValue() const;
     template <class T, int W> T getFloatingPointValue() const;
     template <int W> void getFixedWidthValue(unsigned char*) const;
     template <class T> bool get(T&) const;
@@ -191,6 +192,18 @@ inline T FieldValue::getIntegerValue() const
         }
         v |= octets[W-1];
         return v;
+    } else {
+        throw InvalidConversionException();
+    }
+}
+
+template <class T>
+inline T FieldValue::getIntegerValue() const
+{
+    FixedWidthValue<1>* const fwv = dynamic_cast< FixedWidthValue<1>* const>(data.get());
+    if (fwv) {
+        uint8_t* octets = fwv->rawOctets();
+        return octets[0];
     } else {
         throw InvalidConversionException();
     }
