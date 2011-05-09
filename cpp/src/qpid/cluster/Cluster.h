@@ -60,13 +60,13 @@ class Message;
 
 namespace framing {
 class AMQBody;
-class Uuid;
+struct Uuid;
 }
 
 namespace cluster {
 
 class Connection;
-class EventFrame;
+struct EventFrame;
 class ClusterTimer;
 class UpdateDataExchange;
 
@@ -298,7 +298,7 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     ClusterTimer* timer;
 
   friend std::ostream& operator<<(std::ostream&, const Cluster&);
-  friend class ClusterDispatcher;
+  friend struct ClusterDispatcher;
 };
 
 }} // namespace qpid::cluster
