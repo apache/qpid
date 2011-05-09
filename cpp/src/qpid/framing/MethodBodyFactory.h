@@ -22,6 +22,7 @@
  *
  */
 #include "qpid/framing/amqp_types.h"
+#include "qpid/framing/AMQBody.h"
 #include <boost/intrusive_ptr.hpp>
 
 namespace qpid {

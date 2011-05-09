@@ -24,10 +24,10 @@
 
 #include "types.h"
 #include "OutputInterceptor.h"
-#include "EventFrame.h"
 #include "McastFrameHandler.h"
 #include "UpdateReceiver.h"
 
+#include "qpid/RefCounted.h"
 #include "qpid/broker/Connection.h"
 #include "qpid/broker/SecureConnection.h"
 #include "qpid/broker/SemanticState.h"
@@ -55,6 +55,7 @@ class TxAccept;
 namespace cluster {
 class Cluster;
 class Event;
+struct EventFrame;
 
 /** Intercept broker::Connection calls for shadow and local cluster connections. */
 class Connection :
