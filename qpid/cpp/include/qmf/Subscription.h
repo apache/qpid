@@ -73,7 +73,7 @@ namespace qmf {
 #ifndef SWIG
     private:
         friend class qmf::PrivateImplRef<Subscription>;
-        friend class SubscriptionImplAccess;
+        friend struct SubscriptionImplAccess;
 #endif
     };
 
