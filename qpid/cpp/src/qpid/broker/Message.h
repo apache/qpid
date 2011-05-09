@@ -94,7 +94,7 @@ public:
     }
 
     template <class T> const T* getProperties() const {
-        qpid::framing::AMQHeaderBody* p = frames.getHeaders();
+        const qpid::framing::AMQHeaderBody* p = frames.getHeaders();
         return p->get<T>(true);
     }
 
