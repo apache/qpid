@@ -24,6 +24,8 @@
 
   <property name="project.name"          value="qpid"/>
   <property name="project.version"       value="0.11"/>
+  <property name="project.url"           value="http://qpid.apache.org"/>
+  <property name="project.groupid"       value="org.apache.qpid"/>
   <property name="project.namever"       value="${project.name}-${project.version}"/>
 
   <property name="resources"             location="${project.root}/resources"/>
@@ -76,6 +78,7 @@
   </path>
 
   <property name="maven.local.repo"      value="${build.scratch}/maven-local-repo"/>
+  <property name="maven.settings.xml"    value="${project.root}/maven-settings.xml"/>
   <property name="maven.unique.version"  value="false"/>
   <property name="maven.snapshot"        value="true"/>
   <condition property="maven.version.suffix" value="" else="-SNAPSHOT">
