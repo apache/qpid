@@ -47,7 +47,7 @@ namespace framing { class AMQFrame; }
 
 namespace broker {
 class SemanticState;
-class QueuedMessage;
+struct QueuedMessage;
 class TxBuffer;
 class TxAccept;
 }

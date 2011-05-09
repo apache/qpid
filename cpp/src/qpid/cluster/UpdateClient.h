@@ -34,7 +34,7 @@
 
 namespace qpid {
 
-class Url;
+struct Url;
 
 namespace broker {
 
@@ -42,8 +42,8 @@ class Broker;
 class Queue;
 class Exchange;
 class QueueBindings;
-class QueueBinding;
-class QueuedMessage;
+struct QueueBinding;
+struct QueuedMessage;
 class SessionHandler;
 class DeliveryRecord;
 class SessionState;

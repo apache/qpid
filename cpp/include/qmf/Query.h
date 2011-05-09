@@ -65,7 +65,7 @@ namespace qmf {
 #ifndef SWIG
     private:
         friend class qmf::PrivateImplRef<Query>;
-        friend class QueryImplAccess;
+        friend struct QueryImplAccess;
 #endif
     };
 
