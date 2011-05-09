@@ -129,7 +129,7 @@ FieldTable::ValuePtr FieldTable::get(const std::string& name) const
 namespace {
     template <class T> T default_value() { return T(); }
     template <> int default_value<int>() { return 0; }
-    template <> uint64_t default_value<uint64_t>() { return 0; }
+  //template <> uint64_t default_value<uint64_t>() { return 0; }
 }
 
 template <class T>
