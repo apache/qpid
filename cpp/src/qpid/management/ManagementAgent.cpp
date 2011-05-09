@@ -2861,10 +2861,10 @@ Variant ManagementAgent::toVariant(const boost::shared_ptr<FieldValue>& in)
         //Fixed Width types:
     case 0x00: //bin8
     case 0x01: out.setEncoding(amqp0_10_binary); // int8
-    case 0x02: out = in->getIntegerValue<int8_t, 1>(); break;  //uint8
-    case 0x03: out = in->getIntegerValue<uint8_t, 1>(); break;  // 
+    case 0x02: out = in->getIntegerValue<int8_t>(); break;  //uint8
+    case 0x03: out = in->getIntegerValue<uint8_t>(); break;  // 
         // case 0x04: break; //TODO: iso-8859-15 char  // char
-    case 0x08: out = static_cast<bool>(in->getIntegerValue<uint8_t, 1>()); break;  // bool int8
+    case 0x08: out = static_cast<bool>(in->getIntegerValue<uint8_t>()); break;  // bool int8
 
     case 0x10: out.setEncoding(amqp0_10_binary);  // bin16
     case 0x11: out = in->getIntegerValue<int16_t, 2>(); break;  // int16
