@@ -41,9 +41,9 @@ class StateMonitor : public Waitable
     struct Set : public std::bitset<MaxEnum + 1> {
         Set() {}
         Set(Enum s) { set(s); }
-        Set(Enum s, Enum t) { set(s).set(t); }
-        Set(Enum s, Enum t, Enum u) { set(s).set(t).set(u); }
-        Set(Enum s, Enum t, Enum u, Enum v) { set(s).set(t).set(u).set(v); }
+        Set(Enum s, Enum t) { std::bitset<MaxEnum + 1>::set(s).set(t); }
+        Set(Enum s, Enum t, Enum u) { std::bitset<MaxEnum + 1>::set(s).set(t).set(u); }
+        Set(Enum s, Enum t, Enum u, Enum v) { std::bitset<MaxEnum + 1>::set(s).set(t).set(u).set(v); }
     };
 
 
