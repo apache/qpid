@@ -66,6 +66,8 @@
   <property name="module.release.bz2"  location="${module.release}/${module.namever}.tar.bz2"/>
 
   <property name="module.genpom.args"  value=""/>
+  <property name="maven.remote.repo"     value="file://${module.release.base}/maven"/>
+
   <property name="broker.log.prefix" value="BROKER: "/> 
   <property name="broker.log.interleave" value="true"/>
 
@@ -221,8 +223,8 @@
         <arg line='"${project.root}/genpom"'/>
         <arg line='-s "${project.root}/lib/poms"'/>
         <arg line='-o "${build.scratch}/qpid-${module.name}.pom"'/>
-        <arg line="-u http://qpid.apache.org"/>
-        <arg line="-g org.apache.qpid"/>
+        <arg line="-u ${project.url}"/>
+        <arg line="-g ${project.groupid}"/>
         <arg line="-v ${project.version}${maven.version.suffix}"/>
         <arg line="-p qpid"/>
         <arg line='-m "${module.depends}"'/>
@@ -238,14 +240,14 @@
 
     <artifact:pom id="module.pom" file="${build.scratch}/qpid-${module.name}.pom"/>
 
-    <artifact:install file="${module.jar}" pomRefId="module.pom">
+    <artifact:install file="${module.jar}" pomRefId="module.pom" settingsFile="${maven.settings.xml}">
         <localRepository path="${maven.local.repo}"/>
     </artifact:install>
 
-    <artifact:deploy file="${module.jar}" pomRefId="module.pom" uniqueVersion="${maven.unique.version}">
+    <artifact:deploy file="${module.jar}" pomRefId="module.pom" uniqueVersion="${maven.unique.version}" settingsFile="${maven.settings.xml}">
       <attach file="${module.source.jar}" classifier="sources"/>
       <localRepository path="${maven.local.repo}"/>
-      <remoteRepository url="file://${module.release.base}/maven"/>
+      <remoteRepository url="${maven.remote.repo}"/>
     </artifact:deploy>
   </target>
 
