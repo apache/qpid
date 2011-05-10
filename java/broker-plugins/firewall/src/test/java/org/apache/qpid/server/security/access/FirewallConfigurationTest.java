@@ -93,7 +93,6 @@ public class FirewallConfigurationTest extends InternalBrokerBaseCase
         out.write("\t\t\t</principal-database>\n");
         out.write("\t\t</principal-databases>\n");
         out.write("\t\t<jmx>\n");
-        out.write("\t\t\t<access>/dev/null</access>\n");
         out.write("\t\t\t<principal-database>passwordfile</principal-database>\n");
         out.write("\t\t</jmx>\n");
         out.write("\t\t<firewall>\n");
@@ -194,7 +193,6 @@ public class FirewallConfigurationTest extends InternalBrokerBaseCase
         out.write("\t\t\t</principal-database>\n");
         out.write("\t\t</principal-databases>\n");
         out.write("\t\t<jmx>\n");
-        out.write("\t\t\t<access>/dev/null</access>\n");
         out.write("\t\t\t<principal-database>passwordfile</principal-database>\n");
         out.write("\t\t</jmx>\n");
         out.write("\t\t<firewall>\n");
@@ -304,7 +302,6 @@ public class FirewallConfigurationTest extends InternalBrokerBaseCase
         out.write("\t\t\t</principal-database>\n");
         out.write("\t\t</principal-databases>\n");
         out.write("\t\t<jmx>\n");
-        out.write("\t\t\t<access>/dev/null</access>\n");
         out.write("\t\t\t<principal-database>passwordfile</principal-database>\n");
         out.write("\t\t</jmx>\n");
         out.write("\t\t<firewall>\n");
