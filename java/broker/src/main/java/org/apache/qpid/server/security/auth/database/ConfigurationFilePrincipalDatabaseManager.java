@@ -184,33 +184,6 @@ public class ConfigurationFilePrincipalDatabaseManager implements PrincipalDatab
             }
 
             _mbean.setPrincipalDatabase(database);
-
-            List<String> jmxaccesslist = config.getManagementAccessList();
-            if (jmxaccesslist.isEmpty())
-            {
-                throw new ConfigurationException("No access control files specified for jmx security");
-            }
-
-            String jmxaccesssFile = null;
-            
-            try
-            {
-                jmxaccesssFile = PropertyUtils.replaceProperties(jmxaccesslist.get(0));
-            }
-            catch (PropertyException e)
-            {
-                throw new ConfigurationException("Unable to parse access control filename '" + jmxaccesssFile + "'");
-            }
-            
-            try
-            {
-                _mbean.setAccessFile(jmxaccesssFile);
-            }
-            catch (IOException e)
-            {
-                _logger.warn("Unable to load access file:" + jmxaccesssFile);
-            }
-
             _mbean.register();
         }
         catch (JMException e)

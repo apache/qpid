@@ -38,15 +38,17 @@ public interface UserManagement
     //TabularType and contained CompositeType key/description information.
     //For compatibility reasons, DONT MODIFY the existing key values if expanding the set.
     String USERNAME = "Username";
-    String RIGHTS_READ_ONLY = "read";
-    String RIGHTS_READ_WRITE = "write";
-    String RIGHTS_ADMIN = "admin";
+    String RIGHTS_READ_ONLY = "read";   // item deprecated
+    String RIGHTS_READ_WRITE = "write"; // item deprecated
+    String RIGHTS_ADMIN = "admin";      // item deprecated
+
     List<String> COMPOSITE_ITEM_NAMES = Collections.unmodifiableList(Arrays.asList(USERNAME, RIGHTS_READ_ONLY, RIGHTS_READ_WRITE, RIGHTS_ADMIN));
     List<String> COMPOSITE_ITEM_DESCRIPTIONS = Collections.unmodifiableList(
                               Arrays.asList("Broker Login username", 
-                                            "Management Console Read Permission", 
-                                            "Management Console Write Permission", 
-                                            "Management Console Admin Permission"));
+                                            "Item no longer used", 
+                                            "Item no longer used", 
+                                            "Item no longer used"));
+
     List<String> TABULAR_UNIQUE_INDEX = Collections.unmodifiableList(Arrays.asList(USERNAME));
 
     //********** Operations *****************//
@@ -57,7 +59,7 @@ public interface UserManagement
      * 
      * @deprecated since Qpid JMX API 1.7
      *
-     * @param username The username to create
+     * @param username The username for which the password is to be set
      * @param password The password for the user
      *
      * @return The result of the operation
@@ -85,7 +87,11 @@ public interface UserManagement
                         @MBeanOperationParameter(name = "password", description = "Password")String password);
     
     /**
-     * set rights for users with given details
+     * Set rights for users with given details.
+     * Since Qpid JMX API 2.3 all invocations will cause an exception to be thrown
+     * as access rights can no longer be maintain via this interface.
+     * 
+     * @deprecated since Qpid JMX API 2.3
      *
      * @param username The username to create
      * @param read     The set of permission to give the new user
@@ -94,6 +100,7 @@ public interface UserManagement
      *
      * @return The result of the operation
      */
+    @Deprecated
     @MBeanOperation(name = "setRights", description = "Set access rights for user.",
                     impact = MBeanOperationInfo.ACTION)
     boolean setRights(@MBeanOperationParameter(name = "username", description = "Username")String username,
@@ -102,7 +109,9 @@ public interface UserManagement
                       @MBeanOperationParameter(name = "admin", description = "Administration rights")boolean admin);
 
     /**
-     * Create users with given details
+     * Create users with given details.
+     * Since Qpid JMX API 2.3 if the user passes true for parameters read, write, or admin, a
+     * exception will be thrown as access rights can no longer be maintain via this interface.
      *
      * Since Qpid JMX API 1.2 this operation expects plain text passwords to be provided. Prior to this, MD5 hashed passwords were supplied.
      * 
@@ -114,7 +123,7 @@ public interface UserManagement
      * @param write    The set of permission to give the new user
      * @param admin    The set of permission to give the new user
      *
-     * @return The result of the operation
+     * @return true if the user was created successfully, or false otherwise
      */
     @Deprecated
     @MBeanOperation(name = "createUser", description = "Create new user from system.",
@@ -128,7 +137,10 @@ public interface UserManagement
 
     /**
      * Create users with given details.
+     * Since Qpid JMX API 2.3 if the user passes true for parameters read, write, or admin, a
+     * exception will be thrown as access rights can no longer be maintain via this interface.
      * 
+     * @deprecated since Qpid JMX API 2.3
      * @since Qpid JMX API 1.7
      * 
      * @param username The username to create
@@ -137,8 +149,9 @@ public interface UserManagement
      * @param write    The set of permission to give the new user
      * @param admin    The set of permission to give the new user
      *
-     * @return The result of the operation
+     * @return true if the user was created successfully, or false otherwise
      */
+    @Deprecated
     @MBeanOperation(name = "createUser", description = "Create a new user.",
                     impact = MBeanOperationInfo.ACTION)
     boolean createUser(@MBeanOperationParameter(name = "username", description = "Username")String username,
@@ -146,6 +159,21 @@ public interface UserManagement
                        @MBeanOperationParameter(name = "read", description = "Administration read")boolean read,
                        @MBeanOperationParameter(name = "readAndWrite", description = "Administration write")boolean write,
                        @MBeanOperationParameter(name = "admin", description = "Administration rights")boolean admin);
+
+    /**
+     * Create users with given details.
+     * 
+     * @since Qpid JMX API 2.3
+     * 
+     * @param username The username to create
+     * @param password The password for the user
+     *
+     * @return true if the user was created successfully, or false otherwise
+     */
+    @MBeanOperation(name = "createUser", description = "Create a new user.",
+                    impact = MBeanOperationInfo.ACTION)
+    boolean createUser(@MBeanOperationParameter(name = "username", description = "Username")String username,
+                       @MBeanOperationParameter(name = "password", description = "Password")String password);
     
     /**
      * View users returns all the users that are currently available to the system.
@@ -172,10 +200,13 @@ public interface UserManagement
 
     /**
      * View users returns all the users that are currently available to the system.
+     * 
+     * Since Qpid JMX API 2.3 the items that corresponded to read, write and admin flags 
+     * are deprecated and always return false.
      *
      * @return a table of users data (Username, read, write, admin)
      */
-    @MBeanOperation(name = "viewUsers", description = "All users with access rights to the system.",
+    @MBeanOperation(name = "viewUsers", description = "All users that are currently available to the system.",
                     impact = MBeanOperationInfo.INFO)
     TabularData viewUsers();
 

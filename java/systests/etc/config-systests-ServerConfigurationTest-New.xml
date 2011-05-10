@@ -59,7 +59,6 @@
         </principal-databases>
 
         <jmx>
-            <access>${passwordDir}/jmxremote.access</access>
             <principal-database>passwordfile</principal-database>
         </jmx>
     </security>
