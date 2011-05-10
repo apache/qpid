@@ -177,23 +177,7 @@ public class ServerConfigurationTest extends InternalBrokerBaseCase
         assertEquals("b", dbs.get(1));
     }
 
-    public void testGetManagementAccessList() throws ConfigurationException
-    {
-        // Check default
-        ServerConfiguration serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(0, serverConfig.getManagementAccessList().size());
 
-        // Check value we set
-        _config.setProperty("security.jmx.access(0)", "a");
-        _config.setProperty("security.jmx.access(1)", "b");
-        serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        List<String> dbs = serverConfig.getManagementAccessList();
-        assertEquals(2, dbs.size());
-        assertEquals("a", dbs.get(0));
-        assertEquals("b", dbs.get(1));
-    }
 
     public void testGetFrameSize() throws ConfigurationException
     {
@@ -848,7 +832,6 @@ public class ServerConfigurationTest extends InternalBrokerBaseCase
         out.write("\t\t\t</principal-database>\n");
         out.write("\t\t</principal-databases>\n");
         out.write("\t\t<jmx>\n");
-        out.write("\t\t\t<access>/dev/null</access>\n");
         out.write("\t\t\t<principal-database>passwordfile</principal-database>\n");
         out.write("\t\t</jmx>\n");
         out.write("\t\t<firewall>\n");
@@ -899,7 +882,6 @@ public class ServerConfigurationTest extends InternalBrokerBaseCase
         out.write("\t\t\t</principal-database>\n");
         out.write("\t\t</principal-databases>\n");
         out.write("\t\t<jmx>\n");
-        out.write("\t\t\t<access>/dev/null</access>\n");
         out.write("\t\t\t<principal-database>passwordfile</principal-database>\n");
         out.write("\t\t</jmx>\n");
         out.write("\t\t<firewall>\n");
@@ -1005,7 +987,6 @@ public class ServerConfigurationTest extends InternalBrokerBaseCase
         out.write("\t\t\t</principal-database>\n");
         out.write("\t\t</principal-databases>\n");
         out.write("\t\t<jmx>\n");
-        out.write("\t\t\t<access>/dev/null</access>\n");
         out.write("\t\t\t<principal-database>passwordfile</principal-database>\n");
         out.write("\t\t</jmx>\n");
         out.write("\t\t<firewall>\n");
@@ -1479,6 +1460,33 @@ public class ServerConfigurationTest extends InternalBrokerBaseCase
         catch (Exception e)
         {
             fail("Should throw a ConfigurationException");
+        }
+    }
+    
+    /*
+     * Tests that the old element security.jmx.access (that used to be used
+     * to define JMX access rights) is rejected.
+     */
+    public void testManagementAccessRejected() throws ConfigurationException
+    {
+        // Check default
+        ServerConfiguration serverConfig = new ServerConfiguration(_config);
+        serverConfig.initialise();
+
+        // Check value we set
+        _config.setProperty("security.jmx.access(0)", "jmxremote.access");
+        serverConfig = new ServerConfiguration(_config);
+        
+        try
+        {
+            serverConfig.initialise();
+            fail("Exception not thrown");
+        }
+        catch (ConfigurationException ce)
+        {
+            assertEquals("Incorrect error message",
+                    "Validation error : security/jmx/access is no longer a supported element within the configuration xml.",
+                    ce.getMessage());
         }
     }
 }

@@ -30,7 +30,7 @@ import org.apache.qpid.management.common.mbeans.annotations.MBeanOperation;
 /**
  * Interface for the ServerInformation MBean
  * 
- * @version Qpid JMX API 2.2
+ * @version Qpid JMX API 2.3
  * @since Qpid JMX API 1.3
  */
 public interface ServerInformation
@@ -47,7 +47,7 @@ public interface ServerInformation
      *  Qpid JMX API 1.1 can be assumed.
      */
     int QPID_JMX_API_MAJOR_VERSION = 2;
-    int QPID_JMX_API_MINOR_VERSION = 2;
+    int QPID_JMX_API_MINOR_VERSION = 3;
     
     
     /**

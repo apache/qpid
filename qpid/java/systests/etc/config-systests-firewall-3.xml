@@ -85,7 +85,6 @@
         <msg-auth>false</msg-auth>
         
         <jmx>
-            <access>${conf}/jmxremote.access</access>
             <principal-database>passwordfile</principal-database>
         </jmx>
 

@@ -205,7 +205,15 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
     @Override
     public void validateConfiguration() throws ConfigurationException
     {
-        //Currently doesn't do validation
+        // Support for security.jmx.access was removed when JMX access rights were incorporated into the main ACL.
+        // This ensure that users remove the element from their configuration file.
+        
+        if (getListValue("security.jmx.access").size() > 0)
+        {
+            String message = "Validation error : security/jmx/access is no longer a supported element within the configuration xml." 
+                    + (_configFile == null ? "" : " Configuration file : " + _configFile);
+            throw new ConfigurationException(message);
+        }
     }
 
     /*
@@ -528,11 +536,6 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
     public List<String> getManagementPrincipalDBs()
     {
         return getListValue("security.jmx.principal-database");
-    }
-
-    public List<String> getManagementAccessList()
-    {
-        return getListValue("security.jmx.access");
     }
 
     public int getFrameSize()
