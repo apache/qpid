@@ -2467,7 +2467,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
             }
             else
             {
-                con.close(true);
+                con.close(false);
             }
         }
         // at this point the _consumers map will be empty
