@@ -25,6 +25,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Map;
+import java.util.Properties;
+
 import javax.jms.Connection;
 import javax.jms.Destination;
 import javax.jms.JMSException;
@@ -40,6 +42,7 @@ import javax.jms.Topic;
 import javax.jms.TopicSession;
 import javax.jms.TopicSubscriber;
 import javax.naming.Context;
+import javax.naming.InitialContext;
 
 import org.apache.qpid.client.AMQAnyDestination;
 import org.apache.qpid.client.AMQConnection;
@@ -824,16 +827,53 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
     public void testDurableSubscriber() throws Exception
     {
         Session ssn = _connection.createSession(false,Session.AUTO_ACKNOWLEDGE);        
-        Topic topic = ssn.createTopic("news.us");
         
-        MessageConsumer cons = ssn.createDurableSubscriber(topic, "my-sub");
+        Properties props = new Properties();
+        props.setProperty("java.naming.factory.initial", "org.apache.qpid.jndi.PropertiesFileInitialContextFactory");
+        props.setProperty("destination.address1", "ADDR:amq.topic");
+        props.setProperty("destination.address2", "ADDR:amq.direct/test");                
+        String addrStr = "ADDR:amq.topic/test; {link:{name: my-topic," +
+                  "x-bindings:[{key:'NYSE.#'},{key:'NASDAQ.#'},{key:'CNTL.#'}]}}";
+        props.setProperty("destination.address3", addrStr);
+        props.setProperty("topic.address4", "hello.world");
+        addrStr = "ADDR:my_queue; {create:always,link: {x-subscribes:{exclusive: true, arguments: {a:b,x:y}}}}";
+        props.setProperty("destination.address5", addrStr); 
+        
+        Context ctx = new InitialContext(props);       
+
+        for (int i=1; i < 5; i++)
+        {
+            Topic topic = (Topic) ctx.lookup("address"+i);
+            createDurableSubscriber(ctx,ssn,"address"+i,topic);
+        }
+        
+        Topic topic = ssn.createTopic("ADDR:news.us");
+        createDurableSubscriber(ctx,ssn,"my-dest",topic);
+        
+        Topic namedQueue = (Topic) ctx.lookup("address5");
+        try
+        {
+            createDurableSubscriber(ctx,ssn,"my-queue",namedQueue);
+            fail("Exception should be thrown. Durable subscribers cannot be created for Queues");
+        }
+        catch(JMSException e)
+        {
+            assertEquals("Durable subscribers can only be created for Topics",
+                    e.getMessage());
+        }
+    }
+    
+    private void createDurableSubscriber(Context ctx,Session ssn,String destName,Topic topic) throws Exception
+    {        
+        MessageConsumer cons = ssn.createDurableSubscriber(topic, destName);
         MessageProducer prod = ssn.createProducer(topic);
         
-        Message m = ssn.createTextMessage("A");
+        Message m = ssn.createTextMessage(destName);
         prod.send(m);
         Message msg = cons.receive(1000);
         assertNotNull(msg);
-        assertEquals("A",((TextMessage)msg).getText());
+        assertEquals(destName,((TextMessage)msg).getText());
+        ssn.unsubscribe(destName);
     }
     
     public void testDeleteOptions() throws Exception
