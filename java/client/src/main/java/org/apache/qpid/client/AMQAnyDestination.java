@@ -72,6 +72,17 @@ public class AMQAnyDestination extends AMQDestination implements Queue, Topic
 
     public String getTopicName() throws JMSException
     {
-        return super.getRoutingKey().toString();
+        if (getRoutingKey() != null)
+        {
+            return getRoutingKey().asString();
+        }
+        else if (getSubject() != null)
+        {
+            return getSubject();
+        }
+        else
+        {
+            return null;
+        }
     }
 }

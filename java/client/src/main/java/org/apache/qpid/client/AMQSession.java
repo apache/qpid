@@ -1050,7 +1050,23 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     {
         checkNotClosed();
         Topic origTopic = checkValidTopic(topic, true);
+        
         AMQTopic dest = AMQTopic.createDurableTopic(origTopic, name, _connection);
+        if (dest.getDestSyntax() == DestSyntax.ADDR &&
+            !dest.isAddressResolved())
+        {
+            try
+            {
+                handleAddressBasedDestination(dest,false,true);
+            }
+            catch(AMQException e)
+            {
+                JMSException ex = new JMSException("Error when verifying destination");
+                ex.initCause(e);
+                ex.setLinkedException(e);
+                throw ex;
+            }
+        }
         
         String messageSelector = ((selector == null) || (selector.trim().length() == 0)) ? null : selector;
         
@@ -1062,15 +1078,9 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
             // Not subscribed to this name in the current session
             if (subscriber == null)
             {
-                AMQShortString topicName;
-                if (topic instanceof AMQTopic)
-                {
-                    topicName = ((AMQTopic) topic).getRoutingKey();
-                } else
-                {
-                    topicName = new AMQShortString(topic.getTopicName());
-                }
-
+                // After the address is resolved routing key will not be null.
+                AMQShortString topicName = dest.getRoutingKey();
+                
                 if (_strictAMQP)
                 {
                     if (_strictAMQPFATAL)
