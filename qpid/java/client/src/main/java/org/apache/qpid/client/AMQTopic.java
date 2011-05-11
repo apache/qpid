@@ -147,13 +147,17 @@ public class AMQTopic extends AMQDestination implements Topic
 
     public String getTopicName() throws JMSException
     {
-        if (super.getRoutingKey() == null && super.getSubject() != null)
+        if (getRoutingKey() != null)
         {
-            return super.getSubject();
+            return getRoutingKey().asString();
+        }
+        else if (getSubject() != null)
+        {
+            return getSubject();
         }
         else
         {
-            return super.getRoutingKey().toString();
+            return null;
         }
     }
     
@@ -172,12 +176,18 @@ public class AMQTopic extends AMQDestination implements Topic
 
     public AMQShortString getRoutingKey()
     {
-        if (super.getRoutingKey() == null && super.getSubject() != null)
+        if (super.getRoutingKey() != null)            
         {
-            return new AMQShortString(super.getSubject());
+            return super.getRoutingKey();            
+        }
+        else if (getSubject() != null)
+        {
+            return new AMQShortString(getSubject());
         }
         else
         {
+            setRoutingKey(new AMQShortString("#"));
+            setSubject("#");
             return super.getRoutingKey();
         }
     }
