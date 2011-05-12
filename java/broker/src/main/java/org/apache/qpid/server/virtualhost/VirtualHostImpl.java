@@ -101,7 +101,7 @@ public class VirtualHostImpl implements VirtualHost
 
     private AMQBrokerManagerMBean _brokerMBean;
 
-    private AuthenticationManager _authenticationManager;
+    private final AuthenticationManager _authenticationManager;
 
     private SecurityManager _securityManager;
 
@@ -248,7 +248,7 @@ public class VirtualHostImpl implements VirtualHost
 			initialiseMessageStore(hostConfig);
         }
 		
-        _authenticationManager = new PrincipalDatabaseAuthenticationManager(_name, _configuration);
+        _authenticationManager = ApplicationRegistry.getInstance().getAuthenticationManager();
 
         _brokerMBean = new AMQBrokerManagerMBean(_virtualHostMBean);
         _brokerMBean.register();

@@ -20,6 +20,8 @@
 package org.apache.qpid.server.configuration;
 
 
+import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.queue.AMQPriorityQueue;
 import org.apache.qpid.server.queue.AMQQueue;
@@ -201,6 +203,30 @@ public class VirtualHostConfigurationTest extends InternalBrokerBaseCase
          assertEquals("HouseKeeping PoolSize not correctly change.",
                       1, vhost.getHouseKeepingPoolSize());
 
+     }
+
+     /**
+      * Tests that the old element security.authentication.name is rejected.  This element
+      * was never supported properly as authentication  is performed before the virtual host
+      * is considered.
+      */
+     public void testSecurityAuthenticationNameRejected() throws Exception
+     {
+         getConfigXml().addProperty("virtualhosts.virtualhost.testSecurityAuthenticationNameRejected.security.authentication.name",
+                 "testdb");
+         
+         try
+         {
+             super.createBroker();
+             fail("Exception not thrown");
+         }
+         catch(ConfigurationException ce)
+         {
+             assertEquals("Incorrect error message",
+                          "Validation error : security/authentication/name is no longer a supported element within the configuration xml." +
+                          " It appears in virtual host definition : " + getName(),
+                          ce.getMessage());
+         }
      }
 
 

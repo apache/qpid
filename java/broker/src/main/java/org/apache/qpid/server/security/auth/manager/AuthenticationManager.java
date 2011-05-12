@@ -26,6 +26,10 @@ import javax.security.sasl.SaslServer;
 import org.apache.qpid.common.Closeable;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
 
+/**
+ * The AuthenticationManager class is the entity responsible for
+ * determining the authenticity of user credentials.
+ */
 public interface AuthenticationManager extends Closeable
 {
     String getMechanisms();
