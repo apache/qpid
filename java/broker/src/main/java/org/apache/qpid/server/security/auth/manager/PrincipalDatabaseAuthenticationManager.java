@@ -21,9 +21,6 @@
 package org.apache.qpid.server.security.auth.manager;
 
 import org.apache.log4j.Logger;
-import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
@@ -41,6 +38,11 @@ import java.util.HashMap;
 import java.util.TreeMap;
 import java.security.Security;
 
+/**
+ * Concrete implementation of the AuthenticationManager that determines if supplied
+ * user credentials match those appearing in a PrincipalDatabase.
+ *
+ */
 public class PrincipalDatabaseAuthenticationManager implements AuthenticationManager
 {
     private static final Logger _logger = Logger.getLogger(PrincipalDatabaseAuthenticationManager.class);
@@ -57,47 +59,17 @@ public class PrincipalDatabaseAuthenticationManager implements AuthenticationMan
      */
     private Map<String, Map<String, ?>> _serverCreationProperties = new HashMap<String, Map<String, ?>>();
 
-    private AuthenticationManager _default = null;
     /** The name for the required SASL Server mechanisms */
     public static final String PROVIDER_NAME= "AMQSASLProvider-Server";
 
-    public PrincipalDatabaseAuthenticationManager(String name, VirtualHostConfiguration hostConfig) throws Exception
+    public PrincipalDatabaseAuthenticationManager()  
     {
-        _logger.info("Initialising " + (name == null ? "Default" : "'" + name + "'")
-                     + " PrincipalDatabase authentication manager.");
-
-        // Fixme This should be done per Vhost but allowing global hack isn't right but ...
-        // required as authentication is done before Vhost selection
+        _logger.info("Initialising  PrincipalDatabase authentication manager.");
 
         Map<String, Class<? extends SaslServerFactory>> providerMap = new TreeMap<String, Class<? extends SaslServerFactory>>();
 
 
-        if (name == null || hostConfig == null)
-        {
-            initialiseAuthenticationMechanisms(providerMap, ApplicationRegistry.getInstance().getDatabaseManager().getDatabases());
-        }
-        else
-        {
-            String databaseName = hostConfig.getAuthenticationDatabase();
-
-            if (databaseName == null)
-            {
-
-                _default = ApplicationRegistry.getInstance().getAuthenticationManager();
-                return;
-            }
-            else
-            {
-                PrincipalDatabase database = ApplicationRegistry.getInstance().getDatabaseManager().getDatabases().get(databaseName);
-
-                if (database == null)
-                {
-                    throw new ConfigurationException("Requested database:" + databaseName + " was not found");
-                }
-
-                initialiseAuthenticationMechanisms(providerMap, database);
-            }
-        }
+        initialiseAuthenticationMechanisms(providerMap, ApplicationRegistry.getInstance().getDatabaseManager().getDatabases());
 
         if (providerMap.size() > 0)
         {
@@ -116,11 +88,9 @@ public class PrincipalDatabaseAuthenticationManager implements AuthenticationMan
         {
             _logger.warn("No additional SASL providers registered.");
         }
-
     }
 
-
-    private void initialiseAuthenticationMechanisms(Map<String, Class<? extends SaslServerFactory>> providerMap, Map<String, PrincipalDatabase> databases) throws Exception
+    private void initialiseAuthenticationMechanisms(Map<String, Class<? extends SaslServerFactory>> providerMap, Map<String, PrincipalDatabase> databases) 
     {
         if (databases.size() > 1)
         {
@@ -136,7 +106,7 @@ public class PrincipalDatabaseAuthenticationManager implements AuthenticationMan
         }
     }
 
-    private void initialiseAuthenticationMechanisms(Map<String, Class<? extends SaslServerFactory>> providerMap, PrincipalDatabase database) throws Exception
+    private void initialiseAuthenticationMechanisms(Map<String, Class<? extends SaslServerFactory>> providerMap, PrincipalDatabase database) 
     {
         if (database == null || database.getMechanisms().size() == 0)
         {
@@ -152,7 +122,7 @@ public class PrincipalDatabaseAuthenticationManager implements AuthenticationMan
 
     private void initialiseAuthenticationMechanism(String mechanism, AuthenticationProviderInitialiser initialiser,
                                                    Map<String, Class<? extends SaslServerFactory>> providerMap)
-            throws Exception
+            
     {
         if (_mechanisms == null)
         {
@@ -175,41 +145,17 @@ public class PrincipalDatabaseAuthenticationManager implements AuthenticationMan
 
     public String getMechanisms()
     {
-        if (_default != null)
-        {
-            // Use the default AuthenticationManager if present
-            return _default.getMechanisms();
-        }
-        else
-        {
-            return _mechanisms;
-        }
+        return _mechanisms;
     }
 
     public SaslServer createSaslServer(String mechanism, String localFQDN) throws SaslException
     {
-        if (_default != null)
-        {
-            // Use the default AuthenticationManager if present
-            return _default.createSaslServer(mechanism, localFQDN);
-        }
-        else
-        {
-            return Sasl.createSaslServer(mechanism, "AMQP", localFQDN, _serverCreationProperties.get(mechanism),
-                                         _callbackHandlerMap.get(mechanism));
-        }
-
+        return Sasl.createSaslServer(mechanism, "AMQP", localFQDN, _serverCreationProperties.get(mechanism),
+                                     _callbackHandlerMap.get(mechanism));
     }
 
     public AuthenticationResult authenticate(SaslServer server, byte[] response)
     {
-        // Use the default AuthenticationManager if present
-        if (_default != null)
-        {
-            return _default.authenticate(server, response);
-        }
-
-
         try
         {
             // Process response from the client
@@ -232,6 +178,7 @@ public class PrincipalDatabaseAuthenticationManager implements AuthenticationMan
 
     public void close()
     {
+        _mechanisms = null;
         Security.removeProvider(PROVIDER_NAME);
     }
 }
