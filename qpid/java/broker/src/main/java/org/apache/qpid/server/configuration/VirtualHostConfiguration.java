@@ -306,7 +306,13 @@ public class VirtualHostConfiguration extends ConfigurationPlugin
     @Override
     public void validateConfiguration() throws ConfigurationException
     {
-        //Currently doesn't do validation
+        // QPID-3249.  Support for specifying authentication name at vhost level is no longer supported.
+        if (getListValue("security.authentication.name").size() > 0)
+        {
+            String message = "Validation error : security/authentication/name is no longer a supported element within the configuration xml."
+                    + " It appears in virtual host definition : " + _name;
+            throw new ConfigurationException(message);
+        }
     }
 
     public int getHouseKeepingThreadCount()

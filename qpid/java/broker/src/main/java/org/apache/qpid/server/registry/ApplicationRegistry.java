@@ -287,7 +287,7 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
             createDatabaseManager(_configuration);
 
-            _authenticationManager = new PrincipalDatabaseAuthenticationManager(null, null);
+            _authenticationManager = new PrincipalDatabaseAuthenticationManager();
 
             _databaseManager.initialiseManagement(_configuration);
 
