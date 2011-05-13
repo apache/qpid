@@ -76,13 +76,17 @@
       </para>
 
       <para>
-        When the total number of enqueued messages is greater than or equal to
-        900, the queue's flow control state is OFF.
+        The queue's initial flow control state is "OFF".
+      </para>
+
+      <para>
+        While the total number of enqueued messages is less than or equal to
+        900, the queue's flow control state remains "OFF".
       </para>
 
       <para>
         When the total number of enqueued messages is greater than 900, the
-        queue's flow control state transitions to ON.
+        queue's flow control state transitions to "ON".
       </para>
 
       <para>
