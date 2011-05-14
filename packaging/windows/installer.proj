@@ -20,7 +20,7 @@
 <!--
  Packaging script for Apache Qpid on Windows
 
- Builds the C++ and WCF components, and packages those along with user
+ Builds the C++, .NET, and WCF components, and packages those along with user
  documentation and the python pieces needed to generate QMF stuff.
 -->
 
@@ -87,7 +87,8 @@
 
     <ItemGroup>
 	<WcfProjects Include="$(source_root)\wcf\src\Apache\Qpid\**\*.csproj"/>
-	<WcfArtifacts Include="$(source_root)\wcf\src\Apache\Qpid\Channel\bin\Release\*.dll"/>
+	<WcfArtifacts Include="$(source_root)\wcf\src\Apache\Qpid\Channel\bin\Release\Apache.Qpid.Channel.dll"/>
+	<WcfArtifacts Include="$(source_root)\wcf\src\Apache\Qpid\Channel\bin\Release\Apache.Qpid.Interop.dll"/>
 	<WcfExamples Include="$(source_root)\wcf\samples\**\*"
 	             Exclude="$(source_root)\wcf\samples\**\.svn\**"/>
     </ItemGroup>
@@ -217,9 +218,9 @@
 	    OutputFile="boost_dlls.wxs" />
 	<Candle
 	    ToolPath="$(WixToolPath)"
-	    DefineConstants="qpidc_version=0.9"
+	    DefineConstants="qpidc_version=0.11"
 	    InstallerPlatform="x64"
-	    OutputFile="qpidc-0.9-x64.msi" />
+	    OutputFile="qpidc-0.11-x64.msi" />
     -->
         <Exec
 	    Command="heat dir $(staging_dir)\include\qpid -var var.qpid_headers_dir -dr QpidInclude -gg -cg group_QpidHeaders -out qpid_headers.wxs" />
@@ -229,13 +230,19 @@
 	<Exec
 	    Command="heat dir $(staging_dir)\bin\boost -var var.boost_dll_dir -dr QpidBin -srd -gg -cg group_BoostDlls -sw5150 -out boost_dlls.wxs" />
 	<Exec
-	    Command="heat dir $(staging_dir)\examples -var var.examples_dir -dr INSTALLLOCATION -gg -cg group_Examples -out examples.wxs" />
+	    Command="heat file $(staging_dir)\examples\README.txt -var var.examples_dir -dr INSTALLLOCATION -gg -cg group_Examples -out examples_README.wxs" />
+	<Exec
+	    Command="heat file $(staging_dir)\examples\examples.sln -var var.examples_dir -dr INSTALLLOCATION -gg -cg group_Examples -out examples_examples.wxs" />
+	<Exec
+	    Command="heat dir $(staging_dir)\examples\messaging -var var.examples_dir -dr INSTALLLOCATION -gg -cg group_Examples -out examples_messaging.wxs" />
+	<Exec
+	    Command="heat dir $(staging_dir)\examples\qmf-console -var var.examples_dir -dr INSTALLLOCATION -gg -cg group_Examples -out examples_qmf-console.wxs" />
 	<Exec
 	    Command="heat dir $(staging_dir)\docs\api  -var var.api_docs_dir -dr QpidDoc -gg -cg group_APIDocs -out api_docs.wxs" />
 	<Exec
-	    Command="candle -dqpidc_version=0.9 -dProgramFiles=$(ProgramFiles) -dstaging_dir=$(staging_dir) -dqpid_headers_dir=$(staging_dir)\include\qpid -dboost_headers_dir=$(staging_dir)\include\boost -dboost_dll_dir=$(staging_dir)\bin\boost -dexamples_dir=$(staging_dir)\examples -dapi_docs_dir=$(staging_dir)\docs\api  -ext WiXNetFxExtension qpidc.wxs qpid_headers.wxs boost_headers.wxs boost_dlls.wxs examples.wxs api_docs.wxs -arch $(Architecture)" />
+	    Command="candle -dqpidc_version=0.11 -dProgramFiles=$(ProgramFiles) -dstaging_dir=$(staging_dir) -dqpid_headers_dir=$(staging_dir)\include\qpid -dboost_headers_dir=$(staging_dir)\include\boost -dboost_dll_dir=$(staging_dir)\bin\boost -dexamples_dir=$(staging_dir)\examples -dapi_docs_dir=$(staging_dir)\docs\api  -ext WiXNetFxExtension qpidc.wxs qpid_headers.wxs boost_headers.wxs boost_dlls.wxs examples.wxs api_docs.wxs -arch $(Architecture)" />
 	<Exec
-	    Command="light -ext WiXNetFxExtension -ext WixUtilExtension -ext WixUIExtension -cultures:en-us -out qpidc-0.9-$(Architecture).msi qpidc.wixobj qpid_headers.wixobj boost_headers.wixobj boost_dlls.wixobj examples.wixobj api_docs.wixobj" />
+	    Command="light -ext WiXNetFxExtension -ext WixUtilExtension -ext WixUIExtension -cultures:en-us -out qpidc-0.11-$(Architecture).msi qpidc.wixobj qpid_headers.wixobj boost_headers.wixobj boost_dlls.wixobj examples_README.wixobj examples_examples.wixobj examples_messaging.wixobj examples_qmf-console.wixobj api_docs.wixobj" />
     </Target>
 
 </Project>
