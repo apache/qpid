@@ -87,7 +87,8 @@
 
     <ItemGroup>
 	<WcfProjects Include="$(source_root)\wcf\src\Apache\Qpid\**\*.csproj"/>
-	<WcfArtifacts Include="$(source_root)\wcf\src\Apache\Qpid\Channel\bin\Release\*.dll"/>
+	<WcfArtifacts Include="$(source_root)\wcf\src\Apache\Qpid\Channel\bin\Release\Apache.Qpid.Channel.dll"/>
+	<WcfArtifacts Include="$(source_root)\wcf\src\Apache\Qpid\Channel\bin\Release\Apache.Qpid.Interop.dll"/>
 	<WcfExamples Include="$(source_root)\wcf\samples\**\*"
 	             Exclude="$(source_root)\wcf\samples\**\.svn\**"/>
     </ItemGroup>
@@ -217,9 +218,9 @@
 	    OutputFile="boost_dlls.wxs" />
 	<Candle
 	    ToolPath="$(WixToolPath)"
-	    DefineConstants="qpidc_version=0.9"
+	    DefineConstants="qpidc_version=0.10"
 	    InstallerPlatform="x64"
-	    OutputFile="qpidc-0.9-x64.msi" />
+	    OutputFile="qpidc-0.10-x64.msi" />
     -->
         <Exec
 	    Command="heat dir $(staging_dir)\include\qpid -var var.qpid_headers_dir -dr QpidInclude -gg -cg group_QpidHeaders -out qpid_headers.wxs" />
@@ -233,9 +234,9 @@
 	<Exec
 	    Command="heat dir $(staging_dir)\docs\api  -var var.api_docs_dir -dr QpidDoc -gg -cg group_APIDocs -out api_docs.wxs" />
 	<Exec
-	    Command="candle -dqpidc_version=0.9 -dProgramFiles=$(ProgramFiles) -dstaging_dir=$(staging_dir) -dqpid_headers_dir=$(staging_dir)\include\qpid -dboost_headers_dir=$(staging_dir)\include\boost -dboost_dll_dir=$(staging_dir)\bin\boost -dexamples_dir=$(staging_dir)\examples -dapi_docs_dir=$(staging_dir)\docs\api  -ext WiXNetFxExtension qpidc.wxs qpid_headers.wxs boost_headers.wxs boost_dlls.wxs examples.wxs api_docs.wxs -arch $(Architecture)" />
+	    Command="candle -dqpidc_version=0.10 -dProgramFiles=$(ProgramFiles) -dstaging_dir=$(staging_dir) -dqpid_headers_dir=$(staging_dir)\include\qpid -dboost_headers_dir=$(staging_dir)\include\boost -dboost_dll_dir=$(staging_dir)\bin\boost -dexamples_dir=$(staging_dir)\examples -dapi_docs_dir=$(staging_dir)\docs\api  -ext WiXNetFxExtension qpidc.wxs qpid_headers.wxs boost_headers.wxs boost_dlls.wxs examples.wxs api_docs.wxs -arch $(Architecture)" />
 	<Exec
-	    Command="light -ext WiXNetFxExtension -ext WixUtilExtension -ext WixUIExtension -cultures:en-us -out qpidc-0.9-$(Architecture).msi qpidc.wixobj qpid_headers.wixobj boost_headers.wixobj boost_dlls.wixobj examples.wixobj api_docs.wixobj" />
+	    Command="light -ext WiXNetFxExtension -ext WixUtilExtension -ext WixUIExtension -cultures:en-us -out qpidc-0.10-$(Architecture).msi qpidc.wixobj qpid_headers.wixobj boost_headers.wixobj boost_dlls.wixobj examples.wixobj api_docs.wixobj" />
     </Target>
 
 </Project>
