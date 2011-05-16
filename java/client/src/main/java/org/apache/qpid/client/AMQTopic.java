@@ -186,8 +186,8 @@ public class AMQTopic extends AMQDestination implements Topic
         }
         else
         {
-            setRoutingKey(new AMQShortString("#"));
-            setSubject("#");
+            setRoutingKey(new AMQShortString(""));
+            setSubject("");
             return super.getRoutingKey();
         }
     }
