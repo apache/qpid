@@ -68,7 +68,6 @@ broker.libs=${commons-cli} ${commons-logging} ${log4j} ${slf4j-log4j} \
 
 broker-plugins.libs=${felix.libs} ${log4j} ${commons-configuration.libs}
 
-management-agent.libs=${commons-logging}
 management-console.libs=${commons-logging}
 
 junit-toolkit.libs=${log4j} ${junit} ${slf4j-api}
@@ -151,7 +150,6 @@ broker-plugins.test.libs=${test.libs}
 broker-plugins-experimental-info.test.libs=${test.libs} ${servlet-api} ${jetty} ${jetty-util} ${jetty-servlet-tester}
 
 management-console.test.libs=${junit4} ${slf4j-log4j} ${log4j}
-management-agent.test.libs=${junit} 
 management-eclipse-plugin.test.libs=${systests.libs}
 management-tools-qpid-cli.test.libs=${junit4} ${slf4j-log4j} ${log4j}
 management-common.test.libs=${test.libs}
