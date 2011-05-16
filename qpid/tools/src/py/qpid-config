@@ -41,15 +41,15 @@ Usage:  qpid-config [OPTIONS]
 description = """
 ADDRESS syntax:
 
-      [username/password@] hostname
-      ip-address [:<port>]
+      [username/password@] hostname [:<port>]
+      [username/password@] ip-address [:<port>]
 
 Examples:
 
 $ qpid-config add queue q
-$ qpid-config add exchange direct d localhost:5672
-$ qpid-config exchanges 10.1.1.7:10000
-$ qpid-config queues guest/guest@broker-host:10000
+$ qpid-config add exchange direct d -a localhost:5672
+$ qpid-config exchanges -a 10.1.1.7:10000
+$ qpid-config queues -a guest/guest@broker-host:10000
 
 Add Exchange <type> values:
 
