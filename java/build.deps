@@ -33,9 +33,6 @@ derby-db=lib/derby-10.6.1.0.jar
 geronimo-jms=lib/geronimo-jms_1.1_spec-1.0.jar
 
 junit=lib/junit-3.8.1.jar
-junit4=lib/junit-4.4.jar
-
-jline=lib/jline-0.9.94.jar
 
 log4j=lib/log4j-1.2.12.jar
 
@@ -133,9 +130,6 @@ management-eclipse-plugin.platform-libs=${ecl-equinox-launcher-win32-win32-x86} 
 
 management-eclipse-plugin.libs=${management-eclipse-plugin.core-libs} ${management-eclipse-plugin.platform-libs}
     
-
-management-tools-qpid-cli.libs=${jline} ${commons-configuration.libs}
-
 common.test.libs=${test.libs}
 broker.test.libs=${test.libs}
 client.test.libs=${test.libs}
@@ -148,5 +142,4 @@ broker-plugins.test.libs=${test.libs}
 broker-plugins-experimental-info.test.libs=${test.libs} ${servlet-api} ${jetty} ${jetty-util} ${jetty-servlet-tester}
 
 management-eclipse-plugin.test.libs=${systests.libs}
-management-tools-qpid-cli.test.libs=${junit4} ${slf4j-log4j} ${log4j}
 management-common.test.libs=${test.libs}
