@@ -202,11 +202,11 @@ public class SessionDelegate
 
     public void closed(Session session)
     {
-        log.warn("CLOSED: [%s]", session);
+        log.debug("CLOSED: [%s]", session);
     }
 
     public void detached(Session session)
     {
-        log.warn("DETACHED: [%s]", session);
+        log.debug("DETACHED: [%s]", session);
     }
 }

@@ -148,7 +148,7 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
         }
         catch (Exception e)
         {
-            _logger.error("Signal HUP not supported for OS: " + System.getProperty("os.name"));
+            _logger.info("Signal HUP not supported for OS: " + System.getProperty("os.name"));
             // We're on something that doesn't handle SIGHUP, how sad, Windows.
         }
     }
