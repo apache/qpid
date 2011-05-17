@@ -152,9 +152,9 @@ void Poller::monitorHandle(PollerHandle& handle, Direction dir) {
 }
 
 // All no-ops...
-void Poller::unmonitorHandle(PollerHandle& handle, Direction dir) {}
-void Poller::registerHandle(PollerHandle& handle) {}
-void Poller::unregisterHandle(PollerHandle& handle) {}
+void Poller::unmonitorHandle(PollerHandle& /*handle*/, Direction /*dir*/) {}
+void Poller::registerHandle(PollerHandle& /*handle*/) {}
+void Poller::unregisterHandle(PollerHandle& /*handle*/) {}
 
 Poller::Event Poller::wait(Duration timeout) {
     DWORD timeoutMs = 0;
