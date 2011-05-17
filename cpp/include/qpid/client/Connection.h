@@ -60,7 +60,7 @@ class ConnectionImpl;
  *  
  */
 
-class Connection
+class QPID_CLIENT_CLASS_EXTERN Connection
 {
     framing::ProtocolVersion version;
 

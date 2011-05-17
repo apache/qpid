@@ -39,7 +39,7 @@ struct MessageImpl;
 /**   \ingroup messaging 
  * Representation of a message.
  */
-class Message
+class QPID_MESSAGING_CLASS_EXTERN Message
 {
   public:
     QPID_MESSAGING_EXTERN Message(const std::string& bytes = std::string());
@@ -107,9 +107,9 @@ class Message
     friend struct MessageImplAccess;
 };
 
-struct EncodingException : qpid::types::Exception
+struct QPID_MESSAGING_CLASS_EXTERN EncodingException : qpid::types::Exception
 {
-    EncodingException(const std::string& msg);
+    QPID_MESSAGING_EXTERN EncodingException(const std::string& msg);
 };
 
 /**
@@ -122,8 +122,8 @@ struct EncodingException : qpid::types::Exception
  * @exception EncodingException
  */
 QPID_MESSAGING_EXTERN void decode(const Message& message,
-                               qpid::types::Variant::Map& map,
-                               const std::string& encoding = std::string());
+                                  qpid::types::Variant::Map& map,
+                                  const std::string& encoding = std::string());
 /**
  * Decodes message content into a Variant::List.
  * 
@@ -134,8 +134,8 @@ QPID_MESSAGING_EXTERN void decode(const Message& message,
  * @exception EncodingException
  */
 QPID_MESSAGING_EXTERN void decode(const Message& message,
-                               qpid::types::Variant::List& list,
-                               const std::string& encoding = std::string());
+                                  qpid::types::Variant::List& list,
+                                  const std::string& encoding = std::string());
 /**
  * Encodes a Variant::Map into a message.
  * 
@@ -146,8 +146,8 @@ QPID_MESSAGING_EXTERN void decode(const Message& message,
  * @exception EncodingException
  */
 QPID_MESSAGING_EXTERN void encode(const qpid::types::Variant::Map& map,
-                               Message& message,
-                               const std::string& encoding = std::string());
+                                  Message& message,
+                                  const std::string& encoding = std::string());
 /**
  * Encodes a Variant::List into a message.
  * 
@@ -158,8 +158,8 @@ QPID_MESSAGING_EXTERN void encode(const qpid::types::Variant::Map& map,
  * @exception EncodingException
  */
 QPID_MESSAGING_EXTERN void encode(const qpid::types::Variant::List& list,
-                               Message& message,
-                               const std::string& encoding = std::string());
+                                  Message& message,
+                                  const std::string& encoding = std::string());
 
 }} // namespace qpid::messaging
 

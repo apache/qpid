@@ -21,7 +21,7 @@
  *
  */
 
-#if (defined(_WINDOWS) || defined (WIN32)) && defined(_MSC_VER)
+#if (defined(_WINDOWS) || defined (WIN32))
 #include "qpid/sys/windows/IntegerTypes.h"
 #endif
 #if !defined _WINDOWS && !defined WIN32

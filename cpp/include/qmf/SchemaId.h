@@ -35,7 +35,7 @@ namespace qmf {
 
     class SchemaIdImpl;
 
-    class SchemaId : public qmf::Handle<SchemaIdImpl> {
+    class QMF_CLASS_EXTERN SchemaId : public qmf::Handle<SchemaIdImpl> {
     public:
         QMF_EXTERN SchemaId(SchemaIdImpl* impl = 0);
         QMF_EXTERN SchemaId(const SchemaId&);

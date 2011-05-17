@@ -26,8 +26,17 @@
 #  else
 #    define QMFE_EXTERN __declspec(dllimport)
 #  endif
+#  ifdef _MSC_VER
+#    define QMFE_CLASS_EXTERN
+#    define QMFE_INLINE_EXTERN QMFE_EXTERN
+#  else
+#    define QMFE_CLASS_EXTERN QMFE_EXTERN
+#    define QMFE_INLINE_EXTERN
+#  endif
 #else
 #  define QMFE_EXTERN
+#  define QMFE_CLASS_EXTERN
+#  define QMFE_INLINE_EXTERN
 #endif
 
 #endif

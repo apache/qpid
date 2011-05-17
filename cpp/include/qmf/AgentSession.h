@@ -40,7 +40,7 @@ namespace qmf {
     class Data;
     class DataAddr;
 
-    class AgentSession : public qmf::Handle<AgentSessionImpl> {
+    class QMF_CLASS_EXTERN AgentSession : public qmf::Handle<AgentSessionImpl> {
     public:
         QMF_EXTERN AgentSession(AgentSessionImpl* impl = 0);
         QMF_EXTERN AgentSession(const AgentSession&);

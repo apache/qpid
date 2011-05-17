@@ -31,17 +31,17 @@ namespace console {
      *
      * \ingroup qmfconsoleapi
      */
-    class QPID_CONSOLE_EXTERN Agent {
+    class QPID_CONSOLE_CLASS_EXTERN Agent {
     public:
         typedef std::vector<Agent*> Vector;
 
-        Agent(Broker* _broker, uint32_t _bank, const std::string& _label) :
+        QPID_CONSOLE_INLINE_EXTERN Agent(Broker* _broker, uint32_t _bank, const std::string& _label) :
             broker(_broker), brokerBank(broker->getBrokerBank()),
             agentBank(_bank), label(_label) {}
-        Broker* getBroker() const { return broker; }
-        uint32_t getBrokerBank() const { return brokerBank; }
-        uint32_t getAgentBank() const { return agentBank; }
-        const std::string& getLabel() const { return label; }
+        QPID_CONSOLE_INLINE_EXTERN Broker* getBroker() const { return broker; }
+        QPID_CONSOLE_INLINE_EXTERN uint32_t getBrokerBank() const { return brokerBank; }
+        QPID_CONSOLE_INLINE_EXTERN uint32_t getAgentBank() const { return agentBank; }
+        QPID_CONSOLE_INLINE_EXTERN const std::string& getLabel() const { return label; }
 
     private:
         Broker* broker;
@@ -50,7 +50,7 @@ namespace console {
         const std::string label;
     };
 
-    QPID_CONSOLE_EXTERN std::ostream& operator<<(std::ostream& o, const Agent& agent);
+    std::ostream& operator<<(std::ostream& o, const Agent& agent);
 }
 }
 

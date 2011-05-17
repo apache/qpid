@@ -112,7 +112,7 @@ class MessageImpl;
  *
  *
  */
-class Message
+class QPID_CLIENT_CLASS_EXTERN Message
 {
 public:
     /** Create a Message.

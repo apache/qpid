@@ -36,7 +36,7 @@ class FieldValue;
 /**
  * Representation of an AMQP 0-10 list
  */
-class List
+class QPID_COMMON_CLASS_EXTERN List
 {
   public:
     typedef boost::shared_ptr<FieldValue> ValuePtr;
@@ -53,19 +53,19 @@ class List
     QPID_COMMON_EXTERN bool operator==(const List& other) const;
 
     // std collection interface.
-    QPID_COMMON_EXTERN const_iterator begin() const { return values.begin(); }
-    QPID_COMMON_EXTERN const_iterator end() const { return values.end(); }
-    QPID_COMMON_EXTERN iterator begin() { return values.begin(); }
-    QPID_COMMON_EXTERN iterator end(){ return values.end(); }
+    QPID_COMMON_INLINE_EXTERN const_iterator begin() const { return values.begin(); }
+    QPID_COMMON_INLINE_EXTERN const_iterator end() const { return values.end(); }
+    QPID_COMMON_INLINE_EXTERN iterator begin() { return values.begin(); }
+    QPID_COMMON_INLINE_EXTERN iterator end(){ return values.end(); }
 
-    QPID_COMMON_EXTERN ValuePtr front() const { return values.front(); }
-    QPID_COMMON_EXTERN ValuePtr back() const { return values.back(); }
-    QPID_COMMON_EXTERN size_t size() const { return values.size(); }
+    QPID_COMMON_INLINE_EXTERN ValuePtr front() const { return values.front(); }
+    QPID_COMMON_INLINE_EXTERN ValuePtr back() const { return values.back(); }
+    QPID_COMMON_INLINE_EXTERN size_t size() const { return values.size(); }
 
-    QPID_COMMON_EXTERN iterator insert(iterator i, ValuePtr value) { return values.insert(i, value); }
-    QPID_COMMON_EXTERN void erase(iterator i) { values.erase(i); }
-    QPID_COMMON_EXTERN void push_back(ValuePtr value) { values.insert(end(), value); }
-    QPID_COMMON_EXTERN void pop_back() { values.pop_back(); }
+    QPID_COMMON_INLINE_EXTERN iterator insert(iterator i, ValuePtr value) { return values.insert(i, value); }
+    QPID_COMMON_INLINE_EXTERN void erase(iterator i) { values.erase(i); }
+    QPID_COMMON_INLINE_EXTERN void push_back(ValuePtr value) { values.insert(end(), value); }
+    QPID_COMMON_INLINE_EXTERN void pop_back() { values.pop_back(); }
 
   private:
     Values values;

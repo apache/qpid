@@ -45,7 +45,7 @@ namespace qpid {
          * commit() the messages will be passed to the queue for
          * dispatch or to be added to the in-memory queue.
          */
-        class TxPublish : public TxOp, public Deliverable{
+        class QPID_BROKER_CLASS_EXTERN TxPublish : public TxOp, public Deliverable{
 
             class Commit{
                 boost::intrusive_ptr<Message>& msg;

@@ -36,7 +36,7 @@ namespace qpid
 /**
  * Base class for Qpid runtime exceptions.
  */
-class Exception : public std::exception
+class QPID_COMMON_CLASS_EXTERN Exception : public std::exception
 {
   public:
     QPID_COMMON_EXTERN explicit Exception(const std::string& message=std::string()) throw();
@@ -51,30 +51,30 @@ class Exception : public std::exception
 };
 
 /** Exception that includes an errno message. */
-struct ErrnoException : public Exception {
+struct QPID_COMMON_CLASS_EXTERN ErrnoException : public Exception {
     ErrnoException(const std::string& msg, int err) : Exception(msg+": "+qpid::sys::strError(err)) {}
     ErrnoException(const std::string& msg) : Exception(msg+": "+qpid::sys::strError(errno)) {}
 };
 
-struct SessionException : public Exception {
+struct QPID_COMMON_CLASS_EXTERN SessionException : public Exception {
     const framing::execution::ErrorCode code;
     SessionException(framing::execution::ErrorCode code_, const std::string& message)
         : Exception(message), code(code_) {}
 };
 
-struct ChannelException : public Exception {
+struct QPID_COMMON_CLASS_EXTERN ChannelException : public Exception {
     const framing::session::DetachCode code;
     ChannelException(framing::session::DetachCode _code, const std::string& message)
         : Exception(message), code(_code) {}
 };
 
-struct ConnectionException : public Exception {
+struct QPID_COMMON_CLASS_EXTERN ConnectionException : public Exception {
     const framing::connection::CloseCode code;
     ConnectionException(framing::connection::CloseCode _code, const std::string& message)
         : Exception(message), code(_code) {}
 };
 
-struct ClosedException : public Exception {
+struct QPID_COMMON_CLASS_EXTERN ClosedException : public Exception {
     QPID_COMMON_EXTERN ClosedException(const std::string& msg=std::string());
     QPID_COMMON_EXTERN std::string getPrefix() const;
 };

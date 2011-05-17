@@ -33,7 +33,7 @@ class MethodBodyDefaultVisitorGen < CppGen
       include "qpid/framing/MethodBodyConstVisitor"
       namespace(@namespace) { 
         genl
-        cpp_class(@classname, "public MethodBodyConstVisitor") {
+        cpp_extern_class("QPID_COMMON_CLASS_EXTERN", @classname, "public MethodBodyConstVisitor") {
           genl "public:"
           genl "virtual void defaultVisit() = 0;"
           @amqp.methods_.each { |m|

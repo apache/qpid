@@ -39,7 +39,7 @@ namespace qmf {
     class DataAddr;
     class Agent;
 
-    class Data : public qmf::Handle<DataImpl> {
+    class QMF_CLASS_EXTERN Data : public qmf::Handle<DataImpl> {
     public:
         QMF_EXTERN Data(DataImpl* impl = 0);
         QMF_EXTERN Data(const Data&);

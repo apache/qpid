@@ -33,7 +33,7 @@ class Message;
 /**
  * Default expiry policy.
  */
-class ExpiryPolicy : public RefCounted
+class QPID_BROKER_CLASS_EXTERN ExpiryPolicy : public RefCounted
 {
   public:
     QPID_BROKER_EXTERN virtual ~ExpiryPolicy();

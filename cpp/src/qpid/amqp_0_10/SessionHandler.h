@@ -41,8 +41,8 @@ namespace amqp_0_10 {
  * to a session state.
  */
 
-class SessionHandler : public framing::AMQP_AllOperations::SessionHandler,
-                       public framing::FrameHandler::InOutHandler
+class QPID_COMMON_CLASS_EXTERN SessionHandler : public framing::AMQP_AllOperations::SessionHandler,
+        public framing::FrameHandler::InOutHandler
 {
   public:
     QPID_COMMON_EXTERN SessionHandler(framing::FrameHandler* out=0, uint16_t channel=0);
