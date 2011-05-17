@@ -98,7 +98,7 @@ private:
     // AcceptEx needs a place to write the local and remote addresses
     // when accepting the connection. Place those here; get enough for
     // IPv6 addresses, even if the socket is IPv4.
-    enum { SOCKADDRMAXLEN = sizeof sockaddr_in6 + 16,
+    enum { SOCKADDRMAXLEN = sizeof(sockaddr_in6) + 16,
            SOCKADDRBUFLEN = 2 * SOCKADDRMAXLEN };
     char addressBuffer[SOCKADDRBUFLEN];
 };
