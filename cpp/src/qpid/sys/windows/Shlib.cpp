@@ -44,7 +44,8 @@ void  Shlib::unload() {
 }
 
 void*  Shlib::getSymbol(const char* name) {
-    void* sym = GetProcAddress(static_cast<HMODULE>(handle), name);
+    // Double cast avoids warning about casting function pointer to object
+    void *sym = reinterpret_cast<void*>(reinterpret_cast<intptr_t>(GetProcAddress(static_cast<HMODULE>(handle), name)));
     if (sym == NULL)
         throw QPID_WINDOWS_ERROR(GetLastError());
     return sym;
