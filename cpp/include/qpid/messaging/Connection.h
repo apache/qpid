@@ -42,7 +42,7 @@ class Session;
  * A connection represents a network connection to a remote endpoint.
  */
 
-class Connection : public qpid::messaging::Handle<ConnectionImpl>
+class QPID_MESSAGING_CLASS_EXTERN Connection : public qpid::messaging::Handle<ConnectionImpl>
 {
   public:
     QPID_MESSAGING_EXTERN Connection(ConnectionImpl* impl);

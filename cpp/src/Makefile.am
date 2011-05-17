@@ -804,6 +804,7 @@ nobase_include_HEADERS +=			\
   ../include/qpid/Address.h			\
   ../include/qpid/CommonImportExport.h		\
   ../include/qpid/Exception.h			\
+  ../include/qpid/ImportExport.h		\
   ../include/qpid/InlineAllocator.h		\
   ../include/qpid/InlineVector.h		\
   ../include/qpid/Msg.h				\

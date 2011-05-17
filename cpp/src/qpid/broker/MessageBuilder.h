@@ -33,7 +33,7 @@ namespace qpid {
         class Message;
         class MessageStore;
 
-        class MessageBuilder : public framing::FrameHandler{
+        class QPID_BROKER_CLASS_EXTERN MessageBuilder : public framing::FrameHandler{
         public:
             QPID_BROKER_EXTERN MessageBuilder(MessageStore* const store);
             QPID_BROKER_EXTERN void handle(framing::AMQFrame& frame);

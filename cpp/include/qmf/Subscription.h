@@ -35,7 +35,7 @@ namespace qmf {
     class SubscriptionImpl;
     class Data;
 
-    class Subscription : public qmf::Handle<SubscriptionImpl> {
+    class QMF_CLASS_EXTERN Subscription : public qmf::Handle<SubscriptionImpl> {
     public:
         QMF_EXTERN Subscription(SubscriptionImpl* impl = 0);
         QMF_EXTERN Subscription(const Subscription&);

@@ -33,7 +33,7 @@
 namespace qpid {
 namespace framing {
 
-class AMQFrame : public AMQDataBlock
+class QPID_COMMON_CLASS_EXTERN AMQFrame : public AMQDataBlock
 {
   public:
     QPID_COMMON_EXTERN AMQFrame(const boost::intrusive_ptr<AMQBody>& b=0);

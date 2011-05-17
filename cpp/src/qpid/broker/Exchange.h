@@ -39,7 +39,7 @@ namespace broker {
 class Broker;
 class ExchangeRegistry;
 
-class Exchange : public PersistableExchange, public management::Manageable {
+class QPID_BROKER_CLASS_EXTERN Exchange : public PersistableExchange, public management::Manageable {
 public:
     struct Binding : public management::Manageable {
         typedef boost::shared_ptr<Binding>       shared_ptr;
@@ -166,7 +166,7 @@ public:
                                          Broker* broker = 0);
     QPID_BROKER_EXTERN Exchange(const std::string& _name, bool _durable, const qpid::framing::FieldTable& _args,
                                 management::Manageable* parent = 0, Broker* broker = 0);
-    QPID_BROKER_EXTERN virtual ~Exchange();
+    QPID_BROKER_INLINE_EXTERN virtual ~Exchange();
 
     const std::string& getName() const { return name; }
     bool isDurable() { return durable; }

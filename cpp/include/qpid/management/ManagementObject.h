@@ -58,14 +58,14 @@ protected:
     std::string agentName;
     void fromString(const std::string&);
 public:
-    QPID_COMMON_EXTERN ObjectId() : agent(0), first(0), second(0), agentEpoch(0) {}
-    QPID_COMMON_EXTERN ObjectId(const types::Variant& map) :
+    QPID_COMMON_INLINE_EXTERN ObjectId() : agent(0), first(0), second(0), agentEpoch(0) {}
+    QPID_COMMON_INLINE_EXTERN ObjectId(const types::Variant& map) :
     agent(0), first(0), second(0), agentEpoch(0) { mapDecode(map.asMap()); }
     QPID_COMMON_EXTERN ObjectId(uint8_t flags, uint16_t seq, uint32_t broker);
     QPID_COMMON_EXTERN ObjectId(AgentAttachment* _agent, uint8_t flags, uint16_t seq);
     QPID_COMMON_EXTERN ObjectId(std::istream&);
     QPID_COMMON_EXTERN ObjectId(const std::string&);
-    QPID_COMMON_EXTERN ObjectId(const std::string& agentAddress, const std::string& key,
+    QPID_COMMON_INLINE_EXTERN ObjectId(const std::string& agentAddress, const std::string& key,
                                 uint64_t epoch=0) : agent(0), first(0), second(0),
       agentEpoch(epoch), v2Key(key), agentName(agentAddress) {}
 
@@ -76,15 +76,15 @@ public:
     QPID_COMMON_EXTERN void mapEncode(types::Variant::Map& map) const;
     QPID_COMMON_EXTERN void mapDecode(const types::Variant::Map& map);
     QPID_COMMON_EXTERN operator types::Variant::Map() const;
-    QPID_COMMON_EXTERN uint32_t encodedSize() const { return 16; };
+    QPID_COMMON_INLINE_EXTERN uint32_t encodedSize() const { return 16; };
     QPID_COMMON_EXTERN void encode(std::string& buffer) const;
     QPID_COMMON_EXTERN void decode(const std::string& buffer);
     QPID_COMMON_EXTERN bool equalV1(const ObjectId &other) const;
-    QPID_COMMON_EXTERN void setV2Key(const std::string& _key) { v2Key = _key; }
+    QPID_COMMON_INLINE_EXTERN void setV2Key(const std::string& _key) { v2Key = _key; }
     QPID_COMMON_EXTERN void setV2Key(const ManagementObject& object);
-    QPID_COMMON_EXTERN void setAgentName(const std::string& _name) { agentName = _name; }
-    QPID_COMMON_EXTERN const std::string& getAgentName() const { return agentName; }
-    QPID_COMMON_EXTERN const std::string& getV2Key() const { return v2Key; }
+    QPID_COMMON_INLINE_EXTERN void setAgentName(const std::string& _name) { agentName = _name; }
+    QPID_COMMON_INLINE_EXTERN const std::string& getAgentName() const { return agentName; }
+    QPID_COMMON_INLINE_EXTERN const std::string& getV2Key() const { return v2Key; }
     friend QPID_COMMON_EXTERN std::ostream& operator<<(std::ostream&, const ObjectId&);
 };
 
@@ -131,7 +131,7 @@ public:
     virtual ~ManagementItem() {}
 };
 
-class ManagementObject : public ManagementItem
+class QPID_COMMON_CLASS_EXTERN ManagementObject : public ManagementItem
 {
 protected:
 

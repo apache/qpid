@@ -56,7 +56,7 @@ class TopicExchange : public virtual Exchange {
     //    |   +-->d-->...
     //    +-->x-->y-->...
     //
-    class BindingNode {
+    class QPID_BROKER_CLASS_EXTERN BindingNode {
     public:
 
         typedef boost::shared_ptr<BindingNode> shared_ptr;

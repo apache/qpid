@@ -20,14 +20,16 @@
  * under the License.
  */
 
-#if defined(WIN32) && !defined(QPID_DECLARE_STATIC)
+#include "qpid/ImportExport.h"
+
 #if defined(CLIENT_EXPORT) || defined (qpidmessaging_EXPORTS)
-#define QPID_MESSAGING_EXTERN __declspec(dllexport)
+#  define QPID_MESSAGING_EXTERN QPID_EXPORT
+#  define QPID_MESSAGING_CLASS_EXTERN QPID_CLASS_EXPORT
+#  define QPID_MESSAGING_INLINE_EXTERN QPID_INLINE_EXPORT
 #else
-#define QPID_MESSAGING_EXTERN __declspec(dllimport)
-#endif
-#else
-#define QPID_MESSAGING_EXTERN
+#  define QPID_MESSAGING_EXTERN QPID_IMPORT
+#  define QPID_MESSAGING_CLASS_EXTERN QPID_CLASS_IMPORT
+#  define QPID_MESSAGING_INLINE_EXTERN QPID_INLINE_IMPORT
 #endif
 
 #endif  /*!QPID_MESSAGING_IMPORTEXPORT_H*/

@@ -119,7 +119,7 @@ class AddressImpl;
  * 
  * An address has value semantics.
  */
-class Address
+class QPID_MESSAGING_CLASS_EXTERN Address
 {
   public:
     QPID_MESSAGING_EXTERN Address();

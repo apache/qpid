@@ -48,7 +48,7 @@ namespace client {
  * FailoverListener::decode to extract a list of broker URLs from a
  * failover exchange message.
  */
-class FailoverListener : private MessageListener, private qpid::sys::Runnable 
+class QPID_CLIENT_CLASS_EXTERN FailoverListener : private MessageListener, private qpid::sys::Runnable 
 {
   public:
     /** The name of the standard failover exchange amq.failover */

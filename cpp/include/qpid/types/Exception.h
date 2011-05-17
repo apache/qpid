@@ -28,7 +28,7 @@
 namespace qpid {
 namespace types {
 
-class Exception : public std::exception
+class QPID_TYPES_CLASS_EXTERN Exception : public std::exception
 {
   public:
     QPID_TYPES_EXTERN explicit Exception(const std::string& message=std::string()) throw();

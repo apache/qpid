@@ -34,7 +34,7 @@ namespace qmf {
 
     class DataAddrImpl;
 
-    class DataAddr : public qmf::Handle<DataAddrImpl> {
+    class QMF_CLASS_EXTERN DataAddr : public qmf::Handle<DataAddrImpl> {
     public:
         QMF_EXTERN DataAddr(DataAddrImpl* impl = 0);
         QMF_EXTERN DataAddr(const DataAddr&);

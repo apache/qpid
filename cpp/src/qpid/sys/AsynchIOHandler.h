@@ -57,7 +57,7 @@ class AsynchIOHandler : public OutputControl {
     QPID_COMMON_EXTERN ~AsynchIOHandler();
     QPID_COMMON_EXTERN void init(AsynchIO* a, int numBuffs);
 
-    QPID_COMMON_EXTERN void setClient() { isClient = true; }
+    QPID_COMMON_INLINE_EXTERN void setClient() { isClient = true; }
 
     // Output side
     QPID_COMMON_EXTERN void abort();
