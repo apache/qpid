@@ -38,7 +38,7 @@ namespace qmf {
     class ConsoleSessionImpl;
     class ConsoleEvent;
 
-    class ConsoleSession : public qmf::Handle<ConsoleSessionImpl> {
+    class QMF_CLASS_EXTERN ConsoleSession : public qmf::Handle<ConsoleSessionImpl> {
     public:
         QMF_EXTERN ConsoleSession(ConsoleSessionImpl* impl = 0);
         QMF_EXTERN ConsoleSession(const ConsoleSession&);

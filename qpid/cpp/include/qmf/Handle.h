@@ -39,22 +39,22 @@ template <class T> class Handle {
   public:
 
     /**@return true if handle is valid,  i.e. not null. */
-    QMF_EXTERN bool isValid() const { return impl; }
+    QMF_INLINE_EXTERN bool isValid() const { return impl; }
 
     /**@return true if handle is null. It is an error to call any function on a null handle. */
-    QMF_EXTERN bool isNull() const { return !impl; }
+    QMF_INLINE_EXTERN bool isNull() const { return !impl; }
 
     /** Conversion to bool supports idiom if (handle) { handle->... } */
-    QMF_EXTERN operator bool() const { return impl; }
+    QMF_INLINE_EXTERN operator bool() const { return impl; }
 
     /** Operator ! supports idiom if (!handle) { do_if_handle_is_null(); } */
-    QMF_EXTERN bool operator !() const { return !impl; }
+    QMF_INLINE_EXTERN bool operator !() const { return !impl; }
 
     void swap(Handle<T>& h) { T* t = h.impl; h.impl = impl; impl = t; }
 
   protected:
     typedef T Impl;
-    QMF_EXTERN Handle() :impl() {}
+    QMF_INLINE_EXTERN Handle() :impl() {}
 
     // Not implemented,subclasses must implement.
     QMF_EXTERN Handle(const Handle&);

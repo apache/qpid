@@ -46,7 +46,7 @@ class SessionImpl;
  * A session represents a distinct 'conversation' which can involve
  * sending and receiving messages to and from different addresses.
  */
-class Session : public qpid::messaging::Handle<SessionImpl>
+class QPID_MESSAGING_CLASS_EXTERN Session : public qpid::messaging::Handle<SessionImpl>
 {
   public:
     QPID_MESSAGING_EXTERN Session(SessionImpl* impl = 0);

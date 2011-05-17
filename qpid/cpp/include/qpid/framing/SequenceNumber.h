@@ -34,7 +34,7 @@ class Buffer;
 /**
  * 4-byte sequence number that 'wraps around'.
  */
-class SequenceNumber : public
+class QPID_COMMON_CLASS_EXTERN SequenceNumber : public
 boost::equality_comparable<
     SequenceNumber, boost::less_than_comparable<
         SequenceNumber, boost::incrementable<

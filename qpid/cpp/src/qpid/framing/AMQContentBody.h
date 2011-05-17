@@ -29,7 +29,7 @@
 namespace qpid {
 namespace framing {
 
-class AMQContentBody :  public AMQBody
+class QPID_COMMON_CLASS_EXTERN AMQContentBody :  public AMQBody
 {
     string data;
 
@@ -37,15 +37,15 @@ public:
     QPID_COMMON_EXTERN AMQContentBody();
     QPID_COMMON_EXTERN AMQContentBody(const string& data);
     inline virtual ~AMQContentBody(){}
-    QPID_COMMON_EXTERN inline uint8_t type() const { return CONTENT_BODY; };
-    QPID_COMMON_EXTERN inline const string& getData() const { return data; }
-    QPID_COMMON_EXTERN inline string& getData() { return data; }
+    inline uint8_t type() const { return CONTENT_BODY; };
+    inline const string& getData() const { return data; }
+    inline string& getData() { return data; }
     QPID_COMMON_EXTERN uint32_t encodedSize() const;
     QPID_COMMON_EXTERN void encode(Buffer& buffer) const;
     QPID_COMMON_EXTERN void decode(Buffer& buffer, uint32_t size);
     QPID_COMMON_EXTERN void print(std::ostream& out) const;
-    QPID_COMMON_EXTERN void accept(AMQBodyConstVisitor& v) const { v.visit(*this); }
-    QPID_COMMON_EXTERN boost::intrusive_ptr<AMQBody> clone() const { return BodyFactory::copy(*this); }
+    void accept(AMQBodyConstVisitor& v) const { v.visit(*this); }
+    boost::intrusive_ptr<AMQBody> clone() const { return BodyFactory::copy(*this); }
 };
 
 }

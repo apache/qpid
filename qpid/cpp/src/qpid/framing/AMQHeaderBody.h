@@ -35,7 +35,7 @@
 namespace qpid {
 namespace framing {
 
-class AMQHeaderBody :  public AMQBody
+class QPID_COMMON_CLASS_EXTERN AMQHeaderBody :  public AMQBody
 {
     template <class T> struct OptProps { boost::optional<T> props; };
     template <class Base, class T>

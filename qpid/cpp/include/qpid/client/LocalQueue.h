@@ -71,7 +71,7 @@ template <class T> class PrivateImplRef;
  * </ul>
  */
 
-class LocalQueue : public Handle<LocalQueueImpl> {
+class QPID_CLIENT_CLASS_EXTERN LocalQueue : public Handle<LocalQueueImpl> {
   public:
     /** Create a local queue. Subscribe the local queue to a remote broker
      * queue with a SubscriptionManager.

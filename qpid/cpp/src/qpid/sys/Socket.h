@@ -33,7 +33,7 @@ namespace sys {
 class Duration;
 class SocketAddress;
 
-class Socket : public IOHandle
+class QPID_COMMON_CLASS_EXTERN Socket : public IOHandle
 {
 public:
     /** Create a socket wrapper for descriptor. */
@@ -84,7 +84,7 @@ public:
     /**
      * Returns the full address of the connection: local and remote host and port.
      */
-    QPID_COMMON_EXTERN std::string getFullAddress() const { return getLocalAddress()+"-"+getPeerAddress(); }
+    QPID_COMMON_INLINE_EXTERN std::string getFullAddress() const { return getLocalAddress()+"-"+getPeerAddress(); }
 
     QPID_COMMON_EXTERN uint16_t getLocalPort() const;
     uint16_t getRemotePort() const;

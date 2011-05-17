@@ -35,7 +35,7 @@ namespace broker {
 /**
  * A null implementation of the MessageStore interface
  */
-class NullMessageStore : public MessageStore
+class QPID_BROKER_CLASS_EXTERN NullMessageStore : public MessageStore
 {
     std::set<std::string> prepared;
     uint64_t nextPersistenceId;

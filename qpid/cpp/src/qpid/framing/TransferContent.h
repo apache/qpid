@@ -32,7 +32,7 @@ namespace qpid {
 namespace framing {
 
 /** Message content */
-class TransferContent : public MethodContent
+class QPID_COMMON_CLASS_EXTERN TransferContent : public MethodContent
 {
     AMQHeaderBody header;
     std::string data;
