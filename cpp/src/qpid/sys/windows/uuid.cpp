@@ -19,7 +19,7 @@
  *
  */
 
-#include <Rpc.h>
+#include <rpc.h>
 #ifdef uuid_t   /*  Done in rpcdce.h */
 #  undef uuid_t
 #endif
@@ -52,7 +52,11 @@ int uuid_parse (const char *in, uuid_t uu) {
 void uuid_unparse (const uuid_t uu, char *out) {
     unsigned char *formatted;
     if (UuidToString((UUID*)uu, &formatted) == RPC_S_OK) {
+#ifdef _MSC_VER
         strncpy_s (out, 36+1, (char*)formatted, _TRUNCATE);
+#else
+        strncpy (out, (char*)formatted, 36+1);
+#endif
         RpcStringFree(&formatted);
     }
 }

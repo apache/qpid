@@ -102,7 +102,11 @@ void outputFormattedNow(std::ostream& o) {
     char time_string[100];
 
     ::time( &rawtime );
+#ifdef _MSC_VER
     ::localtime_s(&timeinfo, &rawtime);
+#else
+    timeinfo = *(::localtime(&rawtime));
+#endif
     ::strftime(time_string, 100,
                "%Y-%m-%d %H:%M:%S",
                &timeinfo);
