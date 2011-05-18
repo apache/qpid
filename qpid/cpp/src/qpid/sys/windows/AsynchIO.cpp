@@ -30,6 +30,7 @@
 #include "qpid/log/Statement.h"
 
 #include "qpid/sys/windows/check.h"
+#include "qpid/sys/windows/mingw32_compat.h"
 
 #include <boost/thread/once.hpp>
 
@@ -114,7 +115,8 @@ AsynchAcceptor::~AsynchAcceptor()
 }
 
 void AsynchAcceptor::start(Poller::shared_ptr poller) {
-    poller->monitorHandle(PollerHandle(socket), Poller::INPUT);
+    PollerHandle ph = PollerHandle(socket);
+    poller->monitorHandle(ph, Poller::INPUT);
     restart ();
 }
 
@@ -154,7 +156,7 @@ void AsynchAcceptResult::success(size_t /*bytesTransferred*/) {
     delete this;
 }
 
-void AsynchAcceptResult::failure(int status) {
+void AsynchAcceptResult::failure(int /*status*/) {
     //if (status != WSA_OPERATION_ABORTED)
     // Can there be anything else?  ;
     delete this;
@@ -410,8 +412,9 @@ void AsynchIO::queueForDeletion() {
 }
 
 void AsynchIO::start(Poller::shared_ptr poller0) {
+    PollerHandle ph = PollerHandle(socket);
     poller = poller0;
-    poller->monitorHandle(PollerHandle(socket), Poller::INPUT);
+    poller->monitorHandle(ph, Poller::INPUT);
     if (writeQueue.size() > 0)  // Already have data queued for write
         notifyPendingWrite();
     startReading();
@@ -584,7 +587,6 @@ void AsynchIO::notifyIdle(void) {
 void AsynchIO::startWrite(AsynchIO::BufferBase* buff) {
     writeInProgress = true;
     InterlockedIncrement(&opsInProgress);
-    int writeCount = buff->byteCount-buff->dataCount;
     AsynchWriteResult *result =
         new AsynchWriteResult(boost::bind(&AsynchIO::completion, this, _1),
                               buff,

@@ -25,7 +25,11 @@
 #include "qpid/CommonImportExport.h"
 
 #ifdef _WIN32
-#  define QPID_TSS __declspec(thread)
+#  ifdef _MSC_VER
+#    define QPID_TSS __declspec(thread)
+#  else
+#    define QPID_TSS __thread
+#  endif
 #elif defined (__GNUC__)
 #  define QPID_TSS __thread
 #elif defined (__SUNPRO_CC)

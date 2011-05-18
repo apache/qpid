@@ -636,8 +636,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL Windows)
   )
 
   set (qpidcommon_platform_LIBS
-    ${windows_ssl_libs} ws2_32
-  )
+    ${Boost_THREAD_LIBRARY} ${windows_ssl_libs} ${Boost_PROGRAM_OPTIONS_LIBRARY} ${Boost_DATE_TIME_LIBRARY} ${Boost_FILESYSTEM_LIBRARY} ${Boost_SYSTEM_LIBRARY} ws2_32  )
   set (qpidbroker_platform_SOURCES
     qpid/broker/windows/BrokerDefaults.cpp
     qpid/broker/windows/SaslAuthenticator.cpp
@@ -938,7 +937,7 @@ if (NOT QPID_GENERATED_HEADERS_IN_SOURCE)
 endif (NOT QPID_GENERATED_HEADERS_IN_SOURCE)
 
 
-if (WIN32)
+if (_MSC_VER)
     # Install the DtcPlugin project and call it qpidxarm.
     set(AMQP_WCF_DIR ${qpid-cpp_SOURCE_DIR}/../wcf)
     set(qpidxarm_SOURCES ${AMQP_WCF_DIR}/src/Apache/Qpid/DtcPlugin/DtcPlugin.cpp)
@@ -951,7 +950,7 @@ if (WIN32)
                  COMPONENT ${QPID_COMPONENT_CLIENT})
         install_pdb (qpidxarm ${QPID_COMPONENT_CLIENT})
     endif (EXISTS ${qpidxarm_SOURCES})
-endif (WIN32)
+endif (_MSC_VER)
 
 set (qpidbroker_SOURCES
      ${mgen_broker_cpp}

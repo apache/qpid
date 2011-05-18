@@ -31,10 +31,16 @@ const std::string Broker::Options::DEFAULT_DATA_DIR_NAME("\\QPIDD.DATA");
 std::string
 Broker::Options::getHome() {
     std::string home;
+#ifdef _MSC_VER
     char home_c[MAX_PATH+1];
     size_t unused;
     if (0 == getenv_s (&unused, home_c, sizeof(home_c), "HOME"))
         home += home_c;
+#else
+    char *home_c = getenv("HOME");
+    if (home_c)
+        home += home_c;
+#endif
     return home;
 }
 
