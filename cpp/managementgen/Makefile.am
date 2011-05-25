@@ -19,7 +19,8 @@
 qmfpythondir = $(pythondir)
 dist_bin_SCRIPTS = \
 	qmf-gen
-nobase_qmfpython_DATA = \
+pkgpyexec_qmfgendir = $(pyexecdir)/qmfgen
+pkgpyexec_qmfgen_PYTHON = \
 	qmfgen/__init__.py \
 	qmfgen/generate.py \
 	qmfgen/schema.py \
