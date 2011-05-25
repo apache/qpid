@@ -35,7 +35,7 @@ qmfengine.cpp: $(srcdir)/ruby.i $(srcdir)/../qmfengine.i
 rubylibarchdir = $(RUBY_LIB_ARCH)
 rubylibarch_LTLIBRARIES = qmfengine.la
 
-qmfengine_la_LDFLAGS = -avoid-version -module -shrext ".$(RUBY_DLEXT)"
+qmfengine_la_LDFLAGS = -avoid-version -module -shared -shrext ".$(RUBY_DLEXT)"
 qmfengine_la_LIBADD = $(RUBY_LIBS) -L$(top_builddir)/src/.libs -lqpidclient $(top_builddir)/src/libqmfengine.la
 qmfengine_la_CXXFLAGS = $(INCLUDES) -I$(RUBY_INC) -I$(RUBY_INC_ARCH) -fno-strict-aliasing
 nodist_qmfengine_la_SOURCES = qmfengine.cpp

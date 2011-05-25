@@ -30,12 +30,12 @@ BUILT_SOURCES = $(generated_file_list)
 SWIG_FLAGS = -w362,401
 
 $(generated_file_list): $(srcdir)/python.i $(srcdir)/../qmf2.i $(srcdir)/../../swig_python_typemaps.i
-	swig -c++ -python $(SWIG_FLAGS) $(INCLUDES) $(QPID_CXXFLAGS) -I/usr/include -o cqmf2.cpp $(srcdir)/python.i
+	$(SWIG) -c++ -python $(SWIG_FLAGS) $(INCLUDES) $(QPID_CXXFLAGS) -I/usr/include -o cqmf2.cpp $(srcdir)/python.i
 
 pylibdir = $(PYTHON_LIB)
 
 lib_LTLIBRARIES = _cqmf2.la
-cqpiddir = $(pythondir)
+cqpiddir = $(pyexecdir)
 cqpid_PYTHON = qmf2.py cqmf2.py
 
 _cqmf2_la_LDFLAGS = -avoid-version -module -shared
