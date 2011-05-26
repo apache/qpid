@@ -268,7 +268,6 @@ void ConnectionImpl::open()
         throw;
     }
     connector->init();
-    QPID_LOG(info, *this << " connected to " << protocol << ":" << host << ":" << port);
 
     // Enable heartbeat if requested
     uint16_t heartbeat = static_cast<ConnectionSettings&>(handler).heartbeat;
@@ -283,6 +282,7 @@ void ConnectionImpl::open()
     // - in that case in connector.reset() above;
     // - or when we are deleted
     handler.waitForOpen();
+    QPID_LOG(info, *this << " connected to " << protocol << ":" << host << ":" << port);
 
     // If the SASL layer has provided an "operational" userId for the connection,
     // put it in the negotiated settings.
