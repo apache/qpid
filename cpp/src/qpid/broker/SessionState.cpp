@@ -497,7 +497,9 @@ void SessionState::AsyncCommandCompleter::addPendingMessage(boost::intrusive_ptr
     qpid::sys::ScopedLock<qpid::sys::Mutex> l(completerLock);
     std::pair<SequenceNumber, boost::intrusive_ptr<Message> > item(msg->getCommandId(), msg);
     bool unique = pendingMsgs.insert(item).second;
-    assert(unique);
+    if (!unique) {
+      assert(false);
+    }
 }
 
 
