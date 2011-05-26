@@ -164,6 +164,8 @@ void Socket::connect(const std::string& host, const std::string& port) const
 void
 Socket::connect(const SocketAddress& addr) const
 {
+    peername = addr.asString(false);
+
     const SOCKET& socket = impl->fd;
     const addrinfo *addrs = &(getAddrInfo(addr));
     int error = 0;
