@@ -79,11 +79,6 @@ public class MockAMQConnection extends AMQConnection
         super(connectionURL, sslConfig);
     }
 
-    protected MockAMQConnection(String username, String password, String clientName, String virtualHost)
-    {
-        super(username, password, clientName, virtualHost);
-    }
-
     @Override
     public ProtocolVersion makeBrokerConnection(BrokerDetails brokerDetail) throws IOException
     {

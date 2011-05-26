@@ -111,7 +111,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     /** Maps from session id (Integer) to AMQSession instance */
     private final ChannelToSessionMap _sessions = new ChannelToSessionMap();
 
-    private String _clientName;
+    private final String _clientName;
 
     /** The user name to use for authentication */
     private String _username;
@@ -126,7 +126,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
 
     private ConnectionListener _connectionListener;
 
-    private ConnectionURL _connectionURL;
+    private final ConnectionURL _connectionURL;
 
     /**
      * Whether this connection is started, i.e. whether messages are flowing to consumers. It has no meaning for message
@@ -257,6 +257,11 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
      */
     public AMQConnection(ConnectionURL connectionURL, SSLConfiguration sslConfig) throws AMQException
     {
+        if (connectionURL == null)
+        {
+            throw new IllegalArgumentException("Connection must be specified");
+        }
+        
         // set this connection maxPrefetch
         if (connectionURL.getOption(ConnectionURL.OPTIONS_MAXPREFETCH) != null)
         {
@@ -264,7 +269,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         }
         else
         {
-            // use the defaul value set for all connections
+            // use the default value set for all connections
             _maxPrefetch = Integer.parseInt(System.getProperties().getProperty(ClientProperties.MAX_PREFETCH_PROP_NAME,
                     ClientProperties.MAX_PREFETCH_DEFAULT));
         }
@@ -278,7 +283,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         }
         else
         {
-            // use the defaul value set for all connections
+            // use the default value set for all connections
             _syncPersistence = Boolean.getBoolean(ClientProperties.SYNC_PERSISTENT_PROP_NAME);
             if (_syncPersistence)
             {
@@ -293,7 +298,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         }
         else
         {
-            // use the defaul value set for all connections
+            // use the default value set for all connections
             _syncAck = Boolean.getBoolean(ClientProperties.SYNC_ACK_PROP_NAME);
         }
 
@@ -346,11 +351,6 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         }
 
         _sslConfiguration = sslConfig;
-        if (connectionURL == null)
-        {
-            throw new IllegalArgumentException("Connection must be specified");
-        }
-
         _connectionURL = connectionURL;
 
         _clientName = connectionURL.getClientName();
@@ -535,14 +535,6 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         }
     }
 
-    protected AMQConnection(String username, String password, String clientName, String virtualHost)
-    {
-        _clientName = clientName;
-        _username = username;
-        _password = password;
-        setVirtualHost(virtualHost);
-    }
-
     private void setVirtualHost(String virtualHost)
     {
         if (virtualHost != null && virtualHost.startsWith("/"))
@@ -693,20 +685,6 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
 
             // TODO: Be aware of possible changes to parameter order as versions change.
             _protocolHandler.syncWrite(body.generateFrame(channelId), TxSelectOkBody.class);
-        }
-    }
-
-    private void reopenChannel(int channelId, int prefetchHigh, int prefetchLow, boolean transacted)
-            throws AMQException, FailoverException
-    {
-        try
-        {
-            createChannelOverWire(channelId, prefetchHigh, prefetchLow, transacted);
-        }
-        catch (AMQException e)
-        {
-            deregisterSession(channelId);
-            throw new AMQException(null, "Error reopening channel " + channelId + " after failover: " + e, e);
         }
     }
 
@@ -1372,6 +1350,20 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         return buf.toString();
     }
 
+    /**
+     * Returns connection url. 
+     * @return connection url
+     */
+    public ConnectionURL getConnectionURL()
+    {
+        return _connectionURL;
+    }
+    
+    /**
+     * Returns stringified connection url.   This url is suitable only for display
+     * as {@link AMQConnectionURL#toString()} converts any password to asterisks. 
+     * @return connection url
+     */
     public String toURL()
     {
         return _connectionURL.toString();
