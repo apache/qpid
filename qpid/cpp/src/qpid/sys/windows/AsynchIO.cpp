@@ -175,20 +175,20 @@ private:
     FailedCallback failCallback;
     const Socket& socket;
     const std::string hostname;
-    const uint16_t port;
+    const std::string port;
 
 public:
     AsynchConnector(const Socket& socket,
-                    std::string hostname,
-                    uint16_t port,
+                    const std::string& hostname,
+                    const std::string& port,
                     ConnectedCallback connCb,
                     FailedCallback failCb = 0);
     void start(Poller::shared_ptr poller);
 };
 
 AsynchConnector::AsynchConnector(const Socket& sock,
-                                 std::string hname,
-                                 uint16_t p,
+                                 const std::string& hname,
+                                 const std::string& p,
                                  ConnectedCallback connCb,
                                  FailedCallback failCb) :
     connCallback(connCb), failCallback(failCb), socket(sock),
@@ -218,8 +218,8 @@ AsynchAcceptor* AsynchAcceptor::create(const Socket& s,
 }
 
 AsynchConnector* qpid::sys::AsynchConnector::create(const Socket& s,
-                                                    std::string hostname,
-                                                    uint16_t port,
+                                                    const std::string& hostname,
+                                                    const std::string& port,
                                                     ConnectedCallback connCb,
                                                     FailedCallback failCb)
 {

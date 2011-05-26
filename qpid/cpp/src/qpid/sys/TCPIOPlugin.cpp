@@ -42,9 +42,9 @@ class AsynchIOProtocolFactory : public ProtocolFactory {
     std::auto_ptr<AsynchAcceptor> acceptor;
 
   public:
-    AsynchIOProtocolFactory(int16_t port, int backlog, bool nodelay);
+    AsynchIOProtocolFactory(const std::string& host, const std::string& port, int backlog, bool nodelay);
     void accept(Poller::shared_ptr, ConnectionCodec::Factory*);
-    void connect(Poller::shared_ptr, const std::string& host, int16_t port,
+    void connect(Poller::shared_ptr, const std::string& host, const std::string& port,
                  ConnectionCodec::Factory*,
                  ConnectFailedCallback);
 
@@ -61,22 +61,25 @@ class AsynchIOProtocolFactory : public ProtocolFactory {
 static class TCPIOPlugin : public Plugin {
     void earlyInitialize(Target&) {
     }
-    
+
     void initialize(Target& target) {
         broker::Broker* broker = dynamic_cast<broker::Broker*>(&target);
         // Only provide to a Broker
         if (broker) {
             const broker::Broker::Options& opts = broker->getOptions();
-            ProtocolFactory::shared_ptr protocol(new AsynchIOProtocolFactory(opts.port, opts.connectionBacklog, 
-                                                                             opts.tcpNoDelay));
-            QPID_LOG(notice, "Listening on TCP port " << protocol->getPort());
-            broker->registerProtocolFactory("tcp", protocol);
+            ProtocolFactory::shared_ptr protocolt(
+                new AsynchIOProtocolFactory(
+                    "", boost::lexical_cast<std::string>(opts.port),
+                    opts.connectionBacklog,
+                    opts.tcpNoDelay));
+            QPID_LOG(notice, "Listening on TCP port " << protocolt->getPort());
+            broker->registerProtocolFactory("tcp", protocolt);
         }
     }
 } tcpPlugin;
 
-AsynchIOProtocolFactory::AsynchIOProtocolFactory(int16_t port, int backlog, bool nodelay) :
-    tcpNoDelay(nodelay), listeningPort(listener.listen(port, backlog))
+AsynchIOProtocolFactory::AsynchIOProtocolFactory(const std::string& host, const std::string& port, int backlog, bool nodelay) :
+    tcpNoDelay(nodelay), listeningPort(listener.listen(host, port, backlog))
 {}
 
 void AsynchIOProtocolFactory::established(Poller::shared_ptr poller, const Socket& s,
@@ -130,7 +133,7 @@ void AsynchIOProtocolFactory::connectFailed(
 
 void AsynchIOProtocolFactory::connect(
     Poller::shared_ptr poller,
-    const std::string& host, int16_t port,
+    const std::string& host, const std::string& port,
     ConnectionCodec::Factory* fact,
     ConnectFailedCallback failed)
 {
@@ -139,7 +142,6 @@ void AsynchIOProtocolFactory::connect(
     // upon connection failure or by the AsynchIO upon connection
     // shutdown.  The allocated AsynchConnector frees itself when it
     // is no longer needed.
-
     Socket* socket = new Socket();
     AsynchConnector* c = AsynchConnector::create(
         *socket,

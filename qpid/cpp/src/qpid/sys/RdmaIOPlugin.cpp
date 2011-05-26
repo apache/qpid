@@ -31,7 +31,6 @@
 #include "qpid/sys/SecuritySettings.h"
 
 #include <boost/bind.hpp>
-#include <boost/lexical_cast.hpp>
 #include <memory>
 
 #include <netdb.h>
@@ -254,7 +253,7 @@ class RdmaIOProtocolFactory : public ProtocolFactory {
   public:
     RdmaIOProtocolFactory(int16_t port, int backlog);
     void accept(Poller::shared_ptr, ConnectionCodec::Factory*);
-    void connect(Poller::shared_ptr, const string& host, int16_t port, ConnectionCodec::Factory*, ConnectFailedCallback);
+    void connect(Poller::shared_ptr, const string& host, const std::string& port, ConnectionCodec::Factory*, ConnectFailedCallback);
 
     uint16_t getPort() const;
     string getHost() const;
@@ -387,7 +386,7 @@ void RdmaIOProtocolFactory::connected(Poller::shared_ptr poller, Rdma::Connectio
 
 void RdmaIOProtocolFactory::connect(
     Poller::shared_ptr poller,
-    const std::string& host, int16_t port,
+    const std::string& host, const std::string& port,
     ConnectionCodec::Factory* f,
     ConnectFailedCallback failed)
 {
@@ -399,7 +398,7 @@ void RdmaIOProtocolFactory::connect(
             boost::bind(&RdmaIOProtocolFactory::disconnected, this, _1),
             boost::bind(&RdmaIOProtocolFactory::rejected, this, _1, _2, failed));
 
-    SocketAddress sa(host, boost::lexical_cast<std::string>(port));
+    SocketAddress sa(host, port);
     c->start(poller, sa);
 }
 

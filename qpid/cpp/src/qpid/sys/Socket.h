@@ -47,7 +47,7 @@ public:
 
     QPID_COMMON_EXTERN void setTcpNoDelay() const;
 
-    QPID_COMMON_EXTERN void connect(const std::string& host, uint16_t port) const;
+    QPID_COMMON_EXTERN void connect(const std::string& host, const std::string& port) const;
     QPID_COMMON_EXTERN void connect(const SocketAddress&) const;
 
     QPID_COMMON_EXTERN void close() const;
@@ -57,7 +57,7 @@ public:
      *@param backlog maximum number of pending connections.
      *@return The bound port.
      */
-    QPID_COMMON_EXTERN int listen(uint16_t port = 0, int backlog = 10) const;
+    QPID_COMMON_EXTERN int listen(const std::string& host = "", const std::string& port = "0", int backlog = 10) const;
     QPID_COMMON_EXTERN int listen(const SocketAddress&, int backlog = 10) const;
 
     /** Returns the "socket name" ie the address bound to

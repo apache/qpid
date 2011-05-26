@@ -37,7 +37,6 @@
 #include <iostream>
 
 #include <boost/format.hpp>
-#include <boost/lexical_cast.hpp>
 
 namespace qpid {
 namespace sys {
@@ -154,9 +153,9 @@ void Socket::setTcpNoDelay() const
     }
 }
 
-void Socket::connect(const std::string& host, uint16_t port) const
+void Socket::connect(const std::string& host, const std::string& port) const
 {
-    SocketAddress sa(host, boost::lexical_cast<std::string>(port));
+    SocketAddress sa(host, port);
     connect(sa);
 }
 
@@ -200,9 +199,9 @@ Socket::close() const
     socket = -1;
 }
 
-int Socket::listen(uint16_t port, int backlog) const
+int Socket::listen(const std::string& host, const std::string& port, int backlog) const
 {
-    SocketAddress sa("", boost::lexical_cast<std::string>(port));
+    SocketAddress sa(host, port);
     return listen(sa, backlog);
 }
 

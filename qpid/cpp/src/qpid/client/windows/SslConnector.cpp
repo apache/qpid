@@ -77,7 +77,7 @@ public:
                  framing::ProtocolVersion pVersion,
                  const ConnectionSettings&, 
                  ConnectionImpl*);
-    virtual void connect(const std::string& host, int port);
+    virtual void connect(const std::string& host, const std::string& port);
     virtual void connected(const Socket&);
     unsigned int getSSF();
 };
@@ -153,7 +153,7 @@ SslConnector::~SslConnector()
 
   // Will this get reach via virtual method via boost::bind????
 
-void SslConnector::connect(const std::string& host, int port) {
+void SslConnector::connect(const std::string& host, const std::string& port) {
     brokerHost = host;
     TCPConnector::connect(host, port);
 }

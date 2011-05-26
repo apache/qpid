@@ -88,7 +88,7 @@ TCPConnector::~TCPConnector() {
     close();
 }
 
-void TCPConnector::connect(const std::string& host, int port) {
+void TCPConnector::connect(const std::string& host, const std::string& port) {
     Mutex::ScopedLock l(lock);
     assert(closed);
     connector = AsynchConnector::create(

@@ -158,7 +158,7 @@ void SslSocket::setNonblocking() const
     PR_SetSocketOption(socket, &option);
 }
 
-void SslSocket::connect(const std::string& host, uint16_t port) const
+void SslSocket::connect(const std::string& host, const std::string& port) const
 {
     std::stringstream namestream;
     namestream << host << ":" << port;
@@ -180,7 +180,7 @@ void SslSocket::connect(const std::string& host, uint16_t port) const
     PRHostEnt hostEntry;
     PR_CHECK(PR_GetHostByName(host.data(), hostBuffer, PR_NETDB_BUF_SIZE, &hostEntry));
     PRNetAddr address;
-    int value = PR_EnumerateHostEnt(0, &hostEntry, port, &address);
+    int value = PR_EnumerateHostEnt(0, &hostEntry, boost::lexical_cast<PRUint16>(port), &address);
     if (value < 0) {
         throw Exception(QPID_MSG("Error getting address for host: " << ErrorString()));
     } else if (value == 0) {
