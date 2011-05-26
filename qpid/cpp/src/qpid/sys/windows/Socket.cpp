@@ -101,41 +101,12 @@ std::string getName(SOCKET fd, bool local)
 
     char servName[NI_MAXSERV];
     char dispName[NI_MAXHOST];
-    if (includeService) {
-        if (int rc = ::getnameinfo((sockaddr*)&name, namelen,
-                                   dispName, sizeof(dispName), 
-                                   servName, sizeof(servName), 
-                                   NI_NUMERICHOST | NI_NUMERICSERV) != 0)
-            throw qpid::Exception(QPID_MSG(gai_strerror(rc)));
-        return std::string(dispName) + ":" + std::string(servName);
-    } else {
-        if (int rc = ::getnameinfo((sockaddr*)&name, namelen,
-                                   dispName, sizeof(dispName),
-                                   0, 0,
-                                   NI_NUMERICHOST) != 0)
-            throw qpid::Exception(QPID_MSG(gai_strerror(rc)));
-        return dispName;
-    }
-}
-
-std::string getService(SOCKET fd, bool local)
-{
-    sockaddr_in name; // big enough for any socket address    
-    socklen_t namelen = sizeof(name);
-    
-    if (local) {
-        QPID_WINSOCK_CHECK(::getsockname(fd, (sockaddr*)&name, &namelen));
-    } else {
-        QPID_WINSOCK_CHECK(::getpeername(fd, (sockaddr*)&name, &namelen));
-    }
-
-    char servName[NI_MAXSERV];
     if (int rc = ::getnameinfo((sockaddr*)&name, namelen,
-                               0, 0, 
+                               dispName, sizeof(dispName), 
                                servName, sizeof(servName), 
                                NI_NUMERICHOST | NI_NUMERICSERV) != 0)
         throw qpid::Exception(QPID_MSG(gai_strerror(rc)));
-    return servName;
+    return std::string(dispName) + ":" + std::string(servName);
 }
 }  // namespace
 
@@ -177,20 +148,6 @@ Socket::createSocket(const SocketAddress& sa) const
         socket = INVALID_SOCKET;
         throw;
     }
-}
-
-void Socket::setTimeout(const Duration& interval) const
-{
-    const SOCKET& socket = impl->fd;
-    int64_t nanosecs = interval;
-    nanosecs /= (1000 * 1000); // nsecs -> usec -> msec
-    int msec = 0;
-    if (nanosecs > std::numeric_limits<int>::max())
-        msec = std::numeric_limits<int>::max();
-    else
-        msec = static_cast<int>(nanosecs);
-    setsockopt(socket, SOL_SOCKET, SO_SNDTIMEO, (char *)&msec, sizeof(msec));
-    setsockopt(socket, SOL_SOCKET, SO_RCVTIMEO, (char *)&msec, sizeof(msec));
 }
 
 void Socket::setNonblocking() const {
@@ -282,36 +239,16 @@ Socket* Socket::accept() const
     else throw QPID_WINDOWS_ERROR(WSAGetLastError());
 }
 
-std::string Socket::getSockname() const
-{
-    return getName(impl->fd, true);
-}
-
-std::string Socket::getPeername() const
-{
-    return getName(impl->fd, false);
-}
-
 std::string Socket::getPeerAddress() const
 {
     if (!connectname.empty())
-        return std::string (connectname);
-    return getName(impl->fd, false, true);
+        connectname = getName(impl->fd, false);
+    return connectname;
 }
 
 std::string Socket::getLocalAddress() const
 {
-    return getName(impl->fd, true, true);
-}
-
-uint16_t Socket::getLocalPort() const
-{
-    return atoi(getService(impl->fd, true).c_str());
-}
-
-uint16_t Socket::getRemotePort() const
-{
-    return atoi(getService(impl->fd, true).c_str());
+    return getName(impl->fd, true);
 }
 
 int Socket::getError() const
