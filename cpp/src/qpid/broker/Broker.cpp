@@ -701,7 +701,7 @@ void Broker::accept() {
 }
 
 void Broker::connect(
-    const std::string& host, uint16_t port, const std::string& transport,
+    const std::string& host, const std::string& port, const std::string& transport,
     boost::function2<void, int, std::string> failed,
     sys::ConnectionCodec::Factory* f)
 {
@@ -717,7 +717,7 @@ void Broker::connect(
 {
     url.throwIfEmpty();
     const Address& addr=url[0];
-    connect(addr.host, addr.port, addr.protocol, failed, f);
+    connect(addr.host, boost::lexical_cast<std::string>(addr.port), addr.protocol, failed, f);
 }
 
 uint32_t Broker::queueMoveMessages(

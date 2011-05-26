@@ -114,7 +114,7 @@ class SslConnector : public Connector
 
     std::string identifier;
 
-    void connect(const std::string& host, int port);
+    void connect(const std::string& host, const std::string& port);
     void init();
     void close();
     void send(framing::AMQFrame& frame);
@@ -190,7 +190,7 @@ SslConnector::~SslConnector() {
     close();
 }
 
-void SslConnector::connect(const std::string& host, int port){
+void SslConnector::connect(const std::string& host, const std::string& port){
     Mutex::ScopedLock l(closedLock);
     assert(closed);
     try {

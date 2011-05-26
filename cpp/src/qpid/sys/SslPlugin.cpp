@@ -66,7 +66,7 @@ class SslProtocolFactory : public ProtocolFactory {
   public:
     SslProtocolFactory(const SslServerOptions&, int backlog, bool nodelay);
     void accept(Poller::shared_ptr, ConnectionCodec::Factory*);
-    void connect(Poller::shared_ptr, const std::string& host, int16_t port,
+    void connect(Poller::shared_ptr, const std::string& host, const std::string& port,
                  ConnectionCodec::Factory*,
                  boost::function2<void, int, std::string> failed);
 
@@ -160,7 +160,7 @@ void SslProtocolFactory::accept(Poller::shared_ptr poller,
 
 void SslProtocolFactory::connect(
     Poller::shared_ptr poller,
-    const std::string& host, int16_t port,
+    const std::string& host, const std::string& port,
     ConnectionCodec::Factory* fact,
     ConnectFailedCallback failed)
 {

@@ -89,7 +89,7 @@ namespace sys {
 
 namespace {
 
-std::string getName(SOCKET fd, bool local, bool includeService = false)
+std::string getName(SOCKET fd, bool local)
 {
     sockaddr_in name; // big enough for any socket address    
     socklen_t namelen = sizeof(name);
@@ -198,9 +198,9 @@ void Socket::setNonblocking() const {
     QPID_WINSOCK_CHECK(ioctlsocket(impl->fd, FIONBIO, &nonblock));
 }
 
-void Socket::connect(const std::string& host, uint16_t port) const
+void Socket::connect(const std::string& host, const std::string& port) const
 {
-    SocketAddress sa(host, boost::lexical_cast<std::string>(port));
+    SocketAddress sa(host, port);
     connect(sa);
 }
 
@@ -252,7 +252,7 @@ int Socket::read(void *buf, size_t count) const
     return received;
 }
 
-int Socket::listen(uint16_t port, int backlog) const
+int Socket::listen(const std::string&, const std::string& port, int backlog) const
 {
     const SOCKET& socket = impl->fd;
     BOOL yes=1;
@@ -260,7 +260,7 @@ int Socket::listen(uint16_t port, int backlog) const
     struct sockaddr_in name;
     memset(&name, 0, sizeof(name));
     name.sin_family = AF_INET;
-    name.sin_port = htons(port);
+    name.sin_port = htons(boost::lexical_cast<uint16_t>(port));
     name.sin_addr.s_addr = 0;
     if (::bind(socket, (struct sockaddr*)&name, sizeof(name)) == SOCKET_ERROR)
         throw Exception(QPID_MSG("Can't bind to port " << port << ": " << strError(WSAGetLastError())));

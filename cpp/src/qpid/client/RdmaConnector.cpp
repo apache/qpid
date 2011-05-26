@@ -95,7 +95,7 @@ class RdmaConnector : public Connector, public sys::Codec
 
     std::string identifier;
 
-    void connect(const std::string& host, int port);
+    void connect(const std::string& host, const std::string& port);
     void close();
     void send(framing::AMQFrame& frame);
     void abort() {} // TODO: need to fix this for heartbeat timeouts to work
@@ -173,7 +173,7 @@ RdmaConnector::~RdmaConnector() {
     }
 }
 
-void RdmaConnector::connect(const std::string& host, int port){
+void RdmaConnector::connect(const std::string& host, const std::string& port){
     Mutex::ScopedLock l(dataConnectedLock);
     assert(!dataConnected);
 
@@ -184,7 +184,7 @@ void RdmaConnector::connect(const std::string& host, int port){
         boost::bind(&RdmaConnector::disconnected, this),
         boost::bind(&RdmaConnector::rejected, this, poller, _1, _2));
 
-    SocketAddress sa(host, boost::lexical_cast<std::string>(port));
+    SocketAddress sa(host, port);
     acon->start(poller, sa);
 }
 
