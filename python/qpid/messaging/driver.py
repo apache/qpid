@@ -828,8 +828,9 @@ class Engine:
     self._closing = True
 
   def attach(self, ssn):
+    if ssn.closed: return
     sst = self._attachments.get(ssn)
-    if sst is None and not ssn.closed:
+    if sst is None:
       for i in xrange(0, self.channel_max):
         if not self._sessions.has_key(i):
           ch = i
