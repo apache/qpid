@@ -53,7 +53,7 @@ public:
      * NSSInit().*/
     void setCertName(const std::string& certName);
 
-    void connect(const std::string& host, uint16_t port) const;
+    void connect(const std::string& host, const std::string& port) const;
 
     void close() const;
 

@@ -36,6 +36,7 @@
 
 #include <boost/bind.hpp>
 #include <boost/format.hpp>
+#include <boost/lexical_cast.hpp>
 #include <boost/shared_ptr.hpp>
 
 #include <limits>
@@ -258,8 +259,9 @@ void ConnectionImpl::open()
     connector->setInputHandler(&handler);
     connector->setShutdownHandler(this);
     try {
-        connector->connect(host, port);
-    
+        std::string p = boost::lexical_cast<std::string>(port);
+        connector->connect(host, p);
+
     } catch (const std::exception& e) {
         QPID_LOG(debug, "Failed to connect to " << protocol << ":" << host << ":" << port << " " << e.what());
         connector.reset();
@@ -267,7 +269,7 @@ void ConnectionImpl::open()
     }
     connector->init();
     QPID_LOG(info, *this << " connected to " << protocol << ":" << host << ":" << port);
- 
+
     // Enable heartbeat if requested
     uint16_t heartbeat = static_cast<ConnectionSettings&>(handler).heartbeat;
     if (heartbeat) {

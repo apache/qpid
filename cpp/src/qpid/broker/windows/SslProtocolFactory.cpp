@@ -81,7 +81,7 @@ class SslProtocolFactory : public qpid::sys::ProtocolFactory {
     SslProtocolFactory(const SslServerOptions&, int backlog, bool nodelay);
     ~SslProtocolFactory();
     void accept(sys::Poller::shared_ptr, sys::ConnectionCodec::Factory*);
-    void connect(sys::Poller::shared_ptr, const std::string& host, int16_t port,
+    void connect(sys::Poller::shared_ptr, const std::string& host, const std::string& port,
                  sys::ConnectionCodec::Factory*,
                  ConnectFailedCallback failed);
 
@@ -130,7 +130,7 @@ SslProtocolFactory::SslProtocolFactory(const SslServerOptions& options,
                                        int backlog,
                                        bool nodelay)
     : tcpNoDelay(nodelay),
-      listeningPort(listener.listen(options.port, backlog)),
+    listeningPort(listener.listen("", boost::lexical_cast<std::string>(options.port), backlog)),
       clientAuthSelected(options.clientAuth) {
 
     SecInvalidateHandle(&credHandle);
@@ -251,7 +251,7 @@ void SslProtocolFactory::accept(sys::Poller::shared_ptr poller,
 
 void SslProtocolFactory::connect(sys::Poller::shared_ptr poller,
                                  const std::string& host,
-                                 int16_t port,
+                                 const std::string& port,
                                  sys::ConnectionCodec::Factory* fact,
                                  ConnectFailedCallback failed)
 {
