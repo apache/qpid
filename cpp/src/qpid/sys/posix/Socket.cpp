@@ -42,7 +42,7 @@ namespace qpid {
 namespace sys {
 
 namespace {
-std::string getName(int fd, bool local, bool includeService = false)
+std::string getName(int fd, bool local)
 {
     ::sockaddr_storage name; // big enough for any socket address
     ::socklen_t namelen = sizeof(name);
@@ -53,45 +53,15 @@ std::string getName(int fd, bool local, bool includeService = false)
     } else {
         result = ::getpeername(fd, (::sockaddr*)&name, &namelen);
     }
-
     QPID_POSIX_CHECK(result);
 
     char servName[NI_MAXSERV];
     char dispName[NI_MAXHOST];
-    if (includeService) {
-        if (int rc=::getnameinfo((::sockaddr*)&name, namelen, dispName, sizeof(dispName),
-                                 servName, sizeof(servName),
-                                 NI_NUMERICHOST | NI_NUMERICSERV) != 0)
-            throw QPID_POSIX_ERROR(rc);
-        return std::string(dispName) + ":" + std::string(servName);
-
-    } else {
-        if (int rc=::getnameinfo((::sockaddr*)&name, namelen, dispName, sizeof(dispName), 0, 0, NI_NUMERICHOST) != 0)
-            throw QPID_POSIX_ERROR(rc);
-        return dispName;
-    }
-}
-
-std::string getService(int fd, bool local)
-{
-    ::sockaddr_storage name; // big enough for any socket address
-    ::socklen_t namelen = sizeof(name);
-
-    int result = -1;
-    if (local) {
-        result = ::getsockname(fd, (::sockaddr*)&name, &namelen);
-    } else {
-        result = ::getpeername(fd, (::sockaddr*)&name, &namelen);
-    }
-
-    QPID_POSIX_CHECK(result);
-
-    char servName[NI_MAXSERV];
-    if (int rc=::getnameinfo((::sockaddr*)&name, namelen, 0, 0,
-                                 servName, sizeof(servName),
-                                 NI_NUMERICHOST | NI_NUMERICSERV) != 0)
+    if (int rc=::getnameinfo((::sockaddr*)&name, namelen, dispName, sizeof(dispName),
+                                servName, sizeof(servName),
+                                NI_NUMERICHOST | NI_NUMERICSERV) != 0)
         throw QPID_POSIX_ERROR(rc);
-    return servName;
+    return std::string(dispName) + ":" + std::string(servName);
 }
 }
 
@@ -123,15 +93,6 @@ void Socket::createSocket(const SocketAddress& sa) const
         socket = -1;
         throw;
     }
-}
-
-void Socket::setTimeout(const Duration& interval) const
-{
-    const int& socket = impl->fd;
-    struct timeval tv;
-    toTimeval(tv, interval);
-    setsockopt(socket, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv));
-    setsockopt(socket, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
 }
 
 void Socket::setNonblocking() const {
@@ -246,37 +207,17 @@ int Socket::write(const void *buf, size_t count) const
     return ::write(impl->fd, buf, count);
 }
 
-std::string Socket::getSockname() const
-{
-    return getName(impl->fd, true);
-}
-
-std::string Socket::getPeername() const
-{
-    return getName(impl->fd, false);
-}
-
 std::string Socket::getPeerAddress() const
 {
     if (connectname.empty()) {
-        connectname = getName(impl->fd, false, true);
+        connectname = getName(impl->fd, false);
     }
     return connectname;
 }
 
 std::string Socket::getLocalAddress() const
 {
-    return getName(impl->fd, true, true);
-}
-
-uint16_t Socket::getLocalPort() const
-{
-    return std::atoi(getService(impl->fd, true).c_str());
-}
-
-uint16_t Socket::getRemotePort() const
-{
-    return std::atoi(getService(impl->fd, true).c_str());
+    return getName(impl->fd, true);
 }
 
 int Socket::getError() const

@@ -71,7 +71,6 @@ class SslProtocolFactory : public ProtocolFactory {
                  boost::function2<void, int, std::string> failed);
 
     uint16_t getPort() const;
-    std::string getHost() const;
     bool supports(const std::string& capability);
 
   private:
@@ -144,10 +143,6 @@ void SslProtocolFactory::established(Poller::shared_ptr poller, const qpid::sys:
 
 uint16_t SslProtocolFactory::getPort() const {
     return listeningPort; // Immutable no need for lock.
-}
-
-std::string SslProtocolFactory::getHost() const {
-    return listener.getSockname();
 }
 
 void SslProtocolFactory::accept(Poller::shared_ptr poller,

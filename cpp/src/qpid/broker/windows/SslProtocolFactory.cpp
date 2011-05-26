@@ -86,7 +86,6 @@ class SslProtocolFactory : public qpid::sys::ProtocolFactory {
                  ConnectFailedCallback failed);
 
     uint16_t getPort() const;
-    std::string getHost() const;
     bool supports(const std::string& capability);
 
   private:
@@ -235,10 +234,6 @@ void SslProtocolFactory::established(sys::Poller::shared_ptr poller,
 
 uint16_t SslProtocolFactory::getPort() const {
     return listeningPort; // Immutable no need for lock.
-}
-
-std::string SslProtocolFactory::getHost() const {
-    return listener.getSockname();
 }
 
 void SslProtocolFactory::accept(sys::Poller::shared_ptr poller,
