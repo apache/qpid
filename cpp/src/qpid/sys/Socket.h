@@ -93,7 +93,8 @@ private:
     void createSocket(const SocketAddress&) const;
 
     Socket(IOHandlePrivate*);
-    mutable std::string connectname;
+    mutable std::string localname;
+    mutable std::string peername;
     mutable bool nonblocking;
     mutable bool nodelay;
 };
