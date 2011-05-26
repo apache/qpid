@@ -122,7 +122,7 @@ void Socket::connect(const std::string& host, const std::string& port) const
 
 void Socket::connect(const SocketAddress& addr) const
 {
-    connectname = addr.asString();
+    peername = addr.asString();
 
     createSocket(addr);
 
@@ -130,7 +130,7 @@ void Socket::connect(const SocketAddress& addr) const
     // TODO the correct thing to do here is loop on failure until you've used all the returned addresses
     if ((::connect(socket, getAddrInfo(addr).ai_addr, getAddrInfo(addr).ai_addrlen) < 0) &&
         (errno != EINPROGRESS)) {
-        throw Exception(QPID_MSG(strError(errno) << ": " << connectname));
+        throw Exception(QPID_MSG(strError(errno) << ": " << peername));
     }
     // When connecting to a port on the same host which no longer has
     // a process associated with it, the OS occasionally chooses the
@@ -147,7 +147,7 @@ void Socket::connect(const SocketAddress& addr) const
     //
     if (getLocalAddress() == getPeerAddress()) {
         close();
-        throw Exception(QPID_MSG("Connection refused: " << connectname));
+        throw Exception(QPID_MSG("Connection refused: " << peername));
     }
 }
 
@@ -190,8 +190,11 @@ int Socket::listen(const SocketAddress& sa, int backlog) const
 Socket* Socket::accept() const
 {
     int afd = ::accept(impl->fd, 0, 0);
-    if ( afd >= 0)
-        return new Socket(new IOHandlePrivate(afd));
+    if ( afd >= 0) {
+        Socket* s = new Socket(new IOHandlePrivate(afd));
+        s->localname = localname;
+        return s;
+    }
     else if (errno == EAGAIN)
         return 0;
     else throw QPID_POSIX_ERROR(errno);
@@ -209,15 +212,18 @@ int Socket::write(const void *buf, size_t count) const
 
 std::string Socket::getPeerAddress() const
 {
-    if (connectname.empty()) {
-        connectname = getName(impl->fd, false);
+    if (peername.empty()) {
+        peername = getName(impl->fd, false);
     }
-    return connectname;
+    return peername;
 }
 
 std::string Socket::getLocalAddress() const
 {
-    return getName(impl->fd, true);
+    if (localname.empty()) {
+        localname = getName(impl->fd, true);
+    }
+    return localname;
 }
 
 int Socket::getError() const

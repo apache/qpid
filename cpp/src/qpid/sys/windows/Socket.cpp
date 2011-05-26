@@ -178,7 +178,7 @@ Socket::connect(const SocketAddress& addr) const
         addrs = addrs->ai_next;
     }
     if (error)
-        throw qpid::Exception(QPID_MSG(strError(error) << ": " << connectname));
+        throw qpid::Exception(QPID_MSG(strError(error) << ": " << peername));
 }
 
 void
@@ -241,14 +241,16 @@ Socket* Socket::accept() const
 
 std::string Socket::getPeerAddress() const
 {
-    if (!connectname.empty())
-        connectname = getName(impl->fd, false);
-    return connectname;
+    if (peername.empty())
+        peername = getName(impl->fd, false);
+    return peername;
 }
 
 std::string Socket::getLocalAddress() const
 {
-    return getName(impl->fd, true);
+    if (localname.empty())
+        localname = getName(impl->fd, true);
+    return localname;
 }
 
 int Socket::getError() const
