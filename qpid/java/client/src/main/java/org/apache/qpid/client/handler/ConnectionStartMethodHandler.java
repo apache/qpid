@@ -226,7 +226,7 @@ public class ConnectionStartMethodHandler implements StateAwareMethodListener<Co
         {
             Object instance = mechanismClass.newInstance();
             AMQCallbackHandler cbh = (AMQCallbackHandler) instance;
-            cbh.initialise(protocolSession);
+            cbh.initialise(protocolSession.getAMQConnection().getConnectionURL());
 
             return cbh;
         }
