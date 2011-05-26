@@ -27,6 +27,8 @@
 #include <string.h>
 #include <netdb.h>
 
+#include <algorithm>
+
 namespace qpid {
 namespace sys {
 
@@ -46,15 +48,9 @@ SocketAddress::SocketAddress(const SocketAddress& sa) :
 
 SocketAddress& SocketAddress::operator=(const SocketAddress& sa)
 {
-    if (&sa != this) {
-        host = sa.host;
-        port = sa.port;
+    SocketAddress temp(sa);
 
-        if (addrInfo) {
-            ::freeaddrinfo(addrInfo);
-            addrInfo = 0;
-        }
-    }
+    std::swap(temp, *this);
     return *this;
 }
 
@@ -88,7 +84,7 @@ const ::addrinfo& getAddrInfo(const SocketAddress& sa)
 
         int n = ::getaddrinfo(node, service, &hints, &sa.addrInfo);
         if (n != 0)
-            throw Exception(QPID_MSG("Cannot resolve " << sa.host << ": " << ::gai_strerror(n)));
+            throw Exception(QPID_MSG("Cannot resolve " << sa.asString() << ": " << ::gai_strerror(n)));
     }
 
     return *sa.addrInfo;
