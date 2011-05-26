@@ -121,7 +121,7 @@ void TCPConnector::start(sys::AsynchIO* aio_) {
         aio->queueReadBuffer(new Buff(maxFrameSize));
     }
 
-    identifier = str(format("[%1% %2%]") % socket.getLocalPort() % socket.getPeerAddress());
+    identifier = str(format("[%1%]") % socket.getFullAddress());
 }
 
 void TCPConnector::initAmqp() {

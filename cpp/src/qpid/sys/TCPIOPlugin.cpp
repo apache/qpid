@@ -49,7 +49,6 @@ class AsynchIOProtocolFactory : public ProtocolFactory {
                  ConnectFailedCallback);
 
     uint16_t getPort() const;
-    std::string getHost() const;
 
   private:
     void established(Poller::shared_ptr, const Socket&, ConnectionCodec::Factory*,
@@ -108,10 +107,6 @@ void AsynchIOProtocolFactory::established(Poller::shared_ptr poller, const Socke
 
 uint16_t AsynchIOProtocolFactory::getPort() const {
     return listeningPort; // Immutable no need for lock.
-}
-
-std::string AsynchIOProtocolFactory::getHost() const {
-    return listener.getSockname();
 }
 
 void AsynchIOProtocolFactory::accept(Poller::shared_ptr poller,

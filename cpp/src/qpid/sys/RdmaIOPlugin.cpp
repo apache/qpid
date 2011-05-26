@@ -256,7 +256,6 @@ class RdmaIOProtocolFactory : public ProtocolFactory {
     void connect(Poller::shared_ptr, const string& host, const std::string& port, ConnectionCodec::Factory*, ConnectFailedCallback);
 
     uint16_t getPort() const;
-    string getHost() const;
 
   private:
     bool request(Rdma::Connection::intrusive_ptr, const Rdma::ConnectionParams&, ConnectionCodec::Factory*);
@@ -344,11 +343,6 @@ void RdmaIOProtocolFactory::disconnected(Rdma::Connection::intrusive_ptr ci) {
 
 uint16_t RdmaIOProtocolFactory::getPort() const {
     return listeningPort; // Immutable no need for lock.
-}
-
-string RdmaIOProtocolFactory::getHost() const {
-    //return listener.getSockname();
-    return "";
 }
 
 void RdmaIOProtocolFactory::accept(Poller::shared_ptr poller, ConnectionCodec::Factory* fact) {
