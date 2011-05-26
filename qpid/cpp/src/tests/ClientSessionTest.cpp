@@ -271,8 +271,12 @@ QPID_AUTO_TEST_CASE(testOpenFailure) {
 QPID_AUTO_TEST_CASE(testPeriodicExpiration) {
     Broker::Options opts;
     opts.queueCleanInterval = 1;
+    opts.queueFlowStopRatio = 0;
+    opts.queueFlowResumeRatio = 0;
     ClientSessionFixture fix(opts);
-    fix.session.queueDeclare(arg::queue="my-queue", arg::exclusive=true, arg::autoDelete=true);
+    FieldTable args;
+    args.setInt("qpid.max_count",10);
+    fix.session.queueDeclare(arg::queue="my-queue", arg::exclusive=true, arg::autoDelete=true, arg::arguments=args);
 
     for (uint i = 0; i < 10; i++) {
         Message m((boost::format("Message_%1%") % (i+1)).str(), "my-queue");
@@ -283,6 +287,7 @@ QPID_AUTO_TEST_CASE(testPeriodicExpiration) {
     BOOST_CHECK_EQUAL(fix.session.queueQuery(string("my-queue")).getMessageCount(), 10u);
     qpid::sys::sleep(2);
     BOOST_CHECK_EQUAL(fix.session.queueQuery(string("my-queue")).getMessageCount(), 5u);
+    fix.session.messageTransfer(arg::content=Message("Message_11", "my-queue"));//ensure policy is also updated
 }
 
 QPID_AUTO_TEST_CASE(testExpirationOnPop) {

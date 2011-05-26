@@ -436,7 +436,7 @@ void Queue::purgeExpired()
         std::deque<QueuedMessage> expired;
         {
             Mutex::ScopedLock locker(messageLock);
-            messages->removeIf(boost::bind(&collect_if_expired, expired, _1));
+            messages->removeIf(boost::bind(&collect_if_expired, boost::ref(expired), _1));
         }
         for_each(expired.begin(), expired.end(), boost::bind(&Queue::dequeue, this, (TransactionContext*) 0, _1));
     }
