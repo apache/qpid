@@ -122,7 +122,14 @@ void Socket::connect(const std::string& host, const std::string& port) const
 
 void Socket::connect(const SocketAddress& addr) const
 {
-    peername = addr.asString();
+    // The display name for an outbound connection needs to be the name that was specified
+    // for the address rather than a resolved IP address as we don't know which of
+    // the IP addresses is actually the one that will be connected to.
+    peername = addr.asString(false);
+
+    // However the string we compare with the local port must be numeric or it might not
+    // match when it should as getLocalAddress() will always be numeric
+    std::string connectname = addr.asString();
 
     createSocket(addr);
 
@@ -145,7 +152,7 @@ void Socket::connect(const SocketAddress& addr) const
     // Raise an error if we see such a connection, since we know there is
     // no listener on the peer address.
     //
-    if (getLocalAddress() == getPeerAddress()) {
+    if (getLocalAddress() == connectname) {
         close();
         throw Exception(QPID_MSG("Connection refused: " << peername));
     }

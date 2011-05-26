@@ -63,7 +63,7 @@ SocketAddress::~SocketAddress()
     ::freeaddrinfo(addrInfo);
 }
 
-std::string SocketAddress::asString() const
+std::string SocketAddress::asString(bool) const
 {
     return host + ":" + port;
 }
