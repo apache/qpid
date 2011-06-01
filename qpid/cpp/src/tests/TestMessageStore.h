@@ -41,7 +41,7 @@ class TestMessageStore : public NullMessageStore
 
     void dequeue(TransactionContext*,
                  const boost::intrusive_ptr<PersistableMessage>& msg,
-                 const PersistableQueue& /*queue*/)
+                 const boost::shared_ptr<PersistableQueue>& /*queue*/)
     {
         dequeued.push_back(msg);
     }

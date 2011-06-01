@@ -28,6 +28,7 @@
 #include "qpid/sys/Mutex.h"
 
 #include <boost/intrusive_ptr.hpp>
+#include <boost/shared_ptr.hpp>
 
 namespace qpid {
 namespace broker {
@@ -84,7 +85,7 @@ class QPID_BROKER_CLASS_EXTERN NullMessageStore : public MessageStore
                                             const PersistableQueue& queue);
     QPID_BROKER_EXTERN virtual void dequeue(TransactionContext* ctxt,
                                             const boost::intrusive_ptr<PersistableMessage>& msg,
-                                            const PersistableQueue& queue);
+                                            const boost::shared_ptr<PersistableQueue>& queue);
     QPID_BROKER_EXTERN virtual uint32_t outstandingQueueAIO(const PersistableQueue& queue);
     QPID_BROKER_EXTERN virtual void flush(const qpid::broker::PersistableQueue& queue);
     ~NullMessageStore(){}

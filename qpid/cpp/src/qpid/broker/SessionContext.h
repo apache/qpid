@@ -25,6 +25,7 @@
 #include "qpid/framing/FrameHandler.h"
 #include "qpid/framing/AMQP_ClientProxy.h"
 #include "qpid/framing/amqp_types.h"
+#include "qpid/framing/Invoker.h"
 #include "qpid/sys/OutputControl.h"
 #include "qpid/broker/ConnectionState.h"
 #include "qpid/broker/OwnershipToken.h"
@@ -37,7 +38,12 @@ namespace broker {
 
 class SessionContext : public OwnershipToken, public sys::OutputControl
 {
-  public:
+ protected:
+    class AsyncCommandManager;
+
+ public:
+    class AsyncCommandContext;
+
     virtual ~SessionContext(){}
     virtual bool isLocal(const ConnectionToken* t) const = 0;
     virtual bool isAttached() const = 0;
@@ -47,7 +53,52 @@ class SessionContext : public OwnershipToken, public sys::OutputControl
     virtual uint16_t getChannel() const = 0;
     virtual const SessionId& getSessionId() const = 0;
     virtual void addPendingExecutionSync() = 0;
-};
+    // pass async command context to Session, completion must not occur
+    // until -after- this call returns.
+    virtual void registerAsyncCommand(boost::intrusive_ptr<AsyncCommandContext>&) = 0;
+
+    // class for commands that need to complete asynchronously
+    friend class AsyncCommandContext;
+    class AsyncCommandContext : virtual public RefCounted
+    {
+     private:
+        framing::SequenceNumber id;
+        bool requiresAccept;
+        bool syncBitSet;
+        boost::intrusive_ptr<SessionContext::AsyncCommandManager> manager;
+
+     public:
+        AsyncCommandContext() : id(0), requiresAccept(false), syncBitSet(false) {}
+        virtual ~AsyncCommandContext() {}
+
+        framing::SequenceNumber getId() { return id; }
+        void setId(const framing::SequenceNumber seq) { id = seq; }
+        bool getRequiresAccept() { return requiresAccept; }
+        void setRequiresAccept(const bool a) { requiresAccept = a; }
+        bool getSyncBitSet() { return syncBitSet; }
+        void setSyncBitSet(const bool s) { syncBitSet = s; }
+        void setManager(SessionContext::AsyncCommandManager *m) { manager.reset(m); }
+
+        /** notify session that this command has completed */
+        void completed(const framing::Invoker::Result& r)
+        {
+            boost::intrusive_ptr<AsyncCommandContext> context(this);
+            manager->completePendingCommand( context, r );
+            manager.reset(0);
+        }
+
+        // to force completion as fast as possible (like when Sync arrives)
+        virtual void flush() = 0;
+    };
+
+ protected:
+    class AsyncCommandManager : public RefCounted
+    {
+     public:
+        virtual void completePendingCommand(boost::intrusive_ptr<AsyncCommandContext>&,
+                                            const framing::Invoker::Result&) = 0;
+    };
+ };
 
 }} // namespace qpid::broker
 

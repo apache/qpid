@@ -275,9 +275,30 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     bool enqueue(TransactionContext* ctxt, boost::intrusive_ptr<Message>& msg, bool suppressPolicyCheck = false);
     void enqueueAborted(boost::intrusive_ptr<Message> msg);
     /**
-     * dequeue from store (only done once messages is acknowledged)
+     * dequeue from store (only done once messages is acknowledged).  Dequeue
+     * -may- complete asynchronously. This method returns 'false' if the
+     * dequeue has completed, else 'true' if the dequeue is asynchronous.  If
+     * the caller is interested in receiving notification when the asynchronous
+     * dequeue completes, it may pass a pointer to a factory functor that
+     * returns a shareable DequeueDoneCallback object.  If the dequeue is
+     * completed synchronously, this pointer is ignored.  If the dequeue will
+     * complete asynchronously, the factory is called to obtain a
+     * DequeueDoneCallback.  When the dequeue completes, the
+     * DequeueDoneCallback is invoked. The callback should be prepared to
+     * execute on any thread.
      */
-    QPID_BROKER_EXTERN bool dequeue(TransactionContext* ctxt, const QueuedMessage &msg);
+    class DequeueDoneCallback
+    {
+    public:
+        virtual void operator()() = 0;
+    };
+    typedef boost::function<boost::shared_ptr<DequeueDoneCallback>()> DequeueDoneCallbackFactory;
+    QPID_BROKER_EXTERN bool dequeue(TransactionContext* ctxt, const QueuedMessage& msg,
+                                    DequeueDoneCallbackFactory *factory = 0);
+
+    /** invoked by store to signal dequeue() has completed */
+    QPID_BROKER_EXTERN void dequeueComplete(const boost::intrusive_ptr<PersistableMessage>& msg);
+
     /**
      * Inform the queue that a previous transactional dequeue
      * committed.
@@ -382,6 +403,9 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     void flush();
 
     const Broker* getBroker();
+
+ private:
+    std::map< PersistableMessage *, boost::shared_ptr<DequeueDoneCallback> > pendingDequeueCallbacks;
 };
 }
 }

@@ -110,9 +110,10 @@ void DeliveryRecord::complete()  {
     completed = true; 
 }
 
-bool DeliveryRecord::accept(TransactionContext* ctxt) {
+/** Accept msg, and optionally notify caller when dequeue completes */
+bool DeliveryRecord::accept(TransactionContext* ctxt, Queue::DequeueDoneCallbackFactory *f) {
     if (acquired && !ended) {
-        queue->dequeue(ctxt, msg);
+        queue->dequeue(ctxt, msg, f);
         setEnded();
         QPID_LOG(debug, "Accepted " << id);
     }

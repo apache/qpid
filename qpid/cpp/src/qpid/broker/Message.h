@@ -163,7 +163,6 @@ public:
     void setIsManagementMessage(bool b);
   private:
     MessageAdapter& getAdapter() const;
-    void allDequeuesComplete();
 
     mutable sys::Mutex lock;
     framing::FrameSet frames;

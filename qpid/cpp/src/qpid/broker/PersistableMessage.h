@@ -43,8 +43,7 @@ class MessageStore;
  */
 class PersistableMessage : public Persistable
 {
-    typedef std::list< boost::weak_ptr<PersistableQueue> > syncList;
-    sys::Mutex asyncDequeueLock;
+    typedef std::map< std::string, boost::weak_ptr<PersistableQueue> > syncList;
     sys::Mutex storeLock;
 
     /**
@@ -58,17 +57,6 @@ class PersistableMessage : public Persistable
      */
     AsyncCompletion ingressCompletion;
 
-    /**
-     * Tracks the number of outstanding asynchronous dequeue
-     * operations. When the message is dequeued asynchronously the
-     * count is incremented; when that dequeue completes it is
-     * decremented. Thus when it is 0, there are no outstanding
-     * dequeues.
-     */
-    int asyncDequeueCounter;
-
-    void dequeueAsync();
-
     syncList synclist;
     struct ContentReleaseState
     {
@@ -81,8 +69,6 @@ class PersistableMessage : public Persistable
     ContentReleaseState contentReleaseState;
 
   protected:
-    /** Called when all dequeues are complete for this message. */
-    virtual void allDequeuesComplete() = 0;
 
     void setContentReleased();
 
@@ -124,13 +110,10 @@ class PersistableMessage : public Persistable
     QPID_BROKER_EXTERN void enqueueAsync(PersistableQueue::shared_ptr queue,
                                          MessageStore* _store);
 
+    QPID_BROKER_EXTERN void dequeueComplete(PersistableQueue::shared_ptr queue,
+                                            MessageStore* _store);
 
-    QPID_BROKER_EXTERN bool isDequeueComplete();
-    
-    QPID_BROKER_EXTERN void dequeueComplete();
-
-    QPID_BROKER_EXTERN void dequeueAsync(PersistableQueue::shared_ptr queue,
-                                         MessageStore* _store);
+    QPID_BROKER_EXTERN void dequeueAsync(PersistableQueue::shared_ptr, MessageStore*) {}
 
     bool isStoredOnQueue(PersistableQueue::shared_ptr queue);
     

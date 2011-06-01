@@ -23,6 +23,7 @@
  */
 
 #include <boost/intrusive_ptr.hpp>
+#include <boost/noncopyable.hpp>
 
 #include "qpid/broker/BrokerImportExport.h"
 #include "qpid/sys/AtomicValue.h"
@@ -77,7 +78,7 @@ namespace broker {
  * assuming no need for synchronization with Completer threads.
  */
 
-class AsyncCompletion
+class AsyncCompletion : private boost::noncopyable
 {
  public:
 
@@ -88,7 +89,7 @@ class AsyncCompletion
      * callback object will be used by the last completer thread, and
      * released when the callback returns.
      */
-    class Callback : public RefCounted
+    class Callback : virtual public RefCounted
     {
   public:
         virtual void completed(bool) = 0;

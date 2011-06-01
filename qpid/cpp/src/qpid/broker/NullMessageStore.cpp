@@ -28,6 +28,7 @@
 #include <iostream>
 
 using boost::intrusive_ptr;
+using boost::shared_ptr;
 
 namespace qpid{
 namespace broker{
@@ -103,9 +104,9 @@ void NullMessageStore::enqueue(TransactionContext*,
 
 void NullMessageStore::dequeue(TransactionContext*,
                                const intrusive_ptr<PersistableMessage>& msg,
-                               const PersistableQueue&)
+                               const shared_ptr<PersistableQueue>& q)
 {
-    msg->dequeueComplete();
+    q->dequeueComplete(msg);
 }
 
 void NullMessageStore::flush(const qpid::broker::PersistableQueue&) {}

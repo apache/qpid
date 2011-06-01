@@ -31,6 +31,7 @@
 #include "qpid/broker/QueuedMessage.h"
 #include "qpid/broker/DeliveryId.h"
 #include "qpid/broker/Message.h"
+#include "qpid/broker/Queue.h"
 
 namespace qpid {
 namespace broker {
@@ -38,6 +39,7 @@ namespace broker {
 class TransactionContext;
 class SemanticState;
 struct AckRange;
+
 
 /**
  * Record of a delivery for which an ack is outstanding.
@@ -84,7 +86,7 @@ class DeliveryRecord
     void redeliver(SemanticState* const);
     void acquire(DeliveryIds& results);
     void complete();
-    bool accept(TransactionContext* ctxt); // Returns isRedundant()
+    bool accept(TransactionContext*, Queue::DequeueDoneCallbackFactory *);  // Returns isRedundant()
     bool setEnded();            // Returns isRedundant()
     void committed() const;
 

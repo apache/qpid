@@ -25,6 +25,7 @@
 #include "qpid/SessionState.h"
 #include "qpid/framing/FrameHandler.h"
 #include "qpid/framing/SequenceSet.h"
+#include "qpid/framing/ServerInvoker.h"
 #include "qpid/sys/Time.h"
 #include "qpid/management/Manageable.h"
 #include "qmf/org/apache/qpid/broker/Session.h"
@@ -133,8 +134,17 @@ class SessionState : public qpid::SessionState,
     // belonging to inter-broker bridges
     void addManagementObject();
 
+    // allows commands (dispatched via handleCommand()) to inform the session
+    // that they may complete asynchronously.
+    void registerAsyncCommand(boost::intrusive_ptr<SessionContext::AsyncCommandContext>&);
+    void cancelAsyncCommand(boost::intrusive_ptr<SessionContext::AsyncCommandContext>&);
+    
   private:
     void handleCommand(framing::AMQMethodBody* method, const framing::SequenceNumber& id);
+    /** finish command processing started in handleCommand() */
+    void completeCommand(const framing::SequenceNumber&,
+                         const framing::Invoker::Result&, bool requiresAccept,
+                         bool syncBitSet);
     void handleContent(framing::AMQFrame& frame, const framing::SequenceNumber& id);
 
     // indicate that the given ingress msg has been completely received by the
@@ -173,99 +183,100 @@ class SessionState : public qpid::SessionState,
     boost::scoped_ptr<RateFlowcontrol> rateFlowcontrol;
     boost::intrusive_ptr<sys::TimerTask> flowControlTimer;
 
-    // sequence numbers for pending received Execution.Sync commands
+    // sequence numbers of received Execution.Sync commands that are pending completion.
     std::queue<SequenceNumber> pendingExecutionSyncs;
-    bool currentCommandComplete;
 
+    // true if command completes during call to handleCommand()
+    bool currentCommandComplete;
+    bool syncCurrentCommand;
+    bool acceptRequired;
+
+ protected:
     /** This class provides a context for completing asynchronous commands in a thread
      * safe manner.  Asynchronous commands save their completion state in this class.
-     * This class then schedules the completeCommands() method in the IO thread.
-     * While running in the IO thread, completeCommands() may safely complete all
+     * This class then schedules the processCompletedCommands() method in the IO thread.
+     * While running in the IO thread, processCompletedCommands() may safely complete all
      * saved commands without the risk of colliding with other operations on this
      * SessionState.
      */
-    class AsyncCommandCompleter : public RefCounted {
+    class AsyncCommandManager : public SessionContext::AsyncCommandManager {
     private:
         SessionState *session;
         bool isAttached;
         qpid::sys::Mutex completerLock;
 
-        // special-case message.transfer commands for optimization
-        struct MessageInfo {
-            SequenceNumber cmd; // message.transfer command id
-            bool requiresAccept;
-            bool requiresSync;
-        MessageInfo(SequenceNumber c, bool a, bool s)
-        : cmd(c), requiresAccept(a), requiresSync(s) {}
+        /** all commands pending completion */
+        std::map<SequenceNumber, boost::intrusive_ptr<AsyncCommandContext> > pendingCommands;
+
+        // Store information about completed commands that are pending the
+        // call to completeCommands()
+        struct CommandInfo {
+            SequenceNumber id;
+            framing::Invoker::Result results;
+            bool requiresAccept;    // only if cmd==Message.transfer
+            bool syncBitSet;
+        CommandInfo(SequenceNumber c, const framing::Invoker::Result& r, bool a, bool s)
+        : id(c), results(r), requiresAccept(a), syncBitSet(s) {}
         };
-        std::vector<MessageInfo> completedMsgs;
-        // If an ingress message does not require a Sync, we need to
-        // hold a reference to it in case an Execution.Sync command is received and we
-        // have to manually flush the message.
-        std::map<SequenceNumber, boost::intrusive_ptr<Message> > pendingMsgs;
+        std::vector<CommandInfo> completedCommands;
 
-        /** complete all pending commands, runs in IO thread */
-        void completeCommands();
+        /** finish processing all completed commands, runs in IO thread */
+        void processCompletedCommands();
 
-        /** for scheduling a run of "completeCommands()" on the IO thread */
-        static void schedule(boost::intrusive_ptr<AsyncCommandCompleter>);
+        /** for scheduling a run of "processCompletedCommands()" on the IO thread */
+        static void schedule(boost::intrusive_ptr<AsyncCommandManager>);
+
 
     public:
-        AsyncCommandCompleter(SessionState *s) : session(s), isAttached(s->isAttached()) {};
-        ~AsyncCommandCompleter() {};
+        AsyncCommandManager(SessionState *s) : session(s), isAttached(s->isAttached()) {};
+        ~AsyncCommandManager() {};
 
         /** track a message pending ingress completion */
-        void addPendingMessage(boost::intrusive_ptr<Message> m);
-        void deletePendingMessage(SequenceNumber id);
-        void flushPendingMessages();
+        //void addPendingMessage(boost::intrusive_ptr<Message> m);
+        //void deletePendingMessage(SequenceNumber id);
+        //void flushPendingMessages();
         /** schedule the processing of a completed ingress message.transfer command */
-        void scheduleMsgCompletion(SequenceNumber cmd,
-                                   bool requiresAccept,
-                                   bool requiresSync);
+        //void scheduleMsgCompletion(SequenceNumber cmd,
+        //                           bool requiresAccept,
+        //                           bool requiresSync);
         void cancel();  // called by SessionState destructor.
         void attached();  // called by SessionState on attach()
         void detached();  // called by SessionState on detach()
-    };
-    boost::intrusive_ptr<AsyncCommandCompleter> asyncCommandCompleter;
 
-    /** Abstract class that represents a single asynchronous command that is
-     * pending completion.
-     */
-    class AsyncCommandContext : public AsyncCompletion::Callback
-    {
-     public:
-        AsyncCommandContext( SessionState *ss, SequenceNumber _id )
-          : id(_id), completerContext(ss->asyncCommandCompleter) {}
-        virtual ~AsyncCommandContext() {}
-
-     protected:
-        SequenceNumber id;
-        boost::intrusive_ptr<AsyncCommandCompleter> completerContext;
+        /** called by async command handlers */
+        void addPendingCommand(boost::intrusive_ptr<AsyncCommandContext>&,
+                               framing::SequenceNumber, bool, bool);
+        void cancelPendingCommand(boost::intrusive_ptr<AsyncCommandContext>&);
+        void flushPendingCommands();
+        void completePendingCommand(boost::intrusive_ptr<AsyncCommandContext>&, const framing::Invoker::Result&);
     };
+    boost::intrusive_ptr<AsyncCommandManager> asyncCommandManager;
+
+ private:
 
     /** incomplete Message.transfer commands - inbound to broker from client
      */
-    class IncompleteIngressMsgXfer : public SessionState::AsyncCommandContext
+    class IncompleteIngressMsgXfer : public AsyncCommandContext,
+                                     public AsyncCompletion::Callback
     {
      public:
         IncompleteIngressMsgXfer( SessionState *ss,
                                   boost::intrusive_ptr<Message> m )
-          : AsyncCommandContext(ss, m->getCommandId()),
-          session(ss),
+          : session(ss),
           msg(m),
-          requiresAccept(m->requiresAccept()),
-          requiresSync(m->getFrames().getMethod()->isSync()),
           pending(false) {}
         virtual ~IncompleteIngressMsgXfer() {};
 
+        // async completion calls
         virtual void completed(bool);
         virtual boost::intrusive_ptr<AsyncCompletion::Callback> clone();
+
+        // async cmd calls
+        virtual void flush();
 
      private:
         SessionState *session;  // only valid if sync flag in callback is true
         boost::intrusive_ptr<Message> msg;
-        bool requiresAccept;
-        bool requiresSync;
         bool pending;   // true if msg saved on pending list...
     };
 

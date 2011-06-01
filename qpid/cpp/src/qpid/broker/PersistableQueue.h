@@ -26,10 +26,12 @@
 #include "qpid/broker/Persistable.h"
 #include "qpid/management/Manageable.h"
 #include <boost/shared_ptr.hpp>
+#include <boost/intrusive_ptr.hpp>
 
 namespace qpid {
 namespace broker {
 
+class PersistableMessage;
 
 /**
 * Empty class to be used by any module that wanted to set an external per queue store into
@@ -66,6 +68,9 @@ public:
     
     PersistableQueue():externalQueueStore(NULL){
     };
+
+    /** the message has finished being dequeued from the store */
+    virtual void dequeueComplete(const boost::intrusive_ptr<PersistableMessage>&) = 0;
     
 protected:
     ExternalQueueStore* externalQueueStore;

@@ -419,11 +419,6 @@ struct ScopedSet {
 };
 }
 
-void Message::allDequeuesComplete() {
-    ScopedSet ss(callbackLock, inCallback);
-    MessageCallback* cb = dequeueCallback;
-    if (cb && *cb) (*cb)(intrusive_ptr<Message>(this));
-}
 
 void Message::setDequeueCompleteCallback(MessageCallback& cb) {
     sys::Mutex::ScopedLock l(callbackLock);

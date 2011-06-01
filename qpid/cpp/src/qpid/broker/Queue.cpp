@@ -438,7 +438,8 @@ void Queue::purgeExpired()
             Mutex::ScopedLock locker(messageLock);
             messages->removeIf(boost::bind(&collect_if_expired, expired, _1));
         }
-        for_each(expired.begin(), expired.end(), boost::bind(&Queue::dequeue, this, (TransactionContext*) 0, _1));
+        for_each(expired.begin(), expired.end(), boost::bind(&Queue::dequeue, this, (TransactionContext*) 0, _1,
+                                                             (DequeueDoneCallbackFactory*)0));
     }
 }
 
@@ -613,7 +614,8 @@ bool Queue::enqueue(TransactionContext* ctxt, boost::intrusive_ptr<Message>& msg
             policy->getPendingDequeues(dequeues);
         }
         //depending on policy, may have some dequeues that need to performed without holding the lock
-        for_each(dequeues.begin(), dequeues.end(), boost::bind(&Queue::dequeue, this, (TransactionContext*) 0, _1));        
+        for_each(dequeues.begin(), dequeues.end(), boost::bind(&Queue::dequeue, this, (TransactionContext*) 0, _1,
+                                                               (DequeueDoneCallbackFactory*)0));
     }
 
     if (inLastNodeFailure && persistLastNode){
@@ -652,8 +654,13 @@ void Queue::enqueueAborted(boost::intrusive_ptr<Message> msg)
     if (policy.get()) policy->enqueueAborted(msg);       
 }
 
-// return true if store exists, 
-bool Queue::dequeue(TransactionContext* ctxt, const QueuedMessage& msg)
+/**
+ * returns false if the dequeue completed, otherwise the dequeue will complete
+ * asynchronously.  If the caller needs to know when an asynchronous dequeue
+ * completes, it must provide a factory that will provide the callback.
+ */
+bool Queue::dequeue(TransactionContext* ctxt, const QueuedMessage& msg,
+                    DequeueDoneCallbackFactory *factory)
 {
     ScopedUse u(barrier);
     if (!u.acquired) return false;
@@ -670,9 +677,14 @@ bool Queue::dequeue(TransactionContext* ctxt, const QueuedMessage& msg)
     bool fp = msg.payload->isForcedPersistent();
     if (!fp || (fp && msg.payload->isStoredOnQueue(shared_from_this()))) {
         if ((msg.payload->isPersistent() || msg.payload->checkContentReleasable()) && store) {
-            msg.payload->dequeueAsync(shared_from_this(), store); //increment to async counter -- for message sent to more than one queue
+            msg.payload->dequeueAsync(shared_from_this(), store);
             boost::intrusive_ptr<PersistableMessage> pmsg = boost::static_pointer_cast<PersistableMessage>(msg.payload);
-            store->dequeue(ctxt, pmsg, *this);
+            if (factory) {
+                boost::shared_ptr<DequeueDoneCallback> callback((*factory)());
+                Mutex::ScopedLock locker(messageLock);
+                pendingDequeueCallbacks[pmsg.get()] = callback;
+            }
+            store->dequeue(ctxt, pmsg, shared_from_this());  // invokes Queue::dequeueComplete() when done
             return true;
         }
     }
@@ -1109,7 +1121,8 @@ void Queue::recoveryComplete(ExchangeRegistry& exchanges)
         }
     }
     //process any pending dequeues
-    for_each(pendingDequeues.begin(), pendingDequeues.end(), boost::bind(&Queue::dequeue, this, (TransactionContext*) 0, _1));
+    for_each(pendingDequeues.begin(), pendingDequeues.end(), boost::bind(&Queue::dequeue, this, (TransactionContext*) 0, _1,
+                                                                         (DequeueDoneCallbackFactory*)0));
     pendingDequeues.clear();
 }
 
@@ -1195,6 +1208,27 @@ bool Queue::bind(boost::shared_ptr<Exchange> exchange, const std::string& key,
 const Broker* Queue::getBroker()
 {
     return broker;
+}
+
+
+/** invoked from the store thread when the asynchronous dequeueing of the
+ * message has completed. */
+void Queue::dequeueComplete(const boost::intrusive_ptr<PersistableMessage>& msg )
+{
+    msg->dequeueComplete(shared_from_this(), store);
+
+    boost::shared_ptr<DequeueDoneCallback> cb;
+    {
+        Mutex::ScopedLock locker(messageLock);
+        std::map< PersistableMessage *, boost::shared_ptr<DequeueDoneCallback> >::iterator i;
+        i = pendingDequeueCallbacks.find(msg.get());
+        if (i != pendingDequeueCallbacks.end()) {
+            cb = i->second;
+            pendingDequeueCallbacks.erase(i);
+        }
+    }
+    if (cb) (*cb)();
+    QPID_LOG(error, "dequeueComplete:=" << cb);
 }
 
 

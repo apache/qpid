@@ -27,6 +27,7 @@
 #define TRANSFER_EXCEPTION(fn) try { fn; } catch (std::exception& e) { throw Exception(e.what()); }
 
 using boost::intrusive_ptr;
+using boost::shared_ptr;
 using qpid::framing::FieldTable;
 using std::string;
 
@@ -127,7 +128,7 @@ void MessageStoreModule::enqueue(TransactionContext* ctxt,
 
 void MessageStoreModule::dequeue(TransactionContext* ctxt,
                                  const intrusive_ptr<PersistableMessage>& msg,
-                                 const PersistableQueue& queue)
+                                 const shared_ptr<PersistableQueue>& queue)
 {
     TRANSFER_EXCEPTION(store->dequeue(ctxt, msg, queue));
 }

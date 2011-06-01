@@ -72,7 +72,7 @@ class MessageStoreModule : public MessageStore
                  const PersistableQueue& queue);
     void dequeue(TransactionContext* ctxt,
                  const boost::intrusive_ptr<PersistableMessage>& msg,
-                 const PersistableQueue& queue);
+                 const boost::shared_ptr<PersistableQueue>& queue);
     uint32_t outstandingQueueAIO(const PersistableQueue& queue);
     void flush(const qpid::broker::PersistableQueue& queue);
     bool isNull() const;

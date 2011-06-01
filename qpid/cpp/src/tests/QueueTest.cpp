@@ -366,7 +366,7 @@ class TestMessageStoreOC : public MessageStore
 
     virtual void dequeue(TransactionContext*,
                  const boost::intrusive_ptr<PersistableMessage>& /*msg*/,
-                 const PersistableQueue& /*queue*/)
+                 const boost::shared_ptr<PersistableQueue>& /*queue*/)
     {
         if (error) throw Exception("Dequeue error test");
         deqCnt++;

@@ -34,7 +34,6 @@ class MessageStore;
 PersistableMessage::~PersistableMessage() {}
 
 PersistableMessage::PersistableMessage() :
-    asyncDequeueCounter(0),
     store(0)
 {}
 
@@ -43,18 +42,18 @@ void PersistableMessage::flush()
     syncList copy;
     {
         sys::ScopedLock<sys::Mutex> l(storeLock);
-	if (store) {
-	    copy = synclist;
-	} else {
+        if (store) {
+            copy = synclist;
+        } else {
             return;//early exit as nothing to do
-	}
+        }
     }
     for (syncList::iterator i = copy.begin(); i != copy.end(); ++i) {
-        PersistableQueue::shared_ptr q(i->lock());
+        PersistableQueue::shared_ptr q(i->second.lock());
         if (q) {
             q->flush();
         }
-    } 
+    }
 }
 
 void PersistableMessage::setContentReleased()
@@ -70,8 +69,9 @@ bool PersistableMessage::isContentReleased() const
 
 bool PersistableMessage::isStoredOnQueue(PersistableQueue::shared_ptr queue){
     if (store && (queue->getPersistenceId()!=0)) {
+        sys::ScopedLock<sys::Mutex> l(storeLock);
         for (syncList::iterator i = synclist.begin(); i != synclist.end(); ++i) {
-            PersistableQueue::shared_ptr q(i->lock());
+            PersistableQueue::shared_ptr q(i->second.lock());
             if (q && q->getPersistenceId() == queue->getPersistenceId())  return true;
         } 
     }            
@@ -84,7 +84,7 @@ void PersistableMessage::addToSyncList(PersistableQueue::shared_ptr queue, Messa
         sys::ScopedLock<sys::Mutex> l(storeLock);
         store = _store;
         boost::weak_ptr<PersistableQueue> q(queue);
-        synclist.push_back(q);
+        synclist[queue->getName()] = q;
     }
 }
 
@@ -93,37 +93,12 @@ void PersistableMessage::enqueueAsync(PersistableQueue::shared_ptr queue, Messag
     enqueueStart();
 }
 
-bool PersistableMessage::isDequeueComplete() { 
-    sys::ScopedLock<sys::Mutex> l(asyncDequeueLock);
-    return asyncDequeueCounter == 0;
-}
-    
-void PersistableMessage::dequeueComplete() { 
-    bool notify = false;
-    {
-        sys::ScopedLock<sys::Mutex> l(asyncDequeueLock);
-        if (asyncDequeueCounter > 0) {
-            if (--asyncDequeueCounter == 0) {
-                notify = true;
-            }
-        }
-    }
-    if (notify) allDequeuesComplete();
-}
-
-void PersistableMessage::dequeueAsync(PersistableQueue::shared_ptr queue, MessageStore* _store) { 
+void PersistableMessage::dequeueComplete(PersistableQueue::shared_ptr queue, MessageStore* _store)
+{
     if (_store){
         sys::ScopedLock<sys::Mutex> l(storeLock);
-        store = _store;
-        boost::weak_ptr<PersistableQueue> q(queue);
-        synclist.push_back(q);
+        synclist.erase(queue->getName());
     }
-    dequeueAsync();
-}
-
-void PersistableMessage::dequeueAsync() { 
-    sys::ScopedLock<sys::Mutex> l(asyncDequeueLock);
-    asyncDequeueCounter++; 
 }
 
 PersistableMessage::ContentReleaseState::ContentReleaseState() : blocked(false), requested(false), released(false) {}
