@@ -387,7 +387,7 @@ void Message::adjustTtl()
         sys::Mutex::ScopedLock l(lock);
         if (expiration < FAR_FUTURE) {
             sys::Duration d(sys::AbsTime::now(), getExpiration());
-            props->setTtl(int64_t(d) > 0 ? int64_t(d)/1000000 : 1); // convert from ns to ms; set to 1 if expired
+            props->setTtl(int64_t(d) >= 1000000 ? int64_t(d)/1000000 : 1); // convert from ns to ms; set to 1 if expired
         }
     }
 }
