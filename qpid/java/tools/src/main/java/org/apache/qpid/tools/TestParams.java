@@ -71,7 +71,7 @@ public class TestParams
         url = System.getProperty("url",url);
         host = System.getProperty("host","");
         port = Integer.getInteger("port", -1);
-        address = System.getProperty("address","queue");
+        address = System.getProperty("address",address);
 
         msg_size  = Integer.getInteger("msg_size", 1024);
         msg_type = Integer.getInteger("msg_type",1);
