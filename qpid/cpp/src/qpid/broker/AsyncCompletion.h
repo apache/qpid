@@ -89,7 +89,7 @@ class AsyncCompletion : private boost::noncopyable
      * callback object will be used by the last completer thread, and
      * released when the callback returns.
      */
-    class Callback : virtual public RefCounted
+    class Callback : public RefCounted
     {
   public:
         virtual void completed(bool) = 0;

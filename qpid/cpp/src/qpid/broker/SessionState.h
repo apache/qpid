@@ -186,10 +186,11 @@ class SessionState : public qpid::SessionState,
     // sequence numbers of received Execution.Sync commands that are pending completion.
     std::queue<SequenceNumber> pendingExecutionSyncs;
 
-    // true if command completes during call to handleCommand()
-    bool currentCommandComplete;
-    bool syncCurrentCommand;
-    bool acceptRequired;
+    // flags that reflect the state of the currently executing received command:
+    bool currentCommandComplete;    // true if the current command completed synchronously
+    SequenceNumber currentCommandId;
+    bool syncCurrentCommand;        // true if sync-bit set in current command headers
+    bool acceptRequired;            // true if current ingress message.transfer requires accept
 
  protected:
     /** This class provides a context for completing asynchronous commands in a thread
@@ -231,24 +232,16 @@ class SessionState : public qpid::SessionState,
         AsyncCommandManager(SessionState *s) : session(s), isAttached(s->isAttached()) {};
         ~AsyncCommandManager() {};
 
-        /** track a message pending ingress completion */
-        //void addPendingMessage(boost::intrusive_ptr<Message> m);
-        //void deletePendingMessage(SequenceNumber id);
-        //void flushPendingMessages();
-        /** schedule the processing of a completed ingress message.transfer command */
-        //void scheduleMsgCompletion(SequenceNumber cmd,
-        //                           bool requiresAccept,
-        //                           bool requiresSync);
         void cancel();  // called by SessionState destructor.
         void attached();  // called by SessionState on attach()
         void detached();  // called by SessionState on detach()
 
-        /** called by async command handlers */
-        void addPendingCommand(boost::intrusive_ptr<AsyncCommandContext>&,
-                               framing::SequenceNumber, bool, bool);
-        void cancelPendingCommand(boost::intrusive_ptr<AsyncCommandContext>&);
+        /** for mananging asynchronous commands */
+        void addPendingCommand(const boost::intrusive_ptr<AsyncCommandContext>&,
+                               const framing::SequenceNumber&, const bool, const bool);
+        void cancelPendingCommand(const boost::intrusive_ptr<AsyncCommandContext>&);
         void flushPendingCommands();
-        void completePendingCommand(boost::intrusive_ptr<AsyncCommandContext>&, const framing::Invoker::Result&);
+        void completePendingCommand(const boost::intrusive_ptr<AsyncCommandContext>&, const framing::Invoker::Result&);
     };
     boost::intrusive_ptr<AsyncCommandManager> asyncCommandManager;
 
@@ -256,28 +249,32 @@ class SessionState : public qpid::SessionState,
 
     /** incomplete Message.transfer commands - inbound to broker from client
      */
-    class IncompleteIngressMsgXfer : public AsyncCommandContext,
-                                     public AsyncCompletion::Callback
+    friend class IncompleteIngressMsgXfer;
+    class IncompleteIngressMsgXfer : public AsyncCompletion::Callback
     {
      public:
         IncompleteIngressMsgXfer( SessionState *ss,
                                   boost::intrusive_ptr<Message> m )
-          : session(ss),
-          msg(m),
-          pending(false) {}
+          : session(ss), msg(m) {};
         virtual ~IncompleteIngressMsgXfer() {};
 
-        // async completion calls
         virtual void completed(bool);
         virtual boost::intrusive_ptr<AsyncCompletion::Callback> clone();
 
-        // async cmd calls
-        virtual void flush();
-
      private:
+        /** @todo KAG COMMENT ME */
+        class CommandContext : public AsyncCommandContext
+        {
+            boost::intrusive_ptr<Message> msg;
+         public:
+            CommandContext(boost::intrusive_ptr<Message> _m)
+              : msg(_m) {}
+            virtual void flush() { msg->flush(); }
+        };
+
         SessionState *session;  // only valid if sync flag in callback is true
         boost::intrusive_ptr<Message> msg;
-        bool pending;   // true if msg saved on pending list...
+        boost::intrusive_ptr<CommandContext> pendingCmdCtxt;
     };
 
     friend class SessionManager;

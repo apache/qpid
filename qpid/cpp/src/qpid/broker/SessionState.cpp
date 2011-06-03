@@ -208,6 +208,7 @@ void SessionState::handleCommand(framing::AMQMethodBody* method, const SequenceN
 {
     currentCommandComplete = true;      // assumed, can be overridden by invoker method (this sucks).
     syncCurrentCommand = method->isSync();
+    currentCommandId = id;
     acceptRequired = false;
     Invoker::Result invocation = invoke(adapter, *method);
     if (!invocation.wasHandled()) {
@@ -263,6 +264,7 @@ void SessionState::handleContent(AMQFrame& frame, const SequenceNumber& id)
         currentCommandComplete = true;      // assumed
         syncCurrentCommand = msg->getFrames().getMethod()->isSync();
         acceptRequired = msg->requiresAccept();
+        currentCommandId = msg->getCommandId();
         semanticState.handle(msg);
         msgBuilder.end();
         IncompleteIngressMsgXfer xfer(this, msg);
@@ -428,21 +430,23 @@ framing::AMQP_ClientProxy& SessionState::getClusterOrderProxy() {
 // (called via the invoker() in handleCommand() above)
 void SessionState::addPendingExecutionSync()
 {
-    SequenceNumber syncCommandId = receiverGetCurrent();
-    if (receiverGetIncomplete().front() < syncCommandId) {
+    if (receiverGetIncomplete().front() < currentCommandId) {
         currentCommandComplete = false;
-        pendingExecutionSyncs.push(syncCommandId);
+        pendingExecutionSyncs.push(currentCommandId);
         asyncCommandManager->flushPendingCommands();
-        QPID_LOG(debug, getId() << ": delaying completion of execution.sync " << syncCommandId);
+        QPID_LOG(debug, getId() << ": delaying completion of execution.sync " << currentCommandId);
     }
 }
 
 
 void SessionState::registerAsyncCommand(boost::intrusive_ptr<AsyncCommandContext>& aCmd)
 {
-    /** @todo KAG: ensure this is invoked during handleCommand() context! */
+    /** @todo KAG: ensure this is invoked during handleCommand()/handleContent() context! */
     currentCommandComplete = false;
-    asyncCommandManager->addPendingCommand( aCmd, receiverGetCurrent(), acceptRequired, syncCurrentCommand );
+    asyncCommandManager->addPendingCommand( aCmd, currentCommandId, acceptRequired, syncCurrentCommand );
+    if (syncCurrentCommand) {   // if client wants ack, force command to complete asap.
+        aCmd->flush();
+    }
 }
 
 
@@ -460,14 +464,10 @@ SessionState::IncompleteIngressMsgXfer::clone()
     boost::intrusive_ptr<SessionState::IncompleteIngressMsgXfer> cb(new SessionState::IncompleteIngressMsgXfer(session, msg));
 
     // this routine is *only* invoked when the message needs to be asynchronously completed.  Otherwise, ::completed()
-    // will be invoked directly.
-    pending = true;
-    boost::intrusive_ptr<SessionContext::AsyncCommandContext>ctxt(boost::static_pointer_cast<SessionContext::AsyncCommandContext>(cb));
+    // will be invoked directly.  Thus, let the SessionState know this command is not going to complete immediately:
+    pendingCmdCtxt = boost::intrusive_ptr<CommandContext>(new CommandContext(msg));
+    boost::intrusive_ptr<qpid::broker::SessionContext::AsyncCommandContext> ctxt(pendingCmdCtxt);
     session->registerAsyncCommand(ctxt);
-    if (ctxt->getSyncBitSet()) {
-        // If the client is pending the message.transfer completion, flush now to force immediate write to journal.
-        msg->flush();
-    }
     return cb;
 }
 
@@ -478,32 +478,24 @@ SessionState::IncompleteIngressMsgXfer::clone()
  */
 void SessionState::IncompleteIngressMsgXfer::completed(bool sync)
 {
-    if (!sync) {
-        /** note well: this path may execute in any thread.  It is safe to access
-         * the scheduledCompleterContext, since *this has a shared pointer to it.
-         * but not session!
-         */
+    if (pendingCmdCtxt) {
         session = 0;
-        QPID_LOG(debug, ": async completion callback scheduled for msg seq=" << getId());
-        completed(framing::Invoker::Result());
+        QPID_LOG(debug, ": async completion callback scheduled for msg seq=" << pendingCmdCtxt->getId());
+        pendingCmdCtxt->completed(framing::Invoker::Result());
+        pendingCmdCtxt.reset();
     } else {
+        // Since "clone()" above was _not_ called, this -better- be sync!
+        if (!sync) assert(false);
         // this path runs directly from the ac->end() call in handleContent() above,
         // so *session is definately valid.
         if (session->isAttached()) {
-            QPID_LOG(debug, ": receive completed for msg seq=" << getId());
-            session->completeCommand(getId(), framing::Invoker::Result(), getRequiresAccept(), getSyncBitSet());
-        }
-        if (pending) {
-            boost::intrusive_ptr<AsyncCommandContext> p(this);
-            session->cancelAsyncCommand(p);
+            QPID_LOG(debug, ": receive completed for msg seq=" << session->currentCommandId);
+            session->completeCommand(session->currentCommandId,
+                                     framing::Invoker::Result(),    // dummy
+                                     session->acceptRequired,
+                                     session->syncCurrentCommand);
         }
     }
-}
-
-
-void SessionState::IncompleteIngressMsgXfer::flush()
-{
-    msg->flush();
 }
 
 
@@ -516,9 +508,9 @@ void SessionState::AsyncCommandManager::schedule(boost::intrusive_ptr<AsyncComma
 }
 
 
-void SessionState::AsyncCommandManager::addPendingCommand(boost::intrusive_ptr<AsyncCommandContext>& cmd,
-                                                          framing::SequenceNumber seq,
-                                                          bool acceptRequired, bool syncBitSet)
+void SessionState::AsyncCommandManager::addPendingCommand(const boost::intrusive_ptr<AsyncCommandContext>& cmd,
+                                                          const framing::SequenceNumber& seq,
+                                                          const bool acceptRequired, const bool syncBitSet)
 {
     cmd->setId(seq);
     cmd->setRequiresAccept(acceptRequired);
@@ -531,7 +523,7 @@ void SessionState::AsyncCommandManager::addPendingCommand(boost::intrusive_ptr<A
 }
 
 
-void SessionState::AsyncCommandManager::cancelPendingCommand(boost::intrusive_ptr<AsyncCommandContext>& cmd)
+void SessionState::AsyncCommandManager::cancelPendingCommand(const boost::intrusive_ptr<AsyncCommandContext>& cmd)
 {
     qpid::sys::ScopedLock<qpid::sys::Mutex> l(completerLock);
     pendingCommands.erase(cmd->getId());
@@ -559,7 +551,7 @@ void SessionState::AsyncCommandManager::flushPendingCommands()
 /** mark a pending command as completed.
  * This method must be thread safe - it may run on any thread.
  */
-void SessionState::AsyncCommandManager::completePendingCommand(boost::intrusive_ptr<AsyncCommandContext>& cmd,
+void SessionState::AsyncCommandManager::completePendingCommand(const boost::intrusive_ptr<AsyncCommandContext>& cmd,
                                                                const framing::Invoker::Result& result)
 {
     qpid::sys::ScopedLock<qpid::sys::Mutex> l(completerLock);

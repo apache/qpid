@@ -59,7 +59,7 @@ class SessionContext : public OwnershipToken, public sys::OutputControl
 
     // class for commands that need to complete asynchronously
     friend class AsyncCommandContext;
-    class AsyncCommandContext : virtual public RefCounted
+    class AsyncCommandContext : public RefCounted
     {
      private:
         framing::SequenceNumber id;
@@ -71,11 +71,11 @@ class SessionContext : public OwnershipToken, public sys::OutputControl
         AsyncCommandContext() : id(0), requiresAccept(false), syncBitSet(false) {}
         virtual ~AsyncCommandContext() {}
 
-        framing::SequenceNumber getId() { return id; }
+        framing::SequenceNumber getId() const { return id; }
         void setId(const framing::SequenceNumber seq) { id = seq; }
-        bool getRequiresAccept() { return requiresAccept; }
+        bool getRequiresAccept() const { return requiresAccept; }
         void setRequiresAccept(const bool a) { requiresAccept = a; }
-        bool getSyncBitSet() { return syncBitSet; }
+        bool getSyncBitSet() const { return syncBitSet; }
         void setSyncBitSet(const bool s) { syncBitSet = s; }
         void setManager(SessionContext::AsyncCommandManager *m) { manager.reset(m); }
 
@@ -95,7 +95,7 @@ class SessionContext : public OwnershipToken, public sys::OutputControl
     class AsyncCommandManager : public RefCounted
     {
      public:
-        virtual void completePendingCommand(boost::intrusive_ptr<AsyncCommandContext>&,
+        virtual void completePendingCommand(const boost::intrusive_ptr<AsyncCommandContext>&,
                                             const framing::Invoker::Result&) = 0;
     };
  };
