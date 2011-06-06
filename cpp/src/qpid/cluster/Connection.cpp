@@ -322,10 +322,10 @@ size_t Connection::decode(const char* data, size_t size) {
         while (localDecoder.decode(buf))
             received(localDecoder.getFrame());
         if (!wasOpen && connection->isOpen()) {
-            // Connections marked as federation links are allowed to proxy
+            // Connections marked with setUserProxyAuth are allowed to proxy
             // messages with user-ID that doesn't match the connection's
             // authenticated ID. This is important for updates.
-            connection->setFederationLink(isCatchUp());
+            connection->setUserProxyAuth(isCatchUp());
         }
     }
     else {                      // Multicast local connections.

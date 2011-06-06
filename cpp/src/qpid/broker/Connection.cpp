@@ -288,11 +288,11 @@ void Connection::raiseConnectEvent() {
     }
 }
 
-void Connection::setFederationLink(bool b)
+void Connection::setUserProxyAuth(bool b)
 {
-    ConnectionState::setFederationLink(b);
+    ConnectionState::setUserProxyAuth(b);
     if (mgmtObject != 0)
-            mgmtObject->set_federationLink(b);
+        mgmtObject->set_userProxyAuth(b);
 }
 
 void Connection::close(connection::CloseCode code, const string& text)
