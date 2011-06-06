@@ -125,7 +125,7 @@ class Connection : public sys::ConnectionInputHandler,
     const std::string& getUserId() const { return ConnectionState::getUserId(); }
     const std::string& getMgmtId() const { return mgmtId; }
     management::ManagementAgent* getAgent() const { return agent; }
-    void setFederationLink(bool b);
+    void setUserProxyAuth(bool b);
     /** Connection does not delete the listener. 0 resets. */
     void setErrorListener(ErrorListener* l) { errorListener=l; }
     ErrorListener* getErrorListener() { return errorListener; }
