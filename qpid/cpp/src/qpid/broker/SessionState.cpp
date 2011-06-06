@@ -465,8 +465,8 @@ SessionState::IncompleteIngressMsgXfer::clone()
 
     // this routine is *only* invoked when the message needs to be asynchronously completed.  Otherwise, ::completed()
     // will be invoked directly.  Thus, let the SessionState know this command is not going to complete immediately:
-    pendingCmdCtxt = boost::intrusive_ptr<CommandContext>(new CommandContext(msg));
-    boost::intrusive_ptr<qpid::broker::SessionContext::AsyncCommandContext> ctxt(pendingCmdCtxt);
+    cb->pendingCmdCtxt = boost::intrusive_ptr<CommandContext>(new CommandContext(msg));
+    boost::intrusive_ptr<qpid::broker::SessionContext::AsyncCommandContext> ctxt(cb->pendingCmdCtxt);
     session->registerAsyncCommand(ctxt);
     return cb;
 }
