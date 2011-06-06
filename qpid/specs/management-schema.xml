@@ -255,6 +255,7 @@
     <property name="address"  type="sstr"   access="RC" index="y"/>
     <property name="incoming" type="bool"   access="RC"/>
     <property name="SystemConnection"   type="bool"   access="RC" desc="Infrastucture/ Inter-system connection (Cluster, Federation, ...)"/>
+    <property name="userProxyAuth"      type="bool"   access="RO" desc="Authorization to proxy for users not on broker"/>
     <property name="federationLink"     type="bool"   access="RO" desc="Is this a federation link"/>
     <property name="authIdentity"       type="sstr"   access="RO" desc="authId of connection if authentication enabled"/>
     <property name="remoteProcessName"  type="lstr"   access="RO" optional="y" desc="Name of executable running as remote client"/>
