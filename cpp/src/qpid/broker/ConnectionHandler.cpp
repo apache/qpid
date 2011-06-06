@@ -137,7 +137,9 @@ void ConnectionHandler::Handler::startOk(const framing::FieldTable& clientProper
         throw;
     }
     connection.setFederationLink(clientProperties.get(QPID_FED_LINK));
-    connection.setFederationPeerTag(clientProperties.getAsString(QPID_FED_TAG));
+    if (clientProperties.isSet(QPID_FED_TAG)) {
+        connection.setFederationPeerTag(clientProperties.getAsString(QPID_FED_TAG));
+    }
     if (connection.isFederationLink()) {
     	if (acl && !acl->authorise(connection.getUserId(),acl::ACT_CREATE,acl::OBJ_LINK,"")){
             proxy.close(framing::connection::CLOSE_CODE_CONNECTION_FORCED,"ACL denied creating a federation link");
@@ -292,7 +294,9 @@ void ConnectionHandler::Handler::start(const FieldTable& serverProperties,
         }
     }
 
-    connection.setFederationPeerTag(serverProperties.getAsString(QPID_FED_TAG));
+    if (serverProperties.isSet(QPID_FED_TAG)) {
+        connection.setFederationPeerTag(serverProperties.getAsString(QPID_FED_TAG));
+    }
 
     FieldTable ft;
     ft.setInt(QPID_FED_LINK,1);
