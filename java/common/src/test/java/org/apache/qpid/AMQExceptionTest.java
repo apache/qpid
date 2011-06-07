@@ -23,6 +23,7 @@ package org.apache.qpid;
 import junit.framework.TestCase;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.framing.AMQFrameDecodingException;
+import org.apache.qpid.framing.AMQShortString;
 
 /**
  * This test is to ensure that when an AMQException is rethrown that the specified exception is correctly wrapped up.
@@ -89,6 +90,18 @@ public class AMQExceptionTest extends TestCase
         assertEquals("Cause is not correct", test.getCause(), amqe.getCause().getCause());
 
         return amqe;
+    }
+
+    public void testGetMessageAsString()
+    {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < 25; i++)
+        {
+            sb.append("message [" + i + "]");
+        }
+        AMQException e = new AMQException(AMQConstant.INTERNAL_ERROR, sb.toString(), null);
+        AMQShortString message = e.getMessageAsShortString();
+        assertEquals(sb.substring(0, AMQShortString.MAX_LENGTH - 3) + "...", message.toString());
     }
 
     /**
