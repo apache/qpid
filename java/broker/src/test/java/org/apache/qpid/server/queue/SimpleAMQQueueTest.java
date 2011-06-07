@@ -36,13 +36,16 @@ import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.exchange.DirectExchange;
 import org.apache.qpid.server.message.AMQMessage;
 import org.apache.qpid.server.message.MessageMetaData;
+import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.queue.BaseQueue.PostEnqueueAction;
+import org.apache.qpid.server.queue.SimpleAMQQueue.QueueEntryFilter;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.store.StoredMessage;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
 import org.apache.qpid.server.subscription.MockSubscription;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
+import org.apache.qpid.server.txn.LocalTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.InternalBrokerBaseCase;
 import org.apache.qpid.server.virtualhost.VirtualHost;
@@ -51,6 +54,8 @@ import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 public class SimpleAMQQueueTest extends InternalBrokerBaseCase
 {
@@ -733,6 +738,533 @@ public class SimpleAMQQueueTest extends InternalBrokerBaseCase
         verifyRecievedMessages(msgListSub1, sub1.getMessages());
         verifyRecievedMessages(msgListSub2, sub2.getMessages());
         verifyRecievedMessages(msgListSub3, sub3.getMessages());
+    }
+
+    /**
+     * Tests that dequeued message is not present in the list returned form
+     * {@link SimpleAMQQueue#getMessagesOnTheQueue()}
+     */
+    public void testGetMessagesOnTheQueueWithDequeuedEntry()
+    {
+        int messageNumber = 4;
+        int dequeueMessageIndex = 1;
+
+        // send test messages into a test queue
+        enqueueGivenNumberOfMessages(_queue, messageNumber);
+
+        // dequeue message
+        dequeueMessage(_queue, dequeueMessageIndex);
+
+        // get messages on the queue
+        List<QueueEntry> entries = _queue.getMessagesOnTheQueue();
+
+        // assert queue entries
+        assertEquals(messageNumber - 1, entries.size());
+        int expectedId = 0;
+        for (int i = 0; i < messageNumber - 1; i++)
+        {
+            Long id = ((AMQMessage) entries.get(i).getMessage()).getMessageId();
+            if (i == dequeueMessageIndex)
+            {
+                assertFalse("Message with id " + dequeueMessageIndex
+                        + " was dequeued and should not be returned by method getMessagesOnTheQueue!",
+                        new Long(expectedId).equals(id));
+                expectedId++;
+            }
+            assertEquals("Expected message with id " + expectedId + " but got message with id " + id,
+                    new Long(expectedId), id);
+            expectedId++;
+        }
+    }
+
+    /**
+     * Tests that dequeued message is not present in the list returned form
+     * {@link SimpleAMQQueue#getMessagesOnTheQueue(QueueEntryFilter)}
+     */
+    public void testGetMessagesOnTheQueueByQueueEntryFilterWithDequeuedEntry()
+    {
+        int messageNumber = 4;
+        int dequeueMessageIndex = 1;
+
+        // send test messages into a test queue
+        enqueueGivenNumberOfMessages(_queue, messageNumber);
+
+        // dequeue message
+        dequeueMessage(_queue, dequeueMessageIndex);
+
+        // get messages on the queue with filter accepting all available messages
+        List<QueueEntry> entries = _queue.getMessagesOnTheQueue(new QueueEntryFilter()
+        {
+
+            @Override
+            public boolean accept(QueueEntry entry)
+            {
+                return true;
+            }
+
+            @Override
+            public boolean filterComplete()
+            {
+                return false;
+            }
+        });
+
+        // assert entries on the queue
+        assertEquals(messageNumber - 1, entries.size());
+        int expectedId = 0;
+        for (int i = 0; i < messageNumber - 1; i++)
+        {
+            Long id = ((AMQMessage) entries.get(i).getMessage()).getMessageId();
+            if (i == dequeueMessageIndex)
+            {
+                assertFalse("Message with id " + dequeueMessageIndex
+                        + " was dequeued and should not be returned by method getMessagesOnTheQueue!",
+                        new Long(expectedId).equals(id));
+                expectedId++;
+            }
+            assertEquals("Expected message with id " + expectedId + " but got message with id " + id,
+                    new Long(expectedId), id);
+            expectedId++;
+        }
+    }
+
+    /**
+     * Tests that dequeued message is not copied as part of invocation of
+     * {@link SimpleAMQQueue#copyMessagesToAnotherQueue(long, long, String, StoreContext)}
+     */
+    public void testCopyMessagesWithDequeuedEntry()
+    {
+        int messageNumber = 4;
+        int dequeueMessageIndex = 1;
+        String anotherQueueName = "testQueue2";
+
+        // put test messages into a test queue
+        enqueueGivenNumberOfMessages(_queue, messageNumber);
+
+        // dequeue message
+        dequeueMessage(_queue, dequeueMessageIndex);
+
+        // create another queue
+        SimpleAMQQueue queue = createQueue(anotherQueueName);
+
+        // create transaction
+        ServerTransaction txn = new LocalTransaction(_queue.getVirtualHost().getTransactionLog());
+
+        // copy messages into another queue
+        _queue.copyMessagesToAnotherQueue(0, messageNumber, anotherQueueName, txn);
+
+        // commit transaction
+        txn.commit();
+
+        // get messages on another queue
+        List<QueueEntry> entries = queue.getMessagesOnTheQueue();
+
+        // assert another queue entries
+        assertEquals(messageNumber - 1, entries.size());
+        int expectedId = 0;
+        for (int i = 0; i < messageNumber - 1; i++)
+        {
+            Long id = ((AMQMessage)entries.get(i).getMessage()).getMessageId();
+            if (i == dequeueMessageIndex)
+            {
+                assertFalse("Message with id " + dequeueMessageIndex
+                        + " was dequeued and should not been copied into another queue!",
+                        new Long(expectedId).equals(id));
+                expectedId++;
+            }
+            assertEquals("Expected message with id " + expectedId + " but got message with id " + id,
+                    new Long(expectedId), id);
+            expectedId++;
+        }
+    }
+
+    /**
+     * Tests that dequeued message is not moved as part of invocation of
+     * {@link SimpleAMQQueue#moveMessagesToAnotherQueue(long, long, String, StoreContext)}
+     */
+    public void testMovedMessagesWithDequeuedEntry()
+    {
+        int messageNumber = 4;
+        int dequeueMessageIndex = 1;
+        String anotherQueueName = "testQueue2";
+
+        // put messages into a test queue
+        enqueueGivenNumberOfMessages(_queue, messageNumber);
+
+        // dequeue message
+        dequeueMessage(_queue, dequeueMessageIndex);
+
+        // create another queue
+        SimpleAMQQueue queue = createQueue(anotherQueueName);
+
+        // create transaction
+        ServerTransaction txn = new LocalTransaction(_queue.getVirtualHost().getTransactionLog());
+
+        // move messages into another queue
+        _queue.moveMessagesToAnotherQueue(0, messageNumber, anotherQueueName, txn);
+
+        // commit transaction
+        txn.commit();
+
+        // get messages on another queue
+        List<QueueEntry> entries = queue.getMessagesOnTheQueue();
+
+        // assert another queue entries
+        assertEquals(messageNumber - 1, entries.size());
+        int expectedId = 0;
+        for (int i = 0; i < messageNumber - 1; i++)
+        {
+            Long id = ((AMQMessage)entries.get(i).getMessage()).getMessageId();
+            if (i == dequeueMessageIndex)
+            {
+                assertFalse("Message with id " + dequeueMessageIndex
+                        + " was dequeued and should not been copied into another queue!",
+                        new Long(expectedId).equals(id));
+                expectedId++;
+            }
+            assertEquals("Expected message with id " + expectedId + " but got message with id " + id,
+                    new Long(expectedId), id);
+            expectedId++;
+        }
+    }
+
+    /**
+     * Tests that messages in given range including dequeued one are deleted
+     * from the queue on invocation of
+     * {@link SimpleAMQQueue#removeMessagesFromQueue(long, long, StoreContext)}
+     */
+    public void testRemoveMessagesFromQueueWithDequeuedEntry()
+    {
+        int messageNumber = 4;
+        int dequeueMessageIndex = 1;
+
+        // put messages into a test queue
+        enqueueGivenNumberOfMessages(_queue, messageNumber);
+
+        // dequeue message
+        dequeueMessage(_queue, dequeueMessageIndex);
+
+        // remove messages
+        _queue.removeMessagesFromQueue(0, messageNumber);
+
+        // get queue entries
+        List<QueueEntry> entries = _queue.getMessagesOnTheQueue();
+
+        // assert queue entries
+        assertNotNull("Null is returned from getMessagesOnTheQueue", entries);
+        assertEquals("Queue should be empty", 0, entries.size());
+    }
+
+    /**
+     * Tests that dequeued message on the top is not accounted and next message
+     * is deleted from the queue on invocation of
+     * {@link SimpleAMQQueue#deleteMessageFromTop(StoreContext)}
+     */
+    public void testDeleteMessageFromTopWithDequeuedEntryOnTop()
+    {
+        int messageNumber = 4;
+        int dequeueMessageIndex = 0;
+
+        // put messages into a test queue
+        enqueueGivenNumberOfMessages(_queue, messageNumber);
+
+        // dequeue message on top
+        dequeueMessage(_queue, dequeueMessageIndex);
+
+        //delete message from top
+        _queue.deleteMessageFromTop();
+
+        //get queue netries
+        List<QueueEntry> entries = _queue.getMessagesOnTheQueue();
+
+        // assert queue entries
+        assertNotNull("Null is returned from getMessagesOnTheQueue", entries);
+        assertEquals("Expected " + (messageNumber - 2) + " number of messages  but recieved " + entries.size(),
+                messageNumber - 2, entries.size());
+        assertEquals("Expected first entry with id 2", new Long(2),
+                ((AMQMessage) entries.get(0).getMessage()).getMessageId());
+    }
+
+    /**
+     * Tests that all messages including dequeued one are deleted from the queue
+     * on invocation of {@link SimpleAMQQueue#clearQueue(StoreContext)}
+     */
+    public void testClearQueueWithDequeuedEntry()
+    {
+        int messageNumber = 4;
+        int dequeueMessageIndex = 1;
+
+        // put messages into a test queue
+        enqueueGivenNumberOfMessages(_queue, messageNumber);
+
+        // dequeue message on a test queue
+        dequeueMessage(_queue, dequeueMessageIndex);
+
+        // clean queue
+        try
+        {
+            _queue.clearQueue();
+        }
+        catch (AMQException e)
+        {
+            fail("Failure to clear queue:" + e.getMessage());
+        }
+
+        // get queue entries
+        List<QueueEntry> entries = _queue.getMessagesOnTheQueue();
+
+        // assert queue entries
+        assertNotNull(entries);
+        assertEquals(0, entries.size());
+    }
+
+    /**
+     * Tests whether dequeued entry is sent to subscriber in result of
+     * invocation of {@link SimpleAMQQueue#processQueue(QueueRunner)}
+     */
+    public void testProcessQueueWithDequeuedEntry()
+    {
+        // total number of messages to send
+        int messageNumber = 4;
+        int dequeueMessageIndex = 1;
+
+        // create queue with overridden method deliverAsync
+        SimpleAMQQueue testQueue = new SimpleAMQQueue(new AMQShortString("test"), false,
+                new AMQShortString("testOwner"), false, false, _virtualHost, null)
+        {
+            @Override
+            public void deliverAsync(Subscription sub)
+            {
+                // do nothing
+            }
+        };
+
+        // put messages
+        List<QueueEntry> entries = enqueueGivenNumberOfMessages(testQueue, messageNumber);
+
+        // dequeue message
+        dequeueMessage(testQueue, dequeueMessageIndex);
+
+        // latch to wait for message receipt
+        final CountDownLatch latch = new CountDownLatch(messageNumber -1);
+
+        // create a subscription
+        MockSubscription subscription = new MockSubscription()
+        {
+            /**
+             * Send a message and decrement latch
+             */
+            public void send(QueueEntry msg) throws AMQException
+            {
+                super.send(msg);
+                latch.countDown();
+            }
+        };
+
+        try
+        {
+            // subscribe
+            testQueue.registerSubscription(subscription, false);
+
+            // process queue
+            testQueue.processQueue(new QueueRunner(testQueue, 1)
+            {
+                public void run()
+                {
+                    // do nothing
+                }
+            });
+        }
+        catch (AMQException e)
+        {
+            fail("Failure to process queue:" + e.getMessage());
+        }
+        // wait up to 1 minute for message receipt
+        try
+        {
+            latch.await(1, TimeUnit.MINUTES);
+        }
+        catch (InterruptedException e1)
+        {
+            Thread.currentThread().interrupt();
+        }
+        List<QueueEntry> expected = createEntriesList(entries.get(0), entries.get(2), entries.get(3));
+        verifyRecievedMessages(expected, subscription.getMessages());
+    }
+
+    /**
+     * Tests that entry in dequeued state are not enqueued and not delivered to subscription
+     */
+    public void testEqueueDequeuedEntry()
+    {
+        // create a queue where each even entry is considered a dequeued
+        SimpleAMQQueue queue = new SimpleAMQQueue(new AMQShortString("test"), false, new AMQShortString("testOwner"),
+                false, false, _virtualHost, new QueueEntryListFactory()
+                {
+                    public QueueEntryList createQueueEntryList(AMQQueue queue)
+                    {
+                        /**
+                         * Override SimpleQueueEntryList to create a dequeued
+                         * entries for messages with even id
+                         */
+                        return new SimpleQueueEntryList(queue)
+                        {
+                            /**
+                             * Entries with even message id are considered
+                             * dequeued!
+                             */
+                            protected QueueEntryImpl createQueueEntry(final ServerMessage message)
+                            {
+                                return new QueueEntryImpl(this, message)
+                                {
+                                    public boolean isDequeued()
+                                    {
+                                        return (((AMQMessage) message).getMessageId().longValue() % 2 == 0);
+                                    }
+
+                                    public boolean isDispensed()
+                                    {
+                                        return (((AMQMessage) message).getMessageId().longValue() % 2 == 0);
+                                    }
+
+                                    public boolean isAvailable()
+                                    {
+                                        return !(((AMQMessage) message).getMessageId().longValue() % 2 == 0);
+                                    }
+                                };
+                            }
+                        };
+                    }
+                }, null);
+        // create a subscription
+        MockSubscription subscription = new MockSubscription();
+
+        // register subscription
+        try
+        {
+            queue.registerSubscription(subscription, false);
+        }
+        catch (AMQException e)
+        {
+            fail("Failure to register subscription:" + e.getMessage());
+        }
+
+        // put test messages into a queue
+        putGivenNumberOfMessages(queue, 4);
+
+        // assert received messages
+        List<QueueEntry> messages = subscription.getMessages();
+        assertEquals("Only 2 messages should be returned", 2, messages.size());
+        assertEquals("ID of first message should be 1", new Long(1),
+                ((AMQMessage) messages.get(0).getMessage()).getMessageId());
+        assertEquals("ID of second message should be 3", new Long(3),
+                ((AMQMessage) messages.get(1).getMessage()).getMessageId());
+    }
+
+    /**
+     * A helper method to create a queue with given name
+     *
+     * @param name
+     *            queue name
+     * @return queue
+     */
+    private SimpleAMQQueue createQueue(String name)
+    {
+        SimpleAMQQueue queue = null;
+        try
+        {
+            AMQShortString queueName = new AMQShortString(name);
+            AMQShortString ownerName = new AMQShortString(name + "Owner");
+            queue = (SimpleAMQQueue) AMQQueueFactory.createAMQQueueImpl(queueName, false, ownerName, false, false,
+                    _virtualHost, _arguments);
+        }
+        catch (AMQException e)
+        {
+            fail("Failure to create a queue:" + e.getMessage());
+        }
+        assertNotNull("Queue was not created", queue);
+        return queue;
+    }
+
+    /**
+     * A helper method to put given number of messages into queue
+     * <p>
+     * All messages are asserted that they are present on queue
+     *
+     * @param queue
+     *            queue to put messages into
+     * @param messageNumber
+     *            number of messages to put into queue
+     */
+    private List<QueueEntry> enqueueGivenNumberOfMessages(AMQQueue queue, int messageNumber)
+    {
+        putGivenNumberOfMessages(queue, messageNumber);
+
+        // make sure that all enqueued messages are on the queue
+        List<QueueEntry> entries = queue.getMessagesOnTheQueue();
+        assertEquals(messageNumber, entries.size());
+        for (int i = 0; i < messageNumber; i++)
+        {
+            assertEquals(new Long(i), ((AMQMessage)entries.get(i).getMessage()).getMessageId());
+        }
+        return entries;
+    }
+
+    /**
+     * A helper method to put given number of messages into queue
+     * <p>
+     * Queue is not checked if messages are added into queue
+     *
+     * @param queue
+     *            queue to put messages into
+     * @param messageNumber
+     *            number of messages to put into queue
+     * @param queue
+     * @param messageNumber
+     */
+    private void putGivenNumberOfMessages(AMQQueue queue, int messageNumber)
+    {
+        for (int i = 0; i < messageNumber; i++)
+        {
+            // Create message
+            Long messageId = new Long(i);
+            AMQMessage message = null;
+            try
+            {
+                message = createMessage(messageId);
+            }
+            catch (AMQException e)
+            {
+                fail("Failure to create a test message:" + e.getMessage());
+            }
+            // Put message on queue
+            try
+            {
+                queue.enqueue(message);
+            }
+            catch (AMQException e)
+            {
+                fail("Failure to put message on queue:" + e.getMessage());
+            }
+        }
+    }
+
+    /**
+     * A helper method to dequeue an entry on queue with given index
+     *
+     * @param queue
+     *            queue to dequeue message on
+     * @param dequeueMessageIndex
+     *            entry index to dequeue.
+     */
+    private QueueEntry dequeueMessage(AMQQueue queue, int dequeueMessageIndex)
+    {
+        List<QueueEntry> entries = queue.getMessagesOnTheQueue();
+        QueueEntry entry = entries.get(dequeueMessageIndex);
+        entry.acquire();
+        entry.dequeue();
+        assertTrue(entry.isDequeued());
+        return entry;
     }
 
     private List<QueueEntry> createEntriesList(QueueEntry... entries)
