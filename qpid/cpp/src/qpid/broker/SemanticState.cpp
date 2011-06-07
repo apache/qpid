@@ -878,7 +878,7 @@ namespace {
     /** predicate to process unacked delivery records */
     bool acceptDelivery( SemanticState *state,
                          boost::intrusive_ptr<AsyncMessageAcceptCmd>& cmd,
-                         DeliveryRecord dr )
+                         DeliveryRecord& dr )
     {
         Queue::DequeueDoneCallbackFactory f = boost::bind(factory, state, dr.getId(), cmd);
         return dr.accept((TransactionContext*) 0, &f);
