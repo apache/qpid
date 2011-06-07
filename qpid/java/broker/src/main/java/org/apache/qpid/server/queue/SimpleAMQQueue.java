@@ -629,7 +629,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             // this catches the case where we *just* miss an update
             int loops = 2;
 
-            while (!(entry.isAcquired() || entry.isDeleted()) && loops != 0)
+            while (entry.isAvailable() && loops != 0)
             {
                 if (nextNode == null)
                 {
@@ -648,7 +648,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         }
 
 
-        if (!(entry.isAcquired() || entry.isDeleted()))
+        if (entry.isAvailable())
         {
             checkSubscriptionsNotAheadOfDelivery(entry);
 
@@ -942,7 +942,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         while (queueListIterator.advance())
         {
             QueueEntry node = queueListIterator.getNode();
-            if (node != null && !node.isDeleted())
+            if (node != null && !node.isDispensed())
             {
                 entryList.add(node);
             }
@@ -1046,7 +1046,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         while (queueListIterator.advance() && !filter.filterComplete())
         {
             QueueEntry node = queueListIterator.getNode();
-            if (!node.isDeleted() && filter.accept(node))
+            if (!node.isDispensed() && filter.accept(node))
             {
                 entryList.add(node);
             }
@@ -1240,7 +1240,6 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
                 if ((messageId >= fromMessageId)
                     && (messageId <= toMessageId)
-                    && !node.isDeleted()
                     && node.acquire())
                 {
                     dequeueEntry(node);
@@ -1270,7 +1269,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         while (noDeletes && queueListIterator.advance())
         {
             QueueEntry node = queueListIterator.getNode();
-            if (!node.isDeleted() && node.acquire())
+            if (node.acquire())
             {
                 dequeueEntry(node);
                 noDeletes = false;
@@ -1300,7 +1299,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         while (queueListIterator.advance())
         {
             QueueEntry node = queueListIterator.getNode();
-            if (!node.isDeleted() && node.acquire())
+            if (node.acquire())
             {
                 dequeueEntry(node, txn);
                 if(++count == request)
@@ -1654,7 +1653,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
             QueueEntry node  = getNextAvailableEntry(sub);
 
-            if (node != null && !(node.isAcquired() || node.isDeleted()))
+            if (node != null && node.isAvailable())
             {
                 if (sub.hasInterest(node))
                 {
@@ -1715,7 +1714,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             QueueEntry node = (releasedNode != null && lastSeen.compareTo(releasedNode)>=0) ? releasedNode : _entries.next(lastSeen);
 
             boolean expired = false;
-            while (node != null && (node.isAcquired() || node.isDeleted() || (expired = node.expired()) || !sub.hasInterest(node)))
+            while (node != null && (!node.isAvailable() || (expired = node.expired()) || !sub.hasInterest(node)))
             {
                 if (expired)
                 {
@@ -1884,8 +1883,8 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         while (queueListIterator.advance())
         {
             QueueEntry node = queueListIterator.getNode();
-            // Only process nodes that are not currently deleted
-            if (!node.isDeleted())
+            // Only process nodes that are not currently deleted and not dequeued
+            if (!node.isDispensed())
             {
                 // If the node has exired then aquire it
                 if (node.expired() && node.acquire())
