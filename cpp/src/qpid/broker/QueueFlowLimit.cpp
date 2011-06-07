@@ -167,7 +167,8 @@ void QueueFlowLimit::enqueued(const QueuedMessage& msg)
         msg.payload->getIngressCompletion().startCompleter();    // don't complete until flow resumes
         bool unique;
         unique = index.insert(std::pair<framing::SequenceNumber, boost::intrusive_ptr<Message> >(msg.position, msg.payload)).second;
-        assert(unique);
+        // Like this to avoid tripping up unused variable warning when NDEBUG set
+        if (!unique) assert(unique);
     }
 }
 
@@ -379,7 +380,8 @@ void QueueFlowLimit::setState(const qpid::framing::FieldTable& state)
                 QueuedMessage msg(queue->find(seq));   // fyi: msg.payload may be null if msg is delivered & unacked
                 bool unique;
                 unique = index.insert(std::pair<framing::SequenceNumber, boost::intrusive_ptr<Message> >(seq, msg.payload)).second;
-                assert(unique);
+                // Like this to avoid tripping up unused variable warning when NDEBUG set
+                if (!unique) assert(unique);
             }
         }
     }

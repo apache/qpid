@@ -365,7 +365,8 @@ void Cluster::addShadowConnection(const boost::intrusive_ptr<Connection>& c) {
     assert(discarding);
     pair<ConnectionMap::iterator, bool> ib
         = connections.insert(ConnectionMap::value_type(c->getId(), c));
-    assert(ib.second);
+    // Like this to avoid tripping up unused variable warning when NDEBUG set
+    if (!ib.second) assert(ib.second);
 }
 
 void Cluster::erase(const ConnectionId& id) {
