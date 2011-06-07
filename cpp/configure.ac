@@ -68,8 +68,10 @@ if test x$GXX = xyes; then
 	# The following warnings are deliberately omitted, they warn on valid code.
 	# -Wunreachable-code -Wpadded -Winline
 	# -Wshadow - warns about boost headers.
+	# Can't test for -Werror as whether it fails or not depends on what's in
+	# CFLAGS/CXXFLAGS. In any case it's been in gcc for a long time (since 2.95 at least)
 	if test "${enableval}" = yes; then
-	    gl_COMPILER_FLAGS(-Werror)
+        COMPILER_FLAGS="-Werror"
 	    gl_COMPILER_FLAGS(-pedantic)
 	    gl_COMPILER_FLAGS(-Wall)
 	    gl_COMPILER_FLAGS(-Wextra)
