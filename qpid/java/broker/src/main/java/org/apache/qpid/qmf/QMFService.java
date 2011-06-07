@@ -1311,6 +1311,12 @@ public class QMFService implements ConfigStore.ConfigEventListener, Closeable
         {
             return _obj.isShadow();
         }
+        
+        public Boolean getUserProxyAuth()
+        {
+            // TODO
+            return false;
+        }
     }
 
     private class SessionDelegate implements BrokerSchema.SessionDelegate
