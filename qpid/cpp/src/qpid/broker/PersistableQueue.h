@@ -56,24 +56,20 @@ public:
     typedef boost::shared_ptr<PersistableQueue> shared_ptr;
 
     virtual const std::string& getName() const = 0;
-    virtual ~PersistableQueue() {
-        if (externalQueueStore) 
-             delete externalQueueStore;
-    };
+    virtual ~PersistableQueue() {};
 
-    virtual void setExternalQueueStore(ExternalQueueStore* inst) = 0;
+    virtual void setExternalQueueStore(const boost::shared_ptr<ExternalQueueStore>& inst) = 0;
     virtual void flush() = 0;
     
-    inline ExternalQueueStore* getExternalQueueStore() const {return externalQueueStore;};
+    inline boost::shared_ptr<ExternalQueueStore> getExternalQueueStore() const {return externalQueueStore;};
     
-    PersistableQueue():externalQueueStore(NULL){
-    };
+    PersistableQueue() {};
 
     /** the message has finished being dequeued from the store */
     virtual void dequeueComplete(const boost::intrusive_ptr<PersistableMessage>&) = 0;
     
 protected:
-    ExternalQueueStore* externalQueueStore;
+    boost::shared_ptr<ExternalQueueStore> externalQueueStore;
     
 };
 

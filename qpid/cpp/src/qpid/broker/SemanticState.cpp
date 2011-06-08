@@ -763,8 +763,8 @@ isInSequenceSetAnd(const SequenceSet& s, Predicate p) {
 
 /** Design notes for asychronous completion of Message.accept **
  * Message.Accept command cannot be considered "complete" until all messages
- * identified by the sequence set that accompanys the command have been
- * completely dequeued.  A message dequeue may not be able to complet
+ * identified by the sequence set that accompanies the command have been
+ * completely dequeued.  A message dequeue operation may not be able to complete
  * synchronously - specifically when the message is durable.  Therefore, the
  * Message.Accept command handling must be able to track asynchronous dequeues,
  * and notify the Session when all dequeues are done (at which point the
@@ -772,12 +772,14 @@ isInSequenceSetAnd(const SequenceSet& s, Predicate p) {
  */
 namespace {
 
-    /** Manage a Message.accept that requires async completion of one or more
-     * message dequeue operations */
+    /** Manage a Message.accept command that requires async completion of one
+     * or more message dequeue operations.  An instance is registered with the
+     * SessionContext for each asynchronous Message.accept that is "in
+     * flight" */
     class AsyncMessageAcceptCmd : public SessionContext::AsyncCommandContext
     {
         mutable qpid::sys::Mutex lock;
-        std::set<DeliveryId> pending;    // for dequeue to complete
+        std::map<DeliveryId, boost::shared_ptr<Queue> > pending;    // for dequeue to complete
         bool ready;
         SemanticState& state;
 
@@ -788,28 +790,30 @@ namespace {
         /** called from session to urge pending dequeues to complete ASAP */
         void flush()
         {
-            std::set<DeliveryId> copy;
+            QPID_LOG(trace, "Flushing pending message.accept cmd=" << getId());
+            std::map<DeliveryId, boost::shared_ptr<Queue> > copy;
             {
                 Mutex::ScopedLock l(lock);
                 copy = pending;
             }
-            for (std::set<DeliveryId>::iterator i = copy.begin();
+            std::set<Queue *> flushedQs;    // flush each queue only once!
+            for (std::map<DeliveryId, boost::shared_ptr<Queue> >::iterator i = copy.begin();
                  i != copy.end(); ++i) {
-                for (DeliveryRecords::iterator r = state.getUnacked().begin();
-                     r != state.getUnacked().end(); ++r) {
-                    if (r->getId() == *i) {
-                        r->getQueue()->flush();
-                        break;
-                    }
+                Queue *queue(i->second.get());
+                if (flushedQs.find(queue) == flushedQs.end()) {
+                    flushedQs.insert(queue);
+                    i->second->flush();
                 }
             }
         }
 
         /** add a pending dequeue to track */
-        void add( const DeliveryId& id )
+        void add( const DeliveryId& id, const boost::shared_ptr<Queue>& queue )
         {
+            QPID_LOG(trace, "Scheduling dequeue of delivery " << id
+                     << " on session " << state.getSession().getSessionId());
             Mutex::ScopedLock l(lock);
-            bool unique = pending.insert(id).second;
+            bool unique = pending.insert(std::pair<DeliveryId, boost::shared_ptr<Queue> >(id, queue)).second;
             if (!unique) {
                 assert(false);
             }
@@ -818,22 +822,27 @@ namespace {
         /** signal this dequeue done. Note: may be run in *any* thread */
         void complete( const DeliveryId& id )
         {
+            QPID_LOG(trace, "Dequeue of delivery " << id
+                     << " completed on session " << state.getSession().getSessionId());
             Mutex::ScopedLock l(lock);
-            std::set<DeliveryId>::iterator i = pending.find(id);
+            std::map<DeliveryId, boost::shared_ptr<Queue> >::iterator i = pending.find(id);
             assert(i != pending.end());
             pending.erase(i);
 
             if (ready && pending.empty()) {
                 framing::Invoker::Result r;   // message.accept does not return result data
                 Mutex::ScopedUnlock ul(lock);
+                QPID_LOG(trace, "Completing async message.accept cmd=" << getId());
                 completed( r );
             }
         }
 
         /** allow the Message.Accept to complete - do this only after all
-         * deliveryIds have been added() */
+         * deliveryIds have been added() and this has been registered with the
+         * SessionContext */
         void enable()
         {
+            QPID_LOG(trace, "Dispatching async message.accept cmd=" << getId());
             Mutex::ScopedLock l(lock);
             if (pending.empty()) {
                 framing::Invoker::Result r;
@@ -846,9 +855,10 @@ namespace {
     };
 
 
-    /** callback to indicate a single message has completed its dequeue.  This
-        object is made available to the queue, which will invoke it when the
-        dequeue completes. */
+    /** callback to indicate a single message has completed its asynchronous
+        dequeue.  This object is made available to the queue when a dequeue is
+        started.  The queue will invoke the callback when the dequeue
+        completes. */
     class DequeueDone : public Queue::DequeueDoneCallback
     {
         DeliveryId id;
@@ -862,28 +872,31 @@ namespace {
 
 
     /** factory to create the above callback - passed to queue's dequeue
-        method, only used if dequeue is asynchronous! */
+        method, only invoked if the dequeue operation is asynchronous! */
     boost::shared_ptr<Queue::DequeueDoneCallback> factory( SemanticState *state,
                                                            const DeliveryId& id,
-                                                           boost::intrusive_ptr<AsyncMessageAcceptCmd>& cmd )
+                                                           const boost::shared_ptr<Queue>& queue,
+                                                           boost::intrusive_ptr<AsyncMessageAcceptCmd>* cmd )
     {
-        if (!cmd) {     // first async dequeue creates the context
-            cmd.reset(new AsyncMessageAcceptCmd(*state));
+        if (!cmd->get()) {     // first async dequeue creates the context
+            cmd->reset(new AsyncMessageAcceptCmd(*state));
         }
-        cmd->add( id );
-        boost::shared_ptr<DequeueDone> x( new DequeueDone(id, cmd ) );
+        (*cmd)->add( id, queue );
+        boost::shared_ptr<DequeueDone> x( new DequeueDone(id, *cmd ) );
         return x;
     }
 
-    /** predicate to process unacked delivery records */
+    /** predicate to process unacked delivery records during Message.accept
+        processing */
     bool acceptDelivery( SemanticState *state,
-                         boost::intrusive_ptr<AsyncMessageAcceptCmd>& cmd,
+                         boost::intrusive_ptr<AsyncMessageAcceptCmd>* cmd,
                          DeliveryRecord& dr )
     {
-        Queue::DequeueDoneCallbackFactory f = boost::bind(factory, state, dr.getId(), cmd);
+        Queue::DequeueDoneCallbackFactory f = boost::bind(factory, state, dr.getId(), dr.getQueue(), cmd);
         return dr.accept((TransactionContext*) 0, &f);
     }
-}
+}   // namespace
+
 
 void SemanticState::accepted(const SequenceSet& commands) {
     assertClusterSafe();
@@ -921,7 +934,7 @@ void SemanticState::accepted(const SequenceSet& commands) {
                     isInSequenceSetAnd(commands,
                                        bind(acceptDelivery,
                                             this,
-                                            cmd,
+                                            &cmd,
                                             _1)));
         unacked.erase(removed, unacked.end());
 

@@ -56,6 +56,10 @@ class AsyncCompletionMessageStore : public NullMessageStore {
   public:
     sys::BlockingQueue<boost::intrusive_ptr<PersistableMessage> > enqueued;
 
+    typedef std::pair<boost::intrusive_ptr<PersistableMessage>,
+                      boost::shared_ptr<PersistableQueue> > DequeueRecord;
+    sys::BlockingQueue<DequeueRecord> dequeued;
+
     AsyncCompletionMessageStore() : NullMessageStore() {}
     ~AsyncCompletionMessageStore(){}
 
@@ -64,6 +68,13 @@ class AsyncCompletionMessageStore : public NullMessageStore {
                  const PersistableQueue& )
     {
         enqueued.push(msg);
+    }
+
+    void dequeue(TransactionContext*,
+                 const boost::intrusive_ptr<PersistableMessage>& msg,
+                 const boost::shared_ptr<PersistableQueue>& queue)
+    {
+        dequeued.push(DequeueRecord(msg, queue));
     }
 };
 
@@ -102,6 +113,44 @@ QPID_AUTO_TEST_CASE(testWaitTillComplete) {
         enqueued[k]->enqueueComplete();
     }
     sync.wait();                // Should complete now, all messages are completed.
+
+    // now test the dequeue: messageAccept should not complete until all pending
+    // dequeues complete
+    SubscriptionSettings settings;
+    settings.acceptMode = ACCEPT_MODE_EXPLICIT;
+    settings.autoAck = 0;
+    settings.completionMode = COMPLETE_ON_ACCEPT;
+
+    LocalQueue q;
+    Subscription sub = fix.subs.subscribe(q, "q", settings);
+    s.messageFlush(arg::destination=sub.getName());
+    SequenceSet accepted;
+    for (int x = 0; x < count; x++) {
+        Message m;
+        BOOST_CHECK(q.get(m, TIME_SEC * 3));
+        accepted.add(m.getId());
+    }
+
+    Completion accept = s.messageAccept(accepted, arg::sync=true);
+    sync = s.executionSync(arg::sync=true);
+
+    std::vector<AsyncCompletionMessageStore::DequeueRecord> dequeued;
+    for (int y = 0; y < count; y++) {
+        dequeued.push_back(store->dequeued.pop(TIME_SEC * 3));
+    }
+
+    sleep( 1 );   // even with this, accept should NOT complete!
+
+    for (int z = count-1; z >= 0; --z) {
+        BOOST_CHECK(!accept.isComplete()); // Should not be complete yet.
+        BOOST_CHECK(!sync.isComplete()); // Should not be complete yet.
+        // now complete the dequeue of the message:
+        dequeued[z].second->dequeueComplete(dequeued[z].first);
+    }
+
+    // now both should complete.
+    accept.wait();
+    sync.wait();
 }
 
 QPID_AUTO_TEST_CASE(testGetResult) {

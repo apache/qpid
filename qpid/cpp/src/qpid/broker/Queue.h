@@ -351,7 +351,7 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     static Queue::shared_ptr restore(QueueRegistry& queues, framing::Buffer& buffer);
     static void tryAutoDelete(Broker& broker, Queue::shared_ptr);
 
-    virtual void setExternalQueueStore(ExternalQueueStore* inst);
+    virtual void setExternalQueueStore(const boost::shared_ptr<ExternalQueueStore>& inst);
 
     // Manageable entry points
     management::ManagementObject* GetManagementObject (void) const;

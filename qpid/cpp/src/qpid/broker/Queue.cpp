@@ -684,6 +684,7 @@ bool Queue::dequeue(TransactionContext* ctxt, const QueuedMessage& msg,
                 Mutex::ScopedLock locker(messageLock);
                 pendingDequeueCallbacks[pmsg.get()] = callback;
             }
+            QPID_LOG(debug, "Message " << pmsg << " async dequeue started on queue " << name);
             store->dequeue(ctxt, pmsg, shared_from_this());  // invokes Queue::dequeueComplete() when done
             return true;
         }
@@ -1041,9 +1042,8 @@ bool Queue::hasExclusiveConsumer() const
     return exclusive; 
 }
 
-void Queue::setExternalQueueStore(ExternalQueueStore* inst) {
-    if (externalQueueStore!=inst && externalQueueStore) 
-        delete externalQueueStore; 
+void Queue::setExternalQueueStore(const boost::shared_ptr<ExternalQueueStore>& inst)
+{
     externalQueueStore = inst;
 
     if (inst) {
@@ -1215,6 +1215,10 @@ const Broker* Queue::getBroker()
  * message has completed. */
 void Queue::dequeueComplete(const boost::intrusive_ptr<PersistableMessage>& msg )
 {
+    ScopedUse u(barrier);
+    if (!u.acquired) return;
+
+    QPID_LOG(debug, "Message " << msg << " dequeue complete on queue " << name);
     msg->dequeueComplete(shared_from_this(), store);
 
     boost::shared_ptr<DequeueDoneCallback> cb;
@@ -1228,7 +1232,6 @@ void Queue::dequeueComplete(const boost::intrusive_ptr<PersistableMessage>& msg 
         }
     }
     if (cb) (*cb)();
-    QPID_LOG(error, "dequeueComplete:=" << cb);
 }
 
 
