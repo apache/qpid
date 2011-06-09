@@ -88,7 +88,7 @@ public class ConnectionStartOkMethodHandler implements StateAwareMethodListener<
 
             MethodRegistry methodRegistry = session.getMethodRegistry();
 
-            switch (authResult.status)
+            switch (authResult.getStatus())
             {
                 case ERROR:
                     Exception cause = authResult.getCause();
@@ -121,7 +121,7 @@ public class ConnectionStartOkMethodHandler implements StateAwareMethodListener<
                 case CONTINUE:
                     stateManager.changeState(AMQState.CONNECTION_NOT_AUTH);
 
-                    ConnectionSecureBody secureBody = methodRegistry.createConnectionSecureBody(authResult.challenge);
+                    ConnectionSecureBody secureBody = methodRegistry.createConnectionSecureBody(authResult.getChallenge());
                     session.writeFrame(secureBody.generateFrame(0));
             }
         }

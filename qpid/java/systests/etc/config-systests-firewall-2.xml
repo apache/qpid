@@ -84,10 +84,6 @@
 
         <msg-auth>false</msg-auth>
         
-        <jmx>
-            <principal-database>passwordfile</principal-database>
-        </jmx>
-
         <firewall default-action="deny"/>
     </security>
 

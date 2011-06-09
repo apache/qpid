@@ -57,10 +57,6 @@
                 </attributes>
             </principal-database>
         </principal-databases>
-
-        <jmx>
-            <principal-database>passwordfile</principal-database>
-        </jmx>
     </security>
 
     <virtualhosts>${conf}/virtualhosts-ServerConfigurationTest-New.xml</virtualhosts>
