@@ -198,7 +198,7 @@ qpid::messaging::Session ConnectionImpl::newSession(bool transactional, const st
             sessions[name] = impl;
             break;
         } catch (const qpid::TransportFailure&) {
-            open();
+            reopen();
         } catch (const qpid::SessionException& e) {
             throw qpid::messaging::SessionError(e.what());
         } catch (const std::exception& e) {
@@ -218,6 +218,15 @@ void ConnectionImpl::open()
     catch (const types::Exception&) { throw; }
     catch (const qpid::Exception& e) { throw messaging::ConnectionError(e.what()); }
 }
+
+void ConnectionImpl::reopen()
+{
+    if (!reconnect) {
+        throw qpid::messaging::TransportFailure("Failed to connect (reconnect disabled)");
+    }
+    open();
+}
+
 
 bool expired(const qpid::sys::AbsTime& start, int64_t timeout)
 {
