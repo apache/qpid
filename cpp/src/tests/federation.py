@@ -649,10 +649,17 @@ class FederationTests(TestBase010):
 
         self.verify_cleanup()
 
-    def test_dynamic_headers(self):
+    def test_dynamic_headers_any(self):
+        self.do_test_dynamic_headers('any')
+
+    def test_dynamic_headers_all(self):
+        self.do_test_dynamic_headers('all')
+
+
+    def do_test_dynamic_headers(self, match_mode):
         session = self.session
         r_conn = self.connect(host=self.remote_host(), port=self.remote_port())
-        r_session = r_conn.session("test_dynamic_headers")
+        r_session = r_conn.session("test_dynamic_headers_%s" % match_mode)
 
         session.exchange_declare(exchange="fed.headers", type="headers")
         r_session.exchange_declare(exchange="fed.headers", type="headers")
@@ -671,7 +678,7 @@ class FederationTests(TestBase010):
         sleep(5)
 
         session.queue_declare(queue="fed1", exclusive=True, auto_delete=True)
-        session.exchange_bind(queue="fed1", exchange="fed.headers", binding_key="key1", arguments={'x-match':'any', 'class':'first'})
+        session.exchange_bind(queue="fed1", exchange="fed.headers", binding_key="key1", arguments={'x-match':match_mode, 'class':'first'})
         self.subscribe(queue="fed1", destination="f1")
         queue = session.incoming("f1")
 
