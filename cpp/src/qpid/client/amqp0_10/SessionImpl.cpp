@@ -509,7 +509,7 @@ void SessionImpl::senderCancelled(const std::string& name)
 
 void SessionImpl::reconnect()
 {
-    connection->open();
+    connection->reopen();
 }
 
 bool SessionImpl::backoff()
