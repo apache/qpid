@@ -23,11 +23,13 @@ package org.apache.qpid.server.security.auth.manager;
 import java.security.Provider;
 import java.security.Security;
 
+import javax.security.auth.Subject;
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
 
 import org.apache.qpid.server.security.auth.AuthenticationResult;
 import org.apache.qpid.server.security.auth.AuthenticationResult.AuthenticationStatus;
+import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
 import org.apache.qpid.server.util.InternalBrokerBaseCase;
 
 /**
@@ -89,17 +91,18 @@ public class PrincipalDatabaseAuthenticationManagerTest extends InternalBrokerBa
     }
     
     /**
-     * 
      * Tests that the authenticate method correctly interprets an
      * authentication success.
      * 
      */
-    public void testAuthenticationSuccess() throws Exception
+    public void testSaslAuthenticationSuccess() throws Exception
     {
         SaslServer testServer = createTestSaslServer(true, false);
         
         AuthenticationResult result = _manager.authenticate(testServer, "12345".getBytes());
-        assertEquals(AuthenticationStatus.SUCCESS, result.status);
+        final Subject subject = result.getSubject();
+        assertTrue(subject.getPrincipals().contains(new UsernamePrincipal("guest")));
+        assertEquals(AuthenticationStatus.SUCCESS, result.getStatus());
     }
 
     /**
@@ -108,12 +111,13 @@ public class PrincipalDatabaseAuthenticationManagerTest extends InternalBrokerBa
      * authentication not complete.
      * 
      */
-    public void testAuthenticationNotCompleted() throws Exception
+    public void testSaslAuthenticationNotCompleted() throws Exception
     {
         SaslServer testServer = createTestSaslServer(false, false);
         
         AuthenticationResult result = _manager.authenticate(testServer, "12345".getBytes());
-        assertEquals(AuthenticationStatus.CONTINUE, result.status);
+        assertNull(result.getSubject());
+        assertEquals(AuthenticationStatus.CONTINUE, result.getStatus());
     }
 
     /**
@@ -122,12 +126,39 @@ public class PrincipalDatabaseAuthenticationManagerTest extends InternalBrokerBa
      * authentication error.
      * 
      */
-    public void testAuthenticationError() throws Exception
+    public void testSaslAuthenticationError() throws Exception
     {
         SaslServer testServer = createTestSaslServer(false, true);
         
         AuthenticationResult result = _manager.authenticate(testServer, "12345".getBytes());
-        assertEquals(AuthenticationStatus.ERROR, result.status);
+        assertNull(result.getSubject());
+        assertEquals(AuthenticationStatus.ERROR, result.getStatus());
+    }
+
+    /**
+     * Tests that the authenticate method correctly interprets an
+     * authentication success.
+     *
+     */
+    public void testNonSaslAuthenticationSuccess() throws Exception
+    {
+        AuthenticationResult result = _manager.authenticate("guest", "guest");
+        final Subject subject = result.getSubject();
+        assertFalse("Subject should not be set read-only", subject.isReadOnly());
+        assertTrue(subject.getPrincipals().contains(new UsernamePrincipal("guest")));
+        assertEquals(AuthenticationStatus.SUCCESS, result.getStatus());
+    }
+
+    /**
+     * Tests that the authenticate method correctly interprets an
+     * authentication success.
+     *
+     */
+    public void testNonSaslAuthenticationNotCompleted() throws Exception
+    {
+        AuthenticationResult result = _manager.authenticate("guest", "wrongpassword");
+        assertNull(result.getSubject());
+        assertEquals(AuthenticationStatus.CONTINUE, result.getStatus());
     }
     
     /**
@@ -179,7 +210,7 @@ public class PrincipalDatabaseAuthenticationManagerTest extends InternalBrokerBa
             @Override
             public String getAuthorizationID()
             {
-                return null;
+                return complete ? "guest" : null;
             }
 
             @Override

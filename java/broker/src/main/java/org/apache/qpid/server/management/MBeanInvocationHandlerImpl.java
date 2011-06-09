@@ -27,7 +27,6 @@ import java.lang.reflect.Proxy;
 import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.Principal;
-import java.util.Properties;
 import java.util.Set;
 
 import javax.management.Attribute;
@@ -65,7 +64,6 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler, Notificati
     public final static String READONLY = "readonly";
     private final static String DELEGATE = "JMImplementation:type=MBeanServerDelegate";
     private MBeanServer _mbs;
-    private static Properties _userRoles = new Properties();
     private static ManagementActor  _logActor;
     
     public static MBeanServerForwarder newProxyInstance()
