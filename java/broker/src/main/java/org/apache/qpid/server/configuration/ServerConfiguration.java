@@ -214,6 +214,13 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
                     + (_configFile == null ? "" : " Configuration file : " + _configFile);
             throw new ConfigurationException(message);
         }
+
+        if (getListValue("security.jmx.principal-database").size() > 0)
+        {
+            String message = "Validation error : security/jmx/principal-database is no longer a supported element within the configuration xml."
+                    + (_configFile == null ? "" : " Configuration file : " + _configFile);
+            throw new ConfigurationException(message);
+        }
     }
 
     /*
@@ -533,11 +540,6 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
         return getListValue(name);
     }
 
-    public List<String> getManagementPrincipalDBs()
-    {
-        return getListValue("security.jmx.principal-database");
-    }
-
     public int getFrameSize()
     {
         return getIntValue("advanced.framesize", DEFAULT_FRAME_SIZE);
@@ -566,11 +568,6 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
     public boolean getMsgAuth()
     {
         return getBooleanValue("security.msg-auth");
-    }
-
-    public String getJMXPrincipalDatabase()
-    {
-        return getStringValue("security.jmx.principal-database");
     }
 
     public String getManagementKeyStorePath()

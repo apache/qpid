@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.handler;
 
+
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
 
@@ -68,7 +69,7 @@ public class ConnectionSecureOkMethodHandler implements StateAwareMethodListener
         }
         MethodRegistry methodRegistry = session.getMethodRegistry();
         AuthenticationResult authResult = authMgr.authenticate(ss, body.getResponse());
-        switch (authResult.status)
+        switch (authResult.getStatus())
         {
             case ERROR:
                 Exception cause = authResult.getCause();
@@ -96,13 +97,14 @@ public class ConnectionSecureOkMethodHandler implements StateAwareMethodListener
                                                                 ConnectionStartOkMethodHandler.getConfiguredFrameSize(),
                                                                 ApplicationRegistry.getInstance().getConfiguration().getHeartBeatDelay());
                 session.writeFrame(tuneBody.generateFrame(0));
-                session.setAuthorizedID(new UsernamePrincipal(ss.getAuthorizationID()));
+                final UsernamePrincipal principal = UsernamePrincipal.getUsernamePrincipalFromSubject(authResult.getSubject());
+                session.setAuthorizedID(principal);
                 disposeSaslServer(session);                
                 break;
             case CONTINUE:
                 stateManager.changeState(AMQState.CONNECTION_NOT_AUTH);
 
-                ConnectionSecureBody secureBody = methodRegistry.createConnectionSecureBody(authResult.challenge);
+                ConnectionSecureBody secureBody = methodRegistry.createConnectionSecureBody(authResult.getChallenge());
                 session.writeFrame(secureBody.generateFrame(0));
         }
     }

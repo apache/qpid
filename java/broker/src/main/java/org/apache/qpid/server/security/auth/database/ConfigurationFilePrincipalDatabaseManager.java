@@ -23,6 +23,7 @@ package org.apache.qpid.server.security.auth.database;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -170,18 +171,13 @@ public class ConfigurationFilePrincipalDatabaseManager implements PrincipalDatab
         {
             AMQUserManagementMBean _mbean = new AMQUserManagementMBean();
 
-            List<String> principalDBs = config.getManagementPrincipalDBs();
-            if (principalDBs.isEmpty())
-            {
-                throw new ConfigurationException("No principal-database specified for jmx security");
-            }
 
-            String databaseName = principalDBs.get(0);
-            PrincipalDatabase database = getDatabases().get(databaseName);
-            if (database == null)
+            final Collection<PrincipalDatabase> dbs = getDatabases().values();
+            if (dbs.size() == 0)
             {
-                throw new ConfigurationException("Principal-database '" + databaseName + "' not found");
+                throw new ConfigurationException("Principal-database not found");
             }
+            final PrincipalDatabase database = dbs.iterator().next();
 
             _mbean.setPrincipalDatabase(database);
             _mbean.register();

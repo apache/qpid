@@ -20,42 +20,93 @@
  */
 package org.apache.qpid.server.security.auth;
 
+import javax.security.auth.Subject;
+
+/**
+ * Encapsulates the result of an attempt to authenticate.
+ * <p>
+ * The authentication status describes the overall outcome.
+ * <p>
+ * <ol>
+ *  <li>If authentication status is SUCCESS, the subject will be populated.
+ *  </li>
+ *  <li>If authentication status is CONTINUE, the authentication has failed because the user
+ *      supplied incorrect credentials (etc).  If the authentication requires it, the next challenge
+ *      is made available.
+ *  </li>
+ *  <li>If authentication status is ERROR , the authentication decision could not be made due
+ *      to a failure (such as an external system), the {@link AuthenticationResult#getCause()}
+ *      will provide the underlying exception.
+ *  </li>
+ * </ol>
+ *
+ */
 public class AuthenticationResult
 {
     public enum AuthenticationStatus
     {
-        SUCCESS, CONTINUE, ERROR
+        /** Authentication successful */
+        SUCCESS,
+        /** Authentication not successful due to credentials problem etc */
+        CONTINUE,
+        /** Problem prevented the authentication from being made e.g. failure of an external system */
+        ERROR
     }
 
-    public AuthenticationStatus status;
-    public byte[] challenge;
-    
-    private Exception cause;
+    public final AuthenticationStatus _status;
+    public final byte[] _challenge;
+    private final Exception _cause;
+    private final Subject _subject;
 
-    public AuthenticationResult(AuthenticationStatus status)
+    public AuthenticationResult(final AuthenticationStatus status)
     {
         this(null, status, null);
     }
 
-    public AuthenticationResult(byte[] challenge, AuthenticationStatus status)
+    public AuthenticationResult(final byte[] challenge, final AuthenticationStatus status)
     {
         this(challenge, status, null);
     }
 
-    public AuthenticationResult(AuthenticationStatus error, Exception cause)
+    public AuthenticationResult(final AuthenticationStatus error, final Exception cause)
     {
         this(null, error, cause);
     }
 
-    public AuthenticationResult(byte[] challenge, AuthenticationStatus status, Exception cause)
+    public AuthenticationResult(final byte[] challenge, final AuthenticationStatus status, final Exception cause)
     {
-        this.status = status;
-        this.challenge = challenge;
-        this.cause = cause;
+        this._status = status;
+        this._challenge = challenge;
+        this._cause = cause;
+        this._subject = null;
+    }
+
+    public AuthenticationResult(final Subject subject)
+    {
+        this._status = AuthenticationStatus.SUCCESS;
+        this._challenge = null;
+        this._cause = null;
+        this._subject = subject;
     }
 
     public Exception getCause()
     {
-        return cause;
+        return _cause;
     }
+
+    public AuthenticationStatus getStatus()
+    {
+        return _status;
+    }
+
+    public byte[] getChallenge()
+    {
+        return _challenge;
+    }
+
+    public Subject getSubject()
+    {
+        return _subject;
+    }
+
 }

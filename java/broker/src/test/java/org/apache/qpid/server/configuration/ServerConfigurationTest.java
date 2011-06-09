@@ -23,24 +23,18 @@ package org.apache.qpid.server.configuration;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.RandomAccessFile;
 import java.util.List;
 import java.util.Locale;
-
-import junit.framework.TestCase;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.exchange.Exchange;
-import org.apache.qpid.server.protocol.AMQProtocolEngine;
-import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.ConfigurationFileApplicationRegistry;
 import org.apache.qpid.server.util.InternalBrokerBaseCase;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
-import org.apache.qpid.transport.TestNetworkDriver;
 
 public class ServerConfigurationTest extends InternalBrokerBaseCase
 {
@@ -318,20 +312,6 @@ public class ServerConfigurationTest extends InternalBrokerBaseCase
         serverConfig = new ServerConfiguration(_config);
         serverConfig.initialise();
         assertEquals(true, serverConfig.getMsgAuth());
-    }
-
-    public void testGetJMXPrincipalDatabase() throws ConfigurationException
-    {
-        // Check default
-        ServerConfiguration serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(null, serverConfig.getJMXPrincipalDatabase());
-
-        // Check value we set
-        _config.setProperty("security.jmx.principal-database", "a");
-        serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals("a", serverConfig.getJMXPrincipalDatabase());
     }
 
     public void testGetManagementKeyStorePath() throws ConfigurationException
@@ -831,9 +811,6 @@ public class ServerConfigurationTest extends InternalBrokerBaseCase
         out.write("\t\t\t\t</attributes>\n");
         out.write("\t\t\t</principal-database>\n");
         out.write("\t\t</principal-databases>\n");
-        out.write("\t\t<jmx>\n");
-        out.write("\t\t\t<principal-database>passwordfile</principal-database>\n");
-        out.write("\t\t</jmx>\n");
         out.write("\t\t<firewall>\n");
         out.write("\t\t\t<rule access=\""+ ((allow) ? "allow" : "deny") +"\" network=\"127.0.0.1\"/>");
         out.write("\t\t</firewall>\n");
@@ -881,9 +858,6 @@ public class ServerConfigurationTest extends InternalBrokerBaseCase
         out.write("\t\t\t\t</attributes>\n");
         out.write("\t\t\t</principal-database>\n");
         out.write("\t\t</principal-databases>\n");
-        out.write("\t\t<jmx>\n");
-        out.write("\t\t\t<principal-database>passwordfile</principal-database>\n");
-        out.write("\t\t</jmx>\n");
         out.write("\t\t<firewall>\n");
         out.write("\t\t\t<rule access=\"allow\" network=\"127.0.0.1\"/>");
         out.write("\t\t</firewall>\n");
@@ -986,9 +960,6 @@ public class ServerConfigurationTest extends InternalBrokerBaseCase
         out.write("\t\t\t\t</attributes>\n");
         out.write("\t\t\t</principal-database>\n");
         out.write("\t\t</principal-databases>\n");
-        out.write("\t\t<jmx>\n");
-        out.write("\t\t\t<principal-database>passwordfile</principal-database>\n");
-        out.write("\t\t</jmx>\n");
         out.write("\t\t<firewall>\n");
         out.write("\t\t\t<rule access=\"allow\" network=\"127.0.0.1\"/>");
         out.write("\t\t</firewall>\n");
@@ -1486,6 +1457,33 @@ public class ServerConfigurationTest extends InternalBrokerBaseCase
         {
             assertEquals("Incorrect error message",
                     "Validation error : security/jmx/access is no longer a supported element within the configuration xml.",
+                    ce.getMessage());
+        }
+    }
+
+    /*
+     * Tests that the old element security.jmx.principal-databases (that used to define the
+     * principal database used for JMX authentication) is rejected.
+     */
+    public void testManagementPrincipalDatabaseRejected() throws ConfigurationException
+    {
+        // Check default
+        ServerConfiguration serverConfig = new ServerConfiguration(_config);
+        serverConfig.initialise();
+
+        // Check value we set
+        _config.setProperty("security.jmx.principal-database(0)", "mydb");
+        serverConfig = new ServerConfiguration(_config);
+
+        try
+        {
+            serverConfig.initialise();
+            fail("Exception not thrown");
+        }
+        catch (ConfigurationException ce)
+        {
+            assertEquals("Incorrect error message",
+                    "Validation error : security/jmx/principal-database is no longer a supported element within the configuration xml.",
                     ce.getMessage());
         }
     }
