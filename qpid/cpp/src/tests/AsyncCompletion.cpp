@@ -124,10 +124,11 @@ QPID_AUTO_TEST_CASE(testWaitTillComplete) {
     LocalQueue q;
     Subscription sub = fix.subs.subscribe(q, "q", settings);
     s.messageFlush(arg::destination=sub.getName());
+    s.sync();
     SequenceSet accepted;
     for (int x = 0; x < count; x++) {
         Message m;
-        BOOST_CHECK(q.get(m, TIME_SEC * 3));
+        BOOST_CHECK(q.get(m, TIME_SEC));
         accepted.add(m.getId());
     }
 
