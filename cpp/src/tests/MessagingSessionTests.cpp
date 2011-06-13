@@ -992,6 +992,38 @@ QPID_AUTO_TEST_CASE(testTtlForever)
     BOOST_CHECK(in.getTtl() == Duration::FOREVER);
 }
 
+QPID_AUTO_TEST_CASE(testExclusiveTopicSubscriber)
+{
+    TopicFixture fix;
+    std::string address = (boost::format("%1%; { link: { name: 'my-subscription', x-declare: { auto-delete: true, exclusive: true }}}") % fix.topic).str();
+    Sender sender = fix.session.createSender(fix.topic);
+    Receiver receiver1 = fix.session.createReceiver(address);
+    {
+        ScopedSuppressLogging sl;
+    try {
+        fix.session.createReceiver(address);
+        fix.session.sync();
+        BOOST_FAIL("Expected exception.");
+    } catch (const MessagingException& /*e*/) {}
+    }
+}
+
+QPID_AUTO_TEST_CASE(testNonExclusiveSubscriber)
+{
+    TopicFixture fix;
+    std::string address = (boost::format("%1%; {node:{type:topic}, link:{name:'my-subscription', x-declare:{auto-delete:true, exclusive:false}}}") % fix.topic).str();
+    Receiver receiver1 = fix.session.createReceiver(address);
+    Receiver receiver2 = fix.session.createReceiver(address);
+    Sender sender = fix.session.createSender(fix.topic);
+    sender.send(Message("one"), true);
+    Message in = receiver1.fetch(Duration::IMMEDIATE);
+    BOOST_CHECK_EQUAL(in.getContent(), std::string("one"));
+    sender.send(Message("two"), true);
+    in = receiver2.fetch(Duration::IMMEDIATE);
+    BOOST_CHECK_EQUAL(in.getContent(), std::string("two"));
+    fix.session.acknowledge();
+}
+
 QPID_AUTO_TEST_SUITE_END()
 
 }} // namespace qpid::tests
