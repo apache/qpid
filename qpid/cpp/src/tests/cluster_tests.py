@@ -1055,3 +1055,56 @@ class StoreTests(BrokerTest):
         self.assertEqual(c.get_message("q").content, "x")
         b = cluster.start("b")
         self.assertEqual(c.get_message("q").content, "y")
+
+    def test_no_redeliver_accepted(self):
+        """Verify that messages that have been accepted are not re-delivered
+        after a kill()/restart of the broker.
+        """
+        cluster = self.cluster(0, self.args())
+        b = cluster.start("b", expect=EXPECT_EXIT_FAIL)
+        ssn = b.connect().session()
+        msgs = [Message("M-%s" % x, durable=True) for x in range(24)]
+        b.send_messages("testQ", msgs, durable=True, session=ssn)
+        ssn.sync()
+        # only accept the first 5 before killing
+        rsn = b.connect().session()
+        r0 = rsn.receiver("testQ", capacity=10)
+        for x in range(5):
+            m = r0.fetch(timeout=1)
+        rsn.acknowledge()
+        for x in range(3):    # these are not accepted!
+            m = r0.fetch(timeout=1)
+        b.kill()
+        b = cluster.start("b")
+        rsn = b.connect().session()
+        r0 = rsn.receiver("testQ", capacity=10)
+        # we should expect that the next available msg is
+        # the next after the last accepted (e.g. "M-5")
+        m = r0.fetch(timeout=1)
+        self.assertEqual(m.content, "M-5")
+
+    def test_no_redeliver_accepted_failover(self):
+        """Verify that messages that have been accepted are not re-delivered
+        after a failover of the broker.
+        """
+        cluster = self.cluster(2, self.args(), expect=EXPECT_EXIT_FAIL)
+        ssn = cluster[0].connect().session()
+        msgs = [Message("M-%s" % x, durable=True) for x in range(24)]
+        cluster[0].send_messages("testQ", msgs, durable=True, session=ssn)
+        ssn.sync()
+        # only accept the first 5 before killing
+        rsn = cluster[0].connect().session()
+        r0 = rsn.receiver("testQ", capacity=10)
+        for x in range(5):
+            m = r0.fetch(timeout=1)
+        rsn.acknowledge()
+        for x in range(3):    # these are not accepted!
+            m = r0.fetch(timeout=1)
+        cluster[0].kill()
+        rsn = cluster[1].connect().session()
+        r0 = rsn.receiver("testQ", capacity=10)
+        # we should expect that the next available msg is
+        # the next after the last accepted (e.g. "M-5")
+        m = r0.fetch(timeout=1)
+        self.assertEqual(m.content, "M-5")
+        cluster[1].kill()
