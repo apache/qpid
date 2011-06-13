@@ -117,19 +117,20 @@ void QueuePolicy::update(FieldTable& settings)
     settings.setString(typeKey, type);
 }
 
-uint32_t QueuePolicy::getCapacity(const FieldTable& settings, const std::string& key, uint32_t defaultValue)
+template <typename T>
+T getCapacity(const FieldTable& settings, const std::string& key, T defaultValue)
 {
     FieldTable::ValuePtr v = settings.get(key);
 
-    int32_t result = 0;
+    T result = 0;
 
     if (!v) return defaultValue;
     if (v->getType() == 0x23) {
         QPID_LOG(debug, "Value for " << key << " specified as float: " << v->get<float>());
     } else if (v->getType() == 0x33) {
         QPID_LOG(debug, "Value for " << key << " specified as double: " << v->get<double>());
-    } else if (v->convertsTo<int>()) {
-        result = v->get<int>();
+    } else if (v->convertsTo<T>()) {
+        result = v->get<T>();
         QPID_LOG(debug, "Got integer value for " << key << ": " << result);
         if (result >= 0) return result;
     } else if (v->convertsTo<string>()) {
@@ -319,8 +320,8 @@ std::auto_ptr<QueuePolicy> QueuePolicy::createQueuePolicy(const qpid::framing::F
 
 std::auto_ptr<QueuePolicy> QueuePolicy::createQueuePolicy(const std::string& name, const qpid::framing::FieldTable& settings)
 {
-    uint32_t maxCount = getCapacity(settings, maxCountKey, 0);
-    uint32_t maxSize = getCapacity(settings, maxSizeKey, defaultMaxSize);
+    uint32_t maxCount = getCapacity<int32_t>(settings, maxCountKey, 0);
+    uint64_t maxSize = getCapacity<int64_t>(settings, maxSizeKey, defaultMaxSize);
     if (maxCount || maxSize) {
         return createQueuePolicy(name, maxCount, maxSize, getType(settings));
     } else {
