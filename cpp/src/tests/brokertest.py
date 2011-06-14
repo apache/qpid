@@ -157,8 +157,13 @@ class Popen(subprocess.Popen):
                 try: self.kill()            # Just make sure its dead
                 except: pass
             elif self.expect == EXPECT_RUNNING:
-                try: self.kill()
-                except: self.unexpected("expected running, exit code %d" % self.wait())
+                    if self.poll() != None:
+                        self.unexpected("expected running, exit code %d" % self.returncode)
+                    else:
+                        try:
+                            self.kill()
+                        except Exception,e:
+                            self.unexpected("exception from kill: %s" % str(e))
             else:
                 retry(lambda: self.poll() is not None)
                 if self.returncode is None: # Still haven't stopped
@@ -544,6 +549,7 @@ class NumberedSender(Thread):
              "--broker", "localhost:%s"%broker.port(),
              "--address", "%s;{create:always}"%queue,
              "--failover-updates",
+             "--connection-options", "{reconnect:true,reconnect-timeout:10}",
              "--content-stdin"
              ],
             expect=EXPECT_RUNNING,
@@ -562,6 +568,7 @@ class NumberedSender(Thread):
         try:
             self.sent = 0
             while not self.stopped:
+                self.sender.assert_running()
                 if self.max:
                     self.condition.acquire()
                     while not self.stopped and self.sent - self.received > self.max:
@@ -604,6 +611,7 @@ class NumberedReceiver(Thread):
              "--broker", "localhost:%s"%broker.port(),
              "--address", "%s;{create:always}"%queue,
              "--failover-updates",
+             "--connection-options", "{reconnect:true,reconnect_timeout:10}",
              "--forever"
              ],
             expect=EXPECT_RUNNING,
@@ -620,6 +628,7 @@ class NumberedReceiver(Thread):
             self.received = 0
             m = self.read_message()
             while m != -1:
+                self.receiver.assert_running()
                 assert(m <= self.received) # Check for missing messages
                 if (m == self.received): # Ignore duplicates
                     self.received += 1
