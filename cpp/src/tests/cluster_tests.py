@@ -307,7 +307,7 @@ acl allow all all
              "--sequence=true",
              "--send-eos=1",
              "--messages=100000",
-             "--connection-options={reconnect:true,reconnect_timeout:10}"
+             "--connection-options={reconnect:true}"
              ])
         self.receiver = self.popen(
             ["qpid-receive",
@@ -315,7 +315,7 @@ acl allow all all
              "--address", queue,
              "--ignore-duplicates",
              "--check-redelivered",
-             "--connection-options={reconnect:true,reconnect_timeout:10}",
+             "--connection-options={reconnect:true}",
              "--forever"
              ])
         time.sleep(1)#give sender enough time to have some messages to replay
@@ -463,7 +463,7 @@ acl allow all all
                                                 "--content-size=%s" % self.size,
                                                 "--messages=%s" % self.count,
                                                 "--failover-updates",
-                                                "--connection-options={reconnect:true,reconnect_timeout:10}",
+                                                "--connection-options={reconnect:true}",
                                                 "--address=%s" % self.queue,
                                                 "--broker=%s" % self.broker.host_port()])
                 self.sender.wait()
@@ -495,7 +495,7 @@ acl allow all all
                                      "--timeout=1",
                                      "--print-content=no",
                                      "--failover-updates",
-                                     "--connection-options={reconnect:true,reconnect_timeout:10}",
+                                     "--connection-options={reconnect:true}",
                                      "--ack-frequency=1",
                                      "--address=flq",
                                      "--broker=%s" % cluster[1].host_port()])
@@ -520,7 +520,7 @@ acl allow all all
                                      "--timeout=1",
                                      "--print-content=no",
                                      "--failover-updates",
-                                     "--connection-options={reconnect:true,reconnect_timeout:10}",
+                                     "--connection-options={reconnect:true}",
                                      "--ack-frequency=1",
                                      "--address=flq",
                                      "--broker=%s" % cluster[2].host_port()])
