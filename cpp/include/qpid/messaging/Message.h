@@ -55,23 +55,58 @@ class QPID_MESSAGING_CLASS_EXTERN Message
     QPID_MESSAGING_EXTERN void setSubject(const std::string&);
     QPID_MESSAGING_EXTERN const std::string& getSubject() const;
 
+    /**
+     * Set the content type (i.e. the MIME type) for the message. This
+     * should be set by the sending application and indicates to
+     * recipients of message how to interpret or decode the content.
+     */
     QPID_MESSAGING_EXTERN void setContentType(const std::string&);
+    /**
+     * Returns the content type (i.e. the MIME type) for the
+     * message. This can be used to determine how to decode the
+     * message content.
+     */
     QPID_MESSAGING_EXTERN const std::string& getContentType() const;
 
+    /**
+     * Set an application defined identifier for the message. At
+     * present this must be a stringfied UUID (support for less
+     * restrictive IDs is anticipated however).
+     */
     QPID_MESSAGING_EXTERN void setMessageId(const std::string&);
     QPID_MESSAGING_EXTERN const std::string& getMessageId() const;
 
+    /**
+     * Sets the user id of the message. This should in general be the
+     * user-id as which the sending connection authenticated itself as
+     * the messaging infrastructure will verify this. See
+     * Connection::getAuthenticatedUsername()
+     */
     QPID_MESSAGING_EXTERN void setUserId(const std::string&);
     QPID_MESSAGING_EXTERN const std::string& getUserId() const;
 
+    /**
+     * Can be used to set application specific correlation identifiers
+     * as part of a protocol for message exchange patterns. E.g. a
+     * request-reponse pattern might require the correlation-id of the
+     * request and response to match, or might use the message-id of
+     * the request as the correlation-id on the response etc.
+     */
     QPID_MESSAGING_EXTERN void setCorrelationId(const std::string&);
     QPID_MESSAGING_EXTERN const std::string& getCorrelationId() const;
 
+    /**
+     * Sets a priority level on the message. This may be used by the
+     * messaging infrastructure to prioritise delivery of higher
+     * priority messages.
+     */
     QPID_MESSAGING_EXTERN void setPriority(uint8_t);
     QPID_MESSAGING_EXTERN uint8_t getPriority() const;
 
     /**
-     * Set the time to live for this message in milliseconds.
+     * Set the time to live for this message in milliseconds. This can
+     * be used by the messaging infrastructure to discard messages
+     * that are no longer of relevance.
      */
     QPID_MESSAGING_EXTERN void setTtl(Duration ttl);
     /**
@@ -79,24 +114,62 @@ class QPID_MESSAGING_CLASS_EXTERN Message
      */
     QPID_MESSAGING_EXTERN Duration getTtl() const;
 
+    /**
+     * Mark the message as durable. This is a hint to the messaging
+     * infrastructure that the message should be persisted or
+     * otherwise stored such that failoures or shutdown do not cause
+     * it to be lost.
+     */
     QPID_MESSAGING_EXTERN void setDurable(bool durable);
     QPID_MESSAGING_EXTERN bool getDurable() const;
 
+    /**
+     * The redelivered flag if set implies that the message *may* have
+     * been previously delivered and thus is a hint to the application
+     * or messaging infrastructure that if de-duplication is required
+     * this message should be examined to determine if it is a
+     * duplicate.
+     */
     QPID_MESSAGING_EXTERN bool getRedelivered() const;
+    /**
+     * Can be used to provide a hint to the application or messaging
+     * infrastructure that if de-duplication is required this message
+     * should be examined to determine if it is a duplicate.
+     */
     QPID_MESSAGING_EXTERN void setRedelivered(bool);
 
+    /**
+     * In addition to a payload (i.e. the content), messages can
+     * include annotations describing aspectf of the message. In
+     * addition to the standard annotations such as TTL and content
+     * type, application- or context- specific properties can also be
+     * defined. Each message has a map of name values for such custom
+     * properties. The value is specified as a Variant.
+     */
     QPID_MESSAGING_EXTERN const qpid::types::Variant::Map& getProperties() const;
     QPID_MESSAGING_EXTERN qpid::types::Variant::Map& getProperties();
 
+    /**
+     * Set the content to the data held in the string parameter. Note:
+     * this is treated as raw bytes and need not be text. Consider
+     * setting the content-type to indicate how the data should be
+     * interpreted by recipients.
+     */
     QPID_MESSAGING_EXTERN void setContent(const std::string&);
     /**
-     * Note that chars are copied.
+     * Copy count bytes from the region pointed to by chars as the
+     * message content.
      */
     QPID_MESSAGING_EXTERN void setContent(const char* chars, size_t count);
 
     /** Get the content as a std::string */
     QPID_MESSAGING_EXTERN std::string getContent() const;
-    /** Get a const pointer to the start of the content data. */
+    /**
+     * Get a const pointer to the start of the content data. The
+     * memory pointed to is owned by the message. The getContentSize()
+     * method indicates how much data there is (i.e. the extent of the
+     * memory region pointed to by the return value of this method).
+     */
     QPID_MESSAGING_EXTERN const char* getContentPtr() const;
     /** Get the size of content in bytes. */
     QPID_MESSAGING_EXTERN size_t getContentSize() const;
