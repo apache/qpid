@@ -188,7 +188,7 @@ Broker::Broker(const Broker::Options& conf) :
             conf.replayFlushLimit*1024, // convert kb to bytes.
             conf.replayHardLimit*1024),
         *this),
-    queueCleaner(queues, timer),
+    queueCleaner(queues, &timer),
     queueEvents(poller,!conf.asyncQueueEvents),
     recovery(true),
     inCluster(false),
@@ -750,6 +750,7 @@ bool Broker::deferDeliveryImpl(const std::string& ,
 
 void Broker::setClusterTimer(std::auto_ptr<sys::Timer> t) {
     clusterTimer = t;
+    queueCleaner.setTimer(clusterTimer.get());
 }
 
 const std::string Broker::TCP_TRANSPORT("tcp");

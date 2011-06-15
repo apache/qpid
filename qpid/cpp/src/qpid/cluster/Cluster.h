@@ -63,6 +63,12 @@ class AMQBody;
 struct Uuid;
 }
 
+namespace sys {
+class Timer;
+class AbsTime;
+class Duration;
+}
+
 namespace cluster {
 
 class Connection;
@@ -135,6 +141,9 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     bool deferDeliveryImpl(const std::string& queue,
                            const boost::intrusive_ptr<broker::Message>& msg);
 
+    sys::AbsTime getClusterTime();
+    void sendClockUpdate();
+    void clock(const uint64_t time);
   private:
     typedef sys::Monitor::ScopedLock Lock;
 
@@ -180,12 +189,12 @@ class Cluster : private Cpg::Handler, public management::Manageable {
                       const std::string& left,
                       const std::string& joined,
                       Lock& l);
-    void messageExpired(const MemberId&, uint64_t, Lock& l);
     void errorCheck(const MemberId&, uint8_t type, SequenceNumber frameSeq, Lock&);
     void timerWakeup(const MemberId&, const std::string& name, Lock&);
     void timerDrop(const MemberId&, const std::string& name, Lock&);
     void shutdown(const MemberId&, const framing::Uuid& shutdownId, Lock&);
     void deliverToQueue(const std::string& queue, const std::string& message, Lock&);
+    void clock(const uint64_t time, Lock&);
 
     // Helper functions
     ConnectionPtr getConnection(const EventFrame&, Lock&);
@@ -296,6 +305,9 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     ErrorCheck error;
     UpdateReceiver updateReceiver;
     ClusterTimer* timer;
+    sys::Timer clockTimer;
+    sys::AbsTime clusterTime;
+    sys::Duration clusterTimeOffset;
 
   friend std::ostream& operator<<(std::ostream&, const Cluster&);
   friend struct ClusterDispatcher;

@@ -10,9 +10,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -35,14 +35,15 @@ class QueueRegistry;
 class QueueCleaner
 {
   public:
-    QPID_BROKER_EXTERN QueueCleaner(QueueRegistry& queues, sys::Timer& timer);
+    QPID_BROKER_EXTERN QueueCleaner(QueueRegistry& queues, sys::Timer* timer);
     QPID_BROKER_EXTERN ~QueueCleaner();
-    QPID_BROKER_EXTERN void start(qpid::sys::Duration period);
+    QPID_BROKER_EXTERN void start(sys::Duration period);
+    QPID_BROKER_EXTERN void setTimer(sys::Timer* timer);
   private:
     class Task : public sys::TimerTask
     {
       public:
-        Task(QueueCleaner& parent, qpid::sys::Duration duration);
+        Task(QueueCleaner& parent, sys::Duration duration);
         void fire();
       private:
         QueueCleaner& parent;
@@ -50,7 +51,8 @@ class QueueCleaner
 
     boost::intrusive_ptr<sys::TimerTask> task;
     QueueRegistry& queues;
-    sys::Timer& timer;
+    sys::Timer* timer;
+    sys::Duration period;
 
     void fired();
 };
