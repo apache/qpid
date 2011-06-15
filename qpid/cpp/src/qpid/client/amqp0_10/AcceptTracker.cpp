@@ -30,12 +30,23 @@ void AcceptTracker::State::accept()
     unaccepted.clear();
 }
 
-void AcceptTracker::State::accept(qpid::framing::SequenceNumber id)
+SequenceSet AcceptTracker::State::accept(qpid::framing::SequenceNumber id, bool cumulative)
 {
-    if (unaccepted.contains(id)) {
-        unaccepted.remove(id);
-        unconfirmed.add(id);
+    SequenceSet accepting;
+    if (cumulative) {
+        for (SequenceSet::iterator i = unaccepted.begin(); i != unaccepted.end() && *i <= id; ++i) {
+            accepting.add(*i);
+        }
+        unconfirmed.add(accepting);
+        unaccepted.remove(accepting);
+    } else {
+        if (unaccepted.contains(id)) {
+            unaccepted.remove(id);
+            unconfirmed.add(id);
+            accepting.add(id);
+        }
     }
+    return accepting;
 }
 
 void AcceptTracker::State::release()
@@ -71,16 +82,15 @@ void AcceptTracker::accept(qpid::client::AsyncSession& session)
     aggregateState.accept();
 }
 
-void AcceptTracker::accept(qpid::framing::SequenceNumber id, qpid::client::AsyncSession& session)
+void AcceptTracker::accept(qpid::framing::SequenceNumber id, qpid::client::AsyncSession& session, bool cumulative)
 {
     for (StateMap::iterator i = destinationState.begin(); i != destinationState.end(); ++i) {
-        i->second.accept(id);
+        i->second.accept(id, cumulative);
     }
     Record record;
-    record.accepted.add(id);
+    record.accepted = aggregateState.accept(id, cumulative);
     record.status = session.messageAccept(record.accepted);
     pending.push_back(record);
-    aggregateState.accept(id);
 }
 
 void AcceptTracker::release(qpid::client::AsyncSession& session)
