@@ -40,11 +40,15 @@ using qpid::types::VAR_LIST;
 using qpid::framing::Uuid;
 
 namespace {
-void convert(const Variant::List& from, std::vector<std::string>& to)
+void merge(const std::string& value, std::vector<std::string>& list) {
+    if (std::find(list.begin(), list.end(), value) == list.end())
+        list.push_back(value);
+}
+
+void merge(const Variant::List& from, std::vector<std::string>& to)
 {
-    for (Variant::List::const_iterator i = from.begin(); i != from.end(); ++i) {
-        to.push_back(i->asString());
-    }
+    for (Variant::List::const_iterator i = from.begin(); i != from.end(); ++i)
+        merge(i->asString(), to);
 }
 
 std::string asString(const std::vector<std::string>& v) {
@@ -93,9 +97,9 @@ void ConnectionImpl::setOption(const std::string& name, const Variant& value)
         maxReconnectInterval = value;
     } else if (name == "reconnect-urls" || name == "reconnect_urls") {
         if (value.getType() == VAR_LIST) {
-            convert(value.asList(), urls);
+            merge(value.asList(), urls);
         } else {
-            urls.push_back(value.asString());
+            merge(value.asString(), urls);
         }
     } else if (name == "username") {
         settings.username = value.asString();
@@ -255,14 +259,9 @@ void ConnectionImpl::connect(const qpid::sys::AbsTime& started)
 }
 
 void ConnectionImpl::mergeUrls(const std::vector<Url>& more, const sys::Mutex::ScopedLock&) {
-    if (more.size()) {
-        for (size_t i = 0; i < more.size(); ++i) {
-            if (std::find(urls.begin(), urls.end(), more[i].str()) == urls.end()) {
-                urls.push_back(more[i].str());
-            }
-        }
-        QPID_LOG(debug, "Added known-hosts, reconnect-urls=" << asString(urls));
-    }
+    for (std::vector<Url>::const_iterator i = more.begin(); i != more.end(); ++i)
+        merge(i->str(), urls);
+    QPID_LOG(debug, "Added known-hosts, reconnect-urls=" << asString(urls));
 }
 
 bool ConnectionImpl::tryConnect()
