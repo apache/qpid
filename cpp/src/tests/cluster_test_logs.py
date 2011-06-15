@@ -54,7 +54,7 @@ def filter_log(log):
         'caught up',
         'active for links|Passivating links|Activating links',
         'info Connection.* connected to', # UpdateClient connection
-        'warning Connection [\d+ [0-9.:]+] closed', # UpdateClient connection
+        'warning Connection \\[[-0-9.: ]+\\] closed', # UpdateClient connection
         'warning Broker closed connection: 200, OK',
         'task late',
         'task overran',

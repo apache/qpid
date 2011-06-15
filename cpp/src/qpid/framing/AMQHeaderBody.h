@@ -10,9 +10,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -58,7 +58,7 @@ class QPID_COMMON_CLASS_EXTERN AMQHeaderBody :  public AMQBody
         }
             else
                 return Base::decode(buffer, size, type);
-        }        
+        }
         void print(std::ostream& out) const {
             const boost::optional<T>& p=this->OptProps<T>::props;
             if (p) out << *p;
@@ -77,7 +77,7 @@ class QPID_COMMON_CLASS_EXTERN AMQHeaderBody :  public AMQBody
     typedef  PropSet<PropSet<Empty, DeliveryProperties>, MessageProperties> Properties;
 
     Properties properties;
-    
+
 public:
 
     inline uint8_t type() const { return HEADER_BODY; }
@@ -97,6 +97,10 @@ public:
 
     template <class T> const T* get() const {
         return properties.OptProps<T>::props.get_ptr();
+    }
+
+    template <class T> void erase() {
+        properties.OptProps<T>::props.reset();
     }
 
     boost::intrusive_ptr<AMQBody> clone() const { return BodyFactory::copy(*this); }

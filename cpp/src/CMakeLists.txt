@@ -96,7 +96,7 @@ MACRO (add_msvc_version_full verProject verProjectType verProjectFileExt verFN1 
         inherit_value ("winver_${verProject}_InternalName"         "${verProject}")
         inherit_value ("winver_${verProject}_OriginalFilename"     "${verProject}.${verProjectFileExt}")
         inherit_value ("winver_${verProject}_ProductName"          "${winver_DESCRIPTION_SUMMARY}")
-        
+
         # Create strings to be substituted into the template file
         set ("winverFileVersionBinary"     "${winver_${verProject}_FileVersionBinary}")
         set ("winverProductVersionBinary"  "${winver_${verProject}_ProductVersionBinary}")
@@ -126,7 +126,7 @@ ENDMACRO (add_msvc_version_full)
 #
 MACRO (add_msvc_version verProject verProjectType verProjectFileExt)
     if (MSVC)
-        add_msvc_version_full (${verProject} 
+        add_msvc_version_full (${verProject}
                                ${verProjectType}
                                ${verProjectFileExt}
                                ${winver_FILE_VERSION_N1}
@@ -656,7 +656,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL Windows)
   set (qpidd_platform_SOURCES
     windows/QpiddBroker.cpp
   )
-  
+
   set (qpidmessaging_platform_SOURCES
      qpid/messaging/HandleInstantiator.cpp
   )
@@ -997,7 +997,6 @@ set (qpidbroker_SOURCES
      qpid/broker/QueuePolicy.cpp
      qpid/broker/QueueRegistry.cpp
      qpid/broker/QueueFlowLimit.cpp
-     qpid/broker/RateTracker.cpp
      qpid/broker/RecoveryManagerImpl.cpp
      qpid/broker/RecoveredEnqueue.cpp
      qpid/broker/RecoveredDequeue.cpp
