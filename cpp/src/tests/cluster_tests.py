@@ -787,7 +787,7 @@ class LongTests(BrokerTest):
         args += ["--log-enable=trace+:management"]
         # Use store if present.
         if BrokerTest.store_lib: args +=["--load-module", BrokerTest.store_lib]
-        cluster = self.cluster(3, args)
+        cluster = self.cluster(3, args, expect=EXPECT_EXIT_FAIL) # brokers will be killed
 
         clients = [] # Per-broker list of clients that only connect to one broker.
         mclients = [] # Management clients that connect to every broker in the cluster.
@@ -822,7 +822,7 @@ class LongTests(BrokerTest):
             for b in cluster[alive:]: b.ready() # Check if a broker crashed.
             # Kill the first broker, expect the clients to fail.
             b = cluster[alive]
-            b.expect = EXPECT_EXIT_FAIL
+            b.ready()
             b.kill()
             # Stop the brokers clients and all the mclients.
             for c in clients[alive] + mclients:
@@ -832,11 +832,15 @@ class LongTests(BrokerTest):
             mclients = []
             # Start another broker and clients
             alive += 1
-            cluster.start()
+            cluster.start(expect=EXPECT_EXIT_FAIL)
+            cluster[-1].ready()         # Wait till its ready
             start_clients(cluster[-1])
             start_mclients(cluster[alive])
         for c in chain(mclients, *clients):
             c.stop()
+        for b in cluster[alive:]:
+            b.ready() # Verify still alive
+            b.kill()
         # Verify that logs are consistent
         cluster_test_logs.verify_logs()
 
