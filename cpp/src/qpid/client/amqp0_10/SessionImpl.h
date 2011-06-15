@@ -63,7 +63,7 @@ class SessionImpl : public qpid::messaging::SessionImpl
     void acknowledge(bool sync);
     void reject(qpid::messaging::Message&);
     void release(qpid::messaging::Message&);
-    void acknowledge(qpid::messaging::Message& msg);
+    void acknowledge(qpid::messaging::Message& msg, bool cumulative);
     void close();
     void sync(bool block);
     qpid::messaging::Sender createSender(const qpid::messaging::Address& address);
@@ -139,7 +139,7 @@ class SessionImpl : public qpid::messaging::SessionImpl
     void commitImpl();
     void rollbackImpl();
     void acknowledgeImpl();
-    void acknowledgeImpl(qpid::messaging::Message&);
+    void acknowledgeImpl(qpid::messaging::Message&, bool cumulative);
     void rejectImpl(qpid::messaging::Message&);
     void releaseImpl(qpid::messaging::Message&);
     void closeImpl();
@@ -204,12 +204,13 @@ class SessionImpl : public qpid::messaging::SessionImpl
         void operator()() { impl.releaseImpl(message); }
     };
 
-    struct Acknowledge1 : Command
+    struct Acknowledge2 : Command
     {
         qpid::messaging::Message& message;
+        bool cumulative;
 
-        Acknowledge1(SessionImpl& i, qpid::messaging::Message& m) : Command(i), message(m) {}
-        void operator()() { impl.acknowledgeImpl(message); }
+        Acknowledge2(SessionImpl& i, qpid::messaging::Message& m, bool c) : Command(i), message(m), cumulative(c) {}
+        void operator()() { impl.acknowledgeImpl(message, cumulative); }
     };
 
     struct CreateSender;
