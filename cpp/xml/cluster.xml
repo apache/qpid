@@ -8,9 +8,9 @@
 - to you under the Apache License, Version 2.0 (the
 - "License"); you may not use this file except in compliance
 - with the License.  You may obtain a copy of the License at
-- 
+-
 -   http://www.apache.org/licenses/LICENSE-2.0
-- 
+-
 - Unless required by applicable law or agreed to in writing,
 - software distributed under the License is distributed on an
 - "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -78,10 +78,6 @@
       <field name="left" type="vbin16"/> <!-- packed member-id array -->
     </control>
 
-    <control name="message-expired" code="0x12">
-      <field name="id" type="uint64"/>
-    </control>
-    
     <domain name="error-type" type="uint8" label="Types of error">
       <enum>
 	<choice name="none" value="0"/>
@@ -89,7 +85,7 @@
 	<choice name="connection" value="2"/>
       </enum>
     </domain>
-	
+
     <!-- Check for error consistency across the cluster -->
     <control name="error-check" code="0x14">
       <field name="type" type="error-type"/>
@@ -114,6 +110,11 @@
     <control name="deliver-to-queue" code="0x21">
       <field name="queue" type="str16"/>
       <field name="message" type="vbin32"/>
+    </control>
+
+    <!-- Update the cluster time -->
+    <control name="clock" code="0x22">
+      <field name="time" type="uint64"/>
     </control>
 
   </class>
@@ -149,7 +150,7 @@
 
     <!-- Abort a connection that is sending invalid data. -->
     <control name="abort" code="0x4"/>
-    
+
     <!-- Update controls. Sent to a new broker in joining mode.
 	 A connection is updated as followed:
 	 - send the shadow's management ID in shadow-perpare on the update connection
@@ -183,7 +184,7 @@
       <field name="position" type="sequence-no"/>
       <field name="tag" type="str8"/>
       <field name="id" type="sequence-no"/>
-      <field name="acquired" type="bit"/>		       <!--If not set, message follows. -->
+      <field name="acquired" type="bit"/> <!--If not set, message is on update queue. -->
       <field name="accepted" type="bit"/>
       <field name="cancelled" type="bit"/>
       <field name="completed" type="bit"/>
@@ -192,9 +193,9 @@
       <field name="enqueued" type="bit"/>
       <field name="credit" type="uint32"/>
     </control>
-    
+
     <!-- Tx transaction state. -->
-    <control name="tx-start" code="0x12"/> 
+    <control name="tx-start" code="0x12"/>
     <control name="tx-accept" code="0x13"> <field name="commands" type="sequence-set"/> </control>
     <control name="tx-dequeue" code="0x14"> <field name="queue" type="str8"/> </control>
     <control name="tx-enqueue" code="0x15"> <field name="queue" type="str8"/> </control>
@@ -204,7 +205,7 @@
     </control>
     <control name="tx-end" code="0x17"/>
     <control name="accumulated-ack" code="0x18"> <field name="commands" type="sequence-set"/> </control>
-    
+
     <!-- Consumers in the connection's output task -->
     <control name="output-task" code="0x19">
       <field name="channel" type="uint16"/>
@@ -253,9 +254,6 @@
     <!-- Replicate encoded exchanges/queues. -->
     <control name="exchange" code="0x31"><field name="encoded" type="str32"/></control>
 
-    <!-- Set expiry-id for subsequent messages. -->
-    <control name="expiry-id" code="0x33"><field name="expiry-id" type="uint64"/></control>
-
     <!-- Add a listener to a queue -->
     <control name="add-queue-listener" code="0x34">
       <field name="queue" type="str8"/>
@@ -288,6 +286,18 @@
       <field name="observer-id" type="str8"/>
       <field name="state" type="map"/>    <!-- "name"=value -->
     </control>
+
+    <!-- Update the cluster time -->
+    <control name="clock" code="0x40">
+      <field name="time" type="uint64"/>
+    </control>
+
+    <!-- Update a queue's dequeue rate -->
+    <control name="queue-dequeue-since-purge-state" code="0x41">
+      <field name="queue" type="str8"/>
+      <field name="dequeueSincePurge" type="uint32"/>
+    </control>
+
 
   </class>
 

@@ -75,6 +75,12 @@ void TimerTask::cancel() {
     cancelled = true;
 }
 
+void TimerTask::setFired() {
+    // Set nextFireTime to just before now, making readyToFire() true.
+    nextFireTime = AbsTime(sys::now(), Duration(-1));
+}
+
+
 Timer::Timer() :
     active(false),
     late(50 * TIME_MSEC),
