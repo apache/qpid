@@ -70,11 +70,12 @@ bool PersistableMessage::isContentReleased() const
 bool PersistableMessage::isStoredOnQueue(PersistableQueue::shared_ptr queue){
     if (store && (queue->getPersistenceId()!=0)) {
         sys::ScopedLock<sys::Mutex> l(storeLock);
-        for (syncList::iterator i = synclist.begin(); i != synclist.end(); ++i) {
+        syncList::iterator i = synclist.find(queue->getName());
+        if (i != synclist.end()) {
             PersistableQueue::shared_ptr q(i->second.lock());
             if (q && q->getPersistenceId() == queue->getPersistenceId())  return true;
-        } 
-    }            
+        }
+    }
     return false;
 }
 

@@ -86,7 +86,7 @@ class DeliveryRecord
     void redeliver(SemanticState* const);
     void acquire(DeliveryIds& results);
     void complete();
-    bool accept(TransactionContext*, Queue::DequeueDoneCallbackFactory *);  // Returns isRedundant()
+    boost::intrusive_ptr<Queue::DequeueCompletion> accept(TransactionContext*);
     bool setEnded();            // Returns isRedundant()
     void committed() const;
 
@@ -104,7 +104,7 @@ class DeliveryRecord
     void deliver(framing::FrameHandler& h, DeliveryId deliveryId, uint16_t framesize);
     void setId(DeliveryId _id) { id = _id; }
 
-    typedef std::deque<DeliveryRecord> DeliveryRecords;
+    typedef std::list<DeliveryRecord> DeliveryRecords;
     static AckRange findRange(DeliveryRecords& records, DeliveryId first, DeliveryId last);
     const QueuedMessage& getMessage() const { return msg; }
     framing::SequenceNumber getId() const { return id; }

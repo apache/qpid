@@ -40,6 +40,7 @@
 #include "qpid/management/Manageable.h"
 #include "qmf/org/apache/qpid/broker/Queue.h"
 #include "qpid/framing/amqp_types.h"
+#include "qpid/sys/AtomicValue.h"
 
 #include <boost/shared_ptr.hpp>
 #include <boost/intrusive_ptr.hpp>
@@ -275,26 +276,50 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     bool enqueue(TransactionContext* ctxt, boost::intrusive_ptr<Message>& msg, bool suppressPolicyCheck = false);
     void enqueueAborted(boost::intrusive_ptr<Message> msg);
     /**
-     * dequeue from store (only done once messages is acknowledged).  Dequeue
-     * -may- complete asynchronously. This method returns 'false' if the
-     * dequeue has completed, else 'true' if the dequeue is asynchronous.  If
-     * the caller is interested in receiving notification when the asynchronous
-     * dequeue completes, it may pass a pointer to a factory functor that
-     * returns a shareable DequeueDoneCallback object.  If the dequeue is
-     * completed synchronously, this pointer is ignored.  If the dequeue will
-     * complete asynchronously, the factory is called to obtain a
-     * DequeueDoneCallback.  When the dequeue completes, the
-     * DequeueDoneCallback is invoked. The callback should be prepared to
-     * execute on any thread.
+     * dequeue from Queue (only done once messages is acknowledged).  Dequeue
+     * -may- complete asynchronously. This method returns a DequeueCompletion
+     * object for use by the caller to determine when the dequeue has
+     * completed.  If the dequeue is able to complete during the dequeue call,
+     * a null pointer is returned. If the caller is interested in receiving
+     * notification when an asynchronous dequeue completes, it may register a
+     * callback function and a context.  The callback should be prepared to
+     * execute on any thread, and the callback object's lifecycle must ensure
+     * that it survives until the dequeue callback is made.
      */
-    class DequeueDoneCallback
+    class DequeueCompletion : public RefCounted
     {
     public:
-        virtual void operator()() = 0;
+        typedef void callback( boost::intrusive_ptr<RefCounted>& ctxt );
+
+        DequeueCompletion()
+          : completionsNeeded(2),  // one for register call, another for done call
+          cb(0) {}
+
+        void dequeueDone()
+        {
+            assert(completionsNeeded.get() > 0);
+            if (--completionsNeeded == 0) {
+                assert(cb);
+                (*cb)(ctxt);
+                ctxt.reset();
+            }
+        }
+
+        void registerCallback( callback *f, boost::intrusive_ptr<RefCounted>& _ctxt )
+        {
+            cb = f;
+            ctxt = _ctxt;
+            dequeueDone();  // invoke callback if dequeue already done.
+        }
+
+    private:
+        mutable qpid::sys::AtomicValue<int> completionsNeeded;
+        callback *cb;
+        boost::intrusive_ptr<RefCounted> ctxt;
+        friend class Queue;
+
     };
-    typedef boost::function<boost::shared_ptr<DequeueDoneCallback>()> DequeueDoneCallbackFactory;
-    QPID_BROKER_EXTERN bool dequeue(TransactionContext* ctxt, const QueuedMessage& msg,
-                                    DequeueDoneCallbackFactory *factory = 0);
+    QPID_BROKER_EXTERN boost::intrusive_ptr<DequeueCompletion> dequeue(TransactionContext* ctxt, const QueuedMessage& msg);
 
     /** invoked by store to signal dequeue() has completed */
     QPID_BROKER_EXTERN void dequeueComplete(const boost::intrusive_ptr<PersistableMessage>& msg);
@@ -405,7 +430,7 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     const Broker* getBroker();
 
  private:
-    std::map< PersistableMessage *, boost::shared_ptr<DequeueDoneCallback> > pendingDequeueCallbacks;
+    std::map<PersistableMessage *, boost::intrusive_ptr<DequeueCompletion> > pendingDequeueCompletions;
 };
 }
 }
