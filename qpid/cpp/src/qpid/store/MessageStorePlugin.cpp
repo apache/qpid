@@ -332,7 +332,7 @@ MessageStorePlugin::enqueue(broker::TransactionContext* ctxt,
 void
 MessageStorePlugin::dequeue(broker::TransactionContext* ctxt,
                             const boost::intrusive_ptr<broker::PersistableMessage>& msg,
-                            const broker::PersistableQueue& queue)
+                            const boost::shared_ptr<broker::PersistableQueue>& queue)
 {
     provider->second->dequeue(ctxt, msg, queue);
 }
