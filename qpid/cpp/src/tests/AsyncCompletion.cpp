@@ -140,7 +140,7 @@ QPID_AUTO_TEST_CASE(testWaitTillComplete) {
         dequeued.push_back(store->dequeued.pop(TIME_SEC * 3));
     }
 
-    sleep( 1 );   // even with this, accept should NOT complete!
+    qpid::sys::sleep( 1 );   // even with this, accept should NOT complete!
 
     for (int z = count-1; z >= 0; --z) {
         BOOST_CHECK(!accept.isComplete()); // Should not be complete yet.
