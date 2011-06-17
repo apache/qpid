@@ -113,14 +113,13 @@ void DeliveryRecord::complete()  {
 /** Accept msg, and optionally notify caller when dequeue completes */
 boost::intrusive_ptr<Queue::DequeueCompletion>
 DeliveryRecord::accept(TransactionContext* ctxt) {
-    static const boost::intrusive_ptr<Queue::DequeueCompletion> empty;
+    boost::intrusive_ptr<Queue::DequeueCompletion> dq;
     if (acquired && !ended) {
         QPID_LOG(debug, "Accepted " << id);
-        boost::intrusive_ptr<Queue::DequeueCompletion> dq(queue->dequeue(ctxt, msg));
+        dq = queue->dequeue(ctxt, msg);
         setEnded();
-        return dq;
     }
-    return empty;
+    return dq;
 }
 
 void DeliveryRecord::dequeue(TransactionContext* ctxt) const{

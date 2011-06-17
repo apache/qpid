@@ -659,7 +659,7 @@ void Queue::enqueueAborted(boost::intrusive_ptr<Message> msg)
 boost::intrusive_ptr<Queue::DequeueCompletion>
 Queue::dequeue(TransactionContext* ctxt, const QueuedMessage& msg)
 {
-    static const boost::intrusive_ptr<DequeueCompletion> empty;
+    boost::intrusive_ptr<DequeueCompletion> empty;
     ScopedUse u(barrier);
     if (!u.acquired) return empty;
 
