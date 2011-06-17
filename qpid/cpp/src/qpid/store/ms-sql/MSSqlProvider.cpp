@@ -784,7 +784,7 @@ MSSqlProvider::enqueue(qpid::broker::TransactionContext* ctxt,
 void
 MSSqlProvider::dequeue(qpid::broker::TransactionContext* ctxt,
                        const boost::intrusive_ptr<PersistableMessage>& msg,
-                       const PersistableQueue& queue)
+                       const boost::shared_ptr<PersistableQueue>& queue)
 {
     // If this dequeue is in the context of a transaction, use the specified
     // transaction to nest a new transaction for this operation. However, if
@@ -821,12 +821,12 @@ MSSqlProvider::dequeue(qpid::broker::TransactionContext* ctxt,
         // transaction doesn't commit.
         if (!xid.empty()) {
             rsMap.pendingRemove(msg->getPersistenceId(),
-                                queue.getPersistenceId(),
+                                queue->getPersistenceId(),
                                 xid);
         }
         else {
             rsMap.remove(msg->getPersistenceId(),
-                         queue.getPersistenceId());
+                         queue->getPersistenceId());
         }
         if (atxn)
             atxn->sqlCommit();
@@ -848,7 +848,7 @@ MSSqlProvider::dequeue(qpid::broker::TransactionContext* ctxt,
             db->rollbackTransaction();
         throw ADOException("Error dequeuing message", e, errs);
     }  
-    msg->dequeueComplete();
+    queue->dequeueComplete(msg);
 }
 
 std::auto_ptr<qpid::broker::TransactionContext>

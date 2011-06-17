@@ -215,7 +215,7 @@ class MessageStorePlugin :
      */
     virtual void dequeue(broker::TransactionContext* ctxt,
                          const boost::intrusive_ptr<broker::PersistableMessage>& msg,
-                         const broker::PersistableQueue& queue);
+                         const boost::shared_ptr<broker::PersistableQueue>& queue);
 
     /**
      * Flushes all async messages to disk for the specified queue

@@ -827,7 +827,7 @@ MSSqlClfsProvider::enqueue(qpid::broker::TransactionContext* ctxt,
 void
 MSSqlClfsProvider::dequeue(qpid::broker::TransactionContext* ctxt,
                            const boost::intrusive_ptr<PersistableMessage>& msg,
-                           const PersistableQueue& queue)
+                           const boost::shared_ptr<PersistableQueue>& queue)
 {
     Transaction::shared_ptr t;
     TransactionContext *ctx = dynamic_cast<TransactionContext*>(ctxt);
@@ -839,8 +839,8 @@ MSSqlClfsProvider::dequeue(qpid::broker::TransactionContext* ctxt,
         if (tctx)
             t = tctx->getTransaction();
     }
-    messages.dequeue(msg->getPersistenceId(), queue.getPersistenceId(), t);
-    msg->dequeueComplete();
+    messages.dequeue(msg->getPersistenceId(), queue->getPersistenceId(), t);
+    queue->dequeueComplete(msg);
 }
 
 std::auto_ptr<qpid::broker::TransactionContext>
