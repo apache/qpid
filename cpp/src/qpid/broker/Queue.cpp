@@ -1204,7 +1204,7 @@ const Broker* Queue::getBroker()
 }
 
 void Queue::setDequeueSincePurge(uint32_t value) {
-    dequeueSincePurge = AtomicValue<uint32_t>(value);
+    dequeueSincePurge = value;
 }
 
 
