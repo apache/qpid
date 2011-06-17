@@ -226,7 +226,7 @@ public:
      */
     virtual void dequeue(qpid::broker::TransactionContext* ctxt,
                          const boost::intrusive_ptr<PersistableMessage>& msg,
-                         const PersistableQueue& queue);
+                         const boost::shared_ptr<PersistableQueue>& queue);
 
     /**
      * Flushes all async messages to disk for the specified queue
