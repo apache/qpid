@@ -429,7 +429,7 @@ bool collect_if_expired(std::deque<QueuedMessage>& expired, QueuedMessage& messa
 /**
  *@param lapse: time since the last purgeExpired
  */
-void Queue::purgeExpired(sys::Duration lapse)
+void Queue::purgeExpired(qpid::sys::Duration lapse)
 {
     //As expired messages are discarded during dequeue also, only
     //bother explicitly expiring if the rate of dequeues since last
