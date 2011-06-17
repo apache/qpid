@@ -436,7 +436,7 @@ void Queue::purgeExpired(sys::Duration lapse)
     //attempt is less than one per second.
     int count = dequeueSincePurge.get();
     dequeueSincePurge -= count;
-    int seconds = int64_t(lapse)/sys::TIME_SEC;
+    int seconds = int64_t(lapse)/qpid::sys::TIME_SEC;
     if (seconds == 0 || count / seconds < 1) {
         std::deque<QueuedMessage> expired;
         {
