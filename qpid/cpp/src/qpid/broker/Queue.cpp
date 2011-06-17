@@ -1040,8 +1040,7 @@ bool Queue::hasExclusiveConsumer() const
     return exclusive; 
 }
 
-void Queue::setExternalQueueStore(const boost::shared_ptr<ExternalQueueStore>& inst)
-{
+void Queue::setExternalQueueStore(ExternalQueueStore* inst) {
     externalQueueStore = inst;
 
     if (inst) {

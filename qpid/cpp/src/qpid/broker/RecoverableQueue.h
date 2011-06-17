@@ -48,8 +48,8 @@ public:
     virtual ~RecoverableQueue() {};
 
     virtual const std::string& getName() const = 0;
-    virtual void setExternalQueueStore(const boost::shared_ptr<ExternalQueueStore>& inst) = 0;
-	virtual boost::shared_ptr<ExternalQueueStore> getExternalQueueStore() const = 0;
+    virtual void setExternalQueueStore(ExternalQueueStore* inst) = 0;
+	virtual ExternalQueueStore* getExternalQueueStore() const = 0;
 
 };
 

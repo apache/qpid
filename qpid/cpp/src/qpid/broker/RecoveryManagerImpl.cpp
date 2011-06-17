@@ -65,8 +65,8 @@ public:
     void setPersistenceId(uint64_t id);    
 	uint64_t getPersistenceId() const;
     const std::string& getName() const;
-    void setExternalQueueStore(const boost::shared_ptr<ExternalQueueStore>& inst);
-    boost::shared_ptr<ExternalQueueStore> getExternalQueueStore() const;
+    void setExternalQueueStore(ExternalQueueStore* inst);
+    ExternalQueueStore* getExternalQueueStore() const;
     void recover(RecoverableMessage::shared_ptr msg);
     void enqueue(DtxBuffer::shared_ptr buffer, RecoverableMessage::shared_ptr msg);
     void dequeue(DtxBuffer::shared_ptr buffer, RecoverableMessage::shared_ptr msg);
@@ -213,12 +213,12 @@ const std::string& RecoverableQueueImpl::getName() const
     return queue->getName();
 }
     
-void RecoverableQueueImpl::setExternalQueueStore(const boost::shared_ptr<ExternalQueueStore>& inst)
+void RecoverableQueueImpl::setExternalQueueStore(ExternalQueueStore* inst)
 {
     queue->setExternalQueueStore(inst);
 }
 
-boost::shared_ptr<ExternalQueueStore> RecoverableQueueImpl::getExternalQueueStore() const
+ExternalQueueStore* RecoverableQueueImpl::getExternalQueueStore() const
 {
 	return queue->getExternalQueueStore();
 }

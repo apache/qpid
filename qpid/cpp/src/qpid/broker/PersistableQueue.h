@@ -58,18 +58,19 @@ public:
     virtual const std::string& getName() const = 0;
     virtual ~PersistableQueue() {};
 
-    virtual void setExternalQueueStore(const boost::shared_ptr<ExternalQueueStore>& inst) = 0;
+    virtual void setExternalQueueStore(ExternalQueueStore* inst) = 0;
     virtual void flush() = 0;
     
-    inline boost::shared_ptr<ExternalQueueStore> getExternalQueueStore() const {return externalQueueStore;};
+    inline ExternalQueueStore* getExternalQueueStore() const {return externalQueueStore;};
     
-    PersistableQueue() {};
+    PersistableQueue():externalQueueStore(NULL) {
+    };
 
     /** the message has finished being dequeued from the store */
     virtual void dequeueComplete(const boost::intrusive_ptr<PersistableMessage>&) = 0;
     
 protected:
-    boost::shared_ptr<ExternalQueueStore> externalQueueStore;
+    ExternalQueueStore *externalQueueStore;
     
 };
 
