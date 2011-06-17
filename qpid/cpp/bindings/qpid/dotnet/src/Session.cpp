@@ -248,6 +248,31 @@ namespace Messaging {
 		}
     }
 
+    void Session::AcknowledgeUpTo(Message ^ message)
+    {
+        AcknowledgeUpTo(message, false);
+    }
+
+    void Session::AcknowledgeUpTo(Message ^ message, bool sync)
+    {
+        System::Exception ^ newException = nullptr;
+
+        try 
+		{
+            sessionp->acknowledgeUpTo(*(message->NativeMessage), sync);
+        } 
+        catch (const ::qpid::types::Exception & error) 
+		{
+            String ^ errmsg = gcnew String(error.what());
+            newException    = gcnew QpidException(errmsg);
+        }
+
+		if (newException != nullptr) 
+		{
+	        throw newException;
+		}
+    }
+
     void Session::Reject(Message ^ message)
     {
         System::Exception ^ newException = nullptr;
