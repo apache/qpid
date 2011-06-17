@@ -1256,3 +1256,21 @@ void Queue::UsageBarrier::destroy()
     parent.deleted = true;
     while (count) parent.messageLock.wait();
 }
+
+
+void Queue::DequeueCompletion::dequeueDone()
+{
+    assert(completionsNeeded.get() > 0);
+    if (--completionsNeeded == 0) {
+        assert(cb);
+        (*cb)(ctxt);
+        ctxt.reset();
+    }
+}
+
+void Queue::DequeueCompletion::registerCallback( callback *f, boost::intrusive_ptr<RefCounted>& _ctxt )
+{
+    cb = f;
+    ctxt = _ctxt;
+    dequeueDone();  // invoke callback if dequeue already done.
+}

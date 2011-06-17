@@ -295,22 +295,8 @@ class Queue : public boost::enable_shared_from_this<Queue>,
           : completionsNeeded(2),  // one for register call, another for done call
           cb(0) {}
 
-        void dequeueDone()
-        {
-            assert(completionsNeeded.get() > 0);
-            if (--completionsNeeded == 0) {
-                assert(cb);
-                (*cb)(ctxt);
-                ctxt.reset();
-            }
-        }
-
-        void registerCallback( callback *f, boost::intrusive_ptr<RefCounted>& _ctxt )
-        {
-            cb = f;
-            ctxt = _ctxt;
-            dequeueDone();  // invoke callback if dequeue already done.
-        }
+        void dequeueDone();
+        void registerCallback( callback *f, boost::intrusive_ptr<RefCounted>& _ctxt );
 
     private:
         mutable qpid::sys::AtomicValue<int> completionsNeeded;

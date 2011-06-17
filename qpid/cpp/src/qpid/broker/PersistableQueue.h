@@ -63,14 +63,14 @@ public:
     
     inline ExternalQueueStore* getExternalQueueStore() const {return externalQueueStore;};
     
-    PersistableQueue():externalQueueStore(NULL) {
+    PersistableQueue():externalQueueStore(NULL){
     };
 
     /** the message has finished being dequeued from the store */
     virtual void dequeueComplete(const boost::intrusive_ptr<PersistableMessage>&) = 0;
     
 protected:
-    ExternalQueueStore *externalQueueStore;
+    ExternalQueueStore* externalQueueStore;
     
 };
 
