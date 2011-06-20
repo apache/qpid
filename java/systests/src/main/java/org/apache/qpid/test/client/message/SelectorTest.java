@@ -23,6 +23,7 @@ package org.apache.qpid.test.client.message;
 import java.util.concurrent.CountDownLatch;
 
 import javax.jms.DeliveryMode;
+import javax.jms.Destination;
 import javax.jms.InvalidSelectorException;
 import javax.jms.JMSException;
 import javax.jms.Message;
@@ -30,6 +31,7 @@ import javax.jms.MessageConsumer;
 import javax.jms.MessageListener;
 import javax.jms.MessageProducer;
 import javax.jms.Session;
+import javax.jms.TextMessage;
 
 import junit.framework.Assert;
 
@@ -278,6 +280,38 @@ public class SelectorTest extends QpidBrokerTestCase implements MessageListener
         session.commit();
         Assert.assertNotNull("Msg4 should not be null", msg4);
         Assert.assertNotNull("Msg5 should not be null", msg5);
+    }
+
+    public void testSelectorWithJMSDeliveryMode() throws Exception
+    {
+        Session session = _connection.createSession(false, Session.SESSION_TRANSACTED);
+
+        Destination dest1 = session.createTopic("test1");
+        Destination dest2 = session.createTopic("test2");
+
+        MessageProducer prod1 = session.createProducer(dest1);
+        MessageProducer prod2 = session.createProducer(dest2);
+        MessageConsumer consumer1 = session.createConsumer(dest1,"JMSDeliveryMode = 'PERSISTENT'");
+        MessageConsumer consumer2 = session.createConsumer(dest2,"JMSDeliveryMode = 'NON_PERSISTENT'");
+
+        Message msg1 = session.createTextMessage("Persistent");
+        prod1.send(msg1);
+        prod2.send(msg1);
+
+        prod1.setDeliveryMode(DeliveryMode.NON_PERSISTENT);
+        prod2.setDeliveryMode(DeliveryMode.NON_PERSISTENT);
+
+        Message msg2 = session.createTextMessage("Non_Persistent");
+        prod1.send(msg2);
+        prod2.send(msg2);
+
+        TextMessage m1 = (TextMessage)consumer1.receive(1000);
+        assertEquals("Consumer1 should receive the persistent message","Persistent",m1.getText());
+        assertNull("Consumer1 should not receiver another message",consumer1.receive(1000));
+
+        TextMessage m2 = (TextMessage)consumer2.receive(1000);
+        assertEquals("Consumer2 should receive the non persistent message","Non_Persistent",m2.getText());
+        assertNull("Consumer2 should not receiver another message",consumer2.receive(1000));
     }
 
     public static void main(String[] argv) throws Exception
