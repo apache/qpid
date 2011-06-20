@@ -1263,14 +1263,12 @@ void Queue::DequeueCompletion::dequeueDone()
     assert(completionsNeeded.get() > 0);
     if (--completionsNeeded == 0) {
         assert(cb);
-        (*cb)(ctxt);
-        ctxt.reset();
+        cb();
     }
 }
 
-void Queue::DequeueCompletion::registerCallback( callback *f, boost::intrusive_ptr<RefCounted>& _ctxt )
+void Queue::DequeueCompletion::registerCallback( boost::function<void()> f )
 {
     cb = f;
-    ctxt = _ctxt;
     dequeueDone();  // invoke callback if dequeue already done.
 }

@@ -289,21 +289,14 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     class DequeueCompletion : public RefCounted
     {
     public:
-        typedef void callback( boost::intrusive_ptr<RefCounted>& ctxt );
-
         DequeueCompletion()
-          : completionsNeeded(2),  // one for register call, another for done call
-          cb(0) {}
-
+          : completionsNeeded(2) {}// one for register call, another for done call
         void dequeueDone();
-        void registerCallback( callback *f, boost::intrusive_ptr<RefCounted>& _ctxt );
+        void registerCallback(boost::function<void()> f);
 
     private:
         mutable qpid::sys::AtomicValue<int> completionsNeeded;
-        callback *cb;
-        boost::intrusive_ptr<RefCounted> ctxt;
-        friend class Queue;
-
+        boost::function<void()> cb;
     };
     QPID_BROKER_EXTERN boost::intrusive_ptr<DequeueCompletion> dequeue(TransactionContext* ctxt, const QueuedMessage& msg);
 
