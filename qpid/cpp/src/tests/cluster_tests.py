@@ -725,6 +725,7 @@ class LongTests(BrokerTest):
 
         # Original cluster will all be killed so expect exit with failure
         cluster = self.cluster(3, expect=EXPECT_EXIT_FAIL)
+        for b in cluster: b.ready()     # Wait for brokers to be ready
         for b in cluster: ErrorGenerator(b)
 
         # Start sender and receiver threads
@@ -733,7 +734,9 @@ class LongTests(BrokerTest):
         receiver = NumberedReceiver(cluster[0], sender)
         receiver.start()
         sender.start()
-        for b in cluster: b.ready()     # Make sure brokers are ready
+        # Wait for sender & receiver to get up and running
+        retry(lambda: receiver.received > 0)
+
         # Kill original brokers, start new ones for the duration.
         endtime = time.time() + self.duration()
         i = 0
@@ -888,6 +891,7 @@ class LongTests(BrokerTest):
 
         # Original cluster will all be killed so expect exit with failure
         cluster = self.cluster(3, expect=EXPECT_EXIT_FAIL)
+        for b in cluster: b.ready()     # Wait for brokers to be ready
 
         # create a queue with rather draconian flow control settings
         ssn0 = cluster[0].connect().session()
@@ -898,7 +902,8 @@ class LongTests(BrokerTest):
         senders = [NumberedSender(cluster[0]) for i in range(1,3)]
         for s in senders:
             s.start()
-        for b in cluster: b.ready()     # Make sure brokers are ready
+        # Wait for senders & receiver to get up and running
+        retry(lambda: receiver.received > 2*senders)
 
         # Kill original brokers, start new ones for the duration.
         endtime = time.time() + self.duration();
@@ -990,6 +995,8 @@ class LongTests(BrokerTest):
         # Original cluster will all be killed so expect exit with failure
         # Set small purge interval.
         cluster = self.cluster(3, expect=EXPECT_EXIT_FAIL, args=["--queue-purge-interval=1"])
+        for b in cluster: b.ready()     # Wait for brokers to be ready
+
         # Python client failover produces noisy WARN logs, disable temporarily
         logger = logging.getLogger()
         log_level = logger.getEffectiveLevel()
@@ -1000,6 +1007,8 @@ class LongTests(BrokerTest):
             receiver.start()
             sender = Sender(cluster[0], "q;{create:always}")
             sender.start()
+            # Wait for sender & receiver to get up and running
+            retry(lambda: receiver.received > 0)
 
             # Kill brokers in a cycle.
             endtime = time.time() + self.duration()
@@ -1019,6 +1028,7 @@ class LongTests(BrokerTest):
                 b.kill()
             self.assertEqual(sender.sent, receiver.received)
             cluster_test_logs.verify_logs()
+
         finally:
             # Detach to avoid slow reconnect attempts during shut-down if test fails.
             sender.connection.detach()
