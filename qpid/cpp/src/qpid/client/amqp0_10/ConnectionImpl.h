@@ -43,6 +43,7 @@ class ConnectionImpl : public qpid::messaging::ConnectionImpl
   public:
     ConnectionImpl(const std::string& url, const qpid::types::Variant::Map& options);
     void open();
+    void reopen();
     bool isOpen() const;
     void close();
     qpid::messaging::Session newSession(bool transactional, const std::string& name);

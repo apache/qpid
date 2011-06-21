@@ -236,7 +236,7 @@ def OptionsAndArguments(argv):
         config._fileCount = opts.file_count
     if opts.file_size:
         config._fileSize = opts.file_size
-    if opts.max_queue_size:
+    if opts.max_queue_size != None:
         config._maxQueueSize = opts.max_queue_size
     if opts.max_queue_count:
         config._maxQueueCount = opts.max_queue_count
@@ -488,7 +488,7 @@ class BrokerManager:
             declArgs[FILECOUNT] = config._fileCount
             declArgs[FILESIZE]  = config._fileSize
 
-        if config._maxQueueSize:
+        if config._maxQueueSize != None:
             declArgs[MAX_QUEUE_SIZE]  = config._maxQueueSize
         if config._maxQueueCount:
             declArgs[MAX_QUEUE_COUNT]  = config._maxQueueCount

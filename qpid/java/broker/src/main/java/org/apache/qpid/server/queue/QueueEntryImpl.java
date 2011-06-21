@@ -499,7 +499,7 @@ public class QueueEntryImpl implements QueueEntry
     {
 
         QueueEntryImpl next = nextNode();
-        while(next != null && next.isDeleted())
+        while(next != null && next.isDispensed() )
         {
 
             final QueueEntryImpl newNext = next.nextNode();
@@ -545,6 +545,18 @@ public class QueueEntryImpl implements QueueEntry
     public QueueEntryList getQueueEntryList()
     {
         return _queueEntryList;
+    }
+
+    @Override
+    public boolean isDequeued()
+    {
+        return _state == DEQUEUED_STATE;
+    }
+
+    @Override
+    public boolean isDispensed()
+    {
+        return _state.isDispensed();
     }
 
 }

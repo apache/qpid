@@ -39,11 +39,10 @@ class ProtocolFactory : public qpid::SharedObject<ProtocolFactory>
 
     virtual ~ProtocolFactory() = 0;
     virtual uint16_t getPort() const = 0;
-    virtual std::string getHost() const = 0;
     virtual void accept(boost::shared_ptr<Poller>, ConnectionCodec::Factory*) = 0;
     virtual void connect(
         boost::shared_ptr<Poller>,
-        const std::string& host, int16_t port,
+        const std::string& host, const std::string& port,
         ConnectionCodec::Factory* codec,
         ConnectFailedCallback failed) = 0;
     virtual bool supports(const std::string& /*capability*/) { return false; }

@@ -188,7 +188,7 @@ Broker::Broker(const Broker::Options& conf) :
             conf.replayFlushLimit*1024, // convert kb to bytes.
             conf.replayHardLimit*1024),
         *this),
-    queueCleaner(queues, timer),
+    queueCleaner(queues, &timer),
     queueEvents(poller,!conf.asyncQueueEvents),
     recovery(true),
     inCluster(false),
@@ -701,7 +701,7 @@ void Broker::accept() {
 }
 
 void Broker::connect(
-    const std::string& host, uint16_t port, const std::string& transport,
+    const std::string& host, const std::string& port, const std::string& transport,
     boost::function2<void, int, std::string> failed,
     sys::ConnectionCodec::Factory* f)
 {
@@ -717,7 +717,7 @@ void Broker::connect(
 {
     url.throwIfEmpty();
     const Address& addr=url[0];
-    connect(addr.host, addr.port, addr.protocol, failed, f);
+    connect(addr.host, boost::lexical_cast<std::string>(addr.port), addr.protocol, failed, f);
 }
 
 uint32_t Broker::queueMoveMessages(
@@ -750,6 +750,7 @@ bool Broker::deferDeliveryImpl(const std::string& ,
 
 void Broker::setClusterTimer(std::auto_ptr<sys::Timer> t) {
     clusterTimer = t;
+    queueCleaner.setTimer(clusterTimer.get());
 }
 
 const std::string Broker::TCP_TRANSPORT("tcp");

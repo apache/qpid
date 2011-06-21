@@ -10,9 +10,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -34,12 +34,12 @@
 #include <vector>
 
 namespace qpid {
-       
+
 namespace framing {
 class FieldTable;
 class SequenceNumber;
 }
-       
+
 namespace broker {
 class ConnectionToken;
 class Exchange;
@@ -51,11 +51,11 @@ class ExpiryPolicy;
 class Message : public PersistableMessage {
 public:
     typedef boost::function<void (const boost::intrusive_ptr<Message>&)> MessageCallback;
-    
+
     QPID_BROKER_EXTERN Message(const framing::SequenceNumber& id = framing::SequenceNumber());
     QPID_BROKER_EXTERN Message(const Message&);
     QPID_BROKER_EXTERN ~Message();
-        
+
     uint64_t getPersistenceId() const { return persistenceId; }
     void setPersistenceId(uint64_t _persistenceId) const { persistenceId = _persistenceId; }
 
@@ -83,10 +83,11 @@ public:
     void setExpiryPolicy(const boost::intrusive_ptr<ExpiryPolicy>& e);
     bool hasExpired();
     sys::AbsTime getExpiration() const { return expiration; }
+    void setExpiration(sys::AbsTime exp) { expiration = exp; }
     void adjustTtl();
 
-    framing::FrameSet& getFrames() { return frames; } 
-    const framing::FrameSet& getFrames() const { return frames; } 
+    framing::FrameSet& getFrames() { return frames; }
+    const framing::FrameSet& getFrames() const { return frames; }
 
     template <class T> T* getProperties() {
         qpid::framing::AMQHeaderBody* p = frames.getHeaders();
@@ -101,6 +102,11 @@ public:
     template <class T> const T* hasProperties() const {
         const qpid::framing::AMQHeaderBody* p = frames.getHeaders();
         return p->get<T>();
+    }
+
+    template <class T> void eraseProperties() {
+        qpid::framing::AMQHeaderBody* p = frames.getHeaders();
+        p->erase<T>();
     }
 
     template <class T> const T* getMethod() const {
@@ -135,7 +141,7 @@ public:
 
     QPID_BROKER_EXTERN void decodeHeader(framing::Buffer& buffer);
     QPID_BROKER_EXTERN void decodeContent(framing::Buffer& buffer);
-            
+
     void QPID_BROKER_EXTERN tryReleaseContent();
     void releaseContent();
     void releaseContent(MessageStore* s);//deprecated, use 'setStore(store); releaseContent();' instead
@@ -149,10 +155,10 @@ public:
 
     bool isExcluded(const std::vector<std::string>& excludes) const;
     void addTraceId(const std::string& id);
-       
+
        void forcePersistent();
        bool isForcedPersistent();
-    
+
 
     /** Call cb when dequeue is complete, may call immediately. Holds cb by reference. */
     void setDequeueCompleteCallback(MessageCallback& cb);

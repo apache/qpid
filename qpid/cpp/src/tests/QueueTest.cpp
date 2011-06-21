@@ -681,7 +681,7 @@ QPID_AUTO_TEST_CASE(testPurgeExpired) {
     addMessagesToQueue(10, queue);
     BOOST_CHECK_EQUAL(queue.getMessageCount(), 10u);
     ::usleep(300*1000);
-    queue.purgeExpired();
+    queue.purgeExpired(0);
     BOOST_CHECK_EQUAL(queue.getMessageCount(), 5u);
 }
 
@@ -692,7 +692,7 @@ QPID_AUTO_TEST_CASE(testQueueCleaner) {
     addMessagesToQueue(10, *queue, 200, 400);
     BOOST_CHECK_EQUAL(queue->getMessageCount(), 10u);
 
-    QueueCleaner cleaner(queues, timer);
+    QueueCleaner cleaner(queues, &timer);
     cleaner.start(100 * qpid::sys::TIME_MSEC);
     ::usleep(300*1000);
     BOOST_CHECK_EQUAL(queue->getMessageCount(), 5u);

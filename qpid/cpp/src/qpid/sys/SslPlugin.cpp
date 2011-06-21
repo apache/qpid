@@ -66,12 +66,11 @@ class SslProtocolFactory : public ProtocolFactory {
   public:
     SslProtocolFactory(const SslServerOptions&, int backlog, bool nodelay);
     void accept(Poller::shared_ptr, ConnectionCodec::Factory*);
-    void connect(Poller::shared_ptr, const std::string& host, int16_t port,
+    void connect(Poller::shared_ptr, const std::string& host, const std::string& port,
                  ConnectionCodec::Factory*,
                  boost::function2<void, int, std::string> failed);
 
     uint16_t getPort() const;
-    std::string getHost() const;
     bool supports(const std::string& capability);
 
   private:
@@ -146,10 +145,6 @@ uint16_t SslProtocolFactory::getPort() const {
     return listeningPort; // Immutable no need for lock.
 }
 
-std::string SslProtocolFactory::getHost() const {
-    return listener.getSockname();
-}
-
 void SslProtocolFactory::accept(Poller::shared_ptr poller,
                                      ConnectionCodec::Factory* fact) {
     acceptor.reset(
@@ -160,7 +155,7 @@ void SslProtocolFactory::accept(Poller::shared_ptr poller,
 
 void SslProtocolFactory::connect(
     Poller::shared_ptr poller,
-    const std::string& host, int16_t port,
+    const std::string& host, const std::string& port,
     ConnectionCodec::Factory* fact,
     ConnectFailedCallback failed)
 {

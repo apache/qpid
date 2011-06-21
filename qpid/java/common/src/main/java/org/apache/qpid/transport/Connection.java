@@ -467,11 +467,12 @@ public class Connection extends ConnectionInvoker
     {
         synchronized (lock)
         {
+            List <Binary> transactedSessions = new ArrayList();
             for (Session ssn : sessions.values())
             {
                 if (ssn.isTransacted())
-                {                    
-                    removeSession(ssn);
+                {
+                    transactedSessions.add(ssn.getName());
                     ssn.setState(Session.State.CLOSED);
                 }
                 else
@@ -480,6 +481,11 @@ public class Connection extends ConnectionInvoker
                     ssn.attach();
                     ssn.resume();
                 }
+            }
+            
+            for (Binary ssn_name : transactedSessions)
+            {
+                sessions.remove(ssn_name);
             }
             setState(OPEN);
         }

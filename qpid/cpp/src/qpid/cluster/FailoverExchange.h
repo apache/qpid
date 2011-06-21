@@ -10,9 +10,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -46,6 +46,8 @@ class FailoverExchange : public broker::Exchange
     void setUrls(const std::vector<Url>&);
     /** Set the URLs and send an update.*/
     void updateUrls(const std::vector<Url>&);
+    /** Flag the failover exchange as ready to generate updates (caught up) */
+    void setReady();
 
     // Exchange overrides
     std::string getType() const;
@@ -56,7 +58,7 @@ class FailoverExchange : public broker::Exchange
 
   private:
     void sendUpdate(const boost::shared_ptr<broker::Queue>&);
-    
+
     typedef sys::Mutex::ScopedLock Lock;
     typedef std::vector<Url> Urls;
     typedef std::set<boost::shared_ptr<broker::Queue> > Queues;
@@ -64,7 +66,7 @@ class FailoverExchange : public broker::Exchange
     sys::Mutex lock;
     Urls urls;
     Queues queues;
-    
+    bool ready;
 };
 }} // namespace qpid::cluster
 

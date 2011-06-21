@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -49,25 +49,21 @@ TransferAdapter Message::TRANSFER;
 
 Message::Message(const framing::SequenceNumber& id) :
     frames(id), persistenceId(0), redelivered(false), loaded(false),
-    staged(false), forcePersistentPolicy(false), publisher(0), adapter(0), 
+    staged(false), forcePersistentPolicy(false), publisher(0), adapter(0),
     expiration(FAR_FUTURE), dequeueCallback(0),
     inCallback(false), requiredCredit(0), isManagementMessage(false)
 {}
 
 Message::Message(const Message& original) :
     PersistableMessage(), frames(original.frames), persistenceId(0), redelivered(false), loaded(false),
-    staged(false), forcePersistentPolicy(false), publisher(0), adapter(0), 
+    staged(false), forcePersistentPolicy(false), publisher(0), adapter(0),
     expiration(original.expiration), dequeueCallback(0),
     inCallback(false), requiredCredit(0)
 {
     setExpiryPolicy(original.expiryPolicy);
 }
 
-Message::~Message()
-{
-    if (expiryPolicy)
-        expiryPolicy->forget(*this);
-}
+Message::~Message() {}
 
 void Message::forcePersistent()
 {
@@ -87,7 +83,7 @@ std::string Message::getRoutingKey() const
     return getAdapter().getRoutingKey(frames);
 }
 
-std::string Message::getExchangeName() const 
+std::string Message::getExchangeName() const
 {
     return getAdapter().getExchange(frames);
 }
@@ -96,7 +92,7 @@ const boost::shared_ptr<Exchange> Message::getExchange(ExchangeRegistry& registr
 {
     if (!exchange) {
         exchange = registry.get(getExchangeName());
-    } 
+    }
     return exchange;
 }
 
@@ -196,7 +192,7 @@ void Message::decodeContent(framing::Buffer& buffer)
     } else {
         //adjust header flags
         MarkLastSegment f;
-        frames.map_if(f, TypeFilter<HEADER_BODY>());    
+        frames.map_if(f, TypeFilter<HEADER_BODY>());
     }
     //mark content loaded
     loaded = true;
@@ -248,7 +244,7 @@ void Message::destroy()
 bool Message::getContentFrame(const Queue& queue, AMQFrame& frame, uint16_t maxContentSize, uint64_t offset) const
 {
     intrusive_ptr<const PersistableMessage> pmsg(this);
-    
+
     bool done = false;
     string& data = frame.castBody<AMQContentBody>()->getData();
     store->loadContent(queue, pmsg, data, offset, maxContentSize);
@@ -273,7 +269,7 @@ void Message::sendContent(const Queue& queue, framing::FrameHandler& out, uint16
         uint16_t maxContentSize = maxFrameSize - AMQFrame::frameOverhead();
         bool morecontent = true;
         for (uint64_t offset = 0; morecontent; offset += maxContentSize)
-        {            
+        {
             AMQFrame frame((AMQContentBody()));
             morecontent = getContentFrame(queue, frame, maxContentSize, offset);
             out.handle(frame);
@@ -291,7 +287,7 @@ void Message::sendHeader(framing::FrameHandler& out, uint16_t /*maxFrameSize*/) 
 {
     sys::Mutex::ScopedLock l(lock);
     Relay f(out);
-    frames.map_if(f, TypeFilter<HEADER_BODY>());    
+    frames.map_if(f, TypeFilter<HEADER_BODY>());
 }
 
 // TODO aconway 2007-11-09: Obsolete, remove. Was used to cover over
@@ -321,7 +317,7 @@ bool Message::isContentLoaded() const
 }
 
 
-namespace 
+namespace
 {
 const std::string X_QPID_TRACE("x-qpid.trace");
 }
@@ -358,13 +354,13 @@ void Message::addTraceId(const std::string& id)
             trace += ",";
             trace += id;
             headers.setString(X_QPID_TRACE, trace);
-        }        
+        }
     }
 }
 
-void Message::setTimestamp(const boost::intrusive_ptr<ExpiryPolicy>& e) 
+void Message::setTimestamp(const boost::intrusive_ptr<ExpiryPolicy>& e)
 {
-    DeliveryProperties* props = getProperties<DeliveryProperties>();    
+    DeliveryProperties* props = getProperties<DeliveryProperties>();
     if (props->getTtl()) {
         // AMQP requires setting the expiration property to be posix
         // time_t in seconds. TTL is in milliseconds
@@ -373,10 +369,14 @@ void Message::setTimestamp(const boost::intrusive_ptr<ExpiryPolicy>& e)
             time_t now = ::time(0);
             props->setExpiration(now + (props->getTtl()/1000));
         }
-        // Use higher resolution time for the internal expiry calculation.
-        Duration ttl(std::min(props->getTtl() * TIME_MSEC, (uint64_t) std::numeric_limits<int64_t>::max()));//Prevent overflow
-        expiration = AbsTime(AbsTime::now(), ttl);
-        setExpiryPolicy(e);
+        if (e) {
+            // Use higher resolution time for the internal expiry calculation.
+            // Prevent overflow as a signed int64_t
+            Duration ttl(std::min(props->getTtl() * TIME_MSEC,
+                                  (uint64_t) std::numeric_limits<int64_t>::max()));
+            expiration = AbsTime(e->getCurrentTime(), ttl);
+            setExpiryPolicy(e);
+        }
     }
 }
 
@@ -386,16 +386,17 @@ void Message::adjustTtl()
     if (props->getTtl()) {
         sys::Mutex::ScopedLock l(lock);
         if (expiration < FAR_FUTURE) {
-            sys::Duration d(sys::AbsTime::now(), getExpiration());
-            props->setTtl(int64_t(d) > 0 ? int64_t(d)/1000000 : 1); // convert from ns to ms; set to 1 if expired
+            sys::AbsTime current(
+                expiryPolicy ? expiryPolicy->getCurrentTime() : sys::AbsTime::now());
+            sys::Duration ttl(current, getExpiration());
+            // convert from ns to ms; set to 1 if expired
+            props->setTtl(int64_t(ttl) >= 1000000 ? int64_t(ttl)/1000000 : 1);
         }
     }
 }
 
 void Message::setExpiryPolicy(const boost::intrusive_ptr<ExpiryPolicy>& e) {
     expiryPolicy = e;
-    if (expiryPolicy) 
-        expiryPolicy->willExpire(*this);
 }
 
 bool Message::hasExpired()

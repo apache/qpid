@@ -148,16 +148,6 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
         return getAMQConnection().getVirtualHost();
     }
 
-    public String getUsername()
-    {
-        return getAMQConnection().getUsername();
-    }
-
-    public String getPassword()
-    {
-        return getAMQConnection().getPassword();
-    }
-
     public SaslClient getSaslClient()
     {
         return _saslClient;

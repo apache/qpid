@@ -39,15 +39,12 @@ public:
     /** Create a socket wrapper for descriptor. */
     QPID_COMMON_EXTERN Socket();
 
-    /** Set timeout for read and write */
-    void setTimeout(const Duration& interval) const;
-
     /** Set socket non blocking */
     void setNonblocking() const;
 
     QPID_COMMON_EXTERN void setTcpNoDelay() const;
 
-    QPID_COMMON_EXTERN void connect(const std::string& host, uint16_t port) const;
+    QPID_COMMON_EXTERN void connect(const std::string& host, const std::string& port) const;
     QPID_COMMON_EXTERN void connect(const SocketAddress&) const;
 
     QPID_COMMON_EXTERN void close() const;
@@ -57,18 +54,8 @@ public:
      *@param backlog maximum number of pending connections.
      *@return The bound port.
      */
-    QPID_COMMON_EXTERN int listen(uint16_t port = 0, int backlog = 10) const;
+    QPID_COMMON_EXTERN int listen(const std::string& host = "", const std::string& port = "0", int backlog = 10) const;
     QPID_COMMON_EXTERN int listen(const SocketAddress&, int backlog = 10) const;
-
-    /** Returns the "socket name" ie the address bound to
-     * the near end of the socket
-     */
-    QPID_COMMON_EXTERN std::string getSockname() const;
-
-    /** Returns the "peer name" ie the address bound to
-     * the remote end of the socket
-     */
-    std::string getPeername() const;
 
     /**
      * Returns an address (host and port) for the remote end of the
@@ -85,9 +72,6 @@ public:
      * Returns the full address of the connection: local and remote host and port.
      */
     QPID_COMMON_INLINE_EXTERN std::string getFullAddress() const { return getLocalAddress()+"-"+getPeerAddress(); }
-
-    QPID_COMMON_EXTERN uint16_t getLocalPort() const;
-    uint16_t getRemotePort() const;
 
     /**
      * Returns the error code stored in the socket.  This may be used
@@ -109,7 +93,8 @@ private:
     void createSocket(const SocketAddress&) const;
 
     Socket(IOHandlePrivate*);
-    mutable std::string connectname;
+    mutable std::string localname;
+    mutable std::string peername;
     mutable bool nonblocking;
     mutable bool nodelay;
 };

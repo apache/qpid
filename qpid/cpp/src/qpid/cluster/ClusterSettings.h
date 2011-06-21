@@ -35,8 +35,9 @@ struct ClusterSettings {
     size_t readMax;
     std::string username, password, mechanism;
     size_t size;
+    uint16_t clockInterval;
 
-    ClusterSettings() : quorum(false), readMax(10), size(1)
+    ClusterSettings() : quorum(false), readMax(10), size(1), clockInterval(10)
     {}
   
     Url getUrl(uint16_t port) const {

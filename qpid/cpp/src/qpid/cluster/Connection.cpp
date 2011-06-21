@@ -322,10 +322,10 @@ size_t Connection::decode(const char* data, size_t size) {
         while (localDecoder.decode(buf))
             received(localDecoder.getFrame());
         if (!wasOpen && connection->isOpen()) {
-            // Connections marked as federation links are allowed to proxy
+            // Connections marked with setUserProxyAuth are allowed to proxy
             // messages with user-ID that doesn't match the connection's
             // authenticated ID. This is important for updates.
-            connection->setFederationLink(isCatchUp());
+            connection->setUserProxyAuth(isCatchUp());
         }
     }
     else {                      // Multicast local connections.
@@ -601,10 +601,6 @@ void Connection::queueObserverState(const std::string& qname, const std::string&
     QPID_LOG(error, "Failed to find observer " << observerId << " state on queue " << qname << "; this will result in inconsistencies.");
 }
 
-void Connection::expiryId(uint64_t id) {
-    cluster.getExpiryPolicy().setId(id);
-}
-
 std::ostream& operator<<(std::ostream& o, const Connection& c) {
     const char* type="unknown";
     if (c.isLocal()) type = "local";
@@ -724,5 +720,16 @@ void Connection::doCatchupIoCallbacks() {
 
     if (catchUp) getBrokerConnection()->doIoCallbacks();
 }
+
+void Connection::clock(uint64_t time) {
+    QPID_LOG(debug, "Cluster connection received time update");
+    cluster.clock(time);
+}
+
+void Connection::queueDequeueSincePurgeState(const std::string& qname, uint32_t dequeueSincePurge) {
+    boost::shared_ptr<broker::Queue> queue(findQueue(qname));
+    queue->setDequeueSincePurge(dequeueSincePurge);
+}
+
 }} // Namespace qpid::cluster
 

@@ -73,7 +73,7 @@ public:
     SslConnector(const SslSocket& socket,
                     Poller::shared_ptr poller,
                     std::string hostname,
-                    uint16_t port,
+                    std::string port,
                     ConnectedCallback connCb,
                     FailedCallback failCb = 0);
 

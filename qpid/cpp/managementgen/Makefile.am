@@ -19,10 +19,16 @@
 qmfpythondir = $(pythondir)
 dist_bin_SCRIPTS = \
 	qmf-gen
-nobase_qmfpython_DATA = \
+
+pkgpyexec_qmfgendir = $(pyexecdir)/qmfgen
+pkgpyexec_qmfgen_PYTHON = \
 	qmfgen/__init__.py \
 	qmfgen/generate.py \
 	qmfgen/schema.py \
+	qmfgen/management-types.xml
+
+pkgpyexec_qmfgentmpldir = $(pyexecdir)/qmfgen/templates
+pkgpyexec_qmfgentmpl_PYTHON = \
 	qmfgen/templates/Args.h \
 	qmfgen/templates/Class.cpp \
 	qmfgen/templates/Class.h \
@@ -32,7 +38,6 @@ nobase_qmfpython_DATA = \
 	qmfgen/templates/Package.cpp \
 	qmfgen/templates/Package.h \
 	qmfgen/templates/V2Package.cpp \
-	qmfgen/templates/V2Package.h \
-	qmfgen/management-types.xml
+	qmfgen/templates/V2Package.h
 
 EXTRA_DIST = $(nobase_qmfpython_DATA) CMakeLists.txt

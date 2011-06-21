@@ -23,12 +23,16 @@ package org.apache.qpid.server.security.auth.manager;
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
+import org.apache.qpid.server.security.auth.AuthenticationResult.AuthenticationStatus;
 import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
 import org.apache.qpid.server.security.auth.sasl.JCAProvider;
 import org.apache.qpid.server.security.auth.sasl.AuthenticationProviderInitialiser;
+import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
 
+import javax.security.auth.Subject;
 import javax.security.auth.callback.CallbackHandler;
+import javax.security.auth.login.AccountNotFoundException;
 import javax.security.sasl.SaslServerFactory;
 import javax.security.sasl.SaslServer;
 import javax.security.sasl.SaslException;
@@ -163,7 +167,9 @@ public class PrincipalDatabaseAuthenticationManager implements AuthenticationMan
 
             if (server.isComplete())
             {
-                return new AuthenticationResult(challenge, AuthenticationResult.AuthenticationStatus.SUCCESS);
+                final Subject subject = new Subject();
+                subject.getPrincipals().add(new UsernamePrincipal(server.getAuthorizationID()));
+                return new AuthenticationResult(subject);
             }
             else
             {
@@ -180,5 +186,32 @@ public class PrincipalDatabaseAuthenticationManager implements AuthenticationMan
     {
         _mechanisms = null;
         Security.removeProvider(PROVIDER_NAME);
+    }
+
+    /**
+     * @see org.apache.qpid.server.security.auth.manager.AuthenticationManager#authenticate(String, String)
+     */
+    @Override
+    public AuthenticationResult authenticate(final String username, final String password)
+    {
+        final PrincipalDatabase db = ApplicationRegistry.getInstance().getDatabaseManager().getDatabases().values().iterator().next();
+
+        try
+        {
+            if (db.verifyPassword(username, password.toCharArray()))
+            {
+                final Subject subject = new Subject();
+                subject.getPrincipals().add(new UsernamePrincipal(username));
+                return new AuthenticationResult(subject);
+            }
+            else
+            {
+                return new AuthenticationResult(AuthenticationStatus.CONTINUE);
+            }
+        }
+        catch (AccountNotFoundException e)
+        {
+            return new AuthenticationResult(AuthenticationStatus.CONTINUE);
+        }
     }
 }

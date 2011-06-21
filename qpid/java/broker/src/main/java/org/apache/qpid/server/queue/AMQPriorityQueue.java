@@ -60,7 +60,7 @@ public class AMQPriorityQueue extends SimpleAMQQueue
     {
         // check that all subscriptions are not in advance of the entry
         SubscriptionList.SubscriptionNodeIterator subIter = _subscriptionList.iterator();
-        while(subIter.advance() && !entry.isAcquired())
+        while(subIter.advance() && entry.isAvailable())
         {
             final Subscription subscription = subIter.getNode().getSubscription();
             if(!subscription.isClosed())
@@ -70,7 +70,7 @@ public class AMQPriorityQueue extends SimpleAMQQueue
                 {
                     QueueEntry subnode = context._lastSeenEntry;
                     QueueEntry released = context._releasedEntry;
-                    while(subnode != null && entry.compareTo(subnode) < 0 && !entry.isAcquired() && (released == null || released.compareTo(entry) < 0))
+                    while(subnode != null && entry.compareTo(subnode) < 0 && entry.isAvailable() && (released == null || released.compareTo(entry) < 0))
                     {
                         if(QueueContext._releasedUpdater.compareAndSet(context,released,entry))
                         {

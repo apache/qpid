@@ -70,7 +70,7 @@ SemanticState::SemanticState(DeliveryAdapter& da, SessionContext& ss)
       deliveryAdapter(da),
       tagGenerator("sgen"),
       dtxSelected(false),
-      authMsg(getSession().getBroker().getOptions().auth && !getSession().getConnection().isFederationLink()),
+      authMsg(getSession().getBroker().getOptions().auth && !getSession().getConnection().isUserProxyAuth()),
       userID(getSession().getConnection().getUserId()),
       userName(getSession().getConnection().getUserId().substr(0,getSession().getConnection().getUserId().find('@'))),
       isDefaultRealm(userID.find('@') != std::string::npos && getSession().getBroker().getOptions().realm == userID.substr(userID.find('@')+1,userID.size())),
@@ -469,7 +469,6 @@ void SemanticState::route(intrusive_ptr<Message> msg, Deliverable& strategy) {
     /* verify the userid if specified: */
     std::string id =
     	msg->hasProperties<MessageProperties>() ? msg->getProperties<MessageProperties>()->getUserId() : nullstring;
-
     if (authMsg &&  !id.empty() && !(id == userID || (isDefaultRealm && id == userName)))
     {
         QPID_LOG(debug, "authorised user id : " << userID << " but user id in message declared as " << id);

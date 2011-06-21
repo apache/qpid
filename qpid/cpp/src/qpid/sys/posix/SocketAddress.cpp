@@ -27,6 +27,8 @@
 #include <string.h>
 #include <netdb.h>
 
+#include <algorithm>
+
 namespace qpid {
 namespace sys {
 
@@ -46,15 +48,9 @@ SocketAddress::SocketAddress(const SocketAddress& sa) :
 
 SocketAddress& SocketAddress::operator=(const SocketAddress& sa)
 {
-    if (&sa != this) {
-        host = sa.host;
-        port = sa.port;
+    SocketAddress temp(sa);
 
-        if (addrInfo) {
-            ::freeaddrinfo(addrInfo);
-            addrInfo = 0;
-        }
-    }
+    std::swap(temp, *this);
     return *this;
 }
 
@@ -65,9 +61,23 @@ SocketAddress::~SocketAddress()
     }
 }
 
-std::string SocketAddress::asString() const
+std::string SocketAddress::asString(bool numeric) const
 {
-    return host + ":" + port;
+    if (!numeric)
+        return host + ":" + port;
+    // Canonicalise into numeric id
+    const ::addrinfo& ai = getAddrInfo(*this);
+    char servName[NI_MAXSERV];
+    char dispName[NI_MAXHOST];
+    if (int rc=::getnameinfo(ai.ai_addr, ai.ai_addrlen,
+                            dispName, sizeof(dispName),
+                            servName, sizeof(servName),
+                            NI_NUMERICHOST | NI_NUMERICSERV) != 0)
+        throw QPID_POSIX_ERROR(rc);
+    std::string s(dispName);
+    s += ":";
+    s += servName;
+    return s;
 }
 
 const ::addrinfo& getAddrInfo(const SocketAddress& sa)
@@ -88,7 +98,7 @@ const ::addrinfo& getAddrInfo(const SocketAddress& sa)
 
         int n = ::getaddrinfo(node, service, &hints, &sa.addrInfo);
         if (n != 0)
-            throw Exception(QPID_MSG("Cannot resolve " << sa.host << ": " << ::gai_strerror(n)));
+            throw Exception(QPID_MSG("Cannot resolve " << sa.asString(false) << ": " << ::gai_strerror(n)));
     }
 
     return *sa.addrInfo;

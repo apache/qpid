@@ -78,6 +78,10 @@ class QPID_MESSAGING_CLASS_EXTERN Session : public qpid::messaging::Handle<Sessi
      */
     QPID_MESSAGING_EXTERN void acknowledge(Message&, bool sync=false);
     /**
+     * Acknowledges all message up to the specified message.
+     */
+    QPID_MESSAGING_EXTERN void acknowledgeUpTo(Message&, bool sync=false);
+    /**
      * Rejects the specified message. The broker does not redeliver a
      * message that has been rejected. Once a message has been
      * acknowledged, it can no longer be rejected.

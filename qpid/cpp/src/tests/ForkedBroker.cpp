@@ -68,8 +68,7 @@ ForkedBroker::~ForkedBroker() {
     }
     if (!dataDir.empty())
     {
-        int unused_ret; // Suppress warnings about ignoring return value.
-        unused_ret = ::system(("rm -rf "+dataDir).c_str());
+        (void) ::system(("rm -rf "+dataDir).c_str());
     }
 }
 
