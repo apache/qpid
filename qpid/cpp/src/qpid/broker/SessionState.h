@@ -262,7 +262,10 @@ class SessionState : public qpid::SessionState,
         virtual boost::intrusive_ptr<AsyncCompletion::Callback> clone();
 
      private:
-        /** @todo KAG COMMENT ME */
+        /** If the enqueue of this message is asynchronous, we must notify the
+         * session when the enqueues have completed and the Message.Transfer
+         * command can be completed. This is done by a AsyncCommandContext.
+         */
         class CommandContext : public AsyncCommandContext
         {
             boost::intrusive_ptr<Message> msg;

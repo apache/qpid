@@ -113,8 +113,6 @@ class PersistableMessage : public Persistable
     QPID_BROKER_EXTERN void dequeueComplete(PersistableQueue::shared_ptr queue,
                                             MessageStore* _store);
 
-    QPID_BROKER_EXTERN void dequeueAsync(PersistableQueue::shared_ptr, MessageStore*) {}
-
     bool isStoredOnQueue(PersistableQueue::shared_ptr queue);
     
     void addToSyncList(PersistableQueue::shared_ptr queue, MessageStore* _store);

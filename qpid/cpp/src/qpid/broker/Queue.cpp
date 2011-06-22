@@ -682,7 +682,6 @@ Queue::dequeue(TransactionContext* ctxt, const QueuedMessage& msg)
     bool fp = msg.payload->isForcedPersistent();
     if (!fp || (fp && msg.payload->isStoredOnQueue(shared_from_this()))) {
         if ((msg.payload->isPersistent() || msg.payload->checkContentReleasable()) && store) {
-            msg.payload->dequeueAsync(shared_from_this(), store);
             boost::intrusive_ptr<PersistableMessage> pmsg = boost::static_pointer_cast<PersistableMessage>(msg.payload);
             boost::intrusive_ptr<DequeueCompletion> dc(new DequeueCompletion());
             {
