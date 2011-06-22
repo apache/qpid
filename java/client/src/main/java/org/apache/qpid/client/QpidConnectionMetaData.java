@@ -30,9 +30,11 @@ import org.apache.qpid.common.QpidProperties;
 public class QpidConnectionMetaData implements ConnectionMetaData
 {
 
+    private AMQConnection con;
 
     QpidConnectionMetaData(AMQConnection conn)
     {
+        this.con = conn;
     }
 
     public int getJMSMajorVersion() throws JMSException
@@ -62,12 +64,12 @@ public class QpidConnectionMetaData implements ConnectionMetaData
 
     public int getProviderMajorVersion() throws JMSException
     {
-        return 0;
+        return con.getProtocolVersion().getMajorVersion();
     }
 
     public int getProviderMinorVersion() throws JMSException
     {
-        return 8;
+        return con.getProtocolVersion().getMinorVersion();
     }
 
     public String getProviderVersion() throws JMSException
@@ -78,8 +80,7 @@ public class QpidConnectionMetaData implements ConnectionMetaData
 
     private String getProtocolVersion()
     {
-        // TODO - Implement based on connection negotiated protocol
-        return "0.8";
+        return con.getProtocolVersion().toString();
     }
 
     public String getBrokerVersion()
