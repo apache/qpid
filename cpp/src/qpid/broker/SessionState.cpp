@@ -25,6 +25,7 @@
 #include "qpid/broker/SessionManager.h"
 #include "qpid/broker/SessionHandler.h"
 #include "qpid/broker/RateFlowcontrol.h"
+#include "qpid/sys/ClusterSafe.h"
 #include "qpid/sys/Timer.h"
 #include "qpid/framing/AMQContentBody.h"
 #include "qpid/framing/AMQHeaderBody.h"
@@ -322,6 +323,11 @@ void SessionState::completeRcvMsg(SequenceNumber id,
                                   bool requiresAccept,
                                   bool requiresSync)
 {
+    // Mark this as a cluster-unsafe scope since it can be called in
+    // journal threads or connection threads as part of asynchronous
+    // command completion.
+    sys::ClusterUnsafeScope cus;
+
     bool callSendCompletion = false;
     receiverCompleted(id);
     if (requiresAccept)
