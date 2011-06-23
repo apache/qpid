@@ -360,15 +360,6 @@ class MessageUpdater {
                 sb.get()->sendRawFrame(frame);
             }
         }
-        // If the ttl > 0, we need to send the calculated expiration time to the updatee
-        // Careful not to alter the message as a side effect e.g. by adding
-        // an empty DeliveryProperties or setting TTL when it wasn't set before.
-        uint64_t ttl = 0;
-        if (message.payload->hasProperties<DeliveryProperties>()) {
-            DeliveryProperties* dprops =
-                message.payload->getProperties<DeliveryProperties>();
-            if (dprops->hasTtl()) ttl = dprops->getTtl();
-        };
     }
 
     void updateMessage(const boost::intrusive_ptr<broker::Message>& message) {
