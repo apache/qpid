@@ -78,7 +78,7 @@ const size_t FLUSH_FREQUENCY = 1024;
 void AcceptTracker::addToPending(qpid::client::AsyncSession& session, const Record& record)
 {
     pending.push_back(record);
-    if (pending.size() > FLUSH_FREQUENCY) session.flush();
+    if (pending.size() % FLUSH_FREQUENCY == 0) session.flush();
 }
 
 
