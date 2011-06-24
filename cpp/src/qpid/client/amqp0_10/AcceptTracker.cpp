@@ -70,6 +70,18 @@ void AcceptTracker::delivered(const std::string& destination, const qpid::framin
     destinationState[destination].unaccepted.add(id);
 }
 
+namespace
+{
+const size_t FLUSH_FREQUENCY = 1024;
+}
+
+void AcceptTracker::addToPending(qpid::client::AsyncSession& session, const Record& record)
+{
+    pending.push_back(record);
+    if (pending.size() > FLUSH_FREQUENCY) session.flush();
+}
+
+
 void AcceptTracker::accept(qpid::client::AsyncSession& session)
 {
     for (StateMap::iterator i = destinationState.begin(); i != destinationState.end(); ++i) {
@@ -78,7 +90,7 @@ void AcceptTracker::accept(qpid::client::AsyncSession& session)
     Record record;
     record.status = session.messageAccept(aggregateState.unaccepted);
     record.accepted = aggregateState.unaccepted;
-    pending.push_back(record);
+    addToPending(session, record);
     aggregateState.accept();
 }
 
@@ -90,7 +102,7 @@ void AcceptTracker::accept(qpid::framing::SequenceNumber id, qpid::client::Async
     Record record;
     record.accepted = aggregateState.accept(id, cumulative);
     record.status = session.messageAccept(record.accepted);
-    pending.push_back(record);
+    addToPending(session, record);
 }
 
 void AcceptTracker::release(qpid::client::AsyncSession& session)

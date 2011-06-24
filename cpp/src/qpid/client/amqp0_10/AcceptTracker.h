@@ -79,6 +79,7 @@ class AcceptTracker
     StateMap destinationState;
     Records pending;
 
+    void addToPending(qpid::client::AsyncSession&, const Record&);
     void checkPending();
     void completed(qpid::framing::SequenceSet&);
 };
