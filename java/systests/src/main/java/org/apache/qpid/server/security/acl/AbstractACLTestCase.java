@@ -52,7 +52,6 @@ import org.apache.qpid.url.URLSyntaxException;
  * 
  * TODO move the pre broker-startup setup method invocation code to {@link QpidBrokerTestCase}
  * 
- * @see SimpleACLTest
  * @see ExternalACLTest
  * @see ExternalACLFileTest
  * @see ExternalACLJMXTest
@@ -65,10 +64,7 @@ public abstract class AbstractACLTestCase extends QpidBrokerTestCase implements 
 	protected CountDownLatch _exceptionReceived;
 	
     /** Override this to return the name of the configuration XML file. */
-    public String getConfig()
-    {
-        return "config-systests-acl.xml";
-    }
+    public abstract String getConfig();
     
     /** Override this to setup external ACL files for virtual hosts. */
     public List<String> getHostList()
