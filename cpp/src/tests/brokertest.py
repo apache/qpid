@@ -549,7 +549,7 @@ class NumberedSender(Thread):
              "--broker", "localhost:%s"%broker.port(),
              "--address", "%s;{create:always}"%queue,
              "--failover-updates",
-             "--connection-options", "{reconnect:true}",
+             "--connection-options", "{reconnect:true,reconnect-timeout:5}",
              "--content-stdin"
              ],
             expect=EXPECT_RUNNING,
@@ -611,7 +611,7 @@ class NumberedReceiver(Thread):
              "--broker", "localhost:%s"%broker.port(),
              "--address", "%s;{create:always}"%queue,
              "--failover-updates",
-             "--connection-options", "{reconnect:true}",
+             "--connection-options", "{reconnect:true,reconnect-timeout:5}",
              "--forever"
              ],
             expect=EXPECT_RUNNING,
