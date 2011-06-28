@@ -87,7 +87,7 @@ public class TestParams
         msg_count = Integer.getInteger("msg_count",msg_count);
         warmup_count = Integer.getInteger("warmup_count",warmup_count);
         random_msg_size = Boolean.getBoolean("random_msg_size");
-        msgType = System.getProperty("msg_type","byte");
+        msgType = System.getProperty("msg_type","bytes");
     }
 
     public String getUrl()
