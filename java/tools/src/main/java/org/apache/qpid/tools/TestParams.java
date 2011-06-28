@@ -25,18 +25,18 @@ import javax.jms.Session;
 public class TestParams
 {
     /*
-     * By default the connection URL is used. 
+     * By default the connection URL is used.
      * This allows a user to easily specify a fully fledged URL any given property.
      * Ex. SSL parameters
-     *  
+     *
      * By providing a host & port allows a user to simply override the URL.
      * This allows to create multiple clients in test scripts easily,
-     * without having to deal with the long URL format. 
+     * without having to deal with the long URL format.
      */
     private String url = "amqp://guest:guest@clientid/testpath?brokerlist='tcp://localhost:5672'";
-    
+
     private String host = "";
-    
+
     private int port = -1;
 
     private String address = "queue; {create : always}";
@@ -65,7 +65,7 @@ public class TestParams
 
     private boolean random_msg_size = false;
 
-    private String msgType = "byte";
+    private String msgType = "bytes";
 
     public TestParams()
     {
