@@ -634,6 +634,11 @@ public class AMQMessageDelegate_0_10 extends AbstractAMQMessageDelegate
         {
             return new String(_messageProps.getUserId());
         }
+        else if ("x-amqp-0-10.app-id".equals(propertyName) &&
+                _messageProps.getAppId() != null)
+        {
+            return new String(_messageProps.getAppId());
+        }
         else
         {
             checkPropertyName(propertyName);
@@ -740,7 +745,14 @@ public class AMQMessageDelegate_0_10 extends AbstractAMQMessageDelegate
     {
         checkPropertyName(propertyName);
         checkWritableProperties();
-        setApplicationHeader(propertyName, value);
+        if ("x-amqp-0-10.app-id".equals(propertyName))
+        {
+            _messageProps.setAppId(value.getBytes());
+        }
+        else
+        {
+            setApplicationHeader(propertyName, value);
+        }
     }
 
     private static final Set<Class> ALLOWED = new HashSet();
