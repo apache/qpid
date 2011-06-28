@@ -169,36 +169,36 @@ public class JMSPropertiesTest extends QpidBrokerTestCase
     }
 
     /**
-     * Test Goal : test if the message properties can be retrieved properly with out an error
-     *             and also test if unsupported properties are filtered out. See QPID-2930.
+     * Test Goal : Test if custom message properties can be set and retrieved properly with out an error.
+     *             Also test if unsupported properties are filtered out. See QPID-2930.
      */
-    public void testGetPropertyNames() throws Exception
+    public void testApplicationProperties() throws Exception
     {
         Connection con = getConnection("guest", "guest");
         Session ssn = (AMQSession) con.createSession(false, Session.CLIENT_ACKNOWLEDGE);
         con.start();
-        
+
         Topic topic = ssn.createTopic("test");
         MessageConsumer consumer = ssn.createConsumer(topic);
         MessageProducer prod = ssn.createProducer(topic);
         Message m = ssn.createMessage();
         m.setObjectProperty("x-amqp-0-10.routing-key", "routing-key".getBytes());
-        m.setObjectProperty("routing-key", "routing-key");
+        m.setObjectProperty("x-amqp-0-10.app-id", "my-app-id");
         prod.send(m);
-        
+
         Message msg = consumer.receive(1000);
         assertNotNull(msg);
-        
+
     	Enumeration<String> enu = msg.getPropertyNames();
     	Map<String,String> map = new HashMap<String,String>();
-    	while (enu.hasMoreElements()) 
-    	{    		
-    		String name = enu.nextElement(); 
-    		String value = msg.getStringProperty(name);
+    	while (enu.hasMoreElements())
+    	{
+    	    String name = enu.nextElement();
+    	    String value = msg.getStringProperty(name);
     		map.put(name, value);
-       } 
-    	
+       }
+
        assertFalse("Property 'x-amqp-0-10.routing-key' should have been filtered out",map.containsKey("x-amqp-0-10.routing-key"));
-       assertTrue("Property routing-key should be present",map.containsKey("routing-key"));      
+       assertEquals("Property x-amqp-0-10.app-id should be present","my-app-id",msg.getStringProperty("x-amqp-0-10.app-id"));
     }
 }
