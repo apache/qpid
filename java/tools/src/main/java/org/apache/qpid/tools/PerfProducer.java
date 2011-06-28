@@ -65,7 +65,7 @@ public class PerfProducer extends PerfBase
     int msgSizeRange = 1024;
 
     enum MessageType {
-        BYTE, TEXT, MAP, OBJECT;
+        BYTES, TEXT, MAP, OBJECT;
 
         public static MessageType getType(String s) throws Exception
         {
@@ -73,9 +73,9 @@ public class PerfProducer extends PerfBase
             {
                 return TEXT;
             }
-            else if ("byte".equalsIgnoreCase(s))
+            else if ("bytes".equalsIgnoreCase(s))
             {
-                return BYTE;
+                return BYTES;
             }
             /*else if ("map".equalsIgnoreCase(s))
             {
@@ -92,7 +92,7 @@ public class PerfProducer extends PerfBase
         }
     };
 
-    MessageType msgType = MessageType.BYTE;
+    MessageType msgType = MessageType.BYTES;
 
     public PerfProducer()
     {
