@@ -62,12 +62,14 @@ public class TestParams
     private int msg_count = 10;
 
     private int warmup_count = 1;
-    
+
     private boolean random_msg_size = false;
+
+    private String msgType = "byte";
 
     public TestParams()
     {
-     
+
         url = System.getProperty("url",url);
         host = System.getProperty("host","");
         port = Integer.getInteger("port", -1);
@@ -85,6 +87,7 @@ public class TestParams
         msg_count = Integer.getInteger("msg_count",msg_count);
         warmup_count = Integer.getInteger("warmup_count",warmup_count);
         random_msg_size = Boolean.getBoolean("random_msg_size");
+        msgType = System.getProperty("msg_type","byte");
     }
 
     public String getUrl()
@@ -161,10 +164,14 @@ public class TestParams
     {
         return disableTimestamp;
     }
-    
+
     public boolean isRandomMsgSize()
     {
         return random_msg_size;
     }
 
+    public String getMessageType()
+    {
+        return msgType;
+    }
 }
