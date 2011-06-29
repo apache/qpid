@@ -31,6 +31,7 @@ org.apache.qpid.test.client.message.JMSDestinationTest#testGetDestinationWithCus
 org.apache.qpid.test.client.destination.AddressBasedDestinationTest#*
 org.apache.qpid.test.client.queue.QueuePolicyTest#testRingPolicy
 org.apache.qpid.test.client.queue.QueuePolicyTest#testRejectPolicy
+org.apache.qpid.test.unit.message.JMSPropertiesTest#testApplicationProperties
 
 // Those tests are written against the 0.10 path
 org.apache.qpid.test.unit.message.UTF8Test#*
