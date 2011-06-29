@@ -1069,4 +1069,24 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
 		Message m1 = replyToCons.receive();
 		assertNotNull("The reply to consumer should have received the messsage",m1);
     }
+
+    public void testAltExchangeInAddressString() throws Exception
+    {
+        String addr1 = "ADDR:my-exchange/test; {create: always, node:{type: topic,x-declare:{alternate-exchange:'amq.fanout'}}}";
+        Session session = _connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        String altQueueAddr = "ADDR:my-alt-queue;{create: always, delete: receiver,node:{x-bindings:[{exchange:'amq.fanout'}] }}";
+        MessageConsumer cons = session.createConsumer(session.createQueue(altQueueAddr));
+
+        MessageProducer prod = session.createProducer(session.createTopic(addr1));
+        prod.send(session.createMessage());
+        prod.close();
+        assertNotNull("The consumer on the queue bound to the alt-exchange should receive the message",cons.receive(1000));
+
+        String addr2 = "ADDR:test-queue;{create:sender, delete: sender,node:{type:queue,x-declare:{alternate-exchange:'amq.fanout'}}}";
+        prod = session.createProducer(session.createTopic(addr2));
+        prod.send(session.createMessage());
+        prod.close();
+        assertNotNull("The consumer on the queue bound to the alt-exchange should receive the message",cons.receive(1000));
+        cons.close();
+    }
 }
