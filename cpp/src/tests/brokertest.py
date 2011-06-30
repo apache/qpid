@@ -395,6 +395,8 @@ class Broker(Popen):
 
 class Cluster:
     """A cluster of brokers in a test."""
+    # Client connection options for use in failover tests.
+    CONNECTION_OPTIONS = "reconnect:true,reconnect-timeout:10,reconnect-urls-replace:true"
 
     _cluster_count = 0
 
@@ -538,7 +540,8 @@ class NumberedSender(Thread):
     Thread to run a sender client and send numbered messages until stopped.
     """
 
-    def __init__(self, broker, max_depth=None, queue="test-queue"):
+    def __init__(self, broker, max_depth=None, queue="test-queue",
+                 connection_options=Cluster.CONNECTION_OPTIONS):
         """
         max_depth: enable flow control, ensure sent - received <= max_depth.
         Requires self.notify_received(n) to be called each time messages are received.
@@ -549,7 +552,7 @@ class NumberedSender(Thread):
              "--broker", "localhost:%s"%broker.port(),
              "--address", "%s;{create:always}"%queue,
              "--failover-updates",
-             "--connection-options", "{reconnect:true,reconnect-timeout:5}",
+             "--connection-options", "{%s}"%(connection_options),
              "--content-stdin"
              ],
             expect=EXPECT_RUNNING,
@@ -600,7 +603,8 @@ class NumberedReceiver(Thread):
     Thread to run a receiver client and verify it receives
     sequentially numbered messages.
     """
-    def __init__(self, broker, sender = None, queue="test-queue"):
+    def __init__(self, broker, sender = None, queue="test-queue",
+                 connection_options=Cluster.CONNECTION_OPTIONS):
         """
         sender: enable flow control. Call sender.received(n) for each message received.
         """
@@ -611,7 +615,7 @@ class NumberedReceiver(Thread):
              "--broker", "localhost:%s"%broker.port(),
              "--address", "%s;{create:always}"%queue,
              "--failover-updates",
-             "--connection-options", "{reconnect:true,reconnect-timeout:5}",
+             "--connection-options", "{%s}"%(connection_options),
              "--forever"
              ],
             expect=EXPECT_RUNNING,
