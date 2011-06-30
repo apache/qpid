@@ -20,7 +20,7 @@
 from distutils.core import setup
 
 setup(name="qpid-tests",
-      version="0.11",
+      version="0.12",
       author="Apache Qpid",
       author_email="dev@qpid.apache.org",
       packages=["qpid_tests", "qpid_tests.broker_0_10", "qpid_tests.broker_0_9",
