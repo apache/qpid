@@ -60,6 +60,7 @@ class ConnectionImpl : public qpid::messaging::ConnectionImpl
     qpid::sys::Semaphore semaphore;//used to coordinate reconnection
     Sessions sessions;
     qpid::client::Connection connection;
+    bool replaceUrls;     // Replace rather than merging with reconnect-urls
     std::vector<std::string> urls;
     qpid::client::ConnectionSettings settings;
     bool reconnect;

@@ -64,7 +64,7 @@ std::string asString(const std::vector<std::string>& v) {
 }
 
 ConnectionImpl::ConnectionImpl(const std::string& url, const Variant::Map& options) :
-    reconnect(false), timeout(-1), limit(-1),
+    replaceUrls(false), reconnect(false), timeout(-1), limit(-1),
     minReconnectInterval(3), maxReconnectInterval(60),
     retries(0), reconnectOnLimitExceeded(true)
 {
@@ -95,7 +95,10 @@ void ConnectionImpl::setOption(const std::string& name, const Variant& value)
         minReconnectInterval = value;
     } else if (name == "reconnect-interval-max" || name == "reconnect_interval_max") {
         maxReconnectInterval = value;
+    } else if (name == "reconnect-urls-replace" || name == "reconnect_urls_replace") {
+        replaceUrls = value.asBool();
     } else if (name == "reconnect-urls" || name == "reconnect_urls") {
+        if (replaceUrls) urls.clear();
         if (value.getType() == VAR_LIST) {
             merge(value.asList(), urls);
         } else {
