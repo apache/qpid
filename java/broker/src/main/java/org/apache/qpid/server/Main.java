@@ -172,6 +172,11 @@ public class Main
                         .withDescription("monitor the log file configuration file for changes. Units are seconds. "
                                          + "Zero means do not check for changes.").withLongOpt("logwatch").create("w");
 
+        Option sslport =
+                OptionBuilder.withArgName("sslport").hasArg()
+                        .withDescription("SSL port. Overrides any value in the config file")
+                        .withLongOpt("sslport").create("s");
+
         options.addOption(help);
         options.addOption(version);
         options.addOption(configFile);
@@ -184,6 +189,7 @@ public class Main
         options.addOption(exclude0_8);
         options.addOption(mport);
         options.addOption(bind);
+        options.addOption(sslport);
     }
 
     protected void execute()
@@ -428,11 +434,23 @@ public class Main
             {
                 sslFactory = new SSLContextFactory(keystorePath, keystorePassword, certType);
                 NetworkDriver driver = new MINANetworkDriver();
-                driver.bind(serverConfig.getSSLPort(), new InetAddress[]{bindAddress},
+
+                String sslPort = commandLine.getOptionValue("s");
+                int port = 0;
+                if (null != sslPort)
+                {
+                    port = Integer.parseInt(sslPort);
+                }
+                else
+                {
+                    port = serverConfig.getSSLPort();
+                }
+
+                driver.bind(port, new InetAddress[]{bindAddress},
                             new AMQProtocolEngineFactory(), serverConfig.getNetworkConfiguration(), sslFactory);
-                ApplicationRegistry.getInstance().addAcceptor(new InetSocketAddress(bindAddress, serverConfig.getSSLPort()),
+                ApplicationRegistry.getInstance().addAcceptor(new InetSocketAddress(bindAddress, port),
                         new QpidAcceptor(driver,"TCP"));
-                CurrentActor.get().message(BrokerMessages.LISTENING("TCP/SSL", serverConfig.getSSLPort()));
+                CurrentActor.get().message(BrokerMessages.LISTENING("TCP/SSL", port));
             }
 
             CurrentActor.get().message(BrokerMessages.READY());
