@@ -53,7 +53,6 @@ import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleException;
 import org.osgi.framework.launch.Framework;
 import org.osgi.util.tracker.ServiceTracker;
-import org.osgi.framework.BundleContext;
 
 /**
  * Provides access to pluggable elements, such as exchanges
@@ -65,8 +64,6 @@ public class PluginManager implements Closeable
 
     private static final int FELIX_STOP_TIMEOUT = 30000;
     private static final String QPID_VER_SUFFIX = "version=0.13,";
-
-    private static BundleContext _bundleContext = null;
 
     private Framework _felix;
 
@@ -115,137 +112,126 @@ public class PluginManager implements Closeable
             _vhostPlugins.put(pluginFactory.getClass().getName(), pluginFactory);
         }
 
-        if (_bundleContext == null) // Not running inside an OSGi environment.So start Felix.
+        // Check the plugin directory path is set and exist
+        if (pluginPath == null)
         {
-            // Check the plugin directory path is set and exist
-            if (pluginPath == null)
-            {
-                return;
-            }
-            File pluginDir = new File(pluginPath);
-            if (!pluginDir.exists())
-            {
-                return;
-            }
-
-            // Setup OSGi configuration propery map
-            StringMap configMap = new StringMap(false);
-
-            // Add the bundle provided service interface package and the core OSGi
-            // packages to be exported from the class path via the system bundle.
-            configMap.put(FRAMEWORK_SYSTEMPACKAGES,
-                    "org.osgi.framework; version=1.3.0," +
-                    "org.osgi.service.packageadmin; version=1.2.0," +
-                    "org.osgi.service.startlevel; version=1.0.0," +
-                    "org.osgi.service.url; version=1.0.0," +
-                    "org.osgi.util.tracker; version=1.0.0," +
-                    "org.apache.qpid.junit.extensions.util; " + QPID_VER_SUFFIX +
-                    "org.apache.qpid; " + QPID_VER_SUFFIX +
-                    "org.apache.qpid.common; " + QPID_VER_SUFFIX +
-                    "org.apache.qpid.exchange; " + QPID_VER_SUFFIX +
-                    "org.apache.qpid.framing; " + QPID_VER_SUFFIX +
-                    "org.apache.qpid.management.common.mbeans.annotations; " + QPID_VER_SUFFIX +
-                    "org.apache.qpid.protocol; " + QPID_VER_SUFFIX +
-                    "org.apache.qpid.server.binding; " + QPID_VER_SUFFIX +
-                    "org.apache.qpid.server.configuration; " + QPID_VER_SUFFIX +
-                    "org.apache.qpid.server.configuration.plugins; " + QPID_VER_SUFFIX +
-                    "org.apache.qpid.server.configuration.management; " + QPID_VER_SUFFIX +
-                    "org.apache.qpid.server.exchange; " + QPID_VER_SUFFIX +
-                    "org.apache.qpid.server.logging; " + QPID_VER_SUFFIX +
-                    "org.apache.qpid.server.logging.actors; " + QPID_VER_SUFFIX +
-                    "org.apache.qpid.server.logging.subjects; " + QPID_VER_SUFFIX +
-                    "org.apache.qpid.server.management; " + QPID_VER_SUFFIX +
-                    "org.apache.qpid.server.persistent; " + QPID_VER_SUFFIX +
-                    "org.apache.qpid.server.plugins; " + QPID_VER_SUFFIX +
-                    "org.apache.qpid.server.protocol; " + QPID_VER_SUFFIX +
-                    "org.apache.qpid.server.queue; " + QPID_VER_SUFFIX +
-                    "org.apache.qpid.server.registry; " + QPID_VER_SUFFIX +
-                    "org.apache.qpid.server.security; " + QPID_VER_SUFFIX +
-                    "org.apache.qpid.server.security.access; " + QPID_VER_SUFFIX +
-                    "org.apache.qpid.server.security.access.plugins; " + QPID_VER_SUFFIX +
-                    "org.apache.qpid.server.virtualhost; " + QPID_VER_SUFFIX +
-                    "org.apache.qpid.server.virtualhost.plugins; " + QPID_VER_SUFFIX +
-                    "org.apache.qpid.util; " + QPID_VER_SUFFIX +
-                    "org.apache.commons.configuration; version=1.0.0," +
-                    "org.apache.commons.lang; version=1.0.0," +
-                    "org.apache.commons.lang.builder; version=1.0.0," +
-                    "org.apache.commons.logging; version=1.0.0," +
-                    "org.apache.log4j; version=1.2.12," +
-                    "javax.management.openmbean; version=1.0.0," +
-                    "javax.management; version=1.0.0"
-                );
-
-            // No automatic shutdown hook
-            configMap.put("felix.shutdown.hook", "false");
-
-            // Add system activator
-            List<BundleActivator> activators = new ArrayList<BundleActivator>();
-            _activator = new Activator();
-            activators.add(_activator);
-            configMap.put(SYSTEMBUNDLE_ACTIVATORS_PROP, activators);
-
-            if (cachePath != null)
-            {
-                File cacheDir = new File(cachePath);
-                if (!cacheDir.exists() && cacheDir.canWrite())
-                {
-                    _logger.info("Creating plugin cache directory: " + cachePath);
-                    cacheDir.mkdir();
-                }
-
-                // Set plugin cache directory and empty it
-                _logger.info("Cache bundles in directory " + cachePath);
-                configMap.put(FRAMEWORK_STORAGE, cachePath);
-            }
-            configMap.put(FRAMEWORK_STORAGE_CLEAN, FRAMEWORK_STORAGE_CLEAN_ONFIRSTINIT);
-
-            // Set directory with plugins to auto-deploy
-            _logger.info("Auto deploying bundles from directory " + pluginPath);
-            configMap.put(AUTO_DEPLOY_DIR_PROPERY, pluginPath);
-            configMap.put(AUTO_DEPLOY_ACTION_PROPERY, AUTO_DEPLOY_INSTALL_VALUE + "," + AUTO_DEPLOY_START_VALUE);
-
-            // Start plugin manager and trackers
-            _felix = new Felix(configMap);
-            try
-            {
-                _logger.info("Starting plugin manager...");
-                _felix.init();
-                process(configMap, _felix.getBundleContext());
-                _felix.start();
-                _logger.info("Started plugin manager");
-            }
-            catch (BundleException e)
-            {
-                throw new ConfigurationException("Could not start plugin manager: " + e.getMessage(), e);
-            }
-
-            // Initialize bundle context
-            _bundleContext = _activator.getContext();
+            return;
         }
+        File pluginDir = new File(pluginPath);
+        if (!pluginDir.exists())
+        {
+            return;
+        } 
 
+        // Setup OSGi configuration propery map
+        StringMap configMap = new StringMap(false);
+
+        // Add the bundle provided service interface package and the core OSGi
+        // packages to be exported from the class path via the system bundle.
+        configMap.put(FRAMEWORK_SYSTEMPACKAGES,
+                "org.osgi.framework; version=1.3.0," +
+                "org.osgi.service.packageadmin; version=1.2.0," +
+                "org.osgi.service.startlevel; version=1.0.0," +
+                "org.osgi.service.url; version=1.0.0," +
+                "org.osgi.util.tracker; version=1.0.0," +
+                "org.apache.qpid.junit.extensions.util; " + QPID_VER_SUFFIX +
+                "org.apache.qpid; " + QPID_VER_SUFFIX +
+                "org.apache.qpid.common; " + QPID_VER_SUFFIX +
+                "org.apache.qpid.exchange; " + QPID_VER_SUFFIX +
+                "org.apache.qpid.framing; " + QPID_VER_SUFFIX +
+                "org.apache.qpid.management.common.mbeans.annotations; " + QPID_VER_SUFFIX +
+                "org.apache.qpid.protocol; " + QPID_VER_SUFFIX +
+                "org.apache.qpid.server.binding; " + QPID_VER_SUFFIX +
+                "org.apache.qpid.server.configuration; " + QPID_VER_SUFFIX +
+                "org.apache.qpid.server.configuration.plugins; " + QPID_VER_SUFFIX +
+                "org.apache.qpid.server.configuration.management; " + QPID_VER_SUFFIX +
+                "org.apache.qpid.server.exchange; " + QPID_VER_SUFFIX +
+                "org.apache.qpid.server.logging; " + QPID_VER_SUFFIX +
+                "org.apache.qpid.server.logging.actors; " + QPID_VER_SUFFIX +
+                "org.apache.qpid.server.logging.subjects; " + QPID_VER_SUFFIX +
+                "org.apache.qpid.server.management; " + QPID_VER_SUFFIX +
+                "org.apache.qpid.server.persistent; " + QPID_VER_SUFFIX +
+                "org.apache.qpid.server.plugins; " + QPID_VER_SUFFIX +
+                "org.apache.qpid.server.protocol; " + QPID_VER_SUFFIX +
+                "org.apache.qpid.server.queue; " + QPID_VER_SUFFIX +
+                "org.apache.qpid.server.registry; " + QPID_VER_SUFFIX +
+                "org.apache.qpid.server.security; " + QPID_VER_SUFFIX +
+                "org.apache.qpid.server.security.access; " + QPID_VER_SUFFIX +
+                "org.apache.qpid.server.security.access.plugins; " + QPID_VER_SUFFIX +
+                "org.apache.qpid.server.virtualhost; " + QPID_VER_SUFFIX +
+                "org.apache.qpid.server.virtualhost.plugins; " + QPID_VER_SUFFIX +
+                "org.apache.qpid.util; " + QPID_VER_SUFFIX +
+                "org.apache.commons.configuration; version=1.0.0," +
+                "org.apache.commons.lang; version=1.0.0," +
+                "org.apache.commons.lang.builder; version=1.0.0," +
+                "org.apache.commons.logging; version=1.0.0," +
+                "org.apache.log4j; version=1.2.12," +
+                "javax.management.openmbean; version=1.0.0," +
+                "javax.management; version=1.0.0"
+            );
+        
+        // No automatic shutdown hook
+        configMap.put("felix.shutdown.hook", "false");
+        
+        // Add system activator
+        List<BundleActivator> activators = new ArrayList<BundleActivator>();
+        _activator = new Activator();
+        activators.add(_activator);
+        configMap.put(SYSTEMBUNDLE_ACTIVATORS_PROP, activators);
+
+        if (cachePath != null)
+        {
+            File cacheDir = new File(cachePath);
+            if (!cacheDir.exists() && cacheDir.canWrite())
+            {
+                _logger.info("Creating plugin cache directory: " + cachePath);
+                cacheDir.mkdir();
+            }
+            
+            // Set plugin cache directory and empty it
+            _logger.info("Cache bundles in directory " + cachePath);
+            configMap.put(FRAMEWORK_STORAGE, cachePath);
+        }
+        configMap.put(FRAMEWORK_STORAGE_CLEAN, FRAMEWORK_STORAGE_CLEAN_ONFIRSTINIT);
+        
+        // Set directory with plugins to auto-deploy
+        _logger.info("Auto deploying bundles from directory " + pluginPath);
+        configMap.put(AUTO_DEPLOY_DIR_PROPERY, pluginPath);
+        configMap.put(AUTO_DEPLOY_ACTION_PROPERY, AUTO_DEPLOY_INSTALL_VALUE + "," + AUTO_DEPLOY_START_VALUE);        
+        
+        // Start plugin manager and trackers
+        _felix = new Felix(configMap);
+        try
+        {
+            _logger.info("Starting plugin manager...");
+            _felix.init();
+	        process(configMap, _felix.getBundleContext());
+            _felix.start();
+            _logger.info("Started plugin manager");
+        }
+        catch (BundleException e)
+        {
+            throw new ConfigurationException("Could not start plugin manager: " + e.getMessage(), e);
+        }
+        
         // TODO save trackers in a map, keyed by class name
         
-        _exchangeTracker = new ServiceTracker(_bundleContext, ExchangeType.class.getName(), null);
+        _exchangeTracker = new ServiceTracker(_activator.getContext(), ExchangeType.class.getName(), null);
         _exchangeTracker.open();
 
-        _securityTracker = new ServiceTracker(_bundleContext, SecurityPluginFactory.class.getName(), null);
+        _securityTracker = new ServiceTracker(_activator.getContext(), SecurityPluginFactory.class.getName(), null);
         _securityTracker.open();
 
-        _configTracker = new ServiceTracker(_bundleContext, ConfigurationPluginFactory.class.getName(), null);
+        _configTracker = new ServiceTracker(_activator.getContext(), ConfigurationPluginFactory.class.getName(), null);
         _configTracker.open();
 
-        _virtualHostTracker = new ServiceTracker(_bundleContext, VirtualHostPluginFactory.class.getName(), null);
+        _virtualHostTracker = new ServiceTracker(_activator.getContext(), VirtualHostPluginFactory.class.getName(), null);
         _virtualHostTracker.open();
  
-        _policyTracker = new ServiceTracker(_bundleContext, SlowConsumerPolicyPluginFactory.class.getName(), null);
+        _policyTracker = new ServiceTracker(_activator.getContext(), SlowConsumerPolicyPluginFactory.class.getName(), null);
         _policyTracker.open();
         
         _logger.info("Opened service trackers");
-    }
-
-    public static void setBundleContext(BundleContext ctx)
-    {
-        _bundleContext = ctx;
     }
 
     private static <T> Map<String, T> getServices(ServiceTracker tracker)
