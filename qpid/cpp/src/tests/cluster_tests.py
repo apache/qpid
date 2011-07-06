@@ -829,8 +829,8 @@ class LongTests(BrokerTest):
                  "--base-name", str(qpid.datatypes.uuid4()), "--port", broker.port()],
                 ["qpid-txtest", "--queue-base-name", "tx-%s"%str(qpid.datatypes.uuid4()),
                  "--port", broker.port()],
-                ["qpid-queue-stats", "-a", "localhost:%s" %(broker.port())],
-                ["testagent", "localhost", str(broker.port())] ]
+                ["qpid-queue-stats", "-a", "localhost:%s" %(broker.port())]
+                 ]
             clients.append([ClientLoop(broker, cmd) for cmd in cmds])
 
         def start_mclients(broker):
