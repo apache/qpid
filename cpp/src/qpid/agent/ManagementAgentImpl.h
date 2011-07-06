@@ -62,8 +62,8 @@ class ManagementAgentImpl : public ManagementAgent, public client::MessageListen
               uint16_t intervalSeconds = 10,
               bool useExternalThread = false,
               const std::string& storeFile = "",
-              const std::string& uid = "guest",
-              const std::string& pwd = "guest",
+              const std::string& uid = "",
+              const std::string& pwd = "",
               const std::string& mech = "PLAIN",
               const std::string& proto = "tcp");
     void init(const management::ConnectionSettings& settings,
