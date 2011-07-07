@@ -231,13 +231,11 @@ public class MockQueueEntry implements QueueEntry
         _message = msg;
     }
 
-    @Override
     public boolean isDequeued()
     {
         return false;
     }
 
-    @Override
     public boolean isDispensed()
     {
         return false;

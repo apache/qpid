@@ -547,13 +547,11 @@ public class QueueEntryImpl implements QueueEntry
         return _queueEntryList;
     }
 
-    @Override
     public boolean isDequeued()
     {
         return _state == DEQUEUED_STATE;
     }
 
-    @Override
     public boolean isDispensed()
     {
         return _state.isDispensed();

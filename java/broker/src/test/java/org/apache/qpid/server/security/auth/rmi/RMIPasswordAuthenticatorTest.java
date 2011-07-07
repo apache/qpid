@@ -210,31 +210,26 @@ public class RMIPasswordAuthenticatorTest extends TestCase
     {
         return new AuthenticationManager()
         {
-            @Override
             public void close()
             {
                 throw new UnsupportedOperationException();
             }
 
-            @Override
             public String getMechanisms()
             {
                 throw new UnsupportedOperationException();
             }
 
-            @Override
             public SaslServer createSaslServer(String mechanism, String localFQDN) throws SaslException
             {
                 throw new UnsupportedOperationException();
             }
 
-            @Override
             public AuthenticationResult authenticate(SaslServer server, byte[] response)
             {
                 throw new UnsupportedOperationException();
             }
 
-            @Override
             public AuthenticationResult authenticate(String username, String password)
             {
                 if (exception != null) {

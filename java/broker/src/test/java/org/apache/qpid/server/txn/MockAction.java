@@ -32,13 +32,11 @@ class MockAction implements Action
     private boolean _rollbackFired = false;
     private boolean _postCommitFired = false;
 
-    @Override
     public void postCommit()
     {
         _postCommitFired = true;
     }
 
-    @Override
     public void onRollback()
     {
         _rollbackFired = true;
