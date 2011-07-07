@@ -42,7 +42,7 @@ import org.apache.qpid.transport.util.Logger;
  * SO_RCVBUF    - amqj.receiveBufferSize
  * SO_SNDBUF    - amqj.sendBufferSize
  */
-public final class IoTransport<E> implements IoContext
+public final class IoTransport<E>
 {
 
     static
@@ -70,44 +70,63 @@ public final class IoTransport<E> implements IoContext
     IoTransport(Socket socket, Binding<E,ByteBuffer> binding, boolean ssl)
     {
         this.socket = socket;
-        
+
         if (ssl)
         {
-            SSLEngine engine = null;
-            SSLContext sslCtx;
-            try
-            {
-                sslCtx = createSSLContext();
-            }
-            catch (Exception e)
-            {
-                throw new TransportException("Error creating SSL Context", e);
-            }
-            
-            try
-            {
-                engine = sslCtx.createSSLEngine();
-                engine.setUseClientMode(true);
-            }
-            catch(Exception e)
-            {
-                throw new TransportException("Error creating SSL Engine", e);
-            }
-            
-            this.sender = new SSLSender(engine,new IoSender(this, 2*writeBufferSize, timeout));
-            this.endpoint = binding.endpoint(sender);
-            this.receiver = new IoReceiver(this, new SSLReceiver(engine,binding.receiver(endpoint),(SSLSender)sender),
-                                           2*readBufferSize, timeout);
-            
-            log.info("SSL Sender and Receiver initiated");
+            setupSSLTransport(socket, binding);
         }
         else
         {
-            this.sender = new IoSender(this, 2*writeBufferSize, timeout);
-            this.endpoint = binding.endpoint(sender);
-            this.receiver = new IoReceiver(this, binding.receiver(endpoint),
-                                           2*readBufferSize, timeout);
+            setupTransport(socket, binding);
         }
+    }
+
+    private void setupTransport(Socket socket, Binding<E, ByteBuffer> binding)
+    {
+        IoSender ios = new IoSender(socket, 2*writeBufferSize, timeout);
+        ios.initiate();
+
+        this.sender = ios;
+        this.endpoint = binding.endpoint(sender);
+        this.receiver = new IoReceiver(socket, binding.receiver(endpoint),
+                                       2*readBufferSize, timeout);
+        this.receiver.initiate();
+
+        ios.registerCloseListener(this.receiver);
+    }
+
+    private void setupSSLTransport(Socket socket, Binding<E, ByteBuffer> binding)
+    {
+        SSLEngine engine = null;
+        SSLContext sslCtx;
+        try
+        {
+            sslCtx = createSSLContext();
+        }
+        catch (Exception e)
+        {
+            throw new TransportException("Error creating SSL Context", e);
+        }
+
+        try
+        {
+            engine = sslCtx.createSSLEngine();
+            engine.setUseClientMode(true);
+        }
+        catch(Exception e)
+        {
+            throw new TransportException("Error creating SSL Engine", e);
+        }
+        IoSender ios = new IoSender(socket, 2*writeBufferSize, timeout);
+        ios.initiate();
+        this.sender = new SSLSender(engine,ios);
+        this.endpoint = binding.endpoint(sender);
+        this.receiver = new IoReceiver(socket, new SSLReceiver(engine,binding.receiver(endpoint),(SSLSender)sender),
+                2*readBufferSize, timeout);
+        this.receiver.initiate();
+        ios.registerCloseListener(this.receiver);
+
+        log.info("SSL Sender and Receiver initiated");
     }
 
     public Sender<ByteBuffer> getSender()

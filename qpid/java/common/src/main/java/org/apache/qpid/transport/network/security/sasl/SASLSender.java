@@ -43,8 +43,7 @@ public class SASLSender extends SASLEncryptor implements Sender<ByteBuffer> {
         this.delegate = delegate;
         log.debug("SASL Sender enabled");
     }
-    
-    @Override
+
     public void close() 
     {
         
@@ -65,13 +64,11 @@ public class SASLSender extends SASLEncryptor implements Sender<ByteBuffer> {
         }
     }
 
-    @Override
     public void flush() 
     {
        delegate.flush();
     }
 
-    @Override
     public void send(ByteBuffer buf) 
     {        
         if (closed.get())
@@ -108,7 +105,6 @@ public class SASLSender extends SASLEncryptor implements Sender<ByteBuffer> {
         }        
     }
 
-    @Override
     public void setIdleTimeout(int i) 
     {
         delegate.setIdleTimeout(i);
