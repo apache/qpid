@@ -86,35 +86,6 @@ public class ClientProperties
     
     public static final String USE_LEGACY_MAP_MESSAGE_FORMAT = "qpid.use_legacy_map_message";
 
-     /**
-     * ==========================================================
-     * Those properties are used when the io size should be bounded
-     * ==========================================================
-     */
-
-    /**
-     * When set to true the io layer throttle down producers and consumers
-     * when written or read messages are accumulating and exceeding a certain size.
-     * This is especially useful when a the producer rate is greater than the network
-     * speed.
-     * type: boolean
-     */
-    public static final String PROTECTIO_PROP_NAME = "protectio";
-
-    //=== The following properties are only used when the previous one is true.
-    /**
-     * Max size of read messages that can be stored within the MINA layer
-     * type: int
-     */
-    public static final String READ_BUFFER_LIMIT_PROP_NAME = "qpid.read.buffer.limit";
-    public static final String READ_BUFFER_LIMIT_DEFAULT = "262144";
-    /**
-     * Max size of written messages that can be stored within the MINA layer
-     * type: int
-     */
-    public static final String WRITE_BUFFER_LIMIT_PROP_NAME = "qpid.read.buffer.limit";
-    public static final String WRITE_BUFFER_LIMIT_DEFAULT = "262144";
-
     public static final String AMQP_VERSION = "qpid.amqp.version";
     
     private static ClientProperties _instance = new ClientProperties();

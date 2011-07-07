@@ -26,16 +26,11 @@ import org.apache.mina.common.ExecutorThreadModel;
 import org.apache.mina.common.IdleStatus;
 import org.apache.mina.common.IoAcceptor;
 import org.apache.mina.common.IoConnector;
-import org.apache.mina.common.IoFilterChain;
 import org.apache.mina.common.IoHandlerAdapter;
 import org.apache.mina.common.IoSession;
 import org.apache.mina.common.SimpleByteBufferAllocator;
 import org.apache.mina.common.WriteFuture;
-import org.apache.mina.filter.ReadThrottleFilterBuilder;
 import org.apache.mina.filter.SSLFilter;
-import org.apache.mina.filter.WriteBufferLimitFilterBuilder;
-import org.apache.mina.filter.executor.ExecutorFilter;
-import org.apache.mina.transport.socket.nio.MultiThreadSocketConnector;
 import org.apache.mina.transport.socket.nio.SocketAcceptorConfig;
 import org.apache.mina.transport.socket.nio.SocketConnector;
 import org.apache.mina.transport.socket.nio.SocketConnectorConfig;
@@ -66,16 +61,12 @@ public class MINANetworkDriver extends IoHandlerAdapter implements NetworkDriver
     private static final int DEFAULT_BUFFER_SIZE = 32 * 1024;
 
     ProtocolEngine _protocolEngine;
-    private boolean _useNIO = false;
     private int _processors = 4;
-    private boolean _executorPool = false;
     private SSLContextFactory _sslFactory = null;
     private IoConnector _socketConnector;
     private IoAcceptor _acceptor;
     private IoSession _ioSession;
     private ProtocolEngineFactory _factory;
-    private boolean _protectIO;
-    private NetworkDriverConfiguration _config;
     private Throwable _lastException;
     private boolean _acceptingConnections = false;
 
@@ -91,21 +82,9 @@ public class MINANetworkDriver extends IoHandlerAdapter implements NetworkDriver
         org.apache.mina.common.ByteBuffer.setAllocator(new SimpleByteBufferAllocator());
     }
 
-    public MINANetworkDriver(boolean useNIO, int processors, boolean executorPool, boolean protectIO)
+    public MINANetworkDriver(int processors, ProtocolEngine protocolEngine, IoSession session)
     {
-        _useNIO = useNIO;
         _processors = processors;
-        _executorPool = executorPool;
-        _protectIO = protectIO;
-    }
-
-    public MINANetworkDriver(boolean useNIO, int processors, boolean executorPool, boolean protectIO,
-            ProtocolEngine protocolEngine, IoSession session)
-    {
-        _useNIO = useNIO;
-        _processors = processors;
-        _executorPool = executorPool;
-        _protectIO = protectIO;
         _protocolEngine = protocolEngine;
         _ioSession = session;
         _ioSession.setAttachment(_protocolEngine);
@@ -132,17 +111,8 @@ public class MINANetworkDriver extends IoHandlerAdapter implements NetworkDriver
     {
 
         _factory = factory;
-        _config = config;
 
-        if (_useNIO)
-        {
-            _acceptor = new org.apache.mina.transport.socket.nio.MultiThreadSocketAcceptor(_processors,
-                    new NewThreadExecutor());
-        }
-        else
-        {
-            _acceptor = new org.apache.mina.transport.socket.nio.SocketAcceptor(_processors, new NewThreadExecutor());
-        }
+        _acceptor = new org.apache.mina.transport.socket.nio.SocketAcceptor(_processors, new NewThreadExecutor());
 
         SocketAcceptorConfig sconfig = (SocketAcceptorConfig) _acceptor.getDefaultConfig();
         sconfig.setThreadModel(ExecutorThreadModel.getInstance("MINANetworkDriver(Acceptor)"));
@@ -207,15 +177,7 @@ public class MINANetworkDriver extends IoHandlerAdapter implements NetworkDriver
             _sslFactory = sslFactory;
         }
 
-        if (_useNIO)
-        {
-            _socketConnector = new MultiThreadSocketConnector(1, new QpidThreadExecutor());
-        }
-        else
-        {
-            _socketConnector = new SocketConnector(1, new QpidThreadExecutor()); // non-blocking
-                                                                                 // connector
-        }
+        _socketConnector = new SocketConnector(1, new QpidThreadExecutor()); // non-blocking connector
 
         SocketConnectorConfig cfg = (SocketConnectorConfig) _socketConnector.getDefaultConfig();
         String s = "";
@@ -351,39 +313,10 @@ public class MINANetworkDriver extends IoHandlerAdapter implements NetworkDriver
     {
         // Configure the session with SSL if necessary
         SessionUtil.initialize(protocolSession);
-        if (_executorPool)
+        if (_sslFactory != null)
         {
-            if (_sslFactory != null)
-            {
-                protocolSession.getFilterChain().addAfter("AsynchronousReadFilter", "sslFilter",
-                        new SSLFilter(_sslFactory.buildServerContext()));
-            }
-        }
-        else
-        {
-            if (_sslFactory != null)
-            {
-                protocolSession.getFilterChain().addBefore("protocolFilter", "sslFilter",
-                        new SSLFilter(_sslFactory.buildServerContext()));
-            }
-        }
-        // Do we want to have read/write buffer limits?
-        if (_protectIO)
-        {
-            //Add IO Protection Filters
-            IoFilterChain chain = protocolSession.getFilterChain();
-
-            protocolSession.getFilterChain().addLast("tempExecutorFilterForFilterBuilder", new ExecutorFilter());
-
-            ReadThrottleFilterBuilder readfilter = new ReadThrottleFilterBuilder();
-            readfilter.setMaximumConnectionBufferSize(_config.getReceiveBufferSize());
-            readfilter.attach(chain);
-
-            WriteBufferLimitFilterBuilder writefilter = new WriteBufferLimitFilterBuilder();
-            writefilter.setMaximumConnectionBufferSize(_config.getSendBufferSize());
-            writefilter.attach(chain);
-
-            protocolSession.getFilterChain().remove("tempExecutorFilterForFilterBuilder");
+            protocolSession.getFilterChain().addBefore("protocolFilter", "sslFilter",
+                    new SSLFilter(_sslFactory.buildServerContext()));
         }
 
         if (_ioSession == null)
@@ -395,7 +328,7 @@ public class MINANetworkDriver extends IoHandlerAdapter implements NetworkDriver
         {
             // Set up the protocol engine
             ProtocolEngine protocolEngine = _factory.newProtocolEngine(this);
-            MINANetworkDriver newDriver = new MINANetworkDriver(_useNIO, _processors, _executorPool, _protectIO, protocolEngine, protocolSession);
+            MINANetworkDriver newDriver = new MINANetworkDriver(_processors, protocolEngine, protocolSession);
             protocolEngine.setNetworkDriver(newDriver);
         }
     }

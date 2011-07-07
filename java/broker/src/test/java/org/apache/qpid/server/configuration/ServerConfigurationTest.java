@@ -187,49 +187,6 @@ public class ServerConfigurationTest extends InternalBrokerBaseCase
         assertEquals(23, serverConfig.getFrameSize());
     }
 
-    public void testGetProtectIOEnabled() throws ConfigurationException
-    {
-        // Check default
-        ServerConfiguration serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(false, serverConfig.getProtectIOEnabled());
-
-        // Check value we set
-        _config.setProperty(ServerConfiguration.CONNECTOR_PROTECTIO_ENABLED, true);
-        serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(true, serverConfig.getProtectIOEnabled());
-    }
-
-    public void testGetBufferReadLimit() throws ConfigurationException
-    {
-        // Check default
-        ServerConfiguration serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(262144, serverConfig.getBufferReadLimit());
-
-        // Check value we set
-        _config.setProperty(ServerConfiguration.CONNECTOR_PROTECTIO_READ_BUFFER_LIMIT_SIZE, 23);
-        serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(23, serverConfig.getBufferReadLimit());
-    }
-
-    public void testGetBufferWriteLimit() throws ConfigurationException
-    {
-        // Check default
-        ServerConfiguration serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(262144, serverConfig.getBufferWriteLimit());
-
-        // Check value we set
-        _config.setProperty(ServerConfiguration.CONNECTOR_PROTECTIO_WRITE_BUFFER_LIMIT_SIZE, 23);
-        serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(23, serverConfig.getBufferWriteLimit());
-    }
-
-
     public void testGetStatusEnabled() throws ConfigurationException
     {
         // Check default
@@ -543,7 +500,7 @@ public class ServerConfigurationTest extends InternalBrokerBaseCase
         // Check default
         ServerConfiguration serverConfig = new ServerConfiguration(_config);
         serverConfig.initialise();
-        assertEquals(32767, serverConfig.getReceiveBufferSize());
+        assertEquals(ServerConfiguration.DEFAULT_BUFFER_SIZE, serverConfig.getReceiveBufferSize());
 
         // Check value we set
         _config.setProperty("connector.socketReceiveBuffer", "23");
@@ -557,7 +514,7 @@ public class ServerConfigurationTest extends InternalBrokerBaseCase
         // Check default
         ServerConfiguration serverConfig = new ServerConfiguration(_config);
         serverConfig.initialise();
-        assertEquals(32767, serverConfig.getWriteBufferSize());
+        assertEquals(ServerConfiguration.DEFAULT_BUFFER_SIZE, serverConfig.getWriteBufferSize());
 
         // Check value we set
         _config.setProperty("connector.socketWriteBuffer", "23");
@@ -678,20 +635,6 @@ public class ServerConfigurationTest extends InternalBrokerBaseCase
         assertEquals("a", serverConfig.getCertType());
     }
 
-    public void testGetQpidNIO() throws ConfigurationException
-    {
-        // Check default
-        ServerConfiguration serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(false, serverConfig.getQpidNIO());
-
-        // Check value we set
-        _config.setProperty("connector.qpidnio", true);
-        serverConfig = new ServerConfiguration(_config);
-        serverConfig.initialise();
-        assertEquals(true, serverConfig.getQpidNIO());
-    }
-
     public void testGetUseBiasedWrites() throws ConfigurationException
     {
         // Check default
@@ -756,7 +699,7 @@ public class ServerConfigurationTest extends InternalBrokerBaseCase
         out.close();
 
         out = new FileWriter(fileB);
-        out.write("<broker><connector><ssl><port>2345</port></ssl><qpidnio>true</qpidnio></connector></broker>");
+        out.write("<broker><connector><ssl><port>2345</port></ssl></connector></broker>");
         out.close();
 
         ServerConfiguration config = new ServerConfiguration(mainFile.getAbsoluteFile());
@@ -767,8 +710,6 @@ public class ServerConfigurationTest extends InternalBrokerBaseCase
         assertEquals(1, config.getPorts().size());
         assertEquals("2342", config.getPorts().get(0)); // From the first file, not
                                               // present in the second
-        assertEquals(true, config.getQpidNIO()); // From the second file, not
-                                                 // present in the first
     }
 
     public void testVariableInterpolation() throws Exception
