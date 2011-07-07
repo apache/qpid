@@ -37,6 +37,7 @@ windows_dist = \
   qpid/sys/windows/IOHandle.cpp \
   qpid/sys/windows/IoHandlePrivate.h \
   qpid/sys/windows/LockFile.cpp \
+  qpid/sys/windows/mingw32_compat.h \
   qpid/sys/windows/PollableCondition.cpp \
   qpid/sys/windows/PipeHandle.cpp \
   ../include/qpid/sys/windows/Mutex.h \
