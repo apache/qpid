@@ -466,7 +466,7 @@ public class QpidBrokerTestCase extends QpidTestCase
             final ConfigurationFileApplicationRegistry registry = new ConfigurationFileApplicationRegistry(_configFile);
             try
             {
-                ApplicationRegistry.initialise(registry, port);
+                ApplicationRegistry.initialise(registry);
             }
             catch (Exception e)
             {
@@ -692,7 +692,7 @@ public class QpidBrokerTestCase extends QpidTestCase
         else if (_broker.equals(VM))
         {
             TransportConnection.killVMBroker(port);
-            ApplicationRegistry.remove(port);
+            ApplicationRegistry.remove();
         }
     }
 

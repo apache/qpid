@@ -38,7 +38,7 @@ public class AMQProtocolEngineFactory implements ProtocolEngineFactory
     
     public AMQProtocolEngineFactory(Integer port)
     {
-        _vhosts = ApplicationRegistry.getInstance(port).getVirtualHostRegistry();
+        _vhosts = ApplicationRegistry.getInstance().getVirtualHostRegistry();
     }
    
     
