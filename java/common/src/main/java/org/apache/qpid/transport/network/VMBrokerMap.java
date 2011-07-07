@@ -20,28 +20,32 @@
  */
 package org.apache.qpid.transport.network;
 
-import java.net.SocketAddress;
-import java.nio.ByteBuffer;
+import java.util.HashMap;
+import java.util.Map;
 
-import org.apache.qpid.transport.Sender;
+import org.apache.mina.transport.vmpipe.VmPipeAddress;
 
-public interface NetworkConnection
+public class VMBrokerMap
 {
-    Sender<ByteBuffer> getSender();
+    private static final Map<Integer, VmPipeAddress> _map = new HashMap<Integer, VmPipeAddress>();
 
-    void close();
+    public static void add(int port, VmPipeAddress pipe)
+    {
+        _map.put(port, pipe);
+    }
 
-    /**
-     * Returns the remote address of the underlying socket.
-     */
-    SocketAddress getRemoteAddress();
+    public static VmPipeAddress remove(int port)
+    {
+        return _map.remove(port);
+    }
 
-    /**
-     * Returns the local address of the underlying socket.
-     */
-    SocketAddress getLocalAddress();
+    public static void clear()
+    {
+        _map.clear();
+    }
 
-    void setMaxWriteIdle(int sec);
-
-    void setMaxReadIdle(int sec);
+    public static boolean contains(int port)
+    {
+        return _map.containsKey(port);
+    }
 }

@@ -50,4 +50,3 @@ org.apache.qpid.test.unit.ack.AcknowledgeAfterFailoverTest#*
 
 // QPID-2418 : The queue backing the dur sub is not currently deleted at subscription change, so the test will fail.
 org.apache.qpid.test.unit.ct.DurableSubscriberTest#testResubscribeWithChangedSelectorAndRestart
-

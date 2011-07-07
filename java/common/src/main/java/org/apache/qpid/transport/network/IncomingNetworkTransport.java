@@ -20,28 +20,11 @@
  */
 package org.apache.qpid.transport.network;
 
-import java.net.SocketAddress;
-import java.nio.ByteBuffer;
+import org.apache.qpid.protocol.ProtocolEngineFactory;
+import org.apache.qpid.ssl.SSLContextFactory;
+import org.apache.qpid.transport.NetworkTransportConfiguration;
 
-import org.apache.qpid.transport.Sender;
-
-public interface NetworkConnection
+public interface IncomingNetworkTransport extends NetworkTransport
 {
-    Sender<ByteBuffer> getSender();
-
-    void close();
-
-    /**
-     * Returns the remote address of the underlying socket.
-     */
-    SocketAddress getRemoteAddress();
-
-    /**
-     * Returns the local address of the underlying socket.
-     */
-    SocketAddress getLocalAddress();
-
-    void setMaxWriteIdle(int sec);
-
-    void setMaxReadIdle(int sec);
+    public void accept(NetworkTransportConfiguration config, ProtocolEngineFactory factory, SSLContextFactory sslFactory);
 }

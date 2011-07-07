@@ -78,5 +78,16 @@ public class IoNetworkConnection implements NetworkConnection
     {
         return _socket.getLocalSocketAddress();
     }
-    
+
+    public void setMaxWriteIdle(int sec)
+    {
+        // TODO implement support for setting heartbeating config in this way
+        // Currently a socket timeout is used in IoSender
+    }
+
+    public void setMaxReadIdle(int sec)
+    {
+        // TODO implement support for setting heartbeating config in this way
+        // Currently a socket timeout is used in IoSender
+    }
 }

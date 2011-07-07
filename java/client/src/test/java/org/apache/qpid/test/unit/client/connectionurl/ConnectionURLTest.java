@@ -487,27 +487,6 @@ public class ConnectionURLTest extends TestCase
 
     }
 
-    public void testSocketProtocol() throws URLSyntaxException
-    {
-        String url = "amqp://guest:guest@id/test" + "?brokerlist='socket://VM-Unique-socketID'";
-
-        try
-        {
-            AMQConnectionURL curl = new AMQConnectionURL(url);
-            assertNotNull(curl);
-            assertEquals(1, curl.getBrokerCount());
-            assertNotNull(curl.getBrokerDetails(0));
-            assertEquals(BrokerDetails.SOCKET, curl.getBrokerDetails(0).getTransport());
-            assertEquals("VM-Unique-socketID", curl.getBrokerDetails(0).getHost());
-            assertEquals("URL does not toString as expected",
-                         url.replace(":guest", ":********"), curl.toString());
-        }
-        catch (URLSyntaxException e)
-        {
-            fail(e.getMessage());
-        }
-    }
-
     public void testSingleTransportMultiOptionOnBrokerURL() throws URLSyntaxException
     {
         String url = "amqp://guest:guest@/test?brokerlist='tcp://localhost:5672?foo='jim'&bar='bob'&fred='jimmy'',routingkey='jim',timeout='200',immediatedelivery='true'";

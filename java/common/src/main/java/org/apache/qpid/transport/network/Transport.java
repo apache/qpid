@@ -20,28 +20,8 @@
  */
 package org.apache.qpid.transport.network;
 
-import java.net.SocketAddress;
-import java.nio.ByteBuffer;
-
-import org.apache.qpid.transport.Sender;
-
-public interface NetworkConnection
+public class Transport
 {
-    Sender<ByteBuffer> getSender();
-
-    void close();
-
-    /**
-     * Returns the remote address of the underlying socket.
-     */
-    SocketAddress getRemoteAddress();
-
-    /**
-     * Returns the local address of the underlying socket.
-     */
-    SocketAddress getLocalAddress();
-
-    void setMaxWriteIdle(int sec);
-
-    void setMaxReadIdle(int sec);
+    public static final String TCP = "tcp";
+    public static final String VM = "vm";
 }

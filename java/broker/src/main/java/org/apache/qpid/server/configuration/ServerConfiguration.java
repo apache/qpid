@@ -20,6 +20,8 @@
 
 package org.apache.qpid.server.configuration;
 
+import static org.apache.qpid.transport.ConnectionSettings.WILDCARD_ADDRESS;
+
 import java.io.File;
 import java.util.Collections;
 import java.util.HashMap;
@@ -42,7 +44,7 @@ import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
-import org.apache.qpid.transport.NetworkDriverConfiguration;
+import org.apache.qpid.transport.NetworkTransportConfiguration;
 
 import sun.misc.Signal;
 import sun.misc.SignalHandler;
@@ -61,7 +63,7 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
     public static final int DEFAULT_SSL_PORT = 8672;
     public static final long DEFAULT_HOUSEKEEPING_PERIOD = 30000L;
     public static final int DEFAULT_JMXPORT = 8999;
-    
+
     public static final String QPID_HOME = "QPID_HOME";
     public static final String QPID_WORK = "QPID_WORK";
     public static final String LIB_DIR = "lib";
@@ -629,7 +631,7 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
         return getLongValue("flowResumeCapacity", getCapacity());
     }
 
-    public int getProcessors()
+    public int getConnectorProcessors()
     {
         return getIntValue("connector.processors", 4);
     }
@@ -661,7 +663,7 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
 
     public String getBind()
     {
-        return getStringValue("connector.bind", "wildcard");
+        return getStringValue("connector.bind", WILDCARD_ADDRESS);
     }
 
     public int getReceiveBufferSize()
@@ -769,58 +771,6 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
     public boolean isStatisticsReportResetEnabled()
     {
         return getConfig().getBoolean("statistics.reporting.reset", false);
-    }
-
-    public NetworkDriverConfiguration getNetworkConfiguration()
-    {
-        return new NetworkDriverConfiguration()
-        {
-
-            public Integer getTrafficClass()
-            {
-                return null;
-            }
-
-            public Boolean getTcpNoDelay()
-            {
-                return ServerConfiguration.this.getTcpNoDelay();
-            }
-
-            public Integer getSoTimeout()
-            {
-                return null;
-            }
-
-            public Integer getSoLinger()
-            {
-                return null;
-            }
-
-            public Integer getSendBufferSize()
-            {
-                return ServerConfiguration.this.getWriteBufferSize();
-            }
-
-            public Boolean getReuseAddress()
-            {
-                return null;
-            }
-
-            public Integer getReceiveBufferSize()
-            {
-                return ServerConfiguration.this.getReceiveBufferSize();
-            }
-
-            public Boolean getOOBInline()
-            {
-                return null;
-            }
-
-            public Boolean getKeepAlive()
-            {
-                return null;
-            }
-        };
     }
 
     public int getMaxChannelCount()

@@ -22,8 +22,6 @@ package org.apache.qpid.protocol;
 
 import java.net.SocketAddress;
 
-import org.apache.qpid.framing.AMQDataBlock;
-import org.apache.qpid.transport.NetworkDriver;
 import org.apache.qpid.transport.Receiver;
 
 /**
@@ -32,9 +30,6 @@ import org.apache.qpid.transport.Receiver;
  */
 public interface ProtocolEngine extends Receiver<java.nio.ByteBuffer>
 {
-   // Sets the network driver providing data for this ProtocolEngine
-   void setNetworkDriver (NetworkDriver driver);
-
    // Returns the remote address of the NetworkDriver
    SocketAddress getRemoteAddress();
 
