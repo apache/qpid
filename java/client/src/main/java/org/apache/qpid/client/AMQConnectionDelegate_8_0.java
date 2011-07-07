@@ -89,15 +89,8 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
 
         StateWaiter waiter = _conn._protocolHandler.createWaiter(openOrClosedStates);
 
-        // TODO: use system property thingy for this
-        if (System.getProperty("UseTransportIo", "false").equals("false"))
-        {
-            TransportConnection.getInstance(brokerDetail).connect(_conn._protocolHandler, brokerDetail);
-        }
-        else
-        {
-            _conn.getProtocolHandler().createIoTransportSession(brokerDetail);
-        }
+        TransportConnection.getInstance(brokerDetail).connect(_conn._protocolHandler, brokerDetail);
+
         _conn._protocolHandler.getProtocolSession().init();
         // this blocks until the connection has been set up or when an error
         // has prevented the connection being set up
