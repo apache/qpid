@@ -27,12 +27,15 @@ import java.net.SocketAddress;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.XMLConfiguration;
+import org.apache.qpid.server.configuration.ServerConfiguration;
+import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.security.Result;
 import org.apache.qpid.server.security.access.plugins.Firewall;
 import org.apache.qpid.server.security.access.plugins.FirewallConfiguration;
-import org.apache.qpid.server.util.InternalBrokerBaseCase;
+import org.apache.qpid.server.util.TestApplicationRegistry;
+import org.apache.qpid.test.utils.QpidTestCase;
 
-public class FirewallPluginTest extends InternalBrokerBaseCase
+public class FirewallPluginTest extends QpidTestCase
 {
     public class RuleInfo
     {
@@ -73,15 +76,23 @@ public class FirewallPluginTest extends InternalBrokerBaseCase
 
     // IP address
     private SocketAddress _address;
+    private ServerConfiguration _serverConfig;
 
     @Override
-    public void setUp() throws Exception
+    protected void setUp() throws Exception
     {
         super.setUp();
-        
+        _serverConfig = new ServerConfiguration(new XMLConfiguration());
+        ApplicationRegistry.initialise(new TestApplicationRegistry(_serverConfig));
         _address = new InetSocketAddress("127.0.0.1", 65535);
     }
 
+    @Override
+    protected void tearDown() throws Exception
+    {
+        super.tearDown();
+        ApplicationRegistry.remove();
+    }
     private Firewall initialisePlugin(String defaultAction, RuleInfo[] rules) throws IOException, ConfigurationException
     {
         // Create sample config file
@@ -108,7 +119,7 @@ public class FirewallPluginTest extends InternalBrokerBaseCase
         }
         buf.write("</firewall>");
         buf.close();
-        
+
         // Configure plugin
         FirewallConfiguration config = new FirewallConfiguration();
         config.setConfiguration("", new XMLConfiguration(confFile));

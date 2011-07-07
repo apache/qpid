@@ -25,6 +25,7 @@ import java.io.InputStreamReader;
 import java.io.LineNumberReader;
 import java.io.PrintStream;
 import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -62,6 +63,9 @@ import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.jms.ConnectionURL;
 import org.apache.qpid.management.common.mbeans.ConfigurationManagement;
+import org.apache.qpid.server.Broker;
+import org.apache.qpid.server.BrokerOptions;
+import org.apache.qpid.server.ProtocolExclusion;
 import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.ConfigurationFileApplicationRegistry;
@@ -107,7 +111,8 @@ public class QpidBrokerTestCase extends QpidTestCase
 
     // system properties
     private static final String BROKER_LANGUAGE = "broker.language";
-    private static final String BROKER = "broker";
+    private static final String BROKER_TYPE = "broker.type";
+    private static final String BROKER_COMMAND = "broker.command";
     private static final String BROKER_CLEAN = "broker.clean";
     private static final String BROKER_CLEAN_BETWEEN_TESTS = "broker.clean.between.tests";
     private static final String BROKER_EXISTING_QPID_WORK = "broker.existing.qpid.work";
@@ -118,12 +123,15 @@ public class QpidBrokerTestCase extends QpidTestCase
     private static final String BROKER_LOG_INTERLEAVE = "broker.log.interleave";
     private static final String BROKER_LOG_PREFIX = "broker.log.prefix";
     private static final String BROKER_PERSITENT = "broker.persistent";
+    private static final String BROKER_PROTOCOL_EXCLUDES = "broker.protocols.excludes";
+    
 
     // values
     protected static final String JAVA = "java";
     protected static final String CPP = "cpp";
     protected static final String VM = "vm";
     protected static final String EXTERNAL = "external";
+    protected static final String INTERNAL = "internal";
     private static final String VERSION_08 = "0-8";
     private static final String VERSION_010 = "0-10";
 
@@ -131,16 +139,19 @@ public class QpidBrokerTestCase extends QpidTestCase
 
     public static final int DEFAULT_VM_PORT = 1;
     public static final int DEFAULT_PORT = Integer.getInteger("test.port", ServerConfiguration.DEFAULT_PORT);
+    public static final int FAILING_PORT = Integer.parseInt(System.getProperty("test.port.alt"));
     public static final int DEFAULT_MANAGEMENT_PORT = Integer.getInteger("test.mport", ServerConfiguration.DEFAULT_JMXPORT);
     public static final int DEFAULT_SSL_PORT = Integer.getInteger("test.sslport", ServerConfiguration.DEFAULT_SSL_PORT);
 
     protected String _brokerLanguage = System.getProperty(BROKER_LANGUAGE, JAVA);
-    protected String _broker = System.getProperty(BROKER, VM);
+    protected String _brokerType = System.getProperty(BROKER_TYPE, INTERNAL);
+    protected String _brokerCommand = System.getProperty(BROKER_COMMAND);
     private String _brokerClean = System.getProperty(BROKER_CLEAN, null);
     private Boolean _brokerCleanBetweenTests = Boolean.getBoolean(BROKER_CLEAN_BETWEEN_TESTS);
     private String _brokerVersion = System.getProperty(BROKER_VERSION, VERSION_08);
     protected String _output = System.getProperty(TEST_OUTPUT);
     protected Boolean _brokerPersistent = Boolean.getBoolean(BROKER_PERSITENT);
+    private String _brokerProtocolExcludes = System.getProperty(BROKER_PROTOCOL_EXCLUDES);
 
     protected static String _brokerLogPrefix = System.getProperty(BROKER_LOG_PREFIX,"BROKER: ");
     protected static boolean _interleaveBrokerLog = Boolean.getBoolean(BROKER_LOG_INTERLEAVE);
@@ -149,7 +160,7 @@ public class QpidBrokerTestCase extends QpidTestCase
 
     protected PrintStream _brokerOutputStream;
 
-    protected Map<Integer, Process> _brokers = new HashMap<Integer, Process>();
+    protected Map<Integer, BrokerHolder> _brokers = new HashMap<Integer, BrokerHolder>();
 
     protected InitialContext _initialContext;
     protected AMQConnectionFactory _connectionFactory;
@@ -291,7 +302,7 @@ public class QpidBrokerTestCase extends QpidTestCase
             cleanBroker();
 
             File existing = new File(existingQpidWorkPath);
-            File qpidWork = new File(getQpidWork(_broker, getPort()));
+            File qpidWork = new File(getQpidWork(_brokerType, getPort()));
             FileUtils.copyRecursive(existing, qpidWork);
         }
 
@@ -395,11 +406,6 @@ public class QpidBrokerTestCase extends QpidTestCase
         }
     }
 
-    public void startBroker() throws Exception
-    {
-        startBroker(0);
-    }
-
     /**
      * Return the management portin use by the broker on this main port
      *
@@ -409,7 +415,7 @@ public class QpidBrokerTestCase extends QpidTestCase
      */
     protected int getManagementPort(int mainPort)
     {
-        return mainPort + (DEFAULT_MANAGEMENT_PORT - (_broker.equals(VM) ? DEFAULT_VM_PORT : DEFAULT_PORT));
+        return mainPort + (DEFAULT_MANAGEMENT_PORT - (_brokerType.equals(VM) ? DEFAULT_VM_PORT : DEFAULT_PORT));
     }
 
     /**
@@ -424,11 +430,11 @@ public class QpidBrokerTestCase extends QpidTestCase
 
     protected int getPort(int port)
     {
-        if (_broker.equals(VM))
+        if (_brokerType.equals(VM))
         {
             return port == 0 ? DEFAULT_VM_PORT : port;
         }
-        else if (!_broker.equals(EXTERNAL))
+        else if (!_brokerType.equals(EXTERNAL))
         {
             return port == 0 ? DEFAULT_PORT : port;
         }
@@ -440,11 +446,18 @@ public class QpidBrokerTestCase extends QpidTestCase
 
     protected String getBrokerCommand(int port) throws MalformedURLException
     {
-        return _broker
+        final String protocolExcludesList = _brokerProtocolExcludes.replace("@PORT", "" + port);
+        return _brokerCommand
                 .replace("@PORT", "" + port)
                 .replace("@SSL_PORT", "" + (port - 1))
                 .replace("@MPORT", "" + getManagementPort(port))
-                .replace("@CONFIG_FILE", _configFile.toString());
+                .replace("@CONFIG_FILE", _configFile.toString())
+                .replace("@EXCLUDES", protocolExcludesList);
+    }
+
+    public void startBroker() throws Exception
+    {
+        startBroker(0);
     }
 
     public void startBroker(int port) throws Exception
@@ -455,8 +468,12 @@ public class QpidBrokerTestCase extends QpidTestCase
         saveTestConfiguration();
         saveTestVirtualhosts();
 
-        Process process = null;
-        if (_broker.equals(VM))
+        if(_brokers.get(port) != null)
+        {
+            throw new IllegalStateException("There is already an existing broker running on port " + port);
+        }
+
+        if (_brokerType.equals(VM))
         {
             setConfigurationProperty("management.jmxport", String.valueOf(getManagementPort(port)));
             setConfigurationProperty(ServerConfiguration.MGMT_CUSTOM_REGISTRY_SOCKET, String.valueOf(false));
@@ -483,10 +500,33 @@ public class QpidBrokerTestCase extends QpidTestCase
             }
             TransportConnection.createVMBroker(port);
         }
-        else if (!_broker.equals(EXTERNAL))
+        else if (_brokerType.equals(INTERNAL) && !existingInternalBroker())
+        {
+            setConfigurationProperty(ServerConfiguration.MGMT_CUSTOM_REGISTRY_SOCKET, String.valueOf(false));
+            saveTestConfiguration();
+
+            BrokerOptions options = new BrokerOptions();
+            options.setConfigFile(_configFile.getAbsolutePath());
+            options.addPort(port);
+
+            addExcludedPorts(port, options);
+
+            options.setJmxPort(getManagementPort(port));
+
+            //Set the log config file, relying on the log4j.configuration system property
+            //set on the JVM by the JUnit runner task in module.xml.
+            options.setLogConfigFile(new URL(System.getProperty("log4j.configuration")).getFile());
+
+            Broker broker = new Broker();
+            _logger.info("starting internal broker (same JVM)");
+            broker.startup(options);
+
+            _brokers.put(port, new InternalBrokerHolder(broker));
+        }
+        else if (!_brokerType.equals(EXTERNAL))
         {
             String cmd = getBrokerCommand(port);
-            _logger.info("starting broker: " + cmd);
+            _logger.info("starting external broker: " + cmd);
             ProcessBuilder pb = new ProcessBuilder(cmd.split("\\s+"));
             pb.redirectErrorStream(true);
 
@@ -502,7 +542,7 @@ public class QpidBrokerTestCase extends QpidTestCase
             // DON'T change PNAME, qpid.stop needs this value.
             env.put("QPID_PNAME", "-DPNAME=QPBRKR -DTNAME=\"" + _testName + "\"");
             // Add the port to QPID_WORK to ensure unique working dirs for multi broker tests
-            env.put("QPID_WORK", getQpidWork(_broker, port));
+            env.put("QPID_WORK", getQpidWork(_brokerType, port));
 
 
             // Use the environment variable to set amqj.logging.level for the broker
@@ -554,8 +594,7 @@ public class QpidBrokerTestCase extends QpidTestCase
                     env.put("QPID_OPTS", QPID_OPTS);
                 }
             }
-
-            process = pb.start();
+            Process process = pb.start();;
 
             Piper p = new Piper(process.getInputStream(),
             		            _brokerOutputStream,
@@ -576,6 +615,7 @@ public class QpidBrokerTestCase extends QpidTestCase
 
             try
             {
+                //test that the broker is still running and hasn't exited unexpectedly
                 int exit = process.exitValue();
                 _logger.info("broker aborted: " + exit);
                 cleanBroker();
@@ -583,11 +623,43 @@ public class QpidBrokerTestCase extends QpidTestCase
             }
             catch (IllegalThreadStateException e)
             {
-                // this is expect if the broker started succesfully
+                // this is expect if the broker started successfully
+            }
+
+            _brokers.put(port, new SpawnedBrokerHolder(process));
+        }
+    }
+
+    private void addExcludedPorts(int port, BrokerOptions options)
+    {
+        final String protocolExcludesList = _brokerProtocolExcludes.replace("@PORT", "" + port);
+        final String[] toks = protocolExcludesList.split("\\s");
+
+        if(toks.length % 2 != 0)
+        {
+            throw new IllegalArgumentException("Must be an even number of tokens in " + protocolExcludesList);
+        }
+        for (int i = 0; i < toks.length; i=i+2)
+        {
+            String excludeArg = toks[i];
+            final int excludedPort = Integer.parseInt(toks[i+1]);
+            options.addExcludedPort(ProtocolExclusion.lookup(excludeArg), excludedPort);
+
+            _logger.info("Adding protocol exclusion " + excludeArg + " " + excludedPort);
+        }
+    }
+
+    private boolean existingInternalBroker()
+    {
+        for(BrokerHolder holder : _brokers.values())
+        {
+            if(holder instanceof InternalBrokerHolder)
+            {
+                return true;
             }
         }
 
-        _brokers.put(port, process);
+        return false;
     }
 
     private String getQpidWork(String broker, int port)
@@ -682,14 +754,12 @@ public class QpidBrokerTestCase extends QpidTestCase
         port = getPort(port);
 
         _logger.info("stopping broker: " + getBrokerCommand(port));
-        Process process = _brokers.remove(port);
-        if (process != null)
+        BrokerHolder broker = _brokers.remove(port);
+        if (broker != null)
         {
-            process.destroy();
-            process.waitFor();
-            _logger.info("broker exited: " + process.exitValue());
+            broker.shutdown();
         }
-        else if (_broker.equals(VM))
+        else if (_brokerType.equals(VM))
         {
             TransportConnection.killVMBroker(port);
             ApplicationRegistry.remove();
@@ -940,7 +1010,7 @@ public class QpidBrokerTestCase extends QpidTestCase
 
     protected boolean isJavaBroker()
     {
-        return _brokerLanguage.equals("java") || _broker.equals("vm");
+        return _brokerLanguage.equals("java") || _brokerType.equals("vm");
     }
 
     protected boolean isCppBroker()
@@ -950,9 +1020,14 @@ public class QpidBrokerTestCase extends QpidTestCase
 
     protected boolean isExternalBroker()
     {
-        return !_broker.equals("vm");
+        return !_brokerType.equals("vm");
     }
-    
+
+    protected boolean isInternalBroker()
+    {
+        return _brokerType.equals(INTERNAL);
+    }
+
     protected boolean isBrokerStorePersistent()
     {
         return _brokerPersistent;
@@ -1024,7 +1099,7 @@ public class QpidBrokerTestCase extends QpidTestCase
      */
     public AMQConnectionFactory getConnectionFactory(String factoryName) throws NamingException
     {
-        if (_broker.equals(VM))
+        if (_brokerType.equals(VM))
         {
             factoryName += ".vm";
         }
@@ -1070,7 +1145,7 @@ public class QpidBrokerTestCase extends QpidTestCase
     {
         _logger.info("get Connection");
         Connection con;
-        if (_broker.equals(VM))
+        if (_brokerType.equals(VM))
         {
             con = new AMQConnection("vm://:1", username, password, id, "test");
         }
@@ -1335,7 +1410,7 @@ public class QpidBrokerTestCase extends QpidTestCase
      */
     public void reloadBrokerSecurityConfig() throws Exception
     {
-        if (_broker.equals(VM))
+        if (_brokerType.equals(VM))
         {
             ApplicationRegistry.getInstance().getConfiguration().reparseConfigFileSecuritySections();
         }
@@ -1358,6 +1433,18 @@ public class QpidBrokerTestCase extends QpidTestCase
             assertTrue("The expected server security configuration reload did not occur",
                     _monitor.waitForMessage(ServerConfiguration.SECURITY_CONFIG_RELOADED, LOGMONITOR_TIMEOUT));
 
+        }
+    }
+
+    protected int getFailingPort()
+    {
+        if (_brokerType.equals(VM))
+        {
+            throw new RuntimeException("VM is not supported for Failover testing");
+        }
+        else
+        {
+        	return FAILING_PORT;
         }
     }
 }

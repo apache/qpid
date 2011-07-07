@@ -59,8 +59,6 @@ public class ServerConfigurationTest extends QpidTestCase
         ApplicationRegistry.remove();
     }
 
-
-
     public void testSetJMXManagementPort() throws ConfigurationException
     {
         _serverConfig.initialise();
@@ -453,7 +451,7 @@ public class ServerConfigurationTest extends QpidTestCase
         assertEquals(10, _serverConfig.getConnectorProcessors());
         }
 
-    public void testGetPort() throws ConfigurationException
+    public void testGetPorts() throws ConfigurationException
     {
         // Check default
         _serverConfig.initialise();
@@ -562,17 +560,22 @@ public class ServerConfigurationTest extends QpidTestCase
         assertEquals(true, _serverConfig.getSSLOnly());
     }
 
-    public void testGetSSLPort() throws ConfigurationException
+    public void testGetSSLPorts() throws ConfigurationException
     {
         // Check default
         _serverConfig.initialise();
-        assertEquals(8672, _serverConfig.getSSLPort());
+        assertNotNull(_serverConfig.getSSLPorts());
+        assertEquals(1, _serverConfig.getSSLPorts().size());
+        assertEquals(ServerConfiguration.DEFAULT_SSL_PORT, _serverConfig.getSSLPorts().get(0));
+
 
         // Check value we set
-        _config.setProperty("connector.ssl.port", 23);
+        _config.setProperty("connector.ssl.port", "10");
         _serverConfig = new ServerConfiguration(_config);
         _serverConfig.initialise();
-        assertEquals(23, _serverConfig.getSSLPort());
+        assertNotNull(_serverConfig.getSSLPorts());
+        assertEquals(1, _serverConfig.getSSLPorts().size());
+        assertEquals("10", _serverConfig.getSSLPorts().get(0));
     }
 
     public void testGetKeystorePath() throws ConfigurationException
@@ -651,7 +654,7 @@ public class ServerConfigurationTest extends QpidTestCase
         out.close();
         ServerConfiguration conf = new ServerConfiguration(fileA);
         conf.initialise();
-        assertEquals(4235, conf.getSSLPort());
+        assertEquals("4235", conf.getSSLPorts().get(0));
     }
 
     public void testCombinedConfiguration() throws IOException, ConfigurationException
@@ -681,7 +684,7 @@ public class ServerConfigurationTest extends QpidTestCase
 
         ServerConfiguration config = new ServerConfiguration(mainFile.getAbsoluteFile());
         config.initialise();
-        assertEquals(4235, config.getSSLPort()); // From first file, not
+        assertEquals("4235", config.getSSLPorts().get(0)); // From first file, not
                                                  // overriden by second
         assertNotNull(config.getPorts());
         assertEquals(1, config.getPorts().size());
