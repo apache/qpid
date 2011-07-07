@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.server.configuration;
 
+import static org.apache.qpid.transport.ConnectionSettings.WILDCARD_ADDRESS;
+
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -453,13 +455,13 @@ public class ServerConfigurationTest extends InternalBrokerBaseCase
         // Check default
         ServerConfiguration serverConfig = new ServerConfiguration(_config);
         serverConfig.initialise();
-        assertEquals(4, serverConfig.getProcessors());
+        assertEquals(4, serverConfig.getConnectorProcessors());
 
         // Check value we set
         _config.setProperty("connector.processors", 10);
         serverConfig = new ServerConfiguration(_config);
         serverConfig.initialise();
-        assertEquals(10, serverConfig.getProcessors());
+        assertEquals(10, serverConfig.getConnectorProcessors());
     }
 
     public void testGetPort() throws ConfigurationException
@@ -486,7 +488,7 @@ public class ServerConfigurationTest extends InternalBrokerBaseCase
         // Check default
         ServerConfiguration serverConfig = new ServerConfiguration(_config);
         serverConfig.initialise();
-        assertEquals("wildcard", serverConfig.getBind());
+        assertEquals(WILDCARD_ADDRESS, serverConfig.getBind());
 
         // Check value we set
         _config.setProperty("connector.bind", "a");

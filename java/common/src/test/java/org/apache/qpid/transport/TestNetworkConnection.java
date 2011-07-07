@@ -25,32 +25,32 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 import org.apache.qpid.protocol.ProtocolEngine;
 import org.apache.qpid.protocol.ProtocolEngineFactory;
 import org.apache.qpid.ssl.SSLContextFactory;
+import org.apache.qpid.transport.network.NetworkConnection;
 
 /**
  * Test implementation of IoSession, which is required for some tests. Methods not being used are not implemented,
  * so if this class is being used and some methods are to be used, then please update those.
  */
-public class TestNetworkDriver implements NetworkDriver
+public class TestNetworkConnection implements NetworkConnection
 {
-    private final ConcurrentMap attributes = new ConcurrentHashMap();
     private String _remoteHost = "127.0.0.1";
     private String _localHost = "127.0.0.1";
     private int _port = 1;
     private SocketAddress _localAddress = null;
     private SocketAddress _remoteAddress = null;
+    private final MockSender _sender;
 
-    public TestNetworkDriver()
+    public TestNetworkConnection()
     {
+        _sender = new MockSender();
     }
 
     public void bind(int port, InetAddress[] addresses, ProtocolEngineFactory protocolFactory,
-            NetworkDriverConfiguration config, SSLContextFactory sslFactory) throws BindException
+            NetworkTransportConfiguration config, SSLContextFactory sslFactory) throws BindException
     {
         
     }
@@ -65,7 +65,7 @@ public class TestNetworkDriver implements NetworkDriver
         return (_remoteAddress != null) ? _remoteAddress : new InetSocketAddress(_remoteHost, _port);
     }
 
-    public void open(int port, InetAddress destination, ProtocolEngine engine, NetworkDriverConfiguration config,
+    public void open(int port, InetAddress destination, ProtocolEngine engine, NetworkTransportConfiguration config,
             SSLContextFactory sslFactory) throws OpenException
     {
         
@@ -129,5 +129,10 @@ public class TestNetworkDriver implements NetworkDriver
     public void setRemoteAddress(SocketAddress address)
     {
         _remoteAddress = address;
+    }
+
+    public Sender<ByteBuffer> getSender()
+    {
+        return _sender;
     }
 }

@@ -20,21 +20,18 @@
 */
 package org.apache.qpid.server.protocol;
 
-import org.apache.qpid.protocol.ProtocolEngineFactory;
-import org.apache.qpid.protocol.ProtocolEngine;
-import org.apache.qpid.transport.NetworkDriver;
-import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.registry.IApplicationRegistry;
-
-import java.util.Set;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Set;
+
+import org.apache.qpid.protocol.ProtocolEngine;
+import org.apache.qpid.protocol.ProtocolEngineFactory;
+import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.registry.IApplicationRegistry;
+import org.apache.qpid.transport.network.NetworkConnection;
 
 public class MultiVersionProtocolEngineFactory implements ProtocolEngineFactory
 {
-    ;
-
-
     public enum VERSION { v0_8, v0_9, v0_9_1, v0_10 };
 
     private static final Set<VERSION> ALL_VERSIONS = new HashSet<VERSION>(Arrays.asList(VERSION.values()));
@@ -68,8 +65,8 @@ public class MultiVersionProtocolEngineFactory implements ProtocolEngineFactory
     }
 
 
-    public ProtocolEngine newProtocolEngine(NetworkDriver networkDriver)
+    public ProtocolEngine newProtocolEngine(NetworkConnection network)
     {
-        return new MultiVersionProtocolEngine(_appRegistry, _fqdn, _supported, networkDriver);
+        return new MultiVersionProtocolEngine(_appRegistry, _fqdn, _supported, network);
     }
 }

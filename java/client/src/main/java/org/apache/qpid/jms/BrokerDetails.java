@@ -52,7 +52,6 @@ public interface BrokerDetails
     
     public static final int DEFAULT_PORT = 5672;
 
-    public static final String SOCKET = "socket";
     public static final String TCP = "tcp";
     public static final String VM = "vm";
 

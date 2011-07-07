@@ -21,7 +21,11 @@
 package org.apache.qpid.server.protocol;
 
 import java.security.Principal;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.qpid.AMQException;
@@ -30,14 +34,13 @@ import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.AMQChannel;
-import org.apache.qpid.server.output.ProtocolOutputConverter;
 import org.apache.qpid.server.message.AMQMessage;
+import org.apache.qpid.server.message.MessageContentSource;
+import org.apache.qpid.server.output.ProtocolOutputConverter;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.state.AMQState;
 import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.message.MessageContentSource;
-import org.apache.qpid.transport.TestNetworkDriver;
+import org.apache.qpid.transport.TestNetworkConnection;
 
 public class InternalTestProtocolSession extends AMQProtocolEngine implements ProtocolOutputConverter
 {
@@ -47,7 +50,7 @@ public class InternalTestProtocolSession extends AMQProtocolEngine implements Pr
 
     public InternalTestProtocolSession(VirtualHost virtualHost) throws AMQException
     {
-        super(ApplicationRegistry.getInstance().getVirtualHostRegistry(), new TestNetworkDriver());
+        super(ApplicationRegistry.getInstance().getVirtualHostRegistry(), new TestNetworkConnection());
 
         _channelDelivers = new HashMap<Integer, Map<AMQShortString, LinkedList<DeliveryPair>>>();
 

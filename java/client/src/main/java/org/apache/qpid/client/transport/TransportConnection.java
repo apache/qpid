@@ -22,22 +22,17 @@ package org.apache.qpid.client.transport;
 
 import java.io.IOException;
 import java.net.Socket;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.apache.mina.common.IoConnector;
 import org.apache.mina.common.IoHandlerAdapter;
 import org.apache.mina.common.IoServiceConfig;
-import org.apache.mina.transport.socket.nio.ExistingSocketConnector;
-import org.apache.mina.transport.socket.nio.SocketConnector;
 import org.apache.mina.transport.vmpipe.VmPipeAcceptor;
 import org.apache.mina.transport.vmpipe.VmPipeAddress;
 import org.apache.qpid.client.vmbroker.AMQVMBrokerCreationException;
-import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.protocol.ProtocolEngineFactory;
-import org.apache.qpid.thread.QpidThreadExecutor;
-import org.apache.qpid.transport.network.mina.MINANetworkDriver;
+import org.apache.qpid.transport.network.VMBrokerMap;
+import org.apache.qpid.transport.network.mina.MinaNetworkHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,132 +46,15 @@ public class TransportConnection
 {
     private static ITransportConnection _instance;
 
-    private static final Map _inVmPipeAddress = new HashMap();
     private static VmPipeAcceptor _acceptor;
     private static int _currentInstance = -1;
     private static int _currentVMPort = -1;
-
-    private static final int TCP = 0;
-    private static final int VM = 1;
-    private static final int SOCKET = 2;
 
     private static Logger _logger = LoggerFactory.getLogger(TransportConnection.class);
 
     private static final String DEFAULT_QPID_SERVER = "org.apache.qpid.server.protocol.AMQProtocolEngineFactory";
 
-    private static Map<String, Socket> _openSocketRegister = new ConcurrentHashMap<String, Socket>();
-
-    public static void registerOpenSocket(String socketID, Socket openSocket)
-    {
-        _openSocketRegister.put(socketID, openSocket);
-    }
-
-    public static Socket removeOpenSocket(String socketID)
-    {
-        return _openSocketRegister.remove(socketID);
-    }
-
-    public static synchronized ITransportConnection getInstance(final BrokerDetails details) throws AMQTransportConnectionException
-    {
-        int transport = getTransport(details.getTransport());
-
-        if (transport == -1)
-        {
-            throw new AMQNoTransportForProtocolException(details, null, null);
-        }
-
-        switch (transport)
-        {
-            case SOCKET:
-                return new SocketTransportConnection(new SocketTransportConnection.SocketConnectorFactory()
-                {
-                    public IoConnector newSocketConnector()
-                    {
-                        ExistingSocketConnector connector = new ExistingSocketConnector(1,new QpidThreadExecutor());
-
-                        Socket socket = TransportConnection.removeOpenSocket(details.getHost());
-
-                        if (socket != null)
-                        {
-                            _logger.info("Using existing Socket:" + socket);
-
-                            ((ExistingSocketConnector) connector).setOpenSocket(socket);
-                        }
-                        else
-                        {
-                            throw new IllegalArgumentException("Active Socket must be provided for broker " +
-                                                               "with 'socket://<SocketID>' transport:" + details);
-                        }
-                        return connector;
-                    }
-                });
-            case TCP:
-                return new SocketTransportConnection(new SocketTransportConnection.SocketConnectorFactory()
-                {
-                    public IoConnector newSocketConnector()
-                    {
-                        SocketConnector result = new SocketConnector(1, new QpidThreadExecutor()); // non-blocking connector
-
-                        // Don't have the connector's worker thread wait around for other connections (we only use
-                        // one SocketConnector per connection at the moment anyway). This allows short-running
-                        // clients (like unit tests) to complete quickly.
-                        result.setWorkerTimeout(0);
-                        return result;
-                    }
-                });
-            case VM:
-            {
-                return getVMTransport(details, Boolean.getBoolean("amqj.AutoCreateVMBroker"));
-            }
-            default:
-                throw new AMQNoTransportForProtocolException(details, "Transport not recognised:" + transport, null);
-        }
-    }
-
-    private static int getTransport(String transport)
-    {
-        if (transport.equals(BrokerDetails.SOCKET))
-        {
-            return SOCKET;
-        }
-
-        if (transport.equals(BrokerDetails.TCP))
-        {
-            return TCP;
-        }
-
-        if (transport.equals(BrokerDetails.VM))
-        {
-            return VM;
-        }
-
-        return -1;
-    }
-
-    private static ITransportConnection getVMTransport(BrokerDetails details, boolean AutoCreate)
-            throws AMQVMBrokerCreationException
-    {
-        int port = details.getPort();
-
-        synchronized (_inVmPipeAddress)
-        {
-            if (!_inVmPipeAddress.containsKey(port))
-            {
-                if (AutoCreate)
-                {
-                    _logger.warn("Auto Creating InVM Broker on port:" + port);
-                    createVMBroker(port);
-                }
-                else
-                {
-                    throw new AMQVMBrokerCreationException(null, port, "VM Broker on port " + port
-                                                                       + " does not exist. Auto create disabled.", null);
-                }
-            }
-        }
-
-        return new VmPipeTransportConnection(port);
-    }
+    public static final int DEFAULT_VM_PORT = 1;
 
     public static void createVMBroker(int port) throws AMQVMBrokerCreationException
     {
@@ -189,10 +67,10 @@ public class TransportConnection
                 IoServiceConfig config = _acceptor.getDefaultConfig();
             }
         }
-        synchronized (_inVmPipeAddress)
+        synchronized (VMBrokerMap.class)
         {
 
-            if (!_inVmPipeAddress.containsKey(port))
+            if (!VMBrokerMap.contains(port))
             {
                 _logger.info("Creating InVM Qpid.AMQP listening on port " + port);
                 IoHandlerAdapter provider = null;
@@ -204,7 +82,7 @@ public class TransportConnection
 
                     _acceptor.bind(pipe, provider);
 
-                    _inVmPipeAddress.put(port, pipe);
+                    VMBrokerMap.add(port, pipe);
                     _logger.info("Created InVM Qpid.AMQP listening on port " + port);
                 }
                 catch (IOException e)
@@ -231,7 +109,7 @@ public class TransportConnection
                         }
 
                         _acceptor.bind(pipe, provider);
-                        _inVmPipeAddress.put(port, pipe);
+                        VMBrokerMap.add(port, pipe);
                         _logger.info("Created InVM Qpid.AMQP listening on port " + port);
                     }
                     catch (IOException justUseFirstException)
@@ -272,11 +150,10 @@ public class TransportConnection
         {
             Class[] cnstr = {Integer.class};
             Object[] params = {port};
-            
-            provider = new MINANetworkDriver();
+
             ProtocolEngineFactory engineFactory = (ProtocolEngineFactory) Class.forName(protocolProviderClass).getConstructor(cnstr).newInstance(params);
-            ((MINANetworkDriver) provider).setProtocolEngineFactory(engineFactory, true);
-            // Give the broker a second to create
+            provider = new MinaNetworkHandler(null, engineFactory);
+
             _logger.info("Created VMBroker Instance:" + port);
         }
         catch (Exception e)
@@ -309,9 +186,9 @@ public class TransportConnection
             {
                 _acceptor.unbindAll();
             }
-            synchronized (_inVmPipeAddress)
+            synchronized (VMBrokerMap.class)
             {
-                _inVmPipeAddress.clear();
+                VMBrokerMap.clear();
             }
             _acceptor = null;
         }
@@ -321,16 +198,15 @@ public class TransportConnection
 
     public static void killVMBroker(int port)
     {
-        synchronized (_inVmPipeAddress)
+        synchronized (VMBrokerMap.class)
         {
-            VmPipeAddress pipe = (VmPipeAddress) _inVmPipeAddress.get(port);
-            if (pipe != null)
+            if (VMBrokerMap.contains(port))
             {
                 _logger.info("Killing VM Broker:" + port);
-                _inVmPipeAddress.remove(port);
+                VmPipeAddress address = VMBrokerMap.remove(port);
                 // This does need to be sychronized as otherwise mina can hang
                 // if a new connection is made
-                _acceptor.unbind(pipe);
+                _acceptor.unbind(address);
             }
         }
     }

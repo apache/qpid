@@ -21,44 +21,58 @@
 
 package org.apache.qpid.transport.network.mina;
 
-import java.net.BindException;
+import static org.apache.qpid.transport.ConnectionSettings.WILDCARD_ADDRESS;
+
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
-import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import junit.framework.TestCase;
-
+import org.apache.mina.util.AvailablePortFinder;
 import org.apache.qpid.framing.AMQDataBlock;
 import org.apache.qpid.protocol.ProtocolEngine;
 import org.apache.qpid.protocol.ProtocolEngineFactory;
-import org.apache.qpid.transport.NetworkDriver;
-import org.apache.qpid.transport.OpenException;
+import org.apache.qpid.test.utils.QpidTestCase;
+import org.apache.qpid.transport.ConnectionSettings;
+import org.apache.qpid.transport.NetworkTransportConfiguration;
+import org.apache.qpid.transport.TransportException;
+import org.apache.qpid.transport.network.IncomingNetworkTransport;
+import org.apache.qpid.transport.network.NetworkConnection;
+import org.apache.qpid.transport.network.OutgoingNetworkTransport;
+import org.apache.qpid.transport.network.Transport;
 
-public class MINANetworkDriverTest extends TestCase
+public class MinaNetworkHandlerTest extends QpidTestCase
 {
  
     private static final String TEST_DATA = "YHALOTHAR";
-    private static int TEST_PORT = 2323;
-    private NetworkDriver _server;
-    private NetworkDriver _client;
+    private int _testPort;
+    private IncomingNetworkTransport _server;
+    private OutgoingNetworkTransport _client;
     private CountingProtocolEngine _countingEngine; // Keeps a count of how many bytes it's read
     private Exception _thrownEx;
+    private ConnectionSettings _clientSettings;
+    private NetworkConnection _network;
+    private TestNetworkTransportConfiguration _brokerSettings;
 
     @Override
-    public void setUp()
+    public void setUp() throws Exception
     {
-        _server = new MINANetworkDriver();
-        _client = new MINANetworkDriver();
+        String host = InetAddress.getLocalHost().getHostName();
+        _testPort = AvailablePortFinder.getNextAvailable(10000);
+
+        _clientSettings = new ConnectionSettings();
+        _clientSettings.setHost(host);
+        _clientSettings.setPort(_testPort);
+
+        _brokerSettings = new TestNetworkTransportConfiguration(_testPort, host);
+
+        _server = new MinaNetworkTransport();
+        _client = new MinaNetworkTransport();
         _thrownEx = null;
         _countingEngine = new CountingProtocolEngine();
-        // increment the port to prevent tests clashing with each other when
-        // the port is in TIMED_WAIT state.
-        TEST_PORT++;
     }
 
     @Override
@@ -78,46 +92,40 @@ public class MINANetworkDriverTest extends TestCase
     /**
      * Tests that a socket can't be opened if a driver hasn't been bound
      * to the port and can be opened if a driver has been bound.
-     * @throws BindException
-     * @throws UnknownHostException
-     * @throws OpenException 
      */
-    public void testBindOpen() throws BindException, UnknownHostException, OpenException  
+    public void testBindOpen() throws Exception
     {
         try
         {
-            _client.open(TEST_PORT, InetAddress.getLocalHost(), _countingEngine, null, null);
+            _client.connect(_clientSettings, _countingEngine, null);
         } 
-        catch (OpenException e)
+        catch (TransportException e)
         {
             _thrownEx = e;
         }
 
         assertNotNull("Open should have failed since no engine bound", _thrownEx);        
         
-        _server.bind(TEST_PORT, null, new EchoProtocolEngineSingletonFactory(), null, null);
+        _server.accept(_brokerSettings, null, null);
         
-        _client.open(TEST_PORT, InetAddress.getLocalHost(), _countingEngine, null, null);
+        _client.connect(_clientSettings, _countingEngine, null);
     } 
     
     /**
      * Tests that a socket can't be opened after a bound NetworkDriver has been closed
-     * @throws BindException
-     * @throws UnknownHostException
-     * @throws OpenException
      */
-    public void testBindOpenCloseOpen() throws BindException, UnknownHostException, OpenException  
+    public void testBindOpenCloseOpen() throws Exception
     {
-        _server.bind(TEST_PORT, null, new EchoProtocolEngineSingletonFactory(), null, null);
-        _client.open(TEST_PORT, InetAddress.getLocalHost(), _countingEngine, null, null);
+        _server.accept(_brokerSettings, new EchoProtocolEngineSingletonFactory(), null);
+        _client.connect(_clientSettings, _countingEngine, null);
         _client.close();
         _server.close();
         
         try
         {
-            _client.open(TEST_PORT, InetAddress.getLocalHost(), _countingEngine, null, null);
+            _client.connect(_clientSettings, _countingEngine, null);
         } 
-        catch (OpenException e)
+        catch (TransportException e)
         {
             _thrownEx = e;
         }
@@ -132,43 +140,60 @@ public class MINANetworkDriverTest extends TestCase
     {
         try
         {
-            _server.bind(TEST_PORT, null, new EchoProtocolEngineSingletonFactory(), null, null);
+            _server.accept(_brokerSettings, new EchoProtocolEngineSingletonFactory(), null);
         }
-        catch (BindException e)
+        catch (TransportException e)
         {
             fail("First bind should not fail");
         }
         
         try
         {
-            _client.bind(TEST_PORT, null, new EchoProtocolEngineSingletonFactory(), null, null);
+            IncomingNetworkTransport second = new MinaNetworkTransport();
+            second.accept(_brokerSettings, new EchoProtocolEngineSingletonFactory(), null);
         }
-        catch (BindException e)
+        catch (TransportException e)
         {
             _thrownEx = e;
         }
         assertNotNull("Second bind should throw BindException", _thrownEx);
-    } 
-    
+    }
+
+    /**
+     * Tests that binding to the wildcard address succeeds and a client can
+     * connect via localhost.
+     */
+    public void testWildcardBind() throws Exception
+    {
+        TestNetworkTransportConfiguration serverSettings = 
+            new TestNetworkTransportConfiguration(_testPort, WILDCARD_ADDRESS);
+
+        _server.accept(serverSettings, null, null);
+
+        try
+        {
+            _client.connect(_clientSettings, _countingEngine, null);
+        } 
+        catch (TransportException e)
+        {
+            fail("Open should have succeeded since we used a wildcard bind");        
+        }
+    }
+
     /**
      * tests that bytes sent on a network driver are received at the other end
-     * 
-     * @throws UnknownHostException
-     * @throws OpenException
-     * @throws InterruptedException 
-     * @throws BindException 
      */
-    public void testSend() throws UnknownHostException, OpenException, InterruptedException, BindException 
+    public void testSend() throws Exception 
     {
         // Open a connection from a counting engine to an echo engine
-        _server.bind(TEST_PORT, null,  new EchoProtocolEngineSingletonFactory(), null, null);
-        _client.open(TEST_PORT, InetAddress.getLocalHost(), _countingEngine, null, null);
+        _server.accept(_brokerSettings, new EchoProtocolEngineSingletonFactory(), null);
+        _network = _client.connect(_clientSettings, _countingEngine, null);
         
         // Tell the counting engine how much data we're sending
         _countingEngine.setNewLatch(TEST_DATA.getBytes().length);
         
         // Send the data and wait for up to 2 seconds to get it back 
-        _client.send(ByteBuffer.wrap(TEST_DATA.getBytes()));
+        _network.getSender().send(ByteBuffer.wrap(TEST_DATA.getBytes()));
         _countingEngine.getLatch().await(2, TimeUnit.SECONDS);
         
         // Check what we got
@@ -177,36 +202,30 @@ public class MINANetworkDriverTest extends TestCase
     
     /**
      * Opens a connection with a low read idle and check that it gets triggered
-     * @throws BindException 
-     * @throws OpenException 
-     * @throws UnknownHostException 
      * 
      */
-    public void testSetReadIdle() throws BindException, UnknownHostException, OpenException 
+    public void testSetReadIdle() throws Exception
     {
         // Open a connection from a counting engine to an echo engine
-        _server.bind(TEST_PORT, null,  new EchoProtocolEngineSingletonFactory(), null, null);
-        _client.open(TEST_PORT, InetAddress.getLocalHost(), _countingEngine, null, null);
+        _server.accept(_brokerSettings, new EchoProtocolEngineSingletonFactory(), null);
+        _network = _client.connect(_clientSettings, _countingEngine, null);
         assertFalse("Reader should not have been idle", _countingEngine.getReaderHasBeenIdle());
-        _client.setMaxReadIdle(1);
+        _network.setMaxReadIdle(1);
         sleepForAtLeast(1500);
         assertTrue("Reader should have been idle", _countingEngine.getReaderHasBeenIdle());
     } 
     
     /**
      * Opens a connection with a low write idle and check that it gets triggered
-     * @throws BindException 
-     * @throws OpenException 
-     * @throws UnknownHostException 
      * 
      */
-    public void testSetWriteIdle() throws BindException, UnknownHostException, OpenException 
+    public void testSetWriteIdle() throws Exception
     {
         // Open a connection from a counting engine to an echo engine
-        _server.bind(TEST_PORT, null,  new EchoProtocolEngineSingletonFactory(), null, null);
-        _client.open(TEST_PORT, InetAddress.getLocalHost(), _countingEngine, null, null);
+        _server.accept(_brokerSettings, new EchoProtocolEngineSingletonFactory(), null);
+        _network = _client.connect(_clientSettings, _countingEngine, null);
         assertFalse("Reader should not have been idle", _countingEngine.getWriterHasBeenIdle());
-        _client.setMaxWriteIdle(1);
+        _network.setMaxWriteIdle(1);
         sleepForAtLeast(1500);
         assertTrue("Reader should have been idle", _countingEngine.getWriterHasBeenIdle());
     } 
@@ -216,16 +235,13 @@ public class MINANetworkDriverTest extends TestCase
      * Creates and then closes a connection from client to server and checks that the server
      * has its closed() method called. Then creates a new client and closes the server to check
      * that the client has its closed() method called.  
-     * @throws BindException
-     * @throws UnknownHostException
-     * @throws OpenException
      */
-    public void testClosed() throws BindException, UnknownHostException, OpenException 
+    public void testClosed() throws Exception
     {
         // Open a connection from a counting engine to an echo engine
         EchoProtocolEngineSingletonFactory factory = new EchoProtocolEngineSingletonFactory();
-        _server.bind(TEST_PORT, null, factory, null, null);
-        _client.open(TEST_PORT, InetAddress.getLocalHost(), _countingEngine, null, null);
+        _server.accept(_brokerSettings, factory, null);
+        _network = _client.connect(_clientSettings, _countingEngine, null);
         EchoProtocolEngine serverEngine = null; 
         while (serverEngine == null)
         {
@@ -253,7 +269,7 @@ public class MINANetworkDriverTest extends TestCase
         }
         assertTrue("Server should have been closed", serverEngine.getClosed());
 
-        _client.open(TEST_PORT, InetAddress.getLocalHost(), _countingEngine, null, null);
+        _client.connect(_clientSettings, _countingEngine, null);
         _countingEngine.setClosed(false);
         assertFalse("Client should not have been closed", _countingEngine.getClosed());
         _countingEngine.setNewLatch(1);
@@ -271,22 +287,18 @@ public class MINANetworkDriverTest extends TestCase
     /**
      * Create a connection and instruct the client to throw an exception when it gets some data
      * and that the latch gets counted down. 
-     * @throws BindException
-     * @throws UnknownHostException
-     * @throws OpenException
-     * @throws InterruptedException
      */
-    public void testExceptionCaught() throws BindException, UnknownHostException, OpenException, InterruptedException 
+    public void testExceptionCaught() throws Exception
     {
-        _server.bind(TEST_PORT, null,  new EchoProtocolEngineSingletonFactory(), null, null);
-        _client.open(TEST_PORT, InetAddress.getLocalHost(), _countingEngine, null, null);
+        _server.accept(_brokerSettings, new EchoProtocolEngineSingletonFactory(), null);
+        _network = _client.connect(_clientSettings, _countingEngine, null);
 
 
         assertEquals("Exception should not have been thrown", 1, 
                 _countingEngine.getExceptionLatch().getCount());
         _countingEngine.setErrorOnNextRead(true);
         _countingEngine.setNewLatch(TEST_DATA.getBytes().length);
-        _client.send(ByteBuffer.wrap(TEST_DATA.getBytes()));
+        _network.getSender().send(ByteBuffer.wrap(TEST_DATA.getBytes()));
         _countingEngine.getExceptionLatch().await(2, TimeUnit.SECONDS);
         assertEquals("Exception should have been thrown", 0, 
                 _countingEngine.getExceptionLatch().getCount());
@@ -294,28 +306,24 @@ public class MINANetworkDriverTest extends TestCase
     
     /**
      * Opens a connection and checks that the remote address is the one that was asked for
-     * @throws BindException
-     * @throws UnknownHostException
-     * @throws OpenException
      */
-    public void testGetRemoteAddress() throws BindException, UnknownHostException, OpenException
+    public void testGetRemoteAddress() throws Exception
     {
-        _server.bind(TEST_PORT, null,  new EchoProtocolEngineSingletonFactory(), null, null);
-        _client.open(TEST_PORT, InetAddress.getLocalHost(), _countingEngine, null, null);
-        assertEquals(new InetSocketAddress(InetAddress.getLocalHost(), TEST_PORT),
-                     _client.getRemoteAddress());
+        _server.accept(_brokerSettings, new EchoProtocolEngineSingletonFactory(), null);
+        _network = _client.connect(_clientSettings, _countingEngine, null);
+        assertEquals(new InetSocketAddress(InetAddress.getLocalHost(), _testPort),
+                     _network.getRemoteAddress());
     }
 
     private class EchoProtocolEngineSingletonFactory implements ProtocolEngineFactory
     {
-        EchoProtocolEngine _engine = null;
+        private EchoProtocolEngine _engine = null;
         
-        public ProtocolEngine newProtocolEngine(NetworkDriver driver)
+        public ProtocolEngine newProtocolEngine(NetworkConnection network)
         {
             if (_engine == null)
             {
-                _engine = new EchoProtocolEngine();
-                _engine.setNetworkDriver(driver);
+                _engine = new EchoProtocolEngine(network);
             }
             return getEngine();
         }
@@ -328,8 +336,6 @@ public class MINANetworkDriverTest extends TestCase
     
     public class CountingProtocolEngine implements ProtocolEngine
     {
-
-        protected NetworkDriver _driver;
         public ArrayList<ByteBuffer> _receivedBytes = new ArrayList<ByteBuffer>();
         private int _readBytes;
         private CountDownLatch _latch = new CountDownLatch(0);
@@ -362,26 +368,12 @@ public class MINANetworkDriverTest extends TestCase
 
         public SocketAddress getRemoteAddress()
         {
-            if (_driver != null)
-            {
-                return _driver.getRemoteAddress();
-            } 
-            else
-            {
-                return null;
-            }
+            return _network.getRemoteAddress();
         }
         
         public SocketAddress getLocalAddress()
         {            
-            if (_driver != null)
-            {
-                return _driver.getLocalAddress();
-            } 
-            else
-            {
-                return null;
-            }
+            return _network.getLocalAddress();
         }
 
         public long getWrittenBytes()
@@ -392,11 +384,6 @@ public class MINANetworkDriverTest extends TestCase
         public void readerIdle()
         {
             _readerHasBeenIdle = true;
-        }
-
-        public void setNetworkDriver(NetworkDriver driver)
-        {
-            _driver = driver;
         }
 
         public void writeFrame(AMQDataBlock frame)
@@ -465,12 +452,18 @@ public class MINANetworkDriverTest extends TestCase
 
     private class EchoProtocolEngine extends CountingProtocolEngine
     {
+        private NetworkConnection _echoNetwork;
+
+        public EchoProtocolEngine(NetworkConnection network)
+        {
+            _echoNetwork = network;
+        }
 
         public void received(ByteBuffer msg)
         {
             super.received(msg);
             msg.rewind();
-            _driver.send(msg);
+            _echoNetwork.getSender().send(msg);
         }
     }
     
@@ -490,5 +483,53 @@ public class MINANetworkDriverTest extends TestCase
             }
             timeLeft = period - (System.currentTimeMillis() - start);
         }
+    }
+
+    private static class TestNetworkTransportConfiguration implements NetworkTransportConfiguration
+    {
+        private int _port;
+        private String _host;
+
+        public TestNetworkTransportConfiguration(final int port, final String host)
+        {
+            _port = port;
+            _host = host;
+        }
+
+        public Boolean getTcpNoDelay()
+        {
+            return true;
+        }
+
+        public Integer getReceiveBufferSize()
+        {
+            return 32768;
+        }
+
+        public Integer getSendBufferSize()
+        {
+            return 32768;
+        }
+
+        public Integer getPort()
+        {
+            return _port;
+        }
+
+        public String getHost()
+        {
+            return _host;
+        }
+
+        public String getTransport()
+        {
+            return Transport.TCP;
+        }
+
+        public Integer getConnectorProcessors()
+        {
+            return 4;
+        }
+        
     }
 }

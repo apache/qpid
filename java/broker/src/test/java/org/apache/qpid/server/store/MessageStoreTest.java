@@ -122,6 +122,7 @@ public class MessageStoreTest extends InternalBrokerBaseCase
             }
             catch (Exception e)
             {
+                e.printStackTrace();
                 fail(e.getMessage());
             }
         }

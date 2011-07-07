@@ -77,6 +77,5 @@ org.apache.qpid.test.unit.client.channelclose.ChannelCloseTest#*
 
 //Temporarily adding the following until the issues are sorted out.
 //Should probably raise JIRAs for them.
-org.apache.qpid.transport.network.mina.MINANetworkDriverTest#*
 org.apache.qpid.test.client.destination.AddressBasedDestinationTest#testCreateExchange
 org.apache.qpid.test.client.destination.AddressBasedDestinationTest#testBrowseMode

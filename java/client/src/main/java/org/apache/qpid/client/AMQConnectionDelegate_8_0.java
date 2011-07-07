@@ -49,6 +49,11 @@ import org.apache.qpid.framing.TxSelectBody;
 import org.apache.qpid.framing.TxSelectOkBody;
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.jms.ChannelLimitReachedException;
+import org.apache.qpid.ssl.SSLContextFactory;
+import org.apache.qpid.transport.ConnectionSettings;
+import org.apache.qpid.transport.network.NetworkConnection;
+import org.apache.qpid.transport.network.OutgoingNetworkTransport;
+import org.apache.qpid.transport.network.mina.MinaNetworkTransport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -89,8 +94,21 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
 
         StateWaiter waiter = _conn._protocolHandler.createWaiter(openOrClosedStates);
 
-        TransportConnection.getInstance(brokerDetail).connect(_conn._protocolHandler, brokerDetail);
+        ConnectionSettings settings = new ConnectionSettings();
+        settings.setHost(brokerDetail.getHost());
+        settings.setPort(brokerDetail.getPort());
+        settings.setProtocol(brokerDetail.getTransport());
 
+        SSLConfiguration sslConfig = _conn.getSSLConfiguration();
+        SSLContextFactory sslFactory = null;
+        if (sslConfig != null)
+        {
+            sslFactory = new SSLContextFactory(sslConfig.getKeystorePath(), sslConfig.getKeystorePassword(), sslConfig.getCertType());
+        }
+
+        OutgoingNetworkTransport transport = new MinaNetworkTransport();
+        NetworkConnection network = transport.connect(settings, _conn._protocolHandler, sslFactory);
+        _conn._protocolHandler.setNetworkConnection(network);
         _conn._protocolHandler.getProtocolSession().init();
         // this blocks until the connection has been set up or when an error
         // has prevented the connection being set up
