@@ -23,7 +23,7 @@ package org.apache.qpid.test.unit.ack;
 
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQSession;
-import org.apache.qpid.test.utils.FailoverBaseCase;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 import javax.jms.Connection;
 import javax.jms.JMSException;
@@ -32,7 +32,7 @@ import javax.jms.MessageConsumer;
 import javax.jms.Queue;
 import javax.jms.Session;
 
-public class Acknowledge2ConsumersTest extends FailoverBaseCase
+public class Acknowledge2ConsumersTest extends QpidBrokerTestCase
 {
     protected static int NUM_MESSAGES = 100;
     protected Connection _con;

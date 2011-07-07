@@ -88,7 +88,7 @@ public class InVMBrokerDecorator extends WrappedSuiteTestDecorator
                             // Ensure that the in-vm broker is created.
                             try
                             {
-                                ApplicationRegistry.getInstance(1);
+                                ApplicationRegistry.getInstance();
                                 TransportConnection.createVMBroker(1);
                             }
                             catch (AMQVMBrokerCreationException e)
@@ -104,7 +104,7 @@ public class InVMBrokerDecorator extends WrappedSuiteTestDecorator
                         {
                             // Ensure that the in-vm broker is cleaned up so that the next test starts afresh.
                             TransportConnection.killVMBroker(1);
-                            ApplicationRegistry.remove(1);
+                            ApplicationRegistry.remove();
                         }
                     });
 

@@ -20,15 +20,12 @@
  */
 package org.apache.qpid.server.failover;
 
-import junit.framework.TestCase;
-
 import org.apache.qpid.AMQDisconnectedException;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQConnectionURL;
 import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.client.vmbroker.AMQVMBrokerCreationException;
-import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.util.InternalBrokerBaseCase;
 import org.apache.qpid.url.URLSyntaxException;
 import org.slf4j.Logger;
@@ -47,13 +44,13 @@ public class FailoverMethodTest extends InternalBrokerBaseCase implements Except
     public void createBroker() throws Exception
     {
         super.createBroker();
-        TransportConnection.createVMBroker(ApplicationRegistry.DEFAULT_INSTANCE);
+        TransportConnection.createVMBroker(TransportConnection.DEFAULT_VM_PORT);
     }
 
     @Override
     public void stopBroker()
     {
-        TransportConnection.killVMBroker(ApplicationRegistry.DEFAULT_INSTANCE);
+        TransportConnection.killVMBroker(TransportConnection.DEFAULT_VM_PORT);
         super.stopBroker();
     }
 
@@ -71,7 +68,7 @@ public class FailoverMethodTest extends InternalBrokerBaseCase implements Except
         //note: The VM broker has no connect delay and the default 1 retry
         //        while the tcp:localhost broker has 3 retries with a 2s connect delay
         String connectionString = "amqp://guest:guest@/test?brokerlist=" +
-                                  "'vm://:" + ApplicationRegistry.DEFAULT_INSTANCE +
+                                  "'vm://:" + TransportConnection.DEFAULT_VM_PORT +
                                   ";tcp://localhost:5670?connectdelay='2000',retries='3''";
 
         AMQConnectionURL url = new AMQConnectionURL(connectionString);

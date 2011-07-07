@@ -59,7 +59,7 @@ public class MultiVersionProtocolEngineFactory implements ProtocolEngineFactory
 
     public MultiVersionProtocolEngineFactory(int instance, String fqdn, Set<VERSION> supportedVersions)
     {
-        _appRegistry = ApplicationRegistry.getInstance(instance);
+        _appRegistry = ApplicationRegistry.getInstance();
         _fqdn = fqdn;
         _supported = supportedVersions;
     }

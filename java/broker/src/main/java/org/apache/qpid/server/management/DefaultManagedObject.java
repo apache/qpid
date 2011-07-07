@@ -26,8 +26,9 @@ import javax.management.NotCompliantMBeanException;
 import javax.management.ObjectName;
 import javax.management.StandardMBean;
 
-import org.apache.qpid.AMQException;
+import org.apache.log4j.Logger;
 import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.registry.IApplicationRegistry;
 
 /**
  * Provides implementation of the boilerplate ManagedObject interface. Most managed objects should find it useful
@@ -36,9 +37,13 @@ import org.apache.qpid.server.registry.ApplicationRegistry;
  */
 public abstract class DefaultManagedObject extends StandardMBean implements ManagedObject
 {
+    private static final Logger LOGGER = Logger.getLogger(ApplicationRegistry.class);
+    
     private Class<?> _managementInterface;
 
     private String _typeName;
+
+    private ManagedObjectRegistry _registry;
 
     protected DefaultManagedObject(Class<?> managementInterface, String typeName)
         throws NotCompliantMBeanException
@@ -65,23 +70,26 @@ public abstract class DefaultManagedObject extends StandardMBean implements Mana
 
     public void register() throws JMException
     {
-        getManagedObjectRegistry().registerObject(this);
+        _registry = ApplicationRegistry.getInstance().getManagedObjectRegistry();
+        _registry.registerObject(this);
     }
 
-    protected ManagedObjectRegistry getManagedObjectRegistry()
-    {
-        return ApplicationRegistry.getInstance().getManagedObjectRegistry();
-    }
-
-    public void unregister() throws AMQException
+    public void unregister()
     {
         try
         {
-            getManagedObjectRegistry().unregisterObject(this);
+            if(_registry != null)
+            {
+                _registry.unregisterObject(this);
+            }
         }
         catch (JMException e)
         {
-            throw new AMQException("Error unregistering managed object: " + this + ": " + e, e);
+            LOGGER.error("Error unregistering managed object: " + this + ": " + e, e);
+        }
+        finally
+        {
+            _registry = null;
         }
     }
 
