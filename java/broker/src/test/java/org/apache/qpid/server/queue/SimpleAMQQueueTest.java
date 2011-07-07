@@ -795,14 +795,11 @@ public class SimpleAMQQueueTest extends InternalBrokerBaseCase
         // get messages on the queue with filter accepting all available messages
         List<QueueEntry> entries = _queue.getMessagesOnTheQueue(new QueueEntryFilter()
         {
-
-            @Override
             public boolean accept(QueueEntry entry)
             {
                 return true;
             }
 
-            @Override
             public boolean filterComplete()
             {
                 return false;

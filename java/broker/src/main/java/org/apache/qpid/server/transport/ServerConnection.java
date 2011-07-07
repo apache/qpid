@@ -249,7 +249,6 @@ public class ServerConnection extends Connection implements AMQConnectionModel, 
         return _actor;
     }
 
-    @Override
     public void close(AMQConstant cause, String message) throws AMQException
     {
         ConnectionCloseCode replyCode = ConnectionCloseCode.NORMAL;
@@ -264,7 +263,6 @@ public class ServerConnection extends Connection implements AMQConnectionModel, 
         close(replyCode, message);
     }
 
-    @Override
     public List<AMQSessionModel> getSessionModels()
     {
         List<AMQSessionModel> sessions = new ArrayList<AMQSessionModel>();
