@@ -65,6 +65,6 @@ public class CauseFailureInVM implements CauseFailure
         int liveBroker = inVMTest.getLiveBroker();
 
         TransportConnection.killVMBroker(liveBroker);
-        ApplicationRegistry.remove(liveBroker);
+        ApplicationRegistry.remove();
     }
 }

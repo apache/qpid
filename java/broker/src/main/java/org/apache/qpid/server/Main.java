@@ -255,7 +255,7 @@ public class Main
 
     protected void shutdown(int status)
     {
-        ApplicationRegistry.removeAll();
+        ApplicationRegistry.remove();
         System.exit(status);
     }
 

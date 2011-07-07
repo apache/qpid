@@ -27,6 +27,25 @@ org.apache.qpid.server.security.firewall.FirewallConfigTest#*
 // This test requires a broker capable of 0-8/9 and 0-10
 org.apache.qpid.test.client.message.JMSDestinationTest#testReceiveResend
 
+//Only a single InVM broker is now supported per JVM, so Failover tests do not work on InVm profiles
+org.apache.qpid.test.client.QueueBrowserAutoAckTest#testFailoverAsQueueBrowserCreated
+org.apache.qpid.test.client.QueueBrowserAutoAckTest#testFailoverWithQueueBrowser
+org.apache.qpid.test.client.QueueBrowserClientAckTest#testFailoverAsQueueBrowserCreated
+org.apache.qpid.test.client.QueueBrowserClientAckTest#testFailoverWithQueueBrowser
+org.apache.qpid.test.client.QueueBrowserDupsOkTest#testFailoverAsQueueBrowserCreated
+org.apache.qpid.test.client.QueueBrowserDupsOkTest#testFailoverWithQueueBrowser
+org.apache.qpid.test.client.QueueBrowserNoAckTest#testFailoverAsQueueBrowserCreated
+org.apache.qpid.test.client.QueueBrowserNoAckTest#testFailoverWithQueueBrowser
+org.apache.qpid.test.client.QueueBrowserPreAckTest#testFailoverAsQueueBrowserCreated
+org.apache.qpid.test.client.QueueBrowserPreAckTest#testFailoverWithQueueBrowser
+org.apache.qpid.test.client.QueueBrowserTransactedTest#testFailoverAsQueueBrowserCreated
+org.apache.qpid.test.client.QueueBrowserTransactedTest#testFailoverWithQueueBrowser
+org.apache.qpid.server.failover.MessageDisappearWithIOExceptionTest#*
+org.apache.qpid.test.client.failover.FailoverTest#*
+org.apache.qpid.test.unit.ack.AcknowledgeAfterFailoverTest#*
+org.apache.qpid.test.unit.ack.AcknowledgeAfterFailoverOnMessageTest#*
+org.apache.qpid.test.unit.publish.DirtyTransactedPublishTest#*
+
 // QPID-2478 test fails when run against broker using 0-8/9
 org.apache.qpid.test.client.message.JMSDestinationTest#testGetDestinationWithCustomExchange
 
