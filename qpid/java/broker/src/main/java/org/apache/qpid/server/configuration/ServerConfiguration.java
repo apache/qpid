@@ -638,7 +638,7 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
 
     public List getPorts()
     {
-        return getListValue("connector.port", Collections.singletonList(DEFAULT_PORT));
+        return getListValue("connector.port", Collections.<Integer>singletonList(DEFAULT_PORT));
     }
 
     public List getPortExclude010()
@@ -696,9 +696,9 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
         return getBooleanValue("connector.ssl.sslOnly");
     }
 
-    public int getSSLPort()
+    public List getSSLPorts()
     {
-        return getIntValue("connector.ssl.port", DEFAULT_SSL_PORT);
+        return getListValue("connector.ssl.port", Collections.<Integer>singletonList(DEFAULT_SSL_PORT));
     }
 
     public String getKeystorePath()

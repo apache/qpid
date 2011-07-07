@@ -40,7 +40,7 @@ public class MultipleJCAProviderRegistrationTest extends QpidBrokerTestCase
 
     public void setUp() throws Exception
     {
-        _broker = VM;
+        _brokerType = VM;
 
         super.setUp();
     }

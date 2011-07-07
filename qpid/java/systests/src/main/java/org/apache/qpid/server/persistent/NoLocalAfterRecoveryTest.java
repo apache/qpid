@@ -80,7 +80,7 @@ public class NoLocalAfterRecoveryTest extends QpidBrokerTestCase implements Conn
 
         // Due to the problem with SingleServer delaying on all connection
         // attempts. So using a high retry value.
-        if (_broker.equals(VM))
+        if (_brokerType.equals(VM))
         {
             // Local testing suggests InVM restart takes under a second
             details.setProperty(BrokerDetails.OPTIONS_RETRY, "5");
