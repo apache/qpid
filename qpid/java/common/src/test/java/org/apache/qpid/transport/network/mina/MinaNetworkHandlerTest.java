@@ -31,7 +31,6 @@ import java.util.ArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.mina.util.AvailablePortFinder;
 import org.apache.qpid.framing.AMQDataBlock;
 import org.apache.qpid.protocol.ProtocolEngine;
 import org.apache.qpid.protocol.ProtocolEngineFactory;
@@ -61,7 +60,7 @@ public class MinaNetworkHandlerTest extends QpidTestCase
     public void setUp() throws Exception
     {
         String host = InetAddress.getLocalHost().getHostName();
-        _testPort = AvailablePortFinder.getNextAvailable(10000);
+        _testPort = findFreePort();
 
         _clientSettings = new ConnectionSettings();
         _clientSettings.setHost(host);

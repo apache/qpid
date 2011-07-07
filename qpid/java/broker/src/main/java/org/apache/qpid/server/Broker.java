@@ -47,7 +47,7 @@ import org.apache.qpid.server.logging.management.LoggingManagementMBean;
 import org.apache.qpid.server.logging.messages.BrokerMessages;
 import org.apache.qpid.server.protocol.AMQProtocolEngineFactory;
 import org.apache.qpid.server.protocol.MultiVersionProtocolEngineFactory;
-import org.apache.qpid.server.protocol.MultiVersionProtocolEngineFactory.VERSION;
+import org.apache.qpid.server.protocol.AmqpProtocolVersion;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.ConfigurationFileApplicationRegistry;
 import org.apache.qpid.server.transport.QpidAcceptor;
@@ -192,24 +192,24 @@ public class Broker
             {
                 for(int port : ports)
                 {
-                    Set<VERSION> supported = EnumSet.allOf(VERSION.class);
+                    Set<AmqpProtocolVersion> supported = EnumSet.allOf(AmqpProtocolVersion.class);
 
                     if(exclude_0_10.contains(port))
                     {
-                        supported.remove(VERSION.v0_10);
+                        supported.remove(AmqpProtocolVersion.v0_10);
                     }
 
                     if(exclude_0_9_1.contains(port))
                     {
-                        supported.remove(VERSION.v0_9_1);
+                        supported.remove(AmqpProtocolVersion.v0_9_1);
                     }
                     if(exclude_0_9.contains(port))
                     {
-                        supported.remove(VERSION.v0_9);
+                        supported.remove(AmqpProtocolVersion.v0_9);
                     }
                     if(exclude_0_8.contains(port))
                     {
-                        supported.remove(VERSION.v0_8);
+                        supported.remove(AmqpProtocolVersion.v0_8);
                     }
 
                     NetworkTransportConfiguration settings = 

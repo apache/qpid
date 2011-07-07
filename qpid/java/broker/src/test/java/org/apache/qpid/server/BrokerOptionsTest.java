@@ -21,8 +21,6 @@
 package org.apache.qpid.server;
 
 import static org.apache.qpid.transport.ConnectionSettings.WILDCARD_ADDRESS;
-import static org.apache.qpid.transport.network.Transport.TCP;
-import static org.apache.qpid.transport.network.Transport.VM;
 import static org.apache.qpid.server.configuration.ServerConfiguration.DEFAULT_PORT;
 import static org.apache.qpid.server.configuration.ServerConfiguration.DEFAULT_JMXPORT;
 
@@ -194,17 +192,5 @@ public class BrokerOptionsTest extends QpidTestCase
         
         _options.setLogWatchFrequency(myFreq);
         assertEquals(myFreq, _options.getLogWatchFrequency());
-    }
-    
-    public void testDefaultTransport()
-    {
-        assertEquals(TCP, _options.getTransport());
-    }
-    
-    public void testOverriddenTransport()
-    {
-        _options.setTransport(VM);
-        
-        assertEquals(VM, _options.getTransport());
     }
 }

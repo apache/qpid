@@ -52,7 +52,6 @@ public class SelectorTest extends QpidBrokerTestCase implements MessageListener
     private AMQConnection _connection;
     private AMQDestination _destination;
     private int count;
-    public String _connectionString = "vm://:1";
     private static final String INVALID_SELECTOR = "Cost LIKE 5";
     CountDownLatch _responseLatch = new CountDownLatch(1);
 
@@ -314,31 +313,4 @@ public class SelectorTest extends QpidBrokerTestCase implements MessageListener
         assertNull("Consumer2 should not receiver another message",consumer2.receive(1000));
     }
 
-    public static void main(String[] argv) throws Exception
-    {
-        SelectorTest test = new SelectorTest();
-        test._connectionString = (argv.length == 0) ? "localhost:3000" : argv[0];
-
-        try
-        {
-            while (true)
-            {
-                if (test._connectionString.contains("vm://:1"))
-                {
-                    test.setUp();
-                }
-                test.testUsingOnMessage();
-
-                if (test._connectionString.contains("vm://:1"))
-                {
-                    test.tearDown();
-                }
-            }
-        }
-        catch (Exception e)
-        {
-            System.err.println(e.getMessage());
-            e.printStackTrace();
-        }
-    }
 }

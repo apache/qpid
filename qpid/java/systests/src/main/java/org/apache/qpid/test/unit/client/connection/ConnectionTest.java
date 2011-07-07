@@ -20,32 +20,30 @@
  */
 package org.apache.qpid.test.unit.client.connection;
 
-import org.apache.qpid.AMQConnectionFailureException;
-import org.apache.qpid.AMQException;
-import org.apache.qpid.AMQUnresolvedAddressException;
-import org.apache.qpid.server.exchange.Exchange;
-import org.apache.qpid.test.utils.QpidBrokerTestCase;
-import org.apache.qpid.client.AMQAuthenticationException;
-import org.apache.qpid.client.AMQConnection;
-import org.apache.qpid.client.AMQQueue;
-import org.apache.qpid.client.AMQSession;
-import org.apache.qpid.client.AMQTopic;
-import org.apache.qpid.client.AMQConnectionURL;
-import org.apache.qpid.exchange.ExchangeDefaults;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.jms.Session;
-import org.apache.qpid.jms.ConnectionURL;
-import org.apache.qpid.jms.BrokerDetails;
-
 import javax.jms.Connection;
 import javax.jms.QueueSession;
 import javax.jms.TopicSession;
-import javax.naming.NamingException;
+
+import org.apache.qpid.AMQConnectionFailureException;
+import org.apache.qpid.AMQException;
+import org.apache.qpid.AMQUnresolvedAddressException;
+import org.apache.qpid.client.AMQConnection;
+import org.apache.qpid.client.AMQConnectionURL;
+import org.apache.qpid.client.AMQQueue;
+import org.apache.qpid.client.AMQSession;
+import org.apache.qpid.client.AMQTopic;
+import org.apache.qpid.exchange.ExchangeDefaults;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.jms.BrokerDetails;
+import org.apache.qpid.jms.ConnectionURL;
+import org.apache.qpid.jms.Session;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 public class ConnectionTest extends QpidBrokerTestCase
 {
 
-    String _broker_NotRunning = "vm://:2";
+    String _broker_NotRunning = "tcp://localhost:" + findFreePort();
+
     String _broker_BadDNS = "tcp://hg3sgaaw4lgihjs";
 
     public void testSimpleConnection() throws Exception

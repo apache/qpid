@@ -23,5 +23,4 @@ package org.apache.qpid.transport.network;
 public class Transport
 {
     public static final String TCP = "tcp";
-    public static final String VM = "vm";
 }

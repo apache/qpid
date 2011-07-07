@@ -68,6 +68,14 @@ public class FailoverBaseCase extends QpidBrokerTestCase
         return _connectionFactory;
     }
 
+    @Override
+    public void stopBroker(int port) throws Exception
+    {
+        if (isBrokerPresent(port))
+        {
+            super.stopBroker(port);
+        }
+    }
 
     public void tearDown() throws Exception
     {

@@ -40,7 +40,6 @@ import javax.management.JMException;
 import javax.security.sasl.SaslServer;
 
 import org.apache.log4j.Logger;
-import org.apache.mina.transport.vmpipe.VmPipeAddress;
 import org.apache.qpid.AMQChannelException;
 import org.apache.qpid.AMQConnectionException;
 import org.apache.qpid.AMQException;
@@ -830,15 +829,9 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
     public String getLocalFQDN()
     {
         SocketAddress address = _network.getLocalAddress();
-        // we use the vmpipe address in some tests hence the need for this rather ugly test. The host
-        // information is used by SASL primary.
         if (address instanceof InetSocketAddress)
         {
             return ((InetSocketAddress) address).getHostName();
-        }
-        else if (address instanceof VmPipeAddress)
-        {
-            return "vmpipe:" + ((VmPipeAddress) address).getPort();
         }
         else
         {
