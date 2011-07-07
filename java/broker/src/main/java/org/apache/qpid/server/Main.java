@@ -133,21 +133,21 @@ public class Main
         Option bind =
                 OptionBuilder.withArgName("bind").hasArg()
                         .withDescription("bind to the specified address. Overrides any value in the config file")
-                        .withLongOpt("bind").create("b");
+                        .withLongOpt("bind").create(BrokerOptions.BIND);
         Option logconfig =
                 OptionBuilder.withArgName("logconfig").hasArg()
                         .withDescription("use the specified log4j xml configuration file. By "
                                          + "default looks for a file named " + BrokerOptions.DEFAULT_LOG_CONFIG_FILE
-                                         + " in the same directory as the configuration file").withLongOpt("logconfig").create("l");
+                                         + " in the same directory as the configuration file").withLongOpt("logconfig").create(BrokerOptions.LOG_CONFIG);
         Option logwatchconfig =
                 OptionBuilder.withArgName("logwatch").hasArg()
                         .withDescription("monitor the log file configuration file for changes. Units are seconds. "
-                                         + "Zero means do not check for changes.").withLongOpt("logwatch").create("w");
+                                         + "Zero means do not check for changes.").withLongOpt("logwatch").create(BrokerOptions.WATCH);
 
         Option sslport =
                 OptionBuilder.withArgName("sslport").hasArg()
                         .withDescription("SSL port. Overrides any value in the config file")
-                        .withLongOpt("sslport").create("s");
+                        .withLongOpt("sslport").create(BrokerOptions.SSL_PORTS);
 
         options.addOption(help);
         options.addOption(version);
@@ -179,7 +179,7 @@ public class Main
             options.setLogWatchFrequency(Integer.parseInt(logWatchConfig) * 1000);
         }
 
-        String logConfig = commandLine.getOptionValue(BrokerOptions.LOG4J);
+        String logConfig = commandLine.getOptionValue(BrokerOptions.LOG_CONFIG);
         if(logConfig != null)
         {
             options.setLogConfigFile(logConfig);

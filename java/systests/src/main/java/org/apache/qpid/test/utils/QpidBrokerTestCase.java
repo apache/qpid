@@ -55,10 +55,8 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQConnectionFactory;
 import org.apache.qpid.client.AMQQueue;
-import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.jms.ConnectionURL;
@@ -67,8 +65,7 @@ import org.apache.qpid.server.Broker;
 import org.apache.qpid.server.BrokerOptions;
 import org.apache.qpid.server.ProtocolExclusion;
 import org.apache.qpid.server.configuration.ServerConfiguration;
-import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.registry.ConfigurationFileApplicationRegistry;
+import org.apache.qpid.server.protocol.AmqpProtocolVersion;
 import org.apache.qpid.server.store.DerbyMessageStore;
 import org.apache.qpid.url.URLSyntaxException;
 import org.apache.qpid.util.FileUtils;
@@ -79,6 +76,13 @@ import org.apache.qpid.util.LogMonitor;
  */
 public class QpidBrokerTestCase extends QpidTestCase
 {
+    
+    public enum BrokerType
+    {
+        EXTERNAL /** Test case relies on a Broker started independently of the test-suite */,
+        INTERNAL /** Test case starts an embedded broker within this JVM */, 
+        SPAWNED /** Test case spawns a new broker as a separate process */
+    }
     protected final String QpidHome = System.getProperty("QPID_HOME");
     protected File _configFile = new File(System.getProperty("broker.config"));
 
@@ -123,17 +127,12 @@ public class QpidBrokerTestCase extends QpidTestCase
     private static final String BROKER_LOG_INTERLEAVE = "broker.log.interleave";
     private static final String BROKER_LOG_PREFIX = "broker.log.prefix";
     private static final String BROKER_PERSITENT = "broker.persistent";
-    private static final String BROKER_PROTOCOL_EXCLUDES = "broker.protocols.excludes";
+    private static final String BROKER_PROTOCOL_EXCLUDES = "broker.protocol.excludes";
     
 
     // values
     protected static final String JAVA = "java";
     protected static final String CPP = "cpp";
-    protected static final String VM = "vm";
-    protected static final String EXTERNAL = "external";
-    protected static final String INTERNAL = "internal";
-    private static final String VERSION_08 = "0-8";
-    private static final String VERSION_010 = "0-10";
 
     protected static final String QPID_HOME = "QPID_HOME";
 
@@ -144,11 +143,11 @@ public class QpidBrokerTestCase extends QpidTestCase
     public static final int DEFAULT_SSL_PORT = Integer.getInteger("test.sslport", ServerConfiguration.DEFAULT_SSL_PORT);
 
     protected String _brokerLanguage = System.getProperty(BROKER_LANGUAGE, JAVA);
-    protected String _brokerType = System.getProperty(BROKER_TYPE, INTERNAL);
+    protected BrokerType _brokerType = BrokerType.valueOf(System.getProperty(BROKER_TYPE, "").toUpperCase());
     protected String _brokerCommand = System.getProperty(BROKER_COMMAND);
     private String _brokerClean = System.getProperty(BROKER_CLEAN, null);
     private Boolean _brokerCleanBetweenTests = Boolean.getBoolean(BROKER_CLEAN_BETWEEN_TESTS);
-    private String _brokerVersion = System.getProperty(BROKER_VERSION, VERSION_08);
+    private final AmqpProtocolVersion _brokerVersion = AmqpProtocolVersion.valueOf(System.getProperty(BROKER_VERSION, ""));
     protected String _output = System.getProperty(TEST_OUTPUT);
     protected Boolean _brokerPersistent = Boolean.getBoolean(BROKER_PERSITENT);
     private String _brokerProtocolExcludes = System.getProperty(BROKER_PROTOCOL_EXCLUDES);
@@ -407,7 +406,7 @@ public class QpidBrokerTestCase extends QpidTestCase
     }
 
     /**
-     * Return the management portin use by the broker on this main port
+     * Return the management port in use by the broker on this main port
      *
      * @param mainPort the broker's main port.
      *
@@ -415,7 +414,7 @@ public class QpidBrokerTestCase extends QpidTestCase
      */
     protected int getManagementPort(int mainPort)
     {
-        return mainPort + (DEFAULT_MANAGEMENT_PORT - (_brokerType.equals(VM) ? DEFAULT_VM_PORT : DEFAULT_PORT));
+        return mainPort + (DEFAULT_MANAGEMENT_PORT - DEFAULT_PORT);
     }
 
     /**
@@ -430,11 +429,7 @@ public class QpidBrokerTestCase extends QpidTestCase
 
     protected int getPort(int port)
     {
-        if (_brokerType.equals(VM))
-        {
-            return port == 0 ? DEFAULT_VM_PORT : port;
-        }
-        else if (!_brokerType.equals(EXTERNAL))
+        if (!_brokerType.equals(BrokerType.EXTERNAL))
         {
             return port == 0 ? DEFAULT_PORT : port;
         }
@@ -473,34 +468,7 @@ public class QpidBrokerTestCase extends QpidTestCase
             throw new IllegalStateException("There is already an existing broker running on port " + port);
         }
 
-        if (_brokerType.equals(VM))
-        {
-            setConfigurationProperty("management.jmxport", String.valueOf(getManagementPort(port)));
-            setConfigurationProperty(ServerConfiguration.MGMT_CUSTOM_REGISTRY_SOCKET, String.valueOf(false));
-            saveTestConfiguration();
-            
-            // create an in_VM broker
-            final ConfigurationFileApplicationRegistry registry = new ConfigurationFileApplicationRegistry(_configFile);
-            try
-            {
-                ApplicationRegistry.initialise(registry);
-            }
-            catch (Exception e)
-            {
-                _logger.error("Broker initialise failed due to:",e);
-                try
-                {
-                    registry.close();
-                }
-                catch (Throwable closeE)
-                {
-                    closeE.printStackTrace();
-                }
-                throw e;
-            }
-            TransportConnection.createVMBroker(port);
-        }
-        else if (_brokerType.equals(INTERNAL) && !existingInternalBroker())
+        if (_brokerType.equals(BrokerType.INTERNAL) && !existingInternalBroker())
         {
             setConfigurationProperty(ServerConfiguration.MGMT_CUSTOM_REGISTRY_SOCKET, String.valueOf(false));
             saveTestConfiguration();
@@ -523,7 +491,7 @@ public class QpidBrokerTestCase extends QpidTestCase
 
             _brokers.put(port, new InternalBrokerHolder(broker));
         }
-        else if (!_brokerType.equals(EXTERNAL))
+        else if (!_brokerType.equals(BrokerType.EXTERNAL))
         {
             String cmd = getBrokerCommand(port);
             _logger.info("starting external broker: " + cmd);
@@ -633,11 +601,16 @@ public class QpidBrokerTestCase extends QpidTestCase
     private void addExcludedPorts(int port, BrokerOptions options)
     {
         final String protocolExcludesList = _brokerProtocolExcludes.replace("@PORT", "" + port);
+        
+        if (protocolExcludesList.equals(""))
+        {
+            return;
+        }
         final String[] toks = protocolExcludesList.split("\\s");
 
         if(toks.length % 2 != 0)
         {
-            throw new IllegalArgumentException("Must be an even number of tokens in " + protocolExcludesList);
+            throw new IllegalArgumentException("Must be an even number of tokens in '" + protocolExcludesList + "'");
         }
         for (int i = 0; i < toks.length; i=i+2)
         {
@@ -662,13 +635,9 @@ public class QpidBrokerTestCase extends QpidTestCase
         return false;
     }
 
-    private String getQpidWork(String broker, int port)
+    private String getQpidWork(BrokerType broker, int port)
     {
-        if (broker.equals(VM))
-        {
-            return System.getProperty("QPID_WORK");
-        }
-        else if (!broker.equals(EXTERNAL))
+        if (!broker.equals(BrokerType.EXTERNAL))
         {
             return System.getProperty("QPID_WORK")+ "/" + port;
         }
@@ -755,17 +724,16 @@ public class QpidBrokerTestCase extends QpidTestCase
 
         _logger.info("stopping broker: " + getBrokerCommand(port));
         BrokerHolder broker = _brokers.remove(port);
-        if (broker != null)
-        {
-            broker.shutdown();
-        }
-        else if (_brokerType.equals(VM))
-        {
-            TransportConnection.killVMBroker(port);
-            ApplicationRegistry.remove();
-        }
+        broker.shutdown();
     }
 
+    public boolean isBrokerPresent(int port) throws Exception
+    {
+        port = getPort(port);
+
+        return _brokers.containsKey(port);
+    }
+    
     /**
      * Attempt to set the Java Broker to use the BDBMessageStore for persistence
      * Falling back to the DerbyMessageStore if
@@ -1000,12 +968,12 @@ public class QpidBrokerTestCase extends QpidTestCase
      */
     public boolean isBroker08()
     {
-        return _brokerVersion.equals(VERSION_08);
+        return _brokerVersion.equals(AmqpProtocolVersion.v0_8);
     }
 
     public boolean isBroker010()
     {
-        return _brokerVersion.equals(VERSION_010);
+        return _brokerVersion.equals(AmqpProtocolVersion.v0_10);
     }
 
     protected boolean isJavaBroker()
@@ -1020,12 +988,12 @@ public class QpidBrokerTestCase extends QpidTestCase
 
     protected boolean isExternalBroker()
     {
-        return !_brokerType.equals("vm");
+        return !_brokerType.equals("vm"); //TODO
     }
 
     protected boolean isInternalBroker()
     {
-        return _brokerType.equals(INTERNAL);
+        return _brokerType.equals(BrokerType.INTERNAL);
     }
 
     protected boolean isBrokerStorePersistent()
@@ -1099,11 +1067,6 @@ public class QpidBrokerTestCase extends QpidTestCase
      */
     public AMQConnectionFactory getConnectionFactory(String factoryName) throws NamingException
     {
-        if (_brokerType.equals(VM))
-        {
-            factoryName += ".vm";
-        }
-
         return (AMQConnectionFactory) getInitialContext().lookup(factoryName);
     }
 
@@ -1144,15 +1107,7 @@ public class QpidBrokerTestCase extends QpidTestCase
     public Connection getClientConnection(String username, String password, String id) throws JMSException, URLSyntaxException, AMQException, NamingException
     {
         _logger.info("get Connection");
-        Connection con;
-        if (_brokerType.equals(VM))
-        {
-            con = new AMQConnection("vm://:1", username, password, id, "test");
-        }
-        else
-        {
-            con = getConnectionFactory().createConnection(username, password, id);
-        }
+        Connection con = getConnectionFactory().createConnection(username, password, id);
         //add the connection in the lis of connections
         _connections.add(con);
         return con;
@@ -1410,41 +1365,26 @@ public class QpidBrokerTestCase extends QpidTestCase
      */
     public void reloadBrokerSecurityConfig() throws Exception
     {
-        if (_brokerType.equals(VM))
+        JMXTestUtils jmxu = new JMXTestUtils(this, "admin" , "admin");
+        jmxu.open();
+        
+        try
         {
-            ApplicationRegistry.getInstance().getConfiguration().reparseConfigFileSecuritySections();
+            ConfigurationManagement configMBean = jmxu.getConfigurationManagement();
+            configMBean.reloadSecurityConfiguration();
         }
-        else
+        finally
         {
-            JMXTestUtils jmxu = new JMXTestUtils(this, "admin" , "admin");
-            jmxu.open();
-            
-            try
-            {
-                ConfigurationManagement configMBean = jmxu.getConfigurationManagement();
-                configMBean.reloadSecurityConfiguration();
-            }
-            finally
-            {
-                jmxu.close();
-            }
-            
-            LogMonitor _monitor = new LogMonitor(_outputFile);
-            assertTrue("The expected server security configuration reload did not occur",
-                    _monitor.waitForMessage(ServerConfiguration.SECURITY_CONFIG_RELOADED, LOGMONITOR_TIMEOUT));
-
+            jmxu.close();
         }
+        
+        LogMonitor _monitor = new LogMonitor(_outputFile);
+        assertTrue("The expected server security configuration reload did not occur",
+                _monitor.waitForMessage(ServerConfiguration.SECURITY_CONFIG_RELOADED, LOGMONITOR_TIMEOUT));
     }
 
     protected int getFailingPort()
     {
-        if (_brokerType.equals(VM))
-        {
-            throw new RuntimeException("VM is not supported for Failover testing");
-        }
-        else
-        {
-        	return FAILING_PORT;
-        }
+    	return FAILING_PORT;
     }
 }

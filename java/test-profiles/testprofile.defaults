@@ -19,12 +19,12 @@
 java.naming.factory.initial=org.apache.qpid.jndi.PropertiesFileInitialContextFactory
 java.naming.provider.url=${test.profiles}/test-provider.properties
 
-broker.version=0-8
-broker.type=vm
 broker.clean=${test.profiles}/clean-dir ${build.data} ${project.root}/build/work
 broker.ready=Listening on TCP port
 broker.config=${project.root}/build/etc/config-systests.xml
 messagestore.class.name=org.apache.qpid.server.store.MemoryMessageStore
+broker.protocol.excludes=
+broker.persistent=false
 
 max_prefetch=1000
 qpid.dest_syntax=BURL
@@ -47,9 +47,8 @@ test.port.alt=25672
 test.port.alt.ssl=25671
 
 test.exclude=true
-profile.excludes=JavaTransientExcludes JavaInVMExcludes 08StandaloneExcludes
+profile.excludes=
 test.excludes=Excludes XAExcludes JavaExcludes ${profile}.excludes ${profile.excludes}
-test.fork=no
 test.mem=512M
 test=*Test
 haltonfailure=no
@@ -57,3 +56,5 @@ haltonerror=no
 exclude.modules=none
 
 profile.clustered=false
+
+

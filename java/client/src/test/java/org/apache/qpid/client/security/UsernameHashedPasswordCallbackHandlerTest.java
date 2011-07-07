@@ -50,7 +50,7 @@ public class UsernameHashedPasswordCallbackHandlerTest extends TestCase
     {
         super.setUp();
 
-        final String url = "amqp://username:password@client/test?brokerlist='vm://:1'";
+        final String url = "amqp://username:password@client/test?brokerlist='tcp://localhost:1'";
         _callbackHandler.initialise(new AMQConnectionURL(url));
     }
 

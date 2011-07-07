@@ -50,7 +50,6 @@ public class MessageRequeueTest extends QpidBrokerTestCase
     protected final String queue = "direct://amq.direct//message-requeue-test-queue";
     protected String payload = "Message:";
 
-    //protected final String BROKER = "vm://:1";
     protected final String BROKER = "tcp://127.0.0.1:5672";
     private boolean testReception = true;
 
@@ -155,8 +154,8 @@ public class MessageRequeueTest extends QpidBrokerTestCase
         _logger.info("consumed: " + messagesReceived);
 
         assertEquals("number of consumed messages does not match initial data", (int) numTestMessages, messagesReceived);
-        // wit 0_10 we can have a delivery tag of 0
-        if (conn.isBroker08())
+        // with 0_10 we can have a delivery tag of 0
+        if (!conn.isBroker010())
         {
             for (long b : messageLog)
             {
@@ -224,7 +223,7 @@ public class MessageRequeueTest extends QpidBrokerTestCase
         StringBuilder list = new StringBuilder();
         list.append("Failed to receive:");
         int failed = 0;
-        if (conn.isBroker08())
+        if (!conn.isBroker010())
         {
             for (long b : receieved)
             {

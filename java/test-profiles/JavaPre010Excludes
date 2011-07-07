@@ -18,10 +18,10 @@
 //
 
 //======================================================================
-//Exclude the following from brokers defaulting to the 0-8 protocol
+//Exclude the following from brokers using the 0-8/0-9/0-9-1 protocols
 //======================================================================
 
-// This test requires a broker capable of 0-8/9 and 0-10
+// This test requires a broker capable of 0-8/0-9/0-9-1 and 0-10 concurrently
 org.apache.qpid.test.client.message.JMSDestinationTest#testReceiveResend
 
 // QPID-2478 test fails when run against broker using 0-8/9

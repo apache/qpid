@@ -36,8 +36,6 @@ import org.apache.mina.transport.socket.nio.SocketConnector;
 import org.apache.mina.transport.socket.nio.SocketConnectorConfig;
 import org.apache.mina.transport.socket.nio.SocketSessionConfig;
 import org.apache.mina.util.NewThreadExecutor;
-import org.apache.mina.transport.vmpipe.QpidVmPipeConnector;
-import org.apache.mina.transport.vmpipe.VmPipeAddress;
 
 import org.apache.qpid.protocol.ProtocolEngineFactory;
 import org.apache.qpid.ssl.SSLContextFactory;
@@ -51,7 +49,6 @@ import org.apache.qpid.transport.network.IncomingNetworkTransport;
 import org.apache.qpid.transport.network.NetworkConnection;
 import org.apache.qpid.transport.network.OutgoingNetworkTransport;
 import org.apache.qpid.transport.network.Transport;
-import org.apache.qpid.transport.network.VMBrokerMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -59,7 +56,6 @@ public class MinaNetworkTransport implements OutgoingNetworkTransport, IncomingN
 {
     private static final int UNKNOWN = -1;
     private static final int TCP = 0;
-    private static final int VM = 1;
 
     public NetworkConnection _connection;
     private SocketAcceptor _acceptor;
@@ -83,16 +79,6 @@ public class MinaNetworkTransport implements OutgoingNetworkTransport, IncomingN
                 });
                 _connection = stc.connect(delegate, settings, sslFactory);
                 break;
-            case VM:
-                stc = new IoConnectorCreator(new SocketConnectorFactory()
-                {
-                    public IoConnector newConnector()
-                    {
-                        return new QpidVmPipeConnector();
-                    }
-                });
-                _connection = stc.connect(delegate, settings, sslFactory);
-                break;
             case UNKNOWN:
             default:
                     throw new TransportException("Unknown protocol: " + settings.getProtocol());
@@ -108,12 +94,7 @@ public class MinaNetworkTransport implements OutgoingNetworkTransport, IncomingN
             return TCP;
         }
 
-        if (transport.equals(Transport.VM))
-        {
-            return VM;
-        }
-
-        return -1;
+        return UNKNOWN;
     }
 
     public void close()
@@ -197,18 +178,6 @@ public class MinaNetworkTransport implements OutgoingNetworkTransport, IncomingN
             if (Transport.TCP.equalsIgnoreCase(protocol))
             {
                 address = new InetSocketAddress(settings.getHost(), port);
-            }
-            else if(Transport.VM.equalsIgnoreCase(protocol))
-            {
-                synchronized (VMBrokerMap.class)
-                {
-                    if(!VMBrokerMap.contains(port))
-                    {
-                        throw new TransportException("VM broker on port " + port + " does not exist.");
-                    }
-                }
-
-                address = new VmPipeAddress(port);
             }
             else
             {

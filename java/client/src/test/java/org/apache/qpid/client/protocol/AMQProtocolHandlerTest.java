@@ -73,7 +73,7 @@ public class AMQProtocolHandlerTest extends TestCase
     public void setUp() throws Exception
     {
         //Create a new ProtocolHandler with a fake connection.
-        _handler = new AMQProtocolHandler(new MockAMQConnection("amqp://guest:guest@client/test?brokerlist='vm://:1'"));
+        _handler = new AMQProtocolHandler(new MockAMQConnection("amqp://guest:guest@client/test?brokerlist='tcp://localhost:1'"));
         _handler.setNetworkConnection(new TestNetworkConnection());
          AMQBody body = BasicRecoverOkBodyImpl.getFactory().newInstance(null, 1);
         _blockFrame = new AMQFrame(0, body);

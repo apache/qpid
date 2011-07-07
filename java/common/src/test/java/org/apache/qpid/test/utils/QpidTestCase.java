@@ -31,6 +31,7 @@ import junit.framework.TestCase;
 import junit.framework.TestResult;
 
 import org.apache.log4j.Logger;
+import org.apache.mina.util.AvailablePortFinder;
 
 public class QpidTestCase extends TestCase
 {
@@ -126,5 +127,10 @@ public class QpidTestCase extends TestCase
         String storeClass = System.getProperty(MS_CLASS_NAME_KEY);
         
         return storeClass != null ? storeClass : MEMORY_STORE_CLASS_NAME ;
+    }
+
+    public int findFreePort()
+    {
+        return AvailablePortFinder.getNextAvailable(10000);
     }
 }
