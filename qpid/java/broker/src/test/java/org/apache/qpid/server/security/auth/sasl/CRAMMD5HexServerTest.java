@@ -197,8 +197,6 @@ public class CRAMMD5HexServerTest extends TestCase
     {
         return new Principal()
         {
-
-            @Override
             public String getName()
             {
                 return name;

@@ -73,7 +73,6 @@ public class ConnectionRegistry implements IConnectionRegistry, Closeable
         _registry.remove(connnection);
     }
 
-    @Override
     public List<AMQConnectionModel> getConnections()
     {
         return new ArrayList<AMQConnectionModel>(_registry);

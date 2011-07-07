@@ -75,8 +75,6 @@ public class UsernamePrincipalTest extends TestCase
         final UsernamePrincipal expected = new UsernamePrincipal("name");
         final Principal other = new Principal()
         {
-
-            @Override
             public String getName()
             {
                 return "otherprincipal";

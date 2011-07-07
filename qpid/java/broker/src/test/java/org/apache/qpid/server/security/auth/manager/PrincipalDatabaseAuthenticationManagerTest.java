@@ -184,14 +184,11 @@ public class PrincipalDatabaseAuthenticationManagerTest extends InternalBrokerBa
     {
         return new SaslServer()
         {
-
-            @Override
             public String getMechanismName()
             {
                 return null;
             }
 
-            @Override
             public byte[] evaluateResponse(byte[] response) throws SaslException
             {
                 if (throwSaslException)
@@ -201,37 +198,31 @@ public class PrincipalDatabaseAuthenticationManagerTest extends InternalBrokerBa
                 return null;
             }
 
-            @Override
             public boolean isComplete()
             {
                 return complete;
             }
 
-            @Override
             public String getAuthorizationID()
             {
                 return complete ? "guest" : null;
             }
 
-            @Override
             public byte[] unwrap(byte[] incoming, int offset, int len) throws SaslException
             {
                 return null;
             }
 
-            @Override
             public byte[] wrap(byte[] outgoing, int offset, int len) throws SaslException
             {
                 return null;
             }
 
-            @Override
             public Object getNegotiatedProperty(String propName)
             {
                 return null;
             }
 
-            @Override
             public void dispose() throws SaslException
             {
             }

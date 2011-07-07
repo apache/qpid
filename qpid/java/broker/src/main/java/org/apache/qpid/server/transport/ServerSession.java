@@ -663,7 +663,6 @@ public class ServerSession extends Session implements PrincipalHolder, SessionCo
         }
     }
 
-    @Override
     public String toLogString()
     {
        return "[" +
