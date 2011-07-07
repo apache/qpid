@@ -19,25 +19,16 @@
 
 package org.apache.qpid.transport.network.io;
 
-import java.io.IOException;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.net.SocketException;
 import java.nio.ByteBuffer;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 
-import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
 import org.apache.qpid.ssl.SSLContextFactory;
 import org.apache.qpid.transport.Binding;
-import org.apache.qpid.transport.Connection;
-import org.apache.qpid.transport.ConnectionDelegate;
-import org.apache.qpid.transport.Receiver;
 import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.TransportException;
-import org.apache.qpid.transport.network.ConnectionBinding;
 import org.apache.qpid.transport.network.security.ssl.SSLReceiver;
 import org.apache.qpid.transport.network.security.ssl.SSLSender;
 import org.apache.qpid.transport.util.Logger;
@@ -134,82 +125,6 @@ public final class IoTransport<E> implements IoContext
         return socket;
     }
 
-    public static final <E> E connect(String host, int port,
-                                      Binding<E,ByteBuffer> binding,
-                                      boolean ssl)
-    {
-        Socket socket = createSocket(host, port);
-        IoTransport<E> transport = new IoTransport<E>(socket, binding,ssl);
-        return transport.endpoint;
-    }
-
-    public static final Connection connect(String host, int port,
-                                           ConnectionDelegate delegate,
-                                           boolean ssl)
-    {
-        return connect(host, port, ConnectionBinding.get(delegate),ssl);
-    }
-
-    public static void connect_0_9(AMQVersionAwareProtocolSession session, String host, int port, boolean ssl)
-    {
-        connect(host, port, new Binding_0_9(session),ssl);
-    }
-
-    private static class Binding_0_9
-        implements Binding<AMQVersionAwareProtocolSession,ByteBuffer>
-    {
-
-        private AMQVersionAwareProtocolSession session;
-
-        Binding_0_9(AMQVersionAwareProtocolSession session)
-        {
-            this.session = session;
-        }
-
-        public AMQVersionAwareProtocolSession endpoint(Sender<ByteBuffer> sender)
-        {
-            session.setSender(sender);
-            return session;
-        }
-
-        public Receiver<ByteBuffer> receiver(AMQVersionAwareProtocolSession ssn)
-        {
-            return new InputHandler_0_9(ssn);
-        }
-
-    }
-
-    private static Socket createSocket(String host, int port)
-    {
-        try
-        {
-            InetAddress address = InetAddress.getByName(host);
-            Socket socket = new Socket();
-            socket.setReuseAddress(true);
-            socket.setTcpNoDelay(Boolean.getBoolean("amqj.tcpNoDelay"));
-
-            log.debug("default-SO_RCVBUF : %s", socket.getReceiveBufferSize());
-            log.debug("default-SO_SNDBUF : %s", socket.getSendBufferSize());
-
-            socket.setSendBufferSize(writeBufferSize);
-            socket.setReceiveBufferSize(readBufferSize);
-
-            log.debug("new-SO_RCVBUF : %s", socket.getReceiveBufferSize());
-            log.debug("new-SO_SNDBUF : %s", socket.getSendBufferSize());
-
-            socket.connect(new InetSocketAddress(address, port));
-            return socket;
-        }
-        catch (SocketException e)
-        {
-            throw new TransportException("Error connecting to broker", e);
-        }
-        catch (IOException e)
-        {
-            throw new TransportException("Error connecting to broker", e);
-        }
-    }
-    
     private SSLContext createSSLContext() throws Exception
     {
         String trustStorePath = System.getProperty("javax.net.ssl.trustStore");

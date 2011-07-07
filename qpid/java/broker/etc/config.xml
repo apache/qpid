@@ -37,17 +37,10 @@
             <keystorePath>/path/to/keystore.ks</keystorePath>
             <keystorePassword>keystorepass</keystorePassword>
         </ssl>
-        <qpidnio>false</qpidnio>
-        <protectio>
-            <enabled>false</enabled>
-            <readBufferLimitSize>262144</readBufferLimitSize>
-            <writeBufferLimitSize>262144</writeBufferLimitSize>	    
-        </protectio>
-        <transport>nio</transport>
         <port>5672</port>
         <sslport>8672</sslport>
-        <socketReceiveBuffer>32768</socketReceiveBuffer>
-        <socketSendBuffer>32768</socketSendBuffer>
+        <socketReceiveBuffer>262144</socketReceiveBuffer>
+        <socketSendBuffer>262144</socketSendBuffer>
     </connector>
     <management>
         <enabled>true</enabled>

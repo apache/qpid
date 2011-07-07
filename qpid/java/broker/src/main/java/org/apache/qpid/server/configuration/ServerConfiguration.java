@@ -52,9 +52,7 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
     protected static final Logger _logger = Logger.getLogger(ServerConfiguration.class);
 
     // Default Configuration values
-    public static final int DEFAULT_BUFFER_READ_LIMIT_SIZE = 262144;
-    public static final int DEFAULT_BUFFER_WRITE_LIMIT_SIZE = 262144;
-    public static final boolean DEFAULT_BROKER_CONNECTOR_PROTECTIO_ENABLED = false;
+    public static final int DEFAULT_BUFFER_SIZE = 262144;
     public static final String DEFAULT_STATUS_UPDATES = "on";
     public static final String SECURITY_CONFIG_RELOADED = "SECURITY CONFIGURATION RELOADED";
 
@@ -84,9 +82,6 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
 
     // Configuration values to be read from the configuration file
     //todo Move all properties to static values to ensure system testing can be performed.
-    public static final String CONNECTOR_PROTECTIO_ENABLED = "connector.protectio.enabled";
-    public static final String CONNECTOR_PROTECTIO_READ_BUFFER_LIMIT_SIZE = "connector.protectio.readBufferLimitSize";
-    public static final String CONNECTOR_PROTECTIO_WRITE_BUFFER_LIMIT_SIZE = "connector.protectio.writeBufferLimitSize";
     public static final String MGMT_CUSTOM_REGISTRY_SOCKET = "management.custom-registry-socket";
     public static final String STATUS_UPDATES = "status-updates";
     public static final String ADVANCED_LOCALE = "advanced.locale";
@@ -95,7 +90,6 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
         envVarMap.put("QPID_PORT", "connector.port");
         envVarMap.put("QPID_ENABLEDIRECTBUFFERS", "advanced.enableDirectBuffers");
         envVarMap.put("QPID_SSLPORT", "connector.ssl.port");
-        envVarMap.put("QPID_NIO", "connector.qpidnio");
         envVarMap.put("QPID_WRITEBIASED", "advanced.useWriteBiasedPool");
         envVarMap.put("QPID_JMXPORT", "management.jmxport");
         envVarMap.put("QPID_FRAMESIZE", "advanced.framesize");
@@ -545,21 +539,6 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
         return getIntValue("advanced.framesize", DEFAULT_FRAME_SIZE);
     }
 
-    public boolean getProtectIOEnabled()
-    {
-        return getBooleanValue(CONNECTOR_PROTECTIO_ENABLED, DEFAULT_BROKER_CONNECTOR_PROTECTIO_ENABLED);
-    }
-
-    public int getBufferReadLimit()
-    {
-        return getIntValue(CONNECTOR_PROTECTIO_READ_BUFFER_LIMIT_SIZE, DEFAULT_BUFFER_READ_LIMIT_SIZE);
-    }
-
-    public int getBufferWriteLimit()
-    {
-        return getIntValue(CONNECTOR_PROTECTIO_WRITE_BUFFER_LIMIT_SIZE, DEFAULT_BUFFER_WRITE_LIMIT_SIZE);
-    }
-
     public boolean getSynchedClocks()
     {
         return getBooleanValue("advanced.synced-clocks");
@@ -687,12 +666,12 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
 
     public int getReceiveBufferSize()
     {
-        return getIntValue("connector.socketReceiveBuffer", 32767);
+        return getIntValue("connector.socketReceiveBuffer", DEFAULT_BUFFER_SIZE);
     }
 
     public int getWriteBufferSize()
     {
-        return getIntValue("connector.socketWriteBuffer", 32767);
+        return getIntValue("connector.socketWriteBuffer", DEFAULT_BUFFER_SIZE);
     }
 
     public boolean getTcpNoDelay()
@@ -733,11 +712,6 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
     public String getCertType()
     {
         return getStringValue("connector.ssl.certType", "SunX509");
-    }
-
-    public boolean getQpidNIO()
-    {
-        return getBooleanValue("connector.qpidnio");
     }
 
     public boolean getUseBiasedWrites()
@@ -809,8 +783,7 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
 
             public Boolean getTcpNoDelay()
             {
-                // Can't call parent getTcpNoDelay since it just calls this one
-                return getBooleanValue("connector.tcpNoDelay", true);
+                return ServerConfiguration.this.getTcpNoDelay();
             }
 
             public Integer getSoTimeout()
@@ -825,7 +798,7 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
 
             public Integer getSendBufferSize()
             {
-                return getBufferWriteLimit();
+                return ServerConfiguration.this.getWriteBufferSize();
             }
 
             public Boolean getReuseAddress()
@@ -835,7 +808,7 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
 
             public Integer getReceiveBufferSize()
             {
-                return getBufferReadLimit();
+                return ServerConfiguration.this.getReceiveBufferSize();
             }
 
             public Boolean getOOBInline()

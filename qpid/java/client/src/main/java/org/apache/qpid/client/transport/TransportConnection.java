@@ -30,7 +30,6 @@ import org.apache.mina.common.IoConnector;
 import org.apache.mina.common.IoHandlerAdapter;
 import org.apache.mina.common.IoServiceConfig;
 import org.apache.mina.transport.socket.nio.ExistingSocketConnector;
-import org.apache.mina.transport.socket.nio.MultiThreadSocketConnector;
 import org.apache.mina.transport.socket.nio.SocketConnector;
 import org.apache.mina.transport.vmpipe.VmPipeAcceptor;
 import org.apache.mina.transport.vmpipe.VmPipeAddress;
@@ -116,20 +115,8 @@ public class TransportConnection
                 {
                     public IoConnector newSocketConnector()
                     {
-                        SocketConnector result;
-                        // FIXME - this needs to be sorted to use the new Mina MultiThread SA.
-                        if (Boolean.getBoolean("qpidnio"))
-                        {
-                            _logger.warn("Using Qpid MultiThreaded NIO - " + (System.getProperties().containsKey("qpidnio")
-                                                                              ? "Qpid NIO is new default"
-                                                                              : "Sysproperty 'qpidnio' is set"));
-                            result = new MultiThreadSocketConnector(1, new QpidThreadExecutor());
-                        }
-                        else
-                        {
-                            _logger.info("Using Mina NIO");
-                            result = new SocketConnector(1, new QpidThreadExecutor()); // non-blocking connector
-                        }
+                        SocketConnector result = new SocketConnector(1, new QpidThreadExecutor()); // non-blocking connector
+
                         // Don't have the connector's worker thread wait around for other connections (we only use
                         // one SocketConnector per connection at the moment anyway). This allows short-running
                         // clients (like unit tests) to complete quickly.
