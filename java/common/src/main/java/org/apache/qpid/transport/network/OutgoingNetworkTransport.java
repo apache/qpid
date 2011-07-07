@@ -20,9 +20,13 @@
  */
 package org.apache.qpid.transport.network;
 
-public interface NetworkTransport
-{
-    public void close();
+import java.nio.ByteBuffer;
 
-    public NetworkConnection getConnection();
+import org.apache.qpid.ssl.SSLContextFactory;
+import org.apache.qpid.transport.ConnectionSettings;
+import org.apache.qpid.transport.Receiver;
+
+public interface OutgoingNetworkTransport extends NetworkTransport
+{
+    public NetworkConnection connect(ConnectionSettings settings, Receiver<ByteBuffer> delegate, SSLContextFactory sslFactory);
 }
