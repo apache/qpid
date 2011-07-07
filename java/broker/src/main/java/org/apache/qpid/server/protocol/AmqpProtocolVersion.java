@@ -18,34 +18,6 @@
  * under the License.
  *
  */
-package org.apache.qpid.transport.network;
+package org.apache.qpid.server.protocol;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import org.apache.mina.transport.vmpipe.VmPipeAddress;
-
-public class VMBrokerMap
-{
-    private static final Map<Integer, VmPipeAddress> _map = new HashMap<Integer, VmPipeAddress>();
-
-    public static void add(int port, VmPipeAddress pipe)
-    {
-        _map.put(port, pipe);
-    }
-
-    public static VmPipeAddress remove(int port)
-    {
-        return _map.remove(port);
-    }
-
-    public static void clear()
-    {
-        _map.clear();
-    }
-
-    public static boolean contains(int port)
-    {
-        return _map.containsKey(port);
-    }
-}
+public enum AmqpProtocolVersion { v0_8, v0_9, v0_9_1, v0_10 }

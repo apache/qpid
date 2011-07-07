@@ -23,7 +23,6 @@ package org.apache.qpid.server.protocol;
 
 import org.apache.log4j.Logger;
 import org.apache.qpid.protocol.ProtocolEngine;
-import org.apache.qpid.server.protocol.MultiVersionProtocolEngineFactory.VERSION;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.transport.ServerConnection;
 import org.apache.qpid.transport.ConnectionDelegate;
@@ -38,7 +37,7 @@ public class MultiVersionProtocolEngine implements ProtocolEngine
 {
     private static final Logger _logger = Logger.getLogger(MultiVersionProtocolEngine.class);
 
-    private Set<VERSION> _supported;
+    private Set<AmqpProtocolVersion> _supported;
     private String _fqdn;
     private IApplicationRegistry _appRegistry;
     private NetworkConnection _network;
@@ -48,7 +47,7 @@ public class MultiVersionProtocolEngine implements ProtocolEngine
 
     public MultiVersionProtocolEngine(IApplicationRegistry appRegistry,
                                       String fqdn,
-                                      Set<VERSION> supported,
+                                      Set<AmqpProtocolVersion> supported,
                                       NetworkConnection network)
     {
         _appRegistry = appRegistry;
@@ -152,7 +151,7 @@ private static final byte[] AMQP_0_9_1_HEADER =
 
     private static interface DelegateCreator
     {
-        VERSION getVersion();
+        AmqpProtocolVersion getVersion();
         byte[] getHeaderIdentifier();
         ProtocolEngine getProtocolEngine();
     }
@@ -160,9 +159,9 @@ private static final byte[] AMQP_0_9_1_HEADER =
     private DelegateCreator creator_0_8 = new DelegateCreator()
     {
 
-        public VERSION getVersion()
+        public AmqpProtocolVersion getVersion()
         {
-            return VERSION.v0_8;
+            return AmqpProtocolVersion.v0_8;
         }
 
         public byte[] getHeaderIdentifier()
@@ -179,9 +178,9 @@ private static final byte[] AMQP_0_9_1_HEADER =
     private DelegateCreator creator_0_9 = new DelegateCreator()
     {
 
-        public VERSION getVersion()
+        public AmqpProtocolVersion getVersion()
         {
-            return VERSION.v0_9;
+            return AmqpProtocolVersion.v0_9;
         }
 
 
@@ -199,9 +198,9 @@ private static final byte[] AMQP_0_9_1_HEADER =
     private DelegateCreator creator_0_9_1 = new DelegateCreator()
     {
 
-        public VERSION getVersion()
+        public AmqpProtocolVersion getVersion()
         {
-            return VERSION.v0_9_1;
+            return AmqpProtocolVersion.v0_9_1;
         }
 
 
@@ -220,9 +219,9 @@ private static final byte[] AMQP_0_9_1_HEADER =
     private DelegateCreator creator_0_10 = new DelegateCreator()
     {
 
-        public VERSION getVersion()
+        public AmqpProtocolVersion getVersion()
         {
-            return VERSION.v0_10;
+            return AmqpProtocolVersion.v0_10;
         }
 
 

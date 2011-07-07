@@ -39,10 +39,9 @@ public class BrokerOptions
     public static final String SSL_PORTS = "s";
     public static final String BIND = "b";
     public static final String MANAGEMENT = "m";
-    public static final String LOG4J = "l";
+    public static final String LOG_CONFIG = "l";
     public static final String WATCH = "w";
     public static final String CONFIG = "c";
-    public static final String PROTOCOL = "protocol";
 
     private final Set<Integer> _ports = new HashSet<Integer>();
     private final Set<Integer> _sslPorts = new HashSet<Integer>();
@@ -51,7 +50,6 @@ public class BrokerOptions
     private String _configFile;
     private String _logConfigFile;
     private String _bind;
-    private String _transport = Transport.TCP;
     private Integer _jmxPort;
 
     private Integer _logWatchFrequency = 0;
@@ -146,15 +144,5 @@ public class BrokerOptions
     public void setLogWatchFrequency(final int logWatchFrequency)
     {
         _logWatchFrequency = logWatchFrequency;
-    }
-
-    public String getTransport()
-    {
-        return _transport;
-    }
-
-    public void setTransport(final String transport)
-    {
-        _transport = transport;
     }
 }

@@ -93,11 +93,6 @@ public class AMQProtocolSessionTest extends QpidBrokerTestCase
         checkTempQueueName(new InetSocketAddress(InetAddress.getByName("1080:0:0:0:8:800:200C:417A"), 1234), "tmp_1080_0_0_0_8_800_200c_417a_1234_1");
     }
     
-    public void testTemporaryQueuePipe() throws UnknownHostException
-    {
-        checkTempQueueName(new VmPipeAddress(1), "tmp_vm_1_1");
-    }
-    
     private void checkTempQueueName(SocketAddress address, String queueName)
     {
         _testSession.getNetworkConnection().setLocalAddress(address);

@@ -77,7 +77,7 @@ public class ChannelLoggingTest extends AbstractTestLogging
         validateMessageID("CHN-1001", log);
         assertEquals("Incorrect Channel in actor:"+fromActor(log), isBroker010()? 0 : 1, getChannelID(fromActor(log)));
 
-        if (isBroker08())
+        if (!isBroker010())
         {
             // Wait to ensure that the CHN-1004 message is logged
             waitForMessage("CHN-1004");
@@ -89,7 +89,7 @@ public class ChannelLoggingTest extends AbstractTestLogging
             log = getLogMessage(results, 0);
             //  MESSAGE [con:0(guest@anonymous(3273383)/test)/ch:1] CHN-1004 : Prefetch Size (bytes) {0,number} : Count {1,number}
             validateMessageID("CHN-1004", log);
-            assertEquals("Incorrect Channel in actor:"+fromActor(log), isBroker010()? 0 : 1, getChannelID(fromActor(log)));
+            assertEquals("Incorrect Channel in actor:"+fromActor(log), 1, getChannelID(fromActor(log)));
             assertTrue("Prefetch Count not correct",getMessageString(fromMessage(log)).endsWith("Count "+PREFETCH));
         }
 

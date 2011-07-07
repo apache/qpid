@@ -55,12 +55,9 @@ public class MessageStatisticsConfigurationTest extends MessageStatisticsTestCas
         assertEquals("Incorrect vhost data", 0, vhost.getTotalDataReceived());
         assertFalse("Vhost statistics should not be enabled", vhost.isStatisticsEnabled());
 
-        if (!_brokerType.equals(VM))
-        {
-            assertEquals("Incorrect server total messages", 5, _jmxUtils.getServerInformation().getTotalMessagesReceived());
-            assertEquals("Incorrect server total data", 1000, _jmxUtils.getServerInformation().getTotalDataReceived());
-            assertTrue("Server statistics should be enabled", _jmxUtils.getServerInformation().isStatisticsEnabled());
-        }
+        assertEquals("Incorrect server total messages", 5, _jmxUtils.getServerInformation().getTotalMessagesReceived());
+        assertEquals("Incorrect server total data", 1000, _jmxUtils.getServerInformation().getTotalDataReceived());
+        assertTrue("Server statistics should be enabled", _jmxUtils.getServerInformation().isStatisticsEnabled());
     }
 
     /**
@@ -83,12 +80,9 @@ public class MessageStatisticsConfigurationTest extends MessageStatisticsTestCas
         assertEquals("Incorrect vhost data", 1000, vhost.getTotalDataReceived());
         assertTrue("Vhost statistics should be enabled", vhost.isStatisticsEnabled());
 
-        if (!_brokerType.equals(VM))
-        {
-            assertEquals("Incorrect server total messages", 0, _jmxUtils.getServerInformation().getTotalMessagesReceived());
-            assertEquals("Incorrect server total data", 0, _jmxUtils.getServerInformation().getTotalDataReceived());
-            assertFalse("Server statistics should not be enabled", _jmxUtils.getServerInformation().isStatisticsEnabled());
-        }
+        assertEquals("Incorrect server total messages", 0, _jmxUtils.getServerInformation().getTotalMessagesReceived());
+        assertEquals("Incorrect server total data", 0, _jmxUtils.getServerInformation().getTotalDataReceived());
+        assertFalse("Server statistics should not be enabled", _jmxUtils.getServerInformation().isStatisticsEnabled());
     }
 
     /**
@@ -111,12 +105,9 @@ public class MessageStatisticsConfigurationTest extends MessageStatisticsTestCas
         assertEquals("Incorrect vhost data", 0, vhost.getTotalDataReceived());
         assertFalse("Vhost statistics should not be enabled", vhost.isStatisticsEnabled());
 
-        if (!_brokerType.equals(VM))
-        {
-            assertEquals("Incorrect server total messages", 0, _jmxUtils.getServerInformation().getTotalMessagesReceived());
-            assertEquals("Incorrect server total data", 0, _jmxUtils.getServerInformation().getTotalDataReceived());
-            assertFalse("Server statistics should not be enabled", _jmxUtils.getServerInformation().isStatisticsEnabled());
-        }
+        assertEquals("Incorrect server total messages", 0, _jmxUtils.getServerInformation().getTotalMessagesReceived());
+        assertEquals("Incorrect server total data", 0, _jmxUtils.getServerInformation().getTotalDataReceived());
+        assertFalse("Server statistics should not be enabled", _jmxUtils.getServerInformation().isStatisticsEnabled());
     }
 
     /**
@@ -139,12 +130,9 @@ public class MessageStatisticsConfigurationTest extends MessageStatisticsTestCas
         assertEquals("Incorrect vhost data", 1000, vhost.getTotalDataReceived());
         assertTrue("Vhost statistics should be enabled", vhost.isStatisticsEnabled());
 
-        if (!_brokerType.equals(VM))
-        {
-            assertEquals("Incorrect server total messages", 5, _jmxUtils.getServerInformation().getTotalMessagesReceived());
-            assertEquals("Incorrect server total data", 1000, _jmxUtils.getServerInformation().getTotalDataReceived());
-            assertTrue("Server statistics should be enabled", _jmxUtils.getServerInformation().isStatisticsEnabled());
-        }
+        assertEquals("Incorrect server total messages", 5, _jmxUtils.getServerInformation().getTotalMessagesReceived());
+        assertEquals("Incorrect server total data", 1000, _jmxUtils.getServerInformation().getTotalDataReceived());
+        assertTrue("Server statistics should be enabled", _jmxUtils.getServerInformation().isStatisticsEnabled());
     }
 
     /**
@@ -167,11 +155,8 @@ public class MessageStatisticsConfigurationTest extends MessageStatisticsTestCas
         assertEquals("Incorrect vhost data", 1000, vhost.getTotalDataReceived());
         assertTrue("Vhost statistics should be enabled", vhost.isStatisticsEnabled());
 
-        if (!_brokerType.equals(VM))
-        {
-            assertEquals("Incorrect server total messages", 5, _jmxUtils.getServerInformation().getTotalMessagesReceived());
-            assertEquals("Incorrect server total data", 1000, _jmxUtils.getServerInformation().getTotalDataReceived());
-            assertTrue("Server statistics should be enabled", _jmxUtils.getServerInformation().isStatisticsEnabled());
-        }
+        assertEquals("Incorrect server total messages", 5, _jmxUtils.getServerInformation().getTotalMessagesReceived());
+        assertEquals("Incorrect server total data", 1000, _jmxUtils.getServerInformation().getTotalDataReceived());
+        assertTrue("Server statistics should be enabled", _jmxUtils.getServerInformation().isStatisticsEnabled());
     }
 }
