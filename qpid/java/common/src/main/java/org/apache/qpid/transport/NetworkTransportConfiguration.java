@@ -18,30 +18,29 @@
  * under the License.
  *
  */
-package org.apache.qpid.transport.network;
+package org.apache.qpid.transport;
 
-import java.net.SocketAddress;
-import java.nio.ByteBuffer;
+/**
+ * This interface provides a means for NetworkDrivers to configure TCP options such as incoming and outgoing
+ * buffer sizes and set particular options on the socket. NetworkDrivers should honour the values returned
+ * from here if the underlying implementation supports them.  
+ */ 
+public interface NetworkTransportConfiguration  
+{  
+    // Taken from Socket  
+    Boolean getTcpNoDelay(); 
 
-import org.apache.qpid.transport.Sender;
+    // The amount of memory in bytes to allocate to the incoming buffer 
+    Integer getReceiveBufferSize();  
 
-public interface NetworkConnection
-{
-    Sender<ByteBuffer> getSender();
+    // The amount of memory in bytes to allocate to the outgoing buffer 
+    Integer getSendBufferSize();
 
-    void close();
+    Integer getPort();
 
-    /**
-     * Returns the remote address of the underlying socket.
-     */
-    SocketAddress getRemoteAddress();
+    String getHost();
 
-    /**
-     * Returns the local address of the underlying socket.
-     */
-    SocketAddress getLocalAddress();
+    String getTransport();
 
-    void setMaxWriteIdle(int sec);
-
-    void setMaxReadIdle(int sec);
+    Integer getConnectorProcessors();
 }

@@ -20,12 +20,12 @@
  */
 package org.apache.qpid.protocol;
 
-import org.apache.qpid.transport.NetworkDriver;
+import org.apache.qpid.transport.network.NetworkConnection;
 
 public interface ProtocolEngineFactory  
 { 
  
   // Returns a new instance of a ProtocolEngine 
-  ProtocolEngine newProtocolEngine(NetworkDriver networkDriver); 
+  ProtocolEngine newProtocolEngine(NetworkConnection network);
    
 } 

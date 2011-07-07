@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.server;
 
+import static org.apache.qpid.transport.ConnectionSettings.WILDCARD_ADDRESS;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -44,6 +46,7 @@ import org.apache.log4j.xml.QpidLog4JConfigurator;
 import org.apache.qpid.common.QpidProperties;
 import org.apache.qpid.framing.ProtocolVersion;
 import org.apache.qpid.server.configuration.ServerConfiguration;
+import org.apache.qpid.server.configuration.ServerNetworkTransportConfiguration;
 import org.apache.qpid.server.configuration.management.ConfigurationManagementMBean;
 import org.apache.qpid.server.information.management.ServerInformationMBean;
 import org.apache.qpid.server.logging.SystemOutMessageLogger;
@@ -59,8 +62,11 @@ import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.ConfigurationFileApplicationRegistry;
 import org.apache.qpid.server.transport.QpidAcceptor;
 import org.apache.qpid.ssl.SSLContextFactory;
-import org.apache.qpid.transport.NetworkDriver;
-import org.apache.qpid.transport.network.mina.MINANetworkDriver;
+import org.apache.qpid.transport.ConnectionSettings;
+import org.apache.qpid.transport.NetworkTransportConfiguration;
+import org.apache.qpid.transport.network.IncomingNetworkTransport;
+import org.apache.qpid.transport.network.Transport;
+import org.apache.qpid.transport.network.mina.MinaNetworkTransport;
 
 /**
  * Main entry point for AMQPD.
@@ -370,7 +376,7 @@ public class Main
 
 
 
-            if (bindAddr.equals("wildcard"))
+            if (bindAddr.equals(WILDCARD_ADDRESS))
             {
                 bindAddress = new InetSocketAddress(0).getAddress();
             }
@@ -386,15 +392,12 @@ public class Main
             String keystorePassword = serverConfig.getKeystorePassword();
             String certType = serverConfig.getCertType();
             SSLContextFactory sslFactory = null;
-
+            
             if (!serverConfig.getSSLOnly())
             {
 
                 for(int port : ports)
                 {
-
-                    NetworkDriver driver = new MINANetworkDriver();
-
                     Set<VERSION> supported = EnumSet.allOf(VERSION.class);
 
                     if(exclude_0_10.contains(port))
@@ -415,26 +418,23 @@ public class Main
                         supported.remove(VERSION.v0_8);
                     }
 
+                    NetworkTransportConfiguration settings = 
+                        new ServerNetworkTransportConfiguration(serverConfig, port, bindAddress.getHostName(), Transport.TCP);
+
+                    IncomingNetworkTransport transport = new MinaNetworkTransport();
                     MultiVersionProtocolEngineFactory protocolEngineFactory =
                             new MultiVersionProtocolEngineFactory(hostName, supported);
 
-
-
-                    driver.bind(port, new InetAddress[]{bindAddress}, protocolEngineFactory,
-                                serverConfig.getNetworkConfiguration(), null);
+                    transport.accept(settings, protocolEngineFactory, sslFactory);
                     ApplicationRegistry.getInstance().addAcceptor(new InetSocketAddress(bindAddress, port),
-                                                                  new QpidAcceptor(driver,"TCP"));
+                                                                  new QpidAcceptor(transport, Transport.TCP));
                     CurrentActor.get().message(BrokerMessages.LISTENING("TCP", port));
-
                 }
 
             }
 
             if (serverConfig.getEnableSSL())
             {
-                sslFactory = new SSLContextFactory(keystorePath, keystorePassword, certType);
-                NetworkDriver driver = new MINANetworkDriver();
-
                 String sslPort = commandLine.getOptionValue("s");
                 int port = 0;
                 if (null != sslPort)
@@ -446,10 +446,17 @@ public class Main
                     port = serverConfig.getSSLPort();
                 }
 
-                driver.bind(port, new InetAddress[]{bindAddress},
-                            new AMQProtocolEngineFactory(), serverConfig.getNetworkConfiguration(), sslFactory);
+                NetworkTransportConfiguration settings = 
+                    new ServerNetworkTransportConfiguration(serverConfig, port, bindAddress.getHostName(), Transport.TCP);
+
+                sslFactory = new SSLContextFactory(keystorePath, keystorePassword, certType);
+
+                IncomingNetworkTransport transport = new MinaNetworkTransport();
+
+                transport.accept(settings, new AMQProtocolEngineFactory(), sslFactory);
+
                 ApplicationRegistry.getInstance().addAcceptor(new InetSocketAddress(bindAddress, port),
-                        new QpidAcceptor(driver,"TCP"));
+                                                              new QpidAcceptor(transport,"TCP"));
                 CurrentActor.get().message(BrokerMessages.LISTENING("TCP/SSL", port));
             }
 

@@ -483,7 +483,7 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
                 try
                 {
-                    acceptor.getNetworkDriver().close();
+                    acceptor.getNetworkTransport().close();
                 }
                 catch (Throwable e)
                 {

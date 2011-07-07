@@ -20,25 +20,28 @@
  */
 package org.apache.qpid.transport;
 
-/**
- * This interface provides a means for NetworkDrivers to configure TCP options such as incoming and outgoing
- * buffer sizes and set particular options on the socket. NetworkDrivers should honour the values returned
- * from here if the underlying implementation supports them.  
- */ 
-public interface NetworkDriverConfiguration  
-{  
-    // Taken from Socket  
-    Boolean getKeepAlive();
-    Boolean getOOBInline();
-    Boolean getReuseAddress();
-    Integer getSoLinger(); // null means off 
-    Integer getSoTimeout(); 
-    Boolean getTcpNoDelay(); 
-    Integer getTrafficClass();
+import java.nio.ByteBuffer;
 
-    // The amount of memory in bytes to allocate to the incoming buffer 
-    Integer getReceiveBufferSize();  
+public class MockSender implements Sender<ByteBuffer>
+{
 
-    // The amount of memory in bytes to allocate to the outgoing buffer 
-    Integer getSendBufferSize();  
-} 
+    public void setIdleTimeout(int i)
+    {
+
+    }
+
+    public void send(ByteBuffer msg)
+    {
+
+    }
+
+    public void flush()
+    {
+
+    }
+
+    public void close()
+    {
+
+    }
+}
