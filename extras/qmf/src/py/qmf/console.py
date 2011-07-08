@@ -359,8 +359,8 @@ class Object(object):
         for arg in method.arguments:
           if arg.dir.find("I") != -1:
             count += 1
-        if count != len(args):
-          raise Exception("Incorrect number of arguments: expected %d, got %d" % (count, len(args)))
+        if count != len(args) + len(kwargs):
+          raise Exception("Incorrect number of arguments: expected %d, got %d" % (count, len(args) + len(kwargs)))
 
         if self._agent.isV2:
           #
@@ -372,7 +372,10 @@ class Object(object):
           argMap = {}
           for arg in method.arguments:
             if arg.dir.find("I") != -1:
-              argMap[arg.name] = args[aIdx]
+              if aIdx < len(args):
+                argMap[arg.name] = args[aIdx]
+              else:
+                argMap[arg.name] = kwargs[arg.name]              
               aIdx += 1
           call['_arguments'] = argMap
 
@@ -438,6 +441,10 @@ class Object(object):
         timeout = None
     else:
       sync = True
+
+    # Remove special "meta" kwargs before handing to _sendMethodRequest() to process
+    if "_timeout" in kwargs: del kwargs["_timeout"]
+    if "_async" in kwargs: del kwargs["_async"]
 
     seq = self._sendMethodRequest(name, args, kwargs, sync, timeout)
     if seq:
