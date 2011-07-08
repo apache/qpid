@@ -23,7 +23,7 @@ package org.apache.qpid.configuration;
  */
 public class ClientProperties
 {
-  
+
     /**
      * Currently with Qpid it is not possible to change the client ID.
      * If one is not specified upon connection construction, an id is generated automatically.
@@ -68,38 +68,40 @@ public class ClientProperties
      * by the broker in TuneOK it will be used as the heartbeat interval.
      * If not a warning will be printed and the max value specified for
      * heartbeat in TuneOK will be used
-     * 
+     *
      * The default idle timeout is set to 120 secs
      */
     public static final String IDLE_TIMEOUT_PROP_NAME = "idle_timeout";
     public static final long DEFAULT_IDLE_TIMEOUT = 120000;
-    
+
     public static final String HEARTBEAT = "qpid.heartbeat";
     public static final int HEARTBEAT_DEFAULT = 120;
-    
+
     /**
      * This value will be used to determine the default destination syntax type.
      * Currently the two types are Binding URL (java only) and the Addressing format (used by
-     * all clients). 
+     * all clients).
      */
     public static final String DEST_SYNTAX = "qpid.dest_syntax";
-    
+
     public static final String USE_LEGACY_MAP_MESSAGE_FORMAT = "qpid.use_legacy_map_message";
 
     public static final String AMQP_VERSION = "qpid.amqp.version";
-    
+
+    public static final String QPID_VERIFY_CLIENT_ID = "qpid.verify_client_id";
+
     private static ClientProperties _instance = new ClientProperties();
-    
+
     /*
-    public static final QpidProperty<Boolean>  IGNORE_SET_CLIENTID_PROP_NAME = 
+    public static final QpidProperty<Boolean>  IGNORE_SET_CLIENTID_PROP_NAME =
         QpidProperty.booleanProperty(false,"qpid.ignore_set_client_id","ignore_setclientID");
-    
+
     public static final QpidProperty<Boolean> SYNC_PERSISTENT_PROP_NAME =
         QpidProperty.booleanProperty(false,"qpid.sync_persistence","sync_persistence");
-    
-    
+
+
     public static final QpidProperty<Integer> MAX_PREFETCH_PROP_NAME =
         QpidProperty.intProperty(500,"qpid.max_prefetch","max_prefetch"); */
-    
-    
+
+
 }
