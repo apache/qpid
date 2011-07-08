@@ -86,4 +86,4 @@ org.apache.qpid.server.persistent.NoLocalAfterRecoveryTest#*
 // Excluding here does not reduce test coverage.
 org.apache.qpid.server.configuration.ServerConfigurationFileTest#*
 
-
+org.apache.qpid.test.unit.client.connection.ConnectionTest#testClientIDVerification
