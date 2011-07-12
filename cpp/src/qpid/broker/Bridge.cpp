@@ -164,6 +164,12 @@ void Bridge::destroy()
     listener(this);
 }
 
+bool Bridge::isSessionReady() const
+{
+    SessionHandler& sessionHandler = conn->getChannel(id);
+    return sessionHandler.ready();
+}
+
 void Bridge::setPersistenceId(uint64_t pId) const
 {
     persistenceId = pId;
