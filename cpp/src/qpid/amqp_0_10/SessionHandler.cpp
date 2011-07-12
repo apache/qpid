@@ -188,9 +188,10 @@ void SessionHandler::detach(const std::string& name) {
 void SessionHandler::detached(const std::string& name, uint8_t code) {
     CHECK_NAME(name, "session.detached");
     awaitingDetached = false;
-    if (code != session::DETACH_CODE_NORMAL)
+    if (code != session::DETACH_CODE_NORMAL) {
+        sendReady = receiveReady = false;
         channelException(convert(code), "session.detached from peer.");
-    else {
+    } else {
         handleDetach();
     }
 }
