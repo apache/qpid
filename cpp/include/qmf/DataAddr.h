@@ -51,6 +51,9 @@ namespace qmf {
         QMF_EXTERN uint32_t getAgentEpoch() const;
         QMF_EXTERN qpid::types::Variant::Map asMap() const;
 
+        QMF_EXTERN bool operator==(const DataAddr&) const;
+        QMF_EXTERN bool operator<(const DataAddr&) const;
+
 #ifndef SWIG
     private:
         friend class qmf::PrivateImplRef<DataAddr>;
