@@ -248,6 +248,19 @@ void Link::ioThreadProcessing()
         return;
     QPID_LOG(debug, "Link::ioThreadProcessing()");
 
+    // check for bridge session errors and recover
+    if (!active.empty()) {
+        Bridges::iterator removed = std::remove_if(
+            active.begin(), active.end(), !boost::bind(&Bridge::isSessionReady, _1));
+        for (Bridges::iterator i = removed; i != active.end(); ++i) {
+            Bridge::shared_ptr  bridge = *i;
+            bridge->closed();
+            bridge->cancel(*connection);
+            created.push_back(bridge);
+        }
+        active.erase(removed, active.end());
+    }
+
     //process any pending creates and/or cancellations
     if (!created.empty()) {
         for (Bridges::iterator i = created.begin(); i != created.end(); ++i) {
@@ -296,7 +309,7 @@ void Link::maintenanceVisit ()
             }
         }
     }
-    else if (state == STATE_OPERATIONAL && (!created.empty() || !cancellations.empty()) && connection != 0)
+    else if (state == STATE_OPERATIONAL && (!active.empty() || !created.empty() || !cancellations.empty()) && connection != 0)
         connection->requestIOProcessing (boost::bind(&Link::ioThreadProcessing, this));
 }
 
