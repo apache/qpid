@@ -72,7 +72,7 @@ Schema Agent::getSchema(const SchemaId& s, Duration t) { return impl->getSchema(
 
 AgentImpl::AgentImpl(const std::string& n, uint32_t e, ConsoleSessionImpl& s) :
     name(n), directSubject(n), epoch(e), session(s), touched(true), untouchedCount(0), capability(0),
-    sender(session.directSender), nextCorrelator(1), schemaCache(s.schemaCache)
+    sender(session.directSender), schemaCache(s.schemaCache)
 {
 }
 
@@ -102,12 +102,11 @@ const Variant& AgentImpl::getAttribute(const string& k) const
 ConsoleEvent AgentImpl::query(const Query& query, Duration timeout)
 {
     boost::shared_ptr<SyncContext> context(new SyncContext());
-    uint32_t correlator;
+    uint32_t correlator(session.correlator());
     ConsoleEvent result;
 
     {
         qpid::sys::Mutex::ScopedLock l(lock);
-        correlator = nextCorrelator++;
         contextMap[correlator] = context;
     }
     try {
@@ -151,12 +150,7 @@ ConsoleEvent AgentImpl::query(const string& text, Duration timeout)
 
 uint32_t AgentImpl::queryAsync(const Query& query)
 {
-    uint32_t correlator;
-
-    {
-        qpid::sys::Mutex::ScopedLock l(lock);
-        correlator = nextCorrelator++;
-    }
+    uint32_t correlator(session.correlator());
 
     sendQuery(query, correlator);
     return correlator;
@@ -172,12 +166,11 @@ uint32_t AgentImpl::queryAsync(const string& text)
 ConsoleEvent AgentImpl::callMethod(const string& method, const Variant::Map& args, const DataAddr& addr, Duration timeout)
 {
     boost::shared_ptr<SyncContext> context(new SyncContext());
-    uint32_t correlator;
+    uint32_t correlator(session.correlator());
     ConsoleEvent result;
 
     {
         qpid::sys::Mutex::ScopedLock l(lock);
-        correlator = nextCorrelator++;
         contextMap[correlator] = context;
     }
     try {
@@ -213,12 +206,7 @@ ConsoleEvent AgentImpl::callMethod(const string& method, const Variant::Map& arg
 
 uint32_t AgentImpl::callMethodAsync(const string& method, const Variant::Map& args, const DataAddr& addr)
 {
-    uint32_t correlator;
-
-    {
-        qpid::sys::Mutex::ScopedLock l(lock);
-        correlator = nextCorrelator++;
-    }
+    uint32_t correlator(session.correlator());
 
     sendMethod(method, args, addr, correlator);
     return correlator;
@@ -596,12 +584,7 @@ void AgentImpl::sendMethod(const string& method, const Variant::Map& args, const
 
 void AgentImpl::sendSchemaRequest(const SchemaId& id)
 {
-    uint32_t correlator;
-
-    {
-        qpid::sys::Mutex::ScopedLock l(lock);
-        correlator = nextCorrelator++;
-    }
+    uint32_t correlator(session.correlator());
 
     if (capability >= AGENT_CAPABILITY_V2_SCHEMA) {
         Query query(QUERY_SCHEMA, id);
