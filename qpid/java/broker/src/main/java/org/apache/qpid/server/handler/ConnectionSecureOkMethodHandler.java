@@ -23,7 +23,6 @@ package org.apache.qpid.server.handler;
 
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
-
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.ConnectionCloseBody;
@@ -89,7 +88,10 @@ public class ConnectionSecureOkMethodHandler implements StateAwareMethodListener
                 disposeSaslServer(session);
                 break;
             case SUCCESS:
-                _logger.info("Connected as: " + ss.getAuthorizationID());
+                if (_logger.isInfoEnabled())
+                {
+                    _logger.info("Connected as: " + UsernamePrincipal.getUsernamePrincipalFromSubject(authResult.getSubject()));
+                }
                 stateManager.changeState(AMQState.CONNECTION_NOT_TUNED);
 
                 ConnectionTuneBody tuneBody =
@@ -97,8 +99,7 @@ public class ConnectionSecureOkMethodHandler implements StateAwareMethodListener
                                                                 ConnectionStartOkMethodHandler.getConfiguredFrameSize(),
                                                                 ApplicationRegistry.getInstance().getConfiguration().getHeartBeatDelay());
                 session.writeFrame(tuneBody.generateFrame(0));
-                final UsernamePrincipal principal = UsernamePrincipal.getUsernamePrincipalFromSubject(authResult.getSubject());
-                session.setAuthorizedID(principal);
+                session.setAuthorizedSubject(authResult.getSubject());
                 disposeSaslServer(session);                
                 break;
             case CONTINUE:
