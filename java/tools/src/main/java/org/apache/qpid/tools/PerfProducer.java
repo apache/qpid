@@ -54,6 +54,8 @@ import org.apache.qpid.thread.Threading;
  */
 public class PerfProducer extends PerfBase
 {
+    private static long SEC = 60000;
+
     MessageProducer producer;
     Message msg;
     Object payload;
@@ -63,36 +65,8 @@ public class PerfProducer extends PerfBase
     boolean durable = false;
     Random random;
     int msgSizeRange = 1024;
-
-    enum MessageType {
-        BYTES, TEXT, MAP, OBJECT;
-
-        public static MessageType getType(String s) throws Exception
-        {
-            if ("text".equalsIgnoreCase(s))
-            {
-                return TEXT;
-            }
-            else if ("bytes".equalsIgnoreCase(s))
-            {
-                return BYTES;
-            }
-            /*else if ("map".equalsIgnoreCase(s))
-            {
-                return MAP;
-            }
-            else if ("object".equalsIgnoreCase(s))
-            {
-                return OBJECT;
-            }*/
-            else
-            {
-                throw new Exception("Unsupported message type");
-            }
-        }
-    };
-
-    MessageType msgType = MessageType.BYTES;
+    boolean rateLimitProducer = false;
+    double rateFactor = 0.4;
 
     public PerfProducer()
     {
@@ -105,9 +79,11 @@ public class PerfProducer extends PerfBase
         feedbackDest = session.createTemporaryQueue();
 
         durable = params.isDurable();
-        msgType = MessageType.getType(params.getMessageType());
-
-        System.out.println("Using " + msgType + " messages");
+        rateLimitProducer = params.getRate() > 0 ? true : false;
+        if (rateLimitProducer)
+        {
+            System.out.println("The test will attempt to limit the producer to " + params.getRate() + " msg/sec");
+        }
 
         // if message caching is enabled we pre create the message
         // else we pre create the payload
@@ -204,7 +180,8 @@ public class PerfProducer extends PerfBase
         {
             producer.send(getNextMessage());
         }
-        Message msg = session.createTextMessage("End");
+        Message msg = session.createMessage();
+        msg.setBooleanProperty("End", true);
         msg.setJMSReplyTo(feedbackDest);
         producer.send(msg);
 
@@ -230,15 +207,29 @@ public class PerfProducer extends PerfBase
         boolean transacted = params.isTransacted();
         int tranSize =  params.getTransactionSize();
 
+        long limit = (long)(params.getRate() * rateFactor);
+        long timeLimit = (long)(SEC * rateFactor);
+
         long start = System.currentTimeMillis();
+        long interval = start;
         for(int i=0; i < count; i++ )
         {
             Message msg = getNextMessage();
-            msg.setJMSTimestamp(System.currentTimeMillis());
             producer.send(msg);
             if ( transacted && ((i+1) % tranSize == 0))
             {
                 session.commit();
+            }
+
+            if (rateLimitProducer && i%limit == 0)
+            {
+                long elapsed = System.currentTimeMillis() - interval;
+                if (elapsed < timeLimit)
+                {
+                    Thread.sleep(elapsed);
+                }
+                interval = System.currentTimeMillis();
+
             }
         }
         long time = System.currentTimeMillis() - start;
@@ -252,7 +243,8 @@ public class PerfProducer extends PerfBase
     public void waitForCompletion() throws Exception
     {
         MessageConsumer tmp = session.createConsumer(feedbackDest);
-        Message msg = session.createTextMessage("End");
+        Message msg = session.createMessage();
+        msg.setBooleanProperty("End", true);
         msg.setJMSReplyTo(feedbackDest);
         producer.send(msg);
 

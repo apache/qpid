@@ -18,9 +18,8 @@
 # under the License.
 #
 
-# This will run the 8 use cases defined below and produce
-# a report in tabular format. Refer to the documentation
-# for more details.
+# This will run the following test cases defined below and produce
+# a report in tabular format.
 
 SUB_MEM=-Xmx1024M
 PUB_MEM=-Xmx1024M
@@ -82,7 +81,7 @@ echo "--------------------------------------------------------------------------
 # setting very low values to start with and experiment while increasing them slowly.
 
 # Test 1 Trans Queue
-#run_testcase "Trans_Queue" "-Daddress=$QUEUE" "-Daddress=$QUEUE -Dwarmup_count=1 -Dmsg_count=10"
+run_testcase "Trans_Queue" "-Daddress=$QUEUE" "-Daddress=$QUEUE -Dwarmup_count=1 -Dmsg_count=10"
 
 # Test 2 Dura Queue
 run_testcase "Dura_Queue" "-Daddress=$DURA_QUEUE -Ddurable=true" "-Daddress=$DURA_QUEUE -Ddurable=true -Dwarmup_count=1 -Dmsg_count=10"

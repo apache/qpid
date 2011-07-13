@@ -67,6 +67,10 @@ public class TestParams
 
     private String msgType = "bytes";
 
+    private boolean printStdDev = false;
+
+    private long rate = -1;
+
     public TestParams()
     {
 
@@ -88,6 +92,8 @@ public class TestParams
         warmup_count = Integer.getInteger("warmup_count",warmup_count);
         random_msg_size = Boolean.getBoolean("random_msg_size");
         msgType = System.getProperty("msg_type","bytes");
+        printStdDev = Boolean.getBoolean("print_std_dev");
+        rate = Long.getLong("rate",-1);
     }
 
     public String getUrl()
@@ -173,5 +179,15 @@ public class TestParams
     public String getMessageType()
     {
         return msgType;
+    }
+
+    public boolean isPrintStdDev()
+    {
+        return printStdDev;
+    }
+
+    public long getRate()
+    {
+        return rate;
     }
 }
