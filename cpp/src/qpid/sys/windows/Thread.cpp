@@ -19,6 +19,11 @@
  *
  */
 
+// Ensure definition of OpenThread in mingw
+#ifndef _WIN32_WINNT
+#define _WIN32_WINNT 0x0501
+#endif
+
 #include "qpid/sys/Thread.h"
 #include "qpid/sys/Runnable.h"
 #include "qpid/sys/windows/check.h"
@@ -66,14 +71,14 @@ private:
     Runnable* runnable;
     shared_ptr keepAlive;
 
-    ThreadPrivate() : runnable(NULL), initCompleted(NULL),
-                      qpidThreadDone(NULL), threadId(GetCurrentThreadId()) {
+    ThreadPrivate() : threadId(GetCurrentThreadId()), initCompleted(NULL),
+                      qpidThreadDone(NULL), runnable(NULL) {
         threadHandle =  OpenThread (SYNCHRONIZE, FALSE, threadId);
         QPID_WINDOWS_CHECK_CRT_NZ(threadHandle);
     }
 
-    ThreadPrivate(Runnable* r) : runnable(r), threadHandle(NULL), initCompleted(NULL),
-                                 qpidThreadDone(NULL){}
+    ThreadPrivate(Runnable* r) : threadHandle(NULL), initCompleted(NULL),
+                                 qpidThreadDone(NULL), runnable(r) {}
 
     void start(shared_ptr& p);
     static shared_ptr createThread(Runnable* r);
