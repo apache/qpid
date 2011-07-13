@@ -66,7 +66,7 @@ class QPID_COMMON_CLASS_EXTERN SessionHandler : public framing::AMQP_AllOperatio
     QPID_COMMON_EXTERN void handleException(const qpid::SessionException& e);
 
     /** True if the handler is ready to send and receive */
-    bool ready() const;
+    QPID_COMMON_EXTERN bool ready() const;
 
     // Protocol methods
     QPID_COMMON_EXTERN void attach(const std::string& name, bool force);
