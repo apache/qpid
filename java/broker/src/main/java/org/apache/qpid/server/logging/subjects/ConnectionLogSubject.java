@@ -56,7 +56,7 @@ public class ConnectionLogSubject extends AbstractLogSubject
     {
         if (!_upToDate)
         {
-            if (_session.getPrincipal() != null)
+            if (_session.getAuthorizedPrincipal() != null)
             {
                 if (_session.getVirtualHost() != null)
                 {
@@ -72,7 +72,7 @@ public class ConnectionLogSubject extends AbstractLogSubject
                      */
                     _logString = "[" + MessageFormat.format(CONNECTION_FORMAT, 
                                                             _session.getSessionID(), 
-                                                            _session.getPrincipal().getName(), 
+                                                            _session.getAuthorizedPrincipal().getName(), 
                                                             _session.getRemoteAddress(),
                                                             _session.getVirtualHost().getName()) 
                                  + "] ";
@@ -83,7 +83,7 @@ public class ConnectionLogSubject extends AbstractLogSubject
                 {
                     _logString = "[" + MessageFormat.format(USER_FORMAT, 
                                                             _session.getSessionID(), 
-                                                            _session.getPrincipal().getName(), 
+                                                            _session.getAuthorizedPrincipal().getName(), 
                                                             _session.getRemoteAddress())
                                  + "] ";
 

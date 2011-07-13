@@ -127,7 +127,7 @@ public class ProtocolEngine_0_10  extends InputHandler implements ProtocolEngine
 
     public String getAuthId()
     {
-        return _connection.getAuthorizationID();
+        return _connection.getAuthorizedPrincipal() == null ? null : _connection.getAuthorizedPrincipal().getName();
     }
 
     public String getRemoteProcessName()

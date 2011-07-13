@@ -27,19 +27,20 @@ import java.util.Map;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQUnknownExchangeType;
-import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.server.exchange.*;
+import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.exchange.ExchangeFactory;
+import org.apache.qpid.server.exchange.ExchangeInUseException;
+import org.apache.qpid.server.exchange.ExchangeRegistry;
+import org.apache.qpid.server.exchange.ExchangeType;
+import org.apache.qpid.server.exchange.HeadersExchange;
 import org.apache.qpid.server.filter.FilterManager;
 import org.apache.qpid.server.filter.FilterManagerFactory;
 import org.apache.qpid.server.flow.FlowCreditManager_0_10;
 import org.apache.qpid.server.flow.WindowCreditManager;
-import org.apache.qpid.server.logging.actors.CurrentActor;
-import org.apache.qpid.server.logging.actors.GenericActor;
 import org.apache.qpid.server.message.MessageMetaData_0_10;
 import org.apache.qpid.server.message.MessageTransferMessage;
-import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.queue.BaseQueue;
@@ -105,7 +106,8 @@ public class ServerSessionDelegate extends SessionDelegate
     @Override
     public void command(Session session, Method method)
     {
-        SecurityManager.setThreadPrincipal(session.getConnection().getAuthorizationID());
+        final ServerConnection scon = (ServerConnection) session.getConnection();
+        SecurityManager.setThreadSubject(scon.getAuthorizedSubject());
 
         if(!session.isClosing())
         {
@@ -203,7 +205,7 @@ public class ServerSessionDelegate extends SessionDelegate
                 {
                     exception(session,method,ExecutionErrorCode.NOT_FOUND, "Queue: " + queueName + " not found");
                 }
-                else if(queue.getPrincipalHolder() != null && queue.getPrincipalHolder() != session)
+                else if(queue.getAuthorizationHolder() != null && queue.getAuthorizationHolder() != session)
                 {
                     exception(session,method,ExecutionErrorCode.RESOURCE_LOCKED, "Exclusive Queue: " + queueName + " owned exclusively by another session");
                 }
@@ -213,17 +215,17 @@ public class ServerSessionDelegate extends SessionDelegate
                     {
                         ServerSession s = (ServerSession) session;
                         queue.setExclusiveOwningSession(s);
-                        if(queue.getPrincipalHolder() == null)
+                        if(queue.getAuthorizationHolder() == null)
                         {
-                            queue.setPrincipalHolder(s);
+                            queue.setAuthorizationHolder(s);
                             queue.setExclusiveOwningSession(s);
                             ((ServerSession) session).addSessionCloseTask(new ServerSession.Task()
                             {
                                 public void doTask(ServerSession session)
                                 {
-                                    if(queue.getPrincipalHolder() == session)
+                                    if(queue.getAuthorizationHolder() == session)
                                     {
-                                        queue.setPrincipalHolder(null);
+                                        queue.setAuthorizationHolder(null);
                                         queue.setExclusiveOwningSession(null);
                                     }
                                 }
@@ -389,7 +391,7 @@ public class ServerSessionDelegate extends SessionDelegate
             ((ServerSession)session).unregister(sub);
             if(!queue.isDeleted() && queue.isExclusive() && queue.getConsumerCount() == 0)
             {
-                queue.setPrincipalHolder(null);
+                queue.setAuthorizationHolder(null);
             }
         }
     }
@@ -1007,7 +1009,7 @@ public class ServerSessionDelegate extends SessionDelegate
                             {
                                 public void doTask(ServerSession session)
                                 {
-                                    q.setPrincipalHolder(null);
+                                    q.setAuthorizationHolder(null);
                                     q.setExclusiveOwningSession(null);
                                 }
                             };
@@ -1077,7 +1079,7 @@ public class ServerSessionDelegate extends SessionDelegate
             }
             else
             {
-                if(queue.getPrincipalHolder() != null && queue.getPrincipalHolder() != session)
+                if(queue.getAuthorizationHolder() != null && queue.getAuthorizationHolder() != session)
                 {
                     exception(session,method,ExecutionErrorCode.RESOURCE_LOCKED, "Exclusive Queue: " + queueName + " owned exclusively by another session");
                 }

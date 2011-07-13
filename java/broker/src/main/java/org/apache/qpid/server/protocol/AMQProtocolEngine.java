@@ -37,6 +37,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 import javax.management.JMException;
+import javax.security.auth.Subject;
 import javax.security.sasl.SaslServer;
 
 import org.apache.log4j.Logger;
@@ -88,6 +89,7 @@ import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.output.ProtocolOutputConverter;
 import org.apache.qpid.server.output.ProtocolOutputConverterRegistry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
 import org.apache.qpid.server.state.AMQState;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.stats.StatisticsCounter;
@@ -145,7 +147,7 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
 
     private Map<Integer, Long> _closingChannelsList = new ConcurrentHashMap<Integer, Long>();
     private ProtocolOutputConverter _protocolOutputConverter;
-    private Principal _authorizedID;
+    private Subject _authorizedSubject;
     private MethodDispatcher _dispatcher;
     private ProtocolSessionIdentifier _sessionIdentifier;
 
@@ -806,7 +808,7 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
 
     public String toString()
     {
-        return getRemoteAddress() + "(" + (getAuthorizedID() == null ? "?" : getAuthorizedID().getName() + ")");
+        return getRemoteAddress() + "(" + (getAuthorizedPrincipal() == null ? "?" : getAuthorizedPrincipal().getName() + ")");
     }
 
     public String dump()
@@ -953,19 +955,23 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
         return _protocolOutputConverter;
     }
 
-    public void setAuthorizedID(Principal authorizedID)
+    public void setAuthorizedSubject(final Subject authorizedSubject)
     {
-        _authorizedID = authorizedID;
+        if (authorizedSubject == null)
+        {
+            throw new IllegalArgumentException("authorizedSubject cannot be null");
+        }
+        _authorizedSubject = authorizedSubject;
     }
-
-    public Principal getAuthorizedID()
+    
+    public Subject getAuthorizedSubject()
     {
-        return _authorizedID;
+        return _authorizedSubject;
     }
-
-    public Principal getPrincipal()
+    
+    public Principal getAuthorizedPrincipal()
     {
-        return _authorizedID;
+        return _authorizedSubject == null ? null : UsernamePrincipal.getUsernamePrincipalFromSubject(_authorizedSubject);
     }
 
     public SocketAddress getRemoteAddress()
@@ -1089,7 +1095,7 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
 
     public String getAuthId()
     {
-        return getAuthorizedID().getName();
+        return getAuthorizedPrincipal().getName();
     }
 
     public Integer getRemotePID()

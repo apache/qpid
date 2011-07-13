@@ -29,7 +29,7 @@ import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.message.ServerMessage;
-import org.apache.qpid.server.security.PrincipalHolder;
+import org.apache.qpid.server.security.AuthorizationHolder;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.binding.Binding;
@@ -48,7 +48,7 @@ public class MockAMQQueue implements AMQQueue
     private AMQShortString _name;
     private VirtualHost _virtualhost;
 
-    private PrincipalHolder _principalHolder;
+    private AuthorizationHolder _authorizationHolder;
 
     private AMQSessionModel _exclusiveOwner;
     private AMQShortString _owner;
@@ -536,14 +536,14 @@ public class MockAMQQueue implements AMQQueue
         return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
-    public PrincipalHolder getPrincipalHolder()
+    public AuthorizationHolder getAuthorizationHolder()
     {
-        return _principalHolder;
+        return _authorizationHolder;
     }
 
-    public void setPrincipalHolder(PrincipalHolder principalHolder)
+    public void setAuthorizationHolder(final AuthorizationHolder authorizationHolder)
     {
-        _principalHolder = principalHolder;
+        _authorizationHolder = authorizationHolder;
     }
 
     public AMQSessionModel getExclusiveOwningSession()

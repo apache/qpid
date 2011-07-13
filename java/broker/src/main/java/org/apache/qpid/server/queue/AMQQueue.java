@@ -32,7 +32,7 @@ import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.ExchangeReferrer;
 import org.apache.qpid.server.management.Managable;
 import org.apache.qpid.server.management.ManagedObject;
-import org.apache.qpid.server.security.PrincipalHolder;
+import org.apache.qpid.server.security.AuthorizationHolder;
 import org.apache.qpid.server.store.TransactionLogResource;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.txn.ServerTransaction;
@@ -69,8 +69,8 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>, ExchangeRefer
     boolean isAutoDelete();
 
     AMQShortString getOwner();
-    PrincipalHolder getPrincipalHolder();
-    void setPrincipalHolder(PrincipalHolder principalHolder);
+    AuthorizationHolder getAuthorizationHolder();
+    void setAuthorizationHolder(AuthorizationHolder principalHolder);
 
     void setExclusiveOwningSession(AMQSessionModel owner);
     AMQSessionModel getExclusiveOwningSession();
