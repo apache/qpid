@@ -937,7 +937,7 @@ if (NOT QPID_GENERATED_HEADERS_IN_SOURCE)
 endif (NOT QPID_GENERATED_HEADERS_IN_SOURCE)
 
 
-if (_MSC_VER)
+if (MSVC)
     # Install the DtcPlugin project and call it qpidxarm.
     set(AMQP_WCF_DIR ${qpid-cpp_SOURCE_DIR}/../wcf)
     set(qpidxarm_SOURCES ${AMQP_WCF_DIR}/src/Apache/Qpid/DtcPlugin/DtcPlugin.cpp)
@@ -950,7 +950,7 @@ if (_MSC_VER)
                  COMPONENT ${QPID_COMPONENT_CLIENT})
         install_pdb (qpidxarm ${QPID_COMPONENT_CLIENT})
     endif (EXISTS ${qpidxarm_SOURCES})
-endif (_MSC_VER)
+endif (MSVC)
 
 set (qpidbroker_SOURCES
      ${mgen_broker_cpp}
