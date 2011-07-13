@@ -20,6 +20,10 @@
  */
 package org.apache.qpid.tools;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.jms.BytesMessage;
 import javax.jms.Destination;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
@@ -87,6 +91,9 @@ public class PerfConsumer extends PerfBase implements MessageListener
     boolean transacted = false;
     int transSize = 0;
 
+    boolean printStdDev = false;
+    List<Long> sample;
+
     final Object lock = new Object();
 
     public PerfConsumer()
@@ -102,6 +109,11 @@ public class PerfConsumer extends PerfBase implements MessageListener
         // Storing the following two for efficiency
         transacted = params.isTransacted();
         transSize = params.getTransactionSize();
+        printStdDev = params.isPrintStdDev();
+        if (printStdDev)
+        {
+            sample = new ArrayList<Long>(params.getMsgCount());
+        }
     }
 
     public void warmup()throws Exception
@@ -112,19 +124,16 @@ public class PerfConsumer extends PerfBase implements MessageListener
         while (!start)
         {
             Message msg = consumer.receive();
-            if (msg instanceof TextMessage)
+            if (msg.getBooleanProperty("End"))
             {
-                if (((TextMessage)msg).getText().equals("End"))
+                start = true;
+                MessageProducer temp = session.createProducer(msg.getJMSReplyTo());
+                temp.send(session.createMessage());
+                if (params.isTransacted())
                 {
-                    start = true;
-                    MessageProducer temp = session.createProducer(msg.getJMSReplyTo());
-                    temp.send(session.createMessage());
-                    if (params.isTransacted())
-                    {
-                        session.commit();
-                    }
-                    temp.close();
+                    session.commit();
                 }
+                temp.close();
             }
         }
     }
@@ -161,7 +170,23 @@ public class PerfConsumer extends PerfBase implements MessageListener
         System.out.println(new StringBuilder("Max Latency         : ").
                            append(maxLatency).
                            append(" ms").toString());
+        if (printStdDev)
+        {
+            System.out.println(new StringBuilder("Std Dev             : ").
+                               append(calculateStdDev(avgLatency)).toString());
+        }
         System.out.println("Completed the test......\n");
+    }
+
+    public double calculateStdDev(double mean)
+    {
+        double v = 0;
+        for (double latency: sample)
+        {
+            v = v + Math.pow((latency-mean), 2);
+        }
+        v = v/sample.size();
+        return Math.round(Math.sqrt(v));
     }
 
     public void notifyCompletion(Destination replyTo) throws Exception
@@ -187,7 +212,13 @@ public class PerfConsumer extends PerfBase implements MessageListener
     {
         try
         {
-            if (msg instanceof TextMessage && ((TextMessage)msg).getText().equals("End"))
+            // To figure out the decoding overhead of text
+            if (msgType == MessageType.TEXT)
+            {
+                ((TextMessage)msg).getText();
+            }
+
+            if (msg.getBooleanProperty("End"))
             {
                 notifyCompletion(msg.getJMSReplyTo());
 
@@ -216,6 +247,10 @@ public class PerfConsumer extends PerfBase implements MessageListener
                 maxLatency = Math.max(maxLatency, latency);
                 minLatency = Math.min(minLatency, latency);
                 totalLatency = totalLatency + latency;
+                if (printStdDev)
+                {
+                    sample.add(latency);
+                }
             }
 
         }
@@ -252,16 +287,16 @@ public class PerfConsumer extends PerfBase implements MessageListener
                 cons.test();
             }
         };
-        
+
         Thread t;
         try
         {
-            t = Threading.getThreadFactory().createThread(r);                      
+            t = Threading.getThreadFactory().createThread(r);
         }
         catch(Exception e)
         {
             throw new Error("Error creating consumer thread",e);
         }
-        t.start(); 
+        t.start();
     }
 }

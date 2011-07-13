@@ -21,14 +21,10 @@
 package org.apache.qpid.tools;
 
 import java.text.DecimalFormat;
-import java.util.Hashtable;
 
 import javax.jms.Connection;
-import javax.jms.ConnectionFactory;
 import javax.jms.Destination;
 import javax.jms.Session;
-import javax.naming.Context;
-import javax.naming.InitialContext;
 
 import org.apache.qpid.client.AMQAnyDestination;
 import org.apache.qpid.client.AMQConnection;
@@ -42,13 +38,43 @@ public class PerfBase
     Destination feedbackDest;
     DecimalFormat df = new DecimalFormat("###.##");
 
+    enum MessageType {
+        BYTES, TEXT, MAP, OBJECT;
+
+        public static MessageType getType(String s) throws Exception
+        {
+            if ("text".equalsIgnoreCase(s))
+            {
+                return TEXT;
+            }
+            else if ("bytes".equalsIgnoreCase(s))
+            {
+                return BYTES;
+            }
+            /*else if ("map".equalsIgnoreCase(s))
+            {
+                return MAP;
+            }
+            else if ("object".equalsIgnoreCase(s))
+            {
+                return OBJECT;
+            }*/
+            else
+            {
+                throw new Exception("Unsupported message type");
+            }
+        }
+    };
+
+    MessageType msgType = MessageType.BYTES;
+
     public PerfBase()
     {
         params = new TestParams();
     }
 
     public void setUp() throws Exception
-    {        
+    {
 
         if (params.getHost().equals("") || params.getPort() == -1)
         {
@@ -63,6 +89,8 @@ public class PerfBase
                                     params.isTransacted()? Session.SESSION_TRANSACTED:params.getAckMode());
 
         dest = new AMQAnyDestination(params.getAddress());
+        msgType = MessageType.getType(params.getMessageType());
+        System.out.println("Using " + msgType + " messages");
     }
 
     public void handleError(Exception e,String msg)
