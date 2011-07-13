@@ -167,7 +167,8 @@ public class PluginManager implements Closeable
                 "org.apache.commons.logging; version=1.0.0," +
                 "org.apache.log4j; version=1.2.12," +
                 "javax.management.openmbean; version=1.0.0," +
-                "javax.management; version=1.0.0"
+                "javax.management; version=1.0.0," +
+                "javax.security.auth; version=1.0.0"
             );
         
         // No automatic shutdown hook

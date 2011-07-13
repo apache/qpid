@@ -44,7 +44,7 @@ import org.apache.qpid.server.logging.subjects.QueueLogSubject;
 import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.security.PrincipalHolder;
+import org.apache.qpid.server.security.AuthorizationHolder;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.subscription.SubscriptionList;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
@@ -83,7 +83,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
     /** null means shared */
     private final AMQShortString _owner;
 
-    private PrincipalHolder _prinicpalHolder;
+    private AuthorizationHolder _authorizationHolder;
 
     private boolean _exclusive = false;
     private AMQSessionModel _exclusiveOwner;
@@ -373,14 +373,14 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         return _owner;
     }
 
-    public PrincipalHolder getPrincipalHolder()
+    public AuthorizationHolder getAuthorizationHolder()
     {
-        return _prinicpalHolder;
+        return _authorizationHolder;
     }
 
-    public void setPrincipalHolder(PrincipalHolder prinicpalHolder)
+    public void setAuthorizationHolder(final AuthorizationHolder authorizationHolder)
     {
-        _prinicpalHolder = prinicpalHolder;
+        _authorizationHolder = authorizationHolder;
     }
 
 

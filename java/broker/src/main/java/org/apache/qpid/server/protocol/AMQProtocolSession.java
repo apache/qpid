@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.protocol;
 
+import javax.security.auth.Subject;
 import javax.security.sasl.SaslServer;
 
 import org.apache.qpid.AMQException;
@@ -28,16 +29,15 @@ import org.apache.qpid.framing.*;
 import org.apache.qpid.AMQConnectionException;
 import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
 import org.apache.qpid.server.AMQChannel;
-import org.apache.qpid.server.security.PrincipalHolder;
+import org.apache.qpid.server.security.AuthorizationHolder;
 import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.output.ProtocolOutputConverter;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
-import java.security.Principal;
 import java.util.List;
 
 
-public interface AMQProtocolSession extends AMQVersionAwareProtocolSession, PrincipalHolder, AMQConnectionModel
+public interface AMQProtocolSession extends AMQVersionAwareProtocolSession, AuthorizationHolder, AMQConnectionModel
 {
     long getSessionID();
 
@@ -205,7 +205,7 @@ public interface AMQProtocolSession extends AMQVersionAwareProtocolSession, Prin
 
     public ProtocolOutputConverter getProtocolOutputConverter();
 
-    void setAuthorizedID(Principal authorizedID);
+    void setAuthorizedSubject(Subject authorizedSubject);
 
     public java.net.SocketAddress getRemoteAddress();
 

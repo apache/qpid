@@ -34,6 +34,8 @@ import org.apache.qpid.protocol.ProtocolEngine;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.security.SecurityManager;
+import org.apache.qpid.server.security.auth.AuthenticationResult;
+import org.apache.qpid.server.security.auth.AuthenticationResult.AuthenticationStatus;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.transport.*;
 
@@ -70,7 +72,6 @@ public class ServerConnectionDelegate extends ServerDelegate
         return list;
     }
 
-    @Override
     public ServerSession getSession(Connection conn, SessionAttach atc)
     {
         SessionDelegate serverSessionDelegate = new ServerSessionDelegate(_appRegistry);
@@ -80,14 +81,33 @@ public class ServerConnectionDelegate extends ServerDelegate
         return ssn;
     }
 
-    @Override
     protected SaslServer createSaslServer(String mechanism) throws SaslException
     {
         return _appRegistry.getAuthenticationManager().createSaslServer(mechanism, _localFQDN);
 
     }
 
-    @Override
+    protected void secure(final SaslServer ss, final Connection conn, final byte[] response)
+    {
+        final AuthenticationResult authResult = _appRegistry.getAuthenticationManager().authenticate(ss, response);
+        final ServerConnection sconn = (ServerConnection) conn;
+        
+        
+        if (AuthenticationStatus.SUCCESS.equals(authResult.getStatus()))
+        {
+            tuneAuthorizedConnection(sconn);
+            sconn.setAuthorizedSubject(authResult.getSubject());
+        }
+        else if (AuthenticationStatus.CONTINUE.equals(authResult.getStatus()))
+        {
+            connectionAuthContinue(sconn, authResult.getChallenge());
+        }
+        else
+        {
+            connectionAuthFailed(sconn, authResult.getCause());
+        }
+    }
+
     public void connectionClose(Connection conn, ConnectionClose close)
     {
         try
@@ -101,10 +121,9 @@ public class ServerConnectionDelegate extends ServerDelegate
         
     }
 
-    @Override
     public void connectionOpen(Connection conn, ConnectionOpen open)
     {
-        ServerConnection sconn = (ServerConnection) conn;
+        final ServerConnection sconn = (ServerConnection) conn;
         
         VirtualHost vhost;
         String vhostName;
@@ -118,7 +137,7 @@ public class ServerConnectionDelegate extends ServerDelegate
         }
         vhost = _appRegistry.getVirtualHostRegistry().getVirtualHost(vhostName);
 
-        SecurityManager.setThreadPrincipal(conn.getAuthorizationID());
+        SecurityManager.setThreadSubject(sconn.getAuthorizedSubject());
         
         if(vhost != null)
         {

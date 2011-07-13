@@ -106,7 +106,7 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
                 else
                 {
                     queue = createQueue(queueName, body, virtualHost, protocolConnection);
-                    queue.setPrincipalHolder(protocolConnection);
+                    queue.setAuthorizationHolder(protocolConnection);
                     if (queue.isDurable() && !queue.isAutoDelete())
                     {
                         store.createQueue(queue, body.getArguments());
@@ -119,7 +119,7 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
                     if (body.getExclusive())
                     {
                         queue.setExclusiveOwningSession(protocolConnection.getChannel(channelId));
-                        queue.setPrincipalHolder(protocolConnection);
+                        queue.setAuthorizationHolder(protocolConnection);
 
                         if(!body.getDurable())
                         {

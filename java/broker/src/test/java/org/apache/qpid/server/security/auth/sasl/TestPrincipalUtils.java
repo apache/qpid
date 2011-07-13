@@ -18,12 +18,32 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.security;
+package org.apache.qpid.server.security.auth.sasl;
 
 import java.security.Principal;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
-public interface PrincipalHolder
+import javax.security.auth.Subject;
+
+public class TestPrincipalUtils
 {
-    /** @return a Principal that was used to authorized this session */
-    Principal getPrincipal();
+
+    /**
+     * Creates a test subject, with exactly one UsernamePrincipal and zero or more GroupPrincipals.
+     */
+    public static Subject createTestSubject(final String username, final String... groups)
+    {
+        final Set<Principal> principals = new HashSet<Principal>(1 + groups.length);
+        principals.add(new UsernamePrincipal(username));
+        for (String group : groups)
+        {
+            principals.add(new GroupPrincipal(group));
+        }
+        
+        final Subject subject = new Subject(true, principals, Collections.EMPTY_SET, Collections.EMPTY_SET);
+        return subject;
+    }
+
 }

@@ -120,7 +120,6 @@ public class Connection extends ConnectionInvoker
     private SaslServer saslServer;
     private SaslClient saslClient;
     private int idleTimeout = 0;
-    private String _authorizationID;
     private Map<String,Object> _serverProperties;
     private String userID;
     private ConnectionSettings conSettings;
@@ -659,16 +658,6 @@ public class Connection extends ConnectionInvoker
     public int getIdleTimeout()
     {
         return idleTimeout;
-    }
-
-    public void setAuthorizationID(String authorizationID)
-    {
-        _authorizationID = authorizationID;
-    }
-
-    public String getAuthorizationID()
-    {
-        return _authorizationID;
     }
 
     public String getUserID()
