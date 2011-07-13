@@ -432,8 +432,11 @@ uint32_t SessionImpl::getUnsettledAcksImpl(const std::string* destination)
 
 void SessionImpl::syncImpl(bool block)
 {
-    if (block) session.sync();
-    else session.flush();
+    {
+        ScopedLock l(lock);
+        if (block) session.sync();
+        else session.flush();
+    }
     //cleanup unconfirmed accept records:
     incoming.pendingAccept();
 }
