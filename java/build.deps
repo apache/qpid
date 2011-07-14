@@ -17,8 +17,6 @@
 # under the License.
 #
 
-backport-util-concurrent=lib/backport-util-concurrent-2.2.jar
-
 commons-beanutils-core=lib/commons-beanutils-core-1.8.0.jar
 commons-cli=lib/commons-cli-1.0.jar
 commons-codec=lib/commons-codec-1.3.jar
@@ -36,8 +34,8 @@ junit=lib/junit-3.8.1.jar
 
 log4j=lib/log4j-1.2.12.jar
 
-mina-core=lib/mina-core-1.0.1.jar
-mina-filter-ssl=lib/mina-filter-ssl-1.0.1.jar
+mina-core=lib/mina-core-1.1.7.jar
+mina-filter-ssl=lib/mina-filter-ssl-1.1.7.jar
 
 slf4j-api=lib/slf4j-api-1.6.1.jar
 slf4j-log4j=lib/slf4j-log4j12-1.6.1.jar
@@ -57,7 +55,7 @@ felix.libs=${osgi-core} ${felix-framework}
 commons-configuration.libs = ${commons-beanutils-core} ${commons-digester} \
   ${commons-codec} ${commons-lang} ${commons-collections} ${commons-configuration}
 
-common.libs=${slf4j-api} ${backport-util-concurrent} ${mina-core} ${mina-filter-ssl} 
+common.libs=${slf4j-api} ${mina-core} ${mina-filter-ssl} 
 client.libs=${geronimo-jms}
 tools.libs=${commons-configuration.libs} ${log4j}
 broker.libs=${commons-cli} ${commons-logging} ${log4j} ${slf4j-log4j} \
