@@ -17,8 +17,7 @@
 # under the License.
 #
 
-QPID_LIBS=$(build-classpath backport-util-concurrent \
-                            commons-beanutils \
+QPID_LIBS=$(build-classpath commons-beanutils \
                             commons-beanutils-core \
                             commons-cli \
                             commons-codec \
