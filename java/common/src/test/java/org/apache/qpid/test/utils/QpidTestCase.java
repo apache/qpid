@@ -25,7 +25,9 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import junit.framework.TestCase;
 import junit.framework.TestResult;
@@ -36,6 +38,8 @@ import org.apache.mina.util.AvailablePortFinder;
 public class QpidTestCase extends TestCase
 {
     protected static final Logger _logger = Logger.getLogger(QpidTestCase.class);
+
+    private final Map<String, String> _propertiesSetForTest = new HashMap<String, String>();
 
     /**
      * Some tests are excluded when the property test.excludes is set to true.
@@ -132,5 +136,50 @@ public class QpidTestCase extends TestCase
     public int findFreePort()
     {
         return AvailablePortFinder.getNextAvailable(10000);
+    }
+
+    /**
+     * Set a System property for duration of this test only. The tearDown will
+     * guarantee to reset the property to its previous value after the test
+     * completes.
+     *
+     * @param property The property to set
+     * @param value the value to set it to.
+     */
+    protected void setTestSystemProperty(String property, String value)
+    {
+        if (!_propertiesSetForTest.containsKey(property))
+        {
+            // Record the current value so we can revert it later.
+            _propertiesSetForTest.put(property, System.getProperty(property));
+        }
+
+        System.setProperty(property, value);
+    }
+
+    /**
+     * Restore the System property values that were set by this test run.
+     */
+    protected void revertTestSystemProperties()
+    {
+        for (String key : _propertiesSetForTest.keySet())
+        {
+            String value = _propertiesSetForTest.get(key);
+            if (value != null)
+            {
+                System.setProperty(key, value);
+            }
+            else
+            {
+                System.clearProperty(key);
+            }
+        }
+
+        _propertiesSetForTest.clear();
+    }
+
+    protected void tearDown() throws java.lang.Exception
+    {
+        revertTestSystemProperties();
     }
 }

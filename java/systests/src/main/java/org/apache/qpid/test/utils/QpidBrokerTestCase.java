@@ -91,7 +91,6 @@ public class QpidBrokerTestCase extends QpidTestCase
 
     protected long RECEIVE_TIMEOUT = 1000l;
 
-    private Map<String, String> _propertiesSetForTestOnly = new HashMap<String, String>();
     private Map<String, String> _propertiesSetForBroker = new HashMap<String, String>();
     private Map<Logger, Level> _loggerLevelSetForTest = new HashMap<Logger, Level>();
 
@@ -875,20 +874,14 @@ public class QpidBrokerTestCase extends QpidTestCase
     }
 
     /**
-     * Set a System (-D) property for the external Broker of this test.
+     * Set a System  property for the client (and broker if using the same vm) of this test.
      *
      * @param property The property to set
      * @param value the value to set it to.
      */
     protected void setTestClientSystemProperty(String property, String value)
     {
-        if (!_propertiesSetForTestOnly.containsKey(property))
-        {
-            // Record the current value so we can revert it later.
-            _propertiesSetForTestOnly.put(property, System.getProperty(property));
-        }
-
-        System.setProperty(property, value);
+        setTestSystemProperty(property, value);
     }
 
     /**
@@ -896,20 +889,7 @@ public class QpidBrokerTestCase extends QpidTestCase
      */
     protected void revertSystemProperties()
     {
-        for (String key : _propertiesSetForTestOnly.keySet())
-        {
-            String value = _propertiesSetForTestOnly.get(key);
-            if (value != null)
-            {
-                System.setProperty(key, value);
-            }
-            else
-            {
-                System.clearProperty(key);
-            }
-        }
-
-        _propertiesSetForTestOnly.clear();
+        revertTestSystemProperties();
 
         // We don't change the current VMs settings for Broker only properties
         // so we can just clear this map
@@ -1145,7 +1125,8 @@ public class QpidBrokerTestCase extends QpidTestCase
                 c.close();
             }
         }
-        finally{
+        finally
+        {
             // Ensure any problems with close does not interfer with property resets
             revertSystemProperties();
             revertLoggingLevels();

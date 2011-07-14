@@ -43,8 +43,8 @@ public class SecurityLayer
     Connection con;
     SSLSecurityLayer sslLayer;
     SASLSecurityLayer saslLayer;
-    
-    public void init(Connection con) throws TransportException
+
+    public SecurityLayer(Connection con)
     {
         this.con = con;
         this.settings = con.getConnectionSettings();
@@ -55,10 +55,9 @@ public class SecurityLayer
         if (settings.isUseSASLEncryption())
         {
             saslLayer = new SASLSecurityLayer();
-        }        
-        
+        }
     }
-    
+
     public Sender<ByteBuffer> sender(Sender<ByteBuffer> delegate)
     {
         Sender<ByteBuffer> sender = delegate;
