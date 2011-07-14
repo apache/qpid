@@ -36,21 +36,9 @@ Python Client Libraries
 
   ./python
 
-Ruby Client Libraries
-
-  ./ruby
-
-.NET Client Libraries
-
-  ./dotnet
-
 WCF Support
 
   ./wcf
-
-Messaging Client (implemented in Ruby):
-
-  ./ruby
 
 Management Tools (implemented in Python):
 
@@ -66,4 +54,4 @@ Documentation:
 
 
 Further information about the organization of Qpid source components may
-be found in ./doc/dev-readme/QPID-0.8-Component-README.pdf.
+be found in ./doc/dev-readme/QPID-Component-README.pdf.
