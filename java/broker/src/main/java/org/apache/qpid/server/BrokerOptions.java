@@ -141,6 +141,10 @@ public class BrokerOptions
         return _logWatchFrequency;
     }
 
+    /**
+     * Set the frequency with which the log config file will be checked for updates.
+     * @param logWatchFrequency frequency in seconds
+     */
     public void setLogWatchFrequency(final int logWatchFrequency)
     {
         _logWatchFrequency = logWatchFrequency;
