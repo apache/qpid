@@ -366,7 +366,7 @@ public class Broker
                 // log4j expects the watch interval in milliseconds
                 try
                 {
-                    QpidLog4JConfigurator.configureAndWatch(logConfigFile.getPath(), logWatchTime);
+                    QpidLog4JConfigurator.configureAndWatch(logConfigFile.getPath(), logWatchTime * 1000);
                 }
                 catch (Exception e)
                 {

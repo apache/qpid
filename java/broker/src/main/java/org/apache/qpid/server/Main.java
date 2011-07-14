@@ -38,10 +38,8 @@ import org.apache.qpid.server.registry.ApplicationRegistry;
  */
 public class Main
 {
-    private static Logger _logger;
-
-    protected final static Options options = new Options();
-    protected static CommandLine commandLine;
+    private final Options options = new Options();
+    private CommandLine commandLine;
 
     public static void main(String[] args)
     {
@@ -53,8 +51,11 @@ public class Main
             System.setProperty("log4j.defaultInitOverride", "true");
         }
 
-        //now that the override status is know, we can instantiate the Loggers
-        _logger = Logger.getLogger(Main.class);
+        new Main(args);
+    }
+
+    public Main(final String[] args)
+    {
         setOptions(options);
         if (parseCommandline(args))
         {
@@ -71,7 +72,7 @@ public class Main
         }
     }
 
-    protected static boolean parseCommandline(String[] args)
+    protected boolean parseCommandline(final String[] args)
     {
         try
         {
@@ -89,7 +90,7 @@ public class Main
         }
     }
 
-    protected static void setOptions(Options options)
+    protected void setOptions(final Options options)
     {
         Option help = new Option("h", "help", false, "print this message");
         Option version = new Option("v", "version", false, "print the version information and exit");
@@ -164,7 +165,7 @@ public class Main
         options.addOption(sslport);
     }
 
-    protected static void execute() throws Exception
+    protected void execute() throws Exception
     {
         BrokerOptions options = new BrokerOptions();
         String configFile = commandLine.getOptionValue(BrokerOptions.CONFIG);
@@ -176,7 +177,7 @@ public class Main
         String logWatchConfig = commandLine.getOptionValue(BrokerOptions.WATCH);
         if(logWatchConfig != null)
         {
-            options.setLogWatchFrequency(Integer.parseInt(logWatchConfig) * 1000);
+            options.setLogWatchFrequency(Integer.parseInt(logWatchConfig));
         }
 
         String logConfig = commandLine.getOptionValue(BrokerOptions.LOG_CONFIG);
@@ -217,17 +218,23 @@ public class Main
             }
         }
         
+        startBroker(options);
+    }
+
+    protected void startBroker(final BrokerOptions options) throws Exception
+    {
         Broker broker = new Broker();
         broker.startup(options);
     }
 
-    protected static void shutdown(int status)
+    protected void shutdown(final int status)
     {
         ApplicationRegistry.remove();
         System.exit(status);
     }
 
-    private static void parsePortArray(BrokerOptions options, Object[] ports, boolean ssl) throws InitException
+    private static void parsePortArray(final BrokerOptions options,final Object[] ports,
+                                       final boolean ssl) throws InitException
     {
         if(ports != null)
         {
@@ -252,7 +259,8 @@ public class Main
         }
     }
 
-    private static void parsePortArray(BrokerOptions options, Object[] ports, ProtocolExclusion excludedProtocol) throws InitException
+    private static void parsePortArray(final BrokerOptions options, final Object[] ports,
+                                       final ProtocolExclusion excludedProtocol) throws InitException
     {
         if(ports != null)
         {
