@@ -52,7 +52,7 @@ import org.apache.qpid.ssl.SSLContextFactory;
 import org.apache.qpid.transport.ConnectionSettings;
 import org.apache.qpid.transport.network.NetworkConnection;
 import org.apache.qpid.transport.network.OutgoingNetworkTransport;
-import org.apache.qpid.transport.network.mina.MinaNetworkTransport;
+import org.apache.qpid.transport.network.Transport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -105,7 +105,7 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
             sslFactory = new SSLContextFactory(sslConfig.getKeystorePath(), sslConfig.getKeystorePassword(), sslConfig.getCertType());
         }
 
-        OutgoingNetworkTransport transport = new MinaNetworkTransport();
+        OutgoingNetworkTransport transport = Transport.getOutgoingTransportInstance(getProtocolVersion());
         NetworkConnection network = transport.connect(settings, _conn._protocolHandler, sslFactory);
         _conn._protocolHandler.setNetworkConnection(network);
         _conn._protocolHandler.getProtocolSession().init();

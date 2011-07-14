@@ -25,7 +25,6 @@ import static org.apache.qpid.transport.Connection.State.CLOSING;
 import static org.apache.qpid.transport.Connection.State.NEW;
 import static org.apache.qpid.transport.Connection.State.OPEN;
 import static org.apache.qpid.transport.Connection.State.OPENING;
-import static org.apache.qpid.transport.Connection.State.RESUMING;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -41,12 +40,13 @@ import java.util.concurrent.atomic.AtomicLong;
 import javax.security.sasl.SaslClient;
 import javax.security.sasl.SaslServer;
 
+import org.apache.qpid.framing.ProtocolVersion;
 import org.apache.qpid.transport.network.Assembler;
 import org.apache.qpid.transport.network.Disassembler;
 import org.apache.qpid.transport.network.InputHandler;
 import org.apache.qpid.transport.network.NetworkConnection;
 import org.apache.qpid.transport.network.OutgoingNetworkTransport;
-import org.apache.qpid.transport.network.io.IoNetworkTransport;
+import org.apache.qpid.transport.network.Transport;
 import org.apache.qpid.transport.network.security.SecurityLayer;
 import org.apache.qpid.transport.util.Logger;
 import org.apache.qpid.transport.util.Waiter;
@@ -242,10 +242,9 @@ public class Connection extends ConnectionInvoker
             userID = settings.getUsername();
             delegate = new ClientDelegate(settings);
 
-            securityLayer = new SecurityLayer();
-            securityLayer.init(this);
+            securityLayer = new SecurityLayer(this);
 
-            OutgoingNetworkTransport transport = new IoNetworkTransport();
+            OutgoingNetworkTransport transport = Transport.getOutgoingTransportInstance(ProtocolVersion.v0_10);
             Receiver<ByteBuffer> receiver = securityLayer.receiver(new InputHandler(new Assembler(this)));
             NetworkConnection network = transport.connect(settings, receiver, null);
             sender = new Disassembler(securityLayer.sender(network.getSender()), settings.getMaxFrameSize());
