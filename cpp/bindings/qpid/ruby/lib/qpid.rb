@@ -24,4 +24,5 @@ require 'qpid/encoding'
 require 'qpid/message'
 require 'qpid/sender'
 require 'qpid/receiver'
+require 'qpid/session'
 
