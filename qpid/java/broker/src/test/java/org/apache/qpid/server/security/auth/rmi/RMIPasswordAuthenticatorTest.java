@@ -29,6 +29,7 @@ import javax.security.sasl.SaslServer;
 
 import junit.framework.TestCase;
 
+import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
 import org.apache.qpid.server.security.auth.AuthenticationResult.AuthenticationStatus;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
@@ -210,6 +211,16 @@ public class RMIPasswordAuthenticatorTest extends TestCase
     {
         return new AuthenticationManager()
         {
+            public void configure(ConfigurationPlugin config)
+            {
+                throw new UnsupportedOperationException();
+            }
+
+            public void initialise()
+            {
+                throw new UnsupportedOperationException();
+            }
+
             public void close()
             {
                 throw new UnsupportedOperationException();
@@ -246,5 +257,4 @@ public class RMIPasswordAuthenticatorTest extends TestCase
             }
         };
     }
-
 }

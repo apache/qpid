@@ -20,6 +20,10 @@
  */
 package org.apache.qpid.server.security.auth.manager;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileWriter;
 import java.security.Provider;
 import java.security.Security;
 
@@ -27,8 +31,13 @@ import javax.security.auth.Subject;
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
 
+import org.apache.commons.configuration.CompositeConfiguration;
+import org.apache.commons.configuration.ConfigurationException;
+import org.apache.commons.configuration.XMLConfiguration;
+import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
 import org.apache.qpid.server.security.auth.AuthenticationResult.AuthenticationStatus;
+import org.apache.qpid.server.security.auth.database.PlainPasswordFilePrincipalDatabase;
 import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
 import org.apache.qpid.server.util.InternalBrokerBaseCase;
 
@@ -39,8 +48,10 @@ import org.apache.qpid.server.util.InternalBrokerBaseCase;
  */
 public class PrincipalDatabaseAuthenticationManagerTest extends InternalBrokerBaseCase
 {
-    private PrincipalDatabaseAuthenticationManager _manager = null;
-    
+    private AuthenticationManager _manager = null; // Class under test
+    private String TEST_USERNAME = "guest";
+    private String TEST_PASSWORD = "guest";
+
     /**
      * @see org.apache.qpid.server.util.InternalBrokerBaseCase#tearDown()
      */
@@ -62,7 +73,79 @@ public class PrincipalDatabaseAuthenticationManagerTest extends InternalBrokerBa
     {
         super.setUp();
         
-        _manager = new PrincipalDatabaseAuthenticationManager();
+        final String passwdFilename = createPasswordFile().getCanonicalPath();
+        final ConfigurationPlugin config = getConfig(PlainPasswordFilePrincipalDatabase.class.getName(),
+                "passwordFile", passwdFilename);
+
+        _manager = PrincipalDatabaseAuthenticationManager.FACTORY.newInstance(config);
+    }
+
+    /**
+     * Tests where the case where the config specifies a PD implementation
+     * that is not found.
+     */
+    public void testPrincipalDatabaseImplementationNotFound() throws Exception
+    {
+        try
+        {
+            _manager = PrincipalDatabaseAuthenticationManager.FACTORY.newInstance(getConfig("not.Found", null, null));
+            fail("Exception not thrown");
+        }
+        catch (ConfigurationException ce)
+        {
+            // PASS
+        }
+    }
+
+    /**
+     * Tests where the case where the config specifies a PD implementation
+     * of the wrong type.
+     */
+    public void testPrincipalDatabaseImplementationWrongType() throws Exception
+    {
+        try
+        {
+            _manager = PrincipalDatabaseAuthenticationManager.FACTORY.newInstance(getConfig(String.class.getName(), null, null)); // Not a PrincipalDatabase implementation
+            fail("Exception not thrown");
+        }
+        catch (ConfigurationException ce)
+        {
+            // PASS
+        }
+    }
+
+    /**
+     * Tests the case where a setter with the desired name cannot be found.
+     */
+    public void testPrincipalDatabaseSetterNotFound() throws Exception
+    {
+        try
+        {
+            _manager = PrincipalDatabaseAuthenticationManager.FACTORY.newInstance(getConfig(PlainPasswordFilePrincipalDatabase.class.getName(), "noMethod", "test")); 
+            fail("Exception not thrown");
+        }
+        catch (ConfigurationException ce)
+        {
+            // PASS
+        }
+    }
+
+    /**
+     * QPID-1347. Make sure the exception message and stack trace is reasonable for an absent password file.
+     */
+    public void testPrincipalDatabaseThrowsSetterFileNotFound() throws Exception
+    {
+        try
+        {
+            _manager = PrincipalDatabaseAuthenticationManager.FACTORY.newInstance(getConfig(PlainPasswordFilePrincipalDatabase.class.getName(), "passwordFile", "/not/found")); 
+            fail("Exception not thrown");
+        }
+        catch (ConfigurationException ce)
+        {
+            // PASS
+            assertNotNull("Expected an underlying cause", ce.getCause());
+            assertEquals(FileNotFoundException.class, ce.getCause().getClass());
+        }
     }
 
     /**
@@ -72,8 +155,8 @@ public class PrincipalDatabaseAuthenticationManagerTest extends InternalBrokerBa
     {
         assertNotNull(_manager.getMechanisms());
         // relies on those mechanisms attached to PropertiesPrincipalDatabaseManager
-        assertEquals("PLAIN CRAM-MD5", _manager.getMechanisms());
-    
+        assertEquals("AMQPLAIN PLAIN CRAM-MD5", _manager.getMechanisms());
+
         Provider qpidProvider = Security.getProvider(PrincipalDatabaseAuthenticationManager.PROVIDER_NAME);
         assertNotNull(qpidProvider);
     }
@@ -166,11 +249,11 @@ public class PrincipalDatabaseAuthenticationManagerTest extends InternalBrokerBa
      */
     public void testClose() throws Exception
     {
-        assertEquals("PLAIN CRAM-MD5", _manager.getMechanisms());
+        assertEquals("AMQPLAIN PLAIN CRAM-MD5", _manager.getMechanisms());
         assertNotNull(Security.getProvider(PrincipalDatabaseAuthenticationManager.PROVIDER_NAME));
-        
+
         _manager.close();
-        
+
         // Check provider has been removed.
         assertNull(_manager.getMechanisms());
         assertNull(Security.getProvider(PrincipalDatabaseAuthenticationManager.PROVIDER_NAME));
@@ -227,5 +310,49 @@ public class PrincipalDatabaseAuthenticationManagerTest extends InternalBrokerBa
             {
             }
         };
+    }
+
+    private ConfigurationPlugin getConfig(final String clazz, final String argName, final String argValue) throws Exception
+    {
+        final ConfigurationPlugin config = new PrincipalDatabaseAuthenticationManager.PrincipalDatabaseAuthenticationManagerConfiguration();
+
+        XMLConfiguration xmlconfig = new XMLConfiguration();
+        xmlconfig.addProperty("pd-auth-manager.principal-database.class", clazz);
+
+        if (argName != null)
+        {
+            xmlconfig.addProperty("pd-auth-manager.principal-database.attributes.attribute.name", argName);
+            xmlconfig.addProperty("pd-auth-manager.principal-database.attributes.attribute.value", argValue);
+        }
+
+        // Create a CompositeConfiguration as this is what the broker uses
+        CompositeConfiguration composite = new CompositeConfiguration();
+        composite.addConfiguration(xmlconfig);
+        config.setConfiguration("security", xmlconfig);
+        return config;
+    }
+
+    private File createPasswordFile() throws Exception
+    {
+        BufferedWriter writer = null;
+        try
+        {
+            File testFile = File.createTempFile(this.getClass().getName(),"tmp");
+            testFile.deleteOnExit();
+
+            writer = new BufferedWriter(new FileWriter(testFile));
+            writer.write(TEST_USERNAME + ":" + TEST_PASSWORD);
+            writer.newLine();
+ 
+            return testFile;
+
+        }
+        finally
+        {
+            if (writer != null)
+            {
+                writer.close();
+            }
+        }
     }
 }
