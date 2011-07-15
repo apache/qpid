@@ -23,4 +23,5 @@ require 'test/unit'
 require 'test_encoding'
 require 'test_address'
 require 'test_message'
+require 'test_sender'
 
