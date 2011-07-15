@@ -21,4 +21,5 @@ require 'qpid/errors'
 require 'qpid/duration'
 require 'qpid/address'
 require 'qpid/encoding'
+require 'qpid/message'
 
