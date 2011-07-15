@@ -65,8 +65,8 @@ class FieldTable
     QPID_COMMON_EXTERN void decode(Buffer& buffer);
 
     QPID_COMMON_EXTERN int count() const;
-    QPID_COMMON_EXTERN size_t size() const { return values.size(); }
-    QPID_COMMON_EXTERN bool empty() { return size() == 0; }
+    QPID_COMMON_INLINE_EXTERN size_t size() const { return values.size(); }
+    QPID_COMMON_INLINE_EXTERN bool empty() { return size() == 0; }
     QPID_COMMON_EXTERN void set(const std::string& name, const ValuePtr& value);
     QPID_COMMON_EXTERN ValuePtr get(const std::string& name) const;
     QPID_COMMON_INLINE_EXTERN bool isSet(const std::string& name) const { return get(name).get() != 0; }
