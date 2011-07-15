@@ -26,4 +26,5 @@ require 'test_message'
 require 'test_sender'
 require 'test_receiver'
 require 'test_session'
+require 'test_connection'
 
