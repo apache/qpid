@@ -20,6 +20,20 @@
 $:.unshift File.join(File.dirname(__FILE__), "..", "lib")
 
 require 'test/unit'
-require 'test_encoding'
-require 'test_address'
+require 'flexmock/test_unit'
+
+require 'cqpid'
+require 'qpid/address'
+
+class TestAddress < Test::Unit::TestCase
+
+  def test_constructor
+    result = Qpid::Messaging::Address.new "name", "subject", {:foo => :bar}, "type"
+
+    assert_equal "name", result.name
+    assert_equal "subject", result.subject
+    assert_equal "type", result._type
+  end
+
+end
 
