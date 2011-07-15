@@ -19,4 +19,5 @@
 
 require 'qpid/errors'
 require 'qpid/duration'
+require 'qpid/encoding'
 
