@@ -23,13 +23,10 @@
 
 SUB_MEM=-Xmx1024M
 PUB_MEM=-Xmx1024M
-LOG_CONFIG="-Damqj.logging.level=WARN"
 QUEUE="queue;{create:always,node:{x-declare:{auto-delete:true}}}"
 DURA_QUEUE="dqueue;{create:always,node:{durable:true,x-declare:{auto-delete:true}}}"
 TOPIC="amq.topic/test"
 DURA_TOPIC="amq.topic/test;{create:always,link:{durable:true}}"
-
-. setenv.sh
 
 waitfor() { until grep -a -l "$2" $1 >/dev/null 2>&1 ; do sleep 1 ; done ; }
 cleanup()
@@ -46,9 +43,9 @@ cleanup()
 # $3 producer options
 run_testcase()
 {
-  sh run_sub.sh $LOG_CONFIG $SUB_MEM $2 > sub.out &
+  sh run-sub $LOG_CONFIG $SUB_MEM $2 > sub.out &
   waitfor sub.out "Warming up"
-  sh run_pub.sh $LOG_CONFIG $PUB_MEM $3 > pub.out &
+  sh run-pub $LOG_CONFIG $PUB_MEM $3 > pub.out &
   waitfor sub.out "Completed the test"
   waitfor pub.out "Consumer has completed the test"
   sleep 2 #give a grace period to shutdown
