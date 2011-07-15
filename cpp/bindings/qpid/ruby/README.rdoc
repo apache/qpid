@@ -1,0 +1,27 @@
+= Qpid - Open Source AMQP Messaging
+
+Qpid is an cross-platform enterprise messaging system.
+
+Version :: 0.10.0.alpha.0
+
+= Links
+
+Documents :: http://qpid.apache.org/
+
+= Installation
+
+You can install Qpid with the following command.
+
+  $ gem install qpid
+
+== Examples
+
+Take a look at the integration tests for examples on how to leverage
+the messaging capabilities of Qpid in your Ruby applications.
+
+== License
+
+Licensed to the Apache Software Foundation (ASF) under one or more
+contributor licensing agreements.
+
+
