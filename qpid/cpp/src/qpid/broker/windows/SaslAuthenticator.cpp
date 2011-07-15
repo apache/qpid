@@ -93,6 +93,7 @@ NullAuthenticator::~NullAuthenticator() {}
 void NullAuthenticator::getMechanisms(Array& mechanisms)
 {
     mechanisms.add(boost::shared_ptr<FieldValue>(new Str16Value("ANONYMOUS")));
+    mechanisms.add(boost::shared_ptr<FieldValue>(new Str16Value("PLAIN")));
 }
 
 void NullAuthenticator::start(const string& mechanism, const string& response)
