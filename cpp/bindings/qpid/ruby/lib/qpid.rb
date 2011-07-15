@@ -18,4 +18,5 @@
 #
 
 require 'qpid/errors'
+require 'qpid/duration'
 
