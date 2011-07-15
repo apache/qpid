@@ -80,9 +80,8 @@ public class FirewallConfigurationTest extends QpidTestCase
         out.write("\t<cache-directory>${QPID_WORK}/cache</cache-directory>\n");
         out.write("\t<management><enabled>false</enabled></management>\n");
         out.write("\t<security>\n");
-        out.write("\t\t<principal-databases>\n");
+        out.write("\t\t<pd-auth-manager>\n");
         out.write("\t\t\t<principal-database>\n");
-        out.write("\t\t\t\t<name>passwordfile</name>\n");
         out.write("\t\t\t\t<class>org.apache.qpid.server.security.auth.database.PlainPasswordFilePrincipalDatabase</class>\n");
         out.write("\t\t\t\t<attributes>\n");
         out.write("\t\t\t\t\t<attribute>\n");
@@ -91,7 +90,7 @@ public class FirewallConfigurationTest extends QpidTestCase
         out.write("\t\t\t\t\t</attribute>\n");
         out.write("\t\t\t\t</attributes>\n");
         out.write("\t\t\t</principal-database>\n");
-        out.write("\t\t</principal-databases>\n");
+        out.write("\t\t</pd-auth-manager>\n");
         out.write("\t\t<firewall>\n");
         out.write("\t\t\t<xml fileName=\"" + fileB.getAbsolutePath() + "\"/>");
         out.write("\t\t</firewall>\n");
@@ -163,9 +162,8 @@ public class FirewallConfigurationTest extends QpidTestCase
         out.write("\t<plugin-directory>${QPID_HOME}/lib/plugins</plugin-directory>\n");
         out.write("\t<management><enabled>false</enabled></management>\n");
         out.write("\t<security>\n");
-        out.write("\t\t<principal-databases>\n");
+        out.write("\t\t<pd-auth-manager>\n");
         out.write("\t\t\t<principal-database>\n");
-        out.write("\t\t\t\t<name>passwordfile</name>\n");
         out.write("\t\t\t\t<class>org.apache.qpid.server.security.auth.database.PlainPasswordFilePrincipalDatabase</class>\n");
         out.write("\t\t\t\t<attributes>\n");
         out.write("\t\t\t\t\t<attribute>\n");
@@ -174,7 +172,7 @@ public class FirewallConfigurationTest extends QpidTestCase
         out.write("\t\t\t\t\t</attribute>\n");
         out.write("\t\t\t\t</attributes>\n");
         out.write("\t\t\t</principal-database>\n");
-        out.write("\t\t</principal-databases>\n");
+        out.write("\t\t</pd-auth-manager>\n");
         out.write("\t\t<firewall>\n");
         out.write("\t\t\t<xml fileName=\"" + fileB.getAbsolutePath() + "\"/>");
         out.write("\t\t</firewall>\n");
@@ -262,9 +260,8 @@ public class FirewallConfigurationTest extends QpidTestCase
         out.write("\t<plugin-directory>${QPID_HOME}/lib/plugins</plugin-directory>\n");
         out.write("\t<management><enabled>false</enabled></management>\n");
         out.write("\t<security>\n");
-        out.write("\t\t<principal-databases>\n");
+        out.write("\t\t<pd-auth-manager>\n");
         out.write("\t\t\t<principal-database>\n");
-        out.write("\t\t\t\t<name>passwordfile</name>\n");
         out.write("\t\t\t\t<class>org.apache.qpid.server.security.auth.database.PlainPasswordFilePrincipalDatabase</class>\n");
         out.write("\t\t\t\t<attributes>\n");
         out.write("\t\t\t\t\t<attribute>\n");
@@ -273,7 +270,7 @@ public class FirewallConfigurationTest extends QpidTestCase
         out.write("\t\t\t\t\t</attribute>\n");
         out.write("\t\t\t\t</attributes>\n");
         out.write("\t\t\t</principal-database>\n");
-        out.write("\t\t</principal-databases>\n");
+        out.write("\t\t</pd-auth-manager>\n");
         out.write("\t\t<firewall>\n");
         out.write("\t\t\t<rule access=\""+ ((allow) ? "allow" : "deny") +"\" network=\"127.0.0.1\"/>");
         out.write("\t\t</firewall>\n");

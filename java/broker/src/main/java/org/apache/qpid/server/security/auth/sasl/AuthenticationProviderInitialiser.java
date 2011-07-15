@@ -25,9 +25,6 @@ import java.util.Map;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.sasl.SaslServerFactory;
 
-import org.apache.commons.configuration.Configuration;
-import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
-
 public interface AuthenticationProviderInitialiser
 {
     /**
@@ -35,24 +32,6 @@ public interface AuthenticationProviderInitialiser
      * client.
      */
     String getMechanismName();
-
-    /**
-     * Initialise the authentication provider.
-     * @param baseConfigPath the path in the config file that points to any config options for this provider. Each
-     * provider can have its own set of configuration options
-     * @param configuration the Apache Commons Configuration instance used to configure this provider
-     * @param principalDatabases the set of principal databases that are available
-     * @throws Exception needs refined Exception is too broad.
-     */
-    void initialise(String baseConfigPath, Configuration configuration,
-                    Map<String, PrincipalDatabase> principalDatabases) throws Exception;
-
-    /**
-     * Initialise the authentication provider.     
-     * @param db The principal database to initialise with
-     */
-    void initialise(PrincipalDatabase db);
-
 
     /**
      * @return the callback handler that should be used to process authentication requests for this mechanism. This will

@@ -217,6 +217,13 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
                     + (_configFile == null ? "" : " Configuration file : " + _configFile);
             throw new ConfigurationException(message);
         }
+
+        if (getListValue("security.principal-databases.principal-database(0).class").size() > 0)
+        {
+            String message = "Validation error : security/principal-databases is no longer supported within the configuration xml." 
+                    + (_configFile == null ? "" : " Configuration file : " + _configFile);
+            throw new ConfigurationException(message);
+        }
     }
 
     /*
@@ -512,28 +519,6 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
     public void setVirtualHostConfig(VirtualHostConfiguration config)
     {
         _virtualHosts.put(config.getName(), config);
-    }
-
-    public List<String> getPrincipalDatabaseNames()
-    {
-        return getListValue("security.principal-databases.principal-database.name");
-    }
-
-    public List<String> getPrincipalDatabaseClass()
-    {
-        return getListValue("security.principal-databases.principal-database.class");
-    }
-
-    public List<String> getPrincipalDatabaseAttributeNames(int index)
-    {
-        String name = "security.principal-databases.principal-database(" + index + ")." + "attributes.attribute.name";
-        return getListValue(name);
-    }
-
-    public List<String> getPrincipalDatabaseAttributeValues(int index)
-    {
-        String name = "security.principal-databases.principal-database(" + index + ")." + "attributes.attribute.value";
-        return getListValue(name);
     }
 
     public int getFrameSize()
