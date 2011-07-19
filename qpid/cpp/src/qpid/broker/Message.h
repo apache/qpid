@@ -29,13 +29,17 @@
 #include "qpid/sys/Monitor.h"
 #include "qpid/sys/Time.h"
 #include <boost/function.hpp>
+#include <boost/intrusive_ptr.hpp>
 #include <boost/shared_ptr.hpp>
+#include <memory>
 #include <string>
 #include <vector>
 
 namespace qpid {
 
 namespace framing {
+class AMQBody;
+class AMQHeaderBody;
 class FieldTable;
 class SequenceNumber;
 }
@@ -53,7 +57,6 @@ public:
     typedef boost::function<void (const boost::intrusive_ptr<Message>&)> MessageCallback;
 
     QPID_BROKER_EXTERN Message(const framing::SequenceNumber& id = framing::SequenceNumber());
-    QPID_BROKER_EXTERN Message(const Message&);
     QPID_BROKER_EXTERN ~Message();
 
     uint64_t getPersistenceId() const { return persistenceId; }
@@ -75,7 +78,6 @@ public:
     bool isImmediate() const;
     QPID_BROKER_EXTERN const framing::FieldTable* getApplicationHeaders() const;
     QPID_BROKER_EXTERN std::string getAppId() const;
-    framing::FieldTable& getOrInsertHeaders();
     QPID_BROKER_EXTERN bool isPersistent() const;
     bool requiresAccept();
 
@@ -85,18 +87,19 @@ public:
     sys::AbsTime getExpiration() const { return expiration; }
     void setExpiration(sys::AbsTime exp) { expiration = exp; }
     void adjustTtl();
+    void setRedelivered();
+    void insertCustomProperty(const std::string& key, int64_t value);
+    void insertCustomProperty(const std::string& key, const std::string& value);
+    void removeCustomProperty(const std::string& key);
+    void setExchange(const std::string&);
+    void clearApplicationHeadersFlag();
 
     framing::FrameSet& getFrames() { return frames; }
     const framing::FrameSet& getFrames() const { return frames; }
 
-    template <class T> T* getProperties() {
-        qpid::framing::AMQHeaderBody* p = frames.getHeaders();
-        return p->get<T>(true);
-    }
-
     template <class T> const T* getProperties() const {
         const qpid::framing::AMQHeaderBody* p = frames.getHeaders();
-        return p->get<T>(true);
+        return p->get<T>();
     }
 
     template <class T> const T* hasProperties() const {
@@ -156,9 +159,8 @@ public:
     bool isExcluded(const std::vector<std::string>& excludes) const;
     void addTraceId(const std::string& id);
 
-       void forcePersistent();
-       bool isForcedPersistent();
-
+    void forcePersistent();
+    bool isForcedPersistent();
 
     /** Call cb when dequeue is complete, may call immediately. Holds cb by reference. */
     void setDequeueCompleteCallback(MessageCallback& cb);
@@ -178,7 +180,7 @@ public:
     bool redelivered;
     bool loaded;
     bool staged;
-	bool forcePersistentPolicy; // used to force message as durable, via a broker policy
+    bool forcePersistentPolicy; // used to force message as durable, via a broker policy
     ConnectionToken* publisher;
     mutable MessageAdapter* adapter;
     qpid::sys::AbsTime expiration;
@@ -194,6 +196,15 @@ public:
 
     uint32_t requiredCredit;
     bool isManagementMessage;
+      mutable bool copyHeaderOnWrite;
+
+    /**
+     * Expects lock to be held
+     */
+    template <class T> T* getModifiableProperties() {
+        return getHeaderBody()->get<T>(true);
+    }
+    qpid::framing::AMQHeaderBody* getHeaderBody();
 };
 
 }}

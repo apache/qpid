@@ -318,22 +318,22 @@ class MessageUpdater {
         lastPos = message.position;
 
         // if the ttl > 0, we need to send the calculated expiration time to the updatee
-        if (message.payload->getProperties<DeliveryProperties>()->getTtl() > 0) {
+        const DeliveryProperties* dprops =
+            message.payload->getProperties<DeliveryProperties>();
+        if (dprops && dprops->getTtl() > 0) {
             bool hadMessageProps =
                 message.payload->hasProperties<framing::MessageProperties>();
-            framing::MessageProperties* mprops =
+            const framing::MessageProperties* mprops =
                 message.payload->getProperties<framing::MessageProperties>();
             bool hadApplicationHeaders = mprops->hasApplicationHeaders();
-            FieldTable& applicationHeaders = mprops->getApplicationHeaders();
-            applicationHeaders.setInt64(
-                UpdateClient::X_QPID_EXPIRATION,
-                sys::Duration(sys::EPOCH, message.payload->getExpiration()));
+            message.payload->insertCustomProperty(UpdateClient::X_QPID_EXPIRATION,
+                            sys::Duration(sys::EPOCH, message.payload->getExpiration()));
             // If message properties or application headers didn't exist
             // prior to us adding data, we want to remove them on the other side.
             if (!hadMessageProps)
-                applicationHeaders.setInt(UpdateClient::X_QPID_NO_MESSAGE_PROPS, 0);
+                message.payload->insertCustomProperty(UpdateClient::X_QPID_NO_MESSAGE_PROPS, 0);
             else if (!hadApplicationHeaders)
-                applicationHeaders.setInt(UpdateClient::X_QPID_NO_HEADERS, 0);
+                message.payload->insertCustomProperty(UpdateClient::X_QPID_NO_HEADERS, 0);
         }
 
         // We can't send a broker::Message via the normal client API,

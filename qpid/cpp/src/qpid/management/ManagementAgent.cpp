@@ -614,7 +614,7 @@ void ManagementAgent::sendBufferLH(const string& data,
     props->setAppId("qmf2");
 
     for (i = headers.begin(); i != headers.end(); ++i) {
-        msg->getOrInsertHeaders().setString(i->first, i->second.asString());
+        msg->insertCustomProperty(i->first, i->second.asString());
     }
 
     DeliveryProperties* dp =

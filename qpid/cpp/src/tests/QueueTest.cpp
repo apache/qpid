@@ -81,13 +81,14 @@ public:
     Message& getMessage() { return *(msg.get()); }
 };
 
-intrusive_ptr<Message> create_message(std::string exchange, std::string routingKey) {
+intrusive_ptr<Message> create_message(std::string exchange, std::string routingKey, uint64_t ttl = 0) {
     intrusive_ptr<Message> msg(new Message());
     AMQFrame method((MessageTransferBody(ProtocolVersion(), exchange, 0, 0)));
     AMQFrame header((AMQHeaderBody()));
     msg->getFrames().append(method);
     msg->getFrames().append(header);
     msg->getFrames().getHeaders()->get<DeliveryProperties>(true)->setRoutingKey(routingKey);
+    if (ttl) msg->getFrames().getHeaders()->get<DeliveryProperties>(true)->setTtl(ttl);
     return msg;
 }
 
@@ -437,10 +438,10 @@ QPID_AUTO_TEST_CASE(testLVQOrdering){
     BOOST_CHECK_EQUAL(key, "qpid.LVQ_key");
 
 
-	msg1->getProperties<MessageProperties>()->getApplicationHeaders().setString(key,"a");
-	msg2->getProperties<MessageProperties>()->getApplicationHeaders().setString(key,"b");
-	msg3->getProperties<MessageProperties>()->getApplicationHeaders().setString(key,"c");
-	msg4->getProperties<MessageProperties>()->getApplicationHeaders().setString(key,"a");
+	msg1->insertCustomProperty(key,"a");
+	msg2->insertCustomProperty(key,"b");
+	msg3->insertCustomProperty(key,"c");
+	msg4->insertCustomProperty(key,"a");
 
 	//enqueue 4 message
     queue->deliver(msg1);
@@ -462,9 +463,9 @@ QPID_AUTO_TEST_CASE(testLVQOrdering){
     intrusive_ptr<Message> msg5 = create_message("e", "A");
     intrusive_ptr<Message> msg6 = create_message("e", "B");
     intrusive_ptr<Message> msg7 = create_message("e", "C");
-	msg5->getProperties<MessageProperties>()->getApplicationHeaders().setString(key,"a");
-	msg6->getProperties<MessageProperties>()->getApplicationHeaders().setString(key,"b");
-	msg7->getProperties<MessageProperties>()->getApplicationHeaders().setString(key,"c");
+	msg5->insertCustomProperty(key,"a");
+	msg6->insertCustomProperty(key,"b");
+	msg7->insertCustomProperty(key,"c");
     queue->deliver(msg5);
     queue->deliver(msg6);
     queue->deliver(msg7);
@@ -499,7 +500,7 @@ QPID_AUTO_TEST_CASE(testLVQEmptyKey){
     BOOST_CHECK_EQUAL(key, "qpid.LVQ_key");
 
 
-    msg1->getProperties<MessageProperties>()->getApplicationHeaders().setString(key,"a");
+    msg1->insertCustomProperty(key,"a");
     queue->deliver(msg1);
     queue->deliver(msg2);
     BOOST_CHECK_EQUAL(queue->getMessageCount(), 2u);
@@ -531,12 +532,12 @@ QPID_AUTO_TEST_CASE(testLVQAcquire){
     BOOST_CHECK_EQUAL(key, "qpid.LVQ_key");
 
 
-    msg1->getProperties<MessageProperties>()->getApplicationHeaders().setString(key,"a");
-    msg2->getProperties<MessageProperties>()->getApplicationHeaders().setString(key,"b");
-    msg3->getProperties<MessageProperties>()->getApplicationHeaders().setString(key,"c");
-    msg4->getProperties<MessageProperties>()->getApplicationHeaders().setString(key,"a");
-    msg5->getProperties<MessageProperties>()->getApplicationHeaders().setString(key,"b");
-    msg6->getProperties<MessageProperties>()->getApplicationHeaders().setString(key,"c");
+    msg1->insertCustomProperty(key,"a");
+    msg2->insertCustomProperty(key,"b");
+    msg3->insertCustomProperty(key,"c");
+    msg4->insertCustomProperty(key,"a");
+    msg5->insertCustomProperty(key,"b");
+    msg6->insertCustomProperty(key,"c");
 
     //enqueue 4 message
     queue->deliver(msg1);
@@ -600,8 +601,8 @@ QPID_AUTO_TEST_CASE(testLVQMultiQueue){
     args.getLVQKey(key);
     BOOST_CHECK_EQUAL(key, "qpid.LVQ_key");
 
-    msg1->getProperties<MessageProperties>()->getApplicationHeaders().setString(key,"a");
-    msg2->getProperties<MessageProperties>()->getApplicationHeaders().setString(key,"a");
+    msg1->insertCustomProperty(key,"a");
+    msg2->insertCustomProperty(key,"a");
 
     queue1->deliver(msg1);
     queue2->deliver(msg1);
@@ -644,8 +645,8 @@ QPID_AUTO_TEST_CASE(testLVQRecover){
     args.getLVQKey(key);
     BOOST_CHECK_EQUAL(key, "qpid.LVQ_key");
 
-    msg1->getProperties<MessageProperties>()->getApplicationHeaders().setString(key,"a");
-    msg2->getProperties<MessageProperties>()->getApplicationHeaders().setString(key,"a");
+    msg1->insertCustomProperty(key,"a");
+    msg2->insertCustomProperty(key,"a");
 	// 3
     queue1->deliver(msg1);
     // 4
@@ -665,12 +666,7 @@ QPID_AUTO_TEST_CASE(testLVQRecover){
 void addMessagesToQueue(uint count, Queue& queue, uint oddTtl = 200, uint evenTtl = 0)
 {
     for (uint i = 0; i < count; i++) {
-        intrusive_ptr<Message> m = create_message("exchange", "key");
-        if (i % 2) {
-            if (oddTtl) m->getProperties<DeliveryProperties>()->setTtl(oddTtl);
-        } else {
-            if (evenTtl) m->getProperties<DeliveryProperties>()->setTtl(evenTtl);
-        }
+        intrusive_ptr<Message> m = create_message("exchange", "key", i % 2 ? oddTtl : evenTtl);
         m->setTimestamp(new broker::ExpiryPolicy);
         queue.deliver(m);
     }
