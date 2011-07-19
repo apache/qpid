@@ -93,11 +93,7 @@ void LegacyLVQ::removeIf(Predicate p)
     //purging of an LVQ is not enabled if the broker is clustered
     //(expired messages will be removed on delivery and consolidated
     //by key as part of normal LVQ operation).
-
-    //TODO: Is there a neater way to check whether broker is
-    //clustered? Here we assume that if the clustered timer is the
-    //same as the regular timer, we are not clustered:
-    if (!broker || &(broker->getClusterTimer()) == &(broker->getTimer()))
+    if (!broker || !broker->isInCluster())
         MessageMap::removeIf(p);
 }
 
