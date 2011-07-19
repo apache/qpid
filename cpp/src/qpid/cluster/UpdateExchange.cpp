@@ -49,18 +49,18 @@ void UpdateExchange::setProperties(const boost::intrusive_ptr<broker::Message>& 
 
     // Copy expiration from x-property if present.
     if (msg->hasProperties<MessageProperties>()) {
-        MessageProperties* mprops = msg->getProperties<MessageProperties>();
+        const MessageProperties* mprops = msg->getProperties<MessageProperties>();
         if (mprops->hasApplicationHeaders()) {
-            FieldTable& headers = mprops->getApplicationHeaders();
+            const FieldTable& headers = mprops->getApplicationHeaders();
             if (headers.isSet(UpdateClient::X_QPID_EXPIRATION)) {
                 msg->setExpiration(
                     sys::AbsTime(sys::EPOCH, headers.getAsInt64(UpdateClient::X_QPID_EXPIRATION)));
-                headers.erase(UpdateClient::X_QPID_EXPIRATION);
+                msg->removeCustomProperty(UpdateClient::X_QPID_EXPIRATION);
                 // Erase props/headers that were added by the UpdateClient
                 if (headers.isSet(UpdateClient::X_QPID_NO_MESSAGE_PROPS))
                     msg->eraseProperties<MessageProperties>();
                 else if (headers.isSet(UpdateClient::X_QPID_NO_HEADERS))
-                    mprops->clearApplicationHeadersFlag();
+                    msg->clearApplicationHeadersFlag();
             }
         }
     }
