@@ -139,6 +139,11 @@ bool AMQFrame::decode(Buffer& buffer)
     return true;
 }
 
+void AMQFrame::cloneBody()
+{
+    body = body->clone();
+}
+
 std::ostream& operator<<(std::ostream& out, const AMQFrame& f)
 {
     return

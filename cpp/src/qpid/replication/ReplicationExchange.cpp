@@ -97,11 +97,10 @@ void ReplicationExchange::handleEnqueueEvent(const FieldTable* args, Deliverable
         } else {
             queue->setPosition(seqno1);  
 
-            FieldTable& headers = msg.getMessage().getProperties<MessageProperties>()->getApplicationHeaders();
-            headers.erase(REPLICATION_TARGET_QUEUE);
-            headers.erase(REPLICATION_EVENT_SEQNO);
-            headers.erase(REPLICATION_EVENT_TYPE);
-            headers.erase(QUEUE_MESSAGE_POSITION);
+            msg.getMessage().removeCustomProperty(REPLICATION_TARGET_QUEUE);
+            msg.getMessage().removeCustomProperty(REPLICATION_EVENT_SEQNO);
+            msg.getMessage().removeCustomProperty(REPLICATION_EVENT_TYPE);
+            msg.getMessage().removeCustomProperty(QUEUE_MESSAGE_POSITION);
             msg.deliverTo(queue);
             QPID_LOG(debug, "Enqueued replicated message onto " << queueName);
             if (mgmtExchange != 0) {

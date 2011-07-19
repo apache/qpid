@@ -69,10 +69,9 @@ void ReplicatingEventListener::deliverDequeueMessage(const QueuedMessage& dequeu
 void ReplicatingEventListener::deliverEnqueueMessage(const QueuedMessage& enqueued)
 {
     boost::intrusive_ptr<Message> msg(cloneMessage(*(enqueued.queue), enqueued.payload));
-    FieldTable& headers = msg->getProperties<MessageProperties>()->getApplicationHeaders();
-    headers.setString(REPLICATION_TARGET_QUEUE, enqueued.queue->getName());
-    headers.setInt(REPLICATION_EVENT_TYPE, ENQUEUE);
-    headers.setInt(QUEUE_MESSAGE_POSITION,enqueued.position);
+    msg->insertCustomProperty(REPLICATION_TARGET_QUEUE, enqueued.queue->getName());
+    msg->insertCustomProperty(REPLICATION_EVENT_TYPE, ENQUEUE);
+    msg->insertCustomProperty(QUEUE_MESSAGE_POSITION,enqueued.position);
     route(msg);
 }
 
