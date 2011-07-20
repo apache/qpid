@@ -32,7 +32,6 @@
 #include "qpid/framing/TypeFilter.h"
 #include "qpid/framing/reply_exceptions.h"
 #include "qpid/log/Statement.h"
-#include <boost/pointer_cast.hpp>
 
 #include <time.h>
 
