@@ -88,9 +88,9 @@ public:
     void setExpiration(sys::AbsTime exp) { expiration = exp; }
     void adjustTtl();
     void setRedelivered();
-    void insertCustomProperty(const std::string& key, int64_t value);
-    void insertCustomProperty(const std::string& key, const std::string& value);
-    void removeCustomProperty(const std::string& key);
+    QPID_BROKER_EXTERN void insertCustomProperty(const std::string& key, int64_t value);
+    QPID_BROKER_EXTERN void insertCustomProperty(const std::string& key, const std::string& value);
+    QPID_BROKER_EXTERN void removeCustomProperty(const std::string& key);
     void setExchange(const std::string&);
     void clearApplicationHeadersFlag();
 
