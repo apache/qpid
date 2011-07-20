@@ -62,7 +62,7 @@ class QPID_COMMON_CLASS_EXTERN AMQFrame : public AMQDataBlock
     /**
      * Take a deep copy of the body currently referenced
      */
-    void cloneBody();
+    QPID_COMMON_EXTERN void cloneBody();
 
     QPID_COMMON_EXTERN void encode(Buffer& buffer) const; 
     QPID_COMMON_EXTERN bool decode(Buffer& buffer); 
