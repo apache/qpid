@@ -21,9 +21,13 @@
 package org.apache.qpid.tools;
 
 import java.text.DecimalFormat;
+import java.util.UUID;
 
 import javax.jms.Connection;
 import javax.jms.Destination;
+import javax.jms.MapMessage;
+import javax.jms.MessageConsumer;
+import javax.jms.MessageProducer;
 import javax.jms.Session;
 
 import org.apache.qpid.client.AMQAnyDestination;
@@ -31,12 +35,42 @@ import org.apache.qpid.client.AMQConnection;
 
 public class PerfBase
 {
+    public final static String CODE = "CODE";
+    public final static String ID = "ID";
+    public final static String REPLY_ADDR = "REPLY_ADDR";
+    public final static String MAX_LATENCY = "MAX_LATENCY";
+    public final static String MIN_LATENCY = "MIN_LATENCY";
+    public final static String AVG_LATENCY = "AVG_LATENCY";
+    public final static String STD_DEV = "STD_DEV";
+    public final static String CONS_RATE = "CONS_RATE";
+    public final static String PROD_RATE = "PROD_RATE";
+    public final static String MSG_COUNT = "MSG_COUNT";
+    public final static String TIMESTAMP = "Timestamp";
+
+    String CONTROLLER_ADDR = System.getProperty("CONT_ADDR","CONTROLLER;{create: always, node:{x-declare:{auto-delete:true}}}");
+
     TestParams params;
     Connection con;
     Session session;
+    Session controllerSession;
     Destination dest;
-    Destination feedbackDest;
+    Destination myControlQueue;
+    Destination controllerQueue;
     DecimalFormat df = new DecimalFormat("###.##");
+    String id = UUID.randomUUID().toString();
+    String myControlQueueAddr = id + ";{create: always}";
+
+    MessageProducer sendToController;
+    MessageConsumer receiveFromController;
+
+    enum OPCode {
+        REGISTER_CONSUMER, REGISTER_PRODUCER,
+        PRODUCER_STARTWARMUP, CONSUMER_STARTWARMUP,
+        CONSUMER_READY, PRODUCER_READY,
+        PRODUCER_START,
+        RECEIVED_END_MSG, CONSUMER_STOP,
+        RECEIVED_PRODUCER_STATS, RECEIVED_CONSUMER_STATS
+    };
 
     enum MessageType {
         BYTES, TEXT, MAP, OBJECT;
@@ -88,9 +122,41 @@ public class PerfBase
         session = con.createSession(params.isTransacted(),
                                     params.isTransacted()? Session.SESSION_TRANSACTED:params.getAckMode());
 
+        controllerSession = con.createSession(false, Session.AUTO_ACKNOWLEDGE);
+
         dest = new AMQAnyDestination(params.getAddress());
+        controllerQueue = new AMQAnyDestination(CONTROLLER_ADDR);
+        myControlQueue = session.createQueue(myControlQueueAddr);
         msgType = MessageType.getType(params.getMessageType());
         System.out.println("Using " + msgType + " messages");
+
+        sendToController = controllerSession.createProducer(controllerQueue);
+        receiveFromController = controllerSession.createConsumer(myControlQueue);
+    }
+
+    public synchronized void sendMessageToController(MapMessage m) throws Exception
+    {
+        m.setString(ID, id);
+        sendToController.send(m);
+    }
+
+    public void receiveFromController(OPCode expected) throws Exception
+    {
+        MapMessage m = (MapMessage)receiveFromController.receive();
+        OPCode code = OPCode.values()[m.getInt(CODE)];
+        System.out.println("Received Code : " + code);
+        if (expected != code)
+        {
+            throw new Exception("Expected OPCode : " + expected + " but received : " + code);
+        }
+
+    }
+
+    public void tearDown() throws Exception
+    {
+        session.close();
+        controllerSession.close();
+        con.close();
     }
 
     public void handleError(Exception e,String msg)
