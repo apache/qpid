@@ -26,8 +26,8 @@ import java.util.Random;
 
 import javax.jms.BytesMessage;
 import javax.jms.DeliveryMode;
+import javax.jms.MapMessage;
 import javax.jms.Message;
-import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
 
 import org.apache.qpid.thread.Threading;
@@ -67,17 +67,17 @@ public class PerfProducer extends PerfBase
     int msgSizeRange = 1024;
     boolean rateLimitProducer = false;
     double rateFactor = 0.4;
+    double rate = 0.0;
 
     public PerfProducer()
     {
         super();
+        System.out.println("Producer ID : " + id);
     }
 
     public void setUp() throws Exception
     {
         super.setUp();
-        feedbackDest = session.createTemporaryQueue();
-
         durable = params.isDurable();
         rateLimitProducer = params.getRate() > 0 ? true : false;
         if (rateLimitProducer)
@@ -116,6 +116,11 @@ public class PerfProducer extends PerfBase
         producer = session.createProducer(dest);
         producer.setDisableMessageID(params.isDisableMessageID());
         producer.setDisableMessageTimestamp(params.isDisableTimestamp());
+
+        MapMessage m = controllerSession.createMapMessage();
+        m.setInt(CODE, OPCode.REGISTER_PRODUCER.ordinal());
+        m.setString(REPLY_ADDR,myControlQueueAddr);
+        sendMessageToController(m);
     }
 
     Object createPayload(int size)
@@ -143,7 +148,6 @@ public class PerfProducer extends PerfBase
             return m;
         }
     }
-
 
     protected Message getNextMessage() throws Exception
     {
@@ -173,48 +177,37 @@ public class PerfProducer extends PerfBase
 
     public void warmup()throws Exception
     {
-        System.out.println("Warming up......");
-        MessageConsumer tmp = session.createConsumer(feedbackDest);
+        receiveFromController(OPCode.PRODUCER_STARTWARMUP);
+        System.out.println("Producer Warming up......");
 
         for (int i=0; i < params.getWarmupCount() -1; i++)
         {
             producer.send(getNextMessage());
         }
-        Message msg = session.createMessage();
-        msg.setBooleanProperty("End", true);
-        msg.setJMSReplyTo(feedbackDest);
-        producer.send(msg);
+        sendEndMessage();
 
         if (params.isTransacted())
         {
             session.commit();
         }
-
-        tmp.receive();
-
-        if (params.isTransacted())
-        {
-            session.commit();
-        }
-
-        tmp.close();
     }
 
     public void startTest() throws Exception
     {
-        System.out.println("Starting test......");
+        receiveFromController(OPCode.PRODUCER_START);
         int count = params.getMsgCount();
         boolean transacted = params.isTransacted();
         int tranSize =  params.getTransactionSize();
 
-        long limit = (long)(params.getRate() * rateFactor);
-        long timeLimit = (long)(SEC * rateFactor);
+        long limit = (long)(params.getRate() * rateFactor); // in msecs
+        long timeLimit = (long)(SEC * rateFactor); // in msecs
 
-        long start = System.currentTimeMillis();
+        long start = Clock.getTime(); // defaults to nano secs
         long interval = start;
         for(int i=0; i < count; i++ )
         {
             Message msg = getNextMessage();
+            msg.setLongProperty(TIMESTAMP, Clock.getTime());
             producer.send(msg);
             if ( transacted && ((i+1) % tranSize == 0))
             {
@@ -223,62 +216,53 @@ public class PerfProducer extends PerfBase
 
             if (rateLimitProducer && i%limit == 0)
             {
-                long elapsed = System.currentTimeMillis() - interval;
+                long elapsed = (Clock.getTime() - interval)*Clock.convertToMiliSecs(); // in msecs
                 if (elapsed < timeLimit)
                 {
                     Thread.sleep(elapsed);
                 }
-                interval = System.currentTimeMillis();
+                interval = Clock.getTime();
 
             }
         }
-        long time = System.currentTimeMillis() - start;
-        double rate = ((double)count/(double)time)*1000;
+        sendEndMessage();
+        if ( transacted)
+        {
+            session.commit();
+        }
+        long time = Clock.getTime() - start;
+        rate = (double)count*Clock.convertToSecs()/(double)time;
         System.out.println(new StringBuilder("Producer rate: ").
                                append(df.format(rate)).
                                append(" msg/sec").
                                toString());
+
+        System.out.println("Producer has completed the test......");
     }
 
-    public void waitForCompletion() throws Exception
+    public void sendEndMessage() throws Exception
     {
-        MessageConsumer tmp = session.createConsumer(feedbackDest);
         Message msg = session.createMessage();
         msg.setBooleanProperty("End", true);
-        msg.setJMSReplyTo(feedbackDest);
         producer.send(msg);
-
-        if (params.isTransacted())
-        {
-            session.commit();
-        }
-
-        tmp.receive();
-
-        if (params.isTransacted())
-        {
-            session.commit();
-        }
-
-        tmp.close();
-        System.out.println("Consumer has completed the test......");
     }
 
-    public void tearDown() throws Exception
+    public void sendResults() throws Exception
     {
-        producer.close();
-        session.close();
-        con.close();
+        MapMessage msg = controllerSession.createMapMessage();
+        msg.setInt(CODE, OPCode.RECEIVED_PRODUCER_STATS.ordinal());
+        msg.setDouble(PROD_RATE, rate);
+        sendMessageToController(msg);
     }
 
-    public void test()
+    public void run()
     {
         try
         {
             setUp();
             warmup();
             startTest();
-            waitForCompletion();
+            sendResults();
             tearDown();
         }
         catch(Exception e)
@@ -287,15 +271,42 @@ public class PerfProducer extends PerfBase
         }
     }
 
+    public void startControllerIfNeeded()
+    {
+        if (!params.isExternalController())
+        {
+            final PerfTestController controller = new PerfTestController();
+            Runnable r = new Runnable()
+            {
+                public void run()
+                {
+                    controller.run();
+                }
+            };
+
+            Thread t;
+            try
+            {
+                t = Threading.getThreadFactory().createThread(r);
+            }
+            catch(Exception e)
+            {
+                throw new Error("Error creating controller thread",e);
+            }
+            t.start();
+        }
+    }
+
 
     public static void main(String[] args)
     {
         final PerfProducer prod = new PerfProducer();
+        prod.startControllerIfNeeded();
         Runnable r = new Runnable()
         {
             public void run()
             {
-                prod.test();
+                prod.run();
             }
         };
 

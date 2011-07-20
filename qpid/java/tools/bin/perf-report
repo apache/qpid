@@ -21,16 +21,16 @@
 # This will run the following test cases defined below and produce
 # a report in tabular format.
 
-SUB_MEM=-Xmx1024M
-PUB_MEM=-Xmx1024M
 QUEUE="queue;{create:always,node:{x-declare:{auto-delete:true}}}"
 DURA_QUEUE="dqueue;{create:always,node:{durable:true,x-declare:{auto-delete:true}}}"
 TOPIC="amq.topic/test"
 DURA_TOPIC="amq.topic/test;{create:always,link:{durable:true}}"
 
+COMMON_CONFIG="-server -Durl=amqp://guest:guest@clientid/testpath?brokerlist='tcp://localhost:5672'"
+
 waitfor() { until grep -a -l "$2" $1 >/dev/null 2>&1 ; do sleep 1 ; done ; }
 cleanup()
-{
+{  
   pids=`ps aux | grep java | grep Perf | awk '{print $2}'`
   if [ "$pids" != "" ]; then
     kill -3 $pids
@@ -42,30 +42,31 @@ cleanup()
 # $2 consumer options
 # $3 producer options
 run_testcase()
-{
-  sh run-sub $LOG_CONFIG $SUB_MEM $2 > sub.out &
-  waitfor sub.out "Warming up"
-  sh run-pub $LOG_CONFIG $PUB_MEM $3 > pub.out &
-  waitfor sub.out "Completed the test"
-  waitfor pub.out "Consumer has completed the test"
+{  
+  sh run-sub $COMMON_CONFIG $2 > sub.out &
+  sh run-pub $COMMON_CONFIG $3 > pub.out &
+  waitfor pub.out "Controller: Completed the test"
   sleep 2 #give a grace period to shutdown
-  print_result $1  
+  print_result $1
+  mv pub.out $1.pub.out
+  mv sub.out $1.sub.out
 }
 
 print_result()
 {
-  prod_rate=`cat pub.out | grep "Producer rate" | awk '{print $3}'`
-  sys_rate=`cat sub.out | grep "System Throughput" | awk '{print $4}'`
-  cons_rate=`cat sub.out | grep "Consumer rate" | awk '{print $4}'` 
-  avg_latency=`cat sub.out | grep "Avg Latency" | awk '{print $4}'`
-  min_latency=`cat sub.out | grep "Min Latency" | awk '{print $4}'`
-  max_latency=`cat sub.out | grep "Max Latency" | awk '{print $4}'`
+  prod_rate=`cat pub.out | grep "Avg Producer rate" | awk '{print $5}'`
+  sys_rate=`cat pub.out | grep "System Throughput" | awk '{print $4}'`
+  cons_rate=`cat pub.out | grep "Avg Consumer rate" | awk '{print $5}'` 
+  avg_latency=`cat pub.out | grep "Avg System Latency" | awk '{print $5}'`
+  min_latency=`cat pub.out | grep "Min System Latency" | awk '{print $5}'`
+  max_latency=`cat pub.out | grep "Max System Latency" | awk '{print $5}'`
 
-  printf "|%-15s|%15.2f|%13.2f|%13.2f|%11.2f|%11d|%11d|\n" $1 $sys_rate $prod_rate $cons_rate $avg_latency $min_latency $max_latency
+  printf "|%-15s|%15.2f|%13.2f|%13.2f|%11.2f|%11.2f|%11.2f|\n" $1 $sys_rate $prod_rate $cons_rate $avg_latency $min_latency $max_latency
   echo "------------------------------------------------------------------------------------------------"
 }
 
 trap cleanup EXIT
+rm -rf *.out #cleanup old files.
 
 echo "Test report on " `date +%F`
 echo "================================================================================================"

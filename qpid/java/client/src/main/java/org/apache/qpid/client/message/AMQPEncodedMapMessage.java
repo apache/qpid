@@ -110,7 +110,7 @@ public class AMQPEncodedMapMessage extends JMSMapMessage
     }
     
     // for testing
-    Map<String,Object> getMap()
+    public Map<String,Object> getMap()
     {
         return _map;
     }

@@ -23,12 +23,10 @@ package org.apache.qpid.tools;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.jms.BytesMessage;
-import javax.jms.Destination;
+import javax.jms.MapMessage;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageListener;
-import javax.jms.MessageProducer;
 import javax.jms.TextMessage;
 
 import org.apache.qpid.thread.Threading;
@@ -99,6 +97,7 @@ public class PerfConsumer extends PerfBase implements MessageListener
     public PerfConsumer()
     {
         super();
+        System.out.println("Consumer ID : " + id);
     }
 
     public void setUp() throws Exception
@@ -114,68 +113,87 @@ public class PerfConsumer extends PerfBase implements MessageListener
         {
             sample = new ArrayList<Long>(params.getMsgCount());
         }
+
+        MapMessage m = controllerSession.createMapMessage();
+        m.setInt(CODE, OPCode.REGISTER_CONSUMER.ordinal());
+        m.setString(REPLY_ADDR,myControlQueueAddr);
+        sendMessageToController(m);
     }
 
     public void warmup()throws Exception
     {
-        System.out.println("Warming up......");
-
+        receiveFromController(OPCode.CONSUMER_STARTWARMUP);
         boolean start = false;
-        while (!start)
+        Message msg = consumer.receive();
+        // This is to ensure we drain the queue before we start the actual test.
+        while ( msg != null)
         {
-            Message msg = consumer.receive();
-            if (msg.getBooleanProperty("End"))
+            if (msg.getBooleanProperty("End") == true)
             {
-                start = true;
-                MessageProducer temp = session.createProducer(msg.getJMSReplyTo());
-                temp.send(session.createMessage());
-                if (params.isTransacted())
-                {
-                    session.commit();
-                }
-                temp.close();
+                // It's more realistic for the consumer to signal this.
+                MapMessage m = controllerSession.createMapMessage();
+                m.setInt(CODE, OPCode.PRODUCER_READY.ordinal());
+                sendMessageToController(m);
             }
+            msg = consumer.receive(1000);
         }
+
+        if (params.isTransacted())
+        {
+            session.commit();
+        }
+
+        MapMessage m = controllerSession.createMapMessage();
+        m.setInt(CODE, OPCode.CONSUMER_READY.ordinal());
+        sendMessageToController(m);
     }
 
     public void startTest() throws Exception
     {
-        System.out.println("Starting test......");
+        System.out.println("Consumer Starting test......");
         consumer.setMessageListener(this);
     }
 
-    public void printResults() throws Exception
+    public void sendResults() throws Exception
     {
-        synchronized (lock)
-        {
-            lock.wait();
-        }
+        receiveFromController(OPCode.CONSUMER_STOP);
 
         double avgLatency = (double)totalLatency/(double)rcvdMsgCount;
-        double throughput = ((double)rcvdMsgCount/(double)(rcvdTime - testStartTime))*1000;
-        double consRate   = ((double)rcvdMsgCount/(double)(rcvdTime - startTime))*1000;
+        double consRate   = (double)rcvdMsgCount*Clock.convertToSecs()/(double)(rcvdTime - startTime);
+        double stdDev = 0.0;
+        if (printStdDev)
+        {
+            stdDev = calculateStdDev(avgLatency);
+        }
+        MapMessage m  = controllerSession.createMapMessage();
+        m.setInt(CODE, OPCode.RECEIVED_CONSUMER_STATS.ordinal());
+        m.setDouble(AVG_LATENCY, avgLatency/Clock.convertToMiliSecs());
+        m.setDouble(MIN_LATENCY,minLatency/Clock.convertToMiliSecs());
+        m.setDouble(MAX_LATENCY,maxLatency/Clock.convertToMiliSecs());
+        m.setDouble(STD_DEV, stdDev/Clock.convertToMiliSecs());
+        m.setDouble(CONS_RATE, consRate);
+        m.setLong(MSG_COUNT, rcvdMsgCount);
+        sendMessageToController(m);
+
         System.out.println(new StringBuilder("Total Msgs Received : ").append(rcvdMsgCount).toString());
         System.out.println(new StringBuilder("Consumer rate       : ").
                            append(df.format(consRate)).
                            append(" msg/sec").toString());
-        System.out.println(new StringBuilder("System Throughput   : ").
-                           append(df.format(throughput)).
-                           append(" msg/sec").toString());
         System.out.println(new StringBuilder("Avg Latency         : ").
-                           append(df.format(avgLatency)).
+                           append(df.format(avgLatency/Clock.convertToMiliSecs())).
                            append(" ms").toString());
         System.out.println(new StringBuilder("Min Latency         : ").
-                           append(minLatency).
+                           append(df.format(minLatency/Clock.convertToMiliSecs())).
                            append(" ms").toString());
         System.out.println(new StringBuilder("Max Latency         : ").
-                           append(maxLatency).
+                           append(df.format(maxLatency/Clock.convertToMiliSecs())).
                            append(" ms").toString());
         if (printStdDev)
         {
             System.out.println(new StringBuilder("Std Dev             : ").
-                               append(calculateStdDev(avgLatency)).toString());
+                               append(stdDev/Clock.convertToMiliSecs()).toString());
         }
-        System.out.println("Completed the test......\n");
+        System.out.println("Consumer has completed the test......\n");
     }
 
     public double calculateStdDev(double mean)
@@ -187,25 +205,6 @@ public class PerfConsumer extends PerfBase implements MessageListener
         }
         v = v/sample.size();
         return Math.round(Math.sqrt(v));
-    }
-
-    public void notifyCompletion(Destination replyTo) throws Exception
-    {
-        MessageProducer tmp = session.createProducer(replyTo);
-        Message endMsg = session.createMessage();
-        tmp.send(endMsg);
-        if (params.isTransacted())
-        {
-            session.commit();
-        }
-        tmp.close();
-    }
-
-    public void tearDown() throws Exception
-    {
-        consumer.close();
-        session.close();
-        con.close();
     }
 
     public void onMessage(Message msg)
@@ -220,22 +219,18 @@ public class PerfConsumer extends PerfBase implements MessageListener
 
             if (msg.getBooleanProperty("End"))
             {
-                notifyCompletion(msg.getJMSReplyTo());
-
-                synchronized (lock)
-                {
-                   lock.notifyAll();
-                }
+                MapMessage m = controllerSession.createMapMessage();
+                m.setInt(CODE, OPCode.RECEIVED_END_MSG.ordinal());
+                sendMessageToController(m);
             }
             else
             {
-                rcvdTime = System.currentTimeMillis();
+                rcvdTime = Clock.getTime();
                 rcvdMsgCount ++;
 
                 if (rcvdMsgCount == 1)
                 {
                     startTime = rcvdTime;
-                    testStartTime = msg.getJMSTimestamp();
                 }
 
                 if (transacted && (rcvdMsgCount % transSize == 0))
@@ -243,7 +238,7 @@ public class PerfConsumer extends PerfBase implements MessageListener
                     session.commit();
                 }
 
-                long latency = rcvdTime - msg.getJMSTimestamp();
+                long latency = rcvdTime - msg.getLongProperty(TIMESTAMP);
                 maxLatency = Math.max(maxLatency, latency);
                 minLatency = Math.min(minLatency, latency);
                 totalLatency = totalLatency + latency;
@@ -261,14 +256,14 @@ public class PerfConsumer extends PerfBase implements MessageListener
 
     }
 
-    public void test()
+    public void run()
     {
         try
         {
             setUp();
             warmup();
             startTest();
-            printResults();
+            sendResults();
             tearDown();
         }
         catch(Exception e)
@@ -284,7 +279,7 @@ public class PerfConsumer extends PerfBase implements MessageListener
         {
             public void run()
             {
-                cons.test();
+                cons.run();
             }
         };
 
