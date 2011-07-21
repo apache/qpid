@@ -207,6 +207,8 @@ public class PrincipalDatabaseAuthenticationManager implements AuthenticationMan
         {
             _logger.warn("No additional SASL providers registered.");
         }
+
+        registerManagement();
     }
 
     private void initialiseAuthenticationMechanisms(Map<String, Class<? extends SaslServerFactory>> providerMap, PrincipalDatabase database) 
@@ -326,6 +328,8 @@ public class PrincipalDatabaseAuthenticationManager implements AuthenticationMan
     {
         _mechanisms = null;
         Security.removeProvider(PROVIDER_NAME);
+
+        unregisterManagement();
     }
 
     private PrincipalDatabase createPrincipalDatabaseImpl(final String pdClazz) throws ConfigurationException

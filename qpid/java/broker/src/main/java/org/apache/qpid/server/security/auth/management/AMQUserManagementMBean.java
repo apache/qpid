@@ -91,15 +91,10 @@ public class AMQUserManagementMBean extends AMQManagedObject implements UserMana
 
     public boolean setPassword(String username, String password)
     {
-        return setPassword(username, password.toCharArray());
-    }
-    
-    public boolean setPassword(String username, char[] password)
-    {
         try
         {
             //delegate password changes to the Principal Database
-            return _principalDatabase.updatePassword(new UsernamePrincipal(username), password);
+            return _principalDatabase.updatePassword(new UsernamePrincipal(username), password.toCharArray());
         }
         catch (AccountNotFoundException e)
         {
@@ -108,11 +103,6 @@ public class AMQUserManagementMBean extends AMQManagedObject implements UserMana
         }
     }
 
-    public boolean setRights(String username, boolean read, boolean write, boolean admin)
-    {
-        throw new UnsupportedOperationException("Support for setting access rights no longer supported.");
-    }
-    
     public boolean createUser(String username, String password)
     {
         if (_principalDatabase.createPrincipal(new UsernamePrincipal(username), password.toCharArray()))
@@ -121,20 +111,6 @@ public class AMQUserManagementMBean extends AMQManagedObject implements UserMana
         }
 
         return false;
-    }
-    
-    public boolean createUser(String username, String password, boolean read, boolean write, boolean admin)
-    {
-        if (read || write || admin)
-        {
-            throw new UnsupportedOperationException("Support for setting access rights to true no longer supported.");
-        }
-        return createUser(username, password);
-    }
-
-    public boolean createUser(String username, char[] password, boolean read, boolean write, boolean admin)
-    {
-        return createUser(username, new String(password), read, write, admin);
     }
 
     public boolean deleteUser(String username)
@@ -181,7 +157,6 @@ public class AMQUserManagementMBean extends AMQManagedObject implements UserMana
             for (Principal user : users)
             {
                 // Create header attributes list
-                
                 // Read,Write,Admin items are depcreated and we return always false.
                 Object[] itemData = {user.getName(), false, false, false};
                 CompositeData messageData = new CompositeDataSupport(_userDataType, COMPOSITE_ITEM_NAMES.toArray(new String[COMPOSITE_ITEM_NAMES.size()]), itemData);
