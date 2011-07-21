@@ -27,7 +27,9 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
+import java.util.Properties;
 
 public class FileUtilsTest extends TestCase
 {
@@ -182,6 +184,20 @@ public class FileUtilsTest extends TestCase
         }
     }
 
+
+    /**
+     * Helper method to create a temporary file with test content.
+     *
+     * @param test_data The data to store in the file
+     *
+     * @return The File reference
+     */
+    private File createTestFileInTmpDir(final String testData) throws Exception 
+    {
+        final File tmpFile = File.createTempFile("test", "tmp");
+        
+        return createTestFile(tmpFile.getCanonicalPath(), testData);
+    }
     /**
      * Helper method to create a test file with a string content
      *
@@ -302,7 +318,73 @@ public class FileUtilsTest extends TestCase
             // expected path
         }
     }
+    
+    /**
+     * Tests that openFileOrDefaultResource can open a file on the filesystem.
+     *
+     */
+    public void testOpenFileOrDefaultResourceOpensFileOnFileSystem() throws Exception
+    {
+        final File testFile = createTestFileInTmpDir("src=tmpfile");
+        final String filenameOnFilesystem = testFile.getCanonicalPath();
+        final String defaultResource = "org/apache/qpid/util/default.properties";
 
+        
+        final InputStream is = FileUtils.openFileOrDefaultResource(filenameOnFilesystem, defaultResource, this.getClass().getClassLoader());
+        assertNotNull("Stream must not be null", is);
+        final Properties p = new Properties();
+        p.load(is);
+        assertEquals("tmpfile", p.getProperty("src"));
+    }
+
+    /**
+     * Tests that openFileOrDefaultResource can open a file on the classpath.
+     *
+     */
+    public void testOpenFileOrDefaultResourceOpensFileOnClasspath() throws Exception
+    {
+        final String mydefaultsResource = "org/apache/qpid/util/mydefaults.properties";
+        final String defaultResource = "org/apache/qpid/util/default.properties";
+
+        
+        final InputStream is = FileUtils.openFileOrDefaultResource(mydefaultsResource, defaultResource, this.getClass().getClassLoader());
+        assertNotNull("Stream must not be null", is);
+        final Properties p = new Properties();
+        p.load(is);
+        assertEquals("mydefaults", p.getProperty("src"));
+    }
+
+    /**
+     * Tests that openFileOrDefaultResource returns the default resource when file cannot be found.
+     */
+    public void testOpenFileOrDefaultResourceOpensDefaultResource() throws Exception
+    {
+        final File fileThatDoesNotExist = new File("/does/not/exist.properties");
+        assertFalse("Test must not exist", fileThatDoesNotExist.exists());
+        
+        final String defaultResource = "org/apache/qpid/util/default.properties";
+        
+        final InputStream is = FileUtils.openFileOrDefaultResource(fileThatDoesNotExist.getCanonicalPath(), defaultResource, this.getClass().getClassLoader());
+        assertNotNull("Stream must not be null", is);
+        Properties p = new Properties();
+        p.load(is);
+        assertEquals("default.properties", p.getProperty("src"));
+    }
+    
+    /**
+     * Tests that openFileOrDefaultResource returns null if neither the file nor
+     * the default resource can be found..
+     */
+    public void testOpenFileOrDefaultResourceReturnsNullWhenNeitherCanBeFound() throws Exception
+    {
+
+        final String mydefaultsResource = "org/apache/qpid/util/doesnotexisteiether.properties";        
+        final String defaultResource = "org/apache/qpid/util/doesnotexisteiether.properties";
+        
+        final InputStream is = FileUtils.openFileOrDefaultResource(mydefaultsResource, defaultResource, this.getClass().getClassLoader());
+        assertNull("Stream must  be null", is);
+    }
+    
     /**
      * Given two lists of File arrays ensure they are the same length and all entries in Before are in After
      *
