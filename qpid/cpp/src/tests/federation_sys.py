@@ -64,10 +64,10 @@ class QmfTestBase010(TestBase010):
             for session in self.sessions:
                 try: # Session may have been closed by broker error
                     session.close()
-                except Exception as (e): print "WARNING: %s: Unable to close session %s (%s): %s %s" % (self, session, hex(id(session)), type(e), e) 
+                except Exception, e: print "WARNING: %s: Unable to close session %s (%s): %s %s" % (self, session, hex(id(session)), type(e), e) 
             try: # Connection may have been closed by broker error
                 self.connection.close()
-            except Exception as (e): print "WARNING: %s: Unable to close connection %s (%s): %s %s" % (self, self.connection, hex(id(self.connection)), type(e), e)
+            except Exception, e: print "WARNING: %s: Unable to close connection %s (%s): %s %s" % (self, self.connection, hex(id(self.connection)), type(e), e)
         def session(self, name, transactional_flag = False):
             session = self.connection.session(name, transactional_flag)
             self.sessions.append(session)
