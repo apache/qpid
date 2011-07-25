@@ -118,6 +118,10 @@ void EventHandler::configChange (
     QPID_LOG(notice, "cluster: new membership: " << PrintAddrs(members, nMembers));
     QPID_LOG_IF(notice, nLeft, "cluster:   members left: " << PrintAddrs(left, nLeft));
     QPID_LOG_IF(notice, nJoined, "cluster:   members joined: " << PrintAddrs(joined, nJoined));
+    for (Handlers::iterator i = handlers.begin(); i != handlers.end(); ++i) {
+        for (int l = 0; l < nLeft; ++l) (*i)->left(left[l]);
+        for (int j = 0; j < nJoined; ++j) (*i)->joined(joined[j]);
+    }
 }
 
 }} // namespace qpid::cluster
