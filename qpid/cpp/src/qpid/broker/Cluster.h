@@ -77,25 +77,25 @@ class Cluster
     // Consumers
 
     /** A new consumer subscribes to a queue. */
-    virtual void consume(const Queue&, size_t consumerCount) = 0;
+    virtual void consume(Queue&, size_t consumerCount) = 0;
     /** A consumer cancels its subscription to a queue */
-    virtual void cancel(const Queue&, size_t consumerCount) = 0;
+    virtual void cancel(Queue&, size_t consumerCount) = 0;
 
     // Wiring
 
     /** A queue is created */
-    virtual void create(const Queue&) = 0;
+    virtual void create(Queue&) = 0;
     /** A queue is destroyed */
-    virtual void destroy(const Queue&) = 0;
+    virtual void destroy(Queue&) = 0;
     /** An exchange is created */
-    virtual void create(const Exchange&) = 0;
+    virtual void create(Exchange&) = 0;
     /** An exchange is destroyed */
-    virtual void destroy(const Exchange&) = 0;
+    virtual void destroy(Exchange&) = 0;
     /** A binding is created */
-    virtual void bind(const Queue&, const Exchange&,
+    virtual void bind(Queue&, Exchange&,
                       const std::string& key, const framing::FieldTable& args) = 0;
     /** A binding is removed */
-    virtual void unbind(const Queue&, const Exchange&,
+    virtual void unbind(Queue&, Exchange&,
                         const std::string& key, const framing::FieldTable& args) = 0;
 };
 

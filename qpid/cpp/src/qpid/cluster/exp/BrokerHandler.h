@@ -60,18 +60,18 @@ class BrokerHandler : public broker::Cluster
 
     // Consumers
 
-    void consume(const broker::Queue&, size_t) {}
-    void cancel(const broker::Queue&, size_t) {}
+    void consume(broker::Queue&, size_t) {}
+    void cancel(broker::Queue&, size_t) {}
 
     // Wiring
 
-    void create(const broker::Queue&);
-    void destroy(const broker::Queue&);
-    void create(const broker::Exchange&);
-    void destroy(const broker::Exchange&);
-    void bind(const broker::Queue&, const broker::Exchange&,
+    void create(broker::Queue&);
+    void destroy(broker::Queue&);
+    void create(broker::Exchange&);
+    void destroy(broker::Exchange&);
+    void bind(broker::Queue&, broker::Exchange&,
               const std::string&, const framing::FieldTable&);
-    void unbind(const broker::Queue&, const broker::Exchange&,
+    void unbind(broker::Queue&, broker::Exchange&,
                 const std::string&, const framing::FieldTable&);
 
 
