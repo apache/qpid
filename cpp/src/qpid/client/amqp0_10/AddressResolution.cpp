@@ -833,7 +833,7 @@ void Exchange::checkAssert(qpid::client::AsyncSession& session, CheckMode mode)
                 FieldTable::ValuePtr v = result.getArguments().get(i->first);
                 if (!v) {
                     throw AssertionFailed((boost::format("Option %1% not set for %2%") % i->first % name).str());
-                } else if (i->second != v) {
+                } else if (*i->second != *v) {
                     throw AssertionFailed((boost::format("Option %1% does not match for %2%, expected %3%, got %4%")
                                           % i->first % name % *(i->second) % *v).str());
                 }
