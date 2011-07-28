@@ -1285,12 +1285,13 @@ void Queue::UsageBarrier::destroy()
 
 // FIXME aconway 2011-05-06: naming - only affects consumers. stopDispatch()?
 void Queue::stop() {
+    QPID_LOG(critical, "FIXME Queue stopped " << getName());
     // FIXME aconway 2011-05-25: rename dispatching - acquiring?
     dispatching.stop();
 }
 
 void Queue::start() {
-    QPID_LOG(critical, "FIXME start context=" << clusterContext);
+    QPID_LOG(critical, "FIXME Queue started " << getName());
     assert(clusterContext);      // FIXME aconway 2011-06-08: XXX
     dispatching.start();
     notifyListener();

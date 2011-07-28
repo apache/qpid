@@ -137,6 +137,12 @@ class Cluster2Tests(BrokerTest):
 
         # FIXME aconway 2010-10-29: test unbind, may need to use old API.
 
+    def duration(self):
+        d = self.config.defines.get("DURATION")
+        if d: return float(d)*60
+        else: return 3                  # Default is to be quick
+
+
     def test_dequeue_mutex(self):
         """Ensure that one and only one consumer receives each dequeued message."""
         class Receiver(Thread):
@@ -163,13 +169,12 @@ class Cluster2Tests(BrokerTest):
         for r in receivers: r.start()
 
         n = 0
-        t = time.time() + 1             # Send for 1 second.
+        t = time.time() + self.duration()
         while time.time() < t:
             sender.send(str(n))
             n += 1
         for r in receivers: r.join();
-        print "FIXME", [len(r.messages) for r in receivers] # FIXME aconway 2011-05-17:
-        for r in receivers: assert len(r.messages) # At least one message to each
+        for r in receivers: len(r.messages) > n/6 # Fairness test.
         messages = [int(m.content) for r in receivers for m in r.messages ]
         messages.sort()
         self.assertEqual(range(n), messages)

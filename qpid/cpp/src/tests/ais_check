@@ -18,8 +18,6 @@
 # under the License.
 #
 
-srcdir=`dirname $0`
-
 # Check AIS requirements and run tests if found.
 ps -u root | grep 'aisexec\|corosync' >/dev/null || {
     echo WARNING: Skipping cluster tests, the aisexec or corosync daemon is not running.

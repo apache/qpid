@@ -72,7 +72,6 @@ void WiringHandler::createQueue(const std::string& data) {
     assert(q);                  // FIXME aconway 2011-05-10: error handling.
     // TODO aconway 2011-05-10: if we implement multi-group for queues then
     // this call is a problem: comes from wiring delivery thread, not queues.
-    // FIXME aconway 2011-06-08: move wiring ops to Queue and Exchange handlers..
     queueHandler->add(q);
     QPID_LOG(debug, "cluster: create queue " << q->getName());
 }
