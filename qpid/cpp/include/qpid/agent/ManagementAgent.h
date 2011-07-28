@@ -35,11 +35,11 @@ public:
     virtual void notify() = 0;
 };
 
-class ManagementAgent
+class QMF_AGENT_CLASS_EXTERN ManagementAgent
 {
   public:
 
-    class Singleton {
+    class QMF_AGENT_CLASS_EXTERN Singleton {
     public:
         QMF_AGENT_EXTERN Singleton(bool disableManagement = false);
         QMF_AGENT_EXTERN ~Singleton();

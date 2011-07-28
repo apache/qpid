@@ -41,7 +41,7 @@ class Buffer;
  * TODO: change this implementation as it leaks boost into the
  * client API
  */
-struct Uuid : public boost::array<uint8_t, 16> {
+struct QPID_COMMON_CLASS_EXTERN Uuid : public boost::array<uint8_t, 16> {
     /** If unique is true, generate a unique ID else a null ID. */
     QPID_COMMON_EXTERN Uuid(bool unique=false);
 

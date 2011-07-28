@@ -32,7 +32,7 @@ struct Options;
  *
  * Thread object unsafe, pass-by-value type.
  */
-class Selector {
+class QPID_COMMON_CLASS_EXTERN Selector {
   public:
     /** Empty selector selects nothing */
     Selector() {}

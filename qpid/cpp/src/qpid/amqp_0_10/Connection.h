@@ -40,8 +40,8 @@ class ConnectionInputHandlerFactory;
 
 namespace amqp_0_10 {
 
-class Connection  : public sys::ConnectionCodec,
-                    public sys::ConnectionOutputHandler
+class QPID_BROKER_CLASS_EXTERN Connection  : public sys::ConnectionCodec,
+                                             public sys::ConnectionOutputHandler
 {
     typedef std::deque<framing::AMQFrame> FrameQueue;
 

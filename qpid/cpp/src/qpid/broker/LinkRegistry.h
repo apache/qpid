@@ -10,9 +10,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -29,6 +29,7 @@
 #include "qpid/sys/Mutex.h"
 #include "qpid/sys/Timer.h"
 #include "qpid/management/Manageable.h"
+#include "qpid/broker/BrokerImportExport.h"
 #include <boost/shared_ptr.hpp>
 #include <boost/intrusive_ptr.hpp>
 #include <boost/function.hpp>
@@ -39,7 +40,7 @@ namespace broker {
     class Link;
     class Broker;
     class Connection;
-    class LinkRegistry {
+    class QPID_BROKER_CLASS_EXTERN LinkRegistry {
 
         // Declare a timer task to manage the establishment of link connections and the
         // re-establishment of lost link connections.
@@ -150,7 +151,7 @@ namespace broker {
          */
         void setPassive(bool);
 
-        
+
         /** Iterate over each link in the registry. Used for cluster updates. */
         void eachLink(boost::function<void(boost::shared_ptr<Link>)> f);
         /** Iterate over each bridge in the registry. Used for cluster updates. */

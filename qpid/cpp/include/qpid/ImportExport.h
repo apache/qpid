@@ -56,10 +56,21 @@
 #    define QPID_INLINE_EXPORT
 #    define QPID_INLINE_IMPORT
 #  endif
+#elif __GNUC__ >= 4
+   //
+   // GCC visibility attribute
+   //
+#    define QPID_IMPORT __attribute__ ((visibility("default")))
+#    define QPID_EXPORT __attribute__ ((visibility("default")))
+#    define QPID_CLASS_EXPORT QPID_EXPORT
+#    define QPID_CLASS_IMPORT QPID_IMPORT
+#    define QPID_INLINE_EXPORT QPID_EXPORT
+#    define QPID_INLINE_IMPORT QPID_IMPORT
+
 #else
-   //
-   // Non-Windows (Linux, etc.) definitions:
-   //
+    //
+    // No import/export definitions
+    //
 #  define QPID_EXPORT
 #  define QPID_IMPORT
 #  define QPID_CLASS_EXPORT

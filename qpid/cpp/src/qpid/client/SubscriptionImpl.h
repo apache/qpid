@@ -10,9 +10,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -40,11 +40,11 @@ namespace client {
 class SubscriptionManager;
 class SubscriptionManagerImpl;
 
-class SubscriptionImpl : public RefCounted, public MessageListener {
+class QPID_CLIENT_CLASS_EXTERN SubscriptionImpl : public RefCounted, public MessageListener {
   public:
     QPID_CLIENT_EXTERN SubscriptionImpl(SubscriptionManager, const std::string& queue,
         const SubscriptionSettings&, const std::string& name, MessageListener* =0);
-    
+
     /** The name of the subsctription, used as the "destination" for messages from the broker.
      * Usually the same as the queue name but can be set differently.
      */

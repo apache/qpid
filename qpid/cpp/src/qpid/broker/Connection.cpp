@@ -18,6 +18,7 @@
  * under the License.
  *
  */
+
 #include "qpid/broker/Connection.h"
 #include "qpid/broker/SessionOutputException.h"
 #include "qpid/broker/SessionState.h"

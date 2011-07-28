@@ -32,7 +32,7 @@
 // This is a macro instead of a function because we don't want to
 // evaluate the MSG argument unless there is an error.
 #define CPG_CHECK(RESULT, MSG) \
-    if ((RESULT) != CPG_OK) throw Exception(errorStr((RESULT), (MSG)))
+    if ((RESULT) != CPG_OK) throw qpid::Exception(errorStr((RESULT), (MSG)))
 
 namespace qpid {
 namespace cluster {
@@ -44,7 +44,7 @@ using namespace std;
 Cpg* Cpg::cpgFromHandle(cpg_handle_t handle) {
     void* cpg=0;
     CPG_CHECK(cpg_context_get(handle, &cpg), "Cannot get CPG instance.");
-    if (!cpg) throw Exception("Cannot get CPG instance.");
+    if (!cpg) throw qpid::Exception("Cannot get CPG instance.");
     return reinterpret_cast<Cpg*>(cpg);
 }
 
@@ -154,7 +154,7 @@ void Cpg::join(const std::string& name) {
     group = name;
     callCpg ( cpgJoinOp );
 }
-    
+
 void Cpg::leave() {
     callCpg ( cpgLeaveOp );
 }

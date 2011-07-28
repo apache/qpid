@@ -29,7 +29,7 @@ namespace sys {
 
 void Shlib::load(const char* name) {
     ::dlerror();
-    handle = ::dlopen(name, RTLD_NOW);
+    handle = ::dlopen(name, RTLD_NOW | RTLD_GLOBAL);
     const char* error = ::dlerror();
     if (error) {
         throw Exception(QPID_MSG(error << ": " << name));

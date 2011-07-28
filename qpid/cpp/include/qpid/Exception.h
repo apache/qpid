@@ -82,7 +82,7 @@ struct QPID_COMMON_CLASS_EXTERN ClosedException : public Exception {
 /**
  * Exception representing transport failure
  */
-struct TransportFailure : public Exception {
+struct QPID_COMMON_CLASS_EXTERN TransportFailure : public Exception {
     TransportFailure(const std::string& msg=std::string()) : Exception(msg) {}
 };
 

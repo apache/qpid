@@ -9,9 +9,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -21,6 +21,7 @@
  *
  */
 
+#include "qmf/ImportExport.h"
 #include "qpid/RefCounted.h"
 #include "qmf/Query.h"
 #include "qmf/DataAddr.h"
@@ -30,7 +31,7 @@
 #include <boost/shared_ptr.hpp>
 
 namespace qmf {
-    class QueryImpl : public virtual qpid::RefCounted {
+    class QMF_CLASS_EXTERN QueryImpl : public virtual qpid::RefCounted {
     public:
         //
         // Public impl-only methods
@@ -66,7 +67,7 @@ namespace qmf {
         void parsePredicate(const std::string& s);
     };
 
-    struct QueryImplAccess
+    struct QMF_CLASS_EXTERN QueryImplAccess
     {
         static QueryImpl& get(Query&);
         static const QueryImpl& get(const Query&);

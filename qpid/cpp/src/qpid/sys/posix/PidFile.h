@@ -31,7 +31,7 @@
 namespace qpid {
 namespace sys {
 
-class PidFile : public LockFile
+class QPID_COMMON_CLASS_EXTERN PidFile : public LockFile
 {
 public:
     QPID_COMMON_EXTERN PidFile(const std::string& path_, bool create);
@@ -56,7 +56,7 @@ public:
      */
     QPID_COMMON_EXTERN void writePid(void);
 };
- 
+
 }}   /* namespace qpid::sys */
 
 #endif /*!_sys_PidFile_h*/

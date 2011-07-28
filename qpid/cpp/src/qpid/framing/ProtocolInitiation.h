@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -30,18 +30,18 @@
 namespace qpid {
 namespace framing {
 
-class ProtocolInitiation : public AMQDataBlock
+class QPID_COMMON_CLASS_EXTERN ProtocolInitiation : public AMQDataBlock
 {
 private:
     ProtocolVersion version;
-        
+
 public:
     QPID_COMMON_EXTERN ProtocolInitiation();
     QPID_COMMON_EXTERN ProtocolInitiation(uint8_t major, uint8_t minor);
     QPID_COMMON_EXTERN ProtocolInitiation(ProtocolVersion p);
     QPID_COMMON_EXTERN virtual ~ProtocolInitiation();
-    QPID_COMMON_EXTERN virtual void encode(Buffer& buffer) const; 
-    QPID_COMMON_EXTERN virtual bool decode(Buffer& buffer); 
+    QPID_COMMON_EXTERN virtual void encode(Buffer& buffer) const;
+    QPID_COMMON_EXTERN virtual bool decode(Buffer& buffer);
     inline virtual uint32_t encodedSize() const { return 8; }
     inline uint8_t getMajor() const { return version.getMajor(); }
     inline uint8_t getMinor() const { return version.getMinor(); }

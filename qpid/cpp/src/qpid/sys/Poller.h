@@ -10,9 +10,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -44,7 +44,7 @@ namespace sys {
  */
 class PollerHandle;
 class PollerPrivate;
-class Poller : public Runnable {
+class QPID_COMMON_CLASS_EXTERN Poller : public Runnable {
     PollerPrivate* const impl;
 
 public:
@@ -71,20 +71,20 @@ public:
     struct Event {
         PollerHandle* handle;
         EventType type;
-        
+
         Event(PollerHandle* handle0, EventType type0) :
           handle(handle0),
           type(type0) {
         }
-        
+
         void process();
     };
-    
+
     QPID_COMMON_EXTERN Poller();
     QPID_COMMON_EXTERN ~Poller();
     /** Note: this function is async-signal safe */
     QPID_COMMON_EXTERN void shutdown();
-    
+
     // Interrupt waiting for a specific poller handle
     // returns true if we could interrupt the handle
     // - in this case on return the handle is no longer being monitored,
@@ -94,9 +94,9 @@ public:
     // - This can either be because it has just received an event which has been
     //   reported and has not been reenabled since.
     // - Because it was removed from the monitoring set
-    // - Or because it is already being interrupted 
+    // - Or because it is already being interrupted
     QPID_COMMON_EXTERN bool interrupt(PollerHandle& handle);
-    
+
     // Poller run loop
     QPID_COMMON_EXTERN void run();
 
@@ -114,7 +114,7 @@ public:
  */
 class IOHandle;
 class PollerHandlePrivate;
-class PollerHandle {
+class QPID_COMMON_CLASS_EXTERN PollerHandle {
     friend class Poller;
     friend class PollerPrivate;
     friend struct Poller::Event;

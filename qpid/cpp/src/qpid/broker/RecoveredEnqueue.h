@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -25,6 +25,7 @@
 #include "qpid/broker/Message.h"
 #include "qpid/broker/MessageStore.h"
 #include "qpid/broker/TxOp.h"
+#include "qpid/broker/BrokerImportExport.h"
 
 #include <boost/intrusive_ptr.hpp>
 
@@ -34,7 +35,7 @@
 
 namespace qpid {
 namespace broker {
-class RecoveredEnqueue : public TxOp{
+class QPID_BROKER_CLASS_EXTERN RecoveredEnqueue : public TxOp{
     boost::shared_ptr<Queue> queue;
     boost::intrusive_ptr<Message> msg;
 
@@ -48,7 +49,7 @@ class RecoveredEnqueue : public TxOp{
 
     boost::shared_ptr<Queue> getQueue() const { return queue; }
     boost::intrusive_ptr<Message> getMessage() const { return msg; }
-            
+
 };
 }
 }

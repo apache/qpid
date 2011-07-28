@@ -10,9 +10,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on ang
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -38,9 +38,9 @@ namespace amqp_0_10 {
 
 class Map;
 
-class MapValue {
+class QPID_COMMON_CLASS_EXTERN MapValue {
   public:
-    struct BadTypeException : public Exception {};
+    struct QPID_COMMON_CLASS_EXTERN BadTypeException : public Exception {};
 
     template <class R> struct Visitor { typedef R result_type; };
 
@@ -56,7 +56,7 @@ class MapValue {
     template <class V> typename V::result_type apply_visitor(const V&);
 
     uint8_t getCode() const { return code; }
-    
+
     bool operator==(const MapValue&) const;
 
     template <class S> void serialize(S& s) { s(code); s.split(*this); }
@@ -67,7 +67,7 @@ class MapValue {
         DecodeVisitor<S> dv(blob, s);
         qpid::amqp_0_10::apply_visitor(dv, code);
     }
-    
+
 
   private:
     // TODO aconway 2008-04-15: Estimate required size, we will get a
@@ -85,7 +85,7 @@ class MapValue {
     Blob blob;
 };
 
-class Map : public std::map<Str8, MapValue> {
+class QPID_COMMON_CLASS_EXTERN Map : public std::map<Str8, MapValue> {
   public:
     template <class S> void serialize(S& s) { s.split(*this); }
     template <class S> void encode(S& s) const;
@@ -93,7 +93,7 @@ class Map : public std::map<Str8, MapValue> {
     void encode(Codec::Size& s) const  { s.raw(0, contentSize() + 4/*size*/); }
 
     template <class S> void decode(S& s);
-    
+
   private:
     uint32_t contentSize() const;
 };
@@ -122,7 +122,7 @@ template <class V> struct MapValue::VisitVisitor {
         return visitor(*reinterpret_cast<T*>(blob.get()));
     }
 };
-    
+
 template <class V> typename V::result_type MapValue::apply_visitor(V& v) {
     VisitVisitor<V> visitor(v, blob);
     return qpid::amqp_0_10::apply_visitor(visitor, code);
@@ -137,13 +137,13 @@ template <class R> struct MapValue::GetVisitor {
     R* operator()(R& r) { return &r; }
     template <class T> R* operator()(T&) { return 0; }
 };
-    
+
 template <class D> struct MapValue::DecodeVisitor {
     typedef void result_type;
     MapValue::Blob& blob;
     D& decoder;
     DecodeVisitor(Blob& b, D& d) : blob(b), decoder(d) {}
-    
+
     template <class T> void operator()(T*) {
         T t;
         decoder(t);

@@ -10,9 +10,9 @@
 * to you under the Apache License, Version 2.0 (the
 * "License"); you may not use this file except in compliance
 * with the License.  You may obtain a copy of the License at
-* 
+*
 *   http://www.apache.org/licenses/LICENSE-2.0
-* 
+*
 * Unless required by applicable law or agreed to in writing,
 * software distributed under the License is distributed on an
 * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -26,17 +26,17 @@
 #include "qpid/CommonImportExport.h"
 #include <string>
 
-// This class is a portability wrapper around pipe fds. 
-// It currently exists primarily and solely for the purpose of 
-// integration with single-threaded components that require QMF 
+// This class is a portability wrapper around pipe fds.
+// It currently exists primarily and solely for the purpose of
+// integration with single-threaded components that require QMF
 // integration through a signalling fd.
 
 namespace qpid {
 namespace sys {
 
-    class PipeHandle {
+    class QPID_COMMON_CLASS_EXTERN PipeHandle {
     private:
-        int writeFd; 
+        int writeFd;
         int readFd;
     public:
         QPID_COMMON_EXTERN  PipeHandle(bool nonBlocking=true);

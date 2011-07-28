@@ -10,9 +10,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -42,7 +42,7 @@ struct AckRange;
 /**
  * Record of a delivery for which an ack is outstanding.
  */
-class DeliveryRecord
+class QPID_BROKER_CLASS_EXTERN DeliveryRecord
 {
     QueuedMessage msg;
     mutable boost::shared_ptr<Queue> queue;
@@ -66,16 +66,16 @@ class DeliveryRecord
 
   public:
     QPID_BROKER_EXTERN DeliveryRecord(const QueuedMessage& msg,
-                                      const boost::shared_ptr<Queue>& queue, 
+                                      const boost::shared_ptr<Queue>& queue,
                                       const std::string& tag,
                                       bool acquired,
                                       bool accepted,
                                       bool windowing,
                                       uint32_t credit=0       // Only used if msg is empty.
     );
-    
+
     bool coveredBy(const framing::SequenceSet* const range) const { return range->contains(id); }
-    
+
     void dequeue(TransactionContext* ctxt = 0) const;
     void requeue() const;
     void release(bool setRedelivered);
@@ -95,7 +95,7 @@ class DeliveryRecord
     bool isAccepted() const { return !acceptExpected; }
     bool isEnded() const { return ended; }
     bool isWindowing() const { return windowing; }
-    
+
     uint32_t getCredit() const;
     const std::string& getTag() const { return tag; }
 
@@ -132,7 +132,7 @@ typedef DeliveryRecord::DeliveryRecords DeliveryRecords;
 struct AckRange
 {
     DeliveryRecords::iterator start;
-    DeliveryRecords::iterator end;    
+    DeliveryRecords::iterator end;
     AckRange(DeliveryRecords::iterator _start, DeliveryRecords::iterator _end) : start(_start), end(_end) {}
 };
 

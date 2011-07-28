@@ -19,5 +19,10 @@
 // Defines test_main function to link with actual unit test code.
 #define BOOST_AUTO_TEST_MAIN	// Boost 1.33
 #define BOOST_TEST_MAIN
+
+// FIXME aconway 2011-04-05: work around link problem, need portable solution.
+#pragma GCC visibility push(default)
+
 #include "unit_test.h"
 
+#pragma GCC visibility pop

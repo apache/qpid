@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -22,6 +22,7 @@
 #ifndef _ConnectionImpl_
 #define _ConnectionImpl_
 
+#include "qpid/client/ClientImportExport.h"
 #include "qpid/client/Bounds.h"
 #include "qpid/client/ConnectionHandler.h"
 
@@ -44,9 +45,11 @@ class Connector;
 struct ConnectionSettings;
 class SessionImpl;
 
-class ConnectionImpl : public Bounds,
+// TODO aconway 2011-04-05: exposed for use by cluster::UpdateClient,
+// clean up dependencies.
+class QPID_CLIENT_CLASS_EXTERN ConnectionImpl : public Bounds,
                        public framing::FrameHandler,
-                       public sys::TimeoutHandler, 
+                       public sys::TimeoutHandler,
                        public sys::ShutdownHandler,
                        public boost::enable_shared_from_this<ConnectionImpl>
 {
@@ -54,7 +57,7 @@ class ConnectionImpl : public Bounds,
 
     static const uint16_t NEXT_CHANNEL;
 
-    SessionMap sessions; 
+    SessionMap sessions;
     ConnectionHandler handler;
     boost::scoped_ptr<Connector> connector;
     framing::ProtocolVersion version;
@@ -82,13 +85,13 @@ class ConnectionImpl : public Bounds,
     static void init();
     static boost::shared_ptr<ConnectionImpl> create(framing::ProtocolVersion version, const ConnectionSettings& settings);
     ~ConnectionImpl();
-    
+
     void open();
     bool isOpen() const;
 
     boost::shared_ptr<SessionImpl> newSession(const std::string& name, uint32_t timeout, uint16_t channel=NEXT_CHANNEL);
     void addSession(const boost::shared_ptr<SessionImpl>&, uint16_t channel=NEXT_CHANNEL);
-        
+
     void close();
     void handle(framing::AMQFrame& frame);
     void erase(uint16_t channel);

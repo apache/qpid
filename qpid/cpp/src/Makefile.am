@@ -134,7 +134,11 @@ AM_CXXFLAGS += -DBOOST_FILESYSTEM_VERSION=2
 
 ## Automake macros to build libraries and executables.
 qpidd_CXXFLAGS = $(AM_CXXFLAGS) -DQPIDD_MODULE_DIR=\"$(dmoduleexecdir)\" -DQPIDD_CONF_FILE=\"$(sysconfdir)/qpidd.conf\"
-libqpidclient_la_CXXFLAGS = $(AM_CXXFLAGS) -DQPIDC_MODULE_DIR=\"$(cmoduleexecdir)\" -DQPIDC_CONF_FILE=\"$(confdir)/qpidc.conf\"
+libqpidclient_la_CXXFLAGS =				\
+	$(AM_CXXFLAGS)					\
+	-DQPIDC_MODULE_DIR=\"$(cmoduleexecdir)\"	\
+	-DQPIDC_CONF_FILE=\"$(confdir)/qpidc.conf\"	\
+	-Dqpidclient_EXPORTS
 
 qpidd_LDADD =					\
   libqpidbroker.la				\
@@ -148,6 +152,7 @@ qpidd_SOURCES = qpidd.cpp qpidd.h $(posix_qpidd_src)
 ## Platform specific code.
 
 # Posix-specific code
+libqpidcommon_la_CXXFLAGS=$(AM_CXXFLAGS) -Dqpidcommon_EXPORTS
 libqpidcommon_la_SOURCES +=			\
   qpid/log/posix/SinkOptions.cpp		\
   qpid/sys/posix/IOHandle.cpp			\
@@ -230,7 +235,7 @@ librdmawrap_la_LIBADD = \
   -lrdmacm \
   -libverbs
 librdmawrap_la_CXXFLAGS = \
-  $(AM_CXXFLAGS) -Wno-missing-field-initializers
+  $(AM_CXXFLAGS) -Wno-missing-field-initializers -Drdmawrap_EXPORTS
 lib_LTLIBRARIES += \
   librdmawrap.la
 RDMAWRAP_VERSION_INFO  = 2:0:0
@@ -244,7 +249,7 @@ rdma_la_LIBADD = \
   -libverbs
 rdma_la_LDFLAGS = $(PLUGINLDFLAGS)
 rdma_la_CXXFLAGS = \
-  $(AM_CXXFLAGS) -Wno-missing-field-initializers
+  $(AM_CXXFLAGS) -Wno-missing-field-initializers -Drdma_EXPORTS
 dmoduleexec_LTLIBRARIES += \
   rdma.la
 
@@ -256,7 +261,7 @@ rdmaconnector_la_LIBADD = \
   -libverbs
 rdmaconnector_la_LDFLAGS = $(PLUGINLDFLAGS)
 rdmaconnector_la_CXXFLAGS = \
-  $(AM_CXXFLAGS) -Wno-missing-field-initializers
+  $(AM_CXXFLAGS) -Wno-missing-field-initializers -Drdmaconnector_EXPORTS
 cmoduleexec_LTLIBRARIES += \
   rdmaconnector.la
 
@@ -360,7 +365,7 @@ libqpidcommon_la_SOURCES +=			\
   qpid/amqp_0_10/SessionHandler.cpp		\
   qpid/amqp_0_10/SessionHandler.h		\
   qpid/amqp_0_10/apply.h			\
-  qpid/assert.cpp qpid/assert.h			\
+  qpid/assert.cpp				\
   qpid/assert.h					\
   qpid/framing/AMQBody.cpp			\
   qpid/framing/AMQBody.h			\
@@ -508,6 +513,7 @@ QPIDCOMMON_VERSION_INFO = 2:0:0
 libqpidcommon_la_LDFLAGS=-version-info $(QPIDCOMMON_VERSION_INFO)
 
 libqpidbroker_la_LIBADD = libqpidcommon.la
+libqpidbroker_la_CXXFLAGS = $(AM_CXXFLAGS) -Dqpidbroker_EXPORTS
 libqpidbroker_la_SOURCES = \
   $(mgen_broker_cpp) \
   $(posix_broker_src) \
@@ -683,7 +689,6 @@ QPIDBROKER_VERSION_INFO = 2:0:0
 libqpidbroker_la_LDFLAGS = -version-info $(QPIDBROKER_VERSION_INFO)
 
 libqpidclient_la_LIBADD = libqpidcommon.la  -luuid
-
 libqpidclient_la_SOURCES =			\
   $(rgen_client_srcs)				\
   qpid/client/Bounds.cpp			\
@@ -742,7 +747,8 @@ libqpidclient_la_SOURCES =			\
 QPIDCLIENT_VERSION_INFO  = 2:0:0
 libqpidclient_la_LDFLAGS = -version-info $(QPIDCLIENT_VERSION_INFO)
 
-libqpidtypes_la_LIBADD= -luuid
+libqpidtypes_la_LIBADD=-luuid
+libqpidtypes_la_CXXFLAGS = $(AM_CXXFLAGS) -Dqpidtypes_EXPORTS
 libqpidtypes_la_SOURCES=			\
   qpid/types/Exception.cpp			\
   qpid/types/Uuid.cpp				\
@@ -753,6 +759,7 @@ QPIDTYPES_VERSION_INFO  = 1:0:0
 libqpidtypes_la_LDFLAGS = -version-info $(QPIDTYPES_VERSION_INFO)
 
 libqpidmessaging_la_LIBADD = libqpidclient.la libqpidtypes.la
+libqpidmessaging_la_CXXFLAGS = $(AM_CXXFLAGS) -Dqpidmessaging_EXPORTS
 libqpidmessaging_la_SOURCES =			\
   qpid/messaging/Address.cpp			\
   qpid/messaging/AddressParser.h		\

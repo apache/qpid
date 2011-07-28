@@ -10,9 +10,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -22,6 +22,7 @@
  *
  */
 #include "qpid/broker/Consumer.h"
+#include "qpid/broker/BrokerImportExport.h"
 #include <deque>
 
 namespace qpid {
@@ -30,14 +31,14 @@ namespace broker {
 /**
  * Track and notify components that wish to be notified of messages
  * that become available on a queue.
- * 
+ *
  * None of the methods defined here are protected by locking. However
  * the populate method allows a 'snapshot' to be taken of the
  * listeners to be notified. NotificationSet::notify() may then be
  * called outside of any lock that protects the QueueListeners
  * instance from concurrent access.
  */
-class QueueListeners
+class QPID_BROKER_CLASS_EXTERN QueueListeners
 {
   public:
     typedef std::deque<Consumer::shared_ptr> Listeners;
@@ -61,8 +62,8 @@ class QueueListeners
       friend class QueueListeners;
     };
 
-    void addListener(Consumer::shared_ptr);    
-    void removeListener(Consumer::shared_ptr);    
+    void addListener(Consumer::shared_ptr);
+    void removeListener(Consumer::shared_ptr);
     void populate(NotificationSet&);
     void snapshot(ListenerSet&);
     bool contains(Consumer::shared_ptr c) const;

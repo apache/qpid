@@ -21,7 +21,7 @@ $: << ".."                      # Include .. in load path
 require 'cppgen'
 
 class ConstantsGen < CppGen
-  
+
   def initialize(outdir, amqp)
     super(outdir, amqp)
     @namespace="qpid::framing"
@@ -51,11 +51,11 @@ class ConstantsGen < CppGen
 
   def typecode_h_cpp
     path="#{@dir}/TypeCode"
-    public_api(path+".h") 
+    public_api(path+".h")
     h_file(path) {
       include("<iosfwd>")
       include("\"qpid/sys/IntegerTypes.h\"")
-      namespace(@namespace) { 
+      namespace(@namespace) {
         scope("enum TypeCode {", "};") {
           genl @amqp.types.map { |t| "#{typecode_enum t} = #{t.code}" if t.code }.compact.join(",\n")
         }
@@ -80,7 +80,7 @@ EOS
       include("qpid/Exception.h")
       include("qpid/Msg.h")
       include("<ostream>")
-      namespace(@namespace) { 
+      namespace(@namespace) {
         scope("const char* typeName(TypeCode t) {") {
           scope("switch (t) {") {
             @amqp.types.each { |t| genl "case #{typecode_enum t}: return \"#{t.name}\";" if t.code }
@@ -105,7 +105,7 @@ EOS
       }
     }
   end
-  
+
   def enum_h()
     public_api("#{@dir}/enum.h")
     h_file("#{@dir}/enum.h") {
@@ -125,7 +125,7 @@ EOS
   def declare_enum(enum)
     # Generated like this: enum containing_class::Foo { FOO_X, FOO_Y; }
     name="#{enum.parent.name.caps}"
-    prefix=enum.parent.name.shout+"_" 
+    prefix=enum.parent.name.shout+"_"
     scope("enum #{name} {","};") {
       genl enum.choices.collect { |c| "#{prefix}#{c.name.shout}=#{c.value}" }.join(",\n")
     }
@@ -136,7 +136,8 @@ EOS
     value="#{package}::#{enum.parent.name.shout}_#{c.name.shout}"
     genl
     doxygen_comment { genl c.doc }
-    struct(c.name.caps+"Exception", base) {
+    cpp_extern_class("QPID_COMMON_CLASS_EXTERN", c.name.caps+"Exception", "public #{base}") {
+      public
       genl "std::string getPrefix() const { return \"#{c.name}\"; }"
       genl "#{c.name.caps}Exception(const std::string& msg=std::string()) : #{base}(#{value}, \"\"+msg) {}"
     }
@@ -156,7 +157,7 @@ EOS
         enum = @amqp.class_(class_name).domain(domain_name).enum
         enum.choices.each { |c|
           assign = "holder = new #{c.name.caps}Exception(text); " unless c.name == "normal"
-          genl "case #{c.value}: #{assign}break;" 
+          genl "case #{c.value}: #{assign}break;"
         }
         genl "default: holder = new #{invalid}(QPID_MSG(\"Bad #{enum.parent.name}: \" << code << \": \" << text));"
       }

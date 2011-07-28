@@ -84,9 +84,10 @@ struct NoSuchTransportException : qpid::Exception
 /**
  * A broker instance.
  */
-class Broker : public sys::Runnable, public Plugin::Target,
-               public management::Manageable,
-               public RefCounted
+class QPID_BROKER_CLASS_EXTERN Broker :
+        public sys::Runnable, public Plugin::Target,
+        public management::Manageable,
+        public RefCounted
 {
 public:
 

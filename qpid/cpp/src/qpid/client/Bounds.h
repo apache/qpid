@@ -9,9 +9,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -21,11 +21,12 @@
  *
  */
 #include "qpid/sys/Waitable.h"
+#include "qpid/client/ClientImportExport.h"
 
 namespace qpid{
 namespace client{
 
-class Bounds
+class QPID_CLIENT_CLASS_EXTERN Bounds
 {
   public:
     Bounds(size_t maxSize);
@@ -33,7 +34,7 @@ class Bounds
     void reduce(size_t);
     size_t getCurrentSize();
     void setException(const sys::ExceptionHolder&);
-    
+
   private:
     friend std::ostream& operator<<(std::ostream&, const Bounds&);
     sys::Waitable lock;

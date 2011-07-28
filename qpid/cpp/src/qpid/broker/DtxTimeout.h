@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -23,13 +23,14 @@
 
 #include "qpid/Exception.h"
 #include "qpid/sys/Timer.h"
+#include "qpid/broker/BrokerImportExport.h"
 
 namespace qpid {
 namespace broker {
 
 class DtxManager;
 
-struct DtxTimeoutException : public Exception {};
+struct QPID_BROKER_CLASS_EXTERN DtxTimeoutException : public Exception {};
 
 struct DtxTimeout : public sys::TimerTask
 {
@@ -37,7 +38,7 @@ struct DtxTimeout : public sys::TimerTask
     DtxManager& mgr;
     const std::string xid;
 
-    DtxTimeout(uint32_t timeout, DtxManager& mgr, const std::string& xid);    
+    DtxTimeout(uint32_t timeout, DtxManager& mgr, const std::string& xid);
     void fire();
 };
 

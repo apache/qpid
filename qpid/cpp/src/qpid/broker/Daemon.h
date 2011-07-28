@@ -19,6 +19,7 @@
  *
  */
 
+#include "qpid/broker/BrokerImportExport.h"
 #include "qpid/sys/IntegerTypes.h"
 #include <boost/scoped_ptr.hpp>
 #include <boost/function.hpp>
@@ -33,11 +34,11 @@ namespace broker {
  * Tools for forking and managing a daemon process.
  * NB: Only one Daemon instance is allowed in a process.
  */
-class Daemon : private boost::noncopyable
+class QPID_BROKER_CLASS_EXTERN Daemon : private boost::noncopyable
 {
   public:
     /** Check daemon is running on port, throw exception if not */
-    static pid_t getPid(std::string pidDir, uint16_t port);
+    QPID_BROKER_EXTERN static pid_t getPid(std::string pidDir, uint16_t port);
 
     Daemon(std::string pidDir);
 
@@ -68,7 +69,7 @@ class Daemon : private boost::noncopyable
      *@param port returned by parent call to wait().
      */
     void ready(uint16_t port);
-    
+
   private:
     static std::string pidFile(std::string pidDir, uint16_t port);
 

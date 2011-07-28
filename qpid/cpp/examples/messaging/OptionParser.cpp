@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -91,12 +91,6 @@ class OptionMatch
     bool isOption();
   private:
     std::string name;
-};
-
-class OptionsError : public qpid::types::Exception
-{
-  public:
-    OptionsError(const std::string& message) : qpid::types::Exception(message) {}
 };
 
 Option::Option(const std::string& name, const std::string& desc) : description(desc)
@@ -197,7 +191,7 @@ Option* OptionParser::getOption(const std::string& argument)
             throw OptionsError(error.str());
         } else {
             return *i;
-        }        
+        }
     } else {
         return 0;
     }
@@ -251,7 +245,7 @@ bool OptionParser::parse(int argc, char** argv)
 
 OptionParser::~OptionParser()
 {
-    for (Options::iterator i = options.begin(); i != options.end(); ++i) {        
+    for (Options::iterator i = options.begin(); i != options.end(); ++i) {
         delete *i;
     }
 }

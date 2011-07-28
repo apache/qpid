@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -33,7 +33,7 @@
 namespace qpid {
 namespace broker {
 
-class QueuePolicy
+class QPID_BROKER_CLASS_EXTERN QueuePolicy
 {
     static uint64_t defaultMaxSize;
 
@@ -43,11 +43,11 @@ class QueuePolicy
     uint32_t count;
     uint64_t size;
     bool policyExceeded;
-            
+
     static uint32_t getCapacity(const qpid::framing::FieldTable& settings, const std::string& key, uint32_t defaultValue);
 
   protected:
-    uint64_t getCurrentQueueSize() const { return size; } 
+    uint64_t getCurrentQueueSize() const { return size; }
 
   public:
     typedef std::deque<QueuedMessage> Messages;
@@ -57,7 +57,7 @@ class QueuePolicy
     static QPID_BROKER_EXTERN const std::string REJECT;
     static QPID_BROKER_EXTERN const std::string FLOW_TO_DISK;
     static QPID_BROKER_EXTERN const std::string RING;
-    static QPID_BROKER_EXTERN const std::string RING_STRICT;            
+    static QPID_BROKER_EXTERN const std::string RING_STRICT;
 
     virtual ~QueuePolicy() {}
     QPID_BROKER_EXTERN void tryEnqueue(boost::intrusive_ptr<Message> msg);
@@ -68,7 +68,7 @@ class QueuePolicy
     virtual bool isEnqueued(const QueuedMessage&);
     QPID_BROKER_EXTERN void update(qpid::framing::FieldTable& settings);
     uint32_t getMaxCount() const { return maxCount; }
-    uint64_t getMaxSize() const { return maxSize; }           
+    uint64_t getMaxSize() const { return maxSize; }
     void encode(framing::Buffer& buffer) const;
     void decode ( framing::Buffer& buffer );
     uint32_t encodedSize() const;

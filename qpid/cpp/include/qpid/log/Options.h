@@ -28,7 +28,7 @@ namespace qpid {
 namespace log {
 
 /** Logging options for config parser. */
-struct Options : public qpid::Options {
+struct QPID_COMMON_CLASS_EXTERN Options : public qpid::Options {
     /** Pass argv[0] for use in syslog output */
     QPID_COMMON_EXTERN Options(const std::string& argv0_=std::string(),
             const std::string& name_="Logging options");

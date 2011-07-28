@@ -10,9 +10,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -40,9 +40,9 @@ namespace broker {
 
 struct UnknownExchangeTypeException{};
 
-class ExchangeRegistry{
+class QPID_BROKER_CLASS_EXTERN ExchangeRegistry{
   public:
-    typedef boost::function5<Exchange::shared_ptr, const std::string&, 
+    typedef boost::function5<Exchange::shared_ptr, const std::string&,
                              bool, const qpid::framing::FieldTable&, qpid::management::Manageable*, qpid::broker::Broker*> FactoryFunction;
 
     ExchangeRegistry (Broker* b = 0) : parent(0), broker(b) {}
@@ -50,7 +50,7 @@ class ExchangeRegistry{
       (const std::string& name, const std::string& type);
     QPID_BROKER_EXTERN std::pair<Exchange::shared_ptr, bool> declare
       (const std::string& name,
-       const std::string& type, 
+       const std::string& type,
        bool durable,
        const qpid::framing::FieldTable& args = framing::FieldTable());
     QPID_BROKER_EXTERN void destroy(const std::string& name);
@@ -75,7 +75,7 @@ class ExchangeRegistry{
         for (ExchangeMap::const_iterator i = exchanges.begin(); i != exchanges.end(); ++i)
             f(i->second);
     }
-        
+
   private:
     typedef std::map<std::string, Exchange::shared_ptr> ExchangeMap;
     typedef std::map<std::string, FactoryFunction > FunctionMap;

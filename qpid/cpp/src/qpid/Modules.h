@@ -29,7 +29,7 @@
 
 namespace qpid {
 
-struct ModuleOptions : public qpid::Options {
+struct QPID_COMMON_CLASS_EXTERN ModuleOptions : public qpid::Options {
     std::string              loadDir;
     std::vector<std::string> load;
     bool                     noLoad;

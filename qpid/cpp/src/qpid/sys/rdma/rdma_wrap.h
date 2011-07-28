@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -23,6 +23,7 @@
 
 #include <rdma/rdma_cma.h>
 
+#include "ImportExport.h"
 #include "qpid/RefCounted.h"
 #include "qpid/sys/IOHandle.h"
 #include "qpid/sys/Mutex.h"
@@ -90,7 +91,7 @@ namespace Rdma {
         RECV
     };
 
-    class QueuePairEvent {
+    class RDMAWRAP_CLASS_EXTERN QueuePairEvent {
         boost::shared_ptr< ::ibv_cq > cq;
         ::ibv_wc wc;
         QueueDirection dir;
@@ -116,7 +117,7 @@ namespace Rdma {
     // Wrapper for a queue pair - this has the functionality for
     // putting buffers on the receive queue and for sending buffers
     // to the other end of the connection.
-    class QueuePair : public qpid::sys::IOHandle, public qpid::RefCounted {
+    class RDMAWRAP_CLASS_EXTERN QueuePair : public qpid::sys::IOHandle, public qpid::RefCounted {
         friend class Connection;
 
         boost::shared_ptr< ::ibv_pd > pd;
@@ -168,7 +169,7 @@ namespace Rdma {
         void notifySend();
     };
 
-    class ConnectionEvent {
+    class RDMAWRAP_CLASS_EXTERN ConnectionEvent {
         friend class Connection;
 
         // The order of the members is important as we have to acknowledge
@@ -195,7 +196,7 @@ namespace Rdma {
     // registered buffers can't be shared between different connections
     // (this can only happen between connections on the same controller in any case,
     // so needs careful management if used)
-    class Connection : public qpid::sys::IOHandle, public qpid::RefCounted {
+    class RDMAWRAP_CLASS_EXTERN Connection : public qpid::sys::IOHandle, public qpid::RefCounted {
         boost::shared_ptr< ::rdma_event_channel > channel;
         boost::shared_ptr< ::rdma_cm_id > id;
         QueuePair::intrusive_ptr qp;

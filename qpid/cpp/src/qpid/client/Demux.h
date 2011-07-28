@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -43,7 +43,7 @@ public:
 };
 
 ///@internal
-class Demux
+class QPID_CLIENT_CLASS_EXTERN Demux
 {
 public:
     typedef boost::function<bool(const framing::FrameSet&)> Condition;
@@ -52,7 +52,7 @@ public:
 
     QPID_CLIENT_EXTERN Demux();
     QPID_CLIENT_EXTERN ~Demux();
-    
+
     QPID_CLIENT_EXTERN void handle(framing::FrameSet::shared_ptr);
     QPID_CLIENT_EXTERN void close(const sys::ExceptionHolder& ex);
     QPID_CLIENT_EXTERN void open();

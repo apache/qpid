@@ -18,7 +18,7 @@
 # under the License.
 #
 # Usage: output_directory xml_spec_file [xml_spec_file...]
-# 
+#
 $: << '..'
 require 'cppgen'
 
@@ -31,7 +31,7 @@ class CppGen
     gen_methods.each { |m| m.set_sync_default(sync_default) }
   end
 
-  
+
   # Generates a doxygen comment for AmqpMethod m.
   def doxygen(m)
     doxygen_comment {
@@ -125,7 +125,7 @@ end
 
 class SessionNoKeywordGen < CppGen
   include SyncAsync
-  
+
   def initialize(outdir, amqp, async)
     super(outdir, amqp)
     @async=async
@@ -140,25 +140,25 @@ class SessionNoKeywordGen < CppGen
     h_file(@file) {
       include "qpid/client/#{@version_base}.h"
       include "qpid/client/ClientImportExport.h"
-      namespace(@namespace) { 
+      namespace(@namespace) {
         doxygen_comment {
           genl "AMQP #{@amqp.version} #{sync_adjective} session API."
           genl @amqp.class_("session").doc
           # FIXME aconway 2008-05-23: additional doc on sync/async use.
         }
-        cpp_class(@classname, "public #{@version_base}") {
+        cpp_extern_class("QPID_CLIENT_CLASS_EXTERN", @classname, "public #{@version_base}") {
           public
           decl_ctor_opeq()
           session_methods(sync_default).each { |m|
             genl
             doxygen(m)
-            args=m.sig_c_default.join(", ") 
-            genl "QPID_CLIENT_EXTERN #{m.return_type(@async)} #{m.session_function}(#{args});" 
+            args=m.sig_c_default.join(", ")
+            genl "QPID_CLIENT_EXTERN #{m.return_type(@async)} #{m.session_function}(#{args});"
           }
         }
       }}
 
-    cpp_file(@file) { 
+    cpp_file(@file) {
       include "qpid/client/#{@classname}"
       include "qpid/framing/all_method_bodies.h"
       include "qpid/client/SessionImpl.h"
@@ -228,11 +228,11 @@ class SessionGen < CppGen
       # Generate keyword tag declarations.
       genl "#define BOOST_PARAMETER_MAX_ARITY #{max_arity}"
       include "<boost/parameter.hpp>"
-      namespace("qpid::client::arg") { 
+      namespace("qpid::client::arg") {
         keyword_methods.map{ |m| m.param_names_c }.flatten.uniq.each { |k|
           genl "BOOST_PARAMETER_KEYWORD(keyword_tags, #{k})"
         }}
-    }    
+    }
     public_api("#{@fqclass.file}.h")
     h_file(@fqclass.file) {
       include @fqbase.file
@@ -263,7 +263,7 @@ declarations.
 \\ingroup clientapi
 
 
-\\details 
+\\details
 
 <h2>Publishing Messages</h2>
 <ul>
@@ -274,7 +274,7 @@ declarations.
 
 for (int i=0; i&lt;10; i++) {
     message.setData(message_data.str());
-    async(session).messageTransfer(arg::content=message,  arg::destination="amq.direct");        
+    async(session).messageTransfer(arg::content=message,  arg::destination="amq.direct");
 }
 
 session.sync();
@@ -359,23 +359,23 @@ session.sync();
 <h2>Accepting, Acquiring, Rejecting, or Releasing Messages</h2>
 <ul>
 <li><p>messageAccept()  &mdash; acknowledges messages</p>
-<pre>SequenceSet tobeAccepted; 
-toAccepted.add(msg.getId()); 
+<pre>SequenceSet tobeAccepted;
+toAccepted.add(msg.getId());
 session.messageAccept(toBeAccepted);</pre>
 </li>
 <li><p>messageAcquire()</p>
 <pre>SequenceSet tobeAcquired;
-toBeAcquired.add(msg.getId()); 
+toBeAcquired.add(msg.getId());
 session.messageAcquire(toBeAcquired);</pre>
 </li>
 <li><p>messageReject()</p>
-<pre>SequenceSet tobeRejected; 
-toRejected.add(msg.getId()); 
+<pre>SequenceSet tobeRejected;
+toRejected.add(msg.getId());
 session.messageReject(toBeRejected);</pre>
 </li>
 <li><p>messageRelease()</p>
-<pre>SequenceSet tobeReleased; 
-toReleased.add(msg.getId()); 
+<pre>SequenceSet tobeReleased;
+toReleased.add(msg.getId());
 session.messageRelease(toBeReleased);</pre></li>
 </ul>
 
@@ -394,7 +394,7 @@ session.messageRelease(toBeReleased);</pre></li>
 EOS
         }
         # Session class.
-        cpp_class(@classname,"public #{@base}") {
+        cpp_extern_class("QPID_COMMON_CLASS_EXTERN", @classname,"public #{@base}") {
           public
           decl_ctor_opeq()
           private

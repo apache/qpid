@@ -49,7 +49,7 @@ namespace console {
      *
      * \ingroup qpidconsoleapi
      */
-    class Broker : public client::MessageListener {
+    class QPID_CONSOLE_CLASS_EXTERN Broker : public client::MessageListener {
     public:
         QPID_CONSOLE_EXTERN Broker(SessionManager& sm,
                                    client::ConnectionSettings& settings);

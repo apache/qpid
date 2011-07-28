@@ -190,8 +190,6 @@ class RangeSet
     static size_t accumulateSize(size_t s, const Range<T>& r) { return s+r.size(); }
     Ranges ranges;
 
-  template <class U> friend std::ostream& operator<<(std::ostream& o, const RangeSet<U>& r);
-
   friend class iterator;
 };
 
@@ -204,7 +202,7 @@ template <class T>
 std::ostream& operator<<(std::ostream& o, const RangeSet<T>& rs) {
     std::ostream_iterator<Range<T> > i(o, " ");
     o << "{ ";
-    std::copy(rs.ranges.begin(), rs.ranges.end(), i);
+    std::copy(rs.rangesBegin(), rs.rangesEnd(), i);
     return o << "}";
 }
 

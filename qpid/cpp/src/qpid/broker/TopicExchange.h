@@ -33,7 +33,7 @@
 namespace qpid {
 namespace broker {
 
-class TopicExchange : public virtual Exchange {
+class QPID_BROKER_CLASS_EXTERN TopicExchange : public virtual Exchange {
 
     struct TokenIterator;
     class Normalizer;
@@ -141,7 +141,7 @@ class TopicExchange : public virtual Exchange {
     private:
         qpid::sys::RWlock* cacheLock;
         std::map<std::string, BindingList>* bindingCache;
-	bool cleared; 
+	bool cleared;
     public:
         ClearCache(qpid::sys::RWlock* l, std::map<std::string, BindingList>* bc): cacheLock(l),
              bindingCache(bc),cleared(false) {};
@@ -152,7 +152,7 @@ class TopicExchange : public virtual Exchange {
                  cleared =true;
              }
         };
-        ~ClearCache(){ 
+        ~ClearCache(){
 	     clearCache();
         };
     };

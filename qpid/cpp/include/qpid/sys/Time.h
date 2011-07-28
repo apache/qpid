@@ -77,7 +77,7 @@ class Duration;
  * with one of the AbsTime constructors). However trying to add 2 AbsTimes
  * doesn't make sense.
  */
-class AbsTime {
+class QPID_COMMON_CLASS_EXTERN AbsTime {
     friend class Duration;
     friend class Condition;
 

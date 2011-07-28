@@ -44,7 +44,7 @@ namespace sys {
 class Runnable;
 class ThreadPrivate;
 
-class Thread
+class QPID_COMMON_CLASS_EXTERN Thread
 {
     boost::shared_ptr<ThreadPrivate> impl;
 

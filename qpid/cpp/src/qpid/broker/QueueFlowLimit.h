@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -53,7 +53,8 @@ class Broker;
  * passing _either_ level may turn flow control ON, but _both_ must be
  * below level before flow control will be turned OFF.
  */
- class QueueFlowLimit : public StatefulQueueObserver
+// Note must be EXTERN because it is used by tests.
+ class QPID_BROKER_CLASS_EXTERN QueueFlowLimit : public StatefulQueueObserver
 {
     static uint64_t defaultMaxSize;
     static uint defaultFlowStopRatio;

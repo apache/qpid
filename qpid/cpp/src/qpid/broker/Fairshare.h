@@ -10,9 +10,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -22,6 +22,7 @@
  *
  */
 #include "qpid/broker/PriorityQueue.h"
+#include "qpid/broker/BrokerImportExport.h"
 
 namespace qpid {
 namespace framing {
@@ -34,7 +35,7 @@ namespace broker {
  * from each priority level that are dispatched before allowing
  * dispatch from the next level.
  */
-class Fairshare : public PriorityQueue
+class QPID_BROKER_CLASS_EXTERN Fairshare : public PriorityQueue
 {
   public:
     Fairshare(size_t levels, uint limit);

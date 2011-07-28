@@ -52,10 +52,10 @@ namespace console {
         std::map<std::string, boost::shared_ptr<Value> > arguments;
     };
 
-    class Object {
+    class QPID_CONSOLE_CLASS_EXTERN Object {
     public:
         typedef std::vector<Object> Vector;
-        struct AttributeMap : public std::map<std::string, boost::shared_ptr<Value> > {
+        struct QPID_CONSOLE_CLASS_EXTERN AttributeMap : public std::map<std::string, boost::shared_ptr<Value> > {
             QPID_CONSOLE_EXTERN void addRef(const std::string& key, const ObjectId& val);
             QPID_CONSOLE_EXTERN void addUint(const std::string& key, uint32_t val);
             QPID_CONSOLE_EXTERN void addInt(const std::string& key, int32_t val);

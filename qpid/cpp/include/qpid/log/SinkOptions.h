@@ -35,7 +35,7 @@ class Logger;
  * can't be assumed to all have C++ iostreams or files. Thus, this class
  * is primarily for implementing in a platform-specific way.
  */
-struct SinkOptions : public qpid::Options {
+struct QPID_COMMON_CLASS_EXTERN SinkOptions : public qpid::Options {
 
     // Create a platform's SinkOptions. Pass argv0 as the program name,
     // useful for syslog-type logging.

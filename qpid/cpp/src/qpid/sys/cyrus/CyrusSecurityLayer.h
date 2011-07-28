@@ -10,9 +10,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -22,6 +22,7 @@
  *
  */
 
+#include "qpid/CommonImportExport.h"
 #include "qpid/sys/IntegerTypes.h"
 #include "qpid/sys/SecurityLayer.h"
 #include <sasl/sasl.h>
@@ -34,7 +35,7 @@ namespace cyrus {
 /**
  * Implementation of SASL security layer using cyrus-sasl library
  */
-class CyrusSecurityLayer : public qpid::sys::SecurityLayer
+class QPID_COMMON_CLASS_EXTERN CyrusSecurityLayer : public qpid::sys::SecurityLayer
 {
   public:
     CyrusSecurityLayer(sasl_conn_t*, uint16_t maxFrameSize);

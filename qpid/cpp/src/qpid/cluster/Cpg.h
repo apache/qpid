@@ -34,7 +34,7 @@ namespace cluster {
 
 /**
  * Lightweight C++ interface to cpg.h operations.
- * 
+ *
  * Manages a single CPG handle, initialized in ctor, finialzed in destructor.
  * On error all functions throw Cpg::Exception.
  *
@@ -42,10 +42,6 @@ namespace cluster {
 
 class Cpg : public sys::IOHandle {
   public:
-    struct Exception : public ::qpid::Exception {
-        Exception(const std::string& msg) : ::qpid::Exception(msg) {}
-    };
-
     struct Name : public cpg_name {
         Name() { length = 0; }
         Name(const char* s) { copy(s, strlen(s)); }
@@ -87,22 +83,22 @@ class Cpg : public sys::IOHandle {
      *@param handler for CPG events.
      */
     Cpg(Handler&);
-    
+
     /** Destructor calls shutdown if not already calledx. */
     ~Cpg();
 
     /** Disconnect from CPG */
     void shutdown();
-    
+
     void dispatchOne();
     void dispatchAll();
     void dispatchBlocking();
 
-    void join(const std::string& group);    
+    void join(const std::string& group);
     void leave();
 
     /** Multicast to the group. NB: must not be called concurrently.
-     * 
+     *
      *@return true if the message was multi-cast, false if
      * it was not sent due to flow control.
      */
@@ -113,7 +109,7 @@ class Cpg : public sys::IOHandle {
     MemberId self() const;
 
     int getFd();
-    
+
   private:
 
     // Maximum number of retries for cog functions that can tell
@@ -125,46 +121,46 @@ class Cpg : public sys::IOHandle {
 
 
     // Base class for the Cpg operations that need retry capability.
-    struct CpgOp { 
+    struct CpgOp {
         std::string opName;
 
-        CpgOp ( std::string opName ) 
+        CpgOp ( std::string opName )
           : opName(opName) { }
 
-        virtual cpg_error_t op ( cpg_handle_t handle, struct cpg_name * ) = 0; 
+        virtual cpg_error_t op ( cpg_handle_t handle, struct cpg_name * ) = 0;
         virtual std::string msg(const Name&) = 0;
         virtual ~CpgOp ( ) { }
     };
 
 
-    struct CpgJoinOp : public CpgOp { 
+    struct CpgJoinOp : public CpgOp {
         CpgJoinOp ( )
           : CpgOp ( std::string("cpg_join") ) { }
 
-        cpg_error_t op(cpg_handle_t handle, struct cpg_name * group) { 
-            return cpg_join ( handle, group ); 
+        cpg_error_t op(cpg_handle_t handle, struct cpg_name * group) {
+            return cpg_join ( handle, group );
         }
 
         std::string msg(const Name& name) { return cantJoinMsg(name); }
     };
 
-    struct CpgLeaveOp : public CpgOp { 
+    struct CpgLeaveOp : public CpgOp {
         CpgLeaveOp ( )
           : CpgOp ( std::string("cpg_leave") ) { }
 
-        cpg_error_t op(cpg_handle_t handle, struct cpg_name * group) { 
-            return cpg_leave ( handle, group ); 
+        cpg_error_t op(cpg_handle_t handle, struct cpg_name * group) {
+            return cpg_leave ( handle, group );
         }
 
         std::string msg(const Name& name) { return cantLeaveMsg(name); }
     };
 
-    struct CpgFinalizeOp : public CpgOp { 
+    struct CpgFinalizeOp : public CpgOp {
         CpgFinalizeOp ( )
           : CpgOp ( std::string("cpg_finalize") ) { }
 
-        cpg_error_t op(cpg_handle_t handle, struct cpg_name *) { 
-            return cpg_finalize ( handle ); 
+        cpg_error_t op(cpg_handle_t handle, struct cpg_name *) {
+            return cpg_finalize ( handle );
         }
 
         std::string msg(const Name& name) { return cantFinalizeMsg(name); }

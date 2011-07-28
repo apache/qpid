@@ -56,7 +56,7 @@ struct LevelTraits {
 };
 
 /** POD struct representing a logging statement in source code. */
-struct Statement {
+struct QPID_COMMON_CLASS_EXTERN Statement {
     bool enabled;
     const char* file;
     int line;

@@ -1,8 +1,7 @@
-#ifndef _sys_IOHandle_h
-#define _sys_IOHandle_h
+#ifndef RDMAWRAP_IMPORTEXPORT_H
+#define RDMAWRAP_IMPORTEXPORT_H
 
 /*
- *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,31 +18,18 @@
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
- *
  */
 
-#include "qpid/CommonImportExport.h"
+#include "qpid/ImportExport.h"
 
-namespace qpid {
-namespace sys {
+#if defined (rdmawrap_EXPORTS)
+#  define RDMAWRAP_EXTERN QPID_EXPORT
+#  define RDMAWRAP_CLASS_EXTERN QPID_CLASS_EXPORT
+#  define RDMAWRAP_INLINE_EXTERN QPID_INLINE_EXPORT
+#else
+#  define RDMAWRAP_EXTERN QPID_IMPORT
+#  define RDMAWRAP_CLASS_EXTERN QPID_CLASS_IMPORT
+#  define RDMAWRAP_INLINE_EXTERN QPID_INLINE_IMPORT
+#endif
 
-/**
- * This is a class intended to abstract the Unix concept of file descriptor
- * or the Windows concept of HANDLE
- */
-class PollerHandle;
-class IOHandlePrivate;
-class QPID_COMMON_CLASS_EXTERN IOHandle {
-    friend class PollerHandle;
-    friend class IOHandlePrivate;
-
-protected:
-    IOHandlePrivate* const impl;
-
-    QPID_COMMON_EXTERN IOHandle(IOHandlePrivate*);
-    QPID_COMMON_EXTERN virtual ~IOHandle();
-};
-
-}}
-
-#endif // _sys_IOHandle_h
+#endif  /*!RDMAWRAP_IMPORTEXPORT_H*/

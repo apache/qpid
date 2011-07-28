@@ -34,7 +34,7 @@ namespace console {
      *
      * \ingroup qpidconsoleapi
      */
-    class SequenceManager {
+    class QPID_CONSOLE_CLASS_EXTERN SequenceManager {
     public:
         typedef std::set<uint32_t> set;
 

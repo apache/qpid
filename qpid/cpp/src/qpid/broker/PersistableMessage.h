@@ -10,9 +10,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -41,7 +41,7 @@ class MessageStore;
 /**
  * Base class for persistable messages.
  */
-class PersistableMessage : public Persistable
+class QPID_BROKER_CLASS_EXTERN PersistableMessage : public Persistable
 {
     typedef std::list< boost::weak_ptr<PersistableQueue> > syncList;
     sys::Mutex asyncDequeueLock;
@@ -75,7 +75,7 @@ class PersistableMessage : public Persistable
         bool blocked;
         bool requested;
         bool released;
-        
+
         ContentReleaseState();
     };
     ContentReleaseState contentReleaseState;
@@ -102,7 +102,7 @@ class PersistableMessage : public Persistable
     PersistableMessage();
 
     void flush();
-    
+
     QPID_BROKER_EXTERN bool isContentReleased() const;
 
     QPID_BROKER_EXTERN void setStore(MessageStore*);
@@ -126,14 +126,14 @@ class PersistableMessage : public Persistable
 
 
     QPID_BROKER_EXTERN bool isDequeueComplete();
-    
+
     QPID_BROKER_EXTERN void dequeueComplete();
 
     QPID_BROKER_EXTERN void dequeueAsync(PersistableQueue::shared_ptr queue,
                                          MessageStore* _store);
 
     bool isStoredOnQueue(PersistableQueue::shared_ptr queue);
-    
+
     void addToSyncList(PersistableQueue::shared_ptr queue, MessageStore* _store);
 };
 

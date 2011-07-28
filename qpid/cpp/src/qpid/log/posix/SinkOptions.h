@@ -35,7 +35,7 @@ struct SyslogFacility {
     SyslogFacility(int i=0) : value(i) {}
 };
 
-struct SinkOptions : public qpid::log::SinkOptions {
+struct QPID_COMMON_CLASS_EXTERN SinkOptions : public qpid::log::SinkOptions {
     SinkOptions(const std::string& argv0);
     virtual ~SinkOptions() {}
 

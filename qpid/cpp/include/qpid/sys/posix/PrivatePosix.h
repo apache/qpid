@@ -24,6 +24,7 @@
 
 #include "qpid/sys/Time.h"
 #include "qpid/sys/IOHandle.h"
+#include "qpid/CommonImportExport.h"
 
 struct timespec;
 struct timeval;
@@ -33,13 +34,14 @@ namespace qpid {
 namespace sys {
 
 // Private Time related implementation details
-struct timespec& toTimespec(struct timespec& ts, const Duration& t);
-struct timeval& toTimeval(struct timeval& tv, const Duration& t);
-Duration toTime(const struct timespec& ts);
+QPID_COMMON_EXTERN struct timespec& toTimespec(struct timespec& ts, const Duration& t);
+QPID_COMMON_EXTERN struct timeval& toTimeval(struct timeval& tv, const Duration& t);
+QPID_COMMON_EXTERN Duration toTime(const struct timespec& ts);
 
 // Private SocketAddress details
 class SocketAddress;
-const struct addrinfo& getAddrInfo(const SocketAddress&);
+// FIXME aconway 2011-03-22: ??
+const struct addrinfo& QPID_COMMON_EXTERN getAddrInfo(const SocketAddress&);
 
 // Private fd related implementation details
 class IOHandlePrivate {
@@ -51,7 +53,7 @@ public:
     int fd;
 };
 
-int toFd(const IOHandlePrivate* h);
+QPID_COMMON_EXTERN int toFd(const IOHandlePrivate* h);
 
 // Posix fd as an IOHandle
 class PosixIOHandle : public IOHandle {

@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -27,6 +27,7 @@
 #include "qpid/framing/SequenceSet.h"
 #include "qpid/broker/DeliveryRecord.h"
 #include "qpid/broker/TxOp.h"
+#include "qpid/broker/BrokerImportExport.h"
 
 namespace qpid {
     namespace broker {
@@ -34,11 +35,11 @@ namespace qpid {
          * Defines the transactional behaviour for accepts received by
          * a transactional channel.
          */
-        class TxAccept : public TxOp {
+        class QPID_BROKER_CLASS_EXTERN TxAccept : public TxOp {
             struct RangeOp
             {
                 AckRange range;
-    
+
                 RangeOp(const AckRange& r);
                 void prepare(TransactionContext* ctxt);
                 void commit();
@@ -48,12 +49,12 @@ namespace qpid {
             {
                 std::vector<RangeOp> ranges;
                 DeliveryRecords& unacked;
-    
+
                 RangeOps(DeliveryRecords& u);
 
                 void operator()(framing::SequenceNumber start, framing::SequenceNumber end);
                 void prepare(TransactionContext* ctxt);
-                void commit();    
+                void commit();
             };
 
             framing::SequenceSet acked;

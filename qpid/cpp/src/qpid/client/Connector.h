@@ -24,6 +24,7 @@
 
 #include "qpid/framing/OutputHandler.h"
 #include "qpid/framing/ProtocolVersion.h"
+#include "qpid/client/ClientImportExport.h"
 
 #include <boost/shared_ptr.hpp>
 
@@ -49,7 +50,7 @@ struct ConnectionSettings;
 class ConnectionImpl;
 
 ///@internal
-class Connector : public framing::OutputHandler
+class QPID_CLIENT_CLASS_EXTERN Connector : public framing::OutputHandler
 {
   public:
     // Protocol connector factory related stuff (it might be better to separate this code from the TCP Connector in the future)

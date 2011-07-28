@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -34,21 +34,21 @@
  * transaction. This work can be committed or rolled back. Committing
  * is a two-stage process: first all the operations should be
  * prepared, then if that succeeds they can be committed.
- * 
+ *
  * In the 2pc case, a successful prepare may be followed by either a
  * commit or a rollback.
- * 
+ *
  * Atomicity of prepare is ensured by using a lower level
  * transactional facility. This saves explicitly rolling back all the
  * successfully prepared ops when one of them fails. i.e. we do not
  * use 2pc internally, we instead ensure that prepare is atomic at a
  * lower level. This makes individual prepare operations easier to
  * code.
- * 
+ *
  * Transactions on a messaging broker effect three types of 'action':
  * (1) updates to persistent storage (2) updates to transient storage
  * or cached data (3) network writes.
- * 
+ *
  * Of these, (1) should always occur atomically during prepare to
  * ensure that if the broker crashes while a transaction is being
  * completed the persistent state (which is all that then remains) is
@@ -59,7 +59,7 @@
  */
 namespace qpid {
     namespace broker {
-        class TxBuffer{
+        class QPID_BROKER_CLASS_EXTERN TxBuffer {
             typedef std::vector<TxOp::shared_ptr>::iterator op_iterator;
             std::vector<TxOp::shared_ptr> ops;
         protected:
@@ -78,7 +78,7 @@ namespace qpid {
              *
              * Once prepared, a transaction can be committed (or in
              * the 2pc case, rolled back).
-             * 
+             *
              * @returns true if all the operations prepared
              * successfully, false if not.
              */
@@ -88,7 +88,7 @@ namespace qpid {
              * Signals that the ops all prepared successfully and can
              * now commit, i.e. the operation can now be fully carried
              * out.
-             * 
+             *
              * Should only be called after a call to prepare() returns
              * true.
              */
@@ -96,7 +96,7 @@ namespace qpid {
 
             /**
              * Signals that all ops can be rolled back.
-             * 
+             *
              * Should only be called either after a call to prepare()
              * returns true (2pc) or instead of a prepare call
              * ('server-local')

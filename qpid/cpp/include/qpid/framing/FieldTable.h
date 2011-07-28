@@ -45,7 +45,7 @@ class Buffer;
  *
  * \ingroup clientapi
  */
-class FieldTable
+class QPID_COMMON_CLASS_EXTERN FieldTable
 {
   public:
     typedef boost::shared_ptr<FieldValue> ValuePtr;
@@ -119,9 +119,6 @@ class FieldTable
     QPID_COMMON_EXTERN friend std::ostream& operator<<(std::ostream& out, const FieldTable& body);
 };
 
-//class FieldNotFoundException{};
-//class UnknownFieldName : public FieldNotFoundException{};
-//class IncorrectFieldType : public FieldNotFoundException{};
 }
 }
 

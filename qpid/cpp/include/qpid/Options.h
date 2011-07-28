@@ -53,7 +53,7 @@ QPID_COMMON_EXTERN std::string prettyArg(const std::string&, const std::string&)
 
 /** @internal Normally only constructed by optValue() */
 template <class T>
-class OptionValue : public po::typed_value<T> {
+class QPID_COMMON_CLASS_EXTERN OptionValue : public po::typed_value<T> {
   public:
     OptionValue(T& value, const std::string& arg)
         : po::typed_value<T>(&value), argName(arg) {}
@@ -135,7 +135,7 @@ inline po::value_semantic* optValue(bool& value) { return po::bool_switch(&value
 
 struct Options : public po::options_description {
 
-    struct Exception : public qpid::Exception {
+    struct QPID_COMMON_CLASS_EXTERN Exception : public qpid::Exception {
         Exception(const std::string& msg) : qpid::Exception(msg) {}
     };
 
@@ -161,7 +161,7 @@ struct Options : public po::options_description {
 /**
  * Standard options for configuration
  */
-struct CommonOptions : public Options {
+struct QPID_COMMON_CLASS_EXTERN CommonOptions : public Options {
     QPID_COMMON_EXTERN CommonOptions(const std::string& name=std::string(),
                   const std::string& configfile=std::string());
     bool help;

@@ -10,9 +10,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -32,7 +32,7 @@ namespace qpid {
 namespace sys {
 
 class SocketAddress {
-    friend const ::addrinfo& getAddrInfo(const SocketAddress&);
+    QPID_COMMON_EXTERN friend const ::addrinfo& getAddrInfo(const SocketAddress&);
 
 public:
     /** Create a SocketAddress from hostname and port*/
@@ -41,7 +41,7 @@ public:
     QPID_COMMON_EXTERN SocketAddress& operator=(const SocketAddress&);
     QPID_COMMON_EXTERN ~SocketAddress();
 
-    std::string asString() const;
+    QPID_COMMON_EXTERN std::string asString() const;
 
 private:
     std::string host;

@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -21,6 +21,7 @@
 #ifndef Rdma_Acceptor_h
 #define Rdma_Acceptor_h
 
+#include "ImportExport.h"
 #include "qpid/sys/rdma/rdma_wrap.h"
 
 #include "qpid/sys/AtomicValue.h"
@@ -37,7 +38,8 @@ namespace Rdma {
 
     class Connection;
 
-    class AsynchIO
+// FIXME aconway 2011-03-22: class vs. member declarations.
+    class RDMAWRAP_CLASS_EXTERN AsynchIO
     {
         typedef boost::function1<void, AsynchIO&> ErrorCallback;
         typedef boost::function2<void, AsynchIO&, Buffer*> ReadCallback;
@@ -111,7 +113,7 @@ namespace Rdma {
         void doWriteCallback();
         void checkDrained();
         void doStoppedCallback();
-        
+
         void queueBuffer(Buffer* buff, int credit);
         Buffer* extractBuffer(const QueuePairEvent& e);
     };
@@ -143,7 +145,7 @@ namespace Rdma {
 
     // These are the parameters necessary to start the conversation
     // * Each peer HAS to allocate buffers of the size of the maximum receive from its peer
-    // * Each peer HAS to know the initial "credit" it has for transmitting to its peer 
+    // * Each peer HAS to know the initial "credit" it has for transmitting to its peer
     struct ConnectionParams {
         uint32_t maxRecvBufferSize;
         uint16_t initialXmitCredit;
@@ -168,9 +170,9 @@ namespace Rdma {
     typedef boost::function2<void, Rdma::Connection::intrusive_ptr, ErrorType> ErrorCallback;
     typedef boost::function1<void, Rdma::Connection::intrusive_ptr> DisconnectedCallback;
 
-    class ConnectionManager {
+    class RDMAWRAP_CLASS_EXTERN ConnectionManager {
         typedef boost::function1<void, ConnectionManager&> NotifyCallback;
- 
+
         enum State {IDLE, STOPPED};
         qpid::sys::AtomicValue<State> state;
         Connection::intrusive_ptr ci;
@@ -203,7 +205,7 @@ namespace Rdma {
     typedef boost::function2<bool, Rdma::Connection::intrusive_ptr, const ConnectionParams&> ConnectionRequestCallback;
     typedef boost::function1<void, Rdma::Connection::intrusive_ptr> EstablishedCallback;
 
-    class Listener : public ConnectionManager
+    class RDMAWRAP_CLASS_EXTERN Listener : public ConnectionManager
     {
         ConnectionParams checkConnectionParams;
         ConnectionRequestCallback connectionRequestCallback;
@@ -226,7 +228,7 @@ namespace Rdma {
     typedef boost::function2<void, Rdma::Connection::intrusive_ptr, const ConnectionParams&> RejectedCallback;
     typedef boost::function2<void, Rdma::Connection::intrusive_ptr, const ConnectionParams&> ConnectedCallback;
 
-    class Connector : public ConnectionManager
+    class RDMAWRAP_CLASS_EXTERN Connector : public ConnectionManager
     {
         ConnectionParams connectionParams;
         RejectedCallback rejectedCallback;

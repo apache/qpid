@@ -20,6 +20,7 @@
  */
 
 #include "qpid/sys/posix/check.h"
+#include "qpid/CommonImportExport.h"
 
 #include <pthread.h>
 #include <boost/noncopyable.hpp>
@@ -32,9 +33,9 @@ class Condition;
 /**
  * Mutex lock.
  */
-class Mutex : private boost::noncopyable {
+class QPID_COMMON_CLASS_EXTERN Mutex : private boost::noncopyable {
     friend class Condition;
-    static const pthread_mutexattr_t* getAttribute();
+    QPID_COMMON_EXTERN static const pthread_mutexattr_t* getAttribute();
 
 public:
     typedef ::qpid::sys::ScopedLock<Mutex> ScopedLock;
@@ -54,7 +55,7 @@ protected:
 /**
  * RW lock.
  */
-class RWlock : private boost::noncopyable {
+class QPID_COMMON_CLASS_EXTERN RWlock : private boost::noncopyable {
     friend class Condition;
 
 public:
@@ -78,7 +79,7 @@ protected:
  * PODMutex is a POD, can be static-initialized with
  * PODMutex m = QPID_PODMUTEX_INITIALIZER
  */
-struct PODMutex
+struct QPID_COMMON_CLASS_EXTERN PODMutex
 {
     typedef ::qpid::sys::ScopedLock<PODMutex> ScopedLock;
 

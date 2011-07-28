@@ -21,6 +21,7 @@
 
 #include <string>
 #include <sys/types.h>
+#include "qpid/CommonImportExport.h"
 
 namespace qpid {
 namespace sys {
@@ -28,7 +29,7 @@ namespace sys {
 /**
  * Fork the process. Call parent() in parent and child() in child.
  */
-class Fork {
+class QPID_COMMON_CLASS_EXTERN Fork {
   public:
     Fork();
     virtual ~Fork();

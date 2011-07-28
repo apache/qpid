@@ -40,7 +40,7 @@ struct OutOfBounds : qpid::types::Exception {
  * This class is a wrapper around qpid::framing::Buffer that does not include any dependencies
  * from boost or from qpid::framing.
  */
-class Buffer
+class QPID_COMMON_CLASS_EXTERN Buffer
 {
 public:
     QPID_COMMON_EXTERN Buffer(char* data=0, uint32_t size=0);

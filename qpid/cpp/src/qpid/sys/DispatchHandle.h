@@ -10,9 +10,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -36,11 +36,11 @@ class DispatchHandleRef;
 /**
  * In order to have your own handle (file descriptor on Unix) watched by the poller
  * you need to:
- * 
+ *
  * - Subclass IOHandle, in the constructor supply an appropriate
  *   IOHandlerPrivate object for the platform.
  *
- * - Construct a DispatchHandle passing it your IOHandle and 
+ * - Construct a DispatchHandle passing it your IOHandle and
  *   callback functions for read, write and disconnect events.
  *
  * - Ensure the DispatchHandle is not deleted until the poller is no longer using it.
@@ -50,7 +50,7 @@ class DispatchHandleRef;
  * stops watching that handle. Your callback can call rewatch() or related functions
  * to re-enable polling.
  */
-class DispatchHandle : public PollerHandle {
+class QPID_COMMON_CLASS_EXTERN DispatchHandle : public PollerHandle {
     friend class DispatchHandleRef;
 public:
     typedef boost::function1<void, DispatchHandle&> Callback;
@@ -77,7 +77,7 @@ public:
      * Provide a handle to poll and a set of callbacks.  Note
      * callbacks can be 0, meaning you are not interested in that
      * event.
-     * 
+     *
      *@param h: the handle to watch. The IOHandle encapsulates a
      * platfrom-specific handle to an IO object (e.g. a file descriptor
      * on Unix.)
@@ -110,7 +110,7 @@ public:
 
     /** Stop watching permanently. Disassociates from the poller. */
     QPID_COMMON_EXTERN void stopWatch();
-    
+
     /** Interrupt watching this handle and make a serialised callback that respects the
      * same exclusivity guarantees as the other callbacks
      */

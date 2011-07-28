@@ -29,6 +29,7 @@
 
 #include <boost/ptr_container/ptr_map.hpp>
 
+#include "qpid/broker/BrokerImportExport.h"
 #include "qpid/broker/ConnectionHandler.h"
 #include "qpid/broker/ConnectionState.h"
 #include "qpid/broker/SessionHandler.h"
@@ -63,7 +64,7 @@ class LinkRegistry;
 class SecureConnection;
 struct ConnectionTimeoutTask;
 
-class Connection : public sys::ConnectionInputHandler,
+class QPID_BROKER_CLASS_EXTERN Connection : public sys::ConnectionInputHandler,
                    public ConnectionState,
                    public RefCounted
 {

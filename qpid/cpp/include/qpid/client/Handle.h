@@ -36,7 +36,7 @@ template <class> class PrivateImplRef;
  * Handles can be null,  like a 0 pointer. Use isValid(), isNull() or the
  * conversion to bool to test for a null handle.
  */
-template <class T> class Handle {
+template <class T> class QPID_CLIENT_CLASS_EXTERN Handle {
   public:
 
     /**@return true if handle is valid,  i.e. not null. */

@@ -138,7 +138,7 @@ inline std::ostream& operator<<(std::ostream& out, const FieldValue& v) {
 }
 
 template <int width>
-class FixedWidthValue : public FieldValue::Data {
+class QPID_COMMON_CLASS_EXTERN FixedWidthValue : public FieldValue::Data {
     uint8_t octets[width];
 
   public:
@@ -244,7 +244,7 @@ inline double FieldValue::get<double>() const {
 }
 
 template <>
-class FixedWidthValue<0> : public FieldValue::Data {
+class QPID_COMMON_CLASS_EXTERN FixedWidthValue<0> : public FieldValue::Data {
   public:
     // Implicit default constructor is fine
     uint32_t encodedSize() const { return 0; }
@@ -258,7 +258,7 @@ class FixedWidthValue<0> : public FieldValue::Data {
 };
 
 template <int lenwidth>
-class VariableWidthValue : public FieldValue::Data {
+class QPID_COMMON_CLASS_EXTERN VariableWidthValue : public FieldValue::Data {
     std::vector<uint8_t> octets;
 
   public:
@@ -290,7 +290,7 @@ class VariableWidthValue : public FieldValue::Data {
 };
 
 template <class T>
-class EncodedValue : public FieldValue::Data {
+class QPID_COMMON_CLASS_EXTERN EncodedValue : public FieldValue::Data {
     T value;
   public:
 
@@ -324,7 +324,7 @@ class EncodedValue : public FieldValue::Data {
 template <class T>
 inline bool FieldValue::get(T& t) const
 {
-    const EncodedValue<T>* v = dynamic_cast< EncodedValue<T>* >(data.get());    
+    const EncodedValue<T>* v = dynamic_cast< EncodedValue<T>* >(data.get());
     if (v != 0) {
         t = v->getValue();
         return true;
@@ -338,37 +338,37 @@ inline bool FieldValue::get(T& t) const
     }
 }
 
-class Str8Value : public FieldValue {
+class QPID_COMMON_CLASS_EXTERN Str8Value : public FieldValue {
   public:
     QPID_COMMON_EXTERN Str8Value(const std::string& v);
 };
 
-class Str16Value : public FieldValue {
+class QPID_COMMON_CLASS_EXTERN Str16Value : public FieldValue {
   public:
     QPID_COMMON_EXTERN Str16Value(const std::string& v);
 };
 
-class Var16Value : public FieldValue {
+class QPID_COMMON_CLASS_EXTERN Var16Value : public FieldValue {
   public:
     QPID_COMMON_EXTERN Var16Value(const std::string& v, uint8_t code);
 };
 
-class Var32Value : public FieldValue {
+class QPID_COMMON_CLASS_EXTERN Var32Value : public FieldValue {
   public:
     QPID_COMMON_EXTERN Var32Value(const std::string& v, uint8_t code);
 };
 
-class Struct32Value : public FieldValue {
+class QPID_COMMON_CLASS_EXTERN Struct32Value : public FieldValue {
   public:
     QPID_COMMON_EXTERN Struct32Value(const std::string& v);
 };
 
-class FloatValue : public FieldValue
+class QPID_COMMON_CLASS_EXTERN FloatValue : public FieldValue
 {
   public:
     QPID_COMMON_EXTERN FloatValue(float f);
 };
-class DoubleValue : public FieldValue
+class QPID_COMMON_CLASS_EXTERN DoubleValue : public FieldValue
 {
   public:
     QPID_COMMON_EXTERN DoubleValue(double f);
@@ -377,81 +377,81 @@ class DoubleValue : public FieldValue
 /*
  * Basic integer value encodes as signed 32 bit
  */
-class IntegerValue : public FieldValue {
+class QPID_COMMON_CLASS_EXTERN IntegerValue : public FieldValue {
   public:
     QPID_COMMON_EXTERN IntegerValue(int v);
 };
 
-class TimeValue : public FieldValue {
+class QPID_COMMON_CLASS_EXTERN TimeValue : public FieldValue {
   public:
     QPID_COMMON_EXTERN TimeValue(uint64_t v);
 };
 
-class Integer64Value : public FieldValue {
+class QPID_COMMON_CLASS_EXTERN Integer64Value : public FieldValue {
   public:
     QPID_COMMON_EXTERN Integer64Value(int64_t v);
 };
 
-class Unsigned64Value : public FieldValue {
+class QPID_COMMON_CLASS_EXTERN Unsigned64Value : public FieldValue {
   public:
     QPID_COMMON_EXTERN Unsigned64Value(uint64_t v);
 };
 
-class FieldTableValue : public FieldValue {
+class QPID_COMMON_CLASS_EXTERN FieldTableValue : public FieldValue {
   public:
     typedef FieldTable ValueType;
     QPID_COMMON_EXTERN FieldTableValue(const FieldTable&);
 };
 
-class ArrayValue : public FieldValue {
+class QPID_COMMON_CLASS_EXTERN ArrayValue : public FieldValue {
   public:
     QPID_COMMON_EXTERN ArrayValue(const Array&);
 };
 
-class VoidValue : public FieldValue {
+class QPID_COMMON_CLASS_EXTERN VoidValue : public FieldValue {
   public:
     QPID_COMMON_EXTERN VoidValue();
 };
 
-class BoolValue : public FieldValue {
+class QPID_COMMON_CLASS_EXTERN BoolValue : public FieldValue {
   public:
     QPID_COMMON_EXTERN BoolValue(bool);
 };
 
-class Unsigned8Value : public FieldValue {
+class QPID_COMMON_CLASS_EXTERN Unsigned8Value : public FieldValue {
   public:
     QPID_COMMON_EXTERN Unsigned8Value(uint8_t);
 };
 
-class Unsigned16Value : public FieldValue {
+class QPID_COMMON_CLASS_EXTERN Unsigned16Value : public FieldValue {
   public:
     QPID_COMMON_EXTERN Unsigned16Value(uint16_t);
 };
 
-class Unsigned32Value : public FieldValue {
+class QPID_COMMON_CLASS_EXTERN Unsigned32Value : public FieldValue {
   public:
     QPID_COMMON_EXTERN Unsigned32Value(uint32_t);
 };
 
-class Integer8Value : public FieldValue {
+class QPID_COMMON_CLASS_EXTERN Integer8Value : public FieldValue {
   public:
     QPID_COMMON_EXTERN Integer8Value(int8_t);
 };
 
-class Integer16Value : public FieldValue {
+class QPID_COMMON_CLASS_EXTERN Integer16Value : public FieldValue {
   public:
     QPID_COMMON_EXTERN Integer16Value(int16_t);
 };
 
 typedef IntegerValue Integer32Value;
 
-class ListValue : public FieldValue {
+class QPID_COMMON_CLASS_EXTERN ListValue : public FieldValue {
   public:
     typedef List ValueType;
     QPID_COMMON_EXTERN ListValue(const List&);
 };
 
-class UuidValue : public FieldValue {
+class QPID_COMMON_CLASS_EXTERN UuidValue : public FieldValue {
   public:
     QPID_COMMON_EXTERN UuidValue(const unsigned char*);
 };

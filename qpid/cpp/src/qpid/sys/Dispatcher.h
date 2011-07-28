@@ -10,9 +10,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -29,13 +29,13 @@
 namespace qpid {
 namespace sys {
 
-class Dispatcher : public Runnable {
+class QPID_COMMON_CLASS_EXTERN Dispatcher : public Runnable {
     const Poller::shared_ptr poller;
 
 public:
     QPID_COMMON_EXTERN Dispatcher(Poller::shared_ptr poller);
     QPID_COMMON_EXTERN ~Dispatcher();
-    
+
     QPID_COMMON_EXTERN void run();
 };
 

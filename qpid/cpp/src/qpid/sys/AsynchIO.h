@@ -9,9 +9,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -31,7 +31,7 @@
 
 namespace qpid {
 namespace sys {
-    
+
 class Socket;
 class Poller;
 
@@ -39,7 +39,7 @@ class Poller;
  * Asynchronous acceptor: accepts connections then does a callback with the
  * accepted fd
  */
-class AsynchAcceptor {
+class QPID_COMMON_CLASS_EXTERN AsynchAcceptor {
 public:
     typedef boost::function1<void, const Socket&> Callback;
 
@@ -52,7 +52,7 @@ public:
  * Asynchronous connector: starts the process of initiating a connection and
  * invokes a callback when completed or failed.
  */
-class AsynchConnector {
+class QPID_COMMON_CLASS_EXTERN AsynchConnector {
 public:
     typedef boost::function1<void, const Socket&> ConnectedCallback;
     typedef boost::function3<void, const Socket&, int, const std::string&> FailedCallback;
@@ -80,14 +80,14 @@ struct AsynchIOBufferBase {
     const int32_t byteCount;
     int32_t dataStart;
     int32_t dataCount;
-    
+
     AsynchIOBufferBase(char* const b, const int32_t s) :
         bytes(b),
         byteCount(s),
         dataStart(0),
         dataCount(0)
     {}
-    
+
     virtual ~AsynchIOBufferBase()
     {}
 
@@ -100,11 +100,11 @@ struct AsynchIOBufferBase {
 };
 
 /*
- * Asychronous reader/writer: 
+ * Asychronous reader/writer:
  * Reader accepts buffers to read into; reads into the provided buffers
  * and then does a callback with the buffer and amount read. Optionally it
  * can callback when there is something to read but no buffer to read it into.
- * 
+ *
  * Writer accepts a buffer and queues it for writing; can also be given
  * a callback for when writing is "idle" (ie fd is writable, but nothing
  * to write).

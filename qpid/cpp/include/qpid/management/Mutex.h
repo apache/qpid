@@ -48,7 +48,7 @@ namespace qpid {
             L& mutex;
         };
 
-        class Mutex {
+        class QPID_COMMON_CLASS_EXTERN Mutex {
         public:
             typedef ScopedLockTemplate<Mutex> ScopedLock;
             typedef ScopedUnlockTemplate<Mutex> ScopedUnlock;

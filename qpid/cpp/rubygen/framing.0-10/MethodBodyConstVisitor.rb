@@ -21,7 +21,7 @@ $: << ".."                      # Include .. in load path
 require 'cppgen'
 
 class MethodBodyConstVisitorGen < CppGen
-  
+
   def initialize(outdir, amqp)
     super(outdir, amqp)
     @namespace="qpid::framing"
@@ -31,9 +31,10 @@ class MethodBodyConstVisitorGen < CppGen
 
   def generate()
     h_file("#{@filename}") {
-      namespace(@namespace) { 
+      include("qpid/CommonImportExport.h")
+      namespace(@namespace) {
         @amqp.methods_.each { |m| genl "class #{m.body_name};" }
-        cpp_class("MethodBodyConstVisitor") {
+        cpp_extern_class("QPID_COMMON_CLASS_EXTERN", "MethodBodyConstVisitor") {
           genl "public:"
           genl "virtual ~MethodBodyConstVisitor() {}"
           @amqp.methods_.each { |m| genl "virtual void visit(const #{m.body_name}&) = 0;" }

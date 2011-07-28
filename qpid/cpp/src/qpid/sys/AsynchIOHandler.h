@@ -39,7 +39,7 @@ class AsynchIO;
 struct AsynchIOBufferBase;
 class Socket;
 
-class AsynchIOHandler : public OutputControl {
+class QPID_COMMON_CLASS_EXTERN AsynchIOHandler : public OutputControl {
     std::string identifier;
     AsynchIO* aio;
     ConnectionCodec::Factory* factory;

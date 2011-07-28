@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -32,7 +32,7 @@
 namespace qpid {
     namespace framing {
 
-        struct Range
+        struct QPID_COMMON_CLASS_EXTERN Range
         {
             SequenceNumber start;
             SequenceNumber end;
@@ -47,7 +47,7 @@ namespace qpid {
          * Keeps an accumulated record of acknowledged messages (by delivery
          * tag).
          */
-        class AccumulatedAck {
+        class QPID_COMMON_CLASS_EXTERN AccumulatedAck {
 	public:
             /**
              * Everything up to this value has been acknowledged.

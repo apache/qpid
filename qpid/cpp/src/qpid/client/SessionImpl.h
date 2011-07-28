@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -22,6 +22,7 @@
 #ifndef _SessionImpl_
 #define _SessionImpl_
 
+#include "qpid/client/ClientImportExport.h"
 #include "qpid/client/Demux.h"
 #include "qpid/client/Execution.h"
 #include "qpid/client/Results.h"
@@ -59,7 +60,9 @@ class ConnectionImpl;
 class SessionHandler;
 
 ///@internal
-class SessionImpl : public framing::FrameHandler::InOutHandler,
+// TODO aconway 2011-04-05: exposed for use by cluster::UpdateClient,
+// clean up dependencies.
+class QPID_CLIENT_CLASS_EXTERN SessionImpl : public framing::FrameHandler::InOutHandler,
                     public Execution,
                     private framing::AMQP_ClientOperations::SessionHandler,
                     private framing::AMQP_ClientOperations::ExecutionHandler,
@@ -110,18 +113,18 @@ public:
     void sendFlush();
 
     void setException(const sys::ExceptionHolder&);
-    
+
     //NOTE: these are called by the network thread when the connection is closed or dies
     void connectionClosed(uint16_t code, const std::string& text);
     void connectionBroke(const std::string& text);
 
-    /** Set timeout in seconds, returns actual timeout allowed by broker */ 
+    /** Set timeout in seconds, returns actual timeout allowed by broker */
     uint32_t setTimeout(uint32_t requestedSeconds);
 
     /** Get timeout in seconds. */
     uint32_t getTimeout() const;
 
-    /** 
+    /**
      * get the Connection associated with this connection
      */
     boost::shared_ptr<ConnectionImpl> getConnection();
@@ -150,7 +153,7 @@ private:
 
     void setExceptionLH(const sys::ExceptionHolder&);      // LH = lock held when called.
     void detach();
-    
+
     void check() const;
     void checkOpen() const;
     void handleClosed();
@@ -170,29 +173,29 @@ private:
     Future sendCommand(const framing::AMQBody&, const framing::MethodContent* = 0);
     void sendContent(const framing::MethodContent&);
     void waitForCompletionImpl(const framing::SequenceNumber& id);
-    
+
     void sendCompletionImpl();
 
     // Note: Following methods are called by network thread in
     // response to session controls from the broker
-    void attach(const std::string& name, bool force);    
-    void attached(const std::string& name);    
-    void detach(const std::string& name);    
+    void attach(const std::string& name, bool force);
+    void attached(const std::string& name);
+    void detach(const std::string& name);
     void detached(const std::string& name, uint8_t detachCode);
-    void requestTimeout(uint32_t timeout);    
-    void timeout(uint32_t timeout);    
-    void commandPoint(const framing::SequenceNumber& commandId, uint64_t commandOffset);    
-    void expected(const framing::SequenceSet& commands, const framing::Array& fragments);    
-    void confirmed(const framing::SequenceSet& commands, const framing::Array& fragments);    
-    void completed(const framing::SequenceSet& commands, bool timelyReply);    
-    void knownCompleted(const framing::SequenceSet& commands);    
-    void flush(bool expected, bool confirmed, bool completed);    
+    void requestTimeout(uint32_t timeout);
+    void timeout(uint32_t timeout);
+    void commandPoint(const framing::SequenceNumber& commandId, uint64_t commandOffset);
+    void expected(const framing::SequenceSet& commands, const framing::Array& fragments);
+    void confirmed(const framing::SequenceSet& commands, const framing::Array& fragments);
+    void completed(const framing::SequenceSet& commands, bool timelyReply);
+    void knownCompleted(const framing::SequenceSet& commands);
+    void flush(bool expected, bool confirmed, bool completed);
     void gap(const framing::SequenceSet& commands);
 
     // Note: Following methods are called by network thread in
     // response to execution commands from the broker
-    void sync();    
-    void result(const framing::SequenceNumber& commandId, const std::string& value);    
+    void sync();
+    void result(const framing::SequenceNumber& commandId, const std::string& value);
     void exception(uint16_t errorCode,
                    const framing::SequenceNumber& commandId,
                    uint8_t classCode,
@@ -200,7 +203,7 @@ private:
                    uint8_t fieldIndex,
                    const std::string& description,
                    const framing::FieldTable& errorInfo);
-                   
+
     // Note: Following methods are called by network thread in
     // response to message commands from the broker
     // EXCEPT Message.Transfer
@@ -239,13 +242,13 @@ private:
 
     SessionState sessionState;
 
-    // Only keep track of message credit 
+    // Only keep track of message credit
     sys::Semaphore* sendMsgCredit;
 
     bool doClearDeliveryPropertiesExchange;
 
     bool autoDetach;
-    
+
   friend class client::SessionHandler;
 };
 

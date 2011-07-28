@@ -24,13 +24,14 @@
 
 #include <qpid/RefCounted.h>
 #include <qpid/BufferRef.h>
+#include "qpid/CommonImportExport.h"
 
 namespace qpid {
 
 /**
  * Reference-counted byte buffer. No alignment guarantees.
  */
-class RefCountedBuffer : public RefCounted {
+class QPID_COMMON_CLASS_EXTERN RefCountedBuffer : public RefCounted {
   public:
     /** Create a reference counted buffer of size n */
     static BufferRef create(size_t n);

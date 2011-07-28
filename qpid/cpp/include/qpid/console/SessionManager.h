@@ -47,14 +47,14 @@ class ConsoleListener;
  *
  * \ingroup qmfconsoleapi
  */
-class SessionManager
+class QPID_CONSOLE_CLASS_EXTERN SessionManager
 {
   public:
     typedef std::vector<std::string> NameVector;
     typedef std::vector<ClassKey> KeyVector;
     QPID_CONSOLE_EXTERN ~SessionManager();
 
-    struct Settings {
+    struct QPID_CONSOLE_CLASS_EXTERN Settings {
         bool rcvObjects;
         bool rcvEvents;
         bool rcvHeartbeats;

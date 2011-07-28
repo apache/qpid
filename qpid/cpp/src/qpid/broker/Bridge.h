@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -31,6 +31,7 @@
 #include "qpid/broker/Exchange.h"
 #include "qmf/org/apache/qpid/broker/ArgsLinkBridge.h"
 #include "qmf/org/apache/qpid/broker/Bridge.h"
+#include "qpid/broker/BrokerImportExport.h"
 
 #include <boost/function.hpp>
 #include <memory>
@@ -43,7 +44,9 @@ class ConnectionState;
 class Link;
 class LinkRegistry;
 
-class Bridge : public PersistableConfig, public management::Manageable, public Exchange::DynamicBridge
+class QPID_BROKER_CLASS_EXTERN Bridge :
+        public PersistableConfig, public management::Manageable,
+        public Exchange::DynamicBridge
 {
 public:
     typedef boost::shared_ptr<Bridge> shared_ptr;
@@ -68,7 +71,7 @@ public:
     void     setPersistenceId(uint64_t id) const;
     uint64_t getPersistenceId() const { return persistenceId; }
     uint32_t encodedSize() const;
-    void     encode(framing::Buffer& buffer) const; 
+    void     encode(framing::Buffer& buffer) const;
     const std::string& getName() const;
     static Bridge::shared_ptr decode(LinkRegistry& links, framing::Buffer& buffer);
 

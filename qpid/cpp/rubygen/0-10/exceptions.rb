@@ -33,7 +33,8 @@ class GenExceptions < CppGen
       name=c.name.typename+suffix+"Exception"
       genl
       doxygen_comment { genl c.doc }
-      struct(name, "public #{base}") {
+      cpp_extern_class("QPID_COMMON_CLASS_EXTERN", name, "public #{base}") {
+        public
         genl "#{name}(const std::string& msg=std::string())"
         genl "    : #{base}(#{ns}::#{c.name.shout}, msg) {}"
         protected
@@ -41,11 +42,11 @@ class GenExceptions < CppGen
       }
     }
   end
-  
+
   def gen_exceptions()
-    h_file("#{@dir}/exceptions") { 
+    h_file("#{@dir}/exceptions") {
       include "qpid/amqp_0_10/Exception"
-      namespace("#{@ns}") { 
+      namespace("#{@ns}") {
         error_code = @amqp.class_("execution").domain("error-code").enum
         exceptions_for_enum(error_code, "SessionAbortedException", "execution")
         genl
@@ -62,7 +63,7 @@ class GenExceptions < CppGen
       }
     }
   end
-  
+
   def generate()
     gen_exceptions
   end

@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -38,7 +38,7 @@ namespace sys {
 
 class Timer;
 
-class TimerTask : public RefCounted {
+class QPID_COMMON_CLASS_EXTERN TimerTask : public RefCounted {
   friend class Timer;
   friend bool operator<(const boost::intrusive_ptr<TimerTask>&,
                         const boost::intrusive_ptr<TimerTask>&);
@@ -73,7 +73,7 @@ class TimerTask : public RefCounted {
 bool operator<(const boost::intrusive_ptr<TimerTask>& a,
                const boost::intrusive_ptr<TimerTask>& b);
 
-class Timer : private Runnable {
+class QPID_COMMON_CLASS_EXTERN Timer : private Runnable {
     qpid::sys::Monitor monitor;
     std::priority_queue<boost::intrusive_ptr<TimerTask> > tasks;
     qpid::sys::Thread runner;

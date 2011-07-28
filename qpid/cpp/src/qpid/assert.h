@@ -10,9 +10,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -23,15 +23,15 @@
  */
 
 #include <boost/current_function.hpp>
-
+#include "qpid/CommonImportExport.h"
 /**
- * Abort if !expr in debug mode, throw an exception if NDEBUG is set. 
+ * Abort if !expr in debug mode, throw an exception if NDEBUG is set.
  */
 #define QPID_ASSERT(expr) ((expr) ? static_cast<void>(0) : ::qpid::assert_fail(#expr, BOOST_CURRENT_FUNCTION, __FILE__, __LINE__))
 
 namespace qpid {
 
-void assert_fail(char const * expr, char const * function, char const * file, long line); 
+QPID_COMMON_EXTERN void assert_fail(char const * expr, char const * function, char const * file, long line);
 
 } // namespace qpid
 

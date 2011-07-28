@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -35,7 +35,7 @@ namespace framing {
  * necessary. Currently only works on content frames but this could be
  * changed once we support multi-frame segments in general.
  */
-class SendContent
+class QPID_COMMON_CLASS_EXTERN SendContent
 {
     FrameHandler& handler;
     const uint16_t maxFrameSize;

@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -34,7 +34,7 @@ namespace framing {
 /**
  * Collects the frames representing a message.
  */
-class FrameSet
+class QPID_COMMON_CLASS_EXTERN FrameSet
 {
     typedef InlineVector<AMQFrame, 4> Frames;
     const SequenceNumber id;
@@ -61,7 +61,7 @@ public:
     QPID_COMMON_EXTERN AMQMethodBody* getMethod();
     QPID_COMMON_EXTERN const AMQHeaderBody* getHeaders() const;
     QPID_COMMON_EXTERN AMQHeaderBody* getHeaders();
-     
+
     template <class T> bool isA() const {
         const AMQMethodBody* method = getMethod();
         return method && method->isA<T>();
@@ -70,12 +70,12 @@ public:
     template <class T> const T* as() const {
         const AMQMethodBody* method = getMethod();
         return (method && method->isA<T>()) ? dynamic_cast<const T*>(method) : 0;
-    }    
+    }
 
     template <class T>  T* as()  {
         AMQMethodBody* method = getMethod();
         return (method && method->isA<T>()) ? dynamic_cast<T*>(method) : 0;
-    }    
+    }
 
     template <class T> const T* getHeaderProperties() const {
         const AMQHeaderBody* header = getHeaders();
@@ -84,7 +84,7 @@ public:
 
     Frames::const_iterator begin() const { return parts.begin(); }
     Frames::const_iterator end() const { return parts.end(); }
-    
+
     const SequenceNumber& getId() const { return id; }
 
     template <class P> void remove(P predicate) {

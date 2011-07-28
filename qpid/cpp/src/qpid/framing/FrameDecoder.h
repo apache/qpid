@@ -32,15 +32,15 @@ namespace framing {
  * Decode a frame from buffer.  If buffer does not contain a complete
  * frame, caches the fragment for the next call to decode.
  */
-class FrameDecoder
+class QPID_COMMON_CLASS_EXTERN FrameDecoder
 {
   public:
     QPID_COMMON_EXTERN bool decode(Buffer& buffer);
-    const AMQFrame& getFrame() const { return frame; }
-    AMQFrame& getFrame() { return frame; }
+    QPID_COMMON_EXTERN const AMQFrame& getFrame() const { return frame; }
+    QPID_COMMON_EXTERN AMQFrame& getFrame() { return frame; }
 
-    void setFragment(const char*, size_t);
-    std::pair<const char*, size_t> getFragment() const;
+    QPID_COMMON_EXTERN void setFragment(const char*, size_t);
+    QPID_COMMON_EXTERN std::pair<const char*, size_t> getFragment() const;
 
   private:
     std::vector<char> fragment;

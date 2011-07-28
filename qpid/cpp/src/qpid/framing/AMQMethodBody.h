@@ -10,9 +10,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -37,18 +37,18 @@ class Buffer;
 class AMQP_ServerOperations;
 class MethodBodyConstVisitor;
 
-class AMQMethodBody : public AMQBody {
+class QPID_COMMON_CLASS_EXTERN AMQMethodBody : public AMQBody {
   public:
     AMQMethodBody() {}
     QPID_COMMON_EXTERN virtual ~AMQMethodBody();
 
     virtual void accept(MethodBodyConstVisitor&) const = 0;
-    
+
     virtual MethodId amqpMethodId() const = 0;
     virtual ClassId  amqpClassId() const = 0;
     virtual bool isContentBearing() const = 0;
-    virtual bool resultExpected() const = 0;    
-    virtual bool responseExpected() const = 0;    
+    virtual bool resultExpected() const = 0;
+    virtual bool responseExpected() const = 0;
 
     template <class T> bool isA() const {
         return amqpClassId()==T::CLASS_ID && amqpMethodId()==T::METHOD_ID;

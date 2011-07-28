@@ -10,9 +10,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -38,7 +38,7 @@ using framing::SequenceNumber;
 using framing::SequenceSet;
 
 /** A point in the session. Points to command id + offset */
-struct SessionPoint : boost::totally_ordered1<SessionPoint> {
+struct QPID_COMMON_CLASS_EXTERN SessionPoint : boost::totally_ordered1<SessionPoint> {
     QPID_COMMON_EXTERN SessionPoint(SequenceNumber command = 0, uint64_t offset = 0);
 
     SequenceNumber command;
@@ -59,7 +59,7 @@ QPID_COMMON_EXTERN std::ostream& operator<<(std::ostream&, const SessionPoint&);
  *
  * We only issue/use contiguous confirmations, out-of-order confirmation
  * is ignored. Out of order completion is fully supported.
- * 
+ *
  * Raises NotImplemented if the command point is set greater than the
  * max currently received command data, either explicitly via
  * session.command-point or implicitly via session.gap.
@@ -71,21 +71,21 @@ QPID_COMMON_EXTERN std::ostream& operator<<(std::ostream&, const SessionPoint&);
  * could be extended to support partial replay without
  * source-incompatbile API changes.
  */
-class SessionState {
+class QPID_COMMON_CLASS_EXTERN SessionState {
     typedef std::vector<framing::AMQFrame> ReplayList;
 
   public:
 
     typedef boost::iterator_range<ReplayList::iterator> ReplayRange;
 
-    struct Configuration {
+    struct QPID_COMMON_CLASS_EXTERN Configuration {
         QPID_COMMON_EXTERN Configuration(size_t flush=1024*1024, size_t hard=0);
         size_t replayFlushLimit; // Flush when the replay list >= N bytes. 0 disables.
         size_t replayHardLimit; // Kill session if replay list > N bytes. 0 disables.
     };
 
     QPID_COMMON_EXTERN SessionState(const SessionId& =SessionId(), const Configuration& =Configuration());
-    
+
     QPID_COMMON_EXTERN virtual ~SessionState();
 
     bool hasState() const;
@@ -186,7 +186,7 @@ class SessionState {
      * So called 'push' bridges work by faking a subscribe request
      * (and the accompanying flows etc) to the local broker to initiate
      * the outflow of messages for the bridge.
-     * 
+     *
      * As the peer doesn't send these it cannot include them in its
      * session state. To keep the session state on either side of the
      * bridge in sync, this hack allows the tracking of state for

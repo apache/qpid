@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -43,7 +43,7 @@ namespace broker {
  * across potentially multiple channels. Identified by a xid. Allows
  * that work to be prepared, committed and rolled-back.
  */
-class DtxWorkRecord
+class QPID_BROKER_CLASS_EXTERN DtxWorkRecord
 {
     typedef std::vector<DtxBuffer::shared_ptr> Work;
 

@@ -32,7 +32,7 @@ class AMQBody;
 /**
  * Base class for proxies.
  */
-class Proxy
+class QPID_COMMON_CLASS_EXTERN Proxy
 {
   public:
     class ScopedSync

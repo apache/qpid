@@ -20,6 +20,7 @@
  */
 
 #include "qpid/broker/Broker.h"
+#include "qpid/broker/BrokerImportExport.h"
 #include "qpid/broker/ConnectionState.h"
 #include "qpid/broker/DirectExchange.h"
 #include "qpid/broker/FanOutExchange.h"
@@ -508,7 +509,7 @@ const std::string _TRUE("true");
 const std::string _FALSE("false");
 }
 
-struct InvalidBindingIdentifier : public qpid::Exception
+struct QPID_BROKER_CLASS_EXTERN InvalidBindingIdentifier : public qpid::Exception
 {
     InvalidBindingIdentifier(const std::string& name) : qpid::Exception(name) {}
     std::string getPrefix() const { return "invalid binding"; }
@@ -543,13 +544,13 @@ struct BindingIdentifier
     }
 };
 
-struct ObjectAlreadyExists : public qpid::Exception
+struct QPID_BROKER_CLASS_EXTERN ObjectAlreadyExists : public qpid::Exception
 {
     ObjectAlreadyExists(const std::string& name) : qpid::Exception(name) {}
     std::string getPrefix() const { return "object already exists"; }
 };
 
-struct UnknownObjectType : public qpid::Exception
+struct QPID_BROKER_CLASS_EXTERN UnknownObjectType : public qpid::Exception
 {
     UnknownObjectType(const std::string& type) : qpid::Exception(type) {}
     std::string getPrefix() const { return "unknown object type"; }

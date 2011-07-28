@@ -10,9 +10,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -67,20 +67,21 @@ class Exchange;
  * registered consumers or be stored until dequeued or until one
  * or more consumers registers.
  */
-class Queue : public boost::enable_shared_from_this<Queue>,
-              public PersistableQueue, public management::Manageable {
-
+class QPID_BROKER_CLASS_EXTERN Queue :
+        public boost::enable_shared_from_this<Queue>,
+        public PersistableQueue, public management::Manageable
+{
     struct UsageBarrier
     {
         Queue& parent;
         uint count;
-                
+
         UsageBarrier(Queue&);
         bool acquire();
         void release();
         void destroy();
     };
-            
+
     struct ScopedUse
     {
         UsageBarrier& barrier;
@@ -88,7 +89,7 @@ class Queue : public boost::enable_shared_from_this<Queue>,
         ScopedUse(UsageBarrier& b) : barrier(b), acquired(barrier.acquire()) {}
         ~ScopedUse() { if (acquired) barrier.release(); }
     };
-            
+
     typedef std::set< boost::shared_ptr<QueueObserver> > Observers;
     enum ConsumeCode {NO_MESSAGES=0, CANT_CONSUME=1, CONSUMED=2};
 
@@ -184,8 +185,8 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     typedef std::vector<shared_ptr> vector;
 
     QPID_BROKER_EXTERN Queue(const std::string& name,
-                             bool autodelete = false, 
-                             MessageStore* const store = 0, 
+                             bool autodelete = false,
+                             MessageStore* const store = 0,
                              const OwnershipToken* const owner = 0,
                              management::Manageable* parent = 0,
                              Broker* broker = 0);
@@ -245,11 +246,11 @@ class Queue : public boost::enable_shared_from_this<Queue>,
                                     bool exclusive = false);
     QPID_BROKER_EXTERN void cancel(Consumer::shared_ptr c);
 
-    uint32_t purge(const uint32_t purge_request=0, boost::shared_ptr<Exchange> dest=boost::shared_ptr<Exchange>()); //defaults to all messages 
+    uint32_t purge(const uint32_t purge_request=0, boost::shared_ptr<Exchange> dest=boost::shared_ptr<Exchange>()); //defaults to all messages
     QPID_BROKER_EXTERN void purgeExpired();
 
     //move qty # of messages to destination Queue destq
-    uint32_t move(const Queue::shared_ptr destq, uint32_t qty); 
+    uint32_t move(const Queue::shared_ptr destq, uint32_t qty);
 
     QPID_BROKER_EXTERN uint32_t getMessageCount() const;
     QPID_BROKER_EXTERN uint32_t getEnqueueCompleteMessageCount() const;
@@ -288,8 +289,8 @@ class Queue : public boost::enable_shared_from_this<Queue>,
      * Inform queue of messages that were enqueued, have since
      * been acquired but not yet accepted or released (and
      * thus are still logically on the queue) - used in
-     * clustered broker.  
-     */ 
+     * clustered broker.
+     */
     void updateEnqueued(const QueuedMessage& msg);
 
     /**
@@ -300,20 +301,20 @@ class Queue : public boost::enable_shared_from_this<Queue>,
      * accepted it).
      */
     bool isEnqueued(const QueuedMessage& msg);
-            
+
     /**
-     * Gets the next available message 
+     * Gets the next available message
      */
     QPID_BROKER_EXTERN QueuedMessage get();
 
     /** Get the message at position pos */
     QPID_BROKER_EXTERN QueuedMessage find(framing::SequenceNumber pos) const;
 
-    const QueuePolicy* getPolicy();
+    QPID_BROKER_EXTERN const QueuePolicy* getPolicy();
 
-    void setAlternateExchange(boost::shared_ptr<Exchange> exchange);
-    boost::shared_ptr<Exchange> getAlternateExchange();
-    bool isLocal(boost::intrusive_ptr<Message>& msg);
+    QPID_BROKER_EXTERN void setAlternateExchange(boost::shared_ptr<Exchange> exchange);
+    QPID_BROKER_EXTERN boost::shared_ptr<Exchange> getAlternateExchange();
+    QPID_BROKER_EXTERN bool isLocal(boost::intrusive_ptr<Message>& msg);
 
     //PersistableQueue support:
     uint64_t getPersistenceId() const;
@@ -361,7 +362,7 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     /** return current position sequence number for the next message on the queue.
      */
     QPID_BROKER_EXTERN framing::SequenceNumber getPosition();
-    void addObserver(boost::shared_ptr<QueueObserver>);
+    QPID_BROKER_EXTERN void addObserver(boost::shared_ptr<QueueObserver>);
     QPID_BROKER_EXTERN void insertSequenceNumbers(const std::string& key);
     /**
      * Notify queue that recovery has completed.
@@ -369,9 +370,9 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     void recoveryComplete(ExchangeRegistry& exchanges);
 
     // For cluster update
-    QueueListeners& getListeners();
-    Messages& getMessages();
-    const Messages& getMessages() const;
+    QPID_BROKER_EXTERN QueueListeners& getListeners();
+    QPID_BROKER_EXTERN Messages& getMessages();
+    QPID_BROKER_EXTERN const Messages& getMessages() const;
 
     /**
      * Reserve space in policy for an enqueued message that

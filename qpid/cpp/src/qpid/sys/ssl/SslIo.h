@@ -9,9 +9,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -23,6 +23,7 @@
 
 #include "qpid/sys/DispatchHandle.h"
 #include "qpid/sys/SecuritySettings.h"
+#include "qpid/sys/ssl/SslCommonImportExport.h"
 
 #include <boost/function.hpp>
 #include <deque>
@@ -30,7 +31,7 @@
 namespace qpid {
 namespace sys {
 namespace ssl {
-    
+
 class SslSocket;
 
 /*
@@ -87,31 +88,31 @@ struct SslIOBufferBase {
     const int32_t byteCount;
     int32_t dataStart;
     int32_t dataCount;
-    
+
     SslIOBufferBase(char* const b, const int32_t s) :
         bytes(b),
         byteCount(s),
         dataStart(0),
         dataCount(0)
     {}
-    
+
     virtual ~SslIOBufferBase()
     {}
 };
 
 /*
- * Asychronous reader/writer: 
+ * Asychronous reader/writer:
  * Reader accepts buffers to read into; reads into the provided buffers
  * and then does a callback with the buffer and amount read. Optionally it can callback
  * when there is something to read but no buffer to read it into.
- * 
+ *
  * Writer accepts a buffer and queues it for writing; can also be given
  * a callback for when writing is "idle" (ie fd is writable, but nothing to write)
- * 
+ *
  * The class is implemented in terms of DispatchHandle to allow it to be deleted by deleting
  * the contained DispatchHandle
  */
-class SslIO : private qpid::sys::DispatchHandle {
+class QPID_SSL_COMMON_CLASS_EXTERN SslIO : private qpid::sys::DispatchHandle {
 public:
     typedef SslIOBufferBase BufferBase;
 

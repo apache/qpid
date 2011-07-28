@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -47,7 +47,7 @@ class MessageStore;
  * are deleted when and only when they are no longer in use.
  *
  */
-class QueueRegistry {
+class QPID_BROKER_CLASS_EXTERN QueueRegistry {
   public:
     QPID_BROKER_EXTERN QueueRegistry(Broker* b = 0);
     QPID_BROKER_EXTERN ~QueueRegistry();
@@ -61,7 +61,7 @@ class QueueRegistry {
     QPID_BROKER_EXTERN std::pair<boost::shared_ptr<Queue>, bool> declare(
         const std::string& name,
         bool durable = false,
-        bool autodelete = false, 
+        bool autodelete = false,
         const OwnershipToken* owner = 0,
         boost::shared_ptr<Exchange> alternateExchange = boost::shared_ptr<Exchange>(),
         const qpid::framing::FieldTable& args = framing::FieldTable(),
@@ -122,13 +122,13 @@ class QueueRegistry {
         for (QueueMap::const_iterator i = queues.begin(); i != queues.end(); ++i)
             f(i->second);
     }
-	
+
 	/**
 	* Change queue mode when cluster size drops to 1 node, expands again
 	* in practice allows flow queue to disk when last name to be exectuted
 	*/
 	void updateQueueClusterState(bool lastNode);
-    
+
 private:
     typedef std::map<std::string, boost::shared_ptr<Queue> > QueueMap;
     QueueMap queues;
@@ -144,7 +144,7 @@ private:
     void destroyLH (const std::string& name);
 };
 
-    
+
 }} // namespace qpid::broker
 
 

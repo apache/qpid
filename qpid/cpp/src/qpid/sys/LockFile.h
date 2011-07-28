@@ -41,7 +41,7 @@ class LockFilePrivate;
  * doesn't, the old owner has probably died without cleaning up the lock
  * file.
  */
-class LockFile : private boost::noncopyable
+class QPID_COMMON_CLASS_EXTERN LockFile : private boost::noncopyable
 {
     std::string path;
     bool created;
@@ -55,10 +55,8 @@ public:
     QPID_COMMON_EXTERN LockFile(const std::string& path_, bool create);
     QPID_COMMON_EXTERN ~LockFile();
 };
- 
+
 }}   /* namespace qpid::sys */
 
 #endif /*!_sys_LockFile_h*/
 
-
-       

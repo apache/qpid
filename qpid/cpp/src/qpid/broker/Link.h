@@ -32,6 +32,7 @@
 #include "qpid/management/Manageable.h"
 #include "qpid/management/ManagementAgent.h"
 #include "qmf/org/apache/qpid/broker/Link.h"
+#include "qpid/broker/BrokerImportExport.h"
 #include <boost/ptr_container/ptr_vector.hpp>
 
 namespace qpid {
@@ -41,7 +42,8 @@ namespace qpid {
         class Broker;
         class Connection;
 
-        class Link : public PersistableConfig, public management::Manageable {
+        class QPID_BROKER_CLASS_EXTERN Link :
+            public PersistableConfig, public management::Manageable {
         private:
             sys::Mutex          lock;
             LinkRegistry*       links;

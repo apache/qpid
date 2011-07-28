@@ -29,7 +29,7 @@ namespace qpid {
  * Temporarily disable logging in qpid::Exception constructor.
  * Used by log::Logger to avoid logging exceptions during Logger construction.
  */
-struct DisableExceptionLogging
+struct QPID_COMMON_CLASS_EXTERN DisableExceptionLogging
 {
     QPID_COMMON_EXTERN DisableExceptionLogging();
     QPID_COMMON_EXTERN ~DisableExceptionLogging();

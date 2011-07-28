@@ -37,7 +37,7 @@ class ObjectId;
 class ManagementObject;
 
 
-class AgentAttachment {
+class QPID_COMMON_CLASS_EXTERN AgentAttachment {
     friend class ObjectId;
 private:
     uint64_t first;
@@ -48,7 +48,7 @@ public:
 };
 
 
-class ObjectId {
+class QPID_COMMON_CLASS_EXTERN ObjectId {
 protected:
     const AgentAttachment* agent;
     uint64_t first;
@@ -88,7 +88,7 @@ public:
     friend QPID_COMMON_EXTERN std::ostream& operator<<(std::ostream&, const ObjectId&);
 };
 
-class ManagementItem {
+class QPID_COMMON_CLASS_EXTERN ManagementItem {
 public:
     static const uint8_t TYPE_U8        = 1;
     static const uint8_t TYPE_U16       = 2;

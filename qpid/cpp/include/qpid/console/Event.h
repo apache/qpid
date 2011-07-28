@@ -40,7 +40,7 @@ namespace console {
      *
      * \ingroup qmfconsoleapi
      */
-    class Event {
+    class QPID_CONSOLE_CLASS_EXTERN Event {
     public:
         typedef enum {
         SEV_EMERGENCY = 0, SEV_ALERT = 1, SEV_CRITICAL = 2, SEV_ERROR = 3,

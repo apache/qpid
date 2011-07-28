@@ -34,7 +34,7 @@ namespace qpid {
 /**
  * DataDir class.
  */
-class DataDir
+class QPID_COMMON_CLASS_EXTERN DataDir
 {
     const bool        enabled;
     const std::string dirPath;
@@ -48,7 +48,7 @@ class DataDir
     bool isEnabled() { return enabled; }
     const std::string& getPath() { return dirPath; }
 };
- 
+
 } // namespace qpid
 
 #endif  /*!QPID_DATADIR_H*/

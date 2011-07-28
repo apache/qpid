@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -32,22 +32,22 @@
 namespace qpid {
 namespace broker {
 
-class FanOutExchange : public virtual Exchange {
+class QPID_BROKER_CLASS_EXTERN FanOutExchange : public virtual Exchange {
     typedef qpid::sys::CopyOnWriteArray<Binding::shared_ptr> BindingsArray;
     BindingsArray bindings;
     FedBinding fedBinding;
   public:
     static const std::string typeName;
-        
+
     QPID_BROKER_EXTERN FanOutExchange(const std::string& name,
                                       management::Manageable* parent = 0, Broker* broker = 0);
     QPID_BROKER_EXTERN FanOutExchange(const std::string& _name,
-                                      bool _durable, 
+                                      bool _durable,
                                       const qpid::framing::FieldTable& _args,
                                       management::Manageable* parent = 0, Broker* broker = 0);
 
-    virtual std::string getType() const { return typeName; }            
-        
+    virtual std::string getType() const { return typeName; }
+
     QPID_BROKER_EXTERN virtual bool bind(Queue::shared_ptr queue,
                                          const std::string& routingKey,
                                          const qpid::framing::FieldTable* args);

@@ -56,10 +56,10 @@ QPID_COMMON_EXTERN bool isClusterSafe();
  *  Mark a scope as cluster safe. Sets isClusterSafe in constructor and resets
  *  to previous value in destructor.
  */
-class ClusterSafeScope {
+class QPID_COMMON_CLASS_EXTERN ClusterSafeScope {
   public:
-    ClusterSafeScope();
-    ~ClusterSafeScope();
+    QPID_COMMON_EXTERN ClusterSafeScope();
+    QPID_COMMON_EXTERN ~ClusterSafeScope();
   private:
     bool save;
 };
@@ -68,7 +68,7 @@ class ClusterSafeScope {
  *  Mark a scope as cluster unsafe. Clears isClusterSafe in constructor and resets
  *  to previous value in destructor.
  */
-class ClusterUnsafeScope {
+class QPID_COMMON_CLASS_EXTERN ClusterUnsafeScope {
   public:
     QPID_COMMON_EXTERN ClusterUnsafeScope();
     QPID_COMMON_EXTERN ~ClusterUnsafeScope();
@@ -80,7 +80,7 @@ class ClusterUnsafeScope {
  * Enable cluster-safe assertions. By default they are no-ops.
  * Called by cluster code.
  */
-void enableClusterSafe();
+QPID_COMMON_EXTERN void enableClusterSafe();
 
 }} // namespace qpid::sys
 
