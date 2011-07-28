@@ -54,7 +54,7 @@ class LockedMap
      */
     bool add(const Key& key, const Value& value) {
         sys::RWlock::ScopedWlock w(lock);
-        return map.insert(key, value).second;
+        return map.insert(std::make_pair(key, value)).second;
     }
 
     /** Erase the value associated with key if any. Return true if a value was erased. */

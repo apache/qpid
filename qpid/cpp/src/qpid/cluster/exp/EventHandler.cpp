@@ -41,7 +41,7 @@ EventHandler::EventHandler(Core& c) :
 
 EventHandler::~EventHandler() {}
 
-void EventHandler::add(const boost::shared_ptr<HandlerBase>& handler) {
+void EventHandler::add(const boost::intrusive_ptr<HandlerBase>& handler) {
     handlers.push_back(handler);
 }
 

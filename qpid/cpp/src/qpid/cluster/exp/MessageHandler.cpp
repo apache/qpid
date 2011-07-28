@@ -21,7 +21,7 @@
 
 #include "Core.h"
 #include "MessageHandler.h"
-#include "BrokerHandler.h"
+#include "BrokerContext.h"
 #include "EventHandler.h"
 #include "qpid/broker/Message.h"
 #include "qpid/broker/Broker.h"
@@ -73,7 +73,7 @@ void MessageHandler::enqueue(RoutingId routingId, const std::string& q) {
         msg = memberMap[sender()].routingMap[routingId];
     if (!msg) throw Exception(QPID_MSG("Cluster enqueue on " << q
                                        << " failed:  unknown message"));
-    BrokerHandler::ScopedSuppressReplication ssr;
+    BrokerContext::ScopedSuppressReplication ssr;
     queue->deliver(msg);
 }
 
@@ -84,22 +84,40 @@ void MessageHandler::routed(RoutingId routingId) {
         memberMap[sender()].routingMap.erase(routingId);
 }
 
-void MessageHandler::dequeue(const std::string& q, uint32_t position) {
+void MessageHandler::acquire(const std::string& q, uint32_t position) {
+    // Note acquires from other members. My own acquires were exeuted in
+    // the connection thread
+    if (sender() != self()) {
+        // FIXME aconway 2010-10-28: need to store acquired messages on QueueContext
+        // by broker for possible re-queuing if a broker leaves.
+        boost::shared_ptr<Queue> queue = findQueue(q, "Cluster dequeue failed");
+        QueuedMessage qm;
+        BrokerContext::ScopedSuppressReplication ssr;
+        bool ok = queue->acquireMessageAt(position, qm);
+        (void)ok;                   // Avoid unused variable warnings.
+        assert(ok);
+        assert(qm.position.getValue() == position);
+        assert(qm.payload);
+    }
+}
+
+void MessageHandler::dequeue(const std::string& q, uint32_t /*position*/) {
     if (sender() == self()) {
         // FIXME aconway 2010-10-28: we should complete the ack that initiated
-        // the dequeue at this point, see BrokerHandler::dequeue
+        // the dequeue at this point, see BrokerContext::dequeue
         return;
     }
     boost::shared_ptr<Queue> queue = findQueue(q, "Cluster dequeue failed");
-    BrokerHandler::ScopedSuppressReplication ssr;
-    QueuedMessage qm;
-    // FIXME aconway 2010-10-28: when we replicate acquires, the acquired
-    // messages will be stored by MessageHandler::acquire.
-    if (queue->acquireMessageAt(position, qm)) {
-        assert(qm.position.getValue() == position);
-        assert(qm.payload);
-        queue->dequeue(0, qm);
-    }
+    BrokerContext::ScopedSuppressReplication ssr;
+    // FIXME aconway 2011-05-12: Remove the acquired message from QueueContext.
+    // Do we need to call this? Review with gsim.
+    // QueuedMessage qm;
+    // Get qm from QueueContext?
+    // queue->dequeue(0, qm);
+}
+
+void MessageHandler::release(const std::string& /*queue*/ , uint32_t /*position*/) {
+    // FIXME aconway 2011-05-24:
 }
 
 }} // namespace qpid::cluster

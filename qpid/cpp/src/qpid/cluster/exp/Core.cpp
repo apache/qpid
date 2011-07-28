@@ -21,9 +21,11 @@
 
 #include "Core.h"
 #include "EventHandler.h"
-#include "BrokerHandler.h"
+#include "BrokerContext.h"
 #include "WiringHandler.h"
 #include "MessageHandler.h"
+#include "QueueContext.h"
+#include "QueueHandler.h"
 #include "qpid/broker/Broker.h"
 #include "qpid/broker/SignalHandler.h"
 #include "qpid/framing/AMQFrame.h"
@@ -39,12 +41,17 @@ Core::Core(const Settings& s, broker::Broker& b) :
     eventHandler(new EventHandler(*this)),
     multicaster(eventHandler->getCpg(), b.getPoller(), boost::bind(&Core::fatal, this))
 {
-    eventHandler->add(boost::shared_ptr<HandlerBase>(new WiringHandler(*eventHandler)));
-    eventHandler->add(boost::shared_ptr<HandlerBase>(new MessageHandler(*eventHandler)));
+    boost::intrusive_ptr<QueueHandler> queueHandler(
+        new QueueHandler(*eventHandler, multicaster));
+    eventHandler->add(queueHandler);
+    eventHandler->add(boost::intrusive_ptr<HandlerBase>(
+                          new WiringHandler(*eventHandler, queueHandler)));
+    eventHandler->add(boost::intrusive_ptr<HandlerBase>(
+                          new MessageHandler(*eventHandler)));
 
-    std::auto_ptr<BrokerHandler> bh(new BrokerHandler(*this));
+    std::auto_ptr<BrokerContext> bh(new BrokerContext(*this, queueHandler));
     brokerHandler = bh.get();
-    // BrokerHandler belongs to Broker
+    // BrokerContext belongs to Broker
     broker.setCluster(std::auto_ptr<broker::Cluster>(bh));
     eventHandler->start();
     eventHandler->getCpg().join(s.name);
@@ -62,8 +69,7 @@ void Core::fatal() {
 
 void Core::mcast(const framing::AMQBody& body) {
     QPID_LOG(trace, "cluster multicast: " << body);
-    framing::AMQFrame f(body);
-    multicaster.mcast(f);
+    multicaster.mcast(body);
 }
 
 }} // namespace qpid::cluster

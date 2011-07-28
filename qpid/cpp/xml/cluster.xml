@@ -8,9 +8,9 @@
 - to you under the Apache License, Version 2.0 (the
 - "License"); you may not use this file except in compliance
 - with the License.  You may obtain a copy of the License at
-- 
+-
 -   http://www.apache.org/licenses/LICENSE-2.0
-- 
+-
 - Unless required by applicable law or agreed to in writing,
 - software distributed under the License is distributed on an
 - "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -81,7 +81,7 @@
     <control name="message-expired" code="0x12">
       <field name="id" type="uint64"/>
     </control>
-    
+
     <domain name="error-type" type="uint8" label="Types of error">
       <enum>
 	<choice name="none" value="0"/>
@@ -89,7 +89,7 @@
 	<choice name="connection" value="2"/>
       </enum>
     </domain>
-	
+
     <!-- Check for error consistency across the cluster -->
     <control name="error-check" code="0x14">
       <field name="type" type="error-type"/>
@@ -149,7 +149,7 @@
 
     <!-- Abort a connection that is sending invalid data. -->
     <control name="abort" code="0x4"/>
-    
+
     <!-- Update controls. Sent to a new broker in joining mode.
 	 A connection is updated as followed:
 	 - send the shadow's management ID in shadow-perpare on the update connection
@@ -192,9 +192,9 @@
       <field name="enqueued" type="bit"/>
       <field name="credit" type="uint32"/>
     </control>
-    
+
     <!-- Tx transaction state. -->
-    <control name="tx-start" code="0x12"/> 
+    <control name="tx-start" code="0x12"/>
     <control name="tx-accept" code="0x13"> <field name="commands" type="sequence-set"/> </control>
     <control name="tx-dequeue" code="0x14"> <field name="queue" type="str8"/> </control>
     <control name="tx-enqueue" code="0x15"> <field name="queue" type="str8"/> </control>
@@ -204,7 +204,7 @@
     </control>
     <control name="tx-end" code="0x17"/>
     <control name="accumulated-ack" code="0x18"> <field name="commands" type="sequence-set"/> </control>
-    
+
     <!-- Consumers in the connection's output task -->
     <control name="output-task" code="0x19">
       <field name="channel" type="uint16"/>
@@ -294,6 +294,7 @@
       <field name="message" type="str32"/>
     </control>
 
+    <!--  FIXME aconway 2011-04-27: reference queues by index, not name -->
     <control name="enqueue" code="0x2">
       <field name="routing-id" type="uint32"/>
       <field name="queue" type="queue.name"/>
@@ -303,10 +304,22 @@
       <field name="routing-id" type="uint32"/>
     </control>
 
-    <control name="dequeue" code="0x4">
+    <!-- FIXME aconway 2011-04-27: review queue positions vs. global message IDs -->
+    <control name="acquire" code="0x4">
       <field name="queue" type="queue.name"/>
       <field name="position" type="uint32"/>
     </control>
+
+    <control name="dequeue" code="0x5">
+      <field name="queue" type="queue.name"/>
+      <field name="position" type="uint32"/>
+    </control>
+
+    <control name="release" code="0x6">
+      <field name="queue" type="queue.name"/>
+      <field name="position" type="uint32"/>
+    </control>
+
   </class>
 
   <class name="cluster-wiring" code="0x83">
@@ -341,4 +354,26 @@
     </control>
 
   </class>
+
+  <!-- Manage subscriptions to a queue.
+
+       Each queue has a "subscriber queue" of members waiting take
+       messages from the queue.  The member at the front of the queue
+       is the only one allowed to take messages. -->
+
+  <class name="cluster-queue" code="0x84">
+    <!-- Join at the back of the subscriber queue -->
+    <control name="subscribe" code="0x1">
+      <field name="queue" type="queue.name"/>
+    </control>
+    <!-- Leave the subscriber queue -->
+    <control name="unsubscribe" code="0x2">
+      <field name="queue" type="queue.name"/>
+    </control>
+    <!-- Move the member at the front to the back. -->
+    <control name="resubscribe" code="0x3">
+      <field name="queue" type="queue.name"/>
+    </control>
+  </class>
+
 </amqp>

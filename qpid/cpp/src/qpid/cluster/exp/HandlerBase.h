@@ -21,6 +21,7 @@
  * under the License.
  *
  */
+#include "qpid/RefCounted.h"
 #include "qpid/cluster/types.h"
 
 namespace qpid {
@@ -35,7 +36,7 @@ class EventHandler;
 /**
  * Base class for handlers of events, children of the EventHandler.
  */
-class HandlerBase
+class HandlerBase : public RefCounted
 {
   public:
     HandlerBase(EventHandler&);

@@ -28,7 +28,7 @@ Options:
              Default is $DEFAULT_ENV.
  -c CONFIG   Use CONFIG as qpidd config file. Copies CONFIG to each host.
              Default is $DEFAULT_CONF
- -d          Delete data-dir and log file before starting broker.	     
+ -d          Delete data-dir and log file before starting broker.
 "
     exit 1
 }
@@ -82,6 +82,7 @@ do_start() {
 }
 
 do_stop() {
+
     for h in $HOSTS; do
 	ssh $h "$SOURCE_ENV qpidd -q --no-module-dir --no-data-dir $QPIDD_ARGS"
     done

@@ -21,17 +21,27 @@
  * under the License.
  *
  */
+
+#include <boost/function.hpp>
+
 namespace qpid {
 namespace sys {
 
+// FIXME aconway 2011-05-25: needs better name
+
 /**
  * An activity that may be executed by multiple threads, and can be stopped.
- * Stopping prevents new threads from entering and waits till exiting busy threads leave.
+ *
+ * Stopping prevents new threads from entering and calls a callback
+ * when all busy threads leave.
  */
 class Stoppable {
   public:
-    Stoppable() : busy(0), stopped(false) {}
-    ~Stoppable() { stop(); }
+    /**
+     *@param stoppedCallback: called when all threads have stopped.
+     */
+    Stoppable(boost::function<void()> stoppedCallback)
+        : busy(0), stopped(false), notify(stoppedCallback) {}
 
     /** Mark the scope of a busy thread like this:
      * <pre>
@@ -52,38 +62,49 @@ class Stoppable {
 
   friend class Scope;
 
-    /** Mark  stopped, wait for all threads to leave their busy scope. */
+    /**
+     * Set state to "stopped", so no new threads can enter.
+     * Call notify function when all busy threads have left.
+     */
+    // FIXME aconway 2011-06-27: not guaranteed that stopped will be called,
+    // deadlock?
     void stop() {
         sys::Monitor::ScopedLock l(lock);
         stopped = true;
-        while (busy > 0) lock.wait();
+        check();
     }
 
-    /** Set the state to started.
-     *@pre state is stopped and no theads are busy.
+    /** Set the state to "started", allow threads to enter.
      */
     void start() {
         sys::Monitor::ScopedLock l(lock);
-        assert(stopped && busy == 0); // FIXME aconway 2011-05-06: error handling.
         stopped = false;
     }
 
-  private:
-    uint busy;
-    bool stopped;
-    sys::Monitor lock;
-
+    // Busy thread enters scope
     bool enter() {
         sys::Monitor::ScopedLock l(lock);
         if (!stopped) ++busy;
         return !stopped;
     }
 
+    // Busy thread exits scope
     void exit() {
         sys::Monitor::ScopedLock l(lock);
         assert(busy > 0);
-        if (--busy == 0) lock.notifyAll();
+        --busy;
+        check();
     }
+
+  private:
+    void check() {
+        if (stopped && busy == 0 && notify) notify();
+    }
+
+    uint busy;
+    bool stopped;
+    sys::Monitor lock;
+    boost::function< void() > notify;
 };
 
 }} // namespace qpid::sys

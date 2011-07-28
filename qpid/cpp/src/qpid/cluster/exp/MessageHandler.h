@@ -39,7 +39,10 @@ class Queue;
 
 namespace cluster {
 class EventHandler;
-class BrokerHandler;
+class BrokerContext;
+
+// FIXME aconway 2011-06-28: doesn't follow the same Handler/Replica/Context pattern as for queue.
+// Make this consistent.
 
 /**
  * Handler for message disposition events.
@@ -55,7 +58,10 @@ class MessageHandler : public framing::AMQP_AllOperations::ClusterMessageHandler
     void routing(uint32_t routingId, const std::string& message);
     void enqueue(uint32_t routingId, const std::string& queue);
     void routed(uint32_t routingId);
+    void acquire(const std::string& queue, uint32_t position);
     void dequeue(const std::string& queue, uint32_t position);
+    void release(const std::string& queue, uint32_t position);
+
   private:
     struct Member {
         typedef std::map<uint32_t, boost::intrusive_ptr<broker::Message> > RoutingMap;
