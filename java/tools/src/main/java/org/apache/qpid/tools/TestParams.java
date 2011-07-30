@@ -43,7 +43,7 @@ public class TestParams
 
     private int msg_size = 1024;
 
-    private int msg_type = 1;   // not used yet
+    private int random_msg_size_start_from = 1;
 
     private boolean cacheMessage = false;
 
@@ -73,6 +73,8 @@ public class TestParams
 
     private boolean externalController = false;
 
+    private boolean useUniqueDest = false; // useful when using multiple connections.
+
     public TestParams()
     {
 
@@ -82,7 +84,6 @@ public class TestParams
         address = System.getProperty("address",address);
 
         msg_size  = Integer.getInteger("msg_size", 1024);
-        msg_type = Integer.getInteger("msg_type",1);
         cacheMessage = Boolean.getBoolean("cache_msg");
         disableMessageID = Boolean.getBoolean("disableMessageID");
         disableTimestamp = Boolean.getBoolean("disableTimestamp");
@@ -97,6 +98,8 @@ public class TestParams
         printStdDev = Boolean.getBoolean("print_std_dev");
         rate = Long.getLong("rate",-1);
         externalController = Boolean.getBoolean("ext_controller");
+        useUniqueDest = Boolean.getBoolean("use_unique_dest");
+        random_msg_size_start_from = Integer.getInteger("random_msg_size_start_from", 1);
     }
 
     public String getUrl()
@@ -134,9 +137,9 @@ public class TestParams
         return msg_size;
     }
 
-    public int getMsgType()
+    public int getRandomMsgSizeStartFrom()
     {
-        return msg_type;
+        return random_msg_size_start_from;
     }
 
     public boolean isDurable()
@@ -202,5 +205,10 @@ public class TestParams
     public void setAddress(String addr)
     {
         address = addr;
+    }
+
+    public boolean isUseUniqueDests()
+    {
+        return useUniqueDest;
     }
 }
