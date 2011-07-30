@@ -20,5 +20,9 @@
 
 . check-qpid-java-env
 
-echo "$@"
-$JAVA -cp $CLASSPATH $LOG_CONFIG $JAVA_MEM $@ org.apache.qpid.tools.PerfProducer
+JVM_ARGS="$1"
+PROGRAM_ARGS="$2"
+
+echo "JVM ARGS : $JAVA_MEM $JVM_ARGS"
+echo "PROGRAM ARGS : $PROGRAM_ARGS"
+$JAVA -cp $CLASSPATH $LOG_CONFIG $JAVA_MEM $JVM_ARGS org.apache.qpid.tools.PerfProducer $PROGRAM_ARGS
