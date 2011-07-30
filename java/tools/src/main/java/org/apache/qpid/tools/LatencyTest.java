@@ -77,7 +77,7 @@ public class LatencyTest extends PerfBase implements MessageListener
 
     public LatencyTest()
     {
-        super();
+        super("");
         warmedUp = lock.newCondition();
         testCompleted = lock.newCondition();
         // Storing the following two for efficiency
@@ -314,7 +314,7 @@ public class LatencyTest extends PerfBase implements MessageListener
 
     public static void main(String[] args)
     {
-        final LatencyTest latencyTest = new LatencyTest();        
+        final LatencyTest latencyTest = new LatencyTest();
         Runnable r = new Runnable()
         {
             public void run()
@@ -334,16 +334,16 @@ public class LatencyTest extends PerfBase implements MessageListener
                 }
             }
         };
-        
+
         Thread t;
         try
         {
-            t = Threading.getThreadFactory().createThread(r);                      
+            t = Threading.getThreadFactory().createThread(r);
         }
         catch(Exception e)
         {
             throw new Error("Error creating latency test thread",e);
         }
-        t.start(); 
+        t.start();
     }
 }

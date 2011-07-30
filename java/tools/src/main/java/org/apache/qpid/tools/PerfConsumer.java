@@ -22,6 +22,7 @@ package org.apache.qpid.tools;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 
 import javax.jms.MapMessage;
 import javax.jms.Message;
@@ -29,6 +30,7 @@ import javax.jms.MessageConsumer;
 import javax.jms.MessageListener;
 import javax.jms.TextMessage;
 
+import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.thread.Threading;
 
 /**
@@ -49,7 +51,7 @@ import org.apache.qpid.thread.Threading;
  * b) They are on separate machines that have their time synced via a Time Server
  *
  * In order to calculate latency the producer inserts a timestamp
- * hen the message is sent. The consumer will note the current time the message is
+ * when the message is sent. The consumer will note the current time the message is
  * received and will calculate the latency as follows
  * latency = rcvdTime - msg.getJMSTimestamp()
  *
@@ -57,13 +59,9 @@ import org.apache.qpid.thread.Threading;
  * variance in latencies.
  *
  * Avg latency is measured by adding all latencies and dividing by the total msgs.
- * You can also compute this by (rcvdTime - testStartTime)/rcvdMsgCount
  *
  * Throughput
  * ===========
- * System throughput is calculated as follows
- * rcvdMsgCount/(rcvdTime - testStartTime)
- *
  * Consumer rate is calculated as
  * rcvdMsgCount/(rcvdTime - startTime)
  *
@@ -83,7 +81,6 @@ public class PerfConsumer extends PerfBase implements MessageListener
     long minLatency = Long.MAX_VALUE;
     long totalLatency = 0;  // to calculate avg latency.
     int rcvdMsgCount = 0;
-    long testStartTime = 0; // to measure system throughput
     long startTime = 0;     // to measure consumer throughput
     long rcvdTime = 0;
     boolean transacted = false;
@@ -94,9 +91,9 @@ public class PerfConsumer extends PerfBase implements MessageListener
 
     final Object lock = new Object();
 
-    public PerfConsumer()
+    public PerfConsumer(String prefix)
     {
-        super();
+        super(prefix);
         System.out.println("Consumer ID : " + id);
     }
 
@@ -104,26 +101,20 @@ public class PerfConsumer extends PerfBase implements MessageListener
     {
         super.setUp();
         consumer = session.createConsumer(dest);
+        System.out.println("Consumer: " + id + " Receiving messages from : " + ((AMQDestination)dest).getQueueName() + "\n");
 
         // Storing the following two for efficiency
         transacted = params.isTransacted();
         transSize = params.getTransactionSize();
         printStdDev = params.isPrintStdDev();
-        if (printStdDev)
-        {
-            sample = new ArrayList<Long>(params.getMsgCount());
-        }
-
         MapMessage m = controllerSession.createMapMessage();
         m.setInt(CODE, OPCode.REGISTER_CONSUMER.ordinal());
-        m.setString(REPLY_ADDR,myControlQueueAddr);
         sendMessageToController(m);
     }
 
     public void warmup()throws Exception
     {
         receiveFromController(OPCode.CONSUMER_STARTWARMUP);
-        boolean start = false;
         Message msg = consumer.receive();
         // This is to ensure we drain the queue before we start the actual test.
         while ( msg != null)
@@ -146,12 +137,26 @@ public class PerfConsumer extends PerfBase implements MessageListener
         MapMessage m = controllerSession.createMapMessage();
         m.setInt(CODE, OPCode.CONSUMER_READY.ordinal());
         sendMessageToController(m);
+        consumer.setMessageListener(this);
     }
 
     public void startTest() throws Exception
     {
-        System.out.println("Consumer Starting test......");
-        consumer.setMessageListener(this);
+        System.out.println("Consumer: " + id + " Starting test......" + "\n");
+        resetCounters();
+    }
+
+    public void resetCounters()
+    {
+        rcvdMsgCount = 0;
+        maxLatency = 0;
+        minLatency = Long.MAX_VALUE;
+        totalLatency = 0;
+        if (printStdDev)
+        {
+            sample = null;
+            sample = new ArrayList<Long>(params.getMsgCount());
+        }
     }
 
     public void sendResults() throws Exception
@@ -193,7 +198,6 @@ public class PerfConsumer extends PerfBase implements MessageListener
             System.out.println(new StringBuilder("Std Dev             : ").
                                append(stdDev/Clock.convertToMiliSecs()).toString());
         }
-        System.out.println("Consumer has completed the test......\n");
     }
 
     public double calculateStdDev(double mean)
@@ -262,8 +266,15 @@ public class PerfConsumer extends PerfBase implements MessageListener
         {
             setUp();
             warmup();
-            startTest();
-            sendResults();
+            boolean nextIteration = true;
+            while (nextIteration)
+            {
+                System.out.println("=========================================================\n");
+                System.out.println("Consumer: " + id + " starting a new iteration ......\n");
+                startTest();
+                sendResults();
+                nextIteration = continueTest();
+            }
             tearDown();
         }
         catch(Exception e)
@@ -272,26 +283,43 @@ public class PerfConsumer extends PerfBase implements MessageListener
         }
     }
 
-    public static void main(String[] args)
+        @Override
+    public void tearDown() throws Exception
     {
-        final PerfConsumer cons = new PerfConsumer();
-        Runnable r = new Runnable()
-        {
-            public void run()
-            {
-                cons.run();
-            }
-        };
+        super.tearDown();
+    }
 
-        Thread t;
-        try
+    public static void main(String[] args) throws InterruptedException
+    {
+        String scriptId = (args.length == 1) ? args[0] : "";
+        int conCount = Integer.getInteger("con_count",1);
+        final CountDownLatch testCompleted = new CountDownLatch(conCount);
+        for (int i=0; i < conCount; i++)
         {
-            t = Threading.getThreadFactory().createThread(r);
+
+            final PerfConsumer cons = new PerfConsumer(scriptId + i);
+            Runnable r = new Runnable()
+            {
+                public void run()
+                {
+                    cons.run();
+                    testCompleted.countDown();
+                }
+            };
+
+            Thread t;
+            try
+            {
+                t = Threading.getThreadFactory().createThread(r);
+            }
+            catch(Exception e)
+            {
+                throw new Error("Error creating consumer thread",e);
+            }
+            t.start();
+
         }
-        catch(Exception e)
-        {
-            throw new Error("Error creating consumer thread",e);
-        }
-        t.start();
+        testCompleted.await();
+        System.out.println("Consumers have completed the test......\n");
     }
 }
