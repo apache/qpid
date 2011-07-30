@@ -102,9 +102,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
     protected final QueueEntryList _entries;
 
-    protected final SubscriptionList _subscriptionList = new SubscriptionList(this);
-
-    private final AtomicReference<SubscriptionList.SubscriptionNode> _lastSubscriptionNode = new AtomicReference<SubscriptionList.SubscriptionNode>(_subscriptionList.getHead());
+    protected final SubscriptionList _subscriptionList = new SubscriptionList();
 
     private volatile Subscription _exclusiveSubscriber;
 
@@ -602,25 +600,25 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             iterate over subscriptions and if any is at the end of the queue and can deliver this message, then deliver the message
 
              */
-            SubscriptionList.SubscriptionNode node = _lastSubscriptionNode.get();
-            SubscriptionList.SubscriptionNode nextNode = node.getNext();
+            SubscriptionList.SubscriptionNode node = _subscriptionList.getMarkedNode();
+            SubscriptionList.SubscriptionNode nextNode = node.findNext();
             if (nextNode == null)
             {
-                nextNode = _subscriptionList.getHead().getNext();
+                nextNode = _subscriptionList.getHead().findNext();
             }
             while (nextNode != null)
             {
-                if (_lastSubscriptionNode.compareAndSet(node, nextNode))
+                if (_subscriptionList.updateMarkedNode(node, nextNode))
                 {
                     break;
                 }
                 else
                 {
-                    node = _lastSubscriptionNode.get();
-                    nextNode = node.getNext();
+                    node = _subscriptionList.getMarkedNode();
+                    nextNode = node.findNext();
                     if (nextNode == null)
                     {
-                        nextNode = _subscriptionList.getHead().getNext();
+                        nextNode = _subscriptionList.getHead().findNext();
                     }
                 }
             }
@@ -642,7 +640,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
                     Subscription sub = nextNode.getSubscription();
                     deliverToSubscription(sub, entry);
                 }
-                nextNode = nextNode.getNext();
+                nextNode = nextNode.findNext();
 
             }
         }
