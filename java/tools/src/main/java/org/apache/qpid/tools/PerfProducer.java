@@ -23,6 +23,7 @@ package org.apache.qpid.tools;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.CountDownLatch;
 
 import javax.jms.BytesMessage;
 import javax.jms.DeliveryMode;
@@ -30,6 +31,7 @@ import javax.jms.MapMessage;
 import javax.jms.Message;
 import javax.jms.MessageProducer;
 
+import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.thread.Threading;
 
 /**
@@ -51,6 +53,12 @@ import org.apache.qpid.thread.Threading;
  * System throughput and latencies calculated by the PerfConsumer are more realistic
  * numbers.
  *
+ * Answer by rajith : I agree about in memory buffering affecting rates. But Based on test runs
+ * I have done so far, it seems quite useful to compute the producer rate as it gives an
+ * indication of how the system behaves. For ex if there is a gap between producer and consumer rates
+ * you could clearly see the higher latencies and when producer and consumer rates are very close,
+ * latency is good.
+ *
  */
 public class PerfProducer extends PerfBase
 {
@@ -69,9 +77,9 @@ public class PerfProducer extends PerfBase
     double rateFactor = 0.4;
     double rate = 0.0;
 
-    public PerfProducer()
+    public PerfProducer(String prefix)
     {
-        super();
+        super(prefix);
         System.out.println("Producer ID : " + id);
     }
 
@@ -114,12 +122,12 @@ public class PerfProducer extends PerfBase
         }
 
         producer = session.createProducer(dest);
+        System.out.println("Producer: " + id + " Sending messages to: " + ((AMQDestination)dest).getQueueName());
         producer.setDisableMessageID(params.isDisableMessageID());
         producer.setDisableMessageTimestamp(params.isDisableTimestamp());
 
         MapMessage m = controllerSession.createMapMessage();
         m.setInt(CODE, OPCode.REGISTER_PRODUCER.ordinal());
-        m.setString(REPLY_ADDR,myControlQueueAddr);
         sendMessageToController(m);
     }
 
@@ -178,7 +186,7 @@ public class PerfProducer extends PerfBase
     public void warmup()throws Exception
     {
         receiveFromController(OPCode.PRODUCER_STARTWARMUP);
-        System.out.println("Producer Warming up......");
+        System.out.println("Producer: " + id + " Warming up......");
 
         for (int i=0; i < params.getWarmupCount() -1; i++)
         {
@@ -194,6 +202,7 @@ public class PerfProducer extends PerfBase
 
     public void startTest() throws Exception
     {
+        resetCounters();
         receiveFromController(OPCode.PRODUCER_START);
         int count = params.getMsgCount();
         boolean transacted = params.isTransacted();
@@ -236,8 +245,11 @@ public class PerfProducer extends PerfBase
                                append(df.format(rate)).
                                append(" msg/sec").
                                toString());
+    }
 
-        System.out.println("Producer has completed the test......");
+    public void resetCounters()
+    {
+
     }
 
     public void sendEndMessage() throws Exception
@@ -255,14 +267,27 @@ public class PerfProducer extends PerfBase
         sendMessageToController(msg);
     }
 
+    @Override
+    public void tearDown() throws Exception
+    {
+        super.tearDown();
+    }
+
     public void run()
     {
         try
         {
             setUp();
             warmup();
-            startTest();
-            sendResults();
+            boolean nextIteration = true;
+            while (nextIteration)
+            {
+                System.out.println("=========================================================\n");
+                System.out.println("Producer: " + id + " starting a new iteration ......\n");
+                startTest();
+                sendResults();
+                nextIteration = continueTest();
+            }
             tearDown();
         }
         catch(Exception e)
@@ -298,27 +323,36 @@ public class PerfProducer extends PerfBase
     }
 
 
-    public static void main(String[] args)
+    public static void main(String[] args) throws InterruptedException
     {
-        final PerfProducer prod = new PerfProducer();
-        prod.startControllerIfNeeded();
-        Runnable r = new Runnable()
+        String scriptId = (args.length == 1) ? args[0] : "";
+        int conCount = Integer.getInteger("con_count",1);
+        final CountDownLatch testCompleted = new CountDownLatch(conCount);
+        for (int i=0; i < conCount; i++)
         {
-            public void run()
+            final PerfProducer prod = new PerfProducer(scriptId + i);
+            prod.startControllerIfNeeded();
+            Runnable r = new Runnable()
             {
-                prod.run();
-            }
-        };
+                public void run()
+                {
+                    prod.run();
+                    testCompleted.countDown();
+                }
+            };
 
-        Thread t;
-        try
-        {
-            t = Threading.getThreadFactory().createThread(r);
+            Thread t;
+            try
+            {
+                t = Threading.getThreadFactory().createThread(r);
+            }
+            catch(Exception e)
+            {
+                throw new Error("Error creating producer thread",e);
+            }
+            t.start();
         }
-        catch(Exception e)
-        {
-            throw new Error("Error creating producer thread",e);
-        }
-        t.start();
+        testCompleted.await();
+        System.out.println("Producers have completed the test......");
     }
 }

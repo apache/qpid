@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.tools;
 
+import java.net.InetAddress;
 import java.text.DecimalFormat;
 import java.util.UUID;
 
@@ -32,6 +33,10 @@ import javax.jms.Session;
 
 import org.apache.qpid.client.AMQAnyDestination;
 import org.apache.qpid.client.AMQConnection;
+import org.apache.qpid.client.AMQDestination;
+import org.apache.qpid.client.AMQSession_0_10;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.messaging.Address;
 
 public class PerfBase
 {
@@ -57,11 +62,12 @@ public class PerfBase
     Destination myControlQueue;
     Destination controllerQueue;
     DecimalFormat df = new DecimalFormat("###.##");
-    String id = UUID.randomUUID().toString();
-    String myControlQueueAddr = id + ";{create: always}";
+    String id;
+    String myControlQueueAddr;
 
     MessageProducer sendToController;
     MessageConsumer receiveFromController;
+    String prefix = "";
 
     enum OPCode {
         REGISTER_CONSUMER, REGISTER_PRODUCER,
@@ -69,7 +75,8 @@ public class PerfBase
         CONSUMER_READY, PRODUCER_READY,
         PRODUCER_START,
         RECEIVED_END_MSG, CONSUMER_STOP,
-        RECEIVED_PRODUCER_STATS, RECEIVED_CONSUMER_STATS
+        RECEIVED_PRODUCER_STATS, RECEIVED_CONSUMER_STATS,
+        CONTINUE_TEST, STOP_TEST
     };
 
     enum MessageType {
@@ -102,14 +109,24 @@ public class PerfBase
 
     MessageType msgType = MessageType.BYTES;
 
-    public PerfBase()
+    public PerfBase(String prefix)
     {
         params = new TestParams();
+        String host = "";
+        try
+        {
+            host = InetAddress.getLocalHost().getHostName();
+        }
+        catch (Exception e)
+        {
+        }
+        id = host + "-" + UUID.randomUUID().toString();
+        this.prefix = prefix;
+        this.myControlQueueAddr = id + ";{create: always}";
     }
 
     public void setUp() throws Exception
     {
-
         if (params.getHost().equals("") || params.getPort() == -1)
         {
             con = new AMQConnection(params.getUrl());
@@ -124,7 +141,7 @@ public class PerfBase
 
         controllerSession = con.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
-        dest = new AMQAnyDestination(params.getAddress());
+        dest = createDestination();
         controllerQueue = new AMQAnyDestination(CONTROLLER_ADDR);
         myControlQueue = session.createQueue(myControlQueueAddr);
         msgType = MessageType.getType(params.getMessageType());
@@ -134,9 +151,38 @@ public class PerfBase
         receiveFromController = controllerSession.createConsumer(myControlQueue);
     }
 
+    private Destination createDestination() throws Exception
+    {
+        if (params.isUseUniqueDests())
+        {
+            System.out.println("Prefix : " + prefix);
+            Address addr = Address.parse(params.getAddress());
+            AMQAnyDestination temp = new AMQAnyDestination(params.getAddress());
+            int type = ((AMQSession_0_10)session).resolveAddressType(temp);
+
+            if ( type == AMQDestination.TOPIC_TYPE)
+            {
+                addr = new Address(addr.getName(),addr.getSubject() + "." + prefix,addr.getOptions());
+                System.out.println("Setting subject : " + addr);
+            }
+            else
+            {
+                addr = new Address(addr.getName() + "_" + prefix,addr.getSubject(),addr.getOptions());
+                System.out.println("Setting name : " + addr);
+            }
+
+            return new AMQAnyDestination(addr);
+        }
+        else
+        {
+            return new AMQAnyDestination(params.getAddress());
+        }
+    }
+
     public synchronized void sendMessageToController(MapMessage m) throws Exception
     {
         m.setString(ID, id);
+        m.setString(REPLY_ADDR,myControlQueueAddr);
         sendToController.send(m);
     }
 
@@ -150,6 +196,14 @@ public class PerfBase
             throw new Exception("Expected OPCode : " + expected + " but received : " + code);
         }
 
+    }
+
+    public boolean continueTest() throws Exception
+    {
+        MapMessage m = (MapMessage)receiveFromController.receive();
+        OPCode code = OPCode.values()[m.getInt(CODE)];
+        System.out.println("Received Code : " + code);
+        return (code == OPCode.CONTINUE_TEST);
     }
 
     public void tearDown() throws Exception
