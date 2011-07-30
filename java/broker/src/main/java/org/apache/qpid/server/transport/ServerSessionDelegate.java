@@ -106,8 +106,7 @@ public class ServerSessionDelegate extends SessionDelegate
     @Override
     public void command(Session session, Method method)
     {
-        final ServerConnection scon = (ServerConnection) session.getConnection();
-        SecurityManager.setThreadSubject(scon.getAuthorizedSubject());
+        setThreadSubject(session);
 
         if(!session.isClosing())
         {
@@ -124,8 +123,6 @@ public class ServerSessionDelegate extends SessionDelegate
     {
         ((ServerSession)session).accept(method.getTransfers());
     }
-
-
 
     @Override
     public void messageReject(Session session, MessageReject method)
@@ -1225,6 +1222,8 @@ public class ServerSessionDelegate extends SessionDelegate
     @Override
     public void closed(Session session)
     {
+        setThreadSubject(session);
+
         for(Subscription_0_10 sub : getSubscriptions(session))
         {
             ((ServerSession)session).unregister(sub);
@@ -1243,4 +1242,9 @@ public class ServerSessionDelegate extends SessionDelegate
         return ((ServerSession)session).getSubscriptions();
     }
 
+    private void setThreadSubject(Session session)
+    {
+        final ServerConnection scon = (ServerConnection) session.getConnection();
+        SecurityManager.setThreadSubject(scon.getAuthorizedSubject());
+    }
 }
