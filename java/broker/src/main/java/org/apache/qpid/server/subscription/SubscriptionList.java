@@ -191,7 +191,7 @@ public class SubscriptionList
         return false;
     }
 
-    private void nodeMarkerCleanup(SubscriptionNode node)
+    private void nodeMarkerCleanup(final SubscriptionNode node)
     {
         SubscriptionNode markedNode = _subNodeMarker.get();
         if(node == markedNode)
@@ -200,8 +200,10 @@ public class SubscriptionList
             //replace it with a dummy pointing at the next node.
             //this is OK as the marked node is only used to index
             //into the list and find the next node to use.
+            //Because we inserted a dummy if node was the
+            //tail, markedNode.nextNode() can never be null.
             SubscriptionNode dummy = new SubscriptionNode();
-            dummy.setNext(markedNode.findNext());
+            dummy.setNext(markedNode.nextNode());
 
             //if the CAS fails the marked node has changed, thus
             //we don't care about the dummy and just forget it

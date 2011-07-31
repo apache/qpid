@@ -303,6 +303,40 @@ public class SubscriptionListTest extends QpidTestCase
     }
 
     /**
+     * Test that the marked node 'findNext' behaviour is as expected after a subscription is added
+     * to the list following the tail subscription node being removed while it is the marked node.
+     * That is, that the new subscriptions node is returned by getMarkedNode().findNext().
+     */
+    public void testMarkedNodeFindsNewSubscriptionAfterRemovingTailWhilstMarked()
+    {
+        //get the node out the list for the 3rd subscription
+        SubscriptionNode sub3Node = getNodeForSubscription(_subList, _sub3);
+        assertNotNull("Should have been a node present for the subscription", sub3Node);
+
+        //mark the 3rd subscription node
+        assertTrue("should have succeeded in updating the marked node",
+                _subList.updateMarkedNode(_subList.getMarkedNode(), sub3Node));
+
+        //verify calling findNext on the marked node returns null, i.e. the end of the list has been reached
+        assertEquals("Unexpected node after marked node", null, _subList.getMarkedNode().findNext());
+
+        //remove the 3rd(marked) subscription from the list
+        assertTrue("Removing subscription node should have succeeded", _subList.remove(_sub3));
+
+        //add a new 4th subscription to the list
+        Subscription sub4 = new MockSubscription();
+        _subList.add(sub4);
+
+        //get the node out the list for the 4th subscription
+        SubscriptionNode sub4Node = getNodeForSubscription(_subList, sub4);
+        assertNotNull("Should have been a node present for the subscription", sub4Node);
+
+        //verify the marked node (which is now a dummy substitute for the 3rd subscription) returns
+        //the 4th subscriptions node as the next non-deleted node.
+        assertEquals("Unexpected next node", sub4Node, _subList.getMarkedNode().findNext());
+    }
+
+    /**
      * Test that setting the marked node to null doesn't cause problems during remove operations
      */
     public void testRemoveWithNullMarkedNode()
