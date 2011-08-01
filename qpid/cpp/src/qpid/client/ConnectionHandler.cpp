@@ -143,7 +143,9 @@ void ConnectionHandler::outgoing(AMQFrame& frame)
 void ConnectionHandler::waitForOpen()
 {
     waitFor(ESTABLISHED);
-    if (getState() == FAILED || getState() == CLOSED) {
+    if (getState() == FAILED) {
+        throw TransportFailure(errorText);
+    } else if (getState() == CLOSED) {
         throw ConnectionException(errorCode, errorText);
     }
 }
