@@ -197,7 +197,7 @@ void SslConnector::connect(const std::string& host, const std::string& port){
         socket.connect(host, port);
     } catch (const std::exception& e) {
         socket.close();
-        throw ConnectionException(framing::connection::CLOSE_CODE_FRAMING_ERROR, e.what());
+        throw TransportFailure(e.what());
     }
 
     identifier = str(format("[%1% %2%]") % socket.getLocalPort() % socket.getPeerAddress());
