@@ -35,6 +35,7 @@ import org.apache.qpid.client.AMQDestination.AddressOption;
 import org.apache.qpid.client.AMQDestination.DestSyntax;
 import org.apache.qpid.client.message.AMQMessageDelegate_0_10;
 import org.apache.qpid.client.message.AbstractJMSMessage;
+import org.apache.qpid.client.message.QpidMessageProperties;
 import org.apache.qpid.client.messaging.address.Link.Reliability;
 import org.apache.qpid.client.messaging.address.Node.QueueNode;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
@@ -178,7 +179,7 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
         
         if (destination.getDestSyntax() == AMQDestination.DestSyntax.ADDR && 
            (destination.getSubject() != null || 
-              (messageProps.getApplicationHeaders() != null && messageProps.getApplicationHeaders().get("qpid.subject") != null))
+              (messageProps.getApplicationHeaders() != null && messageProps.getApplicationHeaders().get(QpidMessageProperties.QPID_SUBJECT) != null))
            )
         {
             Map<String,Object> appProps = messageProps.getApplicationHeaders();
@@ -188,16 +189,16 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
                 messageProps.setApplicationHeaders(appProps);          
             }
             
-            if (appProps.get("qpid.subject") == null)
+            if (appProps.get(QpidMessageProperties.QPID_SUBJECT) == null)
             {
                 // use default subject in address string
-                appProps.put("qpid.subject",destination.getSubject());
+                appProps.put(QpidMessageProperties.QPID_SUBJECT,destination.getSubject());
             }
                     
-            if (destination.getTargetNode().getType() == AMQDestination.TOPIC_TYPE)
+            if (destination.getAddressType() == AMQDestination.TOPIC_TYPE)
             {
                 deliveryProp.setRoutingKey((String)
-                        messageProps.getApplicationHeaders().get("qpid.subject"));                
+                        messageProps.getApplicationHeaders().get(QpidMessageProperties.QPID_SUBJECT));                
             }
         }
         
