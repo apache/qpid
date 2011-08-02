@@ -49,6 +49,7 @@ import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.AMQSession_0_10;
+import org.apache.qpid.client.message.QpidMessageProperties;
 import org.apache.qpid.client.messaging.address.Node.ExchangeNode;
 import org.apache.qpid.client.messaging.address.Node.QueueNode;
 import org.apache.qpid.jndi.PropertiesFileInitialContextFactory;
@@ -210,7 +211,7 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
                                  "durable: true ," +
                                  "x-declare: " +
                                  "{" + 
-                                     "auto-delete: true," +
+                                     "exclusive: true," +
                                      "arguments: {" +  
                                         "'qpid.max_size': 1000," +
                                         "'qpid.max_count': 100" +
@@ -226,6 +227,9 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
                       "}";
         AMQDestination dest = new AMQAnyDestination(addr);
         MessageConsumer cons = jmsSession.createConsumer(dest); 
+        cons.close();
+        
+        // Even if the consumer is closed the queue and the bindings should be intact.
         
         assertTrue("Queue not created as expected",(
                 (AMQSession_0_10)jmsSession).isQueueExist(dest,(QueueNode)dest.getSourceNode(), true));              
@@ -254,6 +258,13 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
                 (AMQSession_0_10)jmsSession).isQueueBound("amq.match", 
                     dest.getAddressName(),null, args));
         
+        MessageProducer prod = jmsSession.createProducer(dest);
+        prod.send(jmsSession.createTextMessage("test"));
+        
+        MessageConsumer cons2 = jmsSession.createConsumer(jmsSession.createQueue("ADDR:my-queue"));
+        Message m = cons2.receive(1000);
+        assertNotNull("Should receive message sent to my-queue",m);
+        assertEquals("The subject set in the message is incorrect","hello",m.getStringProperty(QpidMessageProperties.QPID_SUBJECT));
     }
     
     public void testCreateExchange() throws Exception
