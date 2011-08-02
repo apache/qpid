@@ -634,10 +634,15 @@ public class AMQMessageDelegate_0_10 extends AbstractAMQMessageDelegate
         {
             return new String(_messageProps.getUserId());
         }
-        else if ("x-amqp-0-10.app-id".equals(propertyName) &&
+        else if (QpidMessageProperties.AMQP_0_10_APP_ID.equals(propertyName) &&
                 _messageProps.getAppId() != null)
         {
             return new String(_messageProps.getAppId());
+        }
+        else if (QpidMessageProperties.AMQP_0_10_ROUTING_KEY.equals(propertyName) &&
+                _deliveryProps.getRoutingKey() != null)
+        {
+            return _deliveryProps.getRoutingKey();
         }
         else
         {
@@ -745,7 +750,7 @@ public class AMQMessageDelegate_0_10 extends AbstractAMQMessageDelegate
     {
         checkPropertyName(propertyName);
         checkWritableProperties();
-        if ("x-amqp-0-10.app-id".equals(propertyName))
+        if (QpidMessageProperties.AMQP_0_10_APP_ID.equals(propertyName))
         {
             _messageProps.setAppId(value.getBytes());
         }
