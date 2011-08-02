@@ -1435,7 +1435,18 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     {
         return _delegate.getProtocolVersion();
     }
-
+    
+    public String getBrokerUUID()
+    {
+        if(getProtocolVersion().equals(ProtocolVersion.v0_10))
+        {
+            return ((AMQConnectionDelegate_0_10)_delegate).getUUID();
+        }
+        else
+        {
+            return null;
+        }
+    }
     public boolean isFailingOver()
     {
         return (_protocolHandler.getFailoverLatch() != null);
