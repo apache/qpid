@@ -25,6 +25,7 @@ import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.message.NonQpidObjectMessage;
+import org.apache.qpid.client.message.QpidMessageProperties;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
@@ -172,7 +173,7 @@ public class JMSPropertiesTest extends QpidBrokerTestCase
      * Test Goal : Test if custom message properties can be set and retrieved properly with out an error.
      *             Also test if unsupported properties are filtered out. See QPID-2930.
      */
-    public void testApplicationProperties() throws Exception
+    public void testQpidExtensionProperties() throws Exception
     {
         Connection con = getConnection("guest", "guest");
         Session ssn = (AMQSession) con.createSession(false, Session.CLIENT_ACKNOWLEDGE);
@@ -182,8 +183,8 @@ public class JMSPropertiesTest extends QpidBrokerTestCase
         MessageConsumer consumer = ssn.createConsumer(topic);
         MessageProducer prod = ssn.createProducer(topic);
         Message m = ssn.createMessage();
-        m.setObjectProperty("x-amqp-0-10.routing-key", "routing-key".getBytes());
-        m.setObjectProperty("x-amqp-0-10.app-id", "my-app-id");
+        m.setObjectProperty("foo-bar", "foobar".getBytes());
+        m.setObjectProperty(QpidMessageProperties.AMQP_0_10_APP_ID, "my-app-id");
         prod.send(m);
 
         Message msg = consumer.receive(1000);
@@ -198,7 +199,9 @@ public class JMSPropertiesTest extends QpidBrokerTestCase
     		map.put(name, value);
        }
 
-       assertFalse("Property 'x-amqp-0-10.routing-key' should have been filtered out",map.containsKey("x-amqp-0-10.routing-key"));
-       assertEquals("Property x-amqp-0-10.app-id should be present","my-app-id",msg.getStringProperty("x-amqp-0-10.app-id"));
+       assertFalse("Property 'foo-bar' should have been filtered out",map.containsKey("foo-bar"));
+       assertEquals("Property "+ QpidMessageProperties.AMQP_0_10_APP_ID + " should be present","my-app-id",msg.getStringProperty(QpidMessageProperties.AMQP_0_10_APP_ID));
+       assertEquals("Property "+ QpidMessageProperties.AMQP_0_10_ROUTING_KEY + " should be present","test",msg.getStringProperty(QpidMessageProperties.AMQP_0_10_ROUTING_KEY));
+       
     }
 }
