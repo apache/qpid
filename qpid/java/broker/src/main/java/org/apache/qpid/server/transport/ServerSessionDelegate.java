@@ -106,15 +106,22 @@ public class ServerSessionDelegate extends SessionDelegate
     @Override
     public void command(Session session, Method method)
     {
-        setThreadSubject(session);
-
-        if(!session.isClosing())
+        try
         {
-            super.command(session, method);
-            if (method.isSync())
+            setThreadSubject(session);
+
+            if(!session.isClosing())
             {
-                session.flushProcessed();
+                super.command(session, method);
+                if (method.isSync())
+                {
+                    session.flushProcessed();
+                }
             }
+        }
+        catch(RuntimeException e)
+        {
+            exception(session, method, ExecutionErrorCode.INTERNAL_ERROR, "Exception processing command: " + e);
         }
     }
 
