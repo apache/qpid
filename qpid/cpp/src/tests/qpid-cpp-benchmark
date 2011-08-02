@@ -215,7 +215,8 @@ class ReadyReceiver:
                     raise Exception("Receiver error: %s"%(out))
             raise Exception("Timed out waiting for receivers to be ready")
 
-def flatten(l): return sum(map(lambda s: s.split(","), l),[])
+def flatten(l):
+    return sum(map(lambda s: re.split(re.compile("\s*,\s*|\s+"), s), l), [])
 
 class RoundRobin:
     def __init__(self,items):
