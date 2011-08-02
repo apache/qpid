@@ -58,7 +58,11 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
      * This class logger.
      */
     private static final Logger _logger = LoggerFactory.getLogger(AMQConnectionDelegate_0_10.class);
-
+    
+    /**
+     * The name of the UUID property
+     */
+    private static final String UUID_NAME = "qpid.federation_tag";
     /**
      * The AMQ Connection.
      */
@@ -341,6 +345,11 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
     public ProtocolVersion getProtocolVersion()
     {
         return ProtocolVersion.v0_10;
+    }
+    
+    public String getUUID()
+    {
+        return (String)_qpidConnection.getServerProperties().get(UUID_NAME);        
     }
     
     private void retriveConnectionSettings(ConnectionSettings conSettings, BrokerDetails brokerDetail)
