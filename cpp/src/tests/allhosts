@@ -29,11 +29,12 @@ Options:
   -s SECONDS  sleep between starting commands.
   -q          don't print banner lines for each host.
   -o SUFFIX   log output of each command to <host>.SUFFIX
+  -X          passed to ssh - forward X connection.
 "
     exit 1
 }
 
-while getopts "tl:bs:dqo:" opt; do
+while getopts "tl:bs:dqo:X" opt; do
     case $opt in
 	l) SSHOPTS="-l$OPTARG $SSHOPTS" ;;
 	t) SSHOPTS="-t $SSHOPTS" ;;
@@ -42,6 +43,7 @@ while getopts "tl:bs:dqo:" opt; do
 	s) SLEEP="sleep $OPTARG" ;;
 	q) NOBANNER=1 ;;
 	o) SUFFIX=$OPTARG ;;
+	X) SSHOPTS="-X $SSHOPTS" ;;
 	*) usage;;
     esac
 done
