@@ -39,4 +39,4 @@ org.apache.qpid.client.MessageListenerTest#testSynchronousReceiveNoWait
 
 org.apache.qpid.test.unit.client.connection.ConnectionTest#testUnsupportedSASLMechanism
 
-org.apache.qpid.test.unit.message.JMSPropertiesTest#testGetPropertyNames
+org.apache.qpid.test.unit.message.JMSPropertiesTest#testQpidExtensionProperties
