@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
 
+import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQUnknownExchangeType;
 import org.apache.qpid.framing.AMQShortString;
@@ -96,6 +97,7 @@ import org.apache.qpid.transport.TxSelect;
 
 public class ServerSessionDelegate extends SessionDelegate
 {
+    private static final Logger LOGGER = Logger.getLogger(ServerSessionDelegate.class);
     private final IApplicationRegistry _appRegistry;
 
     public ServerSessionDelegate(IApplicationRegistry appRegistry)
@@ -121,6 +123,7 @@ public class ServerSessionDelegate extends SessionDelegate
         }
         catch(RuntimeException e)
         {
+            LOGGER.error("Exception processing command", e);
             exception(session, method, ExecutionErrorCode.INTERNAL_ERROR, "Exception processing command: " + e);
         }
     }
