@@ -396,7 +396,7 @@ struct Controller : public Client {
     void run() {                // Controller
         try {
             // Wait for subscribers to be ready.
-            process(opts.totalSubs, fqn("sub_ready"), bind(expect, _1, "ready"));
+            process(opts.totalSubs, fqn("sub_ready"), boost::bind(expect, _1, "ready"));
 
             LocalQueue pubDone;
             LocalQueue subDone;
