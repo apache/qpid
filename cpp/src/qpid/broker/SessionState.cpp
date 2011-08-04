@@ -445,8 +445,6 @@ void SessionState::addPendingExecutionSync()
 boost::intrusive_ptr<AsyncCompletion::Callback>
 SessionState::IncompleteIngressMsgXfer::clone()
 {
-    boost::intrusive_ptr<SessionState::IncompleteIngressMsgXfer> cb(new SessionState::IncompleteIngressMsgXfer(session, msg));
-
     // Optimization: this routine is *only* invoked when the message needs to be asynchronously completed.
     // If the client is pending the message.transfer completion, flush now to force immediate write to journal.
     if (requiresSync)
@@ -457,7 +455,8 @@ SessionState::IncompleteIngressMsgXfer::clone()
         pending = true;
         completerContext->addPendingMessage(msg);
     }
-    return cb;
+
+    return boost::intrusive_ptr<SessionState::IncompleteIngressMsgXfer>(new SessionState::IncompleteIngressMsgXfer(*this));
 }
 
 
