@@ -384,7 +384,7 @@ void CyrusAuthenticator::start(const string& mechanism, const string& response)
     QPID_LOG(debug, "SASL: Starting authentication with mechanism: " << mechanism);
     int code = sasl_server_start(sasl_conn,
                                  mechanism.c_str(),
-                                 response.c_str(), response.length(),
+                                 response.size() ? response.c_str() : 0, response.length(),
                                  &challenge, &challenge_len);
     
     processAuthenticationStep(code, challenge, challenge_len);
@@ -424,10 +424,12 @@ void CyrusAuthenticator::processAuthenticationStep(int code, const char *challen
         client.secure(challenge_str);
     } else {
         std::string uid;
+        //save error detail before trying to retrieve username as error in doing so will overwrite it
+        std::string errordetail = sasl_errdetail(sasl_conn);
         if (!getUsername(uid)) {
-            QPID_LOG(info, "SASL: Authentication failed (no username available):" << sasl_errdetail(sasl_conn));
+            QPID_LOG(info, "SASL: Authentication failed (no username available yet):" << errordetail);
         } else {
-            QPID_LOG(info, "SASL: Authentication failed for " << uid << ":" << sasl_errdetail(sasl_conn));
+            QPID_LOG(info, "SASL: Authentication failed for " << uid << ":" << errordetail);
         }
 
         // TODO: Change to more specific exceptions, when they are
