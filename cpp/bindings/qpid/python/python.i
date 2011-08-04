@@ -116,16 +116,16 @@ static PyObject* pNoMessageAvailable;
                                      bool transactional) {
         if (!name.empty()) {
             try {
-                return $self->getSession(name);
+                return self->getSession(name);
             }
             catch (const qpid::messaging::KeyError &) {
             }
         }
         if (transactional) {
-            return $self->createTransactionalSession(name);
+            return self->createTransactionalSession(name);
         }
         else {
-            return $self->createSession(name);
+            return self->createSession(name);
         }
     }
 
