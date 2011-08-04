@@ -457,6 +457,19 @@ public class ServerSessionDelegate extends SessionDelegate
         VirtualHost virtualHost = getVirtualHost(session);
         Exchange exchange = getExchange(session, exchangeName);
 
+        //we must check for any unsupported arguments present and throw not-implemented
+        if(method.hasArguments())
+        {
+            Map<String,Object> args = method.getArguments();
+
+            //QPID-3392: currently we don't support any!
+            if(!args.isEmpty())
+            {
+                exception(session, method, ExecutionErrorCode.NOT_IMPLEMENTED, "Unsupported exchange argument(s) found " + args.keySet().toString());
+                return;
+            }
+        }
+
         if(method.getPassive())
         {
             if(exchange == null)
@@ -466,7 +479,6 @@ public class ServerSessionDelegate extends SessionDelegate
             }
             else
             {
-                // TODO - check exchange has same properties
                 if(!exchange.getTypeShortString().toString().equals(method.getType()))
                 {
                     exception(session, method, ExecutionErrorCode.NOT_ALLOWED, "Cannot redeclare with a different exchange type");
