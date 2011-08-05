@@ -75,7 +75,6 @@ class SemanticState : private boost::noncopyable {
     {
         mutable qpid::sys::Mutex lock;
         SemanticState* const parent;
-        const std::string name;
         const boost::shared_ptr<Queue> queue;
         const bool ackExpected;
         const bool acquire;
@@ -128,8 +127,6 @@ class SemanticState : private boost::noncopyable {
         bool setBlocked(bool set) { std::swap(set, blocked); return set; }
 
         bool doOutput();
-
-        std::string getName() const { return name; }
 
         bool isAckExpected() const { return ackExpected; }
         bool isAcquire() const { return acquire; }
@@ -187,7 +184,8 @@ class SemanticState : private boost::noncopyable {
     SessionContext& getSession() { return session; }
     const SessionContext& getSession() const { return session; }
 
-    ConsumerImpl& find(const std::string& destination);
+    const ConsumerImpl::shared_ptr find(const std::string& destination) const;
+    bool find(const std::string& destination, ConsumerImpl::shared_ptr&) const;
     
     /**
      * Get named queue, never returns 0.

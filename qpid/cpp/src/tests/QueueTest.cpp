@@ -58,7 +58,7 @@ public:
 
     intrusive_ptr<Message> last;
     bool received;
-    TestConsumer(bool acquire = true):Consumer(acquire), received(false) {};
+    TestConsumer(bool acquire = true):Consumer("test", acquire), received(false) {};
 
     virtual bool deliver(QueuedMessage& msg){
         last = msg.payload;
@@ -324,14 +324,18 @@ QPID_AUTO_TEST_CASE(testSearch){
     queue->deliver(msg3);
 
     SequenceNumber seq(2);
-    QueuedMessage qm = queue->find(seq);
+    QueuedMessage qm;
+    TestConsumer::shared_ptr c1(new TestConsumer());
+
+    BOOST_CHECK(queue->find(seq, qm));
 
     BOOST_CHECK_EQUAL(seq.getValue(), qm.position.getValue());
 
-    queue->acquire(qm);
+    queue->acquire(qm, c1);
     BOOST_CHECK_EQUAL(queue->getMessageCount(), 2u);
     SequenceNumber seq1(3);
-    QueuedMessage qm1 = queue->find(seq1);
+    QueuedMessage qm1;
+    BOOST_CHECK(queue->find(seq1, qm1));
     BOOST_CHECK_EQUAL(seq1.getValue(), qm1.position.getValue());
 
 }
@@ -551,12 +555,13 @@ QPID_AUTO_TEST_CASE(testLVQAcquire){
     QueuedMessage qmsg2(queue.get(), msg2, ++sequence);
     framing::SequenceNumber sequence1(10);
     QueuedMessage qmsg3(queue.get(), 0, sequence1);
+    TestConsumer::shared_ptr dummy(new TestConsumer());
 
-    BOOST_CHECK(!queue->acquire(qmsg));
-    BOOST_CHECK(queue->acquire(qmsg2));
+    BOOST_CHECK(!queue->acquire(qmsg, dummy));
+    BOOST_CHECK(queue->acquire(qmsg2, dummy));
     // Acquire the massage again to test failure case.
-    BOOST_CHECK(!queue->acquire(qmsg2));
-    BOOST_CHECK(!queue->acquire(qmsg3));
+    BOOST_CHECK(!queue->acquire(qmsg2, dummy));
+    BOOST_CHECK(!queue->acquire(qmsg3, dummy));
 
     BOOST_CHECK_EQUAL(queue->getMessageCount(), 2u);
 

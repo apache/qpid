@@ -25,17 +25,49 @@ namespace qpid {
 namespace broker {
 
 struct QueuedMessage;
+class Consumer;
+
 /**
- * Interface for notifying classes who want to act as 'observers' of a
- * queue of particular events.
+ * Interface for notifying classes who want to act as 'observers' of a queue of particular
+ * events.
+ *
+ * The events that are monitored reflect the relationship between a particular message and
+ * the queue it has been delivered to.  A message can be considered in one of three states
+ * with respect to the queue:
+ *
+ * 1) "Available" - available for transfer to consumers,
+ * 2) "Locked" - to a particular consumer, no longer available for transfer, but not
+ * considered fully dequeued.
+ * 3) "Dequeued" - removed from the queue and no longer available to any consumer.
+ *
+ * The queue events that are observable are:
+ *
+ * "Enqueued" - the message is "Available" - on the queue for transfer to any consumer
+ * (e.g. browse or acquire)
+ *
+ * "Consumed" - the message is "Locked" - a consumer has claimed exclusive access to it.
+ * It is no longer available for other consumers to browse or acquire, but it is not yet
+ * considered dequeued as it may be requeued by the consumer.
+ *
+ * "Requeued" - a previously-consumed message is 'unlocked': it is put back on the queue
+ * at its original position and returns to the "Available" state.
+ *
+ * "Dequeued" - a Locked message is no longer queued.  At this point, the queue no longer
+ * tracks the message, and the broker considers the consumer's transaction complete.
  */
 class QueueObserver
 {
   public:
     virtual ~QueueObserver() {}
+
+    // note: the Queue will hold the messageLock while calling these methods!
     virtual void enqueued(const QueuedMessage&) = 0;
+    virtual void consumed(const QueuedMessage&) = 0;
+    virtual void requeued(const QueuedMessage&) = 0;
     virtual void dequeued(const QueuedMessage&) = 0;
-  private:
+    virtual void consumerAdded( const Consumer& ) {};
+    virtual void consumerRemoved( const Consumer& ) {};
+ private:
 };
 }} // namespace qpid::broker
 

@@ -142,7 +142,7 @@ void DeliveryRecord::reject()
             //just drop it
             QPID_LOG(info, "Dropping rejected message from " << queue->getName());
         }
-        dequeue();
+        queue->dequeue(0, msg);
         setEnded();
     }
 }
@@ -152,8 +152,14 @@ uint32_t DeliveryRecord::getCredit() const
     return credit;
 }
 
-void DeliveryRecord::acquire(DeliveryIds& results) {
-    if (queue->acquire(msg)) {
+void DeliveryRecord::acquire(SemanticState* const session, DeliveryIds& results) {
+    SemanticState::ConsumerImpl::shared_ptr consumer;
+
+    if (!session->find( tag, consumer )) {
+        QPID_LOG(error, "Can't acquire message " << id.getValue() << ": original subscription no longer exists.");
+    }
+
+    if (queue->acquire(msg, consumer)) {
         acquired = true;
         results.push_back(id);
         if (!acceptExpected) {

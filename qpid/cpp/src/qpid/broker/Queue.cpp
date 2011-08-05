@@ -87,6 +87,28 @@ const int ENQUEUE_ONLY=1;
 const int ENQUEUE_AND_DEQUEUE=2;
 }
 
+
+// KAG TBD: find me a home....
+namespace qpid {
+namespace broker {
+
+class MessageSelector
+{
+ protected:
+    Queue *queue;
+ public:
+    MessageSelector( Queue *q ) : queue(q) {}
+    virtual ~MessageSelector() {};
+
+    // assumes caller holds messageLock
+    virtual bool nextMessage( Consumer::shared_ptr c, QueuedMessage& next,
+                              const Mutex::ScopedLock&);
+    virtual bool canAcquire(Consumer::shared_ptr consumer, const QueuedMessage& qm,
+                            const Mutex::ScopedLock&);
+};
+
+}}
+
 Queue::Queue(const string& _name, bool _autodelete,
              MessageStore* const _store,
              const OwnershipToken* const _owner,
@@ -111,7 +133,8 @@ Queue::Queue(const string& _name, bool _autodelete,
     broker(b),
     deleted(false),
     barrier(*this),
-    autoDeleteTimeout(0)
+    autoDeleteTimeout(0),
+    selector(new MessageSelector( this ))   // KAG TODO: FIX!!
 {
     if (parent != 0 && broker != 0) {
         ManagementAgent* agent = broker->getManagementAgent();
@@ -220,6 +243,14 @@ void Queue::requeue(const QueuedMessage& msg){
             	enqueue(0, payload);
             }
         }
+
+        for (Observers::const_iterator i = observers.begin(); i != observers.end(); ++i) {
+            try{
+                (*i)->requeued(msg);
+            } catch (const std::exception& e) {
+                QPID_LOG(warning, "Exception on notification of message requeue for queue " << getName() << ": " << e.what());
+            }
+        }
     }
     copy.notify();
 }
@@ -229,7 +260,7 @@ bool Queue::acquireMessageAt(const SequenceNumber& position, QueuedMessage& mess
     Mutex::ScopedLock locker(messageLock);
     assertClusterSafe();
     QPID_LOG(debug, "Attempting to acquire message at " << position);
-    if (messages->remove(position, message)) {
+    if (acquire(position, message )) {
         QPID_LOG(debug, "Acquired message at " << position << " from " << name);
         return true;
     } else {
@@ -238,9 +269,24 @@ bool Queue::acquireMessageAt(const SequenceNumber& position, QueuedMessage& mess
     }
 }
 
-bool Queue::acquire(const QueuedMessage& msg) {
-    QueuedMessage copy = msg;
-    return acquireMessageAt(msg.position, copy);
+bool Queue::acquire(const QueuedMessage& msg, Consumer::shared_ptr c)
+{
+    Mutex::ScopedLock locker(messageLock);
+    assertClusterSafe();
+    QPID_LOG(debug, c->getName() << " attempting to acquire message at " << msg.position);
+
+    if (!selector->canAcquire( c, msg, locker )) {
+        QPID_LOG(debug, "Not permitted to acquire msg at " << msg.position << " from '" << name);
+        return false;
+    }
+
+    QueuedMessage copy(msg);
+    if (acquire( msg.position, copy )) {
+        QPID_LOG(debug, "Acquired message at " << msg.position << " from " << name);
+        return true;
+    }
+    QPID_LOG(debug, "Could not acquire message at " << msg.position << " from " << name << "; no message at that position");
+    return false;
 }
 
 void Queue::notifyListener()
@@ -276,44 +322,60 @@ bool Queue::getNextMessage(QueuedMessage& m, Consumer::shared_ptr c)
 
 Queue::ConsumeCode Queue::consumeNextMessage(QueuedMessage& m, Consumer::shared_ptr c)
 {
+
     while (true) {
         Mutex::ScopedLock locker(messageLock);
-        if (messages->empty()) {
-            QPID_LOG(debug, "No messages to dispatch on queue '" << name << "'");
+        QueuedMessage msg;
+
+        if (!selector->nextMessage(c, msg, locker)) { // no next available
+            QPID_LOG(debug, "No messages available to dispatch to consumer " <<
+                     c->getName() << " on queue '" << name << "'");
             listeners.addListener(c);
             return NO_MESSAGES;
-        } else {
-            QueuedMessage msg = messages->front();
-            if (msg.payload->hasExpired()) {
-                QPID_LOG(debug, "Message expired from queue '" << name << "'");
-                popAndDequeue();
-                continue;
-            }
+        }
 
-            if (c->filter(msg.payload)) {
-                if (c->accept(msg.payload)) {
-                    m = msg;
-                    pop();
-                    return CONSUMED;
-                } else {
-                    //message(s) are available but consumer hasn't got enough credit
-                    QPID_LOG(debug, "Consumer can't currently accept message from '" << name << "'");
-                    return CANT_CONSUME;
-                }
+        if (msg.payload->hasExpired()) {
+            QPID_LOG(debug, "Message expired from queue '" << name << "'");
+            c->position = msg.position;
+            acquire( msg.position, msg );
+            dequeue( 0, msg );
+            continue;
+        }
+
+        // a message is available for this consumer - can the consumer use it?
+
+        if (c->filter(msg.payload)) {
+            if (c->accept(msg.payload)) {
+                acquire( msg.position, m );
+                c->position = msg.position;
+                return CONSUMED;
             } else {
-                //consumer will never want this message
-                QPID_LOG(debug, "Consumer doesn't want message from '" << name << "'");
+                //message(s) are available but consumer hasn't got enough credit
+                QPID_LOG(debug, "Consumer can't currently accept message from '" << name << "'");
                 return CANT_CONSUME;
             }
+        } else {
+            //consumer will never want this message
+            QPID_LOG(debug, "Consumer doesn't want message from '" << name << "'");
+            c->position = msg.position;
+            return CANT_CONSUME;
         }
     }
 }
 
-
 bool Queue::browseNextMessage(QueuedMessage& m, Consumer::shared_ptr c)
 {
-    QueuedMessage msg(this);
-    while (seek(msg, c)) {
+    while (true) {
+        Mutex::ScopedLock locker(messageLock);
+        QueuedMessage msg;
+
+        if (!selector->nextMessage(c, msg, locker)) { // no next available
+            QPID_LOG(debug, "No browsable messages available for consumer " <<
+                     c->getName() << " on queue '" << name << "'");
+            listeners.addListener(c);
+            return false;
+        }
+
         if (c->filter(msg.payload) && !msg.payload->hasExpired()) {
             if (c->accept(msg.payload)) {
                 //consumer wants the message
@@ -327,8 +389,8 @@ bool Queue::browseNextMessage(QueuedMessage& m, Consumer::shared_ptr c)
             }
         } else {
             //consumer will never want this message, continue seeking
-            c->position = msg.position;
             QPID_LOG(debug, "Browser skipping message from '" << name << "'");
+            c->position = msg.position;
         }
     }
     return false;
@@ -358,61 +420,71 @@ bool Queue::dispatch(Consumer::shared_ptr c)
     }
 }
 
-// Find the next message
-bool Queue::seek(QueuedMessage& msg, Consumer::shared_ptr c) {
+bool Queue::find(SequenceNumber pos, QueuedMessage& msg) const {
+
     Mutex::ScopedLock locker(messageLock);
-    if (messages->next(c->position, msg)) {
+    if (messages->find(pos, msg))
         return true;
-    } else {
-        listeners.addListener(c);
-        return false;
-    }
-}
-
-QueuedMessage Queue::find(SequenceNumber pos) const {
-
-    Mutex::ScopedLock locker(messageLock);
-    QueuedMessage msg;
-    messages->find(pos, msg);
-    return msg;
+    return false;
 }
 
 void Queue::consume(Consumer::shared_ptr c, bool requestExclusive){
     assertClusterSafe();
-    Mutex::ScopedLock locker(consumerLock);
-    if(exclusive) {
-        throw ResourceLockedException(
-            QPID_MSG("Queue " << getName() << " has an exclusive consumer. No more consumers allowed."));
-    } else if(requestExclusive) {
-        if(consumerCount) {
+    {
+        Mutex::ScopedLock locker(consumerLock);
+        if(exclusive) {
             throw ResourceLockedException(
-                QPID_MSG("Queue " << getName() << " already has consumers. Exclusive access denied."));
-        } else {
-            exclusive = c->getSession();
+                                          QPID_MSG("Queue " << getName() << " has an exclusive consumer. No more consumers allowed."));
+        } else if(requestExclusive) {
+            if(consumerCount) {
+                throw ResourceLockedException(
+                                              QPID_MSG("Queue " << getName() << " already has consumers. Exclusive access denied."));
+            } else {
+                exclusive = c->getSession();
+            }
+        }
+        consumerCount++;
+        if (mgmtObject != 0)
+            mgmtObject->inc_consumerCount ();
+        //reset auto deletion timer if necessary
+        if (autoDeleteTimeout && autoDeleteTask) {
+            autoDeleteTask->cancel();
         }
     }
-    consumerCount++;
-    if (mgmtObject != 0)
-        mgmtObject->inc_consumerCount ();
-    //reset auto deletion timer if necessary
-    if (autoDeleteTimeout && autoDeleteTask) {
-        autoDeleteTask->cancel();
+    for (Observers::const_iterator i = observers.begin(); i != observers.end(); ++i) {
+        try{
+            Mutex::ScopedLock locker(messageLock);
+            (*i)->consumerAdded(*c);
+        } catch (const std::exception& e) {
+            QPID_LOG(warning, "Exception on notification of new consumer for queue " << getName() << ": " << e.what());
+        }
     }
 }
 
 void Queue::cancel(Consumer::shared_ptr c){
     removeListener(c);
-    Mutex::ScopedLock locker(consumerLock);
-    consumerCount--;
-    if(exclusive) exclusive = 0;
-    if (mgmtObject != 0)
-        mgmtObject->dec_consumerCount ();
+    {
+        Mutex::ScopedLock locker(consumerLock);
+        consumerCount--;
+        if(exclusive) exclusive = 0;
+        if (mgmtObject != 0)
+            mgmtObject->dec_consumerCount ();
+    }
+    for (Observers::const_iterator i = observers.begin(); i != observers.end(); ++i) {
+        try{
+            Mutex::ScopedLock locker(messageLock);
+            (*i)->consumerRemoved(*c);
+        } catch (const std::exception& e) {
+            QPID_LOG(warning, "Exception on notification of removed consumer for queue " << getName() << ": " << e.what());
+        }
+    }
 }
 
 QueuedMessage Queue::get(){
     Mutex::ScopedLock locker(messageLock);
     QueuedMessage msg(this);
-    messages->pop(msg);
+    if (messages->pop(msg))
+        consumed( msg );
     return msg;
 }
 
@@ -443,8 +515,15 @@ void Queue::purgeExpired(qpid::sys::Duration lapse)
             Mutex::ScopedLock locker(messageLock);
             messages->removeIf(boost::bind(&collect_if_expired, boost::ref(expired), _1));
         }
-        for_each(expired.begin(), expired.end(),
-                 boost::bind(&Queue::dequeue, this, (TransactionContext*) 0, _1));
+
+        for (std::deque<QueuedMessage>::const_iterator i = expired.begin();
+             i != expired.end(); ++i) {
+            {
+                Mutex::ScopedLock locker(messageLock);
+                consumed( *i );   // expects messageLock held
+            }
+            dequeue( 0, *i );
+        }
     }
 }
 
@@ -503,18 +582,33 @@ uint32_t Queue::move(const Queue::shared_ptr destq, uint32_t qty) {
         QueuedMessage qmsg = messages->front();
         boost::intrusive_ptr<Message> msg = qmsg.payload;
         destq->deliver(msg); // deliver message to the destination queue
-        pop();
-        dequeue(0, qmsg);
+        popAndDequeue();
         count++;
     }
     return count;
 }
 
+/** Acquire the front (oldest) message from the in-memory queue.
+ * assumes messageLock held by caller
+ */
 void Queue::pop()
 {
     assertClusterSafe();
-    messages->pop();
-    ++dequeueSincePurge;
+    QueuedMessage msg;
+    if (messages->pop(msg)) {
+        consumed( msg ); // mark it removed
+        ++dequeueSincePurge;
+    }
+}
+
+/** Acquire the message at the given position, return true and msg if acquire succeeds */
+bool Queue::acquire(const qpid::framing::SequenceNumber& position, QueuedMessage& msg )
+{
+    if (messages->remove(position, msg)) {
+        consumed( msg );
+        return true;
+    }
+    return false;
 }
 
 void Queue::push(boost::intrusive_ptr<Message>& msg, bool isRecovery){
@@ -533,6 +627,7 @@ void Queue::push(boost::intrusive_ptr<Message>& msg, bool isRecovery){
     }
     copy.notify();
     if (dequeueRequired) {
+        consumed( removed );  // tell observers
         if (isRecovery) {
             //can't issue new requests for the store until
             //recovery is complete
@@ -696,14 +791,16 @@ void Queue::dequeueCommitted(const QueuedMessage& msg)
 }
 
 /**
- * Removes a message from the in-memory delivery queue as well
- * dequeing it from the logical (and persistent if applicable) queue
+ * Removes the first (oldest) message from the in-memory delivery queue as well dequeing
+ * it from the logical (and persistent if applicable) queue
  */
 void Queue::popAndDequeue()
 {
-    QueuedMessage msg = messages->front();
-    pop();
-    dequeue(0, msg);
+    if (!messages->empty()) {
+        QueuedMessage msg = messages->front();
+        pop();
+        dequeue(0, msg);
+    }
 }
 
 /**
@@ -719,6 +816,20 @@ void Queue::dequeued(const QueuedMessage& msg)
             (*i)->dequeued(msg);
         } catch (const std::exception& e) {
             QPID_LOG(warning, "Exception on notification of dequeue for queue " << getName() << ": " << e.what());
+        }
+    }
+}
+
+/** updates queue observers when a message has become unavailable for transfer,
+ * expects messageLock to be held
+ */
+void Queue::consumed(const QueuedMessage& msg)
+{
+    for (Observers::const_iterator i = observers.begin(); i != observers.end(); ++i) {
+        try{
+            (*i)->consumed(msg);
+        } catch (const std::exception& e) {
+            QPID_LOG(warning, "Exception on notification of message removal for queue " << getName() << ": " << e.what());
         }
     }
 }
@@ -1233,3 +1344,179 @@ void Queue::UsageBarrier::destroy()
     parent.deleted = true;
     while (count) parent.messageLock.wait();
 }
+
+
+// KAG TBD: flesh out...
+
+
+class MessageGroupManager : public QueueObserver, public MessageSelector
+{
+    const std::string groupIdHeader;    // msg header holding group identifier
+    struct GroupState {
+        const std::string group;          // group identifier
+        //Consumer::shared_ptr owner; // consumer with outstanding acquired messages
+        std::string owner; // consumer with outstanding acquired messages
+        uint32_t acquired;  // count of outstanding acquired messages
+        uint32_t total; // count of enqueued messages in this group
+        GroupState() : acquired(0), total(0) {}
+    };
+    std::map<std::string, struct GroupState> messageGroups;
+    std::set<std::string> consumers;
+
+ public:
+
+    MessageGroupManager(const std::string& header, Queue *q )
+        : QueueObserver(), MessageSelector(q), groupIdHeader( header ) {}
+    void enqueued( const QueuedMessage& qm );
+    void removed( const QueuedMessage& qm );
+    void requeued( const QueuedMessage& qm );
+    void dequeued( const QueuedMessage& qm );
+    void consumerAdded( const Consumer& );
+    void consumerRemoved( const Consumer& );
+    bool nextMessage( Consumer::shared_ptr c, QueuedMessage& next,
+                      const Mutex::ScopedLock&);
+    bool canAcquire(Consumer::shared_ptr consumer, const QueuedMessage& msg,
+                    const Mutex::ScopedLock&);
+};
+
+
+namespace {
+    const std::string NO_GROUP("");
+    const std::string getGroupId( const QueuedMessage& qm, const std::string& key )
+    {
+        const qpid::framing::FieldTable* headers = qm.payload->getApplicationHeaders();
+        if (!headers) return NO_GROUP;
+        return headers->getAsString(key);
+    }
+}
+
+
+void MessageGroupManager::enqueued( const QueuedMessage& qm )
+{
+    std::string group( getGroupId(qm, groupIdHeader) );
+    messageGroups[group].total++;
+}
+
+
+void MessageGroupManager::removed( const QueuedMessage& qm )
+{
+    std::string group( getGroupId(qm, groupIdHeader) );
+    std::map<std::string, struct GroupState>::iterator gs = messageGroups.find( group );
+    assert( gs != messageGroups.end() );
+    gs->second.acquired += 1;
+}
+
+
+void MessageGroupManager::requeued( const QueuedMessage& qm )
+{
+    std::string group( getGroupId(qm, groupIdHeader) );
+    std::map<std::string, struct GroupState>::iterator gs = messageGroups.find( group );
+    assert( gs != messageGroups.end() );
+    GroupState& state( gs->second );
+    assert( state.acquired != 0 );
+    state.acquired -= 1;
+    if (state.acquired == 0 && !state.owner.empty()) {
+        state.owner.clear();   // KAG TODO: need to invalidate consumer's positions?
+    }
+}
+
+
+void MessageGroupManager::dequeued( const QueuedMessage& qm )
+{
+    std::string group( getGroupId(qm, groupIdHeader) );
+    std::map<std::string, struct GroupState>::iterator gs = messageGroups.find( group );
+    assert( gs != messageGroups.end() );
+    GroupState& state( gs->second );
+    assert( state.total != 0 );
+    state.total -= 1;
+    assert( state.acquired != 0 );
+    state.acquired -= 1;
+    if (state.total == 0) messageGroups.erase( gs );
+    else if (state.acquired == 0 && !state.owner.empty()) {
+        state.owner.clear();   // KAG TODO: need to invalidate consumer's positions?
+    }
+}
+
+void MessageGroupManager::consumerAdded( const Consumer& c )
+{
+    bool unique = consumers.insert( c.getName() ).second;
+    (void) unique; assert( unique );
+}
+
+void MessageGroupManager::consumerRemoved( const Consumer& c )
+{
+    size_t count = consumers.erase( c.getName() );
+    (void) count; assert( count == 1 );
+
+    bool needReset = false;
+    for (std::map<std::string, struct GroupState>::iterator gs = messageGroups.begin();
+         gs != messageGroups.end(); ++gs) {
+
+        GroupState& state( gs->second );
+        if (state.owner == c.getName()) {
+            state.owner.clear();
+            needReset = true;
+        }
+    }
+
+    if (needReset) {
+        // KAG TODO: How do I invalidate all consumers that need invalidating????
+    }
+}
+
+
+bool MessageGroupManager::nextMessage( Consumer::shared_ptr c, QueuedMessage& next,
+                                       const Mutex::ScopedLock& l)
+{
+    // KAG TODO: FIX!!!
+    return MessageSelector::nextMessage( c, next, l );
+}
+
+
+bool MessageGroupManager::canAcquire(Consumer::shared_ptr consumer, const QueuedMessage& qm,
+                                     const Mutex::ScopedLock&)
+{
+    std::string group( getGroupId(qm, groupIdHeader) );
+    std::map<std::string, struct GroupState>::iterator gs = messageGroups.find( group );
+    assert( gs != messageGroups.end() );
+    GroupState& state( gs->second );
+
+    if (state.owner.empty()) {
+        state.owner = consumer->getName();
+        return true;
+    }
+    return state.owner == consumer->getName();
+}
+
+
+
+
+
+// default selector - requires messageLock to be held by caller!
+bool MessageSelector::nextMessage( Consumer::shared_ptr c, QueuedMessage& next,
+                                   const Mutex::ScopedLock& /*just to enforce locking*/)
+{
+    Messages& messages(queue->getMessages());
+
+    if (messages.empty())
+        return false;
+
+    if (c->preAcquires()) {     // not browsing
+        next = messages.front();
+        return true;
+    } else if (messages.next(c->position, next))
+        return true;
+    return false;
+}
+
+
+// default selector - requires messageLock to be held by caller!
+bool MessageSelector::canAcquire(Consumer::shared_ptr, const QueuedMessage&,
+                                 const Mutex::ScopedLock& /*just to enforce locking*/)
+{
+    return true;    // always give permission to acquire
+}
+
+
+
+

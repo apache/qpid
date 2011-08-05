@@ -36,13 +36,17 @@ class Consumer {
     // inListeners allows QueueListeners to efficiently track if this instance is registered
     // for notifications without having to search its containers
     bool inListeners;
-  public:
-    typedef boost::shared_ptr<Consumer> shared_ptr;            
-    
+    const std::string name;
+ public:
+    typedef boost::shared_ptr<Consumer> shared_ptr;
+
     framing::SequenceNumber position;
-    
-    Consumer(bool preAcquires = true) : acquires(preAcquires), inListeners(false) {}
+
+    Consumer(const std::string& _name, bool preAcquires = true)
+      : acquires(preAcquires), inListeners(false), name(_name), position(0) {}
     bool preAcquires() const { return acquires; }
+    const std::string& getName() const { return name; }
+
     virtual bool deliver(QueuedMessage& msg) = 0;
     virtual void notify() = 0;
     virtual bool filter(boost::intrusive_ptr<Message>) { return true; }

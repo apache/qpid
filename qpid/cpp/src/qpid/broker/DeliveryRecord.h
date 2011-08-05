@@ -46,7 +46,7 @@ class DeliveryRecord
 {
     QueuedMessage msg;
     mutable boost::shared_ptr<Queue> queue;
-    std::string tag;
+    std::string tag;    // name of consumer
     DeliveryId id;
     bool acquired : 1;
     bool acceptExpected : 1;
@@ -82,7 +82,7 @@ class DeliveryRecord
     void reject();
     void cancel(const std::string& tag);
     void redeliver(SemanticState* const);
-    void acquire(DeliveryIds& results);
+    void acquire(SemanticState* const, DeliveryIds& results);
     void complete();
     bool accept(TransactionContext* ctxt); // Returns isRedundant()
     bool setEnded();            // Returns isRedundant()
@@ -90,7 +90,7 @@ class DeliveryRecord
 
     bool isAcquired() const { return acquired; }
     bool isComplete() const { return completed; }
-    bool isRedundant() const { return ended && (!windowing || completed); }
+    bool isRedundant() const { return ended && (!windowing || completed); }     // msg no longer needed - can discard
     bool isCancelled() const { return cancelled; }
     bool isAccepted() const { return !acceptExpected; }
     bool isEnded() const { return ended; }
@@ -117,13 +117,14 @@ inline bool operator<(const DeliveryRecord& a, const framing::SequenceNumber& b)
 
 struct AcquireFunctor
 {
+    SemanticState* session;
     DeliveryIds& results;
 
-    AcquireFunctor(DeliveryIds& _results) : results(_results) {}
+    AcquireFunctor(SemanticState* _session, DeliveryIds& _results) : session(_session), results(_results) {}
 
     void operator()(DeliveryRecord& record)
     {
-        record.acquire(results);
+        record.acquire(session, results);
     }
 };
 

@@ -35,7 +35,9 @@ void LegacyLVQ::setNoBrowse(bool b)
 bool LegacyLVQ::remove(const framing::SequenceNumber& position, QueuedMessage& message)
 {
     Ordering::iterator i = messages.find(position);
-    if (i != messages.end() && i->second.payload == message.payload) {
+    if (i != messages.end() &&
+        // @todo KAG: gsim? is a bug? message is a *return* value - we really shouldn't check ".payload" below:
+        i->second.payload == message.payload) {
         message = i->second;
         erase(i);
         return true;
