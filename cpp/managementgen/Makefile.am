@@ -32,6 +32,7 @@ pkgpyexec_qmfgentmpl_PYTHON = \
 	qmfgen/templates/Args.h \
 	qmfgen/templates/Class.cpp \
 	qmfgen/templates/Class.h \
+	qmfgen/templates/CMakeLists.cmake \
 	qmfgen/templates/Event.cpp \
 	qmfgen/templates/Event.h \
 	qmfgen/templates/Makefile.mk \
