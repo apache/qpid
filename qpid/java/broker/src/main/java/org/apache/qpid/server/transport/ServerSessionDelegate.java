@@ -47,11 +47,11 @@ import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StoredMessage;
+import org.apache.qpid.server.subscription.SubscriptionFactoryImpl;
 import org.apache.qpid.server.subscription.Subscription_0_10;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.transport.Acquired;
@@ -98,11 +98,10 @@ import org.apache.qpid.transport.TxSelect;
 public class ServerSessionDelegate extends SessionDelegate
 {
     private static final Logger LOGGER = Logger.getLogger(ServerSessionDelegate.class);
-    private final IApplicationRegistry _appRegistry;
 
-    public ServerSessionDelegate(IApplicationRegistry appRegistry)
+    public ServerSessionDelegate()
     {
-        _appRegistry = appRegistry;
+
     }
 
     @Override
@@ -254,7 +253,7 @@ public class ServerSessionDelegate extends SessionDelegate
                         return;
                     }
 
-                    Subscription_0_10 sub = new Subscription_0_10((ServerSession)session,
+                    Subscription_0_10 sub = SubscriptionFactoryImpl.INSTANCE.createSubscription((ServerSession)session,
                                                                   destination,
                                                                   method.getAcceptMode(),
                                                                   method.getAcquireMode(),
