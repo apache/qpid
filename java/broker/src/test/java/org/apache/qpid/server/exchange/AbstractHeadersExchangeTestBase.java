@@ -428,19 +428,9 @@ public class AbstractHeadersExchangeTestBase extends InternalBrokerBaseCase
                     //To change body of implemented methods use File | Settings | File Templates.
                 }
 
-                public void reject(Subscription subscription)
-                {
-                    //To change body of implemented methods use File | Settings | File Templates.
-                }
-
-                public boolean isRejectedBy(Subscription subscription)
+                public boolean isRejectedBy(long subscriptionId)
                 {
                     return false;  //To change body of implemented methods use File | Settings | File Templates.
-                }
-
-                public void requeue(Subscription subscription) 
-                {
-                    //To change body of implemented methods use File | Settings | File Templates.
                 }
 
                 public void dequeue()

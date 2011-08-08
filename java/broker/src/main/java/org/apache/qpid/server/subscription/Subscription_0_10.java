@@ -203,7 +203,7 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
 
 
         //check that the message hasn't been rejected
-        if (entry.isRejectedBy(this))
+        if (entry.isRejectedBy(getSubscriptionID()))
         {
 
             return false;

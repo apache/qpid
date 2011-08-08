@@ -475,7 +475,7 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
 
 
         //check that the message hasn't been rejected
-        if (entry.isRejectedBy(this))
+        if (entry.isRejectedBy(getSubscriptionID()))
         {
             if (_logger.isDebugEnabled())
             {
