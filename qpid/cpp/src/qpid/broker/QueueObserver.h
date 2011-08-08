@@ -45,7 +45,7 @@ class Consumer;
  * "Enqueued" - the message is "Available" - on the queue for transfer to any consumer
  * (e.g. browse or acquire)
  *
- * "Consumed" - the message is "Locked" - a consumer has claimed exclusive access to it.
+ * "Acquired" - the message is "Locked" - a consumer has claimed exclusive access to it.
  * It is no longer available for other consumers to browse or acquire, but it is not yet
  * considered dequeued as it may be requeued by the consumer.
  *
@@ -62,9 +62,9 @@ class QueueObserver
 
     // note: the Queue will hold the messageLock while calling these methods!
     virtual void enqueued(const QueuedMessage&) = 0;
-    virtual void consumed(const QueuedMessage&) = 0;
-    virtual void requeued(const QueuedMessage&) = 0;
     virtual void dequeued(const QueuedMessage&) = 0;
+    virtual void acquired(const QueuedMessage&) = 0;
+    virtual void requeued(const QueuedMessage&) = 0;
     virtual void consumerAdded( const Consumer& ) {};
     virtual void consumerRemoved( const Consumer& ) {};
  private:

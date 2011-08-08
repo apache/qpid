@@ -50,7 +50,7 @@ class ThresholdAlerts : public QueueObserver
                     const long repeatInterval);
     void enqueued(const QueuedMessage&);
     void dequeued(const QueuedMessage&);
-    void consumed(const QueuedMessage&) {};
+    void acquired(const QueuedMessage&) {};
     void requeued(const QueuedMessage&) {};
 
     static void observe(Queue& queue, qpid::management::ManagementAgent& agent,

@@ -92,19 +92,25 @@ const int ENQUEUE_AND_DEQUEUE=2;
 namespace qpid {
 namespace broker {
 
-class MessageSelector
+class MessageAllocator
 {
  protected:
     Queue *queue;
  public:
-    MessageSelector( Queue *q ) : queue(q) {}
-    virtual ~MessageSelector() {};
+    MessageAllocator( Queue *q ) : queue(q) {}
+    virtual ~MessageAllocator() {};
 
     // assumes caller holds messageLock
     virtual bool nextMessage( Consumer::shared_ptr c, QueuedMessage& next,
                               const Mutex::ScopedLock&);
-    virtual bool canAcquire(Consumer::shared_ptr consumer, const QueuedMessage& qm,
-                            const Mutex::ScopedLock&);
+    /** acquire a message previously browsed via nextMessage().  assume messageLock held
+     * @param consumer name of consumer that is attempting to acquire the message
+     * @param qm the message to be acquired
+     * @param messageLock - ensures caller is holding it!
+     * @returns true if acquire is successful, false if acquire failed.
+     */
+    virtual bool canAcquire( const std::string& consumer, const QueuedMessage& qm,
+                             const Mutex::ScopedLock&);
 };
 
 }}
@@ -134,7 +140,7 @@ Queue::Queue(const string& _name, bool _autodelete,
     deleted(false),
     barrier(*this),
     autoDeleteTimeout(0),
-    selector(new MessageSelector( this ))   // KAG TODO: FIX!!
+    allocator(new MessageAllocator( this ))   // KAG TODO: FIX!!
 {
     if (parent != 0 && broker != 0) {
         ManagementAgent* agent = broker->getManagementAgent();
@@ -269,13 +275,13 @@ bool Queue::acquireMessageAt(const SequenceNumber& position, QueuedMessage& mess
     }
 }
 
-bool Queue::acquire(const QueuedMessage& msg, Consumer::shared_ptr c)
+bool Queue::acquire(const QueuedMessage& msg, const std::string&  consumer)
 {
     Mutex::ScopedLock locker(messageLock);
     assertClusterSafe();
-    QPID_LOG(debug, c->getName() << " attempting to acquire message at " << msg.position);
+    QPID_LOG(debug, consumer << " attempting to acquire message at " << msg.position);
 
-    if (!selector->canAcquire( c, msg, locker )) {
+    if (!allocator->canAcquire( consumer, msg, locker )) {
         QPID_LOG(debug, "Not permitted to acquire msg at " << msg.position << " from '" << name);
         return false;
     }
@@ -327,7 +333,7 @@ Queue::ConsumeCode Queue::consumeNextMessage(QueuedMessage& m, Consumer::shared_
         Mutex::ScopedLock locker(messageLock);
         QueuedMessage msg;
 
-        if (!selector->nextMessage(c, msg, locker)) { // no next available
+        if (!allocator->nextMessage(c, msg, locker)) { // no next available
             QPID_LOG(debug, "No messages available to dispatch to consumer " <<
                      c->getName() << " on queue '" << name << "'");
             listeners.addListener(c);
@@ -346,8 +352,10 @@ Queue::ConsumeCode Queue::consumeNextMessage(QueuedMessage& m, Consumer::shared_
 
         if (c->filter(msg.payload)) {
             if (c->accept(msg.payload)) {
-                acquire( msg.position, m );
-                c->position = msg.position;
+                bool ok = acquire( msg.position, msg );
+                (void) ok; assert(ok);
+                m = msg;
+                c->position = m.position;
                 return CONSUMED;
             } else {
                 //message(s) are available but consumer hasn't got enough credit
@@ -369,7 +377,7 @@ bool Queue::browseNextMessage(QueuedMessage& m, Consumer::shared_ptr c)
         Mutex::ScopedLock locker(messageLock);
         QueuedMessage msg;
 
-        if (!selector->nextMessage(c, msg, locker)) { // no next available
+        if (!allocator->nextMessage(c, msg, locker)) { // no next available
             QPID_LOG(debug, "No browsable messages available for consumer " <<
                      c->getName() << " on queue '" << name << "'");
             listeners.addListener(c);
@@ -484,7 +492,7 @@ QueuedMessage Queue::get(){
     Mutex::ScopedLock locker(messageLock);
     QueuedMessage msg(this);
     if (messages->pop(msg))
-        consumed( msg );
+        acquired( msg );
     return msg;
 }
 
@@ -520,7 +528,7 @@ void Queue::purgeExpired(qpid::sys::Duration lapse)
              i != expired.end(); ++i) {
             {
                 Mutex::ScopedLock locker(messageLock);
-                consumed( *i );   // expects messageLock held
+                acquired( *i );   // expects messageLock held
             }
             dequeue( 0, *i );
         }
@@ -596,7 +604,7 @@ void Queue::pop()
     assertClusterSafe();
     QueuedMessage msg;
     if (messages->pop(msg)) {
-        consumed( msg ); // mark it removed
+        acquired( msg ); // mark it removed
         ++dequeueSincePurge;
     }
 }
@@ -605,7 +613,7 @@ void Queue::pop()
 bool Queue::acquire(const qpid::framing::SequenceNumber& position, QueuedMessage& msg )
 {
     if (messages->remove(position, msg)) {
-        consumed( msg );
+        acquired( msg );
         return true;
     }
     return false;
@@ -627,7 +635,7 @@ void Queue::push(boost::intrusive_ptr<Message>& msg, bool isRecovery){
     }
     copy.notify();
     if (dequeueRequired) {
-        consumed( removed );  // tell observers
+        acquired( removed );  // tell observers
         if (isRecovery) {
             //can't issue new requests for the store until
             //recovery is complete
@@ -823,11 +831,11 @@ void Queue::dequeued(const QueuedMessage& msg)
 /** updates queue observers when a message has become unavailable for transfer,
  * expects messageLock to be held
  */
-void Queue::consumed(const QueuedMessage& msg)
+void Queue::acquired(const QueuedMessage& msg)
 {
     for (Observers::const_iterator i = observers.begin(); i != observers.end(); ++i) {
         try{
-            (*i)->consumed(msg);
+            (*i)->acquired(msg);
         } catch (const std::exception& e) {
             QPID_LOG(warning, "Exception on notification of message removal for queue " << getName() << ": " << e.what());
         }
@@ -1349,7 +1357,7 @@ void Queue::UsageBarrier::destroy()
 // KAG TBD: flesh out...
 
 
-class MessageGroupManager : public QueueObserver, public MessageSelector
+class MessageGroupManager : public QueueObserver, public MessageAllocator
 {
     const std::string groupIdHeader;    // msg header holding group identifier
     struct GroupState {
@@ -1366,7 +1374,7 @@ class MessageGroupManager : public QueueObserver, public MessageSelector
  public:
 
     MessageGroupManager(const std::string& header, Queue *q )
-        : QueueObserver(), MessageSelector(q), groupIdHeader( header ) {}
+        : QueueObserver(), MessageAllocator(q), groupIdHeader( header ) {}
     void enqueued( const QueuedMessage& qm );
     void removed( const QueuedMessage& qm );
     void requeued( const QueuedMessage& qm );
@@ -1375,7 +1383,7 @@ class MessageGroupManager : public QueueObserver, public MessageSelector
     void consumerRemoved( const Consumer& );
     bool nextMessage( Consumer::shared_ptr c, QueuedMessage& next,
                       const Mutex::ScopedLock&);
-    bool canAcquire(Consumer::shared_ptr consumer, const QueuedMessage& msg,
+    bool canAcquire(const std::string& consumer, const QueuedMessage& msg,
                     const Mutex::ScopedLock&);
 };
 
@@ -1469,11 +1477,11 @@ bool MessageGroupManager::nextMessage( Consumer::shared_ptr c, QueuedMessage& ne
                                        const Mutex::ScopedLock& l)
 {
     // KAG TODO: FIX!!!
-    return MessageSelector::nextMessage( c, next, l );
+    return MessageAllocator::nextMessage( c, next, l );
 }
 
 
-bool MessageGroupManager::canAcquire(Consumer::shared_ptr consumer, const QueuedMessage& qm,
+bool MessageGroupManager::canAcquire(const std::string& consumer, const QueuedMessage& qm,
                                      const Mutex::ScopedLock&)
 {
     std::string group( getGroupId(qm, groupIdHeader) );
@@ -1482,18 +1490,18 @@ bool MessageGroupManager::canAcquire(Consumer::shared_ptr consumer, const Queued
     GroupState& state( gs->second );
 
     if (state.owner.empty()) {
-        state.owner = consumer->getName();
+        state.owner = consumer;
         return true;
     }
-    return state.owner == consumer->getName();
+    return state.owner == consumer;
 }
 
 
 
 
 
-// default selector - requires messageLock to be held by caller!
-bool MessageSelector::nextMessage( Consumer::shared_ptr c, QueuedMessage& next,
+// default allocator - requires messageLock to be held by caller!
+bool MessageAllocator::nextMessage( Consumer::shared_ptr c, QueuedMessage& next,
                                    const Mutex::ScopedLock& /*just to enforce locking*/)
 {
     Messages& messages(queue->getMessages());
@@ -1510,9 +1518,9 @@ bool MessageSelector::nextMessage( Consumer::shared_ptr c, QueuedMessage& next,
 }
 
 
-// default selector - requires messageLock to be held by caller!
-bool MessageSelector::canAcquire(Consumer::shared_ptr, const QueuedMessage&,
-                                 const Mutex::ScopedLock& /*just to enforce locking*/)
+// default allocator - requires messageLock to be held by caller!
+bool MessageAllocator::canAcquire(const std::string&, const QueuedMessage&,
+                                  const Mutex::ScopedLock& /*just to enforce locking*/)
 {
     return true;    // always give permission to acquire
 }

@@ -331,7 +331,7 @@ QPID_AUTO_TEST_CASE(testSearch){
 
     BOOST_CHECK_EQUAL(seq.getValue(), qm.position.getValue());
 
-    queue->acquire(qm, c1);
+    queue->acquire(qm, c1->getName());
     BOOST_CHECK_EQUAL(queue->getMessageCount(), 2u);
     SequenceNumber seq1(3);
     QueuedMessage qm1;
@@ -557,11 +557,11 @@ QPID_AUTO_TEST_CASE(testLVQAcquire){
     QueuedMessage qmsg3(queue.get(), 0, sequence1);
     TestConsumer::shared_ptr dummy(new TestConsumer());
 
-    BOOST_CHECK(!queue->acquire(qmsg, dummy));
-    BOOST_CHECK(queue->acquire(qmsg2, dummy));
+    BOOST_CHECK(!queue->acquire(qmsg, dummy->getName()));
+    BOOST_CHECK(queue->acquire(qmsg2, dummy->getName()));
     // Acquire the massage again to test failure case.
-    BOOST_CHECK(!queue->acquire(qmsg2, dummy));
-    BOOST_CHECK(!queue->acquire(qmsg3, dummy));
+    BOOST_CHECK(!queue->acquire(qmsg2, dummy->getName()));
+    BOOST_CHECK(!queue->acquire(qmsg3, dummy->getName()));
 
     BOOST_CHECK_EQUAL(queue->getMessageCount(), 2u);
 

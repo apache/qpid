@@ -59,7 +59,7 @@ class MessageStore;
 class QueueEvents;
 class QueueRegistry;
 class TransactionContext;
-class MessageSelector;
+class MessageAllocator;
  
 /**
  * The brokers representation of an amqp queue. Messages are
@@ -129,7 +129,7 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     UsageBarrier barrier;
     int autoDeleteTimeout;
     boost::intrusive_ptr<qpid::sys::TimerTask> autoDeleteTask;
-    std::auto_ptr<MessageSelector> selector;
+    std::auto_ptr<MessageAllocator> allocator;
 
     void push(boost::intrusive_ptr<Message>& msg, bool isRecovery=false);
     void setPolicy(std::auto_ptr<QueuePolicy> policy);
@@ -144,7 +144,7 @@ class Queue : public boost::enable_shared_from_this<Queue>,
 
     /** update queue observers with new message state */
     void enqueued(const QueuedMessage& msg);
-    void consumed(const QueuedMessage& msg);
+    void acquired(const QueuedMessage& msg);
     void dequeued(const QueuedMessage& msg);
 
     /** modify the Queue's message container - assumes messageLock held */
@@ -204,7 +204,7 @@ class Queue : public boost::enable_shared_from_this<Queue>,
      * @param msg - message to be acquired.
      * @return false if message is no longer available for acquire.
      */
-    QPID_BROKER_EXTERN bool acquire(const QueuedMessage& msg, const Consumer::shared_ptr c);
+    QPID_BROKER_EXTERN bool acquire(const QueuedMessage& msg, const std::string& consumer);
 
     /**
      * Used to configure a new queue and create a persistent record

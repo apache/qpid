@@ -152,14 +152,9 @@ uint32_t DeliveryRecord::getCredit() const
     return credit;
 }
 
-void DeliveryRecord::acquire(SemanticState* const session, DeliveryIds& results) {
-    SemanticState::ConsumerImpl::shared_ptr consumer;
-
-    if (!session->find( tag, consumer )) {
-        QPID_LOG(error, "Can't acquire message " << id.getValue() << ": original subscription no longer exists.");
-    }
-
-    if (queue->acquire(msg, consumer)) {
+void DeliveryRecord::acquire(DeliveryIds& results)
+{
+    if (queue->acquire(msg, tag)) {
         acquired = true;
         results.push_back(id);
         if (!acceptExpected) {

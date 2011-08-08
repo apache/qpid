@@ -691,7 +691,7 @@ AckRange SemanticState::findRange(DeliveryId first, DeliveryId last)
 void SemanticState::acquire(DeliveryId first, DeliveryId last, DeliveryIds& acquired)
 {
     AckRange range = findRange(first, last);
-    for_each(range.start, range.end, AcquireFunctor(this, acquired));
+    for_each(range.start, range.end, AcquireFunctor(acquired));
 }
 
 void SemanticState::release(DeliveryId first, DeliveryId last, bool setRedelivered)
