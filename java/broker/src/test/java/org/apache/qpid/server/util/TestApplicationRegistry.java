@@ -27,6 +27,7 @@ import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.logging.NullRootMessageLogger;
 import org.apache.qpid.server.logging.actors.BrokerActor;
 import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.logging.actors.GenericActor;
 import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.security.auth.database.PropertiesPrincipalDatabase;
@@ -45,6 +46,7 @@ public class TestApplicationRegistry extends ApplicationRegistry
     public void initialise() throws Exception
     {
         CurrentActor.setDefault(new BrokerActor(new NullRootMessageLogger()));
+        GenericActor.setDefaultMessageLogger(new NullRootMessageLogger());
         super.initialise();
     }
 

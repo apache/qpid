@@ -170,22 +170,7 @@ public class ServerDelegate extends ConnectionDelegate
     @Override
     public void connectionTuneOk(Connection conn, ConnectionTuneOk ok)
     {
-        int okChannelMax = ok.getChannelMax();
-        
-        if (okChannelMax > getChannelMax())
-        {
-            _logger.error("Connection '" + conn.getConnectionId() + "' being severed, " +
-                    "client connectionTuneOk returned a channelMax (" + okChannelMax +
-                    ") above the servers offered limit (" + getChannelMax() +")");
 
-            //Due to the error we must forcefully close the connection without negotiation
-            conn.getSender().close();
-            return;
-        }
-
-        //0 means no implied limit, except available server resources
-        //(or that forced by protocol limitations [0xFFFF])
-        conn.setChannelMax(okChannelMax == 0 ? Connection.MAX_CHANNEL_MAX : okChannelMax);
     }
 
     @Override
@@ -214,5 +199,12 @@ public class ServerDelegate extends ConnectionDelegate
         conn.map(ssn, atc.getChannel());
         ssn.sessionAttached(atc.getName());
         ssn.setState(Session.State.OPEN);
+    }
+
+    protected void setConnectionTuneOkChannelMax(final Connection conn, final int okChannelMax)
+    {
+        //0 means no implied limit, except available server resources
+        //(or that forced by protocol limitations [0xFFFF])
+        conn.setChannelMax(okChannelMax == 0 ? Connection.MAX_CHANNEL_MAX : okChannelMax);
     }
 }

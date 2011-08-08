@@ -20,7 +20,7 @@
  */
 package org.apache.qpid.server.protocol;
 
-import org.apache.qpid.protocol.ProtocolEngine;
+import org.apache.qpid.protocol.ServerProtocolEngine;
 import org.apache.qpid.transport.network.InputHandler;
 import org.apache.qpid.transport.network.Assembler;
 import org.apache.qpid.transport.network.Disassembler;
@@ -33,7 +33,7 @@ import org.apache.qpid.server.registry.IApplicationRegistry;
 import java.net.SocketAddress;
 import java.util.UUID;
 
-public class ProtocolEngine_0_10  extends InputHandler implements ProtocolEngine, ConnectionConfig
+public class ProtocolEngine_0_10  extends InputHandler implements ServerProtocolEngine, ConnectionConfig
 {
     public static final int MAX_FRAME_SIZE = 64 * 1024 - 1;
 
@@ -190,5 +190,10 @@ public class ProtocolEngine_0_10  extends InputHandler implements ProtocolEngine
     public void mgmtClose()
     {
         _connection.mgmtClose();
+    }
+
+    public long getConnectionId()
+    {
+        return _connection.getConnectionId();
     }
 }

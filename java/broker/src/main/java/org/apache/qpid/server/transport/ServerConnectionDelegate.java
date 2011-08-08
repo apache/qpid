@@ -161,6 +161,26 @@ public class ServerConnectionDelegate extends ServerDelegate
         }
         
     }
+
+    @Override
+    public void connectionTuneOk(final Connection conn, final ConnectionTuneOk ok)
+    {
+        ServerConnection sconn = (ServerConnection) conn;
+        int okChannelMax = ok.getChannelMax();
+
+        if (okChannelMax > getChannelMax())
+        {
+            _logger.error("Connection '" + sconn.getConnectionId() + "' being severed, " +
+                    "client connectionTuneOk returned a channelMax (" + okChannelMax +
+                    ") above the servers offered limit (" + getChannelMax() +")");
+
+            //Due to the error we must forcefully close the connection without negotiation
+            sconn.getSender().close();
+            return;
+        }
+
+        setConnectionTuneOkChannelMax(sconn, okChannelMax);
+    }
     
     @Override
     protected int getHeartbeatMax()
