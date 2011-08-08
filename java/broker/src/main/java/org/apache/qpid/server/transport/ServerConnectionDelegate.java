@@ -74,7 +74,7 @@ public class ServerConnectionDelegate extends ServerDelegate
 
     public ServerSession getSession(Connection conn, SessionAttach atc)
     {
-        SessionDelegate serverSessionDelegate = new ServerSessionDelegate(_appRegistry);
+        SessionDelegate serverSessionDelegate = new ServerSessionDelegate();
 
         ServerSession ssn = new ServerSession(conn, serverSessionDelegate,  new Binary(atc.getName()), 0);
 

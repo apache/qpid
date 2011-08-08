@@ -129,16 +129,6 @@ public class ServerSession extends Session implements AuthorizationHolder, Sessi
         this(connection, delegate, name, expiry, ((ServerConnection)connection).getConfig());
     }
 
-    protected void setState(State state)
-    {
-        super.setState(state);
-
-        if (state == State.OPEN)
-        {
-	        _actor.message(ChannelMessages.CREATE());
-        }
-    }
-
     public ServerSession(Connection connection, SessionDelegate delegate, Binary name, long expiry, ConnectionConfig connConfig)
     {
         super(connection, delegate, name, expiry);
@@ -148,6 +138,16 @@ public class ServerSession extends Session implements AuthorizationHolder, Sessi
         _reference = new WeakReference<Session>(this);
         _id = getConfigStore().createId();
         getConfigStore().addConfiguredObject(this);
+    }
+
+    protected void setState(State state)
+    {
+        super.setState(state);
+
+        if (state == State.OPEN)
+        {
+            _actor.message(ChannelMessages.CREATE());
+        }
     }
 
     private ConfigStore getConfigStore()
