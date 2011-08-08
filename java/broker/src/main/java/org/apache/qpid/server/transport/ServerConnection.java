@@ -64,10 +64,11 @@ public class ServerConnection extends Connection implements AMQConnectionModel, 
     private Principal _authorizedPrincipal = null;
     private boolean _statisticsEnabled = false;
     private StatisticsCounter _messagesDelivered, _dataDelivered, _messagesReceived, _dataReceived;
+    private final long _connectionId;
     
-    public ServerConnection()
+    public ServerConnection(final long connectionId)
     {
-
+        _connectionId = connectionId;
     }
 
     public UUID getId()
@@ -378,5 +379,10 @@ public class ServerConnection extends Connection implements AMQConnectionModel, 
     public Principal getAuthorizedPrincipal()
     {
         return _authorizedPrincipal;
+    }
+
+    public long getConnectionId()
+    {
+        return _connectionId;
     }
 }

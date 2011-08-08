@@ -126,8 +126,6 @@ public class Connection extends ConnectionInvoker
     private SecurityLayer securityLayer;
     private String _clientId;
     
-    private static final AtomicLong idGenerator = new AtomicLong(0);
-    private final long _connectionId = idGenerator.incrementAndGet();
     private final AtomicBoolean connectionLost = new AtomicBoolean(false);
     
     public Connection() {}
@@ -358,11 +356,6 @@ public class Connection extends ConnectionInvoker
         assert sessionFactory != null;
 
         _sessionFactory = sessionFactory;
-    }
-
-    public long getConnectionId()
-    {
-        return _connectionId;
     }
 
     public ConnectionDelegate getConnectionDelegate()

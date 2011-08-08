@@ -45,7 +45,6 @@ import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.GenericActor;
 import org.apache.qpid.server.logging.management.LoggingManagementMBean;
 import org.apache.qpid.server.logging.messages.BrokerMessages;
-import org.apache.qpid.server.protocol.AMQProtocolEngineFactory;
 import org.apache.qpid.server.protocol.MultiVersionProtocolEngineFactory;
 import org.apache.qpid.server.protocol.AmqpProtocolVersion;
 import org.apache.qpid.server.registry.ApplicationRegistry;
@@ -241,7 +240,7 @@ public class Broker
 
                     IncomingNetworkTransport transport = new MinaNetworkTransport();
 
-                    transport.accept(settings, new AMQProtocolEngineFactory(), sslFactory);
+                    transport.accept(settings, new MultiVersionProtocolEngineFactory(), sslFactory);
 
                     ApplicationRegistry.getInstance().addAcceptor(new InetSocketAddress(bindAddress, sslPort),
                             new QpidAcceptor(transport,"TCP"));
