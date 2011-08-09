@@ -316,7 +316,7 @@
   <property file="${build.scratch}/test-${profile}.properties"/>
 
   <map property="test.excludefiles" value="${test.excludes}">
-    <globmapper from="*" to="${test.profiles}/*"/>
+    <globmapper from="*" to="${test.profiles}/*;"/>
   </map>
 
   <condition property="dontruntest" value="dontruntest" else="runtest">
