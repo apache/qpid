@@ -59,7 +59,7 @@ public class QpidTestCase extends TestCase
             String exclusionListString = System.getProperties().getProperty("test.excludelist", "");
             List<String> exclusionList = new ArrayList<String>();
 
-            for (String uri : exclusionListURIs.split(";\\s+"))
+            for (String uri : exclusionListURIs.split("\\s+"))
             {
                 File file = new File(uri);
                 if (file.exists())
