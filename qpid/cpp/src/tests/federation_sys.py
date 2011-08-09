@@ -574,7 +574,7 @@ class QmfTestBase010(TestBase010):
     
     def _do_test(self,
                  test_name,                         # Name of test
-                 exch_name = "",                    # Remote exchange name
+                 exch_name = "amq.direct",          # Remote exchange name
                  exch_type = "direct",              # Remote exchange type
                  exch_alt_exch = "",                # Remote exchange alternate exchange
                  exch_alt_exch_type = "direct",     # Remote exchange alternate exchange type
@@ -726,23 +726,6 @@ class B_LongTransactionTests(QmfTestBase010):
         self._do_test(self._get_name(), queue_route_type_flag=True, enq_txn_size=10, msg_count = 103)
 
 
-    def test_txEnq01_route_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", enq_txn_size=1)
-        
-    def test_txEnq01_queueRoute_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", queue_route_type_flag=True, enq_txn_size=1)
-
-    def test_txEnq10_route_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", enq_txn_size=10, msg_count = 103)
-        
-    def test_txEnq10_queueRoute_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", queue_route_type_flag=True, enq_txn_size=10, msg_count = 103)
-
-    def test_txEnq01_txDeq01_route_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", enq_txn_size=1, deq_txn_size=1)
-        
-    def test_txEnq01_txDeq01_queueRoute_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", queue_route_type_flag=True, enq_txn_size=1, deq_txn_size=1)
 
 
     def test_txEnq01_route_directExch(self):
@@ -824,25 +807,6 @@ class C_ShortClusterTests(QmfTestBase010):
 
 
 class C_LongClusterTests(QmfTestBase010):
-    
-    def test_locCluster_route_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", local_cluster_flag=True)
-        
-    def test_locCluster_queueRoute_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", queue_route_type_flag=True, local_cluster_flag=True)
-    
-    def test_remCluster_route_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", remote_cluster_flag=True)
-        
-    def test_remCluster_queueRoute_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", queue_route_type_flag=True, remote_cluster_flag=True)
-    
-    def test_locCluster_remCluster_route_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", local_cluster_flag=True, remote_cluster_flag=True)
-        
-    def test_locCluster_remCluster_queueRoute_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", queue_route_type_flag=True, local_cluster_flag=True, remote_cluster_flag=True)
-
     
     def test_locCluster_route_directExch(self):
         self._do_test(self._get_name(), exch_name="testDirectExchange", local_cluster_flag=True)
@@ -959,61 +923,6 @@ class D_LongClusterTransactionTests(QmfTestBase010):
         
     def test_txEnq10_locCluster_remCluster_queueRoute_defaultExch(self):
         self._do_test(self._get_name(), queue_route_type_flag=True, enq_txn_size=10, msg_count = 103, local_cluster_flag=True, remote_cluster_flag=True)
-
-
-    def test_txEnq01_locCluster_route_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", enq_txn_size=1, local_cluster_flag=True)
-        
-    def test_txEnq01_locCluster_queueRoute_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", queue_route_type_flag=True, enq_txn_size=1, local_cluster_flag=True)
-
-    def test_txEnq10_locCluster_route_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", enq_txn_size=10, msg_count = 103, local_cluster_flag=True)
-        
-    def test_txEnq10_locCluster_queueRoute_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", queue_route_type_flag=True, enq_txn_size=10, msg_count = 103, local_cluster_flag=True)
-       
-    def test_txEnq01_txDeq01_locCluster_route_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", enq_txn_size=1, deq_txn_size=1, local_cluster_flag=True)
-        
-    def test_txEnq01_txDeq01_locCluster_queueRoute_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", queue_route_type_flag=True, enq_txn_size=1, deq_txn_size=1, local_cluster_flag=True)
-
-    def test_txEnq01_remCluster_route_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", enq_txn_size=1, remote_cluster_flag=True)
-        
-    def test_txEnq01_remCluster_queueRoute_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", queue_route_type_flag=True, enq_txn_size=1, remote_cluster_flag=True)
-
-    def test_txEnq10_remCluster_route_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", enq_txn_size=10, msg_count = 103, remote_cluster_flag=True)
-        
-    def test_txEnq10_remCluster_queueRoute_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", queue_route_type_flag=True, enq_txn_size=10, msg_count = 103, remote_cluster_flag=True)
-       
-    def test_txEnq01_txDeq01_remCluster_route_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", enq_txn_size=1, deq_txn_size=1, remote_cluster_flag=True)
-        
-    def test_txEnq01_txDeq01_remCluster_queueRoute_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", queue_route_type_flag=True, enq_txn_size=1, deq_txn_size=1, remote_cluster_flag=True)
-
-    def test_txEnq01_locCluster_remCluster_route_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", enq_txn_size=1, local_cluster_flag=True, remote_cluster_flag=True)
-        
-    def test_txEnq01_locCluster_remCluster_queueRoute_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", queue_route_type_flag=True, enq_txn_size=1, local_cluster_flag=True, remote_cluster_flag=True)
-
-    def test_txEnq10_locCluster_remCluster_route_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", enq_txn_size=10, msg_count = 103, local_cluster_flag=True, remote_cluster_flag=True)
-        
-    def test_txEnq10_locCluster_remCluster_queueRoute_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", queue_route_type_flag=True, enq_txn_size=10, msg_count = 103, local_cluster_flag=True, remote_cluster_flag=True)
-       
-    def test_txEnq01_txDeq01_locCluster_remCluster_route_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", enq_txn_size=1, deq_txn_size=1, local_cluster_flag=True, remote_cluster_flag=True)
-        
-    def test_txEnq01_txDeq01_locCluster_remCluster_queueRoute_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", queue_route_type_flag=True, enq_txn_size=1, deq_txn_size=1, local_cluster_flag=True, remote_cluster_flag=True)
 
 
     def test_txEnq01_locCluster_route_directExch(self):
@@ -1198,18 +1107,6 @@ class E_ShortPersistenceTests(QmfTestBase010):
 
 class E_LongPersistenceTests(QmfTestBase010):   
 
-    def test_route_durQueue_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", queue_durable_flag=True)
-        
-    def test_route_durMsg_durQueue_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", msg_durable_flag=True, queue_durable_flag=True)
-        
-    def test_queueRoute_durQueue_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", queue_durable_flag=True, queue_route_type_flag=True)
-        
-    def test_queueRoute_durMsg_durQueue_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", msg_durable_flag=True, queue_durable_flag=True, queue_route_type_flag=True)
-
          
     def test_route_durQueue_directExch(self):
         self._do_test(self._get_name(), exch_name="testDirectExchange", queue_durable_flag=True)
@@ -1292,41 +1189,6 @@ class F_LongPersistenceTransactionTests(QmfTestBase010):
         self._do_test(self._get_name(), msg_durable_flag=True, queue_durable_flag=True, queue_route_type_flag=True, enq_txn_size=10, msg_count = 103)
 
        
-    def test_txEnq01_route_durQueue_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", queue_durable_flag=True, enq_txn_size=1)
-        
-    def test_txEnq01_route_durMsg_durQueue_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", msg_durable_flag=True, queue_durable_flag=True, enq_txn_size=1)
-        
-    def test_txEnq01_queueRoute_durQueue_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", queue_durable_flag=True, queue_route_type_flag=True, enq_txn_size=1)
-        
-    def test_txEnq01_queueRoute_durMsg_durQueue_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", msg_durable_flag=True, queue_durable_flag=True, queue_route_type_flag=True, enq_txn_size=1)
-       
-    def test_txEnq10_route_durQueue_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", queue_durable_flag=True, enq_txn_size=10, msg_count = 103)
-        
-    def test_txEnq10_route_durMsg_durQueue_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", msg_durable_flag=True, queue_durable_flag=True, enq_txn_size=10, msg_count = 103)
-        
-    def test_txEnq10_queueRoute_durQueue_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", queue_durable_flag=True, queue_route_type_flag=True, enq_txn_size=10, msg_count = 103)
-        
-    def test_txEnq10_queueRoute_durMsg_durQueue_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", msg_durable_flag=True, queue_durable_flag=True, queue_route_type_flag=True, enq_txn_size=10, msg_count = 103)
-        
-    def test_txEnq01_txDeq01_route_durQueue_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", queue_durable_flag=True, enq_txn_size=1, deq_txn_size=1)
-        
-    def test_txEnq01_txDeq01_route_durMsg_durQueue_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", msg_durable_flag=True, queue_durable_flag=True, enq_txn_size=1, deq_txn_size=1)
-        
-    def test_txEnq01_txDeq01_queueRoute_durQueue_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", queue_durable_flag=True, queue_route_type_flag=True, enq_txn_size=1, deq_txn_size=1)
-        
-    def test_txEnq01_txDeq01_queueRoute_durMsg_durQueue_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", msg_durable_flag=True, queue_durable_flag=True, queue_route_type_flag=True, enq_txn_size=1, deq_txn_size=1)
 
        
     def test_txEnq01_route_durQueue_directExch(self):
@@ -1481,41 +1343,6 @@ class G_ShortPersistenceClusterTests(QmfTestBase010):
 
 class G_LongPersistenceClusterTests(QmfTestBase010):   
          
-    def test_locCluster_route_durQueue_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", queue_durable_flag=True, local_cluster_flag=True)
-        
-    def test_locCluster_route_durMsg_durQueue_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", msg_durable_flag=True, queue_durable_flag=True, local_cluster_flag=True)
-        
-    def test_locCluster_queueRoute_durQueue_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", queue_durable_flag=True, queue_route_type_flag=True, local_cluster_flag=True)
-        
-    def test_locCluster_queueRoute_durMsg_durQueue_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", msg_durable_flag=True, queue_durable_flag=True, queue_route_type_flag=True, local_cluster_flag=True)
-         
-    def test_remCluster_route_durQueue_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", queue_durable_flag=True, remote_cluster_flag=True)
-        
-    def test_remCluster_route_durMsg_durQueue_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", msg_durable_flag=True, queue_durable_flag=True, remote_cluster_flag=True)
-        
-    def test_remCluster_queueRoute_durQueue_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", queue_durable_flag=True, queue_route_type_flag=True, remote_cluster_flag=True)
-        
-    def test_remCluster_queueRoute_durMsg_durQueue_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", msg_durable_flag=True, queue_durable_flag=True, queue_route_type_flag=True, remote_cluster_flag=True)
-         
-    def test_locCluster_remCluster_route_durQueue_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", queue_durable_flag=True, local_cluster_flag=True, remote_cluster_flag=True)
-        
-    def test_locCluster_remCluster_route_durMsg_durQueue_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", msg_durable_flag=True, queue_durable_flag=True, local_cluster_flag=True, remote_cluster_flag=True)
-        
-    def test_locCluster_remCluster_queueRoute_durQueue_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", queue_durable_flag=True, queue_route_type_flag=True, local_cluster_flag=True, remote_cluster_flag=True)
-        
-    def test_locCluster_remCluster_queueRoute_durMsg_durQueue_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", msg_durable_flag=True, queue_durable_flag=True, queue_route_type_flag=True, local_cluster_flag=True, remote_cluster_flag=True)
 
          
     def test_locCluster_route_durQueue_directExch(self):
@@ -1743,113 +1570,6 @@ class H_LongPersistenceClusterTransactionTests(QmfTestBase010):
         self._do_test(self._get_name(), msg_durable_flag=True, queue_durable_flag=True, queue_route_type_flag=True, enq_txn_size=10, msg_count = 103, local_cluster_flag=True, remote_cluster_flag=True)
 
        
-    def test_txEnq01_locCluster_route_durQueue_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", queue_durable_flag=True, enq_txn_size=1, local_cluster_flag=True)
-        
-    def test_txEnq01_locCluster_route_durMsg_durQueue_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", msg_durable_flag=True, queue_durable_flag=True, enq_txn_size=1, local_cluster_flag=True)
-        
-    def test_txEnq01_locCluster_queueRoute_durQueue_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", queue_durable_flag=True, queue_route_type_flag=True, enq_txn_size=1, local_cluster_flag=True)
-        
-    def test_txEnq01_locCluster_queueRoute_durMsg_durQueue_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", msg_durable_flag=True, queue_durable_flag=True, queue_route_type_flag=True, enq_txn_size=1, local_cluster_flag=True)
-       
-    def test_txEnq10_locCluster_route_durQueue_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", queue_durable_flag=True, enq_txn_size=10, msg_count = 103, local_cluster_flag=True)
-        
-    def test_txEnq10_locCluster_route_durMsg_durQueue_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", msg_durable_flag=True, queue_durable_flag=True, enq_txn_size=10, msg_count = 103, local_cluster_flag=True)
-        
-    def test_txEnq10_locCluster_queueRoute_durQueue_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", queue_durable_flag=True, queue_route_type_flag=True, enq_txn_size=10, msg_count = 103, local_cluster_flag=True)
-        
-    def test_txEnq10_locCluster_queueRoute_durMsg_durQueue_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", msg_durable_flag=True, queue_durable_flag=True, queue_route_type_flag=True, enq_txn_size=10, msg_count = 103, local_cluster_flag=True)
-        
-    def test_txEnq01_txDeq01_locCluster_route_durQueue_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", queue_durable_flag=True, enq_txn_size=1, deq_txn_size=1, local_cluster_flag=True)
-        
-    def test_txEnq01_txDeq01_locCluster_route_durMsg_durQueue_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", msg_durable_flag=True, queue_durable_flag=True, enq_txn_size=1, deq_txn_size=1, local_cluster_flag=True)
-        
-    def test_txEnq01_txDeq01_locCluster_queueRoute_durQueue_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", queue_durable_flag=True, queue_route_type_flag=True, enq_txn_size=1, deq_txn_size=1, local_cluster_flag=True)
-        
-    def test_txEnq01_txDeq01_locCluster_queueRoute_durMsg_durQueue_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", msg_durable_flag=True, queue_durable_flag=True, queue_route_type_flag=True, enq_txn_size=1, deq_txn_size=1, local_cluster_flag=True)
-       
-    def test_txEnq01_remCluster_route_durQueue_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", queue_durable_flag=True, enq_txn_size=1, remote_cluster_flag=True)
-        
-    def test_txEnq01_remCluster_route_durMsg_durQueue_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", msg_durable_flag=True, queue_durable_flag=True, enq_txn_size=1, remote_cluster_flag=True)
-        
-    def test_txEnq01_remCluster_queueRoute_durQueue_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", queue_durable_flag=True, queue_route_type_flag=True, enq_txn_size=1, remote_cluster_flag=True)
-        
-    def test_txEnq01_remCluster_queueRoute_durMsg_durQueue_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", msg_durable_flag=True, queue_durable_flag=True, queue_route_type_flag=True, enq_txn_size=1, remote_cluster_flag=True)
-       
-    def test_txEnq10_remCluster_route_durQueue_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", queue_durable_flag=True, enq_txn_size=10, msg_count = 103, remote_cluster_flag=True)
-        
-    def test_txEnq10_remCluster_route_durMsg_durQueue_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", msg_durable_flag=True, queue_durable_flag=True, enq_txn_size=10, msg_count = 103, remote_cluster_flag=True)
-        
-    def test_txEnq10_remCluster_queueRoute_durQueue_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", queue_durable_flag=True, queue_route_type_flag=True, enq_txn_size=10, msg_count = 103, remote_cluster_flag=True)
-        
-    def test_txEnq10_remCluster_queueRoute_durMsg_durQueue_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", msg_durable_flag=True, queue_durable_flag=True, queue_route_type_flag=True, enq_txn_size=10, msg_count = 103, remote_cluster_flag=True)
-        
-    def test_txEnq01_txDeq01_remCluster_route_durQueue_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", queue_durable_flag=True, enq_txn_size=1, deq_txn_size=1, remote_cluster_flag=True)
-        
-    def test_txEnq01_txDeq01_remCluster_route_durMsg_durQueue_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", msg_durable_flag=True, queue_durable_flag=True, enq_txn_size=1, deq_txn_size=1, remote_cluster_flag=True)
-        
-    def test_txEnq01_txDeq01_remCluster_queueRoute_durQueue_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", queue_durable_flag=True, queue_route_type_flag=True, enq_txn_size=1, deq_txn_size=1, remote_cluster_flag=True)
-        
-    def test_txEnq01_txDeq01_remCluster_queueRoute_durMsg_durQueue_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", msg_durable_flag=True, queue_durable_flag=True, queue_route_type_flag=True, enq_txn_size=1, deq_txn_size=1, remote_cluster_flag=True)
-       
-    def test_txEnq01_locCluster_remCluster_route_durQueue_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", queue_durable_flag=True, enq_txn_size=1, local_cluster_flag=True, remote_cluster_flag=True)
-        
-    def test_txEnq01_locCluster_remCluster_route_durMsg_durQueue_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", msg_durable_flag=True, queue_durable_flag=True, enq_txn_size=1, local_cluster_flag=True, remote_cluster_flag=True)
-        
-    def test_txEnq01_locCluster_remCluster_queueRoute_durQueue_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", queue_durable_flag=True, queue_route_type_flag=True, enq_txn_size=1, local_cluster_flag=True, remote_cluster_flag=True)
-        
-    def test_txEnq01_locCluster_remCluster_queueRoute_durMsg_durQueue_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", msg_durable_flag=True, queue_durable_flag=True, queue_route_type_flag=True, enq_txn_size=1, local_cluster_flag=True, remote_cluster_flag=True)
-       
-    def test_txEnq10_locCluster_remCluster_route_durQueue_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", queue_durable_flag=True, enq_txn_size=10, msg_count = 103, local_cluster_flag=True, remote_cluster_flag=True)
-        
-    def test_txEnq10_locCluster_remCluster_route_durMsg_durQueue_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", msg_durable_flag=True, queue_durable_flag=True, enq_txn_size=10, msg_count = 103, local_cluster_flag=True, remote_cluster_flag=True)
-        
-    def test_txEnq10_locCluster_remCluster_queueRoute_durQueue_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", queue_durable_flag=True, queue_route_type_flag=True, enq_txn_size=10, msg_count = 103, local_cluster_flag=True, remote_cluster_flag=True)
-        
-    def test_txEnq10_locCluster_remCluster_queueRoute_durMsg_durQueue_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", msg_durable_flag=True, queue_durable_flag=True, queue_route_type_flag=True, enq_txn_size=10, msg_count = 103, local_cluster_flag=True, remote_cluster_flag=True)
-        
-    def test_txEnq01_txDeq01_locCluster_remCluster_route_durQueue_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", queue_durable_flag=True, enq_txn_size=1, deq_txn_size=1, local_cluster_flag=True, remote_cluster_flag=True)
-        
-    def test_txEnq01_txDeq01_locCluster_remCluster_route_durMsg_durQueue_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", msg_durable_flag=True, queue_durable_flag=True, enq_txn_size=1, deq_txn_size=1, local_cluster_flag=True, remote_cluster_flag=True)
-        
-    def test_txEnq01_txDeq01_locCluster_remCluster_queueRoute_durQueue_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", queue_durable_flag=True, queue_route_type_flag=True, enq_txn_size=1, deq_txn_size=1, local_cluster_flag=True, remote_cluster_flag=True)
-        
-    def test_txEnq01_txDeq01_locCluster_remCluster_queueRoute_durMsg_durQueue_amqDirectExch(self):
-        self._do_test(self._get_name(), exch_name="amq.direct", msg_durable_flag=True, queue_durable_flag=True, queue_route_type_flag=True, enq_txn_size=1, deq_txn_size=1, local_cluster_flag=True, remote_cluster_flag=True)
 
        
     def test_txEnq01_locCluster_route_durQueue_directExch(self):

@@ -402,7 +402,11 @@ void UpdateClient::updateNonExclusiveQueue(const boost::shared_ptr<broker::Queue
 }
 
 void UpdateClient::updateBinding(client::AsyncSession& s, const std::string& queue, const QueueBinding& binding) {
-    s.exchangeBind(queue, binding.exchange, binding.key, binding.args);
+    if (binding.exchange.size())
+        s.exchangeBind(queue, binding.exchange, binding.key, binding.args);
+    //else its the default exchange and there is no need to replicate
+    //the binding, the creation of the queue will have done so
+    //automatically
 }
 
 void UpdateClient::updateOutputTask(const sys::OutputTask* task) {

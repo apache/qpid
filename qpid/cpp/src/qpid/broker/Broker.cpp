@@ -916,6 +916,9 @@ void Broker::bind(const std::string& queueName,
         if (!acl->authorise(userId,acl::ACT_BIND,acl::OBJ_EXCHANGE,exchangeName,&params))
             throw framing::UnauthorizedAccessException(QPID_MSG("ACL denied exchange bind request from " << userId));
     }
+    if (exchangeName.empty()) {
+        throw framing::NotAllowedException(QPID_MSG("Bind not allowed for default exchange"));
+    }
 
     Queue::shared_ptr queue = queues.find(queueName);
     Exchange::shared_ptr exchange = exchanges.get(exchangeName);
@@ -946,13 +949,15 @@ void Broker::unbind(const std::string& queueName,
         if (!acl->authorise(userId,acl::ACT_UNBIND,acl::OBJ_EXCHANGE,exchangeName,&params) )
             throw framing::UnauthorizedAccessException(QPID_MSG("ACL denied exchange unbind request from " << userId));
     }
-
+    if (exchangeName.empty()) {
+        throw framing::NotAllowedException(QPID_MSG("Unbind not allowed for default exchange"));
+    }
     Queue::shared_ptr queue = queues.find(queueName);
     Exchange::shared_ptr exchange = exchanges.get(exchangeName);
     if (!queue) {
-        throw framing::NotFoundException(QPID_MSG("Bind failed. No such queue: " << queueName));
+        throw framing::NotFoundException(QPID_MSG("Unbind failed. No such queue: " << queueName));
     } else if (!exchange) {
-        throw framing::NotFoundException(QPID_MSG("Bind failed. No such exchange: " << exchangeName));
+        throw framing::NotFoundException(QPID_MSG("Unbind failed. No such exchange: " << exchangeName));
     } else {
         if (exchange->unbind(queue, key, 0)) {
             if (exchange->isDurable() && queue->isDurable()) {
