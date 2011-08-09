@@ -82,6 +82,6 @@ org.apache.qpid.test.client.destination.AddressBasedDestinationTest#testBrowseMo
 // QPID-3133: On 0-10, the exception listener is currently not invoked when reconnection fails to occurs. 
 org.apache.qpid.server.failover.FailoverMethodTest#*
 
-// QPID-3092: the Java broker does not yet implement exchange creation arguments
+// QPID-3392: the Java broker does not yet implement exchange creation arguments
 org.apache.qpid.test.client.destination.AddressBasedDestinationTest#testCreateExchangeWithArgs
 org.apache.qpid.test.client.destination.AddressBasedDestinationTest#testSessionCreateTopicWithExchangeArgs
