@@ -693,6 +693,10 @@ void SemanticState::release(DeliveryId first, DeliveryId last, bool setRedeliver
     DeliveryRecords::reverse_iterator start(range.end);
     DeliveryRecords::reverse_iterator end(range.start);
     for_each(start, end, boost::bind(&DeliveryRecord::release, _1, setRedelivered));
+
+    DeliveryRecords::iterator removed =
+        remove_if(range.start, range.end, bind(&DeliveryRecord::isRedundant, _1));
+    unacked.erase(removed, range.end);
 }
 
 void SemanticState::reject(DeliveryId first, DeliveryId last)
