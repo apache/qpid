@@ -43,6 +43,12 @@ public:
     CopyOnWriteArray() {}
     CopyOnWriteArray(const CopyOnWriteArray& c) : array(c.array) {}
 
+    bool empty()
+    {
+        Mutex::ScopedLock l(lock);
+        return array->empty();
+    }
+
     void add(T& t)
     {
         Mutex::ScopedLock l(lock);
