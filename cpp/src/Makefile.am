@@ -789,9 +789,7 @@ libqpidmessaging_la_SOURCES =			\
   qpid/client/amqp0_10/SessionImpl.h		\
   qpid/client/amqp0_10/SessionImpl.cpp		\
   qpid/client/amqp0_10/SenderImpl.h		\
-  qpid/client/amqp0_10/SenderImpl.cpp           \
-  qpid/client/amqp0_10/SimpleUrlParser.h	\
-  qpid/client/amqp0_10/SimpleUrlParser.cpp
+  qpid/client/amqp0_10/SenderImpl.cpp
 
 QPIDMESSAGING_VERSION_INFO  = 2:0:0
 libqpidmessaging_la_LDFLAGS = -version-info $(QPIDMESSAGING_VERSION_INFO)

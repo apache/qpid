@@ -923,8 +923,6 @@ set (qpidmessaging_SOURCES
      qpid/client/amqp0_10/SessionImpl.cpp
      qpid/client/amqp0_10/SenderImpl.h
      qpid/client/amqp0_10/SenderImpl.cpp
-     qpid/client/amqp0_10/SimpleUrlParser.h
-     qpid/client/amqp0_10/SimpleUrlParser.cpp
 )
 add_msvc_version (qpidmessaging library dll)
 
