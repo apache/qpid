@@ -173,7 +173,7 @@ std::auto_ptr<Messages> Fairshare::create(const qpid::framing::FieldTable& setti
 {
     using boost::assign::list_of;
     std::auto_ptr<Messages> result;
-    size_t levels = getSetting(settings, list_of<std::string>("qpid.priorities")("x-qpid-priorities"), 1, 100);
+    size_t levels = getSetting(settings, list_of<std::string>("qpid.priorities")("x-qpid-priorities"), 0, 100);
     if (levels) {
         std::auto_ptr<Fairshare> fairshare =
             getFairshare(settings, levels, list_of<std::string>("qpid.fairshare")("x-qpid-fairshare"));
