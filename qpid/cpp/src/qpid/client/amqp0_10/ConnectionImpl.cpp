@@ -20,7 +20,6 @@
  */
 #include "ConnectionImpl.h"
 #include "SessionImpl.h"
-#include "SimpleUrlParser.h"
 #include "qpid/messaging/exceptions.h"
 #include "qpid/messaging/Session.h"
 #include "qpid/messaging/PrivateImplRef.h"
@@ -273,14 +272,10 @@ bool ConnectionImpl::tryConnect()
     for (std::vector<std::string>::const_iterator i = urls.begin(); i != urls.end(); ++i) {
         try {
             QPID_LOG(info, "Trying to connect to " << *i << "...");
-            //TODO: when url support is more complete can avoid this test here
-            if (i->find("amqp:") == 0) {
-                Url url(*i);
-                connection.open(url, settings);
-            } else {
-                SimpleUrlParser::parse(*i, settings);
-                connection.open(settings);
-            }
+            Url url(*i);
+            if (url.getUser().size()) settings.username = url.getUser();
+            if (url.getPass().size()) settings.password = url.getPass();
+            connection.open(url, settings);
             QPID_LOG(info, "Connected to " << *i);
             mergeUrls(connection.getInitialBrokers(), l);
             return resetSessions(l);
