@@ -132,6 +132,8 @@ void ConnectionImpl::setOption(const std::string& name, const Variant& value)
         settings.protocol = value.asString();
     } else if (name == "ssl-cert-name" || name == "ssl_cert_name") {
         settings.sslCertName = value.asString();
+    } else if (name == "x-reconnect-on-limit-exceeded" || name == "x_reconnect_on_limit_exceeded") {
+        reconnectOnLimitExceeded = value;
     } else {
         throw qpid::messaging::MessagingException(QPID_MSG("Invalid option: " << name << " not recognised"));
     }
