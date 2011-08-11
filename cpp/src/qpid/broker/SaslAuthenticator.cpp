@@ -381,13 +381,17 @@ void CyrusAuthenticator::start(const string& mechanism, const string& response)
     const char *challenge;
     unsigned int challenge_len;
     
-    QPID_LOG(debug, "SASL: Starting authentication with mechanism: " << mechanism);
+    // This should be at same debug level as mech list in getMechanisms().
+    QPID_LOG(info, "SASL: Starting authentication with mechanism: " << mechanism);
     int code = sasl_server_start(sasl_conn,
                                  mechanism.c_str(),
                                  response.size() ? response.c_str() : 0, response.length(),
                                  &challenge, &challenge_len);
     
     processAuthenticationStep(code, challenge, challenge_len);
+    qmf::org::apache::qpid::broker::Connection* cnxMgmt = connection.getMgmtObject();
+    if ( cnxMgmt ) 
+        cnxMgmt->set_saslMechanism(mechanism);
 }
         
 void CyrusAuthenticator::step(const string& response)
@@ -461,6 +465,9 @@ std::auto_ptr<SecurityLayer> CyrusAuthenticator::getSecurityLayer(uint16_t maxFr
     if (ssf) {
         securityLayer = std::auto_ptr<SecurityLayer>(new CyrusSecurityLayer(sasl_conn, maxFrameSize));
     }
+    qmf::org::apache::qpid::broker::Connection* cnxMgmt = connection.getMgmtObject();
+    if ( cnxMgmt ) 
+        cnxMgmt->set_saslSsf(ssf);
     return securityLayer;
 }
 
