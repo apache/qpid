@@ -490,7 +490,7 @@ std::string Subscription::getSubscriptionName(const std::string& base, const std
     if (name.empty()) {
         return (boost::format("%1%_%2%") % base % Uuid(true).str()).str();
     } else {
-        return (boost::format("%1%_%2%") % base % name).str();
+        return name;
     }
 }
 
