@@ -262,6 +262,8 @@
     <property name="remotePid"          type="uint32" access="RO" optional="y" desc="Process ID of remote client"/>
     <property name="remoteParentPid"    type="uint32" access="RO" optional="y" desc="Parent Process ID of remote client"/>
     <property name="shadow"             type="bool"   access="RO" desc="True for shadow connections"/>
+    <property name="saslMechanism"      type="sstr"   access="RO" desc="SASL mechanism"/>
+    <property name="saslSsf"            type="uint16"   access="RO" desc="SASL security strength factor"/>
     <statistic name="closing"          type="bool" desc="This client is closing by management request"/>
     <statistic name="framesFromClient" type="count64"/>
     <statistic name="framesToClient"   type="count64"/>
