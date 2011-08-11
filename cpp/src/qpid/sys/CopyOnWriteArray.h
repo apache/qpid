@@ -46,7 +46,7 @@ public:
     bool empty()
     {
         Mutex::ScopedLock l(lock);
-        return array->empty();
+        return array ? array->empty() : true;
     }
 
     void add(T& t)
