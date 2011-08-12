@@ -68,6 +68,13 @@ std::string SocketAddress::asString(bool) const
     return host + ":" + port;
 }
 
+bool SocketAddress::nextAddress() {
+    bool r = currentAddrInfo->ai_next != 0;
+    if (r)
+        currentAddrInfo = currentAddrInfo->ai_next;
+    return r;
+}
+
 const ::addrinfo& getAddrInfo(const SocketAddress& sa)
 {
     return *sa.addrInfo;

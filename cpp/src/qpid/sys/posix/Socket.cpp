@@ -63,6 +63,20 @@ std::string getName(int fd, bool local)
         throw QPID_POSIX_ERROR(rc);
     return std::string(dispName) + ":" + std::string(servName);
 }
+
+uint16_t getLocalPort(int fd)
+{
+    ::sockaddr_storage name;
+    ::socklen_t namelen = sizeof(name);
+    if (::getsockname(fd, (::sockaddr*)&name, &namelen) < 0)
+        throw QPID_POSIX_ERROR(errno);
+
+    switch (name.ss_family) {
+    case AF_INET: return ntohs(((::sockaddr_in&)name).sin_port);
+    case AF_INET6: return ntohs(((::sockaddr_in6&)name).sin6_port);
+    default:throw Exception(QPID_MSG("Unexpected socket type"));
+    }
+}
 }
 
 Socket::Socket() :
@@ -88,6 +102,11 @@ void Socket::createSocket(const SocketAddress& sa) const
     try {
         if (nonblocking) setNonblocking();
         if (nodelay) setTcpNoDelay();
+        if (getAddrInfo(sa).ai_family == AF_INET6) {
+            int flag = 1;
+            int result = ::setsockopt(socket, IPPROTO_IPV6, IPV6_V6ONLY, (char *)&flag, sizeof(flag));
+            QPID_POSIX_CHECK(result);
+        }
     } catch (std::exception&) {
         ::close(s);
         socket = -1;
@@ -109,7 +128,7 @@ void Socket::setTcpNoDelay() const
     nodelay = true;
     if (socket != -1) {
         int flag = 1;
-        int result = setsockopt(impl->fd, IPPROTO_TCP, TCP_NODELAY, (char *)&flag, sizeof(flag));
+        int result = ::setsockopt(impl->fd, IPPROTO_TCP, TCP_NODELAY, (char *)&flag, sizeof(flag));
         QPID_POSIX_CHECK(result);
     }
 }
@@ -179,19 +198,14 @@ int Socket::listen(const SocketAddress& sa, int backlog) const
 
     const int& socket = impl->fd;
     int yes=1;
-    QPID_POSIX_CHECK(setsockopt(socket,SOL_SOCKET,SO_REUSEADDR,&yes,sizeof(yes)));
+    QPID_POSIX_CHECK(::setsockopt(socket,SOL_SOCKET,SO_REUSEADDR,&yes,sizeof(yes)));
 
     if (::bind(socket, getAddrInfo(sa).ai_addr, getAddrInfo(sa).ai_addrlen) < 0)
         throw Exception(QPID_MSG("Can't bind to port " << sa.asString() << ": " << strError(errno)));
     if (::listen(socket, backlog) < 0)
         throw Exception(QPID_MSG("Can't listen on port " << sa.asString() << ": " << strError(errno)));
 
-    struct sockaddr_in name;
-    socklen_t namelen = sizeof(name);
-    if (::getsockname(socket, (struct sockaddr*)&name, &namelen) < 0)
-        throw QPID_POSIX_ERROR(errno);
-
-    return ntohs(name.sin_port);
+    return getLocalPort(socket);
 }
 
 Socket* Socket::accept() const

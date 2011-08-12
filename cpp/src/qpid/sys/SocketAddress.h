@@ -41,12 +41,15 @@ public:
     QPID_COMMON_EXTERN SocketAddress& operator=(const SocketAddress&);
     QPID_COMMON_EXTERN ~SocketAddress();
 
-    std::string asString(bool numeric=true) const;
+    QPID_COMMON_EXTERN bool nextAddress();
+    QPID_COMMON_EXTERN std::string asString(bool numeric=true) const;
+    QPID_COMMON_EXTERN void setAddrInfoPort(uint16_t port);
 
 private:
     std::string host;
     std::string port;
     mutable ::addrinfo* addrInfo;
+    mutable ::addrinfo* currentAddrInfo;
 };
 
 }}

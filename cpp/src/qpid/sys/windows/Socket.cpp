@@ -211,21 +211,24 @@ int Socket::read(void *buf, size_t count) const
     return received;
 }
 
-int Socket::listen(const std::string&, const std::string& port, int backlog) const
+int Socket::listen(const std::string& host, const std::string& port, int backlog) const
+{
+    SocketAddress sa(host, port);
+    return listen(sa, backlog);
+}
+
+int Socket::listen(const SocketAddress& addr, int backlog) const
 {
     const SOCKET& socket = impl->fd;
     BOOL yes=1;
     QPID_WINSOCK_CHECK(setsockopt(socket, SOL_SOCKET, SO_REUSEADDR, (char *)&yes, sizeof(yes)));
-    struct sockaddr_in name;
-    memset(&name, 0, sizeof(name));
-    name.sin_family = AF_INET;
-    name.sin_port = htons(boost::lexical_cast<uint16_t>(port));
-    name.sin_addr.s_addr = 0;
-    if (::bind(socket, (struct sockaddr*)&name, sizeof(name)) == SOCKET_ERROR)
-        throw Exception(QPID_MSG("Can't bind to port " << port << ": " << strError(WSAGetLastError())));
+
+    if (::bind(socket, getAddrInfo(addr).ai_addr, getAddrInfo(addr).ai_addrlen) == SOCKET_ERROR)
+        throw Exception(QPID_MSG("Can't bind to " << addr.asString() << ": " << strError(WSAGetLastError())));
     if (::listen(socket, backlog) == SOCKET_ERROR)
-        throw Exception(QPID_MSG("Can't listen on port " << port << ": " << strError(WSAGetLastError())));
+        throw Exception(QPID_MSG("Can't listen on " <<addr.asString() << ": " << strError(WSAGetLastError())));
     
+    struct sockaddr_in name;
     socklen_t namelen = sizeof(name);
     QPID_WINSOCK_CHECK(::getsockname(socket, (struct sockaddr*)&name, &namelen));
     return ntohs(name.sin_port);
