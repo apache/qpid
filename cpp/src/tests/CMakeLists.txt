@@ -264,6 +264,14 @@ add_executable (qpid-send qpid-send.cpp Statistics.cpp ${platform_test_additions
 target_link_libraries (qpid-send qpidmessaging)
 remember_location(qpid-send)
 
+add_executable (qpid-ping qpid-ping.cpp ${platform_test_additions})
+target_link_libraries (qpid-ping qpidclient)
+remember_location(qpid-ping)
+
+add_executable (datagen datagen.cpp ${platform_test_additions})
+target_link_libraries (datagen qpidclient)
+remember_location(datagen)
+
 # qpid-perftest and qpid-latency-test are generally useful so install them
 install (TARGETS qpid-perftest qpid-latency-test RUNTIME
          DESTINATION ${QPID_INSTALL_BINDIR})
@@ -288,6 +296,7 @@ if (PYTHON_EXECUTABLE)
 endif (PYTHON_EXECUTABLE)
 add_test (stop_broker ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/stop_broker${test_script_suffix})
 if (PYTHON_EXECUTABLE)
+  add_test (ipv6_test ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/ipv6_test${test_script_suffix})
   add_test (federation_tests ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/run_federation_tests${test_script_suffix})
 if (BUILD_ACL)
   add_test (acl_tests ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/run_acl_tests${test_script_suffix})
