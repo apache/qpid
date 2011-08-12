@@ -39,12 +39,17 @@ except ImportError:
       self.sock.close()
 
 def connect(host, port):
-  sock = socket.socket()
-  sock.connect((host, port))
-  sock.setblocking(1)
-  # XXX: we could use this on read, but we'd have to put write in a
-  # loop as well
-  # sock.settimeout(1)
+  for res in socket.getaddrinfo(host, port, 0, socket.SOCK_STREAM):
+    af, socktype, proto, canonname, sa = res
+    sock = socket.socket(af, socktype, proto)
+    try:
+      sock.connect(sa)
+      break
+    except socket.error, msg:
+      sock.close
+  else:
+    # If we got here then we couldn't connect (yet)
+    raise
   return sock
 
 def listen(host, port, predicate = lambda: True, bound = lambda: None):
