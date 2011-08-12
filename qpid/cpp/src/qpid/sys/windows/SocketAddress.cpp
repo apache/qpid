@@ -40,32 +40,47 @@ SocketAddress::SocketAddress(const std::string& host0, const std::string& port0)
     port(port0),
     addrInfo(0)
 {
-    ::addrinfo hints;
-    ::memset(&hints, 0, sizeof(hints));
-    hints.ai_family = AF_INET; // In order to allow AF_INET6 we'd have to change createTcp() as well
-    hints.ai_socktype = SOCK_STREAM;
+}
 
-    const char* node = 0;
-    if (host.empty()) {
-        hints.ai_flags |= AI_PASSIVE;
-    } else {
-        node = host.c_str();
-    }
-    const char* service = port.empty() ? "0" : port.c_str();
+SocketAddress::SocketAddress(const SocketAddress& sa) :
+    host(sa.host),
+    port(sa.port),
+    addrInfo(0)
+{
+}
 
-    int n = ::getaddrinfo(node, service, &hints, &addrInfo);
-    if (n != 0)
-        throw Exception(QPID_MSG("Cannot resolve " << host << ": " << ::gai_strerror(n)));
+SocketAddress& SocketAddress::operator=(const SocketAddress& sa)
+{
+    SocketAddress temp(sa);
+
+    std::swap(temp, *this);
+    return *this;
 }
 
 SocketAddress::~SocketAddress()
 {
-    ::freeaddrinfo(addrInfo);
+    if (addrInfo) {
+        ::freeaddrinfo(addrInfo);
+    }
 }
 
-std::string SocketAddress::asString(bool) const
+std::string SocketAddress::asString(bool numeric) const
 {
-    return host + ":" + port;
+    if (!numeric)
+        return host + ":" + port;
+    // Canonicalise into numeric id
+    const ::addrinfo& ai = getAddrInfo(*this);
+    char servName[NI_MAXSERV];
+    char dispName[NI_MAXHOST];
+    if (int rc=::getnameinfo(ai.ai_addr, ai.ai_addrlen,
+                            dispName, sizeof(dispName),
+                            servName, sizeof(servName),
+                            NI_NUMERICHOST | NI_NUMERICSERV) != 0)
+        throw qpid::Exception(QPID_MSG(gai_strerror(rc)));
+    std::string s(dispName);
+    s += ":";
+    s += servName;
+    return s;
 }
 
 bool SocketAddress::nextAddress() {
@@ -75,9 +90,41 @@ bool SocketAddress::nextAddress() {
     return r;
 }
 
+void SocketAddress::setAddrInfoPort(uint16_t port) {
+    if (!currentAddrInfo) return;
+
+    ::addrinfo& ai = *currentAddrInfo;
+    switch (ai.ai_family) {
+    case AF_INET: ((::sockaddr_in*)ai.ai_addr)->sin_port = htons(port); return;
+    case AF_INET6:((::sockaddr_in6*)ai.ai_addr)->sin6_port = htons(port); return;
+    default: throw Exception(QPID_MSG("Unexpected socket type"));
+    }
+}
+
 const ::addrinfo& getAddrInfo(const SocketAddress& sa)
 {
-    return *sa.addrInfo;
+    if (!sa.addrInfo) {
+        ::addrinfo hints;
+        ::memset(&hints, 0, sizeof(hints));
+        hints.ai_flags = AI_ADDRCONFIG; // Only use protocols that we have configured interfaces for
+        hints.ai_family = AF_UNSPEC; // Allow both IPv4 and IPv6
+        hints.ai_socktype = SOCK_STREAM;
+
+        const char* node = 0;
+        if (sa.host.empty()) {
+            hints.ai_flags |= AI_PASSIVE;
+        } else {
+            node = sa.host.c_str();
+        }
+        const char* service = sa.port.empty() ? "0" : sa.port.c_str();
+
+        int n = ::getaddrinfo(node, service, &hints, &sa.addrInfo);
+        if (n != 0)
+            throw Exception(QPID_MSG("Cannot resolve " << sa.asString(false) << ": " << ::gai_strerror(n)));
+        sa.currentAddrInfo = sa.addrInfo;
+    }
+
+    return *sa.currentAddrInfo;
 }
 
 }}

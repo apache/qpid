@@ -83,17 +83,17 @@ class AsynchAcceptResult : public AsynchResult {
 public:
     AsynchAcceptResult(qpid::sys::AsynchAcceptor::Callback cb,
                        AsynchAcceptor *acceptor,
-                       SOCKET listener);
+                       const qpid::sys::Socket& listener);
     virtual void success (size_t bytesTransferred);
     virtual void failure (int error);
 
 private:
     virtual void complete(void) {}  // No-op for this class.
 
-    std::auto_ptr<qpid::sys::Socket> newSocket;
     qpid::sys::AsynchAcceptor::Callback callback;
     AsynchAcceptor *acceptor;
     SOCKET listener;
+    std::auto_ptr<qpid::sys::Socket> newSocket;
 
     // AcceptEx needs a place to write the local and remote addresses
     // when accepting the connection. Place those here; get enough for
