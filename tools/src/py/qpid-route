@@ -217,11 +217,11 @@ class RouteManager:
             added = False
             links = self.qmf.getObjects(_class="link")
             for link in links:
-                url = BrokerURL("%s:%d" % (link.host, link.port))
+                url = BrokerURL(host=link.host, port=link.port)
                 if url.name() not in self.brokerList:
                     print "    %s..." % url.name(),
                     try:
-                        b = self.qmf.addBroker("%s:%d" % (link.host, link.port), config._connTimeout)
+                        b = self.qmf.addBroker(url, config._connTimeout)
                         self.brokerList[url.name()] = b
                         added = True
                         print "Ok"
@@ -245,7 +245,7 @@ class RouteManager:
             for bridge in bridges:
                 if bridge.src == ex:
                     link = bridge._linkRef_
-                    fromUrl = "%s:%s" % (link.host, link.port)
+                    fromUrl = BrokerURL(host=link.host, port=link.port)
                     toUrl = bridge.getBroker().getUrl()
                     found = False
                     for pair in pairs:
