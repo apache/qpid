@@ -114,6 +114,20 @@ void Socket::createSocket(const SocketAddress& sa) const
     }
 }
 
+Socket* Socket::createSameTypeSocket() const {
+    int& socket = impl->fd;
+    // Socket currently has no actual socket attached
+    if (socket == -1)
+        return new Socket;
+
+    ::sockaddr_storage sa;
+    ::socklen_t salen = sizeof(sa);
+    QPID_POSIX_CHECK(::getsockname(socket, (::sockaddr*)&sa, &salen));
+    int s = ::socket(sa.ss_family, SOCK_STREAM, 0); // Currently only work with SOCK_STREAM
+    if (s < 0) throw QPID_POSIX_ERROR(errno);
+    return new Socket(new IOHandlePrivate(s));
+}
+
 void Socket::setNonblocking() const {
     int& socket = impl->fd;
     nonblocking = true;

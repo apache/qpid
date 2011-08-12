@@ -47,16 +47,13 @@ namespace {
 
 /*
  * The function pointers for AcceptEx and ConnectEx need to be looked up
- * at run time. Make sure this is done only once.
+ * at run time.
  */
-boost::once_flag lookUpAcceptExOnce = BOOST_ONCE_INIT;
-LPFN_ACCEPTEX fnAcceptEx = 0;
-typedef void (*lookUpFunc)(const qpid::sys::Socket &);
-
-void lookUpAcceptEx() {
-    SOCKET h = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+const LPFN_ACCEPTEX lookUpAcceptEx(const qpid::sys::Socket& s) {
+    SOCKET h = toSocketHandle(s);
     GUID guidAcceptEx = WSAID_ACCEPTEX;
     DWORD dwBytes = 0;
+    LPFN_ACCEPTEX fnAcceptEx;
     WSAIoctl(h,
              SIO_GET_EXTENSION_FUNCTION_POINTER,
              &guidAcceptEx,
@@ -66,9 +63,9 @@ void lookUpAcceptEx() {
              &dwBytes,
              NULL,
              NULL);
-    closesocket(h);
     if (fnAcceptEx == 0)
         throw qpid::Exception(QPID_MSG("Failed to look up AcceptEx"));
+    return fnAcceptEx;
 }
 
 }
@@ -95,18 +92,15 @@ private:
 
     AsynchAcceptor::Callback acceptedCallback;
     const Socket& socket;
+    const LPFN_ACCEPTEX fnAcceptEx;
 };
 
 AsynchAcceptor::AsynchAcceptor(const Socket& s, Callback callback)
   : acceptedCallback(callback),
-    socket(s) {
+    socket(s),
+    fnAcceptEx(lookUpAcceptEx(s)) {
 
     s.setNonblocking();
-#if (BOOST_VERSION >= 103500)   /* boost 1.35 or later reversed the args */
-    boost::call_once(lookUpAcceptExOnce, lookUpAcceptEx);
-#else
-    boost::call_once(lookUpAcceptEx, lookUpAcceptExOnce);
-#endif
 }
 
 AsynchAcceptor::~AsynchAcceptor()
@@ -124,25 +118,26 @@ void AsynchAcceptor::restart(void) {
     DWORD bytesReceived = 0;  // Not used, needed for AcceptEx API
     AsynchAcceptResult *result = new AsynchAcceptResult(acceptedCallback,
                                                         this,
-                                                        toSocketHandle(socket));
+                                                        socket);
     BOOL status;
-    status = ::fnAcceptEx(toSocketHandle(socket),
-                          toSocketHandle(*result->newSocket),
-                          result->addressBuffer,
-                          0,
-                          AsynchAcceptResult::SOCKADDRMAXLEN,
-                          AsynchAcceptResult::SOCKADDRMAXLEN,
-                          &bytesReceived,
-                          result->overlapped());
+    status = fnAcceptEx(toSocketHandle(socket),
+                        toSocketHandle(*result->newSocket),
+                        result->addressBuffer,
+                        0,
+                        AsynchAcceptResult::SOCKADDRMAXLEN,
+                        AsynchAcceptResult::SOCKADDRMAXLEN,
+                        &bytesReceived,
+                        result->overlapped());
     QPID_WINDOWS_CHECK_ASYNC_START(status);
 }
 
 
 AsynchAcceptResult::AsynchAcceptResult(AsynchAcceptor::Callback cb,
                                        AsynchAcceptor *acceptor,
-                                       SOCKET listener)
-  : callback(cb), acceptor(acceptor), listener(listener) {
-    newSocket.reset (new Socket());
+                                       const Socket& listener)
+  : callback(cb), acceptor(acceptor),
+    listener(toSocketHandle(listener)),
+    newSocket(listener.createSameTypeSocket()) {
 }
 
 void AsynchAcceptResult::success(size_t /*bytesTransferred*/) {

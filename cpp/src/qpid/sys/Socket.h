@@ -39,6 +39,9 @@ public:
     /** Create a socket wrapper for descriptor. */
     QPID_COMMON_EXTERN Socket();
 
+    /** Create a new Socket which is the same address family as this one */
+    QPID_COMMON_EXTERN Socket* createSameTypeSocket() const;
+
     /** Set socket non blocking */
     void setNonblocking() const;
 
@@ -92,7 +95,9 @@ private:
     /** Create socket */
     void createSocket(const SocketAddress&) const;
 
+    /** Construct socket with existing handle */
     Socket(IOHandlePrivate*);
+
     mutable std::string localname;
     mutable std::string peername;
     mutable bool nonblocking;

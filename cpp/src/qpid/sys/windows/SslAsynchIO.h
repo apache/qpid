@@ -39,9 +39,6 @@ namespace qpid {
 namespace sys {
 namespace windows {
     
-class Socket;
-class Poller;
-
 /*
  * SSL/Schannel shim between the frame-handling and AsynchIO layers.
  * SslAsynchIO creates a regular AsynchIO object to handle I/O and this class

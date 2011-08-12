@@ -91,7 +91,7 @@ namespace {
 
 std::string getName(SOCKET fd, bool local)
 {
-    sockaddr_in name; // big enough for any socket address    
+    sockaddr_storage name; // big enough for any socket address
     socklen_t namelen = sizeof(name);
     if (local) {
         QPID_WINSOCK_CHECK(::getsockname(fd, (sockaddr*)&name, &namelen));
@@ -108,19 +108,26 @@ std::string getName(SOCKET fd, bool local)
         throw qpid::Exception(QPID_MSG(gai_strerror(rc)));
     return std::string(dispName) + ":" + std::string(servName);
 }
+
+uint16_t getLocalPort(int fd)
+{
+    ::sockaddr_storage name;
+    ::socklen_t namelen = sizeof(name);
+    QPID_WINSOCK_CHECK(::getsockname(fd, (::sockaddr*)&name, &namelen));
+
+    switch (name.ss_family) {
+    case AF_INET: return ntohs(((::sockaddr_in&)name).sin_port);
+    case AF_INET6: return ntohs(((::sockaddr_in6&)name).sin6_port);
+    default:throw Exception(QPID_MSG("Unexpected socket type"));
+    }
+}
 }  // namespace
 
 Socket::Socket() :
     IOHandle(new IOHandlePrivate),
     nonblocking(false),
     nodelay(false)
-{
-    SOCKET& socket = impl->fd;
-    if (socket != INVALID_SOCKET) Socket::close();
-    SOCKET s = ::socket (PF_INET, SOCK_STREAM, 0);
-    if (s == INVALID_SOCKET) throw QPID_WINDOWS_ERROR(WSAGetLastError());
-    socket = s;
-}
+{}
 
 Socket::Socket(IOHandlePrivate* h) :
     IOHandle(h),
@@ -143,11 +150,30 @@ Socket::createSocket(const SocketAddress& sa) const
     try {
         if (nonblocking) setNonblocking();
         if (nodelay) setTcpNoDelay();
+        if (getAddrInfo(sa).ai_family == AF_INET6) {
+            int flag = 1;
+            int result = setsockopt(socket, IPPROTO_IPV6, IPV6_V6ONLY, (char *)&flag, sizeof(flag));
+            QPID_WINSOCK_CHECK(result);
+        }
     } catch (std::exception&) {
         closesocket(s);
         socket = INVALID_SOCKET;
         throw;
     }
+}
+
+Socket* Socket::createSameTypeSocket() const {
+    SOCKET& socket = impl->fd;
+    // Socket currently has no actual socket attached
+    if (socket == INVALID_SOCKET)
+        return new Socket;
+
+    ::sockaddr_storage sa;
+    ::socklen_t salen = sizeof(sa);
+    QPID_WINSOCK_CHECK(::getsockname(socket, (::sockaddr*)&sa, &salen));
+    SOCKET s = ::socket(sa.ss_family, SOCK_STREAM, 0); // Currently only work with SOCK_STREAM
+    if (s == INVALID_SOCKET) throw QPID_WINDOWS_ERROR(WSAGetLastError());
+    return new Socket(new IOHandlePrivate(s));
 }
 
 void Socket::setNonblocking() const {
@@ -166,21 +192,14 @@ Socket::connect(const SocketAddress& addr) const
 {
     peername = addr.asString(false);
 
+    createSocket(addr);
+
     const SOCKET& socket = impl->fd;
-    const addrinfo *addrs = &(getAddrInfo(addr));
-    int error = 0;
+    int err;
     WSASetLastError(0);
-    while (addrs != 0) {
-        if ((::connect(socket, addrs->ai_addr, addrs->ai_addrlen) == 0) ||
-            (WSAGetLastError() == WSAEWOULDBLOCK))
-            break;
-        // Error... save this error code and see if there are other address
-        // to try before throwing the exception.
-        error = WSAGetLastError();
-        addrs = addrs->ai_next;
-    }
-    if (error)
-        throw qpid::Exception(QPID_MSG(strError(error) << ": " << peername));
+    if ((::connect(socket, getAddrInfo(addr).ai_addr, getAddrInfo(addr).ai_addrlen) != 0) &&
+        ((err = ::WSAGetLastError()) != WSAEWOULDBLOCK))
+        throw qpid::Exception(QPID_MSG(strError(err) << ": " << peername));
 }
 
 void
@@ -219,6 +238,8 @@ int Socket::listen(const std::string& host, const std::string& port, int backlog
 
 int Socket::listen(const SocketAddress& addr, int backlog) const
 {
+    createSocket(addr);
+
     const SOCKET& socket = impl->fd;
     BOOL yes=1;
     QPID_WINSOCK_CHECK(setsockopt(socket, SOL_SOCKET, SO_REUSEADDR, (char *)&yes, sizeof(yes)));
@@ -227,11 +248,8 @@ int Socket::listen(const SocketAddress& addr, int backlog) const
         throw Exception(QPID_MSG("Can't bind to " << addr.asString() << ": " << strError(WSAGetLastError())));
     if (::listen(socket, backlog) == SOCKET_ERROR)
         throw Exception(QPID_MSG("Can't listen on " <<addr.asString() << ": " << strError(WSAGetLastError())));
-    
-    struct sockaddr_in name;
-    socklen_t namelen = sizeof(name);
-    QPID_WINSOCK_CHECK(::getsockname(socket, (struct sockaddr*)&name, &namelen));
-    return ntohs(name.sin_port);
+
+    return getLocalPort(socket);
 }
 
 Socket* Socket::accept() const
