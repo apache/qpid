@@ -27,8 +27,6 @@
 #include <string.h>
 #include <netdb.h>
 
-#include <algorithm>
-
 namespace qpid {
 namespace sys {
 
@@ -73,11 +71,29 @@ std::string SocketAddress::asString(bool numeric) const
                             dispName, sizeof(dispName),
                             servName, sizeof(servName),
                             NI_NUMERICHOST | NI_NUMERICSERV) != 0)
-        throw QPID_POSIX_ERROR(rc);
+        throw qpid::Exception(QPID_MSG(gai_strerror(rc)));
     std::string s(dispName);
     s += ":";
     s += servName;
     return s;
+}
+
+bool SocketAddress::nextAddress() {
+    bool r = currentAddrInfo->ai_next != 0;
+    if (r)
+        currentAddrInfo = currentAddrInfo->ai_next;
+    return r;
+}
+
+void SocketAddress::setAddrInfoPort(uint16_t port) {
+    if (!currentAddrInfo) return;
+
+    ::addrinfo& ai = *currentAddrInfo;
+    switch (ai.ai_family) {
+    case AF_INET: ((::sockaddr_in*)ai.ai_addr)->sin_port = htons(port); return;
+    case AF_INET6:((::sockaddr_in6*)ai.ai_addr)->sin6_port = htons(port); return;
+    default: throw Exception(QPID_MSG("Unexpected socket type"));
+    }
 }
 
 const ::addrinfo& getAddrInfo(const SocketAddress& sa)
@@ -85,7 +101,8 @@ const ::addrinfo& getAddrInfo(const SocketAddress& sa)
     if (!sa.addrInfo) {
         ::addrinfo hints;
         ::memset(&hints, 0, sizeof(hints));
-        hints.ai_family = AF_INET; // Change this to support IPv6
+        hints.ai_flags = AI_ADDRCONFIG; // Only use protocols that we have configured interfaces for
+        hints.ai_family = AF_UNSPEC; // Allow both IPv4 and IPv6
         hints.ai_socktype = SOCK_STREAM;
 
         const char* node = 0;
@@ -99,9 +116,10 @@ const ::addrinfo& getAddrInfo(const SocketAddress& sa)
         int n = ::getaddrinfo(node, service, &hints, &sa.addrInfo);
         if (n != 0)
             throw Exception(QPID_MSG("Cannot resolve " << sa.asString(false) << ": " << ::gai_strerror(n)));
+        sa.currentAddrInfo = sa.addrInfo;
     }
 
-    return *sa.addrInfo;
+    return *sa.currentAddrInfo;
 }
 
 }}
