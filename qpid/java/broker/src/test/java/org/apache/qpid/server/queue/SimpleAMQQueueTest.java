@@ -107,7 +107,7 @@ public class SimpleAMQQueueTest extends InternalBrokerBaseCase
         ApplicationRegistry applicationRegistry = (ApplicationRegistry)ApplicationRegistry.getInstance();
 
         PropertiesConfiguration env = new PropertiesConfiguration();
-        _virtualHost = new VirtualHostImpl(new VirtualHostConfiguration(getClass().getName(), env), _store);
+        _virtualHost = new VirtualHostImpl(ApplicationRegistry.getInstance(), new VirtualHostConfiguration(getClass().getName(), env), _store);
         applicationRegistry.getVirtualHostRegistry().registerVirtualHost(_virtualHost);
 
         _queue = (SimpleAMQQueue) AMQQueueFactory.createAMQQueueImpl(_qname, false, _owner, false, false, _virtualHost, _arguments);
