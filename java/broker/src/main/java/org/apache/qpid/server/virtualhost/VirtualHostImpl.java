@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.virtualhost;
 
-import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -178,22 +177,11 @@ public class VirtualHostImpl implements VirtualHost
         }
     }
 
-    public VirtualHostImpl(IApplicationRegistry appRegistry, VirtualHostConfiguration hostConfig) throws Exception
-    {
-        this(appRegistry, hostConfig, null);
-    }
-
-
-    public VirtualHostImpl(VirtualHostConfiguration hostConfig, MessageStore store) throws Exception
-    {
-        this(ApplicationRegistry.getInstance(),hostConfig,store);
-    }
-
-    private VirtualHostImpl(IApplicationRegistry appRegistry, VirtualHostConfiguration hostConfig, MessageStore store) throws Exception
+    public VirtualHostImpl(IApplicationRegistry appRegistry, VirtualHostConfiguration hostConfig, MessageStore store) throws Exception
     {
 		if (hostConfig == null)
 		{
-			throw new IllegalAccessException("HostConfig and MessageStore cannot be null");
+			throw new IllegalArgumentException("HostConfig cannot be null");
 		}
 		
         _appRegistry = appRegistry;
@@ -462,46 +450,57 @@ public class VirtualHostImpl implements VirtualHost
     private void configureQueue(QueueConfiguration queueConfiguration) throws AMQException, ConfigurationException
     {
     	AMQQueue queue = AMQQueueFactory.createAMQQueueImpl(queueConfiguration, this);
+        String queueName = queue.getName();
 
     	if (queue.isDurable())
     	{
     		getDurableConfigurationStore().createQueue(queue);
     	}
 
+        //get the exchange name (returns default exchange name if none was specified)
     	String exchangeName = queueConfiguration.getExchange();
 
-    	Exchange exchange = _exchangeRegistry.getExchange(exchangeName == null ? null : new AMQShortString(exchangeName));
-
-        if (exchange == null)
-        {
-            exchange = _exchangeRegistry.getDefaultExchange();
-        }
-
+        Exchange exchange = _exchangeRegistry.getExchange(exchangeName);
     	if (exchange == null)
     	{
-    		throw new ConfigurationException("Attempt to bind queue to unknown exchange:" + exchangeName);
+            throw new ConfigurationException("Attempt to bind queue '" + queueName + "' to unknown exchange:" + exchangeName);
     	}
 
-        List routingKeys = queueConfiguration.getRoutingKeys();
-        if (routingKeys == null || routingKeys.isEmpty())
-        {
-            routingKeys = Collections.singletonList(queue.getNameShortString());
-        }
+        Exchange defaultExchange = _exchangeRegistry.getDefaultExchange();
+
+        //get routing keys in configuration (returns empty list if none are defined)
+        List<?> routingKeys = queueConfiguration.getRoutingKeys();
 
         for (Object routingKeyNameObj : routingKeys)
         {
-            AMQShortString routingKey = new AMQShortString(String.valueOf(routingKeyNameObj));
-            if (_logger.isInfoEnabled())
+            String routingKey = String.valueOf(routingKeyNameObj);
+
+            if (exchange.equals(defaultExchange) && !queueName.equals(routingKey))
             {
-                _logger.info("Binding queue:" + queue + " with routing key '" + routingKey + "' to exchange:" + this);
+                throw new ConfigurationException("Illegal attempt to bind queue '" + queueName +
+                        "' to the default exchange with a key other than the queue name: " + routingKey);
             }
-            _bindingFactory.addBinding(routingKey.toString(), queue, exchange, null);
+
+            configureBinding(queue, exchange, routingKey);
         }
 
-        if (exchange != _exchangeRegistry.getDefaultExchange())
+        if (!exchange.equals(defaultExchange))
         {
-            _bindingFactory.addBinding(queue.getNameShortString().toString(), queue, exchange, null);
+            //bind the queue to the named exchange using its name
+            configureBinding(queue, exchange, queueName);
         }
+
+        //ensure the queue is bound to the default exchange using its name
+        configureBinding(queue, defaultExchange, queueName);
+    }
+
+    private void configureBinding(AMQQueue queue, Exchange exchange, String routingKey) throws AMQException
+    {
+        if (_logger.isInfoEnabled())
+        {
+            _logger.info("Binding queue:" + queue + " with routing key '" + routingKey + "' to exchange:" + exchange.getName());
+        }
+        _bindingFactory.addBinding(routingKey, queue, exchange, null);
     }
 
     public String getName()
