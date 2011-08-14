@@ -100,14 +100,14 @@ public class AbstractHeadersExchangeTestBase extends InternalBrokerBaseCase
 
         return bind(queueName, queueName, getHeadersMap(bindings));
     }
-    
+
     protected void unbind(TestQueue queue, String... bindings) throws AMQException
     {
         String queueName = queue.getName();
         //TODO - check this
         exchange.onUnbind(new Binding(null,queueName, queue, exchange, getHeadersMap(bindings)));
     }
-    
+
     protected int getCount()
     {
         return count;
@@ -120,7 +120,7 @@ public class AbstractHeadersExchangeTestBase extends InternalBrokerBaseCase
         exchange.onBind(new Binding(null,key, queue, exchange, args));
         return queue;
     }
-    
+
 
     protected int route(Message m) throws AMQException
     {
@@ -175,14 +175,14 @@ public class AbstractHeadersExchangeTestBase extends InternalBrokerBaseCase
             }
 
     }
-    
+
     static Map<String,Object> getHeadersMap(String... entries)
     {
         if(entries == null)
         {
             return null;
         }
-        
+
         Map<String,Object> headers = new HashMap<String,Object>();
 
         for (String s : entries)
@@ -276,7 +276,7 @@ public class AbstractHeadersExchangeTestBase extends InternalBrokerBaseCase
     static ContentHeaderBody getContentHeader(FieldTable headers)
     {
         ContentHeaderBody header = new ContentHeaderBody();
-        header.setProperties(getProperties(headers));
+        header.properties = getProperties(headers);
         return header;
     }
 
@@ -428,9 +428,19 @@ public class AbstractHeadersExchangeTestBase extends InternalBrokerBaseCase
                     //To change body of implemented methods use File | Settings | File Templates.
                 }
 
-                public boolean isRejectedBy(long subscriptionId)
+                public void reject(Subscription subscription)
+                {
+                    //To change body of implemented methods use File | Settings | File Templates.
+                }
+
+                public boolean isRejectedBy(Subscription subscription)
                 {
                     return false;  //To change body of implemented methods use File | Settings | File Templates.
+                }
+
+                public void requeue(Subscription subscription)
+                {
+                    //To change body of implemented methods use File | Settings | File Templates.
                 }
 
                 public void dequeue()
@@ -471,16 +481,6 @@ public class AbstractHeadersExchangeTestBase extends InternalBrokerBaseCase
                 public int compareTo(final QueueEntry o)
                 {
                     return 0;  //To change body of implemented methods use File | Settings | File Templates.
-                }
-
-                public boolean isDequeued()
-                {
-                    return false;
-                }
-
-                public boolean isDispensed()
-                {
-                    return false;
                 }
             };
 
