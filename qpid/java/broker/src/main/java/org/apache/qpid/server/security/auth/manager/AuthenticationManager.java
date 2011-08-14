@@ -23,14 +23,17 @@ package org.apache.qpid.server.security.auth.manager;
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
 
+import org.apache.qpid.amqp_1_0.transport.CallbackHanderSource;
 import org.apache.qpid.common.Closeable;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
 
-public interface AuthenticationManager extends Closeable
+public interface AuthenticationManager extends Closeable, CallbackHanderSource
 {
     String getMechanisms();
 
     SaslServer createSaslServer(String mechanism, String localFQDN) throws SaslException;
 
     AuthenticationResult authenticate(SaslServer server, byte[] response);
+
+
 }

@@ -35,7 +35,7 @@ public class MultiVersionProtocolEngineFactory implements ProtocolEngineFactory
     ;
 
 
-    public enum VERSION { v0_8, v0_9, v0_9_1, v0_10 };
+    public enum VERSION { v0_8, v0_9, v0_9_1, v0_10, v1_0_0 };
 
     private static final Set<VERSION> ALL_VERSIONS = new HashSet<VERSION>(Arrays.asList(VERSION.values()));
 

@@ -45,9 +45,9 @@ public class PlainSaslServerFactory implements SaslServerFactory
 
     public String[] getMechanismNames(Map props)
     {
-        if (props.containsKey(Sasl.POLICY_NOPLAINTEXT) ||
+        if (props != null && (props.containsKey(Sasl.POLICY_NOPLAINTEXT) ||
             props.containsKey(Sasl.POLICY_NODICTIONARY) ||
-            props.containsKey(Sasl.POLICY_NOACTIVE))
+            props.containsKey(Sasl.POLICY_NOACTIVE)))
         {
             // returned array must be non null according to interface documentation
             return new String[0];

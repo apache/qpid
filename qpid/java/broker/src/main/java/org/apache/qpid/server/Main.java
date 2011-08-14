@@ -30,6 +30,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
+import java.util.logging.*;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.HelpFormatter;
@@ -77,6 +78,8 @@ public class Main
     private static final int IPV4_ADDRESS_LENGTH = 4;
 
     private static final char IPV4_LITERAL_SEPARATOR = '.';
+    private java.util.logging.Logger FRAME_LOGGER;
+    private java.util.logging.Logger RAW_LOGGER;
 
     protected static class InitException extends Exception
     {
@@ -249,6 +252,10 @@ public class Main
 
     protected void startup() throws Exception
     {
+
+        FRAME_LOGGER = updateLogger("FRM", "qpid-frame.log");
+        RAW_LOGGER = updateLogger("RAW", "qpid-raw.log");
+
         final String QpidHome = System.getProperty(QPID_HOME);
         final File defaultConfigFile = new File(QpidHome, DEFAULT_CONFIG_FILE);
         final File configFile = new File(commandLine.getOptionValue("c", defaultConfigFile.getPath()));
@@ -447,6 +454,39 @@ public class Main
 
 
 
+    }
+
+    private java.util.logging.Logger updateLogger(final String logType, String logFileName) throws IOException
+    {
+        java.util.logging.Logger logger = java.util.logging.Logger.getLogger(logType);
+        logger.setLevel(Level.FINE);
+        Formatter formatter = new Formatter()
+        {
+            @Override
+            public String format(final LogRecord record)
+            {
+
+                return "[" + record.getMillis() + " "+ logType +"]\t" + record.getMessage() + "\n";
+            }
+        };
+        for(Handler handler : logger.getHandlers())
+        {
+            logger.removeHandler(handler);
+        }
+        Handler handler = new ConsoleHandler();
+
+        handler.setLevel(Level.FINE);
+        handler.setFormatter(formatter);
+
+        logger.addHandler(handler);
+
+
+        handler = new FileHandler(logFileName, true);
+        handler.setLevel(Level.FINE);
+        handler.setFormatter(formatter);
+
+        logger.addHandler(handler);
+        return logger;
     }
 
     private void parsePortArray(Set<Integer> ports, String[] portStr)

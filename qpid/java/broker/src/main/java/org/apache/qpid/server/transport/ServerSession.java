@@ -106,7 +106,7 @@ public class ServerSession extends Session implements PrincipalHolder, SessionCo
             new ConcurrentSkipListMap<Integer, MessageDispositionChangeListener>();
 
     private ServerTransaction _transaction;
-    
+
     private final AtomicLong _txnStarts = new AtomicLong(0);
     private final AtomicLong _txnCommits = new AtomicLong(0);
     private final AtomicLong _txnRejects = new AtomicLong(0);
@@ -138,7 +138,7 @@ public class ServerSession extends Session implements PrincipalHolder, SessionCo
     public ServerSession(Connection connection, SessionDelegate delegate, Binary name, long expiry, ConnectionConfig connConfig)
     {
         super(connection, delegate, name, expiry);
-        _connectionConfig = connConfig;        
+        _connectionConfig = connConfig;
         _transaction = new AutoCommitTransaction(this.getMessageStore());
         _principal = new UserPrincipal(connection.getAuthorizationID());
         _reference = new WeakReference(this);
@@ -331,7 +331,7 @@ public class ServerSession extends Session implements PrincipalHolder, SessionCo
         }
     }
 
-    public void removeDispositionListener(Method method)                               
+    public void removeDispositionListener(Method method)
     {
         _messageDispositionListenerMap.remove(method.getId());
     }
@@ -351,7 +351,7 @@ public class ServerSession extends Session implements PrincipalHolder, SessionCo
         {
             task.doTask(this);
         }
-        
+
         CurrentActor.get().message(getLogSubject(), ChannelMessages.CLOSE());
     }
 
@@ -396,7 +396,7 @@ public class ServerSession extends Session implements PrincipalHolder, SessionCo
 
     public void unregister(Subscription_0_10 sub)
     {
-        _subscriptions.remove(sub.getConsumerTag().toString());
+        _subscriptions.remove(sub.getName());
         try
         {
             sub.getSendLock();
@@ -417,7 +417,7 @@ public class ServerSession extends Session implements PrincipalHolder, SessionCo
             sub.releaseSendLock();
         }
     }
-    
+
     public boolean isTransactional()
     {
         // this does not look great but there should only be one "non-transactional"
@@ -435,7 +435,7 @@ public class ServerSession extends Session implements PrincipalHolder, SessionCo
     public void commit()
     {
         _transaction.commit();
-        
+
         _txnCommits.incrementAndGet();
         _txnStarts.incrementAndGet();
         decrementOutstandingTxnsIfNecessary();
@@ -444,13 +444,13 @@ public class ServerSession extends Session implements PrincipalHolder, SessionCo
     public void rollback()
     {
         _transaction.rollback();
-        
+
         _txnRejects.incrementAndGet();
         _txnStarts.incrementAndGet();
         decrementOutstandingTxnsIfNecessary();
     }
 
-    
+
     private void incrementOutstandingTxnsIfNecessary()
     {
         if(isTransactional())
@@ -460,7 +460,7 @@ public class ServerSession extends Session implements PrincipalHolder, SessionCo
             _txnCount.compareAndSet(0,1);
         }
     }
-    
+
     private void decrementOutstandingTxnsIfNecessary()
     {
         if(isTransactional())
@@ -490,7 +490,7 @@ public class ServerSession extends Session implements PrincipalHolder, SessionCo
     {
         return _txnCount.get();
     }
-    
+
     public Principal getPrincipal()
     {
         return _principal;
@@ -606,7 +606,6 @@ public class ServerSession extends Session implements PrincipalHolder, SessionCo
         return (LogSubject) this;
     }
 
-    @Override
     public String toLogString()
     {
        return "[" +

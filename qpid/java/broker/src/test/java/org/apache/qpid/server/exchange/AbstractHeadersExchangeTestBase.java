@@ -100,14 +100,14 @@ public class AbstractHeadersExchangeTestBase extends InternalBrokerBaseCase
 
         return bind(queueName, queueName, getHeadersMap(bindings));
     }
-    
+
     protected void unbind(TestQueue queue, String... bindings) throws AMQException
     {
         String queueName = queue.getName();
         //TODO - check this
         exchange.onUnbind(new Binding(null,queueName, queue, exchange, getHeadersMap(bindings)));
     }
-    
+
     protected int getCount()
     {
         return count;
@@ -120,7 +120,7 @@ public class AbstractHeadersExchangeTestBase extends InternalBrokerBaseCase
         exchange.onBind(new Binding(null,key, queue, exchange, args));
         return queue;
     }
-    
+
 
     protected int route(Message m) throws AMQException
     {
@@ -175,14 +175,14 @@ public class AbstractHeadersExchangeTestBase extends InternalBrokerBaseCase
             }
 
     }
-    
+
     static Map<String,Object> getHeadersMap(String... entries)
     {
         if(entries == null)
         {
             return null;
         }
-        
+
         Map<String,Object> headers = new HashMap<String,Object>();
 
         for (String s : entries)
@@ -438,7 +438,7 @@ public class AbstractHeadersExchangeTestBase extends InternalBrokerBaseCase
                     return false;  //To change body of implemented methods use File | Settings | File Templates.
                 }
 
-                public void requeue(Subscription subscription) 
+                public void requeue(Subscription subscription)
                 {
                     //To change body of implemented methods use File | Settings | File Templates.
                 }

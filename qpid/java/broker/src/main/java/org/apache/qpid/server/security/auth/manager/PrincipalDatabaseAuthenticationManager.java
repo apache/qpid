@@ -234,4 +234,9 @@ public class PrincipalDatabaseAuthenticationManager implements AuthenticationMan
     {
         Security.removeProvider(PROVIDER_NAME);
     }
+
+    public CallbackHandler getHandler(String mechanism)
+    {
+        return _callbackHandlerMap.get(mechanism);
+    }
 }
