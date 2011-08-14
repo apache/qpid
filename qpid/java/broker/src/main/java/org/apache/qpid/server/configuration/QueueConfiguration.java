@@ -167,6 +167,11 @@ public class QueueConfiguration extends ConfigurationPlugin
         return getStringValue("lvqKey", null);
     }
 
+    public boolean isTopic()
+    {
+        return getBooleanValue("topic");
+    }
+
 
     public static class QueueConfig extends ConfigurationPlugin
     {

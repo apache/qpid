@@ -24,7 +24,7 @@ import java.nio.ByteBuffer;
 
 import org.apache.qpid.server.configuration.SessionConfig;
 
-public interface ServerMessage extends EnqueableMessage, MessageContentSource
+public interface ServerMessage<T extends ServerMessage> extends EnqueableMessage, MessageContentSource
 {
     String getRoutingKey();
 
@@ -38,7 +38,7 @@ public interface ServerMessage extends EnqueableMessage, MessageContentSource
 
     long getExpiration();
 
-    MessageReference newReference();
+    MessageReference<T> newReference();
 
     Long getMessageNumber();
 

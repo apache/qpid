@@ -153,6 +153,28 @@ private static final byte[] AMQP_0_9_1_HEADER =
                          (byte) 10
             };
 
+    private static final byte[] AMQP_1_0_0_HEADER =
+                new byte[] { (byte) 'A',
+                             (byte) 'M',
+                             (byte) 'Q',
+                             (byte) 'P',
+                             (byte) 0,
+                             (byte) 1,
+                             (byte) 0,
+                             (byte) 0
+                };
+
+    private static final byte[] AMQP_SASL_1_0_0_HEADER =
+                new byte[] { (byte) 'A',
+                             (byte) 'M',
+                             (byte) 'Q',
+                             (byte) 'P',
+                             (byte) 3,
+                             (byte) 1,
+                             (byte) 0,
+                             (byte) 0
+                };
+
     private static interface DelegateCreator
     {
         VERSION getVersion();
@@ -246,8 +268,49 @@ private static final byte[] AMQP_0_9_1_HEADER =
         }
     };
 
+    private DelegateCreator creator_1_0_0 = new DelegateCreator()
+    {
+
+        public VERSION getVersion()
+        {
+            return VERSION.v1_0_0;
+        }
+
+
+        public byte[] getHeaderIdentifier()
+        {
+            return AMQP_1_0_0_HEADER;
+        }
+
+        public ProtocolEngine getProtocolEngine()
+        {
+            return new ProtocolEngine_1_0_0(_networkDriver, _appRegistry);
+        }
+    };
+
+    private DelegateCreator creator_1_0_0_SASL = new DelegateCreator()
+    {
+
+        public VERSION getVersion()
+        {
+            return VERSION.v1_0_0;
+        }
+
+
+        public byte[] getHeaderIdentifier()
+        {
+            return AMQP_SASL_1_0_0_HEADER;
+        }
+
+        public ProtocolEngine getProtocolEngine()
+        {
+            return new ProtocolEngine_1_0_0_SASL(_networkDriver, _appRegistry);
+        }
+    };
+
+
     private final DelegateCreator[] _creators =
-            new DelegateCreator[] { creator_0_8, creator_0_9, creator_0_9_1, creator_0_10 };
+            new DelegateCreator[] { creator_0_8, creator_0_9, creator_0_9_1, creator_0_10, creator_1_0_0_SASL, creator_1_0_0};
 
 
     private class ClosedDelegateProtocolEngine implements ProtocolEngine

@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.queue;
 
+import org.apache.qpid.AMQException;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.subscription.Subscription;
@@ -65,7 +66,7 @@ public class SubscriptionTestHelper implements Subscription
 
     public void setNoLocal(boolean noLocal)
     {
-        
+
     }
 
     public void send(QueueEntry msg)
@@ -168,11 +169,6 @@ public class SubscriptionTestHelper implements Subscription
         return false;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
-    public void confirmAutoClose()
-    {
-        //To change body of implemented methods use File | Settings | File Templates.
-    }
-
     public void set(String key, Object value)
     {
         //To change body of implemented methods use File | Settings | File Templates.
@@ -220,11 +216,6 @@ public class SubscriptionTestHelper implements Subscription
     public boolean hasInterest(QueueEntry msg)
     {
         return true;
-    }
-
-    public boolean isAutoClose()
-    {
-        return false;
     }
 
     public Queue<QueueEntry> getPreDeliveryQueue()
@@ -286,9 +277,14 @@ public class SubscriptionTestHelper implements Subscription
     {
         return key.toString();
     }
-    
+
     public boolean isSessionTransactional()
     {
         return false;
+    }
+
+    public void queueEmpty() throws AMQException
+    {
+        //TODO
     }
 }

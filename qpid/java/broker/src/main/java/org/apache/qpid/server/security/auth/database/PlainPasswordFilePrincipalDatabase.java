@@ -24,6 +24,7 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.server.security.auth.sasl.AuthenticationProviderInitialiser;
 import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
 import org.apache.qpid.server.security.auth.sasl.amqplain.AmqPlainInitialiser;
+import org.apache.qpid.server.security.auth.sasl.anonymous.AnonymousInitialiser;
 import org.apache.qpid.server.security.auth.sasl.crammd5.CRAMMD5Initialiser;
 import org.apache.qpid.server.security.auth.sasl.plain.PlainInitialiser;
 
@@ -78,6 +79,13 @@ public class PlainPasswordFilePrincipalDatabase implements PrincipalDatabase
         AmqPlainInitialiser amqplain = new AmqPlainInitialiser();
         amqplain.initialise(this);
 
+
+
+        // Accept AMQPlain incomming and compare it to the file.
+        AnonymousInitialiser anonymous = new AnonymousInitialiser();
+        anonymous.initialise(this);
+
+
         // Accept Plain incomming and compare it to the file.
         PlainInitialiser plain = new PlainInitialiser();
         plain.initialise(this);
@@ -89,6 +97,7 @@ public class PlainPasswordFilePrincipalDatabase implements PrincipalDatabase
         _saslServers.put(amqplain.getMechanismName(), amqplain);
         _saslServers.put(plain.getMechanismName(), plain);
         _saslServers.put(cram.getMechanismName(), cram);
+        _saslServers.put(anonymous.getMechanismName(), anonymous);
     }
 
     public void setPasswordFile(String passwordFile) throws IOException

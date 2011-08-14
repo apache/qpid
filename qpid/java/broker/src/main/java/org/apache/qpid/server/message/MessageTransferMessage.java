@@ -29,7 +29,7 @@ import java.nio.ByteBuffer;
 import java.lang.ref.WeakReference;
 
 
-public class MessageTransferMessage implements InboundMessage, ServerMessage
+public class MessageTransferMessage implements InboundMessage, ServerMessage<MessageTransferMessage>
 {
 
 
@@ -90,7 +90,7 @@ public class MessageTransferMessage implements InboundMessage, ServerMessage
         return getMetaData().getExpiration();
     }
 
-    public MessageReference newReference()
+    public MessageReference<MessageTransferMessage> newReference()
     {
         return new TransferMessageReference(this);
     }
@@ -145,5 +145,5 @@ public class MessageTransferMessage implements InboundMessage, ServerMessage
     {
         return _sessionRef == null ? null : (ServerSession) _sessionRef.get();
     }
-    
+
 }

@@ -26,15 +26,13 @@ import java.nio.ByteBuffer;
 public class StoredMemoryMessage implements StoredMessage
 {
     private final long _messageNumber;
-    private final ByteBuffer _content;
+    private ByteBuffer _content;
     private final StorableMessageMetaData _metaData;
 
     public StoredMemoryMessage(long messageNumber, StorableMessageMetaData metaData)
     {
         _messageNumber = messageNumber;
         _metaData = metaData;
-        _content = ByteBuffer.allocate(metaData.getContentSize());
-
     }
 
     public long getMessageNumber()
@@ -45,6 +43,16 @@ public class StoredMemoryMessage implements StoredMessage
     public void addContent(int offsetInMessage, ByteBuffer src)
     {
         src = src.duplicate();
+        if(_content == null || offsetInMessage + src.remaining() > _content.capacity())
+        {
+            ByteBuffer newContent = ByteBuffer.allocate(offsetInMessage+src.remaining());
+            if(_content != null)
+            {
+                newContent.duplicate().put(_content.array());
+            }
+            _content = newContent;
+        }
+
         ByteBuffer dst = _content.duplicate();
         dst.position(offsetInMessage);
         dst.put(src);

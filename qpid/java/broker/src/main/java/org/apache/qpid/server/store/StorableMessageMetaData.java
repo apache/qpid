@@ -30,7 +30,5 @@ public interface StorableMessageMetaData
 
     int writeToBuffer(int offsetInMetaData, ByteBuffer dest);
 
-    int getContentSize();
-
     boolean isPersistent();
 }

@@ -26,6 +26,7 @@ import org.apache.qpid.server.federation.BrokerLink;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
 import org.apache.qpid.server.configuration.VirtualHostConfig;
 import org.apache.qpid.server.configuration.ConfigStore;
+import org.apache.qpid.server.protocol.v1_0.LinkRegistry;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.exchange.ExchangeFactory;
@@ -99,4 +100,6 @@ public interface VirtualHost extends DurableConfigurationStore.Source, VirtualHo
     ConfigStore getConfigStore();
 
     void removeBrokerConnection(BrokerLink brokerLink);
+
+    LinkRegistry getLinkRegistry(String remoteContainerId);
 }

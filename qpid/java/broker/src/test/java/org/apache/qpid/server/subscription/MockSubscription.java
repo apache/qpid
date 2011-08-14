@@ -129,11 +129,6 @@ public class MockSubscription implements Subscription
         return true;
     }
 
-    public void confirmAutoClose()
-    {
-
-    }
-
     public void set(String key, Object value)
     {
     }
@@ -141,11 +136,6 @@ public class MockSubscription implements Subscription
     public Object get(String key)
     {
         return null;
-    }
-
-    public boolean isAutoClose()
-    {
-        return false;
     }
 
     public boolean isBrowser()
@@ -214,7 +204,7 @@ public class MockSubscription implements Subscription
     }
 
     public void setNoLocal(boolean noLocal)
-    {        
+    {
     }
 
     public void setStateListener(StateListener listener)
@@ -240,5 +230,10 @@ public class MockSubscription implements Subscription
     public boolean isSessionTransactional()
     {
         return false;
+    }
+
+    public void queueEmpty() throws AMQException
+    {
+        //TODO
     }
 }

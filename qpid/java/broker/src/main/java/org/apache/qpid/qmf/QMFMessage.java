@@ -28,7 +28,7 @@ import org.apache.qpid.transport.codec.BBEncoder;
 import java.nio.ByteBuffer;
 import java.util.Set;
 
-public class QMFMessage implements ServerMessage, InboundMessage, AMQMessageHeader
+public class QMFMessage implements ServerMessage<QMFMessage>, InboundMessage, AMQMessageHeader
 {
 
     private ByteBuffer _content;
@@ -154,7 +154,7 @@ public class QMFMessage implements ServerMessage, InboundMessage, AMQMessageHead
         return false;
     }
 
-    public MessageReference newReference()
+    public MessageReference<QMFMessage> newReference()
     {
         return new QMFMessageReference(this);
     }

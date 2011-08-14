@@ -341,7 +341,7 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
     {
         return getQueue().getConfigStore();
     }
-    
+
     public Long getDelivered()
     {
         return _deliveredCount.get();
@@ -777,9 +777,19 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
     {
         return _channel.isTransactional();
     }
-    
+
     public long getCreateTime()
     {
         return _createTime;
+    }
+
+    public void queueEmpty() throws AMQException
+    {
+        if (isAutoClose())
+        {
+            _queue.unregisterSubscription(this);
+
+            confirmAutoClose();
+        }
     }
 }

@@ -37,7 +37,7 @@ import java.nio.ByteBuffer;
 /**
  * A deliverable message.
  */
-public class AMQMessage implements ServerMessage
+public class AMQMessage implements ServerMessage<AMQMessage>
 {
     /** Used for debugging purposes. */
     private static final Logger _log = Logger.getLogger(AMQMessage.class);
@@ -73,7 +73,7 @@ public class AMQMessage implements ServerMessage
     {
         this(handle, null);
     }
-    
+
     public AMQMessage(StoredMessage<MessageMetaData> handle, WeakReference<AMQChannel> channelRef)
     {
         _handle = handle;
@@ -85,7 +85,7 @@ public class AMQMessage implements ServerMessage
         {
             _flags |= IMMEDIATE;
         }
-        
+
         _channelRef = channelRef;
     }
 
@@ -294,7 +294,7 @@ public class AMQMessage implements ServerMessage
         return _expiration;
     }
 
-    public MessageReference newReference()
+    public AMQMessageReference newReference()
     {
         return new AMQMessageReference(this);
     }

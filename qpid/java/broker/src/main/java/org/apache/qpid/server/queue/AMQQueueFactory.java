@@ -245,6 +245,15 @@ public class AMQQueueFactory
             }
         }
 
+        if(config.isTopic())
+        {
+            if(arguments == null)
+            {
+                arguments = new HashMap<String,Object>();
+            }
+            arguments.put("topic", Boolean.TRUE);
+        }
+
         AMQQueue q = createAMQQueueImpl(queueName, durable, owner, autodelete, exclusive, host, arguments);
         q.configure(config);
         return q;

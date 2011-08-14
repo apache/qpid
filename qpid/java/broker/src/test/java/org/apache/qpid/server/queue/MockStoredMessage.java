@@ -34,7 +34,7 @@ public class MockStoredMessage implements StoredMessage<MessageMetaData>
 {
     private long _messageId;
     private MessageMetaData _metaData;
-    private final ByteBuffer _content;
+    private ByteBuffer _content;
 
 
     public MockStoredMessage(long messageId)
@@ -46,8 +46,6 @@ public class MockStoredMessage implements StoredMessage<MessageMetaData>
     {
         _messageId = messageId;
         _metaData = new MessageMetaData(info, chb, 0);
-        _content = ByteBuffer.allocate(_metaData.getContentSize());
-
     }
 
     public MessageMetaData getMetaData()
@@ -63,6 +61,16 @@ public class MockStoredMessage implements StoredMessage<MessageMetaData>
     public void addContent(int offsetInMessage, ByteBuffer src)
     {
         src = src.duplicate();
+        if(_content == null || offsetInMessage + src.remaining() > _content.capacity())
+        {
+            ByteBuffer newContent = ByteBuffer.allocate(offsetInMessage+src.remaining());
+            if(_content != null)
+            {
+                newContent.duplicate().put(_content.array());
+            }
+            _content = newContent;
+        }
+
         ByteBuffer dst = _content.duplicate();
         dst.position(offsetInMessage);
         dst.put(src);

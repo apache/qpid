@@ -102,6 +102,7 @@ client.libs=${geronimo-jms}
 tools.libs=${commons-configuration.libs} ${log4j}
 broker.libs=${commons-cli} ${commons-logging} ${log4j} ${slf4j-log4j} \
     ${xalan} ${felix.libs} ${derby-db} ${commons-configuration.libs}
+amqp-1-0-client.libs=${geronimo-jms} ${commons-cli}
 
 broker-plugins.libs=${felix.libs} ${log4j} ${commons-configuration.libs} 
 management-client.libs=${jsp.libs} ${log4j} ${slf4j-log4j} ${slf4j-api} \
