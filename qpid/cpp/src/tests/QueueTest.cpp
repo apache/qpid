@@ -81,14 +81,15 @@ public:
     Message& getMessage() { return *(msg.get()); }
 };
 
-intrusive_ptr<Message> create_message(std::string exchange, std::string routingKey, uint64_t ttl = 0) {
+intrusive_ptr<Message> create_message(std::string exchange, std::string routingKey) {
     intrusive_ptr<Message> msg(new Message());
     AMQFrame method((MessageTransferBody(ProtocolVersion(), exchange, 0, 0)));
     AMQFrame header((AMQHeaderBody()));
     msg->getFrames().append(method);
     msg->getFrames().append(header);
     msg->getFrames().getHeaders()->get<DeliveryProperties>(true)->setRoutingKey(routingKey);
-    if (ttl) msg->getFrames().getHeaders()->get<DeliveryProperties>(true)->setTtl(ttl);
+    boost::shared_ptr<AsyncCompletion>dc(new DummyCompletion());
+    msg->setIngressCompletion(dc);
     return msg;
 }
 
@@ -304,11 +305,11 @@ QPID_AUTO_TEST_CASE(testSeek){
 
     QueuedMessage qm;
     queue->dispatch(consumer);
-
+    
     BOOST_CHECK_EQUAL(msg3.get(), consumer->last.get());
     queue->dispatch(consumer);
     queue->dispatch(consumer); // make sure over-run is safe
-
+ 
 }
 
 QPID_AUTO_TEST_CASE(testSearch){
@@ -326,15 +327,15 @@ QPID_AUTO_TEST_CASE(testSearch){
 
     SequenceNumber seq(2);
     QueuedMessage qm = queue->find(seq);
-
+    
     BOOST_CHECK_EQUAL(seq.getValue(), qm.position.getValue());
-
+    
     queue->acquire(qm);
     BOOST_CHECK_EQUAL(queue->getMessageCount(), 2u);
     SequenceNumber seq1(3);
     QueuedMessage qm1 = queue->find(seq1);
     BOOST_CHECK_EQUAL(seq1.getValue(), qm1.position.getValue());
-
+    
 }
 const std::string nullxid = "";
 
@@ -438,10 +439,10 @@ QPID_AUTO_TEST_CASE(testLVQOrdering){
     BOOST_CHECK_EQUAL(key, "qpid.LVQ_key");
 
 
-	msg1->insertCustomProperty(key,"a");
-	msg2->insertCustomProperty(key,"b");
-	msg3->insertCustomProperty(key,"c");
-	msg4->insertCustomProperty(key,"a");
+	msg1->getProperties<MessageProperties>()->getApplicationHeaders().setString(key,"a");
+	msg2->getProperties<MessageProperties>()->getApplicationHeaders().setString(key,"b");
+	msg3->getProperties<MessageProperties>()->getApplicationHeaders().setString(key,"c");
+	msg4->getProperties<MessageProperties>()->getApplicationHeaders().setString(key,"a");
 
 	//enqueue 4 message
     queue->deliver(msg1);
@@ -463,9 +464,9 @@ QPID_AUTO_TEST_CASE(testLVQOrdering){
     intrusive_ptr<Message> msg5 = create_message("e", "A");
     intrusive_ptr<Message> msg6 = create_message("e", "B");
     intrusive_ptr<Message> msg7 = create_message("e", "C");
-	msg5->insertCustomProperty(key,"a");
-	msg6->insertCustomProperty(key,"b");
-	msg7->insertCustomProperty(key,"c");
+	msg5->getProperties<MessageProperties>()->getApplicationHeaders().setString(key,"a");
+	msg6->getProperties<MessageProperties>()->getApplicationHeaders().setString(key,"b");
+	msg7->getProperties<MessageProperties>()->getApplicationHeaders().setString(key,"c");
     queue->deliver(msg5);
     queue->deliver(msg6);
     queue->deliver(msg7);
@@ -500,7 +501,7 @@ QPID_AUTO_TEST_CASE(testLVQEmptyKey){
     BOOST_CHECK_EQUAL(key, "qpid.LVQ_key");
 
 
-    msg1->insertCustomProperty(key,"a");
+    msg1->getProperties<MessageProperties>()->getApplicationHeaders().setString(key,"a");
     queue->deliver(msg1);
     queue->deliver(msg2);
     BOOST_CHECK_EQUAL(queue->getMessageCount(), 2u);
@@ -532,12 +533,12 @@ QPID_AUTO_TEST_CASE(testLVQAcquire){
     BOOST_CHECK_EQUAL(key, "qpid.LVQ_key");
 
 
-    msg1->insertCustomProperty(key,"a");
-    msg2->insertCustomProperty(key,"b");
-    msg3->insertCustomProperty(key,"c");
-    msg4->insertCustomProperty(key,"a");
-    msg5->insertCustomProperty(key,"b");
-    msg6->insertCustomProperty(key,"c");
+    msg1->getProperties<MessageProperties>()->getApplicationHeaders().setString(key,"a");
+    msg2->getProperties<MessageProperties>()->getApplicationHeaders().setString(key,"b");
+    msg3->getProperties<MessageProperties>()->getApplicationHeaders().setString(key,"c");
+    msg4->getProperties<MessageProperties>()->getApplicationHeaders().setString(key,"a");
+    msg5->getProperties<MessageProperties>()->getApplicationHeaders().setString(key,"b");
+    msg6->getProperties<MessageProperties>()->getApplicationHeaders().setString(key,"c");
 
     //enqueue 4 message
     queue->deliver(msg1);
@@ -601,8 +602,8 @@ QPID_AUTO_TEST_CASE(testLVQMultiQueue){
     args.getLVQKey(key);
     BOOST_CHECK_EQUAL(key, "qpid.LVQ_key");
 
-    msg1->insertCustomProperty(key,"a");
-    msg2->insertCustomProperty(key,"a");
+    msg1->getProperties<MessageProperties>()->getApplicationHeaders().setString(key,"a");
+    msg2->getProperties<MessageProperties>()->getApplicationHeaders().setString(key,"a");
 
     queue1->deliver(msg1);
     queue2->deliver(msg1);
@@ -636,7 +637,7 @@ QPID_AUTO_TEST_CASE(testLVQRecover){
 
     Queue::shared_ptr queue1(new Queue("my-queue", true, &testStore));
     intrusive_ptr<Message> received;
-    queue1->create(args);
+    queue1->configure(args);
 
     intrusive_ptr<Message> msg1 = create_message("e", "A");
     intrusive_ptr<Message> msg2 = create_message("e", "A");
@@ -645,8 +646,8 @@ QPID_AUTO_TEST_CASE(testLVQRecover){
     args.getLVQKey(key);
     BOOST_CHECK_EQUAL(key, "qpid.LVQ_key");
 
-    msg1->insertCustomProperty(key,"a");
-    msg2->insertCustomProperty(key,"a");
+    msg1->getProperties<MessageProperties>()->getApplicationHeaders().setString(key,"a");
+    msg2->getProperties<MessageProperties>()->getApplicationHeaders().setString(key,"a");
 	// 3
     queue1->deliver(msg1);
     // 4
@@ -666,7 +667,12 @@ QPID_AUTO_TEST_CASE(testLVQRecover){
 void addMessagesToQueue(uint count, Queue& queue, uint oddTtl = 200, uint evenTtl = 0)
 {
     for (uint i = 0; i < count; i++) {
-        intrusive_ptr<Message> m = create_message("exchange", "key", i % 2 ? oddTtl : evenTtl);
+        intrusive_ptr<Message> m = create_message("exchange", "key");
+        if (i % 2) {
+            if (oddTtl) m->getProperties<DeliveryProperties>()->setTtl(oddTtl);
+        } else {
+            if (evenTtl) m->getProperties<DeliveryProperties>()->setTtl(evenTtl);
+        }
         m->setTimestamp(new broker::ExpiryPolicy);
         queue.deliver(m);
     }
@@ -677,7 +683,7 @@ QPID_AUTO_TEST_CASE(testPurgeExpired) {
     addMessagesToQueue(10, queue);
     BOOST_CHECK_EQUAL(queue.getMessageCount(), 10u);
     ::usleep(300*1000);
-    queue.purgeExpired(0);
+    queue.purgeExpired();
     BOOST_CHECK_EQUAL(queue.getMessageCount(), 5u);
 }
 
@@ -688,7 +694,7 @@ QPID_AUTO_TEST_CASE(testQueueCleaner) {
     addMessagesToQueue(10, *queue, 200, 400);
     BOOST_CHECK_EQUAL(queue->getMessageCount(), 10u);
 
-    QueueCleaner cleaner(queues, &timer);
+    QueueCleaner cleaner(queues, timer);
     cleaner.start(100 * qpid::sys::TIME_MSEC);
     ::usleep(300*1000);
     BOOST_CHECK_EQUAL(queue->getMessageCount(), 5u);
@@ -703,9 +709,9 @@ QPID_AUTO_TEST_CASE(testMultiQueueLastNode){
     args.setPersistLastNode();
 
     Queue::shared_ptr queue1(new Queue("queue1", true, &testStore ));
-    queue1->create(args);
+    queue1->configure(args);
     Queue::shared_ptr queue2(new Queue("queue2", true, &testStore ));
-    queue2->create(args);
+    queue2->configure(args);
 
     intrusive_ptr<Message> msg1 = create_message("e", "A");
 
@@ -791,7 +797,7 @@ not requeued to the store.
 
     Queue::shared_ptr queue1(new Queue("my-queue", true, &testStore));
     intrusive_ptr<Message> received;
-    queue1->create(args);
+    queue1->configure(args);
 
     // check requeue 1
     intrusive_ptr<Message> msg1 = create_message("e", "C");
@@ -871,40 +877,28 @@ QPID_AUTO_TEST_CASE(testFlowToDiskBlocking){
 
     intrusive_ptr<Message> msg02 = mkMsg(testStore, std::string(5, 'X'));  // transient w/ content
     DeliverableMessage dmsg02(msg02);
-    {
-        ScopedSuppressLogging sl; // suppress expected error messages.
-        BOOST_CHECK_THROW(sbtFanout1.route(dmsg02, "", 0), ResourceLimitExceededException);
-    }
+    BOOST_CHECK_THROW(sbtFanout1.route(dmsg02, "", 0), ResourceLimitExceededException);
     msg02->tryReleaseContent();
     BOOST_CHECK_EQUAL(msg02->isContentReleased(), false);
     BOOST_CHECK_EQUAL(1u, tq1->getMessageCount());
 
     intrusive_ptr<Message> msg03 = mkMsg(testStore, std::string(5, 'X'), true);  // durable w/ content
     DeliverableMessage dmsg03(msg03);
-    {
-        ScopedSuppressLogging sl; // suppress expected error messages.
-        BOOST_CHECK_THROW(sbtFanout1.route(dmsg03, "", 0), ResourceLimitExceededException);
-    }
+    BOOST_CHECK_THROW(sbtFanout1.route(dmsg03, "", 0), ResourceLimitExceededException);
     msg03->tryReleaseContent();
     BOOST_CHECK_EQUAL(msg03->isContentReleased(), false);
     BOOST_CHECK_EQUAL(1u, tq1->getMessageCount());
 
     intrusive_ptr<Message> msg04 = mkMsg(testStore); // transient no content
     DeliverableMessage dmsg04(msg04);
-    {
-        ScopedSuppressLogging sl; // suppress expected error messages.
-        BOOST_CHECK_THROW(sbtFanout1.route(dmsg04, "", 0), ResourceLimitExceededException);
-    }
+    BOOST_CHECK_THROW(sbtFanout1.route(dmsg04, "", 0), ResourceLimitExceededException);
     msg04->tryReleaseContent();
     BOOST_CHECK_EQUAL(msg04->isContentReleased(), false);
     BOOST_CHECK_EQUAL(1u, tq1->getMessageCount());
 
     intrusive_ptr<Message> msg05 = mkMsg(testStore, "", true); // durable no content
     DeliverableMessage dmsg05(msg05);
-    {
-        ScopedSuppressLogging sl; // suppress expected error messages.
-        BOOST_CHECK_THROW(sbtFanout1.route(dmsg05, "", 0), ResourceLimitExceededException);
-    }
+    BOOST_CHECK_THROW(sbtFanout1.route(dmsg05, "", 0), ResourceLimitExceededException);
     msg05->tryReleaseContent();
     BOOST_CHECK_EQUAL(msg05->isContentReleased(), false);
     BOOST_CHECK_EQUAL(1u, tq1->getMessageCount());

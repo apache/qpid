@@ -72,7 +72,6 @@ namespace qmf {
         void open();
         void close();
         bool nextEvent(AgentEvent& e, Duration t);
-        int pendingEvents() const;
 
         void registerSchema(Schema& s);
         DataAddr addData(Data& d, const string& n, bool persist);
@@ -162,7 +161,6 @@ const string& AgentSession::getName() const { return impl->getName(); }
 void AgentSession::open() { impl->open(); }
 void AgentSession::close() { impl->close(); }
 bool AgentSession::nextEvent(AgentEvent& e, Duration t) { return impl->nextEvent(e, t); }
-int AgentSession::pendingEvents() const { return impl->pendingEvents(); }
 void AgentSession::registerSchema(Schema& s) { impl->registerSchema(s); }
 DataAddr AgentSession::addData(Data& d, const string& n, bool p) { return impl->addData(d, n, p); }
 void AgentSession::delData(const DataAddr& a) { impl->delData(a); }
@@ -320,7 +318,7 @@ bool AgentSessionImpl::nextEvent(AgentEvent& event, Duration timeout)
     uint64_t milliseconds = timeout.getMilliseconds();
     qpid::sys::Mutex::ScopedLock l(lock);
 
-    if (eventQueue.empty() && milliseconds > 0)
+    if (eventQueue.empty())
         cond.wait(lock, qpid::sys::AbsTime(qpid::sys::now(),
                                            qpid::sys::Duration(milliseconds * qpid::sys::TIME_MSEC)));
 
@@ -331,13 +329,6 @@ bool AgentSessionImpl::nextEvent(AgentEvent& event, Duration timeout)
     }
 
     return false;
-}
-
-
-int AgentSessionImpl::pendingEvents() const
-{
-    qpid::sys::Mutex::ScopedLock l(lock);
-    return eventQueue.size();
 }
 
 

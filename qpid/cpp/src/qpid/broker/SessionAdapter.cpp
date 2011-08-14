@@ -114,7 +114,7 @@ void SessionAdapter::ExchangeHandlerImpl::declare(const string& exchange, const 
                                                                  "existing"));
             }
         }catch(UnknownExchangeTypeException& /*e*/){
-            throw NotFoundException(QPID_MSG("Exchange type not implemented: " << type));
+            throw CommandInvalidException(QPID_MSG("Exchange type not implemented: " << type));
         }
     }
 }
@@ -353,12 +353,12 @@ void SessionAdapter::QueueHandlerImpl::checkDelete(Queue::shared_ptr queue, bool
     } else if(ifUnused && queue->getConsumerCount() > 0) {
         throw PreconditionFailedException(QPID_MSG("Cannot delete queue "
                                                    << queue->getName() << "; queue in use"));
-    } else if (queue->isExclusiveOwner(&session)) {
+    } else if (queue->isExclusiveOwner(&getConnection())) {
         //remove the queue from the list of exclusive queues if necessary
-        QueueVector::iterator i = std::find(exclusiveQueues.begin(),
-                                            exclusiveQueues.end(),
+        QueueVector::iterator i = std::find(getConnection().exclusiveQueues.begin(),
+                                            getConnection().exclusiveQueues.end(),
                                             queue);
-        if (i < exclusiveQueues.end()) exclusiveQueues.erase(i);
+        if (i < getConnection().exclusiveQueues.end()) getConnection().exclusiveQueues.erase(i);
     }    
 }
         
@@ -431,9 +431,7 @@ SessionAdapter::MessageHandlerImpl::subscribe(const string& queueName,
 void
 SessionAdapter::MessageHandlerImpl::cancel(const string& destination )
 {
-    if (!state.cancel(destination)) {
-        throw NotFoundException(QPID_MSG("No such subscription: " << destination));
-    }
+    state.cancel(destination);
 
     ManagementAgent* agent = getBroker().getManagementAgent();
     if (agent)

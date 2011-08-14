@@ -34,7 +34,7 @@ namespace client {
 class SessionImpl;
 
 ///@internal
-class QPID_CLIENT_CLASS_EXTERN FutureResult : public FutureCompletion
+class FutureResult : public FutureCompletion
 {
     std::string result;
 public:

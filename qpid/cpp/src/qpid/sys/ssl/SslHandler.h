@@ -35,7 +35,7 @@ namespace sys {
 namespace ssl {
 
 class SslIO;
-struct SslIOBufferBase;
+class SslIOBufferBase;
 class SslSocket;
 
 class SslHandler : public OutputControl {

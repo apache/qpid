@@ -90,7 +90,14 @@ void TxPublish::deliverTo(const boost::shared_ptr<Queue>& queue){
 
 void TxPublish::prepare(TransactionContext* ctxt, const boost::shared_ptr<Queue> queue)
 {
-    queue->enqueue(ctxt, msg);
+    if (!queue->enqueue(ctxt, msg)){
+        /**
+         * if not store then mark message for ack and deleivery once
+         * commit happens, as async IO will never set it when no store
+         * exists
+         */
+	msg->enqueueComplete();
+    }
 }
 
 TxPublish::Commit::Commit(intrusive_ptr<Message>& _msg) : msg(_msg){}

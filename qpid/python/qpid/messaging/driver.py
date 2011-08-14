@@ -66,7 +66,7 @@ class Attachment:
 
 # XXX
 
-DURABLE_DEFAULT=False
+DURABLE_DEFAULT=True
 
 # XXX
 
@@ -526,7 +526,7 @@ class Driver:
       rawlog.debug("OPEN[%s]: %s:%s", self.log_id, host, port)
       trans = transports.TRANSPORTS.get(self.connection.transport)
       if trans:
-        self._transport = trans(self.connection, host, port)
+        self._transport = trans(host, port)
       else:
         raise ConnectError("no such transport: %s" % self.connection.transport)
       if self._retrying and self._reconnect_log:
@@ -828,9 +828,8 @@ class Engine:
     self._closing = True
 
   def attach(self, ssn):
-    if ssn.closed: return
     sst = self._attachments.get(ssn)
-    if sst is None:
+    if sst is None and not ssn.closed:
       for i in xrange(0, self.channel_max):
         if not self._sessions.has_key(i):
           ch = i
@@ -931,7 +930,6 @@ class Engine:
 
   def resolve_declare(self, sst, lnk, dir, action):
     declare = lnk.options.get("create") in ("always", dir)
-    assrt = lnk.options.get("assert") in ("always", dir)
     def do_resolved(type, subtype):
       err = None
       if type is None:
@@ -940,12 +938,7 @@ class Engine:
         else:
           err = NotFound(text="no such queue: %s" % lnk.name)
       else:
-        if assrt:
-          expected = lnk.options.get("node", {}).get("type")
-          if expected and type != expected:
-            err = AssertionFailed(text="expected %s, got %s" % (expected, type))
-        if err is None:
-          action(type, subtype)
+        action(type, subtype)
 
       if err:
         tgt = lnk.target

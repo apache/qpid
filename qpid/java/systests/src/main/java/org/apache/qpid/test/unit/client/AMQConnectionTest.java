@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.test.unit.client;
 
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.InputStreamReader;
 import java.io.LineNumberReader;
@@ -36,9 +37,11 @@ import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
 import javax.jms.QueueSession;
 import javax.jms.Session;
+import javax.jms.TextMessage;
 import javax.jms.TopicSession;
 
 import org.apache.qpid.client.AMQConnection;
+import org.apache.qpid.client.AMQConnectionDelegate_0_10;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.AMQTopic;
@@ -228,8 +231,7 @@ public class AMQConnectionTest extends QpidBrokerTestCase
             }
             
             MessageConsumer consumerB = null;
-            // 0-8, 0-9, 0-9-1 prefetch is per session, not consumer.
-            if (!isBroker010())
+            if (isBroker08())
             {
                 Session consSessB = _connection.createSession(true, Session.AUTO_ACKNOWLEDGE);
                 consumerB = consSessB.createConsumer(_queue);

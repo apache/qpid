@@ -195,10 +195,4 @@ public class TestAMQSession extends AMQSession<BasicMessageConsumer_0_8, BasicMe
     {
         return false;
     }
-
-    @Override
-    public AMQException getLastException()
-    {
-        return null;
-    }
 }

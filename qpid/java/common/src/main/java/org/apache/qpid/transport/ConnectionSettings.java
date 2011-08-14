@@ -30,8 +30,6 @@ import java.util.Map;
  */
 public class ConnectionSettings
 {
-    public static final String WILDCARD_ADDRESS = "*";
-
     String protocol = "tcp";
     String host = "localhost";
     String vhost;

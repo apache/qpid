@@ -47,11 +47,10 @@ public class AnonymousSaslServerFactory implements SaslServerFactory
 
     public String[] getMechanismNames(Map props)
     {
-        if (props != null &&
-            (props.containsKey(Sasl.POLICY_NOPLAINTEXT) ||
-             props.containsKey(Sasl.POLICY_NODICTIONARY) ||
-             props.containsKey(Sasl.POLICY_NOACTIVE) ||
-             props.containsKey(Sasl.POLICY_NOANONYMOUS)))
+        if (props.containsKey(Sasl.POLICY_NOPLAINTEXT) ||
+            props.containsKey(Sasl.POLICY_NODICTIONARY) ||
+            props.containsKey(Sasl.POLICY_NOACTIVE) ||
+            props.containsKey(Sasl.POLICY_NOANONYMOUS))
         {
             // returned array must be non null according to interface documentation
             return new String[0];

@@ -243,7 +243,7 @@ public class InternalBrokerBaseCase extends QpidTestCase
             //Make Message Persistent
             properties.setDeliveryMode((byte) 2);
 
-            _headerBody.setProperties(properties);
+            _headerBody.properties = properties;
 
             channel.publishContentHeader(_headerBody);
         }

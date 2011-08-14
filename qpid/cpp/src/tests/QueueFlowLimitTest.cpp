@@ -75,10 +75,8 @@ public:
 
 QueuedMessage createMessage(uint32_t size)
 {
-    static uint32_t seqNum;
     QueuedMessage msg;
     msg.payload = MessageUtils::createMessage();
-    msg.position = ++seqNum;
     MessageUtils::addContent(msg.payload, std::string (size, 'x'));
     return msg;
 }

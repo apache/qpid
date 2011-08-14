@@ -33,10 +33,10 @@ namespace log {
  * is handled by Logger::Output-derived classes instantiated by the
  * platform's sink-related options.
  */
-class QPID_COMMON_CLASS_EXTERN Logger : private boost::noncopyable {
+class Logger : private boost::noncopyable {
   public:
     /** Flags indicating what to include in the log output */
-    enum FormatFlag { FILE=1, LINE=2, FUNCTION=4, LEVEL=8, TIME=16, THREAD=32, HIRES=64};
+    enum FormatFlag { FILE=1, LINE=2, FUNCTION=4, LEVEL=8, TIME=16, THREAD=32};
 
     /**
      * Logging output sink.
@@ -93,7 +93,7 @@ class QPID_COMMON_CLASS_EXTERN Logger : private boost::noncopyable {
     QPID_COMMON_EXTERN void clear();
 
     /** Get the options used to configure the logger. */
-    QPID_COMMON_INLINE_EXTERN const Options& getOptions() const { return options; }
+    QPID_COMMON_EXTERN const Options& getOptions() const { return options; }
 
 
   private:

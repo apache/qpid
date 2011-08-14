@@ -205,7 +205,7 @@ class SemanticState : private boost::noncopyable {
                  const std::string& resumeId=std::string(), uint64_t resumeTtl=0,
                  const framing::FieldTable& = framing::FieldTable());
 
-    bool cancel(const std::string& tag);
+    void cancel(const std::string& tag);
 
     void setWindowMode(const std::string& destination);
     void setCreditMode(const std::string& destination);

@@ -32,8 +32,7 @@ struct QueuedMessage;
 
 /**
  * This interface abstracts out the access to the messages held for
- * delivery by a Queue instance. Note the the assumption at present is
- * that all locking is done in the Queue itself.
+ * delivery by a Queue instance.
  */
 class Messages
 {

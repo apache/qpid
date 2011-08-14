@@ -43,7 +43,7 @@ using namespace qpid::framing;
 // Apply f to [begin, end) and accumulate the result
 template <class Iter, class T, class F>
 T applyAccumulate(Iter begin, Iter end, T seed, const F& f) {
-    return std::accumulate(begin, end, seed, boost::bind(std::plus<T>(), _1, boost::bind(f, _2)));
+    return std::accumulate(begin, end, seed, bind(std::plus<T>(), _1, bind(f, _2)));
 }
 
 // Create a frame with a one-char string.
@@ -105,8 +105,8 @@ size_t transferN(qpid::SessionState& s, string content) {
         char last = content[content.size()-1];
         content.resize(content.size()-1);
         size += applyAccumulate(content.begin(), content.end(), 0,
-                                boost::bind(&send, boost::ref(s),
-                                     boost::bind(contentFrameChar, _1, false)));
+                                bind(&send, ref(s),
+                                     bind(contentFrameChar, _1, false)));
         size += send(s, contentFrameChar(last, true));
     }
     return size;
@@ -115,7 +115,7 @@ size_t transferN(qpid::SessionState& s, string content) {
 // Send multiple transfers with single-byte content.
 size_t transfers(qpid::SessionState& s, string content) {
     return applyAccumulate(content.begin(), content.end(), 0,
-                           boost::bind(transfer1Char, boost::ref(s), _1));
+                           bind(transfer1Char, ref(s), _1));
 }
 
 size_t contentFrameSize(size_t n=1) { return AMQFrame(( AMQContentBody())).encodedSize() + n; }

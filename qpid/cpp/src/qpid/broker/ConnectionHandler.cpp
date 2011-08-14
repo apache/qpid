@@ -137,9 +137,7 @@ void ConnectionHandler::Handler::startOk(const framing::FieldTable& clientProper
         throw;
     }
     connection.setFederationLink(clientProperties.get(QPID_FED_LINK));
-    if (clientProperties.isSet(QPID_FED_TAG)) {
-        connection.setFederationPeerTag(clientProperties.getAsString(QPID_FED_TAG));
-    }
+    connection.setFederationPeerTag(clientProperties.getAsString(QPID_FED_TAG));
     if (connection.isFederationLink()) {
     	if (acl && !acl->authorise(connection.getUserId(),acl::ACT_CREATE,acl::OBJ_LINK,"")){
             proxy.close(framing::connection::CLOSE_CODE_CONNECTION_FORCED,"ACL denied creating a federation link");
@@ -258,6 +256,7 @@ void ConnectionHandler::Handler::start(const FieldTable& serverProperties,
                                                   false ); // disallow interaction
     }
     std::string supportedMechanismsList;
+    bool requestedMechanismIsSupported = false;
     Array::const_iterator i;
 
     /*
@@ -270,9 +269,11 @@ void ConnectionHandler::Handler::start(const FieldTable& serverProperties,
             if (i != supportedMechanisms.begin())
                 supportedMechanismsList += SPACE;
             supportedMechanismsList += (*i)->get<std::string>();
+            requestedMechanismIsSupported = true;
         }
     }
     else {
+        requestedMechanismIsSupported = false;
         /*
           The caller has requested a mechanism.  If it's available,
           make sure it ends up at the head of the list.
@@ -281,6 +282,7 @@ void ConnectionHandler::Handler::start(const FieldTable& serverProperties,
             string currentMechanism = (*i)->get<std::string>();
 
             if ( requestedMechanism == currentMechanism ) {
+                requestedMechanismIsSupported = true;
                 supportedMechanismsList = currentMechanism + SPACE + supportedMechanismsList;
             } else {
                 if (i != supportedMechanisms.begin())
@@ -290,9 +292,7 @@ void ConnectionHandler::Handler::start(const FieldTable& serverProperties,
         }
     }
 
-    if (serverProperties.isSet(QPID_FED_TAG)) {
-        connection.setFederationPeerTag(serverProperties.getAsString(QPID_FED_TAG));
-    }
+    connection.setFederationPeerTag(serverProperties.getAsString(QPID_FED_TAG));
 
     FieldTable ft;
     ft.setInt(QPID_FED_LINK,1);

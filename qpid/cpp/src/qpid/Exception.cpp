@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
+ * 
  *   http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -21,25 +21,13 @@
 
 #include "qpid/log/Statement.h"
 #include "qpid/Exception.h"
-#include "qpid/DisableExceptionLogging.h"
 #include <typeinfo>
 #include <assert.h>
 #include <string.h>
 
 namespace qpid {
 
-// Note on static initialization order: if an exception is constructed
-// in a static constructor before disableExceptionLogging has been
-// initialized, the worst that can happen is we lose an exception log
-// message. Since we shouldn't be throwing a lot of exceptions during
-// static construction this seems safe.
-static bool disableExceptionLogging = false;
-
-DisableExceptionLogging::DisableExceptionLogging() { disableExceptionLogging = true; }
-DisableExceptionLogging::~DisableExceptionLogging() { disableExceptionLogging = false; }
-
 Exception::Exception(const std::string& msg) throw() : message(msg) {
-    if (disableExceptionLogging) return;
     QPID_LOG_IF(debug, !msg.empty(), "Exception constructed: " << message);
 }
 

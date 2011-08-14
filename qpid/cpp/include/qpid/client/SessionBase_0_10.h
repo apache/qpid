@@ -54,7 +54,7 @@ enum CreditUnit { MESSAGE_CREDIT=0, BYTE_CREDIT=1, UNLIMITED_CREDIT=0xFFFFFFFF }
  * Subclasses provide the AMQP commands for a given
  * version of the protocol.
  */
-class QPID_CLIENT_CLASS_EXTERN SessionBase_0_10 {
+class SessionBase_0_10 {
   public:
 
     ///@internal

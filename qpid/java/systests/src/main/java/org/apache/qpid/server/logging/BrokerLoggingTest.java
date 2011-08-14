@@ -21,8 +21,6 @@
 package org.apache.qpid.server.logging;
 
 import junit.framework.AssertionFailedError;
-
-import org.apache.qpid.server.BrokerOptions;
 import org.apache.qpid.server.Main;
 import org.apache.qpid.transport.ConnectionException;
 import org.apache.qpid.util.LogMonitor;
@@ -153,12 +151,12 @@ public class BrokerLoggingTest extends AbstractTestLogging
     {
         // This logging startup code only occurs when you run a Java broker,
         // that broker must be started via Main so not an InVM broker.
-        if (isJavaBroker() && isExternalBroker() && !isInternalBroker())
+        if (isJavaBroker() && isExternalBroker())
         {
             String TESTID = "BRK-1007";
 
             //Remove test Log4j config from the commandline
-            _brokerCommand = _brokerCommand.substring(0, _brokerCommand.indexOf("-l"));
+            _broker = _broker.substring(0, _broker.indexOf("-l"));
 
             startBroker();
 
@@ -205,7 +203,7 @@ public class BrokerLoggingTest extends AbstractTestLogging
                                  1, findMatches(TESTID).size());
 
                     //3
-                    String defaultLog4j = System.getProperty(QPID_HOME) + "/" + BrokerOptions.DEFAULT_LOG_CONFIG_FILE;
+                    String defaultLog4j = _configFile.getParent() + "/" + Main.DEFAULT_LOG_CONFIG_FILENAME;
                     assertTrue("Log4j file(" + defaultLog4j + ") details not correctly logged:" + getMessageString(log),
                                getMessageString(log).endsWith(defaultLog4j));
 
@@ -242,11 +240,12 @@ public class BrokerLoggingTest extends AbstractTestLogging
      */
     public void testBrokerStartupCustomLog4j() throws Exception
     {
-        // This logging startup code only occurs when you run a Java broker
+        // This logging startup code only occurs when you run a Java broker,
+        // that broker must be started via Main so not an InVM broker.
         if (isJavaBroker() && isExternalBroker())
         {
             // Get custom -l value used during testing for the broker startup
-            String customLog4j = _brokerCommand.substring(_brokerCommand.indexOf("-l") + 2);
+            String customLog4j = _broker.substring(_broker.indexOf("-l") + 2);
 
             String TESTID = "BRK-1007";
 

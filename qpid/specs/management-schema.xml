@@ -176,7 +176,6 @@
     <statistic name="unackedMessages"     type="hilo32"   unit="message"     desc="Messages consumed but not yet acked"/>
     <statistic name="messageLatency"      type="mmaTime"  unit="nanosecond"  desc="Broker latency through this queue"/>
     <statistic name="flowStopped"         type="bool"     desc="Flow control active."/>
-    <statistic name="flowStoppedCount"    type="count32"  desc="Number of times flow control was activated for this queue"/>
 
     <method name="purge" desc="Discard all or some messages on a queue">
       <arg name="request" dir="I" type="uint32" desc="0 for all messages or n>0 for n messages"/>
@@ -255,7 +254,6 @@
     <property name="address"  type="sstr"   access="RC" index="y"/>
     <property name="incoming" type="bool"   access="RC"/>
     <property name="SystemConnection"   type="bool"   access="RC" desc="Infrastucture/ Inter-system connection (Cluster, Federation, ...)"/>
-    <property name="userProxyAuth"      type="bool"   access="RO" desc="Authorization to proxy for users not on broker"/>
     <property name="federationLink"     type="bool"   access="RO" desc="Is this a federation link"/>
     <property name="authIdentity"       type="sstr"   access="RO" desc="authId of connection if authentication enabled"/>
     <property name="remoteProcessName"  type="lstr"   access="RO" optional="y" desc="Name of executable running as remote client"/>

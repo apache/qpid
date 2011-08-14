@@ -21,7 +21,7 @@ if HAVE_RUBY_DEVEL
 
 INCLUDES = -I$(top_srcdir)/include -I$(top_builddir)/include -I$(top_srcdir)/src -I$(top_builddir)/src
 
-EXTRA_DIST = CMakeLists.txt ruby.i
+EXTRA_DIST = ruby.i
 BUILT_SOURCES = cqpid.cpp
 SWIG_FLAGS = -w362,401
 
@@ -33,10 +33,10 @@ cqpid.cpp: $(srcdir)/ruby.i $(srcdir)/../qpid.i $(srcdir)/../../swig_ruby_typema
 rubylibarchdir = $(RUBY_LIB_ARCH)
 rubylibarch_LTLIBRARIES = cqpid.la
 
-cqpid_la_LDFLAGS = -avoid-version -module -shared -shrext ".$(RUBY_DLEXT)"
+cqpid_la_LDFLAGS = -avoid-version -module -shrext ".$(RUBY_DLEXT)"
 cqpid_la_LIBADD = $(RUBY_LIBS) -L$(top_builddir)/src/.libs -lqpidmessaging -lqpidtypes \
 	$(top_builddir)/src/libqpidmessaging.la $(top_builddir)/src/libqpidtypes.la
-cqpid_la_CXXFLAGS = $(INCLUDES) -I$(RUBY_INC) -I$(RUBY_INC_ARCH) -fno-strict-aliasing
+cqpid_la_CXXFLAGS = $(INCLUDES) -I$(RUBY_INC) -I$(RUBY_INC_ARCH)
 nodist_cqpid_la_SOURCES = cqpid.cpp
 
 CLEANFILES = cqpid.cpp

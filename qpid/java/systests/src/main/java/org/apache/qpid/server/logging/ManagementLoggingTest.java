@@ -76,8 +76,9 @@ public class ManagementLoggingTest extends AbstractTestLogging
      */
     public void testManagementStartupEnabled() throws Exception
     {
-        // This test only works on java brokers
-        if (isJavaBroker())
+        // This test only works on external java brokers due to the fact that
+        // Management is disabled on InVM brokers.
+        if (isJavaBroker() && isExternalBroker())
         {
             startBrokerAndCreateMonitor(true, false);
 
@@ -129,7 +130,9 @@ public class ManagementLoggingTest extends AbstractTestLogging
      */
     public void testManagementStartupDisabled() throws Exception
     {
-        if (isJavaBroker())
+        // This test only works on external java brokers due to the fact that
+        // Management is disabled on InVM brokers.
+        if (isJavaBroker() && isExternalBroker())
         {
             startBrokerAndCreateMonitor(false, false);
 
@@ -188,7 +191,9 @@ public class ManagementLoggingTest extends AbstractTestLogging
      */
     public void testManagementStartupRMIEntries() throws Exception
     {
-        if (isJavaBroker())
+        // This test only works on external java brokers due to the fact that
+        // Management is disabled on InVM brokers.
+        if (isJavaBroker() && isExternalBroker())
         {
             startBrokerAndCreateMonitor(true, false);
             
@@ -245,7 +250,9 @@ public class ManagementLoggingTest extends AbstractTestLogging
      */
     public void testManagementStartupSSLKeystore() throws Exception
     {
-        if (isJavaBroker())
+        // This test only works on external java brokers due to the fact that
+        // Management is disabled on InVM brokers.
+        if (isJavaBroker() && isExternalBroker())
         {
             startBrokerAndCreateMonitor(true, true);
 

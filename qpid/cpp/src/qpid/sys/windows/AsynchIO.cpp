@@ -30,7 +30,6 @@
 #include "qpid/log/Statement.h"
 
 #include "qpid/sys/windows/check.h"
-#include "qpid/sys/windows/mingw32_compat.h"
 
 #include <boost/thread/once.hpp>
 
@@ -115,8 +114,7 @@ AsynchAcceptor::~AsynchAcceptor()
 }
 
 void AsynchAcceptor::start(Poller::shared_ptr poller) {
-    PollerHandle ph = PollerHandle(socket);
-    poller->monitorHandle(ph, Poller::INPUT);
+    poller->monitorHandle(PollerHandle(socket), Poller::INPUT);
     restart ();
 }
 
@@ -156,7 +154,7 @@ void AsynchAcceptResult::success(size_t /*bytesTransferred*/) {
     delete this;
 }
 
-void AsynchAcceptResult::failure(int /*status*/) {
+void AsynchAcceptResult::failure(int status) {
     //if (status != WSA_OPERATION_ABORTED)
     // Can there be anything else?  ;
     delete this;
@@ -175,20 +173,20 @@ private:
     FailedCallback failCallback;
     const Socket& socket;
     const std::string hostname;
-    const std::string port;
+    const uint16_t port;
 
 public:
     AsynchConnector(const Socket& socket,
-                    const std::string& hostname,
-                    const std::string& port,
+                    std::string hostname,
+                    uint16_t port,
                     ConnectedCallback connCb,
                     FailedCallback failCb = 0);
     void start(Poller::shared_ptr poller);
 };
 
 AsynchConnector::AsynchConnector(const Socket& sock,
-                                 const std::string& hname,
-                                 const std::string& p,
+                                 std::string hname,
+                                 uint16_t p,
                                  ConnectedCallback connCb,
                                  FailedCallback failCb) :
     connCallback(connCb), failCallback(failCb), socket(sock),
@@ -218,8 +216,8 @@ AsynchAcceptor* AsynchAcceptor::create(const Socket& s,
 }
 
 AsynchConnector* qpid::sys::AsynchConnector::create(const Socket& s,
-                                                    const std::string& hostname,
-                                                    const std::string& port,
+                                                    std::string hostname,
+                                                    uint16_t port,
                                                     ConnectedCallback connCb,
                                                     FailedCallback failCb)
 {
@@ -412,9 +410,8 @@ void AsynchIO::queueForDeletion() {
 }
 
 void AsynchIO::start(Poller::shared_ptr poller0) {
-    PollerHandle ph = PollerHandle(socket);
     poller = poller0;
-    poller->monitorHandle(ph, Poller::INPUT);
+    poller->monitorHandle(PollerHandle(socket), Poller::INPUT);
     if (writeQueue.size() > 0)  // Already have data queued for write
         notifyPendingWrite();
     startReading();
@@ -587,6 +584,7 @@ void AsynchIO::notifyIdle(void) {
 void AsynchIO::startWrite(AsynchIO::BufferBase* buff) {
     writeInProgress = true;
     InterlockedIncrement(&opsInProgress);
+    int writeCount = buff->byteCount-buff->dataCount;
     AsynchWriteResult *result =
         new AsynchWriteResult(boost::bind(&AsynchIO::completion, this, _1),
                               buff,

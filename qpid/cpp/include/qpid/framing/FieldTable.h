@@ -56,7 +56,7 @@ class FieldTable
     typedef ValueMap::reference reference;
     typedef ValueMap::value_type value_type;
 
-    QPID_COMMON_INLINE_EXTERN FieldTable() {};
+    QPID_COMMON_EXTERN FieldTable() {};
     QPID_COMMON_EXTERN FieldTable(const FieldTable& ft);
     QPID_COMMON_EXTERN ~FieldTable();
     QPID_COMMON_EXTERN FieldTable& operator=(const FieldTable& ft);
@@ -65,11 +65,9 @@ class FieldTable
     QPID_COMMON_EXTERN void decode(Buffer& buffer);
 
     QPID_COMMON_EXTERN int count() const;
-    QPID_COMMON_INLINE_EXTERN size_t size() const { return values.size(); }
-    QPID_COMMON_INLINE_EXTERN bool empty() { return size() == 0; }
     QPID_COMMON_EXTERN void set(const std::string& name, const ValuePtr& value);
     QPID_COMMON_EXTERN ValuePtr get(const std::string& name) const;
-    QPID_COMMON_INLINE_EXTERN bool isSet(const std::string& name) const { return get(name).get() != 0; }
+    QPID_COMMON_EXTERN bool isSet(const std::string& name) const { return get(name).get() != 0; }
 
     QPID_COMMON_EXTERN void setString(const std::string& name, const std::string& value);
     QPID_COMMON_EXTERN void setInt(const std::string& name, const int value);

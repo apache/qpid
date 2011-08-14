@@ -27,15 +27,14 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.nio.ByteBuffer;
 
-import org.apache.qpid.ssl.SSLContextFactory;
 import org.apache.qpid.transport.ConnectionSettings;
 import org.apache.qpid.transport.Receiver;
+import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.TransportException;
-import org.apache.qpid.transport.network.NetworkConnection;
-import org.apache.qpid.transport.network.OutgoingNetworkTransport;
+import org.apache.qpid.transport.network.NetworkTransport;
 import org.apache.qpid.transport.util.Logger;
 
-public class IoNetworkTransport implements OutgoingNetworkTransport
+public class IoNetworkTransport implements NetworkTransport, IoContext
 {
     static
     {
@@ -45,31 +44,34 @@ public class IoNetworkTransport implements OutgoingNetworkTransport
             (Boolean.getBoolean("amqj.enableDirectBuffers"));
     }
 
-    private static final Logger LOGGER = Logger.get(IoNetworkTransport.class);
+    private static final Logger log = Logger.get(IoNetworkTransport.class);
 
-    private Socket _socket;
-    private IoNetworkConnection _connection;
-    private long _timeout = 60000;
+    private Socket socket;
+    private Sender<ByteBuffer> sender;
+    private IoReceiver receiver;
+    private long timeout = 60000; 
+    private ConnectionSettings settings;    
     
-    public NetworkConnection connect(ConnectionSettings settings, Receiver<ByteBuffer> delegate, SSLContextFactory sslFactory)
+    public void init(ConnectionSettings settings)
     {
-        int sendBufferSize = settings.getWriteBufferSize();
-        int receiveBufferSize = settings.getReadBufferSize();
-        
         try
         {
-            _socket = new Socket();
-            _socket.setReuseAddress(true);
-            _socket.setTcpNoDelay(settings.isTcpNodelay());
-            _socket.setSendBufferSize(sendBufferSize);
-            _socket.setReceiveBufferSize(receiveBufferSize);
-
-            LOGGER.debug("SO_RCVBUF : %s", _socket.getReceiveBufferSize());
-            LOGGER.debug("SO_SNDBUF : %s", _socket.getSendBufferSize());
-
+            this.settings = settings;
             InetAddress address = InetAddress.getByName(settings.getHost());
+            socket = new Socket();
+            socket.setReuseAddress(true);
+            socket.setTcpNoDelay(settings.isTcpNodelay());
 
-            _socket.connect(new InetSocketAddress(address, settings.getPort()));
+            log.debug("default-SO_RCVBUF : %s", socket.getReceiveBufferSize());
+            log.debug("default-SO_SNDBUF : %s", socket.getSendBufferSize());
+
+            socket.setSendBufferSize(settings.getWriteBufferSize());
+            socket.setReceiveBufferSize(settings.getReadBufferSize());
+
+            log.debug("new-SO_RCVBUF : %s", socket.getReceiveBufferSize());
+            log.debug("new-SO_SNDBUF : %s", socket.getSendBufferSize());
+
+            socket.connect(new InetSocketAddress(address, settings.getPort()));
         }
         catch (SocketException e)
         {
@@ -79,35 +81,36 @@ public class IoNetworkTransport implements OutgoingNetworkTransport
         {
             throw new TransportException("Error connecting to broker", e);
         }
+    }
 
-        try
-        {
-            _connection = new IoNetworkConnection(_socket, delegate, sendBufferSize, receiveBufferSize, _timeout);
-        }
-        catch(Exception e)
-        {
-            try
-            {
-                _socket.close();
-            }
-            catch(IOException ioe)
-            {
-                //ignored, throw based on original exception
-            }
+    public void receiver(Receiver<ByteBuffer> delegate)
+    {
+        receiver = new IoReceiver(this, delegate,
+                2*settings.getReadBufferSize() , timeout);
+    }
 
-            throw new TransportException("Error creating network connection", e);
-        }
-
-        return _connection;
+    public Sender<ByteBuffer> sender()
+    {
+        return new IoSender(this, 2*settings.getWriteBufferSize(), timeout);
     }
 
     public void close()
     {
-        _connection.close();
+        
     }
 
-    public NetworkConnection getConnection()
+    public Sender<ByteBuffer> getSender()
     {
-        return _connection;
+        return sender;
+    }
+
+    public IoReceiver getReceiver()
+    {
+        return receiver;
+    }
+
+    public Socket getSocket()
+    {
+        return socket;
     }
 }

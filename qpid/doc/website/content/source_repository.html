@@ -1,0 +1,74 @@
+<!--
+ -
+ - Licensed to the Apache Software Foundation (ASF) under one
+ - or more contributor license agreements.  See the NOTICE file
+ - distributed with this work for additional information
+ - regarding copyright ownership.  The ASF licenses this file
+ - to you under the Apache License, Version 2.0 (the
+ - "License"); you may not use this file except in compliance
+ - with the License.  You may obtain a copy of the License at
+ -
+ -   http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing,
+ - software distributed under the License is distributed on an
+ - "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ - KIND, either express or implied.  See the License for the
+ - specific language governing permissions and limitations
+ - under the License.
+ -
+-->
+<div class="main_text_area_body">
+  <h1>Source Code Repositories</h1>
+  <h2>Web Browsing of SVN</h2>
+
+  <p>To browse via the web use the ViewVC interface:</p>
+
+  <p><a href="http://svn.apache.org/viewvc/qpid/trunk/qpid">http://svn.apache.org/viewvc/qpid/trunk/qpid</a></p>
+
+  <p>Or to browse the source tree directly:</p>
+
+  <p><a href="https://svn.apache.org/repos/asf/qpid/trunk/qpid">https://svn.apache.org/repos/asf/qpid/trunk/qpid</a></p>
+
+  <h2>Checking out from SVN</h2>
+
+  <p>The source code can be checked out anonymous over HTTP:</p>
+
+  <pre>
+svn co http://svn.apache.org/repos/asf/qpid/trunk
+  </pre>
+
+
+  <p>Committers can check out the code using HTTPS:</p>
+
+  <pre>
+svn co https://svn.apache.org/repos/asf/qpid/trunk
+  </pre>
+
+  <h2>Read only GIT repo</h2>
+
+  <p>A read only GIT repo is available:</p>
+
+  <p>It can be cloned with</p>
+  <pre>
+git clone git://git.apache.org/qpid.git qpid
+  </pre>
+
+  <p>or</p>
+
+<pre>
+git clone http://git.apache.org/qpid.git qpid
+</pre>
+
+  <p>and then git pull will fetch updates.</p>
+
+  <p>If you have commit access it is also possible to commit back with git svn dcommit by following the instructions on the <a href="http://wiki.apache.org/general/GitAtApache">GitAtApache</a> page.</p>
+
+  <h2>Setting up your subversion client</h2>
+
+  <p>When adding files to subversion, it's important that your subversion client is properly setup to the appropriate subversion properties are set.  The client can do it automatically by modifying the auto-props section of the subversion config file.   Use the contents of:</p>
+
+<pre>
+http://svn.apache.org/repos/asf/qpid/trunk/etc/svn-auto-props
+</pre>
+</div>

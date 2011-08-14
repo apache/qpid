@@ -55,9 +55,9 @@ class ThresholdAlerts : public QueueObserver
                         const uint64_t sizeThreshold,
                         const long repeatInterval);
     static void observe(Queue& queue, qpid::management::ManagementAgent& agent,
-                        const qpid::framing::FieldTable& settings, uint16_t limitRatio);
+                        const qpid::framing::FieldTable& settings);
     static void observe(Queue& queue, qpid::management::ManagementAgent& agent,
-                        const qpid::types::Variant::Map& settings, uint16_t limitRatio);
+                        const qpid::types::Variant::Map& settings);
   private:
     const std::string name;
     qpid::management::ManagementAgent& agent;

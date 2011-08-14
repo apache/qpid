@@ -176,7 +176,7 @@ public class AlertingTest extends AbstractTestLogging
 
         startBroker();
 
-        if (isInternalBroker())
+        if (!isExternalBroker())
         {
             assertEquals("Alert Max Msg Count is not correct", 5, ApplicationRegistry.getInstance().getVirtualHostRegistry().
                     getVirtualHost(VIRTUALHOST).getQueueRegistry().getQueue(new AMQShortString(_destination.getQueueName())).

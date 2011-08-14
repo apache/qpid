@@ -35,8 +35,6 @@
 #include "qpid/sys/Mutex.h"
 #include "qpid/log/Statement.h"
 
-#include <boost/lexical_cast.hpp>
-
 namespace qpid {
 namespace tests {
 
@@ -64,7 +62,7 @@ class SocketProxy : private qpid::sys::Runnable
       : closed(false), joined(true),
         port(listener.listen()), dropClient(), dropServer()
     {
-        client.connect(host, boost::lexical_cast<std::string>(connectPort));
+        client.connect(host, connectPort);
         joined = false;
         thread = qpid::sys::Thread(static_cast<qpid::sys::Runnable*>(this));
     }

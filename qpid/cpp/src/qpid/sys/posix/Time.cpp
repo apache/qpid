@@ -27,7 +27,6 @@
 #include <stdio.h>
 #include <sys/time.h>
 #include <unistd.h>
-#include <iomanip>
 
 namespace {
 int64_t max_abstime() { return std::numeric_limits<int64_t>::max(); }
@@ -102,12 +101,6 @@ void outputFormattedNow(std::ostream& o) {
     ::time(&rawtime);
     outputFormattedTime(o, &rawtime);
     o << " ";
-}
-
-void outputHiresNow(std::ostream& o) {
-    ::timespec time;
-    ::clock_gettime(CLOCK_REALTIME, &time);
-    o << time.tv_sec << "." << std::setw(9) << std::setfill('0') << time.tv_nsec << "s ";
 }
 
 void sleep(int secs) {

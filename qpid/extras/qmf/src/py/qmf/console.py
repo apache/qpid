@@ -359,8 +359,8 @@ class Object(object):
         for arg in method.arguments:
           if arg.dir.find("I") != -1:
             count += 1
-        if count != len(args) + len(kwargs):
-          raise Exception("Incorrect number of arguments: expected %d, got %d" % (count, len(args) + len(kwargs)))
+        if count != len(args):
+          raise Exception("Incorrect number of arguments: expected %d, got %d" % (count, len(args)))
 
         if self._agent.isV2:
           #
@@ -372,10 +372,7 @@ class Object(object):
           argMap = {}
           for arg in method.arguments:
             if arg.dir.find("I") != -1:
-              if aIdx < len(args):
-                argMap[arg.name] = args[aIdx]
-              else:
-                argMap[arg.name] = kwargs[arg.name]              
+              argMap[arg.name] = args[aIdx]
               aIdx += 1
           call['_arguments'] = argMap
 
@@ -441,10 +438,6 @@ class Object(object):
         timeout = None
     else:
       sync = True
-
-    # Remove special "meta" kwargs before handing to _sendMethodRequest() to process
-    if "_timeout" in kwargs: del kwargs["_timeout"]
-    if "_async" in kwargs: del kwargs["_async"]
 
     seq = self._sendMethodRequest(name, args, kwargs, sync, timeout)
     if seq:
@@ -1218,22 +1211,11 @@ class Session:
     try:
       agentName = ah["qmf.agent"]
       values = content["_values"]
-
-      if '_timestamp' in values:
-        timestamp = values["_timestamp"]
-      else:
-        timestamp = values['timestamp']
-
-      if '_heartbeat_interval' in values:
-        interval = values['_heartbeat_interval']
-      else:
-        interval = values['heartbeat_interval']
-
+      timestamp = values["_timestamp"]
+      interval = values["_heartbeat_interval"]
       epoch = 0
       if '_epoch' in values:
         epoch = values['_epoch']
-      elif 'epoch' in values:
-        epoch = values['epoch']
     except Exception,e:
       return
 
@@ -2434,7 +2416,7 @@ class Broker(Thread):
       if uid.__class__ == tuple and len(uid) == 2:
         self.saslUser = uid[1]
       else:
-        self.saslUser = self.authUser
+        self.saslUser = None
 
       # prevent topic queues from filling up (and causing the agents to
       # disconnect) by discarding the oldest queued messages when full.

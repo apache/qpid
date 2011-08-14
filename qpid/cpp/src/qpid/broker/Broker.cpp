@@ -121,8 +121,7 @@ Broker::Options::Options(const std::string& name) :
     qmf2Support(true),
     qmf1Support(true),
     queueFlowStopRatio(80),
-    queueFlowResumeRatio(70),
-    queueThresholdEventRatio(80)
+    queueFlowResumeRatio(70)
 {
     int c = sys::SystemInfo::concurrency();
     workerThreads=c+1;
@@ -153,12 +152,11 @@ Broker::Options::Options(const std::string& name) :
         ("tcp-nodelay", optValue(tcpNoDelay), "Set TCP_NODELAY on TCP connections")
         ("require-encryption", optValue(requireEncrypted), "Only accept connections that are encrypted")
         ("known-hosts-url", optValue(knownHosts, "URL or 'none'"), "URL to send as 'known-hosts' to clients ('none' implies empty list)")
-        ("sasl-config", optValue(saslConfigPath, "DIR"), "gets sasl config info from nonstandard location")
+        ("sasl-config", optValue(saslConfigPath, "FILE"), "gets sasl config from nonstandard location")
         ("max-session-rate", optValue(maxSessionRate, "MESSAGES/S"), "Sets the maximum message rate per session (0=unlimited)")
         ("async-queue-events", optValue(asyncQueueEvents, "yes|no"), "Set Queue Events async, used for services like replication")
-        ("default-flow-stop-threshold", optValue(queueFlowStopRatio, "PERCENT"), "Percent of queue's maximum capacity at which flow control is activated.")
-        ("default-flow-resume-threshold", optValue(queueFlowResumeRatio, "PERCENT"), "Percent of queue's maximum capacity at which flow control is de-activated.")
-        ("default-event-threshold-ratio", optValue(queueThresholdEventRatio, "%age of limit"), "The ratio of any specified queue limit at which an event will be raised");
+        ("default-flow-stop-threshold", optValue(queueFlowStopRatio, "%MESSAGES"), "Queue capacity level at which flow control is activated.")
+        ("default-flow-resume-threshold", optValue(queueFlowResumeRatio, "%MESSAGES"), "Queue capacity level at which flow control is de-activated.");
 }
 
 const std::string empty;
@@ -188,7 +186,7 @@ Broker::Broker(const Broker::Options& conf) :
             conf.replayFlushLimit*1024, // convert kb to bytes.
             conf.replayHardLimit*1024),
         *this),
-    queueCleaner(queues, &timer),
+    queueCleaner(queues, timer),
     queueEvents(poller,!conf.asyncQueueEvents),
     recovery(true),
     inCluster(false),
@@ -248,7 +246,13 @@ Broker::Broker(const Broker::Options& conf) :
     // Early-Initialize plugins
     Plugin::earlyInitAll(*this);
 
-    QueueFlowLimit::setDefaults(conf.queueLimit, conf.queueFlowStopRatio, conf.queueFlowResumeRatio);
+    /** todo KAG - remove once cluster support for flow control done */
+    if (isInCluster()) {
+        QPID_LOG(info, "Producer Flow Control TBD for clustered brokers - queue flow control disabled by default.");
+        QueueFlowLimit::setDefaults(0, 0, 0);
+    } else {
+        QueueFlowLimit::setDefaults(conf.queueLimit, conf.queueFlowStopRatio, conf.queueFlowResumeRatio);
+    }
 
     // If no plugin store module registered itself, set up the null store.
     if (NullMessageStore::isNullStore(store.get()))
@@ -434,9 +438,8 @@ Manageable::status_t Broker::ManagementMethod (uint32_t methodId,
         _qmf::ArgsBrokerConnect& hp=
             dynamic_cast<_qmf::ArgsBrokerConnect&>(args);
 
+        QPID_LOG (debug, "Broker::connect()");
         string transport = hp.i_transport.empty() ? TCP_TRANSPORT : hp.i_transport;
-        QPID_LOG (debug, "Broker::connect() " << hp.i_host << ":" << hp.i_port << "; transport=" << transport <<
-                        "; durable=" << (hp.i_durable?"T":"F") << "; authMech=\"" << hp.i_authMechanism << "\"");
         if (!getProtocolFactory(transport)) {
             QPID_LOG(error, "Transport '" << transport << "' not supported");
             return  Manageable::STATUS_NOT_IMPLEMENTED;
@@ -453,9 +456,9 @@ Manageable::status_t Broker::ManagementMethod (uint32_t methodId,
         _qmf::ArgsBrokerQueueMoveMessages& moveArgs=
             dynamic_cast<_qmf::ArgsBrokerQueueMoveMessages&>(args);
         QPID_LOG (debug, "Broker::queueMoveMessages()");
-        if (queueMoveMessages(moveArgs.i_srcQueue, moveArgs.i_destQueue, moveArgs.i_qty))
+	if (queueMoveMessages(moveArgs.i_srcQueue, moveArgs.i_destQueue, moveArgs.i_qty))
             status = Manageable::STATUS_OK;
-        else
+	else
             return Manageable::STATUS_PARAMETER_INVALID;
         break;
       }
@@ -590,7 +593,7 @@ void Broker::createObject(const std::string& type, const std::string& name,
         }
     } else if (type == TYPE_EXCHANGE || type == TYPE_TOPIC) {
         bool durable(false);
-        std::string exchangeType("topic");
+        std::string exchangeType;
         std::string alternateExchange;
         Variant::Map extensions;
         for (Variant::Map::const_iterator i = properties.begin(); i != properties.end(); ++i) {
@@ -702,7 +705,7 @@ void Broker::accept() {
 }
 
 void Broker::connect(
-    const std::string& host, const std::string& port, const std::string& transport,
+    const std::string& host, uint16_t port, const std::string& transport,
     boost::function2<void, int, std::string> failed,
     sys::ConnectionCodec::Factory* f)
 {
@@ -718,7 +721,7 @@ void Broker::connect(
 {
     url.throwIfEmpty();
     const Address& addr=url[0];
-    connect(addr.host, boost::lexical_cast<std::string>(addr.port), addr.protocol, failed, f);
+    connect(addr.host, addr.port, addr.protocol, failed, f);
 }
 
 uint32_t Broker::queueMoveMessages(
@@ -751,7 +754,6 @@ bool Broker::deferDeliveryImpl(const std::string& ,
 
 void Broker::setClusterTimer(std::auto_ptr<sys::Timer> t) {
     clusterTimer = t;
-    queueCleaner.setTimer(clusterTimer.get());
 }
 
 const std::string Broker::TCP_TRANSPORT("tcp");
@@ -785,11 +787,18 @@ std::pair<boost::shared_ptr<Queue>, bool> Broker::createQueue(
     Exchange::shared_ptr alternate;
     if (!alternateExchange.empty()) {
         alternate = exchanges.get(alternateExchange);
-        if (!alternate) throw framing::NotFoundException(QPID_MSG("Alternate exchange does not exist: " << alternateExchange));
+        if (!alternate) framing::NotFoundException(QPID_MSG("Alternate exchange does not exist: " << alternateExchange));
     }
 
-    std::pair<Queue::shared_ptr, bool> result = queues.declare(name, durable, autodelete, owner, alternate, arguments);
+    std::pair<Queue::shared_ptr, bool> result = queues.declare(name, durable, autodelete, owner);
     if (result.second) {
+        if (alternate) {
+            result.first->setAlternateExchange(alternate);
+            alternate->incAlternateUsers();
+        }
+
+        //apply settings & create persistent record if required
+        result.first->create(arguments);
         //add default binding:
         result.first->bind(exchanges.getDefault(), name);
 
@@ -850,7 +859,7 @@ std::pair<Exchange::shared_ptr, bool> Broker::createExchange(
     Exchange::shared_ptr alternate;
     if (!alternateExchange.empty()) {
         alternate = exchanges.get(alternateExchange);
-        if (!alternate) throw framing::NotFoundException(QPID_MSG("Alternate exchange does not exist: " << alternateExchange));
+        if (!alternate) framing::NotFoundException(QPID_MSG("Alternate exchange does not exist: " << alternateExchange));
     }
 
     std::pair<Exchange::shared_ptr, bool> result;

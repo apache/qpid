@@ -34,7 +34,7 @@ namespace framing {
 
 class Buffer;
 
-class QPID_COMMON_CLASS_EXTERN Array
+class Array
 {
   public:
     typedef boost::shared_ptr<FieldValue> ValuePtr;
@@ -55,25 +55,25 @@ class QPID_COMMON_CLASS_EXTERN Array
     //creates a longstr array
     QPID_COMMON_EXTERN Array(const std::vector<std::string>& in);
 
-    QPID_COMMON_INLINE_EXTERN TypeCode getType() const { return type; }
+    QPID_COMMON_EXTERN TypeCode getType() const { return type; }
 
     // std collection interface.
-    QPID_COMMON_INLINE_EXTERN const_iterator begin() const { return values.begin(); }
-    QPID_COMMON_INLINE_EXTERN const_iterator end() const { return values.end(); }
-    QPID_COMMON_INLINE_EXTERN iterator begin() { return values.begin(); }
-    QPID_COMMON_INLINE_EXTERN iterator end(){ return values.end(); }
+    QPID_COMMON_EXTERN const_iterator begin() const { return values.begin(); }
+    QPID_COMMON_EXTERN const_iterator end() const { return values.end(); }
+    QPID_COMMON_EXTERN iterator begin() { return values.begin(); }
+    QPID_COMMON_EXTERN iterator end(){ return values.end(); }
 
-    QPID_COMMON_INLINE_EXTERN ValuePtr front() const { return values.front(); }
-    QPID_COMMON_INLINE_EXTERN ValuePtr back() const { return values.back(); }
-    QPID_COMMON_INLINE_EXTERN size_t size() const { return values.size(); }
+    QPID_COMMON_EXTERN ValuePtr front() const { return values.front(); }
+    QPID_COMMON_EXTERN ValuePtr back() const { return values.back(); }
+    QPID_COMMON_EXTERN size_t size() const { return values.size(); }
 
     QPID_COMMON_EXTERN void insert(iterator i, ValuePtr value);
-    QPID_COMMON_INLINE_EXTERN void erase(iterator i) { values.erase(i); }
-    QPID_COMMON_INLINE_EXTERN void push_back(ValuePtr value) { values.insert(end(), value); }
-    QPID_COMMON_INLINE_EXTERN void pop_back() { values.pop_back(); }
+    QPID_COMMON_EXTERN void erase(iterator i) { values.erase(i); }
+    QPID_COMMON_EXTERN void push_back(ValuePtr value) { values.insert(end(), value); }
+    QPID_COMMON_EXTERN void pop_back() { values.pop_back(); }
 
     // Non-std interface
-    QPID_COMMON_INLINE_EXTERN void add(ValuePtr value) { push_back(value); }
+    QPID_COMMON_EXTERN void add(ValuePtr value) { push_back(value); }
 
     template <class T>
     void collect(std::vector<T>& out) const

@@ -54,17 +54,15 @@ def filter_log(log):
         'caught up',
         'active for links|Passivating links|Activating links',
         'info Connection.* connected to', # UpdateClient connection
-        'warning Connection \\[[-0-9.: ]+\\] closed', # UpdateClient connection
+        'warning Connection [\d+ [0-9.:]+] closed', # UpdateClient connection
         'warning Broker closed connection: 200, OK',
         'task late',
         'task overran',
         'warning CLOSING .* unsent data',
         'Inter-broker link ',
-        'Running in a cluster, marking store',
-        'debug Sending keepalive signal to watchdog', # Watchdog timer thread
-        'last broker standing joined by 1 replicas, updating queue policies.',
-        'Connection .* timed out: closing' # heartbeat connection close
+        'Running in a cluster, marking store'
         ])
+    skip_re = re.compile(skip)
     # Regex to match a UUID
     uuid='\w\w\w\w\w\w\w\w-\w\w\w\w-\w\w\w\w-\w\w\w\w-\w\w\w\w\w\w\w\w\w\w\w\w'
     # Substitutions to remove expected differences
@@ -82,13 +80,6 @@ def filter_log(log):
         (r' map={.*_object_name:([^,}]*)[,}].*', r' \1'), # V2 map - just keep name
         (r'\d+-\d+-\d+--\d+', 'X-X-X--X'), # V1 Object IDs
         ]
-    # Substitutions to mask known issue: durable test shows inconsistent "changed stats for com.redhat.rhm.store:journal" messages.
-    skip += '|Changed V[12] statistics com.redhat.rhm.store:journal'
-    subs += [(r'to=console.obj.1.0.com.redhat.rhm.store.journal props=\d+ stats=\d+',
-              'to=console.obj.1.0.com.redhat.rhm.store.journal props=NN stats=NN')]
-
-    skip_re = re.compile(skip)
-    subs = [(re.compile(pattern), subst) for pattern, subst in subs]
     for l in open(log):
         if skip_re.search(l): continue
         for pattern,subst in subs: l = re.sub(pattern,subst,l)

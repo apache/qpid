@@ -231,14 +231,4 @@ public class MockQueueEntry implements QueueEntry
         _message = msg;
     }
 
-    public boolean isDequeued()
-    {
-        return false;
-    }
-
-    public boolean isDispensed()
-    {
-        return false;
-    }
-
 }

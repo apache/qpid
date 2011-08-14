@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
+ * 
  *   http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -35,7 +35,6 @@
 #include "qpid/broker/Fairshare.h"
 #include "qpid/broker/Link.h"
 #include "qpid/broker/Bridge.h"
-#include "qpid/broker/StatefulQueueObserver.h"
 #include "qpid/broker/Queue.h"
 #include "qpid/framing/enum.h"
 #include "qpid/framing/AMQFrame.h"
@@ -79,7 +78,7 @@ const std::string shadowPrefix("[shadow]");
 Connection::Connection(Cluster& c, sys::ConnectionOutputHandler& out,
                        const std::string& mgmtId,
                        const ConnectionId& id, const qpid::sys::SecuritySettings& external)
-    : cluster(c), self(id), catchUp(false), announced(false), output(*this, out),
+    : cluster(c), self(id), catchUp(false), output(*this, out),
       connectionCtor(&output, cluster.getBroker(), mgmtId, external, false, 0, true),
       expectProtocolHeader(false),
       mcastFrameHandler(cluster.getMulticast(), self),
@@ -91,7 +90,7 @@ Connection::Connection(Cluster& c, sys::ConnectionOutputHandler& out,
 Connection::Connection(Cluster& c, sys::ConnectionOutputHandler& out,
                        const std::string& mgmtId, MemberId member,
                        bool isCatchUp, bool isLink, const qpid::sys::SecuritySettings& external
-) : cluster(c), self(member, ++idCounter), catchUp(isCatchUp), announced(false), output(*this, out),
+) : cluster(c), self(member, ++idCounter), catchUp(isCatchUp), output(*this, out),
     connectionCtor(&output, cluster.getBroker(),
                    mgmtId,
                    external,
@@ -144,7 +143,7 @@ void Connection::init() {
 // Called when we have consumed a read buffer to give credit to the
 // connection layer to continue reading.
 void Connection::giveReadCredit(int credit) {
-    if (cluster.getSettings().readMax && credit)
+    if (cluster.getSettings().readMax && credit) 
         output.giveReadCredit(credit);
 }
 
@@ -202,7 +201,7 @@ void Connection::received(framing::AMQFrame& f) {
     }
     else {             // Shadow or updated catch-up connection.
         if (f.getMethod() && f.getMethod()->isA<ConnectionCloseBody>()) {
-            if (isShadow())
+            if (isShadow()) 
                 cluster.addShadowConnection(this);
             AMQFrame ok((ConnectionCloseOkBody()));
             connection->getOutput().send(ok);
@@ -242,7 +241,7 @@ void Connection::deliverDoOutput(uint32_t limit) {
 void Connection::deliveredFrame(const EventFrame& f) {
     GiveReadCreditOnExit gc(*this, f.readCredit);
     assert(!catchUp);
-    currentChannel = f.frame.getChannel();
+    currentChannel = f.frame.getChannel(); 
     if (f.frame.getBody()       // frame can be emtpy with just readCredit
         && !framing::invoke(*this, *f.frame.getBody()).wasHandled() // Connection contol.
         && !checkUnsupported(*f.frame.getBody())) // Unsupported operation.
@@ -256,7 +255,7 @@ void Connection::deliveredFrame(const EventFrame& f) {
     }
 }
 
-// A local connection is closed by the network layer. Called in the connection thread.
+// A local connection is closed by the network layer.
 void Connection::closed() {
     try {
         if (isUpdated()) {
@@ -273,9 +272,8 @@ void Connection::closed() {
             // closed and process any outstanding frames from the cluster
             // until self-delivery of deliver-close.
             output.closeOutput();
-            if (announced)
-                cluster.getMulticast().mcastControl(
-                    ClusterConnectionDeliverCloseBody(), self);
+            cluster.getMulticast().mcastControl(
+                ClusterConnectionDeliverCloseBody(), self);
         }
     }
     catch (const std::exception& e) {
@@ -289,7 +287,7 @@ void Connection::deliverClose () {
     cluster.erase(self);
 }
 
-// Close the connection
+// Close the connection 
 void Connection::close() {
     if (connection.get()) {
         QPID_LOG(debug, cluster << " closed connection " << *this);
@@ -322,10 +320,10 @@ size_t Connection::decode(const char* data, size_t size) {
         while (localDecoder.decode(buf))
             received(localDecoder.getFrame());
         if (!wasOpen && connection->isOpen()) {
-            // Connections marked with setUserProxyAuth are allowed to proxy
+            // Connections marked as federation links are allowed to proxy
             // messages with user-ID that doesn't match the connection's
             // authenticated ID. This is important for updates.
-            connection->setUserProxyAuth(isCatchUp());
+            connection->setFederationLink(isCatchUp());
         }
     }
     else {                      // Multicast local connections.
@@ -334,9 +332,9 @@ size_t Connection::decode(const char* data, size_t size) {
         if (!checkProtocolHeader(ptr, size)) // Updates ptr
             return 0; // Incomplete header
 
-        if (!connection->isOpen())
+        if (!connection->isOpen()) 
             processInitialFrames(ptr, end-ptr); // Updates ptr
-
+        
         if (connection->isOpen() && end - ptr > 0) {
             // We're multi-casting, we will give read credit on delivery.
             grc.credit = 0;
@@ -386,7 +384,6 @@ void Connection::processInitialFrames(const char*& ptr, size_t size) {
                 connection->getUserId(),
                 initialFrames),
             getId());
-        announced = true;
         initialFrames.clear();
     }
 }
@@ -435,7 +432,7 @@ void Connection::sessionState(
         unknownCompleted,
         receivedIncomplete);
     QPID_LOG(debug, cluster << " received session state update for " << sessionState().getId());
-    // The output tasks will be added later in the update process.
+    // The output tasks will be added later in the update process. 
     connection->getOutputTasks().removeAll();
 }
 
@@ -481,7 +478,7 @@ void Connection::retractOffer() {
 
 void Connection::closeUpdated() {
     self.second = 0;      // Mark this as completed update connection.
-    if (connection.get())
+    if (connection.get()) 
         connection->close(connection::CLOSE_CODE_NORMAL, "OK");
 }
 
@@ -532,7 +529,7 @@ void Connection::deliveryRecord(const string& qname,
             m = getUpdateMessage();
             m.queue = queue.get();
             m.position = position;
-            if (enqueued) queue->updateEnqueued(m); //inform queue of the message
+            if (enqueued) queue->updateEnqueued(m); //inform queue of the message 
         } else {                // Message at original position in original queue
             m = queue->find(position);
         }
@@ -559,46 +556,8 @@ void Connection::queueFairshareState(const std::string& qname, const uint8_t pri
     }
 }
 
-
-namespace {
-    // find a StatefulQueueObserver that matches a given identifier
-    class ObserverFinder {
-        const std::string id;
-        boost::shared_ptr<broker::QueueObserver> target;
-        ObserverFinder(const ObserverFinder&) {}
-    public:
-        ObserverFinder(const std::string& _id) : id(_id) {}
-        broker::StatefulQueueObserver *getObserver()
-        {
-            if (target)
-                return dynamic_cast<broker::StatefulQueueObserver *>(target.get());
-            return 0;
-        }
-        void operator() (boost::shared_ptr<broker::QueueObserver> o)
-        {
-            if (!target) {
-                broker::StatefulQueueObserver *p = dynamic_cast<broker::StatefulQueueObserver *>(o.get());
-                if (p && p->getId() == id) {
-                    target = o;
-                }
-            }
-        }
-    };
-}
-
-
-void Connection::queueObserverState(const std::string& qname, const std::string& observerId, const FieldTable& state)
-{
-    boost::shared_ptr<broker::Queue> queue(findQueue(qname));
-    ObserverFinder finder(observerId);      // find this observer
-    queue->eachObserver<ObserverFinder &>(finder);
-    broker::StatefulQueueObserver *so = finder.getObserver();
-    if (so) {
-        so->setState( state );
-        QPID_LOG(debug, "updated queue observer " << observerId << "'s state on queue " << qname << "; ...");
-        return;
-    }
-    QPID_LOG(error, "Failed to find observer " << observerId << " state on queue " << qname << "; this will result in inconsistencies.");
+void Connection::expiryId(uint64_t id) {
+    cluster.getExpiryPolicy().setId(id);
 }
 
 std::ostream& operator<<(std::ostream& o, const Connection& c) {
@@ -632,7 +591,7 @@ void Connection::txEnqueue(const std::string& queue) {
 
 void Connection::txPublish(const framing::Array& queues, bool delivered) {
     boost::shared_ptr<broker::TxPublish> txPub(new broker::TxPublish(getUpdateMessage().payload));
-    for (framing::Array::const_iterator i = queues.begin(); i != queues.end(); ++i)
+    for (framing::Array::const_iterator i = queues.begin(); i != queues.end(); ++i) 
         txPub->deliverTo(findQueue((*i)->get<std::string>()));
     txPub->delivered = delivered;
     txBuffer->enlist(txPub);
@@ -653,6 +612,12 @@ void Connection::exchange(const std::string& encoded) {
         cluster.getBroker().getStore().create(*(ex.get()), ex->getArgs());
     }
     QPID_LOG(debug, cluster << " updated exchange " << ex->getName());
+}
+
+void Connection::queue(const std::string& encoded) {
+    Buffer buf(const_cast<char*>(encoded.data()), encoded.size());
+    broker::Queue::shared_ptr q = broker::Queue::decode(cluster.getBroker().getQueues(), buf);
+    QPID_LOG(debug, cluster << " updated queue " << q->getName());
 }
 
 void Connection::sessionError(uint16_t , const std::string& msg) {
@@ -713,23 +678,6 @@ void Connection::config(const std::string& encoded) {
     else throw Exception(QPID_MSG("Update failed, invalid kind of config: " << kind));
 }
 
-void Connection::doCatchupIoCallbacks() {
-    // We need to process IO callbacks during the catch-up phase in
-    // order to service asynchronous completions for messages
-    // transferred during catch-up.
-
-    if (catchUp) getBrokerConnection()->doIoCallbacks();
-}
-
-void Connection::clock(uint64_t time) {
-    QPID_LOG(debug, "Cluster connection received time update");
-    cluster.clock(time);
-}
-
-void Connection::queueDequeueSincePurgeState(const std::string& qname, uint32_t dequeueSincePurge) {
-    boost::shared_ptr<broker::Queue> queue(findQueue(qname));
-    queue->setDequeueSincePurge(dequeueSincePurge);
-}
 
 }} // Namespace qpid::cluster
 

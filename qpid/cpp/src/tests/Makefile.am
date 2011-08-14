@@ -286,6 +286,18 @@ check_PROGRAMS+=datagen
 datagen_SOURCES=datagen.cpp
 datagen_LDADD=$(lib_common) $(lib_client)
 
+check_PROGRAMS+=qrsh_server
+qrsh_server_SOURCES=qrsh_server.cpp
+qrsh_server_LDADD=$(lib_client)
+
+check_PROGRAMS+=qrsh_run
+qrsh_run_SOURCES=qrsh_run.cpp
+qrsh_run_LDADD=$(lib_client)
+
+check_PROGRAMS+=qrsh
+qrsh_SOURCES=qrsh.cpp
+qrsh_LDADD=$(lib_client)
+
 check_PROGRAMS+=qpid-stream
 qpid_stream_INCLUDES=$(PUBLIC_INCLUDES)
 qpid_stream_SOURCES=qpid-stream.cpp
@@ -298,7 +310,7 @@ TESTS_ENVIRONMENT = \
     $(srcdir)/run_test 
 
 system_tests = qpid-client-test quick_perftest quick_topictest run_header_test quick_txtest
-TESTS += start_broker $(system_tests) python_tests stop_broker run_federation_tests run_federation_sys_tests \
+TESTS += start_broker $(system_tests) python_tests stop_broker run_federation_tests \
   run_acl_tests run_cli_tests replication_test dynamic_log_level_test \
   run_queue_flow_limit_tests
 
@@ -315,8 +327,6 @@ EXTRA_DIST +=								\
   config.null								\
   ais_check								\
   run_federation_tests							\
-  run_federation_sys_tests                  \
-  run_long_federation_sys_tests             \
   run_cli_tests								\
   run_acl_tests								\
   .valgrind.supp							\
@@ -354,7 +364,6 @@ CLEANFILES+=valgrind.out *.log *.vglog* dummy_test qpidd.port $(unit_wrappers)
 # Not run under valgrind, too slow
 
 LONG_TESTS+=start_broker fanout_perftest shared_perftest multiq_perftest topic_perftest run_ring_queue_test stop_broker \
- run_long_federation_sys_tests \
  run_failover_soak reliable_replication_test \
  federated_cluster_test_with_node_failure
 

@@ -58,7 +58,6 @@ namespace qmf {
         void open();
         void close();
         bool nextEvent(ConsoleEvent& e, qpid::messaging::Duration t);
-        int pendingEvents() const;
         uint32_t getAgentCount() const;
         Agent getAgent(uint32_t i) const;
         Agent getConnectedBrokerAgent() const { return connectedBrokerAgent; }
@@ -90,8 +89,6 @@ namespace qmf {
         std::string directBase;
         std::string topicBase;
         boost::shared_ptr<SchemaCache> schemaCache;
-        qpid::sys::Mutex corrlock;
-        uint32_t nextCorrelator;
 
         void enqueueEvent(const ConsoleEvent&);
         void enqueueEventLH(const ConsoleEvent&);
@@ -102,7 +99,6 @@ namespace qmf {
         void handleV1SchemaResponse(qpid::management::Buffer&, uint32_t, const qpid::messaging::Message&);
         void periodicProcessing(uint64_t);
         void run();
-        uint32_t correlator() { qpid::sys::Mutex::ScopedLock l(corrlock); return nextCorrelator++; }
 
         friend class AgentImpl;
     };

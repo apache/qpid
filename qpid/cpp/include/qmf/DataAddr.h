@@ -34,7 +34,7 @@ namespace qmf {
 
     class DataAddrImpl;
 
-    class QMF_CLASS_EXTERN DataAddr : public qmf::Handle<DataAddrImpl> {
+    class DataAddr : public qmf::Handle<DataAddrImpl> {
     public:
         QMF_EXTERN DataAddr(DataAddrImpl* impl = 0);
         QMF_EXTERN DataAddr(const DataAddr&);
@@ -50,9 +50,6 @@ namespace qmf {
         QMF_EXTERN const std::string& getAgentName() const;
         QMF_EXTERN uint32_t getAgentEpoch() const;
         QMF_EXTERN qpid::types::Variant::Map asMap() const;
-
-        QMF_EXTERN bool operator==(const DataAddr&) const;
-        QMF_EXTERN bool operator<(const DataAddr&) const;
 
 #ifndef SWIG
     private:

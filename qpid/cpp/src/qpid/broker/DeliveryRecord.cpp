@@ -75,7 +75,7 @@ void DeliveryRecord::deliver(framing::FrameHandler& h, DeliveryId deliveryId, ui
 {
     id = deliveryId;
     if (msg.payload->getRedelivered()){
-        msg.payload->setRedelivered();
+        msg.payload->getProperties<framing::DeliveryProperties>()->setRedelivered(true);
     }
     msg.payload->adjustTtl();
 
@@ -135,7 +135,7 @@ void DeliveryRecord::reject()
         Exchange::shared_ptr alternate = queue->getAlternateExchange();
         if (alternate) {
             DeliverableMessage delivery(msg.payload);
-            alternate->routeWithAlternate(delivery);
+            alternate->route(delivery, msg.payload->getRoutingKey(), msg.payload->getApplicationHeaders());
             QPID_LOG(info, "Routed rejected message from " << queue->getName() << " to "
                      << alternate->getName());
         } else {

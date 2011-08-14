@@ -93,7 +93,6 @@ NullAuthenticator::~NullAuthenticator() {}
 void NullAuthenticator::getMechanisms(Array& mechanisms)
 {
     mechanisms.add(boost::shared_ptr<FieldValue>(new Str16Value("ANONYMOUS")));
-    mechanisms.add(boost::shared_ptr<FieldValue>(new Str16Value("PLAIN")));
 }
 
 void NullAuthenticator::start(const string& mechanism, const string& response)
@@ -160,11 +159,8 @@ void SspiAuthenticator::start(const string& mechanism, const string& response)
     string::size_type j = response.find((char)0, i+1);
     string uid = response.substr(i+1, j-1);
     string pwd = response.substr(j+1);
-    string dot(".");
     int error = 0;
-    if (!LogonUser(const_cast<char*>(uid.c_str()),
-                   const_cast<char*>(dot.c_str()),
-                   const_cast<char*>(pwd.c_str()),
+    if (!LogonUser(uid.c_str(), ".", pwd.c_str(),
                    LOGON32_LOGON_NETWORK,
                    LOGON32_PROVIDER_DEFAULT,
                    &userToken))
@@ -180,7 +176,7 @@ void SspiAuthenticator::start(const string& mechanism, const string& response)
     client.tune(framing::CHANNEL_MAX, connection.getFrameMax(), 0, 0);
 }
         
-void SspiAuthenticator::step(const string& /*response*/)
+void SspiAuthenticator::step(const string& response)
 {
   QPID_LOG(info, "SASL: Need another step!!!");
 }

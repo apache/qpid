@@ -41,8 +41,8 @@ namespace amqp_0_10 {
  * to a session state.
  */
 
-class QPID_COMMON_CLASS_EXTERN SessionHandler : public framing::AMQP_AllOperations::SessionHandler,
-        public framing::FrameHandler::InOutHandler
+class SessionHandler : public framing::AMQP_AllOperations::SessionHandler,
+                       public framing::FrameHandler::InOutHandler
 {
   public:
     QPID_COMMON_EXTERN SessionHandler(framing::FrameHandler* out=0, uint16_t channel=0);
@@ -66,7 +66,7 @@ class QPID_COMMON_CLASS_EXTERN SessionHandler : public framing::AMQP_AllOperatio
     QPID_COMMON_EXTERN void handleException(const qpid::SessionException& e);
 
     /** True if the handler is ready to send and receive */
-    QPID_COMMON_EXTERN bool ready() const;
+    bool ready() const;
 
     // Protocol methods
     QPID_COMMON_EXTERN void attach(const std::string& name, bool force);

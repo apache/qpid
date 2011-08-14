@@ -52,17 +52,6 @@ public interface QueueEntry extends Comparable<QueueEntry>, Filterable
         }
 
         public abstract State getState();
-
-        /**
-         * Returns true if state is either DEQUEUED or DELETED.
-         *
-         * @return true if state is either DEQUEUED or DELETED.
-         */
-        public boolean isDispensed()
-        {
-            State currentState = getState();
-            return currentState == State.DEQUEUED || currentState == State.DELETED;
-        }
     }
 
 
@@ -206,6 +195,8 @@ public interface QueueEntry extends Comparable<QueueEntry>, Filterable
 
     boolean isRejectedBy(Subscription subscription);
 
+    void requeue(Subscription subscription);
+
     void dequeue();
 
     void dispose();
@@ -218,18 +209,4 @@ public interface QueueEntry extends Comparable<QueueEntry>, Filterable
 
     void addStateChangeListener(StateChangeListener listener);
     boolean removeStateChangeListener(StateChangeListener listener);
-
-    /**
-     * Returns true if entry is in DEQUEUED state, otherwise returns false.
-     *
-     * @return true if entry is in DEQUEUED state, otherwise returns false
-     */
-    boolean isDequeued();
-
-    /**
-     * Returns true if entry is either DEQUED or DELETED state.
-     *
-     * @return true if entry is either DEQUED or DELETED state
-     */
-    boolean isDispensed();
 }

@@ -37,7 +37,7 @@ public class ContentHeaderBodyAdapter implements AMQMessageHeader
 
     private BasicContentHeaderProperties getProperties()
     {
-        return (BasicContentHeaderProperties) _contentHeaderBody.getProperties();
+        return (BasicContentHeaderProperties) _contentHeaderBody.properties;
     }
 
     public String getCorrelationId()

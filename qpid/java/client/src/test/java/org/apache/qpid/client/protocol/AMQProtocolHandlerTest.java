@@ -20,23 +20,22 @@
  */
 package org.apache.qpid.client.protocol;
 
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-
 import junit.framework.TestCase;
-
-import org.apache.qpid.AMQException;
-import org.apache.qpid.client.AMQAuthenticationException;
-import org.apache.qpid.client.MockAMQConnection;
-import org.apache.qpid.client.state.AMQState;
-import org.apache.qpid.framing.AMQBody;
 import org.apache.qpid.framing.AMQFrame;
+import org.apache.qpid.framing.AMQBody;
 import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.framing.amqp_8_0.BasicRecoverOkBodyImpl;
+import org.apache.qpid.AMQException;
 import org.apache.qpid.protocol.AMQConstant;
-import org.apache.qpid.transport.TestNetworkConnection;
+import org.apache.qpid.transport.TestNetworkDriver;
+import org.apache.qpid.client.MockAMQConnection;
+import org.apache.qpid.client.AMQAuthenticationException;
+import org.apache.qpid.client.state.AMQState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 /**
  * This is a test address QPID-1431 where frame listeners would fail to be notified of an incomming exception.
@@ -73,8 +72,8 @@ public class AMQProtocolHandlerTest extends TestCase
     public void setUp() throws Exception
     {
         //Create a new ProtocolHandler with a fake connection.
-        _handler = new AMQProtocolHandler(new MockAMQConnection("amqp://guest:guest@client/test?brokerlist='tcp://localhost:1'"));
-        _handler.setNetworkConnection(new TestNetworkConnection());
+        _handler = new AMQProtocolHandler(new MockAMQConnection("amqp://guest:guest@client/test?brokerlist='vm://:1'"));
+        _handler.setNetworkDriver(new TestNetworkDriver());
          AMQBody body = BasicRecoverOkBodyImpl.getFactory().newInstance(null, 1);
         _blockFrame = new AMQFrame(0, body);
 

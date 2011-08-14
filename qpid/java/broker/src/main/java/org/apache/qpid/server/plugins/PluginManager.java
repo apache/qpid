@@ -18,16 +18,8 @@
  */
 package org.apache.qpid.server.plugins;
 
-import static org.apache.felix.framework.util.FelixConstants.SYSTEMBUNDLE_ACTIVATORS_PROP;
-import static org.apache.felix.main.AutoProcessor.AUTO_DEPLOY_ACTION_PROPERY;
-import static org.apache.felix.main.AutoProcessor.AUTO_DEPLOY_DIR_PROPERY;
-import static org.apache.felix.main.AutoProcessor.AUTO_DEPLOY_INSTALL_VALUE;
-import static org.apache.felix.main.AutoProcessor.AUTO_DEPLOY_START_VALUE;
-import static org.apache.felix.main.AutoProcessor.process;
-import static org.osgi.framework.Constants.FRAMEWORK_STORAGE;
-import static org.osgi.framework.Constants.FRAMEWORK_STORAGE_CLEAN;
-import static org.osgi.framework.Constants.FRAMEWORK_STORAGE_CLEAN_ONFIRSTINIT;
-import static org.osgi.framework.Constants.FRAMEWORK_SYSTEMPACKAGES;
+import static org.apache.felix.framework.util.FelixConstants.*;
+import static org.apache.felix.main.AutoProcessor.*;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -43,20 +35,18 @@ import org.apache.felix.framework.util.StringMap;
 import org.apache.log4j.Logger;
 import org.apache.qpid.common.Closeable;
 import org.apache.qpid.server.configuration.TopicConfiguration;
-import org.apache.qpid.server.configuration.plugins.ConfigurationPluginFactory;
 import org.apache.qpid.server.configuration.plugins.SlowConsumerDetectionConfiguration.SlowConsumerDetectionConfigurationFactory;
 import org.apache.qpid.server.configuration.plugins.SlowConsumerDetectionPolicyConfiguration.SlowConsumerDetectionPolicyConfigurationFactory;
 import org.apache.qpid.server.configuration.plugins.SlowConsumerDetectionQueueConfiguration.SlowConsumerDetectionQueueConfigurationFactory;
+import org.apache.qpid.server.configuration.plugins.ConfigurationPluginFactory;
 import org.apache.qpid.server.exchange.ExchangeType;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.SecurityPluginFactory;
 import org.apache.qpid.server.security.access.plugins.AllowAll;
 import org.apache.qpid.server.security.access.plugins.DenyAll;
 import org.apache.qpid.server.security.access.plugins.LegacyAccess;
-import org.apache.qpid.server.security.auth.manager.AuthenticationManagerPluginFactory;
-import org.apache.qpid.server.security.auth.manager.PrincipalDatabaseAuthenticationManager;
-import org.apache.qpid.server.virtualhost.plugins.SlowConsumerDetection;
 import org.apache.qpid.server.virtualhost.plugins.VirtualHostPluginFactory;
+import org.apache.qpid.server.virtualhost.plugins.SlowConsumerDetection;
 import org.apache.qpid.server.virtualhost.plugins.policies.TopicDeletePolicy;
 import org.apache.qpid.slowconsumerdetection.policies.SlowConsumerPolicyPluginFactory;
 import org.osgi.framework.BundleActivator;
@@ -73,7 +63,7 @@ public class PluginManager implements Closeable
     private static final Logger _logger = Logger.getLogger(PluginManager.class);
 
     private static final int FELIX_STOP_TIMEOUT = 30000;
-    private static final String QPID_VER_SUFFIX = "version=0.13,";
+    private static final String QPID_VER_SUFFIX = "version=0.9,";
 
     private Framework _felix;
 
@@ -82,7 +72,6 @@ public class PluginManager implements Closeable
     private ServiceTracker _configTracker = null;
     private ServiceTracker _virtualHostTracker = null;
     private ServiceTracker _policyTracker = null;
-    private ServiceTracker _authenticationManagerTracker = null;
 
     private Activator _activator;
 
@@ -90,7 +79,6 @@ public class PluginManager implements Closeable
     private Map<List<String>, ConfigurationPluginFactory> _configPlugins = new IdentityHashMap<List<String>, ConfigurationPluginFactory>();
     private Map<String, VirtualHostPluginFactory> _vhostPlugins = new HashMap<String, VirtualHostPluginFactory>();
     private Map<String, SlowConsumerPolicyPluginFactory> _policyPlugins = new HashMap<String, SlowConsumerPolicyPluginFactory>();
-    private Map<String, AuthenticationManagerPluginFactory<? extends Plugin>> _authenticationManagerPlugins = new HashMap<String, AuthenticationManagerPluginFactory<? extends Plugin>>();
 
     public PluginManager(String pluginPath, String cachePath) throws Exception
     {
@@ -109,8 +97,7 @@ public class PluginManager implements Closeable
                 LegacyAccess.LegacyAccessConfiguration.FACTORY,
                 new SlowConsumerDetectionConfigurationFactory(),
                 new SlowConsumerDetectionPolicyConfigurationFactory(),
-                new SlowConsumerDetectionQueueConfigurationFactory(),
-                PrincipalDatabaseAuthenticationManager.PrincipalDatabaseAuthenticationManagerConfiguration.FACTORY))
+                new SlowConsumerDetectionQueueConfigurationFactory()))
         {
             _configPlugins.put(configFactory.getParentPaths(), configFactory);
         }
@@ -123,12 +110,6 @@ public class PluginManager implements Closeable
                 new SlowConsumerDetection.SlowConsumerFactory()))
         {
             _vhostPlugins.put(pluginFactory.getClass().getName(), pluginFactory);
-        }
-
-        for (AuthenticationManagerPluginFactory<? extends Plugin> pluginFactory : Arrays.asList(
-                PrincipalDatabaseAuthenticationManager.FACTORY))
-        {
-            _authenticationManagerPlugins.put(pluginFactory.getPluginName(), pluginFactory);
         }
 
         // Check the plugin directory path is set and exist
@@ -186,8 +167,7 @@ public class PluginManager implements Closeable
                 "org.apache.commons.logging; version=1.0.0," +
                 "org.apache.log4j; version=1.2.12," +
                 "javax.management.openmbean; version=1.0.0," +
-                "javax.management; version=1.0.0," +
-                "javax.security.auth; version=1.0.0"
+                "javax.management; version=1.0.0"
             );
         
         // No automatic shutdown hook
@@ -251,9 +231,6 @@ public class PluginManager implements Closeable
         _policyTracker = new ServiceTracker(_activator.getContext(), SlowConsumerPolicyPluginFactory.class.getName(), null);
         _policyTracker.open();
         
-        _authenticationManagerTracker = new ServiceTracker(_activator.getContext(), AuthenticationManagerPluginFactory.class.getName(), null);
-        _authenticationManagerTracker.open();
-
         _logger.info("Opened service trackers");
     }
 
@@ -324,11 +301,6 @@ public class PluginManager implements Closeable
         return getServices(_securityTracker, _securityPlugins);
     }
 
-    public Map<String, AuthenticationManagerPluginFactory<? extends Plugin>> getAuthenticationManagerPlugins()
-    {
-        return getServices(_authenticationManagerTracker, _authenticationManagerPlugins);
-    }
-
     public void close()
     {
         if (_felix != null)
@@ -341,7 +313,6 @@ public class PluginManager implements Closeable
                 _configTracker.close();
                 _virtualHostTracker.close();
                 _policyTracker.close();
-                _authenticationManagerTracker.close();
             }
             finally
             {

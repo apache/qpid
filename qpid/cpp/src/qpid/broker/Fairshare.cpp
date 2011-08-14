@@ -24,7 +24,6 @@
 #include "qpid/log/Statement.h"
 #include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
-#include <boost/assign/list_of.hpp>
 
 namespace qpid {
 namespace broker {
@@ -105,80 +104,51 @@ bool Fairshare::setState(Messages& m, uint priority, uint count)
     return fairshare && fairshare->setState(priority, count);
 }
 
-int getIntegerSetting(const qpid::framing::FieldTable& settings, const std::vector<std::string>& keys)
+int getIntegerSetting(const qpid::framing::FieldTable& settings, const std::string& key)
 {
-    qpid::framing::FieldTable::ValuePtr v;
-    std::vector<std::string>::const_iterator i = keys.begin(); 
-    while (!v && i != keys.end()) {
-        v = settings.get(*i++);
-    }
-
+    qpid::framing::FieldTable::ValuePtr v = settings.get(key);
     if (!v) {
         return 0;
     } else if (v->convertsTo<int>()) {
         return v->get<int>();
     } else if (v->convertsTo<std::string>()){
         std::string s = v->get<std::string>();
-        try {
-            return boost::lexical_cast<int>(s);
+        try { 
+            return boost::lexical_cast<int>(s); 
         } catch(const boost::bad_lexical_cast&) {
-            QPID_LOG(warning, "Ignoring invalid integer value for " << *i << ": " << s);
+            QPID_LOG(warning, "Ignoring invalid integer value for " << key << ": " << s);
             return 0;
         }
     } else {
-        QPID_LOG(warning, "Ignoring invalid integer value for " << *i << ": " << *v);
+        QPID_LOG(warning, "Ignoring invalid integer value for " << key << ": " << *v);
         return 0;
     }
 }
 
-int getIntegerSettingForKey(const qpid::framing::FieldTable& settings, const std::string& key)
+int getSetting(const qpid::framing::FieldTable& settings, const std::string& key, int minvalue, int maxvalue)
 {
-    return getIntegerSetting(settings, boost::assign::list_of<std::string>(key));
-}
-
-int getSetting(const qpid::framing::FieldTable& settings, const std::vector<std::string>& keys, int minvalue, int maxvalue)
-{
-    return std::max(minvalue,std::min(getIntegerSetting(settings, keys), maxvalue));
-}
-
-std::auto_ptr<Fairshare> getFairshareForKey(const qpid::framing::FieldTable& settings, uint levels, const std::string& key)
-{
-    uint defaultLimit = getIntegerSettingForKey(settings, key);
-    std::auto_ptr<Fairshare> fairshare(new Fairshare(levels, defaultLimit));
-    for (uint i = 0; i < levels; i++) {
-        std::string levelKey = (boost::format("%1%-%2%") % key % i).str();
-        if(settings.isSet(levelKey)) {
-            fairshare->setLimit(i, getIntegerSettingForKey(settings, levelKey));
-        }
-    }
-    if (!fairshare->isNull()) {
-        return fairshare;
-    } else {
-        return std::auto_ptr<Fairshare>();
-    }
-}
-
-std::auto_ptr<Fairshare> getFairshare(const qpid::framing::FieldTable& settings,
-                                      uint levels,
-                                      const std::vector<std::string>& keys)
-{
-    std::auto_ptr<Fairshare> fairshare;
-    for (std::vector<std::string>::const_iterator i = keys.begin(); i != keys.end() && !fairshare.get(); ++i) {
-        fairshare = getFairshareForKey(settings, levels, *i);
-    }
-    return fairshare;
+    return std::max(minvalue,std::min(getIntegerSetting(settings, key), maxvalue));
 }
 
 std::auto_ptr<Messages> Fairshare::create(const qpid::framing::FieldTable& settings)
 {
-    using boost::assign::list_of;
     std::auto_ptr<Messages> result;
-    size_t levels = getSetting(settings, list_of<std::string>("qpid.priorities")("x-qpid-priorities"), 1, 100);
+    size_t levels = getSetting(settings, "x-qpid-priorities", 1, 100);
     if (levels) {
-        std::auto_ptr<Fairshare> fairshare =
-            getFairshare(settings, levels, list_of<std::string>("qpid.fairshare")("x-qpid-fairshare"));
-        if (fairshare.get()) result = fairshare;
-        else result = std::auto_ptr<Messages>(new PriorityQueue(levels));
+        uint defaultLimit = getIntegerSetting(settings, "x-qpid-fairshare");
+        std::auto_ptr<Fairshare> fairshare(new Fairshare(levels, defaultLimit));
+        for (uint i = 0; i < levels; i++) {
+            std::string key = (boost::format("x-qpid-fairshare-%1%") % i).str();
+            if(settings.isSet(key)) {
+                fairshare->setLimit(i, getIntegerSetting(settings, key));
+            }
+        }
+        
+        if (fairshare->isNull()) {
+            result = std::auto_ptr<Messages>(new PriorityQueue(levels));
+        } else {
+            result = fairshare;
+        }
     }
     return result;
 }

@@ -152,8 +152,8 @@ private:
 
 public:
     AsynchConnector(const Socket& socket,
-                    const std::string& hostname,
-                    const std::string& port,
+                    std::string hostname,
+                    uint16_t port,
                     ConnectedCallback connCb,
                     FailedCallback failCb);
     void start(Poller::shared_ptr poller);
@@ -161,8 +161,8 @@ public:
 };
 
 AsynchConnector::AsynchConnector(const Socket& s,
-                                 const std::string& hostname,
-                                 const std::string& port,
+                                 std::string hostname,
+                                 uint16_t port,
                                  ConnectedCallback connCb,
                                  FailedCallback failCb) :
     DispatchHandle(s,
@@ -174,7 +174,7 @@ AsynchConnector::AsynchConnector(const Socket& s,
     socket(s)
 {
     socket.setNonblocking();
-    SocketAddress sa(hostname, port);
+    SocketAddress sa(hostname, boost::lexical_cast<std::string>(port));
     // Note, not catching any exceptions here, also has effect of destructing
     socket.connect(sa);
 }
@@ -589,8 +589,8 @@ AsynchAcceptor* AsynchAcceptor::create(const Socket& s,
 }
 
 AsynchConnector* AsynchConnector::create(const Socket& s,
-                                         const std::string& hostname,
-                                         const std::string& port,
+                                         std::string hostname,
+                                         uint16_t port,
                                          ConnectedCallback connCb,
                                          FailedCallback failCb)
 {

@@ -247,7 +247,7 @@ public class ClientDelegate extends ConnectionDelegate
         int i = heartbeat;
         if (i == 0)
         {
-            log.info("Idle timeout is 0 sec. Heartbeats are disabled.");
+            log.warn("Idle timeout is zero. Heartbeats are disabled");
             return 0; // heartbeats are disabled.
         }
         else if (i >= min && i <= max)
@@ -256,8 +256,8 @@ public class ClientDelegate extends ConnectionDelegate
         }
         else
         {
-            log.info("The broker does not support the configured connection idle timeout of %s sec," +
-                     " using the brokers max supported value of %s sec instead.", i,max);
+            log.warn("Ignoring the idle timeout %s set by the connection," +
+            		" using the brokers max value %s", i,max);
             return max;
         }
     }

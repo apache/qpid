@@ -20,23 +20,14 @@
  * under the License.
  */
 
-#if defined(WIN32) && !defined(QPID_DECLARE_STATIC)
-#  if defined(BROKER_EXPORT) || defined (qpidbroker_EXPORTS)
-#    define QPID_BROKER_EXTERN __declspec(dllexport)
-#  else
-#    define QPID_BROKER_EXTERN __declspec(dllimport)
-#  endif
-#  ifdef _MSC_VER
-#    define QPID_BROKER_CLASS_EXTERN
-#    define QPID_BROKER_INLINE_EXTERN QPID_BROKER_EXTERN
-#  else
-#    define QPID_BROKER_CLASS_EXTERN QPID_BROKER_EXTERN
-#    define QPID_BROKER_INLINE_EXTERN
-#  endif
+#if defined(WIN32) && !defined(QPID_BROKER_STATIC)
+#if defined(BROKER_EXPORT) || defined (qpidbroker_EXPORTS)
+#define QPID_BROKER_EXTERN __declspec(dllexport)
 #else
-#  define QPID_BROKER_EXTERN
-#  define QPID_BROKER_CLASS_EXTERN
-#  define QPID_BROKER_INLINE_EXTERN
+#define QPID_BROKER_EXTERN __declspec(dllimport)
+#endif
+#else
+#define QPID_BROKER_EXTERN 
 #endif
 
 #endif

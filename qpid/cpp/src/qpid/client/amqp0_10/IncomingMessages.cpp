@@ -144,10 +144,10 @@ void IncomingMessages::accept()
     acceptTracker.accept(session);
 }
 
-void IncomingMessages::accept(qpid::framing::SequenceNumber id, bool cumulative)
+void IncomingMessages::accept(qpid::framing::SequenceNumber id)
 {
     sys::Mutex::ScopedLock l(lock);
-    acceptTracker.accept(id, session, cumulative);
+    acceptTracker.accept(id, session);
 }
 
 

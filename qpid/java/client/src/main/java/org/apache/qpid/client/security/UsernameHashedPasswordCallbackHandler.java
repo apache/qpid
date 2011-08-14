@@ -20,29 +20,30 @@
  */
 package org.apache.qpid.client.security;
 
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
+import org.apache.qpid.client.protocol.AMQProtocolSession;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.NameCallback;
 import javax.security.auth.callback.PasswordCallback;
 import javax.security.auth.callback.UnsupportedCallbackException;
 
-import org.apache.qpid.jms.ConnectionURL;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 public class UsernameHashedPasswordCallbackHandler implements AMQCallbackHandler
 {
-    private ConnectionURL _connectionURL;
+    private static final Logger _logger = LoggerFactory.getLogger(UsernameHashedPasswordCallbackHandler.class);
 
-    /**
-     * @see org.apache.qpid.client.security.AMQCallbackHandler#initialise(org.apache.qpid.jms.ConnectionURL)
-     */
-    @Override
-    public void initialise(ConnectionURL connectionURL)
+    private AMQProtocolSession _protocolSession;
+
+    public void initialise(AMQProtocolSession protocolSession)
     {
-        _connectionURL = connectionURL;
+        _protocolSession = protocolSession;
     }
 
     public void handle(Callback[] callbacks) throws IOException, UnsupportedCallbackException
@@ -52,13 +53,13 @@ public class UsernameHashedPasswordCallbackHandler implements AMQCallbackHandler
             Callback cb = callbacks[i];
             if (cb instanceof NameCallback)
             {
-                ((NameCallback) cb).setName(_connectionURL.getUsername());
+                ((NameCallback) cb).setName(_protocolSession.getUsername());
             }
             else if (cb instanceof PasswordCallback)
             {
                 try
                 {
-                    ((PasswordCallback) cb).setPassword(getHash(_connectionURL.getPassword()));
+                    ((PasswordCallback) cb).setPassword(getHash(_protocolSession.getPassword()));
                 }
                 catch (NoSuchAlgorithmException e)
                 {
@@ -98,5 +99,4 @@ public class UsernameHashedPasswordCallbackHandler implements AMQCallbackHandler
 
         return hash;
     }
-
 }

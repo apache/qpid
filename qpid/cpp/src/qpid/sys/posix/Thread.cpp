@@ -37,8 +37,7 @@ void* runRunnable(void* p)
 }
 }
 
-class ThreadPrivate {
-public:
+struct ThreadPrivate {
     pthread_t thread;
 
     ThreadPrivate(Runnable* runnable) {

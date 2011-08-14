@@ -123,7 +123,7 @@ n_messages=100
 #--------------------------------------------------
 #echo "  Sending 100 messages to $broker_1_port "
 #--------------------------------------------------
-$builddir/datagen --count $n_messages | $SENDER_EXEC --mechanism DIGEST-MD5 --username zag --password zag --exchange $EXCHANGE_NAME --routing-key $ROUTING_KEY --port $broker_1_port
+$builddir/datagen --count $n_messages | $SENDER_EXEC --username zag --password zag --exchange $EXCHANGE_NAME --routing-key $ROUTING_KEY --port $broker_1_port
 
 sleep 5
 

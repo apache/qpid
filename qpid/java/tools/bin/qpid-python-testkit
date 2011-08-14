@@ -22,12 +22,9 @@
 # via the python test runner. The defaults are set for a running
 # from an svn checkout
 
-. check-qpid-java-env
+. ./set-testkit-env.sh
 
 export PYTHONPATH=./:$PYTHONPATH
-echo $PYTHONPATH
-if [ "$OUTDIR" = "" ] ; then
-   OUTDIR=$PWD
-fi
-testdir=$OUTDIR/testkit-out-`date +%F-%H-%M-%S`
-qpid-python-test -m testkit -DOUTDIR=$testdir"$@"
+rm -rf $OUTDIR
+qpid-python-test -DOUTDIR=$OUTDIR  -m testkit "$@"
+

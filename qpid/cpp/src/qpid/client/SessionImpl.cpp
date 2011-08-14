@@ -170,7 +170,6 @@ Demux& SessionImpl::getDemux()
 void SessionImpl::waitForCompletion(const SequenceNumber& id)
 {
     Lock l(state);
-    sys::Waitable::ScopedWait w(state);
     waitForCompletionImpl(id);
 }
 

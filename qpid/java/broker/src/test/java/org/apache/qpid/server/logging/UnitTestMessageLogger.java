@@ -28,7 +28,11 @@ import org.apache.qpid.server.logging.AbstractRootMessageLogger;
 
 public class UnitTestMessageLogger extends AbstractRootMessageLogger
 {
-    private final List<Object> _log = new LinkedList<Object>();
+    List<Object> _log;
+    
+    {
+        _log = new LinkedList<Object>();
+    }
     
     public UnitTestMessageLogger()
     {
@@ -64,15 +68,5 @@ public class UnitTestMessageLogger extends AbstractRootMessageLogger
     public void clearLogMessages()
     {
         _log.clear();
-    }
-    
-    public boolean messageContains(final int index, final String contains)
-    {
-        if (index + 1 > _log.size())
-        {
-            throw new IllegalArgumentException("Message with index " + index + " has not been logged");
-        }
-        final String message = _log.get(index).toString();
-        return message.contains(contains);
     }
 }

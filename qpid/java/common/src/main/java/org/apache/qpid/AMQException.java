@@ -20,7 +20,6 @@
  */
 package org.apache.qpid;
 
-import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.protocol.AMQConstant;
 
 /**
@@ -121,20 +120,5 @@ public class AMQException extends Exception
         }
 
         return newAMQE;
-    }
-
-    /**
-     * Truncates the exception message to 255 characters if its length exceeds 255.
-     *
-     * @return exception message
-     */
-    public AMQShortString getMessageAsShortString()
-    {
-        String message = getMessage();
-        if (message != null && message.length() > AMQShortString.MAX_LENGTH)
-        {
-            message = message.substring(0, AMQShortString.MAX_LENGTH - 3) + "...";
-        }
-        return new AMQShortString(message);
     }
 }

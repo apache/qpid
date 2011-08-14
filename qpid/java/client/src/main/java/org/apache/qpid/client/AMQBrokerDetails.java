@@ -56,7 +56,9 @@ public class AMQBrokerDetails implements BrokerDetails
             if (transport != null)
             {
                 //todo this list of valid transports should be enumerated somewhere
-                if (!(transport.equalsIgnoreCase(BrokerDetails.TCP)))
+                if ((!(transport.equalsIgnoreCase(BrokerDetails.VM) ||
+                       transport.equalsIgnoreCase(BrokerDetails.TCP) ||
+                       transport.equalsIgnoreCase(BrokerDetails.SOCKET))))
                 {
                     if (transport.equalsIgnoreCase("localhost"))
                     {
@@ -103,21 +105,6 @@ public class AMQBrokerDetails implements BrokerDetails
             if (host == null)
             {
                 host = "";
-                
-                String auth = connection.getAuthority();
-                if (auth != null)
-                {
-                    // contains both host & port myhost:5672                
-                    if (auth.contains(":"))
-                    {
-                        host = auth.substring(0,auth.indexOf(":"));
-                    }
-                    else
-                    {
-                        host = auth;
-                    }
-                }
-
             }
 
             setHost(host);
@@ -180,7 +167,10 @@ public class AMQBrokerDetails implements BrokerDetails
             }
             else
             {
-                setPort(port);
+                if (!_transport.equalsIgnoreCase(SOCKET))
+                {
+                    setPort(port);
+                }
             }
 
             String queryString = connection.getQuery();
@@ -296,9 +286,17 @@ public class AMQBrokerDetails implements BrokerDetails
 
         sb.append(_transport);
         sb.append("://");
-        sb.append(_host);
-        sb.append(':');
-        sb.append(_port);
+
+        if (!(_transport.equalsIgnoreCase(VM)))
+        {
+            sb.append(_host);
+        }
+
+        if (!(_transport.equalsIgnoreCase(SOCKET)))
+        {
+            sb.append(':');
+            sb.append(_port);
+        }
 
         sb.append(printOptionsURL());
 

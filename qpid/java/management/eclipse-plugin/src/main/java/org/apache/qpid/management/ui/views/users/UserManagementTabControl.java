@@ -37,6 +37,7 @@ import javax.management.openmbean.TabularDataSupport;
 import org.apache.qpid.management.ui.ApiVersion;
 import org.apache.qpid.management.ui.ApplicationRegistry;
 import org.apache.qpid.management.ui.ManagedBean;
+import org.apache.qpid.management.common.mbeans.UserManagement;
 import org.apache.qpid.management.ui.jmx.JMXManagedObject;
 import org.apache.qpid.management.ui.jmx.MBeanUtility;
 import org.apache.qpid.management.ui.views.TabControl;
@@ -82,7 +83,7 @@ public class UserManagementTabControl extends TabControl
     private TableViewer _tableViewer = null;
 
     private TabularDataSupport _userDetails = null;
-    private LegacySupportingUserManagement _ummb;
+    private UserManagement _ummb;
     private ApiVersion _ApiVersion;
     
     public UserManagementTabControl(TabFolder tabFolder, JMXManagedObject mbean, MBeanServerConnection mbsc)
@@ -90,9 +91,9 @@ public class UserManagementTabControl extends TabControl
         super(tabFolder);
         _mbean = mbean;
         _ApiVersion = ApplicationRegistry.getServerRegistry(mbean).getManagementApiVersion();
-        _ummb = (LegacySupportingUserManagement)
+        _ummb = (UserManagement)
                 MBeanServerInvocationHandler.newProxyInstance(mbsc, mbean.getObjectName(),
-                                                            LegacySupportingUserManagement.class, false);
+                                                            UserManagement.class, false);
         _toolkit = new FormToolkit(_tabFolder.getDisplay());
         _form = _toolkit.createScrolledForm(_tabFolder);
         _form.getBody().setLayout(new GridLayout());
@@ -170,13 +171,6 @@ public class UserManagementTabControl extends TabControl
         
         String[] titles = { "Username", "JMX Management Rights" };
         int[] bounds = { 310, 200 };
-        if(!settingManagementRightsSupported())
-        {
-            //Since Qpid JMX API 2.3 / 1.12 only Username is used
-            titles = new String[]{ "Username"};
-            bounds = new int[]{ 310 };
-        }
-
         for (int i = 0; i < titles.length; i++) 
         {
             final int index = i;
@@ -220,16 +214,7 @@ public class UserManagementTabControl extends TabControl
         
         Composite buttonsComposite = _toolkit.createComposite(tableComposite);
         gridData = new GridData(SWT.FILL, SWT.TOP, false, false);
-        if(!settingManagementRightsSupported())
-        {
-            //The 'Set Rights' button is not shown from Qpid JMX API 2.3 / 1.12
-            //onward, provide less space
-            gridData.heightHint = 135;
-        }
-        else
-        {
-            gridData.heightHint = 165;
-        }
+        gridData.heightHint = 165;
         buttonsComposite.setLayoutData(gridData);
         buttonsComposite.setLayout(new GridLayout());
         
@@ -307,14 +292,14 @@ public class UserManagementTabControl extends TabControl
                     
                     if (returnValue  == InputDialog.OK)
                     {
-                        char[] passwordArray = id.getValue().toCharArray();
+                        char[] password = id.getValue().toCharArray();
 
                         // Qpid JMX API 1.1 and below expects the password to be sent as a hashed value.
                         if (_ApiVersion.lessThanOrEqualTo(1,1))
                         {
                             try
                             {
-                                passwordArray = ViewUtility.getHash(id.getValue());
+                                password = ViewUtility.getHash(id.getValue());
                             }
                             catch (Exception hashException)
                             {
@@ -327,18 +312,7 @@ public class UserManagementTabControl extends TabControl
 
                         try
                         {
-                            boolean result;
-
-                            //For Qpid JMX API >=1.7 use String based method instead of older char[] based method.
-                            if(_ApiVersion.greaterThanOrEqualTo(1, 7))
-                            {
-                                result = _ummb.setPassword(user, id.getValue());
-                            }
-                            else
-                            {
-                                result = _ummb.setPassword(user, passwordArray);
-                            }
-
+                            boolean result = _ummb.setPassword(user, password);
                             ViewUtility.operationResultFeedback(result, "Updated user password", "Failed to update user password");
                         }
                         catch(Exception e2)
@@ -350,34 +324,25 @@ public class UserManagementTabControl extends TabControl
                 }
             }
         });
-
-        final Button setRightsButton;
-        if(!settingManagementRightsSupported())
+        
+        final Button setRightsButton = _toolkit.createButton(buttonsComposite, "Set Rights ...", SWT.PUSH);
+        gridData = new GridData(SWT.CENTER, SWT.BOTTOM, false, false);
+        gridData.widthHint = 125;
+        setRightsButton.setLayoutData(gridData);
+        setRightsButton.setEnabled(false);
+        setRightsButton.addSelectionListener(new SelectionAdapter()
         {
-            //The 'Set Rights' button is not used from Qpid JMX API 2.3 / 1.12 onward
-            setRightsButton = null;
-        }
-        else
-        {
-            setRightsButton = _toolkit.createButton(buttonsComposite, "Set Rights ...", SWT.PUSH);
-            gridData = new GridData(SWT.CENTER, SWT.BOTTOM, false, false);
-            gridData.widthHint = 125;
-            setRightsButton.setLayoutData(gridData);
-            setRightsButton.setEnabled(false);
-            setRightsButton.addSelectionListener(new SelectionAdapter()
+            public void widgetSelected(SelectionEvent e)
             {
-                public void widgetSelected(SelectionEvent e)
+                int selectionIndex = _table.getSelectionIndex();
+
+                if (selectionIndex != -1)
                 {
-                    int selectionIndex = _table.getSelectionIndex();
-
-                    if (selectionIndex != -1)
-                    {
-                        setRights(setRightsButton.getShell());
-                    }
+                    setRights(setRightsButton.getShell());
                 }
-            });
-        }
-
+            }
+        });
+        
         _tableViewer.addSelectionChangedListener(new ISelectionChangedListener(){
             public void selectionChanged(SelectionChangedEvent evt)
             {
@@ -386,20 +351,14 @@ public class UserManagementTabControl extends TabControl
                 if (selectionIndex == -1)
                 {
                     deleteUsersButton.setEnabled(false);
+                    setRightsButton.setEnabled(false);
                     setPasswordButton.setEnabled(false);
-                    if(setRightsButton != null)
-                    {
-                        setRightsButton.setEnabled(false);
-                    }
                     return;
                 }
                 else
                 {
                     deleteUsersButton.setEnabled(true);
-                    if(setRightsButton != null)
-                    {
-                        setRightsButton.setEnabled(true);
-                    }
+                    setRightsButton.setEnabled(true);
                 }
                 
                 if (_table.getSelectionCount() > 1)
@@ -427,17 +386,11 @@ public class UserManagementTabControl extends TabControl
             //this only reloaded the JMX rights file before Qpid JMX API 1.2
             _toolkit.createLabel(miscGroup, " Loads the current management rights file from disk");
         }
-        else if(settingManagementRightsSupported())
-        {
-            //from Qpid JMX API 1.2 to 2.3 / 1.12 it also reloads the password file
-            _toolkit.createLabel(miscGroup, " Loads the current password and management rights files from disk");
-        }
         else
         {
-            //since Qpid JMX API 2.3 / 1.12 it only reloads the password file
-            _toolkit.createLabel(miscGroup, " Loads the current password data");
+            //since Qpid JMX API 1.2 it also reloads the password file
+            _toolkit.createLabel(miscGroup, " Loads the current password and management rights files from disk");
         }
-
         reloadUserDetails.addSelectionListener(new SelectionAdapter()
         {
             public void widgetSelected(SelectionEvent e)
@@ -500,7 +453,7 @@ public class UserManagementTabControl extends TabControl
             {
                 case 0 : // username column 
                     return (String) ((CompositeData) element).get(USERNAME);
-                case 1 : // rights column (used for API < 2.3 / 1.12)
+                case 1 : // rights column 
                     return classifyUserRights((CompositeData) element);
                 default :
                     return "-";
@@ -557,11 +510,11 @@ public class UserManagementTabControl extends TabControl
             int comparison = 0;
             switch(column)
             {
-                case 0: //username column
+                case 0:
                     comparison = String.valueOf(user1.get(USERNAME)).compareTo(
                                                 String.valueOf(user2.get(USERNAME)));
                     break;
-                case 1: // rights column (used for API < 2.3 / 1.12)
+                case 1:
                     comparison = classifyUserRights(user1).compareTo(classifyUserRights(user2));
                     break;
                 default:
@@ -602,12 +555,7 @@ public class UserManagementTabControl extends TabControl
     
     private void setRights(final Shell parent)
     {
-        if(!settingManagementRightsSupported())
-        {
-            throw new UnsupportedOperationException("Setting management rights" +
-                        " is not supported using this version of the broker management API: " + (_ApiVersion));
-        }
-
+        
         int selectionIndex = _table.getSelectionIndex();
 
         if (selectionIndex == -1)
@@ -751,13 +699,6 @@ public class UserManagementTabControl extends TabControl
         
         shell.open();
     }
-
-    protected boolean settingManagementRightsSupported()
-    {
-        //setting management access rights was supported until Qpid JMX API 1.12 / 2.3
-        return _ApiVersion.lessThan(1,12) ||
-                (_ApiVersion.greaterThanOrEqualTo(2, 0) && _ApiVersion.lessThan(2,3));
-    }
     
     private void addUser(final Shell parent)
     {
@@ -765,8 +706,7 @@ public class UserManagementTabControl extends TabControl
         
         Composite usernameComposite = _toolkit.createComposite(shell, SWT.NONE);
         usernameComposite.setBackground(shell.getBackground());
-        GridData usernameCompGridData = new GridData(SWT.FILL, SWT.TOP, true, false);
-        usernameComposite.setLayoutData(usernameCompGridData);
+        usernameComposite.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
         usernameComposite.setLayout(new GridLayout(2,false));
         
         _toolkit.createLabel(usernameComposite,"Username:").setBackground(shell.getBackground());
@@ -775,45 +715,28 @@ public class UserManagementTabControl extends TabControl
         
         Composite passwordComposite = _toolkit.createComposite(shell, SWT.NONE);
         passwordComposite.setBackground(shell.getBackground());
-        GridData passwordCompGridData = new GridData(SWT.FILL, SWT.TOP, true, false);
-        passwordComposite.setLayoutData(passwordCompGridData);
+        passwordComposite.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
         passwordComposite.setLayout(new GridLayout(2,false));
         
         _toolkit.createLabel(passwordComposite,"Password:").setBackground(shell.getBackground());
         final Text passwordText = new Text(passwordComposite, SWT.BORDER | SWT.PASSWORD);
         passwordText.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
+        
+        Group buttonGroup = new Group(shell, SWT.NONE);
+        buttonGroup.setText("JMX Management Rights");
+        buttonGroup.setBackground(shell.getBackground());
+        buttonGroup.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
+        buttonGroup.setLayout(new GridLayout(4,false));
 
-        final Button readButton;
-        final Button writeButton;
-        final Button adminButton;
-        if(settingManagementRightsSupported())
-        {
-            Group buttonGroup = new Group(shell, SWT.NONE);
-            buttonGroup.setText("JMX Management Rights");
-            buttonGroup.setBackground(shell.getBackground());
-            buttonGroup.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
-            buttonGroup.setLayout(new GridLayout(4,false));
-
-            final Button noneButton = new Button(buttonGroup, SWT.RADIO);
-            noneButton.setText("No Access");
-            noneButton.setSelection(true);
-            readButton = new Button(buttonGroup, SWT.RADIO);
-            readButton.setText("Read Only");
-            writeButton = new Button(buttonGroup, SWT.RADIO);
-            writeButton.setText("Read + Write");
-            adminButton = new Button(buttonGroup, SWT.RADIO);
-            adminButton.setText("Admin");
-        }
-        else
-        {
-            readButton = null;
-            writeButton = null;
-            adminButton = null;
-            //The lack of rights settings will cause the dialog to,
-            //shrink so add width hints to the other components
-            passwordCompGridData.widthHint = 350;
-            usernameCompGridData.widthHint = 350;
-        }
+        final Button noneButton = new Button(buttonGroup, SWT.RADIO);
+        noneButton.setText("No Access");
+        noneButton.setSelection(true);
+        final Button readButton = new Button(buttonGroup, SWT.RADIO);
+        readButton.setText("Read Only");
+        final Button writeButton = new Button(buttonGroup, SWT.RADIO);
+        writeButton.setText("Read + Write");
+        final Button adminButton = new Button(buttonGroup, SWT.RADIO);
+        adminButton.setText("Admin");
 
         Composite okCancelButtonsComp = _toolkit.createComposite(shell);
         okCancelButtonsComp.setBackground(shell.getBackground());
@@ -861,36 +784,22 @@ public class UserManagementTabControl extends TabControl
                         return;
                     }
                 }
-
-                //read the access rights selections if required
-                boolean read = false;
-                boolean write = false;
-                boolean admin = false;
-                if(settingManagementRightsSupported())
-                {
-                    read = readButton.getSelection();
-                    write = writeButton.getSelection();
-                    admin = adminButton.getSelection();
-                }
+                
+                boolean read = readButton.getSelection();
+                boolean write = writeButton.getSelection();
+                boolean admin = adminButton.getSelection();
                 
                 shell.dispose();
                 try
                 {
                     boolean result = false;
-
-                    if (!settingManagementRightsSupported())
+                    // If we have Qpid JMX API 1.7 or above, use newer createUser method with String based password.
+                    if (_ApiVersion.greaterThanOrEqualTo(1,7))
                     {
-                        // If we have Qpid JMX API 2.3 / 1.12 or above, use newer createUser method without rights parameters.
-                        result = _ummb.createUser(username, password);
-                    }
-                    else if (_ApiVersion.greaterThanOrEqualTo(1,7))
-                    {
-                        // If we have Qpid JMX API 1.7 or above, use newer createUser method with String based password.
                         result = _ummb.createUser(username, password, read, write, admin);
                     }
                     else
                     {
-                        // Else we have Qpid JMX API 1.6 or below, use older createUser method with char[] based password.
                         result = _ummb.createUser(username, passwordChars, read, write, admin);
                     }
                     

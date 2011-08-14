@@ -20,70 +20,27 @@
  */
 package org.apache.qpid.server.util;
 
-import java.util.Properties;
-
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.qpid.server.configuration.ServerConfiguration;
-import org.apache.qpid.server.logging.NullRootMessageLogger;
-import org.apache.qpid.server.logging.actors.BrokerActor;
-import org.apache.qpid.server.logging.actors.CurrentActor;
-import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
 import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.security.auth.database.PropertiesPrincipalDatabase;
-import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
-import org.apache.qpid.server.security.auth.manager.PrincipalDatabaseAuthenticationManager;
+import org.apache.qpid.server.security.auth.database.PropertiesPrincipalDatabaseManager;
+
+import java.util.Properties;
+
 
 public class TestApplicationRegistry extends ApplicationRegistry
 {
-
     public TestApplicationRegistry(ServerConfiguration config) throws ConfigurationException
     {
         super(config);
     }
 
-    @Override
-    public void initialise() throws Exception
+    protected void createDatabaseManager(ServerConfiguration configuration) throws Exception
     {
-        CurrentActor.setDefault(new BrokerActor(new NullRootMessageLogger()));
-        super.initialise();
-    }
-
-    /**
-     * @see org.apache.qpid.server.registry.ApplicationRegistry#createAuthenticationManager()
-     */
-    @Override
-    protected AuthenticationManager createAuthenticationManager() throws ConfigurationException
-    {
-        final Properties users = new Properties();
+        Properties users = new Properties();
         users.put("guest","guest");
         users.put("admin","admin");
-
-        final PropertiesPrincipalDatabase ppd = new PropertiesPrincipalDatabase(users);
-
-        AuthenticationManager pdam =  new PrincipalDatabaseAuthenticationManager()
-        {
-
-            /**
-             * @see org.apache.qpid.server.security.auth.manager.PrincipalDatabaseAuthenticationManager#configure(org.apache.qpid.server.configuration.plugins.ConfigurationPlugin)
-             */
-            @Override
-            public void configure(ConfigurationPlugin config) throws ConfigurationException
-            {
-                // We don't pass configuration to this test instance.
-            }
-
-            @Override
-            public void initialise()
-            {
-                setPrincipalDatabase(ppd);
-
-                super.initialise();
-            }
-        };
-
-        pdam.initialise();
-
-        return pdam;
+        _databaseManager = new PropertiesPrincipalDatabaseManager("testPasswordFile", users);
     }
 
 }

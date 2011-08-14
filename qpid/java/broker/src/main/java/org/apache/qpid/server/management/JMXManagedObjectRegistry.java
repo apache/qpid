@@ -20,6 +20,32 @@
  */
 package org.apache.qpid.server.management;
 
+import org.apache.commons.configuration.ConfigurationException;
+import org.apache.log4j.Logger;
+import org.apache.qpid.AMQException;
+import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.registry.IApplicationRegistry;
+import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
+import org.apache.qpid.server.security.auth.rmi.RMIPasswordAuthenticator;
+import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.logging.messages.ManagementConsoleMessages;
+
+import javax.management.JMException;
+import javax.management.MBeanServer;
+import javax.management.MBeanServerFactory;
+import javax.management.ObjectName;
+import javax.management.NotificationListener;
+import javax.management.NotificationFilterSupport;
+import javax.management.remote.JMXConnectorServer;
+import javax.management.remote.JMXServiceURL;
+import javax.management.remote.MBeanServerForwarder;
+import javax.management.remote.JMXConnectionNotification;
+import javax.management.remote.rmi.RMIConnectorServer;
+import javax.management.remote.rmi.RMIJRMPServerImpl;
+import javax.management.remote.rmi.RMIServerImpl;
+import javax.rmi.ssl.SslRMIClientSocketFactory;
+import javax.rmi.ssl.SslRMIServerSocketFactory;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -38,31 +64,7 @@ import java.rmi.server.RMIClientSocketFactory;
 import java.rmi.server.RMIServerSocketFactory;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.HashMap;
-
-import javax.management.JMException;
-import javax.management.MBeanServer;
-import javax.management.MBeanServerFactory;
-import javax.management.NotificationFilterSupport;
-import javax.management.NotificationListener;
-import javax.management.ObjectName;
-import javax.management.remote.JMXConnectionNotification;
-import javax.management.remote.JMXConnectorServer;
-import javax.management.remote.JMXServiceURL;
-import javax.management.remote.MBeanServerForwarder;
-import javax.management.remote.rmi.RMIConnectorServer;
-import javax.management.remote.rmi.RMIJRMPServerImpl;
-import javax.management.remote.rmi.RMIServerImpl;
-import javax.rmi.ssl.SslRMIClientSocketFactory;
-import javax.rmi.ssl.SslRMIServerSocketFactory;
-
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.log4j.Logger;
-import org.apache.qpid.AMQException;
-import org.apache.qpid.server.logging.actors.CurrentActor;
-import org.apache.qpid.server.logging.messages.ManagementConsoleMessages;
-import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.registry.IApplicationRegistry;
-import org.apache.qpid.server.security.auth.rmi.RMIPasswordAuthenticator;
+import java.util.Map;
 
 /**
  * This class starts up an MBeanserver. If out of the box agent has been enabled then there are no 
@@ -111,6 +113,12 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
         IApplicationRegistry appRegistry = ApplicationRegistry.getInstance();
         int port = appRegistry.getConfiguration().getJMXManagementPort();
 
+        //retrieve the Principal Database assigned to JMX authentication duties
+        String jmxDatabaseName = appRegistry.getConfiguration().getJMXPrincipalDatabase();
+        Map<String, PrincipalDatabase> map = appRegistry.getDatabaseManager().getDatabases();        
+        PrincipalDatabase db = map.get(jmxDatabaseName);
+
+        HashMap<String,Object> env = new HashMap<String,Object>();
 
         //Socket factories for the RMIConnectorServer, either default or SLL depending on configuration
         RMIClientSocketFactory csf;
@@ -192,8 +200,7 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
 
         //add a JMXAuthenticator implementation the env map to authenticate the RMI based JMX connector server
         RMIPasswordAuthenticator rmipa = new RMIPasswordAuthenticator();
-        rmipa.setAuthenticationManager(appRegistry.getAuthenticationManager());
-        HashMap<String,Object> env = new HashMap<String,Object>();
+        rmipa.setPrincipalDatabase(db);
         env.put(JMXConnectorServer.AUTHENTICATOR, rmipa);
 
         /*

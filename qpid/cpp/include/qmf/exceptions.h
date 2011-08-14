@@ -31,24 +31,24 @@ namespace qmf {
 /** \ingroup qmf
  */
 
-    struct QMF_CLASS_EXTERN QmfException : public qpid::types::Exception {
+    struct QmfException : public qpid::types::Exception {
         QMF_EXTERN QmfException(const std::string& msg);
         QMF_EXTERN virtual ~QmfException() throw();
 
         qpid::types::Variant::Map detail;
     };
 
-    struct QMF_CLASS_EXTERN KeyNotFound : public QmfException {
+    struct KeyNotFound : public QmfException {
         QMF_EXTERN KeyNotFound(const std::string& msg);
         QMF_EXTERN virtual ~KeyNotFound() throw();
     };
 
-    struct QMF_CLASS_EXTERN IndexOutOfRange : public QmfException {
+    struct IndexOutOfRange : public QmfException {
         QMF_EXTERN IndexOutOfRange();
         QMF_EXTERN virtual ~IndexOutOfRange() throw();
     };
 
-    struct QMF_CLASS_EXTERN OperationTimedOut : public QmfException {
+    struct OperationTimedOut : public QmfException {
         QMF_EXTERN OperationTimedOut();
         QMF_EXTERN virtual ~OperationTimedOut() throw();
     };

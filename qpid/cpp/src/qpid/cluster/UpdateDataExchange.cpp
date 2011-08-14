@@ -36,8 +36,13 @@ const std::string UpdateDataExchange::MANAGEMENT_AGENTS_KEY("management-agents")
 const std::string UpdateDataExchange::MANAGEMENT_SCHEMAS_KEY("management-schemas");
 const std::string UpdateDataExchange::MANAGEMENT_DELETED_OBJECTS_KEY("management-deleted-objects");
 
+std::ostream& operator<<(std::ostream& o, const UpdateDataExchange& c) {
+    return o << "cluster(" << c.clusterId << " UPDATER)";
+}
+
 UpdateDataExchange::UpdateDataExchange(Cluster& cluster) :
-    Exchange(EXCHANGE_NAME, &cluster)
+    Exchange(EXCHANGE_NAME, &cluster),
+    clusterId(cluster.getId())
 {}
 
 void UpdateDataExchange::route(broker::Deliverable& msg, const std::string& routingKey,
@@ -57,9 +62,11 @@ void UpdateDataExchange::updateManagementAgent(management::ManagementAgent* agen
 
     framing::Buffer buf1(const_cast<char*>(managementAgents.data()), managementAgents.size());
     agent->importAgents(buf1);
+    QPID_LOG(debug, *this << " updated management agents.");
 
     framing::Buffer buf2(const_cast<char*>(managementSchemas.data()), managementSchemas.size());
     agent->importSchemas(buf2);
+    QPID_LOG(debug, *this << " updated management schemas.");
 
     using amqp_0_10::ListCodec;
     using types::Variant;
@@ -71,6 +78,7 @@ void UpdateDataExchange::updateManagementAgent(management::ManagementAgent* agen
                               new management::ManagementAgent::DeletedObject(*i)));
     }
     agent->importDeletedObjects(objects);
+    QPID_LOG(debug, *this << " updated management deleted objects.");
 }
 
 

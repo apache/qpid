@@ -22,23 +22,68 @@
  *
  */
 
-#include <qpid/RefCounted.h>
-#include <qpid/BufferRef.h>
+#include <boost/utility.hpp>
+#include <boost/detail/atomic_count.hpp>
+#include <boost/intrusive_ptr.hpp>
 
 namespace qpid {
 
 /**
- * Reference-counted byte buffer. No alignment guarantees.
+ * Reference-counted byte buffer.
+ * No alignment guarantees.
  */
-class RefCountedBuffer : public RefCounted {
-  public:
-    /** Create a reference counted buffer of size n */
-    static BufferRef create(size_t n);
+class RefCountedBuffer : boost::noncopyable {
+    mutable boost::detail::atomic_count count;
+    RefCountedBuffer();
+    void destroy() const;
+    char* addr() const;
 
-  protected:
-    void released() const;
+public:
+    /** Smart char pointer to a reference counted buffer */
+    class pointer {
+        boost::intrusive_ptr<RefCountedBuffer> p;
+        char* cp() const;
+        pointer(RefCountedBuffer* x);
+      friend class RefCountedBuffer;
+
+      public:
+        pointer();
+        pointer(const pointer&);
+        ~pointer();
+        pointer& operator=(const pointer&);
+
+        char* get() { return cp(); }
+        operator char*() { return cp(); }
+        char& operator*() { return *cp(); }
+        char& operator[](size_t i) { return cp()[i]; }
+
+        const char* get() const { return cp(); }
+        operator const char*() const { return cp(); }
+        const char& operator*() const { return *cp(); }
+        const char& operator[](size_t i) const { return cp()[i]; }
+    };
+
+    /** Create a reference counted buffer of size n */
+    static pointer create(size_t n);
+
+    /** Get a pointer to the start of the buffer. */
+    char* get() { return addr(); }
+    const char* get() const { return addr(); }
+    char& operator[](size_t i) { return get()[i]; }
+    const char& operator[](size_t i) const { return get()[i]; }
+
+    void addRef() const { ++count; }
+    void release() const { if (--count==0) destroy(); }
+    long refCount() { return count; }
 };
 
 } // namespace qpid
+
+// intrusive_ptr support.
+namespace boost {
+inline void intrusive_ptr_add_ref(const qpid::RefCountedBuffer* p) { p->addRef(); }
+inline void intrusive_ptr_release(const qpid::RefCountedBuffer* p) { p->release(); }
+}
+
 
 #endif  /*!QPID_REFCOUNTEDBUFFER_H*/

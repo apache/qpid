@@ -153,7 +153,7 @@ std::string WindowsSasl::start(const std::string& mechanisms,
     return resp;
 }
 
-std::string WindowsSasl::step(const std::string& /*challenge*/)
+std::string WindowsSasl::step(const std::string& challenge)
 {
     // Shouldn't get this for PLAIN...
     throw InternalErrorException(QPID_MSG("Sasl step error"));
@@ -169,7 +169,7 @@ std::string WindowsSasl::getUserId()
     return std::string(); // TODO - when GSSAPI is supported, return userId for connection.
 }
 
-std::auto_ptr<SecurityLayer> WindowsSasl::getSecurityLayer(uint16_t /*maxFrameSize*/)
+std::auto_ptr<SecurityLayer> WindowsSasl::getSecurityLayer(uint16_t maxFrameSize)
 {
     return std::auto_ptr<SecurityLayer>(0);
 }

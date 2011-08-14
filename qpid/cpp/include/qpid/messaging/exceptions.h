@@ -32,7 +32,7 @@ namespace messaging {
 /** \ingroup messaging 
  */
 
-struct QPID_MESSAGING_CLASS_EXTERN MessagingException : public qpid::types::Exception 
+struct MessagingException : public qpid::types::Exception 
 {
     QPID_MESSAGING_EXTERN MessagingException(const std::string& msg);
     QPID_MESSAGING_EXTERN virtual ~MessagingException() throw();
@@ -41,22 +41,22 @@ struct QPID_MESSAGING_CLASS_EXTERN MessagingException : public qpid::types::Exce
     //TODO: override what() to include detail if present
 };
 
-struct QPID_MESSAGING_CLASS_EXTERN InvalidOptionString : public MessagingException 
+struct InvalidOptionString : public MessagingException 
 {
     QPID_MESSAGING_EXTERN InvalidOptionString(const std::string& msg);
 };
 
-struct QPID_MESSAGING_CLASS_EXTERN KeyError : public MessagingException
+struct KeyError : public MessagingException
 {
     QPID_MESSAGING_EXTERN KeyError(const std::string&);
 };
 
-struct QPID_MESSAGING_CLASS_EXTERN LinkError : public MessagingException
+struct LinkError : public MessagingException
 {
     QPID_MESSAGING_EXTERN LinkError(const std::string&);
 };
 
-struct QPID_MESSAGING_CLASS_EXTERN AddressError : public LinkError
+struct AddressError : public LinkError
 {
     QPID_MESSAGING_EXTERN AddressError(const std::string&);
 };
@@ -65,17 +65,17 @@ struct QPID_MESSAGING_CLASS_EXTERN AddressError : public LinkError
  * Thrown when a syntactically correct address cannot be resolved or
  * used.
  */
-struct QPID_MESSAGING_CLASS_EXTERN ResolutionError : public AddressError 
+struct ResolutionError : public AddressError 
 {
     QPID_MESSAGING_EXTERN ResolutionError(const std::string& msg);
 };
 
-struct QPID_MESSAGING_CLASS_EXTERN AssertionFailed : public ResolutionError 
+struct AssertionFailed : public ResolutionError 
 {
     QPID_MESSAGING_EXTERN AssertionFailed(const std::string& msg);
 };
 
-struct QPID_MESSAGING_CLASS_EXTERN NotFound : public ResolutionError 
+struct NotFound : public ResolutionError 
 {
     QPID_MESSAGING_EXTERN NotFound(const std::string& msg);
 };
@@ -83,67 +83,67 @@ struct QPID_MESSAGING_CLASS_EXTERN NotFound : public ResolutionError
 /**
  * Thrown when an address string with inalid sytanx is used.
  */
-struct QPID_MESSAGING_CLASS_EXTERN MalformedAddress : public AddressError 
+struct MalformedAddress : public AddressError 
 {
     QPID_MESSAGING_EXTERN MalformedAddress(const std::string& msg);
 };
 
-struct QPID_MESSAGING_CLASS_EXTERN ReceiverError : public LinkError
+struct ReceiverError : public LinkError
 {
     QPID_MESSAGING_EXTERN ReceiverError(const std::string&);
 };
 
-struct QPID_MESSAGING_CLASS_EXTERN FetchError : public ReceiverError
+struct FetchError : public ReceiverError
 {
     QPID_MESSAGING_EXTERN FetchError(const std::string&);
 };
 
-struct QPID_MESSAGING_CLASS_EXTERN NoMessageAvailable : public FetchError
+struct NoMessageAvailable : public FetchError
 {
     QPID_MESSAGING_EXTERN NoMessageAvailable();
 };
 
-struct QPID_MESSAGING_CLASS_EXTERN SenderError : public LinkError
+struct SenderError : public LinkError
 {
     QPID_MESSAGING_EXTERN SenderError(const std::string&);
 };
 
-struct QPID_MESSAGING_CLASS_EXTERN SendError : public SenderError
+struct SendError : public SenderError
 {
     QPID_MESSAGING_EXTERN SendError(const std::string&);
 };
 
-struct QPID_MESSAGING_CLASS_EXTERN TargetCapacityExceeded : public SendError
+struct TargetCapacityExceeded : public SendError
 {
     QPID_MESSAGING_EXTERN TargetCapacityExceeded(const std::string&);
 };
 
-struct QPID_MESSAGING_CLASS_EXTERN SessionError : public MessagingException
+struct SessionError : public MessagingException
 {
     QPID_MESSAGING_EXTERN SessionError(const std::string&);
 };
 
-struct QPID_MESSAGING_CLASS_EXTERN TransactionError : public SessionError
+struct TransactionError : public SessionError
 {
     QPID_MESSAGING_EXTERN TransactionError(const std::string&);
 };
 
-struct QPID_MESSAGING_CLASS_EXTERN TransactionAborted : public TransactionError
+struct TransactionAborted : public TransactionError
 {
     QPID_MESSAGING_EXTERN TransactionAborted(const std::string&);
 };
 
-struct QPID_MESSAGING_CLASS_EXTERN UnauthorizedAccess : public SessionError
+struct UnauthorizedAccess : public SessionError
 {
     QPID_MESSAGING_EXTERN UnauthorizedAccess(const std::string&);
 };
 
-struct QPID_MESSAGING_CLASS_EXTERN ConnectionError : public MessagingException
+struct ConnectionError : public MessagingException
 {
     QPID_MESSAGING_EXTERN ConnectionError(const std::string&);
 };
 
-struct QPID_MESSAGING_CLASS_EXTERN TransportFailure : public MessagingException
+struct TransportFailure : public MessagingException
 {
     QPID_MESSAGING_EXTERN TransportFailure(const std::string&);
 };

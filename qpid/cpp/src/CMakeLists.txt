@@ -96,7 +96,7 @@ MACRO (add_msvc_version_full verProject verProjectType verProjectFileExt verFN1 
         inherit_value ("winver_${verProject}_InternalName"         "${verProject}")
         inherit_value ("winver_${verProject}_OriginalFilename"     "${verProject}.${verProjectFileExt}")
         inherit_value ("winver_${verProject}_ProductName"          "${winver_DESCRIPTION_SUMMARY}")
-
+        
         # Create strings to be substituted into the template file
         set ("winverFileVersionBinary"     "${winver_${verProject}_FileVersionBinary}")
         set ("winverProductVersionBinary"  "${winver_${verProject}_ProductVersionBinary}")
@@ -126,7 +126,7 @@ ENDMACRO (add_msvc_version_full)
 #
 MACRO (add_msvc_version verProject verProjectType verProjectFileExt)
     if (MSVC)
-        add_msvc_version_full (${verProject}
+        add_msvc_version_full (${verProject} 
                                ${verProjectType}
                                ${verProjectFileExt}
                                ${winver_FILE_VERSION_N1}
@@ -580,15 +580,6 @@ include (ssl.cmake)
 check_symbol_exists (LOG_AUTHPRIV "sys/syslog.h" HAVE_LOG_AUTHPRIV)
 check_symbol_exists (LOG_FTP "sys/syslog.h" HAVE_LOG_FTP)
 
-# Allow MSVC user to select 'WinXP-SP3/Windows Server 2003' as build target version
-set (win32_winnt_default OFF)
-if (CMAKE_SYSTEM_NAME STREQUAL Windows)
-    if (MSVC)
-        set (win32_winnt_default ON)
-    endif (MSVC)
-endif (CMAKE_SYSTEM_NAME STREQUAL Windows)
-option(SET_WIN32_WINNT "In Windows-MSVC build: define _WIN32_WINNT=0x0502 to select target version: Windows XP with SP3" ${win32_winnt_default})
-
 if (CMAKE_SYSTEM_NAME STREQUAL Windows)
   if (MSVC)
     add_definitions(
@@ -599,9 +590,9 @@ if (CMAKE_SYSTEM_NAME STREQUAL Windows)
       /wd4800
       /wd4355
     )
-    if (SET_WIN32_WINNT)
-        add_definitions(/D "_WIN32_WINNT=0x0502")
-    endif (SET_WIN32_WINNT)
+    if (MSVC80)
+      add_definitions(/D "_WIN32_WINNT=0x0501")
+    endif (MSVC80)
 
     # set the RelWithDebInfo compile/link switches to equal Release
     set (CMAKE_CXX_FLAGS_RELWITHDEBINFO "/MD /O2 /Ob2 /D NDEBUG")
@@ -645,7 +636,8 @@ if (CMAKE_SYSTEM_NAME STREQUAL Windows)
   )
 
   set (qpidcommon_platform_LIBS
-    ${Boost_THREAD_LIBRARY} ${windows_ssl_libs} ${Boost_PROGRAM_OPTIONS_LIBRARY} ${Boost_DATE_TIME_LIBRARY} ${Boost_FILESYSTEM_LIBRARY} ${Boost_SYSTEM_LIBRARY} ws2_32  )
+    ${windows_ssl_libs} ws2_32
+  )
   set (qpidbroker_platform_SOURCES
     qpid/broker/windows/BrokerDefaults.cpp
     qpid/broker/windows/SaslAuthenticator.cpp
@@ -665,7 +657,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL Windows)
   set (qpidd_platform_SOURCES
     windows/QpiddBroker.cpp
   )
-
+  
   set (qpidmessaging_platform_SOURCES
      qpid/messaging/HandleInstantiator.cpp
   )
@@ -946,7 +938,7 @@ if (NOT QPID_GENERATED_HEADERS_IN_SOURCE)
 endif (NOT QPID_GENERATED_HEADERS_IN_SOURCE)
 
 
-if (MSVC)
+if (WIN32)
     # Install the DtcPlugin project and call it qpidxarm.
     set(AMQP_WCF_DIR ${qpid-cpp_SOURCE_DIR}/../wcf)
     set(qpidxarm_SOURCES ${AMQP_WCF_DIR}/src/Apache/Qpid/DtcPlugin/DtcPlugin.cpp)
@@ -959,7 +951,7 @@ if (MSVC)
                  COMPONENT ${QPID_COMPONENT_CLIENT})
         install_pdb (qpidxarm ${QPID_COMPONENT_CLIENT})
     endif (EXISTS ${qpidxarm_SOURCES})
-endif (MSVC)
+endif (WIN32)
 
 set (qpidbroker_SOURCES
      ${mgen_broker_cpp}
@@ -1006,6 +998,7 @@ set (qpidbroker_SOURCES
      qpid/broker/QueuePolicy.cpp
      qpid/broker/QueueRegistry.cpp
      qpid/broker/QueueFlowLimit.cpp
+     qpid/broker/RateTracker.cpp
      qpid/broker/RecoveryManagerImpl.cpp
      qpid/broker/RecoveredEnqueue.cpp
      qpid/broker/RecoveredDequeue.cpp

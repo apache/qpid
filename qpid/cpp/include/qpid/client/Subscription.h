@@ -39,7 +39,7 @@ class SubscriptionManager;
  * A handle to an active subscription. Provides methods to query the subscription status
  * and control acknowledgement (acquire and accept) of messages.
  */
-class QPID_CLIENT_CLASS_EXTERN Subscription : public Handle<SubscriptionImpl> {
+class Subscription : public Handle<SubscriptionImpl> {
   public:
     QPID_CLIENT_EXTERN Subscription(SubscriptionImpl* = 0);
     QPID_CLIENT_EXTERN Subscription(const Subscription&);
@@ -91,13 +91,13 @@ class QPID_CLIENT_CLASS_EXTERN Subscription : public Handle<SubscriptionImpl> {
     QPID_CLIENT_EXTERN void release(const SequenceSet& messageIds);
 
     /* Acquire a single message */
-    QPID_CLIENT_INLINE_EXTERN void acquire(const Message& m) { acquire(SequenceSet(m.getId())); }
+    QPID_CLIENT_EXTERN void acquire(const Message& m) { acquire(SequenceSet(m.getId())); }
 
     /* Accept a single message */
-    QPID_CLIENT_INLINE_EXTERN void accept(const Message& m) { accept(SequenceSet(m.getId())); }
+    QPID_CLIENT_EXTERN void accept(const Message& m) { accept(SequenceSet(m.getId())); }
 
     /* Release a single message */
-    QPID_CLIENT_INLINE_EXTERN void release(const Message& m) { release(SequenceSet(m.getId())); }
+    QPID_CLIENT_EXTERN void release(const Message& m) { release(SequenceSet(m.getId())); }
 
     /** Get the session associated with this subscription */
     QPID_CLIENT_EXTERN Session getSession() const;

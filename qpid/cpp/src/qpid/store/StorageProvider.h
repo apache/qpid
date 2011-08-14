@@ -54,7 +54,7 @@ struct QueueEntry {
     QueueEntry(uint64_t id, TplStatus tpl = NONE, const std::string& x = "")
         : queueId(id), tplStatus(tpl), xid(x) {}
 
-    bool operator==(const QueueEntry& rhs) const {
+    bool operator==(const QueueEntry& rhs) {
         if (queueId != rhs.queueId) return false;
         if (tplStatus == NONE && rhs.tplStatus == NONE) return true;
         return xid == rhs.xid;

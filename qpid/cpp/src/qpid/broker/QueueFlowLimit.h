@@ -27,7 +27,7 @@
 #include <memory>
 #include "qpid/broker/BrokerImportExport.h"
 #include "qpid/broker/QueuedMessage.h"
-#include "qpid/broker/StatefulQueueObserver.h"
+#include "qpid/broker/QueueObserver.h"
 #include "qpid/framing/FieldTable.h"
 #include "qpid/sys/AtomicValue.h"
 #include "qpid/sys/Mutex.h"
@@ -53,7 +53,7 @@ class Broker;
  * passing _either_ level may turn flow control ON, but _both_ must be
  * below level before flow control will be turned OFF.
  */
- class QueueFlowLimit : public StatefulQueueObserver
+ class QueueFlowLimit : public QueueObserver
 {
     static uint64_t defaultMaxSize;
     static uint defaultFlowStopRatio;
@@ -78,7 +78,7 @@ class Broker;
     static QPID_BROKER_EXTERN const std::string flowStopSizeKey;
     static QPID_BROKER_EXTERN const std::string flowResumeSizeKey;
 
-    QPID_BROKER_EXTERN virtual ~QueueFlowLimit();
+    virtual ~QueueFlowLimit() {}
 
     /** the queue has added QueuedMessage.  Returns true if flow state changes */
     QPID_BROKER_EXTERN void enqueued(const QueuedMessage&);
@@ -86,8 +86,9 @@ class Broker;
     QPID_BROKER_EXTERN void dequeued(const QueuedMessage&);
 
     /** for clustering: */
-    QPID_BROKER_EXTERN void getState(qpid::framing::FieldTable&) const;
-    QPID_BROKER_EXTERN void setState(const qpid::framing::FieldTable&);
+    /** true if the given message is flow controlled, and cannot be completed. */
+    bool getState(const QueuedMessage&) const;
+    void setState(const QueuedMessage&, bool blocked);
 
     uint32_t getFlowStopCount() const { return flowStopCount; }
     uint32_t getFlowResumeCount() const { return flowResumeCount; }
@@ -110,7 +111,7 @@ class Broker;
 
  protected:
     // msgs waiting for flow to become available.
-    std::map<framing::SequenceNumber, boost::intrusive_ptr<Message> > index;
+    std::set< boost::intrusive_ptr<Message> > index;
     mutable qpid::sys::Mutex indexLock;
 
     _qmfBroker::Queue *queueMgmtObj;

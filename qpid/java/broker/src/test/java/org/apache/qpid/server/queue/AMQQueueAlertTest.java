@@ -277,7 +277,7 @@ public class AMQQueueAlertTest extends InternalBrokerBaseCase
 
         ContentHeaderBody contentHeaderBody = new ContentHeaderBody();
         BasicContentHeaderProperties props = new BasicContentHeaderProperties();
-        contentHeaderBody.setProperties(props);
+        contentHeaderBody.properties = props;
         contentHeaderBody.bodySize = size;   // in bytes
         IncomingMessage message = new IncomingMessage(publish);
         message.setContentHeaderBody(contentHeaderBody);

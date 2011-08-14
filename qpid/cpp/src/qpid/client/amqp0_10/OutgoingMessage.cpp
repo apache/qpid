@@ -59,9 +59,7 @@ void OutgoingMessage::convert(const qpid::messaging::Message& from)
         message.getMessageProperties().setReplyTo(AddressResolution::convert(address));
     }
     translate(from.getProperties(), message.getMessageProperties().getApplicationHeaders());
-    if (from.getTtl().getMilliseconds()) {
-        message.getDeliveryProperties().setTtl(from.getTtl().getMilliseconds());
-    }
+    message.getDeliveryProperties().setTtl(from.getTtl().getMilliseconds());
     if (from.getDurable()) {
         message.getDeliveryProperties().setDeliveryMode(DELIVERY_MODE_PERSISTENT);
     }

@@ -75,12 +75,6 @@ void TimerTask::cancel() {
     cancelled = true;
 }
 
-void TimerTask::setFired() {
-    // Set nextFireTime to just before now, making readyToFire() true.
-    nextFireTime = AbsTime(sys::now(), Duration(-1));
-}
-
-
 Timer::Timer() :
     active(false),
     late(50 * TIME_MSEC),
@@ -137,14 +131,12 @@ void Timer::run()
                 bool warningsEnabled;
                 QPID_LOG_TEST(warning, warningsEnabled);
                 if (warningsEnabled) {
-                    if (overrun > overran) {
-                        if (delay > overran) // if delay is significant to an overrun.
-                            warn.lateAndOverran(t->name, delay, overrun, Duration(start, end));
-                        else
-                            warn.overran(t->name, overrun, Duration(start, end));
-                    }
+                    if (delay > late && overrun > overran)
+                        warn.lateAndOverran(t->name, delay, overrun, Duration(start, end));
                     else if (delay > late)
                         warn.late(t->name, delay);
+                    else if (overrun > overran)
+                        warn.overran(t->name, overrun, Duration(start, end));
                 }
                 continue;
             } else {
@@ -191,11 +183,7 @@ void Timer::stop()
 
 // Allow subclasses to override behavior when firing a task.
 void Timer::fire(boost::intrusive_ptr<TimerTask> t) {
-    try {
-        t->fireTask();
-    } catch (const std::exception& e) {
-        QPID_LOG(error, "Exception thrown by timer task " << t->getName() << ": " << e.what());
-    }
+    t->fireTask();
 }
 
 // Provided for subclasses: called when a task is droped.

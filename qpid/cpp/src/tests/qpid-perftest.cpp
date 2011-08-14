@@ -396,7 +396,7 @@ struct Controller : public Client {
     void run() {                // Controller
         try {
             // Wait for subscribers to be ready.
-            process(opts.totalSubs, fqn("sub_ready"), boost::bind(expect, _1, "ready"));
+            process(opts.totalSubs, fqn("sub_ready"), bind(expect, _1, "ready"));
 
             LocalQueue pubDone;
             LocalQueue subDone;
@@ -423,10 +423,8 @@ struct Controller : public Client {
                 process(opts.totalSubs, subDone, fqn("sub_done"), boost::ref(subRates));
 
                 AbsTime end=now();
+
                 double time=secs(start, end);
-		if (time <= 0.0) {
-		  throw Exception("ERROR: Test completed in zero seconds. Try again with a larger message count.");
-		}
                 double txrate=opts.transfers/time;
                 double mbytes=(txrate*opts.size)/(1024*1024);
 
@@ -510,11 +508,10 @@ struct PublishThread : public Client {
             }
             SubscriptionManager subs(session);
             LocalQueue lq;
-            subs.setFlowControl(0, SubscriptionManager::UNLIMITED, false);
-            Subscription cs = subs.subscribe(lq, fqn("pub_start"));
+            subs.setFlowControl(1, SubscriptionManager::UNLIMITED, true);
+            subs.subscribe(lq, fqn("pub_start"));
 
             for (size_t j = 0; j < opts.iterations; ++j) {
-                cs.grantMessageCredit(1);
                 expect(lq.pop().getData(), "start");
                 AbsTime start=now();
                 for (size_t i=0; i<opts.count; i++) {
@@ -546,9 +543,6 @@ struct PublishThread : public Client {
                 if (opts.confirm) session.sync();
                 AbsTime end=now();
                 double time=secs(start,end);
-		if (time <= 0.0) {
-		  throw Exception("ERROR: Test completed in zero seconds. Try again with a larger message count.");
-		}
 
                 // Send result to controller.
                 Message report(lexical_cast<string>(opts.count/time), fqn("pub_done"));

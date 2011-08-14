@@ -22,12 +22,10 @@
 package org.apache.qpid.client.message;
 
 import java.lang.ref.SoftReference;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -634,16 +632,6 @@ public class AMQMessageDelegate_0_10 extends AbstractAMQMessageDelegate
         {
             return new String(_messageProps.getUserId());
         }
-        else if (QpidMessageProperties.AMQP_0_10_APP_ID.equals(propertyName) &&
-                _messageProps.getAppId() != null)
-        {
-            return new String(_messageProps.getAppId());
-        }
-        else if (QpidMessageProperties.AMQP_0_10_ROUTING_KEY.equals(propertyName) &&
-                _deliveryProps.getRoutingKey() != null)
-        {
-            return _deliveryProps.getRoutingKey();
-        }
         else
         {
             checkPropertyName(propertyName);
@@ -682,19 +670,7 @@ public class AMQMessageDelegate_0_10 extends AbstractAMQMessageDelegate
 
     public Enumeration getPropertyNames() throws JMSException
     {
-        List<String> props = new ArrayList<String>();
-        Map<String, Object> propertyMap = getApplicationHeaders();
-        for (String prop: getApplicationHeaders().keySet())
-        {
-            Object value = propertyMap.get(prop);
-            if (value instanceof Boolean || value instanceof Number 
-                || value instanceof String)
-            {
-                props.add(prop);
-            }
-        }
-        
-        return java.util.Collections.enumeration(props);        
+        return java.util.Collections.enumeration(getApplicationHeaders().keySet());
     }
 
     public void setBooleanProperty(String propertyName, boolean b) throws JMSException
@@ -750,14 +726,7 @@ public class AMQMessageDelegate_0_10 extends AbstractAMQMessageDelegate
     {
         checkPropertyName(propertyName);
         checkWritableProperties();
-        if (QpidMessageProperties.AMQP_0_10_APP_ID.equals(propertyName))
-        {
-            _messageProps.setAppId(value.getBytes());
-        }
-        else
-        {
-            setApplicationHeader(propertyName, value);
-        }
+        setApplicationHeader(propertyName, value);
     }
 
     private static final Set<Class> ALLOWED = new HashSet();

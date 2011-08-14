@@ -35,7 +35,6 @@ Import-Package: org.apache.qpid,
  org.apache.log4j;version=1.0.0,
  javax.management;version=1.0.0,
  javax.management.openmbean;version=1.0.0,
- javax.security.auth;version=1.0.0,
  org.osgi.util.tracker;version=1.0.0,
  org.osgi.framework;version=1.3
 Private-Package: org.apache.qpid.server.security.access.config,

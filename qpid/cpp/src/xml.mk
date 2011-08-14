@@ -16,7 +16,7 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-dmoduleexec_LTLIBRARIES += xml.la
+dmodule_LTLIBRARIES += xml.la
 
 xml_la_SOURCES =  \
 	qpid/xml/XmlExchange.cpp \

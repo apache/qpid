@@ -36,6 +36,7 @@ bool RecoveredEnqueue::prepare(TransactionContext*) throw(){
 }
 
 void RecoveredEnqueue::commit() throw(){
+    msg->enqueueComplete();
     queue->process(msg);
 }
 

@@ -42,7 +42,7 @@ namespace qmf {
     class SchemaId;
     class Schema;
 
-    class QMF_CLASS_EXTERN Agent : public qmf::Handle<AgentImpl> {
+    class Agent : public qmf::Handle<AgentImpl> {
     public:
         QMF_EXTERN Agent(AgentImpl* impl = 0);
         QMF_EXTERN Agent(const Agent&);

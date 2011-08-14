@@ -71,7 +71,7 @@ public class Publisher extends Client
     public static void main(String[] args)
     {
 
-        String destination = args.length > 2 ? args[1] : "usa.news";
+        String destination = args.length > 2 ? args[1] : null;
 
         int msgCount = args.length > 2 ? Integer.parseInt(args[2]) : 100;
 

@@ -20,7 +20,7 @@
 from distutils.core import setup
 
 setup(name="qpid-tools",
-      version="0.13",
+      version="0.9",
       author="Apache Qpid",
       author_email="dev@qpid.apache.org",
       scripts=["src/py/qpid-cluster",
@@ -30,8 +30,7 @@ setup(name="qpid-tools",
                "src/py/qpid-queue-stats",
                "src/py/qpid-route",
                "src/py/qpid-stat",
-               "src/py/qpid-tool",
-               "src/py/qmf-tool"],
+               "src/py/qpid-tool"],
       url="http://qpid.apache.org/",
       license="Apache Software License",
       description="Diagnostic and management tools for Apache Qpid brokers.")

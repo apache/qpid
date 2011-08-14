@@ -386,7 +386,6 @@ QPID_AUTO_TEST_CASE(testCapacityConversion)
 {
     FieldTable args;
     args.setString("qpid.max_count", "5");
-    args.setString("qpid.flow_stop_count", "0");
 
     ProxySessionFixture f;
     std::string q("q");

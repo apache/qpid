@@ -90,12 +90,12 @@ public abstract class AbstractExchangeMBean<T extends AbstractExchange> extends 
 
     public String getObjectInstanceName()
     {
-        return ObjectName.quote(_exchange.getName());
+        return _exchange.getNameShortString().toString();
     }
 
     public String getName()
     {
-        return _exchange.getName();
+        return _exchange.getNameShortString().toString();
     }
 
     public String getExchangeType()

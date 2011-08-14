@@ -74,6 +74,8 @@ public class AppInfo
                 appInfoMap.put("port", sc.getPorts().toString());
                 appInfoMap.put("version", QpidProperties.getReleaseVersion());
                 appInfoMap.put("vhosts", "standalone");
+                appInfoMap.put("JMXPrincipalDatabase", sc
+                        .getJMXPrincipalDatabase());
                 appInfoMap.put("KeystorePath", sc.getKeystorePath());
                 appInfoMap.put("PluginDirectory", sc.getPluginDirectory());
                 appInfoMap.put("CertType", sc.getCertType());

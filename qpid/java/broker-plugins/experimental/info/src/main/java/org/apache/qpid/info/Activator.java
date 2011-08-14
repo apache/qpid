@@ -59,14 +59,7 @@ public class Activator implements BundleActivator
             _ctx = ctx;
             _service = new InfoServiceImpl();
             ctx.registerService(InfoService.class.getName(), _service, null);
-
-            new Thread(new Runnable()
-            {
-                public void run()
-                {
-                    sendInfo("STARTUP");
-                }
-            }).start();
+            sendInfo("STARTUP");
         }
     }
 

@@ -39,6 +39,7 @@ import org.apache.qpid.client.failover.FailoverRetrySupport;
 import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.apache.qpid.client.state.AMQState;
 import org.apache.qpid.client.state.StateWaiter;
+import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.framing.BasicQosBody;
 import org.apache.qpid.framing.BasicQosOkBody;
 import org.apache.qpid.framing.ChannelOpenBody;
@@ -48,11 +49,6 @@ import org.apache.qpid.framing.TxSelectBody;
 import org.apache.qpid.framing.TxSelectOkBody;
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.jms.ChannelLimitReachedException;
-import org.apache.qpid.ssl.SSLContextFactory;
-import org.apache.qpid.transport.ConnectionSettings;
-import org.apache.qpid.transport.network.NetworkConnection;
-import org.apache.qpid.transport.network.OutgoingNetworkTransport;
-import org.apache.qpid.transport.network.Transport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -93,21 +89,15 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
 
         StateWaiter waiter = _conn._protocolHandler.createWaiter(openOrClosedStates);
 
-        ConnectionSettings settings = new ConnectionSettings();
-        settings.setHost(brokerDetail.getHost());
-        settings.setPort(brokerDetail.getPort());
-        settings.setProtocol(brokerDetail.getTransport());
-
-        SSLConfiguration sslConfig = _conn.getSSLConfiguration();
-        SSLContextFactory sslFactory = null;
-        if (sslConfig != null)
+        // TODO: use system property thingy for this
+        if (System.getProperty("UseTransportIo", "false").equals("false"))
         {
-            sslFactory = new SSLContextFactory(sslConfig.getKeystorePath(), sslConfig.getKeystorePassword(), sslConfig.getCertType());
+            TransportConnection.getInstance(brokerDetail).connect(_conn._protocolHandler, brokerDetail);
         }
-
-        OutgoingNetworkTransport transport = Transport.getOutgoingTransportInstance(getProtocolVersion());
-        NetworkConnection network = transport.connect(settings, _conn._protocolHandler, sslFactory);
-        _conn._protocolHandler.setNetworkConnection(network);
+        else
+        {
+            _conn.getProtocolHandler().createIoTransportSession(brokerDetail);
+        }
         _conn._protocolHandler.getProtocolSession().init();
         // this blocks until the connection has been set up or when an error
         // has prevented the connection being set up
@@ -331,10 +321,5 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
     public ProtocolVersion getProtocolVersion()
     {
         return ProtocolVersion.v8_0;
-    }
-
-    public void verifyClientID() throws JMSException
-    {
-        // NOOP
     }
 }

@@ -112,14 +112,13 @@ void SessionImpl::release(qpid::messaging::Message& m)
     execute1<Release>(m);
 }
 
-void SessionImpl::acknowledge(qpid::messaging::Message& m, bool cumulative)
+void SessionImpl::acknowledge(qpid::messaging::Message& m)
 {
     //Should probably throw an exception on failure here, or indicate
     //it through a return type at least. Failure means that the
     //message may be redelivered; i.e. the application cannot delete
     //any state necessary for preventing reprocessing of the message
-    Acknowledge2 ack(*this, m, cumulative);
-    execute(ack);
+    execute1<Acknowledge1>(m);
 }
 
 void SessionImpl::close()
@@ -432,11 +431,8 @@ uint32_t SessionImpl::getUnsettledAcksImpl(const std::string* destination)
 
 void SessionImpl::syncImpl(bool block)
 {
-    {
-        ScopedLock l(lock);
-        if (block) session.sync();
-        else session.flush();
-    }
+    if (block) session.sync();
+    else session.flush();
     //cleanup unconfirmed accept records:
     incoming.pendingAccept();
 }
@@ -471,10 +467,10 @@ void SessionImpl::acknowledgeImpl()
     if (!transactional) incoming.accept();
 }
 
-void SessionImpl::acknowledgeImpl(qpid::messaging::Message& m, bool cumulative)
+void SessionImpl::acknowledgeImpl(qpid::messaging::Message& m)
 {
     ScopedLock l(lock);
-    if (!transactional) incoming.accept(MessageImplAccess::get(m).getInternalId(), cumulative);
+    if (!transactional) incoming.accept(MessageImplAccess::get(m).getInternalId());
 }
 
 void SessionImpl::rejectImpl(qpid::messaging::Message& m)
@@ -513,7 +509,7 @@ void SessionImpl::senderCancelled(const std::string& name)
 
 void SessionImpl::reconnect()
 {
-    connection->reopen();
+    connection->open();
 }
 
 bool SessionImpl::backoff()

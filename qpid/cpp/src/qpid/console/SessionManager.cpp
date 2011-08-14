@@ -362,11 +362,12 @@ void SessionManager::handleCommandComplete(Broker* broker, Buffer& inBuffer, uin
 
 void SessionManager::handleClassInd(Broker* broker, Buffer& inBuffer, uint32_t)
 {
+    uint8_t kind;
     string packageName;
     string className;
     uint8_t hash[16];
 
-    /*kind*/ (void) inBuffer.getOctet();
+    kind = inBuffer.getOctet();
     inBuffer.getShortString(packageName);
     inBuffer.getShortString(className);
     inBuffer.getBin128(hash);

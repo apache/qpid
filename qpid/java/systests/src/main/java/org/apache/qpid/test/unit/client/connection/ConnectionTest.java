@@ -20,30 +20,32 @@
  */
 package org.apache.qpid.test.unit.client.connection;
 
-import javax.jms.Connection;
-import javax.jms.QueueSession;
-import javax.jms.TopicSession;
-
 import org.apache.qpid.AMQConnectionFailureException;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQUnresolvedAddressException;
+import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
+import org.apache.qpid.client.AMQAuthenticationException;
 import org.apache.qpid.client.AMQConnection;
-import org.apache.qpid.client.AMQConnectionURL;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.AMQTopic;
+import org.apache.qpid.client.AMQConnectionURL;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.jms.BrokerDetails;
-import org.apache.qpid.jms.ConnectionURL;
 import org.apache.qpid.jms.Session;
-import org.apache.qpid.test.utils.QpidBrokerTestCase;
+import org.apache.qpid.jms.ConnectionURL;
+import org.apache.qpid.jms.BrokerDetails;
+
+import javax.jms.Connection;
+import javax.jms.QueueSession;
+import javax.jms.TopicSession;
+import javax.naming.NamingException;
 
 public class ConnectionTest extends QpidBrokerTestCase
 {
 
-    String _broker_NotRunning = "tcp://localhost:" + findFreePort();
-
+    String _broker_NotRunning = "vm://:2";
     String _broker_BadDNS = "tcp://hg3sgaaw4lgihjs";
 
     public void testSimpleConnection() throws Exception
@@ -85,17 +87,17 @@ public class ConnectionTest extends QpidBrokerTestCase
 
 
             AMQSession sess = (AMQSession) conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
-
-            sess.declareExchange(new AMQShortString("test.direct"),
+            
+            sess.declareExchange(new AMQShortString("test.direct"), 
                     ExchangeDefaults.DIRECT_EXCHANGE_CLASS, false);
 
-            sess.declareExchange(new AMQShortString("tmp.direct"),
+            sess.declareExchange(new AMQShortString("tmp.direct"), 
                     ExchangeDefaults.DIRECT_EXCHANGE_CLASS, false);
 
-            sess.declareExchange(new AMQShortString("tmp.topic"),
+            sess.declareExchange(new AMQShortString("tmp.topic"), 
                     ExchangeDefaults.TOPIC_EXCHANGE_CLASS, false);
 
-            sess.declareExchange(new AMQShortString("test.topic"),
+            sess.declareExchange(new AMQShortString("test.topic"), 
                     ExchangeDefaults.TOPIC_EXCHANGE_CLASS, false);
 
             QueueSession queueSession = conn.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
@@ -111,7 +113,7 @@ public class ConnectionTest extends QpidBrokerTestCase
             queueSession.close();
 
             TopicSession topicSession = conn.createTopicSession(false, Session.AUTO_ACKNOWLEDGE);
-
+            
             AMQTopic topic = (AMQTopic) topicSession.createTopic("silly.topic");
 
             assertEquals(topic.getExchangeName().toString(), "test.topic");
@@ -269,7 +271,7 @@ public class ConnectionTest extends QpidBrokerTestCase
         }
         connection.close();
     }
-
+    
     public void testUnsupportedSASLMechanism() throws Exception
     {
         BrokerDetails broker = getBroker();
@@ -287,34 +289,8 @@ public class ConnectionTest extends QpidBrokerTestCase
         {
             assertTrue("Incorrect exception thrown",
                        e.getMessage().contains("The following SASL mechanisms " +
-                       "[MY_MECH]"  +
+                       "[MY_MECH]"  + 
                        " specified by the client are not supported by the broker"));
-        }
-    }
-
-    public void testClientIDVerification() throws Exception
-    {
-        System.setProperty("qpid.verify_client_id", "true");
-        BrokerDetails broker = getBroker();
-        try
-        {
-            Connection con = new AMQConnection(broker.toString(), "guest", "guest",
-                                        "client_id", "test");
-
-            Connection con2 = new AMQConnection(broker.toString(), "guest", "guest",
-                    "client_id", "test");
-
-            fail("The client should throw a ConnectionException stating the" +
-                    " client ID is not unique");
-        }
-        catch (Exception e)
-        {
-            assertTrue("Incorrect exception thrown",
-                       e.getMessage().contains("ClientID must be unique"));
-        }
-        finally
-        {
-            System.setProperty("qpid.verify_client_id", "false");
         }
     }
 

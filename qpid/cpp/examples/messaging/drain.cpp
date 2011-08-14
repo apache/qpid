@@ -50,7 +50,7 @@ struct Options : OptionParser
         add("broker,b", url, "url of broker to connect to");
         add("timeout,t", timeout, "timeout in seconds to wait before exiting");
         add("forever,f", forever, "ignore timeout and wait forever");
-        add("connection-options", connectionOptions, "connection options string in the form {name1:value1, name2:value2}");
+        add("connection-options", connectionOptions, "connection options string in the form {name1=value1, name2=value2}");
         add("count,c", count, "number of messages to read before exiting");
     }
 

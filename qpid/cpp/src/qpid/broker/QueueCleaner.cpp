@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
+ * 
  *   http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -27,7 +27,7 @@
 namespace qpid {
 namespace broker {
 
-QueueCleaner::QueueCleaner(QueueRegistry& q, sys::Timer* t) : queues(q), timer(t) {}
+QueueCleaner::QueueCleaner(QueueRegistry& q, sys::Timer& t) : queues(q), timer(t) {}
 
 QueueCleaner::~QueueCleaner()
 {
@@ -36,15 +36,9 @@ QueueCleaner::~QueueCleaner()
 
 void QueueCleaner::start(qpid::sys::Duration p)
 {
-    period = p;
     task = new Task(*this, p);
-    timer->add(task);
+    timer.add(task);
 }
-
-void QueueCleaner::setTimer(qpid::sys::Timer* timer) {
-    this->timer = timer;
-}
-
 
 QueueCleaner::Task::Task(QueueCleaner& p, qpid::sys::Duration d) : sys::TimerTask(d,"QueueCleaner"), parent(p) {}
 
@@ -71,9 +65,9 @@ void QueueCleaner::fired()
     std::vector<Queue::shared_ptr> copy;
     CollectQueues collect(&copy);
     queues.eachQueue(collect);
-    std::for_each(copy.begin(), copy.end(), boost::bind(&Queue::purgeExpired, _1, period));
+    std::for_each(copy.begin(), copy.end(), boost::bind(&Queue::purgeExpired, _1));
     task->setupNextFire();
-    timer->add(task);
+    timer.add(task);
 }
 
 

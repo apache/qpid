@@ -611,28 +611,6 @@ QPID_AUTO_TEST_CASE(testAssertPolicyQueue)
     fix.admin.deleteQueue("q");
 }
 
-QPID_AUTO_TEST_CASE(testAssertExchangeOption)
-{
-    MessagingFixture fix;
-    std::string a1 = "e; {create:always, assert:always, node:{type:topic, x-declare:{type:direct, arguments:{qpid.msg_sequence:True}}}}";
-    Sender s1 = fix.session.createSender(a1);
-    s1.close();
-    Receiver r1 = fix.session.createReceiver(a1);
-    r1.close();
-
-    std::string a2 = "e; {assert:receiver, node:{type:topic, x-declare:{type:fanout, arguments:{qpid.msg_sequence:True}}}}";
-    Sender s2 = fix.session.createSender(a2);
-    s2.close();
-    BOOST_CHECK_THROW(fix.session.createReceiver(a2), qpid::messaging::AssertionFailed);
-
-    std::string a3 = "e; {assert:sender, node:{x-declare:{arguments:{qpid.msg_sequence:False}}}}";
-    BOOST_CHECK_THROW(fix.session.createSender(a3), qpid::messaging::AssertionFailed);
-    Receiver r3 = fix.session.createReceiver(a3);
-    r3.close();
-
-    fix.admin.deleteExchange("e");
-}
-
 QPID_AUTO_TEST_CASE(testGetSender)
 {
     QueueFixture fix;
@@ -998,92 +976,6 @@ QPID_AUTO_TEST_CASE(testRejectAndCredit)
     fix.session.acknowledge();
     receiver.close();
     sender.close();
-}
-
-QPID_AUTO_TEST_CASE(testTtlForever)
-{
-    QueueFixture fix;
-    Sender sender = fix.session.createSender(fix.queue);
-    Message out("I want to live forever!");
-    out.setTtl(Duration::FOREVER);
-    sender.send(out, true);
-    Receiver receiver = fix.session.createReceiver(fix.queue);
-    Message in = receiver.fetch(Duration::IMMEDIATE);
-    fix.session.acknowledge();
-    BOOST_CHECK_EQUAL(in.getContent(), out.getContent());
-    BOOST_CHECK(in.getTtl() == Duration::FOREVER);
-}
-
-QPID_AUTO_TEST_CASE(testExclusiveTopicSubscriber)
-{
-    TopicFixture fix;
-    std::string address = (boost::format("%1%; { link: { name: 'my-subscription', x-declare: { auto-delete: true, exclusive: true }}}") % fix.topic).str();
-    Sender sender = fix.session.createSender(fix.topic);
-    Receiver receiver1 = fix.session.createReceiver(address);
-    {
-        ScopedSuppressLogging sl;
-    try {
-        fix.session.createReceiver(address);
-        fix.session.sync();
-        BOOST_FAIL("Expected exception.");
-    } catch (const MessagingException& /*e*/) {}
-    }
-}
-
-QPID_AUTO_TEST_CASE(testNonExclusiveSubscriber)
-{
-    TopicFixture fix;
-    std::string address = (boost::format("%1%; {node:{type:topic}, link:{name:'my-subscription', x-declare:{auto-delete:true, exclusive:false}}}") % fix.topic).str();
-    Receiver receiver1 = fix.session.createReceiver(address);
-    Receiver receiver2 = fix.session.createReceiver(address);
-    Sender sender = fix.session.createSender(fix.topic);
-    sender.send(Message("one"), true);
-    Message in = receiver1.fetch(Duration::IMMEDIATE);
-    BOOST_CHECK_EQUAL(in.getContent(), std::string("one"));
-    sender.send(Message("two"), true);
-    in = receiver2.fetch(Duration::IMMEDIATE);
-    BOOST_CHECK_EQUAL(in.getContent(), std::string("two"));
-    fix.session.acknowledge();
-}
-
-QPID_AUTO_TEST_CASE(testAcknowledgeUpTo)
-{
-    QueueFixture fix;
-    Sender sender = fix.session.createSender(fix.queue);
-    const uint count(20);
-    for (uint i = 0; i < count; ++i) {
-        sender.send(Message((boost::format("Message_%1%") % (i+1)).str()));
-    }
-
-    Session other = fix.connection.createSession();
-    Receiver receiver = other.createReceiver(fix.queue);
-    std::vector<Message> messages;
-    for (uint i = 0; i < count; ++i) {
-        Message msg = receiver.fetch();
-        BOOST_CHECK_EQUAL(msg.getContent(), (boost::format("Message_%1%") % (i+1)).str());
-        messages.push_back(msg);
-    }
-    const uint batch = 10;
-    other.acknowledgeUpTo(messages[batch-1]);//acknowledge first 10 messages only
-
-    messages.clear();
-    other.sync();
-    other.close();
-
-    other = fix.connection.createSession();
-    receiver = other.createReceiver(fix.queue);
-    Message msg;
-    for (uint i = 0; i < (count-batch); ++i) {
-        msg = receiver.fetch();
-        BOOST_CHECK_EQUAL(msg.getContent(), (boost::format("Message_%1%") % (i+1+batch)).str());
-    }
-    other.acknowledgeUpTo(msg);
-    other.sync();
-    other.close();
-
-    Message m;
-    //check queue is empty
-    BOOST_CHECK(!fix.session.createReceiver(fix.queue).fetch(m, Duration::IMMEDIATE));
 }
 
 QPID_AUTO_TEST_SUITE_END()

@@ -135,7 +135,6 @@ void SenderImpl::sendUnreliable(const qpid::messaging::Message& m)
 void SenderImpl::replay(const sys::Mutex::ScopedLock&)
 {
     for (OutgoingMessages::iterator i = outgoing.begin(); i != outgoing.end(); ++i) {
-        i->message.setRedelivered(true);
         sink->send(session, name, *i);
     }
 }
@@ -148,7 +147,7 @@ uint32_t SenderImpl::checkPendingSends(bool flush) {
 uint32_t SenderImpl::checkPendingSends(bool flush, const sys::Mutex::ScopedLock&)
 {
     if (flush) {
-        session.flush();
+        session.flush(); 
         flushed = true;
     } else {
         flushed = false;

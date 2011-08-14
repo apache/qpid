@@ -258,6 +258,7 @@ public class BrokerLink implements LinkConfig, ConnectionListener
                     _remoteFederationTag = UUID.fromString(_transport+":"+_host+":"+_port).toString();
                 }
                 _qpidConnection.setSessionFactory(new SessionFactory());
+                _qpidConnection.setAuthorizationID(_username == null ? "" : _username);
 
                 updateState(State.ESTABLISHING, State.OPERATIONAL);
 

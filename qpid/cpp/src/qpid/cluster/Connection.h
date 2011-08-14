@@ -10,9 +10,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
+ * 
  *   http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -24,10 +24,10 @@
 
 #include "types.h"
 #include "OutputInterceptor.h"
+#include "EventFrame.h"
 #include "McastFrameHandler.h"
 #include "UpdateReceiver.h"
 
-#include "qpid/RefCounted.h"
 #include "qpid/broker/Connection.h"
 #include "qpid/broker/SecureConnection.h"
 #include "qpid/broker/SemanticState.h"
@@ -47,7 +47,7 @@ namespace framing { class AMQFrame; }
 
 namespace broker {
 class SemanticState;
-struct QueuedMessage;
+class QueuedMessage;
 class TxBuffer;
 class TxAccept;
 }
@@ -55,7 +55,6 @@ class TxAccept;
 namespace cluster {
 class Cluster;
 class Event;
-struct EventFrame;
 
 /** Intercept broker::Connection calls for shadow and local cluster connections. */
 class Connection :
@@ -63,7 +62,7 @@ class Connection :
         public sys::ConnectionInputHandler,
         public framing::AMQP_AllOperations::ClusterConnectionHandler,
         private broker::Connection::ErrorListener
-
+        
 {
   public:
 
@@ -74,7 +73,7 @@ class Connection :
     Connection(Cluster&, sys::ConnectionOutputHandler& out, const std::string& mgmtId, const ConnectionId& id,
                const qpid::sys::SecuritySettings& external);
     ~Connection();
-
+    
     ConnectionId getId() const { return self; }
     broker::Connection* getBrokerConnection() { return connection.get(); }
     const broker::Connection* getBrokerConnection() const { return connection.get(); }
@@ -109,9 +108,9 @@ class Connection :
     void deliveredFrame(const EventFrame&);
 
     void consumerState(const std::string& name, bool blocked, bool notifyEnabled, const qpid::framing::SequenceNumber& position);
-
+    
     // ==== Used in catch-up mode to build initial state.
-    //
+    // 
     // State update methods.
     void shadowPrepare(const std::string&);
 
@@ -124,9 +123,9 @@ class Connection :
                       const framing::SequenceNumber& received,
                       const framing::SequenceSet& unknownCompleted,
                       const SequenceSet& receivedIncomplete);
-
+    
     void outputTask(uint16_t channel, const std::string& name);
-
+    
     void shadowReady(uint64_t memberId,
                      uint64_t connectionId,
                      const std::string& managementId,
@@ -154,7 +153,7 @@ class Connection :
 
     void queuePosition(const std::string&, const framing::SequenceNumber&);
     void queueFairshareState(const std::string&, const uint8_t priority, const uint8_t count);
-    void queueObserverState(const std::string&, const std::string&, const framing::FieldTable&);
+    void expiryId(uint64_t);
 
     void txStart();
     void txAccept(const framing::SequenceSet&);
@@ -164,7 +163,8 @@ class Connection :
     void txEnd();
     void accumulatedAck(const framing::SequenceSet&);
 
-    // Encoded exchange replication.
+    // Encoded queue/exchange replication.
+    void queue(const std::string& encoded);
     void exchange(const std::string& encoded);
 
     void giveReadCredit(int credit);
@@ -188,12 +188,6 @@ class Connection :
     void config(const std::string& encoded);
 
     void setSecureConnection ( broker::SecureConnection * sc );
-
-    void doCatchupIoCallbacks();
-
-    void clock(uint64_t time);
-
-    void queueDequeueSincePurgeState(const std::string&, uint32_t);
 
   private:
     struct NullFrameHandler : public framing::FrameHandler {
@@ -239,7 +233,7 @@ class Connection :
     // Error listener functions
     void connectionError(const std::string&);
     void sessionError(uint16_t channel, const std::string&);
-
+    
     void init();
     bool checkUnsupported(const framing::AMQBody& body);
     void deliverDoOutput(uint32_t limit);
@@ -255,7 +249,6 @@ class Connection :
     Cluster& cluster;
     ConnectionId self;
     bool catchUp;
-    bool announced;
     OutputInterceptor output;
     framing::FrameDecoder localDecoder;
     ConnectionCtor connectionCtor;

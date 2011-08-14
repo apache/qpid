@@ -43,6 +43,15 @@ public class BrokerDetailsTest extends TestCase
         assertTrue(broker.getProperty("immediatedelivery").equals("true"));
     }
 
+    public void testVMBroker() throws URLSyntaxException
+    {
+        String url = "vm://:2";
+
+        AMQBrokerDetails broker = new AMQBrokerDetails(url);
+        assertTrue(broker.getTransport().equals("vm"));
+        assertEquals(broker.getPort(), 2);
+    }
+
     public void testTransportsDefaultToTCP() throws URLSyntaxException
     {
         String url = "localhost:5672";

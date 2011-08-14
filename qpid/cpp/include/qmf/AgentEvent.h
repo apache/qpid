@@ -46,7 +46,7 @@ namespace qmf {
     AGENT_THREAD_FAILED   = 8
     };
 
-    class QMF_CLASS_EXTERN AgentEvent : public qmf::Handle<AgentEventImpl> {
+    class AgentEvent : public qmf::Handle<AgentEventImpl> {
     public:
         QMF_EXTERN AgentEvent(AgentEventImpl* impl = 0);
         QMF_EXTERN AgentEvent(const AgentEvent&);

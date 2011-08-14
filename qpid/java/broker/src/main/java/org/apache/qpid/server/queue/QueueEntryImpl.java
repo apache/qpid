@@ -358,6 +358,15 @@ public class QueueEntryImpl implements QueueEntry
         }
     }
 
+    public void requeue(Subscription subscription)
+    {
+        getQueue().requeue(this, subscription);
+        if(_stateChangeListeners != null)
+        {
+            notifyStateChange(QueueEntry.State.ACQUIRED, QueueEntry.State.AVAILABLE);
+        }
+    }
+
     public void dequeue()
     {
         EntryState state = _state;
@@ -499,7 +508,7 @@ public class QueueEntryImpl implements QueueEntry
     {
 
         QueueEntryImpl next = nextNode();
-        while(next != null && next.isDispensed() )
+        while(next != null && next.isDeleted())
         {
 
             final QueueEntryImpl newNext = next.nextNode();
@@ -545,16 +554,6 @@ public class QueueEntryImpl implements QueueEntry
     public QueueEntryList getQueueEntryList()
     {
         return _queueEntryList;
-    }
-
-    public boolean isDequeued()
-    {
-        return _state == DEQUEUED_STATE;
-    }
-
-    public boolean isDispensed()
-    {
-        return _state.isDispensed();
     }
 
 }

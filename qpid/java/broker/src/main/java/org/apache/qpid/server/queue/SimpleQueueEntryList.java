@@ -1,5 +1,6 @@
 package org.apache.qpid.server.queue;
 
+import org.apache.qpid.server.message.InboundMessage;
 import org.apache.qpid.server.message.ServerMessage;
 
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
@@ -155,7 +156,7 @@ public class SimpleQueueEntryList implements QueueEntryList
             if(!atTail())
             {
                 QueueEntryImpl nextNode = _lastNode.nextNode();
-                while(nextNode.isDispensed() && nextNode.nextNode() != null)
+                while(nextNode.isDeleted() && nextNode.nextNode() != null)
                 {
                     nextNode = nextNode.nextNode();
                 }

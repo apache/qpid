@@ -20,29 +20,25 @@
  */
 package org.apache.qpid.server.transport;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.StringTokenizer;
-
-import javax.security.sasl.SaslException;
-import javax.security.sasl.SaslServer;
-
+import org.apache.qpid.transport.*;
+import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.logging.actors.GenericActor;
+import org.apache.qpid.common.ClientProperties;
 import org.apache.qpid.protocol.ProtocolEngine;
+import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
-import org.apache.qpid.server.security.SecurityManager;
-import org.apache.qpid.server.security.auth.AuthenticationResult;
-import org.apache.qpid.server.security.auth.AuthenticationResult.AuthenticationStatus;
 import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.transport.*;
+
+import javax.security.sasl.SaslServer;
+import javax.security.sasl.SaslException;
+import java.util.*;
 
 public class ServerConnectionDelegate extends ServerDelegate
 {
     private String _localFQDN;
     private final IApplicationRegistry _appRegistry;
+
 
     public ServerConnectionDelegate(IApplicationRegistry appRegistry, String localFQDN)
     {
@@ -72,6 +68,7 @@ public class ServerConnectionDelegate extends ServerDelegate
         return list;
     }
 
+    @Override
     public ServerSession getSession(Connection conn, SessionAttach atc)
     {
         SessionDelegate serverSessionDelegate = new ServerSessionDelegate(_appRegistry);
@@ -81,33 +78,14 @@ public class ServerConnectionDelegate extends ServerDelegate
         return ssn;
     }
 
+    @Override
     protected SaslServer createSaslServer(String mechanism) throws SaslException
     {
         return _appRegistry.getAuthenticationManager().createSaslServer(mechanism, _localFQDN);
 
     }
 
-    protected void secure(final SaslServer ss, final Connection conn, final byte[] response)
-    {
-        final AuthenticationResult authResult = _appRegistry.getAuthenticationManager().authenticate(ss, response);
-        final ServerConnection sconn = (ServerConnection) conn;
-        
-        
-        if (AuthenticationStatus.SUCCESS.equals(authResult.getStatus()))
-        {
-            tuneAuthorizedConnection(sconn);
-            sconn.setAuthorizedSubject(authResult.getSubject());
-        }
-        else if (AuthenticationStatus.CONTINUE.equals(authResult.getStatus()))
-        {
-            connectionAuthContinue(sconn, authResult.getChallenge());
-        }
-        else
-        {
-            connectionAuthFailed(sconn, authResult.getCause());
-        }
-    }
-
+    @Override
     public void connectionClose(Connection conn, ConnectionClose close)
     {
         try
@@ -121,9 +99,10 @@ public class ServerConnectionDelegate extends ServerDelegate
         
     }
 
+    @Override
     public void connectionOpen(Connection conn, ConnectionOpen open)
     {
-        final ServerConnection sconn = (ServerConnection) conn;
+        ServerConnection sconn = (ServerConnection) conn;
         
         VirtualHost vhost;
         String vhostName;
@@ -137,7 +116,7 @@ public class ServerConnectionDelegate extends ServerDelegate
         }
         vhost = _appRegistry.getVirtualHostRegistry().getVirtualHost(vhostName);
 
-        SecurityManager.setThreadSubject(sconn.getAuthorizedSubject());
+        SecurityManager.setThreadPrincipal(conn.getAuthorizationID());
         
         if(vhost != null)
         {
@@ -159,7 +138,6 @@ public class ServerConnectionDelegate extends ServerDelegate
             sconn.invoke(new ConnectionClose(ConnectionCloseCode.INVALID_PATH, "Unknown virtualhost '"+vhostName+"'"));
             sconn.setState(Connection.State.CLOSING);
         }
-        
     }
     
     @Override

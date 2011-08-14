@@ -37,7 +37,7 @@ class ProxyGen < CppGen
   
   def inner_class_decl(c)
     cname=c.name.caps
-    cpp_extern_class("QPID_COMMON_CLASS_EXTERN", cname, "public Proxy") {
+    cpp_class(cname, "public Proxy") {
           gen <<EOS
 public:
 #{cname}(FrameHandler& f) : Proxy(f) {}
@@ -69,7 +69,7 @@ EOS
       include "qpid/CommonImportExport.h"
 
       namespace("qpid::framing") { 
-        cpp_extern_class("QPID_COMMON_CLASS_EXTERN", @classname, "public Proxy") {
+        cpp_class(@classname, "public Proxy") {
           public
           genl "QPID_COMMON_EXTERN #{@classname}(FrameHandler& out);"
           genl

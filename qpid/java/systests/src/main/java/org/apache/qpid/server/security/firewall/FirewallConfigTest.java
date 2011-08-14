@@ -85,6 +85,12 @@ public class FirewallConfigTest extends QpidBrokerTestCase
 
     public void testVhostAllowBrokerDeny() throws Exception
     {
+        if (_broker.equals(VM))
+        {
+            //No point running this test with an InVM broker as the
+            //firewall plugin only functions for TCP connections.
+            return;
+        }
 
         _configFile = new File(System.getProperty("QPID_HOME"), "etc/config-systests-firewall-2.xml");
         
@@ -119,6 +125,13 @@ public class FirewallConfigTest extends QpidBrokerTestCase
     
     public void testVhostDenyBrokerAllow() throws Exception
     {
+        if (_broker.equals(VM))
+        {
+            //No point running this test with an InVM broker as the
+            //firewall plugin only functions for TCP connections.
+            return;
+        }
+        
         _configFile = new File(System.getProperty("QPID_HOME"), "etc/config-systests-firewall-3.xml");
         
         super.setUp();
@@ -264,6 +277,11 @@ public class FirewallConfigTest extends QpidBrokerTestCase
 
     private void testFirewall(boolean initial, boolean inVhost, Runnable restartOrReload) throws Exception
     {
+        if (_broker.equals(VM))
+        {
+            // No point running this test in a vm broker
+            return;
+        }
         
         writeFirewallFile(initial, inVhost);
         setConfigurationProperty("management.enabled", String.valueOf(true));

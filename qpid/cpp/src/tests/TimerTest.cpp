@@ -77,10 +77,8 @@ class TestTask : public TimerTask
         BOOST_CHECK(fired);
         BOOST_CHECK_EQUAL(expected_position, position);
         Duration actual(start, end);
-#ifdef _MSC_VER
+#ifdef _WIN32
         uint64_t difference = _abs64(expected - actual);
-#elif defined(_WIN32)
-        uint64_t difference = labs(expected - actual);
 #else
         uint64_t difference = abs(expected - actual);
 #endif

@@ -59,8 +59,6 @@ public:
     void destroy();
     bool isDurable() { return args.i_durable; }
 
-    bool isSessionReady() const;
-
     management::ManagementObject* GetManagementObject() const;
     management::Manageable::status_t ManagementMethod(uint32_t methodId,
                                                       management::Args& args,

@@ -32,7 +32,7 @@ struct FailoverUpdatesImpl;
  * A utility to listen for updates on cluster membership and update
  * the list of known urls for a connection accordingly.
  */
-class QPID_MESSAGING_CLASS_EXTERN FailoverUpdates
+class FailoverUpdates
 {
   public:
     QPID_MESSAGING_EXTERN FailoverUpdates(Connection& connection);

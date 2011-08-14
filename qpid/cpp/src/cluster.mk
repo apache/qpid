@@ -18,7 +18,7 @@
 #
 #
 # Cluster library makefile fragment, to be included in Makefile.am
-#
+# 
 
 # Optional CMAN support
 
@@ -34,7 +34,7 @@ endif
 
 if HAVE_LIBCPG
 
-dmoduleexec_LTLIBRARIES += cluster.la
+dmodule_LTLIBRARIES += cluster.la
 
 cluster_la_SOURCES =				\
   $(CMAN_SOURCES)				\
@@ -102,7 +102,7 @@ cluster_la_CXXFLAGS = $(AM_CXXFLAGS) -fno-strict-aliasing
 cluster_la_LDFLAGS = $(PLUGINLDFLAGS)
 
 # The watchdog plugin and helper executable
-dmoduleexec_LTLIBRARIES += watchdog.la
+dmodule_LTLIBRARIES += watchdog.la
 watchdog_la_SOURCES = qpid/cluster/WatchDogPlugin.cpp
 watchdog_la_LIBADD = libqpidbroker.la
 watchdog_la_LDFLAGS = $(PLUGINLDFLAGS)

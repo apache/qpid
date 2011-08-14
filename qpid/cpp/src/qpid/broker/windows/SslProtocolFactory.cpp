@@ -81,11 +81,12 @@ class SslProtocolFactory : public qpid::sys::ProtocolFactory {
     SslProtocolFactory(const SslServerOptions&, int backlog, bool nodelay);
     ~SslProtocolFactory();
     void accept(sys::Poller::shared_ptr, sys::ConnectionCodec::Factory*);
-    void connect(sys::Poller::shared_ptr, const std::string& host, const std::string& port,
+    void connect(sys::Poller::shared_ptr, const std::string& host, int16_t port,
                  sys::ConnectionCodec::Factory*,
                  ConnectFailedCallback failed);
 
     uint16_t getPort() const;
+    std::string getHost() const;
     bool supports(const std::string& capability);
 
   private:
@@ -129,7 +130,7 @@ SslProtocolFactory::SslProtocolFactory(const SslServerOptions& options,
                                        int backlog,
                                        bool nodelay)
     : tcpNoDelay(nodelay),
-    listeningPort(listener.listen("", boost::lexical_cast<std::string>(options.port), backlog)),
+      listeningPort(listener.listen(options.port, backlog)),
       clientAuthSelected(options.clientAuth) {
 
     SecInvalidateHandle(&credHandle);
@@ -236,6 +237,10 @@ uint16_t SslProtocolFactory::getPort() const {
     return listeningPort; // Immutable no need for lock.
 }
 
+std::string SslProtocolFactory::getHost() const {
+    return listener.getSockname();
+}
+
 void SslProtocolFactory::accept(sys::Poller::shared_ptr poller,
                                 sys::ConnectionCodec::Factory* fact) {
     acceptor.reset(
@@ -246,7 +251,7 @@ void SslProtocolFactory::accept(sys::Poller::shared_ptr poller,
 
 void SslProtocolFactory::connect(sys::Poller::shared_ptr poller,
                                  const std::string& host,
-                                 const std::string& port,
+                                 int16_t port,
                                  sys::ConnectionCodec::Factory* fact,
                                  ConnectFailedCallback failed)
 {

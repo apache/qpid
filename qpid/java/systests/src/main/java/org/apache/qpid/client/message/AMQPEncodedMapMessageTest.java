@@ -27,7 +27,6 @@ import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 import javax.jms.Connection;
 import javax.jms.JMSException;
@@ -52,7 +51,6 @@ public class AMQPEncodedMapMessageTest extends QpidBrokerTestCase
     private Session _session;
     MessageConsumer _consumer;
     MessageProducer _producer;
-    UUID myUUID = UUID.randomUUID();
     
     public void setUp() throws Exception
     {
@@ -121,8 +119,7 @@ public class AMQPEncodedMapMessageTest extends QpidBrokerTestCase
         m.setFloat("Float", Integer.MAX_VALUE + 5000);
         m.setInt("Int", Integer.MAX_VALUE - 5000);
         m.setShort("Short", (short)58);
-        m.setString("String", "Hello"); 
-        m.setObject("uuid", myUUID);
+        m.setString("String", "Hello");            
         _producer.send(m);
         
         AMQPEncodedMapMessage msg = (AMQPEncodedMapMessage)_consumer.receive(RECEIVE_TIMEOUT);
@@ -143,7 +140,6 @@ public class AMQPEncodedMapMessageTest extends QpidBrokerTestCase
         assertEquals(Integer.MAX_VALUE - 5000,m.getInt("Int"));
         assertEquals((short)58,m.getShort("Short"));
         assertEquals("Hello",m.getString("String"));
-        assertEquals(myUUID,(UUID)m.getObject("uuid"));
     }
     
     
@@ -153,11 +149,7 @@ public class AMQPEncodedMapMessageTest extends QpidBrokerTestCase
         
         List<Integer> myList = getList();
         
-        m.setObject("List", myList);   
-        
-        List<UUID> uuidList = new ArrayList<UUID>();
-        uuidList.add(myUUID);
-        m.setObject("uuid-list", uuidList);
+        m.setObject("List", myList);            
         _producer.send(m);
         
         AMQPEncodedMapMessage msg = (AMQPEncodedMapMessage)_consumer.receive(RECEIVE_TIMEOUT);
@@ -175,10 +167,6 @@ public class AMQPEncodedMapMessageTest extends QpidBrokerTestCase
             assertEquals(i,j.intValue());
             i++;
         }
-        
-        List<UUID> list2 = (List<UUID>)msg.getObject("uuid-list");
-        assertNotNull("UUID List not received",list2);
-        assertEquals(myUUID,list2.get(0));        
     }
     
     public void testMessageWithMapEntries() throws JMSException
@@ -186,12 +174,8 @@ public class AMQPEncodedMapMessageTest extends QpidBrokerTestCase
         MapMessage m = _session.createMapMessage();
         
         Map<String,String> myMap = getMap();
-        m.setObject("Map", myMap);          
         
-        Map<String,UUID> uuidMap = new HashMap<String,UUID>();
-        uuidMap.put("uuid", myUUID);
-        m.setObject("uuid-map", uuidMap);      
-        
+        m.setObject("Map", myMap);            
         _producer.send(m);
         
         AMQPEncodedMapMessage msg = (AMQPEncodedMapMessage)_consumer.receive(RECEIVE_TIMEOUT);
@@ -207,10 +191,6 @@ public class AMQPEncodedMapMessageTest extends QpidBrokerTestCase
             assertEquals("String" + i,map.get("Key" + i));
             i++;
         }
-        
-        Map<String,UUID> map2 = (Map<String,UUID>)msg.getObject("uuid-map");
-        assertNotNull("Map not received",map2);
-        assertEquals(myUUID,map2.get("uuid"));   
     }
     
     public void testMessageWithNestedListsAndMaps() throws JMSException

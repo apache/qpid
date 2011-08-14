@@ -10,6 +10,13 @@ available from
 
    http://www.slf4j.org/
 
+Concurrency utlitity classes are provided by the backport-util-concurrent
+library package, which is open source software, written by
+Dawid Kurzyniec, and copyright by Distributed Computing Laboratory,
+Emory University.  The original software is available from
+
+   http://dcl.mathcs.emory.edu/util/backport-util-concurrent/
+
 Data compression support is provided by the JZLib library package,
 which is open source software, written by JCraft, and copyright
 by JCraft.  The original software is available from

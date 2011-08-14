@@ -18,24 +18,20 @@
  */
 package org.apache.qpid.server.security.access.config;
 
-import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.WeakHashMap;
 
-import javax.security.auth.Subject;
-
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.security.Result;
@@ -49,132 +45,147 @@ import org.apache.qpid.server.security.access.logging.AccessControlMessages;
  * Models the rule configuration for the access control plugin.
  *
  * The access control rule definitions are loaded from an external configuration file, passed in as the
- * target to the {@link load(ConfigurationFile)} method. The file specified
+ * target to the {@link load(ConfigurationFile)} method. The file specified 
  */
 public class RuleSet
 {
+    private static final Logger _logger = Logger.getLogger(RuleSet.class);
+    
     private static final String AT = "@";
-    private static final String SLASH = "/";
+	private static final String SLASH = "/";
 
-    public static final String DEFAULT_ALLOW = "defaultallow";
-    public static final String DEFAULT_DENY = "defaultdeny";
-    public static final String TRANSITIVE = "transitive";
-    public static final String EXPAND = "expand";
+	public static final String DEFAULT_ALLOW = "defaultallow";
+	public static final String DEFAULT_DENY = "defaultdeny";
+	public static final String TRANSITIVE = "transitive";
+	public static final String EXPAND = "expand";
     public static final String AUTONUMBER = "autonumber";
     public static final String CONTROLLED = "controlled";
     public static final String VALIDATE = "validate";
-
+    
     public static final List<String> CONFIG_PROPERTIES = Arrays.asList(
             DEFAULT_ALLOW, DEFAULT_DENY, TRANSITIVE, EXPAND, AUTONUMBER, CONTROLLED
         );
-
+    
     private static final Integer _increment = 10;
-
-    private final Map<String, List<String>> _aclGroups = new HashMap<String, List<String>>();
+	
+    private final Map<String, List<String>> _groups = new HashMap<String, List<String>>();
     private final SortedMap<Integer, Rule> _rules = new TreeMap<Integer, Rule>();
-    private final Map<Subject, Map<Operation, Map<ObjectType, List<Rule>>>> _cache =
-                        new WeakHashMap<Subject, Map<Operation, Map<ObjectType, List<Rule>>>>();
+    private final Map<String, Map<Operation, Map<ObjectType, List<Rule>>>> _cache =
+                        new WeakHashMap<String, Map<Operation, Map<ObjectType, List<Rule>>>>();
     private final Map<String, Boolean> _config = new HashMap<String, Boolean>();
-
+    
     public RuleSet()
     {
         // set some default configuration properties
         configure(DEFAULT_DENY, Boolean.TRUE);
         configure(TRANSITIVE, Boolean.TRUE);
     }
-
+    
     /**
-     * Clear the contents, including acl groups, rules and configuration.
+     * Clear the contents, invluding groups, rules and configuration.
      */
     public void clear()
     {
         _rules.clear();
         _cache.clear();
         _config.clear();
-        _aclGroups.clear();
+        _groups.clear();
     }
-
+    
     public int getRuleCount()
     {
         return _rules.size();
     }
-
-    /**
-     * Filtered rules list based on a subject and operation.
-     *
-     * Allows only enabled rules with identity equal to all, the same, or a group with identity as a member,
-     * and operation is either all or the same operation.
-     */
-    public List<Rule> getRules(final Subject subject, final Operation operation, final ObjectType objectType)
-    {
-        final Map<ObjectType, List<Rule>> objects = getObjectToRuleCache(subject, operation);
+	
+	/**
+	 * Filtered rules list based on an identity and operation.
+	 * 
+	 * Allows only enabled rules with identity equal to all, the same, or a group with identity as a member,
+	 * and operation is either all or the same operation.
+	 */		
+	public List<Rule> getRules(String identity, Operation operation, ObjectType objectType)
+	{
+        // Lookup identity in cache and create empty operation map if required
+		Map<Operation, Map<ObjectType, List<Rule>>> operations = _cache.get(identity);		
+		if (operations == null)
+		{	
+			operations = new EnumMap<Operation, Map<ObjectType, List<Rule>>>(Operation.class);
+			_cache.put(identity, operations);
+		}
+		
+        // Lookup operation and create empty object type map if required        
+        Map<ObjectType, List<Rule>> objects = operations.get(operation);
+		if (objects == null)
+		{
+            objects = new EnumMap<ObjectType, List<Rule>>(ObjectType.class);
+            operations.put(operation, objects);
+        }
 
         // Lookup object type rules for the operation
         if (!objects.containsKey(objectType))
         {
-            final Set<Principal> principals = subject.getPrincipals();
             boolean controlled = false;
             List<Rule> filtered = new LinkedList<Rule>();
             for (Rule rule : _rules.values())
             {
-                final Action ruleAction = rule.getAction();
                 if (rule.isEnabled()
-                    && (ruleAction.getOperation() == Operation.ALL || ruleAction.getOperation() == operation)
-                    && (ruleAction.getObjectType() == ObjectType.ALL || ruleAction.getObjectType() == objectType))
+                    && (rule.getAction().getOperation() == Operation.ALL || rule.getAction().getOperation() == operation)
+                    && (rule.getAction().getObjectType() == ObjectType.ALL || rule.getAction().getObjectType() == objectType))
                 {
                     controlled = true;
 
-                    if (isRelevant(principals,rule))
+                    if (rule.getIdentity().equalsIgnoreCase(Rule.ALL)
+                        || rule.getIdentity().equalsIgnoreCase(identity)
+                        || (_groups.containsKey(rule.getIdentity()) && _groups.get(rule.getIdentity()).contains(identity)))
                     {
                         filtered.add(rule);
                     }
                 }
             }
-
+            
             // Return null if there are no rules at all for this operation and object type
             if (filtered.isEmpty() && controlled == false)
             {
                 filtered = null;
             }
-
+            
             // Save the rules we selected
             objects.put(objectType, filtered);
         }
-
+		
         // Return the cached rules
-        return objects.get(objectType);
-    }
-
-
+		return objects.get(objectType);
+	}
+    
     public boolean isValidNumber(Integer number)
     {
         return !_rules.containsKey(number);
     }
-
+	
     public void grant(Integer number, String identity, Permission permission, Operation operation)
     {
         Action action = new Action(operation);
         addRule(number, identity, permission, action);
     }
-
+    
     public void grant(Integer number, String identity, Permission permission, Operation operation, ObjectType object, ObjectProperties properties)
     {
         Action action = new Action(operation, object, properties);
         addRule(number, identity, permission, action);
     }
-
+    
     public boolean ruleExists(String identity, Action action)
     {
-        for (Rule rule : _rules.values())
-        {
-            if (rule.getIdentity().equals(identity) && rule.getAction().equals(action))
-            {
-                return true;
-            }
-        }
-        return false;
+		for (Rule rule : _rules.values())
+		{
+		    if (rule.getIdentity().equals(identity) && rule.getAction().equals(action))
+		    {
+		        return true;
+		    }
+		}
+		return false;
     }
-
+    
     private Permission noLog(Permission permission)
     {
         switch (permission)
@@ -192,17 +203,15 @@ public class RuleSet
     // TODO make this work when group membership is not known at file parse time
     public void addRule(Integer number, String identity, Permission permission, Action action)
     {
-        _cache.clear();
-
-        if (!action.isAllowed())
-        {
-            throw new IllegalArgumentException("Action is not allowd: " + action);
-        }
+		if (!action.isAllowed())
+		{
+			throw new IllegalArgumentException("Action is not allowd: " + action);
+		}
         if (ruleExists(identity, action))
         {
             return;
         }
-
+        
         // expand actions - possibly multiply number by
         if (isSet(EXPAND))
         {
@@ -225,8 +234,8 @@ public class RuleSet
                 return;
             }
         }
-
-        // transitive action dependencies
+        
+		// transitive action dependencies
         if (isSet(TRANSITIVE))
         {
             if (action.getOperation() == Operation.CREATE && action.getObjectType() == ObjectType.QUEUE)
@@ -235,10 +244,10 @@ public class RuleSet
                 exchProperties.setName(ExchangeDefaults.DEFAULT_EXCHANGE_NAME);
                 exchProperties.put(ObjectProperties.Property.ROUTING_KEY, action.getProperties().get(ObjectProperties.Property.NAME));
                 addRule(null, identity, noLog(permission), new Action(Operation.BIND, ObjectType.EXCHANGE, exchProperties));
-                if (action.getProperties().isSet(ObjectProperties.Property.AUTO_DELETE))
-                {
-                    addRule(null, identity, noLog(permission), new Action(Operation.DELETE, ObjectType.QUEUE, action.getProperties()));
-                }
+				if (action.getProperties().isSet(ObjectProperties.Property.AUTO_DELETE))
+				{
+					addRule(null, identity, noLog(permission), new Action(Operation.DELETE, ObjectType.QUEUE, action.getProperties()));
+				}
             }
             else if (action.getOperation() == Operation.DELETE && action.getObjectType() == ObjectType.QUEUE)
             {
@@ -252,9 +261,9 @@ public class RuleSet
                 addRule(null, identity, noLog(permission), new Action(Operation.ACCESS, ObjectType.VIRTUALHOST));
             }
         }
-
+        
         // set rule number if needed
-        Rule rule = new Rule(number, identity, action, permission);
+        Rule rule = new Rule(number, identity, action, permission);        
         if (rule.getNumber() == null)
         {
             if (_rules.isEmpty())
@@ -266,36 +275,34 @@ public class RuleSet
                 rule.setNumber(_rules.lastKey() + _increment);
             }
         }
-
+        
         // save rule
         _cache.remove(identity);
         _rules.put(rule.getNumber(), rule);
-    }
-
+	}
+    
     public void enableRule(int ruleNumber)
     {
         _rules.get(Integer.valueOf(ruleNumber)).enable();
     }
-
+    
     public void disableRule(int ruleNumber)
     {
         _rules.get(Integer.valueOf(ruleNumber)).disable();
     }
-
+    
     public boolean addGroup(String group, List<String> constituents)
     {
-        _cache.clear();
-
-        if (_aclGroups.containsKey(group))
+        if (_groups.containsKey(group))
         {
             // cannot redefine
             return false;
         }
         else
         {
-            _aclGroups.put(group, new ArrayList<String>());
+            _groups.put(group, new ArrayList<String>());
         }
-
+        
         for (String name : constituents)
         {
             if (name.equalsIgnoreCase(group))
@@ -303,17 +310,17 @@ public class RuleSet
                 // recursive definition
                 return false;
             }
-
+            
             if (!checkName(name))
             {
                 // invalid name
                 return false;
             }
-
-            if (_aclGroups.containsKey(name))
+            
+            if (_groups.containsKey(name))
             {
                 // is a group
-                _aclGroups.get(group).addAll(_aclGroups.get(name));
+                _groups.get(group).addAll(_groups.get(name));
             }
             else
             {
@@ -323,12 +330,12 @@ public class RuleSet
                     // invalid username
                     return false;
                 }
-                _aclGroups.get(group).add(name);
+                _groups.get(group).add(name);
             }
         }
         return true;
     }
-
+    
     /** Return true if the name is well-formed (contains legal characters). */
     protected boolean checkName(String name)
     {
@@ -342,79 +349,79 @@ public class RuleSet
         }
         return true;
     }
-
+    
     /** Returns true if a username has the name[@domain][/realm] format  */
     protected boolean isvalidUserName(String name)
-    {
-        // check for '@' and '/' in namne
-        int atPos = name.indexOf(AT);
-        int slashPos = name.indexOf(SLASH);
-        boolean atFound = atPos != StringUtils.INDEX_NOT_FOUND && atPos == name.lastIndexOf(AT);
-        boolean slashFound = slashPos != StringUtils.INDEX_NOT_FOUND && slashPos == name.lastIndexOf(SLASH);
-
-        // must be at least one character after '@' or '/'
-        if (atFound && atPos > name.length() - 2)
-        {
-            return false;
-        }
-        if (slashFound && slashPos > name.length() - 2)
-        {
-            return false;
-        }
-
-        // must be at least one character between '@' and '/'
-        if (atFound && slashFound)
-        {
-            return (atPos < (slashPos - 1));
-        }
-
-        // otherwise all good
-        return true;
+    {	
+		// check for '@' and '/' in namne
+		int atPos = name.indexOf(AT);
+		int slashPos = name.indexOf(SLASH);
+		boolean atFound = atPos != StringUtils.INDEX_NOT_FOUND && atPos == name.lastIndexOf(AT);
+		boolean slashFound = slashPos != StringUtils.INDEX_NOT_FOUND && slashPos == name.lastIndexOf(SLASH);
+				
+		// must be at least one character after '@' or '/'
+		if (atFound && atPos > name.length() - 2)
+		{
+			return false;
+		}
+		if (slashFound && slashPos > name.length() - 2)
+		{
+			return false;
+		}
+		
+		// must be at least one character between '@' and '/'
+		if (atFound && slashFound)
+		{
+			return (atPos < (slashPos - 1));
+		}
+		
+		// otherwise all good
+		return true; 
     }
 
-    // C++ broker authorise function prototype
+	// C++ broker authorise function prototype
     // virtual bool authorise(const std::string& id, const Action& action, const ObjectType& objType,
-    //        const std::string& name, std::map<Property, std::string>* params=0);
-
-    // Possibly add a String name paramater?
+	//		const std::string& name, std::map<Property, std::string>* params=0);
+	
+	// Possibly add a String name paramater?
 
     /**
      * Check the authorisation granted to a particular identity for an operation on an object type with
      * specific properties.
      *
-     * Looks up the entire ruleset, which may be cached, for the user and operation and goes through the rules
+     * Looks up the entire ruleset, whcih may be cached, for the user and operation and goes through the rules
      * in order to find the first one that matches. Either defers if there are no rules, returns the result of
      * the first match found, or denies access if there are no matching rules. Normally, it would be expected
      * to have a default deny or allow rule at the end of an access configuration however.
      */
-    public Result check(Subject subject, Operation operation, ObjectType objectType, ObjectProperties properties)
+    public Result check(String identity, Operation operation, ObjectType objectType, ObjectProperties properties)
     {
         // Create the action to check
         Action action = new Action(operation, objectType, properties);
 
-        // get the list of rules relevant for this request
-        List<Rule> rules = getRules(subject, operation, objectType);
-        if (rules == null)
-        {
-            if (isSet(CONTROLLED))
-            {
-                // Abstain if there are no rules for this operation
+		// get the list of rules relevant for this request
+		List<Rule> rules = getRules(identity, operation, objectType);
+		if (rules == null)
+		{
+		    if (isSet(CONTROLLED))
+		    {
+    		    // Abstain if there are no rules for this operation
                 return Result.ABSTAIN;
-            }
-            else
-            {
-                return getDefault();
-            }
-        }
-
-        // Iterate through a filtered set of rules dealing with this identity and operation
+		    }
+		    else
+		    {
+		        return getDefault();
+		    }
+		}
+		
+		// Iterate through a filtered set of rules dealing with this identity and operation
         for (Rule current : rules)
-        {
-            // Check if action matches
+		{
+			// Check if action matches
             if (action.matches(current.getAction()))
             {
                 Permission permission = current.getPermission();
-
+                
                 switch (permission)
                 {
                     case ALLOW_LOG:
@@ -432,15 +439,15 @@ public class RuleSet
                 return Result.DENIED;
             }
         }
-
+        
         // Defer to the next plugin of this type, if it exists
-        return Result.DEFER;
+		return Result.DEFER;
     }
-
-    /** Default deny. */
-    public Result getDefault()
-    {
-        if (isSet(DEFAULT_ALLOW))
+	
+	/** Default deny. */
+	public Result getDefault()
+	{
+	    if (isSet(DEFAULT_ALLOW))
         {
             return Result.ALLOWED;
         }
@@ -449,19 +456,19 @@ public class RuleSet
             return Result.DENIED;
         }
         return Result.ABSTAIN;
-    }
-
-    /**
-     * Check if a configuration property is set.
-     */
-    protected boolean isSet(String key)
-    {
-        return BooleanUtils.isTrue(_config.get(key));
-    }
+	}
+	
+	/**
+	 * Check if a configuration property is set.
+	 */
+	protected boolean isSet(String key)
+	{
+	    return BooleanUtils.isTrue(_config.get(key));
+	}
 
     /**
      * Configure properties for the plugin instance.
-     *
+     * 
      * @param properties
      */
     public void configure(Map<String, Boolean> properties)
@@ -471,7 +478,7 @@ public class RuleSet
 
     /**
      * Configure a single property for the plugin instance.
-     *
+     * 
      * @param key
      * @param value
      */
@@ -479,48 +486,4 @@ public class RuleSet
     {
         _config.put(key, value);
     }
-
-    private boolean isRelevant(final Set<Principal> principals, final Rule rule)
-    {
-        if (rule.getIdentity().equalsIgnoreCase(Rule.ALL))
-        {
-            return true;
-        }
-        else
-        {
-            for (Iterator<Principal> iterator = principals.iterator(); iterator.hasNext();)
-            {
-                final Principal principal = iterator.next();
-
-                if (rule.getIdentity().equalsIgnoreCase(principal.getName())
-                    || (_aclGroups.containsKey(rule.getIdentity()) && _aclGroups.get(rule.getIdentity()).contains(principal.getName())))
-                {
-                    return true;
-                }
-            }
-        }
-
-        return false;
-    }
-
-    private Map<ObjectType, List<Rule>> getObjectToRuleCache(final Subject subject, final Operation operation)
-    {
-        // Lookup identity in cache and create empty operation map if required
-        Map<Operation, Map<ObjectType, List<Rule>>> operations = _cache.get(subject);
-        if (operations == null)
-        {
-            operations = new EnumMap<Operation, Map<ObjectType, List<Rule>>>(Operation.class);
-            _cache.put(subject, operations);
-        }
-
-        // Lookup operation and create empty object type map if required
-        Map<ObjectType, List<Rule>> objects = operations.get(operation);
-        if (objects == null)
-        {
-            objects = new EnumMap<ObjectType, List<Rule>>(ObjectType.class);
-            operations.put(operation, objects);
-        }
-        return objects;
-    }
-
 }

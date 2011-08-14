@@ -61,7 +61,7 @@ class Connector : public framing::OutputHandler
     static void registerFactory(const std::string& proto, Factory* connectorFactory);
 
     virtual ~Connector() {};
-    virtual void connect(const std::string& host, const std::string& port) = 0;
+    virtual void connect(const std::string& host, int port) = 0;
     virtual void init() {};
     virtual void close() = 0;
     virtual void send(framing::AMQFrame& frame) = 0;

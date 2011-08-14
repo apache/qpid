@@ -23,7 +23,6 @@ package org.apache.qpid.client.message;
 
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 import javax.jms.JMSException;
 import javax.jms.MessageFormatException;
@@ -66,7 +65,7 @@ public class AMQPEncodedMapMessage extends JMSMapMessage
         if ((value instanceof Boolean) || (value instanceof Byte) || (value instanceof Short) || (value instanceof Integer)
                 || (value instanceof Long) || (value instanceof Character) || (value instanceof Float)
                 || (value instanceof Double) || (value instanceof String) || (value instanceof byte[])
-                || (value instanceof List) || (value instanceof Map) || (value instanceof UUID) || (value == null))
+                || (value instanceof List) || (value instanceof Map) || (value == null))
         {
             _map.put(propName, value);
         }
@@ -110,7 +109,7 @@ public class AMQPEncodedMapMessage extends JMSMapMessage
     }
     
     // for testing
-    public Map<String,Object> getMap()
+    Map<String,Object> getMap()
     {
         return _map;
     }

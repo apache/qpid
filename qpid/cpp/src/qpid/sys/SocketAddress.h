@@ -41,7 +41,7 @@ public:
     QPID_COMMON_EXTERN SocketAddress& operator=(const SocketAddress&);
     QPID_COMMON_EXTERN ~SocketAddress();
 
-    std::string asString(bool numeric=true) const;
+    std::string asString() const;
 
 private:
     std::string host;

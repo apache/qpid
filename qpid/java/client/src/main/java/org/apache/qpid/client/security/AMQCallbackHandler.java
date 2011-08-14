@@ -22,9 +22,9 @@ package org.apache.qpid.client.security;
 
 import javax.security.auth.callback.CallbackHandler;
 
-import org.apache.qpid.jms.ConnectionURL;
+import org.apache.qpid.client.protocol.AMQProtocolSession;
 
 public interface AMQCallbackHandler extends CallbackHandler
 {
-    void initialise(ConnectionURL connectionURL);    
+    void initialise(AMQProtocolSession protocolSession);    
 }

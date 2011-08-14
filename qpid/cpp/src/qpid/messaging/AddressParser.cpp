@@ -151,7 +151,7 @@ bool AddressParser::readValueIfExists(Variant& value)
 bool AddressParser::readString(std::string& value, char delimiter)
 {
     if (readChar(delimiter)) {
-        std::string::size_type start = current;
+        std::string::size_type start = current++;
         while (!eos()) {
             if (input.at(current) == delimiter) {
                 if (current > start) {

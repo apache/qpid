@@ -26,9 +26,7 @@
 // include this file with the executable being built. If the default
 // behaviors are desired, don't include this file in the build.
 
-#if defined(_MSC_VER)
 #include <crtdbg.h>
-#endif
 #include <windows.h>
 #include <iostream>
 
@@ -55,14 +53,12 @@ static redirect_errors_to_stderr block;
 
 redirect_errors_to_stderr::redirect_errors_to_stderr()
 {
-#if defined(_MSC_VER)
     _CrtSetReportMode (_CRT_WARN, _CRTDBG_MODE_FILE);
     _CrtSetReportFile (_CRT_WARN, _CRTDBG_FILE_STDERR);
     _CrtSetReportMode (_CRT_ERROR, _CRTDBG_MODE_FILE);
     _CrtSetReportFile (_CRT_ERROR, _CRTDBG_FILE_STDERR);
     _CrtSetReportMode (_CRT_ASSERT, _CRTDBG_MODE_FILE);
     _CrtSetReportFile (_CRT_ASSERT, _CRTDBG_FILE_STDERR);
-#endif
 
     // Prevent the system from displaying the critical-error-handler
     // and can't-open-file message boxes.

@@ -42,10 +42,7 @@ import static org.apache.qpid.util.Serial.max;
 import static org.apache.qpid.util.Strings.toUTF8;
 
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
@@ -120,9 +117,7 @@ public class Session extends SessionInvoker
 
     private Thread resumer = null;
     private boolean transacted = false;
-    private SessionDetachCode detachCode;
-    private final Object stateLock = new Object();
-
+    
     protected Session(Connection connection, Binary name, long expiry)
     {
         this(connection, new SessionDelegate(), name, expiry);
@@ -267,32 +262,7 @@ public class Session extends SessionInvoker
                 }
                 else if (m instanceof MessageTransfer)
                 {
-                	MessageTransfer xfr = (MessageTransfer)m;
-                	
-                	if (xfr.getHeader() != null)
-                	{
-                		if (xfr.getHeader().get(DeliveryProperties.class) != null)
-                		{
-                		   xfr.getHeader().get(DeliveryProperties.class).setRedelivered(true);
-                		}
-                		else
-                		{
-                			Struct[] structs = xfr.getHeader().getStructs();
-                			DeliveryProperties deliveryProps = new DeliveryProperties();
-                    		deliveryProps.setRedelivered(true);
-                    		
-                    		List<Struct> list = Arrays.asList(structs);
-                    		list.add(deliveryProps);
-                    		xfr.setHeader(new Header(list));
-                		}
-                		
-                	}
-                	else
-                	{
-                		DeliveryProperties deliveryProps = new DeliveryProperties();
-                		deliveryProps.setRedelivered(true);
-                		xfr.setHeader(new Header(deliveryProps));
-                	}
+                    ((MessageTransfer)m).getHeader().get(DeliveryProperties.class).setRedelivered(true);
                 }
                 sessionCommandPoint(m.getId(), 0);
                 send(m);
@@ -452,10 +422,7 @@ public class Session extends SessionInvoker
             {
                 return;
             }
-            if (copy.size() > 0)
-            {
-	            sessionCompleted(copy, options);
-            }
+            sessionCompleted(copy, options);
         }
     }
 
@@ -694,12 +661,7 @@ public class Session extends SessionInvoker
                 {
                     sessionCommandPoint(0, 0);
                 }
-                
-                boolean replayTransfer = !closing && !transacted &&
-                                         m instanceof MessageTransfer &&
-                                         ! m.isUnreliable();
-                
-                if ((replayTransfer) || m.hasCompletionListener())
+                if ((!closing && !transacted && m instanceof MessageTransfer) || m.hasCompletionListener())
                 {
                     commands[mod(next, commands.length)] = m;
                     commandBytes += m.getBodySize();
@@ -1033,8 +995,7 @@ public class Session extends SessionInvoker
 
         if(state == CLOSED)
         {
-            connection.removeSession(this);   
-            listener.closed(this);
+            connection.removeSession(this);            
         }
     }
 
@@ -1047,54 +1008,13 @@ public class Session extends SessionInvoker
     {
         return String.format("ssn:%s", name);
     }
-
+    
     public void setTransacted(boolean b) {
         this.transacted = b;
     }
-
+    
     public boolean isTransacted(){
         return transacted;
     }
-
-    public void setDetachCode(SessionDetachCode dtc)
-    {
-        this.detachCode = dtc;
-    }
-
-    public SessionDetachCode getDetachCode()
-    {
-        return this.detachCode;
-    }
-
-    public void awaitOpen()
-    {
-        switch (state)
-        {
-        case NEW:
-            synchronized(stateLock)
-            {
-                Waiter w = new Waiter(stateLock, timeout);
-                while (w.hasTime() && state == NEW)
-                {
-                    w.await();
-                }
-            }
-
-            if (state != OPEN)
-            {
-                throw new SessionException("Timed out waiting for Session to open");
-            }
-        case DETACHED:
-        case CLOSING:
-        case CLOSED:
-            throw new SessionException("Session closed");
-        default :
-            break;
-        }
-    }
-
-    public Object getStateLock()
-    {
-        return stateLock;
-    }
+    
 }

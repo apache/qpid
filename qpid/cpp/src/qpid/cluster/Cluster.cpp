@@ -146,7 +146,6 @@
 #include "qpid/framing/AMQP_AllOperations.h"
 #include "qpid/framing/AllInvoker.h"
 #include "qpid/framing/ClusterConfigChangeBody.h"
-#include "qpid/framing/ClusterClockBody.h"
 #include "qpid/framing/ClusterConnectionDeliverCloseBody.h"
 #include "qpid/framing/ClusterConnectionAbortBody.h"
 #include "qpid/framing/ClusterRetractOfferBody.h"
@@ -199,7 +198,7 @@ namespace _qmf = ::qmf::org::apache::qpid::cluster;
  * Currently use SVN revision to avoid clashes with versions from
  * different branches.
  */
-const uint32_t Cluster::CLUSTER_VERSION = 1128070;
+const uint32_t Cluster::CLUSTER_VERSION = 1058747;
 
 struct ClusterDispatcher : public framing::AMQP_AllOperations::ClusterHandler {
     qpid::cluster::Cluster& cluster;
@@ -231,16 +230,16 @@ struct ClusterDispatcher : public framing::AMQP_AllOperations::ClusterHandler {
         cluster.updateOffer(member, updatee, l);
     }
     void retractOffer(uint64_t updatee) { cluster.retractOffer(member, updatee, l); }
+    void messageExpired(uint64_t id) { cluster.messageExpired(member, id, l); }
     void errorCheck(uint8_t type, const framing::SequenceNumber& frameSeq) {
         cluster.errorCheck(member, type, frameSeq, l);
     }
     void timerWakeup(const std::string& name) { cluster.timerWakeup(member, name, l); }
-    void timerDrop(const std::string& name) { cluster.timerDrop(member, name, l); }
+    void timerDrop(const std::string& name) { cluster.timerWakeup(member, name, l); }
     void shutdown(const Uuid& id) { cluster.shutdown(member, id, l); }
     void deliverToQueue(const std::string& queue, const std::string& message) {
         cluster.deliverToQueue(queue, message, l);
     }
-    void clock(uint64_t time) { cluster.clock(time, l); }
     bool invoke(AMQBody& body) { return framing::invoke(*this, body).wasHandled(); }
 };
 
@@ -254,7 +253,7 @@ Cluster::Cluster(const ClusterSettings& set, broker::Broker& b) :
     self(cpg.self()),
     clusterId(true),
     mAgent(0),
-    expiryPolicy(new ExpiryPolicy(*this)),
+    expiryPolicy(new ExpiryPolicy(mcast, self, broker.getTimer())),
     mcast(cpg, poller, boost::bind(&Cluster::leave, this)),
     dispatcher(cpg, poller, boost::bind(&Cluster::leave, this)),
     deliverEventQueue(boost::bind(&Cluster::deliveredEvent, this, _1),
@@ -366,8 +365,7 @@ void Cluster::addShadowConnection(const boost::intrusive_ptr<Connection>& c) {
     assert(discarding);
     pair<ConnectionMap::iterator, bool> ib
         = connections.insert(ConnectionMap::value_type(c->getId(), c));
-    // Like this to avoid tripping up unused variable warning when NDEBUG set
-    if (!ib.second) assert(ib.second);
+    assert(ib.second);
 }
 
 void Cluster::erase(const ConnectionId& id) {
@@ -539,7 +537,7 @@ void Cluster::processFrame(const EventFrame& e, Lock& l) {
             connection->deliveredFrame(e);
         }
         else
-            throw Exception(QPID_MSG("Unknown connection: " << e));
+            QPID_LOG(trace, *this << " DROP (no connection): " << e);
     }
     else // Drop connection frames while state < CATCHUP
         QPID_LOG(trace, *this << " DROP (joining): " << e);
@@ -669,8 +667,6 @@ void Cluster::initMapCompleted(Lock& l) {
         else {                  // I can go ready.
             discarding = false;
             setReady(l);
-            // Must be called *before* memberUpdate so first update will be generated.
-            failoverExchange->setReady();
             memberUpdate(l);
             updateMgmtMembership(l);
             mcast.mcastControl(ClusterReadyBody(ProtocolVersion(), myUrl.str()), self);
@@ -723,20 +719,6 @@ void Cluster::configChange(const MemberId&,
     updateMgmtMembership(l);     // Update on every config change for consistency
 }
 
-struct ClusterClockTask : public sys::TimerTask {
-    Cluster& cluster;
-    sys::Timer& timer;
-
-    ClusterClockTask(Cluster& cluster, sys::Timer& timer, uint16_t clockInterval)
-      : TimerTask(Duration(clockInterval * TIME_MSEC),"ClusterClock"), cluster(cluster), timer(timer) {}
-
-    void fire() {
-      cluster.sendClockUpdate();
-      setupNextFire();
-      timer.add(this);
-    }
-};
-
 void Cluster::becomeElder(Lock&) {
     if (elder) return;          // We were already the elder.
     // We are the oldest, reactive links if necessary
@@ -744,8 +726,6 @@ void Cluster::becomeElder(Lock&) {
     elder = true;
     broker.getLinks().setPassive(false);
     timer->becomeElder();
-
-    clockTimer.add(new ClusterClockTask(*this, clockTimer, settings.clockInterval));
 }
 
 void Cluster::makeOffer(const MemberId& id, Lock& ) {
@@ -866,7 +846,7 @@ void Cluster::updateOffer(const MemberId& updater, uint64_t updateeInt, Lock& l)
     if (updatee != self && url) {
         QPID_LOG(debug, debugSnapshot());
         if (mAgent) mAgent->clusterUpdate();
-        // Updatee will call clusterUpdate() via checkUpdateIn() when update completes
+        // Updatee will call clusterUpdate when update completes
     }
 }
 
@@ -947,11 +927,10 @@ void Cluster::checkUpdateIn(Lock& l) {
     if (!updateClosed) return;  // Wait till update connection closes.
     if (updatedMap) { // We're up to date
         map = *updatedMap;
+        failoverExchange->setUrls(getUrls(l));
         mcast.mcastControl(ClusterReadyBody(ProtocolVersion(), myUrl.str()), self);
         state = CATCHUP;
         memberUpdate(l);
-        // Must be called *after* memberUpdate() to avoid sending an extra update.
-        failoverExchange->setReady();
         // NB: don't updateMgmtMembership() here as we are not in the deliver
         // thread. It will be updated on delivery of the "ready" we just mcast.
         broker.setClusterUpdatee(false);
@@ -964,10 +943,6 @@ void Cluster::checkUpdateIn(Lock& l) {
             mAgent->suppress(false); // Enable management output.
             mAgent->clusterUpdate();
         }
-        // Restore alternate exchange settings on exchanges.
-        broker.getExchanges().eachExchange(
-            boost::bind(&broker::Exchange::recoveryComplete, _1,
-                        boost::ref(broker.getExchanges())));
         enableClusterSafe();    // Enable cluster-safe assertions
         deliverEventQueue.start();
     }
@@ -1141,6 +1116,10 @@ void Cluster::setClusterId(const Uuid& uuid, Lock&) {
     QPID_LOG(notice, *this << " cluster-uuid = " << clusterId);
 }
 
+void Cluster::messageExpired(const MemberId&, uint64_t id, Lock&) {
+    expiryPolicy->deliverExpire(id);
+}
+
 void Cluster::errorCheck(const MemberId& from, uint8_t type, framing::SequenceNumber frameSeq, Lock&) {
     // If we see an errorCheck here (rather than in the ErrorCheck
     // class) then we have processed succesfully past the point of the
@@ -1176,35 +1155,6 @@ void Cluster::deliverToQueue(const std::string& queue, const std::string& messag
     msg->decodeHeader(buf);
     msg->decodeContent(buf);
     q->deliver(msg);
-}
-
-sys::AbsTime Cluster::getClusterTime() {
-    Mutex::ScopedLock l(lock);
-    return clusterTime;
-}
-
-// This method is called during update on the updatee to set the initial cluster time.
-void Cluster::clock(const uint64_t time) {
-    Mutex::ScopedLock l(lock);
-    clock(time, l);
-}
-
-// called when broadcast message received
-void Cluster::clock(const uint64_t time, Lock&) {
-    clusterTime = AbsTime(EPOCH, time);
-    AbsTime now = AbsTime::now();
-
-    if (!elder) {
-      clusterTimeOffset = Duration(now, clusterTime);
-    }
-}
-
-// called by elder timer to send clock broadcast
-void Cluster::sendClockUpdate() {
-    Mutex::ScopedLock l(lock);
-    int64_t nanosecondsSinceEpoch = Duration(EPOCH, now());
-    nanosecondsSinceEpoch += clusterTimeOffset;
-    mcast.mcastControl(ClusterClockBody(ProtocolVersion(), nanosecondsSinceEpoch), self);
 }
 
 bool Cluster::deferDeliveryImpl(const std::string& queue,

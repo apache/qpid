@@ -75,7 +75,10 @@ public class ServerDelegate extends ConnectionDelegate
 
         if (mechanism == null || mechanism.length() == 0)
         {
-            tuneAuthorizedConnection(conn);
+            conn.connectionTune
+                (getChannelMax(),
+                 org.apache.qpid.transport.network.ConnectionBinding.MAX_FRAME_SIZE,
+                 0, getHeartbeatMax());
             return;
         }
 
@@ -94,7 +97,8 @@ public class ServerDelegate extends ConnectionDelegate
         }
         catch (SaslException e)
         {
-            connectionAuthFailed(conn, e);
+            conn.exception(e);
+            conn.connectionClose(ConnectionCloseCode.CONNECTION_FORCED, e.getMessage());
         }
     }
 
@@ -105,50 +109,31 @@ public class ServerDelegate extends ConnectionDelegate
         return ss;
     }
 
-    protected void secure(final SaslServer ss, final Connection conn, final byte[] response)
+    private void secure(Connection conn, byte[] response)
     {
+        SaslServer ss = conn.getSaslServer();
         try
         {
             byte[] challenge = ss.evaluateResponse(response);
             if (ss.isComplete())
             {
                 ss.dispose();
-                tuneAuthorizedConnection(conn);
+                conn.connectionTune
+                    (getChannelMax(),
+                     org.apache.qpid.transport.network.ConnectionBinding.MAX_FRAME_SIZE,
+                     0, getHeartbeatMax());
+                conn.setAuthorizationID(ss.getAuthorizationID());
             }
             else
             {
-                connectionAuthContinue(conn, challenge);
+                conn.connectionSecure(challenge);
             }
         }
         catch (SaslException e)
         {
-            connectionAuthFailed(conn, e);
+            conn.exception(e);
+            conn.connectionClose(ConnectionCloseCode.CONNECTION_FORCED, e.getMessage());
         }
-    }
-
-    protected void connectionAuthFailed(final Connection conn, Exception e)
-    {
-        conn.exception(e);
-        conn.connectionClose(ConnectionCloseCode.CONNECTION_FORCED, e.getMessage());
-    }
-
-    protected void connectionAuthContinue(final Connection conn, byte[] challenge)
-    {
-        conn.connectionSecure(challenge);
-    }
-
-    protected void tuneAuthorizedConnection(final Connection conn)
-    {
-        conn.connectionTune
-            (getChannelMax(),
-             org.apache.qpid.transport.network.ConnectionBinding.MAX_FRAME_SIZE,
-             0, getHeartbeatMax());
-    }
-    
-    protected void secure(final Connection conn, final byte[] response)
-    {
-        final SaslServer ss = conn.getSaslServer();
-        secure(ss, conn, response);
     }
 
     protected int getHeartbeatMax()

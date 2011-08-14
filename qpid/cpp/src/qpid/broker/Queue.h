@@ -10,9 +10,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
+ * 
  *   http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -32,9 +32,9 @@
 #include "qpid/broker/QueueBindings.h"
 #include "qpid/broker/QueueListeners.h"
 #include "qpid/broker/QueueObserver.h"
+#include "qpid/broker/RateTracker.h"
 
 #include "qpid/framing/FieldTable.h"
-#include "qpid/sys/AtomicValue.h"
 #include "qpid/sys/Monitor.h"
 #include "qpid/sys/Timer.h"
 #include "qpid/management/Manageable.h"
@@ -74,13 +74,13 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     {
         Queue& parent;
         uint count;
-
+                
         UsageBarrier(Queue&);
         bool acquire();
         void release();
         void destroy();
     };
-
+            
     struct ScopedUse
     {
         UsageBarrier& barrier;
@@ -88,7 +88,7 @@ class Queue : public boost::enable_shared_from_this<Queue>,
         ScopedUse(UsageBarrier& b) : barrier(b), acquired(barrier.acquire()) {}
         ~ScopedUse() { if (acquired) barrier.release(); }
     };
-
+            
     typedef std::set< boost::shared_ptr<QueueObserver> > Observers;
     enum ConsumeCode {NO_MESSAGES=0, CANT_CONSUME=1, CONSUMED=2};
 
@@ -119,7 +119,7 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     boost::shared_ptr<Exchange> alternateExchange;
     framing::SequenceNumber sequence;
     qmf::org::apache::qpid::broker::Queue* mgmtObject;
-    sys::AtomicValue<uint32_t> dequeueSincePurge; // Count dequeues since last purge.
+    RateTracker dequeueTracker;
     int eventMode;
     Observers observers;
     bool insertSeqNo;
@@ -146,10 +146,9 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     void dequeued(const QueuedMessage& msg);
     void pop();
     void popAndDequeue();
-
+    QueuedMessage getFront();
     void forcePersistent(QueuedMessage& msg);
     int getEventMode();
-    void configureImpl(const qpid::framing::FieldTable& settings);
 
     inline void mgntEnqStats(const boost::intrusive_ptr<Message>& msg)
     {
@@ -184,8 +183,8 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     typedef std::vector<shared_ptr> vector;
 
     QPID_BROKER_EXTERN Queue(const std::string& name,
-                             bool autodelete = false,
-                             MessageStore* const store = 0,
+                             bool autodelete = false, 
+                             MessageStore* const store = 0, 
                              const OwnershipToken* const owner = 0,
                              management::Manageable* parent = 0,
                              Broker* broker = 0);
@@ -193,17 +192,11 @@ class Queue : public boost::enable_shared_from_this<Queue>,
 
     QPID_BROKER_EXTERN bool dispatch(Consumer::shared_ptr);
 
-    /**
-     * Used to configure a new queue and create a persistent record
-     * for it in store if required.
-     */
-    QPID_BROKER_EXTERN void create(const qpid::framing::FieldTable& settings);
+    void create(const qpid::framing::FieldTable& settings);
 
-    /**
-     * Used to reconfigure a recovered queue (does not create
-     * persistent record in store).
-     */
-    QPID_BROKER_EXTERN void configure(const qpid::framing::FieldTable& settings);
+    // "recovering" means we are doing a MessageStore recovery.
+    QPID_BROKER_EXTERN void configure(const qpid::framing::FieldTable& settings,
+                                      bool recovering = false);
     void destroyed();
     QPID_BROKER_EXTERN void bound(const std::string& exchange,
                                   const std::string& key,
@@ -245,11 +238,11 @@ class Queue : public boost::enable_shared_from_this<Queue>,
                                     bool exclusive = false);
     QPID_BROKER_EXTERN void cancel(Consumer::shared_ptr c);
 
-    uint32_t purge(const uint32_t purge_request=0, boost::shared_ptr<Exchange> dest=boost::shared_ptr<Exchange>()); //defaults to all messages
-    QPID_BROKER_EXTERN void purgeExpired(sys::Duration);
+    uint32_t purge(const uint32_t purge_request=0, boost::shared_ptr<Exchange> dest=boost::shared_ptr<Exchange>()); //defaults to all messages 
+    QPID_BROKER_EXTERN void purgeExpired();
 
     //move qty # of messages to destination Queue destq
-    uint32_t move(const Queue::shared_ptr destq, uint32_t qty);
+    uint32_t move(const Queue::shared_ptr destq, uint32_t qty); 
 
     QPID_BROKER_EXTERN uint32_t getMessageCount() const;
     QPID_BROKER_EXTERN uint32_t getEnqueueCompleteMessageCount() const;
@@ -288,8 +281,8 @@ class Queue : public boost::enable_shared_from_this<Queue>,
      * Inform queue of messages that were enqueued, have since
      * been acquired but not yet accepted or released (and
      * thus are still logically on the queue) - used in
-     * clustered broker.
-     */
+     * clustered broker.  
+     */ 
     void updateEnqueued(const QueuedMessage& msg);
 
     /**
@@ -300,9 +293,9 @@ class Queue : public boost::enable_shared_from_this<Queue>,
      * accepted it).
      */
     bool isEnqueued(const QueuedMessage& msg);
-
+            
     /**
-     * Gets the next available message
+     * Gets the next available message 
      */
     QPID_BROKER_EXTERN QueuedMessage get();
 
@@ -321,13 +314,8 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     void encode(framing::Buffer& buffer) const;
     uint32_t encodedSize() const;
 
-    /**
-     * Restores a queue from encoded data (used in recovery)
-     *
-     * Note: restored queue will be neither auto-deleted or have an
-     * exclusive owner
-     */
-    static Queue::shared_ptr restore(QueueRegistry& queues, framing::Buffer& buffer);
+    // "recovering" means we are doing a MessageStore recovery.
+    static Queue::shared_ptr decode(QueueRegistry& queues, framing::Buffer& buffer, bool recovering = false );
     static void tryAutoDelete(Broker& broker, Queue::shared_ptr);
 
     virtual void setExternalQueueStore(ExternalQueueStore* inst);
@@ -346,11 +334,6 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     /** Apply f to each QueueBinding on the queue */
     template <class F> void eachBinding(F f) {
         bindings.eachBinding(f);
-    }
-
-    /** Apply f to each Observer on the queue */
-    template <class F> void eachObserver(F f) {
-        std::for_each<Observers::iterator, F>(observers.begin(), observers.end(), f);
     }
 
     /** Set the position sequence number  for the next message on the queue.
@@ -382,9 +365,6 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     void flush();
 
     const Broker* getBroker();
-
-    uint32_t getDequeueSincePurge() { return dequeueSincePurge.get(); }
-    void setDequeueSincePurge(uint32_t value);
 };
 }
 }

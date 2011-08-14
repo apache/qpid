@@ -161,7 +161,7 @@ public class MessageMetaData implements StorableMessageMetaData
 
     public boolean isPersistent()
     {
-        BasicContentHeaderProperties properties = (BasicContentHeaderProperties) (_contentHeaderBody.getProperties());
+        BasicContentHeaderProperties properties = (BasicContentHeaderProperties) (_contentHeaderBody.properties);
         return properties.getDeliveryMode() ==  BasicContentHeaderProperties.PERSISTENT;
     }
 
@@ -229,7 +229,7 @@ public class MessageMetaData implements StorableMessageMetaData
     {
         private BasicContentHeaderProperties getProperties()
         {
-            return (BasicContentHeaderProperties) getContentHeaderBody().getProperties();
+            return (BasicContentHeaderProperties) getContentHeaderBody().properties;
         }
 
         public String getCorrelationId()

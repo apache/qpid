@@ -36,7 +36,7 @@ namespace qmf {
 
     class SchemaPropertyImpl;
 
-    class QMF_CLASS_EXTERN SchemaProperty : public Handle<SchemaPropertyImpl> {
+    class SchemaProperty : public Handle<SchemaPropertyImpl> {
     public:
         QMF_EXTERN SchemaProperty(SchemaPropertyImpl* impl = 0);
         QMF_EXTERN SchemaProperty(const SchemaProperty&);

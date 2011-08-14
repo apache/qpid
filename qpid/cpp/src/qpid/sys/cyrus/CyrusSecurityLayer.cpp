@@ -106,7 +106,7 @@ size_t CyrusSecurityLayer::encode(const char* buffer, size_t size)
 
 bool CyrusSecurityLayer::canEncode()
 {
-    return codec && (encrypted || codec->canEncode());
+    return encrypted || codec->canEncode();
 }
 
 void CyrusSecurityLayer::init(qpid::sys::Codec* c)

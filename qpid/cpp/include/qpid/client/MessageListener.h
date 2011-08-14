@@ -84,7 +84,7 @@ namespace client {
      *
      */
 
-    class QPID_CLIENT_CLASS_EXTERN MessageListener{
+    class MessageListener{
     public:
         QPID_CLIENT_EXTERN virtual ~MessageListener();
 

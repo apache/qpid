@@ -76,10 +76,6 @@ public class SessionDelegate
     @Override public void sessionAttached(Session ssn, SessionAttached atc)
     {
         ssn.setState(Session.State.OPEN);
-        synchronized (ssn.getStateLock())
-        {
-            ssn.getStateLock().notifyAll();
-        }
     }
 
     @Override public void sessionTimeout(Session ssn, SessionTimeout t)
@@ -206,19 +202,11 @@ public class SessionDelegate
 
     public void closed(Session session)
     {
-        log.debug("CLOSED: [%s]", session);
-        synchronized (session.getStateLock())
-        {
-            session.getStateLock().notifyAll();
-        }
+        log.warn("CLOSED: [%s]", session);
     }
 
     public void detached(Session session)
     {
-        log.debug("DETACHED: [%s]", session);
-        synchronized (session.getStateLock())
-        {
-            session.getStateLock().notifyAll();
-        }
+        log.warn("DETACHED: [%s]", session);
     }
 }

@@ -30,7 +30,7 @@ namespace sys {
 /**
  * Interface for objects that can be run, e.g. in a thread.
  */
-class QPID_COMMON_CLASS_EXTERN Runnable
+class Runnable
 {
   public:
     /** Type to represent a runnable as a Functor */

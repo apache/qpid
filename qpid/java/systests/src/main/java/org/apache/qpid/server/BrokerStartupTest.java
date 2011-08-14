@@ -70,13 +70,13 @@ public class BrokerStartupTest extends AbstractTestLogging
     {
         // This logging startup code only occurs when you run a Java broker,
         // that broker must be started via Main so not an InVM broker.
-        if (isJavaBroker() && isExternalBroker() && !isInternalBroker())
+        if (isJavaBroker() && isExternalBroker())
         {
             //Remove test Log4j config from the commandline
-            _brokerCommand = _brokerCommand.substring(0, _brokerCommand.indexOf("-l"));
+            _broker = _broker.substring(0, _broker.indexOf("-l"));
 
             // Add an invalid value
-            _brokerCommand += " -l invalid";
+            _broker += " -l invalid";
 
             // The  broker has a built in default log4j configuration set up
             // so if the the broker cannot load the -l value it will use default

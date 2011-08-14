@@ -29,7 +29,7 @@
 namespace qpid {
 namespace types {
 
-class QPID_TYPES_CLASS_EXTERN Uuid
+class Uuid
 {
   public:
     static const size_t SIZE;

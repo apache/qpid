@@ -31,6 +31,9 @@ public class URLHelper
 
     public static void parseOptions(Map<String, String> optionMap, String options) throws URLSyntaxException
     {
+        // options looks like this
+        // brokerlist='tcp://host:port?option='value',option='value';vm://:3/virtualpath?option='value'',failover='method?option='value',option='value''
+
         if ((options == null) || (options.indexOf('=') == -1))
         {
             return;

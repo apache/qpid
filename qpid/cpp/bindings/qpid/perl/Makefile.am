@@ -21,7 +21,7 @@ if HAVE_PERL_DEVEL
 
 INCLUDES = -I$(top_srcdir)/include -I$(top_builddir)/include -I$(top_srcdir)/src -I$(top_builddir)/src -I$(PERL_INC)
 
-EXTRA_DIST = CMakeLists.txt perl.i
+EXTRA_DIST = perl.i
 BUILT_SOURCES = cqpid_perl.cpp
 SWIG_FLAGS = -w362,401
 
@@ -34,7 +34,7 @@ cqpid_perl_PERL = cqpid_perl.pm
 libcqpid_perl_la_LDFLAGS = -avoid-version -shared
 libcqpid_perl_la_LIBADD = -L$(top_builddir)/src/.libs -lqpidmessaging -lqpidtypes \
 	$(top_builddir)/src/libqpidmessaging.la $(top_builddir)/src/libqpidtypes.la
-libcqpid_perl_la_CXXFLAGS = $(INCLUDES) -fno-strict-aliasing
+libcqpid_perl_la_CXXFLAGS = $(INCLUDES)
 nodist_libcqpid_perl_la_SOURCES = cqpid_perl.cpp
 
 CLEANFILES = cqpid_perl.cpp cqpid_perl.pm

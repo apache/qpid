@@ -10,9 +10,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
+ * 
  *   http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -58,13 +58,13 @@ class OutputInterceptor : public sys::ConnectionOutputHandler {
 
     uint32_t getSendMax() const { return sendMax; }
     void setSendMax(uint32_t sendMax_) { sendMax=sendMax_; }
-
+    
     cluster::Connection& parent;
-
+    
   private:
     typedef sys::Mutex::ScopedLock Locker;
 
-    void sendDoOutput(size_t newLimit, const sys::Mutex::ScopedLock&);
+    void sendDoOutput(size_t newLimit);
 
     mutable sys::Mutex lock;
     bool closing;

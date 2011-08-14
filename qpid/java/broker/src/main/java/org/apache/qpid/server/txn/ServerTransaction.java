@@ -52,13 +52,6 @@ public interface ServerTransaction
         public void onRollback();
     }
 
-    /**
-     * Return the time the current transaction started.
-     * 
-     * @return the time this transaction started or 0 if not in a transaction
-     */
-    long getTransactionStartTime();
-
     /** 
      * Register an Action for execution after transaction commit or rollback.  Actions
      * will be executed in the order in which they are registered.

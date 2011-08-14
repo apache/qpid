@@ -571,7 +571,6 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
                         if (!_session.isClosed() || _session.isClosing())
                         {
                             sendCancel();
-                            cleanupQueue();
                         }
                     }
                     catch (AMQException e)
@@ -609,8 +608,6 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
     }
 
     abstract void sendCancel() throws AMQException, FailoverException;
-    
-    abstract void cleanupQueue() throws AMQException, FailoverException;
 
     /**
      * Called when you need to invalidate a consumer. Used for example when failover has occurred and the client has

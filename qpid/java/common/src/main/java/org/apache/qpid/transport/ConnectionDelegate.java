@@ -95,7 +95,6 @@ public abstract class ConnectionDelegate
         Session ssn = conn.getSession(dtc.getChannel());
         if (ssn != null)
         {
-            ssn.setDetachCode(dtc.getCode());
             conn.unmap(ssn);
             ssn.closed();
         }

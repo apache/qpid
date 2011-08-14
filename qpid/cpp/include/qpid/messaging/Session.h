@@ -46,7 +46,7 @@ class SessionImpl;
  * A session represents a distinct 'conversation' which can involve
  * sending and receiving messages to and from different addresses.
  */
-class QPID_MESSAGING_CLASS_EXTERN Session : public qpid::messaging::Handle<SessionImpl>
+class Session : public qpid::messaging::Handle<SessionImpl>
 {
   public:
     QPID_MESSAGING_EXTERN Session(SessionImpl* impl = 0);
@@ -77,10 +77,6 @@ class QPID_MESSAGING_CLASS_EXTERN Session : public qpid::messaging::Handle<Sessi
      * Acknowledges the specified message.
      */
     QPID_MESSAGING_EXTERN void acknowledge(Message&, bool sync=false);
-    /**
-     * Acknowledges all message up to the specified message.
-     */
-    QPID_MESSAGING_EXTERN void acknowledgeUpTo(Message&, bool sync=false);
     /**
      * Rejects the specified message. The broker does not redeliver a
      * message that has been rejected. Once a message has been

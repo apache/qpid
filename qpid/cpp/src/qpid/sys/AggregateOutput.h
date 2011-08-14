@@ -41,7 +41,7 @@ namespace sys {
  * doOutput is called in another.
  */
 
-class QPID_COMMON_CLASS_EXTERN AggregateOutput : public OutputTask, public OutputControl
+class AggregateOutput : public OutputTask, public OutputControl
 {
     typedef std::deque<OutputTask*> TaskList;
 

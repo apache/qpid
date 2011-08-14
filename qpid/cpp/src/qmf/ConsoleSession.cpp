@@ -54,7 +54,6 @@ void ConsoleSession::setAgentFilter(const string& f) { impl->setAgentFilter(f); 
 void ConsoleSession::open() { impl->open(); }
 void ConsoleSession::close() { impl->close(); }
 bool ConsoleSession::nextEvent(ConsoleEvent& e, Duration t) { return impl->nextEvent(e, t); }
-int ConsoleSession::pendingEvents() const { return impl->pendingEvents(); }
 uint32_t ConsoleSession::getAgentCount() const { return impl->getAgentCount(); }
 Agent ConsoleSession::getAgent(uint32_t i) const { return impl->getAgent(i); }
 Agent ConsoleSession::getConnectedBrokerAgent() const { return impl->getConnectedBrokerAgent(); }
@@ -66,9 +65,9 @@ Subscription ConsoleSession::subscribe(const string& q, const string& f, const s
 //========================================================================================
 
 ConsoleSessionImpl::ConsoleSessionImpl(Connection& c, const string& options) :
-    connection(c), domain("default"), maxAgentAgeMinutes(5), listenOnDirect(true), strictSecurity(false),
+    connection(c), domain("default"), maxAgentAgeMinutes(5),
     opened(false), thread(0), threadCanceled(false), lastVisit(0), lastAgePass(0),
-    connectedBrokerInAgentList(false), schemaCache(new SchemaCache()), nextCorrelator(1)
+    connectedBrokerInAgentList(false), schemaCache(new SchemaCache())
 {
     if (!options.empty()) {
         qpid::messaging::AddressParser parser(options);
@@ -214,7 +213,7 @@ bool ConsoleSessionImpl::nextEvent(ConsoleEvent& event, Duration timeout)
     uint64_t milliseconds = timeout.getMilliseconds();
     qpid::sys::Mutex::ScopedLock l(lock);
 
-    if (eventQueue.empty() && milliseconds > 0)
+    if (eventQueue.empty())
         cond.wait(lock, qpid::sys::AbsTime(qpid::sys::now(),
                                            qpid::sys::Duration(milliseconds * qpid::sys::TIME_MSEC)));
 
@@ -225,13 +224,6 @@ bool ConsoleSessionImpl::nextEvent(ConsoleEvent& event, Duration timeout)
     }
 
     return false;
-}
-
-
-int ConsoleSessionImpl::pendingEvents() const
-{
-    qpid::sys::Mutex::ScopedLock l(lock);
-    return eventQueue.size();
 }
 
 
@@ -429,23 +421,7 @@ void ConsoleSessionImpl::handleAgentUpdate(const string& agentName, const Varian
     iter = content.find("_values");
     if (iter == content.end())
         return;
-    const Variant::Map& in_attrs(iter->second.asMap());
-    Variant::Map attrs;
-
-    //
-    // Copy the map from the message to "attrs".  Translate any old-style
-    // keys to their new key values in the process.
-    //
-    for (iter = in_attrs.begin(); iter != in_attrs.end(); iter++) {
-        if      (iter->first == "epoch")
-            attrs[protocol::AGENT_ATTR_EPOCH] = iter->second;
-        else if (iter->first == "timestamp")
-            attrs[protocol::AGENT_ATTR_TIMESTAMP] = iter->second;
-        else if (iter->first == "heartbeat_interval")
-            attrs[protocol::AGENT_ATTR_HEARTBEAT_INTERVAL] = iter->second;
-        else
-            attrs[iter->first] = iter->second;
-    }
+    Variant::Map attrs(iter->second.asMap());
 
     iter = attrs.find(protocol::AGENT_ATTR_EPOCH);
     if (iter != attrs.end())

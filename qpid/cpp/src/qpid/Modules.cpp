@@ -64,6 +64,7 @@ void tryShlib(const char* libname_, bool noThrow) {
     if (!isShlibName(libname)) libname += suffix();
     try {
         sys::Shlib shlib(libname);
+        QPID_LOG (info, "Loaded Module: " << libname);
     }
     catch (const std::exception& /*e*/) {
         if (!noThrow)
@@ -81,7 +82,7 @@ void loadModuleDir (std::string dirname, bool isDefault)
             return;
         throw Exception ("Directory not found: " + dirname);
     }
-    if (!fs::is_directory(dirPath))
+    if (!fs::is_directory(dirPath)) 
     {
         throw Exception ("Invalid value for module-dir: " + dirname + " is not a directory");
     }

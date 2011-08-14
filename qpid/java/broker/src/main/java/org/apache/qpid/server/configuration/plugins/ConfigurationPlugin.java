@@ -24,7 +24,6 @@ import org.apache.commons.configuration.ConversionException;
 import org.apache.log4j.Logger;
 import org.apache.qpid.server.configuration.ConfigurationManager;
 import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.registry.IApplicationRegistry;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -139,28 +138,10 @@ public abstract class ConfigurationPlugin
             }
         }
 
-        offerRemainingConfigurationToOtherPlugins(path, configuration, elements);
-
-        validateConfiguration();
-    }
-
-    private void offerRemainingConfigurationToOtherPlugins(String path,
-            Configuration configuration, Set<String> elements) throws ConfigurationException
-    {
-        final IApplicationRegistry appRegistry = safeGetApplicationRegistryInstance();
-
-        if (appRegistry == null)
-        {
-            // We see this happen during shutdown due to asynchronous reconfig using IO threads.
-            // Need to remove the responsibility for offering configuration to other class.
-            _logger.info("Cannot offer remaining config to other plugins, can't find app registry");
-            return;
-        }
-
-        final ConfigurationManager configurationManager = appRegistry.getConfigurationManager();
         // Process the elements in the configuration
         for (String element : elements)
         {
+            ConfigurationManager configurationManager = ApplicationRegistry.getInstance().getConfigurationManager();
             Configuration handled = element.length() == 0 ? configuration : configuration.subset(element);
 
             String configurationElement = element;
@@ -181,18 +162,8 @@ public abstract class ConfigurationPlugin
                 _pluginConfiguration.put(plugin.getClass().getName(), plugin);
             }
         }
-    }
 
-    private IApplicationRegistry safeGetApplicationRegistryInstance()
-    {
-        try
-        {
-            return ApplicationRegistry.getInstance();
-        }
-        catch (IllegalStateException ise)
-        {
-            return null;
-        }
+        validateConfiguration();
     }
 
     /** Helper method to print out list of keys in a {@link Configuration}. */

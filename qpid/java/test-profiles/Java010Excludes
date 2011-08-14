@@ -47,13 +47,15 @@ org.apache.qpid.server.logging.SubscriptionLoggingTest#testSubscriptionSuspend
 
 // 0-10 Broker does not have a JMX connection MBean
 org.apache.qpid.management.jmx.ManagementActorLoggingTest#testConnectionCloseViaManagement
-org.apache.qpid.management.jmx.MessageConnectionStatisticsTest#*
 
 // 0-10 has different ideas about clientid and ownership of queues
 org.apache.qpid.server.queue.ModelTest#*
 
 // 0-10 is not supported by the MethodRegistry
 org.apache.qpid.test.unit.close.JavaServerCloseRaceConditionTest#*
+
+// QPID-2084 : this test needs more work for 0-10
+org.apache.qpid.test.unit.client.DynamicQueueExchangeCreateTest#*
 
 //QPID-942 : Implemented Channel.Flow based Producer Side flow control to the Java Broker (not in CPP Broker)
 org.apache.qpid.server.queue.ProducerFlowControlTest#*
@@ -72,16 +74,8 @@ org.apache.qpid.test.unit.publish.DirtyTransactedPublishTest#*
 org.apache.qpid.test.client.RollbackOrderTest#testOrderingAfterRollbackOnMessage
 org.apache.qpid.test.unit.ack.RecoverTest#testRecoverInAutoAckListener
 
-// This test uses 0-8 channel frames
-org.apache.qpid.test.unit.client.channelclose.ChannelCloseTest#*
-
 //Temporarily adding the following until the issues are sorted out.
 //Should probably raise JIRAs for them.
+org.apache.qpid.transport.network.mina.MINANetworkDriverTest#*
+org.apache.qpid.test.client.destination.AddressBasedDestinationTest#testCreateExchange
 org.apache.qpid.test.client.destination.AddressBasedDestinationTest#testBrowseMode
-
-// QPID-3133: On 0-10, the exception listener is currently not invoked when reconnection fails to occurs. 
-org.apache.qpid.server.failover.FailoverMethodTest#*
-
-// QPID-3092: the Java broker does not yet implement exchange creation arguments
-org.apache.qpid.test.client.destination.AddressBasedDestinationTest#testCreateExchangeWithArgs
-org.apache.qpid.test.client.destination.AddressBasedDestinationTest#testSessionCreateTopicWithExchangeArgs

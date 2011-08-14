@@ -47,7 +47,6 @@ import org.apache.qpid.transport.ConnectionException;
 import org.apache.qpid.transport.ConnectionListener;
 import org.apache.qpid.transport.ConnectionSettings;
 import org.apache.qpid.transport.ProtocolVersionException;
-import org.apache.qpid.transport.SessionDetachCode;
 import org.apache.qpid.transport.TransportException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,11 +57,7 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
      * This class logger.
      */
     private static final Logger _logger = LoggerFactory.getLogger(AMQConnectionDelegate_0_10.class);
-    
-    /**
-     * The name of the UUID property
-     */
-    private static final String UUID_NAME = "qpid.federation_tag";
+
     /**
      * The AMQ Connection.
      */
@@ -73,12 +68,6 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
      */
     org.apache.qpid.transport.Connection _qpidConnection;
     private ConnectionException exception = null;
-
-    static
-    {
-        // Register any configured SASL client factories.
-        org.apache.qpid.client.security.DynamicSaslRegistrar.registerSaslProviders();
-    }
 
     //--- constructor
     public AMQConnectionDelegate_0_10(AMQConnection conn)
@@ -91,14 +80,7 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
     /**
      * create a Session and start it if required.
      */
-
     public Session createSession(boolean transacted, int acknowledgeMode, int prefetchHigh, int prefetchLow)
-    throws JMSException
-    {
-        return createSession(transacted,acknowledgeMode,prefetchHigh,prefetchLow,null);
-    }
-
-    public Session createSession(boolean transacted, int acknowledgeMode, int prefetchHigh, int prefetchLow, String name)
             throws JMSException
     {
         _conn.checkNotClosed();
@@ -113,7 +95,7 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
         try
         {
             session = new AMQSession_0_10(_qpidConnection, _conn, channelId, transacted, acknowledgeMode, prefetchHigh,
-                    prefetchLow,name);
+                                          prefetchLow);
             _conn.registerSession(channelId, session);
             if (_conn._started)
             {
@@ -229,8 +211,6 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
 
     public void resubscribeSessions() throws JMSException, AMQException, FailoverException
     {
-        _logger.info("Resuming connection");
-        getQpidConnection().resume();
         List<AMQSession> sessions = new ArrayList<AMQSession>(_conn.getSessions().values());
         _logger.info(String.format("Resubscribing sessions = %s sessions.size=%d", sessions, sessions.size()));
         for (AMQSession s : sessions)
@@ -347,11 +327,6 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
         return ProtocolVersion.v0_10;
     }
     
-    public String getUUID()
-    {
-        return (String)_qpidConnection.getServerProperties().get(UUID_NAME);        
-    }
-    
     private void retriveConnectionSettings(ConnectionSettings conSettings, BrokerDetails brokerDetail)
     {
 
@@ -466,31 +441,12 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
         else
         {
             heartbeat = Integer.getInteger(ClientProperties.HEARTBEAT,ClientProperties.HEARTBEAT_DEFAULT);
-        }
+        } 
         return heartbeat;
     }
-
+    
     protected org.apache.qpid.transport.Connection getQpidConnection()
     {
         return _qpidConnection;
-    }
-
-    public void verifyClientID() throws JMSException
-    {
-        int prefetch = (int)_conn.getMaxPrefetch();
-        AMQSession_0_10 ssn = (AMQSession_0_10)createSession(false, 1,prefetch,prefetch,_conn.getClientID());
-        org.apache.qpid.transport.Session ssn_0_10 = ssn.getQpidSession();
-        try
-        {
-            ssn_0_10.awaitOpen();
-        }
-        catch(Exception e)
-        {
-            if (ssn_0_10.getDetachCode() != null &&
-                ssn_0_10.getDetachCode() == SessionDetachCode.SESSION_BUSY)
-            {
-                throw new JMSException("ClientID must be unique");
-            }
-        }
     }
 }
