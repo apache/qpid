@@ -20,44 +20,56 @@
 */
 package org.apache.qpid.server.protocol;
 
-import java.util.EnumSet;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicLong;
-
 import org.apache.qpid.protocol.ProtocolEngineFactory;
-import org.apache.qpid.protocol.ServerProtocolEngine;
+import org.apache.qpid.protocol.ProtocolEngine;
+import org.apache.qpid.transport.NetworkDriver;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
-import org.apache.qpid.transport.network.NetworkConnection;
+
+import java.util.Set;
+import java.util.Arrays;
+import java.util.HashSet;
 
 public class MultiVersionProtocolEngineFactory implements ProtocolEngineFactory
 {
-    private static final Set<AmqpProtocolVersion> ALL_VERSIONS = EnumSet.allOf(AmqpProtocolVersion.class);
-    private static final AtomicLong ID_GENERATOR = new AtomicLong(0);
+    ;
+
+
+    public enum VERSION { v0_8, v0_9, v0_9_1, v0_10, v1_0_0 };
+
+    private static final Set<VERSION> ALL_VERSIONS = new HashSet<VERSION>(Arrays.asList(VERSION.values()));
 
     private final IApplicationRegistry _appRegistry;
     private final String _fqdn;
-    private final Set<AmqpProtocolVersion> _supported;
+    private final Set<VERSION> _supported;
+
 
     public MultiVersionProtocolEngineFactory()
     {
-        this("localhost", ALL_VERSIONS);
+        this(1, "localhost", ALL_VERSIONS);
     }
+
+    public MultiVersionProtocolEngineFactory(String fqdn, Set<VERSION> versions)
+    {
+        this(1, fqdn, versions);
+    }
+
 
     public MultiVersionProtocolEngineFactory(String fqdn)
     {
-        this(fqdn, ALL_VERSIONS);
+        this(1, fqdn, ALL_VERSIONS);
     }
 
-    public MultiVersionProtocolEngineFactory(String fqdn, Set<AmqpProtocolVersion> supportedVersions)
+    public MultiVersionProtocolEngineFactory(int instance, String fqdn, Set<VERSION> supportedVersions)
     {
-        _appRegistry = ApplicationRegistry.getInstance();
+        _appRegistry = ApplicationRegistry.getInstance(instance);
         _fqdn = fqdn;
         _supported = supportedVersions;
     }
 
-    public ServerProtocolEngine newProtocolEngine(NetworkConnection network)
+
+    public ProtocolEngine newProtocolEngine(NetworkDriver networkDriver)
     {
-        return new MultiVersionProtocolEngine(_appRegistry, _fqdn, _supported, network, ID_GENERATOR.getAndIncrement());
+        return new MultiVersionProtocolEngine(_appRegistry, _fqdn, _supported, networkDriver);
     }
 }
