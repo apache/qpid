@@ -31,10 +31,10 @@ import org.apache.qpid.server.message.ServerMessage;
 /**
  * Mock Server Message allowing its persistent flag to be controlled from test.
  */
-class MockServerMessage implements ServerMessage<MockServerMessage>
+class MockServerMessage implements ServerMessage
 {
     /**
-     *
+     * 
      */
     private final boolean persistent;
 
@@ -46,66 +46,55 @@ class MockServerMessage implements ServerMessage<MockServerMessage>
         this.persistent = persistent;
     }
 
-
     public boolean isPersistent()
     {
         return persistent;
     }
 
-
-    public MessageReference<MockServerMessage> newReference()
+    public MessageReference newReference()
     {
         throw new NotImplementedException();
     }
-
 
     public boolean isImmediate()
     {
         throw new NotImplementedException();
     }
 
-
     public long getSize()
     {
         throw new NotImplementedException();
     }
-
 
     public SessionConfig getSessionConfig()
     {
         throw new NotImplementedException();
     }
 
-
     public String getRoutingKey()
     {
         throw new NotImplementedException();
     }
-
 
     public AMQMessageHeader getMessageHeader()
     {
         throw new NotImplementedException();
     }
 
-
     public long getExpiration()
     {
         throw new NotImplementedException();
     }
-
 
     public int getContent(ByteBuffer buf, int offset)
     {
         throw new NotImplementedException();
     }
 
-
     public long getArrivalTime()
     {
         throw new NotImplementedException();
     }
-
 
     public Long getMessageNumber()
     {
