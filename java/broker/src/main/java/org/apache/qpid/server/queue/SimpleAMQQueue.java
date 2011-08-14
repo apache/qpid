@@ -44,7 +44,7 @@ import org.apache.qpid.server.logging.subjects.QueueLogSubject;
 import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.security.PrincipalHolder;
+import org.apache.qpid.server.security.AuthorizationHolder;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.subscription.SubscriptionList;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
@@ -83,7 +83,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
     /** null means shared */
     private final AMQShortString _owner;
 
-    private PrincipalHolder _prinicpalHolder;
+    private AuthorizationHolder _authorizationHolder;
 
     private boolean _exclusive = false;
     private AMQSessionModel _exclusiveOwner;
@@ -102,9 +102,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
     protected final QueueEntryList _entries;
 
-    protected final SubscriptionList _subscriptionList = new SubscriptionList(this);
-
-    private final AtomicReference<SubscriptionList.SubscriptionNode> _lastSubscriptionNode = new AtomicReference<SubscriptionList.SubscriptionNode>(_subscriptionList.getHead());
+    protected final SubscriptionList _subscriptionList = new SubscriptionList();
 
     private volatile Subscription _exclusiveSubscriber;
 
@@ -188,7 +186,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
     //TODO : persist creation time
     private long _createTime = System.currentTimeMillis();
     private ConfigurationPlugin _queueConfiguration;
-    private final boolean _isTopic;
+
 
 
     protected SimpleAMQQueue(AMQShortString name, boolean durable, AMQShortString owner, boolean autoDelete, boolean exclusive, VirtualHost virtualHost, Map<String,Object> arguments)
@@ -234,11 +232,9 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         _exclusive = exclusive;
         _virtualHost = virtualHost;
         _entries = entryListFactory.createQueueEntryList(this);
-        _arguments = arguments == null ? Collections.EMPTY_MAP : arguments;
+        _arguments = arguments;
 
         _id = virtualHost.getConfigStore().createId();
-
-        _isTopic = arguments != null && arguments.containsKey("topic");
 
         _asyncDelivery = ReferenceCountingExecutorService.getInstance().acquireExecutorService();
 
@@ -331,7 +327,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
     {
         return _exclusive;
     }
-
+    
     public void setExclusive(boolean exclusive) throws AMQException
     {
         _exclusive = exclusive;
@@ -375,14 +371,14 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         return _owner;
     }
 
-    public PrincipalHolder getPrincipalHolder()
+    public AuthorizationHolder getAuthorizationHolder()
     {
-        return _prinicpalHolder;
+        return _authorizationHolder;
     }
 
-    public void setPrincipalHolder(PrincipalHolder prinicpalHolder)
+    public void setAuthorizationHolder(final AuthorizationHolder authorizationHolder)
     {
-        _prinicpalHolder = prinicpalHolder;
+        _authorizationHolder = authorizationHolder;
     }
 
 
@@ -406,8 +402,8 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         {
             throw new AMQSecurityException("Permission denied");
         }
-
-
+        
+        
         if (hasExclusiveSubscriber())
         {
             throw new ExistingExclusiveSubscription();
@@ -437,14 +433,14 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
                 subscription.setNoLocal(_nolocal);
             }
             _subscriptionList.add(subscription);
-
+            
             //Increment consumerCountHigh if necessary. (un)registerSubscription are both
             //synchronized methods so we don't need additional synchronization here
             if(_counsumerCountHigh.get() < getConsumerCount())
             {
                 _counsumerCountHigh.incrementAndGet();
             }
-
+            
             if (isDeleted())
             {
                 subscription.queueDeleted(this);
@@ -490,11 +486,6 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
                 // queue. This is because the delete method uses the subscription set which has just been cleared
                 subscription.queueDeleted(this);
             }
-
-            if(_subscriptionList.size() == 0 && _isTopic)
-            {
-                clearQueue();
-            }
         }
 
     }
@@ -521,10 +512,10 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
                 break;
             }
         }
-
+        
         reconfigure();
     }
-
+    
     private void reconfigure()
     {
         //Reconfigure the queue for to reflect this new binding.
@@ -550,7 +541,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
     public void removeBinding(final Binding binding)
     {
         _bindings.remove(binding);
-
+        
         reconfigure();
     }
 
@@ -577,104 +568,101 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
     public void enqueue(ServerMessage message, PostEnqueueAction action) throws AMQException
     {
+        incrementTxnEnqueueStats(message);
+        incrementQueueCount();
+        incrementQueueSize(message);
         _totalMessagesReceived.incrementAndGet();
 
 
+        QueueEntry entry;
         Subscription exclusiveSub = _exclusiveSubscriber;
-        if(!_isTopic || _subscriptionList.size()!=0)
+
+        if (exclusiveSub != null)
         {
-            incrementTxnEnqueueStats(message);
-            incrementQueueCount();
-            incrementQueueSize(message);
+            exclusiveSub.getSendLock();
 
-            QueueEntry entry;
-
-            if (exclusiveSub != null)
-            {
-                exclusiveSub.getSendLock();
-
-                try
-                {
-                    entry = _entries.add(message);
-
-                    deliverToSubscription(exclusiveSub, entry);
-                }
-                finally
-                {
-                    exclusiveSub.releaseSendLock();
-                }
-            }
-            else
+            try
             {
                 entry = _entries.add(message);
-                /*
 
-                iterate over subscriptions and if any is at the end of the queue and can deliver this message, then deliver the message
-
-                 */
-                SubscriptionList.SubscriptionNode node = _lastSubscriptionNode.get();
-                SubscriptionList.SubscriptionNode nextNode = node.getNext();
-                if (nextNode == null)
-                {
-                    nextNode = _subscriptionList.getHead().getNext();
-                }
-                while (nextNode != null)
-                {
-                    if (_lastSubscriptionNode.compareAndSet(node, nextNode))
-                    {
-                        break;
-                    }
-                    else
-                    {
-                        node = _lastSubscriptionNode.get();
-                        nextNode = node.getNext();
-                        if (nextNode == null)
-                        {
-                            nextNode = _subscriptionList.getHead().getNext();
-                        }
-                    }
-                }
-
-                // always do one extra loop after we believe we've finished
-                // this catches the case where we *just* miss an update
-                int loops = 2;
-
-                while (!(entry.isAcquired() || entry.isDeleted()) && loops != 0)
-                {
-                    if (nextNode == null)
-                    {
-                        loops--;
-                        nextNode = _subscriptionList.getHead();
-                    }
-                    else
-                    {
-                        // if subscription at end, and active, offer
-                        Subscription sub = nextNode.getSubscription();
-                        deliverToSubscription(sub, entry);
-                    }
-                    nextNode = nextNode.getNext();
-
-                }
+                deliverToSubscription(exclusiveSub, entry);
             }
-
-
-            if (!(entry.isAcquired() || entry.isDeleted()))
+            finally
             {
-                checkSubscriptionsNotAheadOfDelivery(entry);
-
-                deliverAsync();
-            }
-
-            if(_managedObject != null)
-            {
-                _managedObject.checkForNotification(entry.getMessage());
-            }
-
-            if(action != null)
-            {
-                action.onEnqueue(entry);
+                exclusiveSub.releaseSendLock();
             }
         }
+        else
+        {
+            entry = _entries.add(message);
+            /*
+
+            iterate over subscriptions and if any is at the end of the queue and can deliver this message, then deliver the message
+
+             */
+            SubscriptionList.SubscriptionNode node = _subscriptionList.getMarkedNode();
+            SubscriptionList.SubscriptionNode nextNode = node.findNext();
+            if (nextNode == null)
+            {
+                nextNode = _subscriptionList.getHead().findNext();
+            }
+            while (nextNode != null)
+            {
+                if (_subscriptionList.updateMarkedNode(node, nextNode))
+                {
+                    break;
+                }
+                else
+                {
+                    node = _subscriptionList.getMarkedNode();
+                    nextNode = node.findNext();
+                    if (nextNode == null)
+                    {
+                        nextNode = _subscriptionList.getHead().findNext();
+                    }
+                }
+            }
+
+            // always do one extra loop after we believe we've finished
+            // this catches the case where we *just* miss an update
+            int loops = 2;
+
+            while (entry.isAvailable() && loops != 0)
+            {
+                if (nextNode == null)
+                {
+                    loops--;
+                    nextNode = _subscriptionList.getHead();
+                }
+                else
+                {
+                    // if subscription at end, and active, offer
+                    Subscription sub = nextNode.getSubscription();
+                    deliverToSubscription(sub, entry);
+                }
+                nextNode = nextNode.findNext();
+
+            }
+        }
+
+
+        if (entry.isAvailable())
+        {
+            checkSubscriptionsNotAheadOfDelivery(entry);
+
+            deliverAsync();
+        }
+
+        if(_managedObject != null)
+        {
+            _managedObject.checkForNotification(entry.getMessage());
+        }
+
+        if(action != null)
+        {
+            action.onEnqueue(entry);
+        }
+
     }
 
     private void deliverToSubscription(final Subscription sub, final QueueEntry entry)
@@ -730,20 +718,20 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
     {
         getAtomicQueueCount().incrementAndGet();
     }
-
+    
     private void incrementTxnEnqueueStats(final ServerMessage message)
     {
         SessionConfig session = message.getSessionConfig();
-
+        
         if(session !=null && session.isTransactional())
         {
             _msgTxnEnqueues.incrementAndGet();
             _byteTxnEnqueues.addAndGet(message.getSize());
         }
     }
-
+    
     private void incrementTxnDequeueStats(QueueEntry entry)
-    {
+    {      
         _msgTxnDequeues.incrementAndGet();
         _byteTxnDequeues.addAndGet(entry.getSize());
     }
@@ -757,40 +745,6 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         incrementUnackedMsgCount();
 
         sub.send(entry);
-
-        if(_isTopic)
-        {
-            if(allSubscriptionsAhead(entry) && entry.acquire())
-            {
-                entry.discard();
-            }
-        }
-    }
-
-    private boolean allSubscriptionsAhead(final QueueEntry entry)
-    {
-        SubscriptionList.SubscriptionNodeIterator subIter = _subscriptionList.iterator();
-        while(subIter.advance() && !entry.isAcquired())
-        {
-            final Subscription subscription = subIter.getNode().getSubscription();
-            if(!subscription.isClosed())
-            {
-                QueueContext context = (QueueContext) subscription.getQueueContext();
-                if(context != null)
-                {
-                    QueueEntry subnode = context._lastSeenEntry;
-                    if(subnode.compareTo(entry)<0)
-                    {
-                        return false;
-                    }
-                }
-                else
-                {
-                    return false;
-                }
-            }
-        }
-        return true;
     }
 
     private boolean subscriptionReadyAndHasInterest(final Subscription sub, final QueueEntry entry) throws AMQException
@@ -849,24 +803,6 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
     }
 
-    public void requeue(QueueEntryImpl entry, Subscription subscription)
-    {
-        SubscriptionList.SubscriptionNodeIterator subscriberIter = _subscriptionList.iterator();
-        // iterate over all the subscribers, and if they are in advance of this queue entry then move them backwards
-        while (subscriberIter.advance())
-        {
-            Subscription sub = subscriberIter.getNode().getSubscription();
-
-            // we don't make browsers send the same stuff twice
-            if (sub.seesRequeues() && (!sub.acquires() && sub == subscription))
-            {
-                updateSubRequeueEntry(sub, entry);
-            }
-        }
-
-        deliverAsync();
-    }
-
     public void dequeue(QueueEntry entry, Subscription sub)
     {
         decrementQueueCount();
@@ -875,7 +811,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         {
             _deliveredMessages.decrementAndGet();
         }
-
+        
         if(sub != null && sub.isSessionTransactional())
         {
             incrementTxnDequeueStats(entry);
@@ -932,7 +868,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
     {
         return _subscriptionList.size();
     }
-
+    
     public int getConsumerCountHigh()
     {
         return _counsumerCountHigh.get();
@@ -1004,7 +940,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         while (queueListIterator.advance())
         {
             QueueEntry node = queueListIterator.getNode();
-            if (node != null && !node.isDeleted())
+            if (node != null && !node.isDispensed())
             {
                 entryList.add(node);
             }
@@ -1108,7 +1044,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         while (queueListIterator.advance() && !filter.filterComplete())
         {
             QueueEntry node = queueListIterator.getNode();
-            if (!node.isDeleted() && filter.accept(node))
+            if (!node.isDispensed() && filter.accept(node))
             {
                 entryList.add(node);
             }
@@ -1302,7 +1238,6 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
                 if ((messageId >= fromMessageId)
                     && (messageId <= toMessageId)
-                    && !node.isDeleted()
                     && node.acquire())
                 {
                     dequeueEntry(node);
@@ -1332,7 +1267,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         while (noDeletes && queueListIterator.advance())
         {
             QueueEntry node = queueListIterator.getNode();
-            if (!node.isDeleted() && node.acquire())
+            if (node.acquire())
             {
                 dequeueEntry(node);
                 noDeletes = false;
@@ -1342,7 +1277,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
     }
 
     public long clearQueue() throws AMQException
-    {
+    {         
         return clear(0l);
     }
 
@@ -1353,7 +1288,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         {
             throw new AMQSecurityException("Permission denied: queue " + getName());
         }
-
+        
         QueueEntryIterator queueListIterator = _entries.iterator();
         long count = 0;
 
@@ -1362,7 +1297,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         while (queueListIterator.advance())
         {
             QueueEntry node = queueListIterator.getNode();
-            if (!node.isDeleted() && node.acquire())
+            if (node.acquire())
             {
                 dequeueEntry(node, txn);
                 if(++count == request)
@@ -1420,7 +1355,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         {
             throw new AMQSecurityException("Permission denied: " + getName());
         }
-
+        
         if (!_deleted.getAndSet(true))
         {
 
@@ -1629,7 +1564,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
     public void deliverAsync()
     {
-        Runner runner = new Runner(_stateChangeCount.incrementAndGet());
+        QueueRunner runner = new QueueRunner(this, _stateChangeCount.incrementAndGet());
 
         if (_asynchronousRunner.compareAndSet(null, runner))
         {
@@ -1646,52 +1581,6 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             sub.set(SUB_FLUSH_RUNNER, flusher);
         }
         _asyncDelivery.execute(flusher);
-    }
-
-
-    private class Runner implements ReadWriteRunnable
-    {
-        String _name;
-        public Runner(long count)
-        {
-            _name = "QueueRunner-" + count + "-" + _logActor;
-        }
-
-        public void run()
-        {
-            String originalName = Thread.currentThread().getName();
-            try
-            {
-                Thread.currentThread().setName(_name);
-                CurrentActor.set(_logActor);
-
-                processQueue(this);
-            }
-            catch (AMQException e)
-            {
-                _logger.error(e);
-            }
-            finally
-            {
-                CurrentActor.remove();
-                Thread.currentThread().setName(originalName);
-            }
-        }
-
-        public boolean isRead()
-        {
-            return false;
-        }
-
-        public boolean isWrite()
-        {
-            return true;
-        }
-
-        public String toString()
-        {
-            return _name;
-        }
     }
 
     public void flushSubscription(Subscription sub) throws AMQException
@@ -1714,9 +1603,12 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             {
                 sub.getSendLock();
                 atTail = attemptDelivery(sub);
-                if (atTail && getNextAvailableEntry(sub) == null)
+                if (atTail && sub.isAutoClose())
                 {
-                    sub.queueEmpty();
+                    unregisterSubscription(sub);
+
+                    sub.confirmAutoClose();
+
                 }
                 else if (!atTail)
                 {
@@ -1737,7 +1629,6 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         {
             advanceAllSubscriptions();
         }
-
         return atTail;
     }
 
@@ -1760,7 +1651,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
             QueueEntry node  = getNextAvailableEntry(sub);
 
-            if (node != null && !(node.isAcquired() || node.isDeleted()))
+            if (node != null && node.isAvailable())
             {
                 if (sub.hasInterest(node))
                 {
@@ -1821,7 +1712,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             QueueEntry node = (releasedNode != null && lastSeen.compareTo(releasedNode)>=0) ? releasedNode : _entries.next(lastSeen);
 
             boolean expired = false;
-            while (node != null && (node.isAcquired() || node.isDeleted() || (expired = node.expired()) || !sub.hasInterest(node)))
+            while (node != null && (!node.isAvailable() || (expired = node.expired()) || !sub.hasInterest(node)))
             {
                 if (expired)
                 {
@@ -1850,14 +1741,40 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
     }
 
 
-    private void processQueue(Runnable runner) throws AMQException
+    /**
+     * Used by queue Runners to asynchronously deliver messages to consumers.
+     *
+     * A queue Runner is started whenever a state change occurs, e.g when a new
+     * message arrives on the queue and cannot be immediately delivered to a
+     * subscription (i.e. asynchronous delivery is required). Unless there are
+     * SubFlushRunners operating (due to subscriptions unsuspending) which are
+     * capable of accepting/delivering all messages then these messages would
+     * otherwise remain on the queue.
+     *
+     * processQueue should be running while there are messages on the queue AND
+     * there are subscriptions that can deliver them. If there are no
+     * subscriptions capable of delivering the remaining messages on the queue
+     * then processQueue should stop to prevent spinning.
+     *
+     * Since processQueue is runs in a fixed size Executor, it should not run
+     * indefinitely to prevent starving other tasks of CPU (e.g jobs to process
+     * incoming messages may not be able to be scheduled in the thread pool
+     * because all threads are working on clearing down large queues). To solve
+     * this problem, after an arbitrary number of message deliveries the
+     * processQueue job stops iterating, resubmits itself to the executor, and
+     * ends the current instance
+     *
+     * @param runner the Runner to schedule
+     * @throws AMQException
+     */
+    public void processQueue(QueueRunner runner) throws AMQException
     {
         long stateChangeCount;
         long previousStateChangeCount = Long.MIN_VALUE;
         boolean deliveryIncomplete = true;
 
-        int extraLoops = 1;
-        long iterations = MAX_ASYNC_DELIVERIES;
+        boolean lastLoop = false;
+        int iterations = MAX_ASYNC_DELIVERIES;
 
         _asynchronousRunner.compareAndSet(runner, null);
 
@@ -1874,12 +1791,14 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
             if (previousStateChangeCount != stateChangeCount)
             {
-                extraLoops = 1;
+                //further asynchronous delivery is required since the
+                //previous loop. keep going if iteration slicing allows.
+                lastLoop = false;
             }
 
             previousStateChangeCount = stateChangeCount;
-            deliveryIncomplete = _subscriptionList.size() != 0;
-            boolean done;
+            boolean allSubscriptionsDone = true;
+            boolean subscriptionDone;
 
             SubscriptionList.SubscriptionNodeIterator subscriptionIter = _subscriptionList.iterator();
             //iterate over the subscribers and try to advance their pointer
@@ -1889,29 +1808,25 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
                 sub.getSendLock();
                 try
                 {
-
-                    done = attemptDelivery(sub);
-
-                    if (done)
+                    //attempt delivery. returns true if no further delivery currently possible to this sub
+                    subscriptionDone = attemptDelivery(sub);
+                    if (subscriptionDone)
                     {
-                        if (extraLoops == 0)
+                        //close autoClose subscriptions if we are not currently intent on continuing
+                        if (lastLoop && sub.isAutoClose())
                         {
-                            if(getNextAvailableEntry(sub) == null)
-                            {
-                                sub.queueEmpty();
-                            }
-                            deliveryIncomplete = false;
+                            unregisterSubscription(sub);
 
-                        }
-                        else
-                        {
-                            extraLoops--;
+                            sub.confirmAutoClose();
                         }
                     }
                     else
                     {
+                        //this subscription can accept additional deliveries, so we must 
+                        //keep going after this (if iteration slicing allows it)
+                        allSubscriptionsDone = false;
+                        lastLoop = false;
                         iterations--;
-                        extraLoops = 1;
                     }
                 }
                 finally
@@ -1919,10 +1834,34 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
                     sub.releaseSendLock();
                 }
             }
+
+            if(allSubscriptionsDone && lastLoop)
+            {
+                //We have done an extra loop already and there are again
+                //again no further delivery attempts possible, only
+                //keep going if state change demands it.
+                deliveryIncomplete = false;
+            }
+            else if(allSubscriptionsDone)
+            {
+                //All subscriptions reported being done, but we have to do
+                //an extra loop if the iterations are not exhausted and
+                //there is still any work to be done
+                deliveryIncomplete = _subscriptionList.size() != 0;
+                lastLoop = true;
+            }
+            else
+            {
+                //some subscriptions can still accept more messages,
+                //keep going if iteration count allows.
+                lastLoop = false;
+                deliveryIncomplete = true;
+            }
+
             _asynchronousRunner.set(null);
         }
 
-        // If deliveries == 0 then the limitting factor was the time-slicing rather than available messages or credit
+        // If iterations == 0 then the limiting factor was the time-slicing rather than available messages or credit
         // therefore we should schedule this runner again (unless someone beats us to it :-) ).
         if (iterations == 0 && _asynchronousRunner.compareAndSet(null, runner))
         {
@@ -1942,8 +1881,8 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         while (queueListIterator.advance())
         {
             QueueEntry node = queueListIterator.getNode();
-            // Only process nodes that are not currently deleted
-            if (!node.isDeleted())
+            // Only process nodes that are not currently deleted and not dequeued
+            if (!node.isDispensed())
             {
                 // If the node has exired then aquire it
                 if (node.expired() && node.acquire())
@@ -2207,22 +2146,22 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
     {
         return _dequeueSize.get();
     }
-
+    
     public long getByteTxnEnqueues()
     {
         return _byteTxnEnqueues.get();
     }
-
+    
     public long getByteTxnDequeues()
     {
         return _byteTxnDequeues.get();
     }
-
+    
     public long getMsgTxnEnqueues()
     {
         return _msgTxnEnqueues.get();
     }
-
+    
     public long getMsgTxnDequeues()
     {
         return _msgTxnDequeues.get();
@@ -2259,21 +2198,21 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
     {
         return _unackedMsgCountHigh.get();
     }
-
+    
     public long getUnackedMessageCount()
     {
         return _unackedMsgCount.get();
     }
-
+    
     public void decrementUnackedMsgCount()
     {
         _unackedMsgCount.decrementAndGet();
     }
-
+    
     private void incrementUnackedMsgCount()
     {
         long unackedMsgCount = _unackedMsgCount.incrementAndGet();
-
+        
         long unackedMsgCountHigh;
         while(unackedMsgCount > (unackedMsgCountHigh = _unackedMsgCountHigh.get()))
         {
@@ -2282,5 +2221,10 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
                 break;
             }
         }
+    }
+
+    public LogActor getLogActor()
+    {
+        return _logActor;
     }
 }
