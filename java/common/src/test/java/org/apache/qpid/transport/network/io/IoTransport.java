@@ -29,6 +29,7 @@ import org.apache.qpid.ssl.SSLContextFactory;
 import org.apache.qpid.transport.Binding;
 import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.TransportException;
+import org.apache.qpid.transport.network.security.SSLStatus;
 import org.apache.qpid.transport.network.security.ssl.SSLReceiver;
 import org.apache.qpid.transport.network.security.ssl.SSLSender;
 import org.apache.qpid.transport.util.Logger;
@@ -119,9 +120,10 @@ public final class IoTransport<E>
         }
         IoSender ios = new IoSender(socket, 2*writeBufferSize, timeout);
         ios.initiate();
-        this.sender = new SSLSender(engine,ios);
+        final SSLStatus sslStatus = new SSLStatus();
+        this.sender = new SSLSender(engine,ios, sslStatus);
         this.endpoint = binding.endpoint(sender);
-        this.receiver = new IoReceiver(socket, new SSLReceiver(engine,binding.receiver(endpoint),(SSLSender)sender),
+        this.receiver = new IoReceiver(socket, new SSLReceiver(engine,binding.receiver(endpoint),sslStatus),
                 2*readBufferSize, timeout);
         this.receiver.initiate();
         ios.registerCloseListener(this.receiver);

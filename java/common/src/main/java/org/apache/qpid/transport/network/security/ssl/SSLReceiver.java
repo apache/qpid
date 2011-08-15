@@ -24,38 +24,37 @@ import java.nio.ByteBuffer;
 
 import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLEngineResult;
-import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLEngineResult.HandshakeStatus;
 import javax.net.ssl.SSLEngineResult.Status;
+import javax.net.ssl.SSLException;
 
 import org.apache.qpid.transport.ConnectionSettings;
 import org.apache.qpid.transport.Receiver;
 import org.apache.qpid.transport.TransportException;
+import org.apache.qpid.transport.network.security.SSLStatus;
 import org.apache.qpid.transport.util.Logger;
 
 public class SSLReceiver implements Receiver<ByteBuffer>
 {
-    private Receiver<ByteBuffer> delegate;
-    private SSLEngine engine;
-    private SSLSender sender;
-    private int sslBufSize;
-    private ByteBuffer appData;
-    private ByteBuffer localBuffer;
-    private boolean dataCached = false;
-    private final Object notificationToken;
-    private ConnectionSettings settings;
-    
     private static final Logger log = Logger.get(SSLReceiver.class);
 
-    public SSLReceiver(SSLEngine engine, Receiver<ByteBuffer> delegate,SSLSender sender)
+    private final Receiver<ByteBuffer> delegate;
+    private final SSLEngine engine;
+    private final int sslBufSize;
+    private final ByteBuffer localBuffer;
+    private final SSLStatus _sslStatus;
+    private ConnectionSettings settings;
+    private ByteBuffer appData;
+    private boolean dataCached = false;
+
+    public SSLReceiver(final SSLEngine engine, final Receiver<ByteBuffer> delegate, final SSLStatus sslStatus)
     {
         this.engine = engine;
         this.delegate = delegate;
-        this.sender = sender;
         this.sslBufSize = engine.getSession().getApplicationBufferSize();
         appData = ByteBuffer.allocate(sslBufSize);
         localBuffer = ByteBuffer.allocate(sslBufSize);
-        notificationToken = sender.getNotificationToken();
+        _sslStatus = sslStatus;
     }
 
     public void setConnectionSettings(ConnectionSettings settings)
@@ -102,9 +101,9 @@ public class SSLReceiver implements Receiver<ByteBuffer>
             try
             {
                 SSLEngineResult result = engine.unwrap(netData, appData);
-                synchronized (notificationToken)
+                synchronized (_sslStatus.getSslLock())
                 {
-                    notificationToken.notifyAll();
+                    _sslStatus.getSslLock().notifyAll();
                 }
 
                 int read = result.bytesProduced();
@@ -129,9 +128,9 @@ public class SSLReceiver implements Receiver<ByteBuffer>
                 switch(status)
                 {
                     case CLOSED:
-                        synchronized(notificationToken)
+                        synchronized(_sslStatus.getSslLock())
                         {
-                            notificationToken.notifyAll();
+                            _sslStatus.getSslLock().notifyAll();
                         }
                         return;
 
@@ -163,7 +162,7 @@ public class SSLReceiver implements Receiver<ByteBuffer>
                         break;
 
                     case NEED_TASK:
-                        sender.doTasks();
+                        doTasks();
                         handshakeStatus = engine.getHandshakeStatus();
 
                     case FINISHED:
@@ -174,9 +173,9 @@ public class SSLReceiver implements Receiver<ByteBuffer>
                             
                     case NEED_WRAP:                        
                     case NOT_HANDSHAKING:
-                        synchronized(notificationToken)
+                        synchronized(_sslStatus.getSslLock())
                         {
-                            notificationToken.notifyAll();
+                            _sslStatus.getSslLock().notifyAll();
                         }
                         break;
 
@@ -189,14 +188,23 @@ public class SSLReceiver implements Receiver<ByteBuffer>
             catch(SSLException e)
             {
                 log.error(e, "Error caught in SSLReceiver");
-                sender.setErrorFlag();
-                synchronized(notificationToken)
+                _sslStatus.setSslErrorFlag();
+                synchronized(_sslStatus.getSslLock())
                 {
-                    notificationToken.notifyAll();
+                    _sslStatus.getSslLock().notifyAll();
                 }                
                 exception(new TransportException("Error in SSLReceiver",e));
             }
 
         }
     }
+
+    private void doTasks()
+    {
+        Runnable runnable;
+        while ((runnable = engine.getDelegatedTask()) != null) {
+            runnable.run();
+        }
+    }
+
 }
