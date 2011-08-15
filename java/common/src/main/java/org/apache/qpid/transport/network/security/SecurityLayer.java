@@ -106,8 +106,8 @@ public class SecurityLayer
     
     class SSLSecurityLayer
     {
-        SSLEngine engine;
-        SSLSender sender;
+        final SSLEngine _engine;
+        final SSLStatus _sslStatus = new SSLStatus();
                 
         public SSLSecurityLayer() 
         {
@@ -123,8 +123,8 @@ public class SecurityLayer
             
             try
             {
-                engine = sslCtx.createSSLEngine();
-                engine.setUseClientMode(true);
+                _engine = sslCtx.createSSLEngine();
+                _engine.setUseClientMode(true);
             }
             catch(Exception e)
             {
@@ -134,28 +134,21 @@ public class SecurityLayer
         
         public SSLSender sender(Sender<ByteBuffer> delegate)
         {
-            sender = new SSLSender(engine,delegate);
+            SSLSender sender = new SSLSender(_engine, delegate, _sslStatus);
             sender.setConnectionSettings(settings);
             return sender;
         }
         
         public SSLReceiver receiver(Receiver<ByteBuffer> delegate)
         {
-            if (sender == null)
-            {
-                throw new  
-                IllegalStateException("SecurityLayer.sender method should be " +
-                		"invoked before SecurityLayer.receiver");
-            }
-            
-            SSLReceiver receiver = new SSLReceiver(engine,delegate,sender);
+            SSLReceiver receiver = new SSLReceiver(_engine, delegate, _sslStatus);
             receiver.setConnectionSettings(settings);
             return receiver;
         }
         
         public String getUserID()
         {
-            return SSLUtil.retriveIdentity(engine);
+            return SSLUtil.retriveIdentity(_engine);
         }
         
     }
