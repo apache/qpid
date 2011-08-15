@@ -103,30 +103,27 @@ ecl-equinox-launcher-solaris-gtk-sparc=lib/org.eclipse.equinox.launcher.gtk.sola
 
 management-common.libs=
 
-management-eclipse-plugin-win32-win32-x86.libs=${management-eclipse-plugin.core-libs} \
-    ${ecl-swt-win32-win32-x86} ${ecl-equinox-launcher-win32-win32-x86}
-management-eclipse-plugin-linux-gtk-x86.libs=${management-eclipse-plugin.core-libs} \
-    ${ecl-swt-linux-gtk-x86} ${ecl-equinox-launcher-linux-gtk-x86}
-management-eclipse-plugin-linux-gtk-x86_64.libs=${management-eclipse-plugin.core-libs} \
-    ${ecl-swt-linux-gtk-x86_64} ${ecl-equinox-launcher-linux-gtk-x86_64}
-management-eclipse-plugin-macosx.libs=${management-eclipse-plugin.core-libs} \
-    ${ecl-swt-macosx-carbon} ${ecl-equinox-launcher-macosx-carbon}
-management-eclipse-plugin-solaris-gtk-sparc.libs=${management-eclipse-plugin.core-libs} \
-    ${ecl-swt-solaris-gtk-sparc} ${ecl-equinox-launcher-solaris-gtk-sparc}
-
 management-eclipse-plugin.core-libs=${ibm-icu} ${ecl-core-jface} ${ecl-core-jface-databinding} \
     ${ecl-core-commands} ${ecl-core-contenttype} ${ecl-core-databinding} ${ecl-core-expressions} \
-    ${ecl-core-jobs} ${ecl-core-runtime} ${ecl-core-runtime-compat-registry} ${ecl-equinox-app} \
-    ${ecl-equinox-common} ${ecl-equinox-launcher} ${ecl-equinox-prefs} ${ecl-equinox-registry} \
-    ${ecl-help} ${ecl-osgi} ${ecl-swt} ${ecl-ui} ${ecl-ui-forms} ${ecl-ui-workbench} ${apache-commons-codec}
-    
-management-eclipse-plugin.platform-libs=${ecl-equinox-launcher-win32-win32-x86} \
-    ${ecl-equinox-launcher-linux-gtk-x86} ${ecl-equinox-launcher-macosx-carbon} \
-    ${ecl-swt-win32-win32-x86} ${ecl-swt-linux-gtk-x86} ${ecl-swt-macosx-carbon} \
-    ${ecl-swt-linux-gtk-x86_64} ${ecl-equinox-launcher-linux-gtk-x86_64} \
-    ${ecl-swt-solaris-gtk-sparc} ${ecl-equinox-launcher-solaris-gtk-sparc}
+    ${ecl-core-jobs} ${ecl-core-runtime} ${ecl-equinox-app} ${ecl-equinox-common} ${ecl-equinox-launcher} \
+    ${ecl-equinox-prefs} ${ecl-equinox-registry} ${ecl-help} ${ecl-osgi} ${ecl-swt} ${ecl-ui} ${ecl-ui-forms} \
+    ${ecl-ui-workbench} ${apache-commons-codec}
 
-management-eclipse-plugin.libs=${management-eclipse-plugin.core-libs} ${management-eclipse-plugin.platform-libs}
+management-eclipse-plugin.swt-libs=${ecl-swt-win32-win32-x86} ${ecl-swt-linux-gtk-x86} ${ecl-swt-macosx-carbon} \
+    ${ecl-swt-linux-gtk-x86_64} ${ecl-swt-solaris-gtk-sparc}
+
+management-eclipse-plugin.libs=${management-eclipse-plugin.core-libs} ${management-eclipse-plugin.swt-libs}
+
+management-eclipse-plugin-win32-win32-x86.libs=${management-eclipse-plugin.core-libs} \
+    ${ecl-swt-win32-win32-x86} ${ecl-equinox-launcher-win32-win32-x86} ${ecl-core-runtime-compat-registry}
+management-eclipse-plugin-linux-gtk-x86.libs=${management-eclipse-plugin.core-libs} \
+    ${ecl-swt-linux-gtk-x86} ${ecl-equinox-launcher-linux-gtk-x86} ${ecl-core-runtime-compat-registry}
+management-eclipse-plugin-linux-gtk-x86_64.libs=${management-eclipse-plugin.core-libs} \
+    ${ecl-swt-linux-gtk-x86_64} ${ecl-equinox-launcher-linux-gtk-x86_64} ${ecl-core-runtime-compat-registry}
+management-eclipse-plugin-macosx.libs=${management-eclipse-plugin.core-libs} \
+    ${ecl-swt-macosx-carbon} ${ecl-equinox-launcher-macosx-carbon} ${ecl-core-runtime-compat-registry}
+management-eclipse-plugin-solaris-gtk-sparc.libs=${management-eclipse-plugin.core-libs} \
+    ${ecl-swt-solaris-gtk-sparc} ${ecl-equinox-launcher-solaris-gtk-sparc} ${ecl-core-runtime-compat-registry}
     
 common.test.libs=${test.libs}
 broker.test.libs=${test.libs}
@@ -139,5 +136,5 @@ systests.libs=${test.libs}
 broker-plugins.test.libs=${test.libs} 
 broker-plugins-experimental-info.test.libs=${test.libs} ${servlet-api} ${jetty} ${jetty-util} ${jetty-servlet-tester}
 
-management-eclipse-plugin.test.libs=${systests.libs}
+management-eclipse-plugin.test.libs=${test.libs}
 management-common.test.libs=${test.libs}
