@@ -281,7 +281,8 @@
     <javac target="${java.target}" source="${java.source}"
            destdir="${module.test.classes}" debug="on"
            deprecation="${javac.deprecation}"
-           srcdir="${module.test.src}">
+           srcdir="${module.test.src}"
+           includeantruntime="false">
       <classpath refid="module.test.path"/>
     </javac>
 
