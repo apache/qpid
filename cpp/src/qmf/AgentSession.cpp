@@ -120,6 +120,7 @@ namespace qmf {
         bool publicEvents;
         bool listenOnDirect;
         bool strictSecurity;
+        uint32_t maxThreadWaitTime;
         uint64_t schemaUpdateTime;
         string directBase;
         string topicBase;
@@ -185,7 +186,7 @@ AgentSessionImpl::AgentSessionImpl(Connection& c, const string& options) :
     bootSequence(1), interval(60), lastHeartbeat(0), lastVisit(0), forceHeartbeat(false),
     externalStorage(false), autoAllowQueries(true), autoAllowMethods(true),
     maxSubscriptions(64), minSubInterval(3000), subLifetime(300), publicEvents(true),
-    listenOnDirect(true), strictSecurity(false),
+    listenOnDirect(true), strictSecurity(false), maxThreadWaitTime(5),
     schemaUpdateTime(uint64_t(qpid::sys::Duration(qpid::sys::EPOCH, qpid::sys::now())))
 {
     //
@@ -246,7 +247,14 @@ AgentSessionImpl::AgentSessionImpl(Connection& c, const string& options) :
         iter = optMap.find("strict-security");
         if (iter != optMap.end())
             strictSecurity = iter->second.asBool();
+
+        iter = optMap.find("max-thread-wait-time");
+        if (iter != optMap.end())
+            maxThreadWaitTime = iter->second.asUint32();
     }
+
+    if (maxThreadWaitTime > interval)
+        maxThreadWaitTime = interval;
 }
 
 
@@ -254,6 +262,11 @@ AgentSessionImpl::~AgentSessionImpl()
 {
     if (opened)
         close();
+
+    if (thread) {
+        thread->join();
+        delete thread;
+    }
 }
 
 
@@ -261,6 +274,12 @@ void AgentSessionImpl::open()
 {
     if (opened)
         throw QmfException("The session is already open");
+
+    // If the thread exists, join and delete it before creating a new one.
+    if (thread) {
+        thread->join();
+        delete thread;
+    }
 
     const string addrArgs(";{create:never,node:{type:topic}}");
     const string routableAddr("direct-agent.route." + qpid::types::Uuid(true).str());
@@ -304,13 +323,8 @@ void AgentSessionImpl::close()
     if (!opened)
         return;
 
-    // Stop and join the receiver thread
+    // Stop the receiver thread.  Don't join it until the destructor is called or open() is called.
     threadCanceled = true;
-    thread->join();
-    delete thread;
-
-    // Close the AMQP session
-    session.close();
     opened = false;
 }
 
@@ -320,9 +334,13 @@ bool AgentSessionImpl::nextEvent(AgentEvent& event, Duration timeout)
     uint64_t milliseconds = timeout.getMilliseconds();
     qpid::sys::Mutex::ScopedLock l(lock);
 
-    if (eventQueue.empty() && milliseconds > 0)
-        cond.wait(lock, qpid::sys::AbsTime(qpid::sys::now(),
-                                           qpid::sys::Duration(milliseconds * qpid::sys::TIME_MSEC)));
+    if (eventQueue.empty() && milliseconds > 0) {
+        int64_t nsecs(qpid::sys::TIME_INFINITE);
+        if ((uint64_t)(nsecs / 1000000) > milliseconds)
+            nsecs = (int64_t) milliseconds * 1000000;
+        qpid::sys::Duration then(nsecs);
+        cond.wait(lock, qpid::sys::AbsTime(qpid::sys::now(), then));
+    }
 
     if (!eventQueue.empty()) {
         event = eventQueue.front();
@@ -1050,7 +1068,7 @@ void AgentSessionImpl::run()
             periodicProcessing((uint64_t) qpid::sys::Duration(qpid::sys::EPOCH, qpid::sys::now()) / qpid::sys::TIME_SEC);
 
             Receiver rx;
-            bool valid = session.nextReceiver(rx, Duration::SECOND);
+            bool valid = session.nextReceiver(rx, Duration::SECOND * maxThreadWaitTime);
             if (threadCanceled)
                 break;
             if (valid) {
@@ -1067,6 +1085,7 @@ void AgentSessionImpl::run()
         enqueueEvent(AgentEvent(new AgentEventImpl(AGENT_THREAD_FAILED)));
     }
 
+    session.close();
     QPID_LOG(debug, "AgentSession thread exiting for agent " << agentName);
 }
 

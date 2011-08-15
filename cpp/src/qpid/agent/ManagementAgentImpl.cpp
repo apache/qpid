@@ -1378,13 +1378,26 @@ bool ManagementAgentImpl::ConnectionThread::isSleeping() const
 
 void ManagementAgentImpl::PublishThread::run()
 {
-    uint16_t    totalSleep;
+    uint16_t totalSleep;
+    uint16_t sleepTime;
 
     while (!shutdown) {
         agent.periodicProcessing();
         totalSleep = 0;
-        while (totalSleep++ < agent.getInterval() && !shutdown) {
-            ::sleep(1);
+
+        //
+        // Calculate a sleep time that is no greater than 5 seconds and
+        // no less than 1 second.
+        //
+        sleepTime = agent.getInterval();
+        if (sleepTime > 5)
+            sleepTime = 5;
+        else if (sleepTime == 0)
+            sleepTime = 1;
+
+        while (totalSleep < agent.getInterval() && !shutdown) {
+            ::sleep(sleepTime);
+            totalSleep += sleepTime;
         }
     }
 }
