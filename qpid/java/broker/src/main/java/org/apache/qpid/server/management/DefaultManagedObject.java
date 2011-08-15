@@ -153,32 +153,4 @@ public abstract class DefaultManagedObject extends StandardMBean implements Mana
             return "";
     }
 
-    protected static StringBuffer jmxEncode(StringBuffer jmxName, int attrPos)
-    {
-        for (int i = attrPos; i < jmxName.length(); i++)
-        {
-            if (jmxName.charAt(i) == ',')
-            {
-                jmxName.setCharAt(i, ';');
-            }
-            else if (jmxName.charAt(i) == ':')
-            {
-                jmxName.setCharAt(i, '-');
-            }
-            else if (jmxName.charAt(i) == '?' ||
-                    jmxName.charAt(i) == '*' ||
-                    jmxName.charAt(i) == '\\')
-            {
-                jmxName.insert(i, '\\');
-                i++;
-            }
-            else if (jmxName.charAt(i) == '\n')
-            {
-                jmxName.insert(i, '\\');
-                i++;
-                jmxName.setCharAt(i, 'n');
-            }
-        }
-        return jmxName;
-    }
 }

@@ -43,6 +43,7 @@ import javax.management.JMException;
 import javax.management.MBeanException;
 import javax.management.MBeanNotificationInfo;
 import javax.management.Notification;
+import javax.management.ObjectName;
 import javax.management.OperationsException;
 import javax.management.monitor.MonitorNotification;
 import javax.management.openmbean.ArrayType;
@@ -97,7 +98,7 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
     {
         super(ManagedQueue.class, ManagedQueue.TYPE);
         _queue = queue;
-        _queueName = jmxEncode(new StringBuffer(queue.getNameShortString()), 0).toString();
+        _queueName = queue.getName();
     }
 
     public ManagedObject getParentObject()
@@ -147,7 +148,7 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
 
     public String getObjectInstanceName()
     {
-        return _queueName;
+        return ObjectName.quote(_queueName);
     }
 
     public String getName()
@@ -506,7 +507,7 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
     private String[] getMessageHeaderProperties(ContentHeaderBody headerBody)
     {
         List<String> list = new ArrayList<String>();
-        BasicContentHeaderProperties headerProperties = (BasicContentHeaderProperties) headerBody.properties;
+        BasicContentHeaderProperties headerProperties = (BasicContentHeaderProperties) headerBody.getProperties();
         list.add("reply-to = " + headerProperties.getReplyToAsString());
         list.add("propertyFlags = " + headerProperties.getPropertyFlags());
         list.add("ApplicationID = " + headerProperties.getAppIdAsString());

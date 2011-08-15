@@ -21,16 +21,13 @@
 package org.apache.qpid.server.queue;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.AMQSecurityException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
 import org.apache.qpid.server.logging.LogSubject;
-import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.configuration.QueueConfig;
-import org.apache.qpid.server.configuration.QueueConfiguration;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.ExchangeReferrer;
 import org.apache.qpid.server.management.Managable;
@@ -108,22 +105,15 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>, ExchangeRefer
 
     boolean isDeleted();
 
-
     int delete() throws AMQException;
 
-
     void requeue(QueueEntry entry);
-
-    void requeue(QueueEntryImpl storeContext, Subscription subscription);
 
     void dequeue(QueueEntry entry, Subscription sub);
 
     void decrementUnackedMsgCount();
 
-
     boolean resend(final QueueEntry entry, final Subscription subscription) throws AMQException;
-
-
 
     void addQueueDeleteTask(final Task task);
     void removeQueueDeleteTask(final Task task);

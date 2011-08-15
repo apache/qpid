@@ -99,7 +99,7 @@ public abstract class AbstractJMSMessageFactory implements MessageFactory
         }
 
         AMQMessageDelegate delegate = new AMQMessageDelegate_0_8(messageNbr,
-                                                                 (BasicContentHeaderProperties) contentHeader.properties,
+                                                                 (BasicContentHeaderProperties) contentHeader.getProperties(),
                                                                  exchange, routingKey);
 
         return createMessage(delegate, data);

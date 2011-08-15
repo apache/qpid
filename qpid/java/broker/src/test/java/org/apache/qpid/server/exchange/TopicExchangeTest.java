@@ -396,7 +396,7 @@ public class TopicExchangeTest extends InternalBrokerBaseCase
         IncomingMessage message = new IncomingMessage(info);
         final ContentHeaderBody chb = new ContentHeaderBody();
         BasicContentHeaderProperties props = new BasicContentHeaderProperties();
-        chb.properties = props;
+        chb.setProperties(props);
         message.setContentHeaderBody(chb);
 
 

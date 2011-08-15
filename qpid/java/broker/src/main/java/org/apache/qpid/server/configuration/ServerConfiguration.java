@@ -767,6 +767,36 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
                                                        DEFAULT_HOUSEKEEPING_PERIOD));
     }
 
+    public long getStatisticsSamplePeriod()
+    {
+        return getConfig().getLong("statistics.sample.period", 5000L);
+    }
+
+    public boolean isStatisticsGenerationBrokerEnabled()
+    {
+        return getConfig().getBoolean("statistics.generation.broker", false);
+    }
+
+    public boolean isStatisticsGenerationVirtualhostsEnabled()
+    {
+        return getConfig().getBoolean("statistics.generation.virtualhosts", false);
+    }
+
+    public boolean isStatisticsGenerationConnectionsEnabled()
+    {
+        return getConfig().getBoolean("statistics.generation.connections", false);
+    }
+
+    public long getStatisticsReportingPeriod()
+    {
+        return getConfig().getLong("statistics.reporting.period", 0L);
+    }
+
+    public boolean isStatisticsReportResetEnabled()
+    {
+        return getConfig().getBoolean("statistics.reporting.reset", false);
+    }
+
     public NetworkDriverConfiguration getNetworkConfiguration()
     {
         return new NetworkDriverConfiguration()

@@ -327,8 +327,7 @@ public class Main
             ConfigurationManagementMBean configMBean = new ConfigurationManagementMBean();
             configMBean.register();
 
-            ServerInformationMBean sysInfoMBean =
-                    new ServerInformationMBean(QpidProperties.getBuildVersion(), QpidProperties.getReleaseVersion());
+            ServerInformationMBean sysInfoMBean = new ServerInformationMBean(config);
             sysInfoMBean.register();
 
 

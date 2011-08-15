@@ -1043,7 +1043,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
             throws JMSException
     {
         checkNotClosed();
-        AMQTopic origTopic = checkValidTopic(topic, true);
+        Topic origTopic = checkValidTopic(topic, true);
         AMQTopic dest = AMQTopic.createDurableTopic(origTopic, name, _connection);
         
         String messageSelector = ((selector == null) || (selector.trim().length() == 0)) ? null : selector;
@@ -1225,7 +1225,6 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                 else
                 {
                     AMQQueue queue = new AMQQueue(queueName);
-                    queue.setCreate(AddressOption.ALWAYS);
                     return queue;
                     
                 }
@@ -1307,8 +1306,8 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     public QueueReceiver createQueueReceiver(Destination destination) throws JMSException
     {
         checkValidDestination(destination);
-        AMQQueue dest = (AMQQueue) destination;
-        C consumer = (C) createConsumer(destination);
+        Queue dest = validateQueue(destination);
+        C consumer = (C) createConsumer(dest);
 
         return new QueueReceiverAdaptor(dest, consumer);
     }
@@ -1326,8 +1325,8 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     public QueueReceiver createQueueReceiver(Destination destination, String messageSelector) throws JMSException
     {
         checkValidDestination(destination);
-        AMQQueue dest = (AMQQueue) destination;
-        C consumer = (C) createConsumer(destination, messageSelector);
+        Queue dest = validateQueue(destination);
+        C consumer = (C) createConsumer(dest, messageSelector);
 
         return new QueueReceiverAdaptor(dest, consumer);
     }
@@ -1344,7 +1343,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     public QueueReceiver createReceiver(Queue queue) throws JMSException
     {
         checkNotClosed();
-        AMQQueue dest = (AMQQueue) queue;
+        Queue dest = validateQueue(queue);
         C consumer = (C) createConsumer(dest);
 
         return new QueueReceiverAdaptor(dest, consumer);
@@ -1363,10 +1362,22 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     public QueueReceiver createReceiver(Queue queue, String messageSelector) throws JMSException
     {
         checkNotClosed();
-        AMQQueue dest = (AMQQueue) queue;
+        Queue dest = validateQueue(queue);
         C consumer = (C) createConsumer(dest, messageSelector);
 
         return new QueueReceiverAdaptor(dest, consumer);
+    }
+    
+    private Queue validateQueue(Destination dest) throws InvalidDestinationException
+    {
+        if (dest instanceof AMQDestination && dest instanceof javax.jms.Queue)
+        {
+            return (Queue)dest;
+        }
+        else
+        {
+            throw new InvalidDestinationException("The destination object used is not from this provider or of type javax.jms.Queue");
+        }
     }
 
     public QueueSender createSender(Queue queue) throws JMSException
@@ -1408,7 +1419,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     public TopicSubscriber createSubscriber(Topic topic) throws JMSException
     {
         checkNotClosed();
-        AMQTopic dest = checkValidTopic(topic);
+        Topic dest = checkValidTopic(topic);
 
         // AMQTopic dest = new AMQTopic(topic.getTopicName());
         return new TopicSubscriberAdaptor(dest, (C) createExclusiveConsumer(dest));
@@ -1428,7 +1439,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     public TopicSubscriber createSubscriber(Topic topic, String messageSelector, boolean noLocal) throws JMSException
     {
         checkNotClosed();
-        AMQTopic dest = checkValidTopic(topic);
+        Topic dest = checkValidTopic(topic);
 
         // AMQTopic dest = new AMQTopic(topic.getTopicName());
         return new TopicSubscriberAdaptor(dest, (C) createExclusiveConsumer(dest, messageSelector, noLocal));
@@ -2395,7 +2406,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     /*
      * I could have combined the last 3 methods, but this way it improves readability
      */
-    protected AMQTopic checkValidTopic(Topic topic, boolean durable) throws JMSException
+    protected Topic checkValidTopic(Topic topic, boolean durable) throws JMSException
     {
         if (topic == null)
         {
@@ -2414,17 +2425,17 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                 ("Cannot create a durable subscription with a temporary topic: " + topic);
         }
 
-        if (!(topic instanceof AMQTopic))
+        if (!(topic instanceof AMQDestination && topic instanceof javax.jms.Topic))
         {
             throw new javax.jms.InvalidDestinationException(
                     "Cannot create a subscription on topic created for another JMS Provider, class of topic provided is: "
                     + topic.getClass().getName());
         }
 
-        return (AMQTopic) topic;
+        return topic;
     }
 
-    protected AMQTopic checkValidTopic(Topic topic) throws JMSException
+    protected Topic checkValidTopic(Topic topic) throws JMSException
     {
         return checkValidTopic(topic, false);
     }
@@ -2819,14 +2830,13 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
             {
                 declareQueue(amqd, protocolHandler, consumer.isNoLocal(), nowait);
             }
+            bindQueue(amqd.getAMQQueueName(), amqd.getRoutingKey(), consumer.getArguments(), amqd.getExchangeName(), amqd, nowait);
         }
         
         AMQShortString queueName = amqd.getAMQQueueName();
 
         // store the consumer queue name
         consumer.setQueuename(queueName);
-
-        bindQueue(queueName, amqd.getRoutingKey(), consumer.getArguments(), amqd.getExchangeName(), amqd, nowait);
 
         // If IMMEDIATE_PREFETCH is not required then suspsend the channel to delay prefetch
         if (!_immediatePrefetch)
@@ -3449,5 +3459,10 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     public boolean isClosing()
     {
         return _closing.get()|| _connection.isClosing();
+    }
+    
+    public boolean isDeclareExchanges()
+    {
+    	return DECLARE_EXCHANGES;
     }
 }

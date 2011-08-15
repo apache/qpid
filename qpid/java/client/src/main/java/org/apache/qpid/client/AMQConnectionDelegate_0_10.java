@@ -69,6 +69,12 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
     org.apache.qpid.transport.Connection _qpidConnection;
     private ConnectionException exception = null;
 
+    static
+    {
+        // Register any configured SASL client factories.
+        org.apache.qpid.client.security.DynamicSaslRegistrar.registerSaslProviders();
+    }
+
     //--- constructor
     public AMQConnectionDelegate_0_10(AMQConnection conn)
     {
@@ -211,6 +217,8 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
 
     public void resubscribeSessions() throws JMSException, AMQException, FailoverException
     {
+        _logger.info("Resuming connection");
+        getQpidConnection().resume();
         List<AMQSession> sessions = new ArrayList<AMQSession>(_conn.getSessions().values());
         _logger.info(String.format("Resubscribing sessions = %s sessions.size=%d", sessions, sessions.size()));
         for (AMQSession s : sessions)
