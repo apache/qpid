@@ -66,7 +66,7 @@ Subscription ConsoleSession::subscribe(const string& q, const string& f, const s
 //========================================================================================
 
 ConsoleSessionImpl::ConsoleSessionImpl(Connection& c, const string& options) :
-    connection(c), domain("default"), maxAgentAgeMinutes(5), listenOnDirect(true), strictSecurity(false),
+    connection(c), domain("default"), maxAgentAgeMinutes(5), listenOnDirect(true), strictSecurity(false), maxThreadWaitTime(5),
     opened(false), thread(0), threadCanceled(false), lastVisit(0), lastAgePass(0),
     connectedBrokerInAgentList(false), schemaCache(new SchemaCache()), nextCorrelator(1)
 {
@@ -92,7 +92,14 @@ ConsoleSessionImpl::ConsoleSessionImpl(Connection& c, const string& options) :
         iter = optMap.find("strict-security");
         if (iter != optMap.end())
             strictSecurity = iter->second.asBool();
+
+        iter = optMap.find("max-thread-wait-time");
+        if (iter != optMap.end())
+            maxThreadWaitTime = iter->second.asUint32();
     }
+
+    if (maxThreadWaitTime > 60)
+        maxThreadWaitTime = 60;
 }
 
 
@@ -100,6 +107,11 @@ ConsoleSessionImpl::~ConsoleSessionImpl()
 {
     if (opened)
         close();
+
+    if (thread) {
+        thread->join();
+        delete thread;
+    }
 }
 
 
@@ -154,6 +166,12 @@ void ConsoleSessionImpl::open()
     if (opened)
         throw QmfException("The session is already open");
 
+    // If the thread exists, join and delete it before creating a new one.
+    if (thread) {
+        thread->join();
+        delete thread;
+    }
+
     // Establish messaging addresses
     directBase = "qmf." + domain + ".direct";
     topicBase = "qmf." + domain + ".topic";
@@ -182,14 +200,13 @@ void ConsoleSessionImpl::open()
 
     // Start the receiver thread
     threadCanceled = false;
+    opened = true;
     thread = new qpid::sys::Thread(*this);
 
     // Send an agent_locate to direct address 'broker' to identify the connected-broker-agent.
     sendBrokerLocate();
     if (agentQuery)
         sendAgentLocate();
-
-    opened = true;
 }
 
 
@@ -198,13 +215,8 @@ void ConsoleSessionImpl::close()
     if (!opened)
         throw QmfException("The session is already closed");
 
-    // Stop and join the receiver thread
+    // Stop the receiver thread.  Don't join it until the destructor is called or open() is called.
     threadCanceled = true;
-    thread->join();
-    delete thread;
-
-    // Close the AMQP session
-    session.close();
     opened = false;
 }
 
@@ -214,9 +226,13 @@ bool ConsoleSessionImpl::nextEvent(ConsoleEvent& event, Duration timeout)
     uint64_t milliseconds = timeout.getMilliseconds();
     qpid::sys::Mutex::ScopedLock l(lock);
 
-    if (eventQueue.empty() && milliseconds > 0)
-        cond.wait(lock, qpid::sys::AbsTime(qpid::sys::now(),
-                                           qpid::sys::Duration(milliseconds * qpid::sys::TIME_MSEC)));
+    if (eventQueue.empty() && milliseconds > 0) {
+        int64_t nsecs(qpid::sys::TIME_INFINITE);
+        if ((uint64_t)(nsecs / 1000000) > milliseconds)
+            nsecs = (int64_t) milliseconds * 1000000;
+        qpid::sys::Duration then(nsecs);
+        cond.wait(lock, qpid::sys::AbsTime(qpid::sys::now(), then));
+    }
 
     if (!eventQueue.empty()) {
         event = eventQueue.front();
@@ -596,7 +612,7 @@ void ConsoleSessionImpl::run()
                                qpid::sys::TIME_SEC);
 
             Receiver rx;
-            bool valid = session.nextReceiver(rx, Duration::SECOND);
+            bool valid = session.nextReceiver(rx, Duration::SECOND * maxThreadWaitTime);
             if (threadCanceled)
                 break;
             if (valid) {
@@ -613,6 +629,7 @@ void ConsoleSessionImpl::run()
         enqueueEvent(ConsoleEvent(new ConsoleEventImpl(CONSOLE_THREAD_FAILED)));
     }
 
+    session.close();
     QPID_LOG(debug, "ConsoleSession thread exiting");
 }
 
