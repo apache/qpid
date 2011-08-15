@@ -76,6 +76,7 @@ namespace qmf {
         uint32_t maxAgentAgeMinutes;
         bool listenOnDirect;
         bool strictSecurity;
+        uint32_t maxThreadWaitTime;
         Query agentQuery;
         bool opened;
         std::queue<ConsoleEvent> eventQueue;

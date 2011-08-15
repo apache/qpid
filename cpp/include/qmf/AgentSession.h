@@ -71,6 +71,11 @@ namespace qmf {
          *                                    If False: Listen only on the routable direct address
          *    strict-security:{True,False}  - If True:  Cooperate with the broker to enforce strict access control to the network
          *                                  - If False: Operate more flexibly with regard to use of messaging facilities [default]
+         *    max-thread-wait-time:N     - Time (in seconds) the session thread will wait for messages from the network between
+         *                                 periodic background processing passes. [default: 5]
+         *                                 Must not be greater than 'interval'.  Larger numbers will cause fewer wake-ups but will
+         *                                 increase the time it takes to shut down the process.  This setting will not affect the
+         *                                 agent's response time for queries or method invocation.
          */
         QMF_EXTERN AgentSession(qpid::messaging::Connection& conn, const std::string& options="");
 
