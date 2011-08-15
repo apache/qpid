@@ -17,6 +17,9 @@
 // under the License.
 //
 
+// QPID-3391: the C++ broker does not currently validate the exchange creation arguments
+org.apache.qpid.test.client.destination.AddressBasedDestinationTest#testCreateExchangeWithNonsenseArgs
+
 org.apache.qpid.test.unit.client.channelclose.ChannelCloseTest#*
 org.apache.qpid.client.ResetMessageListenerTest#*
 
@@ -173,3 +176,6 @@ org.apache.qpid.test.unit.transacted.TransactionTimeoutTest#*
 // Java broker only
 org.apache.qpid.server.logging.management.LoggingManagementMBeanTest#*
 org.apache.qpid.server.management.AMQUserManagementMBeanTest#*
+
+// QPID-3133: On 0-10, the exception listener is currently not invoked when reconnection fails to occurs.
+org.apache.qpid.server.failover.FailoverMethodTest#*

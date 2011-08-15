@@ -33,7 +33,7 @@ import org.apache.qpid.server.configuration.ConfigStore;
 import org.apache.qpid.server.configuration.ConnectionConfigType;
 import org.apache.qpid.server.protocol.v1_0.Connection_1_0;
 import org.apache.qpid.server.registry.IApplicationRegistry;
-import org.apache.qpid.transport.NetworkDriver;
+import org.apache.qpid.transport.network.NetworkConnection;
 
 import java.io.PrintWriter;
 import java.net.SocketAddress;
@@ -45,7 +45,7 @@ public class AMQPSASLEngine_1_0_0 implements ProtocolEngine, FrameOutputHandler
 {
     public static final int MAX_FRAME_SIZE = 64 * 1024 - 1;
 
-    private NetworkDriver _networkDriver;
+    private NetworkConnection _networkDriver;
     private long _readBytes;
     private long _writtenBytes;
     private final UUID _id;
@@ -90,14 +90,14 @@ public class AMQPSASLEngine_1_0_0 implements ProtocolEngine, FrameOutputHandler
 
     private State _state = State.A;
 
-    public AMQPSASLEngine_1_0_0(NetworkDriver networkDriver,
+    public AMQPSASLEngine_1_0_0(NetworkConnection networkDriver,
                                 final IApplicationRegistry appRegistry)
     {
 
 
-        _networkDriver = networkDriver;
         _id = appRegistry.getConfigStore().createId();
         _appRegistry = appRegistry;
+        setNetworkDriver(networkDriver);
 
 
         // FIXME Two log messages to maintain compatinbility with earlier protocol versions
@@ -105,7 +105,7 @@ public class AMQPSASLEngine_1_0_0 implements ProtocolEngine, FrameOutputHandler
 //        _connection.getLogActor().message(ConnectionMessages.OPEN(null, "0-10", false, true));
     }
 
-    public void setNetworkDriver(NetworkDriver driver)
+    public void setNetworkDriver(NetworkConnection driver)
     {
         _networkDriver = driver;
 
@@ -118,7 +118,7 @@ public class AMQPSASLEngine_1_0_0 implements ProtocolEngine, FrameOutputHandler
         _frameWriter =  new FrameWriter(_conn.getDescribedTypeRegistry());
         _frameHandler = new FrameHandler(_conn);
 
-        _networkDriver.send(HEADER.duplicate());
+        _networkDriver.getSender().send(HEADER.duplicate());
 
 
 
@@ -320,7 +320,7 @@ public class AMQPSASLEngine_1_0_0 implements ProtocolEngine, FrameOutputHandler
 
             dup.flip();
             _writtenBytes += dup.limit();
-            _networkDriver.send(dup);
+            _networkDriver.getSender().send(dup);
 
         }
     }

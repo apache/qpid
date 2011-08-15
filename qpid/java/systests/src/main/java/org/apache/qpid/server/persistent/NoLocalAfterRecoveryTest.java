@@ -78,21 +78,10 @@ public class NoLocalAfterRecoveryTest extends QpidBrokerTestCase implements Conn
 
         BrokerDetails details = _connectionURL.getBrokerDetails(0);
 
-        // Due to the problem with SingleServer delaying on all connection
-        // attempts. So using a high retry value.
-        if (_broker.equals(VM))
-        {
-            // Local testing suggests InVM restart takes under a second
-            details.setProperty(BrokerDetails.OPTIONS_RETRY, "5");
-            details.setProperty(BrokerDetails.OPTIONS_CONNECT_DELAY, "200");
-        }
-        else
-        {
-            // This will attempt to failover for 3 seconds.
-            // Local testing suggests failover takes 2 seconds
-            details.setProperty(BrokerDetails.OPTIONS_RETRY, "10");
-            details.setProperty(BrokerDetails.OPTIONS_CONNECT_DELAY, "500");
-        }
+        // This will attempt to failover for 3 seconds.
+        // Local testing suggests failover takes 2 seconds
+        details.setProperty(BrokerDetails.OPTIONS_RETRY, "10");
+        details.setProperty(BrokerDetails.OPTIONS_CONNECT_DELAY, "500");
 
         super.setUp();        
     }

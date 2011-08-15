@@ -36,7 +36,6 @@ import javax.management.remote.JMXConnector;
 import junit.framework.TestCase;
 
 import org.apache.commons.configuration.ConfigurationException;
-import org.apache.qpid.commands.objects.AllObjects;
 import org.apache.qpid.management.common.JMXConnnectionFactory;
 import org.apache.qpid.management.common.mbeans.ManagedBroker;
 import org.apache.qpid.management.common.mbeans.ManagedConnection;
@@ -237,11 +236,10 @@ public class JMXTestUtils
     public ObjectName getVirtualHostManagerObjectName(String vhostName)
     {
         // Get the name of the test manager
-        AllObjects allObject = new AllObjects(_mbsc);
-        allObject.querystring = "org.apache.qpid:type=VirtualHost.VirtualHostManager,VirtualHost="
-                                + ObjectName.quote(vhostName) + ",*";
+        String query = "org.apache.qpid:type=VirtualHost.VirtualHostManager,VirtualHost="
+                       + ObjectName.quote(vhostName) + ",*";
 
-        Set<ObjectName> objectNames = allObject.returnObjects();
+        Set<ObjectName> objectNames = queryObjects(query);
 
         _test.assertNotNull("Null ObjectName Set returned", objectNames);
         _test.assertEquals("Incorrect number test vhosts returned", 1, objectNames.size());
@@ -265,16 +263,14 @@ public class JMXTestUtils
     public ObjectName getQueueObjectName(String virtualHostName, String queue)
     {
         // Get the name of the test manager
-        AllObjects allObject = new AllObjects(_mbsc);
-        allObject.querystring = "org.apache.qpid:type=VirtualHost.Queue,VirtualHost="
-                                 + ObjectName.quote(virtualHostName) + ",name="
-                                 + ObjectName.quote(queue) + ",*";
+        String query = "org.apache.qpid:type=VirtualHost.Queue,VirtualHost="
+                       + ObjectName.quote(virtualHostName) + ",name="
+                       + ObjectName.quote(queue) + ",*";
 
-        Set<ObjectName> objectNames = allObject.returnObjects();
+        Set<ObjectName> objectNames = queryObjects(query);
 
         _test.assertNotNull("Null ObjectName Set returned", objectNames);
-        _test.assertEquals("Incorrect number of queues with name '" + allObject.querystring +
-                           "' returned", 1, objectNames.size());
+        _test.assertEquals("Incorrect number of queues with name '" + queue + "' returned", 1, objectNames.size());
 
         // We have verified we have only one value in objectNames so return it
         ObjectName objectName = objectNames.iterator().next();
@@ -295,12 +291,11 @@ public class JMXTestUtils
     public ObjectName getExchangeObjectName(String virtualHostName, String exchange)
     {
         // Get the name of the test manager
-        AllObjects allObject = new AllObjects(_mbsc);
-        allObject.querystring = "org.apache.qpid:type=VirtualHost.Exchange,VirtualHost="
-                                + ObjectName.quote(virtualHostName) + ",name="
-                                + ObjectName.quote(exchange) + ",*";
+        String query = "org.apache.qpid:type=VirtualHost.Exchange,VirtualHost="
+                       + ObjectName.quote(virtualHostName) + ",name="
+                       + ObjectName.quote(exchange) + ",*";
 
-        Set<ObjectName> objectNames = allObject.returnObjects();
+        Set<ObjectName> objectNames = queryObjects(query);
 
         _test.assertNotNull("Null ObjectName Set returned", objectNames);
         _test.assertEquals("Incorrect number of exchange with name '" + exchange + "' returned", 1, objectNames.size());
@@ -312,12 +307,9 @@ public class JMXTestUtils
     }
 
     @SuppressWarnings("static-access")
-    public <T> T getManagedObject(Class<T> managedClass, String queryString)
+    public <T> T getManagedObject(Class<T> managedClass, String query)
     {
-        AllObjects allObject = new AllObjects(_mbsc);
-        allObject.querystring = queryString;
-
-        Set<ObjectName> objectNames = allObject.returnObjects();
+        Set<ObjectName> objectNames = queryObjects(query);
 
         _test.assertNotNull("Null ObjectName Set returned", objectNames);
         _test.assertEquals("More than one " + managedClass + " returned", 1, objectNames.size());
@@ -383,10 +375,9 @@ public class JMXTestUtils
     public ServerInformation getServerInformation()
     {
         // Get the name of the test manager
-        AllObjects allObject = new AllObjects(_mbsc);
-        allObject.querystring = "org.apache.qpid:type=ServerInformation,name=ServerInformation,*";
+        String query = "org.apache.qpid:type=ServerInformation,name=ServerInformation,*";
 
-        Set<ObjectName> objectNames = allObject.returnObjects();
+        Set<ObjectName> objectNames = queryObjects(query);
 
         TestCase.assertNotNull("Null ObjectName Set returned", objectNames);
         TestCase.assertEquals("Incorrect number of objects returned", 1, objectNames.size());
@@ -401,10 +392,9 @@ public class JMXTestUtils
     public List<ManagedConnection> getAllManagedConnections()
     {
         // Get the name of the test manager
-        AllObjects allObject = new AllObjects(_mbsc);
-        allObject.querystring = "org.apache.qpid:type=VirtualHost.Connection,VirtualHost=*,name=*";
+        String query = "org.apache.qpid:type=VirtualHost.Connection,VirtualHost=*,name=*";
 
-        Set<ObjectName> objectNames = allObject.returnObjects();
+        Set<ObjectName> objectNames = queryObjects(query);
 
         TestCase.assertNotNull("Null ObjectName Set returned", objectNames);
 
@@ -417,13 +407,29 @@ public class JMXTestUtils
     public List<ManagedConnection> getManagedConnections(String vhost)
     {
         // Get the name of the test manager
-        AllObjects allObject = new AllObjects(_mbsc);
-        allObject.querystring = "org.apache.qpid:type=VirtualHost.Connection,VirtualHost=" + ObjectName.quote(vhost) + ",name=*";
+        String query = "org.apache.qpid:type=VirtualHost.Connection,VirtualHost=" + ObjectName.quote(vhost) + ",name=*";
 
-        Set<ObjectName> objectNames = allObject.returnObjects();
+        Set<ObjectName> objectNames = queryObjects(query);
 
         TestCase.assertNotNull("Null ObjectName Set returned", objectNames);
 
         return getManagedObjectList(ManagedConnection.class, objectNames);
+    }
+
+    /**
+     * Returns the Set of ObjectNames returned by the broker for the given query,
+     * or null if there is problem while performing the query.
+     */
+    private Set<ObjectName> queryObjects(String query)
+    {
+        try
+        {
+            return _mbsc.queryNames(new ObjectName(query), null);
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+            return null;
+        }
     }
 }

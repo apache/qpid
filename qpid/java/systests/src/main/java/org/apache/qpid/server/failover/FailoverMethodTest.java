@@ -20,58 +20,39 @@
  */
 package org.apache.qpid.server.failover;
 
-import junit.framework.TestCase;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+
+import javax.jms.ExceptionListener;
+import javax.jms.JMSException;
 
 import org.apache.qpid.AMQDisconnectedException;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQConnectionURL;
-import org.apache.qpid.client.transport.TransportConnection;
-import org.apache.qpid.client.vmbroker.AMQVMBrokerCreationException;
-import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.util.InternalBrokerBaseCase;
-import org.apache.qpid.url.URLSyntaxException;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.jms.ExceptionListener;
-import javax.jms.JMSException;
-import java.util.concurrent.CountDownLatch;
-
-public class FailoverMethodTest extends InternalBrokerBaseCase implements ExceptionListener
+public class FailoverMethodTest extends QpidBrokerTestCase implements ExceptionListener
 {
     private CountDownLatch _failoverComplete = new CountDownLatch(1);
     protected static final Logger _logger = LoggerFactory.getLogger(FailoverMethodTest.class);
 
-    @Override
-    public void createBroker() throws Exception
-    {
-        super.createBroker();
-        TransportConnection.createVMBroker(ApplicationRegistry.DEFAULT_INSTANCE);
-    }
 
-    @Override
-    public void stopBroker()
-    {
-        TransportConnection.killVMBroker(ApplicationRegistry.DEFAULT_INSTANCE);
-        super.stopBroker();
-    }
 
     /**
      * Test that the round robin method has the correct delays.
-     * The first connection to vm://:1 will work but the localhost connection should fail but the duration it takes
+     * The first connection will work but the localhost connection should fail but the duration it takes
      * to report the failure is what is being tested.
      *
-     * @throws URLSyntaxException
-     * @throws InterruptedException
-     * @throws JMSException
      */
-    public void testFailoverRoundRobinDelay() throws URLSyntaxException, InterruptedException, JMSException
+    public void testFailoverRoundRobinDelay() throws Exception
     {
-        //note: The VM broker has no connect delay and the default 1 retry
+        //note: The first broker has no connect delay and the default 1 retry
         //        while the tcp:localhost broker has 3 retries with a 2s connect delay
         String connectionString = "amqp://guest:guest@/test?brokerlist=" +
-                                  "'vm://:" + ApplicationRegistry.DEFAULT_INSTANCE +
+                                  "'tcp://:" + getPort() +
                                   ";tcp://localhost:5670?connectdelay='2000',retries='3''";
 
         AMQConnectionURL url = new AMQConnectionURL(connectionString);
@@ -85,7 +66,9 @@ public class FailoverMethodTest extends InternalBrokerBaseCase implements Except
 
             stopBroker();
 
-            _failoverComplete.await();
+            _failoverComplete.await(30, TimeUnit.SECONDS);
+            assertEquals("failoverLatch was not decremented in given timeframe",
+                    0, _failoverComplete.getCount());
 
             long end = System.currentTimeMillis();
 
@@ -112,10 +95,9 @@ public class FailoverMethodTest extends InternalBrokerBaseCase implements Except
         }
     }
 
-    public void testFailoverSingleDelay() throws URLSyntaxException, AMQVMBrokerCreationException,
-                                                 InterruptedException, JMSException
+    public void testFailoverSingleDelay() throws Exception
     {
-        String connectionString = "amqp://guest:guest@/test?brokerlist='vm://:1?connectdelay='2000',retries='3''";
+        String connectionString = "amqp://guest:guest@/test?brokerlist='tcp://localhost:" + getPort() + "?connectdelay='2000',retries='3''";
 
         AMQConnectionURL url = new AMQConnectionURL(connectionString);
 
@@ -128,7 +110,9 @@ public class FailoverMethodTest extends InternalBrokerBaseCase implements Except
 
             stopBroker();
 
-            _failoverComplete.await();
+            _failoverComplete.await(30, TimeUnit.SECONDS);
+            assertEquals("failoverLatch was not decremented in given timeframe",
+                    0, _failoverComplete.getCount());
 
             long end = System.currentTimeMillis();
 
@@ -160,6 +144,10 @@ public class FailoverMethodTest extends InternalBrokerBaseCase implements Except
             _logger.debug("Received AMQDisconnectedException");
             _failoverComplete.countDown();
         }
+        else
+        {
+            _logger.error("Unexpected underlying exception", e.getLinkedException());
+        }
     }
 
     /**
@@ -168,28 +156,37 @@ public class FailoverMethodTest extends InternalBrokerBaseCase implements Except
      *
      * Test validates that there is a connection delay as required on initial
      * connection.
-     *
-     * @throws URLSyntaxException
-     * @throws AMQVMBrokerCreationException
-     * @throws InterruptedException
-     * @throws JMSException
      */
-    public void testNoFailover() throws URLSyntaxException, AMQVMBrokerCreationException,
-                                        InterruptedException, JMSException
+    public void testNoFailover() throws Exception
     {
+        if (!isInternalBroker())
+        {
+            // QPID-3359
+            // These tests always used to be inVM tests, then QPID-2815, with removal of ivVM, 
+            // converted the test to use QpidBrokerTestCase.  However, since then we notice this
+            // test fails on slower CI boxes.  It turns out the test design is *extremely*
+            // sensitive the length of time the broker takes to start up.
+            //
+            // Making the test a same-VM test to temporarily avoid the issue.  In long term, test
+            // needs redesigned to avoid the issue.
+            return;
+        }
+
         int CONNECT_DELAY = 2000;
-        String connectionString = "amqp://guest:guest@/test?brokerlist='vm://:1?connectdelay='" + CONNECT_DELAY + "'," +
+        String connectionString = "amqp://guest:guest@/test?brokerlist='tcp://localhost:" + getPort() + "?connectdelay='" + CONNECT_DELAY + "'," +
                                   "retries='3'',failover='nofailover'";
 
+        
         AMQConnectionURL url = new AMQConnectionURL(connectionString);
 
+        Thread brokerStart = null;
         try
         {
             //Kill initial broker
             stopBroker();
 
             //Create a thread to start the broker asynchronously
-            Thread brokerStart = new Thread(new Runnable()
+            brokerStart = new Thread(new Runnable()
             {
                 public void run()
                 {
@@ -198,7 +195,7 @@ public class FailoverMethodTest extends InternalBrokerBaseCase implements Except
                         //Wait before starting broker
                         // The wait should allow atleast 1 retries to fail before broker is ready
                         Thread.sleep(750);
-                        createBroker();
+                        startBroker();
                     }
                     catch (Exception e)
                     {
@@ -211,7 +208,6 @@ public class FailoverMethodTest extends InternalBrokerBaseCase implements Except
 
             brokerStart.start();
             long start = System.currentTimeMillis();
-
 
             //Start the connection so it will use the retries
             AMQConnection connection = new AMQConnection(url, null);
@@ -228,13 +224,16 @@ public class FailoverMethodTest extends InternalBrokerBaseCase implements Except
 
             //Ensure we collect the brokerStart thread
             brokerStart.join();
+            brokerStart = null;
 
             start = System.currentTimeMillis();
 
             //Kill connection
             stopBroker();
 
-            _failoverComplete.await();
+            _failoverComplete.await(30, TimeUnit.SECONDS);
+            assertEquals("failoverLatch was not decremented in given timeframe",
+                    0, _failoverComplete.getCount());
 
             end = System.currentTimeMillis();
 
@@ -248,6 +247,23 @@ public class FailoverMethodTest extends InternalBrokerBaseCase implements Except
         catch (AMQException e)
         {
             fail(e.getMessage());
+        }
+        finally
+        {
+            // Guard against the case where the broker took too long to start
+            // and the initial connection failed to be formed.
+            if (brokerStart != null)
+            {
+                brokerStart.join();
+            }
+        }
+    }
+
+    public void stopBroker(int port) throws Exception
+    {
+        if (isBrokerPresent(port))
+        {
+            super.stopBroker(port);
         }
     }
 

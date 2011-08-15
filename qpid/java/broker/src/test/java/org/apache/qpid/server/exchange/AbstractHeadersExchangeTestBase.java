@@ -428,12 +428,7 @@ public class AbstractHeadersExchangeTestBase extends InternalBrokerBaseCase
                     //To change body of implemented methods use File | Settings | File Templates.
                 }
 
-                public void reject(Subscription subscription)
-                {
-                    //To change body of implemented methods use File | Settings | File Templates.
-                }
-
-                public boolean isRejectedBy(Subscription subscription)
+                public boolean isRejectedBy(long subscriptionId)
                 {
                     return false;  //To change body of implemented methods use File | Settings | File Templates.
                 }
@@ -481,6 +476,16 @@ public class AbstractHeadersExchangeTestBase extends InternalBrokerBaseCase
                 public int compareTo(final QueueEntry o)
                 {
                     return 0;  //To change body of implemented methods use File | Settings | File Templates.
+                }
+
+                public boolean isDequeued()
+                {
+                    return false;
+                }
+
+                public boolean isDispensed()
+                {
+                    return false;
                 }
             };
 

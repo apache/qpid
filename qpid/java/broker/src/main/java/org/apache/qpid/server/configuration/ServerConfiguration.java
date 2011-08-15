@@ -20,6 +20,8 @@
 
 package org.apache.qpid.server.configuration;
 
+import static org.apache.qpid.transport.ConnectionSettings.WILDCARD_ADDRESS;
+
 import java.io.File;
 import java.util.Collections;
 import java.util.HashMap;
@@ -42,7 +44,7 @@ import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
-import org.apache.qpid.transport.NetworkDriverConfiguration;
+import org.apache.qpid.transport.NetworkTransportConfiguration;
 
 import sun.misc.Signal;
 import sun.misc.SignalHandler;
@@ -52,9 +54,7 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
     protected static final Logger _logger = Logger.getLogger(ServerConfiguration.class);
 
     // Default Configuration values
-    public static final int DEFAULT_BUFFER_READ_LIMIT_SIZE = 262144;
-    public static final int DEFAULT_BUFFER_WRITE_LIMIT_SIZE = 262144;
-    public static final boolean DEFAULT_BROKER_CONNECTOR_PROTECTIO_ENABLED = false;
+    public static final int DEFAULT_BUFFER_SIZE = 262144;
     public static final String DEFAULT_STATUS_UPDATES = "on";
     public static final String SECURITY_CONFIG_RELOADED = "SECURITY CONFIGURATION RELOADED";
 
@@ -63,7 +63,7 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
     public static final int DEFAULT_SSL_PORT = 8672;
     public static final long DEFAULT_HOUSEKEEPING_PERIOD = 30000L;
     public static final int DEFAULT_JMXPORT = 8999;
-    
+
     public static final String QPID_HOME = "QPID_HOME";
     public static final String QPID_WORK = "QPID_WORK";
     public static final String LIB_DIR = "lib";
@@ -84,9 +84,6 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
 
     // Configuration values to be read from the configuration file
     //todo Move all properties to static values to ensure system testing can be performed.
-    public static final String CONNECTOR_PROTECTIO_ENABLED = "connector.protectio.enabled";
-    public static final String CONNECTOR_PROTECTIO_READ_BUFFER_LIMIT_SIZE = "connector.protectio.readBufferLimitSize";
-    public static final String CONNECTOR_PROTECTIO_WRITE_BUFFER_LIMIT_SIZE = "connector.protectio.writeBufferLimitSize";
     public static final String MGMT_CUSTOM_REGISTRY_SOCKET = "management.custom-registry-socket";
     public static final String STATUS_UPDATES = "status-updates";
     public static final String ADVANCED_LOCALE = "advanced.locale";
@@ -95,7 +92,6 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
         envVarMap.put("QPID_PORT", "connector.port");
         envVarMap.put("QPID_ENABLEDIRECTBUFFERS", "advanced.enableDirectBuffers");
         envVarMap.put("QPID_SSLPORT", "connector.ssl.port");
-        envVarMap.put("QPID_NIO", "connector.qpidnio");
         envVarMap.put("QPID_WRITEBIASED", "advanced.useWriteBiasedPool");
         envVarMap.put("QPID_JMXPORT", "management.jmxport");
         envVarMap.put("QPID_FRAMESIZE", "advanced.framesize");
@@ -148,7 +144,7 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
         }
         catch (Exception e)
         {
-            _logger.error("Signal HUP not supported for OS: " + System.getProperty("os.name"));
+            _logger.info("Signal HUP not supported for OS: " + System.getProperty("os.name"));
             // We're on something that doesn't handle SIGHUP, how sad, Windows.
         }
     }
@@ -205,7 +201,29 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
     @Override
     public void validateConfiguration() throws ConfigurationException
     {
-        //Currently doesn't do validation
+        // Support for security.jmx.access was removed when JMX access rights were incorporated into the main ACL.
+        // This ensure that users remove the element from their configuration file.
+        
+        if (getListValue("security.jmx.access").size() > 0)
+        {
+            String message = "Validation error : security/jmx/access is no longer a supported element within the configuration xml." 
+                    + (_configFile == null ? "" : " Configuration file : " + _configFile);
+            throw new ConfigurationException(message);
+        }
+
+        if (getListValue("security.jmx.principal-database").size() > 0)
+        {
+            String message = "Validation error : security/jmx/principal-database is no longer a supported element within the configuration xml."
+                    + (_configFile == null ? "" : " Configuration file : " + _configFile);
+            throw new ConfigurationException(message);
+        }
+
+        if (getListValue("security.principal-databases.principal-database(0).class").size() > 0)
+        {
+            String message = "Validation error : security/principal-databases is no longer supported within the configuration xml." 
+                    + (_configFile == null ? "" : " Configuration file : " + _configFile);
+            throw new ConfigurationException(message);
+        }
     }
 
     /*
@@ -503,56 +521,9 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
         _virtualHosts.put(config.getName(), config);
     }
 
-    public List<String> getPrincipalDatabaseNames()
-    {
-        return getListValue("security.principal-databases.principal-database.name");
-    }
-
-    public List<String> getPrincipalDatabaseClass()
-    {
-        return getListValue("security.principal-databases.principal-database.class");
-    }
-
-    public List<String> getPrincipalDatabaseAttributeNames(int index)
-    {
-        String name = "security.principal-databases.principal-database(" + index + ")." + "attributes.attribute.name";
-        return getListValue(name);
-    }
-
-    public List<String> getPrincipalDatabaseAttributeValues(int index)
-    {
-        String name = "security.principal-databases.principal-database(" + index + ")." + "attributes.attribute.value";
-        return getListValue(name);
-    }
-
-    public List<String> getManagementPrincipalDBs()
-    {
-        return getListValue("security.jmx.principal-database");
-    }
-
-    public List<String> getManagementAccessList()
-    {
-        return getListValue("security.jmx.access");
-    }
-
     public int getFrameSize()
     {
         return getIntValue("advanced.framesize", DEFAULT_FRAME_SIZE);
-    }
-
-    public boolean getProtectIOEnabled()
-    {
-        return getBooleanValue(CONNECTOR_PROTECTIO_ENABLED, DEFAULT_BROKER_CONNECTOR_PROTECTIO_ENABLED);
-    }
-
-    public int getBufferReadLimit()
-    {
-        return getIntValue(CONNECTOR_PROTECTIO_READ_BUFFER_LIMIT_SIZE, DEFAULT_BUFFER_READ_LIMIT_SIZE);
-    }
-
-    public int getBufferWriteLimit()
-    {
-        return getIntValue(CONNECTOR_PROTECTIO_WRITE_BUFFER_LIMIT_SIZE, DEFAULT_BUFFER_WRITE_LIMIT_SIZE);
     }
 
     public boolean getSynchedClocks()
@@ -563,11 +534,6 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
     public boolean getMsgAuth()
     {
         return getBooleanValue("security.msg-auth");
-    }
-
-    public String getJMXPrincipalDatabase()
-    {
-        return getStringValue("security.jmx.principal-database");
     }
 
     public String getManagementKeyStorePath()
@@ -650,14 +616,14 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
         return getLongValue("flowResumeCapacity", getCapacity());
     }
 
-    public int getProcessors()
+    public int getConnectorProcessors()
     {
         return getIntValue("connector.processors", 4);
     }
 
     public List getPorts()
     {
-        return getListValue("connector.port", Collections.singletonList(DEFAULT_PORT));
+        return getListValue("connector.port", Collections.<Integer>singletonList(DEFAULT_PORT));
     }
 
     public List getPortExclude010()
@@ -682,17 +648,17 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
 
     public String getBind()
     {
-        return getStringValue("connector.bind", "wildcard");
+        return getStringValue("connector.bind", WILDCARD_ADDRESS);
     }
 
     public int getReceiveBufferSize()
     {
-        return getIntValue("connector.socketReceiveBuffer", 32767);
+        return getIntValue("connector.socketReceiveBuffer", DEFAULT_BUFFER_SIZE);
     }
 
     public int getWriteBufferSize()
     {
-        return getIntValue("connector.socketWriteBuffer", 32767);
+        return getIntValue("connector.socketWriteBuffer", DEFAULT_BUFFER_SIZE);
     }
 
     public boolean getTcpNoDelay()
@@ -715,9 +681,9 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
         return getBooleanValue("connector.ssl.sslOnly");
     }
 
-    public int getSSLPort()
+    public List getSSLPorts()
     {
-        return getIntValue("connector.ssl.port", DEFAULT_SSL_PORT);
+        return getListValue("connector.ssl.port", Collections.<Integer>singletonList(DEFAULT_SSL_PORT));
     }
 
     public String getKeystorePath()
@@ -733,11 +699,6 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
     public String getCertType()
     {
         return getStringValue("connector.ssl.certType", "SunX509");
-    }
-
-    public boolean getQpidNIO()
-    {
-        return getBooleanValue("connector.qpidnio");
     }
 
     public boolean getUseBiasedWrites()
@@ -795,59 +756,6 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
     public boolean isStatisticsReportResetEnabled()
     {
         return getConfig().getBoolean("statistics.reporting.reset", false);
-    }
-
-    public NetworkDriverConfiguration getNetworkConfiguration()
-    {
-        return new NetworkDriverConfiguration()
-        {
-
-            public Integer getTrafficClass()
-            {
-                return null;
-            }
-
-            public Boolean getTcpNoDelay()
-            {
-                // Can't call parent getTcpNoDelay since it just calls this one
-                return getBooleanValue("connector.tcpNoDelay", true);
-            }
-
-            public Integer getSoTimeout()
-            {
-                return null;
-            }
-
-            public Integer getSoLinger()
-            {
-                return null;
-            }
-
-            public Integer getSendBufferSize()
-            {
-                return getBufferWriteLimit();
-            }
-
-            public Boolean getReuseAddress()
-            {
-                return null;
-            }
-
-            public Integer getReceiveBufferSize()
-            {
-                return getBufferReadLimit();
-            }
-
-            public Boolean getOOBInline()
-            {
-                return null;
-            }
-
-            public Boolean getKeepAlive()
-            {
-                return null;
-            }
-        };
     }
 
     public int getMaxChannelCount()

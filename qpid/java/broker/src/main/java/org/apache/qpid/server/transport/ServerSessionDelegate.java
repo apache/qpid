@@ -25,31 +25,33 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
 
+import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQUnknownExchangeType;
-import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.server.exchange.*;
+import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.exchange.ExchangeFactory;
+import org.apache.qpid.server.exchange.ExchangeInUseException;
+import org.apache.qpid.server.exchange.ExchangeRegistry;
+import org.apache.qpid.server.exchange.ExchangeType;
+import org.apache.qpid.server.exchange.HeadersExchange;
 import org.apache.qpid.server.filter.FilterManager;
 import org.apache.qpid.server.filter.FilterManagerFactory;
 import org.apache.qpid.server.flow.FlowCreditManager_0_10;
 import org.apache.qpid.server.flow.WindowCreditManager;
-import org.apache.qpid.server.logging.actors.CurrentActor;
-import org.apache.qpid.server.logging.actors.GenericActor;
 import org.apache.qpid.server.message.MessageMetaData_0_10;
 import org.apache.qpid.server.message.MessageTransferMessage;
-import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StoredMessage;
+import org.apache.qpid.server.subscription.SubscriptionFactoryImpl;
 import org.apache.qpid.server.subscription.Subscription_0_10;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.transport.Acquired;
@@ -95,25 +97,33 @@ import org.apache.qpid.transport.TxSelect;
 
 public class ServerSessionDelegate extends SessionDelegate
 {
-    private final IApplicationRegistry _appRegistry;
+    private static final Logger LOGGER = Logger.getLogger(ServerSessionDelegate.class);
 
-    public ServerSessionDelegate(IApplicationRegistry appRegistry)
+    public ServerSessionDelegate()
     {
-        _appRegistry = appRegistry;
+
     }
 
     @Override
     public void command(Session session, Method method)
     {
-        SecurityManager.setThreadPrincipal(session.getConnection().getAuthorizationID());
-
-        if(!session.isClosing())
+        try
         {
-            super.command(session, method);
-            if (method.isSync())
+            setThreadSubject(session);
+
+            if(!session.isClosing())
             {
-                session.flushProcessed();
+                super.command(session, method);
+                if (method.isSync())
+                {
+                    session.flushProcessed();
+                }
             }
+        }
+        catch(RuntimeException e)
+        {
+            LOGGER.error("Exception processing command", e);
+            exception(session, method, ExecutionErrorCode.INTERNAL_ERROR, "Exception processing command: " + e);
         }
     }
 
@@ -122,8 +132,6 @@ public class ServerSessionDelegate extends SessionDelegate
     {
         ((ServerSession)session).accept(method.getTransfers());
     }
-
-
 
     @Override
     public void messageReject(Session session, MessageReject method)
@@ -203,7 +211,7 @@ public class ServerSessionDelegate extends SessionDelegate
                 {
                     exception(session,method,ExecutionErrorCode.NOT_FOUND, "Queue: " + queueName + " not found");
                 }
-                else if(queue.getPrincipalHolder() != null && queue.getPrincipalHolder() != session)
+                else if(queue.getAuthorizationHolder() != null && queue.getAuthorizationHolder() != session)
                 {
                     exception(session,method,ExecutionErrorCode.RESOURCE_LOCKED, "Exclusive Queue: " + queueName + " owned exclusively by another session");
                 }
@@ -213,17 +221,17 @@ public class ServerSessionDelegate extends SessionDelegate
                     {
                         ServerSession s = (ServerSession) session;
                         queue.setExclusiveOwningSession(s);
-                        if(queue.getPrincipalHolder() == null)
+                        if(queue.getAuthorizationHolder() == null)
                         {
-                            queue.setPrincipalHolder(s);
+                            queue.setAuthorizationHolder(s);
                             queue.setExclusiveOwningSession(s);
                             ((ServerSession) session).addSessionCloseTask(new ServerSession.Task()
                             {
                                 public void doTask(ServerSession session)
                                 {
-                                    if(queue.getPrincipalHolder() == session)
+                                    if(queue.getAuthorizationHolder() == session)
                                     {
-                                        queue.setPrincipalHolder(null);
+                                        queue.setAuthorizationHolder(null);
                                         queue.setExclusiveOwningSession(null);
                                     }
                                 }
@@ -245,7 +253,7 @@ public class ServerSessionDelegate extends SessionDelegate
                         return;
                     }
 
-                    Subscription_0_10 sub = new Subscription_0_10((ServerSession)session,
+                    Subscription_0_10 sub = SubscriptionFactoryImpl.INSTANCE.createSubscription((ServerSession)session,
                                                                   destination,
                                                                   method.getAcceptMode(),
                                                                   method.getAcquireMode(),
@@ -389,7 +397,7 @@ public class ServerSessionDelegate extends SessionDelegate
             ((ServerSession)session).unregister(sub);
             if(!queue.isDeleted() && queue.isExclusive() && queue.getConsumerCount() == 0)
             {
-                queue.setPrincipalHolder(null);
+                queue.setAuthorizationHolder(null);
             }
         }
     }
@@ -448,6 +456,19 @@ public class ServerSessionDelegate extends SessionDelegate
         VirtualHost virtualHost = getVirtualHost(session);
         Exchange exchange = getExchange(session, exchangeName);
 
+        //we must check for any unsupported arguments present and throw not-implemented
+        if(method.hasArguments())
+        {
+            Map<String,Object> args = method.getArguments();
+
+            //QPID-3392: currently we don't support any!
+            if(!args.isEmpty())
+            {
+                exception(session, method, ExecutionErrorCode.NOT_IMPLEMENTED, "Unsupported exchange argument(s) found " + args.keySet().toString());
+                return;
+            }
+        }
+
         if(method.getPassive())
         {
             if(exchange == null)
@@ -457,7 +478,6 @@ public class ServerSessionDelegate extends SessionDelegate
             }
             else
             {
-                // TODO - check exchange has same properties
                 if(!exchange.getTypeShortString().toString().equals(method.getType()))
                 {
                     exception(session, method, ExecutionErrorCode.NOT_ALLOWED, "Cannot redeclare with a different exchange type");
@@ -1007,7 +1027,7 @@ public class ServerSessionDelegate extends SessionDelegate
                             {
                                 public void doTask(ServerSession session)
                                 {
-                                    q.setPrincipalHolder(null);
+                                    q.setAuthorizationHolder(null);
                                     q.setExclusiveOwningSession(null);
                                 }
                             };
@@ -1077,7 +1097,7 @@ public class ServerSessionDelegate extends SessionDelegate
             }
             else
             {
-                if(queue.getPrincipalHolder() != null && queue.getPrincipalHolder() != session)
+                if(queue.getAuthorizationHolder() != null && queue.getAuthorizationHolder() != session)
                 {
                     exception(session,method,ExecutionErrorCode.RESOURCE_LOCKED, "Exclusive Queue: " + queueName + " owned exclusively by another session");
                 }
@@ -1223,6 +1243,8 @@ public class ServerSessionDelegate extends SessionDelegate
     @Override
     public void closed(Session session)
     {
+        setThreadSubject(session);
+
         for(Subscription_0_10 sub : getSubscriptions(session))
         {
             ((ServerSession)session).unregister(sub);
@@ -1241,4 +1263,9 @@ public class ServerSessionDelegate extends SessionDelegate
         return ((ServerSession)session).getSubscriptions();
     }
 
+    private void setThreadSubject(Session session)
+    {
+        final ServerConnection scon = (ServerConnection) session.getConnection();
+        SecurityManager.setThreadSubject(scon.getAuthorizedSubject());
+    }
 }

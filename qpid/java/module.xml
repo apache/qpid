@@ -66,6 +66,8 @@
   <property name="module.release.bz2"  location="${module.release}/${module.namever}.tar.bz2"/>
 
   <property name="module.genpom.args"  value=""/>
+  <property name="maven.remote.repo"     value="file://${module.release.base}/maven"/>
+
   <property name="broker.log.prefix" value="BROKER: "/> 
   <property name="broker.log.interleave" value="true"/>
 
@@ -221,8 +223,8 @@
         <arg line='"${project.root}/genpom"'/>
         <arg line='-s "${project.root}/lib/poms"'/>
         <arg line='-o "${build.scratch}/qpid-${module.name}.pom"'/>
-        <arg line="-u http://qpid.apache.org"/>
-        <arg line="-g org.apache.qpid"/>
+        <arg line="-u ${project.url}"/>
+        <arg line="-g ${project.groupid}"/>
         <arg line="-v ${project.version}${maven.version.suffix}"/>
         <arg line="-p qpid"/>
         <arg line='-m "${module.depends}"'/>
@@ -238,14 +240,14 @@
 
     <artifact:pom id="module.pom" file="${build.scratch}/qpid-${module.name}.pom"/>
 
-    <artifact:install file="${module.jar}" pomRefId="module.pom">
+    <artifact:install file="${module.jar}" pomRefId="module.pom" settingsFile="${maven.settings.xml}">
         <localRepository path="${maven.local.repo}"/>
     </artifact:install>
 
-    <artifact:deploy file="${module.jar}" pomRefId="module.pom" uniqueVersion="${maven.unique.version}">
+    <artifact:deploy file="${module.jar}" pomRefId="module.pom" uniqueVersion="${maven.unique.version}" settingsFile="${maven.settings.xml}">
       <attach file="${module.source.jar}" classifier="sources"/>
       <localRepository path="${maven.local.repo}"/>
-      <remoteRepository url="file://${module.release.base}/maven"/>
+      <remoteRepository url="${maven.remote.repo}"/>
     </artifact:deploy>
   </target>
 
@@ -279,7 +281,8 @@
     <javac target="${java.target}" source="${java.source}"
            destdir="${module.test.classes}" debug="on"
            deprecation="${javac.deprecation}"
-           srcdir="${module.test.src}">
+           srcdir="${module.test.src}"
+           includeantruntime="false">
       <classpath refid="module.test.path"/>
     </javac>
 
@@ -293,7 +296,7 @@
   </target>
 
 
-  <property name="profile" value="default"/>
+  <property name="profile" value="java-mms.0-10"/>
   <property name="testprofile.file" value="${test.profiles}/${profile}.testprofile"/>
   
   <available file="${testprofile.file}" property="testprofile.file.present"/>
@@ -301,15 +304,14 @@
 
   <property file="${testprofile.file}" prefix="preload"/>
   <property name="preload.include" value=""/>
-  <condition property="profiles"
-             value="${preload.include} ${profile}"
-             else="default ${preload.include} ${profile}">
-    <equals arg1="${profile}" arg2="default"/>
-  </condition>
+  <property name="profiles" value="${preload.include} ${profile}"/>
   <map property="_profile_files" value="${profiles}" join=" ">
     <globmapper from="*" to="*.testprofile"/>
   </map>
+  
+  <delete file="${build.scratch}/test-${profile}.properties" quiet="true"/>
   <concat destfile="${build.scratch}/test-${profile}.properties" force="no" fixlastline="yes">
+    <filelist dir="${test.profiles}" files="testprofile.defaults"/>
     <filelist dir="${test.profiles}" files="${_profile_files}"/>
   </concat>
   <property file="${build.scratch}/test-${profile}.properties"/>
@@ -317,7 +319,6 @@
   <map property="test.excludefiles" value="${test.excludes}">
     <globmapper from="*" to="${test.profiles}/*"/>
   </map>
-
 
   <condition property="dontruntest" value="dontruntest" else="runtest">
          <contains substring="${module.name}" string="${exclude.modules}" />
@@ -346,15 +347,6 @@
       <sysproperty key="log4j.configuration" value="${log4j.configuration}"/>
       <sysproperty key="java.naming.factory.initial" value="${java.naming.factory.initial}"/>
       <sysproperty key="java.naming.provider.url" value="${java.naming.provider.url}"/>
-      <sysproperty key="broker" value="${broker}"/>
-      <sysproperty key="broker.clean" value="${broker.clean}"/>
-      <sysproperty key="broker.clean.between.tests" value="${broker.clean.between.tests}"/>
-      <sysproperty key="broker.existing.qpid.work" value="${broker.existing.qpid.work}"/>
-      <sysproperty key="broker.persistent" value="${broker.persistent}"/>
-      <sysproperty key="broker.version" value="${broker.version}"/>
-      <sysproperty key="broker.ready" value="${broker.ready}" />
-      <sysproperty key="broker.stopped" value="${broker.stopped}" />
-      <sysproperty key="broker.config" value="${broker.config}" />
       <sysproperty key="messagestore.class.name" value="${messagestore.class.name}" />
       <sysproperty key="test.output" value="${module.results}"/>
       <sysproperty key="qpid.amqp.version" value="${qpid.amqp.version}"/>

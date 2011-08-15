@@ -34,13 +34,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
 
 import javax.management.JMException;
+import javax.security.auth.Subject;
 import javax.security.sasl.SaslServer;
 
 import org.apache.log4j.Logger;
-import org.apache.mina.transport.vmpipe.VmPipeAddress;
 import org.apache.qpid.AMQChannelException;
 import org.apache.qpid.AMQConnectionException;
 import org.apache.qpid.AMQException;
@@ -70,7 +69,7 @@ import org.apache.qpid.pool.ReferenceCountingExecutorService;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.protocol.AMQMethodListener;
-import org.apache.qpid.protocol.ProtocolEngine;
+import org.apache.qpid.protocol.ServerProtocolEngine;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.configuration.ConfigStore;
 import org.apache.qpid.server.configuration.ConfiguredObject;
@@ -89,21 +88,20 @@ import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.output.ProtocolOutputConverter;
 import org.apache.qpid.server.output.ProtocolOutputConverterRegistry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
 import org.apache.qpid.server.state.AMQState;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.stats.StatisticsCounter;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
-import org.apache.qpid.transport.NetworkDriver;
 import org.apache.qpid.transport.Sender;
+import org.apache.qpid.transport.network.NetworkConnection;
 
-public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocolSession, ConnectionConfig
+public class AMQProtocolEngine implements ServerProtocolEngine, Managable, AMQProtocolSession, ConnectionConfig
 {
     private static final Logger _logger = Logger.getLogger(AMQProtocolEngine.class);
 
     private static final String CLIENT_PROPERTIES_INSTANCE = ClientProperties.instance.toString();
-
-    private static final AtomicLong idGenerator = new AtomicLong(0);
 
     // to save boxing the channelId and looking up in a map... cache in an array the low numbered
     // channels.  This value must be of the form 2^x - 1.
@@ -146,17 +144,14 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
 
     private Map<Integer, Long> _closingChannelsList = new ConcurrentHashMap<Integer, Long>();
     private ProtocolOutputConverter _protocolOutputConverter;
-    private Principal _authorizedID;
+    private Subject _authorizedSubject;
     private MethodDispatcher _dispatcher;
     private ProtocolSessionIdentifier _sessionIdentifier;
 
-    // Create a simple ID that increments for ever new Session
-    private final long _sessionID = idGenerator.getAndIncrement();
+    private final long _sessionID;
 
     private AMQPConnectionActor _actor;
     private LogSubject _logSubject;
-
-    private NetworkDriver _networkDriver;
 
     private long _lastIoTime;
 
@@ -177,20 +172,24 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
     private boolean _statisticsEnabled = false;
     private StatisticsCounter _messagesDelivered, _dataDelivered, _messagesReceived, _dataReceived;
 
+    private final NetworkConnection _network;
+    private final Sender<ByteBuffer> _sender;
+
     public ManagedObject getManagedObject()
     {
         return _managedObject;
     }
 
-    public AMQProtocolEngine(VirtualHostRegistry virtualHostRegistry, NetworkDriver driver)
+    public AMQProtocolEngine(VirtualHostRegistry virtualHostRegistry, NetworkConnection network, final long connectionId)
     {
         _stateManager = new AMQStateManager(virtualHostRegistry, this);
-        _networkDriver = driver;
-
         _codecFactory = new AMQCodecFactory(true, this);
         _poolReference.acquireExecutorService();
         _readJob = new Job(_poolReference, Job.MAX_JOB_EVENTS, true);
         _writeJob = new Job(_poolReference, Job.MAX_JOB_EVENTS, false);
+        _network = network;
+        _sender = _network.getSender();
+        _sessionID = connectionId;
 
         _actor = new AMQPConnectionActor(this, virtualHostRegistry.getApplicationRegistry().getRootMessageLogger());
 
@@ -368,14 +367,14 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
                                                                                        null,
                                                                                        mechanisms.getBytes(),
                                                                                        locales.getBytes());
-            _networkDriver.send(responseBody.generateFrame(0).toNioByteBuffer());
+            _sender.send(responseBody.generateFrame(0).toNioByteBuffer());
 
         }
         catch (AMQException e)
         {
             _logger.info("Received unsupported protocol initiation for protocol version: " + getProtocolVersion());
 
-            _networkDriver.send(new ProtocolInitiation(ProtocolVersion.getLatestSupportedVersion()).toNioByteBuffer());
+            _sender.send(new ProtocolInitiation(ProtocolVersion.getLatestSupportedVersion()).toNioByteBuffer());
         }
     }
 
@@ -496,7 +495,7 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
         {
             public void run()
             {
-                _networkDriver.send(buf);
+                _sender.send(buf);
             }
         });
     }
@@ -688,8 +687,8 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
     {
         if (delay > 0)
         {
-            _networkDriver.setMaxWriteIdle(delay);
-            _networkDriver.setMaxReadIdle((int) (ApplicationRegistry.getInstance().getConfiguration().getHeartBeatTimeout() * delay));
+            _network.setMaxWriteIdle(delay);
+            _network.setMaxReadIdle((int) (ApplicationRegistry.getInstance().getConfiguration().getHeartBeatTimeout() * delay));
         }
     }
 
@@ -793,7 +792,7 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
 
     public void closeProtocolSession()
     {
-        _networkDriver.close();
+        _sender.close();
         try
         {
             _stateManager.changeState(AMQState.CONNECTION_CLOSED);
@@ -806,7 +805,7 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
 
     public String toString()
     {
-        return getRemoteAddress() + "(" + (getAuthorizedID() == null ? "?" : getAuthorizedID().getName() + ")");
+        return getRemoteAddress() + "(" + (getAuthorizedPrincipal() == null ? "?" : getAuthorizedPrincipal().getName() + ")");
     }
 
     public String dump()
@@ -828,16 +827,10 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
      */
     public String getLocalFQDN()
     {
-        SocketAddress address = _networkDriver.getLocalAddress();
-        // we use the vmpipe address in some tests hence the need for this rather ugly test. The host
-        // information is used by SASL primary.
+        SocketAddress address = _network.getLocalAddress();
         if (address instanceof InetSocketAddress)
         {
             return ((InetSocketAddress) address).getHostName();
-        }
-        else if (address instanceof VmPipeAddress)
-        {
-            return "vmpipe:" + ((VmPipeAddress) address).getPort();
         }
         else
         {
@@ -917,7 +910,7 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
 
     public Object getClientIdentifier()
     {
-        return (_networkDriver != null) ? _networkDriver.getRemoteAddress() : null;
+        return _network.getRemoteAddress();
     }
 
     public VirtualHost getVirtualHost()
@@ -959,29 +952,33 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
         return _protocolOutputConverter;
     }
 
-    public void setAuthorizedID(Principal authorizedID)
+    public void setAuthorizedSubject(final Subject authorizedSubject)
     {
-        _authorizedID = authorizedID;
+        if (authorizedSubject == null)
+        {
+            throw new IllegalArgumentException("authorizedSubject cannot be null");
+        }
+        _authorizedSubject = authorizedSubject;
     }
-
-    public Principal getAuthorizedID()
+    
+    public Subject getAuthorizedSubject()
     {
-        return _authorizedID;
+        return _authorizedSubject;
     }
-
-    public Principal getPrincipal()
+    
+    public Principal getAuthorizedPrincipal()
     {
-        return _authorizedID;
+        return _authorizedSubject == null ? null : UsernamePrincipal.getUsernamePrincipalFromSubject(_authorizedSubject);
     }
 
     public SocketAddress getRemoteAddress()
     {
-        return _networkDriver.getRemoteAddress();
+        return _network.getRemoteAddress();
     }
 
     public SocketAddress getLocalAddress()
     {
-        return _networkDriver.getLocalAddress();
+        return _network.getLocalAddress();
     }
 
     public MethodRegistry getMethodRegistry()
@@ -1011,14 +1008,9 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
         // Nothing
     }
 
-    public void setNetworkDriver(NetworkDriver driver)
-    {
-        _networkDriver = driver;
-    }
-
     public void writerIdle()
     {
-        _networkDriver.send(HeartbeatBody.FRAME.toNioByteBuffer());
+        _sender.send(HeartbeatBody.FRAME.toNioByteBuffer());
     }
 
     public void exception(Throwable throwable)
@@ -1026,7 +1018,7 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
         if (throwable instanceof AMQProtocolHeaderException)
         {
             writeFrame(new ProtocolInitiation(ProtocolVersion.getLatestSupportedVersion()));
-            _networkDriver.close();
+            _sender.close();
 
             _logger.error("Error in protocol initiation " + this + ":" + getRemoteAddress() + " :" + throwable.getMessage(), throwable);
         }
@@ -1044,7 +1036,7 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
 
             writeFrame(closeBody.generateFrame(0));
 
-            _networkDriver.close();
+            _sender.close();
         }
     }
 
@@ -1100,7 +1092,7 @@ public class AMQProtocolEngine implements ProtocolEngine, Managable, AMQProtocol
 
     public String getAuthId()
     {
-        return getAuthorizedID().getName();
+        return getAuthorizedPrincipal().getName();
     }
 
     public Integer getRemotePID()

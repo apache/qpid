@@ -1085,7 +1085,7 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
                     ? ((BasicContentHeaderProperties) header.getProperties()).getUserId()
                     : null;
 
-        return (!MSG_AUTH || _session.getPrincipal().getName().equals(userID == null? "" : userID.toString()));
+        return (!MSG_AUTH || _session.getAuthorizedPrincipal().getName().equals(userID == null? "" : userID.toString()));
 
     }
 

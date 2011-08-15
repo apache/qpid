@@ -44,7 +44,7 @@ import org.apache.qpid.server.logging.subjects.QueueLogSubject;
 import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.security.PrincipalHolder;
+import org.apache.qpid.server.security.AuthorizationHolder;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.subscription.SubscriptionList;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
@@ -83,7 +83,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
     /** null means shared */
     private final AMQShortString _owner;
 
-    private PrincipalHolder _prinicpalHolder;
+    private AuthorizationHolder _authorizationHolder;
 
     private boolean _exclusive = false;
     private AMQSessionModel _exclusiveOwner;
@@ -102,9 +102,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
     protected final QueueEntryList _entries;
 
-    protected final SubscriptionList _subscriptionList = new SubscriptionList(this);
-
-    private final AtomicReference<SubscriptionList.SubscriptionNode> _lastSubscriptionNode = new AtomicReference<SubscriptionList.SubscriptionNode>(_subscriptionList.getHead());
+    protected final SubscriptionList _subscriptionList = new SubscriptionList();
 
     private volatile Subscription _exclusiveSubscriber;
 
@@ -375,14 +373,14 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         return _owner;
     }
 
-    public PrincipalHolder getPrincipalHolder()
+    public AuthorizationHolder getAuthorizationHolder()
     {
-        return _prinicpalHolder;
+        return _authorizationHolder;
     }
 
-    public void setPrincipalHolder(PrincipalHolder prinicpalHolder)
+    public void setAuthorizationHolder(final AuthorizationHolder authorizationHolder)
     {
-        _prinicpalHolder = prinicpalHolder;
+        _authorizationHolder = authorizationHolder;
     }
 
 
@@ -612,25 +610,25 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
                 iterate over subscriptions and if any is at the end of the queue and can deliver this message, then deliver the message
 
                  */
-                SubscriptionList.SubscriptionNode node = _lastSubscriptionNode.get();
-                SubscriptionList.SubscriptionNode nextNode = node.getNext();
+                SubscriptionList.SubscriptionNode node = _subscriptionList.getMarkedNode();
+                SubscriptionList.SubscriptionNode nextNode = node.findNext();
                 if (nextNode == null)
                 {
-                    nextNode = _subscriptionList.getHead().getNext();
+                    nextNode = _subscriptionList.getHead().findNext();
                 }
                 while (nextNode != null)
                 {
-                    if (_lastSubscriptionNode.compareAndSet(node, nextNode))
+                    if (_subscriptionList.updateMarkedNode(node, nextNode))
                     {
                         break;
                     }
                     else
                     {
-                        node = _lastSubscriptionNode.get();
-                        nextNode = node.getNext();
+                        node = _subscriptionList.getMarkedNode();
+                        nextNode = node.findNext();
                         if (nextNode == null)
                         {
-                            nextNode = _subscriptionList.getHead().getNext();
+                            nextNode = _subscriptionList.getHead().findNext();
                         }
                     }
                 }
@@ -639,7 +637,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
                 // this catches the case where we *just* miss an update
                 int loops = 2;
 
-                while (!(entry.isAcquired() || entry.isDeleted()) && loops != 0)
+                while (entry.isAvailable() && loops != 0)
                 {
                     if (nextNode == null)
                     {
@@ -652,13 +650,12 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
                         Subscription sub = nextNode.getSubscription();
                         deliverToSubscription(sub, entry);
                     }
-                    nextNode = nextNode.getNext();
-
+                    nextNode = nextNode.findNext();
                 }
+
             }
 
-
-            if (!(entry.isAcquired() || entry.isDeleted()))
+            if (entry.isAvailable())
             {
                 checkSubscriptionsNotAheadOfDelivery(entry);
 
@@ -986,7 +983,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         while (queueListIterator.advance())
         {
             QueueEntry node = queueListIterator.getNode();
-            if (node != null && !node.isDeleted())
+            if (node != null && !node.isDispensed())
             {
                 entryList.add(node);
             }
@@ -1090,7 +1087,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         while (queueListIterator.advance() && !filter.filterComplete())
         {
             QueueEntry node = queueListIterator.getNode();
-            if (!node.isDeleted() && filter.accept(node))
+            if (!node.isDispensed() && filter.accept(node))
             {
                 entryList.add(node);
             }
@@ -1284,7 +1281,6 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
                 if ((messageId >= fromMessageId)
                     && (messageId <= toMessageId)
-                    && !node.isDeleted()
                     && node.acquire())
                 {
                     dequeueEntry(node);
@@ -1314,7 +1310,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         while (noDeletes && queueListIterator.advance())
         {
             QueueEntry node = queueListIterator.getNode();
-            if (!node.isDeleted() && node.acquire())
+            if (node.acquire())
             {
                 dequeueEntry(node);
                 noDeletes = false;
@@ -1344,7 +1340,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         while (queueListIterator.advance())
         {
             QueueEntry node = queueListIterator.getNode();
-            if (!node.isDeleted() && node.acquire())
+            if (node.acquire())
             {
                 dequeueEntry(node, txn);
                 if(++count == request)
@@ -1696,7 +1692,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
             QueueEntry node  = getNextAvailableEntry(sub);
 
-            if (node != null && !(node.isAcquired() || node.isDeleted()))
+            if (node != null && node.isAvailable())
             {
                 if (sub.hasInterest(node))
                 {
@@ -1757,7 +1753,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             QueueEntry node = (releasedNode != null && lastSeen.compareTo(releasedNode)>=0) ? releasedNode : _entries.next(lastSeen);
 
             boolean expired = false;
-            while (node != null && (node.isAcquired() || node.isDeleted() || (expired = node.expired()) || !sub.hasInterest(node)))
+            while (node != null && (!node.isAvailable() || (expired = node.expired()) || !sub.hasInterest(node)))
             {
                 if (expired)
                 {
@@ -1857,12 +1853,10 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
                     subscriptionDone = attemptDelivery(sub);
                     if (subscriptionDone)
                     {
-                            if(getNextAvailableEntry(sub) == null)
+                        if(lastLoop)
                         {
-                                sub.queueEmpty();
+                            sub.queueEmpty();
                         }
-                            deliveryIncomplete = false;
-
                     }
                     else
                     {
@@ -1925,8 +1919,8 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         while (queueListIterator.advance())
         {
             QueueEntry node = queueListIterator.getNode();
-            // Only process nodes that are not currently deleted
-            if (!node.isDeleted())
+            // Only process nodes that are not currently deleted and not dequeued
+            if (!node.isDispensed())
             {
                 // If the node has exired then aquire it
                 if (node.expired() && node.acquire())

@@ -25,66 +25,55 @@ import org.apache.mina.common.CloseFuture;
 import org.apache.mina.common.IoSession;
 import org.apache.mina.common.WriteFuture;
 import org.apache.qpid.transport.Sender;
-import org.apache.qpid.transport.TransportException;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * MinaSender
  */
-
 public class MinaSender implements Sender<java.nio.ByteBuffer>
 {
-    private static final int TIMEOUT = 2 * 60 * 1000;
-
-    private final IoSession session;
-    private WriteFuture lastWrite = null;
+    private static final Logger _log = LoggerFactory.getLogger(MinaSender.class);
+    
+    private final IoSession _session;
+    private WriteFuture _lastWrite;
 
     public MinaSender(IoSession session)
     {
-        this.session = session;
+        _session = session;
     }
 
-    public void send(java.nio.ByteBuffer buf)
+    public synchronized void send(java.nio.ByteBuffer msg)
     {
-        if (session.isClosing())
-        {
-            throw new TransportException("attempted to write to a closed socket");
-        }
+        _log.debug("sending data:");
+        ByteBuffer mina = ByteBuffer.allocate(msg.limit());
+        mina.put(msg);
+        mina.flip();
+        _lastWrite = _session.write(mina);
+        _log.debug("sent data:");
+    }
 
-        synchronized (this)
+    public synchronized void flush()
+    {
+        if (_lastWrite != null)
         {
-            lastWrite = session.write(ByteBuffer.wrap(buf));
+            _lastWrite.join();
         }
     }
 
-    public void flush()
+    public void close()
     {
-        // pass
-    }
-
-    public synchronized void close()
-    {
-        // MINA will sometimes throw away in-progress writes when you
-        // ask it to close
-        synchronized (this)
-        {
-            if (lastWrite != null)
-            {
-                lastWrite.join();
-            }
-        }
-        CloseFuture closed = session.close();
+        // MINA will sometimes throw away in-progress writes when you ask it to close
+        flush();
+        CloseFuture closed = _session.close();
         closed.join();
     }
     
     public void setIdleTimeout(int i)
     {
-      //noop
+        //TODO:
+        //We are instead using the setMax[Read|Write]IdleTime methods in 
+        //MinaNetworkConnection for this. Should remove this method from
+        //sender interface, but currently being used by IoSender for 0-10.
     }
-    
-    public long getIdleTimeout()
-    {
-        return 0;
-    }
-    
 }

@@ -20,14 +20,13 @@
  */
 package org.apache.qpid.server.security.auth.rmi;
 
-import java.util.Collections;
-
 import javax.management.remote.JMXAuthenticator;
 import javax.management.remote.JMXPrincipal;
 import javax.security.auth.Subject;
-import javax.security.auth.login.AccountNotFoundException;
 
-import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
+import org.apache.qpid.server.security.auth.AuthenticationResult;
+import org.apache.qpid.server.security.auth.AuthenticationResult.AuthenticationStatus;
+import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 
 public class RMIPasswordAuthenticator implements JMXAuthenticator
 {
@@ -39,15 +38,15 @@ public class RMIPasswordAuthenticator implements JMXAuthenticator
     static final String CREDENTIALS_REQUIRED = "User details are required. " +
     		            "Please ensure you are using an up to date management console to connect.";
     
-    private PrincipalDatabase _db = null;
+    private AuthenticationManager _authenticationManager = null;
 
     public RMIPasswordAuthenticator()
     {
     }
-    
-    public void setPrincipalDatabase(PrincipalDatabase pd)
+
+    public void setAuthenticationManager(final AuthenticationManager authenticationManager)
     {
-        this._db = pd;
+        _authenticationManager = authenticationManager;
     }
 
     public Subject authenticate(Object credentials) throws SecurityException
@@ -65,50 +64,39 @@ public class RMIPasswordAuthenticator implements JMXAuthenticator
             }
         }
 
-        // Verify that required number of credential's.
+        // Verify that required number of credentials.
         final String[] userCredentials = (String[]) credentials;
         if (userCredentials.length != 2)
         {
             throw new SecurityException(SHOULD_HAVE_2_ELEMENTS);
         }
 
-        String username = (String) userCredentials[0];
-        String password = (String) userCredentials[1];
+        final String username = (String) userCredentials[0];
+        final String password = (String) userCredentials[1];
 
-        // Verify that all required credential's are actually present.
+        // Verify that all required credentials are actually present.
         if (username == null || password == null)
         {
             throw new SecurityException(SHOULD_BE_NON_NULL);
         }
         
-        // Verify that a PD has been set.
-        if (_db == null)
+        // Verify that an AuthenticationManager has been set.
+        if (_authenticationManager == null)
         {
             throw new SecurityException(UNABLE_TO_LOOKUP);
         }
-        
-        boolean authenticated = false;
+        final AuthenticationResult result = _authenticationManager.authenticate(username, password);
 
-        // Perform authentication
-        try
+        if (AuthenticationStatus.ERROR.equals(result.getStatus()))
         {
-            if (_db.verifyPassword(username, password.toCharArray()))
-            {            
-                authenticated = true;
-            }
+            throw new SecurityException("Authentication manager failed", result.getCause());
         }
-        catch (AccountNotFoundException e)
+        else if (AuthenticationStatus.SUCCESS.equals(result.getStatus()))
         {
-            throw new SecurityException(INVALID_CREDENTIALS); // XXX
-        }
-
-        if (authenticated)
-        {
-            //credential's check out, return the appropriate JAAS Subject
-            return new Subject(true,
-                    Collections.singleton(new JMXPrincipal(username)),
-                    Collections.EMPTY_SET,
-                    Collections.EMPTY_SET);
+            final Subject subject = result.getSubject();
+            subject.getPrincipals().add(new JMXPrincipal(username));
+            subject.setReadOnly();
+            return subject;
         }
         else
         {

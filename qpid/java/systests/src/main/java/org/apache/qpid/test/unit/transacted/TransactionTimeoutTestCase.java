@@ -102,7 +102,7 @@ public class TransactionTimeoutTestCase extends QpidBrokerTestCase implements Ex
         super.setUp();
         
         // Connect to broker
-        String broker = _broker.equals(VM) ? ("vm://:" + DEFAULT_VM_PORT) : ("tcp://localhost:" + DEFAULT_PORT);
+        String broker = ("tcp://localhost:" + DEFAULT_PORT);
         ConnectionURL url = new AMQConnectionURL("amqp://guest:guest@clientid/test?brokerlist='" + broker + "'&maxprefetch='1'");
         _con = (AMQConnection) getConnection(url);
         _con.setExceptionListener(this);

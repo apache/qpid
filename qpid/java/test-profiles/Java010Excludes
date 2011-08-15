@@ -77,6 +77,11 @@ org.apache.qpid.test.unit.client.channelclose.ChannelCloseTest#*
 
 //Temporarily adding the following until the issues are sorted out.
 //Should probably raise JIRAs for them.
-org.apache.qpid.transport.network.mina.MINANetworkDriverTest#*
-org.apache.qpid.test.client.destination.AddressBasedDestinationTest#testCreateExchange
 org.apache.qpid.test.client.destination.AddressBasedDestinationTest#testBrowseMode
+
+// QPID-3133: On 0-10, the exception listener is currently not invoked when reconnection fails to occurs. 
+org.apache.qpid.server.failover.FailoverMethodTest#*
+
+// QPID-3392: the Java broker does not yet implement exchange creation arguments
+org.apache.qpid.test.client.destination.AddressBasedDestinationTest#testCreateExchangeWithArgs
+org.apache.qpid.test.client.destination.AddressBasedDestinationTest#testSessionCreateTopicWithExchangeArgs

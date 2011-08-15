@@ -25,8 +25,8 @@ import static org.apache.qpid.transport.Connection.State.CLOSING;
 import static org.apache.qpid.transport.Connection.State.NEW;
 import static org.apache.qpid.transport.Connection.State.OPEN;
 import static org.apache.qpid.transport.Connection.State.OPENING;
-import static org.apache.qpid.transport.Connection.State.RESUMING;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -40,6 +40,13 @@ import java.util.concurrent.atomic.AtomicLong;
 import javax.security.sasl.SaslClient;
 import javax.security.sasl.SaslServer;
 
+import org.apache.qpid.framing.ProtocolVersion;
+import org.apache.qpid.transport.network.Assembler;
+import org.apache.qpid.transport.network.Disassembler;
+import org.apache.qpid.transport.network.InputHandler;
+import org.apache.qpid.transport.network.NetworkConnection;
+import org.apache.qpid.transport.network.OutgoingNetworkTransport;
+import org.apache.qpid.transport.network.Transport;
 import org.apache.qpid.transport.network.security.SecurityLayer;
 import org.apache.qpid.transport.util.Logger;
 import org.apache.qpid.transport.util.Waiter;
@@ -113,15 +120,12 @@ public class Connection extends ConnectionInvoker
     private SaslServer saslServer;
     private SaslClient saslClient;
     private int idleTimeout = 0;
-    private String _authorizationID;
     private Map<String,Object> _serverProperties;
     private String userID;
     private ConnectionSettings conSettings;
     private SecurityLayer securityLayer;
     private String _clientId;
     
-    private static final AtomicLong idGenerator = new AtomicLong(0);
-    private final long _connectionId = idGenerator.incrementAndGet();
     private final AtomicBoolean connectionLost = new AtomicBoolean(false);
     
     public Connection() {}
@@ -235,13 +239,14 @@ public class Connection extends ConnectionInvoker
             state = OPENING;
             userID = settings.getUsername();
             delegate = new ClientDelegate(settings);
-           
-            TransportBuilder transport = new TransportBuilder();
-            transport.init(this);
-            this.sender = transport.buildSenderPipe();
-            transport.buildReceiverPipe(this);
-            this.securityLayer = transport.getSecurityLayer();
-            
+
+            securityLayer = new SecurityLayer(this);
+
+            OutgoingNetworkTransport transport = Transport.getOutgoingTransportInstance(ProtocolVersion.v0_10);
+            Receiver<ByteBuffer> receiver = securityLayer.receiver(new InputHandler(new Assembler(this)));
+            NetworkConnection network = transport.connect(settings, receiver, null);
+            sender = new Disassembler(securityLayer.sender(network.getSender()), settings.getMaxFrameSize());
+
             send(new ProtocolHeader(1, 0, 10));
 
             Waiter w = new Waiter(lock, timeout);
@@ -353,11 +358,6 @@ public class Connection extends ConnectionInvoker
         _sessionFactory = sessionFactory;
     }
 
-    public long getConnectionId()
-    {
-        return _connectionId;
-    }
-
     public ConnectionDelegate getConnectionDelegate()
     {
         return delegate;
@@ -467,11 +467,12 @@ public class Connection extends ConnectionInvoker
     {
         synchronized (lock)
         {
+            List <Binary> transactedSessions = new ArrayList();
             for (Session ssn : sessions.values())
             {
                 if (ssn.isTransacted())
-                {                    
-                    removeSession(ssn);
+                {
+                    transactedSessions.add(ssn.getName());
                     ssn.setState(Session.State.CLOSED);
                 }
                 else
@@ -480,6 +481,11 @@ public class Connection extends ConnectionInvoker
                     ssn.attach();
                     ssn.resume();
                 }
+            }
+            
+            for (Binary ssn_name : transactedSessions)
+            {
+                sessions.remove(ssn_name);
             }
             setState(OPEN);
         }
@@ -644,16 +650,6 @@ public class Connection extends ConnectionInvoker
     public int getIdleTimeout()
     {
         return idleTimeout;
-    }
-
-    public void setAuthorizationID(String authorizationID)
-    {
-        _authorizationID = authorizationID;
-    }
-
-    public String getAuthorizationID()
-    {
-        return _authorizationID;
     }
 
     public String getUserID()

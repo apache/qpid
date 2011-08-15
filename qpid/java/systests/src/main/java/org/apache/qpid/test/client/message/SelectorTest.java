@@ -23,6 +23,7 @@ package org.apache.qpid.test.client.message;
 import java.util.concurrent.CountDownLatch;
 
 import javax.jms.DeliveryMode;
+import javax.jms.Destination;
 import javax.jms.InvalidSelectorException;
 import javax.jms.JMSException;
 import javax.jms.Message;
@@ -30,6 +31,7 @@ import javax.jms.MessageConsumer;
 import javax.jms.MessageListener;
 import javax.jms.MessageProducer;
 import javax.jms.Session;
+import javax.jms.TextMessage;
 
 import junit.framework.Assert;
 
@@ -50,7 +52,6 @@ public class SelectorTest extends QpidBrokerTestCase implements MessageListener
     private AMQConnection _connection;
     private AMQDestination _destination;
     private int count;
-    public String _connectionString = "vm://:1";
     private static final String INVALID_SELECTOR = "Cost LIKE 5";
     CountDownLatch _responseLatch = new CountDownLatch(1);
 
@@ -280,31 +281,36 @@ public class SelectorTest extends QpidBrokerTestCase implements MessageListener
         Assert.assertNotNull("Msg5 should not be null", msg5);
     }
 
-    public static void main(String[] argv) throws Exception
+    public void testSelectorWithJMSDeliveryMode() throws Exception
     {
-        SelectorTest test = new SelectorTest();
-        test._connectionString = (argv.length == 0) ? "localhost:3000" : argv[0];
+        Session session = _connection.createSession(false, Session.SESSION_TRANSACTED);
 
-        try
-        {
-            while (true)
-            {
-                if (test._connectionString.contains("vm://:1"))
-                {
-                    test.setUp();
-                }
-                test.testUsingOnMessage();
+        Destination dest1 = session.createTopic("test1");
+        Destination dest2 = session.createTopic("test2");
 
-                if (test._connectionString.contains("vm://:1"))
-                {
-                    test.tearDown();
-                }
-            }
-        }
-        catch (Exception e)
-        {
-            System.err.println(e.getMessage());
-            e.printStackTrace();
-        }
+        MessageProducer prod1 = session.createProducer(dest1);
+        MessageProducer prod2 = session.createProducer(dest2);
+        MessageConsumer consumer1 = session.createConsumer(dest1,"JMSDeliveryMode = 'PERSISTENT'");
+        MessageConsumer consumer2 = session.createConsumer(dest2,"JMSDeliveryMode = 'NON_PERSISTENT'");
+
+        Message msg1 = session.createTextMessage("Persistent");
+        prod1.send(msg1);
+        prod2.send(msg1);
+
+        prod1.setDeliveryMode(DeliveryMode.NON_PERSISTENT);
+        prod2.setDeliveryMode(DeliveryMode.NON_PERSISTENT);
+
+        Message msg2 = session.createTextMessage("Non_Persistent");
+        prod1.send(msg2);
+        prod2.send(msg2);
+
+        TextMessage m1 = (TextMessage)consumer1.receive(1000);
+        assertEquals("Consumer1 should receive the persistent message","Persistent",m1.getText());
+        assertNull("Consumer1 should not receiver another message",consumer1.receive(1000));
+
+        TextMessage m2 = (TextMessage)consumer2.receive(1000);
+        assertEquals("Consumer2 should receive the non persistent message","Non_Persistent",m2.getText());
+        assertNull("Consumer2 should not receiver another message",consumer2.receive(1000));
     }
+
 }

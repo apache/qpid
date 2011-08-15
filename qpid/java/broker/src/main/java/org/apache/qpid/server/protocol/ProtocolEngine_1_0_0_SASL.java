@@ -32,13 +32,13 @@ import org.apache.qpid.amqp_1_0.transport.FrameOutputHandler;
 import org.apache.qpid.amqp_1_0.type.Binary;
 import org.apache.qpid.amqp_1_0.type.FrameBody;
 
-import org.apache.qpid.protocol.ProtocolEngine;
+import org.apache.qpid.protocol.ServerProtocolEngine;
 import org.apache.qpid.server.configuration.ConfigStore;
 import org.apache.qpid.server.configuration.ConnectionConfigType;
 import org.apache.qpid.server.protocol.v1_0.Connection_1_0;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
-import org.apache.qpid.transport.NetworkDriver;
+import org.apache.qpid.transport.network.NetworkConnection;
 
 import java.io.PrintWriter;
 import java.net.SocketAddress;
@@ -48,15 +48,16 @@ import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-public class ProtocolEngine_1_0_0_SASL implements ProtocolEngine, FrameOutputHandler
+public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOutputHandler
 {
-    private NetworkDriver _networkDriver;
+    private NetworkConnection _networkDriver;
        private long _readBytes;
        private long _writtenBytes;
        private final UUID _id;
        private final IApplicationRegistry _appRegistry;
        private long _createTime = System.currentTimeMillis();
        private ConnectionEndpoint _conn;
+       private long _connectionId = ProtocolEngine_1_0_0._connectionIdSource.getAndIncrement();
 
        private static final int BUF_SIZE = 8;
        private static final ByteBuffer HEADER =
@@ -111,14 +112,14 @@ public class ProtocolEngine_1_0_0_SASL implements ProtocolEngine, FrameOutputHan
        private State _state = State.A;
 
 
-    public ProtocolEngine_1_0_0_SASL(final NetworkDriver networkDriver, final IApplicationRegistry appRegistry)
+    public ProtocolEngine_1_0_0_SASL(final NetworkConnection networkDriver, final IApplicationRegistry appRegistry)
     {
-        _networkDriver = networkDriver;
         _id = appRegistry.getConfigStore().createId();
         _appRegistry = appRegistry;
+        setNetworkDriver(networkDriver);
     }
 
-    public void setNetworkDriver(final NetworkDriver driver)
+    public void setNetworkDriver(final NetworkConnection driver)
     {
         _networkDriver = driver;
         Container container = new Container();
@@ -148,7 +149,7 @@ public class ProtocolEngine_1_0_0_SASL implements ProtocolEngine, FrameOutputHan
             {
                 if(_conn.isAuthenticated())
                 {
-                    _networkDriver.send(PROTOCOL_HEADER.duplicate());
+                    _networkDriver.getSender().send(PROTOCOL_HEADER.duplicate());
                 }
                 else
                 {
@@ -159,7 +160,7 @@ public class ProtocolEngine_1_0_0_SASL implements ProtocolEngine, FrameOutputHan
         _frameWriter =  new FrameWriter(_conn.getDescribedTypeRegistry());
         _frameHandler = new SASLFrameHandler(_conn);
 
-        _networkDriver.send(HEADER.duplicate());
+        _networkDriver.getSender().send(HEADER.duplicate());
 
         _conn.initiateSASL();
 
@@ -399,7 +400,7 @@ public class ProtocolEngine_1_0_0_SASL implements ProtocolEngine, FrameOutputHan
                 RAW_LOGGER.fine("SEND[" + getRemoteAddress() + "] : " + bin.toString());
              }
 
-             _networkDriver.send(dup);
+             _networkDriver.getSender().send(dup);
 
          }
      }
@@ -421,6 +422,9 @@ public class ProtocolEngine_1_0_0_SASL implements ProtocolEngine, FrameOutputHan
          _out = out;
      }
 
-
+     public long getConnectionId()
+     {
+         return _connectionId;
+     }
 
 }

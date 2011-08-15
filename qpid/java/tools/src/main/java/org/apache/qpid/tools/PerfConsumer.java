@@ -20,13 +20,17 @@
  */
 package org.apache.qpid.tools;
 
-import javax.jms.Destination;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+
+import javax.jms.MapMessage;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageListener;
-import javax.jms.MessageProducer;
 import javax.jms.TextMessage;
 
+import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.thread.Threading;
 
 /**
@@ -47,7 +51,7 @@ import org.apache.qpid.thread.Threading;
  * b) They are on separate machines that have their time synced via a Time Server
  *
  * In order to calculate latency the producer inserts a timestamp
- * hen the message is sent. The consumer will note the current time the message is
+ * when the message is sent. The consumer will note the current time the message is
  * received and will calculate the latency as follows
  * latency = rcvdTime - msg.getJMSTimestamp()
  *
@@ -55,13 +59,9 @@ import org.apache.qpid.thread.Threading;
  * variance in latencies.
  *
  * Avg latency is measured by adding all latencies and dividing by the total msgs.
- * You can also compute this by (rcvdTime - testStartTime)/rcvdMsgCount
  *
  * Throughput
  * ===========
- * System throughput is calculated as follows
- * rcvdMsgCount/(rcvdTime - testStartTime)
- *
  * Consumer rate is calculated as
  * rcvdMsgCount/(rcvdTime - startTime)
  *
@@ -81,130 +81,160 @@ public class PerfConsumer extends PerfBase implements MessageListener
     long minLatency = Long.MAX_VALUE;
     long totalLatency = 0;  // to calculate avg latency.
     int rcvdMsgCount = 0;
-    long testStartTime = 0; // to measure system throughput
     long startTime = 0;     // to measure consumer throughput
     long rcvdTime = 0;
     boolean transacted = false;
     int transSize = 0;
 
+    boolean printStdDev = false;
+    List<Long> sample;
+
     final Object lock = new Object();
 
-    public PerfConsumer()
+    public PerfConsumer(String prefix)
     {
-        super();
+        super(prefix);
+        System.out.println("Consumer ID : " + id);
     }
 
     public void setUp() throws Exception
     {
         super.setUp();
         consumer = session.createConsumer(dest);
+        System.out.println("Consumer: " + id + " Receiving messages from : " + ((AMQDestination)dest).getQueueName() + "\n");
 
         // Storing the following two for efficiency
         transacted = params.isTransacted();
         transSize = params.getTransactionSize();
+        printStdDev = params.isPrintStdDev();
+        MapMessage m = controllerSession.createMapMessage();
+        m.setInt(CODE, OPCode.REGISTER_CONSUMER.ordinal());
+        sendMessageToController(m);
     }
 
     public void warmup()throws Exception
     {
-        System.out.println("Warming up......");
-
-        boolean start = false;
-        while (!start)
+        receiveFromController(OPCode.CONSUMER_STARTWARMUP);
+        Message msg = consumer.receive();
+        // This is to ensure we drain the queue before we start the actual test.
+        while ( msg != null)
         {
-            Message msg = consumer.receive();
-            if (msg instanceof TextMessage)
+            if (msg.getBooleanProperty("End") == true)
             {
-                if (((TextMessage)msg).getText().equals("End"))
-                {
-                    start = true;
-                    MessageProducer temp = session.createProducer(msg.getJMSReplyTo());
-                    temp.send(session.createMessage());
-                    if (params.isTransacted())
-                    {
-                        session.commit();
-                    }
-                    temp.close();
-                }
+                // It's more realistic for the consumer to signal this.
+                MapMessage m = controllerSession.createMapMessage();
+                m.setInt(CODE, OPCode.PRODUCER_READY.ordinal());
+                sendMessageToController(m);
             }
-        }
-    }
-
-    public void startTest() throws Exception
-    {
-        System.out.println("Starting test......");
-        consumer.setMessageListener(this);
-    }
-
-    public void printResults() throws Exception
-    {
-        synchronized (lock)
-        {
-            lock.wait();
+            msg = consumer.receive(1000);
         }
 
-        double avgLatency = (double)totalLatency/(double)rcvdMsgCount;
-        double throughput = ((double)rcvdMsgCount/(double)(rcvdTime - testStartTime))*1000;
-        double consRate   = ((double)rcvdMsgCount/(double)(rcvdTime - startTime))*1000;
-        System.out.println(new StringBuilder("Total Msgs Received : ").append(rcvdMsgCount).toString());
-        System.out.println(new StringBuilder("Consumer rate       : ").
-                           append(df.format(consRate)).
-                           append(" msg/sec").toString());
-        System.out.println(new StringBuilder("System Throughput   : ").
-                           append(df.format(throughput)).
-                           append(" msg/sec").toString());
-        System.out.println(new StringBuilder("Avg Latency         : ").
-                           append(df.format(avgLatency)).
-                           append(" ms").toString());
-        System.out.println(new StringBuilder("Min Latency         : ").
-                           append(minLatency).
-                           append(" ms").toString());
-        System.out.println(new StringBuilder("Max Latency         : ").
-                           append(maxLatency).
-                           append(" ms").toString());
-        System.out.println("Completed the test......\n");
-    }
-
-    public void notifyCompletion(Destination replyTo) throws Exception
-    {
-        MessageProducer tmp = session.createProducer(replyTo);
-        Message endMsg = session.createMessage();
-        tmp.send(endMsg);
         if (params.isTransacted())
         {
             session.commit();
         }
-        tmp.close();
+
+        MapMessage m = controllerSession.createMapMessage();
+        m.setInt(CODE, OPCode.CONSUMER_READY.ordinal());
+        sendMessageToController(m);
+        consumer.setMessageListener(this);
     }
 
-    public void tearDown() throws Exception
+    public void startTest() throws Exception
     {
-        consumer.close();
-        session.close();
-        con.close();
+        System.out.println("Consumer: " + id + " Starting test......" + "\n");
+        resetCounters();
+    }
+
+    public void resetCounters()
+    {
+        rcvdMsgCount = 0;
+        maxLatency = 0;
+        minLatency = Long.MAX_VALUE;
+        totalLatency = 0;
+        if (printStdDev)
+        {
+            sample = null;
+            sample = new ArrayList<Long>(params.getMsgCount());
+        }
+    }
+
+    public void sendResults() throws Exception
+    {
+        receiveFromController(OPCode.CONSUMER_STOP);
+
+        double avgLatency = (double)totalLatency/(double)rcvdMsgCount;
+        double consRate   = (double)rcvdMsgCount*Clock.convertToSecs()/(double)(rcvdTime - startTime);
+        double stdDev = 0.0;
+        if (printStdDev)
+        {
+            stdDev = calculateStdDev(avgLatency);
+        }
+        MapMessage m  = controllerSession.createMapMessage();
+        m.setInt(CODE, OPCode.RECEIVED_CONSUMER_STATS.ordinal());
+        m.setDouble(AVG_LATENCY, avgLatency/Clock.convertToMiliSecs());
+        m.setDouble(MIN_LATENCY,minLatency/Clock.convertToMiliSecs());
+        m.setDouble(MAX_LATENCY,maxLatency/Clock.convertToMiliSecs());
+        m.setDouble(STD_DEV, stdDev/Clock.convertToMiliSecs());
+        m.setDouble(CONS_RATE, consRate);
+        m.setLong(MSG_COUNT, rcvdMsgCount);
+        sendMessageToController(m);
+
+        System.out.println(new StringBuilder("Total Msgs Received : ").append(rcvdMsgCount).toString());
+        System.out.println(new StringBuilder("Consumer rate       : ").
+                           append(df.format(consRate)).
+                           append(" msg/sec").toString());
+        System.out.println(new StringBuilder("Avg Latency         : ").
+                           append(df.format(avgLatency/Clock.convertToMiliSecs())).
+                           append(" ms").toString());
+        System.out.println(new StringBuilder("Min Latency         : ").
+                           append(df.format(minLatency/Clock.convertToMiliSecs())).
+                           append(" ms").toString());
+        System.out.println(new StringBuilder("Max Latency         : ").
+                           append(df.format(maxLatency/Clock.convertToMiliSecs())).
+                           append(" ms").toString());
+        if (printStdDev)
+        {
+            System.out.println(new StringBuilder("Std Dev             : ").
+                               append(stdDev/Clock.convertToMiliSecs()).toString());
+        }
+    }
+
+    public double calculateStdDev(double mean)
+    {
+        double v = 0;
+        for (double latency: sample)
+        {
+            v = v + Math.pow((latency-mean), 2);
+        }
+        v = v/sample.size();
+        return Math.round(Math.sqrt(v));
     }
 
     public void onMessage(Message msg)
     {
         try
         {
-            if (msg instanceof TextMessage && ((TextMessage)msg).getText().equals("End"))
+            // To figure out the decoding overhead of text
+            if (msgType == MessageType.TEXT)
             {
-                notifyCompletion(msg.getJMSReplyTo());
+                ((TextMessage)msg).getText();
+            }
 
-                synchronized (lock)
-                {
-                   lock.notifyAll();
-                }
+            if (msg.getBooleanProperty("End"))
+            {
+                MapMessage m = controllerSession.createMapMessage();
+                m.setInt(CODE, OPCode.RECEIVED_END_MSG.ordinal());
+                sendMessageToController(m);
             }
             else
             {
-                rcvdTime = System.currentTimeMillis();
+                rcvdTime = Clock.getTime();
                 rcvdMsgCount ++;
 
                 if (rcvdMsgCount == 1)
                 {
                     startTime = rcvdTime;
-                    testStartTime = msg.getJMSTimestamp();
                 }
 
                 if (transacted && (rcvdMsgCount % transSize == 0))
@@ -212,10 +242,14 @@ public class PerfConsumer extends PerfBase implements MessageListener
                     session.commit();
                 }
 
-                long latency = rcvdTime - msg.getJMSTimestamp();
+                long latency = rcvdTime - msg.getLongProperty(TIMESTAMP);
                 maxLatency = Math.max(maxLatency, latency);
                 minLatency = Math.min(minLatency, latency);
                 totalLatency = totalLatency + latency;
+                if (printStdDev)
+                {
+                    sample.add(latency);
+                }
             }
 
         }
@@ -226,14 +260,21 @@ public class PerfConsumer extends PerfBase implements MessageListener
 
     }
 
-    public void test()
+    public void run()
     {
         try
         {
             setUp();
             warmup();
-            startTest();
-            printResults();
+            boolean nextIteration = true;
+            while (nextIteration)
+            {
+                System.out.println("=========================================================\n");
+                System.out.println("Consumer: " + id + " starting a new iteration ......\n");
+                startTest();
+                sendResults();
+                nextIteration = continueTest();
+            }
             tearDown();
         }
         catch(Exception e)
@@ -242,26 +283,43 @@ public class PerfConsumer extends PerfBase implements MessageListener
         }
     }
 
-    public static void main(String[] args)
+        @Override
+    public void tearDown() throws Exception
     {
-        final PerfConsumer cons = new PerfConsumer();
-        Runnable r = new Runnable()
+        super.tearDown();
+    }
+
+    public static void main(String[] args) throws InterruptedException
+    {
+        String scriptId = (args.length == 1) ? args[0] : "";
+        int conCount = Integer.getInteger("con_count",1);
+        final CountDownLatch testCompleted = new CountDownLatch(conCount);
+        for (int i=0; i < conCount; i++)
         {
-            public void run()
+
+            final PerfConsumer cons = new PerfConsumer(scriptId + i);
+            Runnable r = new Runnable()
             {
-                cons.test();
+                public void run()
+                {
+                    cons.run();
+                    testCompleted.countDown();
+                }
+            };
+
+            Thread t;
+            try
+            {
+                t = Threading.getThreadFactory().createThread(r);
             }
-        };
-        
-        Thread t;
-        try
-        {
-            t = Threading.getThreadFactory().createThread(r);                      
+            catch(Exception e)
+            {
+                throw new Error("Error creating consumer thread",e);
+            }
+            t.start();
+
         }
-        catch(Exception e)
-        {
-            throw new Error("Error creating consumer thread",e);
-        }
-        t.start(); 
+        testCompleted.await();
+        System.out.println("Consumers have completed the test......\n");
     }
 }

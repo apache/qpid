@@ -19,3 +19,5 @@
 include=cpp
 profile.excludes=CPPPrefetchExcludes
 broker.modules=--load-module ${broker.module.store}
+broker.persistent=true
+

@@ -56,9 +56,7 @@ public class AMQBrokerDetails implements BrokerDetails
             if (transport != null)
             {
                 //todo this list of valid transports should be enumerated somewhere
-                if ((!(transport.equalsIgnoreCase(BrokerDetails.VM) ||
-                       transport.equalsIgnoreCase(BrokerDetails.TCP) ||
-                       transport.equalsIgnoreCase(BrokerDetails.SOCKET))))
+                if (!(transport.equalsIgnoreCase(BrokerDetails.TCP)))
                 {
                     if (transport.equalsIgnoreCase("localhost"))
                     {
@@ -182,10 +180,7 @@ public class AMQBrokerDetails implements BrokerDetails
             }
             else
             {
-                if (!_transport.equalsIgnoreCase(SOCKET))
-                {
-                    setPort(port);
-                }
+                setPort(port);
             }
 
             String queryString = connection.getQuery();
@@ -301,17 +296,9 @@ public class AMQBrokerDetails implements BrokerDetails
 
         sb.append(_transport);
         sb.append("://");
-
-        if (!(_transport.equalsIgnoreCase(VM)))
-        {
-            sb.append(_host);
-        }
-
-        if (!(_transport.equalsIgnoreCase(SOCKET)))
-        {
-            sb.append(':');
-            sb.append(_port);
-        }
+        sb.append(_host);
+        sb.append(':');
+        sb.append(_port);
 
         sb.append(printOptionsURL());
 

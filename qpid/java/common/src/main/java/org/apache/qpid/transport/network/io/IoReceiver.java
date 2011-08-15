@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.transport.network.io;
 
+import org.apache.qpid.common.Closeable;
 import org.apache.qpid.thread.Threading;
 import org.apache.qpid.transport.Receiver;
 import org.apache.qpid.transport.TransportException;
@@ -37,41 +38,52 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *
  */
 
-final class IoReceiver implements Runnable
+final class IoReceiver implements Runnable, Closeable
 {
 
     private static final Logger log = Logger.get(IoReceiver.class);
 
-    private final IoContext ioCtx;
     private final Receiver<ByteBuffer> receiver;
     private final int bufferSize;
     private final Socket socket;
     private final long timeout;
     private final AtomicBoolean closed = new AtomicBoolean(false);
     private final Thread receiverThread;
-    private final boolean shutdownBroken =
-        ((String) System.getProperties().get("os.name")).matches("(?i).*windows.*");
-
-    public IoReceiver(IoContext ioCtx, Receiver<ByteBuffer> receiver,
-                      int bufferSize, long timeout)
+    private static final boolean shutdownBroken;
+    static
     {
-        this.ioCtx = ioCtx;
+        String osName = System.getProperty("os.name");
+        shutdownBroken = osName == null ? false : osName.matches("(?i).*windows.*");
+    }
+
+    public IoReceiver(Socket socket, Receiver<ByteBuffer> receiver, int bufferSize, long timeout)
+    {
         this.receiver = receiver;
         this.bufferSize = bufferSize;
-        this.socket = ioCtx.getSocket();
+        this.socket = socket;
         this.timeout = timeout;
 
         try
         {
+            //Create but deliberately don't start the thread.
             receiverThread = Threading.getThreadFactory().createThread(this);
         }
         catch(Exception e)
         {
-            throw new Error("Error creating IOReceiver thread",e);
+            throw new RuntimeException("Error creating IOReceiver thread",e);
         }
         receiverThread.setDaemon(true);
         receiverThread.setName(String.format("IoReceiver - %s", socket.getRemoteSocketAddress()));
+    }
+
+    public void initiate()
+    {
         receiverThread.start();
+    }
+
+    public void close()
+    {
+        close(false);
     }
 
     void close(boolean block)

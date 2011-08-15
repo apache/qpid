@@ -634,6 +634,16 @@ public class AMQMessageDelegate_0_10 extends AbstractAMQMessageDelegate
         {
             return new String(_messageProps.getUserId());
         }
+        else if (QpidMessageProperties.AMQP_0_10_APP_ID.equals(propertyName) &&
+                _messageProps.getAppId() != null)
+        {
+            return new String(_messageProps.getAppId());
+        }
+        else if (QpidMessageProperties.AMQP_0_10_ROUTING_KEY.equals(propertyName) &&
+                _deliveryProps.getRoutingKey() != null)
+        {
+            return _deliveryProps.getRoutingKey();
+        }
         else
         {
             checkPropertyName(propertyName);
@@ -740,7 +750,14 @@ public class AMQMessageDelegate_0_10 extends AbstractAMQMessageDelegate
     {
         checkPropertyName(propertyName);
         checkWritableProperties();
-        setApplicationHeader(propertyName, value);
+        if (QpidMessageProperties.AMQP_0_10_APP_ID.equals(propertyName))
+        {
+            _messageProps.setAppId(value.getBytes());
+        }
+        else
+        {
+            setApplicationHeader(propertyName, value);
+        }
     }
 
     private static final Set<Class> ALLOWED = new HashSet();

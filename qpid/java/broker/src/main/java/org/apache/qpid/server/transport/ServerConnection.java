@@ -22,11 +22,14 @@ package org.apache.qpid.server.transport;
 
 import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.*;
 
+import java.security.Principal;
 import java.text.MessageFormat;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+
+import javax.security.auth.Subject;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.protocol.AMQConstant;
@@ -38,7 +41,8 @@ import org.apache.qpid.server.logging.actors.GenericActor;
 import org.apache.qpid.server.logging.messages.ConnectionMessages;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
-import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.security.AuthorizationHolder;
+import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
 import org.apache.qpid.server.stats.StatisticsCounter;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.transport.Connection;
@@ -49,20 +53,22 @@ import org.apache.qpid.transport.Method;
 import org.apache.qpid.transport.ProtocolEvent;
 import org.apache.qpid.transport.Session;
 
-public class ServerConnection extends Connection implements AMQConnectionModel, LogSubject
+public class ServerConnection extends Connection implements AMQConnectionModel, LogSubject, AuthorizationHolder
 {
     private ConnectionConfig _config;
     private Runnable _onOpenTask;
     private AtomicBoolean _logClosed = new AtomicBoolean(false);
     private LogActor _actor = GenericActor.getInstance(this);
 
-    private ApplicationRegistry _registry;
+    private Subject _authorizedSubject = null;
+    private Principal _authorizedPrincipal = null;
     private boolean _statisticsEnabled = false;
     private StatisticsCounter _messagesDelivered, _dataDelivered, _messagesReceived, _dataReceived;
+    private final long _connectionId;
     
-    public ServerConnection()
+    public ServerConnection(final long connectionId)
     {
-
+        _connectionId = connectionId;
     }
 
     public UUID getId()
@@ -212,9 +218,9 @@ public class ServerConnection extends Connection implements AMQConnectionModel, 
     public String toLogString()
     {
         boolean hasVirtualHost = (null != this.getVirtualHost());
-        boolean hasPrincipal = (null != getAuthorizationID());
+        boolean hasClientId = (null != getClientId());
 
-        if (hasPrincipal && hasVirtualHost)
+        if (hasClientId && hasVirtualHost)
         {
             return "[" +
                     MessageFormat.format(CONNECTION_FORMAT,
@@ -224,7 +230,7 @@ public class ServerConnection extends Connection implements AMQConnectionModel, 
                                          getVirtualHost().getName())
                  + "] ";
         }
-        else if (hasPrincipal)
+        else if (hasClientId)
         {
             return "[" +
                     MessageFormat.format(USER_FORMAT,
@@ -249,7 +255,6 @@ public class ServerConnection extends Connection implements AMQConnectionModel, 
         return _actor;
     }
 
-    @Override
     public void close(AMQConstant cause, String message) throws AMQException
     {
         ConnectionCloseCode replyCode = ConnectionCloseCode.NORMAL;
@@ -264,7 +269,6 @@ public class ServerConnection extends Connection implements AMQConnectionModel, 
         close(replyCode, message);
     }
 
-    @Override
     public List<AMQSessionModel> getSessionModels()
     {
         List<AMQSessionModel> sessions = new ArrayList<AMQSessionModel>();
@@ -342,5 +346,43 @@ public class ServerConnection extends Connection implements AMQConnectionModel, 
     public void setStatisticsEnabled(boolean enabled)
     {
         _statisticsEnabled = enabled;
+    }
+
+    /**
+     * @return authorizedSubject
+     */
+    public Subject getAuthorizedSubject()
+    {
+        return _authorizedSubject;
+    }
+
+    /**
+     * Sets the authorized subject.  It also extracts the UsernamePrincipal from the subject
+     * and caches it for optimisation purposes.
+     *
+     * @param authorizedSubject
+     */
+    public void setAuthorizedSubject(final Subject authorizedSubject)
+    {
+        if (authorizedSubject == null)
+        {
+            _authorizedSubject = null;
+            _authorizedPrincipal = null;
+        }
+        else
+        {
+            _authorizedSubject = authorizedSubject;
+            _authorizedPrincipal = UsernamePrincipal.getUsernamePrincipalFromSubject(_authorizedSubject);
+        }
+    }
+
+    public Principal getAuthorizedPrincipal()
+    {
+        return _authorizedPrincipal;
+    }
+
+    public long getConnectionId()
+    {
+        return _connectionId;
     }
 }

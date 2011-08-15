@@ -46,10 +46,14 @@ class MockServerMessage implements ServerMessage<MockServerMessage>
         this.persistent = persistent;
     }
 
-
     public boolean isPersistent()
     {
         return persistent;
+    }
+
+    public boolean isImmediate()
+    {
+        return false;
     }
 
 
@@ -57,13 +61,6 @@ class MockServerMessage implements ServerMessage<MockServerMessage>
     {
         throw new NotImplementedException();
     }
-
-
-    public boolean isImmediate()
-    {
-        throw new NotImplementedException();
-    }
-
 
     public long getSize()
     {
@@ -76,36 +73,30 @@ class MockServerMessage implements ServerMessage<MockServerMessage>
         throw new NotImplementedException();
     }
 
-
     public String getRoutingKey()
     {
         throw new NotImplementedException();
     }
-
 
     public AMQMessageHeader getMessageHeader()
     {
         throw new NotImplementedException();
     }
 
-
     public long getExpiration()
     {
         throw new NotImplementedException();
     }
-
 
     public int getContent(ByteBuffer buf, int offset)
     {
         throw new NotImplementedException();
     }
 
-
     public long getArrivalTime()
     {
         throw new NotImplementedException();
     }
-
 
     public Long getMessageNumber()
     {

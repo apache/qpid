@@ -28,12 +28,19 @@ import java.net.InetSocketAddress;
 
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.ConfigurationFileApplicationRegistry;
-import org.apache.qpid.server.util.InternalBrokerBaseCase;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
+import org.apache.qpid.test.utils.QpidTestCase;
 
-public class FirewallConfigurationTest extends InternalBrokerBaseCase
+public class FirewallConfigurationTest extends QpidTestCase
 {
+    @Override
+    protected void tearDown() throws Exception
+    {
+        super.tearDown();
+        ApplicationRegistry.remove();
+    }
+
     public void testFirewallConfiguration() throws Exception
     {
         // Write out config
@@ -43,18 +50,11 @@ public class FirewallConfigurationTest extends InternalBrokerBaseCase
 
         // Load config
         ApplicationRegistry reg = new ConfigurationFileApplicationRegistry(mainFile);
-        try
-        {
-            ApplicationRegistry.initialise(reg, 1);
+        ApplicationRegistry.initialise(reg);
 
-            // Test config
-            assertFalse(reg.getSecurityManager().accessVirtualhost("test", new InetSocketAddress("127.0.0.1", 65535)));
-            assertTrue(reg.getSecurityManager().accessVirtualhost("test", new InetSocketAddress("127.1.2.3", 65535)));
-        }
-        finally
-        {
-            ApplicationRegistry.remove(1);
-        }
+        // Test config
+        assertFalse(reg.getSecurityManager().accessVirtualhost("test", new InetSocketAddress("127.0.0.1", 65535)));
+        assertTrue(reg.getSecurityManager().accessVirtualhost("test", new InetSocketAddress("127.1.2.3", 65535)));
     }
 
     public void testCombinedConfigurationFirewall() throws Exception
@@ -80,9 +80,8 @@ public class FirewallConfigurationTest extends InternalBrokerBaseCase
         out.write("\t<cache-directory>${QPID_WORK}/cache</cache-directory>\n");
         out.write("\t<management><enabled>false</enabled></management>\n");
         out.write("\t<security>\n");
-        out.write("\t\t<principal-databases>\n");
+        out.write("\t\t<pd-auth-manager>\n");
         out.write("\t\t\t<principal-database>\n");
-        out.write("\t\t\t\t<name>passwordfile</name>\n");
         out.write("\t\t\t\t<class>org.apache.qpid.server.security.auth.database.PlainPasswordFilePrincipalDatabase</class>\n");
         out.write("\t\t\t\t<attributes>\n");
         out.write("\t\t\t\t\t<attribute>\n");
@@ -91,11 +90,7 @@ public class FirewallConfigurationTest extends InternalBrokerBaseCase
         out.write("\t\t\t\t\t</attribute>\n");
         out.write("\t\t\t\t</attributes>\n");
         out.write("\t\t\t</principal-database>\n");
-        out.write("\t\t</principal-databases>\n");
-        out.write("\t\t<jmx>\n");
-        out.write("\t\t\t<access>/dev/null</access>\n");
-        out.write("\t\t\t<principal-database>passwordfile</principal-database>\n");
-        out.write("\t\t</jmx>\n");
+        out.write("\t\t</pd-auth-manager>\n");
         out.write("\t\t<firewall>\n");
         out.write("\t\t\t<xml fileName=\"" + fileB.getAbsolutePath() + "\"/>");
         out.write("\t\t</firewall>\n");
@@ -116,17 +111,10 @@ public class FirewallConfigurationTest extends InternalBrokerBaseCase
 
         // Load config
         ApplicationRegistry reg = new ConfigurationFileApplicationRegistry(mainFile);
-        try
-        {
-            ApplicationRegistry.initialise(reg, 1);
+        ApplicationRegistry.initialise(reg);
 
-            // Test config
-            assertFalse(reg.getSecurityManager().accessVirtualhost("test", new InetSocketAddress("127.0.0.1", 65535)));
-        }
-        finally
-        {
-            ApplicationRegistry.remove(1);
-        }
+        // Test config
+        assertFalse(reg.getSecurityManager().accessVirtualhost("test", new InetSocketAddress("127.0.0.1", 65535)));
     }
 
     public void testConfigurationFirewallReload() throws Exception
@@ -139,24 +127,17 @@ public class FirewallConfigurationTest extends InternalBrokerBaseCase
 
         // Load config
         ApplicationRegistry reg = new ConfigurationFileApplicationRegistry(mainFile);
-        try
-        {
-            ApplicationRegistry.initialise(reg, 1);
+        ApplicationRegistry.initialise(reg);
 
-            // Test config
-            assertFalse(reg.getSecurityManager().accessVirtualhost("test", new InetSocketAddress("127.0.0.1", 65535)));
+        // Test config
+        assertFalse(reg.getSecurityManager().accessVirtualhost("test", new InetSocketAddress("127.0.0.1", 65535)));
 
-            // Switch to deny the connection
-            writeConfigFile(mainFile, true);
+        // Switch to deny the connection
+        writeConfigFile(mainFile, true);
 
-            reg.getConfiguration().reparseConfigFileSecuritySections();
+        reg.getConfiguration().reparseConfigFileSecuritySections();
 
-            assertTrue(reg.getSecurityManager().accessVirtualhost("test", new InetSocketAddress("127.0.0.1", 65535)));
-        }
-        finally
-        {
-            ApplicationRegistry.remove(1);
-        }
+        assertTrue(reg.getSecurityManager().accessVirtualhost("test", new InetSocketAddress("127.0.0.1", 65535)));
     }
 
     public void testCombinedConfigurationFirewallReload() throws Exception
@@ -181,9 +162,8 @@ public class FirewallConfigurationTest extends InternalBrokerBaseCase
         out.write("\t<plugin-directory>${QPID_HOME}/lib/plugins</plugin-directory>\n");
         out.write("\t<management><enabled>false</enabled></management>\n");
         out.write("\t<security>\n");
-        out.write("\t\t<principal-databases>\n");
+        out.write("\t\t<pd-auth-manager>\n");
         out.write("\t\t\t<principal-database>\n");
-        out.write("\t\t\t\t<name>passwordfile</name>\n");
         out.write("\t\t\t\t<class>org.apache.qpid.server.security.auth.database.PlainPasswordFilePrincipalDatabase</class>\n");
         out.write("\t\t\t\t<attributes>\n");
         out.write("\t\t\t\t\t<attribute>\n");
@@ -192,11 +172,7 @@ public class FirewallConfigurationTest extends InternalBrokerBaseCase
         out.write("\t\t\t\t\t</attribute>\n");
         out.write("\t\t\t\t</attributes>\n");
         out.write("\t\t\t</principal-database>\n");
-        out.write("\t\t</principal-databases>\n");
-        out.write("\t\t<jmx>\n");
-        out.write("\t\t\t<access>/dev/null</access>\n");
-        out.write("\t\t\t<principal-database>passwordfile</principal-database>\n");
-        out.write("\t\t</jmx>\n");
+        out.write("\t\t</pd-auth-manager>\n");
         out.write("\t\t<firewall>\n");
         out.write("\t\t\t<xml fileName=\"" + fileB.getAbsolutePath() + "\"/>");
         out.write("\t\t</firewall>\n");
@@ -217,47 +193,40 @@ public class FirewallConfigurationTest extends InternalBrokerBaseCase
 
         // Load config
         ApplicationRegistry reg = new ConfigurationFileApplicationRegistry(mainFile);
-        try
-        {
-            ApplicationRegistry.initialise(reg, 1);
+        ApplicationRegistry.initialise(reg);
 
-            // Test config
-            assertFalse(reg.getSecurityManager().accessVirtualhost("test", new InetSocketAddress("127.0.0.1", 65535)));
+        // Test config
+        assertFalse(reg.getSecurityManager().accessVirtualhost("test", new InetSocketAddress("127.0.0.1", 65535)));
 
-            RandomAccessFile fileBRandom = new RandomAccessFile(fileB, "rw");
-            fileBRandom.setLength(0);
-            fileBRandom.seek(0);
-            fileBRandom.close();
+        RandomAccessFile fileBRandom = new RandomAccessFile(fileB, "rw");
+        fileBRandom.setLength(0);
+        fileBRandom.seek(0);
+        fileBRandom.close();
 
-            out = new FileWriter(fileB);
-            out.write("<firewall>\n");
-            out.write("\t<rule access=\"allow\" network=\"127.0.0.1\"/>");
-            out.write("</firewall>\n");
-            out.close();
+        out = new FileWriter(fileB);
+        out.write("<firewall>\n");
+        out.write("\t<rule access=\"allow\" network=\"127.0.0.1\"/>");
+        out.write("</firewall>\n");
+        out.close();
 
-            reg.getConfiguration().reparseConfigFileSecuritySections();
+        reg.getConfiguration().reparseConfigFileSecuritySections();
 
-            assertTrue(reg.getSecurityManager().accessVirtualhost("test", new InetSocketAddress("127.0.0.1", 65535)));
+        assertTrue(reg.getSecurityManager().accessVirtualhost("test", new InetSocketAddress("127.0.0.1", 65535)));
 
-            fileBRandom = new RandomAccessFile(fileB, "rw");
-            fileBRandom.setLength(0);
-            fileBRandom.seek(0);
-            fileBRandom.close();
+        fileBRandom = new RandomAccessFile(fileB, "rw");
+        fileBRandom.setLength(0);
+        fileBRandom.seek(0);
+        fileBRandom.close();
 
-            out = new FileWriter(fileB);
-            out.write("<firewall>\n");
-            out.write("\t<rule access=\"deny\" network=\"127.0.0.1\"/>");
-            out.write("</firewall>\n");
-            out.close();
+        out = new FileWriter(fileB);
+        out.write("<firewall>\n");
+        out.write("\t<rule access=\"deny\" network=\"127.0.0.1\"/>");
+        out.write("</firewall>\n");
+        out.close();
 
-            reg.getConfiguration().reparseConfigFileSecuritySections();
+        reg.getConfiguration().reparseConfigFileSecuritySections();
 
-            assertFalse(reg.getSecurityManager().accessVirtualhost("test", new InetSocketAddress("127.0.0.1", 65535)));
-        }
-        finally
-        {
-            ApplicationRegistry.remove(1);
-        }
+        assertFalse(reg.getSecurityManager().accessVirtualhost("test", new InetSocketAddress("127.0.0.1", 65535)));
     }
 
     private void writeFirewallVhostsFile(File vhostsFile, boolean allow) throws IOException
@@ -291,9 +260,8 @@ public class FirewallConfigurationTest extends InternalBrokerBaseCase
         out.write("\t<plugin-directory>${QPID_HOME}/lib/plugins</plugin-directory>\n");
         out.write("\t<management><enabled>false</enabled></management>\n");
         out.write("\t<security>\n");
-        out.write("\t\t<principal-databases>\n");
+        out.write("\t\t<pd-auth-manager>\n");
         out.write("\t\t\t<principal-database>\n");
-        out.write("\t\t\t\t<name>passwordfile</name>\n");
         out.write("\t\t\t\t<class>org.apache.qpid.server.security.auth.database.PlainPasswordFilePrincipalDatabase</class>\n");
         out.write("\t\t\t\t<attributes>\n");
         out.write("\t\t\t\t\t<attribute>\n");
@@ -302,11 +270,7 @@ public class FirewallConfigurationTest extends InternalBrokerBaseCase
         out.write("\t\t\t\t\t</attribute>\n");
         out.write("\t\t\t\t</attributes>\n");
         out.write("\t\t\t</principal-database>\n");
-        out.write("\t\t</principal-databases>\n");
-        out.write("\t\t<jmx>\n");
-        out.write("\t\t\t<access>/dev/null</access>\n");
-        out.write("\t\t\t<principal-database>passwordfile</principal-database>\n");
-        out.write("\t\t</jmx>\n");
+        out.write("\t\t</pd-auth-manager>\n");
         out.write("\t\t<firewall>\n");
         out.write("\t\t\t<rule access=\""+ ((allow) ? "allow" : "deny") +"\" network=\"127.0.0.1\"/>");
         out.write("\t\t</firewall>\n");
@@ -346,8 +310,8 @@ public class FirewallConfigurationTest extends InternalBrokerBaseCase
 
         // Load config
         ApplicationRegistry reg = new ConfigurationFileApplicationRegistry(mainFile);
-        ApplicationRegistry.initialise(reg, 1);
-
+        ApplicationRegistry.initialise(reg);
+    
         // Test config
         VirtualHostRegistry virtualHostRegistry = reg.getVirtualHostRegistry();
         VirtualHost virtualHost = virtualHostRegistry.getVirtualHost("test");

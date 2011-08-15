@@ -20,6 +20,10 @@
 
 package org.apache.qpid.framing;
 
+import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
+import java.util.List;
+
 import junit.framework.TestCase;
 public class AMQShortStringTest extends TestCase
 {
@@ -105,5 +109,215 @@ public class AMQShortStringTest extends TestCase
         assertFalse(new AMQShortString("A").equals(new AMQShortString("a")));
     }
 
+    /**
+     * Test method for
+     * {@link org.apache.qpid.framing.AMQShortString#AMQShortString(byte[])}.
+     */
+    public void testCreateAMQShortStringByteArray()
+    {
+        byte[] bytes = null;
+        try
+        {
+            bytes = "test".getBytes("UTF-8");
+        }
+        catch (UnsupportedEncodingException e)
+        {
+            fail("UTF-8 encoding is not supported anymore by JVM:" + e.getMessage());
+        }
+        AMQShortString string = new AMQShortString(bytes);
+        assertEquals("constructed amq short string length differs from expected", 4, string.length());
+        assertTrue("constructed amq short string differs from expected", string.equals("test"));
+    }
+
+    /**
+     * Test method for
+     * {@link org.apache.qpid.framing.AMQShortString#AMQShortString(java.lang.String)}
+     * <p>
+     * Tests short string construction from string with length less than 255.
+     */
+    public void testCreateAMQShortStringString()
+    {
+        AMQShortString string = new AMQShortString("test");
+        assertEquals("constructed amq short string length differs from expected", 4, string.length());
+        assertTrue("constructed amq short string differs from expected", string.equals("test"));
+    }
+
+    /**
+     * Test method for
+     * {@link org.apache.qpid.framing.AMQShortString#AMQShortString(char[])}.
+     * <p>
+     * Tests short string construction from char array with length less than 255.
+     */
+    public void testCreateAMQShortStringCharArray()
+    {
+        char[] chars = "test".toCharArray();
+        AMQShortString string = new AMQShortString(chars);
+        assertEquals("constructed amq short string length differs from expected", 4, string.length());
+        assertTrue("constructed amq short string differs from expected", string.equals("test"));
+    }
+
+    /**
+     * Test method for
+     * {@link org.apache.qpid.framing.AMQShortString#AMQShortString(java.lang.CharSequence)}
+     * <p>
+     * Tests short string construction from char sequence with length less than 255.
+     */
+    public void testCreateAMQShortStringCharSequence()
+    {
+        AMQShortString string = new AMQShortString((CharSequence) "test");
+        assertEquals("constructed amq short string length differs from expected", 4, string.length());
+        assertTrue("constructed amq short string differs from expected", string.equals("test"));
+    }
+
+    /**
+     * Test method for
+     * {@link org.apache.qpid.framing.AMQShortString#AMQShortString(byte[])}.
+     * <p>
+     * Tests an attempt to create an AMQP short string from byte array with length over 255.
+     */
+    public void testCreateAMQShortStringByteArrayOver255()
+    {
+        String test = buildString('a', 256);
+        byte[] bytes = null;
+        try
+        {
+            bytes = test.getBytes("UTF-8");
+        }
+        catch (UnsupportedEncodingException e)
+        {
+            fail("UTF-8 encoding is not supported anymore by JVM:" + e.getMessage());
+        }
+        try
+        {
+            new AMQShortString(bytes);
+            fail("It should not be possible to create AMQShortString with length over 255");
+        }
+        catch (IllegalArgumentException e)
+        {
+            assertEquals("Exception message differs from expected",
+                    "Cannot create AMQShortString with number of octets over 255!", e.getMessage());
+        }
+    }
+
+    /**
+     * Test method for
+     * {@link org.apache.qpid.framing.AMQShortString#AMQShortString(java.lang.String)}
+     * <p>
+     * Tests an attempt to create an AMQP short string from string with length over 255
+     */
+    public void testCreateAMQShortStringStringOver255()
+    {
+        String test = buildString('a', 256);
+        try
+        {
+            new AMQShortString(test);
+            fail("It should not be possible to create AMQShortString with length over 255");
+        }
+        catch (IllegalArgumentException e)
+        {
+            assertEquals("Exception message differs from expected",
+                    "Cannot create AMQShortString with number of octets over 255!", e.getMessage());
+        }
+    }
+
+    /**
+     * Test method for
+     * {@link org.apache.qpid.framing.AMQShortString#AMQShortString(char[])}.
+     * <p>
+     * Tests an attempt to create an AMQP short string from char array with length over 255.
+     */
+    public void testCreateAMQShortStringCharArrayOver255()
+    {
+        String test = buildString('a', 256);
+        char[] chars = test.toCharArray();
+        try
+        {
+            new AMQShortString(chars);
+            fail("It should not be possible to create AMQShortString with length over 255");
+        }
+        catch (IllegalArgumentException e)
+        {
+            assertEquals("Exception message differs from expected",
+                    "Cannot create AMQShortString with number of octets over 255!", e.getMessage());
+        }
+    }
+
+    /**
+     * Test method for
+     * {@link org.apache.qpid.framing.AMQShortString#AMQShortString(java.lang.CharSequence)}
+     * <p>
+     * Tests an attempt to create an AMQP short string from char sequence with length over 255.
+     */
+    public void testCreateAMQShortStringCharSequenceOver255()
+    {
+        String test = buildString('a', 256);
+        try
+        {
+            new AMQShortString((CharSequence) test);
+            fail("It should not be possible to create AMQShortString with length over 255");
+        }
+        catch (IllegalArgumentException e)
+        {
+            assertEquals("Exception message differs from expected",
+                    "Cannot create AMQShortString with number of octets over 255!", e.getMessage());
+        }
+    }
+
+    /**
+     * Tests joining of short strings into a short string with length over 255.
+     */
+    public void testJoinOverflow()
+    {
+        List<AMQShortString> data = new ArrayList<AMQShortString>();
+        for (int i = 0; i < 25; i++)
+        {
+            data.add(new AMQShortString("test data!"));
+        }
+        try
+        {
+            AMQShortString.join(data, new AMQShortString(" "));
+            fail("It should not be possible to create AMQShortString with length over 255");
+        }
+        catch (IllegalArgumentException e)
+        {
+            assertEquals("Exception message differs from expected",
+                    "Cannot create AMQShortString with number of octets over 255!", e.getMessage());
+        }
+    }
+
+    /**
+     * Tests joining of short strings into a short string with length less than 255.
+     */
+    public void testJoin()
+    {
+        StringBuilder expected = new StringBuilder();
+        List<AMQShortString> data = new ArrayList<AMQShortString>();
+        data.add(new AMQShortString("test data 1"));
+        expected.append("test data 1");
+        data.add(new AMQShortString("test data 2"));
+        expected.append(" test data 2");
+        AMQShortString result = AMQShortString.join(data, new AMQShortString(" "));
+        assertEquals("join result differs from expected", expected.toString(), result.asString());
+    }
+
+    /**
+     * A helper method to generate a string with given length containing given
+     * character
+     *
+     * @param ch
+     *            char to build string with
+     * @param length
+     *            target string length
+     * @return string
+     */
+    private String buildString(char ch, int length)
+    {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < length; i++)
+        {
+            sb.append(ch);
+        }
+        return sb.toString();
+    }
 
 }

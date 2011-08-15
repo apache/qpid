@@ -65,7 +65,6 @@ public class ConnectionStartOkMethodHandler implements StateAwareMethodListener<
         _logger.info("Locale selected: " + body.getLocale());
 
         AuthenticationManager authMgr = ApplicationRegistry.getInstance().getAuthenticationManager();
-
         SaslServer ss = null;
         try
         {                       
@@ -78,8 +77,7 @@ public class ConnectionStartOkMethodHandler implements StateAwareMethodListener<
 
             session.setSaslServer(ss);
 
-            AuthenticationResult authResult = authMgr.authenticate(ss, body.getResponse());
-
+            final AuthenticationResult authResult = authMgr.authenticate(ss, body.getResponse());
             //save clientProperties
             if (session.getClientProperties() == null)
             {
@@ -88,7 +86,7 @@ public class ConnectionStartOkMethodHandler implements StateAwareMethodListener<
 
             MethodRegistry methodRegistry = session.getMethodRegistry();
 
-            switch (authResult.status)
+            switch (authResult.getStatus())
             {
                 case ERROR:
                     Exception cause = authResult.getCause();
@@ -108,8 +106,11 @@ public class ConnectionStartOkMethodHandler implements StateAwareMethodListener<
                     break;
 
                 case SUCCESS:
-                    _logger.info("Connected as: " + ss.getAuthorizationID());
-                    session.setAuthorizedID(new UsernamePrincipal(ss.getAuthorizationID()));
+                    if (_logger.isInfoEnabled())
+                    {
+                        _logger.info("Connected as: " + UsernamePrincipal.getUsernamePrincipalFromSubject(authResult.getSubject()));
+                    }
+                    session.setAuthorizedSubject(authResult.getSubject());
 
                     stateManager.changeState(AMQState.CONNECTION_NOT_TUNED);
 
@@ -121,7 +122,7 @@ public class ConnectionStartOkMethodHandler implements StateAwareMethodListener<
                 case CONTINUE:
                     stateManager.changeState(AMQState.CONNECTION_NOT_AUTH);
 
-                    ConnectionSecureBody secureBody = methodRegistry.createConnectionSecureBody(authResult.challenge);
+                    ConnectionSecureBody secureBody = methodRegistry.createConnectionSecureBody(authResult.getChallenge());
                     session.writeFrame(secureBody.generateFrame(0));
             }
         }
