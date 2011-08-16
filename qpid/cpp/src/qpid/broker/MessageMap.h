@@ -47,6 +47,7 @@ class MessageMap : public Messages
     virtual bool remove(const framing::SequenceNumber&, QueuedMessage&);
     bool find(const framing::SequenceNumber&, QueuedMessage&);
     virtual bool next(const framing::SequenceNumber&, QueuedMessage&);
+    virtual bool next(const QueuedMessage&, QueuedMessage&);
 
     QueuedMessage& front();
     void pop();

@@ -74,6 +74,11 @@ bool MessageDeque::find(const framing::SequenceNumber& position, QueuedMessage& 
     return find(position, message, false);
 }
 
+bool MessageDeque::next(const QueuedMessage& message, QueuedMessage& next)
+{
+    return this->next(message.position, next);
+}
+
 bool MessageDeque::next(const framing::SequenceNumber& position, QueuedMessage& message)
 {
     if (messages.empty()) {

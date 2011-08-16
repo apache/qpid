@@ -56,12 +56,12 @@ class TestConsumer : public virtual Consumer{
 public:
     typedef boost::shared_ptr<TestConsumer> shared_ptr;
 
-    intrusive_ptr<Message> last;
+    QueuedMessage last;
     bool received;
-    TestConsumer(bool acquire = true):Consumer("test", acquire), received(false) {};
+    TestConsumer(std::string name="test", bool acquire = true):Consumer(name, acquire), received(false) {};
 
     virtual bool deliver(QueuedMessage& msg){
-        last = msg.payload;
+        last = msg;
         received = true;
         return true;
     };
@@ -148,16 +148,16 @@ QPID_AUTO_TEST_CASE(testConsumers){
 
     queue->deliver(msg1);
     BOOST_CHECK(queue->dispatch(c1));
-    BOOST_CHECK_EQUAL(msg1.get(), c1->last.get());
+    BOOST_CHECK_EQUAL(msg1.get(), c1->last.payload.get());
 
     queue->deliver(msg2);
     BOOST_CHECK(queue->dispatch(c2));
-    BOOST_CHECK_EQUAL(msg2.get(), c2->last.get());
+    BOOST_CHECK_EQUAL(msg2.get(), c2->last.payload.get());
 
     c1->received = false;
     queue->deliver(msg3);
     BOOST_CHECK(queue->dispatch(c1));
-    BOOST_CHECK_EQUAL(msg3.get(), c1->last.get());
+    BOOST_CHECK_EQUAL(msg3.get(), c1->last.payload.get());
 
     //Test cancellation:
     queue->cancel(c1);
@@ -213,7 +213,7 @@ QPID_AUTO_TEST_CASE(testDequeue){
     if (!consumer->received)
         sleep(2);
 
-    BOOST_CHECK_EQUAL(msg3.get(), consumer->last.get());
+    BOOST_CHECK_EQUAL(msg3.get(), consumer->last.payload.get());
     BOOST_CHECK_EQUAL(uint32_t(0), queue->getMessageCount());
 
     received = queue->get().payload;
@@ -297,14 +297,14 @@ QPID_AUTO_TEST_CASE(testSeek){
     queue->deliver(msg2);
     queue->deliver(msg3);
 
-    TestConsumer::shared_ptr consumer(new TestConsumer(false));
+    TestConsumer::shared_ptr consumer(new TestConsumer("test", false));
     SequenceNumber seq(2);
     consumer->position = seq;
 
     QueuedMessage qm;
     queue->dispatch(consumer);
 
-    BOOST_CHECK_EQUAL(msg3.get(), consumer->last.get());
+    BOOST_CHECK_EQUAL(msg3.get(), consumer->last.payload.get());
     queue->dispatch(consumer);
     queue->dispatch(consumer); // make sure over-run is safe
 
@@ -571,7 +571,7 @@ QPID_AUTO_TEST_CASE(testLVQAcquire){
     // set mode to no browse and check
     args.setOrdering(client::LVQ_NO_BROWSE);
     queue->configure(args);
-    TestConsumer::shared_ptr c1(new TestConsumer(false));
+    TestConsumer::shared_ptr c1(new TestConsumer("test", false));
 
     queue->dispatch(c1);
     queue->dispatch(c1);
@@ -703,6 +703,67 @@ QPID_AUTO_TEST_CASE(testQueueCleaner) {
     BOOST_CHECK_EQUAL(queue->getMessageCount(), 5u);
     ::usleep(300*1000);
     BOOST_CHECK_EQUAL(queue->getMessageCount(), 0u);
+}
+
+QPID_AUTO_TEST_CASE(testGroupsMultiConsumer) {
+    FieldTable args;
+    Queue::shared_ptr queue(new Queue("my_queue", true));
+    args.setString("qpid.group_header_key", "GROUP-ID");
+    queue->configure(args);
+
+    for (int i = 0; i < 3; ++i) {
+        intrusive_ptr<Message> msg1 = create_message("e", "A");
+        msg1->getProperties<MessageProperties>()->getApplicationHeaders().setString("GROUP-ID","a");
+        queue->deliver(msg1);
+
+        intrusive_ptr<Message> msg2 = create_message("e", "A");
+        msg2->getProperties<MessageProperties>()->getApplicationHeaders().setString("GROUP-ID","b");
+        queue->deliver(msg2);
+    }
+
+    BOOST_CHECK_EQUAL(uint32_t(6), queue->getMessageCount());
+
+    TestConsumer::shared_ptr c1(new TestConsumer("C1"));
+    TestConsumer::shared_ptr c2(new TestConsumer("C2"));
+
+    queue->consume(c1);
+    queue->consume(c2);
+
+    std::deque<QueuedMessage> dequeMe;
+
+    queue->dispatch(c1);    // now owns group "a"
+    dequeMe.push_back(c1->last);
+    queue->dispatch(c2);    // now owns group "b"
+    dequeMe.push_back(c2->last);
+
+    queue->dispatch(c2);    // should skip next "a", get last "b"
+    std::string group = c2->last.payload->getProperties<MessageProperties>()->getApplicationHeaders().getAsString("GROUP-ID");
+    dequeMe.push_back(c2->last);
+    BOOST_CHECK_EQUAL( group, std::string("b") );
+
+    queue->dispatch(c1);    // should get last "a"
+    group = c1->last.payload->getProperties<MessageProperties>()->getApplicationHeaders().getAsString("GROUP-ID");
+    dequeMe.push_back(c1->last);
+    BOOST_CHECK_EQUAL( group, std::string("a") );
+
+    // now "free up" the groups
+    while (!dequeMe.empty()) {
+        queue->dequeue( 0, dequeMe.front() );
+        dequeMe.pop_front();
+    }
+
+    // now c2 should be able to acquire group "a", and c1 group "b"
+
+    queue->dispatch(c2);
+    group = c2->last.payload->getProperties<MessageProperties>()->getApplicationHeaders().getAsString("GROUP-ID");
+    BOOST_CHECK_EQUAL( group, std::string("a") );
+
+    queue->dispatch(c1);
+    group = c1->last.payload->getProperties<MessageProperties>()->getApplicationHeaders().getAsString("GROUP-ID");
+    BOOST_CHECK_EQUAL( group, std::string("b") );
+
+    queue->cancel(c1);
+    queue->cancel(c2);
 }
 
 QPID_AUTO_TEST_CASE(testMultiQueueLastNode){

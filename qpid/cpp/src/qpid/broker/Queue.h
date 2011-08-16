@@ -60,7 +60,7 @@ class QueueEvents;
 class QueueRegistry;
 class TransactionContext;
 class MessageAllocator;
- 
+
 /**
  * The brokers representation of an amqp queue. Messages are
  * delivered to a queue from where they can be dispatched to
@@ -70,6 +70,10 @@ class MessageAllocator;
 class Queue : public boost::enable_shared_from_this<Queue>,
               public PersistableQueue, public management::Manageable {
 
+ public:
+    enum Disposition {FIFO, LVQ, PRIORITY, GROUP};
+
+ private:
     struct UsageBarrier
     {
         Queue& parent;
@@ -129,7 +133,9 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     UsageBarrier barrier;
     int autoDeleteTimeout;
     boost::intrusive_ptr<qpid::sys::TimerTask> autoDeleteTask;
-    std::auto_ptr<MessageAllocator> allocator;
+    boost::shared_ptr<MessageAllocator> allocator;
+    Disposition type;
+
 
     void push(boost::intrusive_ptr<Message>& msg, bool isRecovery=false);
     void setPolicy(std::auto_ptr<QueuePolicy> policy);
@@ -262,11 +268,14 @@ class Queue : public boost::enable_shared_from_this<Queue>,
                                     bool exclusive = false);
     QPID_BROKER_EXTERN void cancel(Consumer::shared_ptr c);
 
-    uint32_t purge(const uint32_t purge_request=0, boost::shared_ptr<Exchange> dest=boost::shared_ptr<Exchange>()); //defaults to all messages
+    uint32_t purge(const uint32_t purge_request=0,  //defaults to all messages
+                   boost::shared_ptr<Exchange> dest=boost::shared_ptr<Exchange>(),
+                   const ::qpid::types::Variant::Map *filter=0);
     QPID_BROKER_EXTERN void purgeExpired(sys::Duration);
 
     //move qty # of messages to destination Queue destq
-    uint32_t move(const Queue::shared_ptr destq, uint32_t qty);
+    uint32_t move(const Queue::shared_ptr destq, uint32_t qty,
+                  const qpid::types::Variant::Map *filter=0);
 
     QPID_BROKER_EXTERN uint32_t getMessageCount() const;
     QPID_BROKER_EXTERN uint32_t getEnqueueCompleteMessageCount() const;
@@ -353,6 +362,7 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     management::ManagementObject* GetManagementObject (void) const;
     management::Manageable::status_t
     ManagementMethod (uint32_t methodId, management::Args& args, std::string& text);
+    void query(::qpid::types::Variant::Map&) const;
 
     /** Apply f to each Message on the queue. */
     template <class F> void eachMessage(F f) {
@@ -402,6 +412,8 @@ class Queue : public boost::enable_shared_from_this<Queue>,
 
     uint32_t getDequeueSincePurge() { return dequeueSincePurge.get(); }
     void setDequeueSincePurge(uint32_t value);
+
+    Disposition getDisposition() const { return type; }
 };
 }
 }

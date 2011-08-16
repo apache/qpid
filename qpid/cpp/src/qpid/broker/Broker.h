@@ -157,7 +157,12 @@ public:
                       const qpid::types::Variant::Map& properties, bool strict, const ConnectionState* context);
     void deleteObject(const std::string& type, const std::string& name,
                       const qpid::types::Variant::Map& options, const ConnectionState* context);
-
+    Manageable::status_t queryObject(const std::string& type, const std::string& name,
+                                     qpid::types::Variant::Map& results, const ConnectionState* context);
+    Manageable::status_t queryQueue( const std::string& name,
+                                     const std::string& userId,
+                                     const std::string& connectionId,
+                                     qpid::types::Variant::Map& results);
     boost::shared_ptr<sys::Poller> poller;
     sys::Timer timer;
     std::auto_ptr<sys::Timer> clusterTimer;
@@ -258,7 +263,8 @@ public:
     */
     uint32_t queueMoveMessages( const std::string& srcQueue,
 			    const std::string& destQueue,
-			    uint32_t  qty);
+                uint32_t  qty,
+                const qpid::types::Variant::Map& filter);
 
     boost::shared_ptr<sys::ProtocolFactory> getProtocolFactory(const std::string& name = TCP_TRANSPORT) const;
 
