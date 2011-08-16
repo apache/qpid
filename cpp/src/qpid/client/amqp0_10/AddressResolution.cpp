@@ -129,6 +129,10 @@ const std::string HEADERS_EXCHANGE("headers");
 const std::string XML_EXCHANGE("xml");
 const std::string WILDCARD_ANY("#");
 
+//exchange prefixes:
+const std::string PREFIX_AMQ("amq.");
+const std::string PREFIX_QPID("qpid.");
+
 const Verifier verifier;
 }
 
@@ -199,6 +203,7 @@ class Exchange : protected Node
     void checkCreate(qpid::client::AsyncSession&, CheckMode);
     void checkAssert(qpid::client::AsyncSession&, CheckMode);
     void checkDelete(qpid::client::AsyncSession&, CheckMode);
+    bool isReservedName();
 
   protected:
     const std::string specifiedType;
@@ -772,18 +777,32 @@ Exchange::Exchange(const Address& a) : Node(a),
     linkBindings.setDefaultExchange(name);
 }
 
+bool Exchange::isReservedName()
+{
+    return name.find(PREFIX_AMQ) != std::string::npos || name.find(PREFIX_QPID) != std::string::npos;
+}
+
 void Exchange::checkCreate(qpid::client::AsyncSession& session, CheckMode mode)
 {
     if (enabled(createPolicy, mode)) {
         try {
-            std::string type = specifiedType;
-            if (type.empty()) type = TOPIC_EXCHANGE;
-            session.exchangeDeclare(arg::exchange=name,
-                                          arg::type=type,
-                                          arg::durable=durable,
-                                          arg::autoDelete=autoDelete,
-                                          arg::alternateExchange=alternateExchange,
-                                          arg::arguments=arguments);
+            if (isReservedName()) {
+                try {
+                    sync(session).exchangeDeclare(arg::exchange=name, arg::passive=true);
+                } catch (const qpid::framing::NotFoundException& /*e*/) {
+                    throw ResolutionError((boost::format("Cannot create exchange %1%; names beginning with \"amq.\" or \"qpid.\" are reserved.") % name).str());
+                }
+
+            } else {
+                std::string type = specifiedType;
+                if (type.empty()) type = TOPIC_EXCHANGE;
+                session.exchangeDeclare(arg::exchange=name,
+                                        arg::type=type,
+                                        arg::durable=durable,
+                                        arg::autoDelete=autoDelete,
+                                        arg::alternateExchange=alternateExchange,
+                                        arg::arguments=arguments);
+            }
             nodeBindings.bind(session);
             session.sync();
         } catch (const qpid::framing::NotAllowedException& e) {
