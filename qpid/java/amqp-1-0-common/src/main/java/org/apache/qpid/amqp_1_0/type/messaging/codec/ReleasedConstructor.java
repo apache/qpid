@@ -36,7 +36,7 @@ public class ReleasedConstructor extends DescribedTypeConstructor<Released>
 {
     private static final Object[] DESCRIPTORS =
     {
-            Symbol.valueOf("apache.qpid.amqp_1_0:released:list"),UnsignedLong.valueOf(0x0000000000000026L),
+            Symbol.valueOf("amqp:released:list"),UnsignedLong.valueOf(0x0000000000000026L),
     };
 
     private static final ReleasedConstructor INSTANCE = new ReleasedConstructor();

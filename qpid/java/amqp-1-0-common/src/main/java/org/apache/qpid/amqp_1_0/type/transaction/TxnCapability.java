@@ -37,15 +37,15 @@ public class TxnCapability
     private final Symbol _val;
 
     
-    public static final TxnCapability LOCAL_TXN = new TxnCapability(Symbol.valueOf("apache.qpid.amqp_1_0:local-transactions"));
+    public static final TxnCapability LOCAL_TXN = new TxnCapability(Symbol.valueOf("amqp:local-transactions"));
     
-    public static final TxnCapability DISTRIBUTED_TXN = new TxnCapability(Symbol.valueOf("apache.qpid.amqp_1_0:distributed-transactions"));
+    public static final TxnCapability DISTRIBUTED_TXN = new TxnCapability(Symbol.valueOf("amqp:distributed-transactions"));
     
-    public static final TxnCapability PROMOTABLE_TXN = new TxnCapability(Symbol.valueOf("apache.qpid.amqp_1_0:promotable-transactions"));
+    public static final TxnCapability PROMOTABLE_TXN = new TxnCapability(Symbol.valueOf("amqp:promotable-transactions"));
     
-    public static final TxnCapability MULTI_TXNS_PER_SSN = new TxnCapability(Symbol.valueOf("apache.qpid.amqp_1_0:multi-txns-per-ssn"));
+    public static final TxnCapability MULTI_TXNS_PER_SSN = new TxnCapability(Symbol.valueOf("amqp:multi-txns-per-ssn"));
     
-    public static final TxnCapability MULTI_SSNS_PER_TXN = new TxnCapability(Symbol.valueOf("apache.qpid.amqp_1_0:multi-ssns-per-txn"));
+    public static final TxnCapability MULTI_SSNS_PER_TXN = new TxnCapability(Symbol.valueOf("amqp:multi-ssns-per-txn"));
     
 
 

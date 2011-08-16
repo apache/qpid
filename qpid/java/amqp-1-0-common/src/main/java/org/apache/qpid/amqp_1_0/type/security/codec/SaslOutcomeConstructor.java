@@ -36,7 +36,7 @@ public class SaslOutcomeConstructor extends DescribedTypeConstructor<SaslOutcome
 {
     private static final Object[] DESCRIPTORS =
     {
-            Symbol.valueOf("apache.qpid.amqp_1_0:sasl-outcome:list"),UnsignedLong.valueOf(0x0000000000000044L),
+            Symbol.valueOf("amqp:sasl-outcome:list"),UnsignedLong.valueOf(0x0000000000000044L),
     };
 
     private static final SaslOutcomeConstructor INSTANCE = new SaslOutcomeConstructor();

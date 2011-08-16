@@ -36,7 +36,7 @@ public class CoordinatorConstructor extends DescribedTypeConstructor<Coordinator
 {
     private static final Object[] DESCRIPTORS =
     {
-            Symbol.valueOf("apache.qpid.amqp_1_0:coordinator:list"),UnsignedLong.valueOf(0x0000000000000030L),
+            Symbol.valueOf("amqp:coordinator:list"),UnsignedLong.valueOf(0x0000000000000030L),
     };
 
     private static final CoordinatorConstructor INSTANCE = new CoordinatorConstructor();

@@ -37,7 +37,7 @@ public class OpenConstructor extends DescribedTypeConstructor<Open>
 {
     private static final Object[] DESCRIPTORS =
     {
-            Symbol.valueOf("apache.qpid.amqp_1_0:open:list"),UnsignedLong.valueOf(0x0000000000000010L),
+            Symbol.valueOf("amqp:open:list"),UnsignedLong.valueOf(0x0000000000000010L),
     };
 
     private static final OpenConstructor INSTANCE = new OpenConstructor();

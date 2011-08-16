@@ -36,7 +36,7 @@ public class SaslResponseConstructor extends DescribedTypeConstructor<SaslRespon
 {
     private static final Object[] DESCRIPTORS =
     {
-            Symbol.valueOf("apache.qpid.amqp_1_0:sasl-response:list"),UnsignedLong.valueOf(0x0000000000000043L),
+            Symbol.valueOf("amqp:sasl-response:list"),UnsignedLong.valueOf(0x0000000000000043L),
     };
 
     private static final SaslResponseConstructor INSTANCE = new SaslResponseConstructor();

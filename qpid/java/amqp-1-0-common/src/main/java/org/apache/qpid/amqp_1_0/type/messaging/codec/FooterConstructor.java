@@ -36,7 +36,7 @@ public class FooterConstructor extends DescribedTypeConstructor<Footer>
 {
     private static final Object[] DESCRIPTORS =
     {
-            Symbol.valueOf("apache.qpid.amqp_1_0:footer:map"),UnsignedLong.valueOf(0x0000000000000078L),
+            Symbol.valueOf("amqp:footer:map"),UnsignedLong.valueOf(0x0000000000000078L),
     };
 
     private static final FooterConstructor INSTANCE = new FooterConstructor();

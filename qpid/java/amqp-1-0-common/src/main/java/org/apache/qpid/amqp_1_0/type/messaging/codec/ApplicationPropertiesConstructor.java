@@ -36,7 +36,7 @@ public class ApplicationPropertiesConstructor extends DescribedTypeConstructor<A
 {
     private static final Object[] DESCRIPTORS =
     {
-            Symbol.valueOf("apache.qpid.amqp_1_0:application-properties:map"),UnsignedLong.valueOf(0x0000000000000074L),
+            Symbol.valueOf("amqp:application-properties:map"),UnsignedLong.valueOf(0x0000000000000074L),
     };
 
     private static final ApplicationPropertiesConstructor INSTANCE = new ApplicationPropertiesConstructor();

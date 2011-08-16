@@ -36,7 +36,7 @@ public class DeleteOnCloseConstructor extends DescribedTypeConstructor<DeleteOnC
 {
     private static final Object[] DESCRIPTORS =
     {
-            Symbol.valueOf("apache.qpid.amqp_1_0:delete-on-close:list"),UnsignedLong.valueOf(0x000000000000002bL),
+            Symbol.valueOf("amqp:delete-on-close:list"),UnsignedLong.valueOf(0x000000000000002bL),
     };
 
     private static final DeleteOnCloseConstructor INSTANCE = new DeleteOnCloseConstructor();

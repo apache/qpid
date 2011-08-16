@@ -102,11 +102,23 @@ public class Session_1_0 implements SessionEventListener
                     {
 
                         destination = new QueueDestination(queue);
+
+
+
                     }
                     else
                     {
-                        endpoint.setSource(null);
-                        destination = null;
+                        Exchange exchg = _vhost.getExchangeRegistry().getExchange(addr);
+                        if(exchg != null)
+                        {
+                            destination = new ExchangeDestination(exchg);
+                        }
+                        else
+                        {
+
+                            endpoint.setSource(null);
+                            destination = null;
+                        }
                     }
 
                 }

@@ -37,7 +37,7 @@ public class BeginConstructor extends DescribedTypeConstructor<Begin>
 {
     private static final Object[] DESCRIPTORS =
     {
-            Symbol.valueOf("apache.qpid.amqp_1_0:begin:list"),UnsignedLong.valueOf(0x0000000000000011L),
+            Symbol.valueOf("amqp:begin:list"),UnsignedLong.valueOf(0x0000000000000011L),
     };
 
     private static final BeginConstructor INSTANCE = new BeginConstructor();

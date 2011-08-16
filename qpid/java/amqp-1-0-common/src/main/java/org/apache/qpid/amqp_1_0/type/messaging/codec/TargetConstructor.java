@@ -37,7 +37,7 @@ public class TargetConstructor extends DescribedTypeConstructor<Target>
 {
     private static final Object[] DESCRIPTORS =
     {
-            Symbol.valueOf("apache.qpid.amqp_1_0:target:list"),UnsignedLong.valueOf(0x0000000000000029L),
+            Symbol.valueOf("amqp:target:list"),UnsignedLong.valueOf(0x0000000000000029L),
     };
 
     private static final TargetConstructor INSTANCE = new TargetConstructor();

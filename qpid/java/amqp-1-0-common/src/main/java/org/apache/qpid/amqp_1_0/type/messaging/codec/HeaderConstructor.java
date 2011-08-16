@@ -36,7 +36,7 @@ public class HeaderConstructor extends DescribedTypeConstructor<Header>
 {
     private static final Object[] DESCRIPTORS =
     {
-            Symbol.valueOf("apache.qpid.amqp_1_0:header:list"),UnsignedLong.valueOf(0x0000000000000070L),
+            Symbol.valueOf("amqp:header:list"),UnsignedLong.valueOf(0x0000000000000070L),
     };
 
     private static final HeaderConstructor INSTANCE = new HeaderConstructor();

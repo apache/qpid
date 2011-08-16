@@ -31,7 +31,7 @@ import org.apache.qpid.server.txn.ServerTransaction;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-public class ExchangeDestination implements ReceivingDestination
+public class ExchangeDestination implements ReceivingDestination, SendingDestination
 {
     private static final Accepted ACCEPTED = new Accepted();
     private static final Outcome[] OUTCOMES = { ACCEPTED };
@@ -86,5 +86,10 @@ public class ExchangeDestination implements ReceivingDestination
     {
         // TODO - fix
         return 20000;
+    }
+
+    public Exchange getExchange()
+    {
+        return _exchange;
     }
 }

@@ -36,7 +36,7 @@ public class ReceivedConstructor extends DescribedTypeConstructor<Received>
 {
     private static final Object[] DESCRIPTORS =
     {
-            Symbol.valueOf("apache.qpid.amqp_1_0:received:list"),UnsignedLong.valueOf(0x0000000000000023L),
+            Symbol.valueOf("amqp:received:list"),UnsignedLong.valueOf(0x0000000000000023L),
     };
 
     private static final ReceivedConstructor INSTANCE = new ReceivedConstructor();

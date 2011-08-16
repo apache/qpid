@@ -36,7 +36,7 @@ public class TransactionalStateConstructor extends DescribedTypeConstructor<Tran
 {
     private static final Object[] DESCRIPTORS =
     {
-            Symbol.valueOf("apache.qpid.amqp_1_0:transactional-state:list"),UnsignedLong.valueOf(0x0000000000000034L),
+            Symbol.valueOf("amqp:transactional-state:list"),UnsignedLong.valueOf(0x0000000000000034L),
     };
 
     private static final TransactionalStateConstructor INSTANCE = new TransactionalStateConstructor();

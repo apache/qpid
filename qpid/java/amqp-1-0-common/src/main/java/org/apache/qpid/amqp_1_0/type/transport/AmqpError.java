@@ -37,31 +37,31 @@ public class AmqpError
     private final Symbol _val;
 
     
-    public static final AmqpError INTERNAL_ERROR = new AmqpError(Symbol.valueOf("apache.qpid.amqp_1_0:internal-error"));
+    public static final AmqpError INTERNAL_ERROR = new AmqpError(Symbol.valueOf("amqp:internal-error"));
     
-    public static final AmqpError NOT_FOUND = new AmqpError(Symbol.valueOf("apache.qpid.amqp_1_0:not-found"));
+    public static final AmqpError NOT_FOUND = new AmqpError(Symbol.valueOf("amqp:not-found"));
     
-    public static final AmqpError UNAUTHORIZED_ACCESS = new AmqpError(Symbol.valueOf("apache.qpid.amqp_1_0:unauthorized-access"));
+    public static final AmqpError UNAUTHORIZED_ACCESS = new AmqpError(Symbol.valueOf("amqp:unauthorized-access"));
     
-    public static final AmqpError DECODE_ERROR = new AmqpError(Symbol.valueOf("apache.qpid.amqp_1_0:decode-error"));
+    public static final AmqpError DECODE_ERROR = new AmqpError(Symbol.valueOf("amqp:decode-error"));
     
-    public static final AmqpError RESOURCE_LIMIT_EXCEEDED = new AmqpError(Symbol.valueOf("apache.qpid.amqp_1_0:resource-limit-exceeded"));
+    public static final AmqpError RESOURCE_LIMIT_EXCEEDED = new AmqpError(Symbol.valueOf("amqp:resource-limit-exceeded"));
     
-    public static final AmqpError NOT_ALLOWED = new AmqpError(Symbol.valueOf("apache.qpid.amqp_1_0:not-allowed"));
+    public static final AmqpError NOT_ALLOWED = new AmqpError(Symbol.valueOf("amqp:not-allowed"));
     
-    public static final AmqpError INVALID_FIELD = new AmqpError(Symbol.valueOf("apache.qpid.amqp_1_0:invalid-field"));
+    public static final AmqpError INVALID_FIELD = new AmqpError(Symbol.valueOf("amqp:invalid-field"));
     
-    public static final AmqpError NOT_IMPLEMENTED = new AmqpError(Symbol.valueOf("apache.qpid.amqp_1_0:not-implemented"));
+    public static final AmqpError NOT_IMPLEMENTED = new AmqpError(Symbol.valueOf("amqp:not-implemented"));
     
-    public static final AmqpError RESOURCE_LOCKED = new AmqpError(Symbol.valueOf("apache.qpid.amqp_1_0:resource-locked"));
+    public static final AmqpError RESOURCE_LOCKED = new AmqpError(Symbol.valueOf("amqp:resource-locked"));
     
-    public static final AmqpError PRECONDITION_FAILED = new AmqpError(Symbol.valueOf("apache.qpid.amqp_1_0:precondition-failed"));
+    public static final AmqpError PRECONDITION_FAILED = new AmqpError(Symbol.valueOf("amqp:precondition-failed"));
     
-    public static final AmqpError RESOURCE_DELETED = new AmqpError(Symbol.valueOf("apache.qpid.amqp_1_0:resource-deleted"));
+    public static final AmqpError RESOURCE_DELETED = new AmqpError(Symbol.valueOf("amqp:resource-deleted"));
     
-    public static final AmqpError ILLEGAL_STATE = new AmqpError(Symbol.valueOf("apache.qpid.amqp_1_0:illegal-state"));
+    public static final AmqpError ILLEGAL_STATE = new AmqpError(Symbol.valueOf("amqp:illegal-state"));
     
-    public static final AmqpError FRAME_SIZE_TOO_SMALL = new AmqpError(Symbol.valueOf("apache.qpid.amqp_1_0:frame-size-too-small"));
+    public static final AmqpError FRAME_SIZE_TOO_SMALL = new AmqpError(Symbol.valueOf("amqp:frame-size-too-small"));
     
 
 

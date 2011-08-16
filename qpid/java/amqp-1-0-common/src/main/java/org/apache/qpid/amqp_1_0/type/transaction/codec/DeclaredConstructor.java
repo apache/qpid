@@ -36,7 +36,7 @@ public class DeclaredConstructor extends DescribedTypeConstructor<Declared>
 {
     private static final Object[] DESCRIPTORS =
     {
-            Symbol.valueOf("apache.qpid.amqp_1_0:declared:list"),UnsignedLong.valueOf(0x0000000000000033L),
+            Symbol.valueOf("amqp:declared:list"),UnsignedLong.valueOf(0x0000000000000033L),
     };
 
     private static final DeclaredConstructor INSTANCE = new DeclaredConstructor();

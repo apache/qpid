@@ -36,7 +36,7 @@ public class DischargeConstructor extends DescribedTypeConstructor<Discharge>
 {
     private static final Object[] DESCRIPTORS =
     {
-            Symbol.valueOf("apache.qpid.amqp_1_0:discharge:list"),UnsignedLong.valueOf(0x0000000000000032L),
+            Symbol.valueOf("amqp:discharge:list"),UnsignedLong.valueOf(0x0000000000000032L),
     };
 
     private static final DischargeConstructor INSTANCE = new DischargeConstructor();

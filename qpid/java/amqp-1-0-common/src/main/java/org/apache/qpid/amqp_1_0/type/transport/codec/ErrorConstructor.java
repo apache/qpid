@@ -36,7 +36,7 @@ public class ErrorConstructor extends DescribedTypeConstructor<org.apache.qpid.a
 {
     private static final Object[] DESCRIPTORS =
     {
-            Symbol.valueOf("apache.qpid.amqp_1_0:error:list"),UnsignedLong.valueOf(0x000000000000001dL),
+            Symbol.valueOf("amqp:error:list"),UnsignedLong.valueOf(0x000000000000001dL),
     };
 
     private static final ErrorConstructor INSTANCE = new ErrorConstructor();

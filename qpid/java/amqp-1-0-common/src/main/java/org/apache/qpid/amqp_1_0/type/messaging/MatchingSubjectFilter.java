@@ -23,6 +23,31 @@
 
 package org.apache.qpid.amqp_1_0.type.messaging;
 
-public interface Filter
+
+import org.apache.qpid.amqp_1_0.messaging.SectionEncoder;
+import org.apache.qpid.amqp_1_0.type.Binary;
+import org.apache.qpid.amqp_1_0.type.Section;
+
+public class MatchingSubjectFilter implements Filter
 {
-}
+
+
+
+    private final String _value;
+
+    public MatchingSubjectFilter(String value)
+    {
+        _value = value;
+    }
+
+    public String getValue()
+    {
+        return _value;
+    }
+
+      @Override
+      public String toString()
+      {
+          return "MatchingSubjectFilter{" + _value + '}';
+      }
+  }

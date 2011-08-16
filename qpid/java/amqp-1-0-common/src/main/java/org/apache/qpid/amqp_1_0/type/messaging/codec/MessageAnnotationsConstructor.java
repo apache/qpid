@@ -36,7 +36,7 @@ public class MessageAnnotationsConstructor extends DescribedTypeConstructor<Mess
 {
     private static final Object[] DESCRIPTORS =
     {
-            Symbol.valueOf("apache.qpid.amqp_1_0:message-annotations:map"),UnsignedLong.valueOf(0x0000000000000072L),
+            Symbol.valueOf("amqp:message-annotations:map"),UnsignedLong.valueOf(0x0000000000000072L),
     };
 
     private static final MessageAnnotationsConstructor INSTANCE = new MessageAnnotationsConstructor();

@@ -37,15 +37,15 @@ public class LinkError
     private final Symbol _val;
 
     
-    public static final LinkError DETACH_FORCED = new LinkError(Symbol.valueOf("apache.qpid.amqp_1_0:link:detach-forced"));
+    public static final LinkError DETACH_FORCED = new LinkError(Symbol.valueOf("amqp:link:detach-forced"));
     
-    public static final LinkError TRANSFER_LIMIT_EXCEEDED = new LinkError(Symbol.valueOf("apache.qpid.amqp_1_0:link:transfer-limit-exceeded"));
+    public static final LinkError TRANSFER_LIMIT_EXCEEDED = new LinkError(Symbol.valueOf("amqp:link:transfer-limit-exceeded"));
     
-    public static final LinkError MESSAGE_SIZE_EXCEEDED = new LinkError(Symbol.valueOf("apache.qpid.amqp_1_0:link:message-size-exceeded"));
+    public static final LinkError MESSAGE_SIZE_EXCEEDED = new LinkError(Symbol.valueOf("amqp:link:message-size-exceeded"));
     
-    public static final LinkError REDIRECT = new LinkError(Symbol.valueOf("apache.qpid.amqp_1_0:link:redirect"));
+    public static final LinkError REDIRECT = new LinkError(Symbol.valueOf("amqp:link:redirect"));
     
-    public static final LinkError STOLEN = new LinkError(Symbol.valueOf("apache.qpid.amqp_1_0:link:stolen"));
+    public static final LinkError STOLEN = new LinkError(Symbol.valueOf("amqp:link:stolen"));
     
 
 

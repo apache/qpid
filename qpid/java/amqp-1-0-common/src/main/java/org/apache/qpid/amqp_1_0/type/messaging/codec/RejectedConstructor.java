@@ -36,7 +36,7 @@ public class RejectedConstructor extends DescribedTypeConstructor<Rejected>
 {
     private static final Object[] DESCRIPTORS =
     {
-            Symbol.valueOf("apache.qpid.amqp_1_0:rejected:list"),UnsignedLong.valueOf(0x0000000000000025L),
+            Symbol.valueOf("amqp:rejected:list"),UnsignedLong.valueOf(0x0000000000000025L),
     };
 
     private static final RejectedConstructor INSTANCE = new RejectedConstructor();

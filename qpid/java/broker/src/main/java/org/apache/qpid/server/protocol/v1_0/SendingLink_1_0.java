@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.server.protocol.v1_0;
 
+import org.apache.qpid.AMQInternalException;
+import org.apache.qpid.AMQSecurityException;
 import org.apache.qpid.amqp_1_0.transport.DeliveryStateHandler;
 import org.apache.qpid.amqp_1_0.transport.LinkEndpoint;
 import org.apache.qpid.amqp_1_0.transport.SendingLinkEndpoint;
@@ -33,7 +35,12 @@ import org.apache.qpid.amqp_1_0.type.messaging.*;
 import org.apache.qpid.amqp_1_0.type.transport.Detach;
 import org.apache.qpid.amqp_1_0.type.transport.Transfer;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.server.exchange.DirectExchange;
+import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.exchange.ExchangeType;
+import org.apache.qpid.server.exchange.TopicExchange;
 import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
@@ -67,27 +74,88 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
         _vhost = vhost;
         _destination = destination;
         _linkAttachment = linkAttachment;
-        _durability = ((Source)linkAttachment.getSource()).getDurable();
+        final Source source = (Source) linkAttachment.getSource();
+        _durability = source.getDurable();
         linkAttachment.setDeliveryStateHandler(this);
+        QueueDestination qd = null;
+        AMQQueue queue = null;
 
         if(destination instanceof QueueDestination)
         {
-            AMQQueue queue = ((QueueDestination) _destination).getQueue();
+            queue = ((QueueDestination) _destination).getQueue();
             if(queue.getArguments().containsKey("topic"))
             {
-                ((Source)linkAttachment.getSource()).setDistributionMode(StdDistMode.COPY);
+                source.setDistributionMode(StdDistMode.COPY);
             }
-            _subscription = new Subscription_1_0(this, (QueueDestination)destination);
+            qd = (QueueDestination) destination;
+            source.setFilter(null);
+
+        }
+        else if(destination instanceof ExchangeDestination)
+        {
             try
             {
+                queue = AMQQueueFactory.createAMQQueueImpl(UUID.randomUUID().toString(), false, null, true,
+                        false, _vhost, Collections.EMPTY_MAP);
+                Exchange exchange = ((ExchangeDestination) destination).getExchange();
 
-                queue.registerSubscription(_subscription, false);
+                String binding = "";
+
+                Map filters = source.getFilter();
+
+                if(filters != null && !filters.isEmpty())
+                {
+
+                    source.setFilter(null);
+                    if(exchange.getType() == DirectExchange.TYPE)
+                    {
+                        if(filters.size() == 1 && filters.values().iterator().next() instanceof ExactSubjectFilter)
+                        {
+                            ExactSubjectFilter filter = (ExactSubjectFilter) filters.values().iterator().next();
+                            source.setFilter(filters);
+                            binding = filter.getValue();
+                        }
+                    }
+                    else if(exchange.getType() == TopicExchange.TYPE)
+                    {
+                        if(filters.size() == 1 && filters.values().iterator().next() instanceof MatchingSubjectFilter)
+                        {
+                            MatchingSubjectFilter filter = (MatchingSubjectFilter) filters.values().iterator().next();
+                            source.setFilter(filters);
+                            binding = filter.getValue();
+                        }
+                    }
+                }
+
+                vhost.getBindingFactory().addBinding(binding,queue,exchange,null);
+                source.setDistributionMode(StdDistMode.COPY);
+
+                qd = new QueueDestination(queue);
             }
-            catch (AMQException e)
+            catch (AMQSecurityException e)
             {
-                e.printStackTrace();  //TODO
+                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
             }
+            catch (AMQInternalException e)
+            {
+                e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+            }
+
+
         }
+
+        _subscription = new Subscription_1_0(this, qd);
+
+        try
+        {
+
+            queue.registerSubscription(_subscription, false);
+        }
+        catch (AMQException e)
+        {
+            e.printStackTrace();  //TODO
+        }
+
 
     }
 
@@ -107,7 +175,9 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
 
             try
             {
-                ((QueueDestination)_destination).getQueue().unregisterSubscription(_subscription);
+
+                _subscription.getQueue().unregisterSubscription(_subscription);
+
             }
             catch (AMQException e)
             {

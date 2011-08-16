@@ -36,7 +36,7 @@ public class CloseConstructor extends DescribedTypeConstructor<Close>
 {
     private static final Object[] DESCRIPTORS =
     {
-            Symbol.valueOf("apache.qpid.amqp_1_0:close:list"),UnsignedLong.valueOf(0x0000000000000018L),
+            Symbol.valueOf("amqp:close:list"),UnsignedLong.valueOf(0x0000000000000018L),
     };
 
     private static final CloseConstructor INSTANCE = new CloseConstructor();

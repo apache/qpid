@@ -63,7 +63,7 @@ public class ConnectionEndpoint implements DescribedTypeConstructorRegistry.Sour
     private Principal _user;
 
     private static final short DEFAULT_CHANNEL_MAX = 255;
-    private static final int DEFAULT_MAX_FRAME = Integer.getInteger("apache.qpid.amqp_1_0.max_frame_size",1<<15);
+    private static final int DEFAULT_MAX_FRAME = Integer.getInteger("amqp.max_frame_size",1<<15);
 
 
     private ConnectionState _state = ConnectionState.UNOPENED;

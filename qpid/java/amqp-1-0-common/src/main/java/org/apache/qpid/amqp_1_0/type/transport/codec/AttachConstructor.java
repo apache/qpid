@@ -37,7 +37,7 @@ public class AttachConstructor extends DescribedTypeConstructor<Attach>
 {
     private static final Object[] DESCRIPTORS =
     {
-            Symbol.valueOf("apache.qpid.amqp_1_0:attach:list"),UnsignedLong.valueOf(0x0000000000000012L),
+            Symbol.valueOf("amqp:attach:list"),UnsignedLong.valueOf(0x0000000000000012L),
     };
 
     private static final AttachConstructor INSTANCE = new AttachConstructor();

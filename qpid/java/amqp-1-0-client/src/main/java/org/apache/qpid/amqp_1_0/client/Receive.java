@@ -21,9 +21,15 @@
 
 package org.apache.qpid.amqp_1_0.client;
 
+import org.apache.qpid.amqp_1_0.type.Symbol;
 import org.apache.qpid.amqp_1_0.type.UnsignedInteger;
 import org.apache.qpid.amqp_1_0.type.UnsignedLong;
 import org.apache.commons.cli.*;
+import org.apache.qpid.amqp_1_0.type.messaging.ExactSubjectFilter;
+import org.apache.qpid.amqp_1_0.type.messaging.Filter;
+import org.apache.qpid.amqp_1_0.type.messaging.MatchingSubjectFilter;
+
+import java.util.Collections;
 
 public class Receive extends Util
 {
@@ -102,6 +108,12 @@ public class Receive extends Util
         return true;
     }
 
+    @Override
+    protected boolean hasFilterOption()
+    {
+        return true;
+    }
+
     protected void run()
     {
 
@@ -116,9 +128,28 @@ public class Receive extends Util
 
             Session session = conn.createSession();
 
+            Filter filter = null;
+            if(getFilter() != null)
+            {
+                String[] filterParts  = getFilter().split("=",2);
+                if("exact-subject".equals(filterParts[0]))
+                {
+                    filter = new ExactSubjectFilter(filterParts[1]);
+                }
+                else if("matching-subject".equals(filterParts[0]))
+                {
+                    filter = new MatchingSubjectFilter(filterParts[1]);
+                }
+                else
+                {
+                    System.err.println("Unknown filter type: " + filterParts[0]);
+                }
+            }
 
-
-            Receiver r = session.createReceiver(queue, getMode(), getLinkName(), isDurableLink());
+            Receiver r =
+                    filter == null
+                        ? session.createReceiver(queue, getMode(), getLinkName(), isDurableLink())
+                        : session.createReceiver(queue, getMode(), getLinkName(), isDurableLink(), Collections.singletonMap(Symbol.valueOf("filter"), filter), null);
             Transaction txn = null;
 
             int credit = 0;

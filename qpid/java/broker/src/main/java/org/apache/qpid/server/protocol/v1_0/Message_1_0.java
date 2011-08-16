@@ -54,7 +54,7 @@ public class Message_1_0 implements ServerMessage<Message_1_0>, InboundMessage
         }
         else
         {
-            return null;
+            return getMessageHeader().getSubject();
         }
     }
 
@@ -63,7 +63,7 @@ public class Message_1_0 implements ServerMessage<Message_1_0>, InboundMessage
         return _storedMessage.getMetaData();
     }
 
-    public AMQMessageHeader getMessageHeader()
+    public MessageMetaData_1_0.MessageHeader_1_0 getMessageHeader()
     {
         return getMessageMetaData().getMessageHeader();
     }

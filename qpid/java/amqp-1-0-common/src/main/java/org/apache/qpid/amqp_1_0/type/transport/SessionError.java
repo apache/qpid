@@ -37,13 +37,13 @@ public class SessionError
     private final Symbol _val;
 
     
-    public static final SessionError WINDOW_VIOLATION = new SessionError(Symbol.valueOf("apache.qpid.amqp_1_0:session:window-violation"));
+    public static final SessionError WINDOW_VIOLATION = new SessionError(Symbol.valueOf("amqp:session:window-violation"));
     
-    public static final SessionError ERRANT_LINK = new SessionError(Symbol.valueOf("apache.qpid.amqp_1_0:session:errant-link"));
+    public static final SessionError ERRANT_LINK = new SessionError(Symbol.valueOf("amqp:session:errant-link"));
     
-    public static final SessionError HANDLE_IN_USE = new SessionError(Symbol.valueOf("apache.qpid.amqp_1_0:session:handle-in-use"));
+    public static final SessionError HANDLE_IN_USE = new SessionError(Symbol.valueOf("amqp:session:handle-in-use"));
     
-    public static final SessionError UNATTACHED_HANDLE = new SessionError(Symbol.valueOf("apache.qpid.amqp_1_0:session:unattached-handle"));
+    public static final SessionError UNATTACHED_HANDLE = new SessionError(Symbol.valueOf("amqp:session:unattached-handle"));
     
 
 

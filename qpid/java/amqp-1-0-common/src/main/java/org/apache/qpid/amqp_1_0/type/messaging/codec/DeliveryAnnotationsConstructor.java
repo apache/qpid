@@ -36,7 +36,7 @@ public class DeliveryAnnotationsConstructor extends DescribedTypeConstructor<Del
 {
     private static final Object[] DESCRIPTORS =
     {
-            Symbol.valueOf("apache.qpid.amqp_1_0:delivery-annotations:map"),UnsignedLong.valueOf(0x0000000000000071L),
+            Symbol.valueOf("amqp:delivery-annotations:map"),UnsignedLong.valueOf(0x0000000000000071L),
     };
 
     private static final DeliveryAnnotationsConstructor INSTANCE = new DeliveryAnnotationsConstructor();

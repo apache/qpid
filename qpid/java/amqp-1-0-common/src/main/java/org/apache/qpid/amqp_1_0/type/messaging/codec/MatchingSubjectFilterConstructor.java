@@ -21,25 +21,21 @@
 */
 
 
-package org.apache.qpid.amqp_1_0.type.transport.codec;
+package org.apache.qpid.amqp_1_0.type.messaging.codec;
 
 import org.apache.qpid.amqp_1_0.codec.DescribedTypeConstructor;
 import org.apache.qpid.amqp_1_0.codec.DescribedTypeConstructorRegistry;
-import org.apache.qpid.amqp_1_0.type.*;
-import org.apache.qpid.amqp_1_0.type.transport.*;
-import org.apache.qpid.amqp_1_0.type.transport.End;
+import org.apache.qpid.amqp_1_0.type.Symbol;
+import org.apache.qpid.amqp_1_0.type.messaging.MatchingSubjectFilter;
 
-
-import java.util.List;
-
-public class EndConstructor extends DescribedTypeConstructor<End>
+public class MatchingSubjectFilterConstructor extends DescribedTypeConstructor<MatchingSubjectFilter>
 {
     private static final Object[] DESCRIPTORS =
     {
-            Symbol.valueOf("amqp:end:list"),UnsignedLong.valueOf(0x0000000000000017L),
+            Symbol.valueOf("amqp:matching-subject-filter:string"),
     };
 
-    private static final EndConstructor INSTANCE = new EndConstructor();
+    private static final MatchingSubjectFilterConstructor INSTANCE = new MatchingSubjectFilterConstructor();
 
     public static void register(DescribedTypeConstructorRegistry registry)
     {
@@ -49,44 +45,13 @@ public class EndConstructor extends DescribedTypeConstructor<End>
         }
     }
 
-    public End construct(Object underlying)
+
+    public MatchingSubjectFilter construct(Object underlying)
     {
-        if(underlying instanceof List)
+
+        if(underlying instanceof String)
         {
-            List list = (List) underlying;
-            End obj = new End();
-            int position = 0;
-            final int size = list.size();
-
-            if(position < size)
-            {
-                Object val = list.get(position);
-                position++;
-
-                if(val != null)
-                {
-
-                    try
-                    {
-                        obj.setError( (org.apache.qpid.amqp_1_0.type.transport.Error) val );
-                    }
-                    catch(ClassCastException e)
-                    {
-
-                        // TODO Error
-                    }
-
-                }
-
-
-            }
-            else
-            {
-                return obj;
-            }
-
-
-            return obj;
+            return new MatchingSubjectFilter((String)underlying);
         }
         else
         {

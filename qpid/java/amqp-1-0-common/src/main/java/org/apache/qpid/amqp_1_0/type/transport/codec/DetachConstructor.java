@@ -36,7 +36,7 @@ public class DetachConstructor extends DescribedTypeConstructor<Detach>
 {
     private static final Object[] DESCRIPTORS =
     {
-            Symbol.valueOf("apache.qpid.amqp_1_0:detach:list"),UnsignedLong.valueOf(0x0000000000000016L),
+            Symbol.valueOf("amqp:detach:list"),UnsignedLong.valueOf(0x0000000000000016L),
     };
 
     private static final DetachConstructor INSTANCE = new DetachConstructor();

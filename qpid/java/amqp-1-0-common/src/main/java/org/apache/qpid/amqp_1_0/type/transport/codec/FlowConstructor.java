@@ -37,7 +37,7 @@ public class FlowConstructor extends DescribedTypeConstructor<Flow>
 {
     private static final Object[] DESCRIPTORS =
     {
-            Symbol.valueOf("apache.qpid.amqp_1_0:flow:list"),UnsignedLong.valueOf(0x0000000000000013L),
+            Symbol.valueOf("amqp:flow:list"),UnsignedLong.valueOf(0x0000000000000013L),
     };
 
     private static final FlowConstructor INSTANCE = new FlowConstructor();

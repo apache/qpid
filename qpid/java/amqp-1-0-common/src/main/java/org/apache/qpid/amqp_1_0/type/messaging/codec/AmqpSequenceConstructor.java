@@ -36,7 +36,7 @@ public class AmqpSequenceConstructor extends DescribedTypeConstructor<AmqpSequen
 {
     private static final Object[] DESCRIPTORS =
     {
-            Symbol.valueOf("apache.qpid.amqp_1_0:apache.qpid.amqp_1_0-sequence:list"),UnsignedLong.valueOf(0x0000000000000076L),
+            Symbol.valueOf("amqp:amqp-sequence:list"),UnsignedLong.valueOf(0x0000000000000076L),
     };
 
     private static final AmqpSequenceConstructor INSTANCE = new AmqpSequenceConstructor();

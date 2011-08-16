@@ -33,7 +33,7 @@ public class AmqpValueConstructor extends DescribedTypeConstructor<AmqpValue>
 {
     private static final Object[] DESCRIPTORS =
     {
-            Symbol.valueOf("apache.qpid.amqp_1_0:apache.qpid.amqp_1_0-value:*"),UnsignedLong.valueOf(0x0000000000000077L),
+            Symbol.valueOf("amqp:amqp-value:*"),UnsignedLong.valueOf(0x0000000000000077L),
     };
 
     private static final AmqpValueConstructor INSTANCE = new AmqpValueConstructor();

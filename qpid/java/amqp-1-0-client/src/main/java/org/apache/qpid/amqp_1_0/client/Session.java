@@ -29,6 +29,8 @@ import org.apache.qpid.amqp_1_0.transport.SessionEndpoint;
 import org.apache.qpid.amqp_1_0.type.Binary;
 import org.apache.qpid.amqp_1_0.type.DistributionMode;
 import org.apache.qpid.amqp_1_0.type.Outcome;
+import org.apache.qpid.amqp_1_0.type.Symbol;
+import org.apache.qpid.amqp_1_0.type.messaging.Filter;
 import org.apache.qpid.amqp_1_0.type.messaging.Source;
 import org.apache.qpid.amqp_1_0.type.messaging.StdDistMode;
 import org.apache.qpid.amqp_1_0.type.messaging.Target;
@@ -123,6 +125,13 @@ public class Session
         return createReceiver(queue, null, mode, linkName, isDurable);
     }
 
+    public Receiver createReceiver(final String queue, final AcknowledgeMode mode, String linkName, boolean isDurable,
+                                   Map<Symbol, Filter> filters, Map<Binary, Outcome> unsettled)
+    {
+        return createReceiver(queue, null, mode, linkName, isDurable, filters, unsettled);
+    }
+
+
     public Receiver createReceiver(final String queue, final AcknowledgeMode mode, String linkName,
                                    boolean isDurable, Map<Binary, Outcome> unsettled)
     {
@@ -163,13 +172,30 @@ public class Session
                                             final AcknowledgeMode ackMode, String linkName, boolean isDurable,
                                             Map<Binary, Outcome> unsettled)
     {
+        return createReceiver(sourceAddr,mode,ackMode, linkName, isDurable, null, unsettled);
+    }
+
+    private synchronized Receiver createReceiver(final String sourceAddr, DistributionMode mode,
+                                            final AcknowledgeMode ackMode, String linkName, boolean isDurable,
+                                            Map<Symbol, Filter> filters, Map<Binary, Outcome> unsettled)
+    {
+
+        final Target target = new Target();
+        final Source source = new Source();
+        source.setAddress(sourceAddr);
+        source.setDistributionMode(mode);
+        source.setFilter(filters);
+
+        if(linkName == null)
+        {
+            linkName = sourceAddr + "-> (" + UUID.randomUUID().toString() + ")";
+        }
 
         final Receiver receiver =
-                new Receiver(this, linkName == null
-                                    ? sourceAddr + "-> (" + UUID.randomUUID().toString() + ")"
-                                    : linkName,
-                             null, sourceAddr, mode, ackMode, isDurable, unsettled);
+                new Receiver(this, linkName,
+                        target, source, ackMode, isDurable, unsettled);
         _receivers.add(receiver);
+
         return receiver;
 
     }

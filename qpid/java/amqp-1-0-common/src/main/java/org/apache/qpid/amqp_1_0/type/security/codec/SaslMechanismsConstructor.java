@@ -36,7 +36,7 @@ public class SaslMechanismsConstructor extends DescribedTypeConstructor<SaslMech
 {
     private static final Object[] DESCRIPTORS =
     {
-            Symbol.valueOf("apache.qpid.amqp_1_0:sasl-mechanisms:list"),UnsignedLong.valueOf(0x0000000000000040L),
+            Symbol.valueOf("amqp:sasl-mechanisms:list"),UnsignedLong.valueOf(0x0000000000000040L),
     };
 
     private static final SaslMechanismsConstructor INSTANCE = new SaslMechanismsConstructor();

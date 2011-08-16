@@ -37,7 +37,7 @@ public class SourceConstructor extends DescribedTypeConstructor<Source>
 {
     private static final Object[] DESCRIPTORS =
     {
-            Symbol.valueOf("apache.qpid.amqp_1_0:source:list"),UnsignedLong.valueOf(0x0000000000000028L),
+            Symbol.valueOf("amqp:source:list"),UnsignedLong.valueOf(0x0000000000000028L),
     };
 
     private static final SourceConstructor INSTANCE = new SourceConstructor();

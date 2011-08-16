@@ -49,70 +49,6 @@ public class Receiver implements DeliveryStateHandler
     private Queue<Transfer> _prefetchQueue = new ConcurrentLinkedQueue<Transfer>();
     private Map<Binary, SettledAction> _unsettledMap = new HashMap<Binary, SettledAction>();
 
-
-
-    public Receiver(final Session session, final String linkName, final String targetAddr, final String sourceAddr)
-    {
-        this(session, linkName, targetAddr, sourceAddr, null);
-    }
-    public Receiver(final Session session, final String linkName, final String targetAddr, final String sourceAddr, DistributionMode mode)
-    {
-        this(session, linkName, targetAddr, sourceAddr, mode, AcknowledgeMode.ALO);
-    }
-
-
-    public Receiver(final Session session,
-                    final String linkName,
-                    final String targetAddr,
-                    final String sourceAddr,
-                    final DistributionMode distMode,
-                    final AcknowledgeMode ackMode)
-    {
-        this(session, linkName, createTarget(targetAddr), createSource(sourceAddr, distMode), ackMode);
-
-    }
-
-    public Receiver(final Session session,
-                    final String linkName,
-                    final String targetAddr,
-                    final String sourceAddr,
-                    final DistributionMode distMode,
-                    final AcknowledgeMode ackMode,
-                    boolean isDurable)
-    {
-        this(session, linkName, createTarget(targetAddr), createSource(sourceAddr, distMode), ackMode, isDurable);
-    }
-
-
-    public Receiver(final Session session,
-                    final String linkName,
-                    final String targetAddr,
-                    final String sourceAddr,
-                    final DistributionMode distMode,
-                    final AcknowledgeMode ackMode,
-                    boolean isDurable,
-                    Map<Binary, Outcome> unsettled)
-    {
-        this(session, linkName, createTarget(targetAddr), createSource(sourceAddr, distMode), ackMode, isDurable,
-             unsettled);
-    }
-
-
-    private static Source createSource(final String sourceAddr, final DistributionMode distMode)
-    {
-        Source source = new Source();
-        source.setAddress(sourceAddr);
-        source.setDistributionMode(distMode);
-        return source;
-    }
-
-    private static Target createTarget(final String targetAddr)
-    {
-        Target target = new Target();
-        target.setAddress(targetAddr);
-        return target;
-    }
-
     public Receiver(final Session session,
                     final String linkName,
                     final Target target,
@@ -121,6 +57,7 @@ public class Receiver implements DeliveryStateHandler
     {
         this(session, linkName, target, source, ackMode, false);
     }
+
     public Receiver(final Session session,
                     final String linkName,
                     final Target target,

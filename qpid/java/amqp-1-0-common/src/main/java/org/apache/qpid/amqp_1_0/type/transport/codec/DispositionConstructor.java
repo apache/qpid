@@ -36,7 +36,7 @@ public class DispositionConstructor extends DescribedTypeConstructor<Disposition
 {
     private static final Object[] DESCRIPTORS =
     {
-            Symbol.valueOf("apache.qpid.amqp_1_0:disposition:list"),UnsignedLong.valueOf(0x0000000000000015L),
+            Symbol.valueOf("amqp:disposition:list"),UnsignedLong.valueOf(0x0000000000000015L),
     };
 
     private static final DispositionConstructor INSTANCE = new DispositionConstructor();

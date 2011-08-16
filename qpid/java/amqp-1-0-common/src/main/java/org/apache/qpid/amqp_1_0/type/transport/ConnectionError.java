@@ -37,11 +37,11 @@ public class ConnectionError
     private final Symbol _val;
 
     
-    public static final ConnectionError CONNECTION_FORCED = new ConnectionError(Symbol.valueOf("apache.qpid.amqp_1_0:connection:forced"));
+    public static final ConnectionError CONNECTION_FORCED = new ConnectionError(Symbol.valueOf("amqp:connection:forced"));
     
-    public static final ConnectionError FRAMING_ERROR = new ConnectionError(Symbol.valueOf("apache.qpid.amqp_1_0:connection:framing-error"));
+    public static final ConnectionError FRAMING_ERROR = new ConnectionError(Symbol.valueOf("amqp:connection:framing-error"));
     
-    public static final ConnectionError REDIRECT = new ConnectionError(Symbol.valueOf("apache.qpid.amqp_1_0:connection:redirect"));
+    public static final ConnectionError REDIRECT = new ConnectionError(Symbol.valueOf("amqp:connection:redirect"));
     
 
 

@@ -51,6 +51,7 @@ public abstract class Util
     private boolean _useMultipleConnections;
     private int _windowSize = 100;
     private String _subject;
+    private String _filter;
 
     protected Util(String[] args)
     {
@@ -119,6 +120,13 @@ public abstract class Util
                 .withDescription("acknowledgement mode: AMO|ALO|EO (At Least Once, At Most Once, Exactly Once")
                 .hasArg(false)
                 .create('Z'));
+
+        if(hasFilterOption())
+            options.addOption(OptionBuilder.withLongOpt("filter")
+                .withDescription("filter, e.g. exact-subject=hello; matching-subject=%.a.#")
+                .hasArg(true)
+                .withArgName("<TYPE>=<VALUE>")
+                .create('F'));
 
 
         if(hasTxnOption())
@@ -224,6 +232,11 @@ public abstract class Util
             _password = cmdLine.getOptionValue('w');
         }
 
+        if(cmdLine.hasOption('F'))
+        {
+            _filter = cmdLine.getOptionValue('F');
+        }
+
         _port = Integer.parseInt(portStr);
 
         _containerName = cmdLine.getOptionValue('C');
@@ -325,6 +338,11 @@ public abstract class Util
 
         _args = cmdLine.getArgs();
 
+    }
+
+    protected boolean hasFilterOption()
+    {
+        return false;
     }
 
     protected boolean hasSubjectOption()
@@ -485,5 +503,10 @@ public abstract class Util
     public void setWindowSize(int windowSize)
     {
         _windowSize = windowSize;
+    }
+
+    public String getFilter()
+    {
+        return _filter;
     }
 }

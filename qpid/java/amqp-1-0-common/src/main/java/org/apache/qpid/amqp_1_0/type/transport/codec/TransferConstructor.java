@@ -36,7 +36,7 @@ public class TransferConstructor extends DescribedTypeConstructor<Transfer>
 {
     private static final Object[] DESCRIPTORS =
     {
-            Symbol.valueOf("apache.qpid.amqp_1_0:transfer:list"),UnsignedLong.valueOf(0x0000000000000014L),
+            Symbol.valueOf("amqp:transfer:list"),UnsignedLong.valueOf(0x0000000000000014L),
     };
 
     private static final TransferConstructor INSTANCE = new TransferConstructor();

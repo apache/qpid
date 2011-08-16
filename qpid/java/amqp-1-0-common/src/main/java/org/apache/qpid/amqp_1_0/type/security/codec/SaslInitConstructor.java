@@ -36,7 +36,7 @@ public class SaslInitConstructor extends DescribedTypeConstructor<SaslInit>
 {
     private static final Object[] DESCRIPTORS =
     {
-            Symbol.valueOf("apache.qpid.amqp_1_0:sasl-init:list"),UnsignedLong.valueOf(0x0000000000000041L),
+            Symbol.valueOf("amqp:sasl-init:list"),UnsignedLong.valueOf(0x0000000000000041L),
     };
 
     private static final SaslInitConstructor INSTANCE = new SaslInitConstructor();

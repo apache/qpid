@@ -181,6 +181,10 @@ public class AMQPDescribedTypeRegistry implements DescribedTypeConstructorRegist
         DeleteOnNoLinksWriter.register(registry);
         DeleteOnNoMessagesWriter.register(registry);
         DeleteOnNoLinksOrMessagesWriter.register(registry);
+
+
+        ExactSubjectFilterWriter.register(registry);
+        MatchingSubjectFilterWriter.register(registry);
     }
 
     private static void registerTransactionsWriters(final AMQPDescribedTypeRegistry registry)
@@ -244,6 +248,9 @@ public class AMQPDescribedTypeRegistry implements DescribedTypeConstructorRegist
         DeleteOnNoLinksConstructor.register(registry);
         DeleteOnNoMessagesConstructor.register(registry);
         DeleteOnNoLinksOrMessagesConstructor.register(registry);
+
+        ExactSubjectFilterConstructor.register(registry);
+        MatchingSubjectFilterConstructor.register(registry);
     }
 
     private static void registerTransactionsConstructors(final AMQPDescribedTypeRegistry registry)

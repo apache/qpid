@@ -496,6 +496,10 @@ public class MessageMetaData_1_0 implements StorableMessageMetaData
             return _appProperties != null && _appProperties.containsKey(name);
         }
 
+        public String getSubject()
+        {
+            return _properties == null ? null : _properties.getSubject();
+        }
     }
 
 }

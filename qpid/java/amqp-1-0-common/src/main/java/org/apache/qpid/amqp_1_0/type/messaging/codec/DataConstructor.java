@@ -33,7 +33,7 @@ public class DataConstructor extends DescribedTypeConstructor<Data>
 {
     private static final Object[] DESCRIPTORS =
     {
-            Symbol.valueOf("apache.qpid.amqp_1_0:data:binary"),UnsignedLong.valueOf(0x0000000000000075L),
+            Symbol.valueOf("amqp:data:binary"),UnsignedLong.valueOf(0x0000000000000075L),
     };
 
     private static final DataConstructor INSTANCE = new DataConstructor();

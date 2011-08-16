@@ -36,7 +36,7 @@ public class AcceptedConstructor extends DescribedTypeConstructor<Accepted>
 {
     private static final Object[] DESCRIPTORS =
     {
-            Symbol.valueOf("apache.qpid.amqp_1_0:accepted:list"),UnsignedLong.valueOf(0x0000000000000024L),
+            Symbol.valueOf("amqp:accepted:list"),UnsignedLong.valueOf(0x0000000000000024L),
     };
 
     private static final AcceptedConstructor INSTANCE = new AcceptedConstructor();

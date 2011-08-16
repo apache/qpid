@@ -37,11 +37,11 @@ public class TransactionErrors
     private final Symbol _val;
 
     
-    public static final TransactionErrors UNKNOWN_ID = new TransactionErrors(Symbol.valueOf("apache.qpid.amqp_1_0:transaction:unknown-id"));
+    public static final TransactionErrors UNKNOWN_ID = new TransactionErrors(Symbol.valueOf("amqp:transaction:unknown-id"));
     
-    public static final TransactionErrors TRANSACTION_ROLLBACK = new TransactionErrors(Symbol.valueOf("apache.qpid.amqp_1_0:transaction:rollback"));
+    public static final TransactionErrors TRANSACTION_ROLLBACK = new TransactionErrors(Symbol.valueOf("amqp:transaction:rollback"));
     
-    public static final TransactionErrors TRANSACTION_TIMEOUT = new TransactionErrors(Symbol.valueOf("apache.qpid.amqp_1_0:transaction:timeout"));
+    public static final TransactionErrors TRANSACTION_TIMEOUT = new TransactionErrors(Symbol.valueOf("amqp:transaction:timeout"));
     
 
 

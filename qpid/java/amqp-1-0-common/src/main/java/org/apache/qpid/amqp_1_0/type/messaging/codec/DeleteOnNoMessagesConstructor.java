@@ -36,7 +36,7 @@ public class DeleteOnNoMessagesConstructor extends DescribedTypeConstructor<Dele
 {
     private static final Object[] DESCRIPTORS =
     {
-            Symbol.valueOf("apache.qpid.amqp_1_0:delete-on-no-messages:list"),UnsignedLong.valueOf(0x000000000000002dL),
+            Symbol.valueOf("amqp:delete-on-no-messages:list"),UnsignedLong.valueOf(0x000000000000002dL),
     };
 
     private static final DeleteOnNoMessagesConstructor INSTANCE = new DeleteOnNoMessagesConstructor();

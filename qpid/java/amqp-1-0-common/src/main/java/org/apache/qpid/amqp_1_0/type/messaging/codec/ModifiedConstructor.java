@@ -37,7 +37,7 @@ public class ModifiedConstructor extends DescribedTypeConstructor<Modified>
 {
     private static final Object[] DESCRIPTORS =
     {
-            Symbol.valueOf("apache.qpid.amqp_1_0:modified:list"),UnsignedLong.valueOf(0x0000000000000027L),
+            Symbol.valueOf("amqp:modified:list"),UnsignedLong.valueOf(0x0000000000000027L),
     };
 
     private static final ModifiedConstructor INSTANCE = new ModifiedConstructor();

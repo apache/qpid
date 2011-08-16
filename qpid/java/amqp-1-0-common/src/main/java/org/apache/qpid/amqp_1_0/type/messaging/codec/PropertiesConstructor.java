@@ -37,7 +37,7 @@ public class PropertiesConstructor extends DescribedTypeConstructor<Properties>
 {
     private static final Object[] DESCRIPTORS =
     {
-            Symbol.valueOf("apache.qpid.amqp_1_0:properties:list"),UnsignedLong.valueOf(0x0000000000000073L),
+            Symbol.valueOf("amqp:properties:list"),UnsignedLong.valueOf(0x0000000000000073L),
     };
 
     private static final PropertiesConstructor INSTANCE = new PropertiesConstructor();

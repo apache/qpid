@@ -36,7 +36,7 @@ public class DeleteOnNoLinksOrMessagesConstructor extends DescribedTypeConstruct
 {
     private static final Object[] DESCRIPTORS =
     {
-            Symbol.valueOf("apache.qpid.amqp_1_0:delete-on-no-links-or-messages:list"),UnsignedLong.valueOf(0x000000000000002eL),
+            Symbol.valueOf("amqp:delete-on-no-links-or-messages:list"),UnsignedLong.valueOf(0x000000000000002eL),
     };
 
     private static final DeleteOnNoLinksOrMessagesConstructor INSTANCE = new DeleteOnNoLinksOrMessagesConstructor();

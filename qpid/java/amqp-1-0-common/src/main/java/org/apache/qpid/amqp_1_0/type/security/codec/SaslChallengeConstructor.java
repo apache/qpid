@@ -36,7 +36,7 @@ public class SaslChallengeConstructor extends DescribedTypeConstructor<SaslChall
 {
     private static final Object[] DESCRIPTORS =
     {
-            Symbol.valueOf("apache.qpid.amqp_1_0:sasl-challenge:list"),UnsignedLong.valueOf(0x0000000000000042L),
+            Symbol.valueOf("amqp:sasl-challenge:list"),UnsignedLong.valueOf(0x0000000000000042L),
     };
 
     private static final SaslChallengeConstructor INSTANCE = new SaslChallengeConstructor();
