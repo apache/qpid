@@ -1086,6 +1086,20 @@ QPID_AUTO_TEST_CASE(testAcknowledgeUpTo)
     BOOST_CHECK(!fix.session.createReceiver(fix.queue).fetch(m, Duration::IMMEDIATE));
 }
 
+QPID_AUTO_TEST_CASE(testCreateBindingsOnStandardExchange)
+{
+    QueueFixture fix;
+    Sender sender = fix.session.createSender((boost::format("amq.direct; {create:always, node:{type:topic, x-bindings:[{queue:%1%, key:my-subject}]}}") % fix.queue).str());
+    Message out("test-message");
+    out.setSubject("my-subject");
+    sender.send(out);
+    Receiver receiver = fix.session.createReceiver(fix.queue);
+    Message in = receiver.fetch(Duration::SECOND * 5);
+    fix.session.acknowledge();
+    BOOST_CHECK_EQUAL(in.getContent(), out.getContent());
+    BOOST_CHECK_EQUAL(in.getSubject(), out.getSubject());
+}
+
 QPID_AUTO_TEST_SUITE_END()
 
 }} // namespace qpid::tests
