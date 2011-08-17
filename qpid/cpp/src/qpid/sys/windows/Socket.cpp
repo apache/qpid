@@ -19,24 +19,18 @@
  *
  */
 
+#include "qpid/sys/Socket.h"
+
+#include "qpid/sys/SocketAddress.h"
+#include "qpid/sys/windows/check.h"
+#include "qpid/sys/windows/IoHandlePrivate.h"
+
 // Ensure we get all of winsock2.h
 #ifndef _WIN32_WINNT
 #define _WIN32_WINNT 0x0501
 #endif
 
-#include "qpid/sys/Socket.h"
-#include "qpid/sys/SocketAddress.h"
-#include "qpid/sys/windows/IoHandlePrivate.h"
-#include "qpid/sys/windows/check.h"
-#include "qpid/sys/Time.h"
-
-#include <cstdlib>
-#include <string.h>
-
 #include <winsock2.h>
-
-#include <boost/format.hpp>
-#include <boost/lexical_cast.hpp>
 
 // Need to initialize WinSock. Ideally, this would be a singleton or embedded
 // in some one-time initialization function. I tried boost singleton and could
@@ -91,35 +85,28 @@ namespace {
 
 std::string getName(SOCKET fd, bool local)
 {
-    sockaddr_storage name; // big enough for any socket address
-    socklen_t namelen = sizeof(name);
+    ::sockaddr_storage name_s; // big enough for any socket address
+    ::sockaddr* name = (::sockaddr*)&name_s;
+    ::socklen_t namelen = sizeof(name_s);
+
     if (local) {
-        QPID_WINSOCK_CHECK(::getsockname(fd, (sockaddr*)&name, &namelen));
+        QPID_WINSOCK_CHECK(::getsockname(fd, name, &namelen));
     } else {
-        QPID_WINSOCK_CHECK(::getpeername(fd, (sockaddr*)&name, &namelen));
+        QPID_WINSOCK_CHECK(::getpeername(fd, name, &namelen));
     }
 
-    char servName[NI_MAXSERV];
-    char dispName[NI_MAXHOST];
-    if (int rc = ::getnameinfo((sockaddr*)&name, namelen,
-                               dispName, sizeof(dispName), 
-                               servName, sizeof(servName), 
-                               NI_NUMERICHOST | NI_NUMERICSERV) != 0)
-        throw qpid::Exception(QPID_MSG(gai_strerror(rc)));
-    return std::string(dispName) + ":" + std::string(servName);
+    return SocketAddress::asString(name, namelen);
 }
 
 uint16_t getLocalPort(int fd)
 {
-    ::sockaddr_storage name;
-    ::socklen_t namelen = sizeof(name);
-    QPID_WINSOCK_CHECK(::getsockname(fd, (::sockaddr*)&name, &namelen));
+    ::sockaddr_storage name_s; // big enough for any socket address
+    ::sockaddr* name = (::sockaddr*)&name_s;
+    ::socklen_t namelen = sizeof(name_s);
 
-    switch (name.ss_family) {
-    case AF_INET: return ntohs(((::sockaddr_in&)name).sin_port);
-    case AF_INET6: return ntohs(((::sockaddr_in6&)name).sin6_port);
-    default:throw Exception(QPID_MSG("Unexpected socket type"));
-    }
+    QPID_WINSOCK_CHECK(::getsockname(fd, name, &namelen));
+
+    return SocketAddress::getPort(name);
 }
 }  // namespace
 
@@ -135,8 +122,7 @@ Socket::Socket(IOHandlePrivate* h) :
     nodelay(false)
 {}
 
-void
-Socket::createSocket(const SocketAddress& sa) const
+void Socket::createSocket(const SocketAddress& sa) const
 {
     SOCKET& socket = impl->fd;
     if (socket != INVALID_SOCKET) Socket::close();
@@ -152,11 +138,11 @@ Socket::createSocket(const SocketAddress& sa) const
         if (nodelay) setTcpNoDelay();
         if (getAddrInfo(sa).ai_family == AF_INET6) {
             int flag = 1;
-            int result = setsockopt(socket, IPPROTO_IPV6, IPV6_V6ONLY, (char *)&flag, sizeof(flag));
+            int result = ::setsockopt(socket, IPPROTO_IPV6, IPV6_V6ONLY, (char *)&flag, sizeof(flag));
             QPID_WINSOCK_CHECK(result);
         }
     } catch (std::exception&) {
-        closesocket(s);
+        ::closesocket(s);
         socket = INVALID_SOCKET;
         throw;
     }
@@ -264,15 +250,17 @@ Socket* Socket::accept() const
 
 std::string Socket::getPeerAddress() const
 {
-    if (peername.empty())
+    if (peername.empty()) {
         peername = getName(impl->fd, false);
+    }
     return peername;
 }
 
 std::string Socket::getLocalAddress() const
 {
-    if (localname.empty())
+    if (localname.empty()) {
         localname = getName(impl->fd, true);
+    }
     return localname;
 }
 
