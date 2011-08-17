@@ -70,10 +70,6 @@ class MessageAllocator;
 class Queue : public boost::enable_shared_from_this<Queue>,
               public PersistableQueue, public management::Manageable {
 
- public:
-    enum Disposition {FIFO, LVQ, PRIORITY, GROUP};
-
- private:
     struct UsageBarrier
     {
         Queue& parent;
@@ -134,8 +130,6 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     int autoDeleteTimeout;
     boost::intrusive_ptr<qpid::sys::TimerTask> autoDeleteTask;
     boost::shared_ptr<MessageAllocator> allocator;
-    Disposition type;
-
 
     void push(boost::intrusive_ptr<Message>& msg, bool isRecovery=false);
     void setPolicy(std::auto_ptr<QueuePolicy> policy);
@@ -412,8 +406,6 @@ class Queue : public boost::enable_shared_from_this<Queue>,
 
     uint32_t getDequeueSincePurge() { return dequeueSincePurge.get(); }
     void setDequeueSincePurge(uint32_t value);
-
-    Disposition getDisposition() const { return type; }
 };
 }
 }

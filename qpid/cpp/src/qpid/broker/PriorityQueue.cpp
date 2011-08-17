@@ -88,25 +88,6 @@ bool PriorityQueue::find(const framing::SequenceNumber& position, QueuedMessage&
     return find(position, message, false);
 }
 
-bool PriorityQueue::next(const QueuedMessage& message, QueuedMessage& next)
-{
-    uint p = getPriorityLevel(message);
-    QueuedMessage match;
-    match.position = message.position+1;
-    Deque::iterator m = lower_bound(messages[p].begin(), messages[p].end(), match);
-    if (m != messages[p].end()) {
-        next = *m;
-        return true;
-    }
-    while (p-- > 0) {
-        if (!messages[p].empty()) {
-            next = messages[p].front();
-            return true;
-        }
-    }
-    return false;
-}
-
 bool PriorityQueue::next(const framing::SequenceNumber& position, QueuedMessage& message)
 {
     QueuedMessage match;

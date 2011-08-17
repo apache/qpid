@@ -142,7 +142,7 @@ void DeliveryRecord::reject()
             //just drop it
             QPID_LOG(info, "Dropping rejected message from " << queue->getName());
         }
-        queue->dequeue(0, msg);
+        dequeue();
         setEnded();
     }
 }
@@ -152,8 +152,7 @@ uint32_t DeliveryRecord::getCredit() const
     return credit;
 }
 
-void DeliveryRecord::acquire(DeliveryIds& results)
-{
+void DeliveryRecord::acquire(DeliveryIds& results) {
     if (queue->acquire(msg, tag)) {
         acquired = true;
         results.push_back(id);

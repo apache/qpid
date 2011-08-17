@@ -44,11 +44,6 @@ bool LegacyLVQ::remove(const framing::SequenceNumber& position, QueuedMessage& m
     }
 }
 
-bool LegacyLVQ::next(const QueuedMessage& message, QueuedMessage& next)
-{
-    return this->next(message.position, next);
-}
-
 bool LegacyLVQ::next(const framing::SequenceNumber& position, QueuedMessage& message)
 {
     if (MessageMap::next(position, message)) {

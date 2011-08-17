@@ -46,7 +46,6 @@ class PriorityQueue : public Messages
     bool remove(const framing::SequenceNumber&, QueuedMessage&);
     bool find(const framing::SequenceNumber&, QueuedMessage&);
     bool next(const framing::SequenceNumber&, QueuedMessage&);
-    bool next(const QueuedMessage&, QueuedMessage&);
 
     QueuedMessage& front();
     void pop();

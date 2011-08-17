@@ -77,11 +77,6 @@ bool MessageMap::find(const framing::SequenceNumber& position, QueuedMessage& me
     }
 }
 
-bool MessageMap::next(const QueuedMessage& message, QueuedMessage& next)
-{
-    return this->next(message.position, next);
-}
-
 bool MessageMap::next(const framing::SequenceNumber& position, QueuedMessage& message)
 {
     if (!messages.empty() && position < front().position) {
