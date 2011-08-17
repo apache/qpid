@@ -34,9 +34,6 @@
 #include <netdb.h>
 #include <cstdlib>
 #include <string.h>
-#include <iostream>
-
-#include <boost/format.hpp>
 
 namespace qpid {
 namespace sys {
@@ -44,38 +41,28 @@ namespace sys {
 namespace {
 std::string getName(int fd, bool local)
 {
-    ::sockaddr_storage name; // big enough for any socket address
-    ::socklen_t namelen = sizeof(name);
+    ::sockaddr_storage name_s; // big enough for any socket address
+    ::sockaddr* name = (::sockaddr*)&name_s;
+    ::socklen_t namelen = sizeof(name_s);
 
-    int result = -1;
     if (local) {
-        result = ::getsockname(fd, (::sockaddr*)&name, &namelen);
+        QPID_POSIX_CHECK( ::getsockname(fd, name, &namelen) );
     } else {
-        result = ::getpeername(fd, (::sockaddr*)&name, &namelen);
+        QPID_POSIX_CHECK( ::getpeername(fd, name, &namelen) );
     }
-    QPID_POSIX_CHECK(result);
 
-    char servName[NI_MAXSERV];
-    char dispName[NI_MAXHOST];
-    if (int rc=::getnameinfo((::sockaddr*)&name, namelen, dispName, sizeof(dispName),
-                                servName, sizeof(servName),
-                                NI_NUMERICHOST | NI_NUMERICSERV) != 0)
-        throw QPID_POSIX_ERROR(rc);
-    return std::string(dispName) + ":" + std::string(servName);
+    return SocketAddress::asString(name, namelen);
 }
 
 uint16_t getLocalPort(int fd)
 {
-    ::sockaddr_storage name;
-    ::socklen_t namelen = sizeof(name);
-    if (::getsockname(fd, (::sockaddr*)&name, &namelen) < 0)
-        throw QPID_POSIX_ERROR(errno);
+    ::sockaddr_storage name_s; // big enough for any socket address
+    ::sockaddr* name = (::sockaddr*)&name_s;
+    ::socklen_t namelen = sizeof(name_s);
 
-    switch (name.ss_family) {
-    case AF_INET: return ntohs(((::sockaddr_in&)name).sin_port);
-    case AF_INET6: return ntohs(((::sockaddr_in6&)name).sin6_port);
-    default:throw Exception(QPID_MSG("Unexpected socket type"));
-    }
+    QPID_POSIX_CHECK( ::getsockname(fd, name, &namelen) );
+
+    return SocketAddress::getPort(name);
 }
 }
 

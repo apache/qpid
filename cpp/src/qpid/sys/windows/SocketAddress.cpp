@@ -19,14 +19,15 @@
  *
  */
 
+#include "qpid/sys/SocketAddress.h"
+
+#include "qpid/Exception.h"
+#include "qpid/Msg.h"
+
 // Ensure we get all of winsock2.h
 #ifndef _WIN32_WINNT
 #define _WIN32_WINNT 0x0501
 #endif
-
-#include "qpid/sys/SocketAddress.h"
-
-#include "qpid/sys/windows/check.h"
 
 #include <winsock2.h>
 #include <ws2tcpip.h>
@@ -64,23 +65,43 @@ SocketAddress::~SocketAddress()
     }
 }
 
+std::string SocketAddress::asString(::sockaddr const * const addr, size_t addrlen)
+{
+    char servName[NI_MAXSERV];
+    char dispName[NI_MAXHOST];
+    if (int rc=::getnameinfo(addr, addrlen,
+        dispName, sizeof(dispName),
+                             servName, sizeof(servName),
+                             NI_NUMERICHOST | NI_NUMERICSERV) != 0)
+        throw qpid::Exception(QPID_MSG(gai_strerror(rc)));
+    std::string s;
+    switch (addr->sa_family) {
+        case AF_INET: s += dispName; break;
+        case AF_INET6: s += "["; s += dispName; s+= "]"; break;
+        default: throw Exception(QPID_MSG("Unexpected socket type"));
+    }
+    s += ":";
+    s += servName;
+    return s;
+}
+
+uint16_t SocketAddress::getPort(::sockaddr const * const addr)
+{
+    switch (addr->sa_family) {
+        case AF_INET: return ntohs(((::sockaddr_in*)addr)->sin_port);
+        case AF_INET6: return ntohs(((::sockaddr_in6*)addr)->sin6_port);
+        default:throw Exception(QPID_MSG("Unexpected socket type"));
+    }
+}
+
 std::string SocketAddress::asString(bool numeric) const
 {
     if (!numeric)
         return host + ":" + port;
     // Canonicalise into numeric id
     const ::addrinfo& ai = getAddrInfo(*this);
-    char servName[NI_MAXSERV];
-    char dispName[NI_MAXHOST];
-    if (int rc=::getnameinfo(ai.ai_addr, ai.ai_addrlen,
-                            dispName, sizeof(dispName),
-                            servName, sizeof(servName),
-                            NI_NUMERICHOST | NI_NUMERICSERV) != 0)
-        throw qpid::Exception(QPID_MSG(gai_strerror(rc)));
-    std::string s(dispName);
-    s += ":";
-    s += servName;
-    return s;
+
+    return asString(ai.ai_addr, ai.ai_addrlen);
 }
 
 bool SocketAddress::nextAddress() {
