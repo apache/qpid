@@ -29,24 +29,24 @@
 # * User chooses in-source or out-of-source build directories.
 #
 #     - 'In-source' builds happen when CMake is run from directory qpid\cpp.
-#       Hundreds of CMake-generated output files are placed in qpid\cpp\src. 
+#       Hundreds of CMake-generated output files are placed in qpid\cpp\src.
 #       These files go right on top of files that are part of the source tree
 #       in qpid\cpp\src.
-#       In-source builds support only one platform. 
+#       In-source builds support only one platform.
 #       Choose only a 32-bit or a 64-bit platform but not both.
 #
 #     - Out-of-source builds happen when the user chooses another directory
 #       under qpid in which to run CMake. Out-of-source builds are required
-#       in order to build both x86 and x64 targets using the same source tree. 
+#       in order to build both x86 and x64 targets using the same source tree.
 #       For each build platform (32-bit x86 or Win32, or 64-bit x64) the user
-#       specifies a build directory and a specific version of Boost. 
+#       specifies a build directory and a specific version of Boost.
 #       Many platform/Boost-version directories may reside side by side.
 #
 # * User chooses to run CMake or not.
 #
 #     - When a new build directory is created then the user is given the
-#       option of running CMake in that directory. Running CMake is a 
-#       necessary step as CMake creates important source, solution, and 
+#       option of running CMake in that directory. Running CMake is a
+#       necessary step as CMake creates important source, solution, and
 #       project files.
 #
 #     - If a directory "looks like" is has already had CMake run in it
@@ -63,7 +63,7 @@
 #  3. CMake 2.8 (or later) must be installed. The cmake\bin directory
 #     must be in the user's path.
 #  4. Boost library specifications may or may not be in the user's path.
-#     The script author recommeds not to have Boost in the path and only 
+#     The script author recommeds not to have Boost in the path and only
 #     allow the Boost path to be specified by generated command procedures.
 #  5. Visual Studio build environment must be installed.
 #
@@ -90,7 +90,7 @@
 #  In this example the build dirs are new. The script will prompt
 #  asking if CMake is to run in the build directories. User chooses Yes.
 #
-#  Now this script runs CMake twice, once each with the 32-bit and 64-bit 
+#  Now this script runs CMake twice, once each with the 32-bit and 64-bit
 #  generators.
 #  * This step creates qpid-cpp.sln and related project files.
 #      C:\svn\qpid\build32\qpid-cpp.sln
@@ -107,7 +107,7 @@
 #   C:\svn\qpid\build64\setenv-messaging-x64-64bit.bat
 #
 #  Next the user compiles solution qpid\build32\qpid-cpp.sln.
-#  
+#
 # Using the generated scripts:
 #
 # Case 1. Run an executable in 32-bit mode.
@@ -168,7 +168,7 @@ function AskYesOrNo ($Question="No question?", $Title="No Title?")
            [Windows.Forms.MessageBoxIcon]::Question)
 
     $result = $dlg -eq [Windows.Forms.DialogResult]::Yes
-    
+
     $result
 }
 
@@ -188,7 +188,7 @@ function SanityCheckBoostPath ($path=0)
 
         $toTest = ('include', 'lib')
         foreach ($pattern in $toTest) {
-        	$target = Join-Path $path $pattern
+            $target = Join-Path $path $pattern
             if (!(Test-Path -path $target)) {
                 $result = $false
             }
@@ -196,7 +196,7 @@ function SanityCheckBoostPath ($path=0)
     } else {
         $result = $false
     }
-    
+
     if (! $result) {
         Write-Host "The path ""$displayPath"" does not appear to be a Boost root path."
     }
@@ -219,7 +219,7 @@ function SanityCheckBuildPath ($path=0)
         $toTest = ('CMakeFiles', 'docs', 'etc', 'examples', 'include',
                    'managementgen', 'src')
         foreach ($pattern in $toTest) {
-        	$target = Join-Path $path $pattern
+            $target = Join-Path $path $pattern
             if (!(Test-Path -path $target)) {
                 $result = $false
             }
@@ -313,7 +313,7 @@ function WriteDotnetBindingEnvSetupBat
 
     $out = @("@ECHO OFF
 REM
-REM Call this command procedure from a command prompt to set up a $vsPlatform ($nBits-bit) 
+REM Call this command procedure from a command prompt to set up a $vsPlatform ($nBits-bit)
 REM $slnName environment
 REM
 REM     > call $outfileName
@@ -437,7 +437,7 @@ if ($make64) {
 if ($defined32) {
 
     Write-Host "Writing 32-bit scripts..."
-    
+
     ###########
     # Powershell script to launch org.apache.qpid.messaging.sln
     #
@@ -448,8 +448,8 @@ if ($defined32) {
                                       -vsPlatform "x86" `
                                            -nBits "32" `
                                      -outfileName "start-devenv-messaging-x86-32bit.ps1"
-                                     
-    
+
+
     ###########
     # Batch script (that you doubleclick) to launch powershell script
     # that launches org.apache.qpid.messaging.sln.
@@ -482,7 +482,7 @@ if ($defined32) {
 if ($defined64) {
 
     Write-Host "Writing 64-bit scripts..."
-    
+
     ###########
     # Powershell script to launch org.apache.qpid.messaging.sln
     #
@@ -493,8 +493,8 @@ if ($defined64) {
                                       -vsPlatform "x64" `
                                            -nBits "64" `
                                      -outfileName "start-devenv-messaging-x64-64bit.ps1"
-                                     
-    
+
+
     ###########
     # Batch script (that you doubleclick) to launch powershell script
     # that launches org.apache.qpid.messaging.sln.
