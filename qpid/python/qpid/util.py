@@ -151,7 +151,10 @@ class URL:
       if self.password:
         s += "/%s" % self.password
       s += "@"
-    s += self.host if ':' not in self.host else "[%s]" % self.host
+    if ':' not in self.host:
+      s += self.host
+    else:
+      s += "[%s]" % self.host
     if self.port:
       s += ":%s" % self.port
     return s
