@@ -25,6 +25,7 @@ import java.nio.ByteBuffer;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLEngine;
 
+import org.apache.qpid.ssl.SSLContextFactory;
 import org.apache.qpid.transport.Connection;
 import org.apache.qpid.transport.ConnectionListener;
 import org.apache.qpid.transport.ConnectionSettings;
@@ -114,7 +115,14 @@ public class SecurityLayer
             SSLContext sslCtx;
             try
             {
-                sslCtx = SSLUtil.createSSLContext(settings);
+                sslCtx = SSLContextFactory
+                        .buildClientContext(settings.getTrustStorePath(),
+                                settings.getTrustStorePassword(),
+                                settings.getTrustStoreCertType(),
+                                settings.getKeyStorePath(),
+                                settings.getKeyStorePassword(),
+                                settings.getKeyStoreCertType(),
+                                settings.getCertAlias());
             }
             catch (Exception e)
             {

@@ -22,11 +22,12 @@ package org.apache.qpid.transport.network;
 
 import java.nio.ByteBuffer;
 
-import org.apache.qpid.ssl.SSLContextFactory;
+import javax.net.ssl.SSLContext;
+
 import org.apache.qpid.transport.ConnectionSettings;
 import org.apache.qpid.transport.Receiver;
 
 public interface OutgoingNetworkTransport extends NetworkTransport
 {
-    public NetworkConnection connect(ConnectionSettings settings, Receiver<ByteBuffer> delegate, SSLContextFactory sslFactory);
+    public NetworkConnection connect(ConnectionSettings settings, Receiver<ByteBuffer> delegate, SSLContext sslContext);
 }

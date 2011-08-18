@@ -37,7 +37,10 @@ import org.apache.mina.util.AvailablePortFinder;
 
 public class QpidTestCase extends TestCase
 {
-    protected static final Logger _logger = Logger.getLogger(QpidTestCase.class);
+    public static final String QPID_HOME = System.getProperty("QPID_HOME");
+    public static final String TEST_RESOURCES_DIR = QPID_HOME + "/../test-profiles/test_resources/";
+
+    private static final Logger _logger = Logger.getLogger(QpidTestCase.class);
 
     private final Map<String, String> _propertiesSetForTest = new HashMap<String, String>();
 
@@ -144,9 +147,9 @@ public class QpidTestCase extends TestCase
      * completes.
      *
      * @param property The property to set
-     * @param value the value to set it to.
+     * @param value the value to set it to, if null, the property will be cleared
      */
-    protected void setTestSystemProperty(String property, String value)
+    protected void setTestSystemProperty(final String property, final String value)
     {
         if (!_propertiesSetForTest.containsKey(property))
         {
@@ -154,7 +157,14 @@ public class QpidTestCase extends TestCase
             _propertiesSetForTest.put(property, System.getProperty(property));
         }
 
-        System.setProperty(property, value);
+        if (value == null)
+        {
+            System.clearProperty(property);
+        }
+        else
+        {
+            System.setProperty(property, value);
+        }
     }
 
     /**
@@ -162,6 +172,7 @@ public class QpidTestCase extends TestCase
      */
     protected void revertTestSystemProperties()
     {
+        _logger.debug("reverting " + _propertiesSetForTest.size() + " test properties");
         for (String key : _propertiesSetForTest.keySet())
         {
             String value = _propertiesSetForTest.get(key);

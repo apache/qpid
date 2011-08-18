@@ -60,7 +60,7 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
 
     public static final int DEFAULT_FRAME_SIZE = 65536;
     public static final int DEFAULT_PORT = 5672;
-    public static final int DEFAULT_SSL_PORT = 8672;
+    public static final int DEFAULT_SSL_PORT = 5671;
     public static final long DEFAULT_HOUSEKEEPING_PERIOD = 30000L;
     public static final int DEFAULT_JMXPORT = 8999;
 
@@ -688,12 +688,12 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
 
     public String getKeystorePath()
     {
-        return getStringValue("connector.ssl.keystorePath", "none");
+        return getStringValue("connector.ssl.keystorePath");
     }
 
     public String getKeystorePassword()
     {
-        return getStringValue("connector.ssl.keystorePassword", "none");
+        return getStringValue("connector.ssl.keystorePassword");
     }
 
     public String getCertType()
