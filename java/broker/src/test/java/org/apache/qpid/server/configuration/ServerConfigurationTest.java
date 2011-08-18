@@ -511,7 +511,7 @@ public class ServerConfigurationTest extends QpidTestCase
     {
         // Check default
         _serverConfig.initialise();
-        assertEquals("none", _serverConfig.getKeystorePath());
+        assertNull(_serverConfig.getKeystorePath());
 
         // Check value we set
         _config.setProperty("connector.ssl.keystorePath", "a");
@@ -524,7 +524,7 @@ public class ServerConfigurationTest extends QpidTestCase
     {
         // Check default
         _serverConfig.initialise();
-        assertEquals("none", _serverConfig.getKeystorePassword());
+        assertNull(_serverConfig.getKeystorePassword());
 
         // Check value we set
         _config.setProperty("connector.ssl.keystorePassword", "a");

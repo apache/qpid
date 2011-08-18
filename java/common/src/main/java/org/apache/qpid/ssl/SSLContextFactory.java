@@ -20,18 +20,17 @@
  */
 package org.apache.qpid.ssl;
 
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
 
+import org.apache.qpid.transport.network.security.ssl.QpidClientX509KeyManager;
 import org.apache.qpid.transport.network.security.ssl.SSLUtil;
 
 /**
@@ -39,157 +38,92 @@ import org.apache.qpid.transport.network.security.ssl.SSLUtil;
  * before this will work.
  * 
  */
-public class SSLContextFactory {
-	
-	/**
-	 * Path to the Java keystore file
-	 */
-	private String _keyStorePath;
-	
-	/**
-	 * Password for the keystore
-	 */
-	private String _keyStorePassword;
-	
-	/**
-	 * Cert type to use in keystore
-	 */
-	private String _keyStoreCertType;
-	
-	/**
-     * Path to the Java truststore file
-     */
-    private String _trustStorePath;
-    
-    /**
-     * Password for the truststore
-     */
-    private String _trustStorePassword;
-    
-    /**
-     * Cert type to use in truststore
-     */
-    private String _trustStoreCertType;
-    
-	private KeyManager customKeyManager;
-    
-    public SSLContextFactory(String trustStorePath, String trustStorePassword,
-            String trustStoreCertType) 
+public class SSLContextFactory
+{
+    public static final String JAVA_KEY_STORE_CODE = "JKS";
+    public static final String TRANSPORT_LAYER_SECURITY_CODE = "TLS";
+    public static final String KEY_STORE_CERTIFICATE_TYPE = "SunX509";
+
+    private SSLContextFactory()
     {
-        this(trustStorePath,trustStorePassword,trustStoreCertType,
-                          trustStorePath,trustStorePassword,trustStoreCertType);
+        //no instances
     }
 
-    /**
-	 * Create a factory instance
-	 * @param keystorePath path to the Java keystore file
-	 * @param keystorePassword password for the Java keystore
-	 * @param certType certificate type
-	 */
-	public SSLContextFactory(String trustStorePath, String trustStorePassword, String trustStoreCertType,
-            String keyStorePath, String keyStorePassword, String keyStoreCertType) 
-	{
-
-	    _trustStorePath = trustStorePath;
-        _trustStorePassword = trustStorePassword;
-                
-        if (_trustStorePassword != null && _trustStorePassword.equals("none"))
-        {
-            _trustStorePassword = null;
-        }
-        _trustStoreCertType = trustStoreCertType;
-        
-	    _keyStorePath = keyStorePath;
-		_keyStorePassword = keyStorePassword;
-				
-		if (_keyStorePassword != null && _keyStorePassword.equals("none"))
-		{
-			_keyStorePassword = null;
-		}
-		_keyStoreCertType = keyStoreCertType;
-		
-		if (_trustStorePath == null) {
-			throw new IllegalArgumentException("A TrustStore path or KeyStore path must be specified");
-		}
-		if (_trustStoreCertType == null) {
-			throw new IllegalArgumentException("Cert type must be specified");
-		}
-	}
-	
-	public SSLContextFactory(String trustStorePath, String trustStorePassword, String trustStoreCertType,
-	                         KeyManager customKeyManager) 
+    public static SSLContext buildServerContext(final String keyStorePath,
+            final String keyStorePassword, final String keyStoreCertType)
+            throws GeneralSecurityException, IOException
     {
-
-        _trustStorePath = trustStorePath;
-        _trustStorePassword = trustStorePassword;
-                
-        if (_trustStorePassword != null && _trustStorePassword.equals("none"))
-        {
-            _trustStorePassword = null;
-        }
-        _trustStoreCertType = trustStoreCertType;
-        
-        if (_trustStorePath == null) {
-            throw new IllegalArgumentException("A TrustStore path or KeyStore path must be specified");
-        }
-        if (_trustStoreCertType == null) {
-            throw new IllegalArgumentException("Cert type must be specified");
-        }
-        
-        this.customKeyManager = customKeyManager;
+        return buildContext(null, null, null, keyStorePath, keyStorePassword,
+                keyStoreCertType, null);
     }
-	
-	
-	/**
-	 * Builds a SSLContext appropriate for use with a server
-	 * @return SSLContext
-	 * @throws GeneralSecurityException
-	 * @throws IOException
-	 */
 
-	public SSLContext buildServerContext() throws GeneralSecurityException, IOException
-	{
-        KeyStore ts = SSLUtil.getInitializedKeyStore(_trustStorePath,_trustStorePassword);
-        TrustManagerFactory tmf = TrustManagerFactory.getInstance(_trustStoreCertType);
-        tmf.init(ts);
-        
+    public static SSLContext buildClientContext(final String trustStorePath,
+            final String trustStorePassword, final String trustStoreCertType,
+            final String keyStorePath, final String keyStorePassword,
+            final String keyStoreCertType, final String certAlias)
+            throws GeneralSecurityException, IOException
+    {
+        return buildContext(trustStorePath, trustStorePassword,
+                trustStoreCertType, keyStorePath, keyStorePassword,
+                keyStoreCertType, certAlias);
+    }
+    
+    private static SSLContext buildContext(final String trustStorePath,
+            final String trustStorePassword, final String trustStoreCertType,
+            final String keyStorePath, final String keyStorePassword,
+            final String keyStoreCertType, final String certAlias)
+            throws GeneralSecurityException, IOException
+    {
         // Initialize the SSLContext to work with our key managers.
-        SSLContext sslContext = SSLContext.getInstance("TLS");
-        
-        if (customKeyManager != null)
+        final SSLContext sslContext = SSLContext
+                .getInstance(TRANSPORT_LAYER_SECURITY_CODE);
+
+        final TrustManager[] trustManagers;
+        final KeyManager[] keyManagers;
+
+        if (trustStorePath != null)
         {
-            sslContext.init(new KeyManager[]{customKeyManager},
-                            tmf.getTrustManagers(), null);
-            
+            final KeyStore ts = SSLUtil.getInitializedKeyStore(trustStorePath,
+                    trustStorePassword);
+            final TrustManagerFactory tmf = TrustManagerFactory
+                    .getInstance(trustStoreCertType);
+            tmf.init(ts);
+
+            trustManagers = tmf.getTrustManagers();
         }
         else
         {
-            // Create keystore
-            KeyStore ks = SSLUtil.getInitializedKeyStore(_keyStorePath,_keyStorePassword);
-            // Set up key manager factory to use our key store
-            KeyManagerFactory kmf = KeyManagerFactory.getInstance(_keyStoreCertType);
-            kmf.init(ks, _keyStorePassword.toCharArray());
-
-            sslContext.init(kmf.getKeyManagers(), tmf.getTrustManagers(), null);    
+            trustManagers = null;
         }
-        
-        return sslContext;		
-	}
-	
-	/**
-	 * Creates a SSLContext factory appropriate for use with a client
-	 * @return SSLContext
-	 * @throws GeneralSecurityException
-	 * @throws IOException
-	 */
-	public SSLContext buildClientContext() throws GeneralSecurityException, IOException
-	{
-		KeyStore ks = SSLUtil.getInitializedKeyStore(_trustStorePath,_trustStorePassword);
-        TrustManagerFactory tmf = TrustManagerFactory.getInstance(_trustStoreCertType);
-        tmf.init(ks);
-        SSLContext context = SSLContext.getInstance("TLS");
-        context.init(null, tmf.getTrustManagers(), null);
-        return context;		
-	}
-	
+
+        if (keyStorePath != null)
+        {
+            if (certAlias != null)
+            {
+                keyManagers = new KeyManager[] { new QpidClientX509KeyManager(
+                        certAlias, keyStorePath, keyStorePassword,
+                        keyStoreCertType) };
+            }
+            else
+            {
+                final KeyStore ks = SSLUtil.getInitializedKeyStore(
+                        keyStorePath, keyStorePassword);
+
+                char[] keyStoreCharPassword = keyStorePassword == null ? null : keyStorePassword.toCharArray();
+                // Set up key manager factory to use our key store
+                final KeyManagerFactory kmf = KeyManagerFactory
+                        .getInstance(keyStoreCertType);
+                kmf.init(ks, keyStoreCharPassword);
+                keyManagers = kmf.getKeyManagers();
+            }
+        }
+        else
+        {
+            keyManagers = null;
+        }
+
+        sslContext.init(keyManagers, trustManagers, null);
+
+        return sslContext;
+    }
 }

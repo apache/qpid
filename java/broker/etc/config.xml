@@ -33,12 +33,12 @@
              To disasble Non-SSL port set sslOnly to true -->
         <ssl>
             <enabled>false</enabled>
+            <port>5671</port>
             <sslOnly>false</sslOnly>
             <keystorePath>/path/to/keystore.ks</keystorePath>
             <keystorePassword>keystorepass</keystorePassword>
         </ssl>
         <port>5672</port>
-        <sslport>8672</sslport>
         <socketReceiveBuffer>262144</socketReceiveBuffer>
         <socketSendBuffer>262144</socketSendBuffer>
     </connector>

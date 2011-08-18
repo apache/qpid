@@ -519,7 +519,7 @@ public class BrokerLoggingTest extends AbstractTestLogging
             setConfigurationProperty("connector.ssl.keyStorePath", getConfigurationStringProperty("management.ssl.keyStorePath"));
             setConfigurationProperty("connector.ssl.keyStorePassword", getConfigurationStringProperty("management.ssl.keyStorePassword"));
 
-            Integer sslPort = Integer.parseInt(getConfigurationStringProperty("connector.sslport"));
+            Integer sslPort = Integer.parseInt(getConfigurationStringProperty("connector.ssl.port"));
 
             startBroker();
 

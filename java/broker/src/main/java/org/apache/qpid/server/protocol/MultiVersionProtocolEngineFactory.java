@@ -20,7 +20,6 @@
 */
 package org.apache.qpid.server.protocol;
 
-import java.util.EnumSet;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -32,22 +31,11 @@ import org.apache.qpid.transport.network.NetworkConnection;
 
 public class MultiVersionProtocolEngineFactory implements ProtocolEngineFactory
 {
-    private static final Set<AmqpProtocolVersion> ALL_VERSIONS = EnumSet.allOf(AmqpProtocolVersion.class);
     private static final AtomicLong ID_GENERATOR = new AtomicLong(0);
 
     private final IApplicationRegistry _appRegistry;
     private final String _fqdn;
     private final Set<AmqpProtocolVersion> _supported;
-
-    public MultiVersionProtocolEngineFactory()
-    {
-        this("localhost", ALL_VERSIONS);
-    }
-
-    public MultiVersionProtocolEngineFactory(String fqdn)
-    {
-        this(fqdn, ALL_VERSIONS);
-    }
 
     public MultiVersionProtocolEngineFactory(String fqdn, Set<AmqpProtocolVersion> supportedVersions)
     {
