@@ -33,6 +33,8 @@ import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 
+import javax.net.ssl.SSLContext;
+
 import org.apache.log4j.PropertyConfigurator;
 import org.apache.log4j.xml.QpidLog4JConfigurator;
 import org.apache.qpid.server.configuration.ServerConfiguration;
@@ -45,8 +47,8 @@ import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.GenericActor;
 import org.apache.qpid.server.logging.management.LoggingManagementMBean;
 import org.apache.qpid.server.logging.messages.BrokerMessages;
-import org.apache.qpid.server.protocol.MultiVersionProtocolEngineFactory;
 import org.apache.qpid.server.protocol.AmqpProtocolVersion;
+import org.apache.qpid.server.protocol.MultiVersionProtocolEngineFactory;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.ConfigurationFileApplicationRegistry;
 import org.apache.qpid.server.transport.QpidAcceptor;
@@ -191,57 +193,41 @@ public class Broker
             {
                 for(int port : ports)
                 {
-                    Set<AmqpProtocolVersion> supported = EnumSet.allOf(AmqpProtocolVersion.class);
+                    final Set<AmqpProtocolVersion> supported = 
+                                    getSupportedVersions(port, exclude_0_10, exclude_0_9_1, exclude_0_9, exclude_0_8);
+                    final NetworkTransportConfiguration settings = 
+                                    new ServerNetworkTransportConfiguration(serverConfig, port, bindAddress.getHostName(), Transport.TCP);
 
-                    if(exclude_0_10.contains(port))
-                    {
-                        supported.remove(AmqpProtocolVersion.v0_10);
-                    }
-
-                    if(exclude_0_9_1.contains(port))
-                    {
-                        supported.remove(AmqpProtocolVersion.v0_9_1);
-                    }
-                    if(exclude_0_9.contains(port))
-                    {
-                        supported.remove(AmqpProtocolVersion.v0_9);
-                    }
-                    if(exclude_0_8.contains(port))
-                    {
-                        supported.remove(AmqpProtocolVersion.v0_8);
-                    }
-
-                    NetworkTransportConfiguration settings = 
-                        new ServerNetworkTransportConfiguration(serverConfig, port, bindAddress.getHostName(), Transport.TCP);
-
-                    IncomingNetworkTransport transport = Transport.getIncomingTransportInstance();
-                    MultiVersionProtocolEngineFactory protocolEngineFactory =
-                        new MultiVersionProtocolEngineFactory(hostName, supported);
+                    final IncomingNetworkTransport transport = Transport.getIncomingTransportInstance();
+                    final MultiVersionProtocolEngineFactory protocolEngineFactory =
+                                    new MultiVersionProtocolEngineFactory(hostName, supported);
 
                     transport.accept(settings, protocolEngineFactory, null);
                     ApplicationRegistry.getInstance().addAcceptor(new InetSocketAddress(bindAddress, port),
-                            new QpidAcceptor(transport,"TCP"));
+                                    new QpidAcceptor(transport,"TCP"));
                     CurrentActor.get().message(BrokerMessages.LISTENING("TCP", port));
                 }
             }
 
             if (serverConfig.getEnableSSL())
             {
-                String keystorePath = serverConfig.getKeystorePath();
-                String keystorePassword = serverConfig.getKeystorePassword();
-                String certType = serverConfig.getCertType();
-                SSLContextFactory sslFactory = 
-                    new SSLContextFactory(keystorePath, keystorePassword, certType);
+                final String keystorePath = serverConfig.getKeystorePath();
+                final String keystorePassword = serverConfig.getKeystorePassword();
+                final String certType = serverConfig.getCertType();
+                final SSLContext sslContext = SSLContextFactory.buildServerContext(keystorePath, keystorePassword, certType);
 
                 for(int sslPort : sslPorts)
                 {
-                    NetworkTransportConfiguration settings = 
+                    final Set<AmqpProtocolVersion> supported = 
+                                    getSupportedVersions(sslPort, exclude_0_10, exclude_0_9_1, exclude_0_9, exclude_0_8);
+                    final NetworkTransportConfiguration settings = 
                         new ServerNetworkTransportConfiguration(serverConfig, sslPort, bindAddress.getHostName(), Transport.TCP);
 
-                    IncomingNetworkTransport transport = new MinaNetworkTransport();
+                    final IncomingNetworkTransport transport = new MinaNetworkTransport();
+                    final MultiVersionProtocolEngineFactory protocolEngineFactory =
+                                    new MultiVersionProtocolEngineFactory(hostName, supported);
 
-                    transport.accept(settings, new MultiVersionProtocolEngineFactory(), sslFactory);
-
+                    transport.accept(settings, protocolEngineFactory, sslContext);
                     ApplicationRegistry.getInstance().addAcceptor(new InetSocketAddress(bindAddress, sslPort),
                             new QpidAcceptor(transport,"TCP"));
                     CurrentActor.get().message(BrokerMessages.LISTENING("TCP/SSL", sslPort));
@@ -257,6 +243,32 @@ public class Broker
         }
     }
 
+    private static Set<AmqpProtocolVersion> getSupportedVersions(final int port, final Set<Integer> exclude_0_10,
+                                                                final Set<Integer> exclude_0_9_1, final Set<Integer> exclude_0_9, 
+                                                                final Set<Integer> exclude_0_8)
+    {
+        final EnumSet<AmqpProtocolVersion> supported = EnumSet.allOf(AmqpProtocolVersion.class);
+
+        if(exclude_0_10.contains(port))
+        {
+            supported.remove(AmqpProtocolVersion.v0_10);
+        }
+        if(exclude_0_9_1.contains(port))
+        {
+            supported.remove(AmqpProtocolVersion.v0_9_1);
+        }
+        if(exclude_0_9.contains(port))
+        {
+            supported.remove(AmqpProtocolVersion.v0_9);
+        }
+        if(exclude_0_8.contains(port))
+        {
+            supported.remove(AmqpProtocolVersion.v0_8);
+        }
+
+        return supported;
+    }
+    
     private File getConfigFile(final String fileName,
                                final String defaultFileName,
                                final String qpidHome, boolean throwOnFileNotFound) throws InitException
