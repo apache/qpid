@@ -147,9 +147,6 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
      */
     private QpidConnectionMetaData _connectionMetaData;
 
-    /** Configuration info for SSL */
-    private SSLConfiguration _sslConfiguration;
-
     private AMQShortString _defaultTopicExchangeName = ExchangeDefaults.TOPIC_EXCHANGE_NAME;
     private AMQShortString _defaultQueueExchangeName = ExchangeDefaults.DIRECT_EXCHANGE_NAME;
     private AMQShortString _temporaryTopicExchangeName = ExchangeDefaults.TOPIC_EXCHANGE_NAME;
@@ -194,68 +191,27 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         this(new AMQConnectionURL(
                 ConnectionURL.AMQ_PROTOCOL + "://" + username + ":" + password + "@"
                 + ((clientName == null) ? "" : clientName) + "/" + virtualHost + "?brokerlist='"
-                + AMQBrokerDetails.checkTransport(broker) + "'"), null);
-    }
-
-    /**
-     * @param broker      brokerdetails
-     * @param username    username
-     * @param password    password
-     * @param clientName  clientid
-     * @param virtualHost virtualhost
-     *
-     * @throws AMQException
-     * @throws URLSyntaxException
-     */
-    public AMQConnection(String broker, String username, String password, String clientName, String virtualHost,
-                         SSLConfiguration sslConfig) throws AMQException, URLSyntaxException
-    {
-        this(new AMQConnectionURL(
-                ConnectionURL.AMQ_PROTOCOL + "://" + username + ":" + password + "@"
-                + ((clientName == null) ? "" : clientName) + "/" + virtualHost + "?brokerlist='"
-                + AMQBrokerDetails.checkTransport(broker) + "'"), sslConfig);
+                + AMQBrokerDetails.checkTransport(broker) + "'"));
     }
 
     public AMQConnection(String host, int port, String username, String password, String clientName, String virtualHost)
             throws AMQException, URLSyntaxException
     {
-        this(host, port, false, username, password, clientName, virtualHost, null);
-    }
-
-    public AMQConnection(String host, int port, String username, String password, String clientName, String virtualHost,
-                         SSLConfiguration sslConfig) throws AMQException, URLSyntaxException
-    {
-        this(host, port, false, username, password, clientName, virtualHost, sslConfig);
-    }
-
-    public AMQConnection(String host, int port, boolean useSSL, String username, String password, String clientName,
-                         String virtualHost, SSLConfiguration sslConfig) throws AMQException, URLSyntaxException
-    {
         this(new AMQConnectionURL(
-                useSSL
-                ? (ConnectionURL.AMQ_PROTOCOL + "://" + username + ":" + password + "@"
-                   + ((clientName == null) ? "" : clientName) + virtualHost + "?brokerlist='tcp://" + host + ":" + port
-                   + "'" + "," + BrokerDetails.OPTIONS_SSL + "='true'")
-                : (ConnectionURL.AMQ_PROTOCOL + "://" + username + ":" + password + "@"
-                   + ((clientName == null) ? "" : clientName) + virtualHost + "?brokerlist='tcp://" + host + ":" + port
-                   + "'" + "," + BrokerDetails.OPTIONS_SSL + "='false'")), sslConfig);
+                   ConnectionURL.AMQ_PROTOCOL + "://" + username + ":" + password + "@"
+                   + ((clientName == null) ? "" : clientName) + virtualHost + "?brokerlist='tcp://" + host + ":" + port + "'"));
     }
 
     public AMQConnection(String connection) throws AMQException, URLSyntaxException
     {
-        this(new AMQConnectionURL(connection), null);
-    }
-
-    public AMQConnection(String connection, SSLConfiguration sslConfig) throws AMQException, URLSyntaxException
-    {
-        this(new AMQConnectionURL(connection), sslConfig);
+        this(new AMQConnectionURL(connection));
     }
 
     /**
      * @todo Some horrible stuff going on here with setting exceptions to be non-null to detect if an exception
      * was thrown during the connection! Intention not clear. Use a flag anyway, not exceptions... Will fix soon.
      */
-    public AMQConnection(ConnectionURL connectionURL, SSLConfiguration sslConfig) throws AMQException
+    public AMQConnection(ConnectionURL connectionURL) throws AMQException
     {
         if (connectionURL == null)
         {
@@ -350,7 +306,6 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
             _logger.info("Connection:" + connectionURL);
         }
 
-        _sslConfiguration = sslConfig;
         _connectionURL = connectionURL;
 
         _clientName = connectionURL.getClientName();
@@ -548,7 +503,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
 
     public boolean attemptReconnection(String host, int port)
     {
-        BrokerDetails bd = new AMQBrokerDetails(host, port, _sslConfiguration);
+        BrokerDetails bd = new AMQBrokerDetails(host, port);
 
         _failoverPolicy.setBroker(bd);
 
@@ -1374,11 +1329,6 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     {
         return new Reference(AMQConnection.class.getName(), new StringRefAddr(AMQConnection.class.getName(), toURL()),
                              AMQConnectionFactory.class.getName(), null); // factory location
-    }
-
-    public SSLConfiguration getSSLConfiguration()
-    {
-        return _sslConfiguration;
     }
 
     public AMQShortString getDefaultTopicExchangeName()

@@ -81,7 +81,7 @@ public class ConnectionTest extends QpidBrokerTestCase
                                      + "&temporaryTopicExchange='tmp.topic'");
 
             System.err.println(url.toString());
-            conn = new AMQConnection(url, null);
+            conn = new AMQConnection(url);
 
 
             AMQSession sess = (AMQSession) conn.createSession(false, Session.AUTO_ACKNOWLEDGE);

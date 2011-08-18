@@ -140,7 +140,6 @@ public class FailoverExchangeMethod implements FailoverMethod, MessageListener
                         broker.setHost(tokens[1]);
                         broker.setPort(Integer.parseInt(tokens[2]));
                         broker.setProperties(_originalBrokerDetail.getProperties());
-                        broker.setSSLConfiguration(_originalBrokerDetail.getSSLConfiguration());
                         brokerList.add(broker);
                         
                         if (currentBrokerIP.equals(broker.getHost()) && 

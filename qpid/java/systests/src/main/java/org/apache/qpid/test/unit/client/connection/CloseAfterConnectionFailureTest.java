@@ -55,7 +55,7 @@ public class CloseAfterConnectionFailureTest extends QpidBrokerTestCase implemen
             try
             {
                 //Start the connection so it will use the retries
-                connection = new AMQConnection(url, null);
+                connection = new AMQConnection(url);
 
                 connection.setExceptionListener(this);
 
