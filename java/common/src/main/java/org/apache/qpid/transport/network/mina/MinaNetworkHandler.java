@@ -42,6 +42,7 @@ public class MinaNetworkHandler extends IoHandlerAdapter
 
     private ProtocolEngineFactory _factory;
     private SSLContext _sslContext = null;
+    private boolean _useClientMode;
 
     static
     {
@@ -57,6 +58,10 @@ public class MinaNetworkHandler extends IoHandlerAdapter
     {
         _sslContext = sslContext;
         _factory = factory;
+        if(_factory == null)
+        {
+            _useClientMode = true;
+        }
     }
 
     public MinaNetworkHandler(SSLContext sslContext)
@@ -103,8 +108,10 @@ public class MinaNetworkHandler extends IoHandlerAdapter
 
         if (_sslContext != null)
         {
-            ioSession.getFilterChain().addFirst("sslFilter",
-                            new SSLFilter(_sslContext));
+            SSLFilter sslFilter = new SSLFilter(_sslContext);
+            sslFilter.setUseClientMode(_useClientMode);
+
+            ioSession.getFilterChain().addFirst("sslFilter",sslFilter);
         }
 
         if (_factory != null)

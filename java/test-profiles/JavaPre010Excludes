@@ -40,8 +40,3 @@ org.apache.qpid.client.MessageListenerTest#testSynchronousReceiveNoWait
 org.apache.qpid.test.unit.client.connection.ConnectionTest#testUnsupportedSASLMechanism
 
 org.apache.qpid.test.unit.message.JMSPropertiesTest#testQpidExtensionProperties
-
-//The 0-8/0-9/0-9-1 client configuration for SSL does not work the same as the 0-10 client
-//so these tests fail due to the client failing to use SSL
-org.apache.qpid.client.ssl.SSLTest#*
-org.apache.qpid.test.unit.client.AMQSSLConnectionTest#*
