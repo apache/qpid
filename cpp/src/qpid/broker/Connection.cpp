@@ -156,16 +156,7 @@ Connection::~Connection()
 void Connection::received(framing::AMQFrame& frame) {
     // Received frame on connection so delay timeout
     restartTimeout();
-
-    if (frame.getChannel() == 0 && frame.getMethod()) {
-        adapter.handle(frame);
-    } else {
-        if (adapter.isOpen())
-            getChannel(frame.getChannel()).in(frame);
-        else
-            close(connection::CLOSE_CODE_FRAMING_ERROR, "Connection not yet open, invalid frame received.");
-    }
-
+    adapter.handle(frame);
     if (isLink) //i.e. we are acting as the client to another broker
         recordFromServer(frame);
     else
