@@ -57,6 +57,7 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQConnectionFactory;
 import org.apache.qpid.client.AMQQueue;
+import org.apache.qpid.client.SSLConfiguration;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.jms.ConnectionURL;
@@ -83,7 +84,7 @@ public class QpidBrokerTestCase extends QpidTestCase
         INTERNAL /** Test case starts an embedded broker within this JVM */, 
         SPAWNED /** Test case spawns a new broker as a separate process */
     }
-    protected final String QpidHome = System.getProperty("QPID_HOME");
+    protected final static String QpidHome = System.getProperty("QPID_HOME");
     protected File _configFile = new File(System.getProperty("broker.config"));
 
     protected static final Logger _logger = Logger.getLogger(QpidBrokerTestCase.class);
@@ -139,7 +140,7 @@ public class QpidBrokerTestCase extends QpidTestCase
     public static final int DEFAULT_PORT = Integer.getInteger("test.port", ServerConfiguration.DEFAULT_PORT);
     public static final int FAILING_PORT = Integer.parseInt(System.getProperty("test.port.alt"));
     public static final int DEFAULT_MANAGEMENT_PORT = Integer.getInteger("test.mport", ServerConfiguration.DEFAULT_JMXPORT);
-    public static final int DEFAULT_SSL_PORT = Integer.getInteger("test.sslport", ServerConfiguration.DEFAULT_SSL_PORT);
+    public static final int DEFAULT_SSL_PORT = Integer.getInteger("test.port.ssl", ServerConfiguration.DEFAULT_SSL_PORT);
 
     protected String _brokerLanguage = System.getProperty(BROKER_LANGUAGE, JAVA);
     protected BrokerType _brokerType = BrokerType.valueOf(System.getProperty(BROKER_TYPE, "").toUpperCase());
@@ -257,6 +258,10 @@ public class QpidBrokerTestCase extends QpidTestCase
             {
                 _logger.error("exception stopping broker", e);
             }
+
+            // reset properties used in the test
+            revertSystemProperties();
+            revertLoggingLevels();
 
             if(_brokerCleanBetweenTests)
             {
@@ -440,10 +445,11 @@ public class QpidBrokerTestCase extends QpidTestCase
 
     protected String getBrokerCommand(int port) throws MalformedURLException
     {
-        final String protocolExcludesList = _brokerProtocolExcludes.replace("@PORT", "" + port);
+        final int sslPort = port-1;
+        final String protocolExcludesList = getProtocolExcludesList(port, sslPort);
         return _brokerCommand
                 .replace("@PORT", "" + port)
-                .replace("@SSL_PORT", "" + (port - 1))
+                .replace("@SSL_PORT", "" + sslPort)
                 .replace("@MPORT", "" + getManagementPort(port))
                 .replace("@CONFIG_FILE", _configFile.toString())
                 .replace("@EXCLUDES", protocolExcludesList);
@@ -476,7 +482,7 @@ public class QpidBrokerTestCase extends QpidTestCase
             options.setConfigFile(_configFile.getAbsolutePath());
             options.addPort(port);
 
-            addExcludedPorts(port, options);
+            addExcludedPorts(port, DEFAULT_SSL_PORT, options);
 
             options.setJmxPort(getManagementPort(port));
 
@@ -597,9 +603,9 @@ public class QpidBrokerTestCase extends QpidTestCase
         }
     }
 
-    private void addExcludedPorts(int port, BrokerOptions options)
+    private void addExcludedPorts(int port, int sslPort, BrokerOptions options)
     {
-        final String protocolExcludesList = _brokerProtocolExcludes.replace("@PORT", "" + port);
+        final String protocolExcludesList = getProtocolExcludesList(port, sslPort);
         
         if (protocolExcludesList.equals(""))
         {
@@ -619,6 +625,13 @@ public class QpidBrokerTestCase extends QpidTestCase
 
             _logger.info("Adding protocol exclusion " + excludeArg + " " + excludedPort);
         }
+    }
+
+    protected String getProtocolExcludesList(int port, int sslPort)
+    {
+        final String protocolExcludesList =
+            _brokerProtocolExcludes.replace("@PORT", "" + port).replace("@SSL_PORT", "" + sslPort);
+        return protocolExcludesList;
     }
 
     private boolean existingInternalBroker()
@@ -1049,7 +1062,7 @@ public class QpidBrokerTestCase extends QpidTestCase
     {
         return (AMQConnectionFactory) getInitialContext().lookup(factoryName);
     }
-
+    
     public Connection getConnection() throws JMSException, NamingException
     {
         return getConnection("guest", "guest");
@@ -1117,19 +1130,10 @@ public class QpidBrokerTestCase extends QpidTestCase
 
     protected void tearDown() throws java.lang.Exception
     {
-        try
+        // close all the connections used by this test.
+        for (Connection c : _connections)
         {
-            // close all the connections used by this test.
-            for (Connection c : _connections)
-            {
-                c.close();
-            }
-        }
-        finally
-        {
-            // Ensure any problems with close does not interfer with property resets
-            revertSystemProperties();
-            revertLoggingLevels();
+            c.close();
         }
     }
 

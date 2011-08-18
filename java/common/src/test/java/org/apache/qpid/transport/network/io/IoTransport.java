@@ -68,18 +68,10 @@ public final class IoTransport<E>
     private IoReceiver receiver;
     private long timeout = 60000;
 
-    IoTransport(Socket socket, Binding<E,ByteBuffer> binding, boolean ssl)
+    IoTransport(Socket socket, Binding<E,ByteBuffer> binding)
     {
         this.socket = socket;
-
-        if (ssl)
-        {
-            setupSSLTransport(socket, binding);
-        }
-        else
-        {
-            setupTransport(socket, binding);
-        }
+        setupTransport(socket, binding);
     }
 
     private void setupTransport(Socket socket, Binding<E, ByteBuffer> binding)
@@ -96,41 +88,6 @@ public final class IoTransport<E>
         ios.registerCloseListener(this.receiver);
     }
 
-    private void setupSSLTransport(Socket socket, Binding<E, ByteBuffer> binding)
-    {
-        SSLEngine engine = null;
-        SSLContext sslCtx;
-        try
-        {
-            sslCtx = createSSLContext();
-        }
-        catch (Exception e)
-        {
-            throw new TransportException("Error creating SSL Context", e);
-        }
-
-        try
-        {
-            engine = sslCtx.createSSLEngine();
-            engine.setUseClientMode(true);
-        }
-        catch(Exception e)
-        {
-            throw new TransportException("Error creating SSL Engine", e);
-        }
-        IoSender ios = new IoSender(socket, 2*writeBufferSize, timeout);
-        ios.initiate();
-        final SSLStatus sslStatus = new SSLStatus();
-        this.sender = new SSLSender(engine,ios, sslStatus);
-        this.endpoint = binding.endpoint(sender);
-        this.receiver = new IoReceiver(socket, new SSLReceiver(engine,binding.receiver(endpoint),sslStatus),
-                2*readBufferSize, timeout);
-        this.receiver.initiate();
-        ios.registerCloseListener(this.receiver);
-
-        log.info("SSL Sender and Receiver initiated");
-    }
-
     public Sender<ByteBuffer> getSender()
     {
         return sender;
@@ -144,24 +101,6 @@ public final class IoTransport<E>
     public Socket getSocket()
     {
         return socket;
-    }
-
-    private SSLContext createSSLContext() throws Exception
-    {
-        String trustStorePath = System.getProperty("javax.net.ssl.trustStore");
-        String trustStorePassword = System.getProperty("javax.net.ssl.trustStorePassword");
-        String trustStoreCertType = System.getProperty("qpid.ssl.trustStoreCertType","SunX509");
-                
-        String keyStorePath = System.getProperty("javax.net.ssl.keyStore",trustStorePath);
-        String keyStorePassword = System.getProperty("javax.net.ssl.keyStorePassword",trustStorePassword);
-        String keyStoreCertType = System.getProperty("qpid.ssl.keyStoreCertType","SunX509");
-        
-        SSLContextFactory sslContextFactory = new SSLContextFactory(trustStorePath,trustStorePassword,
-                                                                    trustStoreCertType,keyStorePath,
-                                                                    keyStorePassword,keyStoreCertType);
-        
-        return sslContextFactory.buildServerContext();
-        
     }
 
 }

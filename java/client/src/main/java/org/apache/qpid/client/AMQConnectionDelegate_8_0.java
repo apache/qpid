@@ -23,6 +23,7 @@ package org.apache.qpid.client;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.nio.channels.UnresolvedAddressException;
+import java.security.GeneralSecurityException;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -31,6 +32,7 @@ import java.util.Set;
 
 import javax.jms.JMSException;
 import javax.jms.XASession;
+import javax.net.ssl.SSLContext;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.failover.FailoverException;
@@ -99,14 +101,21 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
         settings.setProtocol(brokerDetail.getTransport());
 
         SSLConfiguration sslConfig = _conn.getSSLConfiguration();
-        SSLContextFactory sslFactory = null;
+        SSLContext sslContext = null;
         if (sslConfig != null)
         {
-            sslFactory = new SSLContextFactory(sslConfig.getKeystorePath(), sslConfig.getKeystorePassword(), sslConfig.getCertType());
+            try
+            {
+                sslContext = SSLContextFactory.buildClientContext(sslConfig.getKeystorePath(), sslConfig.getKeystorePassword(), sslConfig.getCertType(),null,null,null,null);
+            }
+            catch (GeneralSecurityException e)
+            {
+                throw new AMQException("Unable to create SSLContext: " + e.getMessage(), e);
+            }
         }
 
         OutgoingNetworkTransport transport = Transport.getOutgoingTransportInstance(getProtocolVersion());
-        NetworkConnection network = transport.connect(settings, _conn._protocolHandler, sslFactory);
+        NetworkConnection network = transport.connect(settings, _conn._protocolHandler, sslContext);
         _conn._protocolHandler.setNetworkConnection(network);
         _conn._protocolHandler.getProtocolSession().init();
         // this blocks until the connection has been set up or when an error

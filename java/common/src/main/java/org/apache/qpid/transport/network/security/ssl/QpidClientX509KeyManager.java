@@ -20,7 +20,9 @@
  */
 package org.apache.qpid.transport.network.security.ssl;
 
+import java.io.IOException;
 import java.net.Socket;
+import java.security.GeneralSecurityException;
 import java.security.KeyStore;
 import java.security.Principal;
 import java.security.PrivateKey;
@@ -40,7 +42,7 @@ public class QpidClientX509KeyManager extends X509ExtendedKeyManager
     String alias;
     
     public QpidClientX509KeyManager(String alias, String keyStorePath,
-                           String keyStorePassword,String keyStoreCertType) throws Exception
+                           String keyStorePassword,String keyStoreCertType) throws GeneralSecurityException, IOException
     {
         this.alias = alias;    
         KeyStore ks = SSLUtil.getInitializedKeyStore(keyStorePath,keyStorePassword);

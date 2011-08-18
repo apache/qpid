@@ -50,9 +50,9 @@ import org.slf4j.LoggerFactory;
 
 public class AMQConnectionTest extends QpidBrokerTestCase
 {
-    private static AMQConnection _connection;
-    private static AMQTopic _topic;
-    private static AMQQueue _queue;
+    protected static AMQConnection _connection;
+    protected static AMQTopic _topic;
+    protected static AMQQueue _queue;
     private static QueueSession _queueSession;
     private static TopicSession _topicSession;
     protected static final Logger _logger = LoggerFactory.getLogger(AMQConnectionTest.class);
@@ -60,15 +60,14 @@ public class AMQConnectionTest extends QpidBrokerTestCase
     protected void setUp() throws Exception
     {
         super.setUp();
-        _connection = (AMQConnection) getConnection("guest", "guest");
+        createConnection();
         _topic = new AMQTopic(_connection.getDefaultTopicExchangeName(), new AMQShortString("mytopic"));
         _queue = new AMQQueue(_connection.getDefaultQueueExchangeName(), new AMQShortString("myqueue"));
     }
-
-    protected void tearDown() throws Exception
+    
+    protected void createConnection() throws Exception
     {
-        _connection.close();
-        super.tearDown();
+        _connection = (AMQConnection) getConnection("guest", "guest");
     }
 
     /**
@@ -207,61 +206,50 @@ public class AMQConnectionTest extends QpidBrokerTestCase
 
     public void testPrefetchSystemProperty() throws Exception
     {
-        String oldPrefetch = System.getProperty(ClientProperties.MAX_PREFETCH_PROP_NAME);
-        try
+        _connection.close();
+        setTestClientSystemProperty(ClientProperties.MAX_PREFETCH_PROP_NAME, new Integer(2).toString());
+        
+        createConnection();
+        _connection.start();
+        // Create two consumers on different sessions
+        Session consSessA = _connection.createSession(true, Session.AUTO_ACKNOWLEDGE);
+        MessageConsumer consumerA = consSessA.createConsumer(_queue);
+
+        Session producerSession = _connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        MessageProducer producer = producerSession.createProducer(_queue);
+
+        // Send 3 messages
+        for (int i = 0; i < 3; i++)
         {
-            _connection.close();
-            System.setProperty(ClientProperties.MAX_PREFETCH_PROP_NAME, new Integer(2).toString());
-            _connection = (AMQConnection) getConnection();
-            _connection.start();
-            // Create two consumers on different sessions
-            Session consSessA = _connection.createSession(true, Session.AUTO_ACKNOWLEDGE);
-            MessageConsumer consumerA = consSessA.createConsumer(_queue);
+            producer.send(producerSession.createTextMessage("test"));
+        }
+        
+        MessageConsumer consumerB = null;
+        // 0-8, 0-9, 0-9-1 prefetch is per session, not consumer.
+        if (!isBroker010())
+        {
+            Session consSessB = _connection.createSession(true, Session.AUTO_ACKNOWLEDGE);
+            consumerB = consSessB.createConsumer(_queue);
+        }
+        else
+        {
+            consumerB = consSessA.createConsumer(_queue);
+        }
 
-            Session producerSession = _connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-            MessageProducer producer = producerSession.createProducer(_queue);
-
-            // Send 3 messages
-            for (int i = 0; i < 3; i++)
-            {
-                producer.send(producerSession.createTextMessage("test"));
-            }
-            
-            MessageConsumer consumerB = null;
-            // 0-8, 0-9, 0-9-1 prefetch is per session, not consumer.
-            if (!isBroker010())
-            {
-                Session consSessB = _connection.createSession(true, Session.AUTO_ACKNOWLEDGE);
-                consumerB = consSessB.createConsumer(_queue);
-            }
-            else
-            {
-                consumerB = consSessA.createConsumer(_queue);
-            }
-
-            Message msg;
-            // Check that consumer A has 2 messages
-            for (int i = 0; i < 2; i++)
-            {
-                msg = consumerA.receive(1500);
-                assertNotNull("Consumer A should receive 2 messages",msg);                
-            }
-            
+        Message msg;
+        // Check that consumer A has 2 messages
+        for (int i = 0; i < 2; i++)
+        {
             msg = consumerA.receive(1500);
-            assertNull("Consumer A should not have received a 3rd message",msg);
-            
-            // Check that consumer B has the last message
-            msg = consumerB.receive(1500);
-            assertNotNull("Consumer B should have received the message",msg);
+            assertNotNull("Consumer A should receive 2 messages",msg);                
         }
-        finally
-        {
-            if (oldPrefetch == null)
-            {
-                oldPrefetch = ClientProperties.MAX_PREFETCH_DEFAULT;
-            }
-            System.setProperty(ClientProperties.MAX_PREFETCH_PROP_NAME, oldPrefetch);
-        }
+        
+        msg = consumerA.receive(1500);
+        assertNull("Consumer A should not have received a 3rd message",msg);
+        
+        // Check that consumer B has the last message
+        msg = consumerB.receive(1500);
+        assertNotNull("Consumer B should have received the message",msg);
     }
     
     public void testGetChannelID() throws Exception
@@ -311,7 +299,7 @@ public class AMQConnectionTest extends QpidBrokerTestCase
            _connection.close();
            stopBroker(port);
            
-           System.setProperty("qpid.heartbeat", "1");
+           setSystemProperty("qpid.heartbeat", "1");
            
            // in case this broker gets stuck, atleast the rest of the tests will not fail.
            port = port + 200;
@@ -381,9 +369,7 @@ public class AMQConnectionTest extends QpidBrokerTestCase
            throw e;
        }
        finally
-       {
-           System.setProperty("qpid.heartbeat", "");
-           
+       {           
            if (process != null)
            {
                process.destroy();
@@ -394,10 +380,5 @@ public class AMQConnectionTest extends QpidBrokerTestCase
            killScript.destroy();
            cleanBroker();
        }
-    }
-    
-    public static junit.framework.Test suite()
-    {
-        return new junit.framework.TestSuite(AMQConnectionTest.class);
     }
 }

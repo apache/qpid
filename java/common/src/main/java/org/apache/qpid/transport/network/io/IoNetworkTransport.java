@@ -27,7 +27,8 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.nio.ByteBuffer;
 
-import org.apache.qpid.ssl.SSLContextFactory;
+import javax.net.ssl.SSLContext;
+
 import org.apache.qpid.transport.ConnectionSettings;
 import org.apache.qpid.transport.Receiver;
 import org.apache.qpid.transport.TransportException;
@@ -51,7 +52,7 @@ public class IoNetworkTransport implements OutgoingNetworkTransport
     private IoNetworkConnection _connection;
     private long _timeout = 60000;
     
-    public NetworkConnection connect(ConnectionSettings settings, Receiver<ByteBuffer> delegate, SSLContextFactory sslFactory)
+    public NetworkConnection connect(ConnectionSettings settings, Receiver<ByteBuffer> delegate, SSLContext sslContext)
     {
         int sendBufferSize = settings.getWriteBufferSize();
         int receiveBufferSize = settings.getReadBufferSize();
