@@ -22,7 +22,7 @@ package org.apache.qpid.jms;
 
 import java.util.Map;
 
-import org.apache.qpid.client.SSLConfiguration;
+import org.apache.qpid.transport.ConnectionSettings;
 
 public interface BrokerDetails
 {
@@ -104,14 +104,12 @@ public interface BrokerDetails
     long getTimeout();
 
     void setTimeout(long timeout);
-
-    SSLConfiguration getSSLConfiguration();
-
-    void setSSLConfiguration(SSLConfiguration sslConfiguration);
     
     boolean getBooleanProperty(String propName);
 
     String toString();
 
     boolean equals(Object o);
+
+    ConnectionSettings buildConnectionSettings();
 }

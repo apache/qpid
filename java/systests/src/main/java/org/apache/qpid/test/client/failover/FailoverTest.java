@@ -299,7 +299,7 @@ public class FailoverTest extends FailoverBaseCase implements ConnectionListener
         details.setProperty(BrokerDetails.OPTIONS_RETRY, String.valueOf(RETRIES));
         details.setProperty(BrokerDetails.OPTIONS_CONNECT_DELAY, String.valueOf(DELAY));
 
-        connection = new AMQConnection(connectionURL, null);
+        connection = new AMQConnection(connectionURL);
 
         ((AMQConnection) connection).setConnectionListener(this);
 

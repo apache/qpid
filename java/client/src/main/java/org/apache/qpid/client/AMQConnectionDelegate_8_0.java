@@ -95,18 +95,22 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
 
         StateWaiter waiter = _conn._protocolHandler.createWaiter(openOrClosedStates);
 
-        ConnectionSettings settings = new ConnectionSettings();
-        settings.setHost(brokerDetail.getHost());
-        settings.setPort(brokerDetail.getPort());
+        ConnectionSettings settings = brokerDetail.buildConnectionSettings();
         settings.setProtocol(brokerDetail.getTransport());
 
-        SSLConfiguration sslConfig = _conn.getSSLConfiguration();
         SSLContext sslContext = null;
-        if (sslConfig != null)
+        if (settings.isUseSSL())
         {
             try
             {
-                sslContext = SSLContextFactory.buildClientContext(sslConfig.getKeystorePath(), sslConfig.getKeystorePassword(), sslConfig.getCertType(),null,null,null,null);
+                sslContext = SSLContextFactory.buildClientContext(
+                                settings.getTrustStorePath(),
+                                settings.getTrustStorePassword(),
+                                settings.getTrustStoreCertType(),
+                                settings.getKeyStorePath(),
+                                settings.getKeyStorePassword(),
+                                settings.getKeyStoreCertType(),
+                                settings.getCertAlias());
             }
             catch (GeneralSecurityException e)
             {
