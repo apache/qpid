@@ -101,19 +101,48 @@ class MessageAllocator
     MessageAllocator( Queue *q ) : queue(q) {}
     virtual ~MessageAllocator() {};
 
-    // assumes caller holds messageLock
-    virtual bool nextMessage( Consumer::shared_ptr c, QueuedMessage& next,
-                              const Mutex::ScopedLock&);
-    /** acquire a message previously browsed via nextMessage().  assume messageLock held
+    // Note: all methods taking a mutex assume the caller is holding the
+    // Queue::messageLock during the method call.
+
+    /** Determine the next message available for consumption by the consumer
+     * @param next set to the next message that the consumer may acquire.
+     * @return true if message is available
+     */
+    virtual bool nextConsumableMessage( Consumer::shared_ptr, QueuedMessage& next,
+                                        const Mutex::ScopedLock&)
+    {
+        Messages& messages(queue->getMessages());
+        if (!messages.empty()) {
+            next = messages.front();    // by default, consume oldest msg
+            return true;
+        }
+        return false;
+    }
+    /** Determine the next message available for browsing by the consumer
+     * @param next set to the next message that the consumer may browse.
+     * @return true if a message is available
+     */
+    virtual bool nextBrowsableMessage( Consumer::shared_ptr c, QueuedMessage& next,
+                                       const Mutex::ScopedLock&)
+    {
+        Messages& messages(queue->getMessages());
+        if (!messages.empty() && messages.next(c->position, next))
+            return true;
+        return false;
+    }
+    /** acquire a message previously returned via next*Message().
      * @param consumer name of consumer that is attempting to acquire the message
      * @param qm the message to be acquired
      * @param messageLock - ensures caller is holding it!
      * @returns true if acquire is successful, false if acquire failed.
      */
-    virtual bool canAcquire( const std::string& consumer, const QueuedMessage& qm,
-                             const Mutex::ScopedLock&);
+    virtual bool acquireMessage( const std::string&, const QueuedMessage&,
+                                 const Mutex::ScopedLock&)
+    {
+        return true;
+    }
 
-    /** hook to add any interesting management state to the status map (lock held) */
+    /** hook to add any interesting management state to the status map */
     virtual void query(qpid::types::Variant::Map&, const Mutex::ScopedLock&) const {};
 };
 
@@ -125,24 +154,55 @@ class MessageGroupManager : public QueueObserver, public MessageAllocator
     const unsigned int timestamp;       // mark messages with timestamp if set
 
     struct GroupState {
-        //const std::string group;          // group identifier
-        //Consumer::shared_ptr owner; // consumer with outstanding acquired messages
-        std::string owner; // consumer with outstanding acquired messages
+        typedef std::list<framing::SequenceNumber> PositionFifo;
+
+        std::string group;  // group identifier
+        std::string owner;  // consumer with outstanding acquired messages
         uint32_t acquired;  // count of outstanding acquired messages
-        uint32_t total; // count of enqueued messages in this group
-        GroupState() : acquired(0), total(0) {}
+        //uint32_t total;     // count of enqueued messages in this group
+        PositionFifo members;   // msgs belonging to this group
+
+        GroupState() : acquired(0) {}
+        bool owned() const {return !owner.empty();}
     };
     typedef std::map<std::string, struct GroupState> GroupMap;
-    typedef std::set<std::string> Consumers;
+    typedef std::map<std::string, uint32_t> Consumers;  // count of owned groups
+    typedef std::map<framing::SequenceNumber, struct GroupState *> GroupFifo;
 
-    GroupMap messageGroups;
-    Consumers consumers;
+    GroupMap messageGroups; // index: group name
+    GroupFifo freeGroups; // ordered by oldest free msg
+    Consumers consumers;    // index: consumer name
 
     static const std::string qpidMessageGroupKey;
     static const std::string qpidMessageGroupTimestamp;
     static const std::string qpidMessageGroupDefault;
 
     const std::string getGroupId( const QueuedMessage& qm ) const;
+    void unFree( const GroupState& state )
+    {
+        GroupFifo::iterator pos = freeGroups.find( state.members.front() );
+        assert( pos != freeGroups.end() && pos->second == &state );
+        freeGroups.erase( pos );
+    }
+    void own( GroupState& state, const std::string& owner )
+    {
+        state.owner = owner;
+        consumers[state.owner]++;
+        unFree( state );
+    }
+    void disown( GroupState& state )
+    {
+        assert(consumers[state.owner]);
+        consumers[state.owner]--;
+        state.owner.clear();
+        assert(state.members.size());
+#ifdef NDEBUG
+        freeGroups[state.members.front()] = &state;
+#else
+        bool unique = freeGroups.insert(GroupFifo::value_type(state.members.front(), &state)).second;
+        (void) unique; assert(unique);
+#endif
+    }
 
  public:
 
@@ -156,10 +216,11 @@ class MessageGroupManager : public QueueObserver, public MessageAllocator
     void dequeued( const QueuedMessage& qm );
     void consumerAdded( const Consumer& );
     void consumerRemoved( const Consumer& );
-    bool nextMessage( Consumer::shared_ptr c, QueuedMessage& next,
-                      const Mutex::ScopedLock&);
-    bool canAcquire(const std::string& consumer, const QueuedMessage& msg,
-                    const Mutex::ScopedLock&);
+    bool nextConsumableMessage( Consumer::shared_ptr c, QueuedMessage& next,
+                                const Mutex::ScopedLock&);
+    // uses default nextBrowsableMessage()
+    bool acquireMessage(const std::string& consumer, const QueuedMessage& msg,
+                        const Mutex::ScopedLock&);
     void query(qpid::types::Variant::Map&, const Mutex::ScopedLock&) const;
     bool match(const qpid::types::Variant::Map*, const QueuedMessage&) const;
 };
@@ -339,7 +400,7 @@ bool Queue::acquire(const QueuedMessage& msg, const std::string& consumer)
     assertClusterSafe();
     QPID_LOG(debug, consumer << " attempting to acquire message at " << msg.position);
 
-    if (!allocator->canAcquire( consumer, msg, locker )) {
+    if (!allocator->acquireMessage( consumer, msg, locker )) {
         QPID_LOG(debug, "Not permitted to acquire msg at " << msg.position << " from '" << name);
         return false;
     }
@@ -391,7 +452,7 @@ Queue::ConsumeCode Queue::consumeNextMessage(QueuedMessage& m, Consumer::shared_
         Mutex::ScopedLock locker(messageLock);
         QueuedMessage msg;
 
-        if (!allocator->nextMessage(c, msg, locker)) { // no next available
+        if (!allocator->nextConsumableMessage(c, msg, locker)) { // no next available
             QPID_LOG(debug, "No messages available to dispatch to consumer " <<
                      c->getName() << " on queue '" << name << "'");
             listeners.addListener(c);
@@ -410,7 +471,9 @@ Queue::ConsumeCode Queue::consumeNextMessage(QueuedMessage& m, Consumer::shared_
 
         if (c->filter(msg.payload)) {
             if (c->accept(msg.payload)) {
-                bool ok = acquire( msg.position, msg );
+                bool ok = allocator->acquireMessage( c->getName(), msg, locker );  // inform allocator
+                (void) ok; assert(ok);
+                ok = acquire( msg.position, msg );
                 (void) ok; assert(ok);
                 m = msg;
                 c->position = m.position;
@@ -435,7 +498,7 @@ bool Queue::browseNextMessage(QueuedMessage& m, Consumer::shared_ptr c)
         Mutex::ScopedLock locker(messageLock);
         QueuedMessage msg;
 
-        if (!allocator->nextMessage(c, msg, locker)) { // no next available
+        if (!allocator->nextBrowsableMessage(c, msg, locker)) { // no next available
             QPID_LOG(debug, "No browsable messages available for consumer " <<
                      c->getName() << " on queue '" << name << "'");
             listeners.addListener(c);
@@ -1540,15 +1603,31 @@ const std::string MessageGroupManager::getGroupId( const QueuedMessage& qm ) con
 
 void MessageGroupManager::enqueued( const QueuedMessage& qm )
 {
+    // @todo KAG optimization - store reference to group state in QueuedMessage
+    // issue: const-ness??
     std::string group( getGroupId(qm) );
-    uint32_t total = ++messageGroups[group].total;
+    GroupState &state(messageGroups[group]);
+    state.members.push_back(qm.position);
+    uint32_t total = state.members.size();
     QPID_LOG( trace, "group queue " << queue->getName() <<
               ": added message to group id=" << group << " total=" << total );
+    if (total == 1) {
+        // newly created group, no owner
+        state.group = group;
+#ifdef NDEBUG
+        freeGroups[qm.position] = &state;
+#else
+        bool unique = freeGroups.insert(GroupFifo::value_type(qm.position, &state)).second;
+        (void) unique; assert(unique);
+#endif
+    }
 }
 
 
 void MessageGroupManager::acquired( const QueuedMessage& qm )
 {
+    // @todo KAG  avoid lookup: retrieve direct reference to group state from QueuedMessage
+    // issue: const-ness??
     std::string group( getGroupId(qm) );
     GroupMap::iterator gs = messageGroups.find( group );
     assert( gs != messageGroups.end() );
@@ -1561,16 +1640,20 @@ void MessageGroupManager::acquired( const QueuedMessage& qm )
 
 void MessageGroupManager::requeued( const QueuedMessage& qm )
 {
+    // @todo KAG  avoid lookup: retrieve direct reference to group state from QueuedMessage
+    // issue: const-ness??
+    // @todo KAG BUG - how to ensure requeue happens in the correct order?
+    // @todo KAG BUG - if requeue is not in correct order - what do we do?  throw?
     std::string group( getGroupId(qm) );
     GroupMap::iterator gs = messageGroups.find( group );
     assert( gs != messageGroups.end() );
     GroupState& state( gs->second );
     assert( state.acquired != 0 );
     state.acquired -= 1;
-    if (state.acquired == 0 && !state.owner.empty()) {
+    if (state.acquired == 0 && state.owned()) {
         QPID_LOG( trace, "group queue " << queue->getName() <<
                   ": consumer name=" << state.owner << " released group id=" << gs->first);
-        state.owner.clear();   // KAG TODO: need to invalidate consumer's positions?
+        disown(state);
     }
     QPID_LOG( trace, "group queue " << queue->getName() <<
               ": requeued message to group id=" << group << " acquired=" << state.acquired );
@@ -1579,22 +1662,41 @@ void MessageGroupManager::requeued( const QueuedMessage& qm )
 
 void MessageGroupManager::dequeued( const QueuedMessage& qm )
 {
+    // @todo KAG  avoid lookup: retrieve direct reference to group state from QueuedMessage
+    // issue: const-ness??
     std::string group( getGroupId(qm) );
     GroupMap::iterator gs = messageGroups.find( group );
     assert( gs != messageGroups.end() );
     GroupState& state( gs->second );
-    assert( state.total != 0 );
-    uint32_t total = state.total -= 1;
+    assert( state.members.size() != 0 );
+
+    // likely to be at or near begin() if dequeued in order
+    {
+        GroupState::PositionFifo::iterator pos = state.members.begin();
+        GroupState::PositionFifo::iterator end = state.members.end();
+        while (pos != end) {
+            if (*pos == qm.position) {
+                state.members.erase(pos);
+                break;
+            }
+            ++pos;
+        }
+    }
+
     assert( state.acquired != 0 );
     state.acquired -= 1;
-    if (state.total == 0) {
+    uint32_t total = state.members.size();
+    if (total == 0) {
+        if (!state.owned()) {  // unlikely, but need to remove from the free list before erase
+            unFree( state );
+        }
         QPID_LOG( trace, "group queue " << queue->getName() << ": deleting group id=" << gs->first);
         messageGroups.erase( gs );
     } else {
-        if (state.acquired == 0 && !state.owner.empty()) {
+        if (state.acquired == 0 && state.owned()) {
             QPID_LOG( trace, "group queue " << queue->getName() <<
                       ": consumer name=" << state.owner << " released group id=" << gs->first);
-            state.owner.clear();   // KAG TODO: need to invalidate consumer's positions?
+            disown(state);
         }
     }
     QPID_LOG( trace, "group queue " << queue->getName() <<
@@ -1603,81 +1705,84 @@ void MessageGroupManager::dequeued( const QueuedMessage& qm )
 
 void MessageGroupManager::consumerAdded( const Consumer& c )
 {
-    const std::string& name(c.getName());
-    bool unique = consumers.insert( name ).second;
-    (void) unique; assert( unique );
-    QPID_LOG( trace, "group queue " << queue->getName() << ": added consumer name=" << name );
+    assert(consumers.find(c.getName()) == consumers.end());
+    consumers[c.getName()] = 0;     // no groups owned yet
+    QPID_LOG( trace, "group queue " << queue->getName() << ": added consumer, name=" << c.getName() );
 }
 
 void MessageGroupManager::consumerRemoved( const Consumer& c )
 {
     const std::string& name(c.getName());
-    size_t count = consumers.erase( name );
-    (void) count; assert( count == 1 );
+    Consumers::iterator consumer = consumers.find(name);
+    assert(consumer != consumers.end());
+    size_t count = consumer->second;
 
-    bool needReset = false;
     for (GroupMap::iterator gs = messageGroups.begin();
-         gs != messageGroups.end(); ++gs) {
+         count && gs != messageGroups.end(); ++gs) {
 
         GroupState& state( gs->second );
         if (state.owner == name) {
-            state.owner.clear();
-            needReset = true;
+            --count;
+            disown(state);
             QPID_LOG( trace, "group queue " << queue->getName() <<
                       ": consumer name=" << name << " released group id=" << gs->first);
         }
     }
-
-    if (needReset) {
-        // KAG TODO: How do I invalidate all consumers that need invalidating????
-    }
+    consumers.erase( consumer );
     QPID_LOG( trace, "group queue " << queue->getName() << ": removed consumer name=" << name );
 }
 
 
-bool MessageGroupManager::nextMessage( Consumer::shared_ptr c, QueuedMessage& next,
-                                       const Mutex::ScopedLock& )
+bool MessageGroupManager::nextConsumableMessage( Consumer::shared_ptr c, QueuedMessage& next,
+                                                 const Mutex::ScopedLock& )
 {
     Messages& messages(queue->getMessages());
 
     if (messages.empty())
         return false;
 
-    if (c->preAcquires()) {     // not browsing
-        next = messages.front();
-        do {
-            /** @todo KAG: horrifingly suboptimal  - optimize */
-            std::string group( getGroupId( next ) );
-            GroupMap::iterator gs = messageGroups.find( group );    /** @todo need to cache this somehow */
-            assert( gs != messageGroups.end() );
-            GroupState& state( gs->second );
-            if (state.owner.empty()) {
-                state.owner = c->getName();
-                QPID_LOG( trace, "group queue " << queue->getName() <<
-                          ": consumer name=" << c->getName() << " has acquired group id=" << group);
-                return true;
-            }
-            if (state.owner == c->getName()) {
-                return true;
-            }
-        } while (messages.next( next.position, next ));     /** @todo: .next() is a linear search from front - optimize */
-        return false;
-    } else if (messages.next(c->position, next))
-        return true;
+    if (!freeGroups.empty()) {
+        framing::SequenceNumber nextFree = freeGroups.begin()->first;
+        if (nextFree < c->position) {  // next free group's msg is older than current position
+            bool ok = messages.find(nextFree, next);
+            (void) ok; assert( ok );
+        } else {
+            if (!messages.next( c->position, next ))
+                return false;           // shouldn't happen - should find nextFree
+        }
+    } else {  // no free groups available
+        if (consumers[c->getName()] == 0) {  // and none currently owned
+            return false;       // so nothing available to consume
+        }
+        if (!messages.next( c->position, next ))
+            return false;
+    }
+
+    do {
+        // @todo KAG  avoid lookup: retrieve direct reference to group state from QueuedMessage
+        std::string group( getGroupId( next ) );
+        GroupMap::iterator gs = messageGroups.find( group );
+        assert( gs != messageGroups.end() );
+        GroupState& state( gs->second );
+        if (!state.owned() || state.owner == c->getName()) {
+            return true;
+        }
+    } while (messages.next( next.position, next ));
     return false;
 }
 
 
-bool MessageGroupManager::canAcquire(const std::string& consumer, const QueuedMessage& qm,
-                                     const Mutex::ScopedLock&)
+bool MessageGroupManager::acquireMessage(const std::string& consumer, const QueuedMessage& qm,
+                                         const Mutex::ScopedLock&)
 {
+    // @todo KAG avoid lookup: retrieve direct reference to group state from QueuedMessage
     std::string group( getGroupId(qm) );
     GroupMap::iterator gs = messageGroups.find( group );
     assert( gs != messageGroups.end() );
     GroupState& state( gs->second );
 
-    if (state.owner.empty()) {
-        state.owner = consumer;
+    if (!state.owned()) {
+        own( state, consumer );
         QPID_LOG( trace, "group queue " << queue->getName() <<
                   ": consumer name=" << consumer << " has acquired group id=" << gs->first);
         return true;
@@ -1722,7 +1827,7 @@ void MessageGroupManager::query(qpid::types::Variant::Map& status,
          g != messageGroups.end(); ++g) {
         qpid::types::Variant::Map info;
         info[GroupIdKey] = g->first;
-        info[GroupMsgCount] = g->second.total;
+        info[GroupMsgCount] = g->second.members.size();
         info[GroupTimestamp] = 0;   /** @todo KAG - NEED HEAD MSG TIMESTAMP */
         info[GroupConsumer] = g->second.owner;
         groups.push_back(info);
@@ -1756,34 +1861,6 @@ boost::shared_ptr<MessageGroupManager> MessageGroupManager::create( Queue *q,
         return manager;
     }
     return empty;
-}
-
-
-
-
-// default allocator - requires messageLock to be held by caller!
-bool MessageAllocator::nextMessage( Consumer::shared_ptr c, QueuedMessage& next,
-                                   const Mutex::ScopedLock& /*just to enforce locking*/)
-{
-    Messages& messages(queue->getMessages());
-
-    if (messages.empty())
-        return false;
-
-    if (c->preAcquires()) {     // not browsing
-        next = messages.front();
-        return true;
-    } else if (messages.next(c->position, next))
-        return true;
-    return false;
-}
-
-
-// default allocator - requires messageLock to be held by caller!
-bool MessageAllocator::canAcquire(const std::string&, const QueuedMessage&,
-                                  const Mutex::ScopedLock& /*just to enforce locking*/)
-{
-    return true;    // always give permission to acquire
 }
 
 
