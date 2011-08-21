@@ -39,17 +39,13 @@ import org.apache.commons.configuration.HierarchicalConfiguration;
 import org.apache.commons.configuration.SystemConfiguration;
 import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.log4j.Logger;
-import org.apache.qpid.server.configuration.management.ConfigurationManagementMBean;
 import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
 import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.signal.SignalHandlerTask;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
-import org.apache.qpid.transport.NetworkTransportConfiguration;
 
-import sun.misc.Signal;
-import sun.misc.SignalHandler;
-
-public class ServerConfiguration extends ConfigurationPlugin implements SignalHandler
+public class ServerConfiguration extends ConfigurationPlugin
 {
     protected static final Logger _logger = Logger.getLogger(ServerConfiguration.class);
 
@@ -74,10 +70,6 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
 
     private File _configFile;
     private File _vhostsFile;
-
-    private Logger _log = Logger.getLogger(this.getClass());
-
-    private ConfigurationManagementMBean _mbean;
 
     // Map of environment variables to config items
     private static final Map<String, String> envVarMap = new HashMap<String, String>();
@@ -137,15 +129,26 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
     {
         this(parseConfig(configurationURL));
         _configFile = configurationURL;
-        try
+
+        SignalHandlerTask hupReparseTask = new SignalHandlerTask()
         {
-            Signal sig = new sun.misc.Signal("HUP");
-            sun.misc.Signal.handle(sig, this);
-        }
-        catch (Exception e)
+            public void handle()
+            {
+                try
+                {
+                    reparseConfigFileSecuritySections();
+                }
+                catch (ConfigurationException e)
+                {
+                    _logger.error("Could not reload configuration file security sections", e);
+                }
+            }
+        };
+
+        if(!hupReparseTask.register("HUP"))
         {
-            _logger.info("Signal HUP not supported for OS: " + System.getProperty("os.name"));
-            // We're on something that doesn't handle SIGHUP, how sad, Windows.
+            _logger.info("Unable to register Signal HUP handler to reload security configuration.");
+            _logger.info("Signal HUP not supported for this OS / JVM combination - " + SignalHandlerTask.getPlatformDescription());
         }
     }
 
@@ -414,18 +417,6 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
     public String getConfigurationURL()
     {
         return _configFile == null ? "" : _configFile.getAbsolutePath();
-    }
-
-    public void handle(Signal arg0)
-    {
-        try
-        {
-            reparseConfigFileSecuritySections();
-        }
-        catch (ConfigurationException e)
-        {
-             _logger.error("Could not reload configuration file security sections", e);
-        }
     }
 
     public void reparseConfigFileSecuritySections() throws ConfigurationException
