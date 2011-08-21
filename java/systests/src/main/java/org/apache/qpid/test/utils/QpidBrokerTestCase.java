@@ -92,7 +92,6 @@ public class QpidBrokerTestCase extends QpidTestCase
     protected long RECEIVE_TIMEOUT = 1000l;
 
     private Map<String, String> _propertiesSetForBroker = new HashMap<String, String>();
-    private Map<Logger, Level> _loggerLevelSetForTest = new HashMap<Logger, Level>();
 
     private XMLConfiguration _testConfiguration = new XMLConfiguration();
     private XMLConfiguration _testVirtualhosts = new XMLConfiguration();
@@ -163,8 +162,6 @@ public class QpidBrokerTestCase extends QpidTestCase
     protected InitialContext _initialContext;
     protected AMQConnectionFactory _connectionFactory;
 
-    protected String _testName;
-
     // the connections created for a given test
     protected List<Connection> _connections = new ArrayList<Connection>();
     public static final String QUEUE = "queue";
@@ -206,7 +203,6 @@ public class QpidBrokerTestCase extends QpidTestCase
 
     public void runBare() throws Throwable
     {
-        _testName = getClass().getSimpleName() + "." + getName();
         String qname = getClass().getName() + "." + getName();
 
         // Initialize this for each test run
@@ -237,7 +233,6 @@ public class QpidBrokerTestCase extends QpidTestCase
             }
         }
 
-        _logger.info("========== start " + _testName + " ==========");
         try
         {
             super.runBare();
@@ -274,7 +269,7 @@ public class QpidBrokerTestCase extends QpidTestCase
             	}
             }
 
-            _logger.info("==========  stop " + _testName + " ==========");
+            _logger.info("==========  stop " + getTestName() + " ==========");
 
             if (redirected)
             {
@@ -293,6 +288,8 @@ public class QpidBrokerTestCase extends QpidTestCase
     @Override
     protected void setUp() throws Exception
     {
+        super.setUp();
+
         if (!_configFile.exists())
         {
             fail("Unable to test without config file:" + _configFile);
@@ -512,7 +509,7 @@ public class QpidBrokerTestCase extends QpidTestCase
 
             //Add the test name to the broker run.
             // DON'T change PNAME, qpid.stop needs this value.
-            env.put("QPID_PNAME", "-DPNAME=QPBRKR -DTNAME=\"" + _testName + "\"");
+            env.put("QPID_PNAME", "-DPNAME=QPBRKR -DTNAME=\"" + getTestName() + "\"");
             // Add the port to QPID_WORK to ensure unique working dirs for multi broker tests
             env.put("QPID_WORK", getQpidWork(_brokerType, port));
 
@@ -920,40 +917,6 @@ public class QpidBrokerTestCase extends QpidTestCase
     }
 
     /**
-     * Adjust the VMs Log4j Settings just for this test run
-     *
-     * @param logger the logger to change
-     * @param level the level to set
-     */
-    protected void setLoggerLevel(Logger logger, Level level)
-    {
-        assertNotNull("Cannot set level of null logger", logger);
-        assertNotNull("Cannot set Logger("+logger.getName()+") to null level.",level);
-
-        if (!_loggerLevelSetForTest.containsKey(logger))
-        {
-            // Record the current value so we can revert it later.
-            _loggerLevelSetForTest.put(logger, logger.getLevel());
-        }
-
-        logger.setLevel(level);
-    }
-
-    /**
-     * Restore the logging levels defined by this test.
-     */
-    protected void revertLoggingLevels()
-    {
-        for (Logger logger : _loggerLevelSetForTest.keySet())
-        {
-            logger.setLevel(_loggerLevelSetForTest.get(logger));
-        }
-
-        _loggerLevelSetForTest.clear();
-
-    }
-
-    /**
      * Check whether the broker is an 0.8
      *
      * @return true if the broker is an 0_8 version, false otherwise.
@@ -1129,6 +1092,8 @@ public class QpidBrokerTestCase extends QpidTestCase
 
     protected void tearDown() throws java.lang.Exception
     {
+        super.tearDown();
+
         // close all the connections used by this test.
         for (Connection c : _connections)
         {
