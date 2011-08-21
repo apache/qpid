@@ -20,8 +20,13 @@ package org.apache.qpid.amqp_1_0.jms.impl;
 
 import org.apache.qpid.amqp_1_0.jms.Queue;
 
+import java.util.WeakHashMap;
+
 public class QueueImpl extends DestinationImpl implements Queue
 {
+    private static final WeakHashMap<String, QueueImpl> QUEUE_CACHE =
+        new WeakHashMap<String, QueueImpl>();
+
     public QueueImpl(String address)
     {
         super(address);
@@ -29,6 +34,18 @@ public class QueueImpl extends DestinationImpl implements Queue
 
     public String getQueueName()
     {
-        return getAddress();  //TODO
+        return getAddress();
     }
+
+    public static synchronized QueueImpl createQueue(final String address)
+    {
+        QueueImpl queue = QUEUE_CACHE.get(address);
+        if(queue == null)
+        {
+            queue = new QueueImpl(address);
+            QUEUE_CACHE.put(address, queue);
+        }
+        return queue;
+    }
+
 }

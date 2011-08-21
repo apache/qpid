@@ -21,11 +21,16 @@ package org.apache.qpid.amqp_1_0.jms.impl;
 
 import org.apache.qpid.amqp_1_0.jms.Destination;
 
+import java.util.WeakHashMap;
+
 public class DestinationImpl implements Destination
 {
+    private static final WeakHashMap<String, DestinationImpl> DESTINATION_CACHE =
+            new WeakHashMap<String, DestinationImpl>();
+
     private final String _address;
 
-    public DestinationImpl(String address)
+    protected DestinationImpl(String address)
     {
         _address = address;
     }
@@ -37,6 +42,31 @@ public class DestinationImpl implements Destination
 
     public static DestinationImpl valueOf(String address)
     {
-        return address == null ? null : new DestinationImpl(address);
+        return address == null ? null : createDestination(address);
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return _address.hashCode();
+    }
+
+    @Override
+    public boolean equals(final Object obj)
+    {
+        return obj != null
+               && obj.getClass() == getClass()
+               && _address.equals(((DestinationImpl)obj)._address);
+    }
+
+    public static synchronized DestinationImpl createDestination(final String address)
+    {
+        DestinationImpl destination = DESTINATION_CACHE.get(address);
+        if(destination == null)
+        {
+            destination = new DestinationImpl(address);
+            DESTINATION_CACHE.put(address, destination);
+        }
+        return destination;
     }
 }

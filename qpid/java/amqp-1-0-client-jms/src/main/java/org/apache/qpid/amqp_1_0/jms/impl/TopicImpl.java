@@ -19,8 +19,15 @@
 package org.apache.qpid.amqp_1_0.jms.impl;
 
 import org.apache.qpid.amqp_1_0.jms.Topic;
+
+import java.util.WeakHashMap;
+
 public class TopicImpl extends DestinationImpl implements Topic
 {
+    private static final WeakHashMap<String, TopicImpl> TOPIC_CACHE =
+        new WeakHashMap<String, TopicImpl>();
+
+
     public TopicImpl(String address)
     {
         super(address);
@@ -30,4 +37,17 @@ public class TopicImpl extends DestinationImpl implements Topic
     {
         return getAddress();
     }
+
+    public static synchronized TopicImpl createTopic(final String address)
+    {
+        TopicImpl topic = TOPIC_CACHE.get(address);
+        if(topic == null)
+        {
+            topic = new TopicImpl(address);
+            TOPIC_CACHE.put(address, topic);
+        }
+        return topic;
+    }
+
+
 }

@@ -1,0 +1,100 @@
+/*
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ *
+ */
+package org.apache.qpid.amqp_1_0.jms.impl;
+
+import org.apache.qpid.amqp_1_0.jms.Connection;
+import org.apache.qpid.amqp_1_0.jms.ConnectionFactory;
+
+import javax.jms.JMSException;
+import java.net.MalformedURLException;
+import java.net.URL;
+
+public class ConnectionFactoryImpl implements ConnectionFactory
+{
+    private String _host;
+    private int _port;
+    private String _username;
+    private String _password;
+    private String _clientId;
+
+    public ConnectionFactoryImpl(final String host,
+                                 final int port,
+                                 final String username,
+                                 final String password,
+                                 final String clientId)
+    {
+        _host = host;
+        _port = port;
+        _username = username;
+        _password = password;
+        _clientId = clientId;
+    }
+
+    public Connection createConnection() throws JMSException
+    {
+        return new ConnectionImpl(_host, _port, _username, _password, _clientId);
+    }
+
+    public Connection createConnection(final String username, final String password) throws JMSException
+    {
+        return new ConnectionImpl(_host, _port, username, password, _clientId);
+    }
+
+    public static ConnectionFactoryImpl createFromURL(final String urlString) throws MalformedURLException
+    {
+        URL url = new URL(urlString);
+        String host = url.getHost();
+        int port = url.getPort();
+        if(port == -1)
+        {
+            port = 5672;
+        }
+        String userInfo = url.getUserInfo();
+        String username = null;
+        String password = null;
+        String clientId = null;
+        if(userInfo != null)
+        {
+            String[] components = userInfo.split(":",2);
+            username = components[0];
+            if(components.length == 2)
+            {
+                password = components[1];
+            }
+        }
+        String query = url.getQuery();
+        if(query != null)
+        {
+           for(String param : query.split("&"))
+           {
+               String[] keyValuePair = param.split("=",2);
+               if(keyValuePair[0].equalsIgnoreCase("clientid"))
+               {
+                   clientId = keyValuePair[1];
+                   break;
+               }
+           }
+        }
+
+        return new ConnectionFactoryImpl(host, port, username, password, clientId);
+
+    }
+}
