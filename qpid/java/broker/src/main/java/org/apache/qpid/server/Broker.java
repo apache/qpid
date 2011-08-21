@@ -109,7 +109,7 @@ public class Broker
 
         configureLogging(logConfigFile, options.getLogWatchFrequency());
 
-        ConfigurationFileApplicationRegistry config = new ConfigurationFileApplicationRegistry(configFile);
+        ConfigurationFileApplicationRegistry config = new ConfigurationFileApplicationRegistry(configFile, options.getBundleContext());
         ServerConfiguration serverConfig = config.getConfiguration();
         updateManagementPort(serverConfig, options.getJmxPort());
 

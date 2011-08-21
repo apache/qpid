@@ -26,6 +26,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import org.osgi.framework.BundleContext;
+
 public class BrokerOptions
 {
     /** serialVersionUID */
@@ -51,8 +53,10 @@ public class BrokerOptions
     private String _logConfigFile;
     private String _bind;
     private Integer _jmxPort;
+    private BundleContext _bundleContext;
 
     private Integer _logWatchFrequency = 0;
+
 
     public void addPort(final int port)
     {
@@ -148,5 +152,15 @@ public class BrokerOptions
     public void setLogWatchFrequency(final int logWatchFrequency)
     {
         _logWatchFrequency = logWatchFrequency;
+    }
+
+    public BundleContext getBundleContext()
+    {
+        return _bundleContext ;
+    }
+
+    public void setBundleContext(final BundleContext bundleContext)
+    {
+        _bundleContext = bundleContext;
     }
 }
