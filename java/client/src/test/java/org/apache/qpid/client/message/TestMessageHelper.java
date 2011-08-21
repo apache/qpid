@@ -43,4 +43,9 @@ public class TestMessageHelper
     {
         return new JMSStreamMessage(AMQMessageDelegateFactory.FACTORY_0_8);
     }
+
+    public static JMSObjectMessage newJMSObjectMessage()
+    {
+        return new JMSObjectMessage(AMQMessageDelegateFactory.FACTORY_0_8);
+    }
 }

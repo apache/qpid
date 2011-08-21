@@ -62,7 +62,6 @@ public class ClassLoadingAwareObjectInputStream extends ObjectInputStream
         return load(classDesc.getName(), cl);
     }
 
-
     @Override
     protected Class resolveProxyClass(String[] interfaces)
             throws IOException, ClassNotFoundException
@@ -112,16 +111,16 @@ public class ClassLoadingAwareObjectInputStream extends ObjectInputStream
             if (clazz != null)
             {
                 return clazz;
-            } else
+            }
+            else
             {
                 return Class.forName(className, false, _ON_FAULT_CLASS_LOADER);
             }
         }
     }
 
-
-
-    static {
+    static
+    {
         _primitives.put("boolean", boolean.class);
         _primitives.put("byte", byte.class);
         _primitives.put("char", char.class);
@@ -132,5 +131,4 @@ public class ClassLoadingAwareObjectInputStream extends ObjectInputStream
         _primitives.put("double", double.class);
         _primitives.put("void", void.class);
     }
-
 }
