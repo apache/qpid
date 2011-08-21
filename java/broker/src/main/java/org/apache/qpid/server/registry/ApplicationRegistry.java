@@ -65,6 +65,7 @@ import org.apache.qpid.server.transport.QpidAcceptor;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
+import org.osgi.framework.BundleContext;
 
 
 /**
@@ -110,6 +111,8 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
     private Timer _reportingTimer;
     private boolean _statisticsEnabled = false;
     private StatisticsCounter _messagesDelivered, _dataDelivered, _messagesReceived, _dataReceived;
+
+    private BundleContext _bundleContext;
 
     static
     {
@@ -209,7 +212,13 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
     protected ApplicationRegistry(ServerConfiguration configuration)
     {
+        this(configuration, null);
+    }
+
+    protected ApplicationRegistry(ServerConfiguration configuration, BundleContext bundleContext)
+    {
         _configuration = configuration;
+        _bundleContext = bundleContext;
     }
 
     public void configure() throws ConfigurationException
@@ -218,7 +227,7 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
         try
         {
-            _pluginManager = new PluginManager(_configuration.getPluginDirectory(), _configuration.getCacheDirectory());
+            _pluginManager = new PluginManager(_configuration.getPluginDirectory(), _configuration.getCacheDirectory(), _bundleContext);
         }
         catch (Exception e)
         {
