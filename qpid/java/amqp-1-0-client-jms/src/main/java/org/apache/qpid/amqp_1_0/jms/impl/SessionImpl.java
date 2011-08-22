@@ -119,7 +119,7 @@ public class SessionImpl implements Session
 
     public void close() throws JMSException
     {
-        //TODO
+        _session.close();
     }
 
     public void recover() throws JMSException
@@ -165,6 +165,10 @@ public class SessionImpl implements Session
         {
             messageConsumer = new MessageConsumerImpl(destination, this, selector, noLocal);
             addConsumer(messageConsumer);
+            if(_connection.isStarted())
+            {
+                messageConsumer.start();
+            }
         }
         return messageConsumer;
     }

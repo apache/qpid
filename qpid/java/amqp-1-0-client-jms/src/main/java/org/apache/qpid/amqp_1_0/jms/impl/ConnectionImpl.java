@@ -219,4 +219,13 @@ public class ConnectionImpl implements Connection
     {
         return _conn;
     }
+
+    public boolean isStarted()
+    {
+        synchronized (_lock)
+        {
+            return _state == State.STARTED;
+        }
+    }
+
 }

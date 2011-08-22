@@ -83,10 +83,15 @@ class MessageFactory
             {
                 message = new MapMessageImpl(header, properties, appProperties, (Map) ((AmqpValue)bodySection).getValue(), footer, _session);
             }
-            else if(bodySection instanceof AmqpValue && ((AmqpValue)bodySection).getValue() instanceof Map)
+            else if(bodySection instanceof AmqpValue && ((AmqpValue)bodySection).getValue() instanceof List)
             {
                 message = new StreamMessageImpl(header, properties, appProperties,
                                                 (List) ((AmqpValue)bodySection).getValue(), footer, _session);
+            }
+            else if(bodySection instanceof AmqpValue && ((AmqpValue)bodySection).getValue() instanceof String)
+            {
+                message = new TextMessageImpl(header, properties, appProperties,
+                                                (String) ((AmqpValue)bodySection).getValue(), footer, _session);
             }
             else if(bodySection instanceof Data)
             {

@@ -21,6 +21,7 @@ package org.apache.qpid.amqp_1_0.jms.impl;
 import org.apache.qpid.amqp_1_0.client.Receiver;
 import org.apache.qpid.amqp_1_0.jms.MessageConsumer;
 import org.apache.qpid.amqp_1_0.type.Binary;
+import org.apache.qpid.amqp_1_0.type.UnsignedInteger;
 
 import javax.jms.Destination;
 import javax.jms.JMSException;
@@ -170,5 +171,10 @@ public class MessageConsumerImpl implements MessageConsumer
     public boolean getNoLocal()
     {
         return _noLocal;
+    }
+
+    public void start()
+    {
+        _receiver.setCredit(UnsignedInteger.valueOf(100), true);
     }
 }
