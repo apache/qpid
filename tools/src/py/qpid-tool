@@ -350,7 +350,7 @@ class QmfData(Console):
              self.notNone(prop.unit), notes, self.notNone(prop.desc))
       rows.append(row)
     for stat in schema.getStatistics():
-      row = (stat.name, self.typeName(stat.type), "", self.notNone(prop.unit), "", self.notNone(prop.desc))
+      row = (stat.name, self.typeName(stat.type), "", self.notNone(stat.unit), "", self.notNone(stat.desc))
       rows.append(row)
     self.disp.table(title, heads, rows)
 
