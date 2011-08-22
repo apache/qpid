@@ -116,10 +116,9 @@
 	<attribute name="dir"/>
         <attribute name="name"/>
 	<attribute name="excludes" default=""/>
-	<attribute name="erroronmissingdir" default="true"/>
 	  
 	<sequential>
-	  <dirset id="@{dir}.refid" dir="@{dir}" excludes="@{excludes}" erroronmissingdir="@{erroronmissingdir}">
+	  <dirset id="@{dir}.refid" dir="@{dir}" excludes="@{excludes}">
 	   <present targetdir="@{dir}">
         	 <mapper type="glob" from="*" to="*/build.xml" />
 	   </present>
