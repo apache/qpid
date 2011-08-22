@@ -23,7 +23,7 @@
   <import file="common.xml"/>
 
   <findSubProjects name="broker-plugins" dir="broker-plugins"/>
-  <findSubProjects name="client-plugins" dir="client-plugins" erroronmissingdir="false"/>
+  <findSubProjects name="client-plugins" dir="client-plugins"/>
   <findSubProjects name="management" dir="management" excludes="common,example"/>
 
   <property name="modules.core"       value="junit-toolkit common management/common broker client tools"/>
