@@ -21,6 +21,8 @@
 
 package org.apache.qpid.transport.network.mina;
 
+import javax.net.ssl.SSLContext;
+
 import org.apache.mina.common.ByteBuffer;
 import org.apache.mina.common.IdleStatus;
 import org.apache.mina.common.IoHandlerAdapter;
@@ -30,7 +32,6 @@ import org.apache.mina.filter.SSLFilter;
 import org.apache.mina.util.SessionUtil;
 import org.apache.qpid.protocol.ProtocolEngine;
 import org.apache.qpid.protocol.ProtocolEngineFactory;
-import org.apache.qpid.ssl.SSLContextFactory;
 import org.apache.qpid.transport.network.NetworkConnection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,7 +41,8 @@ public class MinaNetworkHandler extends IoHandlerAdapter
     private static final Logger LOGGER = LoggerFactory.getLogger(MinaNetworkHandler.class);
 
     private ProtocolEngineFactory _factory;
-    private SSLContextFactory _sslFactory = null;
+    private SSLContext _sslContext = null;
+    private boolean _useClientMode;
 
     static
     {
@@ -52,15 +54,19 @@ public class MinaNetworkHandler extends IoHandlerAdapter
         ByteBuffer.setAllocator(new SimpleByteBufferAllocator());
     }
 
-    public MinaNetworkHandler(SSLContextFactory sslFactory, ProtocolEngineFactory factory)
+    public MinaNetworkHandler(SSLContext sslContext, ProtocolEngineFactory factory)
     {
-        _sslFactory = sslFactory;
+        _sslContext = sslContext;
         _factory = factory;
+        if(_factory == null)
+        {
+            _useClientMode = true;
+        }
     }
 
-    public MinaNetworkHandler(SSLContextFactory sslFactory)
+    public MinaNetworkHandler(SSLContext sslContext)
     {
-        this(sslFactory, null);
+        this(sslContext, null);
     }
 
     public void messageReceived(IoSession session, Object message)
@@ -100,10 +106,12 @@ public class MinaNetworkHandler extends IoHandlerAdapter
 
         SessionUtil.initialize(ioSession);
 
-        if (_sslFactory != null)
+        if (_sslContext != null)
         {
-            ioSession.getFilterChain().addBefore("protocolFilter", "sslFilter",
-                    new SSLFilter(_sslFactory.buildServerContext()));
+            SSLFilter sslFilter = new SSLFilter(_sslContext);
+            sslFilter.setUseClientMode(_useClientMode);
+
+            ioSession.getFilterChain().addFirst("sslFilter",sslFilter);
         }
 
         if (_factory != null)

@@ -60,7 +60,7 @@ public class FailoverMethodTest extends QpidBrokerTestCase implements ExceptionL
         try
         {
             long start = System.currentTimeMillis();
-            AMQConnection connection = new AMQConnection(url, null);
+            AMQConnection connection = new AMQConnection(url);
 
             connection.setExceptionListener(this);
 
@@ -104,7 +104,7 @@ public class FailoverMethodTest extends QpidBrokerTestCase implements ExceptionL
         try
         {
             long start = System.currentTimeMillis();
-            AMQConnection connection = new AMQConnection(url, null);
+            AMQConnection connection = new AMQConnection(url);
 
             connection.setExceptionListener(this);
 
@@ -210,7 +210,7 @@ public class FailoverMethodTest extends QpidBrokerTestCase implements ExceptionL
             long start = System.currentTimeMillis();
 
             //Start the connection so it will use the retries
-            AMQConnection connection = new AMQConnection(url, null);
+            AMQConnection connection = new AMQConnection(url);
 
             long end = System.currentTimeMillis();
 

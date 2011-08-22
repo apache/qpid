@@ -26,6 +26,8 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 
+import javax.net.ssl.SSLContext;
+
 import org.apache.mina.common.ConnectFuture;
 import org.apache.mina.common.ExecutorThreadModel;
 import org.apache.mina.common.IoConnector;
@@ -62,7 +64,7 @@ public class MinaNetworkTransport implements OutgoingNetworkTransport, IncomingN
     private InetSocketAddress _address;
 
     public NetworkConnection connect(ConnectionSettings settings,
-            Receiver<java.nio.ByteBuffer> delegate, SSLContextFactory sslFactory)
+            Receiver<java.nio.ByteBuffer> delegate, SSLContext sslContext)
     {
         int transport = getTransport(settings.getProtocol());
         
@@ -77,7 +79,7 @@ public class MinaNetworkTransport implements OutgoingNetworkTransport, IncomingN
                         return new SocketConnector(1, new QpidThreadExecutor()); // non-blocking connector
                     }
                 });
-                _connection = stc.connect(delegate, settings, sslFactory);
+                _connection = stc.connect(delegate, settings, sslContext);
                 break;
             case UNKNOWN:
             default:
@@ -115,7 +117,7 @@ public class MinaNetworkTransport implements OutgoingNetworkTransport, IncomingN
     }
 
     public void accept(final NetworkTransportConfiguration config, final ProtocolEngineFactory factory,
-            final SSLContextFactory sslFactory)
+            final SSLContext sslContext)
     {
         int processors = config.getConnectorProcessors();
         
@@ -146,7 +148,7 @@ public class MinaNetworkTransport implements OutgoingNetworkTransport, IncomingN
 
         try
         {
-            _acceptor.bind(_address, new MinaNetworkHandler(sslFactory, factory));
+            _acceptor.bind(_address, new MinaNetworkHandler(sslContext, factory));
         }
         catch (IOException e)
         {
@@ -168,7 +170,7 @@ public class MinaNetworkTransport implements OutgoingNetworkTransport, IncomingN
             _ioConnectorFactory = socketConnectorFactory;
         }
         
-        public NetworkConnection connect(Receiver<java.nio.ByteBuffer> receiver, ConnectionSettings settings, SSLContextFactory sslFactory)
+        public NetworkConnection connect(Receiver<java.nio.ByteBuffer> receiver, ConnectionSettings settings, SSLContext sslContext)
         {
             final IoConnector ioConnector = _ioConnectorFactory.newConnector();
             final SocketAddress address;
@@ -203,7 +205,7 @@ public class MinaNetworkTransport implements OutgoingNetworkTransport, IncomingN
                 ((SocketConnector) ioConnector).setWorkerTimeout(0);
             }
 
-            ConnectFuture future = ioConnector.connect(address, new MinaNetworkHandler(sslFactory), ioConnector.getDefaultConfig());
+            ConnectFuture future = ioConnector.connect(address, new MinaNetworkHandler(sslContext), ioConnector.getDefaultConfig());
             future.join();
             if (!future.isConnected())
             {

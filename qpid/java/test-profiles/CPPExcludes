@@ -144,9 +144,6 @@ org.apache.qpid.test.unit.ack.FailoverBeforeConsumingRecoverTest#*
 
 org.apache.qpid.test.client.RollbackOrderTest#testOrderingAfterRollbackOnMessage#*
 
-// Temporarily adding the following until the issues are sorted out.
-org.apache.qpid.test.unit.client.AMQConnectionTest#testHeartBeat
-
 //Excluded due to QPID-1447 : CPP broker does not have SlowConsumer Disconnection
 org.apache.qpid.systest.GlobalQueuesTest#*
 org.apache.qpid.systest.GlobalTopicsTest#*

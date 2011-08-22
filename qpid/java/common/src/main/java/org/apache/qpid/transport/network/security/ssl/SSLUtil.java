@@ -125,38 +125,6 @@ public class SSLUtil
         return id.toString();
     }
     
-    public static SSLContext createSSLContext(ConnectionSettings settings) throws Exception
-    {
-        SSLContextFactory sslContextFactory;
-        
-        if (settings.getCertAlias() == null)
-        {
-            sslContextFactory = 
-                new SSLContextFactory(settings.getTrustStorePath(),
-                                      settings.getTrustStorePassword(),
-                                      settings.getTrustStoreCertType(),
-                                      settings.getKeyStorePath(),
-                                      settings.getKeyStorePassword(),
-                                      settings.getKeyStoreCertType());
-
-        } else
-        {
-            sslContextFactory = 
-                new SSLContextFactory(settings.getTrustStorePath(),
-                                      settings.getTrustStorePassword(),
-                                      settings.getTrustStoreCertType(),
-                    new QpidClientX509KeyManager(settings.getCertAlias(),
-                                                     settings.getKeyStorePath(),
-                                                     settings.getKeyStorePassword(),
-                                                     settings.getKeyStoreCertType()));
-            
-            log.debug("Using custom key manager");
-        }
-
-        return sslContextFactory.buildServerContext();
-        
-    }
-    
     public static KeyStore getInitializedKeyStore(String storePath, String storePassword) throws GeneralSecurityException, IOException
     {
         KeyStore ks = KeyStore.getInstance("JKS");
@@ -176,7 +144,10 @@ public class SSLUtil
             {
                 throw new IOException("Unable to load keystore resource: " + storePath);
             }
-            ks.load(in, storePassword.toCharArray());
+
+            char[] storeCharPassword = storePassword == null ? null : storePassword.toCharArray();
+
+            ks.load(in, storeCharPassword);
         }
         finally
         {

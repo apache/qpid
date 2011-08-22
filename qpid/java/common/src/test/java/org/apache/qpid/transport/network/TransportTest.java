@@ -23,9 +23,10 @@ package org.apache.qpid.transport.network;
 
 import java.nio.ByteBuffer;
 
+import javax.net.ssl.SSLContext;
+
 import org.apache.qpid.framing.ProtocolVersion;
 import org.apache.qpid.protocol.ProtocolEngineFactory;
-import org.apache.qpid.ssl.SSLContextFactory;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.transport.ConnectionSettings;
 import org.apache.qpid.transport.NetworkTransportConfiguration;
@@ -129,7 +130,7 @@ public class TransportTest extends QpidTestCase
         }
 
         public NetworkConnection connect(ConnectionSettings settings,
-                Receiver<ByteBuffer> delegate, SSLContextFactory sslFactory)
+                Receiver<ByteBuffer> delegate, SSLContext sslContext)
         {
             throw new UnsupportedOperationException();
         }
@@ -149,7 +150,7 @@ public class TransportTest extends QpidTestCase
         }
 
         public void accept(NetworkTransportConfiguration config,
-                ProtocolEngineFactory factory, SSLContextFactory sslFactory)
+                ProtocolEngineFactory factory, SSLContext sslContext)
         {
             throw new UnsupportedOperationException();
         }

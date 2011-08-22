@@ -33,6 +33,7 @@ import javax.jms.ObjectMessage;
 import org.apache.mina.common.ByteBuffer;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.client.util.ClassLoadingAwareObjectInputStream;
 
 public class JMSObjectMessage extends AbstractJMSMessage implements ObjectMessage
 {
@@ -136,7 +137,7 @@ public class JMSObjectMessage extends AbstractJMSMessage implements ObjectMessag
         try
         {
             _data.rewind();
-            in = new ObjectInputStream(_data.asInputStream());
+            in = new ClassLoadingAwareObjectInputStream(_data.asInputStream());
 
             return (Serializable) in.readObject();
         }

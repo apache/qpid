@@ -32,14 +32,21 @@ import java.util.Map;
 import junit.framework.TestCase;
 import junit.framework.TestResult;
 
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.mina.util.AvailablePortFinder;
 
 public class QpidTestCase extends TestCase
 {
-    protected static final Logger _logger = Logger.getLogger(QpidTestCase.class);
+    public static final String QPID_HOME = System.getProperty("QPID_HOME");
+    public static final String TEST_RESOURCES_DIR = QPID_HOME + "/../test-profiles/test_resources/";
 
+    private static final Logger _logger = Logger.getLogger(QpidTestCase.class);
+
+    private final Map<Logger, Level> _loggerLevelSetForTest = new HashMap<Logger, Level>();
     private final Map<String, String> _propertiesSetForTest = new HashMap<String, String>();
+
+    private String _testName;
 
     /**
      * Some tests are excluded when the property test.excludes is set to true.
@@ -144,9 +151,9 @@ public class QpidTestCase extends TestCase
      * completes.
      *
      * @param property The property to set
-     * @param value the value to set it to.
+     * @param value the value to set it to, if null, the property will be cleared
      */
-    protected void setTestSystemProperty(String property, String value)
+    protected void setTestSystemProperty(final String property, final String value)
     {
         if (!_propertiesSetForTest.containsKey(property))
         {
@@ -154,7 +161,14 @@ public class QpidTestCase extends TestCase
             _propertiesSetForTest.put(property, System.getProperty(property));
         }
 
-        System.setProperty(property, value);
+        if (value == null)
+        {
+            System.clearProperty(property);
+        }
+        else
+        {
+            System.setProperty(property, value);
+        }
     }
 
     /**
@@ -162,24 +176,74 @@ public class QpidTestCase extends TestCase
      */
     protected void revertTestSystemProperties()
     {
-        for (String key : _propertiesSetForTest.keySet())
+        if(!_propertiesSetForTest.isEmpty())
         {
-            String value = _propertiesSetForTest.get(key);
-            if (value != null)
+            _logger.debug("reverting " + _propertiesSetForTest.size() + " test properties");
+            for (String key : _propertiesSetForTest.keySet())
             {
-                System.setProperty(key, value);
+                String value = _propertiesSetForTest.get(key);
+                if (value != null)
+                {
+                    System.setProperty(key, value);
+                }
+                else
+                {
+                    System.clearProperty(key);
+                }
             }
-            else
-            {
-                System.clearProperty(key);
-            }
+
+            _propertiesSetForTest.clear();
+        }
+    }
+
+    /**
+     * Adjust the VMs Log4j Settings just for this test run
+     *
+     * @param logger the logger to change
+     * @param level the level to set
+     */
+    protected void setLoggerLevel(Logger logger, Level level)
+    {
+        assertNotNull("Cannot set level of null logger", logger);
+        assertNotNull("Cannot set Logger("+logger.getName()+") to null level.",level);
+
+        if (!_loggerLevelSetForTest.containsKey(logger))
+        {
+            // Record the current value so we can revert it later.
+            _loggerLevelSetForTest.put(logger, logger.getLevel());
         }
 
-        _propertiesSetForTest.clear();
+        logger.setLevel(level);
+    }
+
+    /**
+     * Restore the logging levels defined by this test.
+     */
+    protected void revertLoggingLevels()
+    {
+        for (Logger logger : _loggerLevelSetForTest.keySet())
+        {
+            logger.setLevel(_loggerLevelSetForTest.get(logger));
+        }
+
+        _loggerLevelSetForTest.clear();
     }
 
     protected void tearDown() throws java.lang.Exception
     {
+        _logger.info("========== tearDown " + _testName + " ==========");
         revertTestSystemProperties();
+        revertLoggingLevels();
+    }
+
+    protected void setUp() throws Exception
+    {
+        _testName = getClass().getSimpleName() + "." + getName();
+        _logger.info("========== start " + _testName + " ==========");
+    }
+
+    protected String getTestName()
+    {
+        return _testName;
     }
 }
