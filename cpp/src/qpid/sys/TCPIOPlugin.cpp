@@ -164,6 +164,7 @@ void AsynchIOProtocolFactory::connect(
     // shutdown.  The allocated AsynchConnector frees itself when it
     // is no longer needed.
     Socket* socket = new Socket();
+    try {
     AsynchConnector* c = AsynchConnector::create(
         *socket,
         host,
@@ -173,6 +174,12 @@ void AsynchIOProtocolFactory::connect(
         boost::bind(&AsynchIOProtocolFactory::connectFailed,
                     this, _1, _2, _3, failed));
     c->start(poller);
+    } catch (std::exception&) {
+        // TODO: Design question - should we do the error callback and also throw?
+        int errCode = socket->getError();
+        connectFailed(*socket, errCode, strError(errCode), failed);
+        throw;
+    }
 }
 
 }} // namespace qpid::sys
