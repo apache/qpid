@@ -463,24 +463,24 @@ class MiscellaneousErrorsTests(TestHelper):
         try:
             self.session.queue_declare(queue="my-queue", auto_delete=True, exclusive=True)
             self.session.exchange_bind(exchange="", queue="my-queue", binding_key="another-key")
-            self.fail("Expected 530 (not-allowed) code for bind to default exchange.")
+            self.fail("Expected 542 (invalid-argument) code for bind to default exchange.")
         except SessionException, e:
-            self.assertEquals(530, e.args[0].error_code)
+            self.assertEquals(542, e.args[0].error_code)
 
     def testDefaultAccessUnbind(self):
         try:
             self.session.queue_declare(queue="my-queue", auto_delete=True, exclusive=True)
             self.session.exchange_unbind(exchange="", queue="my-queue", binding_key="my-queue")
-            self.fail("Expected 530 (not-allowed) code for unbind from default exchange.")
+            self.fail("Expected 542 (invalid-argument) code for unbind from default exchange.")
         except SessionException, e:
-            self.assertEquals(530, e.args[0].error_code)
+            self.assertEquals(542, e.args[0].error_code)
 
     def testDefaultAccessDelete(self):
         try:
             self.session.exchange_delete(exchange="")
-            self.fail("Expected 530 (not-allowed) code for delete of default exchange.")
+            self.fail("Expected 542 (invalid-argument) code for delete of default exchange.")
         except SessionException, e:
-            self.assertEquals(530, e.args[0].error_code)
+            self.assertEquals(542, e.args[0].error_code)
 
 class ExchangeTests(TestHelper):
     def testHeadersBindNoMatchArg(self):
