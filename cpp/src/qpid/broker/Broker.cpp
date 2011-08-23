@@ -889,6 +889,9 @@ void Broker::deleteExchange(const std::string& name, const std::string& userId,
             throw framing::UnauthorizedAccessException(QPID_MSG("ACL denied exchange delete request from " << userId));
     }
 
+    if (name.empty()) {
+        throw framing::InvalidArgumentException(QPID_MSG("Delete not allowed for default exchange"));
+    }
     Exchange::shared_ptr exchange(exchanges.get(name));
     if (!exchange) throw framing::NotFoundException(QPID_MSG("Delete failed. No such exchange: " << name));
     if (exchange->inUseAsAlternate()) throw framing::NotAllowedException(QPID_MSG("Exchange in use as alternate-exchange."));
@@ -917,7 +920,7 @@ void Broker::bind(const std::string& queueName,
             throw framing::UnauthorizedAccessException(QPID_MSG("ACL denied exchange bind request from " << userId));
     }
     if (exchangeName.empty()) {
-        throw framing::NotAllowedException(QPID_MSG("Bind not allowed for default exchange"));
+        throw framing::InvalidArgumentException(QPID_MSG("Bind not allowed for default exchange"));
     }
 
     Queue::shared_ptr queue = queues.find(queueName);
@@ -950,7 +953,7 @@ void Broker::unbind(const std::string& queueName,
             throw framing::UnauthorizedAccessException(QPID_MSG("ACL denied exchange unbind request from " << userId));
     }
     if (exchangeName.empty()) {
-        throw framing::NotAllowedException(QPID_MSG("Unbind not allowed for default exchange"));
+        throw framing::InvalidArgumentException(QPID_MSG("Unbind not allowed for default exchange"));
     }
     Queue::shared_ptr queue = queues.find(queueName);
     Exchange::shared_ptr exchange = exchanges.get(exchangeName);
