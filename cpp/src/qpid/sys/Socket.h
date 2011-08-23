@@ -80,7 +80,7 @@ public:
      * Returns the error code stored in the socket.  This may be used
      * to determine the result of a non-blocking connect.
      */
-    int getError() const;
+    QPID_COMMON_EXTERN int getError() const;
 
     /** Accept a connection from a socket that is already listening
      * and has an incoming connection
