@@ -198,10 +198,12 @@ void FieldTable::encode(Buffer& buffer) const {
 
 void FieldTable::decode(Buffer& buffer){
     clear();
+    if (buffer.available() < 4)
+        throw IllegalArgumentException(QPID_MSG("Not enough data for field table."));
     uint32_t len = buffer.getLong();
     if (len) {
         uint32_t available = buffer.available();
-        if (available < len)
+        if ((available < len) || (available < 4))
             throw IllegalArgumentException(QPID_MSG("Not enough data for field table."));
         uint32_t count = buffer.getLong();
         uint32_t leftover = available - len;
