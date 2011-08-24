@@ -45,7 +45,7 @@ struct Options : OptionParser
           url("127.0.0.1"),
           timeout(0),
           forever(false),
-          count(1)
+          count(0)
     {
         add("broker,b", url, "url of broker to connect to");
         add("timeout,t", timeout, "timeout in seconds to wait before exiting");
