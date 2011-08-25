@@ -21,6 +21,7 @@
 package org.apache.qpid.server.transport;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -36,6 +37,7 @@ import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
 import org.apache.qpid.server.security.auth.AuthenticationResult.AuthenticationStatus;
+import org.apache.qpid.server.subscription.Subscription_0_10;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.transport.*;
 
@@ -193,5 +195,24 @@ public class ServerConnectionDelegate extends ServerDelegate
     protected int getChannelMax()
     {
         return ApplicationRegistry.getInstance().getConfiguration().getMaxChannelCount();
+    }
+
+    @Override public void sessionDetach(Connection conn, SessionDetach dtc)
+    {
+        // To ensure a clean detach, we unregister any remaining subscriptions. Unregister ensures
+        // that any in-progress delivery (SubFlushRunner/QueueRunner) is completed before the unregister
+        // completes.
+        unregisterAllSubscriptions(conn, dtc);
+        super.sessionDetach(conn, dtc);
+    }
+
+    private void unregisterAllSubscriptions(Connection conn, SessionDetach dtc)
+    {
+        final ServerSession ssn = (ServerSession) conn.getSession(dtc.getChannel());
+        final Collection<Subscription_0_10> subs = ssn.getSubscriptions();
+        for (Subscription_0_10 subscription_0_10 : subs)
+        {
+            ssn.unregister(subscription_0_10);
+        }
     }
 }
