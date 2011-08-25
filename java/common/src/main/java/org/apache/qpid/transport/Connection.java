@@ -35,7 +35,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
 
 import javax.security.sasl.SaslClient;
 import javax.security.sasl.SaslServer;
@@ -406,7 +405,7 @@ public class Connection extends ConnectionInvoker
         else
         {
             throw new ProtocolViolationException(
-					"Received frames for an already dettached session", null);
+					"Received frames for an already detached session", null);
         }
     }
 
@@ -455,7 +454,7 @@ public class Connection extends ConnectionInvoker
         }
     }
 
-    protected Session getSession(int channel)
+    public Session getSession(int channel)
     {
         synchronized (lock)
         {
