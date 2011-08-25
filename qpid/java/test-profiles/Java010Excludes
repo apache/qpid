@@ -78,5 +78,7 @@ org.apache.qpid.test.client.destination.AddressBasedDestinationTest#testSessionC
 org.apache.qpid.test.client.QueueBrowserTransactedTest#testFailoverAsQueueBrowserCreated
 org.apache.qpid.test.client.QueueBrowserTransactedTest#testFailoverWithQueueBrowser
 
-// QPID-3432: Test fails on 0.10 profile
+// QPID-3432: These tests test the behaviour of 0-8..-0-9-1 specific system property (amqj.default_syncwrite_timeout)
 org.apache.qpid.test.client.timeouts.SyncWaitTimeoutDelayTest#*
+org.apache.qpid.test.client.timeouts.SyncWaitDelayTest#*
+
