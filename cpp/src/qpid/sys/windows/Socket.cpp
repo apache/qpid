@@ -136,11 +136,6 @@ void Socket::createSocket(const SocketAddress& sa) const
     try {
         if (nonblocking) setNonblocking();
         if (nodelay) setTcpNoDelay();
-        if (getAddrInfo(sa).ai_family == AF_INET6) {
-            int flag = 1;
-            int result = ::setsockopt(socket, IPPROTO_IPV6, IPV6_V6ONLY, (char *)&flag, sizeof(flag));
-            QPID_WINSOCK_CHECK(result);
-        }
     } catch (std::exception&) {
         ::closesocket(s);
         socket = INVALID_SOCKET;
