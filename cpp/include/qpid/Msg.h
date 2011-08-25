@@ -41,7 +41,7 @@ struct Msg {
     std::ostringstream os;
     Msg() {}
     Msg(const Msg& m) : os(m.str()) {}
-    std::string str() const { return os.str(); }
+    std::string str() const;
     operator std::string() const { return str(); }
 
     Msg& operator<<(long n) { os << n; return *this; }

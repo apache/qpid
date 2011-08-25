@@ -29,6 +29,7 @@
 
 #include "qpid/RefCounted.h"
 #include "qpid/broker/Connection.h"
+#include "qpid/broker/DeliveryRecord.h"
 #include "qpid/broker/SecureConnection.h"
 #include "qpid/broker/SemanticState.h"
 #include "qpid/amqp_0_10/Connection.h"
@@ -164,6 +165,17 @@ class Connection :
     void txEnd();
     void accumulatedAck(const framing::SequenceSet&);
 
+    // Dtx state
+    void dtxStart(const std::string& xid,
+                  bool ended,
+                  bool suspended,
+                  bool failed,
+                  bool expired);
+    void dtxEnd();
+    void dtxAck();
+    void dtxBufferRef(const std::string& xid, uint32_t index);
+    void dtxWorkRecord(const std::string& xid, bool prepared, uint32_t timeout);
+
     // Encoded exchange replication.
     void exchange(const std::string& encoded);
 
@@ -251,7 +263,7 @@ class Connection :
     broker::SemanticState& semanticState();
     broker::QueuedMessage getUpdateMessage();
     void closeUpdated();
-
+    void setDtxBuffer(const UpdateReceiver::DtxBuffers::value_type &);
     Cluster& cluster;
     ConnectionId self;
     bool catchUp;
@@ -263,6 +275,9 @@ class Connection :
     framing::SequenceNumber deliverSeq;
     framing::ChannelId currentChannel;
     boost::shared_ptr<broker::TxBuffer> txBuffer;
+    boost::shared_ptr<broker::DtxBuffer> dtxBuffer;
+    broker::DeliveryRecords dtxAckRecords;
+    broker::DtxWorkRecord* dtxCurrent;
     bool expectProtocolHeader;
     McastFrameHandler mcastFrameHandler;
     UpdateReceiver& updateIn;

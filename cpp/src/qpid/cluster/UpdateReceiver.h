@@ -39,6 +39,13 @@ class UpdateReceiver {
 
     /** Management-id for the next shadow connection */
     std::string nextShadowMgmtId;
+
+    /** Relationship between DtxBuffers, identified by xid, index in DtxManager,
+     * and sessions represented by their SemanticState.
+     */
+    typedef std::pair<std::string, uint32_t> DtxBufferRef;
+    typedef std::map<DtxBufferRef, broker::SemanticState* > DtxBuffers;
+    DtxBuffers dtxBuffers;
 };
 }} // namespace qpid::cluster
 

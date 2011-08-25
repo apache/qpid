@@ -493,9 +493,7 @@ class BrokerTest(TestCase):
         return cluster
 
     def browse(self, session, queue, timeout=0):
-        """Assert that the contents of messages on queue (as retrieved
-        using session and timeout) exactly match the strings in
-        expect_contents"""
+        """Return a list with the contents of each message on queue."""
         r = session.receiver("%s;{mode:browse}"%(queue))
         try:
             contents = []

@@ -191,7 +191,8 @@ class AmqpElement
     "command-fragments" => "session.command-fragment",
     "in-doubt" => "dtx.xid",
     "tx-publish" => "str-8",
-    "queues" => "str-8"
+    "queues" => "str-8",
+    "prepared" => "str-8"
   }
 
   def array_type(name)
