@@ -24,7 +24,6 @@ org.apache.qpid.test.unit.client.channelclose.ChannelCloseTest#*
 org.apache.qpid.client.ResetMessageListenerTest#*
 
 // This test is not finished
-org.apache.qpid.test.testcases.TTLTest#*
 org.apache.qpid.test.client.failover.FailoverTest#test4MinuteFailover
 
 // Those tests are testing 0.8 specific semantics

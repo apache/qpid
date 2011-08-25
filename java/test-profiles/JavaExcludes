@@ -17,9 +17,6 @@
 // under the License.
 //
 
-// Those tests are not finished
-org.apache.qpid.test.testcases.TTLTest#*
-
 // QPID-1823: this takes ages to run
 org.apache.qpid.client.SessionCreateTest#*
 
