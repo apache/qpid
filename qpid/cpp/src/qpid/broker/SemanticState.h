@@ -65,7 +65,7 @@ class SessionContext;
  *
  * Message delivery is driven by ConsumerImpl::doOutput(), which is
  * called when a client's socket is ready to write data.
- * 
+ *
  */
 class SemanticState : private boost::noncopyable {
   public:
@@ -99,15 +99,15 @@ class SemanticState : private boost::noncopyable {
       public:
         typedef boost::shared_ptr<ConsumerImpl> shared_ptr;
 
-        ConsumerImpl(SemanticState* parent, 
+        ConsumerImpl(SemanticState* parent,
                      const std::string& name, boost::shared_ptr<Queue> queue,
                      bool ack, bool acquire, bool exclusive,
                      const std::string& resumeId, uint64_t resumeTtl, const framing::FieldTable& arguments);
         ~ConsumerImpl();
         OwnershipToken* getSession();
-        bool deliver(QueuedMessage& msg);            
-        bool filter(boost::intrusive_ptr<Message> msg);            
-        bool accept(boost::intrusive_ptr<Message> msg);            
+        bool deliver(QueuedMessage& msg);
+        bool filter(boost::intrusive_ptr<Message> msg);
+        bool accept(boost::intrusive_ptr<Message> msg);
 
         void disableNotify();
         void enableNotify();
@@ -122,7 +122,7 @@ class SemanticState : private boost::noncopyable {
         void addMessageCredit(uint32_t value);
         void flush();
         void stop();
-        void complete(DeliveryRecord&);    
+        void complete(DeliveryRecord&);
         boost::shared_ptr<Queue> getQueue() const { return queue; }
         bool isBlocked() const { return blocked; }
         bool setBlocked(bool set) { std::swap(set, blocked); return set; }
@@ -188,7 +188,7 @@ class SemanticState : private boost::noncopyable {
     const SessionContext& getSession() const { return session; }
 
     ConsumerImpl& find(const std::string& destination);
-    
+
     /**
      * Get named queue, never returns 0.
      * @return: named queue
@@ -196,11 +196,11 @@ class SemanticState : private boost::noncopyable {
      * @exception: ConnectionException if name="" and session has no default.
      */
     boost::shared_ptr<Queue> getQueue(const std::string& name) const;
-    
+
     bool exists(const std::string& consumerTag);
 
-    void consume(const std::string& destination, 
-                 boost::shared_ptr<Queue> queue, 
+    void consume(const std::string& destination,
+                 boost::shared_ptr<Queue> queue,
                  bool ackRequired, bool acquire, bool exclusive,
                  const std::string& resumeId=std::string(), uint64_t resumeTtl=0,
                  const framing::FieldTable& = framing::FieldTable());
@@ -223,7 +223,7 @@ class SemanticState : private boost::noncopyable {
     void suspendDtx(const std::string& xid);
     void resumeDtx(const std::string& xid);
     void recover(bool requeue);
-    void deliver(DeliveryRecord& message, bool sync);            
+    void deliver(DeliveryRecord& message, bool sync);
     void acquire(DeliveryId first, DeliveryId last, DeliveryIds& acquired);
     void release(DeliveryId first, DeliveryId last, bool setRedelivered);
     void reject(DeliveryId first, DeliveryId last);
@@ -244,7 +244,9 @@ class SemanticState : private boost::noncopyable {
     DeliveryRecords& getUnacked() { return unacked; }
     framing::SequenceSet getAccumulatedAck() const { return accumulatedAck; }
     TxBuffer::shared_ptr getTxBuffer() const { return txBuffer; }
+    DtxBuffer::shared_ptr getDtxBuffer() const { return dtxBuffer; }
     void setTxBuffer(const TxBuffer::shared_ptr& txb) { txBuffer = txb; }
+    void setDtxBuffer(const DtxBuffer::shared_ptr& dtxb) { dtxBuffer = dtxb; txBuffer = dtxb; }
     void setAccumulatedAck(const framing::SequenceSet& s) { accumulatedAck = s; }
     void record(const DeliveryRecord& delivery);
 };

@@ -212,6 +212,29 @@
       <field name="name" type="str8"/>
     </control>
 
+    <!-- Dtx transaction state. -->
+    <control name="dtx-start" code="0x1A">
+      <field name="xid" type="str16"/>
+      <field name="ended" type="bit"/>
+      <field name="suspended" type="bit"/>
+      <field name="failed" type="bit"/>
+      <field name="expired" type="bit"/>
+    </control>
+    <control name="dtx-end" code="0x1B"/>
+
+    <control name="dtx-ack" code="0x1C"/>
+
+    <control name="dtx-buffer-ref" code="0x1D">
+      <field name="xid" type="str16"/>
+      <field name="index" type="uint32"/>
+    </control>
+
+    <control name="dtx-work-record" code="0x1E">
+      <field name="xid" type="str16"/>
+      <field name="prepared" type="bit"/>
+      <field name="timeout" type="uint32"/>
+    </control>
+
     <!-- Complete a session state update. -->
     <control name="session-state" code="0x1F">
       <!-- Target session deduced from channel number.  -->
