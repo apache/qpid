@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -34,7 +34,7 @@ using qpid::ptr_map_ptr;
 using namespace qpid::broker;
 using namespace qpid::framing;
 
-DtxManager::DtxManager(qpid::sys::Timer& t) : store(0), timer(t) {}
+DtxManager::DtxManager(qpid::sys::Timer& t) : store(0), timer(&t) {}
 
 DtxManager::~DtxManager() {}
 
@@ -53,8 +53,8 @@ void DtxManager::recover(const std::string& xid, std::auto_ptr<TPCTransactionCon
     createWork(xid)->recover(txn, ops);
 }
 
-bool DtxManager::prepare(const std::string& xid) 
-{ 
+bool DtxManager::prepare(const std::string& xid)
+{
     QPID_LOG(debug, "preparing: " << xid);
     try {
         return getWork(xid)->prepare();
@@ -64,8 +64,8 @@ bool DtxManager::prepare(const std::string& xid)
     }
 }
 
-bool DtxManager::commit(const std::string& xid, bool onePhase) 
-{ 
+bool DtxManager::commit(const std::string& xid, bool onePhase)
+{
     QPID_LOG(debug, "committing: " << xid);
     try {
         bool result = getWork(xid)->commit(onePhase);
@@ -77,8 +77,8 @@ bool DtxManager::commit(const std::string& xid, bool onePhase)
     }
 }
 
-void DtxManager::rollback(const std::string& xid) 
-{ 
+void DtxManager::rollback(const std::string& xid)
+{
     QPID_LOG(debug, "rolling back: " << xid);
     try {
         getWork(xid)->rollback();
@@ -91,7 +91,7 @@ void DtxManager::rollback(const std::string& xid)
 
 DtxWorkRecord* DtxManager::getWork(const std::string& xid)
 {
-    Mutex::ScopedLock locker(lock); 
+    Mutex::ScopedLock locker(lock);
     WorkMap::iterator i = work.find(xid);
     if (i == work.end()) {
         throw NotFoundException(QPID_MSG("Unrecognised xid " << xid));
@@ -99,9 +99,14 @@ DtxWorkRecord* DtxManager::getWork(const std::string& xid)
     return ptr_map_ptr(i);
 }
 
+bool DtxManager::exists(const std::string& xid) {
+    Mutex::ScopedLock locker(lock);
+    return  work.find(xid) != work.end();
+}
+
 void DtxManager::remove(const std::string& xid)
 {
-    Mutex::ScopedLock locker(lock); 
+    Mutex::ScopedLock locker(lock);
     WorkMap::iterator i = work.find(xid);
     if (i == work.end()) {
         throw NotFoundException(QPID_MSG("Unrecognised xid " << xid));
@@ -110,14 +115,15 @@ void DtxManager::remove(const std::string& xid)
     }
 }
 
-DtxWorkRecord* DtxManager::createWork(std::string xid)
+DtxWorkRecord* DtxManager::createWork(const std::string& xid)
 {
-    Mutex::ScopedLock locker(lock); 
+    Mutex::ScopedLock locker(lock);
     WorkMap::iterator i = work.find(xid);
     if (i != work.end()) {
         throw NotAllowedException(QPID_MSG("Xid " << xid << " is already known (use 'join' to add work to an existing xid)"));
     } else {
-      return ptr_map_ptr(work.insert(xid, new DtxWorkRecord(xid, store)).first);
+        std::string ncxid = xid; // Work around const correctness problems in ptr_map.
+        return ptr_map_ptr(work.insert(ncxid, new DtxWorkRecord(ncxid, store)).first);
     }
 }
 
@@ -131,7 +137,7 @@ void DtxManager::setTimeout(const std::string& xid, uint32_t secs)
     }
     timeout = intrusive_ptr<DtxTimeout>(new DtxTimeout(secs, *this, xid));
     record->setTimeout(timeout);
-    timer.add(timeout);
+    timer->add(timeout);
 }
 
 uint32_t DtxManager::getTimeout(const std::string& xid)
@@ -142,7 +148,7 @@ uint32_t DtxManager::getTimeout(const std::string& xid)
 
 void DtxManager::timedout(const std::string& xid)
 {
-    Mutex::ScopedLock locker(lock); 
+    Mutex::ScopedLock locker(lock);
     WorkMap::iterator i = work.find(xid);
     if (i == work.end()) {
         QPID_LOG(warning, "Transaction timeout failed: no record for xid");
@@ -153,7 +159,7 @@ void DtxManager::timedout(const std::string& xid)
     }
 }
 
-DtxManager::DtxCleanup::DtxCleanup(uint32_t _timeout, DtxManager& _mgr, const std::string& _xid) 
+DtxManager::DtxCleanup::DtxCleanup(uint32_t _timeout, DtxManager& _mgr, const std::string& _xid)
     : TimerTask(qpid::sys::Duration(_timeout * qpid::sys::TIME_SEC),"DtxCleanup"), mgr(_mgr), xid(_xid) {}
 
 void DtxManager::DtxCleanup::fire()

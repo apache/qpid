@@ -89,7 +89,7 @@ rgen_cmd=ruby -I $(rgen_dir) $(rgen_dir)/generate . ../include $(specs) all
 
 $(rgen_srcs) $(srcdir)/rubygen.mk: rgen.timestamp
 rgen.timestamp: $(rgen_generator) $(specs)
-	$(rgen_cmd) $(srcdir)/rubygen.mk; touch $@
+	$(rgen_cmd) $(srcdir)/rubygen.mk && touch $@
 $(rgen_generator):
 
 # The CMake version is needed for dist
@@ -435,6 +435,7 @@ libqpidcommon_la_SOURCES +=			\
   qpid/log/OstreamOutput.h			\
   qpid/log/Selector.cpp				\
   qpid/log/Statement.cpp			\
+  qpid/Msg.cpp					\
   qpid/management/Buffer.cpp			\
   qpid/management/ConnectionSettings.cpp	\
   qpid/management/Manageable.cpp		\
