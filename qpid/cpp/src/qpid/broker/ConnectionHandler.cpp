@@ -192,7 +192,7 @@ void ConnectionHandler::Handler::secureOk(const string& response)
 void ConnectionHandler::Handler::tuneOk(uint16_t /*channelmax*/,
     uint16_t framemax, uint16_t heartbeat)
 {
-    connection.setFrameMax(framemax);
+    if (framemax) connection.setFrameMax(framemax);
     connection.setHeartbeatInterval(heartbeat);
 }
 
