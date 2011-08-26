@@ -964,16 +964,29 @@ public class Session extends SessionInvoker
 
     public void close()
     {
+        if (log.isDebugEnabled())
+        {
+            log.debug("Closing [%s] in state [%s]", this, state);
+        }
         synchronized (commands)
         {
-            state = CLOSING;
-            setClose(true);
-            sessionRequestTimeout(0);
-            sessionDetach(name.getBytes());
-
-            awaitClose();
- 
-
+            switch(state)
+            {
+                case DETACHED:
+                    state = CLOSED;
+                    delegate.closed(this);
+                    connection.removeSession(this);
+                    listener.closed(this);
+                    break;
+                case CLOSED:
+                    break;
+                default:
+                    state = CLOSING;
+                    setClose(true);
+                    sessionRequestTimeout(0);
+                    sessionDetach(name.getBytes());
+                    awaitClose();
+            }
         }
     }
 
