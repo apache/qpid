@@ -24,7 +24,7 @@
 
 #include <sstream>
 #include <iostream>
-#include "qpid/CommonImportExport.h"
+#include "qpid/types/ImportExport.h"
 
 namespace qpid {
 
@@ -42,7 +42,7 @@ struct Msg {
     std::ostringstream os;
     Msg() {}
     Msg(const Msg& m) : os(m.str()) {}
-    QPID_COMMON_EXTERN std::string str() const;
+    QPID_TYPES_EXTERN std::string str() const;
     operator std::string() const { return str(); }
 
     Msg& operator<<(long n) { os << n; return *this; }
