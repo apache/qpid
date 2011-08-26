@@ -20,6 +20,7 @@
  */
 
 #include "qpid/Msg.h"
+#include <algorithm>
 #include <string>
 
 namespace qpid {
