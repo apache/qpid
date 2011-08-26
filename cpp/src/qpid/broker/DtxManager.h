@@ -27,6 +27,7 @@
 #include "qpid/broker/TransactionalStore.h"
 #include "qpid/framing/amqp_types.h"
 #include "qpid/sys/Mutex.h"
+#include "qpid/ptr_map.h"
 
 namespace qpid {
 namespace broker {
@@ -69,7 +70,7 @@ public:
     // Used by cluster for replication.
     template<class F> void each(F f) const {
         for (WorkMap::const_iterator i = work.begin(); i != work.end(); ++i)
-            f(*i);
+            f(*ptr_map_ptr(i));
     }
     DtxWorkRecord* getWork(const std::string& xid);
     bool exists(const std::string& xid);
