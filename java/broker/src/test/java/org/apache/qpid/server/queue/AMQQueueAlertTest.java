@@ -289,7 +289,7 @@ public class AMQQueueAlertTest extends InternalBrokerBaseCase
     protected void configure()
     {
         // Increase Alert Check period
-        getConfiguration().setHousekeepingExpiredMessageCheckPeriod(200);
+        getConfiguration().setHousekeepingCheckPeriod(200);
     }
 
     private void sendMessages(AMQChannel channel, long messageCount, final long size) throws AMQException
