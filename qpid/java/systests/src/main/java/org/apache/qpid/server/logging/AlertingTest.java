@@ -46,7 +46,7 @@ public class AlertingTest extends AbstractTestLogging
     {
         // Update the configuration to make our virtualhost Persistent.
         makeVirtualHostPersistent(VIRTUALHOST);
-        setConfigurationProperty("virtualhosts.virtualhost." + VIRTUALHOST + ".housekeeping.expiredMessageCheckPeriod", "5000");
+        setConfigurationProperty("virtualhosts.virtualhost." + VIRTUALHOST + ".housekeeping.checkPeriod", "5000");
 
         _numMessages = 50;
 

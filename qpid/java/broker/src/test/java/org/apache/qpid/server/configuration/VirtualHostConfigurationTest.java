@@ -229,5 +229,26 @@ public class VirtualHostConfigurationTest extends InternalBrokerBaseCase
          }
      }
 
+     /*
+      * Tests that the old element housekeeping.expiredMessageCheckPeriod. ... (that was
+      * replaced by housekeeping.checkPeriod) is rejected.
+      */
+     public void testExpiredMessageCheckPeriodRejected() throws Exception
+     {
+         getConfigXml().addProperty("virtualhosts.virtualhost.testExpiredMessageCheckPeriodRejected.housekeeping.expiredMessageCheckPeriod",
+                 5);
 
+         try
+         {
+             super.createBroker();
+             fail("Exception not thrown");
+         }
+         catch (ConfigurationException ce)
+         {
+             assertEquals("Incorrect error message",
+                     "Validation error : housekeeping/expiredMessageCheckPeriod must be replaced by housekeeping/checkPeriod." +
+                     " It appears in virtual host definition : " + getName(),
+                     ce.getMessage());
+         }
+     }
 }
