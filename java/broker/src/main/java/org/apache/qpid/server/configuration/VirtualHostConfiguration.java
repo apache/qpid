@@ -86,9 +86,9 @@ public class VirtualHostConfiguration extends ConfigurationPlugin
         return _name;
     }
 
-    public long getHousekeepingExpiredMessageCheckPeriod()
+    public long getHousekeepingCheckPeriod()
     {
-        return getLongValue("housekeeping.expiredMessageCheckPeriod", ApplicationRegistry.getInstance().getConfiguration().getHousekeepingCheckPeriod());
+        return getLongValue("housekeeping.checkPeriod", ApplicationRegistry.getInstance().getConfiguration().getHousekeepingCheckPeriod());
     }
 
     public String getAuthenticationDatabase()
@@ -310,6 +310,14 @@ public class VirtualHostConfiguration extends ConfigurationPlugin
         if (getListValue("security.authentication.name").size() > 0)
         {
             String message = "Validation error : security/authentication/name is no longer a supported element within the configuration xml."
+                    + " It appears in virtual host definition : " + _name;
+            throw new ConfigurationException(message);
+        }
+
+        // QPID-3266.  Tidy up housekeeping configuration option for scheduling frequency
+        if (contains("housekeeping.expiredMessageCheckPeriod"))
+        {
+            String message = "Validation error : housekeeping/expiredMessageCheckPeriod must be replaced by housekeeping/checkPeriod."
                     + " It appears in virtual host definition : " + _name;
             throw new ConfigurationException(message);
         }

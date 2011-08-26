@@ -227,6 +227,14 @@ public class ServerConfiguration extends ConfigurationPlugin
                     + (_configFile == null ? "" : " Configuration file : " + _configFile);
             throw new ConfigurationException(message);
         }
+
+        // QPID-3266.  Tidy up housekeeping configuration option for scheduling frequency
+        if (contains("housekeeping.expiredMessageCheckPeriod"))
+        {
+            String message = "Validation error : housekeeping/expiredMessageCheckPeriod must be replaced by housekeeping/checkPeriod."
+                    + (_configFile == null ? "" : " Configuration file : " + _configFile);
+            throw new ConfigurationException(message);
+        }
     }
 
     /*
@@ -707,16 +715,14 @@ public class ServerConfiguration extends ConfigurationPlugin
          getConfig().setProperty("virtualhosts.default", vhost);
     }    
 
-    public void setHousekeepingExpiredMessageCheckPeriod(long value)
+    public void setHousekeepingCheckPeriod(long value)
     {
-        getConfig().setProperty("housekeeping.expiredMessageCheckPeriod", value);
+        getConfig().setProperty("housekeeping.checkPeriod", value);
     }
 
     public long getHousekeepingCheckPeriod()
     {
-        return getLongValue("housekeeping.checkPeriod",
-                                   getLongValue("housekeeping.expiredMessageCheckPeriod",
-                                                       DEFAULT_HOUSEKEEPING_PERIOD));
+        return getLongValue("housekeeping.checkPeriod", DEFAULT_HOUSEKEEPING_PERIOD);
     }
 
     public long getStatisticsSamplePeriod()

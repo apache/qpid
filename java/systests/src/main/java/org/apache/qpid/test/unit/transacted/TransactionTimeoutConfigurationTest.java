@@ -31,7 +31,7 @@ public class TransactionTimeoutConfigurationTest extends TransactionTimeoutTestC
     protected void configure() throws Exception
     {
         // Setup housekeeping every second
-        setConfigurationProperty("virtualhosts.virtualhost." + VIRTUALHOST + ".housekeeping.expiredMessageCheckPeriod", "100");
+        setConfigurationProperty("virtualhosts.virtualhost." + VIRTUALHOST + ".housekeeping.checkPeriod", "100");
         
         // Set transaction timout properties.
         setConfigurationProperty("virtualhosts.virtualhost." + VIRTUALHOST + ".transactionTimeout.openWarn", "200");
