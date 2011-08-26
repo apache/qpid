@@ -748,6 +748,7 @@ set (qpidcommon_SOURCES
      qpid/Address.cpp
      qpid/DataDir.cpp
      qpid/Exception.cpp
+     qpid/Msg.cpp
      qpid/Modules.cpp
      qpid/Options.cpp
      qpid/Plugin.cpp
