@@ -18,6 +18,7 @@
  */
 package org.apache.qpid.amqp_1_0.jms.impl;
 
+import org.apache.qpid.amqp_1_0.client.Message;
 import org.apache.qpid.amqp_1_0.client.Receiver;
 import org.apache.qpid.amqp_1_0.jms.MessageConsumer;
 import org.apache.qpid.amqp_1_0.type.Binary;
@@ -36,6 +37,7 @@ public class MessageConsumerImpl implements MessageConsumer
     private SessionImpl _session;
     private Receiver _receiver;
     private Binary _lastUnackedMessage;
+    private MessageListener _messageListener;
 
     MessageConsumerImpl(final Destination destination,
                         final SessionImpl session,
@@ -68,14 +70,23 @@ public class MessageConsumerImpl implements MessageConsumer
         return _selector;
     }
 
-    public MessageListener getMessageListener() throws JMSException
+    public MessageListener getMessageListener()
     {
-        return null;  //TODO
+        return _messageListener;
     }
 
     public void setMessageListener(final MessageListener messageListener) throws JMSException
     {
-        //TODO
+        _messageListener = messageListener;
+        _session.messageListenerSet( this );
+        _receiver.setMessageArrivalListener(new Receiver.MessageArrivalListener()
+        {
+
+            public void messageArrived(final Receiver receiver)
+            {
+                _session.messageArrived(MessageConsumerImpl.this);
+            }
+        });
     }
 
     public MessageImpl receive() throws JMSException
@@ -97,12 +108,17 @@ public class MessageConsumerImpl implements MessageConsumer
 
     private MessageImpl receiveImpl(long timeout)
     {
-        org.apache.qpid.amqp_1_0.client.Message msg = _receiver.receive(timeout);
+        org.apache.qpid.amqp_1_0.client.Message msg = receive0(timeout);
         if(msg != null)
         {
             preReceiveAction(msg);
         }
         return createJMSMessage(msg);
+    }
+
+    Message receive0(final long timeout)
+    {
+        return _receiver.receive(timeout);
     }
 
 
@@ -111,7 +127,7 @@ public class MessageConsumerImpl implements MessageConsumer
         _receiver.acknowledge(msg.getDeliveryTag());
     }
 
-    private MessageImpl createJMSMessage(final org.apache.qpid.amqp_1_0.client.Message msg)
+    MessageImpl createJMSMessage(final org.apache.qpid.amqp_1_0.client.Message msg)
     {
         if(msg != null)
         {

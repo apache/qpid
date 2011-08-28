@@ -48,6 +48,7 @@ public class Receiver implements DeliveryStateHandler
 
     private Queue<Transfer> _prefetchQueue = new ConcurrentLinkedQueue<Transfer>();
     private Map<Binary, SettledAction> _unsettledMap = new HashMap<Binary, SettledAction>();
+    private MessageArrivalListener _messageArrivalListener;
 
     public Receiver(final Session session,
                     final String linkName,
@@ -110,6 +111,7 @@ public class Receiver implements DeliveryStateHandler
             @Override public void messageTransfer(final Transfer xfr)
             {
                 _prefetchQueue.add(xfr);
+                postPrefetchAction();
             }
         });
 
@@ -130,6 +132,14 @@ public class Receiver implements DeliveryStateHandler
                     e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
                 }
             }
+        }
+    }
+
+    private void postPrefetchAction()
+    {
+        if(_messageArrivalListener != null)
+        {
+            _messageArrivalListener.messageArrived(this);
         }
     }
 
@@ -262,7 +272,7 @@ public class Receiver implements DeliveryStateHandler
                     }
                     catch (InterruptedException e)
                     {
-                        e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                        return null;
                     }
                     if(wait > 0L)
                     {
@@ -393,8 +403,22 @@ public class Receiver implements DeliveryStateHandler
     }
 
 
+    public void setMessageArrivalListener(final MessageArrivalListener messageArrivalListener)
+    {
+        synchronized(_endpoint.getLock())
+        {
+            _messageArrivalListener = messageArrivalListener;
+        }
+    }
+
     public static interface SettledAction
     {
         public void onSettled(Binary deliveryTag);
+    }
+
+
+    public interface MessageArrivalListener
+    {
+        void messageArrived(Receiver receiver);
     }
 }

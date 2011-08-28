@@ -439,6 +439,7 @@ public class ConnectionEndpoint implements DescribedTypeConstructorRegistry.Sour
                 SessionEndpoint endpoint = new SessionEndpoint(this,begin);
 
                 _receivingSessions[channel] = endpoint;
+                _sendingSessions[myChannelId] = endpoint;
 
                 Begin beginToSend = new Begin();
 
