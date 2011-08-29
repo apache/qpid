@@ -242,19 +242,24 @@ public class VirtualHostImpl implements VirtualHost
 
         _brokerMBean = new AMQBrokerManagerMBean(_virtualHostMBean);
         _brokerMBean.register();
-        initialiseHouseKeeping(hostConfig.getHousekeepingExpiredMessageCheckPeriod());
+        initialiseHouseKeeping(hostConfig.getHousekeepingCheckPeriod());
         
         initialiseStatistics();
     }
 
+    /**
+     * Initialise a housekeeping task to iterate over queues cleaning expired messages with no consumers
+     * and checking for idle or open transactions that have exceeded the permitted thresholds.
+     *
+     * @param period
+     */
 	private void initialiseHouseKeeping(long period)
     {
-        /* add a timer task to iterate over queues, cleaning expired messages from queues with no consumers */
         if (period != 0L)
         {
-            class ExpiredMessagesTask extends HouseKeepingTask
+            class VirtualHostHouseKeepingTask extends HouseKeepingTask
             {
-                public ExpiredMessagesTask(VirtualHost vhost)
+                public VirtualHostHouseKeepingTask(VirtualHost vhost)
                 {
                     super(vhost);
                 }
@@ -299,7 +304,7 @@ public class VirtualHostImpl implements VirtualHost
                 }
             }
 
-            scheduleHouseKeepingTask(period, new ExpiredMessagesTask(this));
+            scheduleHouseKeepingTask(period, new VirtualHostHouseKeepingTask(this));
 
             Map<String, VirtualHostPluginFactory> plugins =
                 ApplicationRegistry.getInstance().getPluginManager().getVirtualHostPlugins();

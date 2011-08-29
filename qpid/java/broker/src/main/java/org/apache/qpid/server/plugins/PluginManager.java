@@ -92,6 +92,7 @@ public class PluginManager implements Closeable
 
     private Activator _activator;
 
+    private final List<ServiceTracker> _trackers = new ArrayList<ServiceTracker>();
     private Map<String, SecurityPluginFactory> _securityPlugins = new HashMap<String, SecurityPluginFactory>();
     private Map<List<String>, ConfigurationPluginFactory> _configPlugins = new IdentityHashMap<List<String>, ConfigurationPluginFactory>();
     private Map<String, VirtualHostPluginFactory> _vhostPlugins = new HashMap<String, VirtualHostPluginFactory>();
@@ -253,25 +254,29 @@ public class PluginManager implements Closeable
             _logger.info("Using the specified external BundleContext");
         }
 
-        // TODO save trackers in a map, keyed by class name
-        
         _exchangeTracker = new ServiceTracker(bundleContext, ExchangeType.class.getName(), null);
         _exchangeTracker.open();
+        _trackers.add(_exchangeTracker);
 
         _securityTracker = new ServiceTracker(bundleContext, SecurityPluginFactory.class.getName(), null);
         _securityTracker.open();
+        _trackers.add(_securityTracker);
 
         _configTracker = new ServiceTracker(bundleContext, ConfigurationPluginFactory.class.getName(), null);
         _configTracker.open();
+        _trackers.add(_configTracker);
 
         _virtualHostTracker = new ServiceTracker(bundleContext, VirtualHostPluginFactory.class.getName(), null);
         _virtualHostTracker.open();
+        _trackers.add(_virtualHostTracker);
  
         _policyTracker = new ServiceTracker(bundleContext, SlowConsumerPolicyPluginFactory.class.getName(), null);
         _policyTracker.open();
-        
+        _trackers.add(_policyTracker);
+
         _authenticationManagerTracker = new ServiceTracker(bundleContext, AuthenticationManagerPluginFactory.class.getName(), null);
         _authenticationManagerTracker.open();
+        _trackers.add(_authenticationManagerTracker);
 
         _logger.info("Opened service trackers");
     }
@@ -353,12 +358,10 @@ public class PluginManager implements Closeable
         try
         {
             // Close all bundle trackers
-            _exchangeTracker.close();
-            _securityTracker.close();
-            _configTracker.close();
-            _virtualHostTracker.close();
-            _policyTracker.close();
-            _authenticationManagerTracker.close();
+            for(ServiceTracker tracker : _trackers)
+            {
+                tracker.close();
+            }
         }
         finally
         {

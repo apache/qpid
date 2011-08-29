@@ -559,18 +559,17 @@ public class ServerConfigurationTest extends QpidTestCase
         assertEquals(true, _serverConfig.getUseBiasedWrites());
     }
 
-    public void testGetHousekeepingExpiredMessageCheckPeriod() throws ConfigurationException
+    public void testGetHousekeepingCheckPeriod() throws ConfigurationException
     {
         // Check default
         _serverConfig.initialise();
         assertEquals(30000, _serverConfig.getHousekeepingCheckPeriod());
 
         // Check value we set
-        _config.setProperty("housekeeping.expiredMessageCheckPeriod", 23L);
+        _config.setProperty("housekeeping.checkPeriod", 23L);
         _serverConfig = new ServerConfiguration(_config);
         _serverConfig.initialise();
-        assertEquals(23, _serverConfig.getHousekeepingCheckPeriod());
-        _serverConfig.setHousekeepingExpiredMessageCheckPeriod(42L);
+        _serverConfig.setHousekeepingCheckPeriod(42L);
         assertEquals(42, _serverConfig.getHousekeepingCheckPeriod());
     }
 
@@ -1359,6 +1358,31 @@ public class ServerConfigurationTest extends QpidTestCase
         {
             assertEquals("Incorrect error message",
                     "Validation error : security/principal-databases is no longer supported within the configuration xml.",
+                    ce.getMessage());
+        }
+    }
+
+    /*
+     * Tests that the old element housekeeping.expiredMessageCheckPeriod. ... (that was
+     * replaced by housekeeping.checkPeriod) is rejected.
+     */
+    public void testExpiredMessageCheckPeriodRejected() throws ConfigurationException
+    {
+        _serverConfig.initialise();
+
+        // Check value we set
+        _config.setProperty("housekeeping.expiredMessageCheckPeriod", 23L);
+        _serverConfig = new ServerConfiguration(_config);
+
+        try
+        {
+            _serverConfig.initialise();
+            fail("Exception not thrown");
+        }
+        catch (ConfigurationException ce)
+        {
+            assertEquals("Incorrect error message",
+                    "Validation error : housekeeping/expiredMessageCheckPeriod must be replaced by housekeeping/checkPeriod.",
                     ce.getMessage());
         }
     }
