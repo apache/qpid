@@ -30,6 +30,9 @@ import java.util.*;
 public class StreamMessageImpl extends MessageImpl implements StreamMessage
 {
     private List _list;
+    private boolean _readOnly;
+    private int _position = -1;
+    private int _offset = -1;
 
     protected StreamMessageImpl(Header header, Properties properties, ApplicationProperties appProperties, List list,
                                 Footer footer, SessionImpl session)
@@ -42,6 +45,7 @@ public class StreamMessageImpl extends MessageImpl implements StreamMessage
     {
         super(new Header(), new Properties(), new ApplicationProperties(new HashMap()), new Footer(Collections.EMPTY_MAP),
               session);
+        _list = new ArrayList();
     }
 
     public StreamMessageImpl(final Header header,
@@ -105,7 +109,14 @@ public class StreamMessageImpl extends MessageImpl implements StreamMessage
 
     public Object readObject() throws JMSException
     {
-        return null;  //TODO
+        if(_offset == -1)
+        {
+            return _list.get(++_position);
+        }
+        else
+        {
+            return null;  //TODO
+        }
     }
 
     public void writeBoolean(final boolean b) throws JMSException
@@ -115,42 +126,42 @@ public class StreamMessageImpl extends MessageImpl implements StreamMessage
 
     public void writeByte(final byte b) throws JMSException
     {
-        //TODO
+        _list.add(b);
     }
 
     public void writeShort(final short i) throws JMSException
     {
-        //TODO
+        _list.add(i);
     }
 
     public void writeChar(final char c) throws JMSException
     {
-        //TODO
+        _list.add(c);
     }
 
     public void writeInt(final int i) throws JMSException
     {
-        //TODO
+        _list.add(i);
     }
 
     public void writeLong(final long l) throws JMSException
     {
-        //TODO
+        _list.add(l);
     }
 
     public void writeFloat(final float v) throws JMSException
     {
-        //TODO
+        _list.add(v);
     }
 
     public void writeDouble(final double v) throws JMSException
     {
-        //TODO
+        _list.add(v);
     }
 
     public void writeString(final String s) throws JMSException
     {
-        //TODO
+        _list.add(s);
     }
 
     public void writeBytes(final byte[] bytes) throws JMSException

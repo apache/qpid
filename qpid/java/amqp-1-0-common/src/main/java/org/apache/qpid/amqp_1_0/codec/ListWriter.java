@@ -107,6 +107,7 @@ public class ListWriter implements ValueWriter<List>
         {
             _delegate = _nonEmptyListWriter;
         }
+        _delegate.setValue(frameBody);
     }
 
     public boolean isComplete()

@@ -28,24 +28,25 @@ import org.apache.qpid.amqp_1_0.type.messaging.Properties;
 import javax.jms.JMSException;
 import javax.jms.MessageEOFException;
 import javax.jms.MessageFormatException;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.EOFException;
-import java.io.IOException;
+import java.io.*;
 import java.util.*;
 
 public class BytesMessageImpl extends MessageImpl implements BytesMessage
 {
-    private Data _data;
     private DataInputStream _dataAsInput;
     private DataOutputStream _dataAsOutput;
+    private ByteArrayOutputStream _bytesOut;
+    private Data _dataIn;
 
     // message created for reading
     protected BytesMessageImpl(Header header, Properties properties, ApplicationProperties appProperties, Data data,
                                Footer footer, SessionImpl session)
     {
         super(header, properties, appProperties, footer, session);
-        _data = data;
+        _dataIn = data;
+        final Binary dataBuffer = data.getValue();
+        _dataAsInput = new DataInputStream(new ByteArrayInputStream(dataBuffer.getArray(),dataBuffer.getArrayOffset(),dataBuffer.getLength()));
+
     }
 
     // message created to be sent
@@ -53,14 +54,34 @@ public class BytesMessageImpl extends MessageImpl implements BytesMessage
     {
         super(new Header(), new Properties(), new ApplicationProperties(new HashMap()), new Footer(Collections.EMPTY_MAP),
               session);
-        _data = new Data(new Binary(new byte[0]));
-        _dataAsOutput = null;
+
+        _bytesOut = new ByteArrayOutputStream();
+        _dataAsOutput = new DataOutputStream(_bytesOut);
+    }
+
+
+    private Data getDataSection()
+    {
+        if(_bytesOut != null)
+        {
+            return new Data(new Binary(_bytesOut.toByteArray()));
+        }
+        else
+        {
+            return _dataIn;
+        }
+    }
+
+    @Override
+    protected boolean isReadOnly()
+    {
+        return _dataIn != null;
     }
 
     public long getBodyLength() throws JMSException
     {
         checkReadable();
-        return _data.getValue().getLength();
+        return getDataSection().getValue().getLength();
     }
 
     public boolean readBoolean() throws JMSException
@@ -477,8 +498,9 @@ public class BytesMessageImpl extends MessageImpl implements BytesMessage
         sections.add(getHeader());
         sections.add(getProperties());
         sections.add(getApplicationProperties());
-        sections.add(_data);
+        sections.add(getDataSection());
         sections.add(getFooter());
         return sections;
     }
+
 }

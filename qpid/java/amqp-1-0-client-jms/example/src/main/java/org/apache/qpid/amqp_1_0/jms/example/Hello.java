@@ -97,6 +97,19 @@ public class Hello
                             System.out.println("=======================");
                             System.out.println(((BytesMessage) message).readUTF());
                         }
+                        else if(message instanceof StreamMessage)
+                        {
+                            System.out.println("Received Stream Message:");
+                            System.out.println("========================");
+                            StreamMessage streamMessage = (StreamMessage)message;
+                            Object o = streamMessage.readObject();
+                            System.out.println(o.getClass().getName() + ": " + o);
+                            o = streamMessage.readObject();
+                            System.out.println(o.getClass().getName() + ": " + o);
+                            o = streamMessage.readObject();
+                            System.out.println(o.getClass().getName() + ": " + o);
+
+                        }
                     }
                     catch (JMSException e)
                     {
@@ -126,7 +139,12 @@ public class Hello
 
             messageProducer.send(bytesMessage);
 
-
+            StreamMessage streamMessage = producersession.createStreamMessage();
+            streamMessage.writeBoolean(true);
+            streamMessage.writeLong(18031974L);
+            streamMessage.writeString("this is a stream Message");
+            streamMessage.writeChar('£');
+            messageProducer.send(streamMessage);
 
             Thread.sleep(50000L);
 

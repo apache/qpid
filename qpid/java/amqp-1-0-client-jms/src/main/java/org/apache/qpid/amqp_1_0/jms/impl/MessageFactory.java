@@ -97,6 +97,11 @@ class MessageFactory
             {
                 message = new BytesMessageImpl(header, properties, appProperties, (Data) bodySection, footer, _session);
             }
+            else if(bodySection instanceof AmqpSequence)
+            {
+                message = new StreamMessageImpl(header, properties, appProperties, ((AmqpSequence) bodySection).getValue(), footer, _session);
+            }
+
             /*else if(bodySection instanceof AmqpDataSection)
             {
                 AmqpDataSection dataSection = (AmqpDataSection) bodySection;
