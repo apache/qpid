@@ -42,7 +42,7 @@ struct Msg {
     std::ostringstream os;
     Msg() {}
     Msg(const Msg& m) : os(m.str()) {}
-    QPID_TYPES_EXTERN std::string str() const;
+    std::string str() const { return os.str(); }
     operator std::string() const { return str(); }
 
     Msg& operator<<(long n) { os << n; return *this; }
