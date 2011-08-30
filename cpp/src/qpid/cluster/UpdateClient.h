@@ -100,6 +100,7 @@ class UpdateClient : public sys::Runnable {
     void updateBinding(client::AsyncSession&, const std::string& queue, const broker::QueueBinding& binding);
     void updateConnection(const boost::intrusive_ptr<Connection>& connection);
     void updateSession(broker::SessionHandler& s);
+    void updateBufferRef(const broker::DtxBuffer::shared_ptr& dtx, bool suspended);
     void updateTransactionState(broker::SemanticState& s);
     void updateOutputTask(const sys::OutputTask* task);
     void updateConsumer(const broker::SemanticState::ConsumerImpl::shared_ptr&);
