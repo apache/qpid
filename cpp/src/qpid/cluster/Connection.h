@@ -124,7 +124,8 @@ class Connection :
                       const framing::SequenceNumber& expected,
                       const framing::SequenceNumber& received,
                       const framing::SequenceSet& unknownCompleted,
-                      const SequenceSet& receivedIncomplete);
+                      const SequenceSet& receivedIncomplete,
+                      bool dtxSelected);
 
     void outputTask(uint16_t channel, const std::string& name);
 
@@ -173,7 +174,7 @@ class Connection :
                   bool expired);
     void dtxEnd();
     void dtxAck();
-    void dtxBufferRef(const std::string& xid, uint32_t index);
+    void dtxBufferRef(const std::string& xid, uint32_t index, bool suspended);
     void dtxWorkRecord(const std::string& xid, bool prepared, uint32_t timeout);
 
     // Encoded exchange replication.

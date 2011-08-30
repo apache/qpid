@@ -420,6 +420,9 @@ class Cluster:
         self._brokers.append(self.test.broker(self.args+args, name, expect, wait, port=port, show_cmd=show_cmd))
         return self._brokers[-1]
 
+    def ready(self):
+        for b in self: b.ready()
+
     def start_n(self, count, expect=EXPECT_RUNNING, wait=True, args=[], show_cmd=False):
         for i in range(count): self.start(expect=expect, wait=wait, args=args, show_cmd=show_cmd)
 
@@ -495,6 +498,7 @@ class BrokerTest(TestCase):
     def browse(self, session, queue, timeout=0):
         """Return a list with the contents of each message on queue."""
         r = session.receiver("%s;{mode:browse}"%(queue))
+        r.capacity = 100
         try:
             contents = []
             try:
