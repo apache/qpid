@@ -148,9 +148,10 @@ class SemanticState : private boost::noncopyable {
         management::Manageable::status_t ManagementMethod (uint32_t methodId, management::Args& args, std::string& text);
     };
 
+    typedef std::map<std::string, DtxBuffer::shared_ptr> DtxBufferMap;
+
   private:
     typedef std::map<std::string, ConsumerImpl::shared_ptr> ConsumerImplMap;
-    typedef std::map<std::string, DtxBuffer::shared_ptr> DtxBufferMap;
 
     SessionContext& session;
     DeliveryAdapter& deliveryAdapter;
@@ -181,6 +182,7 @@ class SemanticState : private boost::noncopyable {
     void disable(ConsumerImpl::shared_ptr);
 
   public:
+
     SemanticState(DeliveryAdapter&, SessionContext&);
     ~SemanticState();
 
@@ -218,6 +220,7 @@ class SemanticState : private boost::noncopyable {
     void commit(MessageStore* const store);
     void rollback();
     void selectDtx();
+    bool getDtxSelected() const { return dtxSelected; }
     void startDtx(const std::string& xid, DtxManager& mgr, bool join);
     void endDtx(const std::string& xid, bool fail);
     void suspendDtx(const std::string& xid);
@@ -249,6 +252,7 @@ class SemanticState : private boost::noncopyable {
     void setDtxBuffer(const DtxBuffer::shared_ptr& dtxb) { dtxBuffer = dtxb; txBuffer = dtxb; }
     void setAccumulatedAck(const framing::SequenceSet& s) { accumulatedAck = s; }
     void record(const DeliveryRecord& delivery);
+    DtxBufferMap& getSuspendedXids() { return suspendedXids; }
 };
 
 }} // namespace qpid::broker
