@@ -24,6 +24,9 @@
 # This script configures a qpid\cpp developer build environment under Windows
 # to enable working with cpp\bindings\qpid\dotnet binding source code.
 #
+# * Supports multiple versions of Visual Studio (VS2008, VS2010) as CMake
+#   generator.
+#
 # * Supports 32-bit and/or 64-bit development platforms.
 #
 # * User chooses in-source or out-of-source build directories.
@@ -142,6 +145,11 @@ $global:txtPath = '$env:PATH'
 $global:txtQR   = '$env:QPID_BUILD_ROOT'
 $global:txtWH   = 'Write-Host'
 
+#############################
+# Visual Studio version selection dialog items and choice
+#
+[array]$global:VsVersionCmakeChoiceList = "Visual Studio 10", "Visual Studio 9 2008"
+$global:cmakeGenerator = ''
 
 #############################
 # Select-Folder
@@ -329,6 +337,56 @@ ECHO Environment set for $slnName $vsPlatform $nBits-bit development.
     $out | Out-File "$buildRoot\$outfileName" -encoding ASCII
 }
 
+#############################
+# Return the SelectedItem from the dropdown list and close the form.
+#
+function Return-DropDown {
+    if ($DropDown.SelectedItem -ne $null) {
+        $global:cmakeGenerator = $DropDown.SelectedItem.ToString()
+    	$Form.Close()
+        Write-Host "Selected generator: $global:cmakeGenerator"
+    }
+}
+
+#############################
+# Create the CMake generator form and launch it
+#
+function SelectCMakeGenerator {
+
+    $Form = New-Object System.Windows.Forms.Form
+
+    $Form.width = 350
+    $Form.height = 150
+    $Form.Text = ”Select CMake Generator”
+
+    $DropDown          = new-object System.Windows.Forms.ComboBox
+    $DropDown.Location = new-object System.Drawing.Size(120,10)
+    $DropDown.Size     = new-object System.Drawing.Size(150,30)
+
+    ForEach ($Item in $global:VsVersionCmakeChoiceList) {
+    	$DropDown.Items.Add($Item)
+    }
+    $DropDown.SelectedIndex = 0
+
+    $Form.Controls.Add($DropDown)
+
+    $DropDownLabel          = new-object System.Windows.Forms.Label
+    $DropDownLabel.Location = new-object System.Drawing.Size(10,10)
+    $DropDownLabel.size     = new-object System.Drawing.Size(100,20)
+    $DropDownLabel.Text     = "CMake generators"
+    $Form.Controls.Add($DropDownLabel)
+
+    $Button          = new-object System.Windows.Forms.Button
+    $Button.Location = new-object System.Drawing.Size(120,50)
+    $Button.Size     = new-object System.Drawing.Size(120,20)
+    $Button.Text     = "Select a generator"
+    $Button.Add_Click({Return-DropDown})
+    $form.Controls.Add($Button)
+
+    $Form.Add_Shown({$Form.Activate()})
+    $Form.ShowDialog()
+}
+
 
 #############################
 # Main
@@ -341,6 +399,12 @@ ECHO Environment set for $slnName $vsPlatform $nBits-bit development.
 [string] $cppDir   = Resolve-Path (Join-Path $curDir "..\..\..")
 
 [System.Reflection.Assembly]::LoadWithPartialName("System.Windows.Forms") | Out-Null
+[System.Reflection.Assembly]::LoadWithPartialName("System.Drawing")       | Out-Null
+
+#############################
+# User dialog to select a version of Visual Studio as CMake generator
+#
+SelectCMakeGenerator
 
 #############################
 # User dialog to get optional 32-bit boost and build paths
@@ -412,7 +476,7 @@ if ($make32) {
     $env:BOOST_ROOT = "$boost32"
     cd "$build32"
     Write-Host "Running 32-bit CMake in $build32 ..."
-    CMake -G "Visual Studio 9 2008" "-DCMAKE_INSTALL_PREFIX=install_x86" $cppDir
+    CMake -G "$global:cmakeGenerator" "-DCMAKE_INSTALL_PREFIX=install_x86" $cppDir
 } else {
     Write-Host "Skipped 32-bit CMake."
 }
@@ -424,7 +488,7 @@ if ($make64) {
     $env:BOOST_ROOT = "$boost64"
     cd "$build64"
     Write-Host "Running 64-bit CMake in $build64"
-    CMake -G "Visual Studio 9 2008 Win64" "-DCMAKE_INSTALL_PREFIX=install_x64" $cppDir
+    CMake -G "$global:cmakeGenerator Win64" "-DCMAKE_INSTALL_PREFIX=install_x64" $cppDir
 } else {
     Write-Host "Skipped 64-bit CMake."
 }
