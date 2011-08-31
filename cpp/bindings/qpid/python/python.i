@@ -251,9 +251,11 @@ static PyObject* pTransportFailure;
                       subject=None, user_id=None, reply_to=None,
                       correlation_id=None, durable=None, priority=None,
                       ttl=None, properties=None):
-             this = _cqpid.new_Message(content if content else '')
+             this = _cqpid.new_Message('')
              try: self.this.append(this)
              except: self.this = this
+             if content :
+                 self.content = content
              if content_type != UNSPECIFIED :
                  self.content_type = content_type
              if id is not None :
@@ -279,9 +281,24 @@ static PyObject* pTransportFailure;
                  for k, v in properties.iteritems() :
                      self.setProperty(k, v)
 
-         __swig_getmethods__["content"] = getContent
-         __swig_setmethods__["content"] = setContent
-         if _newclass: content = _swig_property(getContent, setContent)
+         def _get_content(self) :
+             if self.content_type == "amqp/list" :
+                 return decodeList(self)
+             if self.content_type == "amqp/map" :
+                 return decodeMap(self)
+             return self.getContent()
+         def _set_content(self, content) :
+             if isinstance(content, basestring) :
+                 self.setContent(content)
+             elif isinstance(content, list) or isinstance(content, dict) :
+                 encode(content, self)
+             else :
+                 # Not a type we can handle.  Try setting it anyway,
+                 # although this will probably lead to a swig error
+                 self.setContent(content)
+         __swig_getmethods__["content"] = _get_content
+         __swig_setmethods__["content"] = _set_content
+         if _newclass: content = _swig_property(_get_content, _set_content)
 
          __swig_getmethods__["content_type"] = getContentType
          __swig_setmethods__["content_type"] = setContentType
