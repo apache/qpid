@@ -194,6 +194,9 @@ static PyObject* pTransportFailure;
                  self._acknowledge_msg(message, sync)
              else :
                  self._acknowledge_all(sync)
+
+         __swig_getmethods__["connection"] = getConnection
+         if _newclass: connection = _swig_property(getConnection)
     %}
 }
 
