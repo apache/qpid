@@ -113,27 +113,35 @@ public class AMQConnectionFactory implements ConnectionFactory, QueueConnectionF
     
     public Connection createConnection(String userName, String password, String id) throws JMSException
     {
-        try
+        if (_connectionDetails != null)
         {
-            _connectionDetails.setUsername(userName);
-            _connectionDetails.setPassword(password);
-            
-            if (id != null && !id.equals(""))
+            try
             {
-                _connectionDetails.setClientName(id);
-            } 
-            else if (_connectionDetails.getClientName() == null || _connectionDetails.getClientName().equals(""))
-            {
-                _connectionDetails.setClientName(getUniqueClientID());
+                ConnectionURL connectionDetails = new AMQConnectionURL(_connectionDetails.toString());
+                connectionDetails.setUsername(userName);
+                connectionDetails.setPassword(password);
+                
+                if (id != null && !id.equals(""))
+                {
+                    connectionDetails.setClientName(id);
+                } 
+                else if (connectionDetails.getClientName() == null || connectionDetails.getClientName().equals(""))
+                {
+                    connectionDetails.setClientName(getUniqueClientID());
+                }
+                return new AMQConnection(connectionDetails);
             }
-            return new AMQConnection(_connectionDetails);
+            catch (Exception e)
+            {
+                JMSException jmse = new JMSException("Error creating connection: " + e.getMessage());
+                jmse.setLinkedException(e);
+                jmse.initCause(e);
+                throw jmse;
+            }
         }
-        catch (Exception e)
+        else
         {
-            JMSException jmse = new JMSException("Error creating connection: " + e.getMessage());
-            jmse.setLinkedException(e);
-            jmse.initCause(e);
-            throw jmse;
+            throw new JMSException("The connection factory wasn't created with a proper URL, the connection details are empty");
         }
     }
 
@@ -285,19 +293,30 @@ public class AMQConnectionFactory implements ConnectionFactory, QueueConnectionF
     {
         if (_connectionDetails != null)
         {
-            _connectionDetails.setUsername(username);
-            _connectionDetails.setPassword(password);
-
-            if (_connectionDetails.getClientName() == null || _connectionDetails.getClientName().equals(""))
+            try
             {
-                _connectionDetails.setClientName(getUniqueClientID());
+                ConnectionURL connectionDetails = new AMQConnectionURL(_connectionDetails.toString());
+                connectionDetails.setUsername(username);
+                connectionDetails.setPassword(password);
+    
+                if (connectionDetails.getClientName() == null || connectionDetails.getClientName().equals(""))
+                {
+                    connectionDetails.setClientName(getUniqueClientID());
+                }
+                return new XAConnectionImpl(connectionDetails);
+            }
+            catch (Exception e)
+            {
+                JMSException jmse = new JMSException("Error creating XA Connection: " + e.getMessage());
+                jmse.setLinkedException(e);
+                jmse.initCause(e);
+                throw jmse;
             }
         }
         else
         {
-            throw new JMSException("A URL must be specified to access XA connections");
-        }
-        return createXAConnection();
+            throw new JMSException("The connection factory wasn't created with a proper URL, the connection details are empty");
+        }        
     }
 
 
