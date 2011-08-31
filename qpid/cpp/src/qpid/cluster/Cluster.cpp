@@ -526,7 +526,7 @@ void Cluster::deliveredFrame(const EventFrame& efConst) {
 
 void Cluster::processFrame(const EventFrame& e, Lock& l) {
     if (e.isCluster()) {
-        QPID_LOG(trace, *this << " DLVR: " << e);
+        QPID_LOG_IF(trace, loggable(e.frame), *this << " DLVR: " << e);
         ClusterDispatcher dispatch(*this, e.connectionId.getMember(), l);
         if (!framing::invoke(dispatch, *e.frame.getBody()).wasHandled())
             throw Exception(QPID_MSG("Invalid cluster control"));
@@ -535,14 +535,15 @@ void Cluster::processFrame(const EventFrame& e, Lock& l) {
         map.incrementFrameSeq();
         ConnectionPtr connection = getConnection(e, l);
         if (connection) {
-            QPID_LOG(trace, *this << " DLVR " << map.getFrameSeq() << ":  " << e);
+            QPID_LOG_IF(trace, loggable(e.frame),
+                        *this << " DLVR " << map.getFrameSeq() << ":  " << e);
             connection->deliveredFrame(e);
         }
         else
             throw Exception(QPID_MSG("Unknown connection: " << e));
     }
     else // Drop connection frames while state < CATCHUP
-        QPID_LOG(trace, *this << " DROP (joining): " << e);
+        QPID_LOG_IF(trace, loggable(e.frame), *this << " DROP (joining): " << e);
 }
 
 // Called in deliverFrameQueue thread
@@ -1217,6 +1218,14 @@ bool Cluster::deferDeliveryImpl(const std::string& queue,
     msg->encode(buf);
     mcast.mcastControl(ClusterDeliverToQueueBody(ProtocolVersion(), queue, message), self);
     return true;
+}
+
+bool Cluster::loggable(const AMQFrame& f) {
+    const  AMQMethodBody* method = (f.getMethod());
+    if (!method) return true;     // Not a method
+    bool isClock = method->amqpClassId() ==  ClusterClockBody::CLASS_ID
+        && method->amqpMethodId() == ClusterClockBody::METHOD_ID;
+    return !isClock;
 }
 
 }} // namespace qpid::cluster

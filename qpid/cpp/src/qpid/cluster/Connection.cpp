@@ -196,7 +196,7 @@ void Connection::received(framing::AMQFrame& f) {
                  << *this << ": " << f);
         return;
     }
-    QPID_LOG(trace, cluster << " RECV " << *this << ": " << f);
+    QPID_LOG_IF(trace, Cluster::loggable(f), cluster << " RECV " << *this << ": " << f);
     if (isLocal()) {            // Local catch-up connection.
         currentChannel = f.getChannel();
         if (!framing::invoke(*this, *f.getBody()).wasHandled())
