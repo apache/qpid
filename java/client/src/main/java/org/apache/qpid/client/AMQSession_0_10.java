@@ -1007,6 +1007,13 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
             }
             sendCommit();
         }
+        catch(SessionException e)
+        {
+            JMSException ex = new JMSException("Session exception occured while trying to commit");
+            ex.initCause(e);
+            ex.setLinkedException(e);
+            throw ex;
+        }
         catch (AMQException e)
         {
             throw new JMSAMQException("Failed to commit: " + e.getMessage(), e);
