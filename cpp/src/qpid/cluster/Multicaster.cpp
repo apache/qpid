@@ -21,6 +21,7 @@
 
 #include "qpid/cluster/Multicaster.h"
 #include "qpid/cluster/Cpg.h"
+#include "qpid/cluster/Cluster.h"
 #include "qpid/log/Statement.h"
 #include "qpid/framing/AMQBody.h"
 #include "qpid/framing/AMQFrame.h"
@@ -58,7 +59,7 @@ void Multicaster::mcast(const Event& e) {
             return;
         }
     }
-    QPID_LOG(trace, "MCAST " << e);
+    QPID_LOG_IF(trace, e.isControl() && Cluster::loggable(e.getFrame()), "MCAST " << e);
     if (bypass) {               // direct, don't queue
         iovec iov = e.toIovec();
         while (!cpg.mcast(&iov, 1))
