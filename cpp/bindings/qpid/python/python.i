@@ -25,8 +25,19 @@
  * convert uint8_t by default. */
 %apply unsigned char { uint8_t };
 
+
+/*
+ * Exceptions
+ *
+ * The convention below is that exceptions in _cqpid.so have the same
+ * names as in the C++ library.  They get renamed to their Python
+ * equivalents when brought into the Python wrapping
+ */
 %{
-static PyObject* pNoMessageAvailable;    
+static PyObject* pNoMessageAvailable;
+static PyObject* pTargetCapacityExceeded;
+static PyObject* pNotFound;
+static PyObject* pTransportFailure;
 %}
 
 %init %{
@@ -34,10 +45,28 @@ static PyObject* pNoMessageAvailable;
         "_cqpid.NoMessageAvailable", NULL, NULL);
     Py_INCREF(pNoMessageAvailable);
     PyModule_AddObject(m, "NoMessageAvailable", pNoMessageAvailable);
+
+    pTargetCapacityExceeded = PyErr_NewException(
+        "_cqpid.TargetCapacityExceeded", NULL, NULL);
+    Py_INCREF(pTargetCapacityExceeded);
+    PyModule_AddObject(m, "TargetCapacityExceeded", pTargetCapacityExceeded);
+
+    pNotFound = PyErr_NewException(
+        "_cqpid.NotFound", NULL, NULL);
+    Py_INCREF(pNotFound);
+    PyModule_AddObject(m, "NotFound", pNotFound);
+
+    pTransportFailure = PyErr_NewException(
+        "_cqpid.TransportFailure", NULL, NULL);
+    Py_INCREF(pTransportFailure);
+    PyModule_AddObject(m, "TransportFailure", pTransportFailure);
 %}
 
 %pythoncode %{
     Empty = _cqpid.NoMessageAvailable
+    TargetCapacityExceeded = _cqpid.TargetCapacityExceeded
+    NotFound = _cqpid.NotFound
+    ConnectError = _cqpid.TransportFailure
 %}
 
 /* Define the general-purpose exception handling */
@@ -50,6 +79,15 @@ static PyObject* pNoMessageAvailable;
     } catch (qpid::messaging::NoMessageAvailable & ex) {
         pExceptionType = pNoMessageAvailable;
         error = ex.what();
+    } catch (qpid::messaging::TargetCapacityExceeded & ex) {
+        pExceptionType = pTargetCapacityExceeded;
+        error = ex.what();
+    } catch (qpid::messaging::NotFound & ex) {
+        pExceptionType = pNotFound;
+        error = ex.what();
+    } catch (qpid::messaging::TransportFailure & ex) {
+        pExceptionType = pTransportFailure;
+        error = ex.what();
     } catch (qpid::types::Exception& ex) {
         pExceptionType = PyExc_RuntimeError;
         error = ex.what();
@@ -60,6 +98,7 @@ static PyObject* pNoMessageAvailable;
         return NULL;
     }
 }
+
 
 /* This only renames the non-const version (I believe).  Then again, I
  * don't even know why there is a non-const version of the method. */
