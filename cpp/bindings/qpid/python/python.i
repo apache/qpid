@@ -203,6 +203,9 @@ static PyObject* pTransportFailure;
          __swig_getmethods__["capacity"] = getCapacity
          __swig_setmethods__["capacity"] = setCapacity
          if _newclass: capacity = _swig_property(getCapacity, setCapacity)
+
+         __swig_getmethods__["session"] = getSession
+         if _newclass: session = _swig_property(getSession)
     %}
 
     %pythoncode %{
@@ -228,6 +231,9 @@ static PyObject* pTransportFailure;
          __swig_getmethods__["capacity"] = getCapacity
          __swig_setmethods__["capacity"] = setCapacity
          if _newclass: capacity = _swig_property(getCapacity, setCapacity)
+
+         __swig_getmethods__["session"] = getSession
+         if _newclass: session = _swig_property(getSession)
     %}
 }
 
