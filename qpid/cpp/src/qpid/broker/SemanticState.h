@@ -82,6 +82,7 @@ class SemanticState : private boost::noncopyable {
         bool windowing;
         bool exclusive;
         std::string resumeId;
+        const std::string tag;  // <destination> from AMQP 0-10 Message.subscribe command
         uint64_t resumeTtl;
         framing::FieldTable arguments;
         uint32_t msgCredit;
@@ -98,10 +99,11 @@ class SemanticState : private boost::noncopyable {
       public:
         typedef boost::shared_ptr<ConsumerImpl> shared_ptr;
 
-        ConsumerImpl(SemanticState* parent, 
+        ConsumerImpl(SemanticState* parent,
                      const std::string& name, boost::shared_ptr<Queue> queue,
                      bool ack, bool acquire, bool exclusive,
-                     const std::string& resumeId, uint64_t resumeTtl, const framing::FieldTable& arguments);
+                     const std::string& tag, const std::string& resumeId,
+                     uint64_t resumeTtl, const framing::FieldTable& arguments);
         ~ConsumerImpl();
         OwnershipToken* getSession();
         bool deliver(QueuedMessage& msg);            
@@ -135,6 +137,7 @@ class SemanticState : private boost::noncopyable {
         uint32_t getMsgCredit() const { return msgCredit; }
         uint32_t getByteCredit() const { return byteCredit; }
         std::string getResumeId() const { return resumeId; };
+        const std::string& getTag() const { return tag; }
         uint64_t getResumeTtl() const { return resumeTtl; }
         const framing::FieldTable& getArguments() const { return arguments; }
 

@@ -107,11 +107,18 @@ bool SemanticState::exists(const string& consumerTag){
     return consumers.find(consumerTag) != consumers.end();
 }
 
+namespace {
+    const std::string SEPARATOR("::");
+}
+    
 void SemanticState::consume(const string& tag,
                             Queue::shared_ptr queue, bool ackRequired, bool acquire,
                             bool exclusive, const string& resumeId, uint64_t resumeTtl, const FieldTable& arguments)
 {
-    ConsumerImpl::shared_ptr c(new ConsumerImpl(this, tag, queue, ackRequired, acquire, exclusive, resumeId, resumeTtl, arguments));
+    // "tag" is only guaranteed to be unique to this session (see AMQP 0-10 Message.subscribe, destination).
+    // Create a globally unique name so the broker can identify individual consumers
+    std::string name = session.getSessionId().str() + SEPARATOR + tag;
+    ConsumerImpl::shared_ptr c(new ConsumerImpl(this, name, queue, ackRequired, acquire, exclusive, tag, resumeId, resumeTtl, arguments));
     queue->consume(c, exclusive);//may throw exception
     consumers[tag] = c;
 }
@@ -263,6 +270,7 @@ SemanticState::ConsumerImpl::ConsumerImpl(SemanticState* _parent,
                                           bool ack,
                                           bool _acquire,
                                           bool _exclusive,
+                                          const string& _tag,
                                           const string& _resumeId,
                                           uint64_t _resumeTtl,
                                           const framing::FieldTable& _arguments
@@ -278,6 +286,7 @@ SemanticState::ConsumerImpl::ConsumerImpl(SemanticState* _parent,
     windowing(true),
     exclusive(_exclusive),
     resumeId(_resumeId),
+    tag(_tag),
     resumeTtl(_resumeTtl),
     arguments(_arguments),
     msgCredit(0),
@@ -294,7 +303,7 @@ SemanticState::ConsumerImpl::ConsumerImpl(SemanticState* _parent,
 
         if (agent != 0)
         {
-            mgmtObject = new _qmf::Subscription(agent, this, ms , queue->GetManagementObject()->getObjectId(), getName(),
+            mgmtObject = new _qmf::Subscription(agent, this, ms , queue->GetManagementObject()->getObjectId(), getTag(),
                                                 !acquire, ackExpected, exclusive, ManagementAgent::toMap(arguments));
             agent->addObject (mgmtObject);
             mgmtObject->set_creditMode("WINDOW");
@@ -326,7 +335,7 @@ bool SemanticState::ConsumerImpl::deliver(QueuedMessage& msg)
 {
     assertClusterSafe();
     allocateCredit(msg.payload);
-    DeliveryRecord record(msg, queue, getName(), acquire, !ackExpected, windowing);
+    DeliveryRecord record(msg, queue, getTag(), acquire, !ackExpected, windowing);
     bool sync = syncFrequency && ++deliveryCount >= syncFrequency;
     if (sync) deliveryCount = 0;//reset
     parent->deliver(record, sync);
@@ -364,7 +373,7 @@ struct ConsumerName {
 };
 
 ostream& operator<<(ostream& o, const ConsumerName& pc) {
-    return o << pc.consumer.getName() << " on "
+    return o << pc.consumer.getTag() << " on "
              << pc.consumer.getParent().getSession().getSessionId();
 }
 }

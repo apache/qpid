@@ -410,8 +410,8 @@ void UpdateClient::updateOutputTask(const sys::OutputTask* task) {
         boost::polymorphic_downcast<const SemanticState::ConsumerImpl*> (task);
     SemanticState::ConsumerImpl* ci = const_cast<SemanticState::ConsumerImpl*>(cci);
     uint16_t channel =  ci->getParent().getSession().getChannel();
-    ClusterConnectionProxy(shadowConnection).outputTask(channel,  ci->getName());
-    QPID_LOG(debug, *this << " updating output task " << ci->getName()
+    ClusterConnectionProxy(shadowConnection).outputTask(channel,  ci->getTag());
+    QPID_LOG(debug, *this << " updating output task " << ci->getTag()
              << " channel=" << channel);
 }
 
@@ -509,13 +509,13 @@ void UpdateClient::updateSession(broker::SessionHandler& sh) {
 void UpdateClient::updateConsumer(
     const broker::SemanticState::ConsumerImpl::shared_ptr& ci)
 {
-    QPID_LOG(debug, *this << " updating consumer " << ci->getName() << " on "
+    QPID_LOG(debug, *this << " updating consumer " << ci->getTag() << " on "
              << shadowSession.getId());
 
     using namespace message;
     shadowSession.messageSubscribe(
         arg::queue       = ci->getQueue()->getName(),
-        arg::destination = ci->getName(),
+        arg::destination = ci->getTag(),
         arg::acceptMode  = ci->isAckExpected() ? ACCEPT_MODE_EXPLICIT : ACCEPT_MODE_NONE,
         arg::acquireMode = ci->isAcquire() ? ACQUIRE_MODE_PRE_ACQUIRED : ACQUIRE_MODE_NOT_ACQUIRED,
         arg::exclusive   = ci->isExclusive(),
@@ -523,18 +523,18 @@ void UpdateClient::updateConsumer(
         arg::resumeTtl   = ci->getResumeTtl(),
         arg::arguments   = ci->getArguments()
     );
-    shadowSession.messageSetFlowMode(ci->getName(), ci->isWindowing() ? FLOW_MODE_WINDOW : FLOW_MODE_CREDIT);
-    shadowSession.messageFlow(ci->getName(), CREDIT_UNIT_MESSAGE, ci->getMsgCredit());
-    shadowSession.messageFlow(ci->getName(), CREDIT_UNIT_BYTE, ci->getByteCredit());
+    shadowSession.messageSetFlowMode(ci->getTag(), ci->isWindowing() ? FLOW_MODE_WINDOW : FLOW_MODE_CREDIT);
+    shadowSession.messageFlow(ci->getTag(), CREDIT_UNIT_MESSAGE, ci->getMsgCredit());
+    shadowSession.messageFlow(ci->getTag(), CREDIT_UNIT_BYTE, ci->getByteCredit());
     ClusterConnectionProxy(shadowSession).consumerState(
-        ci->getName(),
+        ci->getTag(),
         ci->isBlocked(),
         ci->isNotifyEnabled(),
         ci->position
     );
     consumerNumbering.add(ci.get());
 
-    QPID_LOG(debug, *this << " updated consumer " << ci->getName()
+    QPID_LOG(debug, *this << " updated consumer " << ci->getTag()
              << " on " << shadowSession.getId());
 }
 
