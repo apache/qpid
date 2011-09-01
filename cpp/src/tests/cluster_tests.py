@@ -729,25 +729,28 @@ class DtxTestFixture:
         self.connection = broker.connect_old()
         self.session = self.connection.session(name, 1) # 1 second timeout
         self.queue = self.session.queue_declare(name, exclusive=exclusive)
-        self.xid = self.session.xid(format=0, global_id=name)
         self.session.dtx_select()
         self.consumer = None
 
-    def start(self, resume=False):
-        self.test.assertEqual(XA_OK, self.session.dtx_start(xid=self.xid, resume=resume).status)
+    def xid(self, id=None):
+        if id is None: id = self.name
+        return self.session.xid(format=0, global_id=id)
 
-    def end(self, suspend=False):
-        self.test.assertEqual(XA_OK, self.session.dtx_end(xid=self.xid, suspend=suspend).status)
+    def start(self, id=None, resume=False):
+        self.test.assertEqual(XA_OK, self.session.dtx_start(xid=self.xid(id), resume=resume).status)
 
-    def prepare(self):
-        self.test.assertEqual(XA_OK, self.session.dtx_prepare(xid=self.xid).status)
+    def end(self, id=None, suspend=False):
+        self.test.assertEqual(XA_OK, self.session.dtx_end(xid=self.xid(id), suspend=suspend).status)
 
-    def commit(self, one_phase=True):
+    def prepare(self, id=None):
+        self.test.assertEqual(XA_OK, self.session.dtx_prepare(xid=self.xid(id)).status)
+
+    def commit(self, id=None, one_phase=True):
         self.test.assertEqual(
-            XA_OK, self.session.dtx_commit(xid=self.xid, one_phase=one_phase).status)
+            XA_OK, self.session.dtx_commit(xid=self.xid(id), one_phase=one_phase).status)
 
-    def rollback(self):
-        self.test.assertEqual(XA_OK, self.session.dtx_rollback(xid=self.xid).status)
+    def rollback(self, id=None):
+        self.test.assertEqual(XA_OK, self.session.dtx_rollback(xid=self.xid(id)).status)
 
     def send(self, messages):
        for m in messages:
@@ -827,13 +830,19 @@ class DtxTests(BrokerTest):
         t7.start()
         self.assertEqual(t7.accept().body, "a");
 
-        # Suspended transaction across join.
+        # Ended, suspended transactions across join.
         t8 = DtxTestFixture(self, cluster[0], "t8")
-        t8.start()
+        t8.start(id="1")
         t8.send(["x"])
-        t8.end(suspend=True)
+        t8.end(id="1", suspend=True)
+        t8.start(id="2")
+        t8.send(["y"])
+        t8.end(id="2")
+        t8.start()
+        t8.send("z")
 
-        # Start new member
+
+        # Start new cluster member
         cluster.start()
         sessions.append(cluster[1].connect().session())
 
@@ -880,11 +889,14 @@ class DtxTests(BrokerTest):
         t7.verify(sessions, ["a", "b", "c"])
 
         # Resume t8
-        t8.start(resume=True)
-        t8.send(["y"])
         t8.end()
         t8.commit(one_phase=True)
-        t8.verify(sessions, ["x","y"])
+        t8.start("1", resume=True)
+        t8.end("1")
+        t8.commit("1", one_phase=True)
+        t8.commit("2", one_phase=True)
+        t8.verify(sessions, ["z", "x","y"])
+
 
     def test_dtx_failover_rollback(self):
        """Kill a broker during a transaction, verify we roll back correctly"""
