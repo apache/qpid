@@ -504,7 +504,7 @@ class BrokerTest(TestCase):
             try:
                 while True: contents.append(r.fetch(timeout=timeout).content)
             except messaging.Empty: pass
-        finally: pass                   #FIXME aconway 2011-04-14: r.close()
+        finally: r.close()
         return contents
 
     def assert_browse(self, session, queue, expect_contents, timeout=0):
