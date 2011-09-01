@@ -719,6 +719,14 @@ XA_RBTIMEOUT = 2
 XA_OK = 0
 dtx_branch_counter = 0
 
+class DtxStatusException(Exception):
+    def __init__(self, expect, actual):
+        self.expect = expect
+        self.actual = actual
+
+    def str(self):
+        return "DtxStatusException(expect=%s, actual=%s)"%(self.expect, self.actual)
+
 class DtxTestFixture:
     """Bundle together some common requirements for dtx tests."""
     def __init__(self, test, broker, name, exclusive=False):
@@ -736,21 +744,27 @@ class DtxTestFixture:
         if id is None: id = self.name
         return self.session.xid(format=0, global_id=id)
 
+    def check_status(self, expect, actual):
+        if expect != actual: raise DtxStatusException(expect, actual)
+
     def start(self, id=None, resume=False):
-        self.test.assertEqual(XA_OK, self.session.dtx_start(xid=self.xid(id), resume=resume).status)
+        self.check_status(XA_OK, self.session.dtx_start(xid=self.xid(id), resume=resume).status)
 
     def end(self, id=None, suspend=False):
-        self.test.assertEqual(XA_OK, self.session.dtx_end(xid=self.xid(id), suspend=suspend).status)
+        self.check_status(XA_OK, self.session.dtx_end(xid=self.xid(id), suspend=suspend).status)
 
     def prepare(self, id=None):
-        self.test.assertEqual(XA_OK, self.session.dtx_prepare(xid=self.xid(id)).status)
+        self.check_status(XA_OK, self.session.dtx_prepare(xid=self.xid(id)).status)
 
     def commit(self, id=None, one_phase=True):
-        self.test.assertEqual(
+        self.check_status(
             XA_OK, self.session.dtx_commit(xid=self.xid(id), one_phase=one_phase).status)
 
     def rollback(self, id=None):
-        self.test.assertEqual(XA_OK, self.session.dtx_rollback(xid=self.xid(id)).status)
+        self.check_status(XA_OK, self.session.dtx_rollback(xid=self.xid(id)).status)
+
+    def set_timeout(self, timeout, id=None):
+        self.session.dtx_set_timeout(xid=self.xid(id),timeout=timeout)
 
     def send(self, messages):
        for m in messages:
@@ -924,6 +938,19 @@ class DtxTests(BrokerTest):
        s = cluster[1].connect().session();
        self.assert_browse(s, "t1", ["a"])
        self.assert_browse(s, "t2", ["a"])
+
+    def test_dtx_timeout(self):
+        """Verify that dtx timeout works"""
+        cluster = self.cluster(1)
+        t1 = DtxTestFixture(self, cluster[0], "t1")
+        t1.start()
+        t1.set_timeout(1)
+        time.sleep(1.1)
+        try:
+            t1.end()
+            self.fail("Expected rollback timeout.")
+        except DtxStatusException, e:
+            self.assertEqual(e.actual, XA_RBTIMEOUT)
 
 class TxTests(BrokerTest):
 
