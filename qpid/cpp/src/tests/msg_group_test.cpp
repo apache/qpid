@@ -29,6 +29,7 @@
 #include <qpid/Options.h>
 #include <qpid/log/Logger.h>
 #include <qpid/log/Options.h>
+#include "qpid/log/Statement.h"
 #include "qpid/sys/Time.h"
 #include "qpid/sys/Runnable.h"
 #include "qpid/sys/Thread.h"
@@ -65,6 +66,7 @@ struct Options : public qpid::Options
     bool allowDuplicates;
     bool randomizeSize;
     bool stickyConsumer;
+    uint timeout;
 
     Options(const std::string& argv0=std::string())
         : qpid::Options("Options"),
@@ -83,7 +85,8 @@ struct Options : public qpid::Options
           durable(false),
           allowDuplicates(false),
           randomizeSize(false),
-          stickyConsumer(false)
+          stickyConsumer(false),
+          timeout(10)
     {
         addOptions()
           ("ack-frequency", qpid::optValue(ackFrequency, "N"), "Ack frequency (0 implies none of the messages will get accepted)")
@@ -101,7 +104,8 @@ struct Options : public qpid::Options
           ("randomize-group-size", qpid::optValue(randomizeSize), "Randomize the number of messages per group to [1...group-size].")
           ("senders,s", qpid::optValue(senders, "N"), "Number of message producers.")
           ("sticky-consumers", qpid::optValue(stickyConsumer), "If set, verify that all messages in a group are consumed by the same client [TBD].")
-          ("print-report", qpid::optValue(printReport, "yes|no"), "Dump message group statistics to stdout.")
+          ("timeout", qpid::optValue(timeout, "N"), "Fail with a stall error should all consumers remain idle for timeout seconds.")
+          ("print-report", qpid::optValue(printReport), "Dump message group statistics to stdout.")
           ("help", qpid::optValue(help), "print this usage statement");
         add(log);
         //("check-redelivered", qpid::optValue(checkRedelivered), "Fails with exception if a duplicate is not marked as redelivered (only relevant when ignore-duplicates is selected)")
@@ -140,8 +144,9 @@ class GroupChecker
 {
     qpid::sys::Mutex lock;
 
-    const uint totalMsgsPublished;
+    const uint totalMsgs;
     uint totalMsgsConsumed;
+    uint totalMsgsPublished;
     bool allowDuplicates;
     uint duplicateMsgs;
 
@@ -157,13 +162,15 @@ class GroupChecker
 public:
 
     GroupChecker( uint t, bool d ) :
-        totalMsgsPublished(t), totalMsgsConsumed(0), allowDuplicates(d),
+        totalMsgs(t), totalMsgsConsumed(0), totalMsgsPublished(0), allowDuplicates(d),
         duplicateMsgs(0) {}
 
     bool checkSequence( const std::string& groupId,
                         uint sequence, const std::string& client )
     {
         qpid::sys::Mutex::ScopedLock l(lock);
+
+        QPID_LOG(debug, "Client " << client << " has received " << groupId << ":" << sequence);
 
         GroupStatistics::iterator gs = statistics.find(groupId);
         if (gs == statistics.end()) {
@@ -176,19 +183,33 @@ public:
         if (s == sequenceMap.end()) {
             sequenceMap[groupId] = 1;
             totalMsgsConsumed++;
+            QPID_LOG(debug,  "Client " << client << " thinks this is the first message from group " << groupId << ":" << sequence);
             return sequence == 0;
         }
         if (sequence < s->second) {
             duplicateMsgs++;
+            QPID_LOG(debug, "Client " << client << " thinks this message is a duplicate! " << groupId << ":" << sequence);
             return allowDuplicates;
         }
         totalMsgsConsumed++;
         return sequence == s->second++;
     }
 
-    bool eraseGroup( const std::string& groupId )
+    void sendingSequence( const std::string& groupId,
+                          uint sequence, bool eos,
+                          const std::string& client )
     {
         qpid::sys::Mutex::ScopedLock l(lock);
+        ++totalMsgsPublished;
+
+        QPID_LOG(debug, "Client " << client << " sending " << groupId << ":" << sequence <<
+                 ((eos) ? " (last)" : ""));
+    }
+
+    bool eraseGroup( const std::string& groupId, const std::string& name )
+    {
+        qpid::sys::Mutex::ScopedLock l(lock);
+        QPID_LOG(debug, "Deleting group " << groupId << " (by client " << name << ")");
         return sequenceMap.erase( groupId ) == 1;
     }
 
@@ -201,13 +222,19 @@ public:
     bool allMsgsConsumed()  // true when done processing msgs
     {
         qpid::sys::Mutex::ScopedLock l(lock);
-        return totalMsgsConsumed == totalMsgsPublished;
+        return totalMsgsConsumed == totalMsgs;
     }
 
     uint getConsumedTotal()
     {
         qpid::sys::Mutex::ScopedLock l(lock);
         return totalMsgsConsumed;
+    }
+
+    uint getPublishedTotal()
+    {
+        qpid::sys::Mutex::ScopedLock l(lock);
+        return totalMsgsPublished;
     }
 
     ostream& print(ostream& out)
@@ -314,7 +341,7 @@ public:
                         testFailed( msg.str() );
                         break;
                     } else if (eof) {
-                        if (!checker.eraseGroup( groupId )) {
+                        if (!checker.eraseGroup( groupId, name )) {
                             ostringstream msg;
                             msg << "Erase group failed.  Group=" << groupId << " rcvd seq=" << groupSeq;
                             testFailed( msg.str() );
@@ -347,8 +374,10 @@ public:
 
 class Producer : public Client
 {
+    GroupChecker& checker;
+
 public:
-    Producer(const std::string& n, const Options& o) : Client(n, o) {};
+    Producer(const std::string& n, const Options& o, GroupChecker& c) : Client(n, o), checker(c) {};
     virtual ~Producer() {};
 
     void run()
@@ -367,7 +396,7 @@ public:
             uint groupSeq = 0;
             uint groupSize = opts.groupSize;
             ostringstream group;
-            group << name << sent;
+            group << name << ":" << sent;
             std::string groupId(group.str());
 
             while (!stopped && sent < opts.messages) {
@@ -375,11 +404,12 @@ public:
                 msg.getProperties()[opts.groupKey] = groupId;
                 msg.getProperties()[SN] = groupSeq++;
                 msg.getProperties()[EOS] = false;
+                checker.sendingSequence( groupId, groupSeq-1, (groupSeq == groupSize), name );
                 if (groupSeq == groupSize) {
                     msg.getProperties()[EOS] = true;
                     // generate new group
                     ostringstream nextGroupId;
-                    nextGroupId << name << sent;
+                    nextGroupId << name << ":" << sent;
                     groupId = nextGroupId.str();
                     groupSeq = 0;
                     if (opts.randomizeSize) {
@@ -424,7 +454,7 @@ int main(int argc, char ** argv)
             for (size_t j = 0; j < opts.senders; ++j)  {
                 ostringstream name;
                 name << "P_" << j;
-                clients.push_back(Client::shared_ptr(new Producer( name.str(), opts )));
+                clients.push_back(Client::shared_ptr(new Producer( name.str(), opts, state )));
                 clients.back()->getThread() = qpid::sys::Thread(*clients.back());
             }
             for (size_t j = 0; j < opts.receivers; ++j)  {
@@ -435,11 +465,11 @@ int main(int argc, char ** argv)
             }
 
             // wait for all pubs/subs to finish.... or for consumers to fail or stall.
-            uint lastCount;
+            uint stalledTime = 0;
             bool done;
             bool clientFailed = false;
             do {
-                lastCount = state.getConsumedTotal();
+                uint lastCount = state.getConsumedTotal();
                 qpid::sys::usleep( 1000000 );
 
                 // check each client for status
@@ -450,16 +480,31 @@ int main(int argc, char ** argv)
                         std::cerr << argv[0] << ": test failed with client error: " << (*i)->getErrorMsg() << std::endl;
                         clientFailed = true;
                         done = true;
-                        break;
+                        break;  // exit test.
                     } else if ((*i)->getState() != Client::DONE) {
                         done = false;
                     }
                 }
-            } while (!done && lastCount != state.getConsumedTotal());
+
+                if (!done) {
+                    // check that consumers are still receiving messages
+                    if (lastCount == state.getConsumedTotal())
+                        stalledTime++;
+                    else {
+                        lastCount = state.getConsumedTotal();
+                        stalledTime = 0;
+                    }
+                }
+
+                QPID_LOG(debug, "Consumed to date = " << state.getConsumedTotal() <<
+                         " Published to date = " << state.getPublishedTotal() <<
+                         " total=" << opts.senders * opts.messages );
+
+            } while (!done && stalledTime < opts.timeout);
 
             if (clientFailed) {
                 status = 1;
-            } else if (!state.allMsgsConsumed()) {
+            } else if (stalledTime >= opts.timeout) {
                 std::cerr << argv[0] << ": test failed due to stalled consumer." << std::endl;
                 status = 2;
             }

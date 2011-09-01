@@ -18,9 +18,9 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-#script to run a sequence of ring queue tests via make
+#script to run a sequence of message group queue tests via make
 
-#setup path to find qpid-config and sender/receiver test progs
+#setup path to find qpid-config and msg_group_test progs
 source ./test_env.sh
 
 export PATH=$PWD:$srcdir:$PYTHON_COMMANDS:$PATH
@@ -28,33 +28,39 @@ export PATH=$PWD:$srcdir:$PYTHON_COMMANDS:$PATH
 #set port to connect to via env var
 test -s qpidd.port && QPID_PORT=`cat qpidd.port`
 
-trap cleanup INT TERM QUIT
+#trap cleanup INT TERM QUIT
 
 QUEUE_NAME="group-queue"
 GROUP_KEY="My-Group-Id"
 
-BROKER_URL="-a ${QPID_BROKER:-localhost}:${QPID_PORT:-5672}"
-
-setup() {
-    qpid-config $BROKER_URL add queue $QUEUE_NAME --argument="qpid.group_header_key=${GROUP_KEY}"
-}
-
-cleanup() {
-    qpid-config $BROKER_URL del queue $QUEUE_NAME --force
-}
+BROKER_URL="${QPID_BROKER:-localhost}:${QPID_PORT:-5672}"
 
 run_test() {
-
-    msg_group_test -a $QUEUE_NAME --group-key $GROUP_KEY --capacity 3 --group-size 13 --ack-frequency 7 --messages 103 --receivers 3 --senders 5
-    RETCODE=$?
-    cleanup
-
-    if test x$RETCODE != x0; then
-        echo "FAIL message group tests"; exit 1;
-    fi
+    $@
 }
 
-setup
-run_test
+##set -x
 
+declare -i i=0
+declare -a tests
+tests=("qpid-config -a $BROKER_URL add queue $QUEUE_NAME --argument=qpid.group_header_key=${GROUP_KEY}"
+    "msg_group_test -b $BROKER_URL -a $QUEUE_NAME --group-key $GROUP_KEY --messages 103 --group-size 13 --receivers 2 --senders 3 --capacity 3 --ack-frequency 7 --randomize-group-size"
+    "msg_group_test -b $BROKER_URL -a $QUEUE_NAME --group-key $GROUP_KEY --messages 103 --group-size 13 --receivers 2 --senders 3 --capacity 7 --ack-frequency 7 --randomize-group-size"
+    "qpid-config -a $BROKER_URL add queue ${QUEUE_NAME}-two --argument=qpid.group_header_key=${GROUP_KEY}"
+    "msg_group_test -b $BROKER_URL -a $QUEUE_NAME --group-key $GROUP_KEY --messages 103 --group-size 13 --receivers 2 --senders 3 --capacity 7 --ack-frequency 3 --randomize-group-size"
+    "msg_group_test -b $BROKER_URL -a ${QUEUE_NAME}-two --group-key $GROUP_KEY --messages 103 --group-size 13 --receivers 2 --senders 3 --capacity 3 --ack-frequency 7 --randomize-group-size"
+    "msg_group_test -b $BROKER_URL -a $QUEUE_NAME --group-key $GROUP_KEY --messages 59  --group-size 5  --receivers 2 --senders 3 --capacity 1 --ack-frequency 3 --randomize-group-size"
+    "qpid-config -a $BROKER_URL del queue ${QUEUE_NAME}-two --force"
+    "msg_group_test -b $BROKER_URL -a $QUEUE_NAME --group-key $GROUP_KEY --messages 59  --group-size 3  --receivers 2 --senders 3 --capacity 1 --ack-frequency 1 --randomize-group-size"
+    "msg_group_test -b $BROKER_URL -a $QUEUE_NAME --group-key $GROUP_KEY --messages 103 --group-size 13 --receivers 2 --senders 3 --capacity 47 --ack-frequency 79"
+    "qpid-config -a $BROKER_URL del queue $QUEUE_NAME --force")
 
+while [ -n "${tests[i]}" ]; do
+    run_test ${tests[i]}
+    RETCODE=$?
+    if test x$RETCODE != x0; then
+        echo "FAILED message group test.  Failed command: \"${tests[i]}\"";
+        exit 1;
+    fi
+    i+=1
+done
