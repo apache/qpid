@@ -13,7 +13,9 @@ public class ConnectionFactoryTest extends QpidBrokerTestCase
      */
     public void testCreateConnectionWithUsernamePassword() throws Exception
     {
-        String URL = "amqp://guest:guest@clientID/test?brokerlist='tcp://localhost:5672'";
+        
+        String brokerUrl = getBroker().toString();
+        String URL = "amqp://guest:guest@clientID/test?brokerlist='" + brokerUrl + "'";
         AMQConnectionFactory factory = new AMQConnectionFactory(URL);
         
         AMQConnection con = (AMQConnection)factory.createConnection();
