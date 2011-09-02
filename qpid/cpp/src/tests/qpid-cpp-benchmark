@@ -74,7 +74,7 @@ def posix_quote(string):
     return "'" + single_quote_re.sub("\\'", string) + "'";
 
 def ssh_command(host, command):
-    """Convert command into an ssh command on host with quoting"""
+    """ Convert command into an ssh command on host with quoting"""
     return ["ssh", host] + [posix_quote(arg) for arg in command]
 
 class Clients:
@@ -150,8 +150,8 @@ def first_line(p):
 def queue_exists(queue,broker):
     c = qpid.messaging.Connection(broker)
     c.open()
-    s = c.session()
     try:
+        s = c.session()
         try:
             s.sender(queue)
             return True
@@ -168,12 +168,12 @@ def recreate_queues(queues, brokers):
         except qpid.messaging.exceptions.NotFound: pass
         # FIXME aconway 2011-05-04: async wiring, wait for changes to propagate.
         for b in brokers:
-            while queue_exists(q,b): time.sleep(0.001);
+            while queue_exists(q,b): time.sleep(0.1);
     for q in queues:
         s.sender("%s;{create:always}"%q)
         # FIXME aconway 2011-05-04: async wiring, wait for changes to propagate.
         for b in brokers:
-            while not queue_exists(q,b): time.sleep(0.001);
+            while not queue_exists(q,b): time.sleep(0.1);
     c.close()
 
 def print_header(timestamp):
@@ -235,7 +235,9 @@ class ReadyReceiver:
                     raise Exception("Receiver error: %s"%error_msg(out,err))
             raise Exception("Timed out waiting for receivers to be ready")
 
-def flatten(l): return sum(map(lambda s: s.split(","), l),[])
+def flatten(l):
+    separator = re.compile("\s+|\s*,\s*")
+    return sum(map(lambda s: re.split(separator, s), l),[])
 
 class RoundRobin:
     def __init__(self,items):
@@ -250,9 +252,12 @@ class RoundRobin:
 
 def main():
     opts, args = op.parse_args()
-    if not opts.broker: opts.broker = ["127.0.0.1"] # Deafult to local broker
-    opts.broker = flatten(opts.broker)
     opts.client_host = flatten(opts.client_host)
+    if not opts.broker:
+        if opts.client_host:
+            raise Exception("--broker must be specified if --client_host is.")
+        opts.broker = ["127.0.0.1"] # Deafult to local broker
+    opts.broker = flatten(opts.broker)
     brokers = RoundRobin(opts.broker)
     client_hosts = RoundRobin(opts.client_host)
     send_out = ""

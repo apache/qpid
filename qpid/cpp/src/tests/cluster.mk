@@ -80,7 +80,7 @@ LONG_TESTS +=					\
 	cluster_python_tests			\
 	stop_cluster
 
-qpidtest_PROGRAMS += cluster_test
+qpidexectest_PROGRAMS += cluster_test
 
 cluster_test_SOURCES =				\
 	cluster_test.cpp			\
@@ -94,7 +94,7 @@ cluster_test_SOURCES =				\
 
 cluster_test_LDADD=$(lib_client) $(lib_broker) $(lib_messaging) ../cluster.la -lboost_unit_test_framework
 
-qpidtest_SCRIPTS += run_cluster_tests brokertest.py cluster_tests.py cluster_test_logs.py run_long_cluster_tests long_cluster_tests.py testlib.py cluster_tests.fail
-qpidtest_SCRIPTS += $(CLUSTER_TEST_SCRIPTS_LIST)
+qpidexectest_SCRIPTS += run_cluster_tests brokertest.py cluster_tests.py cluster_test_logs.py run_long_cluster_tests long_cluster_tests.py testlib.py cluster_tests.fail
+qpidexectest_SCRIPTS += $(CLUSTER_TEST_SCRIPTS_LIST)
 
 endif
