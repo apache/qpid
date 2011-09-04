@@ -1642,13 +1642,15 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
         while (!sub.isSuspended() && !atTail && iterations != 0)
         {
+            boolean queueEmpty = false;
+
             try
             {
                 sub.getSendLock();
                 atTail = attemptDelivery(sub);
                 if (atTail && getNextAvailableEntry(sub) == null)
                 {
-                    sub.queueEmpty();
+                    queueEmpty = true;
                 }
                 else if (!atTail)
                 {
@@ -1658,6 +1660,10 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             finally
             {
                 sub.releaseSendLock();
+            }
+            if(queueEmpty)
+            {
+                sub.queueEmpty();
             }
         }
 
@@ -1860,7 +1866,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
                     }
                     else
                     {
-                        //this subscription can accept additional deliveries, so we must 
+                        //this subscription can accept additional deliveries, so we must
                         //keep going after this (if iteration slicing allows it)
                         allSubscriptionsDone = false;
                         lastLoop = false;

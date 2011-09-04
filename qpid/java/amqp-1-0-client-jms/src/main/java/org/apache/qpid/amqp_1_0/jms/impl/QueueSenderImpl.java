@@ -32,19 +32,5 @@ public class QueueSenderImpl extends MessageProducerImpl implements QueueSender
         super(destination, session);
     }
 
-    public QueueImpl getQueue() throws JMSException
-    {
-        return null;  //TODO
-    }
 
-    public void send(final javax.jms.Queue queue, final Message message) throws JMSException
-    {
-        //TODO
-    }
-
-    public void send(final javax.jms.Queue queue, final Message message, final int i, final int i1, final long l)
-            throws JMSException
-    {
-        //TODO
-    }
 }

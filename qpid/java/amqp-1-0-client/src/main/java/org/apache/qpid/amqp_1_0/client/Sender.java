@@ -24,6 +24,9 @@ import org.apache.qpid.amqp_1_0.messaging.SectionEncoder;
 import org.apache.qpid.amqp_1_0.transport.DeliveryStateHandler;
 import org.apache.qpid.amqp_1_0.transport.SendingLinkEndpoint;
 import org.apache.qpid.amqp_1_0.type.*;
+import org.apache.qpid.amqp_1_0.type.Source;
+import org.apache.qpid.amqp_1_0.type.Target;
+import org.apache.qpid.amqp_1_0.type.messaging.*;
 import org.apache.qpid.amqp_1_0.type.transaction.TransactionalState;
 import org.apache.qpid.amqp_1_0.type.transport.*;
 
@@ -61,11 +64,24 @@ public class Sender implements DeliveryStateHandler
     }
 
 
+    public Sender(final Session session, final String linkName, final org.apache.qpid.amqp_1_0.type.messaging.Target target, final org.apache.qpid.amqp_1_0.type.messaging.Source source,
+                  int window) throws SenderCreationException
+    {
+        this(session, linkName, target, source, window, AcknowledgeMode.ALO);
+    }
+
     public Sender(final Session session, final String linkName, final String targetAddr, final String sourceAddr,
                   int window, AcknowledgeMode mode)
             throws SenderCreationException
     {
         this(session, linkName, targetAddr, sourceAddr, window, mode, null);
+    }
+
+    public Sender(final Session session, final String linkName, final org.apache.qpid.amqp_1_0.type.messaging.Target target, final org.apache.qpid.amqp_1_0.type.messaging.Source source,
+                  int window, AcknowledgeMode mode)
+            throws SenderCreationException
+    {
+        this(session, linkName, target, source, window, mode, null);
     }
 
     public Sender(final Session session, final String linkName, final String targetAddr, final String sourceAddr,
@@ -79,9 +95,36 @@ public class Sender implements DeliveryStateHandler
                   int window, AcknowledgeMode mode, boolean isDurable, Map<Binary, Outcome> unsettled)
             throws SenderCreationException
     {
+        this(session, linkName, createTarget(targetAddr, isDurable), createSource(sourceAddr), window, mode, unsettled);
+    }
+
+    private static org.apache.qpid.amqp_1_0.type.messaging.Source createSource(final String sourceAddr)
+    {
+        org.apache.qpid.amqp_1_0.type.messaging.Source source = new org.apache.qpid.amqp_1_0.type.messaging.Source();
+        source.setAddress(sourceAddr);
+        return source;
+    }
+
+    private static org.apache.qpid.amqp_1_0.type.messaging.Target createTarget(final String targetAddr, final boolean isDurable)
+    {
+        org.apache.qpid.amqp_1_0.type.messaging.Target target = new org.apache.qpid.amqp_1_0.type.messaging.Target();
+        target.setAddress(targetAddr);
+        if(isDurable)
+        {
+            target.setDurable(TerminusDurability.UNSETTLED_STATE);
+            target.setExpiryPolicy(TerminusExpiryPolicy.NEVER);
+        }
+        return target;
+    }
+
+    public Sender(final Session session, final String linkName, final org.apache.qpid.amqp_1_0.type.messaging.Target target, final org.apache.qpid.amqp_1_0.type.messaging.Source source,
+                  int window, AcknowledgeMode mode, Map<Binary, Outcome> unsettled)
+            throws SenderCreationException
+    {
 
         _session = session;
-        _endpoint = session.getEndpoint().createSendingLinkEndpoint(linkName, targetAddr, sourceAddr, isDurable, unsettled);
+        _endpoint = session.getEndpoint().createSendingLinkEndpoint(linkName,
+                                                                    source, target, unsettled);
 
 
         switch(mode)
@@ -118,9 +161,19 @@ public class Sender implements DeliveryStateHandler
             }
             if(_endpoint.getTarget()== null)
             {
-                throw new SenderCreationException("Peer did not create remote endpoint for link, target: " + targetAddr);
+                throw new SenderCreationException("Peer did not create remote endpoint for link, target: " + target.getAddress());
             };
         }
+    }
+
+    public Source getSource()
+    {
+        return _endpoint.getSource();
+    }
+
+    public Target getTarget()
+    {
+        return _endpoint.getTarget();
     }
 
     public void send(Message message)

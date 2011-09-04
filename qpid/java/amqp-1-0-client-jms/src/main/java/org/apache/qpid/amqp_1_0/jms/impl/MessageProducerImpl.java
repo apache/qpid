@@ -176,6 +176,11 @@ public class MessageProducerImpl implements MessageProducer, QueueSender, TopicP
 
     public void send(final Message message, final int deliveryMode, final int priority, final long ttl) throws JMSException
     {
+        if(_sender == null)
+        {
+            throw new UnsupportedOperationException("No Destination provided");
+        }
+
         //TODO
         MessageImpl msg;
         if(message instanceof org.apache.qpid.amqp_1_0.jms.Message)
@@ -186,6 +191,8 @@ public class MessageProducerImpl implements MessageProducer, QueueSender, TopicP
         {
             msg = _session.convertMessage(message);
         }
+
+
 
         msg.setJMSDeliveryMode(deliveryMode);
         msg.setJMSPriority(priority);
@@ -312,14 +319,14 @@ public class MessageProducerImpl implements MessageProducer, QueueSender, TopicP
         }
     }
 
-    public Queue getQueue() throws JMSException
+    public QueueImpl getQueue() throws JMSException
     {
-        return (Queue) getDestination();
+        return (QueueImpl) getDestination();
     }
 
-    public Topic getTopic() throws JMSException
+    public TopicImpl getTopic() throws JMSException
     {
-        return (Topic) getDestination();
+        return (TopicImpl) getDestination();
     }
 
     public void publish(final Message message) throws JMSException

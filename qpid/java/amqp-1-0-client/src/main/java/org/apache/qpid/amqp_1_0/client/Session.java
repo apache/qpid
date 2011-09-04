@@ -221,6 +221,20 @@ public class Session
         return receiver;
     }
 
+    public Sender createTemporaryQueueSender() throws Sender.SenderCreationException
+    {
+        Target target = new Target();
+        target.setDynamic(true);
+
+        final Sender sender;
+        sender = new Sender(this, "tempSender"+ UUID.randomUUID().toString(), target,
+                                                   new Source(), 0, AcknowledgeMode.ALO);
+        _senders.add(sender);
+        return sender;
+    }
+
+
+
     public SessionEndpoint getEndpoint()
     {
         return _endpoint;

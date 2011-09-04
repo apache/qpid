@@ -60,7 +60,7 @@ public class MessageAnnotationsWriter extends AbstractDescribedTypeWriter<Messag
     @Override
     protected ValueWriter createDescribedWriter()
     {
-        return getRegistry().getValueWriter(_value);
+        return getRegistry().getValueWriter(_value.getValue());
     }
 
     private static Factory<MessageAnnotations> FACTORY = new Factory<MessageAnnotations>()

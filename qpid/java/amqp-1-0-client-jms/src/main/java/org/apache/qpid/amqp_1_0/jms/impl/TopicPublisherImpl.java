@@ -33,29 +33,4 @@ public class TopicPublisherImpl extends MessageProducerImpl implements TopicPubl
         super(destination, session);
     }
 
-    public TopicImpl getTopic() throws JMSException
-    {
-        return null;  //TODO
-    }
-
-    public void publish(final Message message) throws JMSException
-    {
-        //TODO
-    }
-
-    public void publish(final Message message, final int i, final int i1, final long l) throws JMSException
-    {
-        //TODO
-    }
-
-    public void publish(final Topic topic, final Message message) throws JMSException
-    {
-        //TODO
-    }
-
-    public void publish(final Topic topic, final Message message, final int i, final int i1, final long l)
-            throws JMSException
-    {
-        //TODO
-    }
 }

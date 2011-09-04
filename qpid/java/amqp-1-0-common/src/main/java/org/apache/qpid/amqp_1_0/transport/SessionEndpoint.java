@@ -474,12 +474,12 @@ public class SessionEndpoint
 
     }
 
-    private SendingLinkEndpoint createSendingLinkEndpoint(final String name, final Source source, final org.apache.qpid.amqp_1_0.type.Target target)
+    public SendingLinkEndpoint createSendingLinkEndpoint(final String name, final Source source, final org.apache.qpid.amqp_1_0.type.Target target)
     {
         return createSendingLinkEndpoint(name, source, target, null);
     }
 
-    private SendingLinkEndpoint createSendingLinkEndpoint(final String name, final Source source, final org.apache.qpid.amqp_1_0.type.Target target, Map<Binary, Outcome> unsettled)
+    public SendingLinkEndpoint createSendingLinkEndpoint(final String name, final Source source, final org.apache.qpid.amqp_1_0.type.Target target, Map<Binary, Outcome> unsettled)
     {
         SendingLinkEndpoint endpoint = new SendingLinkEndpoint(this, name, unsettled);
         endpoint.setSource(source);

@@ -42,6 +42,7 @@ import java.util.logging.Logger;
 public class Connection
 {
     private static final Logger RAW_LOGGER = Logger.getLogger("RAW");
+    private static final int MAX_FRAME_SIZE = 65536;
 
     private String _address;
     private ConnectionEndpoint _conn;
@@ -53,7 +54,7 @@ public class Connection
                   final String username,
                   final String password) throws ConnectionException
     {
-        this(address, port, username, password, 65536);
+        this(address, port, username, password, MAX_FRAME_SIZE);
     }
     public Connection(final String address,
                   final int port,
@@ -63,6 +64,16 @@ public class Connection
     {
         this(address,port,username,password,maxFrameSize,new Container());
     }
+
+    public Connection(final String address,
+                  final int port,
+                  final String username,
+                  final String password,
+                  final Container container) throws ConnectionException
+    {
+        this(address,port,username,password,MAX_FRAME_SIZE,container);
+    }
+
 
     public Connection(final String address,
                   final int port,
