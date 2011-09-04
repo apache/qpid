@@ -21,6 +21,7 @@ package org.apache.qpid.amqp_1_0.jms.impl;
 import org.apache.qpid.amqp_1_0.jms.Connection;
 import org.apache.qpid.amqp_1_0.jms.ConnectionMetaData;
 import org.apache.qpid.amqp_1_0.jms.Session;
+import org.apache.qpid.amqp_1_0.transport.Container;
 
 import javax.jms.*;
 import javax.jms.IllegalStateException;
@@ -38,6 +39,8 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
     private final Object _lock = new Object();
 
     private org.apache.qpid.amqp_1_0.client.Connection _conn;
+    private boolean _isQueueConnection;
+    private boolean _isTopicConnection;
 
 
     private static enum State
@@ -51,10 +54,11 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
 
     public ConnectionImpl(String host, int port, String username, String password, String clientId) throws JMSException
     {
+        Container container = clientId == null ? new Container() : new Container(clientId);
         // TODO - authentication, containerId, clientId, ssl?, etc
         try
         {
-            _conn = new org.apache.qpid.amqp_1_0.client.Connection(host, port, username, password);
+            _conn = new org.apache.qpid.amqp_1_0.client.Connection(host, port, username, password, container);
             // TODO - retrieve negotiated AMQP version
             _connectionMetaData = new ConnectionMetaDataImpl(1,0,0);
         }
@@ -97,7 +101,8 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
             }
 
             SessionImpl session = new SessionImpl(this, acknowledgeMode);
-
+            session.setQueueSession(_isQueueConnection);
+            session.setTopicSession(_isTopicConnection);
             _sessions.add(session);
 
             return session;
@@ -108,7 +113,7 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
     public String getClientID() throws JMSException
     {
         checkClosed();
-        return null;  //TODO
+        return _conn.getEndpoint().getContainer().getId();
     }
 
     public void setClientID(final String s) throws JMSException
@@ -269,4 +274,13 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
         }
     }
 
+    void setQueueConnection(final boolean queueConnection)
+    {
+        _isQueueConnection = queueConnection;
+    }
+
+    void setTopicConnection(final boolean topicConnection)
+    {
+        _isTopicConnection = topicConnection;
+    }
 }

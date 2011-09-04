@@ -46,6 +46,8 @@ class MessageFactory
         MessageImpl message;
         List<Section> payload = msg.getPayload();
         Header header = null;
+        MessageAnnotations messageAnnotations = null;
+
         Properties properties = null;
         ApplicationProperties appProperties = null;
         Footer footer;
@@ -58,6 +60,12 @@ class MessageFactory
         if(section instanceof Header)
         {
             header = (Header) section;
+            section = iter.hasNext() ? iter.next() : null;
+        }
+
+        if(section instanceof MessageAnnotations)
+        {
+            messageAnnotations = (MessageAnnotations) section;
             section = iter.hasNext() ? iter.next() : null;
         }
 
@@ -86,16 +94,16 @@ class MessageFactory
             Section bodySection = body.get(0);
             if(bodySection instanceof AmqpValue && ((AmqpValue)bodySection).getValue() instanceof Map)
             {
-                message = new MapMessageImpl(header, properties, appProperties, (Map) ((AmqpValue)bodySection).getValue(), footer, _session);
+                message = new MapMessageImpl(header, messageAnnotations, properties, appProperties, (Map) ((AmqpValue)bodySection).getValue(), footer, _session);
             }
             else if(bodySection instanceof AmqpValue && ((AmqpValue)bodySection).getValue() instanceof List)
             {
-                message = new StreamMessageImpl(header, properties, appProperties,
+                message = new StreamMessageImpl(header, messageAnnotations, properties, appProperties,
                                                 (List) ((AmqpValue)bodySection).getValue(), footer, _session);
             }
             else if(bodySection instanceof AmqpValue && ((AmqpValue)bodySection).getValue() instanceof String)
             {
-                message = new TextMessageImpl(header, properties, appProperties,
+                message = new TextMessageImpl(header, messageAnnotations, properties, appProperties,
                                                 (String) ((AmqpValue)bodySection).getValue(), footer, _session);
             }
             else if(bodySection instanceof Data)
@@ -120,16 +128,16 @@ class MessageFactory
                         e.printStackTrace();  //TODO
                     }
 
-                    message = new ObjectMessageImpl(header, properties, appProperties, serializable, footer, _session);
+                    message = new ObjectMessageImpl(header, messageAnnotations, properties, appProperties, serializable, footer, _session);
                 }
                 else
                 {
-                    message = new BytesMessageImpl(header, properties, appProperties, (Data) bodySection, footer, _session);
+                    message = new BytesMessageImpl(header, messageAnnotations, properties, appProperties, (Data) bodySection, footer, _session);
                 }
             }
             else if(bodySection instanceof AmqpSequence)
             {
-                message = new StreamMessageImpl(header, properties, appProperties, ((AmqpSequence) bodySection).getValue(), footer, _session);
+                message = new StreamMessageImpl(header, messageAnnotations, properties, appProperties, ((AmqpSequence) bodySection).getValue(), footer, _session);
             }
 
             /*else if(bodySection instanceof AmqpDataSection)
@@ -174,12 +182,12 @@ class MessageFactory
             }*/
             else
             {
-                message = new AmqpMessageImpl(header,properties,appProperties,body,footer, _session);
+                message = new AmqpMessageImpl(header,messageAnnotations, properties,appProperties,body,footer, _session);
             }
         }
         else
         {
-            message = new AmqpMessageImpl(header,properties,appProperties,body,footer, _session);
+            message = new AmqpMessageImpl(header,messageAnnotations, properties,appProperties,body,footer, _session);
         }
 
         message.setReadOnly();

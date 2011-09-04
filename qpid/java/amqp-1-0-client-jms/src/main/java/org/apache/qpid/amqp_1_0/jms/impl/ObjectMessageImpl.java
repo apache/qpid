@@ -40,20 +40,22 @@ public class ObjectMessageImpl extends MessageImpl implements ObjectMessage
     private Serializable _object;
 
     protected ObjectMessageImpl(Header header,
+                                MessageAnnotations messageAnnotations,
                                 Properties properties,
                                 ApplicationProperties appProperties,
                                 Serializable object,
                                 Footer footer,
                                 SessionImpl session)
     {
-        super(header, properties, appProperties, footer, session);
+        super(header, messageAnnotations, properties, appProperties, footer, session);
         getProperties().setContentType(CONTENT_TYPE);
         _object = object;
     }
 
     protected ObjectMessageImpl(final SessionImpl session)
     {
-        super(new Header(), new Properties(), new ApplicationProperties(new HashMap()), new Footer(Collections.EMPTY_MAP),
+        super(new Header(), new MessageAnnotations(new HashMap()),
+              new Properties(), new ApplicationProperties(new HashMap()), new Footer(Collections.EMPTY_MAP),
               session);
         getProperties().setContentType(CONTENT_TYPE);
     }
@@ -74,6 +76,10 @@ public class ObjectMessageImpl extends MessageImpl implements ObjectMessage
     {
         List<Section> sections = new ArrayList<Section>();
         sections.add(getHeader());
+        if(getMessageAnnotations() != null && getMessageAnnotations().getValue() != null && !getMessageAnnotations().getValue().isEmpty())
+        {
+            sections.add(getMessageAnnotations());
+        }
         sections.add(getProperties());
         sections.add(getApplicationProperties());
 

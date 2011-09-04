@@ -22,7 +22,7 @@ import org.apache.qpid.amqp_1_0.client.Receiver;
 import org.apache.qpid.amqp_1_0.jms.Queue;
 import org.apache.qpid.amqp_1_0.jms.QueueReceiver;
 
-import javax.jms.JMSException;
+import javax.jms.*;
 
 public class QueueReceiverImpl extends MessageConsumerImpl implements QueueReceiver
 {
@@ -33,9 +33,10 @@ public class QueueReceiverImpl extends MessageConsumerImpl implements QueueRecei
             throws JMSException
     {
         super(destination, session, selector, noLocal);
+        setQueueConsumer(true);
     }
 
-    protected Receiver createClientReceiver()
+    protected Receiver createClientReceiver() throws javax.jms.IllegalStateException
     {
         return getSession().getClientSession().createMovingReceiver(getDestination().getAddress());
     }

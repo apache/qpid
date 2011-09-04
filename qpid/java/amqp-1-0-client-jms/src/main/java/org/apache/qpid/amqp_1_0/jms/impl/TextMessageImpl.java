@@ -33,19 +33,21 @@ public class TextMessageImpl extends MessageImpl implements TextMessage
     private String _text;
 
     protected TextMessageImpl(Header header,
+                              MessageAnnotations messageAnnotations,
                               Properties properties,
                               ApplicationProperties appProperties,
                               String text,
                               Footer footer,
                               SessionImpl session)
     {
-        super(header, properties, appProperties, footer, session);
+        super(header, messageAnnotations, properties, appProperties, footer, session);
         _text = text;
     }
 
     protected TextMessageImpl(final SessionImpl session)
     {
-        super(new Header(), new Properties(), new ApplicationProperties(new HashMap()), new Footer(Collections.EMPTY_MAP),
+        super(new Header(), new MessageAnnotations(new HashMap()),
+              new Properties(), new ApplicationProperties(new HashMap()), new Footer(Collections.EMPTY_MAP),
               session);
     }
 
@@ -68,6 +70,10 @@ public class TextMessageImpl extends MessageImpl implements TextMessage
     {
         List<Section> sections = new ArrayList<Section>();
         sections.add(getHeader());
+        if(getMessageAnnotations() != null && getMessageAnnotations().getValue() != null && !getMessageAnnotations().getValue().isEmpty())
+        {
+            sections.add(getMessageAnnotations());
+        }
         sections.add(getProperties());
         sections.add(getApplicationProperties());
         AmqpValue section = new AmqpValue(_text);
@@ -75,4 +81,6 @@ public class TextMessageImpl extends MessageImpl implements TextMessage
         sections.add(getFooter());
         return sections;
     }
+
+
 }

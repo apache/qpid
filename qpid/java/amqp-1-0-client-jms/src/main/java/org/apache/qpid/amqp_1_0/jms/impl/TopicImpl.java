@@ -49,5 +49,8 @@ public class TopicImpl extends DestinationImpl implements Topic
         return topic;
     }
 
-
+    public static TopicImpl valueOf(String address)
+    {
+        return address == null ? null : createTopic(address);
+    }
 }

@@ -48,4 +48,9 @@ public class QueueImpl extends DestinationImpl implements Queue
         return queue;
     }
 
+    public static QueueImpl valueOf(String address)
+    {
+        return address == null ? null : createQueue(address);
+    }
+
 }

@@ -22,7 +22,7 @@ import org.apache.qpid.amqp_1_0.client.Receiver;
 import org.apache.qpid.amqp_1_0.jms.Topic;
 import org.apache.qpid.amqp_1_0.jms.TopicSubscriber;
 
-import javax.jms.JMSException;
+import javax.jms.*;
 
 public class TopicSubscriberImpl extends MessageConsumerImpl implements TopicSubscriber
 {
@@ -33,6 +33,7 @@ public class TopicSubscriberImpl extends MessageConsumerImpl implements TopicSub
             throws JMSException
     {
         super(destination, session, selector, noLocal);
+        setTopicSubscriber(true);
     }
 
     public TopicImpl getTopic() throws JMSException
@@ -41,7 +42,7 @@ public class TopicSubscriberImpl extends MessageConsumerImpl implements TopicSub
     }
 
 
-    protected Receiver createClientReceiver()
+    protected Receiver createClientReceiver() throws javax.jms.IllegalStateException
     {
         return getSession().getClientSession().createCopyingReceiver(getDestination().getAddress());
     }

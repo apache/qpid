@@ -37,26 +37,28 @@ public class StreamMessageImpl extends MessageImpl implements StreamMessage
 
 
 
-    protected StreamMessageImpl(Header header, Properties properties, ApplicationProperties appProperties, List list,
+    protected StreamMessageImpl(Header header, MessageAnnotations messageAnnotations, Properties properties, ApplicationProperties appProperties, List list,
                                 Footer footer, SessionImpl session)
     {
-        super(header, properties, appProperties, footer, session);
+        super(header, messageAnnotations, properties, appProperties, footer, session);
         _list = list;
     }
 
     StreamMessageImpl(final SessionImpl session)
     {
-        super(new Header(), new Properties(), new ApplicationProperties(new HashMap()), new Footer(Collections.EMPTY_MAP),
+        super(new Header(), new MessageAnnotations(new HashMap()), new Properties(),
+              new ApplicationProperties(new HashMap()), new Footer(Collections.EMPTY_MAP),
               session);
         _list = new ArrayList();
     }
 
     public StreamMessageImpl(final Header header,
+                             final MessageAnnotations messageAnnotations,
                              final Properties properties,
                              final ApplicationProperties appProperties,
                              final List amqpListSection, final Footer footer)
     {
-        super(header, properties, appProperties, footer, null);
+        super(header, messageAnnotations, properties, appProperties, footer, null);
         _list = amqpListSection;
     }
 
@@ -257,6 +259,7 @@ public class StreamMessageImpl extends MessageImpl implements StreamMessage
 
     public Object readObject() throws JMSException
     {
+        checkReadable();
         if(_offset == -1)
         {
             return _list.get(++_position);
@@ -332,6 +335,7 @@ public class StreamMessageImpl extends MessageImpl implements StreamMessage
 
     public void reset() throws JMSException
     {
+        super.reset();
         _position = -1;
         _offset = -1;
     }
@@ -340,6 +344,10 @@ public class StreamMessageImpl extends MessageImpl implements StreamMessage
     {
         List<Section> sections = new ArrayList<Section>();
         sections.add(getHeader());
+        if(getMessageAnnotations() != null && getMessageAnnotations().getValue() != null && !getMessageAnnotations().getValue().isEmpty())
+        {
+            sections.add(getMessageAnnotations());
+        }
         sections.add(getProperties());
         sections.add(getApplicationProperties());
         sections.add(new AmqpValue(_list));

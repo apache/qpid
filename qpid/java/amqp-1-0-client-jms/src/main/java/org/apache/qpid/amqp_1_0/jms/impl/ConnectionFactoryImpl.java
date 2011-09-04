@@ -104,21 +104,29 @@ public class ConnectionFactoryImpl implements ConnectionFactory, TopicConnection
 
     public QueueConnection createQueueConnection() throws JMSException
     {
-        return createConnection();
+        final ConnectionImpl connection = createConnection();
+        connection.setQueueConnection(true);
+        return connection;
     }
 
     public QueueConnection createQueueConnection(final String username, final String password) throws JMSException
     {
-        return createConnection(username, password);
+        final ConnectionImpl connection = createConnection(username, password);
+        connection.setQueueConnection(true);
+        return connection;
     }
 
     public TopicConnection createTopicConnection() throws JMSException
     {
-        return createConnection();
+        final ConnectionImpl connection = createConnection();
+        connection.setTopicConnection(true);
+        return connection;
     }
 
     public TopicConnection createTopicConnection(final String username, final String password) throws JMSException
     {
-        return createConnection(username, password);
+        final ConnectionImpl connection = createConnection(username, password);
+        connection.setTopicConnection(true);
+        return connection;
     }
 }

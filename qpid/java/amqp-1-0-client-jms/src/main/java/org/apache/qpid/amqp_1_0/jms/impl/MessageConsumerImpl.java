@@ -41,6 +41,9 @@ public class MessageConsumerImpl implements MessageConsumer, QueueReceiver, Topi
     private Binary _lastUnackedMessage;
     MessageListener _messageListener;
 
+    private boolean _isQueueConsumer;
+    private boolean _isTopicSubscriber;
+
     private boolean _closed = false;
 
     MessageConsumerImpl(final Destination destination,
@@ -53,10 +56,18 @@ public class MessageConsumerImpl implements MessageConsumer, QueueReceiver, Topi
         if(destination instanceof DestinationImpl)
         {
             _destination = (DestinationImpl) destination;
+            if(destination instanceof javax.jms.Queue)
+            {
+                _isQueueConsumer = true;
+            }
+            else if(destination instanceof javax.jms.Topic)
+            {
+                _isTopicSubscriber = true;
+            }
         }
-        else if(destination != null)
+        else
         {
-            // TODO - throw appropriate exception
+            throw new InvalidDestinationException("Invalid destination class");
         }
         _session = session;
 
@@ -64,7 +75,7 @@ public class MessageConsumerImpl implements MessageConsumer, QueueReceiver, Topi
 
     }
 
-    protected Receiver createClientReceiver()
+    protected Receiver createClientReceiver() throws IllegalStateException
     {
         return _session.getClientSession().createReceiver(_destination.getAddress());
     }
@@ -142,7 +153,10 @@ public class MessageConsumerImpl implements MessageConsumer, QueueReceiver, Topi
         if(msg != null)
         {
             MessageFactory factory = _session.getMessageFactory();
-            return factory.createMessage(_destination, msg);
+            final MessageImpl message = factory.createMessage(_destination, msg);
+            message.setFromQueue(_isQueueConsumer);
+            message.setFromTopic(_isTopicSubscriber);
+            return message;
         }
         else
         {
@@ -229,5 +243,15 @@ public class MessageConsumerImpl implements MessageConsumer, QueueReceiver, Topi
     public Topic getTopic() throws JMSException
     {
         return (Topic) getDestination();
+    }
+
+    void setQueueConsumer(final boolean queueConsumer)
+    {
+        _isQueueConsumer = queueConsumer;
+    }
+
+    void setTopicSubscriber(final boolean topicSubscriber)
+    {
+        _isTopicSubscriber = topicSubscriber;
     }
 }

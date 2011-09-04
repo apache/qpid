@@ -23,6 +23,7 @@ import org.apache.qpid.amqp_1_0.type.Section;
 import org.apache.qpid.amqp_1_0.type.messaging.ApplicationProperties;
 import org.apache.qpid.amqp_1_0.type.messaging.Footer;
 import org.apache.qpid.amqp_1_0.type.messaging.Header;
+import org.apache.qpid.amqp_1_0.type.messaging.MessageAnnotations;
 import org.apache.qpid.amqp_1_0.type.messaging.Properties;
 
 import java.util.*;
@@ -31,16 +32,16 @@ public class AmqpMessageImpl extends MessageImpl implements AmqpMessage
 {
     private List<Section> _sections;
 
-    protected AmqpMessageImpl(Header header, Properties properties, ApplicationProperties appProperties, List<Section> sections,
+    protected AmqpMessageImpl(Header header, MessageAnnotations messageAnnotations, Properties properties, ApplicationProperties appProperties, List<Section> sections,
                               Footer footer, SessionImpl session)
     {
-        super(header, properties, appProperties, footer, session);
+        super(header, messageAnnotations, properties, appProperties, footer, session);
         _sections = sections;
     }
 
     protected AmqpMessageImpl(final SessionImpl session)
     {
-        super(new Header(), new Properties(), new ApplicationProperties(new HashMap()), new Footer(Collections.EMPTY_MAP),
+        super(new Header(), new MessageAnnotations(new HashMap()), new Properties(), new ApplicationProperties(new HashMap()), new Footer(Collections.EMPTY_MAP),
               session);
         _sections = new ArrayList<Section>();
     }
@@ -64,6 +65,10 @@ public class AmqpMessageImpl extends MessageImpl implements AmqpMessage
     {
         List<Section> sections = new ArrayList<Section>();
         sections.add(getHeader());
+        if(getMessageAnnotations() != null && getMessageAnnotations().getValue() != null && !getMessageAnnotations().getValue().isEmpty())
+        {
+            sections.add(getMessageAnnotations());
+        }
         sections.add(getProperties());
         sections.add(getApplicationProperties());
         sections.addAll(_sections);

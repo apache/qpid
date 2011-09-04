@@ -28,6 +28,7 @@ public class TopicSessionImpl extends SessionImpl implements TopicSession
     protected TopicSessionImpl(final ConnectionImpl connection, final AcknowledgeMode acknowledgeMode)
     {
         super(connection, acknowledgeMode);
+        setTopicSession(true);
     }
 
     public TopicSubscriberImpl createSubscriber(final Topic topic) throws JMSException

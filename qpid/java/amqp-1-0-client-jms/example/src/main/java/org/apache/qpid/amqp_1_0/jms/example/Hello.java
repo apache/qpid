@@ -110,6 +110,18 @@ public class Hello
                             System.out.println(o.getClass().getName() + ": " + o);
 
                         }
+                        else if(message instanceof ObjectMessage)
+                        {
+                            System.out.println("Received Object Message:");
+                            System.out.println("========================");
+                            ObjectMessage objectMessage = (ObjectMessage)message;
+                            Object o = objectMessage.getObject();
+                            System.out.println(o.getClass().getName() + ": " + o);
+                        }
+                        else
+                        {
+                            System.out.println("Received Message " + message.getClass().getName());
+                        }
                     }
                     catch (JMSException e)
                     {
@@ -124,8 +136,9 @@ public class Hello
 
             MessageProducer messageProducer = producersession.createProducer(queue);
             TextMessage message = producersession.createTextMessage("Hello world!");
+            message.setJMSType("Hello");
             messageProducer.send(message);
-
+           /*
             MapMessage mapmessage = producersession.createMapMessage();
             mapmessage.setBoolean("mybool", true);
             mapmessage.setString("mystring", "hello");
@@ -139,13 +152,18 @@ public class Hello
 
             messageProducer.send(bytesMessage);
 
-            StreamMessage streamMessage = producersession.createStreamMessage();
+            ObjectMessage objectMessage = producersession.createObjectMessage();
+            objectMessage.setObject(new Double("3.14159265358979323846264338327950288"));
+
+            messageProducer.send(objectMessage);
+
+/*          StreamMessage streamMessage = producersession.createStreamMessage();
             streamMessage.writeBoolean(true);
             streamMessage.writeLong(18031974L);
             streamMessage.writeString("this is a stream Message");
             streamMessage.writeChar('£');
             messageProducer.send(streamMessage);
-
+*/
             Thread.sleep(50000L);
 
             connection.close();

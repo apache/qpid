@@ -18,19 +18,36 @@
  */
 package org.apache.qpid.amqp_1_0.jms.impl;
 
+import org.apache.qpid.amqp_1_0.client.Sender;
 import org.apache.qpid.amqp_1_0.jms.TemporaryQueue;
 
 import javax.jms.JMSException;
 
 public class TemporaryQueueImpl extends QueueImpl implements TemporaryQueue
 {
-    protected TemporaryQueueImpl(String address)
+    private Sender _sender;
+
+    protected TemporaryQueueImpl(String address, Sender sender)
     {
         super(address);
+        _sender = sender;
     }
 
     public void delete() throws JMSException
     {
-        //TODO
+        try
+        {
+            if(_sender != null)
+            {
+                _sender.close();
+                _sender = null;
+            }
+        }
+        catch (Sender.SenderClosingException e)
+        {
+            final JMSException jmsException = new JMSException(e.getMessage());
+            jmsException.setLinkedException(e);
+            throw jmsException;
+        }
     }
 }

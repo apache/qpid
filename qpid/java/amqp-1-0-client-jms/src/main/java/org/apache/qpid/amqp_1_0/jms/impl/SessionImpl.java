@@ -20,6 +20,7 @@ package org.apache.qpid.amqp_1_0.jms.impl;
 
 import org.apache.qpid.amqp_1_0.client.Connection;
 import org.apache.qpid.amqp_1_0.client.Message;
+import org.apache.qpid.amqp_1_0.client.Sender;
 import org.apache.qpid.amqp_1_0.jms.QueueReceiver;
 import org.apache.qpid.amqp_1_0.jms.QueueSender;
 import org.apache.qpid.amqp_1_0.jms.QueueSession;
@@ -27,6 +28,7 @@ import org.apache.qpid.amqp_1_0.jms.Session;
 import org.apache.qpid.amqp_1_0.jms.TopicPublisher;
 import org.apache.qpid.amqp_1_0.jms.TopicSession;
 import org.apache.qpid.amqp_1_0.jms.TopicSubscriber;
+import org.apache.qpid.amqp_1_0.type.messaging.Target;
 
 import javax.jms.*;
 import javax.jms.IllegalStateException;
@@ -49,6 +51,9 @@ public class SessionImpl implements Session, QueueSession, TopicSession
     private Thread _dispatcherThread;
 
     private boolean _closed;
+
+    private boolean _isQueueSession;
+    private boolean _isTopicSession;
 
     protected SessionImpl(final ConnectionImpl connection, final AcknowledgeMode acknowledgeMode)
     {
@@ -102,8 +107,7 @@ public class SessionImpl implements Session, QueueSession, TopicSession
 
     public TextMessageImpl createTextMessage() throws JMSException
     {
-        checkClosed();
-        return new TextMessageImpl(this);
+        return createTextMessage("");
     }
 
     public TextMessageImpl createTextMessage(final String s) throws JMSException
@@ -293,6 +297,10 @@ public class SessionImpl implements Session, QueueSession, TopicSession
             throws JMSException
     {
         checkClosed();
+        if(!(topic instanceof TopicImpl))
+        {
+            throw new InvalidDestinationException("invalid destination " + topic);
+        }
         return null;  //TODO
     }
 
@@ -317,7 +325,17 @@ public class SessionImpl implements Session, QueueSession, TopicSession
     public TemporaryQueueImpl createTemporaryQueue() throws JMSException
     {
         checkClosed();
-        return null;  //TODO
+        try
+        {
+            Sender send = _session.createTemporaryQueueSender();
+
+            TemporaryQueueImpl tempQ = new TemporaryQueueImpl(((Target)send.getTarget()).getAddress(), send);
+            return tempQ;
+        }
+        catch (Sender.SenderCreationException e)
+        {
+            throw new JMSException("Unable to create temporary queue");
+        }
     }
 
     public TemporaryTopicImpl createTemporaryTopic() throws JMSException
@@ -329,6 +347,7 @@ public class SessionImpl implements Session, QueueSession, TopicSession
     public void unsubscribe(final String s) throws JMSException
     {
         checkClosed();
+
         //TODO
     }
 
@@ -604,5 +623,15 @@ public class SessionImpl implements Session, QueueSession, TopicSession
                 getLock().notifyAll();
             }
         }
+    }
+
+    void setQueueSession(final boolean queueSession)
+    {
+        _isQueueSession = queueSession;
+    }
+
+    void setTopicSession(final boolean topicSession)
+    {
+        _isTopicSession = topicSession;
     }
 }

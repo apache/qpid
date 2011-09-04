@@ -32,17 +32,18 @@ public class MapMessageImpl extends MessageImpl implements MapMessage
 {
     private Map _map;
 
-    public MapMessageImpl(Header header, Properties properties, ApplicationProperties appProperties, Map map,
+    public MapMessageImpl(Header header, MessageAnnotations messageAnnotations, Properties properties, ApplicationProperties appProperties, Map map,
                           Footer footer,
                           SessionImpl session)
     {
-        super(header, properties, appProperties, footer, session);
+        super(header, messageAnnotations, properties, appProperties, footer, session);
         _map = map;
     }
 
     MapMessageImpl(final SessionImpl session)
     {
-        super(new Header(), new Properties(), new ApplicationProperties(new HashMap()), new Footer(Collections.EMPTY_MAP),
+        super(new Header(), new MessageAnnotations(new HashMap()),
+              new Properties(), new ApplicationProperties(new HashMap()), new Footer(Collections.EMPTY_MAP),
               session);
         _map = new HashMap();
     }
@@ -417,6 +418,10 @@ public class MapMessageImpl extends MessageImpl implements MapMessage
     {
         List<Section> sections = new ArrayList<Section>();
         sections.add(getHeader());
+        if(getMessageAnnotations() != null && getMessageAnnotations().getValue() != null && !getMessageAnnotations().getValue().isEmpty())
+        {
+            sections.add(getMessageAnnotations());
+        }
         sections.add(getProperties());
         sections.add(getApplicationProperties());
         sections.add(new AmqpValue(_map));

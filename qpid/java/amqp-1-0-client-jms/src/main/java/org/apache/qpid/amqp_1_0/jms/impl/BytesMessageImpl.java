@@ -39,10 +39,10 @@ public class BytesMessageImpl extends MessageImpl implements BytesMessage
     private Data _dataIn;
 
     // message created for reading
-    protected BytesMessageImpl(Header header, Properties properties, ApplicationProperties appProperties, Data data,
+    protected BytesMessageImpl(Header header, MessageAnnotations messageAnnotations, Properties properties, ApplicationProperties appProperties, Data data,
                                Footer footer, SessionImpl session)
     {
-        super(header, properties, appProperties, footer, session);
+        super(header, messageAnnotations, properties, appProperties, footer, session);
         _dataIn = data;
         final Binary dataBuffer = data.getValue();
         _dataAsInput = new DataInputStream(new ByteArrayInputStream(dataBuffer.getArray(),dataBuffer.getArrayOffset(),dataBuffer.getLength()));
@@ -52,7 +52,11 @@ public class BytesMessageImpl extends MessageImpl implements BytesMessage
     // message created to be sent
     protected BytesMessageImpl(final SessionImpl session)
     {
-        super(new Header(), new Properties(), new ApplicationProperties(new HashMap()), new Footer(Collections.EMPTY_MAP),
+        super(new Header(),
+              new MessageAnnotations(new HashMap()),
+              new Properties(),
+              new ApplicationProperties(new HashMap()),
+              new Footer(Collections.EMPTY_MAP),
               session);
 
         _bytesOut = new ByteArrayOutputStream();
@@ -496,6 +500,10 @@ public class BytesMessageImpl extends MessageImpl implements BytesMessage
     {
         List<Section> sections = new ArrayList<Section>();
         sections.add(getHeader());
+        if(getMessageAnnotations() != null && getMessageAnnotations().getValue() != null && !getMessageAnnotations().getValue().isEmpty())
+        {
+            sections.add(getMessageAnnotations());
+        }
         sections.add(getProperties());
         sections.add(getApplicationProperties());
         sections.add(getDataSection());

@@ -52,21 +52,24 @@ public class MessageProducerImpl implements MessageProducer, QueueSender, TopicP
         }
         else if(destination != null)
         {
-            // TODO - throw appropriate exception
+            throw new InvalidDestinationException("Invalid Destination Class" + destination.getClass().getName());
         }
         _session = session;
 
-        try
+        if(_destination != null)
         {
-            _sender = _session.getClientSession().createSender(_destination.getAddress());
-        }
-        catch (Sender.SenderCreationException e)
-        {
-            // TODO - refine exception
-            JMSException jmsEx = new JMSException(e.getMessage());
-            jmsEx.initCause(e);
-            jmsEx.setLinkedException(e);
-            throw jmsEx;
+            try
+            {
+                _sender = _session.getClientSession().createSender(_destination.getAddress());
+            }
+            catch (Sender.SenderCreationException e)
+            {
+                // TODO - refine exception
+                JMSException jmsEx = new JMSException(e.getMessage());
+                jmsEx.initCause(e);
+                jmsEx.setLinkedException(e);
+                throw jmsEx;
+            }
         }
     }
 
@@ -151,7 +154,10 @@ public class MessageProducerImpl implements MessageProducer, QueueSender, TopicP
             if(!_closed)
             {
                 _closed = true;
-                _sender.close();
+                if(_sender != null)
+                {
+                    _sender.close();
+                }
             }
 
         }
@@ -255,7 +261,55 @@ public class MessageProducerImpl implements MessageProducer, QueueSender, TopicP
     public void send(final Destination destination, final Message message, final int deliveryMode, final int priority, final long ttl)
             throws JMSException
     {
-        //TODO
+
+        checkClosed();
+        if(destination == null)
+        {
+            send(message, deliveryMode, priority, ttl);
+        }
+        else
+        {
+            if(_destination != null)
+            {
+                throw new UnsupportedOperationException("Cannot use explicit destination pon non-anonymous producer");
+            }
+            else if(!(destination instanceof DestinationImpl))
+            {
+                throw new InvalidDestinationException("Invalid Destination Class" + destination.getClass().getName());
+            }
+            try
+            {
+                _destination = (DestinationImpl) destination;
+                _sender = _session.getClientSession().createSender(_destination.getAddress());
+
+                send(message, deliveryMode, priority, ttl);
+
+                _sender.close();
+
+
+
+            }
+            catch (Sender.SenderCreationException e)
+            {
+                // TODO - refine exception
+                JMSException jmsEx = new JMSException(e.getMessage());
+                jmsEx.initCause(e);
+                jmsEx.setLinkedException(e);
+                throw jmsEx;
+            }
+            catch (Sender.SenderClosingException e)
+            {
+                JMSException jmsEx = new JMSException(e.getMessage());
+                jmsEx.initCause(e);
+                jmsEx.setLinkedException(e);
+                throw jmsEx;
+            }
+            finally
+            {
+                _sender = null;
+                _destination = null;
+            }
+        }
     }
 
     public Queue getQueue() throws JMSException

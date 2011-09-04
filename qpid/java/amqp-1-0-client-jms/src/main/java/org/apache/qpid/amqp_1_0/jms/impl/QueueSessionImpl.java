@@ -28,6 +28,7 @@ public class QueueSessionImpl extends SessionImpl implements QueueSession
     protected QueueSessionImpl(final ConnectionImpl connection, final AcknowledgeMode acknowledgeMode)
     {
         super(connection, acknowledgeMode);
+        setQueueSession(true);
     }
 
     public QueueReceiverImpl createReceiver(final Queue queue) throws JMSException
