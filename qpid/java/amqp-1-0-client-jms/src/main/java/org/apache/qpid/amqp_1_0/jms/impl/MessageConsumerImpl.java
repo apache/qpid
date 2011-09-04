@@ -21,15 +21,17 @@ package org.apache.qpid.amqp_1_0.jms.impl;
 import org.apache.qpid.amqp_1_0.client.Message;
 import org.apache.qpid.amqp_1_0.client.Receiver;
 import org.apache.qpid.amqp_1_0.jms.MessageConsumer;
+import org.apache.qpid.amqp_1_0.jms.QueueReceiver;
+import org.apache.qpid.amqp_1_0.jms.Queue;
+import org.apache.qpid.amqp_1_0.jms.Topic;
+import org.apache.qpid.amqp_1_0.jms.TopicSubscriber;
 import org.apache.qpid.amqp_1_0.type.Binary;
 import org.apache.qpid.amqp_1_0.type.UnsignedInteger;
 
-import javax.jms.Destination;
-import javax.jms.JMSException;
-import javax.jms.MessageListener;
-import javax.jms.Session;
+import javax.jms.*;
+import javax.jms.IllegalStateException;
 
-public class MessageConsumerImpl implements MessageConsumer
+public class MessageConsumerImpl implements MessageConsumer, QueueReceiver, TopicSubscriber
 {
     private String _selector;
     private boolean _noLocal;
@@ -37,7 +39,9 @@ public class MessageConsumerImpl implements MessageConsumer
     private SessionImpl _session;
     private Receiver _receiver;
     private Binary _lastUnackedMessage;
-    private MessageListener _messageListener;
+    MessageListener _messageListener;
+
+    private boolean _closed = false;
 
     MessageConsumerImpl(final Destination destination,
                         final SessionImpl session,
@@ -67,16 +71,19 @@ public class MessageConsumerImpl implements MessageConsumer
 
     public String getMessageSelector() throws JMSException
     {
+        checkClosed();
         return _selector;
     }
 
-    public MessageListener getMessageListener()
+    public MessageListener getMessageListener() throws IllegalStateException
     {
+        checkClosed();
         return _messageListener;
     }
 
     public void setMessageListener(final MessageListener messageListener) throws JMSException
     {
+        checkClosed();
         _messageListener = messageListener;
         _session.messageListenerSet( this );
         _receiver.setMessageArrivalListener(new Receiver.MessageArrivalListener()
@@ -91,11 +98,13 @@ public class MessageConsumerImpl implements MessageConsumer
 
     public MessageImpl receive() throws JMSException
     {
+        checkClosed();
         return receiveImpl(-1L);
     }
 
     public MessageImpl receive(final long timeout) throws JMSException
     {
+        checkClosed();
         // TODO - validate timeout > 0
 
         return receiveImpl(timeout);
@@ -103,10 +112,11 @@ public class MessageConsumerImpl implements MessageConsumer
 
     public MessageImpl receiveNoWait() throws JMSException
     {
+        checkClosed();
         return receiveImpl(0L);
     }
 
-    private MessageImpl receiveImpl(long timeout)
+    private MessageImpl receiveImpl(long timeout) throws IllegalStateException
     {
         org.apache.qpid.amqp_1_0.client.Message msg = receive0(timeout);
         if(msg != null)
@@ -142,7 +152,21 @@ public class MessageConsumerImpl implements MessageConsumer
 
     public void close() throws JMSException
     {
-        //TODO
+        if(!_closed)
+        {
+            _closed = true;
+
+            _receiver.close();
+
+        }
+    }
+
+    private void checkClosed() throws IllegalStateException
+    {
+        if(_closed)
+        {
+            throw new javax.jms.IllegalStateException("Closed");
+        }
     }
 
     void setLastUnackedMessage(final Binary deliveryTag)
@@ -150,7 +174,7 @@ public class MessageConsumerImpl implements MessageConsumer
         _lastUnackedMessage = deliveryTag;
     }
 
-    void preReceiveAction(final org.apache.qpid.amqp_1_0.client.Message msg)
+    void preReceiveAction(final org.apache.qpid.amqp_1_0.client.Message msg) throws IllegalStateException
     {
         final int acknowledgeMode = _session.getAcknowledgeMode();
 
@@ -173,24 +197,37 @@ public class MessageConsumerImpl implements MessageConsumer
         }
     }
 
-    public DestinationImpl getDestination()
+    public DestinationImpl getDestination() throws IllegalStateException
     {
+        checkClosed();
         return _destination;
     }
 
 
-    public SessionImpl getSession()
+    public SessionImpl getSession() throws IllegalStateException
     {
+        checkClosed();
         return _session;
     }
 
-    public boolean getNoLocal()
+    public boolean getNoLocal() throws IllegalStateException
     {
+        checkClosed();
         return _noLocal;
     }
 
     public void start()
     {
         _receiver.setCredit(UnsignedInteger.valueOf(100), true);
+    }
+
+    public Queue getQueue() throws JMSException
+    {
+        return (Queue) getDestination();
+    }
+
+    public Topic getTopic() throws JMSException
+    {
+        return (Topic) getDestination();
     }
 }

@@ -20,15 +20,17 @@ package org.apache.qpid.amqp_1_0.jms.impl;
 
 import org.apache.qpid.amqp_1_0.client.Sender;
 import org.apache.qpid.amqp_1_0.jms.MessageProducer;
+import org.apache.qpid.amqp_1_0.jms.Queue;
+import org.apache.qpid.amqp_1_0.jms.QueueSender;
+import org.apache.qpid.amqp_1_0.jms.TopicPublisher;
 import org.apache.qpid.amqp_1_0.type.Binary;
 import org.apache.qpid.amqp_1_0.type.UnsignedInteger;
 
-import javax.jms.Destination;
-import javax.jms.JMSException;
-import javax.jms.Message;
+import javax.jms.*;
+import javax.jms.IllegalStateException;
 import java.util.UUID;
 
-public class MessageProducerImpl implements MessageProducer
+public class MessageProducerImpl implements MessageProducer, QueueSender, TopicPublisher
 {
     private boolean _disableMessageID;
     private boolean _disableMessageTimestamp;
@@ -39,6 +41,7 @@ public class MessageProducerImpl implements MessageProducer
     private DestinationImpl _destination;
     private SessionImpl _session;
     private Sender _sender;
+    private boolean _closed;
 
     protected MessageProducerImpl(final Destination destination,
                                final SessionImpl session) throws JMSException
@@ -67,64 +70,97 @@ public class MessageProducerImpl implements MessageProducer
         }
     }
 
-    public boolean getDisableMessageID()
+    private void checkClosed() throws IllegalStateException
     {
+        if(_closed)
+        {
+            throw new javax.jms.IllegalStateException("Producer closed");
+        }
+    }
+
+    public boolean getDisableMessageID() throws IllegalStateException
+    {
+        checkClosed();
         return _disableMessageID;
     }
 
-    public void setDisableMessageID(final boolean disableMessageID)
+    public void setDisableMessageID(final boolean disableMessageID) throws IllegalStateException
     {
+        checkClosed();
         _disableMessageID = disableMessageID;
     }
 
-    public boolean getDisableMessageTimestamp()
+    public boolean getDisableMessageTimestamp() throws IllegalStateException
     {
+        checkClosed();
         return _disableMessageTimestamp;
     }
 
-    public void setDisableMessageTimestamp(final boolean disableMessageTimestamp)
+    public void setDisableMessageTimestamp(final boolean disableMessageTimestamp) throws IllegalStateException
     {
+        checkClosed();
         _disableMessageTimestamp = disableMessageTimestamp;
     }
 
-    public int getDeliveryMode()
+    public int getDeliveryMode() throws IllegalStateException
     {
+        checkClosed();
         return _deliveryMode;
     }
 
-    public void setDeliveryMode(final int deliveryMode)
+    public void setDeliveryMode(final int deliveryMode) throws IllegalStateException
     {
+        checkClosed();
         _deliveryMode = deliveryMode;
     }
 
-    public int getPriority()
+    public int getPriority() throws IllegalStateException
     {
+        checkClosed();
         return _priority;
     }
 
-    public void setPriority(final int priority)
+    public void setPriority(final int priority) throws IllegalStateException
     {
+        checkClosed();
         _priority = priority;
     }
 
-    public long getTimeToLive()
+    public long getTimeToLive() throws IllegalStateException
     {
+        checkClosed();
         return _timeToLive;
     }
 
-    public void setTimeToLive(final long timeToLive)
+    public void setTimeToLive(final long timeToLive) throws IllegalStateException
     {
+        checkClosed();
         _timeToLive = timeToLive;
     }
 
     public DestinationImpl getDestination() throws JMSException
     {
+        checkClosed();
         return _destination;
     }
 
     public void close() throws JMSException
     {
-        //TODO
+        try
+        {
+            if(!_closed)
+            {
+                _closed = true;
+                _sender.close();
+            }
+
+        }
+        catch (Sender.SenderClosingException e)
+        {
+            final JMSException jmsException = new JMSException("error closing");
+            jmsException.setLinkedException(e);
+            throw jmsException;
+        }
     }
 
     public void send(final Message message) throws JMSException
@@ -142,11 +178,22 @@ public class MessageProducerImpl implements MessageProducer
         }
         else
         {
-            msg = convertMessage(message);
+            msg = _session.convertMessage(message);
         }
 
         msg.setJMSDeliveryMode(deliveryMode);
         msg.setJMSPriority(priority);
+
+        msg.setJMSDestination(_destination);
+
+        long timestamp = 0l;
+
+        if(!getDisableMessageTimestamp() && ttl==0)
+        {
+            timestamp = System.currentTimeMillis();
+            msg.setJMSTimestamp(timestamp);
+
+        }
         if(ttl != 0)
         {
             msg.setTtl(UnsignedInteger.valueOf(ttl));
@@ -155,30 +202,49 @@ public class MessageProducerImpl implements MessageProducer
         {
             msg.setTtl(null);
         }
-        msg.setJMSDestination(_destination);
-        if(!getDisableMessageTimestamp())
-        {
-            msg.setJMSTimestamp(System.currentTimeMillis());
-        }
+
         if(!getDisableMessageID() && msg.getMessageId() == null)
         {
-            msg.setMessageId(generateMessageId());
+            final Binary messageId = generateMessageId();
+            msg.setMessageId(messageId);
+
         }
+
+        if(message != msg)
+        {
+            message.setJMSTimestamp(msg.getJMSTimestamp());
+            message.setJMSMessageID(msg.getJMSMessageID());
+            message.setJMSDeliveryMode(msg.getJMSDeliveryMode());
+            message.setJMSPriority(msg.getJMSPriority());
+            message.setJMSExpiration(msg.getJMSExpiration());
+        }
+
 
         final org.apache.qpid.amqp_1_0.client.Message clientMessage = new org.apache.qpid.amqp_1_0.client.Message(msg.getSections());
 
         _sender.send(clientMessage);
+
+        if(getDestination() != null)
+        {
+            message.setJMSDestination(getDestination());
+        }
+    }
+
+    public void send(final javax.jms.Queue queue, final Message message) throws JMSException
+    {
+        send((Destination)queue, message);
+    }
+
+    public void send(final javax.jms.Queue queue, final Message message, final int deliveryMode, final int priority, final long ttl)
+            throws JMSException
+    {
+        send((Destination)queue, message, deliveryMode, priority, ttl);
     }
 
     private Binary generateMessageId()
     {
-        UUID uuid = UUID.randomUUID();        
+        UUID uuid = UUID.randomUUID();
         return new Binary(uuid.toString().getBytes());
-    }
-
-    private MessageImpl convertMessage(final Message message)
-    {
-        return null;  //TODO
     }
 
     public void send(final Destination destination, final Message message) throws JMSException
@@ -190,5 +256,36 @@ public class MessageProducerImpl implements MessageProducer
             throws JMSException
     {
         //TODO
+    }
+
+    public Queue getQueue() throws JMSException
+    {
+        return (Queue) getDestination();
+    }
+
+    public Topic getTopic() throws JMSException
+    {
+        return (Topic) getDestination();
+    }
+
+    public void publish(final Message message) throws JMSException
+    {
+        send(message);
+    }
+
+    public void publish(final Message message, final int deliveryMode, final int priority, final long ttl) throws JMSException
+    {
+        send(message, deliveryMode, priority, ttl);
+    }
+
+    public void publish(final Topic topic, final Message message) throws JMSException
+    {
+        send(topic, message);
+    }
+
+    public void publish(final Topic topic, final Message message, final int deliveryMode, final int priority, final long ttl)
+            throws JMSException
+    {
+        send(topic, message, deliveryMode, priority, ttl);
     }
 }

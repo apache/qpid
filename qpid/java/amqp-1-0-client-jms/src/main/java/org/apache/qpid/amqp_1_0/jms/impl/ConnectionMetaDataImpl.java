@@ -21,6 +21,9 @@ package org.apache.qpid.amqp_1_0.jms.impl;
 import org.apache.qpid.amqp_1_0.jms.ConnectionMetaData;
 
 import javax.jms.JMSException;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Enumeration;
 
 public class ConnectionMetaDataImpl implements ConnectionMetaData
@@ -35,6 +38,7 @@ public class ConnectionMetaDataImpl implements ConnectionMetaData
     private final int _amqpMajorVersion;
     private final int _amqpMinorVersion;
     private final int _amqpRevisionVersion;
+    private static final Collection<String> _jmsxProperties = Arrays.asList("JMSXGroupID", "JMSXGroupSeq");
 
     public ConnectionMetaDataImpl(final int amqpMajorVersion, final int amqpMinorVersion, final int amqpRevisionVersion)
     {
@@ -80,7 +84,8 @@ public class ConnectionMetaDataImpl implements ConnectionMetaData
 
     public Enumeration getJMSXPropertyNames() throws JMSException
     {
-        return null;  //TODO
+
+        return Collections.enumeration(_jmsxProperties);
     }
 
     public int getAMQPMajorVersion()

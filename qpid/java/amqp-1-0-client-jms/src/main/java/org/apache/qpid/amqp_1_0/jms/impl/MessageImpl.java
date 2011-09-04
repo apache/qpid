@@ -46,12 +46,17 @@ import java.util.*;
 
 public abstract class MessageImpl implements Message
 {
+    static final Set<Class> _supportedClasses =
+                new HashSet<Class>(Arrays.asList(Boolean.class, Byte.class, Short.class, Integer.class, Long.class,
+                                                 Float.class, Double.class, Character.class, String.class, byte[].class));
+
     private Header _header;
     private Properties _properties;
     private ApplicationProperties _applicationProperties;
     private Footer _footer;
     public static final Charset UTF_8_CHARSET = Charset.forName("UTF-8");
     private SessionImpl _sessionImpl;
+    private boolean _readOnly;
 
     protected MessageImpl(Header header,
                           Properties properties,
@@ -133,13 +138,13 @@ public abstract class MessageImpl implements Message
 
     public void setJMSCorrelationID(String s) throws JMSException
     {
-        getProperties().setCorrelationId(new Binary(s.getBytes()));
+        getProperties().setCorrelationId(s == null ? null : new Binary(s.getBytes()));
     }
 
     public String getJMSCorrelationID() throws JMSException
     {
         final Binary id = (Binary) getProperties().getCorrelationId();
-        return new String(id.getArray(), id.getArrayOffset(), id.getLength());
+        return id == null ? null : new String(id.getArray(), id.getArrayOffset(), id.getLength());
     }
 
     public DestinationImpl getJMSReplyTo() throws JMSException
@@ -253,12 +258,24 @@ public abstract class MessageImpl implements Message
 
     public long getJMSExpiration() throws JMSException
     {
-        return 0;  //TODO
+        final UnsignedInteger ttl = getTtl();
+        return ttl == null || ttl.longValue() == 0 ? 0 : getJMSTimestamp() + ttl.longValue();
     }
 
     public void setJMSExpiration(long l) throws JMSException
     {
-        //TODO
+        if(l == 0)
+        {
+            setTtl(UnsignedInteger.ZERO);
+        }
+        else
+        {
+            if(getTransmitTime() == null)
+            {
+                setTransmitTime(new Date());
+            }
+            setTtl(UnsignedInteger.valueOf(l - getTransmitTime().getDate()));
+        }
     }
 
     public int getJMSPriority() throws JMSException
@@ -281,7 +298,7 @@ public abstract class MessageImpl implements Message
 
     public void clearProperties() throws JMSException
     {
-        //TODO
+        _applicationProperties.getValue().clear();
     }
 
     public boolean propertyExists(final String s) throws JMSException
@@ -674,53 +691,62 @@ public abstract class MessageImpl implements Message
 
     public void setBooleanProperty(final String s, final boolean b) throws JMSException
     {
+        checkWritable();
         setBooleanProperty((Object)s, b);
     }
 
     public void setByteProperty(final String s, final byte b) throws JMSException
     {
+        checkWritable();
         setByteProperty((Object)s, b);
     }
 
     public void setShortProperty(final String s, final short i) throws JMSException
     {
+        checkWritable();
         setShortProperty((Object)s, i);
     }
 
     public void setIntProperty(final String s, final int i) throws JMSException
     {
+        checkWritable();
         setIntProperty((Object)s, i);
     }
 
     public void setLongProperty(final String s, final long l) throws JMSException
     {
+        checkWritable();
         setLongProperty((Object)s, l);
     }
 
     public void setFloatProperty(final String s, final float v) throws JMSException
     {
+        checkWritable();
         setFloatProperty((Object) s, v);
     }
 
     public void setDoubleProperty(final String s, final double v) throws JMSException
     {
+        checkWritable();
         setDoubleProperty((Object)s, v);
     }
 
     public void setStringProperty(final String s, final String s1) throws JMSException
     {
+        checkWritable();
         setStringProperty((Object)s, s1);
     }
 
     public void setObjectProperty(final String s, final Object o) throws JMSException
     {
-        if(o != null && (o.getClass().isPrimitive() || o instanceof String))
+        checkWritable();
+        if(o != null && (_supportedClasses.contains(o.getClass())))
         {
             setObjectProperty((Object)s, o);
         }
         else
         {
-            throw new JMSException("Cannot call setObjectProperty with a value of " + ((o == null) ? "null" : " class "+o.getClass().getName()) + ".");
+            throw new MessageFormatException("Cannot call setObjectProperty with a value of " + ((o == null) ? "null" : " class "+o.getClass().getName()) + ".");
         }
     }
 
@@ -958,12 +984,12 @@ public abstract class MessageImpl implements Message
 
     public void clearBody() throws JMSException
     {
-        //TODO
+        _readOnly = false;
     }
 
     protected boolean isReadOnly()
     {
-        return false;  //TODO
+        return _readOnly;
     }
 
     protected void checkReadable() throws MessageNotReadableException
@@ -980,6 +1006,11 @@ public abstract class MessageImpl implements Message
         {
             throw new MessageNotWriteableException("You need to call clearBody() to make the message writable");
         }
+    }
+
+    public void setReadOnly()
+    {
+        _readOnly = true;
     }
 
     private static class InvalidJMSMEssageIdException extends JMSException

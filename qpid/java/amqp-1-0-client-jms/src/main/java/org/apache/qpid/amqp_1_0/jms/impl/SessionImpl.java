@@ -20,28 +20,35 @@ package org.apache.qpid.amqp_1_0.jms.impl;
 
 import org.apache.qpid.amqp_1_0.client.Connection;
 import org.apache.qpid.amqp_1_0.client.Message;
+import org.apache.qpid.amqp_1_0.jms.QueueReceiver;
+import org.apache.qpid.amqp_1_0.jms.QueueSender;
+import org.apache.qpid.amqp_1_0.jms.QueueSession;
 import org.apache.qpid.amqp_1_0.jms.Session;
+import org.apache.qpid.amqp_1_0.jms.TopicPublisher;
+import org.apache.qpid.amqp_1_0.jms.TopicSession;
+import org.apache.qpid.amqp_1_0.jms.TopicSubscriber;
 
-import javax.jms.Destination;
-import javax.jms.JMSException;
-import javax.jms.MessageListener;
-import javax.jms.Queue;
-import javax.jms.Topic;
+import javax.jms.*;
+import javax.jms.IllegalStateException;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.List;
 
-public class SessionImpl implements Session
+public class SessionImpl implements Session, QueueSession, TopicSession
 {
     private ConnectionImpl _connection;
     private AcknowledgeMode _acknowledgeMode;
     private org.apache.qpid.amqp_1_0.client.Session _session;
     private MessageFactory _messageFactory;
     private List<MessageConsumerImpl> _consumers = new ArrayList<MessageConsumerImpl>();
+    private List<MessageProducerImpl> _producers = new ArrayList<MessageProducerImpl>();
+
     private MessageListener _messageListener;
     private Dispatcher _dispatcher = new Dispatcher();
     private Thread _dispatcherThread;
 
+    private boolean _closed;
 
     protected SessionImpl(final ConnectionImpl connection, final AcknowledgeMode acknowledgeMode)
     {
@@ -55,29 +62,33 @@ public class SessionImpl implements Session
         _dispatcherThread.start();
     }
 
-    public BytesMessageImpl createBytesMessage() throws JMSException
+    public BytesMessageImpl createBytesMessage() throws IllegalStateException
     {
+        checkClosed();
         return new BytesMessageImpl(this);
 
     }
 
     public MapMessageImpl createMapMessage() throws JMSException
     {
+        checkClosed();
         return new MapMessageImpl(this);
     }
 
-    public MessageImpl createMessage() throws JMSException
+    public MessageImpl createMessage() throws IllegalStateException
     {
         return createAmqpMessage();
     }
 
     public ObjectMessageImpl createObjectMessage() throws JMSException
     {
+        checkClosed();
         return new ObjectMessageImpl(this);
     }
 
     public ObjectMessageImpl createObjectMessage(final Serializable serializable) throws JMSException
     {
+        checkClosed();
         ObjectMessageImpl msg = new ObjectMessageImpl(this);
         msg.setObject(serializable);
         return msg;
@@ -85,55 +96,81 @@ public class SessionImpl implements Session
 
     public StreamMessageImpl createStreamMessage() throws JMSException
     {
+        checkClosed();
         return new StreamMessageImpl(this);
     }
 
     public TextMessageImpl createTextMessage() throws JMSException
     {
+        checkClosed();
         return new TextMessageImpl(this);
     }
 
     public TextMessageImpl createTextMessage(final String s) throws JMSException
     {
+        checkClosed();
         TextMessageImpl msg = new TextMessageImpl(this);
         msg.setText(s);
         return msg;
     }
 
-    public AmqpMessageImpl createAmqpMessage() throws JMSException
+    public AmqpMessageImpl createAmqpMessage() throws IllegalStateException
     {
+        checkClosed();
         return new AmqpMessageImpl(this);
     }
 
     public boolean getTransacted() throws JMSException
     {
+        checkClosed();
         return _acknowledgeMode == AcknowledgeMode.SESSION_TRANSACTED;
     }
 
-    public int getAcknowledgeMode()
+    public int getAcknowledgeMode() throws IllegalStateException
     {
+        checkClosed();
         return _acknowledgeMode.ordinal();
     }
 
     public void commit() throws JMSException
     {
+        checkClosed();
         //TODO
     }
 
     public void rollback() throws JMSException
     {
+        checkClosed();
         //TODO
     }
 
     public void close() throws JMSException
     {
-        _dispatcher.close();
-        _session.close();
+        if(!_closed)
+        {
+            _closed = true;
+            _dispatcher.close();
+            for(MessageConsumerImpl consumer : _consumers)
+            {
+                consumer.close();
+            }
+            for(MessageProducerImpl producer : _producers)
+            {
+                producer.close();
+            }
+            _session.close();
+        }
+    }
 
+    private void checkClosed() throws IllegalStateException
+    {
+        if(_closed)
+            throw new IllegalStateException("Closed");
     }
 
     public void recover() throws JMSException
     {
+        checkClosed();
         //TODO
     }
 
@@ -161,22 +198,31 @@ public class SessionImpl implements Session
 
     public MessageProducerImpl createProducer(final Destination destination) throws JMSException
     {
-        return new MessageProducerImpl(destination, this);
+        checkClosed();
+
+        final MessageProducerImpl messageProducer = new MessageProducerImpl(destination, this);
+
+        _producers.add(messageProducer);
+
+        return messageProducer;
     }
 
     public MessageConsumerImpl createConsumer(final Destination destination) throws JMSException
     {
+        checkClosed();
         return createConsumer(destination, null, false);
     }
 
     public MessageConsumerImpl createConsumer(final Destination destination, final String selector) throws JMSException
     {
+        checkClosed();
         return createConsumer(destination, selector, false);
     }
 
     public MessageConsumerImpl createConsumer(final Destination destination, final String selector, final boolean noLocal)
             throws JMSException
     {
+        checkClosed();
         final MessageConsumerImpl messageConsumer;
         synchronized(_session.getEndpoint().getLock())
         {
@@ -197,47 +243,92 @@ public class SessionImpl implements Session
 
     public QueueImpl createQueue(final String s) throws JMSException
     {
+        checkClosed();
         return new QueueImpl(s);
+    }
+
+    public QueueReceiver createReceiver(final Queue queue) throws JMSException
+    {
+        checkClosed();
+        return createConsumer(queue);
+    }
+
+    public QueueReceiver createReceiver(final Queue queue, final String selector) throws JMSException
+    {
+        checkClosed();
+        return createConsumer(queue, selector);
+    }
+
+    public QueueSender createSender(final Queue queue) throws JMSException
+    {
+        checkClosed();
+        return createProducer(queue);
     }
 
     public TopicImpl createTopic(final String s) throws JMSException
     {
+        checkClosed();
         return new TopicImpl(s);
+    }
+
+    public TopicSubscriber createSubscriber(final Topic topic) throws JMSException
+    {
+        checkClosed();
+        return createConsumer(topic);
+    }
+
+    public TopicSubscriber createSubscriber(final Topic topic, final String selector, final boolean noLocal) throws JMSException
+    {
+        checkClosed();
+        return createConsumer(topic, selector, noLocal);
     }
 
     public TopicSubscriberImpl createDurableSubscriber(final Topic topic, final String name) throws JMSException
     {
+        checkClosed();
         return createDurableSubscriber(topic, name, null, false);
     }
 
     public TopicSubscriberImpl createDurableSubscriber(final Topic topic, final String name, final String selector, final boolean noLocal)
             throws JMSException
     {
+        checkClosed();
         return null;  //TODO
+    }
+
+    public TopicPublisher createPublisher(final Topic topic) throws JMSException
+    {
+        checkClosed();
+        return createProducer(topic);
     }
 
     public QueueBrowserImpl createBrowser(final Queue queue) throws JMSException
     {
+        checkClosed();
         return createBrowser(queue, null);
     }
 
     public QueueBrowserImpl createBrowser(final Queue queue, final String selector) throws JMSException
     {
+        checkClosed();
         return null;  //TODO
     }
 
     public TemporaryQueueImpl createTemporaryQueue() throws JMSException
     {
+        checkClosed();
         return null;  //TODO
     }
 
     public TemporaryTopicImpl createTemporaryTopic() throws JMSException
     {
+        checkClosed();
         return null;  //TODO
     }
 
     public void unsubscribe(final String s) throws JMSException
     {
+        checkClosed();
         //TODO
     }
 
@@ -286,6 +377,133 @@ public class SessionImpl implements Session
         _dispatcher.messageArrivedAtConsumer(messageConsumer);
     }
 
+    MessageImpl convertMessage(final javax.jms.Message message) throws JMSException
+    {
+        MessageImpl replacementMessage;
+
+        if(message instanceof BytesMessage)
+        {
+            replacementMessage = convertBytesMessage((BytesMessage) message);
+        }
+        else if(message instanceof MapMessage)
+        {
+            replacementMessage = convertMapMessage((MapMessage) message);
+        }
+        else if(message instanceof ObjectMessage)
+        {
+            replacementMessage = convertObjectMessage((ObjectMessage) message);
+        }
+        else if(message instanceof StreamMessage)
+        {
+            replacementMessage = convertStreamMessage((StreamMessage) message);
+        }
+        else if(message instanceof TextMessage)
+        {
+            replacementMessage = convertTextMessage((TextMessage) message);
+        }
+        else
+        {
+            replacementMessage = createMessage();
+        }
+
+        convertMessageProperties(message, replacementMessage);
+
+        return replacementMessage;
+    }
+
+
+    private void convertMessageProperties(final javax.jms.Message message, final MessageImpl replacementMessage)
+            throws JMSException
+    {
+        Enumeration propertyNames = message.getPropertyNames();
+        while (propertyNames.hasMoreElements())
+        {
+            String propertyName = String.valueOf(propertyNames.nextElement());
+            // TODO: Shouldn't need to check for JMS properties here as don't think getPropertyNames() should return them
+            if (!propertyName.startsWith("JMSX_"))
+            {
+                Object value = message.getObjectProperty(propertyName);
+                replacementMessage.setObjectProperty(propertyName, value);
+            }
+        }
+
+
+        replacementMessage.setJMSDeliveryMode(message.getJMSDeliveryMode());
+
+        if (message.getJMSReplyTo() != null)
+        {
+            replacementMessage.setJMSReplyTo(message.getJMSReplyTo());
+        }
+
+        replacementMessage.setJMSType(message.getJMSType());
+
+        replacementMessage.setJMSCorrelationID(message.getJMSCorrelationID());
+    }
+
+    private MessageImpl convertMapMessage(final MapMessage message) throws JMSException
+    {
+        MapMessageImpl mapMessage = createMapMessage();
+
+        Enumeration mapNames = message.getMapNames();
+        while (mapNames.hasMoreElements())
+        {
+            String name = (String) mapNames.nextElement();
+            mapMessage.setObject(name, message.getObject(name));
+        }
+
+        return mapMessage;
+    }
+
+    private MessageImpl convertBytesMessage(final BytesMessage message) throws JMSException
+    {
+        BytesMessageImpl bytesMessage = createBytesMessage();
+
+        message.reset();
+
+        byte[] buf = new byte[1024];
+
+        int len;
+
+        while ((len = message.readBytes(buf)) != -1)
+        {
+            bytesMessage.writeBytes(buf, 0, len);
+        }
+
+        return bytesMessage;
+    }
+
+    private MessageImpl convertObjectMessage(final ObjectMessage message) throws JMSException
+    {
+        ObjectMessageImpl objectMessage = createObjectMessage();
+        objectMessage.setObject(message.getObject());
+        return objectMessage;
+    }
+
+    private MessageImpl convertStreamMessage(final StreamMessage message) throws JMSException
+    {
+        StreamMessageImpl streamMessage = createStreamMessage();
+
+        try
+        {
+            message.reset();
+            while (true)
+            {
+                streamMessage.writeObject(message.readObject());
+            }
+        }
+        catch (MessageEOFException e)
+        {
+            // we're at the end so don't mind the exception
+        }
+
+        return streamMessage;
+    }
+
+    private MessageImpl convertTextMessage(final TextMessage message) throws JMSException
+    {
+        return createTextMessage(message.getText());
+    }
+
 
     private class Dispatcher implements Runnable
     {
@@ -315,7 +533,7 @@ public class SessionImpl implements Session
                     while(_started && !_messageConsumerList.isEmpty())
                     {
                         MessageConsumerImpl consumer = _messageConsumerList.remove(0);
-                        MessageListener listener = consumer.getMessageListener();
+                        MessageListener listener = consumer._messageListener;
                         Message msg = consumer.receive0(0L);
 
                         MessageImpl message = consumer.createJMSMessage(msg);

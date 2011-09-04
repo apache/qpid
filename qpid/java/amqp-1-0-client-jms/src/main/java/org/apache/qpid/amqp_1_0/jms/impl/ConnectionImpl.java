@@ -22,16 +22,12 @@ import org.apache.qpid.amqp_1_0.jms.Connection;
 import org.apache.qpid.amqp_1_0.jms.ConnectionMetaData;
 import org.apache.qpid.amqp_1_0.jms.Session;
 
-import javax.jms.ConnectionConsumer;
-import javax.jms.Destination;
-import javax.jms.ExceptionListener;
-import javax.jms.JMSException;
-import javax.jms.ServerSessionPool;
-import javax.jms.Topic;
+import javax.jms.*;
+import javax.jms.IllegalStateException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ConnectionImpl implements Connection
+public class ConnectionImpl implements Connection, QueueConnection, TopicConnection
 {
 
     private ConnectionMetaData _connectionMetaData;
@@ -97,7 +93,7 @@ public class ConnectionImpl implements Connection
         {
             if(_state == State.CLOSED)
             {
-                throw new JMSException("Cannot create a session on a closed connection");
+                throw new IllegalStateException("Cannot create a session on a closed connection");
             }
 
             SessionImpl session = new SessionImpl(this, acknowledgeMode);
@@ -111,6 +107,7 @@ public class ConnectionImpl implements Connection
 
     public String getClientID() throws JMSException
     {
+        checkClosed();
         return null;  //TODO
     }
 
@@ -123,16 +120,19 @@ public class ConnectionImpl implements Connection
 
     public ConnectionMetaData getMetaData() throws JMSException
     {
+        checkClosed();
         return _connectionMetaData;
     }
 
     public ExceptionListener getExceptionListener() throws JMSException
     {
+        checkClosed();
         return _exceptionListener;
     }
 
     public void setExceptionListener(final ExceptionListener exceptionListener) throws JMSException
     {
+        checkClosed();
         _exceptionListener = exceptionListener;
     }
 
@@ -140,7 +140,7 @@ public class ConnectionImpl implements Connection
     {
         synchronized(_lock)
         {
-
+            checkClosed();
             if(_state == State.STOPPED)
             {
                 // TODO
@@ -153,6 +153,7 @@ public class ConnectionImpl implements Connection
                 }
 
             }
+
             _lock.notifyAll();
         }
 
@@ -172,7 +173,7 @@ public class ConnectionImpl implements Connection
                     _state = State.STOPPED;
                     break;
                 case CLOSED:
-                    //TODO
+                    throw new javax.jms.IllegalStateException("Closed");
             }
 
             _lock.notifyAll();
@@ -198,11 +199,33 @@ public class ConnectionImpl implements Connection
         }
     }
 
+    private void checkClosed() throws IllegalStateException
+    {
+        if(_state == State.CLOSED)
+            throw new IllegalStateException("Closed");
+    }
+
     public ConnectionConsumer createConnectionConsumer(final Destination destination,
                                                        final String s,
                                                        final ServerSessionPool serverSessionPool,
                                                        final int i) throws JMSException
     {
+        checkClosed();
+        return null;  //TODO
+    }
+
+    public TopicSession createTopicSession(final boolean transacted, final int acknowledgeMode) throws JMSException
+    {
+        checkClosed();
+        return createSession(transacted, acknowledgeMode);
+    }
+
+    public ConnectionConsumer createConnectionConsumer(final Topic topic,
+                                                       final String s,
+                                                       final ServerSessionPool serverSessionPool,
+                                                       final int i) throws JMSException
+    {
+        checkClosed();
         return null;  //TODO
     }
 
@@ -212,8 +235,26 @@ public class ConnectionImpl implements Connection
                                                               final ServerSessionPool serverSessionPool,
                                                               final int i) throws JMSException
     {
+        checkClosed();
         return null;  //TODO
     }
+
+    public QueueSession createQueueSession(final boolean transacted, final int acknowledgeMode) throws JMSException
+    {
+        checkClosed();
+        return createSession(transacted, acknowledgeMode);
+    }
+
+    public ConnectionConsumer createConnectionConsumer(final Queue queue,
+                                                       final String s,
+                                                       final ServerSessionPool serverSessionPool,
+                                                       final int i) throws JMSException
+    {
+        checkClosed();
+        return null;  //TODO
+    }
+
+
 
     protected org.apache.qpid.amqp_1_0.client.Connection getClientConnection()
     {

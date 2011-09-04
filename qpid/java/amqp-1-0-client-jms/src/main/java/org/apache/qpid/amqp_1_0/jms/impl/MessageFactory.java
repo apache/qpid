@@ -20,10 +20,15 @@
 package org.apache.qpid.amqp_1_0.jms.impl;
 
 import org.apache.qpid.amqp_1_0.client.Message;
+import org.apache.qpid.amqp_1_0.type.Binary;
 import org.apache.qpid.amqp_1_0.type.Section;
 import org.apache.qpid.amqp_1_0.type.messaging.*;
 import org.apache.qpid.amqp_1_0.type.messaging.Properties;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.Serializable;
 import java.util.*;
 
 class MessageFactory
@@ -95,7 +100,32 @@ class MessageFactory
             }
             else if(bodySection instanceof Data)
             {
-                message = new BytesMessageImpl(header, properties, appProperties, (Data) bodySection, footer, _session);
+                if(properties != null && ObjectMessageImpl.CONTENT_TYPE.equals(properties.getContentType()))
+                {
+
+                    Serializable serializable = null;
+                    Binary data = ((Data) bodySection).getValue();
+
+                    try
+                    {
+                        ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(data.getArray(), data.getArrayOffset(), data.getLength()));
+                        serializable = (Serializable) ois.readObject();
+                    }
+                    catch (IOException e)
+                    {
+                        e.printStackTrace();
+                    }
+                    catch (ClassNotFoundException e)
+                    {
+                        e.printStackTrace();  //TODO
+                    }
+
+                    message = new ObjectMessageImpl(header, properties, appProperties, serializable, footer, _session);
+                }
+                else
+                {
+                    message = new BytesMessageImpl(header, properties, appProperties, (Data) bodySection, footer, _session);
+                }
             }
             else if(bodySection instanceof AmqpSequence)
             {
@@ -151,6 +181,8 @@ class MessageFactory
         {
             message = new AmqpMessageImpl(header,properties,appProperties,body,footer, _session);
         }
+
+        message.setReadOnly();
 
         return message;
     }

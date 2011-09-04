@@ -24,10 +24,14 @@ import org.apache.qpid.amqp_1_0.jms.Connection;
 import org.apache.qpid.amqp_1_0.jms.ConnectionFactory;
 
 import javax.jms.JMSException;
+import javax.jms.QueueConnection;
+import javax.jms.QueueConnectionFactory;
+import javax.jms.TopicConnection;
+import javax.jms.TopicConnectionFactory;
 import java.net.MalformedURLException;
 import java.net.URL;
 
-public class ConnectionFactoryImpl implements ConnectionFactory
+public class ConnectionFactoryImpl implements ConnectionFactory, TopicConnectionFactory, QueueConnectionFactory
 {
     private String _host;
     private int _port;
@@ -48,12 +52,12 @@ public class ConnectionFactoryImpl implements ConnectionFactory
         _clientId = clientId;
     }
 
-    public Connection createConnection() throws JMSException
+    public ConnectionImpl createConnection() throws JMSException
     {
         return new ConnectionImpl(_host, _port, _username, _password, _clientId);
     }
 
-    public Connection createConnection(final String username, final String password) throws JMSException
+    public ConnectionImpl createConnection(final String username, final String password) throws JMSException
     {
         return new ConnectionImpl(_host, _port, username, password, _clientId);
     }
@@ -96,5 +100,25 @@ public class ConnectionFactoryImpl implements ConnectionFactory
 
         return new ConnectionFactoryImpl(host, port, username, password, clientId);
 
+    }
+
+    public QueueConnection createQueueConnection() throws JMSException
+    {
+        return createConnection();
+    }
+
+    public QueueConnection createQueueConnection(final String username, final String password) throws JMSException
+    {
+        return createConnection(username, password);
+    }
+
+    public TopicConnection createTopicConnection() throws JMSException
+    {
+        return createConnection();
+    }
+
+    public TopicConnection createTopicConnection(final String username, final String password) throws JMSException
+    {
+        return createConnection(username, password);
     }
 }

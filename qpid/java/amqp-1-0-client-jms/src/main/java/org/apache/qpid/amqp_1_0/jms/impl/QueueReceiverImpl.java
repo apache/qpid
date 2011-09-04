@@ -19,6 +19,7 @@
 package org.apache.qpid.amqp_1_0.jms.impl;
 
 import org.apache.qpid.amqp_1_0.client.Receiver;
+import org.apache.qpid.amqp_1_0.jms.Queue;
 import org.apache.qpid.amqp_1_0.jms.QueueReceiver;
 
 import javax.jms.JMSException;
@@ -39,7 +40,7 @@ public class QueueReceiverImpl extends MessageConsumerImpl implements QueueRecei
         return getSession().getClientSession().createMovingReceiver(getDestination().getAddress());
     }
 
-    public QueueImpl getQueue() throws JMSException
+    public Queue getQueue() throws JMSException
     {
         return (QueueImpl) getDestination();
     }

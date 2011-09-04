@@ -20,26 +20,34 @@
 package org.apache.qpid.amqp_1_0.jms.impl;
 
 import org.apache.qpid.amqp_1_0.jms.ObjectMessage;
+import org.apache.qpid.amqp_1_0.type.Binary;
 import org.apache.qpid.amqp_1_0.type.Section;
+import org.apache.qpid.amqp_1_0.type.Symbol;
 import org.apache.qpid.amqp_1_0.type.messaging.*;
 import org.apache.qpid.amqp_1_0.type.messaging.Properties;
 
 import javax.jms.MessageNotWriteableException;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.*;
 
 public class ObjectMessageImpl extends MessageImpl implements ObjectMessage
 {
+    static final Symbol CONTENT_TYPE = Symbol.valueOf("application/x-java-serialized-object");
+
     private Serializable _object;
 
     protected ObjectMessageImpl(Header header,
                                 Properties properties,
-                                Footer footer,
                                 ApplicationProperties appProperties,
                                 Serializable object,
+                                Footer footer,
                                 SessionImpl session)
     {
         super(header, properties, appProperties, footer, session);
+        getProperties().setContentType(CONTENT_TYPE);
         _object = object;
     }
 
@@ -47,6 +55,7 @@ public class ObjectMessageImpl extends MessageImpl implements ObjectMessage
     {
         super(new Header(), new Properties(), new ApplicationProperties(new HashMap()), new Footer(Collections.EMPTY_MAP),
               session);
+        getProperties().setContentType(CONTENT_TYPE);
     }
 
     public void setObject(final Serializable serializable) throws MessageNotWriteableException
@@ -67,8 +76,22 @@ public class ObjectMessageImpl extends MessageImpl implements ObjectMessage
         sections.add(getHeader());
         sections.add(getProperties());
         sections.add(getApplicationProperties());
-        AmqpValue section = new AmqpValue(_object);
-        sections.add(section);
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try
+        {
+            ObjectOutputStream oos = new ObjectOutputStream(baos);
+            oos.writeObject(_object);
+            oos.flush();
+            oos.close();
+            sections.add(new Data(new Binary(baos.toByteArray())));
+
+        }
+        catch (IOException e)
+        {
+            e.printStackTrace();  //TODO
+        }
+
         sections.add(getFooter());
         return sections;
     }
