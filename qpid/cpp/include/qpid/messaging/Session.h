@@ -62,6 +62,12 @@ class QPID_MESSAGING_CLASS_EXTERN Session : public qpid::messaging::Handle<Sessi
      */
     QPID_MESSAGING_EXTERN void close();
 
+    /**
+     * Commits the sessions transaction.
+     *
+     * @exception TransactionAborted if the original session is lost
+     * forcing an automatic rollback.
+     */
     QPID_MESSAGING_EXTERN void commit();
     QPID_MESSAGING_EXTERN void rollback();
 
@@ -139,25 +145,51 @@ class QPID_MESSAGING_CLASS_EXTERN Session : public qpid::messaging::Handle<Sessi
     /**
      * Create a new sender through which messages can be sent to the
      * specified address.
+     *
+     * @exception ResolutionError if there is an error in resolving
+     * the address
      */
     QPID_MESSAGING_EXTERN Sender createSender(const Address& address);
+    /**
+     * Create a new sender through which messages can be sent to the
+     * specified address.
+     *
+     * @exception ResolutionError if there is an error in resolving
+     * the address
+     *
+     * @exception MalformedAddress if the syntax of address is not
+     * valid
+     */
     QPID_MESSAGING_EXTERN Sender createSender(const std::string& address);
 
     /**
      * Create a new receiver through which messages can be received
      * from the specified address.
+     *
+     * @exception ResolutionError if there is an error in resolving
+     * the address
      */
     QPID_MESSAGING_EXTERN Receiver createReceiver(const Address& address);
+    /**
+     * Create a new receiver through which messages can be received
+     * from the specified address.
+     *
+     * @exception ResolutionError if there is an error in resolving
+     * the address
+     *
+     * @exception MalformedAddress if the syntax of address is not
+     * valid
+     */
     QPID_MESSAGING_EXTERN Receiver createReceiver(const std::string& address);
 
     /**
      * Returns the sender with the specified name.
-     *@exception KeyError if there is none for that name.
+     * @exception KeyError if there is none for that name.
      */
     QPID_MESSAGING_EXTERN Sender getSender(const std::string& name) const;
     /**
      * Returns the receiver with the specified name.
-     *@exception KeyError if there is none for that name.
+     * @exception KeyError if there is none for that name.
      */
     QPID_MESSAGING_EXTERN Receiver getReceiver(const std::string& name) const;
     /**
@@ -166,7 +198,16 @@ class QPID_MESSAGING_CLASS_EXTERN Session : public qpid::messaging::Handle<Sessi
      */
     QPID_MESSAGING_EXTERN Connection getConnection() const;
 
+    /**
+     * @returns true if the session has been rendered invalid by some
+     * exception, false if it is valid for use.
+     */
     QPID_MESSAGING_EXTERN bool hasError();
+    /**
+     * If the session has been rendered invalid by some exception,
+     * this method will result in that exception being thrown on
+     * calling this method.
+     */
     QPID_MESSAGING_EXTERN void checkError();
 
 #ifndef SWIG
