@@ -82,3 +82,14 @@ org.apache.qpid.test.client.QueueBrowserTransactedTest#testFailoverWithQueueBrow
 org.apache.qpid.test.client.timeouts.SyncWaitTimeoutDelayTest#*
 org.apache.qpid.test.client.timeouts.SyncWaitDelayTest#*
 
+//QPID-3468: exclude QueueBrowser related failover tests
+org.apache.qpid.test.client.QueueBrowserAutoAckTest#testFailoverWithQueueBrowser
+org.apache.qpid.test.client.QueueBrowserAutoAckTest#testFailoverAsQueueBrowserCreated
+org.apache.qpid.test.client.QueueBrowserClientAckTest#testFailoverWithQueueBrowser
+org.apache.qpid.test.client.QueueBrowserClientAckTest#testFailoverAsQueueBrowserCreated
+org.apache.qpid.test.client.QueueBrowserNoAckTest#testFailoverWithQueueBrowser
+org.apache.qpid.test.client.QueueBrowserNoAckTest#testFailoverAsQueueBrowserCreated
+org.apache.qpid.test.client.QueueBrowserPreAckTest#testFailoverWithQueueBrowser
+org.apache.qpid.test.client.QueueBrowserPreAckTest#testFailoverAsQueueBrowserCreated
+org.apache.qpid.test.client.QueueBrowserDupsOkTest#testFailoverWithQueueBrowser
+org.apache.qpid.test.client.QueueBrowserDupsOkTest#testFailoverAsQueueBrowserCreated
