@@ -55,6 +55,7 @@ class ExchangeRegistry{
        const qpid::framing::FieldTable& args = framing::FieldTable());
     QPID_BROKER_EXTERN void destroy(const std::string& name);
     QPID_BROKER_EXTERN Exchange::shared_ptr get(const std::string& name);
+    QPID_BROKER_EXTERN Exchange::shared_ptr find(const std::string& name);
     Exchange::shared_ptr getDefault();
 
     /**

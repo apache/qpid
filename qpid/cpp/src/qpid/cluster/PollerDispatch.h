@@ -41,6 +41,7 @@ class PollerDispatch  {
     ~PollerDispatch();
 
     void start();
+    void stop();
 
   private:
     // Poller callbacks

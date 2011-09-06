@@ -10,9 +10,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -38,7 +38,7 @@ extern "C" {
 #  include <corosync/cpg.h>
 #else
 #  error "No cpg.h header file available"
-#endif    
+#endif
 }
 
 namespace qpid {
@@ -78,6 +78,9 @@ struct ConnectionId : public std::pair<MemberId, uint64_t>  {
 std::ostream& operator<<(std::ostream&, const ConnectionId&);
 
 std::ostream& operator<<(std::ostream&, EventType);
+
+/** Number to identify a message being routed. */
+typedef uint32_t RoutingId;
 
 }} // namespace qpid::cluster
 

@@ -401,17 +401,25 @@ class Cluster:
 
     _cluster_count = 0
 
-    def __init__(self, test, count=0, args=[], expect=EXPECT_RUNNING, wait=True, show_cmd=False):
+    def __init__(self, test, count=0, args=[], expect=EXPECT_RUNNING, wait=True,
+                 cluster2=False, show_cmd=False):
+        if cluster2:
+            cluster_name = "--cluster2-name"
+            cluster_lib = BrokerTest.cluster2_lib
+        else:
+            cluster_name = "--cluster-name"
+            cluster_lib = BrokerTest.cluster_lib
         self.test = test
         self._brokers=[]
         self.name = "cluster%d" % Cluster._cluster_count
         Cluster._cluster_count += 1
         # Use unique cluster name
         self.args = copy(args)
-        self.args += [ "--cluster-name", "%s-%s:%d" % (self.name, socket.gethostname(), os.getpid()) ]
+        self.args += [ cluster_name,
+                       "%s-%s:%d" % (self.name, socket.gethostname(), os.getpid()) ]
         self.args += [ "--log-enable=info+", "--log-enable=debug+:cluster"]
-        assert BrokerTest.cluster_lib, "Cannot locate cluster plug-in"
-        self.args += [ "--load-module", BrokerTest.cluster_lib ]
+        assert cluster_lib, "Cannot locate cluster plug-in"
+        self.args += [ "--load-module", cluster_lib ]
         self.start_n(count, expect=expect, wait=wait, show_cmd=show_cmd)
 
     def start(self, name=None, expect=EXPECT_RUNNING, wait=True, args=[], port=0, show_cmd=False):
@@ -440,6 +448,7 @@ class BrokerTest(TestCase):
     # Environment settings.
     qpidd_exec = os.path.abspath(checkenv("QPIDD_EXEC"))
     cluster_lib = os.getenv("CLUSTER_LIB")
+    cluster2_lib = os.getenv("CLUSTER2_LIB")
     xml_lib = os.getenv("XML_LIB")
     qpid_config_exec = os.getenv("QPID_CONFIG_EXEC")
     qpid_route_exec = os.getenv("QPID_ROUTE_EXEC")
@@ -490,9 +499,11 @@ class BrokerTest(TestCase):
                 raise RethrownException("Failed to start broker %s(%s): %s" % (b.name, b.log, e))
         return b
 
-    def cluster(self, count=0, args=[], expect=EXPECT_RUNNING, wait=True, show_cmd=False):
+    def cluster(self, count=0, args=[], expect=EXPECT_RUNNING, wait=True, cluster2=False,
+                show_cmd=False):
         """Create and return a cluster ready for use"""
-        cluster = Cluster(self, count, args, expect=expect, wait=wait, show_cmd=show_cmd)
+        cluster = Cluster(self, count, args, expect=expect, wait=wait, cluster2=cluster2,
+                          show_cmd=show_cmd)
         return cluster
 
     def browse(self, session, queue, timeout=0):

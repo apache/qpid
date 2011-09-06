@@ -101,6 +101,30 @@ cluster_la_LIBADD=  -lcpg $(libcman) libqpidbroker.la libqpidclient.la
 cluster_la_CXXFLAGS = $(AM_CXXFLAGS) -fno-strict-aliasing
 cluster_la_LDFLAGS = $(PLUGINLDFLAGS)
 
+# Experimental new cluster plugin
+dmodule_LTLIBRARIES += cluster2.la
+cluster2_la_LIBADD = -lcpg libqpidbroker.la
+cluster2_la_LDFLAGS = $(PLUGINLDFLAGS)
+cluster2_la_SOURCES =				\
+	qpid/cluster/Cpg.cpp			\
+	qpid/cluster/Cpg.h			\
+	qpid/cluster/PollerDispatch.cpp		\
+	qpid/cluster/PollerDispatch.h		\
+	qpid/cluster/exp/BrokerHandler.cpp	\
+	qpid/cluster/exp/BrokerHandler.h	\
+	qpid/cluster/exp/Cluster2Plugin.cpp	\
+	qpid/cluster/exp/Core.cpp		\
+	qpid/cluster/exp/Core.h			\
+	qpid/cluster/exp/EventHandler.cpp	\
+	qpid/cluster/exp/EventHandler.h		\
+	qpid/cluster/exp/HandlerBase.cpp	\
+	qpid/cluster/exp/HandlerBase.h		\
+	qpid/cluster/exp/MessageHandler.cpp	\
+	qpid/cluster/exp/MessageHandler.h	\
+	qpid/cluster/exp/WiringHandler.cpp	\
+	qpid/cluster/exp/WiringHandler.h
+
+
 # The watchdog plugin and helper executable
 dmoduleexec_LTLIBRARIES += watchdog.la
 watchdog_la_SOURCES = qpid/cluster/WatchDogPlugin.cpp

@@ -20,6 +20,7 @@
  */
 
 #include "qpid/broker/Broker.h"
+#include "qpid/broker/Cluster.h"
 #include "qpid/broker/Queue.h"
 #include "qpid/broker/QueueEvents.h"
 #include "qpid/broker/Exchange.h"
@@ -152,6 +153,10 @@ void Queue::deliver(boost::intrusive_ptr<Message> msg){
     // Check for deferred delivery in a cluster.
     if (broker && broker->deferDelivery(name, msg))
         return;
+    // Same thing but for the new cluster interface.
+    if (broker && !broker->getCluster().enqueue(*this, msg))
+        return;
+
     if (msg->isImmediate() && getConsumerCount() == 0) {
         if (alternateExchange) {
             DeliverableMessage deliverable(msg);
@@ -221,16 +226,33 @@ void Queue::requeue(const QueuedMessage& msg){
             }
         }
     }
+    if (broker) broker->getCluster().release(msg);
     copy.notify();
 }
 
+// Inform the cluster of an acquired message on exit from a function
+// that does the acquiring. ClusterAcquireOnExit is declared *before*
+// any locks are taken. The calling function sets qmsg to the acquired
+// message with a lock held, but the call to Cluster::acquire() will
+// be outside the lock.
+struct ClusterAcquireOnExit {
+    Broker* broker;
+    QueuedMessage qmsg;
+    ClusterAcquireOnExit(Broker* b) : broker(b) {}
+    ~ClusterAcquireOnExit() {
+        if (broker && qmsg.queue) broker->getCluster().acquire(qmsg);
+    }
+};
+
 bool Queue::acquireMessageAt(const SequenceNumber& position, QueuedMessage& message)
 {
+    ClusterAcquireOnExit willAcquire(broker); // Outside lock
     Mutex::ScopedLock locker(messageLock);
     assertClusterSafe();
     QPID_LOG(debug, "Attempting to acquire message at " << position);
     if (messages->remove(position, message)) {
         QPID_LOG(debug, "Acquired message at " << position << " from " << name);
+        willAcquire.qmsg = message;
         return true;
     } else {
         QPID_LOG(debug, "Could not acquire message at " << position << " from " << name << "; no message at that position");
@@ -277,6 +299,7 @@ bool Queue::getNextMessage(QueuedMessage& m, Consumer::shared_ptr c)
 Queue::ConsumeCode Queue::consumeNextMessage(QueuedMessage& m, Consumer::shared_ptr c)
 {
     while (true) {
+        ClusterAcquireOnExit willAcquire(broker); // Outside the lock
         Mutex::ScopedLock locker(messageLock);
         if (messages->empty()) {
             QPID_LOG(debug, "No messages to dispatch on queue '" << name << "'");
@@ -293,6 +316,7 @@ Queue::ConsumeCode Queue::consumeNextMessage(QueuedMessage& m, Consumer::shared_
             if (c->filter(msg.payload)) {
                 if (c->accept(msg.payload)) {
                     m = msg;
+                    willAcquire.qmsg = msg;
                     pop();
                     return CONSUMED;
                 } else {
@@ -377,42 +401,51 @@ QueuedMessage Queue::find(SequenceNumber pos) const {
     return msg;
 }
 
-void Queue::consume(Consumer::shared_ptr c, bool requestExclusive){
+void Queue::consume(Consumer::shared_ptr c, bool requestExclusive) {
     assertClusterSafe();
-    Mutex::ScopedLock locker(consumerLock);
-    if(exclusive) {
-        throw ResourceLockedException(
-            QPID_MSG("Queue " << getName() << " has an exclusive consumer. No more consumers allowed."));
-    } else if(requestExclusive) {
-        if(consumerCount) {
+    size_t consumers;
+    {
+        Mutex::ScopedLock locker(consumerLock);
+        if(exclusive) {
             throw ResourceLockedException(
-                QPID_MSG("Queue " << getName() << " already has consumers. Exclusive access denied."));
-        } else {
-            exclusive = c->getSession();
+                QPID_MSG("Queue " << getName() << " has an exclusive consumer. No more consumers allowed."));
+        } else if(requestExclusive) {
+            if(consumerCount) {
+                throw ResourceLockedException(
+                    QPID_MSG("Queue " << getName() << " already has consumers. Exclusive access denied."));
+            } else {
+                exclusive = c->getSession();
+            }
         }
+        consumers = ++consumerCount;
     }
-    consumerCount++;
     if (mgmtObject != 0)
         mgmtObject->inc_consumerCount ();
     //reset auto deletion timer if necessary
     if (autoDeleteTimeout && autoDeleteTask) {
         autoDeleteTask->cancel();
     }
+    if (broker) broker->getCluster().consume(*this, consumers);
 }
 
 void Queue::cancel(Consumer::shared_ptr c){
     removeListener(c);
-    Mutex::ScopedLock locker(consumerLock);
-    consumerCount--;
-    if(exclusive) exclusive = 0;
-    if (mgmtObject != 0)
-        mgmtObject->dec_consumerCount ();
+    size_t consumers;
+    {
+        Mutex::ScopedLock locker(consumerLock);
+        consumers = --consumerCount;
+        if(exclusive) exclusive = 0;
+        if (mgmtObject != 0)
+            mgmtObject->dec_consumerCount ();
+    }
+    if (broker) broker->getCluster().cancel(*this, consumers);
 }
 
 QueuedMessage Queue::get(){
+    ClusterAcquireOnExit willAcquire(broker); // Outside lock
     Mutex::ScopedLock locker(messageLock);
     QueuedMessage msg(this);
-    messages->pop(msg);
+    if (messages->pop(msg)) willAcquire.qmsg = msg;
     return msg;
 }
 
@@ -519,6 +552,7 @@ void Queue::pop()
 
 void Queue::push(boost::intrusive_ptr<Message>& msg, bool isRecovery){
     assertClusterSafe();
+    QueuedMessage qm;
     QueueListeners::NotificationSet copy;
     QueuedMessage removed;
     bool dequeueRequired = false;
@@ -658,7 +692,6 @@ bool Queue::dequeue(TransactionContext* ctxt, const QueuedMessage& msg)
 {
     ScopedUse u(barrier);
     if (!u.acquired) return false;
-
     {
         Mutex::ScopedLock locker(messageLock);
         if (!isEnqueued(msg)) return false;
@@ -666,6 +699,7 @@ bool Queue::dequeue(TransactionContext* ctxt, const QueuedMessage& msg)
             dequeued(msg);
         }
     }
+    if (!ctxt && broker) broker->getCluster().dequeue(msg); // Outside lock
     // This check prevents messages which have been forced persistent on one queue from dequeuing
     // from another on which no forcing has taken place and thus causing a store error.
     bool fp = msg.payload->isForcedPersistent();
@@ -682,6 +716,7 @@ bool Queue::dequeue(TransactionContext* ctxt, const QueuedMessage& msg)
 
 void Queue::dequeueCommitted(const QueuedMessage& msg)
 {
+    if (broker) broker->getCluster().dequeue(msg); // Outside lock
     Mutex::ScopedLock locker(messageLock);
     dequeued(msg);
     if (mgmtObject != 0) {
@@ -726,6 +761,7 @@ void Queue::create(const FieldTable& _settings)
         store->create(*this, _settings);
     }
     configureImpl(_settings);
+    if (broker) broker->getCluster().create(*this);
 }
 
 
@@ -848,6 +884,7 @@ void Queue::destroyed()
     }
     if (autoDeleteTask) autoDeleteTask = boost::intrusive_ptr<TimerTask>();
     notifyDeleted();
+    if (broker) broker->getCluster().destroy(*this);
 }
 
 void Queue::notifyDeleted()

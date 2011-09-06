@@ -25,6 +25,7 @@
 #include "qpid/broker/FanOutExchange.h"
 #include "qpid/broker/HeadersExchange.h"
 #include "qpid/broker/MessageStoreModule.h"
+#include "qpid/broker/NullCluster.h"
 #include "qpid/broker/NullMessageStore.h"
 #include "qpid/broker/RecoveryManagerImpl.h"
 #include "qpid/broker/SaslAuthenticator.h"
@@ -176,6 +177,7 @@ Broker::Broker(const Broker::Options& conf) :
                                                           conf.qmf2Support)
                                     : 0),
     store(new NullMessageStore),
+    cluster(new NullCluster),
     acl(0),
     dataDir(conf.noDataDir ? std::string() : conf.dataDir),
     queues(this),
@@ -757,7 +759,6 @@ void Broker::setClusterTimer(std::auto_ptr<sys::Timer> t) {
 
 const std::string Broker::TCP_TRANSPORT("tcp");
 
-
 std::pair<boost::shared_ptr<Queue>, bool> Broker::createQueue(
     const std::string& name,
     bool durable,
@@ -811,10 +812,11 @@ std::pair<boost::shared_ptr<Queue>, bool> Broker::createQueue(
 void Broker::deleteQueue(const std::string& name, const std::string& userId,
                          const std::string& connectionId, QueueFunctor check)
 {
-    if (acl && !acl->authorise(userId,acl::ACT_DELETE,acl::OBJ_QUEUE,name,NULL)) {
-        throw framing::UnauthorizedAccessException(QPID_MSG("ACL denied queue delete request from " << userId));
+    if ((userId.size() || connectionId.size()) && // Skip ACL check if ID is empty.
+        acl && !acl->authorise(userId,acl::ACT_DELETE,acl::OBJ_QUEUE,name,NULL)) {
+            throw framing::UnauthorizedAccessException(
+                QPID_MSG("ACL denied queue delete request from " << userId));
     }
-
     Queue::shared_ptr queue = queues.find(name);
     if (queue) {
         if (check) check(queue);
@@ -878,6 +880,7 @@ std::pair<Exchange::shared_ptr, bool> Broker::createExchange(
                                                          ManagementAgent::toMap(arguments),
                                                          "created"));
         }
+        getCluster().create(*result.first);
     }
     return result;
 }
@@ -885,8 +888,8 @@ std::pair<Exchange::shared_ptr, bool> Broker::createExchange(
 void Broker::deleteExchange(const std::string& name, const std::string& userId,
                            const std::string& connectionId)
 {
-    if (acl) {
-        if (!acl->authorise(userId,acl::ACT_DELETE,acl::OBJ_EXCHANGE,name,NULL) )
+    if ((userId.size() || connectionId.size()) && // Skip ACL check if ID is empty.
+        acl && !acl->authorise(userId,acl::ACT_DELETE,acl::OBJ_EXCHANGE,name,NULL)) {
             throw framing::UnauthorizedAccessException(QPID_MSG("ACL denied exchange delete request from " << userId));
     }
 
@@ -902,7 +905,7 @@ void Broker::deleteExchange(const std::string& name, const std::string& userId,
 
     if (managementAgent.get())
         managementAgent->raiseEvent(_qmf::EventExchangeDelete(connectionId, userId, name));
-
+    getCluster().destroy(*exchange);
 }
 
 void Broker::bind(const std::string& queueName,
@@ -937,6 +940,7 @@ void Broker::bind(const std::string& queueName,
                                                   queueName, key, ManagementAgent::toMap(arguments)));
             }
         }
+        getCluster().bind(*queue, *exchange, key, arguments);
     }
 }
 
@@ -965,14 +969,19 @@ void Broker::unbind(const std::string& queueName,
     } else {
         if (exchange->unbind(queue, key, 0)) {
             if (exchange->isDurable() && queue->isDurable()) {
-                store->unbind(*exchange, *queue, key, qpid::framing::FieldTable());
+                store->unbind(*exchange, *queue, key, framing::FieldTable());
             }
             if (managementAgent.get()) {
                 managementAgent->raiseEvent(_qmf::EventUnbind(connectionId, userId, exchangeName, queueName, key));
             }
+            getCluster().unbind(*queue, *exchange, key, framing::FieldTable());
         }
     }
 }
+
+void Broker::setCluster(std::auto_ptr<Cluster> c) { cluster = c; }
+
+Cluster& Broker::getCluster() { return *cluster; }
 
 }} // namespace qpid::broker
 

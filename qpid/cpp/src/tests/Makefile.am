@@ -25,7 +25,7 @@ QMF_GEN=$(top_srcdir)/managementgen/qmf-gen
 abs_builddir=@abs_builddir@
 abs_srcdir=@abs_srcdir@
 
-extra_libs = 
+extra_libs =
 lib_client = $(abs_builddir)/../libqpidclient.la
 lib_messaging = $(abs_builddir)/../libqpidmessaging.la
 lib_common = $(abs_builddir)/../libqpidcommon.la
@@ -36,7 +36,7 @@ lib_qmf2 = $(abs_builddir)/../libqmf2.la
 
 #
 # Initialize variables that are incremented with +=
-# 
+#
 check_PROGRAMS=
 check_LTLIBRARIES=
 TESTS=
@@ -61,9 +61,9 @@ tmodule_LTLIBRARIES=
 # Unit test program
 #
 # Unit tests are built as a single program to reduce valgrind overhead
-# when running the tests. If you want to build a subset of the tests do 
+# when running the tests. If you want to build a subset of the tests do
 #   rm -f unit_test; make unit_test unit_test_OBJECTS="unit_test.o SelectedTest.o"
-# 
+#
 
 TESTS+=unit_test
 check_PROGRAMS+=unit_test
@@ -124,7 +124,8 @@ unit_test_SOURCES= unit_test.cpp unit_test.h \
 	Variant.cpp \
 	Address.cpp \
 	ClientMessage.cpp \
-	Qmf2.cpp
+	Qmf2.cpp \
+	BrokerClusterCalls.cpp
 
 if HAVE_XML
 unit_test_SOURCES+= XmlClientSessionTest.cpp
@@ -188,32 +189,32 @@ qpid_send_LDADD = $(lib_messaging)
 qpidtest_PROGRAMS+=qpid-perftest
 qpid_perftest_SOURCES=qpid-perftest.cpp test_tools.h TestOptions.h ConnectionOptions.h
 qpid_perftest_INCLUDES=$(PUBLIC_INCLUDES)
-qpid_perftest_LDADD=$(lib_client) 
+qpid_perftest_LDADD=$(lib_client)
 
 qpidtest_PROGRAMS+=qpid-txtest
 qpid_txtest_INCLUDES=$(PUBLIC_INCLUDES)
 qpid_txtest_SOURCES=qpid-txtest.cpp  TestOptions.h ConnectionOptions.h
-qpid_txtest_LDADD=$(lib_client) 
+qpid_txtest_LDADD=$(lib_client)
 
 qpidtest_PROGRAMS+=qpid-latency-test
 qpid_latency_test_INCLUDES=$(PUBLIC_INCLUDES)
 qpid_latency_test_SOURCES=qpid-latency-test.cpp TestOptions.h ConnectionOptions.h
-qpid_latency_test_LDADD=$(lib_client) 
+qpid_latency_test_LDADD=$(lib_client)
 
 qpidtest_PROGRAMS+=qpid-client-test
 qpid_client_test_INCLUDES=$(PUBLIC_INCLUDES)
 qpid_client_test_SOURCES=qpid-client-test.cpp TestOptions.h ConnectionOptions.h
-qpid_client_test_LDADD=$(lib_client) 
+qpid_client_test_LDADD=$(lib_client)
 
 qpidtest_PROGRAMS+=qpid-topic-listener
 qpid_topic_listener_INCLUDES=$(PUBLIC_INCLUDES)
 qpid_topic_listener_SOURCES=qpid-topic-listener.cpp TestOptions.h ConnectionOptions.h
-qpid_topic_listener_LDADD=$(lib_client) 
+qpid_topic_listener_LDADD=$(lib_client)
 
 qpidtest_PROGRAMS+=qpid-topic-publisher
 qpid_topic_publisher_INCLUDES=$(PUBLIC_INCLUDES)
 qpid_topic_publisher_SOURCES=qpid-topic-publisher.cpp TestOptions.h ConnectionOptions.h
-qpid_topic_publisher_LDADD=$(lib_client) 
+qpid_topic_publisher_LDADD=$(lib_client)
 
 qpidtest_PROGRAMS+=qpid-ping
 qpid_ping_INCLUDES=$(PUBLIC_INCLUDES)
@@ -232,17 +233,17 @@ echotest_LDADD=$(lib_client)
 check_PROGRAMS+=publish
 publish_INCLUDES=$(PUBLIC_INCLUDES)
 publish_SOURCES=publish.cpp TestOptions.h ConnectionOptions.h
-publish_LDADD=$(lib_client) 
+publish_LDADD=$(lib_client)
 
 check_PROGRAMS+=consume
 consume_INCLUDES=$(PUBLIC_INCLUDES)
 consume_SOURCES=consume.cpp  TestOptions.h ConnectionOptions.h
-consume_LDADD=$(lib_client) 
+consume_LDADD=$(lib_client)
 
 check_PROGRAMS+=header_test
 header_test_INCLUDES=$(PUBLIC_INCLUDES)
 header_test_SOURCES=header_test.cpp TestOptions.h ConnectionOptions.h
-header_test_LDADD=$(lib_client) 
+header_test_LDADD=$(lib_client)
 
 check_PROGRAMS+=failover_soak
 failover_soak_INCLUDES=$(PUBLIC_INCLUDES)
@@ -251,28 +252,28 @@ failover_soak_LDADD=$(lib_client) $(lib_broker)
 
 check_PROGRAMS+=declare_queues
 declare_queues_INCLUDES=$(PUBLIC_INCLUDES)
-declare_queues_SOURCES=declare_queues.cpp  
-declare_queues_LDADD=$(lib_client) 
+declare_queues_SOURCES=declare_queues.cpp
+declare_queues_LDADD=$(lib_client)
 
 check_PROGRAMS+=replaying_sender
 replaying_sender_INCLUDES=$(PUBLIC_INCLUDES)
-replaying_sender_SOURCES=replaying_sender.cpp  
-replaying_sender_LDADD=$(lib_client) 
+replaying_sender_SOURCES=replaying_sender.cpp
+replaying_sender_LDADD=$(lib_client)
 
 check_PROGRAMS+=resuming_receiver
 resuming_receiver_INCLUDES=$(PUBLIC_INCLUDES)
-resuming_receiver_SOURCES=resuming_receiver.cpp  
-resuming_receiver_LDADD=$(lib_client) 
+resuming_receiver_SOURCES=resuming_receiver.cpp
+resuming_receiver_LDADD=$(lib_client)
 
 check_PROGRAMS+=txshift
 txshift_INCLUDES=$(PUBLIC_INCLUDES)
 txshift_SOURCES=txshift.cpp  TestOptions.h ConnectionOptions.h
-txshift_LDADD=$(lib_client) 
+txshift_LDADD=$(lib_client)
 
 check_PROGRAMS+=txjob
 txjob_INCLUDES=$(PUBLIC_INCLUDES)
 txjob_SOURCES=txjob.cpp  TestOptions.h ConnectionOptions.h
-txjob_LDADD=$(lib_client) 
+txjob_LDADD=$(lib_client)
 
 check_PROGRAMS+=PollerTest
 PollerTest_SOURCES=PollerTest.cpp
@@ -295,7 +296,7 @@ TESTS_ENVIRONMENT = \
     VALGRIND=$(VALGRIND) \
     LIBTOOL="$(LIBTOOL)" \
     QPID_DATA_DIR= \
-    $(srcdir)/run_test 
+    $(srcdir)/run_test
 
 system_tests = qpid-client-test quick_perftest quick_topictest run_header_test quick_txtest
 TESTS += start_broker $(system_tests) python_tests stop_broker run_federation_tests run_federation_sys_tests \
@@ -342,7 +343,8 @@ EXTRA_DIST +=								\
   start_broker.ps1							\
   stop_broker.ps1							\
   topictest.ps1                                                         \
-  run_queue_flow_limit_tests
+  run_queue_flow_limit_tests						\
+  run_cluster_authentication_test
 
 check_LTLIBRARIES += libdlclose_noop.la
 libdlclose_noop_la_LDFLAGS = -module -rpath $(abs_builddir)
@@ -366,6 +368,7 @@ EXTRA_DIST+=						\
 	run_failover_soak				\
 	reliable_replication_test			\
 	federated_cluster_test_with_node_failure        \
+        run_cluster_authentication_soak			\
 	sasl_test_setup.sh
 
 check-long:
