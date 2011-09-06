@@ -42,6 +42,8 @@ class HandlerBase
     virtual ~HandlerBase();
 
     virtual bool invoke(const framing::AMQBody& body) = 0;
+    virtual void left(const MemberId&) {}
+    virtual void joined(const MemberId&) {}
 
   protected:
     EventHandler& eventHandler;
