@@ -63,7 +63,7 @@ public class Main
             {
                 execute();
             }
-            catch(Exception e)
+            catch(Throwable e)
             {
                 System.err.println("Exception during startup: " + e);
                 e.printStackTrace();
