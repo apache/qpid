@@ -23,11 +23,15 @@
  */
 
 #include "BufferFactory.h"
-#include "qpid/framing/AMQDataBlock.h"
 #include "qpid/sys/PollableQueue.h"
 #include <sys/uio.h>            // For struct iovec
 
 namespace qpid {
+
+namespace framing {
+class AMQDataBlock;
+class AMQBody;
+}
 
 namespace sys {
 class Poller;
@@ -50,6 +54,7 @@ class Multicaster
 
     /** Multicast an event */
     void mcast(const framing::AMQDataBlock&);
+    void mcast(const framing::AMQBody&);
 
   private:
     typedef sys::PollableQueue<BufferRef> PollableEventQueue;

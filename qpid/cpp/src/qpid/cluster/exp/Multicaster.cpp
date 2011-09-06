@@ -22,6 +22,9 @@
 #include "Multicaster.h"
 #include "qpid/cluster/Cpg.h"
 #include "qpid/log/Statement.h"
+#include "qpid/framing/AMQBody.h"
+#include "qpid/framing/AMQDataBlock.h"
+#include "qpid/framing/AMQFrame.h"
 
 namespace qpid {
 namespace cluster {
@@ -53,6 +56,11 @@ void Multicaster::mcast(const framing::AMQDataBlock& data) {
     framing::Buffer buf(bufRef.begin(), bufRef.size());
     data.encode(buf);
     queue.push(bufRef);
+}
+
+void Multicaster::mcast(const framing::AMQBody& body) {
+    framing::AMQFrame f(body);
+    mcast(f);
 }
 
 Multicaster::PollableEventQueue::Batch::const_iterator
