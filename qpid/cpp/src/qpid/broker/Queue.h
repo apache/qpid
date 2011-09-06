@@ -133,9 +133,9 @@ class Queue : public boost::enable_shared_from_this<Queue>,
 
     void push(boost::intrusive_ptr<Message>& msg, bool isRecovery=false);
     void setPolicy(std::auto_ptr<QueuePolicy> policy);
-    bool getNextMessage(QueuedMessage& msg, Consumer::shared_ptr c);
-    ConsumeCode consumeNextMessage(QueuedMessage& msg, Consumer::shared_ptr c);
-    bool browseNextMessage(QueuedMessage& msg, Consumer::shared_ptr c);
+    bool getNextMessage(QueuedMessage& msg, Consumer::shared_ptr& c);
+    ConsumeCode consumeNextMessage(QueuedMessage& msg, Consumer::shared_ptr& c);
+    bool browseNextMessage(QueuedMessage& msg, Consumer::shared_ptr& c);
     void notifyListener();
 
     void removeListener(Consumer::shared_ptr);

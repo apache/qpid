@@ -108,7 +108,7 @@ class MessageAllocator
      * @param next set to the next message that the consumer may acquire.
      * @return true if message is available
      */
-    virtual bool nextConsumableMessage( Consumer::shared_ptr, QueuedMessage& next,
+    virtual bool nextConsumableMessage( Consumer::shared_ptr&, QueuedMessage& next,
                                         const Mutex::ScopedLock&)
     {
         Messages& messages(queue->getMessages());
@@ -122,7 +122,7 @@ class MessageAllocator
      * @param next set to the next message that the consumer may browse.
      * @return true if a message is available
      */
-    virtual bool nextBrowsableMessage( Consumer::shared_ptr c, QueuedMessage& next,
+    virtual bool nextBrowsableMessage( Consumer::shared_ptr& c, QueuedMessage& next,
                                        const Mutex::ScopedLock&)
     {
         Messages& messages(queue->getMessages());
@@ -216,7 +216,7 @@ class MessageGroupManager : public QueueObserver, public MessageAllocator
     void dequeued( const QueuedMessage& qm );
     void consumerAdded( const Consumer& );
     void consumerRemoved( const Consumer& );
-    bool nextConsumableMessage( Consumer::shared_ptr c, QueuedMessage& next,
+    bool nextConsumableMessage( Consumer::shared_ptr& c, QueuedMessage& next,
                                 const Mutex::ScopedLock&);
     // uses default nextBrowsableMessage()
     bool acquireMessage(const std::string& consumer, const QueuedMessage& msg,
@@ -427,7 +427,7 @@ void Queue::notifyListener()
     set.notify();
 }
 
-bool Queue::getNextMessage(QueuedMessage& m, Consumer::shared_ptr c)
+bool Queue::getNextMessage(QueuedMessage& m, Consumer::shared_ptr& c)
 {
     checkNotDeleted();
     if (c->preAcquires()) {
@@ -445,7 +445,7 @@ bool Queue::getNextMessage(QueuedMessage& m, Consumer::shared_ptr c)
     }
 }
 
-Queue::ConsumeCode Queue::consumeNextMessage(QueuedMessage& m, Consumer::shared_ptr c)
+Queue::ConsumeCode Queue::consumeNextMessage(QueuedMessage& m, Consumer::shared_ptr& c)
 {
 
     while (true) {
@@ -492,7 +492,7 @@ Queue::ConsumeCode Queue::consumeNextMessage(QueuedMessage& m, Consumer::shared_
     }
 }
 
-bool Queue::browseNextMessage(QueuedMessage& m, Consumer::shared_ptr c)
+bool Queue::browseNextMessage(QueuedMessage& m, Consumer::shared_ptr& c)
 {
     while (true) {
         Mutex::ScopedLock locker(messageLock);
@@ -1733,7 +1733,7 @@ void MessageGroupManager::consumerRemoved( const Consumer& c )
 }
 
 
-bool MessageGroupManager::nextConsumableMessage( Consumer::shared_ptr c, QueuedMessage& next,
+bool MessageGroupManager::nextConsumableMessage( Consumer::shared_ptr& c, QueuedMessage& next,
                                                  const Mutex::ScopedLock& )
 {
     Messages& messages(queue->getMessages());
