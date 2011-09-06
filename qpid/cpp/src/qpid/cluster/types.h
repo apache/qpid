@@ -82,6 +82,16 @@ std::ostream& operator<<(std::ostream&, EventType);
 /** Number to identify a message being routed. */
 typedef uint32_t RoutingId;
 
+// FIXME aconway 2011-07-28: can we put these 2 back  in the
+// QueueReplica & QueueContext?
+/** State of a queue with respect to a cluster member. */
+enum QueueOwnership {
+    UNSUBSCRIBED,
+    SUBSCRIBED,
+    SOLE_OWNER,
+    SHARED_OWNER
+};
+
 }} // namespace qpid::cluster
 
 #endif  /*!QPID_CLUSTER_TYPES_H*/

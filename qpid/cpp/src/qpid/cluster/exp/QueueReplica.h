@@ -35,7 +35,6 @@ class Queue;
 }
 
 namespace cluster {
-class QueueHandler;
 class QueueContext;
 
 /**
@@ -56,15 +55,9 @@ class QueueReplica : public RefCounted
     void resubscribe(const MemberId&);
 
   private:
-    enum State {
-        UNSUBSCRIBED,
-        SUBSCRIBED,
-        SOLE_OWNER,
-        SHARED_OWNER
-    };
 
   friend class PrintSubscribers;
-  friend std::ostream& operator<<(std::ostream&, State);
+  friend std::ostream& operator<<(std::ostream&, QueueOwnership);
   friend std::ostream& operator<<(std::ostream&, const QueueReplica&);
 
     typedef std::deque<MemberId> MemberQueue;
@@ -74,10 +67,10 @@ class QueueReplica : public RefCounted
     MemberId self;
     boost::intrusive_ptr<QueueContext> context;
 
-    State getState() const;
+    QueueOwnership getState() const;
     bool isOwner() const;
     bool isSubscriber(const MemberId&) const;
-    void update(State before);
+    void update(QueueOwnership before);
 };
 
 }} // namespace qpid::cluster
