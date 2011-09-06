@@ -373,11 +373,18 @@ void Queue::removeListener(Consumer::shared_ptr c)
 
 bool Queue::dispatch(Consumer::shared_ptr c)
 {
-    QueuedMessage msg(this);
-    if (getNextMessage(msg, c)) {
-        c->deliver(msg);
-        return true;
-    } else {
+    Stoppable::Scope doDispatch(dispatching);
+    if (doDispatch) {
+        QueuedMessage msg(this);
+        if (getNextMessage(msg, c)) {
+            c->deliver(msg);
+            return true;
+        } else {
+            return false;
+        }
+    } else { // Dispatching is stopped
+        Mutex::ScopedLock locker(messageLock);
+        listeners.addListener(c); // FIXME aconway 2011-05-05:
         return false;
     }
 }
@@ -1264,4 +1271,14 @@ void Queue::UsageBarrier::destroy()
     Monitor::ScopedLock l(parent.messageLock);
     parent.deleted = true;
     while (count) parent.messageLock.wait();
+}
+
+// FIXME aconway 2011-05-06: naming - only affects consumers. stopDispatch()?
+void Queue::stop() {
+    dispatching.stop();
+}
+
+void Queue::start() {
+    dispatching.start();
+    notifyListener();
 }

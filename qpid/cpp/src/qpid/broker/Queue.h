@@ -36,6 +36,7 @@
 #include "qpid/framing/FieldTable.h"
 #include "qpid/sys/AtomicValue.h"
 #include "qpid/sys/Monitor.h"
+#include "qpid/sys/Stoppable.h"
 #include "qpid/sys/Timer.h"
 #include "qpid/management/Manageable.h"
 #include "qmf/org/apache/qpid/broker/Queue.h"
@@ -70,6 +71,7 @@ class Exchange;
 class Queue : public boost::enable_shared_from_this<Queue>,
               public PersistableQueue, public management::Manageable {
 
+    // Used to prevent destruction of the queue while it is in use.
     struct UsageBarrier
     {
         Queue& parent;
@@ -129,6 +131,8 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     UsageBarrier barrier;
     int autoDeleteTimeout;
     boost::intrusive_ptr<qpid::sys::TimerTask> autoDeleteTask;
+    // Allow dispatching consumer threads to be stopped.
+    sys::Stoppable dispatching;
 
     void push(boost::intrusive_ptr<Message>& msg, bool isRecovery=false);
     void setPolicy(std::auto_ptr<QueuePolicy> policy);
@@ -385,9 +389,21 @@ class Queue : public boost::enable_shared_from_this<Queue>,
 
     uint32_t getDequeueSincePurge() { return dequeueSincePurge.get(); }
     void setDequeueSincePurge(uint32_t value);
+
+    /** Stop consumers. Return when all consumer threads are stopped.
+     *@pre Queue is active and not already stopping.
+     */
+    void stop();
+
+    /** Start consumers.
+     *@pre Queue is stopped and idle: no thread in dispatch.
+     */
+    void start();
+
+    /** Context data attached and used by cluster code. */
+    boost::intrusive_ptr<qpid::RefCounted> clusterContext;
 };
-}
-}
+}} // qpid::broker
 
 
 #endif  /*!_broker_Queue_h*/

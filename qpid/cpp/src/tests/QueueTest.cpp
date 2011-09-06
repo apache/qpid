@@ -1,4 +1,4 @@
- /*
+/*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -41,6 +41,7 @@
 
 #include <iostream>
 #include "boost/format.hpp"
+#include <boost/enable_shared_from_this.hpp>
 
 using boost::intrusive_ptr;
 using namespace qpid;
@@ -57,16 +58,22 @@ public:
     typedef boost::shared_ptr<TestConsumer> shared_ptr;
 
     intrusive_ptr<Message> last;
-    bool received;
-    TestConsumer(bool acquire = true):Consumer(acquire), received(false) {};
+    bool received, notified;
+
+    TestConsumer(bool acquire = true):
+        Consumer(acquire), received(false), notified(false) {};
 
     virtual bool deliver(QueuedMessage& msg){
         last = msg.payload;
         received = true;
         return true;
     };
-    void notify() {}
+    void notify() {
+        notified = true;
+    }
+
     OwnershipToken* getSession() { return 0; }
+    void reset() { last = intrusive_ptr<Message>(); received = false; }
 };
 
 class FailOnDeliver : public Deliverable
@@ -1112,6 +1119,30 @@ QPID_AUTO_TEST_CASE(testFlowToDiskBlocking){
     BOOST_CHECK_EQUAL(5u, dq7->getMessageCount()); // over limit
     BOOST_CHECK_EQUAL(5u, dq8->getMessageCount()); // over limit
     BOOST_CHECK_EQUAL(5u, tq9->getMessageCount());
+}
+
+QPID_AUTO_TEST_CASE(testStopStart) {
+    boost::shared_ptr<Queue> q(new Queue("foo"));
+    boost::shared_ptr<TestConsumer> c(new TestConsumer);
+    intrusive_ptr<Message> m = create_message("x","y");
+    q->consume(c);
+    // Initially q is started.
+    q->deliver(m);
+    BOOST_CHECK(q->dispatch(c));
+    BOOST_CHECK(c->received);
+    c->reset();
+    // Stop q, should not receive message
+    q->stop();
+    q->deliver(m);
+    BOOST_CHECK(!q->dispatch(c));
+    BOOST_CHECK(!c->received);
+    BOOST_CHECK(!c->notified);
+    // Start q, should be notified and delivered
+    q->start();
+    q->deliver(m);
+    BOOST_CHECK(c->notified);
+    BOOST_CHECK(q->dispatch(c));
+    BOOST_CHECK(c->received);
 }
 
 
