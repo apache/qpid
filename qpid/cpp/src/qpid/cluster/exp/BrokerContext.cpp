@@ -20,17 +20,22 @@
  */
 
 #include "Core.h"
-#include "BrokerHandler.h"
+#include "BrokerContext.h"
+#include "QueueContext.h"
+#include "QueueHandler.h"
 #include "qpid/framing/ClusterMessageRoutingBody.h"
 #include "qpid/framing/ClusterMessageRoutedBody.h"
 #include "qpid/framing/ClusterMessageEnqueueBody.h"
+#include "qpid/framing/ClusterMessageAcquireBody.h"
 #include "qpid/framing/ClusterMessageDequeueBody.h"
+#include "qpid/framing/ClusterMessageReleaseBody.h"
 #include "qpid/framing/ClusterWiringCreateQueueBody.h"
 #include "qpid/framing/ClusterWiringCreateExchangeBody.h"
 #include "qpid/framing/ClusterWiringDestroyQueueBody.h"
 #include "qpid/framing/ClusterWiringDestroyExchangeBody.h"
 #include "qpid/framing/ClusterWiringBindBody.h"
 #include "qpid/framing/ClusterWiringUnbindBody.h"
+#include "qpid/framing/ClusterQueueSubscribeBody.h"
 #include "qpid/sys/Thread.h"
 #include "qpid/broker/QueuedMessage.h"
 #include "qpid/broker/Queue.h"
@@ -54,27 +59,28 @@ QPID_TSS bool tssNoReplicate = false;
 QPID_TSS RoutingId tssRoutingId = 0;
 }
 
-BrokerHandler::ScopedSuppressReplication::ScopedSuppressReplication() {
+BrokerContext::ScopedSuppressReplication::ScopedSuppressReplication() {
     assert(!tssNoReplicate);
     tssNoReplicate = true;
 }
 
-BrokerHandler::ScopedSuppressReplication::~ScopedSuppressReplication() {
+BrokerContext::ScopedSuppressReplication::~ScopedSuppressReplication() {
     assert(tssNoReplicate);
     tssNoReplicate = false;
 }
 
-BrokerHandler::BrokerHandler(Core& c) : core(c) {}
+BrokerContext::BrokerContext(Core& c, boost::intrusive_ptr<QueueHandler> q)
+    : core(c), queueHandler(q) {}
 
-RoutingId BrokerHandler::nextRoutingId() {
+RoutingId BrokerContext::nextRoutingId() {
     RoutingId id = ++routingId;
     if (id == 0) id = ++routingId; // Avoid 0 on wrap-around.
     return id;
 }
 
-void BrokerHandler::routing(const boost::intrusive_ptr<Message>&) { }
+void BrokerContext::routing(const boost::intrusive_ptr<Message>&) { }
 
-bool BrokerHandler::enqueue(Queue& queue, const boost::intrusive_ptr<Message>& msg)
+bool BrokerContext::enqueue(Queue& queue, const boost::intrusive_ptr<Message>& msg)
 {
     if (tssNoReplicate) return true;
     if (!tssRoutingId) {             // This is the first enqueue, so send the message
@@ -93,7 +99,7 @@ bool BrokerHandler::enqueue(Queue& queue, const boost::intrusive_ptr<Message>& m
     return false;
 }
 
-void BrokerHandler::routed(const boost::intrusive_ptr<Message>&) {
+void BrokerContext::routed(const boost::intrusive_ptr<Message>&) {
     if (tssRoutingId) {             // we enqueued at least one message.
         core.mcast(ClusterMessageRoutedBody(ProtocolVersion(), tssRoutingId));
         // Note: routingMap is cleaned up on CPG delivery in MessageHandler.
@@ -101,28 +107,45 @@ void BrokerHandler::routed(const boost::intrusive_ptr<Message>&) {
     }
 }
 
-void BrokerHandler::dequeue(const broker::QueuedMessage& qm) {
+void BrokerContext::acquire(const broker::QueuedMessage& qm) {
     if (tssNoReplicate) return;
-    // FIXME aconway 2010-10-28: we also need to delay completion of the
-    // ack that caused this dequeue until self-delivery of the mcast below.
+    QueueContext::get(*qm.queue)->acquire();
+    core.mcast(ClusterMessageAcquireBody(
+                   ProtocolVersion(), qm.queue->getName(), qm.position));
+}
+
+// FIXME aconway 2011-05-24: need to handle acquire and release.
+// Dequeue in the wrong place?
+void BrokerContext::dequeue(const broker::QueuedMessage& qm) {
+    if (tssNoReplicate) return;
     core.mcast(ClusterMessageDequeueBody(
                    ProtocolVersion(), qm.queue->getName(), qm.position));
 }
 
-void BrokerHandler::create(broker::Queue& q) {
-    if (tssNoReplicate) return;
+void BrokerContext::release(const broker::QueuedMessage& ) {
+    // FIXME aconway 2011-05-24: TODO
+}
+
+// FIXME aconway 2011-06-08: should be be using shared_ptr to q here?
+void BrokerContext::create(broker::Queue& q) {
+    if (tssNoReplicate) return; // FIXME aconway 2011-06-08: revisit
+    // FIXME aconway 2011-06-08: error handling- if already set...
+    // Create local context immediately, queue will be stopped until replicated.
+    boost::intrusive_ptr<QueueContext> context(
+        new QueueContext(q,core.getMulticaster()));
     std::string data(q.encodedSize(), '\0');
     framing::Buffer buf(&data[0], data.size());
     q.encode(buf);
     core.mcast(ClusterWiringCreateQueueBody(ProtocolVersion(), data));
+    QPID_LOG(critical, "FIXME BrokerContext create " << q.getName() << q.getClusterContext().get());
 }
 
-void BrokerHandler::destroy(broker::Queue& q) {
+void BrokerContext::destroy(broker::Queue& q) {
     if (tssNoReplicate) return;
     core.mcast(ClusterWiringDestroyQueueBody(ProtocolVersion(), q.getName()));
 }
 
-void BrokerHandler::create(broker::Exchange& ex) {
+void BrokerContext::create(broker::Exchange& ex) {
     if (tssNoReplicate) return;
     std::string data(ex.encodedSize(), '\0');
     framing::Buffer buf(&data[0], data.size());
@@ -130,12 +153,12 @@ void BrokerHandler::create(broker::Exchange& ex) {
     core.mcast(ClusterWiringCreateExchangeBody(ProtocolVersion(), data));
 }
 
-void BrokerHandler::destroy(broker::Exchange& ex) {
+void BrokerContext::destroy(broker::Exchange& ex) {
     if (tssNoReplicate) return;
     core.mcast(ClusterWiringDestroyExchangeBody(ProtocolVersion(), ex.getName()));
 }
 
-void BrokerHandler::bind(broker::Queue& q, broker::Exchange& ex,
+void BrokerContext::bind(broker::Queue& q, broker::Exchange& ex,
                          const std::string& key, const framing::FieldTable& args)
 {
     if (tssNoReplicate) return;
@@ -143,12 +166,40 @@ void BrokerHandler::bind(broker::Queue& q, broker::Exchange& ex,
                    ProtocolVersion(), q.getName(), ex.getName(), key, args));
 }
 
-void BrokerHandler::unbind(broker::Queue& q, broker::Exchange& ex,
+void BrokerContext::unbind(broker::Queue& q, broker::Exchange& ex,
                            const std::string& key, const framing::FieldTable& args)
 {
     if (tssNoReplicate) return;
     core.mcast(ClusterWiringUnbindBody(
                    ProtocolVersion(), q.getName(), ex.getName(), key, args));
+}
+
+// n is the number of consumers including the one just added.
+// FIXME aconway 2011-06-27: rename, conflicting terms.
+void BrokerContext::consume(broker::Queue& q, size_t n) {
+    if (n == 1) {
+        // FIXME aconway 2011-06-27: should be on QueueContext for symmetry?
+        core.mcast(ClusterQueueSubscribeBody(ProtocolVersion(), q.getName()));
+    }
+}
+
+// n is the number of consumers after the cancel.
+void BrokerContext::cancel(broker::Queue& q, size_t n) {
+    if (n == 0) QueueContext::get(q)->unsubscribed();
+}
+
+void BrokerContext::empty(broker::Queue& ) {
+    // FIXME aconway 2011-06-28: is this needed?
+}
+
+void BrokerContext::stopped(broker::Queue& q) {
+    boost::intrusive_ptr<QueueContext> qc = QueueContext::get(q);
+    // Don't forward the stopped call if the queue does not yet have a cluster context
+    // this when the queue is first created locally.
+    if (qc){
+        QPID_LOG(critical, "FIXME BrokerContext::stopped " << q.getName());
+        qc->stopped();
+    }
 }
 
 }} // namespace qpid::cluster

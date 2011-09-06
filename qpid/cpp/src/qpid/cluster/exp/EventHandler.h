@@ -27,7 +27,7 @@
 #include "qpid/cluster/Cpg.h"
 #include "qpid/cluster/PollerDispatch.h"
 #include "qpid/cluster/types.h"
-#include <boost/shared_ptr.hpp>
+#include <boost/intrusive_ptr.hpp>
 #include <vector>
 
 namespace qpid {
@@ -52,7 +52,7 @@ class EventHandler : public Cpg::Handler
     ~EventHandler();
 
     /** Add a handler */
-    void add(const boost::shared_ptr<HandlerBase>&);
+    void add(const boost::intrusive_ptr<HandlerBase>&);
 
     /** Start polling */
     void start();
@@ -87,7 +87,7 @@ class EventHandler : public Cpg::Handler
     MemberId sender;              // sender of current event.
     MemberId self;
 
-    typedef std::vector<boost::shared_ptr<HandlerBase> > Handlers;
+    typedef std::vector<boost::intrusive_ptr<HandlerBase> > Handlers;
     Handlers handlers;
 };
 }} // namespace qpid::cluster

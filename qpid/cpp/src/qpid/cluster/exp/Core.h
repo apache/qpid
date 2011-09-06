@@ -44,7 +44,7 @@ class Broker;
 
 namespace cluster {
 class EventHandler;
-class BrokerHandler;
+class BrokerContext;
 
 /**
  * Cluster core state machine.
@@ -77,16 +77,17 @@ class Core
 
     broker::Broker& getBroker() { return broker; }
     EventHandler& getEventHandler() { return *eventHandler; }
-    BrokerHandler& getBrokerHandler() { return *brokerHandler; }
+    BrokerContext& getBrokerContext() { return *brokerHandler; }
+    Multicaster& getMulticaster() { return multicaster; }
 
     /** Map of messages that are currently being routed.
-     * Used to pass messages being routed from BrokerHandler to MessageHandler
+     * Used to pass messages being routed from BrokerContext to MessageHandler
      */
     RoutingMap& getRoutingMap() { return routingMap; }
   private:
     broker::Broker& broker;
     std::auto_ptr<EventHandler> eventHandler; // Handles CPG events.
-    BrokerHandler* brokerHandler; // Handles broker events.
+    BrokerContext* brokerHandler; // Handles broker events.
     RoutingMap routingMap;
     Multicaster multicaster;
 };

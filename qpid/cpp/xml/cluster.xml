@@ -78,6 +78,10 @@
       <field name="left" type="vbin16"/> <!-- packed member-id array -->
     </control>
 
+    <control name="message-expired" code="0x12">
+      <field name="id" type="uint64"/>
+    </control>
+
     <domain name="error-type" type="uint8" label="Types of error">
       <enum>
 	<choice name="none" value="0"/>
@@ -337,6 +341,7 @@
       <field name="message" type="str32"/>
     </control>
 
+    <!--  FIXME aconway 2011-04-27: reference queues by index, not name -->
     <control name="enqueue" code="0x2">
       <field name="routing-id" type="uint32"/>
       <field name="queue" type="queue.name"/>
@@ -346,10 +351,22 @@
       <field name="routing-id" type="uint32"/>
     </control>
 
-    <control name="dequeue" code="0x4">
+    <!-- FIXME aconway 2011-04-27: review queue positions vs. global message IDs -->
+    <control name="acquire" code="0x4">
       <field name="queue" type="queue.name"/>
       <field name="position" type="uint32"/>
     </control>
+
+    <control name="dequeue" code="0x5">
+      <field name="queue" type="queue.name"/>
+      <field name="position" type="uint32"/>
+    </control>
+
+    <control name="release" code="0x6">
+      <field name="queue" type="queue.name"/>
+      <field name="position" type="uint32"/>
+    </control>
+
   </class>
 
   <class name="cluster-wiring" code="0x83">
@@ -384,4 +401,26 @@
     </control>
 
   </class>
+
+  <!-- Manage subscriptions to a queue.
+
+       Each queue has a "subscriber queue" of members waiting take
+       messages from the queue.  The member at the front of the queue
+       is the only one allowed to take messages. -->
+
+  <class name="cluster-queue" code="0x84">
+    <!-- Join at the back of the subscriber queue -->
+    <control name="subscribe" code="0x1">
+      <field name="queue" type="queue.name"/>
+    </control>
+    <!-- Leave the subscriber queue -->
+    <control name="unsubscribe" code="0x2">
+      <field name="queue" type="queue.name"/>
+    </control>
+    <!-- Move the member at the front to the back. -->
+    <control name="resubscribe" code="0x3">
+      <field name="queue" type="queue.name"/>
+    </control>
+  </class>
+
 </amqp>

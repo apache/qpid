@@ -42,7 +42,7 @@ class Broker;
 
 namespace cluster {
 class EventHandler;
-
+class QueueHandler;
 
 /**
  * Handler for wiring disposition events.
@@ -51,7 +51,7 @@ class WiringHandler : public framing::AMQP_AllOperations::ClusterWiringHandler,
                       public HandlerBase
 {
   public:
-    WiringHandler(EventHandler&);
+    WiringHandler(EventHandler&, const boost::intrusive_ptr<QueueHandler>& qh);
 
     bool invoke(const framing::AMQBody& body);
 
@@ -66,8 +66,10 @@ class WiringHandler : public framing::AMQP_AllOperations::ClusterWiringHandler,
 
 
   private:
+
     broker::Broker& broker;
     broker::RecoveryManagerImpl recovery;
+    boost::intrusive_ptr<QueueHandler> queueHandler;
 };
 
 }} // namespace qpid::cluster

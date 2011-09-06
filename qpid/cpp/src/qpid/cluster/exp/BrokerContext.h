@@ -1,5 +1,5 @@
-#ifndef QPID_CLUSTER_BROKERHANDLER_H
-#define QPID_CLUSTER_BROKERHANDLER_H
+#ifndef QPID_CLUSTER_BROKERCONTEXT_H
+#define QPID_CLUSTER_BROKERCONTEXT_H
 
 /*
  *
@@ -28,13 +28,15 @@
 namespace qpid {
 namespace cluster {
 class Core;
+class QueueHandler;
+class QueueContext;
 
 // TODO aconway 2010-10-19: experimental cluster code.
 
 /**
  * Implements broker::Cluster interface, handles events in broker code.
  */
-class BrokerHandler : public broker::Cluster
+class BrokerContext : public broker::Cluster
 {
   public:
     /** Suppress replication while in scope.
@@ -45,7 +47,7 @@ class BrokerHandler : public broker::Cluster
         ~ScopedSuppressReplication();
     };
 
-    BrokerHandler(Core&);
+    BrokerContext(Core&, boost::intrusive_ptr<QueueHandler>);
 
     // FIXME aconway 2010-10-20: implement all points.
 
@@ -54,14 +56,18 @@ class BrokerHandler : public broker::Cluster
     void routing(const boost::intrusive_ptr<broker::Message>&);
     bool enqueue(broker::Queue&, const boost::intrusive_ptr<broker::Message>&);
     void routed(const boost::intrusive_ptr<broker::Message>&);
-    void acquire(const broker::QueuedMessage&) {}
-    void release(const broker::QueuedMessage&) {}
+    void acquire(const broker::QueuedMessage&);
     void dequeue(const broker::QueuedMessage&);
+    void release(const broker::QueuedMessage&);
 
     // Consumers
 
-    void consume(broker::Queue&, size_t) {}
-    void cancel(broker::Queue&, size_t) {}
+    void consume(broker::Queue&, size_t);
+    void cancel(broker::Queue&, size_t);
+
+    // Queues
+    void empty(broker::Queue&);
+    void stopped(broker::Queue&);
 
     // Wiring
 
@@ -79,8 +85,9 @@ class BrokerHandler : public broker::Cluster
     uint32_t nextRoutingId();
 
     Core& core;
+    boost::intrusive_ptr<QueueHandler> queueHandler;
     sys::AtomicValue<uint32_t> routingId;
 };
 }} // namespace qpid::cluster
 
-#endif  /*!QPID_CLUSTER_BROKERHANDLER_H*/
+#endif  /*!QPID_CLUSTER_BROKERCONTEXT_H*/

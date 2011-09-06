@@ -56,13 +56,18 @@ class DummyCluster : public broker::Cluster
      */
     bool isRouting;
 
+    // Record a QueuedMessage
     void recordQm(const string& op, const broker::QueuedMessage& qm) {
         history += (format("%s(%s, %d, %s)") % op % qm.queue->getName()
                     % qm.position % qm.payload->getFrames().getContent()).str();
     }
+
+    // Record a message
     void recordMsg(const string& op, broker::Queue& q, intrusive_ptr<broker::Message> msg) {
         history += (format("%s(%s, %s)") % op % q.getName() % msg->getFrames().getContent()).str();
     }
+
+    // Record a string
     void recordStr(const string& op, const string& name) {
         history += (format("%s(%s)") % op % name).str();
     }
@@ -101,6 +106,11 @@ class DummyCluster : public broker::Cluster
     virtual void cancel(broker::Queue& q, size_t n) {
         history += (format("cancel(%s, %d)") % q.getName() % n).str();
     }
+
+    // Queues
+    // FIXME aconway 2011-05-18: update test to exercise empty()
+    virtual void empty(broker::Queue& q) { recordStr("empty", q.getName()); }
+    virtual void stopped(broker::Queue& q) { recordStr("stopped", q.getName()); }
 
     // Wiring
 
@@ -230,7 +240,7 @@ QPID_AUTO_TEST_CASE(testReleaseReject) {
     h.clear();
     i = 0;
     m = Message("t");
-    m.setTtl(Duration(1));                // Timeout 1ms
+    m.setTtl(Duration(1));      // Timeout 1ms
     sender.send(m);
     usleep(2000);               // Sleep 2ms
     bool received = receiver.fetch(m, Duration::IMMEDIATE);
@@ -239,6 +249,10 @@ QPID_AUTO_TEST_CASE(testReleaseReject) {
     BOOST_CHECK_EQUAL(h.at(i++), "enqueue(q, t)");
     BOOST_CHECK_EQUAL(h.at(i++), "routed(t)");
     BOOST_CHECK_EQUAL(h.at(i++), "dequeue(q, 2, t)");
+    // Note: empty is called once for each receiver.
+    BOOST_CHECK_EQUAL(h.at(i++), "empty(q)");
+    BOOST_CHECK_EQUAL(h.at(i++), "empty(q)");
+    BOOST_CHECK_EQUAL(h.at(i++), "empty(q)");
     BOOST_CHECK_EQUAL(h.size(), i);
 
     // Message replaced on LVQ

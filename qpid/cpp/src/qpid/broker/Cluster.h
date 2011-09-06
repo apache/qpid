@@ -80,6 +80,10 @@ class Cluster
     virtual void consume(Queue&, size_t consumerCount) = 0;
     /** A consumer cancels its subscription to a queue */
     virtual void cancel(Queue&, size_t consumerCount) = 0;
+    /** A queue becomes empty */
+    virtual void empty(Queue&) = 0;
+    /** A queue has been stopped */
+    virtual void stopped(Queue&) = 0;
 
     // Wiring
 

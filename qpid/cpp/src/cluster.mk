@@ -110,8 +110,8 @@ cluster2_la_SOURCES =				\
 	qpid/cluster/Cpg.h			\
 	qpid/cluster/PollerDispatch.cpp		\
 	qpid/cluster/PollerDispatch.h		\
-	qpid/cluster/exp/BrokerHandler.cpp	\
-	qpid/cluster/exp/BrokerHandler.h	\
+	qpid/cluster/exp/BrokerContext.cpp	\
+	qpid/cluster/exp/BrokerContext.h	\
 	qpid/cluster/exp/BufferFactory.h	\
 	qpid/cluster/exp/Cluster2Plugin.cpp	\
 	qpid/cluster/exp/Core.cpp		\
@@ -124,6 +124,12 @@ cluster2_la_SOURCES =				\
 	qpid/cluster/exp/MessageHandler.h	\
 	qpid/cluster/exp/Multicaster.cpp	\
 	qpid/cluster/exp/Multicaster.h		\
+	qpid/cluster/exp/QueueContext.cpp	\
+	qpid/cluster/exp/QueueContext.h		\
+	qpid/cluster/exp/QueueHandler.cpp	\
+	qpid/cluster/exp/QueueHandler.h		\
+	qpid/cluster/exp/QueueReplica.cpp	\
+	qpid/cluster/exp/QueueReplica.h		\
 	qpid/cluster/exp/WiringHandler.cpp	\
 	qpid/cluster/exp/WiringHandler.h
 

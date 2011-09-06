@@ -21,6 +21,7 @@
  * under the License.
  *
  */
+#include "qpid/log/Statement.h" // FIXME  XXX aconway 2011-06-08: remove
 
 #include "qpid/broker/BrokerImportExport.h"
 #include "qpid/broker/OwnershipToken.h"
@@ -131,8 +132,9 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     UsageBarrier barrier;
     int autoDeleteTimeout;
     boost::intrusive_ptr<qpid::sys::TimerTask> autoDeleteTask;
-    // Allow dispatching consumer threads to be stopped.
-    sys::Stoppable dispatching;
+    // Allow dispatching consumer threads to be stopped. Used by cluster
+    sys::Stoppable dispatching; // FIXME aconway 2011-06-07: name: acquiring?
+    boost::intrusive_ptr<RefCounted> clusterContext;
 
     void push(boost::intrusive_ptr<Message>& msg, bool isRecovery=false);
     void setPolicy(std::auto_ptr<QueuePolicy> policy);
@@ -180,6 +182,7 @@ class Queue : public boost::enable_shared_from_this<Queue>,
 
     void checkNotDeleted();
     void notifyDeleted();
+    void acquireStopped();
 
   public:
 
@@ -385,7 +388,7 @@ class Queue : public boost::enable_shared_from_this<Queue>,
 
     void flush();
 
-    const Broker* getBroker();
+    Broker* getBroker();
 
     uint32_t getDequeueSincePurge() { return dequeueSincePurge.get(); }
     void setDequeueSincePurge(uint32_t value);
@@ -395,13 +398,20 @@ class Queue : public boost::enable_shared_from_this<Queue>,
      */
     void stop();
 
-    /** Start consumers.
-     *@pre Queue is stopped and idle: no thread in dispatch.
-     */
+    /** Start consumers. */
     void start();
 
-    /** Context data attached and used by cluster code. */
-    boost::intrusive_ptr<qpid::RefCounted> clusterContext;
+    /** Context information used in a cluster. */
+    boost::intrusive_ptr<RefCounted> getClusterContext() {
+        // FIXME aconway 2011-06-08: XXX
+        QPID_LOG(critical, "FIXME q get context " << name << clusterContext);
+        return clusterContext;
+    }
+    void setClusterContext(boost::intrusive_ptr<RefCounted> context) {
+        // FIXME aconway 2011-06-08: XXX
+        clusterContext = context;
+        QPID_LOG(critical, "FIXME q set context " << name << clusterContext);
+    }
 };
 }} // qpid::broker
 

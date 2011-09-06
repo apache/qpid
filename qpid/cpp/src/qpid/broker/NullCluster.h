@@ -49,6 +49,11 @@ class NullCluster : public Cluster
     virtual void consume(Queue&, size_t) {}
     virtual void cancel(Queue&, size_t) {}
 
+    // Queues
+
+    virtual void stopped(Queue&) {}
+    virtual void empty(Queue&) {}
+
     // Wiring
 
     virtual void create(Queue&) {}
@@ -59,6 +64,7 @@ class NullCluster : public Cluster
                       const std::string&, const framing::FieldTable&) {}
     virtual void unbind(Queue&, Exchange&,
                         const std::string&, const framing::FieldTable&) {}
+
 };
 
 }} // namespace qpid::broker
