@@ -64,10 +64,9 @@ class Stoppable {
 
     /**
      * Set state to "stopped", so no new threads can enter.
-     * Call notify function when all busy threads have left.
+     * Notify function will be called when all busy threads have left.
+     * No-op if already stopping.
      */
-    // FIXME aconway 2011-06-27: not guaranteed that stopped will be called,
-    // deadlock?
     void stop() {
         sys::Monitor::ScopedLock l(lock);
         stopped = true;
@@ -75,6 +74,7 @@ class Stoppable {
     }
 
     /** Set the state to "started", allow threads to enter.
+     * If already stopping this will prevent notify function from being called.
      */
     void start() {
         sys::Monitor::ScopedLock l(lock);

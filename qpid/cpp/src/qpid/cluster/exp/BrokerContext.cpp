@@ -136,7 +136,7 @@ void BrokerContext::create(broker::Queue& q) {
     framing::Buffer buf(&data[0], data.size());
     q.encode(buf);
     core.mcast(ClusterWiringCreateQueueBody(ProtocolVersion(), data));
-    QPID_LOG(critical, "FIXME BrokerContext create " << q.getName() << q.getClusterContext().get());
+    // FIXME aconway 2011-07-29: Need asynchronous completion.
 }
 
 void BrokerContext::destroy(broker::Queue& q) {

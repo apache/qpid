@@ -95,7 +95,7 @@ void MessageHandler::acquire(const std::string& q, uint32_t position) {
         BrokerContext::ScopedSuppressReplication ssr;
         bool ok = queue->acquireMessageAt(position, qm);
         (void)ok;                   // Avoid unused variable warnings.
-        assert(ok);
+        assert(ok);             // FIXME aconway 2011-08-04: failing this assertion.
         assert(qm.position.getValue() == position);
         assert(qm.payload);
     }

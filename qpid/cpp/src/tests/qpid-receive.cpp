@@ -190,13 +190,20 @@ int main(int argc, char ** argv)
                 session.createSender(opts.readyAddress).send(msg);
 
             // For receive rate calculation
-            qpid::sys::AbsTime start = qpid::sys::now();
+            qpid::sys::AbsTime start; // Will be set on first itertion.
+            bool started=false;
             int64_t interval = 0;
             if (opts.receiveRate) interval = qpid::sys::TIME_SEC/opts.receiveRate;
 
             std::map<std::string,Sender> replyTo;
 
             while (!done && receiver.fetch(msg, timeout)) {
+                if (!started) {
+                    // Start the time on receipt of the first message to avoid counting
+                    // idle time at process startup.
+                    start = qpid::sys::AbsTime::now();
+                    started = true;
+                }
                 reporter.message(msg);
                 if (!opts.ignoreDuplicates || !sequenceTracker.isDuplicate(msg)) {
                     if (msg.getContent() == EOS) {

@@ -402,16 +402,9 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     void start();
 
     /** Context information used in a cluster. */
-    boost::intrusive_ptr<RefCounted> getClusterContext() {
-        // FIXME aconway 2011-06-08: XXX
-        QPID_LOG(critical, "FIXME q get context " << name << clusterContext);
-        return clusterContext;
-    }
-    void setClusterContext(boost::intrusive_ptr<RefCounted> context) {
-        // FIXME aconway 2011-06-08: XXX
-        clusterContext = context;
-        QPID_LOG(critical, "FIXME q set context " << name << clusterContext);
-    }
+    boost::intrusive_ptr<RefCounted> getClusterContext() { return clusterContext; }
+    void setClusterContext(boost::intrusive_ptr<RefCounted> context) { clusterContext = context; }
+
 };
 }} // qpid::broker
 
