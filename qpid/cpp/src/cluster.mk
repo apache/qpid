@@ -112,6 +112,7 @@ cluster2_la_SOURCES =				\
 	qpid/cluster/PollerDispatch.h		\
 	qpid/cluster/exp/BrokerHandler.cpp	\
 	qpid/cluster/exp/BrokerHandler.h	\
+	qpid/cluster/exp/BufferFactory.h	\
 	qpid/cluster/exp/Cluster2Plugin.cpp	\
 	qpid/cluster/exp/Core.cpp		\
 	qpid/cluster/exp/Core.h			\
@@ -121,6 +122,8 @@ cluster2_la_SOURCES =				\
 	qpid/cluster/exp/HandlerBase.h		\
 	qpid/cluster/exp/MessageHandler.cpp	\
 	qpid/cluster/exp/MessageHandler.h	\
+	qpid/cluster/exp/Multicaster.cpp	\
+	qpid/cluster/exp/Multicaster.h		\
 	qpid/cluster/exp/WiringHandler.cpp	\
 	qpid/cluster/exp/WiringHandler.h
 

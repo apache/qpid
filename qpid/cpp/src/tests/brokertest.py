@@ -418,6 +418,8 @@ class Cluster:
         self.args += [ cluster_name,
                        "%s-%s:%d" % (self.name, socket.gethostname(), os.getpid()) ]
         self.args += [ "--log-enable=info+", "--log-enable=debug+:cluster"]
+        self.args += [ "--log-enable=info+", "--log-enable=trace+:cluster"]
+
         assert cluster_lib, "Cannot locate cluster plug-in"
         self.args += [ "--load-module", cluster_lib ]
         self.start_n(count, expect=expect, wait=wait, show_cmd=show_cmd)

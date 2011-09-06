@@ -25,6 +25,7 @@
 #include <string>
 #include <memory>
 #include "LockedMap.h"
+#include "Multicaster.h"
 #include "qpid/cluster/types.h"
 #include "qpid/cluster/Cpg.h"
 #include "qpid/broker/QueuedMessage.h"
@@ -87,6 +88,7 @@ class Core
     std::auto_ptr<EventHandler> eventHandler; // Handles CPG events.
     BrokerHandler* brokerHandler; // Handles broker events.
     RoutingMap routingMap;
+    Multicaster multicaster;
 };
 }} // namespace qpid::cluster
 
