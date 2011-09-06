@@ -397,9 +397,6 @@ int main(int argc, char ** argv)
                 ++sent;
                 if (opts.sequence)
                     msg.getProperties()[SN] = sent;
-                if (opts.timestamp)
-                    msg.getProperties()[TS] = int64_t(
-                        qpid::sys::Duration(qpid::sys::EPOCH, qpid::sys::now()));
                 if (opts.flowControl) {
                     if ((sent % opts.flowControl) == 0) {
                         msg.setReplyTo(flowControlAddress);
@@ -408,10 +405,12 @@ int main(int argc, char ** argv)
                     else
                         msg.setReplyTo(Address()); // Clear the reply address.
                 }
-
                 if (groupGen.get())
                     groupGen->setGroupInfo(msg);
 
+                if (opts.timestamp)
+                    msg.getProperties()[TS] = int64_t(
+                        qpid::sys::Duration(qpid::sys::EPOCH, qpid::sys::now()));
                 sender.send(msg);
                 reporter.message(msg);
 
