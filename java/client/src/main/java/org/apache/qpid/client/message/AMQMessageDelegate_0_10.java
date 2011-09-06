@@ -291,7 +291,7 @@ public class AMQMessageDelegate_0_10 extends AbstractAMQMessageDelegate
         
         try
         {
-            return AMQDestination.createDestination("ADDR:" + addr.toString() + ";{create: always}");
+            return AMQDestination.createDestination("ADDR:" + addr.toString());
         }
         catch(Exception e)
         {
