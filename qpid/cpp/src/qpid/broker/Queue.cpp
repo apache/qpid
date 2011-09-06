@@ -226,6 +226,7 @@ void Queue::requeue(const QueuedMessage& msg){
             }
         }
     }
+
     if (broker) broker->getCluster().release(msg);
     copy.notify();
 }

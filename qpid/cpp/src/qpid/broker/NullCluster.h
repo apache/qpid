@@ -46,18 +46,18 @@ class NullCluster : public Cluster
 
     // Consumers
 
-    virtual void consume(const Queue&, size_t) {}
-    virtual void cancel(const Queue&, size_t) {}
+    virtual void consume(Queue&, size_t) {}
+    virtual void cancel(Queue&, size_t) {}
 
     // Wiring
 
-    virtual void create(const Queue&) {}
-    virtual void destroy(const Queue&) {}
-    virtual void create(const Exchange&) {}
-    virtual void destroy(const Exchange&) {}
-    virtual void bind(const Queue&, const Exchange&,
+    virtual void create(Queue&) {}
+    virtual void destroy(Queue&) {}
+    virtual void create(Exchange&) {}
+    virtual void destroy(Exchange&) {}
+    virtual void bind(Queue&, Exchange&,
                       const std::string&, const framing::FieldTable&) {}
-    virtual void unbind(const Queue&, const Exchange&,
+    virtual void unbind(Queue&, Exchange&,
                         const std::string&, const framing::FieldTable&) {}
 };
 

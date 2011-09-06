@@ -95,23 +95,23 @@ class DummyCluster : public broker::Cluster
 
     // Consumers
 
-    virtual void consume(const broker::Queue& q, size_t n) {
+    virtual void consume(broker::Queue& q, size_t n) {
         history += (format("consume(%s, %d)") % q.getName() % n).str();
     }
-    virtual void cancel(const broker::Queue& q, size_t n) {
+    virtual void cancel(broker::Queue& q, size_t n) {
         history += (format("cancel(%s, %d)") % q.getName() % n).str();
     }
 
     // Wiring
 
-    virtual void create(const broker::Queue& q) { recordStr("createq", q.getName()); }
-    virtual void destroy(const broker::Queue& q) { recordStr("destroyq", q.getName()); }
-    virtual void create(const broker::Exchange& ex) { recordStr("createex", ex.getName()); }
-    virtual void destroy(const broker::Exchange& ex) { recordStr("destroyex", ex.getName()); }
-    virtual void bind(const broker::Queue& q, const broker::Exchange& ex, const std::string& key, const framing::FieldTable& /*args*/) {
+    virtual void create(broker::Queue& q) { recordStr("createq", q.getName()); }
+    virtual void destroy(broker::Queue& q) { recordStr("destroyq", q.getName()); }
+    virtual void create(broker::Exchange& ex) { recordStr("createex", ex.getName()); }
+    virtual void destroy(broker::Exchange& ex) { recordStr("destroyex", ex.getName()); }
+    virtual void bind(broker::Queue& q, broker::Exchange& ex, const std::string& key, const framing::FieldTable& /*args*/) {
         history += (format("bind(%s, %s, %s)") % q.getName() % ex.getName() % key).str();
     }
-    virtual void unbind(const broker::Queue& q, const broker::Exchange& ex, const std::string& key, const framing::FieldTable& /*args*/) {
+    virtual void unbind(broker::Queue& q, broker::Exchange& ex, const std::string& key, const framing::FieldTable& /*args*/) {
         history += (format("unbind(%s, %s, %s)")% q.getName()%ex.getName()%key).str();
     }
     vector<string> history;

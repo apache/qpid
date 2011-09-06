@@ -109,7 +109,7 @@ void BrokerHandler::dequeue(const broker::QueuedMessage& qm) {
                    ProtocolVersion(), qm.queue->getName(), qm.position));
 }
 
-void BrokerHandler::create(const broker::Queue& q) {
+void BrokerHandler::create(broker::Queue& q) {
     if (tssNoReplicate) return;
     std::string data(q.encodedSize(), '\0');
     framing::Buffer buf(&data[0], data.size());
@@ -117,12 +117,12 @@ void BrokerHandler::create(const broker::Queue& q) {
     core.mcast(ClusterWiringCreateQueueBody(ProtocolVersion(), data));
 }
 
-void BrokerHandler::destroy(const broker::Queue& q) {
+void BrokerHandler::destroy(broker::Queue& q) {
     if (tssNoReplicate) return;
     core.mcast(ClusterWiringDestroyQueueBody(ProtocolVersion(), q.getName()));
 }
 
-void BrokerHandler::create(const broker::Exchange& ex) {
+void BrokerHandler::create(broker::Exchange& ex) {
     if (tssNoReplicate) return;
     std::string data(ex.encodedSize(), '\0');
     framing::Buffer buf(&data[0], data.size());
@@ -130,12 +130,12 @@ void BrokerHandler::create(const broker::Exchange& ex) {
     core.mcast(ClusterWiringCreateExchangeBody(ProtocolVersion(), data));
 }
 
-void BrokerHandler::destroy(const broker::Exchange& ex) {
+void BrokerHandler::destroy(broker::Exchange& ex) {
     if (tssNoReplicate) return;
     core.mcast(ClusterWiringDestroyExchangeBody(ProtocolVersion(), ex.getName()));
 }
 
-void BrokerHandler::bind(const broker::Queue& q, const broker::Exchange& ex,
+void BrokerHandler::bind(broker::Queue& q, broker::Exchange& ex,
                          const std::string& key, const framing::FieldTable& args)
 {
     if (tssNoReplicate) return;
@@ -143,8 +143,8 @@ void BrokerHandler::bind(const broker::Queue& q, const broker::Exchange& ex,
                    ProtocolVersion(), q.getName(), ex.getName(), key, args));
 }
 
-void BrokerHandler::unbind(const broker::Queue& q, const broker::Exchange& ex,
-                         const std::string& key, const framing::FieldTable& args)
+void BrokerHandler::unbind(broker::Queue& q, broker::Exchange& ex,
+                           const std::string& key, const framing::FieldTable& args)
 {
     if (tssNoReplicate) return;
     core.mcast(ClusterWiringUnbindBody(
