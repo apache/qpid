@@ -85,7 +85,7 @@ void MessageHandler::routed(RoutingId routingId) {
 }
 
 void MessageHandler::acquire(const std::string& q, uint32_t position) {
-    // Note acquires from other members. My own acquires were exeuted in
+    // Note acquires from other members. My own acquires were executed in
     // the connection thread
     if (sender() != self()) {
         // FIXME aconway 2010-10-28: need to store acquired messages on QueueContext

@@ -25,6 +25,7 @@
 #include "BufferFactory.h"
 #include "qpid/sys/PollableQueue.h"
 #include <sys/uio.h>            // For struct iovec
+#include <vector>
 
 namespace qpid {
 

@@ -229,7 +229,7 @@ QPID_AUTO_TEST_CASE(testReleaseReject) {
     i = 0;
     f.s.reject(m);
     BOOST_CHECK_EQUAL(h.at(i++), "routing(a)"); // Routing to alt exchange
-    BOOST_CHECK_EQUAL(h.at(i++), "enqueue(amq.fanout_altq, a)");
+    BOOST_CHECK_EQUAL(h.at(i++), "enqueue(altq, a)");
     BOOST_CHECK_EQUAL(h.at(i++), "routed(a)");
     BOOST_CHECK_EQUAL(h.at(i++), "dequeue(q, 1, a)");
     BOOST_CHECK_EQUAL(h.size(), i);
@@ -300,8 +300,8 @@ QPID_AUTO_TEST_CASE(testFanout) {
     sender.send(Message("a"));
     f.s.sync();
     BOOST_CHECK_EQUAL(h.at(i++), "routing(a)");
-    BOOST_CHECK_EQUAL(0u, h.at(i++).find("enqueue(amq.fanout_r"));
-    BOOST_CHECK_EQUAL(0u, h.at(i++).find("enqueue(amq.fanout_r"));
+    BOOST_CHECK_EQUAL(0u, h.at(i++).find("enqueue(r"));
+    BOOST_CHECK_EQUAL(0u, h.at(i++).find("enqueue(r"));
     BOOST_CHECK(h.at(i-1) != h.at(i-2));
     BOOST_CHECK_EQUAL(h.at(i++), "routed(a)");
     BOOST_CHECK_EQUAL(h.size(), i);
@@ -312,10 +312,10 @@ QPID_AUTO_TEST_CASE(testFanout) {
     Message m2 = r2.fetch(Duration::SECOND);
     f.s.acknowledge(m2, true);
 
-    BOOST_CHECK_EQUAL(h.at(i++), "acquire(amq.fanout_r1, 1, a)");
-    BOOST_CHECK_EQUAL(h.at(i++), "dequeue(amq.fanout_r1, 1, a)");
-    BOOST_CHECK_EQUAL(h.at(i++), "acquire(amq.fanout_r2, 1, a)");
-    BOOST_CHECK_EQUAL(h.at(i++), "dequeue(amq.fanout_r2, 1, a)");
+    BOOST_CHECK_EQUAL(h.at(i++), "acquire(r1, 1, a)");
+    BOOST_CHECK_EQUAL(h.at(i++), "dequeue(r1, 1, a)");
+    BOOST_CHECK_EQUAL(h.at(i++), "acquire(r2, 1, a)");
+    BOOST_CHECK_EQUAL(h.at(i++), "dequeue(r2, 1, a)");
     BOOST_CHECK_EQUAL(h.size(), i);
 }
 
