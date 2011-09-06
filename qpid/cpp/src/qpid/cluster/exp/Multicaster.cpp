@@ -65,6 +65,7 @@ Multicaster::sendMcast(const PollableEventQueue::Batch& buffers) {
             std::transform(i, j, ioVector.begin(), &bufToIov);
             if (!cpg.mcast(&ioVector[0], len)) {
                 // CPG didn't send because of CPG flow control.
+                ::usleep(1000);    // Don't spin too tightly.
                 return i;
             }
             i = j;
