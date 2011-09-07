@@ -29,6 +29,8 @@ public interface NetworkConnection
 {
     Sender<ByteBuffer> getSender();
 
+    void start();
+
     void close();
 
     /**

@@ -43,9 +43,10 @@ public class SSLReceiver implements Receiver<ByteBuffer>
     private final int sslBufSize;
     private final ByteBuffer localBuffer;
     private final SSLStatus _sslStatus;
-    private ConnectionSettings settings;
     private ByteBuffer appData;
     private boolean dataCached = false;
+
+    private String _hostname;
 
     public SSLReceiver(final SSLEngine engine, final Receiver<ByteBuffer> delegate, final SSLStatus sslStatus)
     {
@@ -57,9 +58,9 @@ public class SSLReceiver implements Receiver<ByteBuffer>
         _sslStatus = sslStatus;
     }
 
-    public void setConnectionSettings(ConnectionSettings settings)
+    public void setHostname(String hostname)
     {
-        this.settings = settings;
+        _hostname = hostname;
     }
     
     public void closed()
@@ -166,9 +167,9 @@ public class SSLReceiver implements Receiver<ByteBuffer>
                         handshakeStatus = engine.getHandshakeStatus();
 
                     case FINISHED:
-                        if (this.settings != null && this.settings.isVerifyHostname() )
+                        if (_hostname != null)
                         {
-                            SSLUtil.verifyHostname(engine, this.settings.getHost());
+                            SSLUtil.verifyHostname(engine, _hostname);
                         }
                             
                     case NEED_WRAP:                        

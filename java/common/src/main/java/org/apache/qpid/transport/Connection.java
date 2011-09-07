@@ -47,6 +47,7 @@ import org.apache.qpid.transport.network.NetworkConnection;
 import org.apache.qpid.transport.network.OutgoingNetworkTransport;
 import org.apache.qpid.transport.network.Transport;
 import org.apache.qpid.transport.network.security.SecurityLayer;
+import org.apache.qpid.transport.network.security.SecurityLayerFactory;
 import org.apache.qpid.transport.util.Logger;
 import org.apache.qpid.transport.util.Waiter;
 import org.apache.qpid.util.Strings;
@@ -71,6 +72,7 @@ public class Connection extends ConnectionInvoker
     //Usable channels are numbered 0 to <ChannelMax> - 1
     public static final int MAX_CHANNEL_MAX = 0xFFFF;
     public static final int MIN_USABLE_CHANNEL_NUM = 0;
+
 
     public enum State { NEW, CLOSED, OPENING, OPEN, CLOSING, CLOSE_RCVD, RESUMING }
 
@@ -124,9 +126,9 @@ public class Connection extends ConnectionInvoker
     private ConnectionSettings conSettings;
     private SecurityLayer securityLayer;
     private String _clientId;
-    
+
     private final AtomicBoolean connectionLost = new AtomicBoolean(false);
-    
+
     public Connection() {}
 
     public void setConnectionDelegate(ConnectionDelegate delegate)
@@ -239,12 +241,22 @@ public class Connection extends ConnectionInvoker
             userID = settings.getUsername();
             delegate = new ClientDelegate(settings);
 
-            securityLayer = new SecurityLayer(this);
+            securityLayer = SecurityLayerFactory.newInstance(getConnectionSettings());
 
             OutgoingNetworkTransport transport = Transport.getOutgoingTransportInstance(ProtocolVersion.v0_10);
-            Receiver<ByteBuffer> receiver = securityLayer.receiver(new InputHandler(new Assembler(this)));
-            NetworkConnection network = transport.connect(settings, receiver, null);
-            sender = new Disassembler(securityLayer.sender(network.getSender()), settings.getMaxFrameSize());
+            Receiver<ByteBuffer> secureReceiver = securityLayer.receiver(new InputHandler(new Assembler(this)));
+            if(secureReceiver instanceof ConnectionListener)
+            {
+                addConnectionListener((ConnectionListener)secureReceiver);
+            }
+
+            NetworkConnection network = transport.connect(settings, secureReceiver, null);
+            final Sender<ByteBuffer> secureSender = securityLayer.sender(network.getSender());
+            if(secureSender instanceof ConnectionListener)
+            {
+                addConnectionListener((ConnectionListener)secureSender);
+            }
+            sender = new Disassembler(secureSender, settings.getMaxFrameSize());
 
             send(new ProtocolHeader(1, 0, 10));
 
@@ -326,14 +338,14 @@ public class Connection extends ConnectionInvoker
             Waiter w = new Waiter(lock, timeout);
             while (w.hasTime() && state != OPEN && error == null)
             {
-                w.await();                
+                w.await();
             }
-            
+
             if (state != OPEN)
             {
                 throw new ConnectionException("Timed out waiting for connection to be ready. Current state is :" + state);
             }
-            
+
             Session ssn = _sessionFactory.newSession(this, name, expiry);
             sessions.put(name, ssn);
             map(ssn);
@@ -475,13 +487,13 @@ public class Connection extends ConnectionInvoker
                     ssn.setState(Session.State.CLOSED);
                 }
                 else
-                {                
+                {
                     map(ssn);
                     ssn.attach();
                     ssn.resume();
                 }
             }
-            
+
             for (Binary ssn_name : transactedSessions)
             {
                 sessions.remove(ssn_name);
@@ -572,12 +584,12 @@ public class Connection extends ConnectionInvoker
     {
         close(ConnectionCloseCode.NORMAL, null);
     }
-    
+
     public void mgmtClose()
     {
         close(ConnectionCloseCode.CONNECTION_FORCED, "The connection was closed using the broker's management interface.");
     }
-    
+
     public void close(ConnectionCloseCode replyCode, String replyText, Option ... _options)
     {
         synchronized (lock)
@@ -680,12 +692,12 @@ public class Connection extends ConnectionInvoker
     {
         return conSettings;
     }
-    
+
     public SecurityLayer getSecurityLayer()
     {
         return securityLayer;
     }
-    
+
     public boolean isConnectionResuming()
     {
         return connectionLost.get();

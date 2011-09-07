@@ -44,7 +44,7 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
     private IApplicationRegistry _appRegistry;
     private NetworkConnection _network;
     private Sender<ByteBuffer> _sender;
-    
+
     private volatile ServerProtocolEngine _delegate = new SelfDelegateProtocolEngine();
 
     public MultiVersionProtocolEngine(IApplicationRegistry appRegistry,
@@ -53,13 +53,22 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
                                       NetworkConnection network,
                                       long id)
     {
+        this(appRegistry,fqdn,supported,id);
+        setNetworkConnection(network);
+    }
+
+    public MultiVersionProtocolEngine(IApplicationRegistry appRegistry,
+                                      String fqdn,
+                                      Set<AmqpProtocolVersion> supported,
+                                      long id)
+    {
         _id = id;
         _appRegistry = appRegistry;
         _fqdn = fqdn;
         _supported = supported;
-        _network = network;
-        _sender = _network.getSender();
+
     }
+
 
     public SocketAddress getRemoteAddress()
     {
@@ -95,6 +104,7 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
     {
         _delegate.readerIdle();
     }
+
 
     public void received(ByteBuffer msg)
     {
@@ -157,6 +167,18 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
                          (byte) 0,
                          (byte) 10
             };
+
+    public void setNetworkConnection(NetworkConnection networkConnection)
+    {
+        setNetworkConnection(networkConnection, networkConnection.getSender());
+    }
+
+    public void setNetworkConnection(NetworkConnection network, Sender<ByteBuffer> sender)
+    {
+        _network = network;
+        _sender = sender;
+    }
+
 
     private static interface DelegateCreator
     {
@@ -302,6 +324,11 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
 
         }
 
+        public void setNetworkConnection(NetworkConnection network, Sender<ByteBuffer> sender)
+        {
+
+        }
+
         public long getConnectionId()
         {
             return _id;
@@ -380,14 +407,19 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
                 if(newDelegate == null)
                 {
                     _sender.send(ByteBuffer.wrap(newestSupported));
+                    _sender.flush();
 
                     _delegate = new ClosedDelegateProtocolEngine();
+
+                    _network.close();
+
                 }
                 else
                 {
                     _delegate = newDelegate;
 
                     _header.flip();
+                    _delegate.setNetworkConnection(_network, _sender);
                     _delegate.received(_header);
                     if(msg.hasRemaining())
                     {
@@ -420,6 +452,11 @@ public class MultiVersionProtocolEngine implements ServerProtocolEngine
         }
 
         public void readerIdle()
+        {
+
+        }
+
+        public void setNetworkConnection(NetworkConnection network, Sender<ByteBuffer> sender)
         {
 
         }

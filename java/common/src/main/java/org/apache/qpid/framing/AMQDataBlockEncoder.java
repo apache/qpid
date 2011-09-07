@@ -21,9 +21,6 @@
 package org.apache.qpid.framing;
 
 import org.apache.mina.common.ByteBuffer;
-import org.apache.mina.common.IoSession;
-import org.apache.mina.filter.codec.ProtocolEncoderOutput;
-import org.apache.mina.filter.codec.demux.MessageEncoder;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,7 +28,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Collections;
 import java.util.Set;
 
-public final class AMQDataBlockEncoder implements MessageEncoder
+public final class AMQDataBlockEncoder
 {
     private static final Logger _logger = LoggerFactory.getLogger(AMQDataBlockEncoder.class);
 
@@ -40,19 +37,6 @@ public final class AMQDataBlockEncoder implements MessageEncoder
     public AMQDataBlockEncoder()
     { }
 
-    public void encode(IoSession session, Object message, ProtocolEncoderOutput out) throws Exception
-    {
-        final AMQDataBlock frame = (AMQDataBlock) message;
-
-        final ByteBuffer buffer = frame.toByteBuffer();
-
-        if (_logger.isDebugEnabled())
-        {
-            _logger.debug("Encoded frame byte-buffer is '" + EncodingUtils.convertToHexString(buffer) + "'");
-        }
-        
-        out.write(buffer);
-    }
 
     public Set getMessageTypes()
     {

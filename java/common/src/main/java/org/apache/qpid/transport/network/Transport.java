@@ -37,7 +37,6 @@ public class Transport
     public static final String QPID_BROKER_TRANSPORT_PROPNAME = "qpid.broker.transport";
 
     // Can't reference the class directly here, as this would preclude the ability to bundle transports separately.
-    private static final String MINA_TRANSPORT_CLASSNAME = "org.apache.qpid.transport.network.mina.MinaNetworkTransport";
     private static final String IO_TRANSPORT_CLASSNAME = "org.apache.qpid.transport.network.io.IoNetworkTransport";
 
     public static final String TCP = "tcp";
@@ -47,9 +46,9 @@ public class Transport
     static
     {
         final Map<ProtocolVersion,String> map = new HashMap<ProtocolVersion, String>();
-        map.put(ProtocolVersion.v8_0, MINA_TRANSPORT_CLASSNAME);
-        map.put(ProtocolVersion.v0_9, MINA_TRANSPORT_CLASSNAME);
-        map.put(ProtocolVersion.v0_91, MINA_TRANSPORT_CLASSNAME);
+        map.put(ProtocolVersion.v8_0, IO_TRANSPORT_CLASSNAME);
+        map.put(ProtocolVersion.v0_9, IO_TRANSPORT_CLASSNAME);
+        map.put(ProtocolVersion.v0_91, IO_TRANSPORT_CLASSNAME);
         map.put(ProtocolVersion.v0_10, IO_TRANSPORT_CLASSNAME);
 
         OUTGOING_PROTOCOL_TO_IMPLDEFAULTS_MAP = Collections.unmodifiableMap(map);
@@ -58,7 +57,7 @@ public class Transport
     public static IncomingNetworkTransport getIncomingTransportInstance()
     {
         return (IncomingNetworkTransport) loadTransportClass(
-                System.getProperty(QPID_BROKER_TRANSPORT_PROPNAME, MINA_TRANSPORT_CLASSNAME));
+                System.getProperty(QPID_BROKER_TRANSPORT_PROPNAME, IO_TRANSPORT_CLASSNAME));
     }
 
     public static OutgoingNetworkTransport getOutgoingTransportInstance(

@@ -27,6 +27,4 @@ package org.apache.qpid.transport.network;
 public interface NetworkTransport
 {
     public void close();
-
-    public NetworkConnection getConnection();
 }

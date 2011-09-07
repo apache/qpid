@@ -163,8 +163,10 @@ public interface AMQProtocolSession extends AMQVersionAwareProtocolSession, Auth
     /** This must be called when the session is _closed in order to free up any resources managed by the session. */
     void closeSession() throws AMQException;
 
+    void closeProtocolSession();
+
     /** This must be called to close the session in order to free up any resources managed by the session. */
-    void closeConnection(int channelId, AMQConnectionException e, boolean closeProtocolSession) throws AMQException;
+    void closeConnection(int channelId, AMQConnectionException e) throws AMQException;
 
 
     /** @return a key that uniquely identifies this session */
