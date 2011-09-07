@@ -1183,7 +1183,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
 
             if (code != null)
             {
-                je = new JMSException(Integer.toString(code.getCode()), "Exception thrown against " + toString() + ": " + cause);
+                je = new JMSException("Exception thrown against " + toString() + ": " + cause, Integer.toString(code.getCode()));
             }
             else
             {
