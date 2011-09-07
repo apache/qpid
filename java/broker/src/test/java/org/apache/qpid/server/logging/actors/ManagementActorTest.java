@@ -20,12 +20,12 @@
  */
 package org.apache.qpid.server.logging.actors;
 
-import org.apache.qpid.server.configuration.ServerConfiguration;
-import org.apache.qpid.server.logging.LogMessage;
-import org.apache.qpid.server.logging.LogSubject;
-import org.apache.qpid.AMQException;
-
+import java.security.PrivilegedAction;
+import java.util.Collections;
 import java.util.List;
+
+import javax.management.remote.JMXPrincipal;
+import javax.security.auth.Subject;
 
 /**
  * Test : AMQPManagementActorTest
@@ -96,8 +96,40 @@ public class ManagementActorTest extends BaseActorTestCase
 
         // Verify that the message has the right values
         assertTrue("Message contains the [mng: prefix",
-                   logs.get(0).toString().contains("[mng:" + CONNECTION_ID + "(" + IP + ")"));
+                   logs.get(0).toString().contains("[mng:N/A(" + IP + ")"));
+    }
 
+    /**
+     * Tests appearance of principal name in log message
+     */
+    public void testSubjectPrincipalNameAppearance()
+    {
+        Subject subject = new Subject(true, Collections.singleton(new JMXPrincipal("guest")), Collections.EMPTY_SET,
+                Collections.EMPTY_SET);
+
+        final String message = Subject.doAs(subject, new PrivilegedAction<String>()
+        {
+            public String run()
+            {
+                return sendTestLogMessage(_amqpActor);
+            }
+        });
+
+        // Verify that the log message was created
+        assertNotNull("Test log message is not created!", message);
+
+        List<Object> logs = _rawLogger.getLogMessages();
+
+        // Verify that at least one log message was added to log
+        assertEquals("Message log size not as expected.", 1, logs.size());
+
+        String logMessage = logs.get(0).toString();
+
+        // Verify that the logged message is present in the output
+        assertTrue("Message was not found in log message", logMessage.contains(message));
+
+        // Verify that the message has the right principal value
+        assertTrue("Message contains the [mng: prefix", logMessage.contains("[mng:guest(" + IP + ")"));
     }
 
 }
