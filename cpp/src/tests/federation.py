@@ -111,18 +111,18 @@ class FederationTests(TestBase010):
 
         broker = qmf.getObjects(_class="broker")[0]
         result = broker.connect(self.remote_host(), self.remote_port(), False, "PLAIN", "guest", "guest", "tcp")
-        self.assertEqual(result.status, 0)
+        self.assertEqual(result.status, 0, result)
 
         link = qmf.getObjects(_class="link")[0]
         result = link.bridge(False, "amq.direct", "amq.direct", "my-key", "", "", False, False, False, 0)
-        self.assertEqual(result.status, 0)
+        self.assertEqual(result.status, 0, result)
 
         bridge = qmf.getObjects(_class="bridge")[0]
         result = bridge.close()
-        self.assertEqual(result.status, 0)
+        self.assertEqual(result.status, 0, result)
 
         result = link.close()
-        self.assertEqual(result.status, 0)
+        self.assertEqual(result.status, 0, result)
 
         self.verify_cleanup()
 
@@ -133,11 +133,11 @@ class FederationTests(TestBase010):
         qmf = self.qmf
         broker = qmf.getObjects(_class="broker")[0]
         result = broker.connect(self.remote_host(), self.remote_port(), False, "PLAIN", "guest", "guest", "tcp")
-        self.assertEqual(result.status, 0)
+        self.assertEqual(result.status, 0, result)
 
         link = qmf.getObjects(_class="link")[0]
         result = link.bridge(False, "amq.direct", "amq.fanout", "my-key", "", "", False, False, False, 0)
-        self.assertEqual(result.status, 0)
+        self.assertEqual(result.status, 0, result)
 
         bridge = qmf.getObjects(_class="bridge")[0]
 
@@ -165,9 +165,9 @@ class FederationTests(TestBase010):
         except Empty: None
 
         result = bridge.close()
-        self.assertEqual(result.status, 0)
+        self.assertEqual(result.status, 0, result)
         result = link.close()
-        self.assertEqual(result.status, 0)
+        self.assertEqual(result.status, 0, result)
 
         self.verify_cleanup()
 
@@ -178,11 +178,11 @@ class FederationTests(TestBase010):
         qmf = self.qmf
         broker = qmf.getObjects(_class="broker")[0]
         result = broker.connect(self.remote_host(), self.remote_port(), False, "PLAIN", "guest", "guest", "tcp")
-        self.assertEqual(result.status, 0)
+        self.assertEqual(result.status, 0, result)
 
         link = qmf.getObjects(_class="link")[0]
         result = link.bridge(False, "amq.direct", "amq.fanout", "my-key", "", "", False, True, False, 0)
-        self.assertEqual(result.status, 0)
+        self.assertEqual(result.status, 0, result)
 
         bridge = qmf.getObjects(_class="bridge")[0]
 
@@ -209,9 +209,9 @@ class FederationTests(TestBase010):
         except Empty: None
 
         result = bridge.close()
-        self.assertEqual(result.status, 0)
+        self.assertEqual(result.status, 0, result)
         result = link.close()
-        self.assertEqual(result.status, 0)
+        self.assertEqual(result.status, 0, result)
 
         self.verify_cleanup()
 
@@ -236,11 +236,11 @@ class FederationTests(TestBase010):
         qmf = self.qmf
         broker = qmf.getObjects(_class="broker")[0]
         result = broker.connect(self.remote_host(), self.remote_port(), False, "PLAIN", "guest", "guest", "tcp")
-        self.assertEqual(result.status, 0)
+        self.assertEqual(result.status, 0, result)
 
         link = qmf.getObjects(_class="link")[0]
         result = link.bridge(False, "my-bridge-queue", "amq.fanout", "my-key", "", "", True, False, False, 1)
-        self.assertEqual(result.status, 0)
+        self.assertEqual(result.status, 0, result)
 
         bridge = qmf.getObjects(_class="bridge")[0]
         sleep(3)
@@ -262,9 +262,9 @@ class FederationTests(TestBase010):
         except Empty: None
 
         result = bridge.close()
-        self.assertEqual(result.status, 0)
+        self.assertEqual(result.status, 0, result)
         result = link.close()
-        self.assertEqual(result.status, 0)
+        self.assertEqual(result.status, 0, result)
 
         self.verify_cleanup()
 
@@ -289,11 +289,11 @@ class FederationTests(TestBase010):
         qmf = self.qmf
         broker = qmf.getObjects(_class="broker")[0]
         result = broker.connect(self.remote_host(), self.remote_port(), False, "PLAIN", "guest", "guest", "tcp")
-        self.assertEqual(result.status, 0)
+        self.assertEqual(result.status, 0, result)
 
         link = qmf.getObjects(_class="link")[0]
         result = link.bridge(False, "my-bridge-queue", "amq.fanout", "my-key", "", "", True, False, False, 1)
-        self.assertEqual(result.status, 0)
+        self.assertEqual(result.status, 0, result)
 
         bridge = qmf.getObjects(_class="bridge")[0]
         sleep(5)
