@@ -138,4 +138,15 @@ public class ContentHeaderBody implements AMQBody
     {
         properties = props;
     }
+
+    @Override
+    public String toString()
+    {
+        return "ContentHeaderBody{" +
+                "classId=" + classId +
+                ", weight=" + weight +
+                ", bodySize=" + bodySize +
+                ", properties=" + properties +
+                '}';
+    }
 }

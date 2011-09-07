@@ -48,4 +48,10 @@ public class MultiVersionProtocolEngineFactory implements ProtocolEngineFactory
     {
         return new MultiVersionProtocolEngine(_appRegistry, _fqdn, _supported, network, ID_GENERATOR.getAndIncrement());
     }
+
+    public ServerProtocolEngine newProtocolEngine()
+    {
+        return new MultiVersionProtocolEngine(_appRegistry, _fqdn, _supported, ID_GENERATOR.getAndIncrement());
+    }
+
 }

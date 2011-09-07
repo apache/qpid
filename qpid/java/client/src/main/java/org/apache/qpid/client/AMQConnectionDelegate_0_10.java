@@ -1,6 +1,6 @@
 package org.apache.qpid.client;
 /*
- * 
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -8,16 +8,16 @@ package org.apache.qpid.client;
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
- * 
+ *
  */
 
 
@@ -43,6 +43,7 @@ import org.apache.qpid.jms.Session;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.transport.Connection;
 import org.apache.qpid.transport.ConnectionClose;
+import org.apache.qpid.transport.ConnectionCloseCode;
 import org.apache.qpid.transport.ConnectionException;
 import org.apache.qpid.transport.ConnectionListener;
 import org.apache.qpid.transport.ConnectionSettings;
@@ -58,7 +59,7 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
      * This class logger.
      */
     private static final Logger _logger = LoggerFactory.getLogger(AMQConnectionDelegate_0_10.class);
-    
+
     /**
      * The name of the UUID property
      */
@@ -273,10 +274,10 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
         }
 
         ConnectionClose close = exc.getClose();
-        if (close == null)
+        if (close == null || close.getReplyCode() == ConnectionCloseCode.CONNECTION_FORCED)
         {
             _conn.getProtocolHandler().setFailoverLatch(new CountDownLatch(1));
-            
+
             try
             {
                 if (_conn.firePreFailover(false) && _conn.attemptReconnection())
@@ -345,12 +346,12 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
     {
         return ProtocolVersion.v0_10;
     }
-    
+
     public String getUUID()
     {
-        return (String)_qpidConnection.getServerProperties().get(UUID_NAME);        
+        return (String)_qpidConnection.getServerProperties().get(UUID_NAME);
     }
-    
+
     private ConnectionSettings retriveConnectionSettings(BrokerDetails brokerDetail)
     {
         ConnectionSettings conSettings = brokerDetail.buildConnectionSettings();
@@ -358,7 +359,7 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
         conSettings.setVhost(_conn.getVirtualHost());
         conSettings.setUsername(_conn.getUsername());
         conSettings.setPassword(_conn.getPassword());
-        
+
         // Pass client name from connection URL
         Map<String, Object> clientProps = new HashMap<String, Object>();
         try
@@ -375,7 +376,7 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
 
         return conSettings;
     }
-    
+
     // The idle_timeout prop is in milisecs while
     // the new heartbeat prop is in secs
     private int getHeartbeatInterval(BrokerDetails brokerDetail)
@@ -390,7 +391,7 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
         {
             heartbeat = Integer.parseInt(brokerDetail.getProperty(BrokerDetails.OPTIONS_HEARTBEAT));
         }
-        else if (Integer.getInteger(ClientProperties.IDLE_TIMEOUT_PROP_NAME) != null) 
+        else if (Integer.getInteger(ClientProperties.IDLE_TIMEOUT_PROP_NAME) != null)
         {
             heartbeat = Integer.getInteger(ClientProperties.IDLE_TIMEOUT_PROP_NAME)/1000;
             _logger.warn("JVM arg -Didle_timeout=<mili_secs> is deprecated, please use -Dqpid.heartbeat=<secs>");

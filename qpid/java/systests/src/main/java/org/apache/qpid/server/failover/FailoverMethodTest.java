@@ -26,6 +26,7 @@ import java.util.concurrent.TimeUnit;
 import javax.jms.ExceptionListener;
 import javax.jms.JMSException;
 
+import org.apache.qpid.AMQConnectionClosedException;
 import org.apache.qpid.AMQDisconnectedException;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQConnection;
@@ -139,7 +140,7 @@ public class FailoverMethodTest extends QpidBrokerTestCase implements ExceptionL
 
     public void onException(JMSException e)
     {
-        if (e.getLinkedException() instanceof AMQDisconnectedException)
+        if (e.getLinkedException() instanceof AMQDisconnectedException || e.getLinkedException() instanceof AMQConnectionClosedException)
         {
             _logger.debug("Received AMQDisconnectedException");
             _failoverComplete.countDown();

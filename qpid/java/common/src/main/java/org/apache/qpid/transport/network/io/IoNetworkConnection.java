@@ -37,7 +37,7 @@ public class IoNetworkConnection implements NetworkConnection
     private final long _timeout;
     private final IoSender _ioSender;
     private final IoReceiver _ioReceiver;
-    
+
     public IoNetworkConnection(Socket socket, Receiver<ByteBuffer> delegate,
             int sendBufferSize, int receiveBufferSize, long timeout)
     {
@@ -45,9 +45,15 @@ public class IoNetworkConnection implements NetworkConnection
         _timeout = timeout;
 
         _ioReceiver = new IoReceiver(_socket, delegate, receiveBufferSize,_timeout);
+
         _ioSender = new IoSender(_socket, 2 * sendBufferSize, _timeout);
+
         _ioSender.registerCloseListener(_ioReceiver);
 
+    }
+
+    public void start()
+    {
         _ioReceiver.initiate();
         _ioSender.initiate();
     }

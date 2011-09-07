@@ -67,14 +67,14 @@ public class ExternalACLTest extends AbstractACLTestCase
             fail("Connection was not created due to:" + e);
         }
     }
-    
+
     public void testAccessVhostAuthorisedGuestSuccess() throws IOException, Exception
     {
         //The 'guest' user has no access to the 'test' vhost, as tested below in testAccessNoRights(), and so
-        //is unable to perform actions such as connecting (and by extension, creating a queue, and consuming 
-        //from a queue etc). In order to test the vhost-wide 'access' ACL right, the 'guest' user has been given 
+        //is unable to perform actions such as connecting (and by extension, creating a queue, and consuming
+        //from a queue etc). In order to test the vhost-wide 'access' ACL right, the 'guest' user has been given
         //this right in the 'test2' vhost.
-        
+
         try
         {
             //get a connection to the 'test2' vhost using the guest user and perform various actions.
@@ -106,7 +106,7 @@ public class ExternalACLTest extends AbstractACLTestCase
             fail("Test failed due to:" + e.getMessage());
         }
     }
-    
+
     public void testAccessNoRightsFailure() throws Exception
     {
         try
@@ -115,7 +115,7 @@ public class ExternalACLTest extends AbstractACLTestCase
             Session sess = conn.createSession(true, Session.SESSION_TRANSACTED);
             conn.start();
             sess.rollback();
-            
+
             fail("Connection was created.");
         }
         catch (JMSException e)
@@ -126,11 +126,11 @@ public class ExternalACLTest extends AbstractACLTestCase
             Throwable cause = linkedException.getCause();
             assertNotNull("Cause was null", cause);
             assertTrue("Wrong linked exception type", cause instanceof AMQException);
-            AMQConstant errorCode = isBroker010() ? AMQConstant.CONTEXT_IN_USE : AMQConstant.ACCESS_REFUSED;
+            AMQConstant errorCode = isBroker010() ? AMQConstant.CONNECTION_FORCED : AMQConstant.ACCESS_REFUSED;
             assertEquals("Incorrect error code received", errorCode, ((AMQException) cause).getErrorCode());
         }
     }
-    
+
     public void testClientDeleteQueueSuccess() throws Exception
     {
         try
@@ -155,7 +155,7 @@ public class ExternalACLTest extends AbstractACLTestCase
             fail("Test failed due to:" + e.getMessage());
         }
     }
-    
+
     public void testServerDeleteQueueFailure() throws Exception
     {
         try
@@ -207,13 +207,13 @@ public class ExternalACLTest extends AbstractACLTestCase
         try
         {
             Connection conn = getConnection("test", "client", "guest");
-            
+
             Session sess = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
             conn.start();
 
             sess.createConsumer(sess.createQueue("IllegalQueue"));
-            
+
             fail("Test failed as consumer was created.");
         }
         catch (JMSException e)
@@ -253,10 +253,10 @@ public class ExternalACLTest extends AbstractACLTestCase
             Session sess = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
             conn.start();
-            
+
             //Create a Named Queue
             ((AMQSession<?, ?>) sess).createQueue(new AMQShortString("IllegalQueue"), false, false, false);
-            
+
             fail("Test failed as Queue creation succeded.");
             //conn will be automatically closed
         }
@@ -385,7 +385,7 @@ public class ExternalACLTest extends AbstractACLTestCase
         try
         {
             Connection conn = getConnection("test", "client", "guest");
-            
+
             Session sess = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
             conn.start();
@@ -405,13 +405,13 @@ public class ExternalACLTest extends AbstractACLTestCase
         try
         {
             Connection conn = getConnection("test", "server", "guest");
-            
+
             Session sess = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
             conn.start();
 
             sess.createConsumer(sess.createTemporaryQueue());
-            
+
             fail("Test failed as consumer was created.");
         }
         catch (JMSException e)
@@ -446,7 +446,7 @@ public class ExternalACLTest extends AbstractACLTestCase
         try
         {
             Connection conn = getConnection("test", "server", "guest");
-            
+
             Session sess = conn.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
             conn.start();
@@ -480,13 +480,13 @@ public class ExternalACLTest extends AbstractACLTestCase
             check403Exception(e.getLinkedException());
         }
     }
-    
+
     public void testServerCreateAutoDeleteQueueInvalid() throws NamingException, JMSException, AMQException, Exception
     {
         try
         {
             Connection connection = getConnection("test", "server", "guest");
-            
+
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
             connection.start();
@@ -630,8 +630,8 @@ public class ExternalACLTest extends AbstractACLTestCase
             check403Exception(e.getLinkedException());
         }
     }
-    
-    
+
+
     @Override
     public String getConfig()
     {

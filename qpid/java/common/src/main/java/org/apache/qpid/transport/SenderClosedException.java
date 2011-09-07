@@ -18,14 +18,35 @@
  * under the License.
  *
  */
-package org.apache.qpid.protocol;
+package org.apache.qpid.transport;
 
-import org.apache.qpid.transport.network.NetworkConnection;
 
-public interface ProtocolEngineFactory  
-{ 
- 
-  // Returns a new instance of a ProtocolEngine 
-  ProtocolEngine newProtocolEngine();
-   
-} 
+/**
+ * SenderClosedException
+ *
+ */
+
+public class SenderClosedException extends SenderException
+{
+
+    public SenderClosedException(String message, Throwable cause)
+    {
+        super(message, cause);
+    }
+
+    public SenderClosedException(String message)
+    {
+        super(message);
+    }
+
+    public SenderClosedException(Throwable cause)
+    {
+        super(cause);
+    }
+
+    public void rethrow()
+    {
+        throw new SenderClosedException(getMessage(), this);
+    }
+
+}
