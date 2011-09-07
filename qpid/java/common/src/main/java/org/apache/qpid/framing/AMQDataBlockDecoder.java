@@ -21,17 +21,12 @@
 package org.apache.qpid.framing;
 
 import org.apache.mina.common.ByteBuffer;
-import org.apache.mina.common.IoSession;
-import org.apache.mina.filter.codec.ProtocolDecoderOutput;
-
-import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class AMQDataBlockDecoder
 {
-    private static final String SESSION_METHOD_BODY_FACTORY = "QPID_SESSION_METHOD_BODY_FACTORY";
 
     private static final BodyFactory[] _bodiesSupported = new BodyFactory[Byte.MAX_VALUE];
 
@@ -104,19 +99,6 @@ public class AMQDataBlockDecoder
         }
 
         return frame;
-    }
-
-    public void decode(IoSession session, ByteBuffer in, ProtocolDecoderOutput out) throws Exception
-    {
-        AMQMethodBodyFactory bodyFactory = (AMQMethodBodyFactory) session.getAttribute(SESSION_METHOD_BODY_FACTORY);
-        if (bodyFactory == null)
-        {
-            AMQVersionAwareProtocolSession protocolSession = (AMQVersionAwareProtocolSession) session.getAttachment();
-            bodyFactory = new AMQMethodBodyFactory(protocolSession);
-            session.setAttribute(SESSION_METHOD_BODY_FACTORY, bodyFactory);
-        }
-        
-        out.write(createAndPopulateFrame(bodyFactory, in));
     }
 
     public boolean decodable(ByteBuffer msg) throws AMQFrameDecodingException

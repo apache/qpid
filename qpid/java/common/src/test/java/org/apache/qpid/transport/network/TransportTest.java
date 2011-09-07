@@ -33,7 +33,6 @@ import org.apache.qpid.transport.NetworkTransportConfiguration;
 import org.apache.qpid.transport.Receiver;
 import org.apache.qpid.transport.TransportException;
 import org.apache.qpid.transport.network.io.IoNetworkTransport;
-import org.apache.qpid.transport.network.mina.MinaNetworkTransport;
 
 public class TransportTest extends QpidTestCase
 {
@@ -44,7 +43,7 @@ public class TransportTest extends QpidTestCase
     {
         final OutgoingNetworkTransport networkTransport = Transport.getOutgoingTransportInstance(ProtocolVersion.v8_0);
         assertNotNull(networkTransport);
-        assertTrue(networkTransport instanceof MinaNetworkTransport);
+        assertTrue(networkTransport instanceof IoNetworkTransport);
     }
 
     public void testGloballyOverriddenOutgoingTransportForv0_8() throws Exception
@@ -76,7 +75,7 @@ public class TransportTest extends QpidTestCase
     {
         final IncomingNetworkTransport networkTransport = Transport.getIncomingTransportInstance();
         assertNotNull(networkTransport);
-        assertTrue(networkTransport instanceof MinaNetworkTransport);
+        assertTrue(networkTransport instanceof IoNetworkTransport);
     }
 
     public void testOverriddenGetIncomingTransport() throws Exception

@@ -57,7 +57,6 @@ import org.apache.qpid.ssl.SSLContextFactory;
 import org.apache.qpid.transport.NetworkTransportConfiguration;
 import org.apache.qpid.transport.network.IncomingNetworkTransport;
 import org.apache.qpid.transport.network.Transport;
-import org.apache.qpid.transport.network.mina.MinaNetworkTransport;
 
 public class Broker
 {
@@ -88,7 +87,7 @@ public class Broker
         startup(new BrokerOptions());
     }
 
-    public void startup(BrokerOptions options) throws Exception
+    public void startup(final BrokerOptions options) throws Exception
     {
         try
         {
@@ -201,9 +200,9 @@ public class Broker
             {
                 for(int port : ports)
                 {
-                    final Set<AmqpProtocolVersion> supported = 
+                    final Set<AmqpProtocolVersion> supported =
                                     getSupportedVersions(port, exclude_0_10, exclude_0_9_1, exclude_0_9, exclude_0_8);
-                    final NetworkTransportConfiguration settings = 
+                    final NetworkTransportConfiguration settings =
                                     new ServerNetworkTransportConfiguration(serverConfig, port, bindAddress.getHostName(), Transport.TCP);
 
                     final IncomingNetworkTransport transport = Transport.getIncomingTransportInstance();
@@ -226,12 +225,12 @@ public class Broker
 
                 for(int sslPort : sslPorts)
                 {
-                    final Set<AmqpProtocolVersion> supported = 
+                    final Set<AmqpProtocolVersion> supported =
                                     getSupportedVersions(sslPort, exclude_0_10, exclude_0_9_1, exclude_0_9, exclude_0_8);
-                    final NetworkTransportConfiguration settings = 
+                    final NetworkTransportConfiguration settings =
                         new ServerNetworkTransportConfiguration(serverConfig, sslPort, bindAddress.getHostName(), Transport.TCP);
 
-                    final IncomingNetworkTransport transport = new MinaNetworkTransport();
+                    final IncomingNetworkTransport transport = Transport.getIncomingTransportInstance();
                     final MultiVersionProtocolEngineFactory protocolEngineFactory =
                                     new MultiVersionProtocolEngineFactory(hostName, supported);
 
@@ -252,7 +251,7 @@ public class Broker
     }
 
     private static Set<AmqpProtocolVersion> getSupportedVersions(final int port, final Set<Integer> exclude_0_10,
-                                                                final Set<Integer> exclude_0_9_1, final Set<Integer> exclude_0_9, 
+                                                                final Set<Integer> exclude_0_9_1, final Set<Integer> exclude_0_9,
                                                                 final Set<Integer> exclude_0_8)
     {
         final EnumSet<AmqpProtocolVersion> supported = EnumSet.allOf(AmqpProtocolVersion.class);
@@ -276,7 +275,7 @@ public class Broker
 
         return supported;
     }
-    
+
     private File getConfigFile(final String fileName,
                                final String defaultFileName,
                                final String qpidHome, boolean throwOnFileNotFound) throws InitException

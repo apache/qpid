@@ -92,13 +92,23 @@ final class IoReceiver implements Runnable, Closeable
         {
             try
             {
-                if (shutdownBroken)
+                try
                 {
-                   socket.close();
+                    if (shutdownBroken)
+                    {
+                       socket.close();
+                    }
+                    else
+                    {
+                        socket.shutdownInput();
+                    }
                 }
-                else
+                catch(SocketException se)
                 {
-                    socket.shutdownInput();
+                    if(!socket.isClosed() && !socket.isInputShutdown())
+                    {
+                        throw se;
+                    }
                 }
                 if (block && Thread.currentThread() != receiverThread)
                 {
@@ -117,6 +127,7 @@ final class IoReceiver implements Runnable, Closeable
             {
                 throw new TransportException(e);
             }
+
         }
     }
 

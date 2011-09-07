@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.net.ConnectException;
 import java.nio.channels.UnresolvedAddressException;
 import java.security.GeneralSecurityException;
+import java.security.Security;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -55,6 +56,8 @@ import org.apache.qpid.transport.ConnectionSettings;
 import org.apache.qpid.transport.network.NetworkConnection;
 import org.apache.qpid.transport.network.OutgoingNetworkTransport;
 import org.apache.qpid.transport.network.Transport;
+import org.apache.qpid.transport.network.security.SecurityLayer;
+import org.apache.qpid.transport.network.security.SecurityLayerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -118,9 +121,11 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
             }
         }
 
+        SecurityLayer securityLayer = SecurityLayerFactory.newInstance(settings);
+
         OutgoingNetworkTransport transport = Transport.getOutgoingTransportInstance(getProtocolVersion());
-        NetworkConnection network = transport.connect(settings, _conn._protocolHandler, sslContext);
-        _conn._protocolHandler.setNetworkConnection(network);
+        NetworkConnection network = transport.connect(settings, securityLayer.receiver(_conn._protocolHandler), sslContext);
+        _conn._protocolHandler.setNetworkConnection(network, securityLayer.sender(network.getSender()));
         _conn._protocolHandler.getProtocolSession().init();
         // this blocks until the connection has been set up or when an error
         // has prevented the connection being set up

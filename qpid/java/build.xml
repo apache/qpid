@@ -77,7 +77,7 @@
     <iterate target="compile-tests"/>
   </target>
 
-  <target name="test" description="execute tests">
+  <target name="test" description="execute tests" depends="manifest">
 
     <delete file="${build.failed}"/>
 

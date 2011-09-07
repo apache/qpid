@@ -76,6 +76,7 @@ import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.txn.LocalTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.transport.TransportException;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -207,7 +208,7 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
     {
         return isTransactional() && _txnUpdateTime.get() > 0 && _transaction.getTransactionStartTime() > 0;
     }
-    
+
     private void incrementOutstandingTxnsIfNecessary()
     {
         if(isTransactional())
@@ -386,6 +387,13 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
             _currentMessage = null;
             throw e;
         }
+        catch (RuntimeException e)
+        {
+            // we want to make sure we don't keep a reference to the message in the
+            // event of an error
+            _currentMessage = null;
+            throw e;
+        }
     }
 
     protected void routeCurrentMessage() throws AMQException
@@ -457,6 +465,11 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
             _tag2SubscriptionMap.remove(tag);
             throw e;
         }
+        catch (RuntimeException e)
+        {
+            _tag2SubscriptionMap.remove(tag);
+            throw e;
+        }
         return tag;
     }
 
@@ -514,7 +527,11 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
         }
         catch (AMQException e)
         {
-            _logger.error("Caught AMQException whilst attempting to reque:" + e);
+            _logger.error("Caught AMQException whilst attempting to requeue:" + e);
+        }
+        catch (TransportException e)
+        {
+            _logger.error("Caught TransportException whilst attempting to requeue:" + e);
         }
 
         getConfigStore().removeConfiguredObject(this);
@@ -1432,7 +1449,7 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
     {
         _session.mgmtCloseChannel(_channelId);
     }
-    
+
     public void checkTransactionStatus(long openWarn, long openClose, long idleWarn, long idleClose) throws AMQException
     {
         if (inTransaction())

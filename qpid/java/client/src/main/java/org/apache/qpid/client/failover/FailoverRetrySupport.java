@@ -59,8 +59,8 @@ import org.slf4j.LoggerFactory;
  * <tr><td> Automatically retry the continuation accross fail-overs until it succeeds, or raises an exception.
  * </table>
  *
- * @todo Another continuation. Could use an interface Continuation (as described in other todos, for example, see
- *      {@link org.apache.qpid.pool.Job}). Then have a wrapping continuation (this), which blocks on an arbitrary
+ * @todo Another continuation. Could use an interface Continuation (as described in other todos)
+ *      Then have a wrapping continuation (this), which blocks on an arbitrary
  *      Condition or Latch (specified in constructor call), that this blocks on before calling the wrapped Continuation.
  *      Must work on Java 1.4, so check retrotranslator works on Lock/Condition or latch first. Argument and return type
  *      to match wrapped condition as type parameters. Rename to AsyncConditionalContinuation or something like that.
