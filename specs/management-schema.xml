@@ -163,8 +163,8 @@
     <statistic name="msgTxnDequeues"      type="count64"  unit="message"     desc="Transactional messages dequeued"/>
     <statistic name="msgPersistEnqueues"  type="count64"  unit="message"     desc="Persistent messages enqueued"/>
     <statistic name="msgPersistDequeues"  type="count64"  unit="message"     desc="Persistent messages dequeued"/>
-    <statistic name="msgDepth"            type="count32"  unit="message"     desc="Current size of queue in messages" assign="msgTotalEnqueues - msgTotalDequeues"/>
-    <statistic name="byteDepth"           type="count32"  unit="octet"       desc="Current size of queue in bytes"    assign="byteTotalEnqueues - byteTotalDequeues"/>
+    <statistic name="msgDepth"            type="count64"  unit="message"     desc="Current size of queue in messages" assign="msgTotalEnqueues - msgTotalDequeues"/>
+    <statistic name="byteDepth"           type="count64"  unit="octet"       desc="Current size of queue in bytes"    assign="byteTotalEnqueues - byteTotalDequeues"/>
     <statistic name="byteTotalEnqueues"   type="count64"  unit="octet"       desc="Total messages enqueued"/>
     <statistic name="byteTotalDequeues"   type="count64"  unit="octet"       desc="Total messages dequeued"/>
     <statistic name="byteTxnEnqueues"     type="count64"  unit="octet"       desc="Transactional messages enqueued"/>
@@ -398,8 +398,8 @@
     <arg name="reason"  type="lstr"   desc="Reason for a failure"/>
     <arg name="rhost"   type="sstr"   desc="Address (i.e. DNS name, IP address, etc.) of a remotely connected host"/>
     <arg name="user"    type="sstr"   desc="Authentication identity"/>
-    <arg name="msgDepth" type="count32" desc="Current size of queue in messages"/>
-    <arg name="byteDepth" type="count32" desc="Current size of queue in bytes"/>
+    <arg name="msgDepth" type="count64" desc="Current size of queue in messages"/>
+    <arg name="byteDepth" type="count64" desc="Current size of queue in bytes"/>
   </eventArguments>
 
   <event name="clientConnect"     sev="inform" args="rhost, user"/>
