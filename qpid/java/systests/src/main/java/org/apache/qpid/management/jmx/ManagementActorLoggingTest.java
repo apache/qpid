@@ -68,61 +68,6 @@ public class ManagementActorLoggingTest extends AbstractTestLogging
 
     /**
      * Description:
-     * When a JMX Management connection is made then this will be logged out.
-     *
-     * Input:
-     *
-     * 1. Running Broker
-     * 2. Connect Management client via JMX
-     * Output:
-     *
-     * <date> MNG-1007 : Open <user>
-     *
-     * Validation Steps:
-     * 1. The MNG ID is correct
-     * 2. The user is correct
-     *
-     * On connection close a MNG-1008 is expected
-     *
-     * * <date> MNG-1008 : Close
-     *
-     * Validation Steps:
-     * 1. The MNG ID is correct
-     *
-     * @throws java.io.IOException - if there is a problem reseting the log monitor
-     */
-    public void testJMXManagementConsoleConnection() throws IOException
-    {
-        List<String> results = waitAndFindMatches("MNG-1007");
-
-        assertEquals("Unexpected Management Connection count", 1, results.size());
-
-        String log = getLogMessage(results, 0);
-
-        validateMessageID("MNG-1007", log);
-
-        assertTrue("User not in log message:" + log, log.endsWith(USER));
-        // Extract the id from the log string
-        //  MESSAGE [mng:1(rmi://169.24.29.116)] MNG-1007 : Open : User admin
-        int connectionID = Integer.parseInt(fromActor(getLog(results.get(0))).charAt(4) + "");
-
-        results = findMatches("MNG-1008");
-
-        assertEquals("Unexpected Management Connection close count", 0, results.size());
-
-        _jmxUtils.close();
-        _closed  = true;
-        
-        results = waitAndFindMatches("MNG-1008");
-
-        assertEquals("Unexpected Management Connection count", 1, results.size());
-
-        assertEquals("Close does not have same id as open,", connectionID,
-                     Integer.parseInt(fromActor(getLog(results.get(0))).charAt(4) + ""));
-    }
-
-    /**
-     * Description:
      * When a connected client has its connection closed via the Management Console this will be logged as a CON-1002 message.
      * Input:
      *
