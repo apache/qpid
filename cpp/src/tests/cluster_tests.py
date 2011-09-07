@@ -164,6 +164,121 @@ acl allow all all
             self.fail("Expected exception")
         except messaging.exceptions.NotFound: pass
 
+    def test_sasl_join(self):
+        """Verify SASL authentication between brokers when joining a cluster."""
+        sasl_config=os.path.join(self.rootdir, "sasl_config")
+
+                # Valid user/password, ensure queue is created.
+        c = cluster[0].connect(username="zig", password="zig")
+        c.session().sender("ziggy;{create:always}")
+        c.close()
+        c = cluster[1].connect(username="zig", password="zig")
+        c.session().receiver("ziggy;{assert:always}")
+        c.close()
+        for b in cluster: b.ready()     # Make sure all brokers still running.
+
+        # Valid user, bad password
+        try:
+            cluster[0].connect(username="zig", password="foo").close()
+            self.fail("Expected exception")
+        except messaging.exceptions.ConnectionError: pass
+        for b in cluster: b.ready()     # Make sure all brokers still running.
+
+        # Bad user ID
+        try:
+            cluster[0].connect(username="foo", password="bar").close()
+            self.fail("Expected exception")
+        except messaging.exceptions.ConnectionError: pass
+        for b in cluster: b.ready()     # Make sure all brokers still running.
+
+        # Action disallowed by ACL
+        c = cluster[0].connect(username="zag", password="zag")
+        try:
+            s = c.session()
+            s.sender("zaggy;{create:always}")
+            s.close()
+            self.fail("Expected exception")
+        except messaging.exceptions.UnauthorizedAccess: pass
+        # make sure the queue was not created at the other node.
+        c = cluster[0].connect(username="zag", password="zag")
+        try:
+            s = c.session()
+            s.sender("zaggy;{assert:always}")
+            s.close()
+            self.fail("Expected exception")
+        except messaging.exceptions.NotFound: pass
+
+    def test_sasl_join(self):
+        """Verify SASL authentication between brokers when joining a cluster."""
+        # Valid user/password, ensure queue is created.
+        c = cluster[0].connect(username="zig", password="zig")
+        c.session().sender("ziggy;{create:always}")
+        c.close()
+        c = cluster[1].connect(username="zig", password="zig")
+        c.session().receiver("ziggy;{assert:always}")
+        c.close()
+        for b in cluster: b.ready()     # Make sure all brokers still running.
+
+        # Valid user, bad password
+        try:
+            cluster[0].connect(username="zig", password="foo").close()
+            self.fail("Expected exception")
+        except messaging.exceptions.ConnectionError: pass
+        for b in cluster: b.ready()     # Make sure all brokers still running.
+
+        # Bad user ID
+        try:
+            cluster[0].connect(username="foo", password="bar").close()
+            self.fail("Expected exception")
+        except messaging.exceptions.ConnectionError: pass
+        for b in cluster: b.ready()     # Make sure all brokers still running.
+
+        # Action disallowed by ACL
+        c = cluster[0].connect(username="zag", password="zag")
+        try:
+            s = c.session()
+            s.sender("zaggy;{create:always}")
+            s.close()
+            self.fail("Expected exception")
+        except messaging.exceptions.UnauthorizedAccess: pass
+        # make sure the queue was not created at the other node.
+        c = cluster[0].connect(username="zag", password="zag")
+        try:
+            s = c.session()
+            s.sender("zaggy;{assert:always}")
+            s.close()
+            self.fail("Expected exception")
+        except messaging.exceptions.NotFound: pass
+
+    def test_sasl_join(self):
+        """Verify SASL authentication between brokers when joining a cluster."""
+        sasl_config=os.path.join(self.rootdir, "sasl_config")
+        # Test with a valid username/password
+        cluster = self.cluster(1, args=["--auth", "yes",
+                                        "--sasl-config", sasl_config,
+                                        "--load-module", os.getenv("ACL_LIB"),
+                                        "--cluster-username=zig",
+                                        "--cluster-password=zig",
+                                        "--cluster-mechanism=PLAIN"
+                                        ])
+        cluster.start()
+        cluster.ready()
+        c = cluster[1].connect(username="zag", password="zag")
+
+        # Test with an invalid username/password
+        cluster = self.cluster(1, args=["--auth", "yes",
+                                        "--sasl-config", sasl_config,
+                                        "--load-module", os.getenv("ACL_LIB"),
+                                        "--cluster-username=x",
+                                        "--cluster-password=y",
+                                        "--cluster-mechanism=PLAIN"
+                                        ])
+        try:
+            cluster.start(expect=EXPECT_EXIT_OK)
+            cluster[1].ready()
+            self.fail("Expected exception")
+        except: pass
+
     def test_user_id_update(self):
         """Ensure that user-id of an open session is updated to new cluster members"""
         sasl_config=os.path.join(self.rootdir, "sasl_config")

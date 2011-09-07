@@ -151,6 +151,7 @@ void UpdateClient::run() {
     try {
         connection.open(updateeUrl, connectionSettings);
         session = connection.newSession(UPDATE);
+        session.sync();
         update();
         done();
     } catch (const std::exception& e) {
