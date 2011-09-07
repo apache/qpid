@@ -49,10 +49,12 @@ public class TestNetworkConnection implements NetworkConnection
         _sender = new MockSender();
     }
 
+
+
     public void bind(int port, InetAddress[] addresses, ProtocolEngineFactory protocolFactory,
             NetworkTransportConfiguration config, SSLContextFactory sslFactory) throws BindException
     {
-        
+
     }
 
     public SocketAddress getLocalAddress()
@@ -68,37 +70,37 @@ public class TestNetworkConnection implements NetworkConnection
     public void open(int port, InetAddress destination, ProtocolEngine engine, NetworkTransportConfiguration config,
             SSLContextFactory sslFactory) throws OpenException
     {
-        
+
     }
 
     public void setMaxReadIdle(int idleTime)
     {
-        
+
     }
 
     public void setMaxWriteIdle(int idleTime)
     {
-        
+
     }
 
     public void close()
     {
-           
+
     }
 
     public void flush()
     {
-        
+
     }
 
     public void send(ByteBuffer msg)
     {
-        
+
     }
 
     public void setIdleTimeout(int i)
     {
-        
+
     }
 
     public void setPort(int port)
@@ -134,5 +136,9 @@ public class TestNetworkConnection implements NetworkConnection
     public Sender<ByteBuffer> getSender()
     {
         return _sender;
+    }
+
+    public void start()
+    {
     }
 }

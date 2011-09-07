@@ -80,7 +80,7 @@ public final class AMQConstant
     /**
      * An operator intervened to close the connection for some reason. The client may retry at some later date.
      */
-    public static final AMQConstant CONTEXT_IN_USE = new AMQConstant(320, "context in use", true);
+    public static final AMQConstant CONNECTION_FORCED = new AMQConstant(320, "connection forced", true);
 
     /** The client tried to work with an unknown virtual host or cluster. */
     public static final AMQConstant INVALID_PATH = new AMQConstant(402, "invalid path", true);

@@ -75,6 +75,7 @@ import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.txn.LocalTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.transport.TransportException;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -137,7 +138,7 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
     private final AtomicBoolean _suspended = new AtomicBoolean(false);
 
     private ServerTransaction _transaction;
-    
+
     private final AtomicLong _txnStarts = new AtomicLong(0);
     private final AtomicLong _txnCommits = new AtomicLong(0);
     private final AtomicLong _txnRejects = new AtomicLong(0);
@@ -201,12 +202,12 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
         // theory
         return !(_transaction instanceof AutoCommitTransaction);
     }
-    
+
     public boolean inTransaction()
     {
         return isTransactional() && _txnUpdateTime.get() > 0 && _transaction.getTransactionStartTime() > 0;
     }
-    
+
     private void incrementOutstandingTxnsIfNecessary()
     {
         if(isTransactional())
@@ -216,7 +217,7 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
             _txnCount.compareAndSet(0,1);
         }
     }
-    
+
     private void decrementOutstandingTxnsIfNecessary()
     {
         if(isTransactional())
@@ -314,7 +315,7 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
             try
             {
                 _currentMessage.getStoredMessage().flushToStore();
-                
+
                 final ArrayList<? extends BaseQueue> destinationQueues = _currentMessage.getDestinationQueues();
 
                 if(!checkMessageUserId(_currentMessage.getContentHeader()))
@@ -385,6 +386,13 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
             _currentMessage = null;
             throw e;
         }
+        catch (RuntimeException e)
+        {
+            // we want to make sure we don't keep a reference to the message in the
+            // event of an error
+            _currentMessage = null;
+            throw e;
+        }
     }
 
     protected void routeCurrentMessage() throws AMQException
@@ -435,7 +443,7 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
         {
             throw new AMQException("Consumer already exists with same tag: " + tag);
         }
-        
+
          Subscription subscription =
                 SubscriptionFactoryImpl.INSTANCE.createSubscription(_channelId, _session, tag, acks, filters, noLocal, _creditManager);
 
@@ -452,6 +460,11 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
             queue.registerSubscription(subscription, exclusive);
         }
         catch (AMQException e)
+        {
+            _tag2SubscriptionMap.remove(tag);
+            throw e;
+        }
+        catch (RuntimeException e)
         {
             _tag2SubscriptionMap.remove(tag);
             throw e;
@@ -513,7 +526,11 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
         }
         catch (AMQException e)
         {
-            _logger.error("Caught AMQException whilst attempting to reque:" + e);
+            _logger.error("Caught AMQException whilst attempting to requeue:" + e);
+        }
+        catch (TransportException e)
+        {
+            _logger.error("Caught TransportException whilst attempting to requeue:" + e);
         }
 
         getConfigStore().removeConfiguredObject(this);
@@ -944,7 +961,7 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
         finally
         {
             _rollingBack = false;
-            
+
             _txnRejects.incrementAndGet();
             _txnStarts.incrementAndGet();
             decrementOutstandingTxnsIfNecessary();
@@ -1425,12 +1442,12 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
     {
         return _createTime;
     }
-    
+
     public void mgmtClose() throws AMQException
     {
         _session.mgmtCloseChannel(_channelId);
     }
-    
+
     public void checkTransactionStatus(long openWarn, long openClose, long idleWarn, long idleClose) throws AMQException
     {
         if (inTransaction())

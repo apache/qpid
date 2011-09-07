@@ -44,8 +44,9 @@ public class SSLSender implements Sender<ByteBuffer>
     private final ByteBuffer netData;
     private final long timeout;
     private final SSLStatus _sslStatus;
-    private ConnectionSettings settings;
-    
+
+    private String _hostname;
+
     private final AtomicBoolean closed = new AtomicBoolean(false);
 
 
@@ -59,9 +60,9 @@ public class SSLSender implements Sender<ByteBuffer>
         _sslStatus = sslStatus;
     }
     
-    public void setConnectionSettings(ConnectionSettings settings)
+    public void setHostname(String hostname)
     {
-        this.settings = settings;
+        _hostname = hostname;
     }
 
     public void close()
@@ -237,9 +238,9 @@ public class SSLSender implements Sender<ByteBuffer>
                     break;
 
                 case FINISHED:
-                    if (this.settings != null && this.settings.isVerifyHostname() )
+                    if (_hostname != null)
                     {
-                        SSLUtil.verifyHostname(engine, this.settings.getHost());
+                        SSLUtil.verifyHostname(engine, _hostname);
                     }
                     
                 case NOT_HANDSHAKING:

@@ -210,10 +210,7 @@ public class ClientDelegate extends ConnectionDelegate
             }
             else if (sc.getMechanismName().equals("EXTERNAL"))
             {
-                if (conn.getSecurityLayer() != null)
-                {
-                    conn.setUserID(conn.getSecurityLayer().getUserID());
-                }
+                conn.setUserID(conn.getSecurityLayer().getUserID());
             }
         }
         
