@@ -99,7 +99,9 @@ Connection::Connection(Cluster& c, sys::ConnectionOutputHandler& out,
                    external,
                    isLink,
                    isCatchUp ? ++catchUpId : 0,
-                   isCatchUp),  // isCatchUp => shadow
+                   // The first catch-up connection is not considered a shadow
+                   // as it needs to be authenticated.
+                   isCatchUp && self.second > 1),
     expectProtocolHeader(isLink),
     mcastFrameHandler(cluster.getMulticast(), self),
     updateIn(c.getUpdateReceiver()),
