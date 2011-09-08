@@ -39,11 +39,6 @@ Usage:  qpid-config [OPTIONS]
         qpid-config [OPTIONS] unbind <exchange-name> <queue-name> [binding-key]"""
 
 description = """
-ADDRESS syntax:
-
-      [username/password@] hostname [:<port>]
-      [username/password@] ip-address [:<port>]
-
 Examples:
 
 $ qpid-config add queue q
@@ -160,7 +155,7 @@ def OptionsAndArguments(argv):
     group1 = OptionGroup(parser, "General Options")
     group1.add_option("-t", "--timeout", action="store", type="int", default=10, metavar="<secs>", help="Maximum time to wait for broker connection (in seconds)")
     group1.add_option("-b", "--bindings", action="store_true", help="Show bindings in queue or exchange list")
-    group1.add_option("-a", "--broker-addr", action="store", type="string", default="localhost:5672", metavar="<address>", help="Address of qpidd broker")
+    group1.add_option("-a", "--broker-addr", action="store", type="string", default="localhost:5672", metavar="<address>", help="Address of qpidd broker with syntax: [username/password@] hostname | ip-address [:<port>]")
     group1.add_option("--sasl-mechanism", action="store", type="string", metavar="<mech>", help="SASL mechanism for authentication (e.g. EXTERNAL, ANONYMOUS, PLAIN, CRAM-MD, DIGEST-MD5, GSSAPI). SASL automatically picks the most secure available mechanism - use this option to override.")
     parser.add_option_group(group1)
 
