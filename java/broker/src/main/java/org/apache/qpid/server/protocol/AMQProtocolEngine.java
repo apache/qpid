@@ -20,7 +20,9 @@
  */
 package org.apache.qpid.server.protocol;
 
+import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
@@ -348,7 +350,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, Managable, AMQPr
     private void protocolInitiationReceived(ProtocolInitiation pi)
     {
         // this ensures the codec never checks for a PI message again
-        ((AMQDecoder) _codecFactory.getDecoder()).setExpectProtocolInitiation(false);
+        (_codecFactory.getDecoder()).setExpectProtocolInitiation(false);
         try
         {
             // Log incomming protocol negotiation request
@@ -368,7 +370,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, Managable, AMQPr
                                                                                        null,
                                                                                        mechanisms.getBytes(),
                                                                                        locales.getBytes());
-            _sender.send(responseBody.generateFrame(0).toNioByteBuffer());
+            _sender.send(asByteBuffer(responseBody.generateFrame(0)));
             _sender.flush();
 
         }
@@ -376,9 +378,41 @@ public class AMQProtocolEngine implements ServerProtocolEngine, Managable, AMQPr
         {
             _logger.info("Received unsupported protocol initiation for protocol version: " + getProtocolVersion());
 
-            _sender.send(new ProtocolInitiation(ProtocolVersion.getLatestSupportedVersion()).toNioByteBuffer());
+            _sender.send(asByteBuffer(new ProtocolInitiation(ProtocolVersion.getLatestSupportedVersion())));
             _sender.flush();
         }
+    }
+
+    private ByteBuffer asByteBuffer(AMQDataBlock block)
+    {
+        final ByteBuffer buf = ByteBuffer.allocate((int) block.getSize());
+
+        try
+        {
+            block.writePayload(new DataOutputStream(new OutputStream()
+            {
+
+
+                @Override
+                public void write(int b) throws IOException
+                {
+                    buf.put((byte) b);
+                }
+
+                @Override
+                public void write(byte[] b, int off, int len) throws IOException
+                {
+                    buf.put(b, off, len);
+                }
+            }));
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException(e);
+        }
+
+        buf.flip();
+        return buf;
     }
 
     public void methodFrameReceived(int channelId, AMQMethodBody methodBody)
@@ -491,7 +525,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, Managable, AMQPr
     public synchronized void writeFrame(AMQDataBlock frame)
     {
         _lastSent = frame;
-        final ByteBuffer buf = frame.toNioByteBuffer();
+        final ByteBuffer buf = asByteBuffer(frame);
         _lastIoTime = System.currentTimeMillis();
         _writtenBytes += buf.remaining();
         _sender.send(buf);
@@ -1020,7 +1054,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, Managable, AMQPr
 
     public void writerIdle()
     {
-        _sender.send(HeartbeatBody.FRAME.toNioByteBuffer());
+        _sender.send(asByteBuffer(HeartbeatBody.FRAME));
     }
 
     public void exception(Throwable throwable)

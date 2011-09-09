@@ -20,13 +20,13 @@
  */
 package org.apache.qpid.client.util;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.ObjectOutputStream;
-import java.lang.reflect.Proxy;
 import java.util.Arrays;
 import java.util.List;
 
-import org.apache.mina.common.ByteBuffer;
 import org.apache.qpid.test.utils.QpidTestCase;
 
 public class ClassLoadingAwareObjectInputStreamTest extends QpidTestCase
@@ -37,16 +37,15 @@ public class ClassLoadingAwareObjectInputStreamTest extends QpidTestCase
     protected void setUp() throws Exception
     {
         //Create a viable input stream for instantiating the CLA OIS
-        ByteBuffer buf = ByteBuffer.allocate(10);
-        buf.setAutoExpand(true);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
-        ObjectOutputStream out = new ObjectOutputStream(buf.asOutputStream());
+        ObjectOutputStream out = new ObjectOutputStream(baos);
         out.writeObject("testString");
         out.flush();
         out.close();
 
-        buf.rewind();
-        _in = buf.asInputStream();
+
+        _in = new ByteArrayInputStream(baos.toByteArray());
 
         _claOIS = new ClassLoadingAwareObjectInputStream(_in);
     }

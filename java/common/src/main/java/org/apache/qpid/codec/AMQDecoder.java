@@ -20,10 +20,9 @@
  */
 package org.apache.qpid.codec;
 
-import java.util.ArrayList;
-
-import org.apache.mina.common.ByteBuffer;
-import org.apache.mina.common.SimpleByteBufferAllocator;
+import java.io.*;
+import java.nio.ByteBuffer;
+import java.util.*;
 
 import org.apache.qpid.framing.AMQDataBlock;
 import org.apache.qpid.framing.AMQDataBlockDecoder;
@@ -61,12 +60,11 @@ public class AMQDecoder
 
     /** Flag to indicate whether this decoder needs to handle protocol initiation. */
     private boolean _expectProtocolInitiation;
-    private boolean firstDecode = true;
 
     private AMQMethodBodyFactory _bodyFactory;
 
-    private ByteBuffer _remainingBuf;
-    
+    private List<ByteArrayInputStream> _remainingBufs = new ArrayList<ByteArrayInputStream>();
+
     /**
      * Creates a new AMQP decoder.
      *
@@ -92,62 +90,168 @@ public class AMQDecoder
         _expectProtocolInitiation = expectProtocolInitiation;
     }
 
+    private class RemainingByteArrayInputStream extends InputStream
+    {
+        private int _currentListPos;
+        private int _markPos;
 
-    private static final SimpleByteBufferAllocator SIMPLE_BYTE_BUFFER_ALLOCATOR = new SimpleByteBufferAllocator();
 
-    public ArrayList<AMQDataBlock> decodeBuffer(java.nio.ByteBuffer buf) throws AMQFrameDecodingException, AMQProtocolVersionException
+        @Override
+        public int read() throws IOException
+        {
+            ByteArrayInputStream currentStream = _remainingBufs.get(_currentListPos);
+            if(currentStream.available() > 0)
+            {
+                return currentStream.read();
+            }
+            else if((_currentListPos == _remainingBufs.size())
+                    || (++_currentListPos == _remainingBufs.size()))
+            {
+                return -1;
+            }
+            else
+            {
+
+                ByteArrayInputStream stream = _remainingBufs.get(_currentListPos);
+                stream.mark(0);
+                return stream.read();
+            }
+        }
+
+        @Override
+        public int read(final byte[] b, final int off, final int len) throws IOException
+        {
+
+            if(_currentListPos == _remainingBufs.size())
+            {
+                return -1;
+            }
+            else
+            {
+                ByteArrayInputStream currentStream = _remainingBufs.get(_currentListPos);
+                final int available = currentStream.available();
+                int read = currentStream.read(b, off, len > available ? available : len);
+                if(read < len)
+                {
+                    if(_currentListPos++ != _remainingBufs.size())
+                    {
+                        _remainingBufs.get(_currentListPos).mark(0);
+                    }
+                    int correctRead = read == -1 ? 0 : read;
+                    int subRead = read(b, off+correctRead, len-correctRead);
+                    if(subRead == -1)
+                    {
+                        return read;
+                    }
+                    else
+                    {
+                        return correctRead+subRead;
+                    }
+                }
+                else
+                {
+                    return len;
+                }
+            }
+        }
+
+        @Override
+        public int available() throws IOException
+        {
+            int total = 0;
+            for(int i = _currentListPos; i < _remainingBufs.size(); i++)
+            {
+                total += _remainingBufs.get(i).available();
+            }
+            return total;
+        }
+
+        @Override
+        public void mark(final int readlimit)
+        {
+            _markPos = _currentListPos;
+            final ByteArrayInputStream stream = _remainingBufs.get(_currentListPos);
+            if(stream != null)
+            {
+                stream.mark(readlimit);
+            }
+        }
+
+        @Override
+        public void reset() throws IOException
+        {
+            _currentListPos = _markPos;
+            final int size = _remainingBufs.size();
+            if(_currentListPos < size)
+            {
+                _remainingBufs.get(_currentListPos).reset();
+            }
+            for(int i = _currentListPos+1; i<size; i++)
+            {
+                _remainingBufs.get(i).reset();
+            }
+        }
+    }
+
+
+    public ArrayList<AMQDataBlock> decodeBuffer(ByteBuffer buf) throws AMQFrameDecodingException, AMQProtocolVersionException, IOException
     {
 
         // get prior remaining data from accumulator
         ArrayList<AMQDataBlock> dataBlocks = new ArrayList<AMQDataBlock>();
-        ByteBuffer msg;
-        // if we have a session buffer, append data to that otherwise
-        // use the buffer read from the network directly
-        if( _remainingBuf != null )
-        {
-            _remainingBuf.put(buf);
-            _remainingBuf.flip();
-            msg = _remainingBuf;
-        }
-        else
-        {
-            msg = ByteBuffer.wrap(buf);
-        }
-        
-        if (_expectProtocolInitiation  
-            || (firstDecode
-                && (msg.remaining() > 0)
-                && (msg.get(msg.position()) == (byte)'A')))
-        {
-            if (_piDecoder.decodable(msg.buf()))
-            {
-                dataBlocks.add(new ProtocolInitiation(msg.buf()));
-            }
-        }
-        else
-        {
-            boolean enoughData = true;
-            while (enoughData)
-            {
-                int pos = msg.position();
+        DataInputStream msg;
 
+
+        ByteArrayInputStream bais = new ByteArrayInputStream(buf.array(),buf.arrayOffset()+buf.position(), buf.remaining());
+        if(!_remainingBufs.isEmpty())
+        {
+            _remainingBufs.add(bais);
+            msg = new DataInputStream(new RemainingByteArrayInputStream());
+        }
+        else
+        {
+            msg = new DataInputStream(bais);
+        }
+
+        boolean enoughData = true;
+        while (enoughData)
+        {
+            if(!_expectProtocolInitiation)
+            {
                 enoughData = _dataBlockDecoder.decodable(msg);
-                msg.position(pos);
                 if (enoughData)
                 {
                     dataBlocks.add(_dataBlockDecoder.createAndPopulateFrame(_bodyFactory, msg));
                 }
-                else
+            }
+            else
+            {
+                enoughData = _piDecoder.decodable(msg);
+                if (enoughData)
                 {
-                    _remainingBuf = SIMPLE_BYTE_BUFFER_ALLOCATOR.allocate(msg.remaining(), false);
-                    _remainingBuf.setAutoExpand(true);
-                    _remainingBuf.put(msg);
+                    dataBlocks.add(new ProtocolInitiation(msg));
+                }
+
+            }
+
+            if(!enoughData)
+            {
+                if(!_remainingBufs.isEmpty())
+                {
+                    _remainingBufs.remove(_remainingBufs.size()-1);
+                    ListIterator<ByteArrayInputStream> iterator = _remainingBufs.listIterator();
+                    while(iterator.hasNext() && iterator.next().available() == 0)
+                    {
+                        iterator.remove();
+                    }
+                }
+                if(bais.available()!=0)
+                {
+                    byte[] remaining = new byte[bais.available()];
+                    bais.read(remaining);
+                    _remainingBufs.add(new ByteArrayInputStream(remaining));
                 }
             }
-        }
-        if(firstDecode && dataBlocks.size() > 0)
-        {
-            firstDecode = false;
         }
         return dataBlocks;
     }

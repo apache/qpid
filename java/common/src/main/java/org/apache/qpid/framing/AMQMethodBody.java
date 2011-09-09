@@ -20,11 +20,13 @@
  */
 package org.apache.qpid.framing;
 
-import org.apache.mina.common.ByteBuffer;
 import org.apache.qpid.AMQChannelException;
 import org.apache.qpid.AMQConnectionException;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.protocol.AMQConstant;
+
+import java.io.DataOutputStream;
+import java.io.IOException;
 
 public interface AMQMethodBody extends AMQBody
 {
@@ -43,12 +45,12 @@ public interface AMQMethodBody extends AMQBody
     /** @return unsigned short */
     public int getMethod();
 
-    public void writeMethodPayload(ByteBuffer buffer);
+    public void writeMethodPayload(DataOutputStream buffer) throws IOException;
 
 
     public int getSize();
 
-    public void writePayload(ByteBuffer buffer);
+    public void writePayload(DataOutputStream buffer) throws IOException;
 
     //public abstract void populateMethodBodyFromBuffer(ByteBuffer buffer) throws AMQFrameDecodingException;
 

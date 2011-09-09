@@ -22,16 +22,8 @@ package org.apache.qpid.transport.network.io;
 import java.net.Socket;
 import java.nio.ByteBuffer;
 
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLEngine;
-
-import org.apache.qpid.ssl.SSLContextFactory;
 import org.apache.qpid.transport.Binding;
 import org.apache.qpid.transport.Sender;
-import org.apache.qpid.transport.TransportException;
-import org.apache.qpid.transport.network.security.SSLStatus;
-import org.apache.qpid.transport.network.security.ssl.SSLReceiver;
-import org.apache.qpid.transport.network.security.ssl.SSLSender;
 import org.apache.qpid.transport.util.Logger;
 
 /**
@@ -46,13 +38,6 @@ import org.apache.qpid.transport.util.Logger;
 public final class IoTransport<E>
 {
 
-    static
-    {
-        org.apache.mina.common.ByteBuffer.setAllocator
-            (new org.apache.mina.common.SimpleByteBufferAllocator());
-        org.apache.mina.common.ByteBuffer.setUseDirectBuffers
-            (Boolean.getBoolean("amqj.enableDirectBuffers"));
-    }
 
     private static final Logger log = Logger.get(IoTransport.class);
 
