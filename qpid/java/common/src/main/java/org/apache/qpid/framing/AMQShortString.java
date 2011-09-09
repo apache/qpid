@@ -21,11 +21,12 @@
 
 package org.apache.qpid.framing;
 
-import org.apache.mina.common.ByteBuffer;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.util.*;
 import java.lang.ref.WeakReference;
 
@@ -199,27 +200,16 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
 
     }
 
-    private AMQShortString(ByteBuffer data, final int length)
+    private AMQShortString(DataInputStream data, final int length) throws IOException
     {
         if (length > MAX_LENGTH)
         {
             throw new IllegalArgumentException("Cannot create AMQShortString with number of octets over 255!");
         }
-        if(data.isDirect() || data.isReadOnly())
-        {
-            byte[] dataBytes = new byte[length];
-            data.get(dataBytes);
-            _data = dataBytes;
-            _offset = 0;
-        }
-        else
-        {
-
-            _data = data.array();
-            _offset = data.arrayOffset() + data.position();
-            data.skip(length);
-
-        }
+        byte[] dataBytes = new byte[length];
+        data.read(dataBytes);
+        _data = dataBytes;
+        _offset = 0;
         _length = length;
 
     }
@@ -275,9 +265,9 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
         return new CharSubSequence(start, end);
     }
 
-    public static AMQShortString readFromBuffer(ByteBuffer buffer)
+    public static AMQShortString readFromBuffer(DataInputStream buffer) throws IOException
     {
-        final short length = buffer.getUnsigned();
+        final int length = buffer.readUnsignedByte();
         if (length == 0)
         {
             return null;
@@ -303,13 +293,13 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
         }
     }
 
-    public void writeToBuffer(ByteBuffer buffer)
+    public void writeToBuffer(DataOutputStream buffer) throws IOException
     {
 
         final int size = length();
         //buffer.setAutoExpand(true);
-        buffer.put((byte) size);
-        buffer.put(_data, _offset, size);
+        buffer.write((byte) size);
+        buffer.write(_data, _offset, size);
 
     }
 

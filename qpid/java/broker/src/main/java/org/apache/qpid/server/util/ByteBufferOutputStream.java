@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -18,30 +18,29 @@
  * under the License.
  *
  */
-package org.apache.qpid.framing;
+package org.apache.qpid.server.util;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.ByteBuffer;
 
-
-/**
- * A data block represents something that has a size in bytes and the ability to write itself to a byte
- * buffer (similar to a byte array).
- */
-public abstract class AMQDataBlock implements EncodableAMQDataBlock
+public class ByteBufferOutputStream extends OutputStream
 {
-    /**
-     * Get the size of buffer needed to store the byte representation of this
-     * frame.
-     * @return unsigned integer
-     */
-    public abstract long getSize();
+    private final ByteBuffer _buffer;
 
-    /**
-     * Writes the datablock to the specified buffer.
-     * @param buffer
-     */
-    public abstract void writePayload(DataOutputStream buffer) throws IOException;
+    public ByteBufferOutputStream(ByteBuffer buffer)
+    {
+        _buffer = buffer;
+    }
 
+    @Override
+    public void write(int b)
+    {
+        _buffer.put((byte)b);
+    }
+
+    @Override
+    public void write(byte[] b, int off, int len)
+    {
+        _buffer.put(b, off, len);
+    }
 }

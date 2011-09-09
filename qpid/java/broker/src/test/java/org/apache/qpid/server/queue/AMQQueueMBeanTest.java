@@ -37,7 +37,6 @@ import org.apache.qpid.server.subscription.SubscriptionFactoryImpl;
 import org.apache.qpid.server.protocol.InternalTestProtocolSession;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
-import org.apache.mina.common.ByteBuffer;
 
 import javax.management.JMException;
 
@@ -275,18 +274,14 @@ public class AMQQueueMBeanTest extends InternalBrokerBaseCase
 
         msg.addContentBodyFrame(new ContentChunk()
         {
-            ByteBuffer _data = ByteBuffer.allocate((int)MESSAGE_SIZE);
-
-            {
-                _data.limit((int)MESSAGE_SIZE);
-            }
+            byte[] _data = new byte[((int)MESSAGE_SIZE)];
 
             public int getSize()
             {
                 return (int) MESSAGE_SIZE;
             }
 
-            public ByteBuffer getData()
+            public byte[] getData()
             {
                 return _data;
             }
@@ -441,8 +436,7 @@ public class AMQQueueMBeanTest extends InternalBrokerBaseCase
                     getSession().getMethodRegistry()
                                                        .getProtocolVersionMethodConverter()
                                                        .convertToContentChunk(
-                                                       new ContentBody(ByteBuffer.allocate((int) MESSAGE_SIZE),
-                                                                       MESSAGE_SIZE)));
+                                                       new ContentBody(new byte[(int) MESSAGE_SIZE])));
 
             AMQMessage m = new AMQMessage(currentMessage.getStoredMessage());
             for(BaseQueue q : currentMessage.getDestinationQueues())

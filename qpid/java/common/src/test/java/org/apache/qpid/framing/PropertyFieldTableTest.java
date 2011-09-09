@@ -23,13 +23,13 @@ package org.apache.qpid.framing;
 import junit.framework.Assert;
 import junit.framework.TestCase;
 
-import org.apache.mina.common.ByteBuffer;
-
 import org.apache.qpid.AMQInvalidArgumentException;
 import org.apache.qpid.AMQPInvalidClassException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.*;
 
 public class PropertyFieldTableTest extends TestCase
 {
@@ -441,7 +441,7 @@ public class PropertyFieldTableTest extends TestCase
     }
 
     /** Check that a nested field table parameter correctly encodes and decodes to a byte buffer. */
-    public void testNestedFieldTable()
+    public void testNestedFieldTable() throws IOException
     {
         byte[] testBytes = new byte[] { 0, 1, 2, 3, 4, 5 };
 
@@ -465,14 +465,16 @@ public class PropertyFieldTableTest extends TestCase
         outerTable.setFieldTable("innerTable", innerTable);
 
         // Write the outer table into the buffer.
-        final ByteBuffer buffer = ByteBuffer.allocate((int) outerTable.getEncodedSize() + 4);
-        outerTable.writeToBuffer(buffer);
-        buffer.flip();
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+        outerTable.writeToBuffer(new DataOutputStream(baos));
+
+        byte[] data = baos.toByteArray();
 
         // Extract the table back from the buffer again.
         try
         {
-            FieldTable extractedOuterTable = EncodingUtils.readFieldTable(buffer);
+            FieldTable extractedOuterTable = EncodingUtils.readFieldTable(new DataInputStream(new ByteArrayInputStream(data)));
 
             FieldTable extractedTable = extractedOuterTable.getFieldTable("innerTable");
 
@@ -567,7 +569,7 @@ public class PropertyFieldTableTest extends TestCase
         Assert.assertEquals("Hello", table.getObject("object-string"));
     }
 
-    public void testwriteBuffer()
+    public void testwriteBuffer() throws IOException
     {
         byte[] bytes = { 99, 98, 97, 96, 95 };
 
@@ -585,15 +587,17 @@ public class PropertyFieldTableTest extends TestCase
         table.setString("string", "hello");
         table.setString("null-string", null);
 
-        final ByteBuffer buffer = ByteBuffer.allocate((int) table.getEncodedSize() + 4); // FIXME XXX: Is cast a problem?
 
-        table.writeToBuffer(buffer);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream((int) table.getEncodedSize() + 4);
+        table.writeToBuffer(new DataOutputStream(baos));
 
-        buffer.flip();
+        ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
+        DataInputStream dis = new DataInputStream(bais);
 
-        long length = buffer.getUnsignedInt();
 
-        FieldTable table2 = new FieldTable(buffer, length);
+        long length = dis.readInt() & 0xFFFFFFFFL;
+
+        FieldTable table2 = new FieldTable(dis, length);
 
         Assert.assertEquals((Boolean) true, table2.getBoolean("bool"));
         Assert.assertEquals((Byte) Byte.MAX_VALUE, table2.getByte("byte"));

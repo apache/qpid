@@ -201,8 +201,9 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
                         messageProps.getApplicationHeaders().get(QpidMessageProperties.QPID_SUBJECT));                
             }
         }
-        
-        messageProps.setContentLength(message.getContentLength());
+
+        ByteBuffer data = message.getData();
+        messageProps.setContentLength(data.remaining());
 
         // send the message
         try
@@ -221,8 +222,8 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
             boolean unreliable = (destination.getDestSyntax() == DestSyntax.ADDR) &&
                                  (destination.getLink().getReliability() == Reliability.UNRELIABLE);
             
-            org.apache.mina.common.ByteBuffer data = message.getData();
-            ByteBuffer buffer = data == null ? ByteBuffer.allocate(0) : data.buf().slice();
+
+            ByteBuffer buffer = data == null ? ByteBuffer.allocate(0) : data.slice();
             
             ssn.messageTransfer(destination.getExchangeName() == null ? "" : destination.getExchangeName().toString(), 
                                 MessageAcceptMode.NONE,
