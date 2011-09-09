@@ -20,7 +20,8 @@
  */
 package org.apache.qpid.framing;
 
-import org.apache.mina.common.ByteBuffer;
+import java.io.DataInputStream;
+import java.io.IOException;
 
 import org.apache.qpid.framing.abstraction.ProtocolVersionMethodConverter;
 
@@ -144,7 +145,7 @@ public class VersionSpecificRegistry
 
     }
 
-    public AMQMethodBody get(short classID, short methodID, ByteBuffer in, long size) throws AMQFrameDecodingException
+    public AMQMethodBody get(short classID, short methodID, DataInputStream in, long size) throws AMQFrameDecodingException, IOException
     {
         AMQMethodBodyInstanceFactory bodyFactory;
         try

@@ -20,7 +20,8 @@
  */
 package org.apache.qpid.framing;
 
-import org.apache.mina.common.ByteBuffer;
+import java.io.DataInputStream;
+import java.io.IOException;
 
 public class FieldTableFactory
 {
@@ -29,7 +30,7 @@ public class FieldTableFactory
         return new FieldTable();
     }
 
-    public static FieldTable newFieldTable(ByteBuffer byteBuffer, long length) throws AMQFrameDecodingException
+    public static FieldTable newFieldTable(DataInputStream byteBuffer, long length) throws AMQFrameDecodingException, IOException
     {
         return new FieldTable(byteBuffer, length);
     }

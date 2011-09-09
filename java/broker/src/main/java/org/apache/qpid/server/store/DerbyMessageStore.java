@@ -21,6 +21,7 @@
 package org.apache.qpid.server.store;
 
 import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.lang.ref.SoftReference;
@@ -479,9 +480,15 @@ public class DerbyMessageStore implements MessageStore
                         FieldTable arguments;
                         if(dataAsBytes.length > 0)
                         {
-                            org.apache.mina.common.ByteBuffer buffer = org.apache.mina.common.ByteBuffer.wrap(dataAsBytes);
 
-                            arguments = new FieldTable(buffer,buffer.limit());
+                            try
+                            {
+                                arguments = new FieldTable(new DataInputStream(new ByteArrayInputStream(dataAsBytes)),dataAsBytes.length);
+                            }
+                            catch (IOException e)
+                            {
+                                throw new RuntimeException("IO Exception should not be thrown",e);
+                            }
                         }
                         else
                         {
