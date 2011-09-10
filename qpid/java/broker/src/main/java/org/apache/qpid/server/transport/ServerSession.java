@@ -677,4 +677,18 @@ public class ServerSession extends Session implements AuthorizationHolder, Sessi
                                    getChannel())
             + "] ";
     }
+
+    @Override
+    public void close()
+    {
+        // unregister subscriptions in order to prevent sending of new messages
+        // to subscriptions with closing session
+        final Collection<Subscription_0_10> subscriptions = getSubscriptions();
+        for (Subscription_0_10 subscription_0_10 : subscriptions)
+        {
+            unregister(subscription_0_10);
+        }
+
+        super.close();
+    }
 }

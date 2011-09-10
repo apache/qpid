@@ -499,7 +499,6 @@ public class AMQMessageDelegate_0_8 extends AbstractAMQMessageDelegate
         {
             throw new MessageNotWriteableException("You need to call clearProperties() to make the message writable");
         }
-        _contentHeaderProperties.updated();
     }
 
 

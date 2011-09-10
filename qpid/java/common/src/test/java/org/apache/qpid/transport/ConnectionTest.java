@@ -20,8 +20,6 @@
  */
 package org.apache.qpid.transport;
 
-import org.apache.mina.util.AvailablePortFinder;
-
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.transport.network.ConnectionBinding;
 import org.apache.qpid.transport.network.io.IoAcceptor;
@@ -58,7 +56,7 @@ public class ConnectionTest extends QpidTestCase implements SessionListener
     {
         super.setUp();
 
-        port = AvailablePortFinder.getNextAvailable(12000);
+        port = findFreePort();
     }
 
     protected void tearDown() throws Exception

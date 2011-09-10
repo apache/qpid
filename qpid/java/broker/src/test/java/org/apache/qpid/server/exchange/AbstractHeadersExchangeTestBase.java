@@ -52,6 +52,7 @@ import org.apache.qpid.server.store.StoredMessage;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.util.InternalBrokerBaseCase;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -570,8 +571,8 @@ public class AbstractHeadersExchangeTestBase extends InternalBrokerBaseCase
             int pos = 0;
             for(ContentBody body : bodies)
             {
-                storedMessage.addContent(pos, body.payload.duplicate().buf());
-                pos += body.payload.limit();
+                storedMessage.addContent(pos, ByteBuffer.wrap(body._payload));
+                pos += body._payload.length;
             }
 
             _incoming = new TestIncomingMessage(getMessageId(),publish, protocolsession);

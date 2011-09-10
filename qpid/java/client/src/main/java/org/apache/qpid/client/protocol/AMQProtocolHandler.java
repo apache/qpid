@@ -20,7 +20,9 @@
  */
 package org.apache.qpid.client.protocol;
 
+import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -524,7 +526,7 @@ public class AMQProtocolHandler implements ProtocolEngine
 
     public  synchronized void writeFrame(AMQDataBlock frame, boolean wait)
     {
-        final ByteBuffer buf = frame.toNioByteBuffer();
+        final ByteBuffer buf = asByteBuffer(frame);
         _writtenBytes += buf.remaining();
         _sender.send(buf);
         _sender.flush();
@@ -546,6 +548,39 @@ public class AMQProtocolHandler implements ProtocolEngine
         _connection.bytesSent(_writtenBytes);
 
     }
+
+    private ByteBuffer asByteBuffer(AMQDataBlock block)
+    {
+        final ByteBuffer buf = ByteBuffer.allocate((int) block.getSize());
+
+        try
+        {
+            block.writePayload(new DataOutputStream(new OutputStream()
+            {
+
+
+                @Override
+                public void write(int b) throws IOException
+                {
+                    buf.put((byte) b);
+                }
+
+                @Override
+                public void write(byte[] b, int off, int len) throws IOException
+                {
+                    buf.put(b, off, len);
+                }
+            }));
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException(e);
+        }
+
+        buf.flip();
+        return buf;
+    }
+
 
     /**
      * Convenience method that writes a frame to the protocol session and waits for a particular response. Equivalent to

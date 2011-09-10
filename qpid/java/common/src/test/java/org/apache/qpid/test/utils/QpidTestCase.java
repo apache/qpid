@@ -24,17 +24,16 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.net.DatagramSocket;
+import java.net.ServerSocket;
+import java.util.*;
 
 import junit.framework.TestCase;
 import junit.framework.TestResult;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.apache.mina.util.AvailablePortFinder;
+
 
 public class QpidTestCase extends TestCase
 {
@@ -140,9 +139,85 @@ public class QpidTestCase extends TestCase
         return storeClass != null ? storeClass : MEMORY_STORE_CLASS_NAME ;
     }
 
+
+    public static final int MIN_PORT_NUMBER = 1;
+    public static final int MAX_PORT_NUMBER = 49151;
+
+
+    /**
+     * Gets the next available port starting at a port.
+     *
+     * @param fromPort the port to scan for availability
+     * @throws NoSuchElementException if there are no ports available
+     */
+    protected int getNextAvailable(int fromPort)
+    {
+        if ((fromPort < MIN_PORT_NUMBER) || (fromPort > MAX_PORT_NUMBER))
+        {
+            throw new IllegalArgumentException("Invalid start port: " + fromPort);
+        }
+
+        for (int i = fromPort; i <= MAX_PORT_NUMBER; i++)
+        {
+            if (available(i)) {
+                return i;
+            }
+        }
+
+        throw new NoSuchElementException("Could not find an available port above " + fromPort);
+    }
+
+    /**
+     * Checks to see if a specific port is available.
+     *
+     * @param port the port to check for availability
+     */
+    private boolean available(int port)
+    {
+        if ((port < MIN_PORT_NUMBER) || (port > MAX_PORT_NUMBER))
+        {
+            throw new IllegalArgumentException("Invalid start port: " + port);
+        }
+
+        ServerSocket ss = null;
+        DatagramSocket ds = null;
+        try
+        {
+            ss = new ServerSocket(port);
+            ss.setReuseAddress(true);
+            ds = new DatagramSocket(port);
+            ds.setReuseAddress(true);
+            return true;
+        }
+        catch (IOException e)
+        {
+        }
+        finally
+        {
+            if (ds != null)
+            {
+                ds.close();
+            }
+
+            if (ss != null)
+            {
+                try
+                {
+                    ss.close();
+                }
+                catch (IOException e)
+                {
+                    /* should not be thrown */
+                }
+            }
+        }
+
+        return false;
+    }
+
     public int findFreePort()
     {
-        return AvailablePortFinder.getNextAvailable(10000);
+        return getNextAvailable(10000);
     }
 
     /**

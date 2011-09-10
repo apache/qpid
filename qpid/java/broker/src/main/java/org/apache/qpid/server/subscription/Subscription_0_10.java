@@ -189,7 +189,7 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
 
     public boolean isSuspended()
     {
-        return !isActive() || _deleted.get(); // TODO check for Session suspension
+        return !isActive() || _deleted.get() || _session.isClosing(); // TODO check for Session suspension
     }
 
     public boolean hasInterest(QueueEntry entry)

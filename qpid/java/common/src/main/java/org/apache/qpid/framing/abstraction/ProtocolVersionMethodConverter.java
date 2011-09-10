@@ -23,8 +23,6 @@ package org.apache.qpid.framing.abstraction;
 
 import org.apache.qpid.framing.AMQBody;
 
-import java.nio.ByteBuffer;
-
 public interface ProtocolVersionMethodConverter extends MessagePublishInfoConverter
 {
     AMQBody convertToBody(ContentChunk contentBody);
@@ -32,5 +30,5 @@ public interface ProtocolVersionMethodConverter extends MessagePublishInfoConver
 
     void configure();
 
-    AMQBody convertToBody(ByteBuffer buf);
+    AMQBody convertToBody(byte[] input);
 }

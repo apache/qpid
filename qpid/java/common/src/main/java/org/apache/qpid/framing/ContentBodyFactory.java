@@ -20,7 +20,8 @@
  */
 package org.apache.qpid.framing;
 
-import org.apache.mina.common.ByteBuffer;
+import java.io.DataInputStream;
+import java.io.IOException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,7 +42,7 @@ public class ContentBodyFactory implements BodyFactory
         _log.debug("Creating content body factory");
     }
 
-    public AMQBody createBody(ByteBuffer in, long bodySize) throws AMQFrameDecodingException
+    public AMQBody createBody(DataInputStream in, long bodySize) throws AMQFrameDecodingException, IOException
     {
         return new ContentBody(in, bodySize);
     }

@@ -45,8 +45,6 @@ public class ObjectMessageUnitTest extends QpidTestCase
         _om.setObject(true);
 
         //make the message readable
-        _om.reset();
-
         Object object = _om.getObject();
 
         assertTrue("Unexpected type returned", object instanceof Boolean);
@@ -61,8 +59,6 @@ public class ObjectMessageUnitTest extends QpidTestCase
         _om.setObject("test string");
 
         //make the message readable
-        _om.reset();
-
         Object object = _om.getObject();
 
         assertTrue("Unexpected type returned", object instanceof String);
@@ -87,7 +83,6 @@ public class ObjectMessageUnitTest extends QpidTestCase
         list.add(0);
 
         //make the message readable
-        _om.reset();
 
         //retrieve the Object
         Object object = _om.getObject();

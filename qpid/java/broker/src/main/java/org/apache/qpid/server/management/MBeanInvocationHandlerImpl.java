@@ -313,7 +313,7 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler, Notificati
         else if (notification.getType().equals(JMXConnectionNotification.CLOSED) ||
                  notification.getType().equals(JMXConnectionNotification.FAILED))
         {
-            _logActor.message(ManagementConsoleMessages.CLOSE());
+            _logActor.message(ManagementConsoleMessages.CLOSE(user));
         }
     }
 }

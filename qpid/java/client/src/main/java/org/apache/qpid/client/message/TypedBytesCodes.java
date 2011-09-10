@@ -18,28 +18,29 @@
  * under the License.
  *
  */
-package org.apache.qpid.framing;
+package org.apache.qpid.client.message;
 
-import org.apache.mina.common.ByteBuffer;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.Collections;
-import java.util.Set;
-
-public final class AMQDataBlockEncoder
+public interface TypedBytesCodes
 {
-    private static final Logger _logger = LoggerFactory.getLogger(AMQDataBlockEncoder.class);
+    static final byte BOOLEAN_TYPE = (byte) 1;
 
-    private final Set _messageTypes = Collections.singleton(EncodableAMQDataBlock.class);
+    static final byte BYTE_TYPE = (byte) 2;
 
-    public AMQDataBlockEncoder()
-    { }
+    static final byte BYTEARRAY_TYPE = (byte) 3;
 
+    static final byte SHORT_TYPE = (byte) 4;
 
-    public Set getMessageTypes()
-    {
-        return _messageTypes;
-    }
+    static final byte CHAR_TYPE = (byte) 5;
+
+    static final byte INT_TYPE = (byte) 6;
+
+    static final byte LONG_TYPE = (byte) 7;
+
+    static final byte FLOAT_TYPE = (byte) 8;
+
+    static final byte DOUBLE_TYPE = (byte) 9;
+
+    static final byte STRING_TYPE = (byte) 10;
+
+    static final byte NULL_STRING_TYPE = (byte) 11;
 }
