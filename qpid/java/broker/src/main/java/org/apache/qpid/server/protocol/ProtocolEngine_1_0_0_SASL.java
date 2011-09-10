@@ -38,6 +38,7 @@ import org.apache.qpid.server.configuration.ConnectionConfigType;
 import org.apache.qpid.server.protocol.v1_0.Connection_1_0;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
+import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.network.NetworkConnection;
 
 import java.io.PrintWriter;
@@ -50,7 +51,6 @@ import java.util.logging.Logger;
 
 public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOutputHandler
 {
-    private NetworkConnection _networkDriver;
        private long _readBytes;
        private long _writtenBytes;
        private final UUID _id;
@@ -59,7 +59,6 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
        private ConnectionEndpoint _conn;
        private long _connectionId = ProtocolEngine_1_0_0._connectionIdSource.getAndIncrement();
 
-       private static final int BUF_SIZE = 8;
        private static final ByteBuffer HEADER =
                ByteBuffer.wrap(new byte[]
                        {
@@ -95,6 +94,8 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
        private byte _minor;
        private byte _revision;
     private PrintWriter _out;
+    private NetworkConnection _network;
+    private Sender<ByteBuffer> _sender;
 
 
     static enum State {
@@ -116,64 +117,17 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
     {
         _id = appRegistry.getConfigStore().createId();
         _appRegistry = appRegistry;
-        setNetworkDriver(networkDriver);
     }
 
-    public void setNetworkDriver(final NetworkConnection driver)
-    {
-        _networkDriver = driver;
-        Container container = new Container();
-
-                    Principal principal = new Principal()
-                    {
-
-                        public String getName()
-                        {
-                            // TODO
-                            return "rob";
-                        }
-                    };
-        _conn = new ConnectionEndpoint(container, ApplicationRegistry.getInstance().getAuthenticationManager());
-        _conn.setConnectionEventListener(new Connection_1_0(_appRegistry));
-        _conn.setRemoteAddress(getRemoteAddress());
-
-
-        _conn.setFrameOutputHandler(this);
-        _conn.setSaslFrameOutput(this);
-
-        _conn.setOnSaslComplete(new Runnable()
-        {
-
-
-            public void run()
-            {
-                if(_conn.isAuthenticated())
-                {
-                    _networkDriver.getSender().send(PROTOCOL_HEADER.duplicate());
-                }
-                else
-                {
-                    _networkDriver.close();
-                }
-            }
-        });
-        _frameWriter =  new FrameWriter(_conn.getDescribedTypeRegistry());
-        _frameHandler = new SASLFrameHandler(_conn);
-
-        _networkDriver.getSender().send(HEADER.duplicate());
-
-        _conn.initiateSASL();
-
-    }
 
     public SocketAddress getRemoteAddress()
     {
-        return _networkDriver.getRemoteAddress();
+        return _network.getRemoteAddress();
     }
 
     public SocketAddress getLocalAddress()
     {
-        return _networkDriver.getLocalAddress();
+        return _network.getLocalAddress();
     }
 
     public long getReadBytes()
@@ -194,6 +148,49 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
     public void readerIdle()
     {
         //Todo
+    }
+
+    public void setNetworkConnection(final NetworkConnection network, final Sender<ByteBuffer> sender)
+    {
+        _network = network;
+        _sender = sender;
+
+        Container container = new Container();
+
+        _conn = new ConnectionEndpoint(container, ApplicationRegistry.getInstance().getAuthenticationManager());
+        _conn.setConnectionEventListener(new Connection_1_0(_appRegistry));
+        _conn.setRemoteAddress(getRemoteAddress());
+
+
+        _conn.setFrameOutputHandler(this);
+        _conn.setSaslFrameOutput(this);
+
+        _conn.setOnSaslComplete(new Runnable()
+        {
+
+
+            public void run()
+            {
+                if(_conn.isAuthenticated())
+                {
+                    _sender.send(PROTOCOL_HEADER.duplicate());
+                    _sender.flush();
+                }
+                else
+                {
+                    _network.close();
+                }
+            }
+        });
+        _frameWriter =  new FrameWriter(_conn.getDescribedTypeRegistry());
+        _frameHandler = new SASLFrameHandler(_conn);
+
+        _sender.send(HEADER.duplicate());
+        _sender.flush();
+
+        _conn.initiateSASL();
+
+
     }
 
     public String getAddress()
@@ -366,41 +363,41 @@ public class ProtocolEngine_1_0_0_SASL implements ServerProtocolEngine, FrameOut
 
          synchronized(_sendLock)
          {
-            if(FRAME_LOGGER.isLoggable(Level.FINE))
-            {
-                FRAME_LOGGER.fine("SEND[" + getRemoteAddress() + "|" + amqFrame.getChannel() + "] : " + amqFrame.getFrameBody());
-            }
-             if(_buf.remaining() < _conn.getMaxFrameSize())
+
+             if(FRAME_LOGGER.isLoggable(Level.FINE))
              {
-                 _buf = ByteBuffer.allocate(Math.min(_conn.getMaxFrameSize(),1024*1024));
+                 FRAME_LOGGER.fine("SEND[" + getRemoteAddress() + "|" + amqFrame.getChannel() + "] : " + amqFrame.getFrameBody());
              }
+
+
              _frameWriter.setValue(amqFrame);
 
-             ByteBuffer dup = _buf.slice();
-             int pos = _buf.position();
+
+
+             ByteBuffer dup = ByteBuffer.allocate(_conn.getMaxFrameSize());
 
              int size = _frameWriter.writeToBuffer(dup);
              if(size > _conn.getMaxFrameSize())
              {
-                 _buf.position(pos);
                  throw new OversizeFrameException(amqFrame,size);
              }
-
-             _buf.position(_buf.position()+dup.position());
 
              dup.flip();
              _writtenBytes += dup.limit();
 
              if(RAW_LOGGER.isLoggable(Level.FINE))
-             {
-                ByteBuffer dup2 = dup.duplicate();
-                byte[] data = new byte[dup2.remaining()];
-                dup2.get(data);
-                Binary bin = new Binary(data);
-                RAW_LOGGER.fine("SEND[" + getRemoteAddress() + "] : " + bin.toString());
-             }
+              {
+                 ByteBuffer dup2 = dup.duplicate();
+                 byte[] data = new byte[dup2.remaining()];
+                 dup2.get(data);
+                 Binary bin = new Binary(data);
+                 RAW_LOGGER.fine("SEND[" + getRemoteAddress() + "] : " + bin.toString());
+              }
 
-             _networkDriver.getSender().send(dup);
+
+             _sender.send(dup);
+             _sender.flush();
+
 
          }
      }
