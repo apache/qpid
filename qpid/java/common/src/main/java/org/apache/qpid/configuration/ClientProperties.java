@@ -90,7 +90,17 @@ public class ClientProperties
 
     public static final String QPID_VERIFY_CLIENT_ID = "qpid.verify_client_id";
 
-    private static ClientProperties _instance = new ClientProperties();
+    /**
+     * System properties to change the default timeout used during
+     * synchronous operations.
+     */
+    public static final String QPID_SYNC_OP_TIMEOUT = "qpid.sync_op_timeout";
+    public static final String AMQJ_DEFAULT_SYNCWRITE_TIMEOUT = "amqj.default_syncwrite_timeout";
+
+    /**
+     * A default timeout value for synchronous operations
+     */
+    public static final int DEFAULT_SYNC_OPERATION_TIMEOUT = 60000;
 
     /*
     public static final QpidProperty<Boolean>  IGNORE_SET_CLIENTID_PROP_NAME =
