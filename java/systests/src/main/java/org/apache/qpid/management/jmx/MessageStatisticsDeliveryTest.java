@@ -103,7 +103,7 @@ public class MessageStatisticsDeliveryTest extends MessageStatisticsTestCase
         MessageConsumer consumer = session.createConsumer(_queue);
         for (int i = 0; i < number; i++)
         {
-            Message msg = consumer.receive(100);
+            Message msg = consumer.receive(1000);
             assertNotNull("Message " + i + " was not received", msg);
         }
     }
