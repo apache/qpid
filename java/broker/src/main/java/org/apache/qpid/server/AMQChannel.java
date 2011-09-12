@@ -1055,9 +1055,9 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
             public void deliverToClient(final Subscription sub, final QueueEntry entry, final long deliveryTag)
                     throws AMQException
             {
+                _session.registerMessageDelivered(entry.getMessage().getSize());
                 getProtocolSession().getProtocolOutputConverter().writeDeliver(entry, getChannelId(),
                                                                                deliveryTag, sub.getConsumerTag());
-               _session.registerMessageDelivered(entry.getMessage().getSize());
             }
 
         };

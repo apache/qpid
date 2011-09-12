@@ -200,8 +200,8 @@ public class ServerSession extends Session implements AuthorizationHolder, Sessi
     public void sendMessage(MessageTransfer xfr,
                             Runnable postIdSettingAction)
     {
-        invoke(xfr, postIdSettingAction);
         getConnectionModel().registerMessageDelivered(xfr.getBodySize());
+        invoke(xfr, postIdSettingAction);
     }
 
     public void onMessageDispositionChange(MessageTransfer xfr, MessageDispositionChangeListener acceptListener)
