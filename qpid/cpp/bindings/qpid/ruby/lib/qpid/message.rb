@@ -30,6 +30,7 @@ module Qpid
         @message_impl = message_impl
         @message_impl = Cqpid::Message.new if @message_impl.nil?
         @message_impl.setContent args[:content].to_s if args[:content]
+        @content = nil
       end
 
       def message_impl # :nodoc:
@@ -113,10 +114,37 @@ module Qpid
       def []=(key, value); @message_impl.setProperty(key.to_s, value.to_s); end
 
       # Sets the content.
-      def content=(content); @message_impl.setContent content.to_s; end
+      def content=(content)
+        content_type = nil
+        @content = content
+        case @content
+        when Hash
+          content_type = "amqp/map"
+        when Array
+          content_type = "amqp/list"
+        end
+        if content_type.nil?
+          @message_impl.setContent @content
+        else
+          Qpid::Messaging.encode @content, self, content_type
+        end
+      end
 
       # Returns the content.
-      def content; @message_impl.getContent; end
+      def content
+        if @content.nil?
+          @content = @message_impl.getContent
+
+          # decode the content is necessary if it
+          # has an encoded content type
+          if ["amqp/list", "amqp/map"].include? @message_impl.getContentType
+            @content = Qpid::Messaging.decode(self,
+                                              @message_impl.getContentType)
+          end
+
+        end
+        @content
+      end
 
       # Returns the content's size.
       def content_size; @message_impl.getContentSize; end
