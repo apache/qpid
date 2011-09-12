@@ -22,8 +22,7 @@ $:.unshift File.join(File.dirname(__FILE__), "..", "lib")
 require 'test/unit'
 require 'flexmock/test_unit'
 
-require 'qpid/encoding'
-require 'qpid/message'
+require 'qpid'
 
 class TestMessage < Test::Unit::TestCase
 
@@ -31,6 +30,7 @@ class TestMessage < Test::Unit::TestCase
     @address = flexmock("address")
     @address_impl = flexmock("address_impl")
 
+    @messaging = flexmock(Qpid::Messaging)
     @message_impl = flexmock("message")
     @message = Qpid::Messaging::Message.new({}, @message_impl)
  end
@@ -283,15 +283,61 @@ class TestMessage < Test::Unit::TestCase
       with("foo")
 
     @message.content = "foo"
+    assert_equal "foo", @message.content
+  end
+
+  def test_set_content_with_array
+    content = ["one", "two", "three"]
+
+    @messaging.
+      should_receive(:encode).
+      once.
+      with(content, @message, "amqp/list")
+
+    @message.content = content
+    assert_same content, @message.content
+  end
+
+  def test_set_content_with_map
+    content = {:foo => "bar", :dog => "cat"}
+
+    @messaging.
+      should_receive(:encode).
+      once.
+      with(content, @message, "amqp/map")
+
+    @message.content = content
+    assert_same content, @message.content
   end
 
   def test_get_content
     @message_impl.
       should_receive(:getContent).
-      once.
       and_return("foo")
+    @message_impl.
+      should_receive(:getContentType).
+      and_return(String)
 
     assert_equal "foo", @message.content
+  end
+
+  def test_get_content_with_array
+    decoded = ["foo", "bar"]
+
+    @message_impl.
+      should_receive(:getContent).
+      and_return("[foo,bar]")
+    @message_impl.
+      should_receive(:getContentType).
+      and_return("amqp/list")
+    @messaging.
+      should_receive(:decode).
+      once.
+      with(@message, "amqp/list").
+      and_return(decoded)
+
+    result = @message.content
+    assert_same decoded, result
   end
 
   def test_get_content_size
