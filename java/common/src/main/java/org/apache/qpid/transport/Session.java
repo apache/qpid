@@ -30,6 +30,8 @@ import static org.apache.qpid.transport.Session.State.DETACHED;
 import static org.apache.qpid.transport.Session.State.NEW;
 import static org.apache.qpid.transport.Session.State.OPEN;
 import static org.apache.qpid.transport.Session.State.RESUMING;
+
+import org.apache.qpid.configuration.ClientProperties;
 import org.apache.qpid.transport.network.Frame;
 import static org.apache.qpid.transport.util.Functions.mod;
 import org.apache.qpid.transport.util.Logger;
@@ -42,7 +44,6 @@ import static org.apache.qpid.util.Serial.max;
 import static org.apache.qpid.util.Strings.toUTF8;
 
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -58,7 +59,6 @@ import java.util.concurrent.TimeUnit;
 
 public class Session extends SessionInvoker
 {
-
     private static final Logger log = Logger.get(Session.class);
 
     public enum State { NEW, DETACHED, RESUMING, OPEN, CLOSING, CLOSED }
@@ -92,7 +92,9 @@ public class Session extends SessionInvoker
     private int channel;
     private SessionDelegate delegate;
     private SessionListener listener = new DefaultSessionListener();
-    private long timeout = 60000;
+    private final long timeout = Long.getLong(ClientProperties.QPID_SYNC_OP_TIMEOUT,
+                                        Long.getLong(ClientProperties.AMQJ_DEFAULT_SYNCWRITE_TIMEOUT,
+                                                     ClientProperties.DEFAULT_SYNC_OPERATION_TIMEOUT));
     private boolean autoSync = false;
 
     private boolean incomingInit;
