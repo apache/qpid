@@ -237,6 +237,8 @@ bool ConsoleSessionImpl::nextEvent(ConsoleEvent& event, Duration timeout)
     if (!eventQueue.empty()) {
         event = eventQueue.front();
         eventQueue.pop();
+        if (eventQueue.empty())
+            alertEventNotifierLH(false);
         return true;
     }
 
@@ -248,6 +250,20 @@ int ConsoleSessionImpl::pendingEvents() const
 {
     qpid::sys::Mutex::ScopedLock l(lock);
     return eventQueue.size();
+}
+
+
+void ConsoleSessionImpl::setEventNotifier(EventNotifierImpl* notifier)
+{
+    qpid::sys::Mutex::ScopedLock l(lock);
+    this->eventNotifier = notifier;
+}
+
+
+EventNotifierImpl* ConsoleSessionImpl::getEventNotifier() const
+{
+    qpid::sys::Mutex::ScopedLock l(lock);
+    return this->eventNotifier;
 }
 
 
@@ -292,8 +308,10 @@ void ConsoleSessionImpl::enqueueEventLH(const ConsoleEvent& event)
 {
     bool notify = eventQueue.empty();
     eventQueue.push(event);
-    if (notify)
+    if (notify) {
         cond.notify();
+        alertEventNotifierLH(true);
+    }
 }
 
 
@@ -602,6 +620,13 @@ void ConsoleSessionImpl::periodicProcessing(uint64_t seconds)
 }
 
 
+void ConsoleSessionImpl::alertEventNotifierLH(bool readable)
+{
+    if (eventNotifier)
+        eventNotifier->setReadable(readable);
+}
+
+
 void ConsoleSessionImpl::run()
 {
     QPID_LOG(debug, "ConsoleSession thread started");
@@ -633,3 +658,14 @@ void ConsoleSessionImpl::run()
     QPID_LOG(debug, "ConsoleSession thread exiting");
 }
 
+
+ConsoleSessionImpl& ConsoleSessionImplAccess::get(ConsoleSession& session)
+{
+  return *session.impl;
+}
+
+
+const ConsoleSessionImpl& ConsoleSessionImplAccess::get(const ConsoleSession& session)
+{
+  return *session.impl;
+}

@@ -27,6 +27,7 @@
 #include "qmf/SchemaId.h"
 #include "qmf/Schema.h"
 #include "qmf/ConsoleEventImpl.h"
+#include "qmf/EventNotifierImpl.h"
 #include "qmf/SchemaCache.h"
 #include "qmf/Query.h"
 #include "qpid/sys/Mutex.h"
@@ -41,8 +42,13 @@
 #include "qpid/messaging/Address.h"
 #include "qpid/management/Buffer.h"
 #include "qpid/types/Variant.h"
+
+#include <boost/shared_ptr.hpp>
 #include <map>
 #include <queue>
+
+using namespace boost;
+using namespace std;
 
 namespace qmf {
     class ConsoleSessionImpl : public virtual qpid::RefCounted, public qpid::sys::Runnable {
@@ -59,6 +65,10 @@ namespace qmf {
         void close();
         bool nextEvent(ConsoleEvent& e, qpid::messaging::Duration t);
         int pendingEvents() const;
+
+        void setEventNotifier(EventNotifierImpl* notifier);
+        EventNotifierImpl* getEventNotifier() const;
+
         uint32_t getAgentCount() const;
         Agent getAgent(uint32_t i) const;
         Agent getConnectedBrokerAgent() const { return connectedBrokerAgent; }
@@ -80,6 +90,7 @@ namespace qmf {
         Query agentQuery;
         bool opened;
         std::queue<ConsoleEvent> eventQueue;
+        EventNotifierImpl* eventNotifier;
         qpid::sys::Thread* thread;
         bool threadCanceled;
         uint64_t lastVisit;
@@ -102,10 +113,16 @@ namespace qmf {
         void handleAgentUpdate(const std::string&, const qpid::types::Variant::Map&, const qpid::messaging::Message&);
         void handleV1SchemaResponse(qpid::management::Buffer&, uint32_t, const qpid::messaging::Message&);
         void periodicProcessing(uint64_t);
+        void alertEventNotifierLH(bool readable);
         void run();
         uint32_t correlator() { qpid::sys::Mutex::ScopedLock l(corrlock); return nextCorrelator++; }
 
         friend class AgentImpl;
+    };
+
+    struct ConsoleSessionImplAccess {
+        static ConsoleSessionImpl& get(ConsoleSession& session);
+        static const ConsoleSessionImpl& get(const ConsoleSession& session);
     };
 }
 
