@@ -1100,6 +1100,7 @@ if(NOT WIN32)
         ../include/qmf/exceptions.h
         ../include/qmf/Handle.h
         ../include/qmf/ImportExport.h
+        ../include/qmf/posix/EventNotifier.h
         ../include/qmf/Query.h
         ../include/qmf/Schema.h
         ../include/qmf/SchemaId.h
@@ -1129,6 +1130,10 @@ if(NOT WIN32)
         qmf/DataAddrImpl.h
         qmf/Data.cpp
         qmf/DataImpl.h
+        qmf/EventNotifierImpl.h
+        qmf/EventNotifierImpl.cpp
+        qmf/PosixEventNotifier.cpp
+        qmf/PosixEventNotifierImpl.cpp
         qmf/exceptions.cpp
         qmf/Expression.cpp
         qmf/Expression.h

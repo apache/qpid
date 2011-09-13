@@ -188,6 +188,7 @@ namespace qmf {
 #ifndef SWIG
     private:
         friend class qmf::PrivateImplRef<AgentSession>;
+        friend struct AgentSessionImplAccess;
 #endif
     };
 
