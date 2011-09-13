@@ -64,5 +64,5 @@ public interface AMQConnectionDelegate
 
     ProtocolVersion getProtocolVersion();
 
-    void verifyClientID() throws JMSException;
+    boolean verifyClientID() throws JMSException, AMQException;
 }

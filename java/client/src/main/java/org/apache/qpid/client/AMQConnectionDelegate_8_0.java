@@ -351,8 +351,8 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
         return ProtocolVersion.v8_0;
     }
 
-    public void verifyClientID() throws JMSException
+    public boolean verifyClientID() throws JMSException
     {
-        // NOOP
+        return true;
     }
 }

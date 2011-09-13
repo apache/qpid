@@ -56,3 +56,6 @@ org.apache.qpid.test.unit.ack.FailoverBeforeConsumingRecoverTest#testOderingWith
 
 // LVQ tests use new address syntax and can not be run on 0.9.1 profiles
 org.apache.qpid.test.client.queue.LVQTest#*
+
+// Verification of unique client id is 0-10 specific
+org.apache.qpid.test.unit.client.connection.ConnectionTest#testClientIDVerification

@@ -1099,6 +1099,7 @@ public class Session extends SessionInvoker
             {
                 throw new SessionException("Timed out waiting for Session to open");
             }
+            break;
         case DETACHED:
         case CLOSING:
         case CLOSED:
