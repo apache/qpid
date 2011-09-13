@@ -23,9 +23,7 @@ import org.apache.qpid.client.AMQDestination.AddressOption;
 import org.apache.qpid.client.AMQDestination.DestSyntax;
 import org.apache.qpid.client.failover.FailoverException;
 import org.apache.qpid.client.message.*;
-import org.apache.qpid.client.messaging.address.Node.QueueNode;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
-import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQInternalException;
@@ -365,21 +363,28 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
     public void setMessageListener(final MessageListener messageListener) throws JMSException
     {
         super.setMessageListener(messageListener);
-        if (messageListener != null && capacity == 0)
+        try
         {
-            _0_10session.getQpidSession().messageFlow(getConsumerTagString(),
-                                                      MessageCreditUnit.MESSAGE, 1,
-                                                      Option.UNRELIABLE);
-        }
-        if (messageListener != null && !_synchronousQueue.isEmpty())
-        {
-            Iterator messages=_synchronousQueue.iterator();
-            while (messages.hasNext())
+            if (messageListener != null && capacity == 0)
             {
-                AbstractJMSMessage message=(AbstractJMSMessage) messages.next();
-                messages.remove();
-                _session.rejectMessage(message, true);
+                _0_10session.getQpidSession().messageFlow(getConsumerTagString(),
+                                                          MessageCreditUnit.MESSAGE, 1,
+                                                          Option.UNRELIABLE);
             }
+            if (messageListener != null && !_synchronousQueue.isEmpty())
+            {
+                Iterator messages=_synchronousQueue.iterator();
+                while (messages.hasNext())
+                {
+                    AbstractJMSMessage message=(AbstractJMSMessage) messages.next();
+                    messages.remove();
+                    _session.rejectMessage(message, true);
+                }
+            }
+        }
+        catch(TransportException e)
+        {
+            throw _session.toJMSException("Exception while setting message listener:"+ e.getMessage(), e);
         }
     }
 
@@ -443,7 +448,7 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
         return o;
     }
 
-    void postDeliver(AbstractJMSMessage msg) throws JMSException
+    void postDeliver(AbstractJMSMessage msg)
     {
         super.postDeliver(msg);
         if (_acknowledgeMode == org.apache.qpid.jms.Session.NO_ACKNOWLEDGE && !_session.isInRecovery())

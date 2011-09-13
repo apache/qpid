@@ -47,7 +47,6 @@ import org.apache.qpid.client.AMQSession_0_10;
 import org.apache.qpid.client.CustomJMSXProperty;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.jms.Message;
-import org.apache.qpid.messaging.Address;
 import org.apache.qpid.transport.DeliveryProperties;
 import org.apache.qpid.transport.ExchangeQueryResult;
 import org.apache.qpid.transport.Future;
@@ -56,6 +55,7 @@ import org.apache.qpid.transport.MessageDeliveryMode;
 import org.apache.qpid.transport.MessageDeliveryPriority;
 import org.apache.qpid.transport.MessageProperties;
 import org.apache.qpid.transport.ReplyTo;
+import org.apache.qpid.transport.TransportException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -342,6 +342,14 @@ public class AMQMessageDelegate_0_10 extends AbstractAMQMessageDelegate
                e.setLinkedException(ex);
                throw e;
            }
+           catch (TransportException e)
+           {
+               JMSException jmse = new JMSException("Exception occured while figuring out the node type:" + e.getMessage());
+               jmse.initCause(e);
+               jmse.setLinkedException(e);
+               throw jmse;
+           }
+
         }
         
         final ReplyTo replyTo = new ReplyTo(amqd.getExchangeName().toString(), amqd.getRoutingKey().toString());

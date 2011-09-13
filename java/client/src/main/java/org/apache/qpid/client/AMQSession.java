@@ -97,7 +97,10 @@ import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.FieldTableFactory;
 import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.jms.Session;
+import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.thread.Threading;
+import org.apache.qpid.transport.SessionException;
+import org.apache.qpid.transport.TransportException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -606,8 +609,9 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
      * Acknowledges all unacknowledged messages on the session, for all message consumers on the session.
      *
      * @throws IllegalStateException If the session is closed.
+     * @throws JMSException if there is a problem during acknowledge process.
      */
-    public void acknowledge() throws IllegalStateException
+    public void acknowledge() throws IllegalStateException, JMSException
     {
         if (isClosed())
         {
@@ -625,7 +629,15 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
             {
                 break;
             }
-            acknowledgeMessage(tag, false);
+
+            try
+            {
+                acknowledgeMessage(tag, false);
+            }
+            catch (TransportException e)
+            {
+                throw toJMSException("Exception while acknowledging message(s):" + e.getMessage(), e);
+            }
         }
     }
 
@@ -763,6 +775,10 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                         _logger.debug(
                                 "Got FailoverException during channel close, ignored as channel already marked as closed.");
                     }
+                    catch (TransportException e)
+                    {
+                        throw toJMSException("Error closing session:" + e.getMessage(), e);
+                    }
                     finally
                     {
                         _connection.deregisterSession(_channelId);
@@ -873,6 +889,10 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         catch (FailoverException e)
         {
             throw new JMSAMQException("Fail-over interrupted commit. Status of the commit is uncertain.", e);
+        }
+        catch(TransportException e)
+        {
+            throw toJMSException("Session exception occured while trying to commit: " + e.getMessage(), e);
         }
     }
 
@@ -1071,6 +1091,10 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                 ex.setLinkedException(e);
                 throw ex;
             }
+            catch(TransportException e)
+            {
+                throw toJMSException("Error when verifying destination", e);
+            }
         }
         
         String messageSelector = ((selector == null) || (selector.trim().length() == 0)) ? null : selector;
@@ -1155,6 +1179,10 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
             }
     
             return subscriber;
+        }
+        catch (TransportException e)
+        {
+            throw toJMSException("Exception while creating durable subscriber:" + e.getMessage(), e);
         }
         finally
         {
@@ -1405,7 +1433,6 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     {
         checkNotClosed();
 
-        // return (QueueSender) createProducer(queue);
         return new QueueSenderAdapter(createProducer(queue), queue);
     }
 
@@ -1442,7 +1469,6 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         checkNotClosed();
         Topic dest = checkValidTopic(topic);
 
-        // AMQTopic dest = new AMQTopic(topic.getTopicName());
         return new TopicSubscriberAdaptor(dest, (C) createExclusiveConsumer(dest));
     }
 
@@ -1727,13 +1753,14 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         // Ensure that the session is not transacted.
         checkNotTransacted();
 
-        // flush any acks we are holding in the buffer.
-        flushAcknowledgments();
-        
-        // this is set only here, and the before the consumer's onMessage is called it is set to false
-        _inRecovery = true;
+
         try
         {
+            // flush any acks we are holding in the buffer.
+            flushAcknowledgments();
+
+            // this is set only here, and the before the consumer's onMessage is called it is set to false
+            _inRecovery = true;
 
             boolean isSuspended = isSuspended();
 
@@ -1769,7 +1796,10 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         {
             throw new JMSAMQException("Recovery was interrupted by fail-over. Recovery status is not known.", e);
         }
-       
+        catch(TransportException e)
+        {
+            throw toJMSException("Recover failed: " + e.getMessage(), e);
+        }
     }
 
     protected abstract void sendRecover() throws AMQException, FailoverException;
@@ -1854,6 +1884,10 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
             {
                 throw new JMSAMQException("Fail-over interrupted rollback. Status of the rollback is uncertain.", e);
             }
+            catch (TransportException e)
+            {
+                throw toJMSException("Failure to rollback:" + e.getMessage(), e);
+            }
         }
     }
 
@@ -1900,7 +1934,14 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
      */
     public void unsubscribe(String name) throws JMSException
     {
-        unsubscribe(name, false);
+        try
+        {
+            unsubscribe(name, false);
+        }
+        catch (TransportException e)
+        {
+            throw toJMSException("Exception while unsubscribing:" + e.getMessage(), e);
+        }
     }
     
     /**
@@ -2021,8 +2062,16 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                         // argument, as specifying null for the arguments when querying means they should not be checked at all
                         ft.put(AMQPFilterTypes.JMS_SELECTOR.getValue(), messageSelector == null ? "" : messageSelector);
 
-                        C consumer = createMessageConsumer(amqd, prefetchHigh, prefetchLow,
-                                                                              noLocal, exclusive, messageSelector, ft, noConsume, autoClose);
+                        C consumer;
+                        try
+                        {
+                            consumer = createMessageConsumer(amqd, prefetchHigh, prefetchLow,
+                                                             noLocal, exclusive, messageSelector, ft, noConsume, autoClose);
+                        }
+                        catch(TransportException e)
+                        {
+                            throw toJMSException("Exception while creating consumer: " + e.getMessage(), e);
+                        }
 
                         if (_messageListener != null)
                         {
@@ -2059,7 +2108,10 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                             ex.initCause(e);
                             throw ex;
                         }
-
+                        catch (TransportException e)
+                        {
+                            throw toJMSException("Exception while registering consumer:" + e.getMessage(), e);
+                        }
                         return consumer;
                     }
                 }, _connection).execute();
@@ -2601,8 +2653,18 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                     {
                         checkNotClosed();
                         long producerId = getNextProducerId();
-                        P producer = createMessageProducer(destination, mandatory,
-                                                           immediate, waitUntilSent, producerId);
+
+                        P producer;
+                        try
+                        {
+                            producer = createMessageProducer(destination, mandatory,
+                                    immediate, waitUntilSent, producerId);
+                        }
+                        catch (TransportException e)
+                        {
+                            throw toJMSException("Exception while creating producer:" + e.getMessage(), e);
+                        }
+
                         registerProducer(producerId, producer);
 
                         return producer;
@@ -3008,6 +3070,10 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
             catch (FailoverException e)
             {
                 throw new AMQException(null, "Fail-over interrupted suspend/unsuspend channel.", e);
+            }
+            catch (TransportException e)
+            {
+                throw new AMQException(AMQConstant.getConstant(getErrorCode(e)), e.getMessage(), e);
             }
         }
     }
@@ -3485,5 +3551,28 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     public boolean isDeclareExchanges()
     {
     	return DECLARE_EXCHANGES;
+    }
+
+    JMSException toJMSException(String message, TransportException e)
+    {
+        int code = getErrorCode(e);
+        JMSException jmse = new JMSException(message, Integer.toString(code));
+        jmse.setLinkedException(e);
+        jmse.initCause(e);
+        return jmse;
+    }
+
+    private int getErrorCode(TransportException e)
+    {
+        int code = AMQConstant.INTERNAL_ERROR.getCode();
+        if (e instanceof SessionException)
+        {
+            SessionException se = (SessionException) e;
+            if(se.getException() != null && se.getException().getErrorCode() != null)
+            {
+                code = se.getException().getErrorCode().getValue();
+            }
+        }
+        return code;
     }
 }
