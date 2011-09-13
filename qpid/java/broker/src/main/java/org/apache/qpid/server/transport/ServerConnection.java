@@ -20,14 +20,16 @@
  */
 package org.apache.qpid.server.transport;
 
-import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.*;
+import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.CONNECTION_FORMAT;
+import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.SOCKET_FORMAT;
+import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.USER_FORMAT;
 
 import java.security.Principal;
 import java.text.MessageFormat;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.security.auth.Subject;
 
@@ -384,5 +386,17 @@ public class ServerConnection extends Connection implements AMQConnectionModel, 
     public long getConnectionId()
     {
         return _connectionId;
+    }
+
+    @Override
+    public boolean isSessionNameUnique(String name)
+    {
+        return !super.hasSessionWithName(name);
+    }
+
+    @Override
+    public String getUserName()
+    {
+        return _authorizedPrincipal.getName();
     }
 }

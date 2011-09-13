@@ -292,9 +292,10 @@ public class ConnectionTest extends QpidBrokerTestCase
         }
     }
 
-    public void testClientIDVerification() throws Exception
+    public void testClientIDVerificationForSameUser() throws Exception
     {
-        System.setProperty("qpid.verify_client_id", "true");
+        setTestSystemProperty("qpid.verify_client_id", "true");
+
         BrokerDetails broker = getBroker();
         try
         {
@@ -302,19 +303,34 @@ public class ConnectionTest extends QpidBrokerTestCase
                                         "client_id", "test");
 
             Connection con2 = new AMQConnection(broker.toString(), "guest", "guest",
-                    "client_id", "test");
+                                        "client_id", "test");
 
             fail("The client should throw a ConnectionException stating the" +
                     " client ID is not unique");
         }
         catch (Exception e)
         {
-            assertTrue("Incorrect exception thrown",
+            assertTrue("Incorrect exception thrown: " + e.getMessage(),
                        e.getMessage().contains("ClientID must be unique"));
         }
-        finally
+    }
+
+    public void testClientIDVerificationForDifferentUsers() throws Exception
+    {
+        setTestSystemProperty("qpid.verify_client_id", "true");
+
+        BrokerDetails broker = getBroker();
+        try
         {
-            System.setProperty("qpid.verify_client_id", "false");
+            Connection con = new AMQConnection(broker.toString(), "guest", "guest",
+                                        "client_id", "test");
+
+            Connection con2 = new AMQConnection(broker.toString(), "admin", "admin",
+                                        "client_id", "test");
+        }
+        catch (Exception e)
+        {
+            fail("Unexpected exception thrown, client id was not unique but usernames were different! " + e.getMessage());
         }
     }
 
