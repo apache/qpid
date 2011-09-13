@@ -37,7 +37,6 @@ import org.apache.qpid.client.message.AMQMessageDelegate_0_10;
 import org.apache.qpid.client.message.AbstractJMSMessage;
 import org.apache.qpid.client.message.QpidMessageProperties;
 import org.apache.qpid.client.messaging.address.Link.Reliability;
-import org.apache.qpid.client.messaging.address.Node.QueueNode;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.transport.DeliveryProperties;
 import org.apache.qpid.transport.Header;
@@ -47,6 +46,7 @@ import org.apache.qpid.transport.MessageDeliveryMode;
 import org.apache.qpid.transport.MessageDeliveryPriority;
 import org.apache.qpid.transport.MessageProperties;
 import org.apache.qpid.transport.Option;
+import org.apache.qpid.transport.TransportException;
 import org.apache.qpid.util.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -246,14 +246,14 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
         }
     }
 
-
+    @Override
     public boolean isBound(AMQDestination destination) throws JMSException
     {
         return _session.isQueueBound(destination);
     }
     
     @Override
-    public void close()
+    public void close() throws JMSException
     {
         super.close();
         AMQDestination dest = _destination;
@@ -262,10 +262,18 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
             if (dest.getDelete() == AddressOption.ALWAYS ||
                 dest.getDelete() == AddressOption.SENDER )
             {
-                ((AMQSession_0_10) getSession()).getQpidSession().queueDelete(
+                try
+                {
+                    ((AMQSession_0_10) getSession()).getQpidSession().queueDelete(
                         _destination.getQueueName());
+                }
+                catch(TransportException e)
+                {
+                    throw getSession().toJMSException("Exception while closing producer:" + e.getMessage(), e);
+                }
             }
         }
     }
+
 }
 
