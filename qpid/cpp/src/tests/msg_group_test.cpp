@@ -67,6 +67,9 @@ struct Options : public qpid::Options
     bool randomizeSize;
     bool stickyConsumer;
     uint timeout;
+    uint interleave;
+    std::string prefix;
+    uint sendRate;
 
     Options(const std::string& argv0=std::string())
         : qpid::Options("Options"),
@@ -86,11 +89,13 @@ struct Options : public qpid::Options
           allowDuplicates(false),
           randomizeSize(false),
           stickyConsumer(false),
-          timeout(10)
+          timeout(10),
+          interleave(1),
+          sendRate(0)
     {
         addOptions()
           ("ack-frequency", qpid::optValue(ackFrequency, "N"), "Ack frequency (0 implies none of the messages will get accepted)")
-          ("address,a", qpid::optValue(address, "ADDRESS"), "address to receive from")
+          ("address,a", qpid::optValue(address, "ADDRESS"), "address to send and receive from")
           ("allow-duplicates", qpid::optValue(allowDuplicates), "Ignore the delivery of duplicated messages")
           ("broker,b", qpid::optValue(url, "URL"), "url of broker to connect to")
           ("capacity", qpid::optValue(capacity, "N"), "Pre-fetch window (0 implies no pre-fetch)")
@@ -98,10 +103,13 @@ struct Options : public qpid::Options
           ("durable", qpid::optValue(durable, "yes|no"), "Mark messages as durable.")
           ("failover-updates", qpid::optValue(failoverUpdates), "Listen for membership updates distributed via amq.failover")
           ("group-key", qpid::optValue(groupKey, "KEY"), "Key of the message header containing the group identifier.")
+          ("group-prefix", qpid::optValue(prefix, "STRING"), "Add 'prefix' to the start of all generated group identifiers.")
           ("group-size", qpid::optValue(groupSize, "N"), "Number of messages per a group.")
+          ("interleave", qpid::optValue(interleave, "N"), "Simultaineously interleave messages from N different groups.")
           ("messages,m", qpid::optValue(messages, "N"), "Number of messages to send per each sender.")
           ("receivers,r", qpid::optValue(receivers, "N"), "Number of message consumers.")
           ("randomize-group-size", qpid::optValue(randomizeSize), "Randomize the number of messages per group to [1...group-size].")
+          ("send-rate", qpid::optValue(sendRate,"N"), "Send at rate of N messages/second. 0 means send as fast as possible.")
           ("senders,s", qpid::optValue(senders, "N"), "Number of message producers.")
           ("sticky-consumers", qpid::optValue(stickyConsumer), "If set, verify that all messages in a group are consumed by the same client [TBD].")
           ("timeout", qpid::optValue(timeout, "N"), "Fail with a stall error should all consumers remain idle for timeout seconds.")
@@ -181,12 +189,12 @@ public:
         // now verify
         SequenceMap::iterator s = sequenceMap.find(groupId);
         if (s == sequenceMap.end()) {
-            sequenceMap[groupId] = 1;
-            totalMsgsConsumed++;
             QPID_LOG(debug,  "Client " << client << " thinks this is the first message from group " << groupId << ":" << sequence);
-            return sequence == 0;
-        }
-        if (sequence < s->second) {
+            // if duplication allowed, it is possible that the last msg(s) of an old sequence are redelivered on reconnect.
+            // in this case, set the sequence from the first msg.
+            sequenceMap[groupId] = (allowDuplicates) ? sequence : 0;
+            s = sequenceMap.find(groupId);
+        } else if (sequence < s->second) {
             duplicateMsgs++;
             QPID_LOG(debug, "Client " << client << " thinks this message is a duplicate! " << groupId << ":" << sequence);
             return allowDuplicates;
@@ -222,7 +230,9 @@ public:
     bool allMsgsConsumed()  // true when done processing msgs
     {
         qpid::sys::Mutex::ScopedLock l(lock);
-        return totalMsgsConsumed == totalMsgs;
+        return (totalMsgsPublished >= totalMsgs) &&
+          (totalMsgsConsumed >= totalMsgsPublished) &&
+          sequenceMap.size() == 0;
     }
 
     uint getConsumedTotal()
@@ -274,8 +284,83 @@ namespace {
         }
     };
 
-    static Randomizer randomize;
+    static Randomizer randomizer;
 }
+
+
+// tag each generated message with a group identifer
+//
+class GroupGenerator {
+
+    const std::string groupPrefix;
+    const uint groupSize;
+    const bool randomizeSize;
+    const uint interleave;
+
+    uint groupSuffix;
+    uint total;
+
+    struct GroupState {
+        std::string id;
+        const uint size;
+        uint count;
+        GroupState( const std::string& i, const uint s )
+            : id(i), size(s), count(0) {}
+    };
+    typedef std::list<GroupState> GroupList;
+    GroupList groups;
+    GroupList::iterator current;
+
+    // add a new group identifier to the list
+    void newGroup() {
+        std::ostringstream groupId(groupPrefix, ios_base::out|ios_base::ate);
+        groupId << std::string(":") << groupSuffix++;
+        uint size = (randomizeSize) ? randomizer(groupSize) : groupSize;
+        QPID_LOG(trace, "New group: GROUPID=[" << groupId.str() << "] size=" << size << " this=" << this);
+        GroupState group( groupId.str(), size );
+        groups.push_back( group );
+    }
+
+public:
+    GroupGenerator( const std::string& prefix,
+                    const uint t,
+                    const uint size,
+                    const bool randomize,
+                    const uint i)
+        : groupPrefix(prefix), groupSize(size),
+          randomizeSize(randomize), interleave(i), groupSuffix(0), total(t)
+    {
+        QPID_LOG(trace, "New group generator: PREFIX=[" << prefix << "] total=" << total << " size=" << size << " rand=" << randomize << " interleave=" << interleave << " this=" << this);
+        for (uint i = 0; i < 1 || i < interleave; ++i) {
+            newGroup();
+        }
+        current = groups.begin();
+    }
+
+    bool genGroup(std::string& groupId, uint& seq, bool& eos)
+    {
+        if (!total) return false;
+        --total;
+        if (current == groups.end())
+            current = groups.begin();
+        groupId = current->id;
+        seq = current->count++;
+        if (current->count == current->size) {
+            QPID_LOG(trace, "Last msg for " << current->id << ", " << current->count << " this=" << this);
+            eos = true;
+            if (total >= interleave) {  // need a new group to replace this one
+                newGroup();
+                groups.erase(current++);
+            } else ++current;
+        } else {
+            ++current;
+            eos = total < interleave;   // mark eos on the last message of each group
+        }
+        QPID_LOG(trace, "SENDING GROUPID=[" << groupId << "] seq=" << seq << " eos=" << eos << " this=" << this);
+        return true;
+    }
+};
+
 
 
 class Client : public qpid::sys::Runnable
@@ -291,6 +376,7 @@ public:
     qpid::sys::Thread& getThread() { return thread; }
     const std::string getErrorMsg() { return error.str(); }
     void stop() {stopped = true;}
+    const std::string& getName() { return name; }
 
 protected:
     const std::string name;
@@ -323,15 +409,14 @@ public:
             Message msg;
             uint count = 0;
 
-            while (!stopped && !checker.allMsgsConsumed()) {
-
+            while (!stopped) {
                 if (receiver.fetch(msg, Duration::SECOND)) { // msg retrieved
-
                     qpid::types::Variant::Map& properties = msg.getProperties();
-
                     std::string groupId = properties[opts.groupKey];
                     uint groupSeq = properties[SN];
                     bool eof = properties[EOS];
+
+                    QPID_LOG(trace, "RECVING GROUPID=[" << groupId << "] seq=" << groupSeq << " eos=" << eof << " name=" << name);
 
                     qpid::sys::usleep(10);
 
@@ -355,7 +440,8 @@ public:
                     }
                     // Clear out message properties & content for next iteration.
                     msg = Message(); // TODO aconway 2010-12-01: should be done by fetch
-                }
+                } else if (checker.allMsgsConsumed())   // timed out, nothing else to do?
+                    break;
             }
             session.acknowledge();
             session.close();
@@ -367,6 +453,7 @@ public:
             connection.close();
         }
         clientDone();
+        QPID_LOG(trace, "Consuming client " << name << " completed.");
     }
 };
 
@@ -375,9 +462,13 @@ public:
 class Producer : public Client
 {
     GroupChecker& checker;
+    GroupGenerator generator;
 
 public:
-    Producer(const std::string& n, const Options& o, GroupChecker& c) : Client(n, o), checker(c) {};
+    Producer(const std::string& n, const Options& o, GroupChecker& c)
+        : Client(n, o), checker(c),
+          generator( n, o.messages, o.groupSize, o.randomizeSize, o.interleave )
+    {};
     virtual ~Producer() {};
 
     void run()
@@ -392,32 +483,29 @@ public:
             if (opts.capacity) sender.setCapacity(opts.capacity);
             Message msg;
             msg.setDurable(opts.durable);
+            std::string groupId;
+            uint seq;
+            bool eos;
             uint sent = 0;
-            uint groupSeq = 0;
-            uint groupSize = opts.groupSize;
-            ostringstream group;
-            group << name << ":" << sent;
-            std::string groupId(group.str());
 
-            while (!stopped && sent < opts.messages) {
-                ++sent;
+            qpid::sys::AbsTime start = qpid::sys::now();
+            int64_t interval = 0;
+            if (opts.sendRate) interval = qpid::sys::TIME_SEC/opts.sendRate;
+
+            while (!stopped && generator.genGroup(groupId, seq, eos)) {
                 msg.getProperties()[opts.groupKey] = groupId;
-                msg.getProperties()[SN] = groupSeq++;
-                msg.getProperties()[EOS] = false;
-                checker.sendingSequence( groupId, groupSeq-1, (groupSeq == groupSize), name );
-                if (groupSeq == groupSize) {
-                    msg.getProperties()[EOS] = true;
-                    // generate new group
-                    ostringstream nextGroupId;
-                    nextGroupId << name << ":" << sent;
-                    groupId = nextGroupId.str();
-                    groupSeq = 0;
-                    if (opts.randomizeSize) {
-                        groupSize = randomize(opts.groupSize);
-                    }
-                }
+                msg.getProperties()[SN] = seq;
+                msg.getProperties()[EOS] = eos;
+                checker.sendingSequence( groupId, seq, eos, name );
+
                 sender.send(msg);
-                qpid::sys::usleep(10);
+                ++sent;
+
+                if (opts.sendRate) {
+                    qpid::sys::AbsTime waitTill(start, sent*interval);
+                    int64_t delay = qpid::sys::Duration(qpid::sys::now(), waitTill);
+                    if (delay > 0) qpid::sys::usleep(delay/qpid::sys::TIME_USEC);
+                }
             }
             session.sync();
             session.close();
@@ -429,6 +517,7 @@ public:
             connection.close();
         }
         clientDone();
+        QPID_LOG(trace, "Producing client " << name << " completed.");
     }
 };
 
@@ -453,13 +542,13 @@ int main(int argc, char ** argv)
             // fire off the producers && consumers
             for (size_t j = 0; j < opts.senders; ++j)  {
                 ostringstream name;
-                name << "P_" << j;
+                name << opts.prefix << "P_" << j;
                 clients.push_back(Client::shared_ptr(new Producer( name.str(), opts, state )));
                 clients.back()->getThread() = qpid::sys::Thread(*clients.back());
             }
             for (size_t j = 0; j < opts.receivers; ++j)  {
                 ostringstream name;
-                name << "C_" << j;
+                name << opts.prefix << "C_" << j;
                 clients.push_back(Client::shared_ptr(new Consumer( name.str(), opts, state )));
                 clients.back()->getThread() = qpid::sys::Thread(*clients.back());
             }
@@ -476,8 +565,9 @@ int main(int argc, char ** argv)
                 done = true;
                 for (std::vector<Client::shared_ptr>::iterator i = clients.begin();
                      i != clients.end(); ++i) {
+                    QPID_LOG(debug, "Client " << (*i)->getName() << " state=" << (*i)->getState());
                     if ((*i)->getState() == Client::FAILURE) {
-                        std::cerr << argv[0] << ": test failed with client error: " << (*i)->getErrorMsg() << std::endl;
+                        QPID_LOG(error, argv[0] << ": test failed with client error: " << (*i)->getErrorMsg());
                         clientFailed = true;
                         done = true;
                         break;  // exit test.
@@ -505,7 +595,7 @@ int main(int argc, char ** argv)
             if (clientFailed) {
                 status = 1;
             } else if (stalledTime >= opts.timeout) {
-                std::cerr << argv[0] << ": test failed due to stalled consumer." << std::endl;
+                QPID_LOG(error, argv[0] << ": test failed due to stalled consumer." );
                 status = 2;
             }
 
@@ -517,10 +607,12 @@ int main(int argc, char ** argv)
             }
 
             if (opts.printReport && !status) state.print(std::cout);
-        }
+        } else status = 4;
     } catch(const std::exception& error) {
-        std::cerr << argv[0] << ": " << error.what() << std::endl;
+        QPID_LOG(error, argv[0] << ": " << error.what());
         status = 3;
     }
+    QPID_LOG(trace, "TEST DONE [" << status << "]");
+
     return status;
 }

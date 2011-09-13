@@ -702,6 +702,7 @@ Manageable::status_t Broker::queryQueue( const std::string& name,
         QPID_LOG(error, "Query failed: queue not found, name=" << name);
         return Manageable::STATUS_UNKNOWN_OBJECT;
     }
+    q->query( results );
     return Manageable::STATUS_OK;;
 }
 

@@ -305,3 +305,108 @@ boost::shared_ptr<MessageGroupManager> MessageGroupManager::create( Queue *q,
     }
     return empty;
 }
+
+/** Cluster replication:
+
+   state map format:
+
+   { "group-state": [ {"name": <group-name>,
+                       "owner": <consumer-name>-or-empty,
+                       "acquired-ct": <acquired count>,
+                       "positions": [Seqnumbers, ... ]},
+                      {...}
+                    ]
+   }
+*/
+
+namespace {
+    const std::string GROUP_NAME("name");
+    const std::string GROUP_OWNER("owner");
+    const std::string GROUP_ACQUIRED_CT("acquired-ct");
+    const std::string GROUP_POSITIONS("positions");
+    const std::string GROUP_STATE("group-state");
+}
+
+
+/** Runs on UPDATER to snapshot current state */
+void MessageGroupManager::getState(qpid::framing::FieldTable& state ) const
+{
+    using namespace qpid::framing;
+    state.clear();
+    framing::Array groupState(TYPE_CODE_MAP);
+    for (GroupMap::const_iterator g = messageGroups.begin();
+         g != messageGroups.end(); ++g) {
+
+        framing::FieldTable group;
+        group.setString(GROUP_NAME, g->first);
+        group.setString(GROUP_OWNER, g->second.owner);
+        group.setInt(GROUP_ACQUIRED_CT, g->second.acquired);
+        framing::Array positions(TYPE_CODE_UINT32);
+        for (GroupState::PositionFifo::const_iterator p = g->second.members.begin();
+             p != g->second.members.end(); ++p)
+            positions.push_back(framing::Array::ValuePtr(new IntegerValue( *p )));
+        group.setArray(GROUP_POSITIONS, positions);
+        groupState.push_back(framing::Array::ValuePtr(new FieldTableValue(group)));
+    }
+    state.setArray(GROUP_STATE, groupState);
+
+    QPID_LOG(debug, "Queue \"" << queue->getName() << "\": replicating message group state, key=" << groupIdHeader);
+}
+
+
+/** called on UPDATEE to set state from snapshot */
+void MessageGroupManager::setState(const qpid::framing::FieldTable& state)
+{
+    using namespace qpid::framing;
+    messageGroups.clear();
+    consumers.clear();
+    freeGroups.clear();
+
+    framing::Array groupState(TYPE_CODE_MAP);
+
+    bool ok = state.getArray(GROUP_STATE, groupState);
+    if (!ok) {
+        QPID_LOG(error, "Unable to find message group state information for queue \"" <<
+                 queue->getName() << "\": cluster inconsistency error!");
+        return;
+    }
+
+    for (framing::Array::const_iterator g = groupState.begin();
+         g != groupState.end(); ++g) {
+        framing::FieldTable group;
+        ok = framing::getEncodedValue<FieldTable>(*g, group);
+        if (!ok) {
+            QPID_LOG(error, "Invalid message group state information for queue \"" <<
+                     queue->getName() << "\": table encoding error!");
+            return;
+        }
+        MessageGroupManager::GroupState state;
+        if (!group.isSet(GROUP_NAME) || !group.isSet(GROUP_OWNER) || !group.isSet(GROUP_ACQUIRED_CT)) {
+            QPID_LOG(error, "Invalid message group state information for queue \"" <<
+                     queue->getName() << "\": fields missing error!");
+            return;
+        }
+        state.group = group.getAsString(GROUP_NAME);
+        state.owner = group.getAsString(GROUP_OWNER);
+        state.acquired = group.getAsInt(GROUP_ACQUIRED_CT);
+        framing::Array positions(TYPE_CODE_UINT32);
+        ok = group.getArray(GROUP_POSITIONS, positions);
+        if (!ok) {
+            QPID_LOG(error, "Invalid message group state information for queue \"" <<
+                     queue->getName() << "\": position encoding error!");
+            return;
+        }
+
+        for (Array::const_iterator p = positions.begin(); p != positions.end(); ++p)
+            state.members.push_back((*p)->getIntegerValue<uint32_t, 4>());
+        messageGroups[state.group] = state;
+        if (state.owned())
+            consumers[state.owner]++;
+        else {
+            assert(state.members.size());
+            freeGroups[state.members.front()] = &messageGroups[state.group];
+        }
+    }
+
+    QPID_LOG(debug, "Queue \"" << queue->getName() << "\": message group state replicated, key =" << groupIdHeader)
+}

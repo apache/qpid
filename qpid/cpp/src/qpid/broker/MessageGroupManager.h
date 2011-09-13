@@ -24,7 +24,7 @@
 
 /* for managing message grouping on Queues */
 
-#include "qpid/broker/QueueObserver.h"
+#include "qpid/broker/StatefulQueueObserver.h"
 #include "qpid/broker/MessageAllocator.h"
 
 
@@ -34,7 +34,7 @@ namespace broker {
 class QueueObserver;
 class MessageAllocator;
 
-class MessageGroupManager : public QueueObserver, public MessageAllocator
+class MessageGroupManager : public StatefulQueueObserver, public MessageAllocator
 {
     const std::string groupIdHeader;    // msg header holding group identifier
     const unsigned int timestamp;       // mark messages with timestamp if set
@@ -55,8 +55,9 @@ class MessageGroupManager : public QueueObserver, public MessageAllocator
     typedef std::map<std::string, uint32_t> Consumers;  // count of owned groups
     typedef std::map<framing::SequenceNumber, struct GroupState *> GroupFifo;
 
+    // note: update getState()/setState() when changing this object's state implementation
     GroupMap messageGroups; // index: group name
-    GroupFifo freeGroups; // ordered by oldest free msg
+    GroupFifo freeGroups;   // ordered by oldest free msg
     Consumers consumers;    // index: consumer name
 
     static const std::string qpidMessageGroupKey;
@@ -95,13 +96,17 @@ class MessageGroupManager : public QueueObserver, public MessageAllocator
     static boost::shared_ptr<MessageGroupManager> create( Queue *q, const qpid::framing::FieldTable& settings );
 
     MessageGroupManager(const std::string& header, Queue *q, unsigned int _timestamp=0 )
-        : QueueObserver(), MessageAllocator(q), groupIdHeader( header ), timestamp(_timestamp) {}
+      : StatefulQueueObserver(std::string("MessageGroupManager:") + header), MessageAllocator(q),
+        groupIdHeader( header ), timestamp(_timestamp) {}
     void enqueued( const QueuedMessage& qm );
     void acquired( const QueuedMessage& qm );
     void requeued( const QueuedMessage& qm );
     void dequeued( const QueuedMessage& qm );
     void consumerAdded( const Consumer& );
     void consumerRemoved( const Consumer& );
+    void getState(qpid::framing::FieldTable& state ) const;
+    void setState(const qpid::framing::FieldTable&);
+
     bool nextConsumableMessage( Consumer::shared_ptr& c, QueuedMessage& next,
                                 const sys::Mutex::ScopedLock&);
     // uses default nextBrowsableMessage()
