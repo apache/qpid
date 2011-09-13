@@ -123,6 +123,7 @@ namespace qmf {
 #ifndef SWIG
     private:
         friend class qmf::PrivateImplRef<ConsoleSession>;
+        friend struct ConsoleSessionImplAccess;
 #endif
     };
 

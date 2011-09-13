@@ -19,134 +19,7 @@
  *
  */
 
-#include "qpid/RefCounted.h"
-#include "qmf/PrivateImplRef.h"
-#include "qmf/exceptions.h"
-#include "qmf/AgentSession.h"
-#include "qmf/AgentEventImpl.h"
-#include "qmf/SchemaIdImpl.h"
-#include "qmf/SchemaImpl.h"
-#include "qmf/DataAddrImpl.h"
-#include "qmf/DataImpl.h"
-#include "qmf/QueryImpl.h"
-#include "qmf/agentCapability.h"
-#include "qmf/constants.h"
-#include "qpid/sys/Mutex.h"
-#include "qpid/sys/Condition.h"
-#include "qpid/sys/Thread.h"
-#include "qpid/sys/Runnable.h"
-#include "qpid/log/Statement.h"
-#include "qpid/messaging/Connection.h"
-#include "qpid/messaging/Session.h"
-#include "qpid/messaging/Receiver.h"
-#include "qpid/messaging/Sender.h"
-#include "qpid/messaging/Message.h"
-#include "qpid/messaging/AddressParser.h"
-#include "qpid/management/Buffer.h"
-#include <queue>
-#include <map>
-#include <set>
-#include <iostream>
-#include <memory>
-
-using namespace std;
-using namespace qpid::messaging;
-using namespace qmf;
-using qpid::types::Variant;
-
-namespace qmf {
-    class AgentSessionImpl : public virtual qpid::RefCounted, public qpid::sys::Runnable {
-    public:
-        ~AgentSessionImpl();
-
-        //
-        // Methods from API handle
-        //
-        AgentSessionImpl(Connection& c, const string& o);
-        void setDomain(const string& d) { checkOpen(); domain = d; }
-        void setVendor(const string& v) { checkOpen(); attributes["_vendor"] = v; }
-        void setProduct(const string& p) { checkOpen(); attributes["_product"] = p; }
-        void setInstance(const string& i) { checkOpen(); attributes["_instance"] = i; }
-        void setAttribute(const string& k, const qpid::types::Variant& v) { checkOpen(); attributes[k] = v; }
-        const string& getName() const { return agentName; }
-        void open();
-        void close();
-        bool nextEvent(AgentEvent& e, Duration t);
-        int pendingEvents() const;
-
-        void registerSchema(Schema& s);
-        DataAddr addData(Data& d, const string& n, bool persist);
-        void delData(const DataAddr&);
-
-        void authAccept(AgentEvent& e);
-        void authReject(AgentEvent& e, const string& m);
-        void raiseException(AgentEvent& e, const string& s);
-        void raiseException(AgentEvent& e, const Data& d);
-        void response(AgentEvent& e, const Data& d);
-        void complete(AgentEvent& e);
-        void methodSuccess(AgentEvent& e);
-        void raiseEvent(const Data& d);
-        void raiseEvent(const Data& d, int s);
-
-    private:
-        typedef map<DataAddr, Data, DataAddrCompare> DataIndex;
-        typedef map<SchemaId, Schema, SchemaIdCompare> SchemaMap;
-
-        mutable qpid::sys::Mutex lock;
-        qpid::sys::Condition cond;
-        Connection connection;
-        Session session;
-        Sender directSender;
-        Sender topicSender;
-        string domain;
-        Variant::Map attributes;
-        Variant::Map options;
-        string agentName;
-        bool opened;
-        queue<AgentEvent> eventQueue;
-        qpid::sys::Thread* thread;
-        bool threadCanceled;
-        uint32_t bootSequence;
-        uint32_t interval;
-        uint64_t lastHeartbeat;
-        uint64_t lastVisit;
-        bool forceHeartbeat;
-        bool externalStorage;
-        bool autoAllowQueries;
-        bool autoAllowMethods;
-        uint32_t maxSubscriptions;
-        uint32_t minSubInterval;
-        uint32_t subLifetime;
-        bool publicEvents;
-        bool listenOnDirect;
-        bool strictSecurity;
-        uint32_t maxThreadWaitTime;
-        uint64_t schemaUpdateTime;
-        string directBase;
-        string topicBase;
-
-        SchemaMap schemata;
-        DataIndex globalIndex;
-        map<SchemaId, DataIndex, SchemaIdCompareNoHash> schemaIndex;
-
-        void checkOpen();
-        void setAgentName();
-        void enqueueEvent(const AgentEvent&);
-        void handleLocateRequest(const Variant::List& content, const Message& msg);
-        void handleMethodRequest(const Variant::Map& content, const Message& msg);
-        void handleQueryRequest(const Variant::Map& content, const Message& msg);
-        void handleSchemaRequest(AgentEvent&);
-        void handleV1SchemaRequest(qpid::management::Buffer&, uint32_t, const Message&);
-        void dispatch(Message);
-        void sendHeartbeat();
-        void send(Message, const Address&);
-        void flushResponses(AgentEvent&, bool);
-        void periodicProcessing(uint64_t);
-        void run();
-    };
-}
-
-typedef qmf::PrivateImplRef<AgentSession> PI;
+#include "qmf/AgentSessionImpl.h"
 
 AgentSession::AgentSession(AgentSessionImpl* impl) { PI::ctor(*this, impl); }
 AgentSession::AgentSession(const AgentSession& s) : qmf::Handle<AgentSessionImpl>() { PI::copy(*this, s); }
@@ -345,6 +218,8 @@ bool AgentSessionImpl::nextEvent(AgentEvent& event, Duration timeout)
     if (!eventQueue.empty()) {
         event = eventQueue.front();
         eventQueue.pop();
+        if (eventQueue.empty())
+            alertEventNotifierLH(false);
         return true;
     }
 
@@ -356,6 +231,19 @@ int AgentSessionImpl::pendingEvents() const
 {
     qpid::sys::Mutex::ScopedLock l(lock);
     return eventQueue.size();
+}
+
+
+void AgentSessionImpl::setEventNotifier(EventNotifierImpl* notifier)
+{
+    qpid::sys::Mutex::ScopedLock l(lock);
+    eventNotifier = notifier;
+}
+
+EventNotifierImpl* AgentSessionImpl::getEventNotifier() const
+{
+    qpid::sys::Mutex::ScopedLock l(lock);
+    return eventNotifier;
 }
 
 
@@ -614,8 +502,10 @@ void AgentSessionImpl::enqueueEvent(const AgentEvent& event)
     qpid::sys::Mutex::ScopedLock l(lock);
     bool notify = eventQueue.empty();
     eventQueue.push(event);
-    if (notify)
+    if (notify) {
         cond.notify();
+        alertEventNotifierLH(true);
+    }
 }
 
 
@@ -1059,6 +949,13 @@ void AgentSessionImpl::periodicProcessing(uint64_t seconds)
 }
 
 
+void AgentSessionImpl::alertEventNotifierLH(bool readable)
+{
+    if (eventNotifier)
+        eventNotifier->setReadable(readable);
+}
+
+
 void AgentSessionImpl::run()
 {
     QPID_LOG(debug, "AgentSession thread started for agent " << agentName);
@@ -1087,5 +984,17 @@ void AgentSessionImpl::run()
 
     session.close();
     QPID_LOG(debug, "AgentSession thread exiting for agent " << agentName);
+}
+
+
+AgentSessionImpl& AgentSessionImplAccess::get(AgentSession& session)
+{
+    return *session.impl;
+}
+
+
+const AgentSessionImpl& AgentSessionImplAccess::get(const AgentSession& session)
+{
+    return *session.impl;
 }
 
