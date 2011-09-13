@@ -39,6 +39,7 @@ import org.apache.qpid.client.message.AbstractJMSMessage;
 import org.apache.qpid.client.message.MessageConverter;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.framing.ContentBody;
+import org.apache.qpid.transport.TransportException;
 import org.apache.qpid.util.UUIDGen;
 import org.apache.qpid.util.UUIDs;
 import org.slf4j.Logger;
@@ -266,7 +267,7 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
         return _destination;
     }
 
-    public void close()
+    public void close() throws JMSException
     {
         _closed.set(true);
         _session.deregisterProducer(_producerId);
@@ -498,7 +499,14 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
             message.setJMSMessageID(messageId);
         }
 
-        sendMessage(destination, origMessage, message, messageId, deliveryMode, priority, timeToLive, mandatory, immediate, wait);
+        try
+        {
+            sendMessage(destination, origMessage, message, messageId, deliveryMode, priority, timeToLive, mandatory, immediate, wait);
+        }
+        catch (TransportException e)
+        {
+            throw getSession().toJMSException("Exception whilst sending:" + e.getMessage(), e);
+        }
 
         if (message != origMessage)
         {
@@ -596,6 +604,13 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
 
     public boolean isBound(AMQDestination destination) throws JMSException
     {
-        return _session.isQueueBound(destination.getExchangeName(), null, destination.getRoutingKey());
+        try
+        {
+            return _session.isQueueBound(destination.getExchangeName(), null, destination.getRoutingKey());
+        }
+        catch (TransportException e)
+        {
+            throw getSession().toJMSException("Exception whilst checking destination binding:" + e.getMessage(), e);
+        }
     }
 }

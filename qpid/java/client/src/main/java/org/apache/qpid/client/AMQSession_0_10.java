@@ -72,6 +72,7 @@ import org.apache.qpid.transport.RangeSet;
 import org.apache.qpid.transport.Session;
 import org.apache.qpid.transport.SessionException;
 import org.apache.qpid.transport.SessionListener;
+import org.apache.qpid.transport.TransportException;
 import org.apache.qpid.util.Serial;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -548,7 +549,6 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
     }
     
     public boolean isQueueBound(final String exchangeName, final String queueName, final String bindingKey,Map<String,Object> args)
-    throws JMSException
     {
         boolean res;
         ExchangeBoundResult bindingQueryResult =
@@ -691,6 +691,10 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
             ex.setLinkedException(e);
             
             throw ex;
+        }
+        catch(TransportException e)
+        {
+            throw toJMSException("Exception while creating message producer:" + e.getMessage(), e);
         }
 
     }
@@ -994,7 +998,8 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
         }
     }
 
-    @Override public void commit() throws JMSException
+    @Override
+    public void commit() throws JMSException
     {
         checkTransacted();
         try
@@ -1007,12 +1012,9 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
             }
             sendCommit();
         }
-        catch(SessionException e)
+        catch(TransportException e)
         {
-            JMSException ex = new JMSException("Session exception occured while trying to commit");
-            ex.initCause(e);
-            ex.setLinkedException(e);
-            throw ex;
+            throw toJMSException("Session exception occured while trying to commit: " + e.getMessage(), e);
         }
         catch (AMQException e)
         {
@@ -1383,5 +1385,5 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
         sb.append(">");
         return sb.toString();
     }
-    
+
 }
