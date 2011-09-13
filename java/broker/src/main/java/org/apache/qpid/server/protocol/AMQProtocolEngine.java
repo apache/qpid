@@ -1394,4 +1394,16 @@ public class AMQProtocolEngine implements ServerProtocolEngine, Managable, AMQPr
     {
         _statisticsEnabled = enabled;
     }
+
+    @Override
+    public boolean isSessionNameUnique(String name)
+    {
+        return true;
+    }
+
+    @Override
+    public String getUserName()
+    {
+        return getAuthorizedPrincipal().getName();
+    }
 }
