@@ -18,9 +18,11 @@
  */
 
 #include "PosixEventNotifierImpl.h"
+#include "qpid/log/Statement.h"
 
 #include <fcntl.h>
 #include <unistd.h>
+#include <errno.h>
 
 #define BUFFER_SIZE 10
 
@@ -51,10 +53,12 @@ void PosixEventNotifierImpl::update(bool readable)
     char buffer[BUFFER_SIZE];
 
     if(readable && !this->isReadable()) {
-        (void) ::write(myHandle, "1", 1);
+        if (::write(myHandle, "1", 1) == -1)
+            QPID_LOG(error, "PosixEventNotifierImpl::update write failed: " << errno);
     }
     else if(!readable && this->isReadable()) {
-        (void) ::read(yourHandle, buffer, BUFFER_SIZE);
+        if (::read(yourHandle, buffer, BUFFER_SIZE) == -1)
+            QPID_LOG(error, "PosixEventNotifierImpl::update read failed: " << errno);
     }
 }
 
