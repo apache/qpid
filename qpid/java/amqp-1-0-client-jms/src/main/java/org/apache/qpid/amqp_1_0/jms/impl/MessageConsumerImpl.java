@@ -18,6 +18,7 @@
  */
 package org.apache.qpid.amqp_1_0.jms.impl;
 
+import org.apache.qpid.amqp_1_0.client.AcknowledgeMode;
 import org.apache.qpid.amqp_1_0.client.Message;
 import org.apache.qpid.amqp_1_0.client.Receiver;
 import org.apache.qpid.amqp_1_0.jms.MessageConsumer;
@@ -26,13 +27,24 @@ import org.apache.qpid.amqp_1_0.jms.Queue;
 import org.apache.qpid.amqp_1_0.jms.Topic;
 import org.apache.qpid.amqp_1_0.jms.TopicSubscriber;
 import org.apache.qpid.amqp_1_0.type.Binary;
+import org.apache.qpid.amqp_1_0.type.Outcome;
+import org.apache.qpid.amqp_1_0.type.Symbol;
 import org.apache.qpid.amqp_1_0.type.UnsignedInteger;
+import org.apache.qpid.amqp_1_0.type.messaging.Filter;
+import org.apache.qpid.amqp_1_0.type.messaging.JMSSelectorFilter;
+import org.apache.qpid.amqp_1_0.type.messaging.NoLocalFilter;
 
 import javax.jms.*;
 import javax.jms.IllegalStateException;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
 public class MessageConsumerImpl implements MessageConsumer, QueueReceiver, TopicSubscriber
 {
+    private static final Filter NO_LOCAL_FILTER = new NoLocalFilter();
+    private static final Symbol NO_LOCAL_FILTER_NAME = Symbol.valueOf("no-local");
+    private static final Symbol JMS_SELECTOR_FILTER_NAME = Symbol.valueOf("jms-selector");
     private String _selector;
     private boolean _noLocal;
     private DestinationImpl _destination;
@@ -77,7 +89,37 @@ public class MessageConsumerImpl implements MessageConsumer, QueueReceiver, Topi
 
     protected Receiver createClientReceiver() throws IllegalStateException
     {
-        return _session.getClientSession().createReceiver(_destination.getAddress());
+        return _session.getClientSession(). createReceiver(_destination.getAddress(), AcknowledgeMode.ALO,
+                                                           null, false, getFilters(), null);
+    }
+
+    private Map<Symbol, Filter> getFilters()
+    {
+        if(_selector == null)
+        {
+            if(_noLocal)
+            {
+                return Collections.singletonMap(NO_LOCAL_FILTER_NAME, NO_LOCAL_FILTER);
+            }
+            else
+            {
+                return null;
+
+            }
+        }
+        else if(_noLocal)
+        {
+            Map<Symbol, Filter> filters = new HashMap<Symbol, Filter>();
+            filters.put(NO_LOCAL_FILTER_NAME, NO_LOCAL_FILTER);
+            filters.put(JMS_SELECTOR_FILTER_NAME, new JMSSelectorFilter(_selector));
+            return filters;
+        }
+        else
+        {
+            return Collections.singletonMap(JMS_SELECTOR_FILTER_NAME, (Filter)new JMSSelectorFilter(_selector));
+        }
+
+
     }
 
     public String getMessageSelector() throws JMSException

@@ -51,7 +51,7 @@ public class FilterManagerFactory
                 if (selector != null && !selector.equals(""))
                 {
                     manager = new SimpleFilterManager();
-                    manager.add(new JMSSelectorFilter(selector));
+                    manager.add(new JMSSelectorMessageFilter(selector));
                 }
 
             }

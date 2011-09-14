@@ -21,17 +21,16 @@
 package org.apache.qpid.server.protocol.v1_0;
 
 import org.apache.qpid.AMQInternalException;
+import org.apache.qpid.AMQInvalidArgumentException;
 import org.apache.qpid.AMQSecurityException;
 import org.apache.qpid.amqp_1_0.transport.DeliveryStateHandler;
 import org.apache.qpid.amqp_1_0.transport.LinkEndpoint;
 import org.apache.qpid.amqp_1_0.transport.SendingLinkEndpoint;
 import org.apache.qpid.amqp_1_0.transport.SendingLinkListener;
-import org.apache.qpid.amqp_1_0.type.Binary;
-import org.apache.qpid.amqp_1_0.type.DeliveryState;
-import org.apache.qpid.amqp_1_0.type.Outcome;
-import org.apache.qpid.amqp_1_0.type.UnsignedInteger;
+import org.apache.qpid.amqp_1_0.type.*;
 
 import org.apache.qpid.amqp_1_0.type.messaging.*;
+import org.apache.qpid.amqp_1_0.type.messaging.Source;
 import org.apache.qpid.amqp_1_0.type.transport.Detach;
 import org.apache.qpid.amqp_1_0.type.transport.Transfer;
 import org.apache.qpid.AMQException;
@@ -39,6 +38,8 @@ import org.apache.qpid.server.exchange.DirectExchange;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.ExchangeType;
 import org.apache.qpid.server.exchange.TopicExchange;
+import org.apache.qpid.server.filter.JMSSelectorMessageFilter;
+import org.apache.qpid.server.filter.SimpleFilterManager;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.queue.QueueEntry;
@@ -80,6 +81,11 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
         QueueDestination qd = null;
         AMQQueue queue = null;
 
+
+
+        boolean noLocal = false;
+        JMSSelectorMessageFilter messageFilter = null;
+
         if(destination instanceof QueueDestination)
         {
             queue = ((QueueDestination) _destination).getQueue();
@@ -88,7 +94,37 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
                 source.setDistributionMode(StdDistMode.COPY);
             }
             qd = (QueueDestination) destination;
-            source.setFilter(null);
+
+            Map<Symbol,Filter> filters = source.getFilter();
+
+            Map<Symbol,Filter> actualFilters = new HashMap<Symbol,Filter>();
+
+            for(Map.Entry<Symbol,Filter> entry : filters.entrySet())
+            {
+                if(entry.getValue() instanceof NoLocalFilter)
+                {
+                    actualFilters.put(entry.getKey(), entry.getValue());
+                    noLocal = true;
+                }
+                else if(messageFilter == null && entry.getValue() instanceof JMSSelectorFilter)
+                {
+
+                    JMSSelectorFilter selectorFilter = (JMSSelectorFilter) entry.getValue();
+                    try
+                    {
+                        messageFilter = new JMSSelectorMessageFilter(selectorFilter.getValue());
+
+                        actualFilters.put(entry.getKey(), entry.getValue());
+                    }
+                    catch (AMQInvalidArgumentException e)
+                    {
+
+                    }
+
+
+                }
+            }
+            source.setFilter(actualFilters.isEmpty() ? null : actualFilters);
 
         }
         else if(destination instanceof ExchangeDestination)
@@ -145,6 +181,8 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
         }
 
         _subscription = new Subscription_1_0(this, qd);
+        _subscription.setNoLocal(noLocal);
+        _subscription.setFilters(new SimpleFilterManager(messageFilter));
 
         try
         {
@@ -214,6 +252,11 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
     public SendingLinkEndpoint getEndpoint()
     {
         return _linkAttachment == null ? null : _linkAttachment.getEndpoint() ;
+    }
+
+    public Session_1_0 getSession()
+    {
+        return _linkAttachment == null ? null : _linkAttachment.getSession();
     }
 
     public void flowStateChanged()

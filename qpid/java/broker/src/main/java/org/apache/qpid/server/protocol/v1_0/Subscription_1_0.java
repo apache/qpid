@@ -33,7 +33,9 @@ import org.apache.qpid.amqp_1_0.type.transport.SenderSettleMode;
 import org.apache.qpid.amqp_1_0.type.transport.Transfer;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.server.filter.FilterManager;
 import org.apache.qpid.server.logging.LogActor;
+import org.apache.qpid.server.message.MessageTransferMessage;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueEntry;
@@ -62,6 +64,9 @@ class Subscription_1_0 implements Subscription
     private AMQQueue.Context _queueContext;
     private Map<String, Object> _properties = new ConcurrentHashMap<String, Object>();
     private ReentrantLock _stateChangeLock = new ReentrantLock();
+
+    private boolean _noLocal;
+    private FilterManager _filters;
 
     private long _deliveryTag = 0L;
     private StateListener _stateListener;
@@ -113,7 +118,12 @@ class Subscription_1_0 implements Subscription
 
     public void setNoLocal(final boolean noLocal)
     {
-        //TODO
+        _noLocal = noLocal;
+    }
+
+    public boolean isNoLocal()
+    {
+        return _noLocal;
     }
 
     public long getSubscriptionID()
@@ -123,13 +133,21 @@ class Subscription_1_0 implements Subscription
 
     public boolean isSuspended()
     {
-        final boolean isSuspended = !isActive();// || !getEndpoint().hasCreditToSend();
-        return isSuspended;
+        return !isActive();// || !getEndpoint().hasCreditToSend();
+
     }
 
-    public boolean hasInterest(final QueueEntry msg)
+    public boolean hasInterest(final QueueEntry entry)
     {
-        return true;  //TODO - filters
+        return !(_noLocal && (entry.getMessage() instanceof Message_1_0)
+                          && ((Message_1_0)entry.getMessage()).getSession() == getSession())
+               && checkFilters(entry);
+
+    }
+
+    private boolean checkFilters(final QueueEntry entry)
+    {
+        return (_filters == null) || _filters.allAllow(entry);
     }
 
     public boolean isClosed()
@@ -371,6 +389,11 @@ class Subscription_1_0 implements Subscription
         }
     }
 
+    public Session_1_0 getSession()
+    {
+        return _link.getSession();
+    }
+
     private class DispositionAction implements UnsettledAction
     {
 
@@ -483,5 +506,15 @@ class Subscription_1_0 implements Subscription
             }
             return true;
         }
+    }
+
+    public FilterManager getFilters()
+    {
+        return _filters;
+    }
+
+    public void setFilters(final FilterManager filters)
+    {
+        _filters = filters;
     }
 }

@@ -29,6 +29,7 @@ import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.store.StoredMessage;
 
+import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.List;
@@ -37,12 +38,16 @@ public class Message_1_0 implements ServerMessage<Message_1_0>, InboundMessage
 {
     private final StoredMessage<MessageMetaData_1_0> _storedMessage;
     private List<ByteBuffer> _fragments;
+    private WeakReference<Session_1_0> _session;
 
 
-    public Message_1_0(final StoredMessage<MessageMetaData_1_0> storedMessage, final List<ByteBuffer> fragments)
+    public Message_1_0(final StoredMessage<MessageMetaData_1_0> storedMessage,
+                       final List<ByteBuffer> fragments,
+                       final Session_1_0 session)
     {
         _storedMessage = storedMessage;
         _fragments = fragments;
+        _session = new WeakReference<Session_1_0>(session);
     }
 
     public String getRoutingKey()
@@ -125,6 +130,11 @@ public class Message_1_0 implements ServerMessage<Message_1_0>, InboundMessage
         return _fragments;
     }
 
+    public Session_1_0 getSession()
+    {
+        return _session.get();
+    }
+
     public static class Reference extends MessageReference<Message_1_0>
     {
         public Reference(Message_1_0 message)
@@ -141,5 +151,6 @@ public class Message_1_0 implements ServerMessage<Message_1_0>, InboundMessage
         {
 
         }
+
 }
 }

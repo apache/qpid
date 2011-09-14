@@ -59,7 +59,7 @@ public class Hello
 
 
             Session consumerSession = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-            MessageConsumer messageConsumer = consumerSession.createConsumer(queue);
+            MessageConsumer messageConsumer = consumerSession.createConsumer(queue, "hello='true'");
 
             messageConsumer.setMessageListener(new MessageListener()
             {
@@ -137,6 +137,7 @@ public class Hello
             MessageProducer messageProducer = producersession.createProducer(queue);
             TextMessage message = producersession.createTextMessage("Hello world!");
             message.setJMSType("Hello");
+            message.setStringProperty("hello","true");
             messageProducer.send(message);
            /*
             MapMessage mapmessage = producersession.createMapMessage();

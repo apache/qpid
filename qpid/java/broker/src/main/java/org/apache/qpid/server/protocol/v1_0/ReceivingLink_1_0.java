@@ -42,6 +42,7 @@ import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
+import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
 import java.util.*;
 
@@ -159,7 +160,7 @@ public class ReceivingLink_1_0 implements ReceivingLinkListener, Link_1_0, Deliv
 
             storedMessage.flushToStore();
 
-            Message_1_0 message = new Message_1_0(storedMessage, fragments);
+            Message_1_0 message = new Message_1_0(storedMessage, fragments, getSession());
 
 
             Binary transactionId = null;
