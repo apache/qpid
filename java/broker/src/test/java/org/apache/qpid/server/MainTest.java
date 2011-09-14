@@ -17,7 +17,7 @@ public class MainTest extends QpidTestCase
 
         assertTrue(options.getPorts().isEmpty());
         assertTrue(options.getSSLPorts().isEmpty());
-        assertEquals(null, options.getJmxPort());
+        assertEquals(null, options.getJmxPortRegistryServer());
         assertEquals(null, options.getConfigFile());
         assertEquals(null, options.getLogConfigFile());
         assertEquals(null, options.getBind());
@@ -76,11 +76,21 @@ public class MainTest extends QpidTestCase
         assertEquals(1, options.getSSLPorts().size());
     }
 
-    public void testJMXportOverridden()
+    public void testJmxPortRegistryServerOverridden()
     {
-        BrokerOptions options = startDummyMain("-m 3456");
+        BrokerOptions options = startDummyMain("--jmxregistryport 3456");
 
-        assertEquals(Integer.valueOf(3456), options.getJmxPort());
+        assertEquals(Integer.valueOf(3456), options.getJmxPortRegistryServer());
+
+         options = startDummyMain("-m 3457");
+         assertEquals(Integer.valueOf(3457), options.getJmxPortRegistryServer());
+    }
+
+    public void testJmxPortConnectorServerOverridden()
+    {
+        BrokerOptions options = startDummyMain("--jmxconnectorport 3456");
+
+        assertEquals(Integer.valueOf(3456), options.getJmxPortConnectorServer());
     }
 
     public void testExclude0_10()

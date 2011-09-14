@@ -30,7 +30,7 @@
     <connector>
         <!-- To enable SSL edit the keystorePath and keystorePassword
 	     and set enabled to true. 
-             To disasble Non-SSL port set sslOnly to true -->
+             To disable Non-SSL port set sslOnly to true -->
         <ssl>
             <enabled>false</enabled>
             <port>5671</port>
@@ -44,7 +44,13 @@
     </connector>
     <management>
         <enabled>true</enabled>
-        <jmxport>8999</jmxport>
+        <jmxport>
+            <registryServer>8999</registryServer>
+            <!--
+             If unspecified, connectorServer defaults to 100 + registryServer port.
+            <connectorServer>9099</connectionServer>
+            -->
+        </jmxport>
         <ssl>
             <enabled>false</enabled>
             <!-- Update below path to your keystore location, or run the bin/create-example-ssl-stores(.sh|.bat)

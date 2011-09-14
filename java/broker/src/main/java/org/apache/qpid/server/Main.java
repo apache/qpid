@@ -27,7 +27,6 @@ import org.apache.commons.cli.OptionBuilder;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.cli.PosixParser;
-import org.apache.log4j.Logger;
 import org.apache.qpid.server.Broker.InitException;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 
@@ -38,7 +37,92 @@ import org.apache.qpid.server.registry.ApplicationRegistry;
  */
 public class Main
 {
-    private final Options options = new Options();
+
+    private static final Option OPTION_HELP = new Option("h", "help", false, "print this message");
+
+    private static final Option OPTION_VERSION = new Option("v", "version", false, "print the version information and exit");
+
+    private static final Option OPTION_CONFIG_FILE =
+            OptionBuilder.withArgName("file").hasArg().withDescription("use given configuration file").withLongOpt("config")
+                    .create("c");
+
+    private static final Option OPTION_PORT =
+            OptionBuilder.withArgName("port").hasArg()
+                    .withDescription("listen on the specified port. Overrides any value in the config file")
+                    .withLongOpt("port").create("p");
+
+    private static final Option OPTION_SSLPORT =
+            OptionBuilder.withArgName("port").hasArg()
+                    .withDescription("SSL port. Overrides any value in the config file")
+                    .withLongOpt("sslport").create("s");
+
+    private static final Option OPTION_EXCLUDE_0_10 =
+            OptionBuilder.withArgName("port").hasArg()
+                    .withDescription("when listening on the specified port do not accept AMQP0-10 connections. The specified port must be one specified on the command line")
+                    .withLongOpt("exclude-0-10").create();
+
+    private static final Option OPTION_EXCLUDE_0_9_1 =
+            OptionBuilder.withArgName("port").hasArg()
+                    .withDescription("when listening on the specified port do not accept AMQP0-9-1 connections. The specified port must be one specified on the command line")
+                    .withLongOpt("exclude-0-9-1").create();
+
+    private static final Option OPTION_EXCLUDE_0_9 =
+            OptionBuilder.withArgName("port").hasArg()
+                    .withDescription("when listening on the specified port do not accept AMQP0-9 connections. The specified port must be one specified on the command line")
+                    .withLongOpt("exclude-0-9").create();
+
+    private static final Option OPTION_EXCLUDE_0_8 =
+            OptionBuilder.withArgName("port").hasArg()
+                    .withDescription("when listening on the specified port do not accept AMQP0-8 connections. The specified port must be one specified on the command line")
+                    .withLongOpt("exclude-0-8").create();
+
+    private static final Option OPTION_JMX_PORT_REGISTRY_SERVER =
+            OptionBuilder.withArgName("port").hasArg()
+                    .withDescription("listen on the specified management (registry server) port. Overrides any value in the config file")
+                    .withLongOpt("jmxregistryport").create("m");
+
+    private static final Option OPTION_JMX_PORT_CONNECTOR_SERVER =
+            OptionBuilder.withArgName("port").hasArg()
+                    .withDescription("listen on the specified management (connector server) port. Overrides any value in the config file")
+                    .withLongOpt("jmxconnectorport").create();
+
+    private static final Option OPTION_BIND =
+            OptionBuilder.withArgName("address").hasArg()
+                    .withDescription("bind to the specified address. Overrides any value in the config file")
+                    .withLongOpt("bind").create("b");
+
+    private static final Option OPTION_LOG_CONFIG_FILE =
+            OptionBuilder.withArgName("file").hasArg()
+                    .withDescription("use the specified log4j xml configuration file. By "
+                                     + "default looks for a file named " + BrokerOptions.DEFAULT_LOG_CONFIG_FILE
+                                     + " in the same directory as the configuration file").withLongOpt("logconfig").create("l");
+
+    private static final Option OPTION_LOG_WATCH =
+            OptionBuilder.withArgName("period").hasArg()
+                    .withDescription("monitor the log file configuration file for changes. Units are seconds. "
+                                     + "Zero means do not check for changes.").withLongOpt("logwatch").create("w");
+
+    private static final Options OPTIONS = new Options();
+
+    static
+    {
+        OPTIONS.addOption(OPTION_HELP);
+        OPTIONS.addOption(OPTION_VERSION);
+        OPTIONS.addOption(OPTION_CONFIG_FILE);
+        OPTIONS.addOption(OPTION_LOG_CONFIG_FILE);
+        OPTIONS.addOption(OPTION_LOG_WATCH);
+        OPTIONS.addOption(OPTION_PORT);
+        OPTIONS.addOption(OPTION_SSLPORT);
+        OPTIONS.addOption(OPTION_EXCLUDE_0_10);
+        OPTIONS.addOption(OPTION_EXCLUDE_0_9_1);
+        OPTIONS.addOption(OPTION_EXCLUDE_0_9);
+        OPTIONS.addOption(OPTION_EXCLUDE_0_8);
+        OPTIONS.addOption(OPTION_BIND);
+
+        OPTIONS.addOption(OPTION_JMX_PORT_REGISTRY_SERVER);
+        OPTIONS.addOption(OPTION_JMX_PORT_CONNECTOR_SERVER);
+    }
+
     private CommandLine commandLine;
 
     public static void main(String[] args)
@@ -56,7 +140,6 @@ public class Main
 
     public Main(final String[] args)
     {
-        setOptions(options);
         if (parseCommandline(args))
         {
             try
@@ -76,7 +159,7 @@ public class Main
     {
         try
         {
-            commandLine = new PosixParser().parse(options, args);
+            commandLine = new PosixParser().parse(OPTIONS, args);
 
             return true;
         }
@@ -84,121 +167,52 @@ public class Main
         {
             System.err.println("Error: " + e.getMessage());
             HelpFormatter formatter = new HelpFormatter();
-            formatter.printHelp("Qpid", options, true);
+            formatter.printHelp("Qpid", OPTIONS, true);
 
             return false;
         }
     }
 
-    protected void setOptions(final Options options)
-    {
-        Option help = new Option("h", "help", false, "print this message");
-        Option version = new Option("v", "version", false, "print the version information and exit");
-        Option configFile =
-                OptionBuilder.withArgName("file").hasArg().withDescription("use given configuration file").withLongOpt("config")
-                        .create("c");
-        Option port =
-                OptionBuilder.withArgName("port").hasArg()
-                        .withDescription("listen on the specified port. Overrides any value in the config file")
-                        .withLongOpt("port").create("p");
-
-        Option exclude0_10 =
-                OptionBuilder.withArgName("exclude-0-10").hasArg()
-                        .withDescription("when listening on the specified port do not accept AMQP0-10 connections. The specified port must be one specified on the command line")
-                        .withLongOpt("exclude-0-10").create();
-
-        Option exclude0_9_1 =
-                OptionBuilder.withArgName("exclude-0-9-1").hasArg()
-                        .withDescription("when listening on the specified port do not accept AMQP0-9-1 connections. The specified port must be one specified on the command line")
-                        .withLongOpt("exclude-0-9-1").create();
-
-
-        Option exclude0_9 =
-                OptionBuilder.withArgName("exclude-0-9").hasArg()
-                        .withDescription("when listening on the specified port do not accept AMQP0-9 connections. The specified port must be one specified on the command line")
-                        .withLongOpt("exclude-0-9").create();
-
-
-        Option exclude0_8 =
-                OptionBuilder.withArgName("exclude-0-8").hasArg()
-                        .withDescription("when listening on the specified port do not accept AMQP0-8 connections. The specified port must be one specified on the command line")
-                        .withLongOpt("exclude-0-8").create();
-
-
-        Option mport =
-                OptionBuilder.withArgName("mport").hasArg()
-                        .withDescription("listen on the specified management port. Overrides any value in the config file")
-                        .withLongOpt("mport").create("m");
-
-
-        Option bind =
-                OptionBuilder.withArgName("bind").hasArg()
-                        .withDescription("bind to the specified address. Overrides any value in the config file")
-                        .withLongOpt("bind").create(BrokerOptions.BIND);
-        Option logconfig =
-                OptionBuilder.withArgName("logconfig").hasArg()
-                        .withDescription("use the specified log4j xml configuration file. By "
-                                         + "default looks for a file named " + BrokerOptions.DEFAULT_LOG_CONFIG_FILE
-                                         + " in the same directory as the configuration file").withLongOpt("logconfig").create(BrokerOptions.LOG_CONFIG);
-        Option logwatchconfig =
-                OptionBuilder.withArgName("logwatch").hasArg()
-                        .withDescription("monitor the log file configuration file for changes. Units are seconds. "
-                                         + "Zero means do not check for changes.").withLongOpt("logwatch").create(BrokerOptions.WATCH);
-
-        Option sslport =
-                OptionBuilder.withArgName("sslport").hasArg()
-                        .withDescription("SSL port. Overrides any value in the config file")
-                        .withLongOpt("sslport").create(BrokerOptions.SSL_PORTS);
-
-        options.addOption(help);
-        options.addOption(version);
-        options.addOption(configFile);
-        options.addOption(logconfig);
-        options.addOption(logwatchconfig);
-        options.addOption(port);
-        options.addOption(exclude0_10);
-        options.addOption(exclude0_9_1);
-        options.addOption(exclude0_9);
-        options.addOption(exclude0_8);
-        options.addOption(mport);
-        options.addOption(bind);
-        options.addOption(sslport);
-    }
-
     protected void execute() throws Exception
     {
         BrokerOptions options = new BrokerOptions();
-        String configFile = commandLine.getOptionValue(BrokerOptions.CONFIG);
+        String configFile = commandLine.getOptionValue(OPTION_CONFIG_FILE.getOpt());
         if(configFile != null)
         {
             options.setConfigFile(configFile);
         }
 
-        String logWatchConfig = commandLine.getOptionValue(BrokerOptions.WATCH);
+        String logWatchConfig = commandLine.getOptionValue(OPTION_LOG_WATCH.getOpt());
         if(logWatchConfig != null)
         {
             options.setLogWatchFrequency(Integer.parseInt(logWatchConfig));
         }
 
-        String logConfig = commandLine.getOptionValue(BrokerOptions.LOG_CONFIG);
+        String logConfig = commandLine.getOptionValue(OPTION_LOG_CONFIG_FILE.getOpt());
         if(logConfig != null)
         {
             options.setLogConfigFile(logConfig);
         }
 
-        String jmxPort = commandLine.getOptionValue(BrokerOptions.MANAGEMENT);
-        if(jmxPort != null)
+        String jmxPortRegistryServer = commandLine.getOptionValue(OPTION_JMX_PORT_REGISTRY_SERVER.getOpt());
+        if(jmxPortRegistryServer != null)
         {
-            options.setJmxPort(Integer.parseInt(jmxPort));
+            options.setJmxPortRegistryServer(Integer.parseInt(jmxPortRegistryServer));
         }
 
-        String bindAddr = commandLine.getOptionValue(BrokerOptions.BIND);
+        String jmxPortConnectorServer = commandLine.getOptionValue(OPTION_JMX_PORT_CONNECTOR_SERVER.getLongOpt());
+        if(jmxPortConnectorServer != null)
+        {
+            options.setJmxPortConnectorServer(Integer.parseInt(jmxPortConnectorServer));
+        }
+
+        String bindAddr = commandLine.getOptionValue(OPTION_BIND.getOpt());
         if (bindAddr != null)
         {
             options.setBind(bindAddr);
         }
 
-        String[] portStr = commandLine.getOptionValues(BrokerOptions.PORTS);
+        String[] portStr = commandLine.getOptionValues(OPTION_PORT.getOpt());
         if(portStr != null)
         {
             parsePortArray(options, portStr, false);
@@ -208,7 +222,7 @@ public class Main
             }
         }
 
-        String[] sslPortStr = commandLine.getOptionValues(BrokerOptions.SSL_PORTS);
+        String[] sslPortStr = commandLine.getOptionValues(OPTION_SSLPORT.getOpt());
         if(sslPortStr != null)
         {
             parsePortArray(options, sslPortStr, true);

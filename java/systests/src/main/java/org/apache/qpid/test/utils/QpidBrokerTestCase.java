@@ -137,7 +137,7 @@ public class QpidBrokerTestCase extends QpidTestCase
     public static final int DEFAULT_VM_PORT = 1;
     public static final int DEFAULT_PORT = Integer.getInteger("test.port", ServerConfiguration.DEFAULT_PORT);
     public static final int FAILING_PORT = Integer.parseInt(System.getProperty("test.port.alt"));
-    public static final int DEFAULT_MANAGEMENT_PORT = Integer.getInteger("test.mport", ServerConfiguration.DEFAULT_JMXPORT);
+    public static final int DEFAULT_MANAGEMENT_PORT = Integer.getInteger("test.mport", ServerConfiguration.DEFAULT_JMXPORT_REGISTRYSERVER);
     public static final int DEFAULT_SSL_PORT = Integer.getInteger("test.port.ssl", ServerConfiguration.DEFAULT_SSL_PORT);
 
     protected String _brokerLanguage = System.getProperty(BROKER_LANGUAGE, JAVA);
@@ -480,7 +480,7 @@ public class QpidBrokerTestCase extends QpidTestCase
 
             addExcludedPorts(port, DEFAULT_SSL_PORT, options);
 
-            options.setJmxPort(getManagementPort(port));
+            options.setJmxPortRegistryServer(getManagementPort(port));
 
             //Set the log config file, relying on the log4j.configuration system property
             //set on the JVM by the JUnit runner task in module.xml.

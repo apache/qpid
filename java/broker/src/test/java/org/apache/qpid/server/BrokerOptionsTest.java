@@ -20,15 +20,10 @@
  */
 package org.apache.qpid.server;
 
-import static org.apache.qpid.transport.ConnectionSettings.WILDCARD_ADDRESS;
-import static org.apache.qpid.server.configuration.ServerConfiguration.DEFAULT_PORT;
-import static org.apache.qpid.server.configuration.ServerConfiguration.DEFAULT_JMXPORT;
-
-import java.util.Collections;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
-
 
 import org.apache.qpid.test.utils.QpidTestCase;
 
@@ -126,15 +121,26 @@ public class BrokerOptionsTest extends QpidTestCase
         assertEquals(testLogConfigFile, _options.getLogConfigFile());
     }
 
-    public void testDefaultJmxPort()
+    public void testDefaultJmxPortRegistryServer()
     {
-        assertNull(_options.getJmxPort());
+        assertNull(_options.getJmxPortRegistryServer());
     }
 
-    public void testJmxPort()
+    public void testJmxPortRegistryServer()
     {
-        _options.setJmxPort(TEST_PORT1);
-        assertEquals(Integer.valueOf(TEST_PORT1), _options.getJmxPort());
+        _options.setJmxPortRegistryServer(TEST_PORT1);
+        assertEquals(Integer.valueOf(TEST_PORT1), _options.getJmxPortRegistryServer());
+    }
+
+    public void testDefaultJmxPortConnectorServer()
+    {
+        assertNull(_options.getJmxPortConnectorServer());
+    }
+
+    public void testJmxPortConnectorServer()
+    {
+        _options.setJmxPortConnectorServer(TEST_PORT1);
+        assertEquals(Integer.valueOf(TEST_PORT1), _options.getJmxPortConnectorServer());
     }
 
     public void testQpidHomeExposesSysProperty()
