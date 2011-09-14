@@ -37,14 +37,6 @@ public class BrokerOptions
     public static final String DEFAULT_LOG_CONFIG_FILE = "etc/log4j.xml";
     public static final String QPID_HOME = "QPID_HOME";
 
-    public static final String PORTS = "p";
-    public static final String SSL_PORTS = "s";
-    public static final String BIND = "b";
-    public static final String MANAGEMENT = "m";
-    public static final String LOG_CONFIG = "l";
-    public static final String WATCH = "w";
-    public static final String CONFIG = "c";
-
     private final Set<Integer> _ports = new HashSet<Integer>();
     private final Set<Integer> _sslPorts = new HashSet<Integer>();
     private final Map<ProtocolExclusion,Set<Integer>> _exclusionMap = new HashMap<ProtocolExclusion, Set<Integer>>();
@@ -52,7 +44,8 @@ public class BrokerOptions
     private String _configFile;
     private String _logConfigFile;
     private String _bind;
-    private Integer _jmxPort;
+    private Integer _jmxPortRegistryServer;
+    private Integer _jmxPortConnectorServer;
     private BundleContext _bundleContext;
 
     private Integer _logWatchFrequency = 0;
@@ -98,14 +91,24 @@ public class BrokerOptions
         _logConfigFile = logConfigFile;
     }
 
-    public Integer getJmxPort()
+    public Integer getJmxPortRegistryServer()
     {
-        return _jmxPort;
+        return _jmxPortRegistryServer;
     }
 
-    public void setJmxPort(final int jmxPort)
+    public void setJmxPortRegistryServer(final int jmxPortRegistryServer)
     {
-        _jmxPort = jmxPort;
+        _jmxPortRegistryServer = jmxPortRegistryServer;
+    }
+
+    public Integer getJmxPortConnectorServer()
+    {
+        return _jmxPortConnectorServer;
+    }
+
+    public void setJmxPortConnectorServer(final int jmxPortConnectorServer)
+    {
+        _jmxPortConnectorServer = jmxPortConnectorServer;
     }
 
     public String getQpidHome()
@@ -163,4 +166,5 @@ public class BrokerOptions
     {
         _bundleContext = bundleContext;
     }
+
 }
