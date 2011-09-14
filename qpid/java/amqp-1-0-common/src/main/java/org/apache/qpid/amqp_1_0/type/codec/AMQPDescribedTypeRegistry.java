@@ -186,6 +186,7 @@ public class AMQPDescribedTypeRegistry implements DescribedTypeConstructorRegist
         ExactSubjectFilterWriter.register(registry);
         MatchingSubjectFilterWriter.register(registry);
         JMSSelectorFilterWriter.register(registry);
+        NoLocalFilterWriter.register(registry);
     }
 
     private static void registerTransactionsWriters(final AMQPDescribedTypeRegistry registry)
@@ -253,6 +254,7 @@ public class AMQPDescribedTypeRegistry implements DescribedTypeConstructorRegist
         ExactSubjectFilterConstructor.register(registry);
         MatchingSubjectFilterConstructor.register(registry);
         JMSSelectorFilterConstructor.register(registry);
+        NoLocalFilterConstructor.register(registry);
     }
 
     private static void registerTransactionsConstructors(final AMQPDescribedTypeRegistry registry)
