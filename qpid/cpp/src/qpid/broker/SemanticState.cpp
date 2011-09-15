@@ -125,6 +125,10 @@ bool SemanticState::cancel(const string& tag)
         //should cancel all unacked messages for this consumer so that
         //they are not redelivered on recovery
         for_each(unacked.begin(), unacked.end(), boost::bind(&DeliveryRecord::cancel, _1, tag));
+        //can also remove any records that are now redundant
+        DeliveryRecords::iterator removed =
+            remove_if(unacked.begin(), unacked.end(), bind(&DeliveryRecord::isRedundant, _1));
+        unacked.erase(removed, unacked.end());
         return true;
     } else {
         return false;
