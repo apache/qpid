@@ -81,6 +81,7 @@ class SemanticState : private boost::noncopyable {
         const bool acquire;
         bool blocked;
         bool windowing;
+        bool windowActive;
         bool exclusive;
         std::string resumeId;
         uint64_t resumeTtl;
