@@ -50,6 +50,7 @@ import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.actors.AMQPChannelActor;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.messages.ChannelMessages;
+import org.apache.qpid.server.logging.messages.ExchangeMessages;
 import org.apache.qpid.server.logging.subjects.ChannelLogSubject;
 import org.apache.qpid.server.message.AMQMessage;
 import org.apache.qpid.server.message.MessageMetaData;
@@ -315,7 +316,6 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
             try
             {
                 _currentMessage.getStoredMessage().flushToStore();
-
                 final ArrayList<? extends BaseQueue> destinationQueues = _currentMessage.getDestinationQueues();
 
                 if(!checkMessageUserId(_currentMessage.getContentHeader()))
@@ -324,7 +324,7 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
                 }
                 else
                 {
-                    if(destinationQueues == null || _currentMessage.getDestinationQueues().isEmpty())
+                    if(destinationQueues == null || destinationQueues.isEmpty())
                     {
                         if (_currentMessage.isMandatory() || _currentMessage.isImmediate())
                         {
@@ -332,7 +332,7 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
                         }
                         else
                         {
-                            _logger.warn("MESSAGE DISCARDED: No routes for message - " + createAMQMessage(_currentMessage));
+                            _actor.message(ExchangeMessages.DISCARDMSG(_currentMessage.getExchange().asString(), _currentMessage.getRoutingKey()));
                         }
 
                     }
