@@ -115,7 +115,9 @@ def start_receive(queue, index, opts, ready_queue, broker, host):
     if opts.connection_options:
         command += ["--connection-options",opts.connection_options]
     if host: command = ssh_command(host, command)
-    return clients.add(Popen(command, stdout=PIPE, stderr=PIPE))
+    # FIXME aconway 2011-09-15: 
+    # return clients.add(Popen(command, stdout=PIPE, stderr=PIPE))
+    return clients.add(Popen(command, stdout=PIPE))
 
 def start_send(queue, opts, broker, host):
     address="%s;{%s}"%(queue,",".join(opts.send_option + ["create:always"]))
@@ -128,7 +130,9 @@ def start_send(queue, opts, broker, host):
                "--report-total",
                "--report-header=no",
                "--timestamp=%s"%(opts.timestamp and "yes" or "no"),
-               "--sequence=no",
+               # FIXME aconway 2011-09-15: 
+               # "--sequence=no",
+               "--sequence=yes",
                "--flow-control", str(opts.flow_control),
                "--durable", str(opts.durable)
                ]
@@ -166,12 +170,12 @@ def recreate_queues(queues, brokers):
     for q in queues:
         try: s.sender("%s;{delete:always}"%(q)).close()
         except qpid.messaging.exceptions.NotFound: pass
-        # FIXME aconway 2011-05-04: async wiring, wait for changes to propagate.
+        # FIXME aconway 2011-05-04: new cluster async wiring, wait for changes to propagate
         for b in brokers:
             while queue_exists(q,b): time.sleep(0.1);
-    for q in queues:
-        s.sender("%s;{create:always}"%q)
-        # FIXME aconway 2011-05-04: async wiring, wait for changes to propagate.
+        for q in queues:
+            s.sender("%s;{create:always}"%q)
+        # FIXME aconway 2011-05-04: new cluster async wiring, wait for changes to propagate
         for b in brokers:
             while not queue_exists(q,b): time.sleep(0.1);
     c.close()
@@ -182,8 +186,6 @@ def print_header(timestamp):
     print "send-tp\t\trecv-tp%s"%latency_header
 
 def parse(parser, lines):               # Parse sender/receiver output
-    for l in lines:
-        fn_val = zip(parser, l)
     return [map(lambda p: p[0](p[1]), zip(parser,line.split())) for line in lines]
 
 def parse_senders(senders):

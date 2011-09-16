@@ -22,7 +22,9 @@
 #include "Core.h"
 #include "MessageHandler.h"
 #include "BrokerContext.h"
+#include "QueueContext.h"
 #include "EventHandler.h"
+#include "PrettyId.h"
 #include "qpid/broker/Message.h"
 #include "qpid/broker/Broker.h"
 #include "qpid/broker/QueueRegistry.h"
@@ -72,7 +74,7 @@ void MessageHandler::enqueue(RoutingId routingId, const std::string& q) {
     else
         msg = memberMap[sender()].routingMap[routingId];
     if (!msg) throw Exception(QPID_MSG("Cluster enqueue on " << q
-                                       << " failed:  unknown message"));
+                                       << " failed: unknown message"));
     BrokerContext::ScopedSuppressReplication ssr;
     queue->deliver(msg);
 }
@@ -84,40 +86,51 @@ void MessageHandler::routed(RoutingId routingId) {
         memberMap[sender()].routingMap.erase(routingId);
 }
 
+// FIXME aconway 2011-09-14: performance: pack acquires into a SequenceSet
+// and scan queue once.
 void MessageHandler::acquire(const std::string& q, uint32_t position) {
     // Note acquires from other members. My own acquires were executed in
     // the connection thread
     if (sender() != self()) {
-        // FIXME aconway 2010-10-28: need to store acquired messages on QueueContext
-        // by broker for possible re-queuing if a broker leaves.
-        boost::shared_ptr<Queue> queue = findQueue(q, "Cluster dequeue failed");
+        boost::shared_ptr<Queue> queue = findQueue(q, "Cluster acquire failed");
         QueuedMessage qm;
         BrokerContext::ScopedSuppressReplication ssr;
         bool ok = queue->acquireMessageAt(position, qm);
-        (void)ok;                   // Avoid unused variable warnings.
-        assert(ok);             // FIXME aconway 2011-08-04: failing this assertion.
+        (void)ok;               // Avoid unused variable warnings.
+        assert(ok);             // FIXME aconway 2011-09-14: error handling
         assert(qm.position.getValue() == position);
         assert(qm.payload);
+        // Save for possible requeue.
+        QueueContext::get(*queue)->acquire(qm);
     }
-}
+    QPID_LOG(trace, "cluster message " << q << "[" << position
+             << "] acquired by " << PrettyId(sender(), self()));
+ }
 
-void MessageHandler::dequeue(const std::string& q, uint32_t /*position*/) {
+void MessageHandler::dequeue(const std::string& q, uint32_t position) {
     if (sender() == self()) {
         // FIXME aconway 2010-10-28: we should complete the ack that initiated
         // the dequeue at this point, see BrokerContext::dequeue
-        return;
     }
-    boost::shared_ptr<Queue> queue = findQueue(q, "Cluster dequeue failed");
-    BrokerContext::ScopedSuppressReplication ssr;
-    // FIXME aconway 2011-05-12: Remove the acquired message from QueueContext.
-    // Do we need to call this? Review with gsim.
-    // QueuedMessage qm;
-    // Get qm from QueueContext?
-    // queue->dequeue(0, qm);
+    else {
+        // FIXME aconway 2011-09-15: new cluster, inefficient looks up
+        // message by position multiple times?
+        boost::shared_ptr<Queue> queue = findQueue(q, "Cluster dequeue failed");
+        // Remove fom the unacked list
+        QueueContext::get(*queue)->dequeue(position);
+        BrokerContext::ScopedSuppressReplication ssr;
+        QueuedMessage qm = queue->find(position);
+        if (qm.queue) queue->dequeue(0, qm);
+    }
 }
 
-void MessageHandler::release(const std::string& /*queue*/ , uint32_t /*position*/) {
-    // FIXME aconway 2011-05-24:
+// FIXME aconway 2011-09-14: rename as requeue?
+void MessageHandler::release(const std::string& q, uint32_t position, bool redelivered) {
+    // FIXME aconway 2011-09-15: review release/requeue logic.
+    if (sender() != self()) {
+        boost::shared_ptr<Queue> queue = findQueue(q, "Cluster release failed");
+        QueueContext::get(*queue)->requeue(position, redelivered);
+    }
 }
 
 }} // namespace qpid::cluster

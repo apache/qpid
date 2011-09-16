@@ -93,10 +93,9 @@ bool BrokerContext::enqueue(Queue& queue, const boost::intrusive_ptr<Message>& m
         core.getRoutingMap().put(tssRoutingId, msg);
     }
     core.mcast(ClusterMessageEnqueueBody(ProtocolVersion(), tssRoutingId, queue.getName()));
-    // TODO aconway 2010-10-21: configable option for strict (wait
-    // for CPG deliver to do local deliver) vs.  loose (local deliver
-    // immediately).
-    return false;
+    // TODO aconway 2010-10-21: review delivery options: strict (wait
+    // for CPG delivery vs loose (local deliver immediately).
+    return false; // Strict delivery, cluster will call Queue deliver.
 }
 
 void BrokerContext::routed(const boost::intrusive_ptr<Message>&) {
@@ -113,25 +112,27 @@ void BrokerContext::acquire(const broker::QueuedMessage& qm) {
                    ProtocolVersion(), qm.queue->getName(), qm.position));
 }
 
-// FIXME aconway 2011-05-24: need to handle acquire and release.
-// Dequeue in the wrong place?
-void BrokerContext::dequeue(const broker::QueuedMessage& qm) {
-    if (tssNoReplicate) return;
-    core.mcast(ClusterMessageDequeueBody(
-                   ProtocolVersion(), qm.queue->getName(), qm.position));
+bool BrokerContext::dequeue(const broker::QueuedMessage& qm) {
+    if (!tssNoReplicate)
+        core.mcast(ClusterMessageDequeueBody(
+                       ProtocolVersion(), qm.queue->getName(), qm.position));
+    return false;               // FIXME aconway 2011-09-14: needed?
 }
 
-void BrokerContext::release(const broker::QueuedMessage& ) {
-    // FIXME aconway 2011-05-24: TODO
+// FIXME aconway 2011-09-14: rename requeue?
+void BrokerContext::release(const broker::QueuedMessage& qm) {
+    if (!tssNoReplicate)
+        core.mcast(ClusterMessageReleaseBody(
+                       ProtocolVersion(), qm.queue->getName(), qm.position, qm.payload->getRedelivered()));
 }
 
 // FIXME aconway 2011-06-08: should be be using shared_ptr to q here?
 void BrokerContext::create(broker::Queue& q) {
-    if (tssNoReplicate) return; // FIXME aconway 2011-06-08: revisit
-    // FIXME aconway 2011-06-08: error handling- if already set...
-    // Create local context immediately, queue will be stopped until replicated.
+    q.stopConsumers();          // FIXME aconway 2011-09-14: Stop queue initially.
+    if (tssNoReplicate) return;
+    assert(!QueueContext::get(q));
     boost::intrusive_ptr<QueueContext> context(
-        new QueueContext(q,core.getMulticaster()));
+        new QueueContext(q, core.getMulticaster()));
     std::string data(q.encodedSize(), '\0');
     framing::Buffer buf(&data[0], data.size());
     q.encode(buf);
@@ -174,11 +175,12 @@ void BrokerContext::unbind(broker::Queue& q, broker::Exchange& ex,
 }
 
 // n is the number of consumers including the one just added.
-// FIXME aconway 2011-06-27: rename, conflicting terms.
+// FIXME aconway 2011-06-27: rename, conflicting terms. subscribe?
 void BrokerContext::consume(broker::Queue& q, size_t n) {
     QueueContext::get(q)->consume(n);
 }
 
+// FIXME aconway 2011-09-13: rename unsubscribe?
 // n is the number of consumers after the cancel.
 void BrokerContext::cancel(broker::Queue& q, size_t n) {
     QueueContext::get(q)->cancel(n);

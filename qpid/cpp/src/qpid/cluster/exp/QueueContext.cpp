@@ -20,13 +20,16 @@
  */
 
 #include "QueueContext.h"
+
 #include "Multicaster.h"
+#include "BrokerContext.h"      // for ScopedSuppressReplication
 #include "qpid/framing/ProtocolVersion.h"
 #include "qpid/framing/ClusterQueueResubscribeBody.h"
 #include "qpid/framing/ClusterQueueSubscribeBody.h"
 #include "qpid/framing/ClusterQueueUnsubscribeBody.h"
 #include "qpid/broker/Broker.h"
 #include "qpid/broker/Queue.h"
+#include "qpid/broker/QueuedMessage.h"
 #include "qpid/log/Statement.h"
 #include "qpid/sys/Timer.h"
 
@@ -41,7 +44,6 @@ class OwnershipTimeout : public sys::TimerTask {
     OwnershipTimeout(QueueContext& qc, const sys::Duration& interval) :
         TimerTask(interval, "QueueContext::OwnershipTimeout"), queueContext(qc) {}
 
-    // FIXME aconway 2011-07-27: thread safety on deletion?
     void fire() { queueContext.timeout(); }
 };
 
@@ -49,32 +51,35 @@ QueueContext::QueueContext(broker::Queue& q, Multicaster& m)
     : timer(q.getBroker()->getTimer()), queue(q), mcast(m), consumers(0)
 {
     q.setClusterContext(boost::intrusive_ptr<QueueContext>(this));
-    q.stop();  // Initially stopped.
 }
 
 QueueContext::~QueueContext() {
-    // FIXME aconway 2011-07-27: revisit shutdown logic.
-    // timeout() could be called concurrently with destructor.
-    sys::Mutex::ScopedLock l(lock);
     if (timerTask) timerTask->cancel();
 }
 
+void QueueContext::cancelTimer(const sys::Mutex::ScopedLock&) {
+    if (timerTask) {        // no need for timeout, sole owner.
+        timerTask->cancel();
+        timerTask = 0;
+    }
+}
+
+// Called by QueueReplica in CPG deliver thread when state changes.
 void QueueContext::replicaState(QueueOwnership state) {
     sys::Mutex::ScopedLock l(lock);
     switch (state) {
       case UNSUBSCRIBED:
       case SUBSCRIBED:
+        cancelTimer(l);
+        queue.stopConsumers();
         break;
       case SOLE_OWNER:
-        queue.start();
-        if (timerTask) {        // no need for timeout.
-            timerTask->cancel();
-            timerTask = 0;
-        }
+        cancelTimer(l);         // Sole owner, no need for timer.
+        queue.startConsumers();
         break;
       case SHARED_OWNER:
-        queue.start();
-        if (timerTask) timerTask->cancel();
+        cancelTimer(l);
+        queue.startConsumers();
         // FIXME aconway 2011-07-28: configurable interval.
         timerTask = new OwnershipTimeout(*this, 100*sys::TIME_MSEC);
         timer.add(timerTask);
@@ -82,7 +87,7 @@ void QueueContext::replicaState(QueueOwnership state) {
     }
 }
 
-// FIXME aconway 2011-07-27: Dont spin token on an empty queue. Cancel timer.
+// FIXME aconway 2011-07-27: Dont spin token on an empty queue.
 
 // Called in connection threads when a consumer is added
 void QueueContext::consume(size_t n) {
@@ -96,18 +101,19 @@ void QueueContext::consume(size_t n) {
 void QueueContext::cancel(size_t n) {
     sys::Mutex::ScopedLock l(lock);
     consumers = n;
-    if (n == 0) queue.stop(); // FIXME aconway 2011-07-28: Ok inside lock?
+    // When consuming threads are stopped, this->stopped will be called.
+    if (n == 0) queue.stopConsumers(); // FIXME aconway 2011-07-28: Ok inside lock?
 }
 
+// Called in timer thread.
 void QueueContext::timeout() {
-    QPID_LOG(critical, "FIXME Ownership timeout on queue " << queue.getName());
-    queue.stop();
+    // FIXME aconway 2011-09-14: need to deal with stray timeouts.
+    queue.stopConsumers();
     // When all threads have stopped, queue will call stopped()
 }
 
-
-// Callback set up by queue.stop(), called when no threads are dispatching from the queue.
-// Release the queue.
+// Callback set up by queue.stopConsumers() called in connection thread.
+// Called when no threads are dispatching from the queue.
 void QueueContext::stopped() {
     sys::Mutex::ScopedLock l(lock);
     // FIXME aconway 2011-07-28: review thread safety of state.
@@ -116,16 +122,33 @@ void QueueContext::stopped() {
     if (consumers == 0)
         mcast.mcast(framing::ClusterQueueUnsubscribeBody(
                         framing::ProtocolVersion(), queue.getName()));
-    else
+    else                        // FIXME aconway 2011-09-13: check if we're owner?
         mcast.mcast(framing::ClusterQueueResubscribeBody(
                         framing::ProtocolVersion(), queue.getName()));
+}
+
+void QueueContext::requeue(uint32_t position, bool redelivered) {
+    // FIXME aconway 2011-09-15: no lock, unacked has its own lock.
+    broker::QueuedMessage qm;
+    if (unacked.get(position, qm)) {
+        unacked.erase(position);
+        if (redelivered) qm.payload->redeliver();
+        BrokerContext::ScopedSuppressReplication ssr;
+        queue.requeue(qm);
+    }
+}
+
+void QueueContext::acquire(const broker::QueuedMessage& qm) {
+    unacked.put(qm.position, qm);
+}
+
+void QueueContext::dequeue(uint32_t position) {
+    unacked.erase(position);
 }
 
 boost::intrusive_ptr<QueueContext> QueueContext::get(broker::Queue& q) {
     return boost::intrusive_ptr<QueueContext>(
         static_cast<QueueContext*>(q.getClusterContext().get()));
 }
-
-
 
 }} // namespace qpid::cluster

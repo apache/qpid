@@ -159,7 +159,7 @@ class Cluster2Tests(BrokerTest):
                         self.session.acknowledge()
                 except Empty: pass
 
-        cluster = self.cluster(3, cluster2=True, args=["-t"]) # FIXME aconway 2011-05-13: -t
+        cluster = self.cluster(3, cluster2=True)
         connections = [ b.connect() for  b in cluster]
         sessions = [ c.session() for c in connections ]
         sender = sessions[0].sender("q;{create:always}")

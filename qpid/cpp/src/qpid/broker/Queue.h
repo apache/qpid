@@ -132,9 +132,8 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     UsageBarrier barrier;
     int autoDeleteTimeout;
     boost::intrusive_ptr<qpid::sys::TimerTask> autoDeleteTask;
-    // Allow dispatching consumer threads to be stopped. Used by cluster
-    sys::Stoppable dispatching; // FIXME aconway 2011-06-07: name: acquiring?
-    boost::intrusive_ptr<RefCounted> clusterContext;
+    sys::Stoppable consuming; // Allow consumer threads to be stopped, used by cluster
+    boost::intrusive_ptr<RefCounted> clusterContext; // Used by cluster
 
     void push(boost::intrusive_ptr<Message>& msg, bool isRecovery=false);
     void setPolicy(std::auto_ptr<QueuePolicy> policy);
@@ -182,7 +181,7 @@ class Queue : public boost::enable_shared_from_this<Queue>,
 
     void checkNotDeleted();
     void notifyDeleted();
-    void acquireStopped();
+    void consumingStopped();
 
   public:
 
@@ -396,10 +395,10 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     /** Stop consumers. Return when all consumer threads are stopped.
      *@pre Queue is active and not already stopping.
      */
-    void stop();
+    void stopConsumers();
 
     /** Start consumers. */
-    void start();
+    void startConsumers();
 
     /** Context information used in a cluster. */
     boost::intrusive_ptr<RefCounted> getClusterContext() { return clusterContext; }

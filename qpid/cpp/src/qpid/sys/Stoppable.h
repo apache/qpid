@@ -33,11 +33,12 @@ namespace sys {
  * An activity that may be executed by multiple threads, and can be stopped.
  *
  * Stopping prevents new threads from entering and calls a callback
- * when all busy threads leave.
+ * when all busy threads have left.
  */
 class Stoppable {
   public:
     /**
+     * Initially not stopped.
      *@param stoppedCallback: called when all threads have stopped.
      */
     Stoppable(boost::function<void()> stoppedCallback)
@@ -55,7 +56,7 @@ class Stoppable {
         Stoppable& state;
         bool entered;
       public:
-        Scope(Stoppable& s) : state(s) { entered = s.enter(); }
+        Scope(Stoppable& s) : state(s) { entered = state.enter(); }
         ~Scope() { if (entered) state.exit(); }
         operator bool() const { return entered; }
     };
@@ -69,6 +70,7 @@ class Stoppable {
      */
     void stop() {
         sys::Monitor::ScopedLock l(lock);
+        if (stopped) return;
         stopped = true;
         check();
     }
@@ -80,6 +82,8 @@ class Stoppable {
         sys::Monitor::ScopedLock l(lock);
         stopped = false;
     }
+
+  private:
 
     // Busy thread enters scope
     bool enter() {
@@ -96,8 +100,8 @@ class Stoppable {
         check();
     }
 
-  private:
     void check() {
+        // Called with lock held.
         if (stopped && busy == 0 && notify) notify();
     }
 

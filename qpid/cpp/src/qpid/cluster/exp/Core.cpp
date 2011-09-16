@@ -68,7 +68,6 @@ void Core::fatal() {
 }
 
 void Core::mcast(const framing::AMQBody& body) {
-    QPID_LOG(trace, "cluster multicast: " << body);
     multicaster.mcast(body);
 }
 

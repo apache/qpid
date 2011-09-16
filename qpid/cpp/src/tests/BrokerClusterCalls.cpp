@@ -94,8 +94,9 @@ class DummyCluster : public broker::Cluster
     virtual void release(const broker::QueuedMessage& qm) {
         if (!isRouting) recordQm("release", qm);
     }
-    virtual void dequeue(const broker::QueuedMessage& qm) {
+    virtual bool dequeue(const broker::QueuedMessage& qm) {
         if (!isRouting) recordQm("dequeue", qm);
+        return false;
     }
 
     // Consumers

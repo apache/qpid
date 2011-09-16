@@ -57,8 +57,7 @@ class Cluster
 
     /** A message is delivered to a queue.
      * Called before actually pushing the message to the queue.
-     *@return If true the message should be pushed to the queue now.
-     * otherwise the cluster code will push the message when it is replicated.
+     *@return If true the message should be enqueued now, false for delayed enqueue.
      */
     virtual bool enqueue(Queue& queue, const boost::intrusive_ptr<Message>&) = 0;
 
@@ -71,8 +70,10 @@ class Cluster
     /** A locally-acquired message is released by the consumer and re-queued. */
     virtual void release(const QueuedMessage&) = 0;
 
-    /** A message is removed from the queue. */
-    virtual void dequeue(const QueuedMessage&) = 0;
+    /** A message is removed from the queue.
+     *@return true if the message should be dequeued, false for delayed dequeue.
+     */
+    virtual bool dequeue(const QueuedMessage&) = 0;
 
     // Consumers
 

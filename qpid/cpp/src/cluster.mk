@@ -83,6 +83,7 @@ cluster_la_SOURCES =				\
   qpid/cluster/OutputInterceptor.h		\
   qpid/cluster/PollerDispatch.cpp		\
   qpid/cluster/PollerDispatch.h			\
+  qpid/cluster/PrettyId.h			\
   qpid/cluster/ProxyInputHandler.h		\
   qpid/cluster/Quorum.h				\
   qpid/cluster/InitialStatusMap.h		\

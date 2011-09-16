@@ -22,6 +22,7 @@
 #include "Core.h"
 #include "EventHandler.h"
 #include "HandlerBase.h"
+#include "PrettyId.h"
 #include "qpid/broker/Broker.h"
 #include "qpid/cluster/types.h"
 #include "qpid/framing/AMQFrame.h"
@@ -47,17 +48,6 @@ void EventHandler::add(const boost::intrusive_ptr<HandlerBase>& handler) {
 
 void EventHandler::start() {
     dispatcher.start();
-}
-
-// Print member ID or "self" if member is self
-struct PrettyId {
-    MemberId id, self;
-    PrettyId(const MemberId& id_, const MemberId& self_) : id(id_), self(self_) {}
-};
-
-std::ostream& operator<<(std::ostream& o, const PrettyId& id) {
-    if (id.id == id.self) return o << "self";
-    else return o << id.id;
 }
 
 // Deliver CPG message.

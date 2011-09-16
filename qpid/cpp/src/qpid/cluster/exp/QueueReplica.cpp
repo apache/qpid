@@ -20,6 +20,7 @@
  */
 #include "QueueReplica.h"
 #include "QueueContext.h"
+#include "PrettyId.h"
 #include "qpid/broker/Queue.h"
 #include "qpid/log/Statement.h"
 #include <algorithm>
@@ -30,17 +31,17 @@ namespace cluster {
 QueueReplica::QueueReplica(boost::shared_ptr<broker::Queue> q,
                            const MemberId& self_)
     : queue(q), self(self_), context(QueueContext::get(*q))
-{
-    // q is initially stopped.
-}
+{}
 
 struct PrintSubscribers {
     const QueueReplica::MemberQueue& mq;
-    PrintSubscribers(const QueueReplica::MemberQueue& m) : mq(m) {}
+    MemberId self;
+    PrintSubscribers(const QueueReplica::MemberQueue& m, const MemberId& s) : mq(m), self(s) {}
 };
 
 std::ostream& operator<<(std::ostream& o, const PrintSubscribers& ps) {
-    copy(ps.mq.begin(), ps.mq.end(), std::ostream_iterator<MemberId>(o, " "));
+    for (QueueReplica::MemberQueue::const_iterator i = ps.mq.begin();  i != ps.mq.end(); ++i)
+        o << PrettyId(*i, ps.self) << " ";
     return o;
 }
 
@@ -51,11 +52,9 @@ std::ostream& operator<<(std::ostream& o, QueueOwnership s) {
 
 std::ostream& operator<<(std::ostream& o, const QueueReplica& qr) {
     o << qr.queue->getName() << "(" << qr.getState() << "): "
-      <<  PrintSubscribers(qr.subscribers);
+      <<  PrintSubscribers(qr.subscribers, qr.getSelf());
     return o;
 }
-
-// FIXME aconway 2011-05-17: error handling for asserts.
 
 void QueueReplica::subscribe(const MemberId& member) {
     QueueOwnership before = getState();
@@ -73,15 +72,16 @@ void QueueReplica::unsubscribe(const MemberId& member) {
 }
 
 void QueueReplica::resubscribe(const MemberId& member) {
-    assert (member == subscribers.front()); // FIXME aconway 2011-06-27: error handling
-    QueueOwnership before = getState();
-    subscribers.pop_front();
-    subscribers.push_back(member);
-    update(before);
+    if (member == subscribers.front()) { // FIXME aconway 2011-09-13: should be assert?
+        QueueOwnership before = getState();
+        subscribers.pop_front();
+        subscribers.push_back(member);
+        update(before);
+    }
 }
 
 void QueueReplica::update(QueueOwnership before) {
-    QPID_LOG(trace, "QueueReplica " << *this << " (was " << before << ")");
+    QPID_LOG(trace, "cluster: queue replica " << *this << " (was " << before << ")");
     QueueOwnership after = getState();
     if (before == after) return;
     context->replicaState(after);

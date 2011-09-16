@@ -60,7 +60,7 @@ class MessageHandler : public framing::AMQP_AllOperations::ClusterMessageHandler
     void routed(uint32_t routingId);
     void acquire(const std::string& queue, uint32_t position);
     void dequeue(const std::string& queue, uint32_t position);
-    void release(const std::string& queue, uint32_t position);
+    void release(const std::string& queue, uint32_t position, bool redelivered);
 
   private:
     struct Member {

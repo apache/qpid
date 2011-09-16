@@ -58,6 +58,7 @@ void QueueHandler::left(const MemberId& member) {
 }
 
 // FIXME aconway 2011-06-08: do we need to hold on to the shared pointer for lifecycle?
+// FIXME aconway 2011-09-13: called from wiring handler, need to consider for multi-cpg.
 void QueueHandler::add(boost::shared_ptr<broker::Queue> q) {
     // FIXME aconway 2011-06-08: move create operation from Wiring to Queue handler.
     // FIXME aconway 2011-05-10: assert not already in map.

@@ -198,6 +198,7 @@ int main(int argc, char ** argv)
             std::map<std::string,Sender> replyTo;
 
             while (!done && receiver.fetch(msg, timeout)) {
+                cerr << "FIXME " << msg.getProperties()[SN] << endl;
                 if (!started) {
                     // Start the time on receipt of the first message to avoid counting
                     // idle time at process startup.
@@ -207,6 +208,7 @@ int main(int argc, char ** argv)
                 reporter.message(msg);
                 if (!opts.ignoreDuplicates || !sequenceTracker.isDuplicate(msg)) {
                     if (msg.getContent() == EOS) {
+                        cerr << "FIXME eos" << endl;
                         done = true;
                     } else {
                         ++count;
@@ -224,7 +226,10 @@ int main(int argc, char ** argv)
                         }
                         if (opts.printContent)
                             std::cout << msg.getContent() << std::endl;//TODO: handle map or list messages
-                        if (opts.messages && count >= opts.messages) done = true;
+                        if (opts.messages && count >= opts.messages) {
+                            cerr << "FIXME "<< count << " >= " << opts.messages << endl;
+                            done = true;
+                        }
                     }
                 } else if (opts.checkRedelivered && !msg.getRedelivered()) {
                     throw qpid::Exception("duplicate sequence number received, message not marked as redelivered!");

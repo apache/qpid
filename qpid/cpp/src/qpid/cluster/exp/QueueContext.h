@@ -22,7 +22,7 @@
  *
  */
 
-
+#include "LockedMap.h"
 #include <qpid/RefCounted.h>
 #include "qpid/sys/Time.h"
 #include <qpid/sys/Mutex.h>
@@ -35,6 +35,7 @@
 namespace qpid {
 namespace broker {
 class Queue;
+class QueuedMessage;
 }
 namespace sys {
 class Timer;
@@ -60,16 +61,16 @@ class QueueContext : public RefCounted {
     void replicaState(QueueOwnership);
 
     /** Called when queue is stopped, no threads are dispatching.
-     * Connection or deliver thread.
+     * May be called in connection or deliver thread.
      */
     void stopped();
 
-    /** Called when a consumer is added to the queue.
+    /** Called in connection thread when a consumer is added.
      *@param n: nubmer of consumers after new one is added.
      */
     void consume(size_t n);
 
-    /** Called when a consumer is cancelled on the queue.
+    /** Called in connection thread when a consumer is cancelled on the queue.
      *@param n: nubmer of consumers after the cancel.
      */
     void cancel(size_t n);
@@ -77,8 +78,17 @@ class QueueContext : public RefCounted {
     /** Get the context for a broker queue. */
     static boost::intrusive_ptr<QueueContext> get(broker::Queue&);
 
-    /** Called when the timer runs out: stop the queue. */
+    /** Called in timer thread when the timer runs out. */
     void timeout();
+
+    /** Called by MessageHandler to requeue a message. */
+    void requeue(uint32_t position, bool redelivered);
+
+    /** Called by MessageHandler when a mesages is acquired. */
+    void acquire(const broker::QueuedMessage& qm);
+
+    /** Called by MesageHandler when a message is dequeued. */
+    void dequeue(uint32_t position);
 
   private:
     sys::Timer& timer;
@@ -89,7 +99,10 @@ class QueueContext : public RefCounted {
     boost::intrusive_ptr<sys::TimerTask> timerTask;
     size_t consumers;
 
-    // FIXME aconway 2011-06-28: need to store acquired messages for possible re-queueing.
+    typedef LockedMap<uint32_t, broker::QueuedMessage> UnackedMap; // FIXME aconway 2011-09-15: don't need read/write map? Rename
+    UnackedMap unacked;
+
+    void cancelTimer(const sys::Mutex::ScopedLock& l);
 };
 
 }} // namespace qpid::cluster

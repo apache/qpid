@@ -51,7 +51,8 @@ Multicaster::Multicaster(Cpg& cpg_,
     queue.start();
 }
 
-void Multicaster::mcast(const framing::AMQDataBlock& data) {
+void Multicaster::mcast(const framing::AMQFrame& data) {
+    QPID_LOG(trace, "cluster multicast: " << data);
     BufferRef bufRef = buffers.get(data.encodedSize());
     framing::Buffer buf(bufRef.begin(), bufRef.size());
     data.encode(buf);

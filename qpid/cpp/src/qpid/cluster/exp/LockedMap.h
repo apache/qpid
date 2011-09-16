@@ -39,8 +39,20 @@ class LockedMap
     Value get(const Key& key) const {
         sys::RWlock::ScopedRlock r(lock);
         typename Map::const_iterator i = map.find(key);
-        if (i == map.end()) return Value();
-        else return i->second;
+        return (i == map.end()) ? Value() : i->second;
+    }
+
+    /** Update value with the value for key.
+     *@return true if key was found.
+     */
+    bool get(const Key& key, Value& value) const {
+        sys::RWlock::ScopedRlock r(lock);
+        typename Map::const_iterator i = map.find(key);
+        if (i != map.end())  {
+            value = i->second;
+            return true;
+        }
+        return false;
     }
 
     /** Associate value with key, overwriting any previous value for key. */
