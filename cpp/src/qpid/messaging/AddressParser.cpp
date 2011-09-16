@@ -201,7 +201,8 @@ bool AddressParser::readSimpleValue(Variant& value)
 {
     std::string s;
     if (readWord(s)) {
-        value.parse(s);        
+        value.parse(s);
+        if (value.getType() == VAR_STRING) value.setEncoding("utf8");
         return true;
     } else {
         return false;
