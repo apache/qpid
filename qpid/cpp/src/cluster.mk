@@ -115,6 +115,7 @@ cluster2_la_SOURCES =				\
 	qpid/cluster/exp/BrokerContext.h	\
 	qpid/cluster/exp/BufferFactory.h	\
 	qpid/cluster/exp/Cluster2Plugin.cpp	\
+	qpid/cluster/exp/CountdownTimer.h	\
 	qpid/cluster/exp/Core.cpp		\
 	qpid/cluster/exp/Core.h			\
 	qpid/cluster/exp/EventHandler.cpp	\

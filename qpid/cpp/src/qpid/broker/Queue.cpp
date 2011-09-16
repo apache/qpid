@@ -227,7 +227,7 @@ void Queue::requeue(const QueuedMessage& msg){
             }
         }
     }
-    if (broker) broker->getCluster().release(msg); // FIXME aconway 2011-09-12: review. rename requeue?
+    if (broker) broker->getCluster().requeue(msg); // FIXME aconway 2011-09-12: review. rename requeue?
     copy.notify();
 }
 

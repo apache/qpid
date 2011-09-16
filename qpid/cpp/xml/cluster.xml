@@ -358,7 +358,7 @@
       <field name="position" type="uint32"/>
     </control>
 
-    <control name="release" code="0x6">
+    <control name="requeue" code="0x6">
       <field name="queue" type="queue.name"/>
       <field name="position" type="uint32"/>
       <field name="redelivered" type="bit"/>

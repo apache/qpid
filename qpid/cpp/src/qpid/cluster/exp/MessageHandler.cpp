@@ -95,14 +95,15 @@ void MessageHandler::acquire(const std::string& q, uint32_t position) {
         boost::shared_ptr<Queue> queue = findQueue(q, "Cluster acquire failed");
         QueuedMessage qm;
         BrokerContext::ScopedSuppressReplication ssr;
-        bool ok = queue->acquireMessageAt(position, qm);
-        (void)ok;               // Avoid unused variable warnings.
-        assert(ok);             // FIXME aconway 2011-09-14: error handling
+        if (!queue->acquireMessageAt(position, qm))
+            throw Exception(QPID_MSG("Cluster acquire: message not found: "
+                                     << q << "[" << position << "]"));
         assert(qm.position.getValue() == position);
         assert(qm.payload);
-        // Save for possible requeue.
+        // Save on context for possible requeue if released/rejected.
         QueueContext::get(*queue)->acquire(qm);
     }
+    // FIXME aconway 2011-09-15: systematic logging across cluster module.
     QPID_LOG(trace, "cluster message " << q << "[" << position
              << "] acquired by " << PrettyId(sender(), self()));
  }
@@ -124,11 +125,9 @@ void MessageHandler::dequeue(const std::string& q, uint32_t position) {
     }
 }
 
-// FIXME aconway 2011-09-14: rename as requeue?
-void MessageHandler::release(const std::string& q, uint32_t position, bool redelivered) {
-    // FIXME aconway 2011-09-15: review release/requeue logic.
+void MessageHandler::requeue(const std::string& q, uint32_t position, bool redelivered) {
     if (sender() != self()) {
-        boost::shared_ptr<Queue> queue = findQueue(q, "Cluster release failed");
+        boost::shared_ptr<Queue> queue = findQueue(q, "Cluster requeue failed");
         QueueContext::get(*queue)->requeue(position, redelivered);
     }
 }

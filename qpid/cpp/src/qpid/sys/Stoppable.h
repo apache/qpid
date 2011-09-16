@@ -27,8 +27,6 @@
 namespace qpid {
 namespace sys {
 
-// FIXME aconway 2011-05-25: needs better name
-
 /**
  * An activity that may be executed by multiple threads, and can be stopped.
  *
@@ -72,7 +70,7 @@ class Stoppable {
         sys::Monitor::ScopedLock l(lock);
         if (stopped) return;
         stopped = true;
-        check();
+        check(l);
     }
 
     /** Set the state to "started", allow threads to enter.
@@ -97,10 +95,10 @@ class Stoppable {
         sys::Monitor::ScopedLock l(lock);
         assert(busy > 0);
         --busy;
-        check();
+        check(l);
     }
 
-    void check() {
+    void check(const sys::Monitor::ScopedLock&) {
         // Called with lock held.
         if (stopped && busy == 0 && notify) notify();
     }

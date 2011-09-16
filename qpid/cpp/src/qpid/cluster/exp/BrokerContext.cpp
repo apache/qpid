@@ -28,7 +28,7 @@
 #include "qpid/framing/ClusterMessageEnqueueBody.h"
 #include "qpid/framing/ClusterMessageAcquireBody.h"
 #include "qpid/framing/ClusterMessageDequeueBody.h"
-#include "qpid/framing/ClusterMessageReleaseBody.h"
+#include "qpid/framing/ClusterMessageRequeueBody.h"
 #include "qpid/framing/ClusterWiringCreateQueueBody.h"
 #include "qpid/framing/ClusterWiringCreateExchangeBody.h"
 #include "qpid/framing/ClusterWiringDestroyQueueBody.h"
@@ -93,9 +93,7 @@ bool BrokerContext::enqueue(Queue& queue, const boost::intrusive_ptr<Message>& m
         core.getRoutingMap().put(tssRoutingId, msg);
     }
     core.mcast(ClusterMessageEnqueueBody(ProtocolVersion(), tssRoutingId, queue.getName()));
-    // TODO aconway 2010-10-21: review delivery options: strict (wait
-    // for CPG delivery vs loose (local deliver immediately).
-    return false; // Strict delivery, cluster will call Queue deliver.
+    return false; // Strict order, wait for CPG self-delivery to enqueue.
 }
 
 void BrokerContext::routed(const boost::intrusive_ptr<Message>&) {
@@ -113,22 +111,27 @@ void BrokerContext::acquire(const broker::QueuedMessage& qm) {
 }
 
 bool BrokerContext::dequeue(const broker::QueuedMessage& qm) {
+    // FIXME aconway 2011-09-15: should dequeue locally immediately
+    // instead of waiting for redeliver. No need for CPG order on
+    // dequeues.
     if (!tssNoReplicate)
         core.mcast(ClusterMessageDequeueBody(
                        ProtocolVersion(), qm.queue->getName(), qm.position));
     return false;               // FIXME aconway 2011-09-14: needed?
 }
 
-// FIXME aconway 2011-09-14: rename requeue?
-void BrokerContext::release(const broker::QueuedMessage& qm) {
+void BrokerContext::requeue(const broker::QueuedMessage& qm) {
     if (!tssNoReplicate)
-        core.mcast(ClusterMessageReleaseBody(
-                       ProtocolVersion(), qm.queue->getName(), qm.position, qm.payload->getRedelivered()));
+        core.mcast(ClusterMessageRequeueBody(
+                       ProtocolVersion(),
+                       qm.queue->getName(),
+                       qm.position,
+                       qm.payload->getRedelivered()));
 }
 
 // FIXME aconway 2011-06-08: should be be using shared_ptr to q here?
 void BrokerContext::create(broker::Queue& q) {
-    q.stopConsumers();          // FIXME aconway 2011-09-14: Stop queue initially.
+    q.stopConsumers();          // Stop queue initially.
     if (tssNoReplicate) return;
     assert(!QueueContext::get(q));
     boost::intrusive_ptr<QueueContext> context(
@@ -192,8 +195,8 @@ void BrokerContext::empty(broker::Queue& ) {
 
 void BrokerContext::stopped(broker::Queue& q) {
     boost::intrusive_ptr<QueueContext> qc = QueueContext::get(q);
-    // Don't forward the stopped call if the queue does not yet have a cluster context
-    // this when the queue is first created locally.
+    // Don't forward the stopped call if the queue does not yet have a
+    // cluster context this when the queue is first created locally.
     if (qc) qc->stopped();
 }
 

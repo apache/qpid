@@ -56,22 +56,23 @@ bool WiringHandler::invoke(const framing::AMQBody& body) {
 void WiringHandler::createQueue(const std::string& data) {
     // FIXME aconway 2011-05-25: Needs async completion.
     std::string name;
-    if (sender() != self()) {   // Created by another member, need to create locally.
+    if (sender() != self()) { // Created by another member, need to create locally.
         BrokerContext::ScopedSuppressReplication ssr;
         framing::Buffer buf(const_cast<char*>(&data[0]), data.size());
         // TODO aconway 2011-02-21: asymetric - RecoveryManager vs Broker::create*()
         RecoverableQueue::shared_ptr rq = recovery.recoverQueue(buf);
         name = rq->getName();
     }
-    else {                      // Created locally, Queue and QueueContext already exist.
+    else {   // Created locally, Queue and QueueContext already exist.
         framing::Buffer buffer(const_cast<char*>(&data[0]), data.size());
         // FIXME aconway 2011-05-10: implicit knowledge of queue encoding.
         buffer.getShortString(name);
     }
     boost::shared_ptr<broker::Queue> q = broker.getQueues().find(name);
     assert(q);                  // FIXME aconway 2011-05-10: error handling.
-    // TODO aconway 2011-05-10: if we implement multi-group for queues then
-    // this call is a problem: comes from wiring delivery thread, not queues.
+    // TODO aconway 2011-05-10: if we implement multi-group for queues
+    // then this call is a potential problem: comes from wiring
+    // delivery thread, not queues.
     queueHandler->add(q);
     QPID_LOG(debug, "cluster: create queue " << q->getName());
 }

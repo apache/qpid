@@ -56,7 +56,7 @@ class QueueReplica : public RefCounted
     void resubscribe(const MemberId&);
 
     MemberId getSelf() const { return self; }
-    
+
   private:
     typedef std::deque<MemberId> MemberQueue;
 

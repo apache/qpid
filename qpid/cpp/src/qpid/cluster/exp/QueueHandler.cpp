@@ -52,7 +52,6 @@ void QueueHandler::resubscribe(const std::string& queue) {
 
 void QueueHandler::left(const MemberId& member) {
     // Unsubscribe for members that leave.
-    // FIXME aconway 2011-06-28: also need to re-queue acquired messages.
     for (QueueMap::iterator i = queues.begin(); i != queues.end(); ++i)
         i->second->unsubscribe(member);
 }
@@ -66,6 +65,7 @@ void QueueHandler::add(boost::shared_ptr<broker::Queue> q) {
     // Local queues already have a context, remote queues need one.
     if (!QueueContext::get(*q))
         new QueueContext(*q, multicaster); // Context attaches itself to the Queue
+    // FIXME aconway 2011-09-15: thread safety: called from wiring handler..
     queues[q->getName()] = boost::intrusive_ptr<QueueReplica>(
         new QueueReplica(q, self()));
 }

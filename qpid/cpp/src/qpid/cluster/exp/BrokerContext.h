@@ -58,7 +58,7 @@ class BrokerContext : public broker::Cluster
     void routed(const boost::intrusive_ptr<broker::Message>&);
     void acquire(const broker::QueuedMessage&);
     bool dequeue(const broker::QueuedMessage&);
-    void release(const broker::QueuedMessage&);
+    void requeue(const broker::QueuedMessage&);
 
     // Consumers
 

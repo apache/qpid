@@ -23,9 +23,10 @@
  */
 
 #include "LockedMap.h"
-#include <qpid/RefCounted.h>
+#include "CountdownTimer.h"
+#include "qpid/RefCounted.h"
 #include "qpid/sys/Time.h"
-#include <qpid/sys/Mutex.h>
+#include "qpid/sys/Mutex.h"
 #include "qpid/cluster/types.h"
 #include <boost/intrusive_ptr.hpp>
 
@@ -36,10 +37,6 @@ namespace qpid {
 namespace broker {
 class Queue;
 class QueuedMessage;
-}
-namespace sys {
-class Timer;
-class TimerTask;
 }
 
 namespace cluster {
@@ -91,18 +88,15 @@ class QueueContext : public RefCounted {
     void dequeue(uint32_t position);
 
   private:
-    sys::Timer& timer;
-
     sys::Mutex lock;
+    QueueOwnership ownership;
+    CountdownTimer timer;
     broker::Queue& queue;       // FIXME aconway 2011-06-08: should be shared/weak ptr?
     Multicaster& mcast;
-    boost::intrusive_ptr<sys::TimerTask> timerTask;
     size_t consumers;
 
     typedef LockedMap<uint32_t, broker::QueuedMessage> UnackedMap; // FIXME aconway 2011-09-15: don't need read/write map? Rename
     UnackedMap unacked;
-
-    void cancelTimer(const sys::Mutex::ScopedLock& l);
 };
 
 }} // namespace qpid::cluster
