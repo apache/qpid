@@ -67,7 +67,7 @@ Subscription ConsoleSession::subscribe(const string& q, const string& f, const s
 
 ConsoleSessionImpl::ConsoleSessionImpl(Connection& c, const string& options) :
     connection(c), domain("default"), maxAgentAgeMinutes(5), listenOnDirect(true), strictSecurity(false), maxThreadWaitTime(5),
-    opened(false), thread(0), threadCanceled(false), lastVisit(0), lastAgePass(0),
+    opened(false), eventNotifier(0), thread(0), threadCanceled(false), lastVisit(0), lastAgePass(0),
     connectedBrokerInAgentList(false), schemaCache(new SchemaCache()), nextCorrelator(1)
 {
     if (!options.empty()) {
@@ -210,7 +210,7 @@ void ConsoleSessionImpl::open()
 }
 
 
-void ConsoleSessionImpl::close()
+void ConsoleSessionImpl::closeAsync()
 {
     if (!opened)
         throw QmfException("The session is already closed");
@@ -218,6 +218,18 @@ void ConsoleSessionImpl::close()
     // Stop the receiver thread.  Don't join it until the destructor is called or open() is called.
     threadCanceled = true;
     opened = false;
+}
+
+
+void ConsoleSessionImpl::close()
+{
+    closeAsync();
+
+    if (thread) {
+        thread->join();
+        delete thread;
+        thread = 0;
+    }
 }
 
 
@@ -256,14 +268,14 @@ int ConsoleSessionImpl::pendingEvents() const
 void ConsoleSessionImpl::setEventNotifier(EventNotifierImpl* notifier)
 {
     qpid::sys::Mutex::ScopedLock l(lock);
-    this->eventNotifier = notifier;
+    eventNotifier = notifier;
 }
 
 
 EventNotifierImpl* ConsoleSessionImpl::getEventNotifier() const
 {
     qpid::sys::Mutex::ScopedLock l(lock);
-    return this->eventNotifier;
+    return eventNotifier;
 }
 
 

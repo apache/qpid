@@ -62,6 +62,7 @@ namespace qmf {
         void setDomain(const std::string& d) { domain = d; }
         void setAgentFilter(const std::string& f);
         void open();
+        void closeAsync();
         void close();
         bool nextEvent(ConsoleEvent& e, qpid::messaging::Duration t);
         int pendingEvents() const;

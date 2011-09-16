@@ -38,6 +38,7 @@ namespace posix {
 
   class QMF_CLASS_EXTERN EventNotifier : public qmf::Handle<qmf::PosixEventNotifierImpl> {
   public:
+      QMF_EXTERN EventNotifier(PosixEventNotifierImpl* impl = 0);
       QMF_EXTERN EventNotifier(::qmf::AgentSession& agentSession);
       QMF_EXTERN EventNotifier(::qmf::ConsoleSession& consoleSession);
       QMF_EXTERN EventNotifier(const EventNotifier& that);
