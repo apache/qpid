@@ -55,7 +55,7 @@ void AgentSession::raiseEvent(const Data& d, int s) { impl->raiseEvent(d, s); }
 //========================================================================================
 
 AgentSessionImpl::AgentSessionImpl(Connection& c, const string& options) :
-    connection(c), domain("default"), opened(false), thread(0), threadCanceled(false),
+    connection(c), domain("default"), opened(false), eventNotifier(0), thread(0), threadCanceled(false),
     bootSequence(1), interval(60), lastHeartbeat(0), lastVisit(0), forceHeartbeat(false),
     externalStorage(false), autoAllowQueries(true), autoAllowMethods(true),
     maxSubscriptions(64), minSubInterval(3000), subLifetime(300), publicEvents(true),
@@ -191,7 +191,7 @@ void AgentSessionImpl::open()
 }
 
 
-void AgentSessionImpl::close()
+void AgentSessionImpl::closeAsync()
 {
     if (!opened)
         return;
@@ -199,6 +199,18 @@ void AgentSessionImpl::close()
     // Stop the receiver thread.  Don't join it until the destructor is called or open() is called.
     threadCanceled = true;
     opened = false;
+}
+
+
+void AgentSessionImpl::close()
+{
+    closeAsync();
+
+    if (thread) {
+        thread->join();
+        delete thread;
+        thread = 0;
+    }
 }
 
 

@@ -84,6 +84,7 @@ namespace qmf {
         void setAttribute(const string& k, const qpid::types::Variant& v) { checkOpen(); attributes[k] = v; }
         const string& getName() const { return agentName; }
         void open();
+        void closeAsync();
         void close();
         bool nextEvent(AgentEvent& e, Duration t);
         int pendingEvents() const;
