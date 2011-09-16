@@ -26,6 +26,8 @@ using namespace std;
 
 typedef qmf::PrivateImplRef<posix::EventNotifier> PI;
 
+posix::EventNotifier::EventNotifier(PosixEventNotifierImpl* impl) { PI::ctor(*this, impl); }
+
 posix::EventNotifier::EventNotifier(AgentSession& agentSession)
 {
     PI::ctor(*this, new PosixEventNotifierImpl(agentSession));
