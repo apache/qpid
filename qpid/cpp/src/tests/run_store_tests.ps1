@@ -111,7 +111,7 @@ Invoke-Expression "$prog --quit --port $env:QPID_PORT" | Write-Output
 # Test 2... store.py starts/stops/restarts its own brokers
 
 $tests = "*"
-$env:PYTHONPATH="$PYTHON_DIR;$srcdir"
+$env:PYTHONPATH="$PYTHON_DIR;$QMF_LIB;$srcdir"
 $env:QPIDD_EXEC="$prog"
 $env:STORE_LIB="$store_dir\store$suffix.dll"
 if ($test_store -eq "MSSQL") {
