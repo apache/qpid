@@ -23,6 +23,7 @@
 
 #include "qpid/broker/Queue.h"
 #include "qpid/broker/MessageAllocator.h"
+#include "qpid/sys/Mutex.h"
 
 using namespace qpid::broker;
 

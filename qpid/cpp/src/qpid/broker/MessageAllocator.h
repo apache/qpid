@@ -31,7 +31,7 @@ namespace qpid {
 namespace broker {
 
 class Queue;
-class QueuedMessage;
+struct QueuedMessage;
 
 class MessageAllocator
 {
