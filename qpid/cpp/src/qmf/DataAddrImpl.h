@@ -38,8 +38,8 @@ namespace qmf {
         //
         // Methods from API handle
         //
-        bool operator==(const DataAddrImpl&);
-        bool operator<(const DataAddrImpl&);
+        bool operator==(const DataAddrImpl&) const;
+        bool operator<(const DataAddrImpl&) const;
         DataAddrImpl(const qpid::types::Variant::Map&);
         DataAddrImpl(const std::string& _name, const std::string& _agentName, uint32_t _agentEpoch=0) :
             agentName(_agentName), name(_name), agentEpoch(_agentEpoch) {}

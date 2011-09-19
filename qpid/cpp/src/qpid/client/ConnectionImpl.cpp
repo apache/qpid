@@ -265,7 +265,7 @@ void ConnectionImpl::open()
     } catch (const std::exception& e) {
         QPID_LOG(debug, "Failed to connect to " << protocol << ":" << host << ":" << port << " " << e.what());
         connector.reset();
-        throw;
+        throw TransportFailure(e.what());
     }
     connector->init();
 

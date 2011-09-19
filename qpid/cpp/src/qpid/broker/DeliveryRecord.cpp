@@ -75,7 +75,7 @@ void DeliveryRecord::deliver(framing::FrameHandler& h, DeliveryId deliveryId, ui
 {
     id = deliveryId;
     if (msg.payload->getRedelivered()){
-        msg.payload->getProperties<framing::DeliveryProperties>()->setRedelivered(true);
+        msg.payload->setRedelivered();
     }
     msg.payload->adjustTtl();
 

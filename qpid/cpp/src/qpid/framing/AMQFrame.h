@@ -59,6 +59,11 @@ class QPID_COMMON_CLASS_EXTERN AMQFrame : public AMQDataBlock
         return boost::polymorphic_downcast<const T*>(getBody());
     }
 
+    /**
+     * Take a deep copy of the body currently referenced
+     */
+    QPID_COMMON_EXTERN void cloneBody();
+
     QPID_COMMON_EXTERN void encode(Buffer& buffer) const; 
     QPID_COMMON_EXTERN bool decode(Buffer& buffer); 
     QPID_COMMON_EXTERN uint32_t encodedSize() const;

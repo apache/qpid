@@ -196,7 +196,7 @@ public abstract class AbstractACLTestCase extends QpidBrokerTestCase implements 
         }
 
         PrintWriter out = new PrintWriter(new FileWriter(aclFile));
-        out.println(String.format("# %s", _testName));
+        out.println(String.format("# %s", getTestName()));
         for (String line : rules)
         {
             out.println(line);

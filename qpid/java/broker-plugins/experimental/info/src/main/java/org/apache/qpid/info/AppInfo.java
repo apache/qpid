@@ -70,7 +70,7 @@ public class AppInfo
             sc = ApplicationRegistry.getInstance().getConfiguration();
             if (null != sc)
             {
-                appInfoMap.put("jmxport", sc.getJMXManagementPort() + "");
+                appInfoMap.put("jmxport", sc.getJMXPortRegistryServer() + "");
                 appInfoMap.put("port", sc.getPorts().toString());
                 appInfoMap.put("version", QpidProperties.getReleaseVersion());
                 appInfoMap.put("vhosts", "standalone");

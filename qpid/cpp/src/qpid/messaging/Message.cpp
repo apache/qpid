@@ -21,6 +21,7 @@
 #include "qpid/messaging/Message.h"
 #include "qpid/messaging/MessageImpl.h"
 #include "qpid/amqp_0_10/Codecs.h"
+#include <qpid/Exception.h>
 #include <boost/format.hpp>
 
 namespace qpid {
@@ -115,7 +116,11 @@ template <class C> struct MessageCodec
     static void decode(const Message& message, typename C::ObjectType& object, const std::string& encoding)
     {
         checkEncoding(message, encoding);
-        C::decode(message.getContent(), object);
+        try {
+            C::decode(message.getContent(), object);
+        } catch (const qpid::Exception &ex) {
+            throw EncodingException(ex.what());
+        }
     }
 
     static void encode(const typename C::ObjectType& map, Message& message, const std::string& encoding)

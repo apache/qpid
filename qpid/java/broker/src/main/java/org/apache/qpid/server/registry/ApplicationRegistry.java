@@ -21,7 +21,9 @@
 package org.apache.qpid.server.registry;
 
 import java.net.InetSocketAddress;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -52,17 +54,18 @@ import org.apache.qpid.server.logging.messages.BrokerMessages;
 import org.apache.qpid.server.logging.messages.VirtualHostMessages;
 import org.apache.qpid.server.management.ManagedObjectRegistry;
 import org.apache.qpid.server.management.NoopManagedObjectRegistry;
+import org.apache.qpid.server.plugins.Plugin;
 import org.apache.qpid.server.plugins.PluginManager;
 import org.apache.qpid.server.security.SecurityManager;
-import org.apache.qpid.server.security.auth.database.ConfigurationFilePrincipalDatabaseManager;
-import org.apache.qpid.server.security.auth.database.PrincipalDatabaseManager;
+import org.apache.qpid.server.security.SecurityManager.SecurityConfiguration;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
-import org.apache.qpid.server.security.auth.manager.PrincipalDatabaseAuthenticationManager;
+import org.apache.qpid.server.security.auth.manager.AuthenticationManagerPluginFactory;
 import org.apache.qpid.server.stats.StatisticsCounter;
 import org.apache.qpid.server.transport.QpidAcceptor;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
+import org.osgi.framework.BundleContext;
 
 
 /**
@@ -89,8 +92,6 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
     protected SecurityManager _securityManager;
 
-    protected PrincipalDatabaseManager _databaseManager;
-
     protected PluginManager _pluginManager;
 
     protected ConfigurationManager _configurationManager;
@@ -110,6 +111,8 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
     private Timer _reportingTimer;
     private boolean _statisticsEnabled = false;
     private StatisticsCounter _messagesDelivered, _dataDelivered, _messagesReceived, _dataReceived;
+
+    private BundleContext _bundleContext;
 
     static
     {
@@ -209,7 +212,13 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
     protected ApplicationRegistry(ServerConfiguration configuration)
     {
+        this(configuration, null);
+    }
+
+    protected ApplicationRegistry(ServerConfiguration configuration, BundleContext bundleContext)
+    {
         _configuration = configuration;
+        _bundleContext = bundleContext;
     }
 
     public void configure() throws ConfigurationException
@@ -218,7 +227,7 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
         try
         {
-            _pluginManager = new PluginManager(_configuration.getPluginDirectory(), _configuration.getCacheDirectory());
+            _pluginManager = new PluginManager(_configuration.getPluginDirectory(), _configuration.getCacheDirectory(), _bundleContext);
         }
         catch (Exception e)
         {
@@ -253,11 +262,7 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
             _securityManager = new SecurityManager(_configuration, _pluginManager);
 
-            createDatabaseManager(_configuration);
-
-            _authenticationManager = new PrincipalDatabaseAuthenticationManager();
-
-            _databaseManager.initialiseManagement(_configuration);
+            _authenticationManager = createAuthenticationManager();
 
             _managedObjectRegistry.start();
         }
@@ -280,9 +285,51 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
         }
     }
 
-    protected void createDatabaseManager(ServerConfiguration configuration) throws Exception
+    /**
+     * Iterates across all discovered authentication manager factories, offering the security configuration to each.
+     * Expects <b>exactly</b> one authentication manager to configure and initialise itself.
+     * 
+     * It is an error to configure more than one authentication manager, or to configure none.
+     *
+     * @return authentication manager
+     * @throws ConfigurationException
+     */
+    protected AuthenticationManager createAuthenticationManager() throws ConfigurationException
     {
-        _databaseManager = new ConfigurationFilePrincipalDatabaseManager(_configuration);
+        final SecurityConfiguration securityConfiguration = _configuration.getConfiguration(SecurityConfiguration.class.getName());
+        final Collection<AuthenticationManagerPluginFactory<? extends Plugin>> factories = _pluginManager.getAuthenticationManagerPlugins().values();
+        
+        if (factories.size() == 0)
+        {
+            throw new ConfigurationException("No authentication manager factory plugins found.  Check the desired authentication" +
+                    "manager plugin has been placed in the plugins directory.");
+        }
+        
+        AuthenticationManager authMgr = null;
+        
+        for (final Iterator<AuthenticationManagerPluginFactory<? extends Plugin>> iterator = factories.iterator(); iterator.hasNext();)
+        {
+            final AuthenticationManagerPluginFactory<? extends Plugin> factory = (AuthenticationManagerPluginFactory<? extends Plugin>) iterator.next();
+            final AuthenticationManager tmp = factory.newInstance(securityConfiguration);
+            if (tmp != null)
+            {
+                if (authMgr != null)
+                {
+                    throw new ConfigurationException("Cannot configure more than one authentication manager."
+                            + " Both " + tmp.getClass() + " and " + authMgr.getClass() + " are configured."
+                            + " Remove configuration for one of the authentication manager, or remove the plugin JAR"
+                            + " from the classpath.");
+                }
+                authMgr = tmp;
+            }
+        }
+
+        if (authMgr == null)
+        {
+            throw new ConfigurationException("No authentication managers configured within the configure file.");
+        }
+        
+        return authMgr;
     }
 
     protected void initialiseVirtualHosts() throws Exception
@@ -422,10 +469,6 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
         //Shutdown virtualhosts
         close(_virtualHostRegistry);
 
-//      close(_accessManager);
-//
-//      close(_databaseManager);
-
         close(_authenticationManager);
 
         close(_managedObjectRegistry);
@@ -487,11 +530,6 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
         return _managedObjectRegistry;
     }
 
-    public PrincipalDatabaseManager getDatabaseManager()
-    {
-        return _databaseManager;
-    }
-
     public AuthenticationManager getAuthenticationManager()
     {
         return _authenticationManager;
@@ -539,7 +577,7 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
     public VirtualHost createVirtualHost(final VirtualHostConfiguration vhostConfig) throws Exception
     {
-        VirtualHostImpl virtualHost = new VirtualHostImpl(this, vhostConfig);
+        VirtualHostImpl virtualHost = new VirtualHostImpl(this, vhostConfig, null);
         _virtualHostRegistry.registerVirtualHost(virtualHost);
         getBroker().addVirtualHost(virtualHost);
         return virtualHost;

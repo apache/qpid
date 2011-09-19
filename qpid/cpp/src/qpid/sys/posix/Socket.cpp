@@ -34,9 +34,6 @@
 #include <netdb.h>
 #include <cstdlib>
 #include <string.h>
-#include <iostream>
-
-#include <boost/format.hpp>
 
 namespace qpid {
 namespace sys {
@@ -44,24 +41,28 @@ namespace sys {
 namespace {
 std::string getName(int fd, bool local)
 {
-    ::sockaddr_storage name; // big enough for any socket address
-    ::socklen_t namelen = sizeof(name);
+    ::sockaddr_storage name_s; // big enough for any socket address
+    ::sockaddr* name = (::sockaddr*)&name_s;
+    ::socklen_t namelen = sizeof(name_s);
 
-    int result = -1;
     if (local) {
-        result = ::getsockname(fd, (::sockaddr*)&name, &namelen);
+        QPID_POSIX_CHECK( ::getsockname(fd, name, &namelen) );
     } else {
-        result = ::getpeername(fd, (::sockaddr*)&name, &namelen);
+        QPID_POSIX_CHECK( ::getpeername(fd, name, &namelen) );
     }
-    QPID_POSIX_CHECK(result);
 
-    char servName[NI_MAXSERV];
-    char dispName[NI_MAXHOST];
-    if (int rc=::getnameinfo((::sockaddr*)&name, namelen, dispName, sizeof(dispName),
-                                servName, sizeof(servName),
-                                NI_NUMERICHOST | NI_NUMERICSERV) != 0)
-        throw QPID_POSIX_ERROR(rc);
-    return std::string(dispName) + ":" + std::string(servName);
+    return SocketAddress::asString(name, namelen);
+}
+
+uint16_t getLocalPort(int fd)
+{
+    ::sockaddr_storage name_s; // big enough for any socket address
+    ::sockaddr* name = (::sockaddr*)&name_s;
+    ::socklen_t namelen = sizeof(name_s);
+
+    QPID_POSIX_CHECK( ::getsockname(fd, name, &namelen) );
+
+    return SocketAddress::getPort(name);
 }
 }
 
@@ -88,11 +89,30 @@ void Socket::createSocket(const SocketAddress& sa) const
     try {
         if (nonblocking) setNonblocking();
         if (nodelay) setTcpNoDelay();
+        if (getAddrInfo(sa).ai_family == AF_INET6) {
+            int flag = 1;
+            int result = ::setsockopt(socket, IPPROTO_IPV6, IPV6_V6ONLY, (char *)&flag, sizeof(flag));
+            QPID_POSIX_CHECK(result);
+        }
     } catch (std::exception&) {
         ::close(s);
         socket = -1;
         throw;
     }
+}
+
+Socket* Socket::createSameTypeSocket() const {
+    int& socket = impl->fd;
+    // Socket currently has no actual socket attached
+    if (socket == -1)
+        return new Socket;
+
+    ::sockaddr_storage sa;
+    ::socklen_t salen = sizeof(sa);
+    QPID_POSIX_CHECK(::getsockname(socket, (::sockaddr*)&sa, &salen));
+    int s = ::socket(sa.ss_family, SOCK_STREAM, 0); // Currently only work with SOCK_STREAM
+    if (s < 0) throw QPID_POSIX_ERROR(errno);
+    return new Socket(new IOHandlePrivate(s));
 }
 
 void Socket::setNonblocking() const {
@@ -109,7 +129,7 @@ void Socket::setTcpNoDelay() const
     nodelay = true;
     if (socket != -1) {
         int flag = 1;
-        int result = setsockopt(impl->fd, IPPROTO_TCP, TCP_NODELAY, (char *)&flag, sizeof(flag));
+        int result = ::setsockopt(impl->fd, IPPROTO_TCP, TCP_NODELAY, (char *)&flag, sizeof(flag));
         QPID_POSIX_CHECK(result);
     }
 }
@@ -179,19 +199,14 @@ int Socket::listen(const SocketAddress& sa, int backlog) const
 
     const int& socket = impl->fd;
     int yes=1;
-    QPID_POSIX_CHECK(setsockopt(socket,SOL_SOCKET,SO_REUSEADDR,&yes,sizeof(yes)));
+    QPID_POSIX_CHECK(::setsockopt(socket,SOL_SOCKET,SO_REUSEADDR,&yes,sizeof(yes)));
 
     if (::bind(socket, getAddrInfo(sa).ai_addr, getAddrInfo(sa).ai_addrlen) < 0)
         throw Exception(QPID_MSG("Can't bind to port " << sa.asString() << ": " << strError(errno)));
     if (::listen(socket, backlog) < 0)
         throw Exception(QPID_MSG("Can't listen on port " << sa.asString() << ": " << strError(errno)));
 
-    struct sockaddr_in name;
-    socklen_t namelen = sizeof(name);
-    if (::getsockname(socket, (struct sockaddr*)&name, &namelen) < 0)
-        throw QPID_POSIX_ERROR(errno);
-
-    return ntohs(name.sin_port);
+    return getLocalPort(socket);
 }
 
 Socket* Socket::accept() const

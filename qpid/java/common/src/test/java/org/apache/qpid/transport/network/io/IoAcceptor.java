@@ -80,7 +80,7 @@ public class IoAcceptor<E> extends Thread
             try
             {
                 Socket sock = socket.accept();
-                IoTransport<E> transport = new IoTransport<E>(sock, binding,false);
+                IoTransport<E> transport = new IoTransport<E>(sock, binding);
             }
             catch (IOException e)
             {

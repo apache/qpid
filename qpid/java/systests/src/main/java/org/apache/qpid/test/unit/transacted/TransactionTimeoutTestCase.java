@@ -72,7 +72,7 @@ public class TransactionTimeoutTestCase extends QpidBrokerTestCase implements Ex
     protected void configure() throws Exception
     {
         // Setup housekeeping every second
-        setConfigurationProperty("virtualhosts.virtualhost." + VIRTUALHOST + ".housekeeping.expiredMessageCheckPeriod", "100");
+        setConfigurationProperty("virtualhosts.virtualhost." + VIRTUALHOST + ".housekeeping.checkPeriod", "100");
         
         /*
          * Set transaction timout properties. The XML in the virtualhosts configuration is as follows:

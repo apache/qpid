@@ -20,11 +20,8 @@
  */
 package org.apache.qpid.client.message;
 
-import org.apache.mina.common.ByteBuffer;
-
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.BasicContentHeaderProperties;
+
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,13 +29,14 @@ import org.slf4j.LoggerFactory;
 import javax.jms.JMSException;
 import javax.jms.MessageFormatException;
 
+import java.nio.ByteBuffer;
 import java.nio.charset.CharacterCodingException;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 
-public class JMSMapMessage extends AbstractBytesTypedMessage implements javax.jms.MapMessage
+public class JMSMapMessage extends AbstractJMSMessage implements javax.jms.MapMessage
 {
     private static final Logger _logger = LoggerFactory.getLogger(JMSMapMessage.class);
 
@@ -54,10 +52,10 @@ public class JMSMapMessage extends AbstractBytesTypedMessage implements javax.jm
     JMSMapMessage(AMQMessageDelegateFactory delegateFactory, ByteBuffer data) throws JMSException
     {
 
-        super(delegateFactory, data); // this instantiates a content header
+        super(delegateFactory, data!=null); // this instantiates a content header
         if(data != null)
         {
-            populateMapFromData();
+            populateMapFromData(data);
         }
 
     }
@@ -65,10 +63,10 @@ public class JMSMapMessage extends AbstractBytesTypedMessage implements javax.jm
     JMSMapMessage(AMQMessageDelegate delegate, ByteBuffer data) throws AMQException
     {
 
-        super(delegate, data);
+        super(delegate, data != null);
         try
         {
-            populateMapFromData();
+            populateMapFromData(data);
         }
         catch (JMSException je)
         {
@@ -89,18 +87,10 @@ public class JMSMapMessage extends AbstractBytesTypedMessage implements javax.jm
         return MIME_TYPE;
     }
 
-    public ByteBuffer getData()
-    {
-        // What if _data is null?
-        writeMapToData();
-
-        return super.getData();
-    }
-
     @Override
-    public void clearBodyImpl() throws JMSException
+    public void clearBody() throws JMSException
     {
-        super.clearBodyImpl();
+        super.clearBody();
         _map.clear();
     }
 
@@ -458,17 +448,18 @@ public class JMSMapMessage extends AbstractBytesTypedMessage implements javax.jm
         return _map.containsKey(propName);
     }
 
-    protected void populateMapFromData() throws JMSException
+    protected void populateMapFromData(ByteBuffer data) throws JMSException
     {
-        if (_data != null)
+        TypedBytesContentReader reader = new TypedBytesContentReader(data);
+        if (data != null)
         {
-            _data.rewind();
+            data.rewind();
 
-            final int entries = readIntImpl();
+            final int entries = reader.readIntImpl();
             for (int i = 0; i < entries; i++)
             {
-                String propName = readStringImpl();
-                Object value = readObject();
+                String propName = reader.readStringImpl();
+                Object value = reader.readObject();
                 _map.put(propName, value);
             }
         }
@@ -478,35 +469,21 @@ public class JMSMapMessage extends AbstractBytesTypedMessage implements javax.jm
         }
     }
 
-    protected void writeMapToData()
+    public ByteBuffer getData()
+            throws JMSException
     {
-        allocateInitialBuffer();
+        TypedBytesContentWriter writer = new TypedBytesContentWriter();
+
         final int size = _map.size();
-        writeIntImpl(size);
+        writer.writeIntImpl(size);
         for (Map.Entry<String, Object> entry : _map.entrySet())
         {
-            try
-            {
-                writeStringImpl(entry.getKey());
-            }
-            catch (CharacterCodingException e)
-            {
-                throw new IllegalArgumentException("Cannot encode property key name " + entry.getKey(), e);
+            writer.writeNullTerminatedStringImpl(entry.getKey());
 
-            }
-
-            try
-            {
-                writeObject(entry.getValue());
-            }
-            catch (JMSException e)
-            {
-                Object value = entry.getValue();
-                throw new IllegalArgumentException("Cannot encode property key name " + entry.getKey() + " value : " + value
-                    + " (type: " + value.getClass().getName() + ").", e);
-            }
+            writer.writeObject(entry.getValue());
         }
 
+        return writer.getData();
     }
 
 }

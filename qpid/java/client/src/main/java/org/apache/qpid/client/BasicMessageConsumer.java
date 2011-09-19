@@ -27,6 +27,7 @@ import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.framing.*;
 import org.apache.qpid.jms.MessageConsumer;
 import org.apache.qpid.jms.Session;
+import org.apache.qpid.transport.TransportException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -419,6 +420,10 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
 
             return null;
         }
+        catch(TransportException e)
+        {
+            throw _session.toJMSException("Exception while receiving:" + e.getMessage(), e);
+        }
         finally
         {
             releaseReceiving();
@@ -488,6 +493,10 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
             _logger.warn("Interrupted: " + e);
 
             return null;
+        }
+        catch(TransportException e)
+        {
+            throw _session.toJMSException("Exception while receiving:" + e.getMessage(), e);
         }
         finally
         {
@@ -581,6 +590,10 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
                     catch (FailoverException e)
                     {
                         throw new JMSAMQException("FailoverException interrupted basic cancel.", e);
+                    }
+                    catch (TransportException e)
+                    {
+                        throw _session.toJMSException("Exception while closing consumer: " + e.getMessage(), e);
                     }
                 }
             }
@@ -775,7 +788,7 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
 
     }
 
-    void postDeliver(AbstractJMSMessage msg) throws JMSException
+    void postDeliver(AbstractJMSMessage msg)
     {
         switch (_acknowledgeMode)
         {

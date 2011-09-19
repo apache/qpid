@@ -58,7 +58,7 @@ Exchange::PreRoute::PreRoute(Deliverable& msg, Exchange* _p):parent(_p) {
 
         if (parent->sequence){
             parent->sequenceNo++;
-            msg.getMessage().getProperties<MessageProperties>()->getApplicationHeaders().setInt64(qpidMsgSequence,parent->sequenceNo);
+            msg.getMessage().insertCustomProperty(qpidMsgSequence,parent->sequenceNo);
         }
         if (parent->ive) {
             parent->lastMsg =  &( msg.getMessage());
@@ -390,7 +390,7 @@ bool Exchange::MatchQueue::operator()(Exchange::Binding::shared_ptr b)
 }
 
 void Exchange::setProperties(const boost::intrusive_ptr<Message>& msg) {
-    msg->getProperties<DeliveryProperties>()->setExchange(getName());
+    msg->setExchange(getName());
 }
 
 bool Exchange::routeWithAlternate(Deliverable& msg)

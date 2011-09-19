@@ -19,7 +19,6 @@
  *
  */
 #include "qpid/types/Variant.h"
-#include "qpid/Msg.h"
 #include "qpid/log/Statement.h"
 #include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>

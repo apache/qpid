@@ -83,7 +83,7 @@ public class QpidBrokerTestCase extends QpidTestCase
         INTERNAL /** Test case starts an embedded broker within this JVM */, 
         SPAWNED /** Test case spawns a new broker as a separate process */
     }
-    protected final String QpidHome = System.getProperty("QPID_HOME");
+    protected final static String QpidHome = System.getProperty("QPID_HOME");
     protected File _configFile = new File(System.getProperty("broker.config"));
 
     protected static final Logger _logger = Logger.getLogger(QpidBrokerTestCase.class);
@@ -91,9 +91,7 @@ public class QpidBrokerTestCase extends QpidTestCase
 
     protected long RECEIVE_TIMEOUT = 1000l;
 
-    private Map<String, String> _propertiesSetForTestOnly = new HashMap<String, String>();
     private Map<String, String> _propertiesSetForBroker = new HashMap<String, String>();
-    private Map<Logger, Level> _loggerLevelSetForTest = new HashMap<Logger, Level>();
 
     private XMLConfiguration _testConfiguration = new XMLConfiguration();
     private XMLConfiguration _testVirtualhosts = new XMLConfiguration();
@@ -139,8 +137,8 @@ public class QpidBrokerTestCase extends QpidTestCase
     public static final int DEFAULT_VM_PORT = 1;
     public static final int DEFAULT_PORT = Integer.getInteger("test.port", ServerConfiguration.DEFAULT_PORT);
     public static final int FAILING_PORT = Integer.parseInt(System.getProperty("test.port.alt"));
-    public static final int DEFAULT_MANAGEMENT_PORT = Integer.getInteger("test.mport", ServerConfiguration.DEFAULT_JMXPORT);
-    public static final int DEFAULT_SSL_PORT = Integer.getInteger("test.sslport", ServerConfiguration.DEFAULT_SSL_PORT);
+    public static final int DEFAULT_MANAGEMENT_PORT = Integer.getInteger("test.mport", ServerConfiguration.DEFAULT_JMXPORT_REGISTRYSERVER);
+    public static final int DEFAULT_SSL_PORT = Integer.getInteger("test.port.ssl", ServerConfiguration.DEFAULT_SSL_PORT);
 
     protected String _brokerLanguage = System.getProperty(BROKER_LANGUAGE, JAVA);
     protected BrokerType _brokerType = BrokerType.valueOf(System.getProperty(BROKER_TYPE, "").toUpperCase());
@@ -163,8 +161,6 @@ public class QpidBrokerTestCase extends QpidTestCase
 
     protected InitialContext _initialContext;
     protected AMQConnectionFactory _connectionFactory;
-
-    protected String _testName;
 
     // the connections created for a given test
     protected List<Connection> _connections = new ArrayList<Connection>();
@@ -207,7 +203,6 @@ public class QpidBrokerTestCase extends QpidTestCase
 
     public void runBare() throws Throwable
     {
-        _testName = getClass().getSimpleName() + "." + getName();
         String qname = getClass().getName() + "." + getName();
 
         // Initialize this for each test run
@@ -238,7 +233,6 @@ public class QpidBrokerTestCase extends QpidTestCase
             }
         }
 
-        _logger.info("========== start " + _testName + " ==========");
         try
         {
             super.runBare();
@@ -259,6 +253,10 @@ public class QpidBrokerTestCase extends QpidTestCase
                 _logger.error("exception stopping broker", e);
             }
 
+            // reset properties used in the test
+            revertSystemProperties();
+            revertLoggingLevels();
+
             if(_brokerCleanBetweenTests)
             {
             	try
@@ -271,7 +269,7 @@ public class QpidBrokerTestCase extends QpidTestCase
             	}
             }
 
-            _logger.info("==========  stop " + _testName + " ==========");
+            _logger.info("==========  stop " + getTestName() + " ==========");
 
             if (redirected)
             {
@@ -290,6 +288,8 @@ public class QpidBrokerTestCase extends QpidTestCase
     @Override
     protected void setUp() throws Exception
     {
+        super.setUp();
+
         if (!_configFile.exists())
         {
             fail("Unable to test without config file:" + _configFile);
@@ -441,10 +441,11 @@ public class QpidBrokerTestCase extends QpidTestCase
 
     protected String getBrokerCommand(int port) throws MalformedURLException
     {
-        final String protocolExcludesList = _brokerProtocolExcludes.replace("@PORT", "" + port);
+        final int sslPort = port-1;
+        final String protocolExcludesList = getProtocolExcludesList(port, sslPort);
         return _brokerCommand
                 .replace("@PORT", "" + port)
-                .replace("@SSL_PORT", "" + (port - 1))
+                .replace("@SSL_PORT", "" + sslPort)
                 .replace("@MPORT", "" + getManagementPort(port))
                 .replace("@CONFIG_FILE", _configFile.toString())
                 .replace("@EXCLUDES", protocolExcludesList);
@@ -477,9 +478,9 @@ public class QpidBrokerTestCase extends QpidTestCase
             options.setConfigFile(_configFile.getAbsolutePath());
             options.addPort(port);
 
-            addExcludedPorts(port, options);
+            addExcludedPorts(port, DEFAULT_SSL_PORT, options);
 
-            options.setJmxPort(getManagementPort(port));
+            options.setJmxPortRegistryServer(getManagementPort(port));
 
             //Set the log config file, relying on the log4j.configuration system property
             //set on the JVM by the JUnit runner task in module.xml.
@@ -508,7 +509,7 @@ public class QpidBrokerTestCase extends QpidTestCase
 
             //Add the test name to the broker run.
             // DON'T change PNAME, qpid.stop needs this value.
-            env.put("QPID_PNAME", "-DPNAME=QPBRKR -DTNAME=\"" + _testName + "\"");
+            env.put("QPID_PNAME", "-DPNAME=QPBRKR -DTNAME=\"" + getTestName() + "\"");
             // Add the port to QPID_WORK to ensure unique working dirs for multi broker tests
             env.put("QPID_WORK", getQpidWork(_brokerType, port));
 
@@ -598,9 +599,9 @@ public class QpidBrokerTestCase extends QpidTestCase
         }
     }
 
-    private void addExcludedPorts(int port, BrokerOptions options)
+    private void addExcludedPorts(int port, int sslPort, BrokerOptions options)
     {
-        final String protocolExcludesList = _brokerProtocolExcludes.replace("@PORT", "" + port);
+        final String protocolExcludesList = getProtocolExcludesList(port, sslPort);
         
         if (protocolExcludesList.equals(""))
         {
@@ -620,6 +621,13 @@ public class QpidBrokerTestCase extends QpidTestCase
 
             _logger.info("Adding protocol exclusion " + excludeArg + " " + excludedPort);
         }
+    }
+
+    protected String getProtocolExcludesList(int port, int sslPort)
+    {
+        final String protocolExcludesList =
+            _brokerProtocolExcludes.replace("@PORT", "" + port).replace("@SSL_PORT", "" + sslPort);
+        return protocolExcludesList;
     }
 
     private boolean existingInternalBroker()
@@ -875,20 +883,14 @@ public class QpidBrokerTestCase extends QpidTestCase
     }
 
     /**
-     * Set a System (-D) property for the external Broker of this test.
+     * Set a System  property for the client (and broker if using the same vm) of this test.
      *
      * @param property The property to set
      * @param value the value to set it to.
      */
     protected void setTestClientSystemProperty(String property, String value)
     {
-        if (!_propertiesSetForTestOnly.containsKey(property))
-        {
-            // Record the current value so we can revert it later.
-            _propertiesSetForTestOnly.put(property, System.getProperty(property));
-        }
-
-        System.setProperty(property, value);
+        setTestSystemProperty(property, value);
     }
 
     /**
@@ -896,20 +898,7 @@ public class QpidBrokerTestCase extends QpidTestCase
      */
     protected void revertSystemProperties()
     {
-        for (String key : _propertiesSetForTestOnly.keySet())
-        {
-            String value = _propertiesSetForTestOnly.get(key);
-            if (value != null)
-            {
-                System.setProperty(key, value);
-            }
-            else
-            {
-                System.clearProperty(key);
-            }
-        }
-
-        _propertiesSetForTestOnly.clear();
+        revertTestSystemProperties();
 
         // We don't change the current VMs settings for Broker only properties
         // so we can just clear this map
@@ -925,40 +914,6 @@ public class QpidBrokerTestCase extends QpidTestCase
     protected void setBrokerEnvironment(String property, String value)
     {
         _env.put(property, value);
-    }
-
-    /**
-     * Adjust the VMs Log4j Settings just for this test run
-     *
-     * @param logger the logger to change
-     * @param level the level to set
-     */
-    protected void setLoggerLevel(Logger logger, Level level)
-    {
-        assertNotNull("Cannot set level of null logger", logger);
-        assertNotNull("Cannot set Logger("+logger.getName()+") to null level.",level);
-
-        if (!_loggerLevelSetForTest.containsKey(logger))
-        {
-            // Record the current value so we can revert it later.
-            _loggerLevelSetForTest.put(logger, logger.getLevel());
-        }
-
-        logger.setLevel(level);
-    }
-
-    /**
-     * Restore the logging levels defined by this test.
-     */
-    protected void revertLoggingLevels()
-    {
-        for (Logger logger : _loggerLevelSetForTest.keySet())
-        {
-            logger.setLevel(_loggerLevelSetForTest.get(logger));
-        }
-
-        _loggerLevelSetForTest.clear();
-
     }
 
     /**
@@ -1069,7 +1024,7 @@ public class QpidBrokerTestCase extends QpidTestCase
     {
         return (AMQConnectionFactory) getInitialContext().lookup(factoryName);
     }
-
+    
     public Connection getConnection() throws JMSException, NamingException
     {
         return getConnection("guest", "guest");
@@ -1137,18 +1092,12 @@ public class QpidBrokerTestCase extends QpidTestCase
 
     protected void tearDown() throws java.lang.Exception
     {
-        try
+        super.tearDown();
+
+        // close all the connections used by this test.
+        for (Connection c : _connections)
         {
-            // close all the connections used by this test.
-            for (Connection c : _connections)
-            {
-                c.close();
-            }
-        }
-        finally{
-            // Ensure any problems with close does not interfer with property resets
-            revertSystemProperties();
-            revertLoggingLevels();
+            c.close();
         }
     }
 

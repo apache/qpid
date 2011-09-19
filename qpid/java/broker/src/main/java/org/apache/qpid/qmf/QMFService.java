@@ -1317,6 +1317,17 @@ public class QMFService implements ConfigStore.ConfigEventListener, Closeable
             // TODO
             return false;
         }
+
+        public String getSaslMechanism()
+        {
+            // TODO
+            return null;
+        }
+        public Integer getSaslSsf()
+        {
+            // TODO
+            return 0;
+        }
     }
 
     private class SessionDelegate implements BrokerSchema.SessionDelegate

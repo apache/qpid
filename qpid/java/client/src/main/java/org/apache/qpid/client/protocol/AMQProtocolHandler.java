@@ -20,7 +20,9 @@
  */
 package org.apache.qpid.client.protocol;
 
+import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -31,7 +33,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
-import org.apache.mina.filter.codec.ProtocolCodecException;
 import org.apache.qpid.AMQConnectionClosedException;
 import org.apache.qpid.AMQDisconnectedException;
 import org.apache.qpid.AMQException;
@@ -46,6 +47,7 @@ import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.client.state.StateWaiter;
 import org.apache.qpid.client.state.listener.SpecificMethodFrameListener;
 import org.apache.qpid.codec.AMQCodecFactory;
+import org.apache.qpid.configuration.ClientProperties;
 import org.apache.qpid.framing.AMQBody;
 import org.apache.qpid.framing.AMQDataBlock;
 import org.apache.qpid.framing.AMQFrame;
@@ -57,8 +59,6 @@ import org.apache.qpid.framing.HeartbeatBody;
 import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.framing.ProtocolInitiation;
 import org.apache.qpid.framing.ProtocolVersion;
-import org.apache.qpid.pool.Job;
-import org.apache.qpid.pool.ReferenceCountingExecutorService;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.protocol.AMQMethodListener;
@@ -164,19 +164,19 @@ public class AMQProtocolHandler implements ProtocolEngine
     private FailoverException _lastFailoverException;
 
     /** Defines the default timeout to use for synchronous protocol commands. */
-    private final long DEFAULT_SYNC_TIMEOUT = Long.getLong("amqj.default_syncwrite_timeout", 1000 * 30);
+    private final long DEFAULT_SYNC_TIMEOUT = Long.getLong(ClientProperties.QPID_SYNC_OP_TIMEOUT,
+                                                           Long.getLong(ClientProperties.AMQJ_DEFAULT_SYNCWRITE_TIMEOUT,
+                                                                        ClientProperties.DEFAULT_SYNC_OPERATION_TIMEOUT));
 
     /** Object to lock on when changing the latch */
     private Object _failoverLatchChange = new Object();
     private AMQCodecFactory _codecFactory;
-    private Job _readJob;
-    private Job _writeJob;
-    private ReferenceCountingExecutorService _poolReference = ReferenceCountingExecutorService.getInstance();
+
     private ProtocolVersion _suggestedProtocolVersion;
 
     private long _writtenBytes;
     private long _readBytes;
-    private NetworkTransport _transport;
+
     private NetworkConnection _network;
     private Sender<ByteBuffer> _sender;
 
@@ -191,24 +191,6 @@ public class AMQProtocolHandler implements ProtocolEngine
         _protocolSession = new AMQProtocolSession(this, _connection);
         _stateManager = new AMQStateManager(_protocolSession);
         _codecFactory = new AMQCodecFactory(false, _protocolSession);
-        _poolReference.setThreadFactory(new ThreadFactory()
-        {
-
-            public Thread newThread(final Runnable runnable)
-            {
-                try
-                {
-                    return Threading.getThreadFactory().createThread(runnable);
-                }
-                catch (Exception e)
-                {
-                    throw new RuntimeException("Failed to create thread", e);
-                }
-            }
-        });
-        _readJob = new Job(_poolReference, Job.MAX_JOB_EVENTS, true);
-        _writeJob = new Job(_poolReference, Job.MAX_JOB_EVENTS, false);
-        _poolReference.acquireExecutorService();
         _failoverHandler = new FailoverHandler(this);
     }
 
@@ -329,17 +311,7 @@ public class AMQProtocolHandler implements ProtocolEngine
             }
             else
             {
-
-                if (cause instanceof ProtocolCodecException)
-                {
-                    _logger.info("Protocol Exception caught NOT going to attempt failover as " +
-                                 "cause isn't AMQConnectionClosedException: " + cause, cause);
-
-                    AMQException amqe = new AMQException("Protocol handler error: " + cause, cause);
-                    propagateExceptionToAllWaiters(amqe);
-                }
                 _connection.exceptionReceived(cause);
-
             }
 
             // FIXME Need to correctly handle other exceptions. Things like ...
@@ -433,76 +405,63 @@ public class AMQProtocolHandler implements ProtocolEngine
 
     public void received(ByteBuffer msg)
     {
+        _readBytes += msg.remaining();
         try
         {
-            _readBytes += msg.remaining();
             final ArrayList<AMQDataBlock> dataBlocks = _codecFactory.getDecoder().decodeBuffer(msg);
 
-            Job.fireAsynchEvent(_poolReference.getPool(), _readJob, new Runnable()
+            // Decode buffer
+
+            for (AMQDataBlock message : dataBlocks)
             {
 
-                public void run()
-                {
-                    // Decode buffer
-
-                    for (AMQDataBlock message : dataBlocks)
+                    if (PROTOCOL_DEBUG)
                     {
+                        _protocolLogger.info(String.format("RECV: [%s] %s", this, message));
+                    }
 
-                        try
+                    if(message instanceof AMQFrame)
+                    {
+                        final boolean debug = _logger.isDebugEnabled();
+                        final long msgNumber = ++_messageReceivedCount;
+
+                        if (debug && ((msgNumber % 1000) == 0))
                         {
-                            if (PROTOCOL_DEBUG)
-                            {
-                                _protocolLogger.info(String.format("RECV: [%s] %s", this, message));
-                            }
-
-                            if(message instanceof AMQFrame)
-                            {
-                                final boolean debug = _logger.isDebugEnabled();
-                                final long msgNumber = ++_messageReceivedCount;
-
-                                if (debug && ((msgNumber % 1000) == 0))
-                                {
-                                    _logger.debug("Received " + _messageReceivedCount + " protocol messages");
-                                }
-
-                                AMQFrame frame = (AMQFrame) message;
-
-                                final AMQBody bodyFrame = frame.getBodyFrame();
-
-                                HeartbeatDiagnostics.received(bodyFrame instanceof HeartbeatBody);
-
-                                bodyFrame.handle(frame.getChannel(), _protocolSession);
-
-                                _connection.bytesReceived(_readBytes);
-                            }
-                            else if (message instanceof ProtocolInitiation)
-                            {
-                                // We get here if the server sends a response to our initial protocol header
-                                // suggesting an alternate ProtocolVersion; the server will then close the
-                                // connection.
-                                ProtocolInitiation protocolInit = (ProtocolInitiation) message;
-                                _suggestedProtocolVersion = protocolInit.checkVersion();
-                                _logger.info("Broker suggested using protocol version:" + _suggestedProtocolVersion);
-                                
-                                // get round a bug in old versions of qpid whereby the connection is not closed
-                                _stateManager.changeState(AMQState.CONNECTION_CLOSED);
-                            }
+                            _logger.debug("Received " + _messageReceivedCount + " protocol messages");
                         }
-                        catch (Exception e)
-                        {
-                            _logger.error("Exception processing frame", e);
-                            propagateExceptionToFrameListeners(e);
-                            exception(e);
-                        }
+
+                        AMQFrame frame = (AMQFrame) message;
+
+                        final AMQBody bodyFrame = frame.getBodyFrame();
+
+                        HeartbeatDiagnostics.received(bodyFrame instanceof HeartbeatBody);
+
+                        bodyFrame.handle(frame.getChannel(), _protocolSession);
+
+                        _connection.bytesReceived(_readBytes);
+                    }
+                    else if (message instanceof ProtocolInitiation)
+                    {
+                        // We get here if the server sends a response to our initial protocol header
+                        // suggesting an alternate ProtocolVersion; the server will then close the
+                        // connection.
+                        ProtocolInitiation protocolInit = (ProtocolInitiation) message;
+                        _suggestedProtocolVersion = protocolInit.checkVersion();
+                        _logger.info("Broker suggested using protocol version:" + _suggestedProtocolVersion);
+
+                        // get round a bug in old versions of qpid whereby the connection is not closed
+                        _stateManager.changeState(AMQState.CONNECTION_CLOSED);
                     }
                 }
-            });
         }
         catch (Exception e)
         {
+            _logger.error("Exception processing frame", e);
             propagateExceptionToFrameListeners(e);
             exception(e);
         }
+
+
     }
 
     public void methodBodyReceived(final int channelId, final AMQBody bodyFrame)
@@ -568,17 +527,13 @@ public class AMQProtocolHandler implements ProtocolEngine
         writeFrame(frame, false);
     }
 
-    public void writeFrame(AMQDataBlock frame, boolean wait)
+    public  synchronized void writeFrame(AMQDataBlock frame, boolean wait)
     {
-        final ByteBuffer buf = frame.toNioByteBuffer();
+        final ByteBuffer buf = asByteBuffer(frame);
         _writtenBytes += buf.remaining();
-        Job.fireAsynchEvent(_poolReference.getPool(), _writeJob, new Runnable()
-        {
-            public void run()
-            {
-                _sender.send(buf);
-            }
-        });
+        _sender.send(buf);
+        _sender.flush();
+
         if (PROTOCOL_DEBUG)
         {
             _protocolLogger.debug(String.format("SEND: [%s] %s", this, frame));
@@ -595,11 +550,40 @@ public class AMQProtocolHandler implements ProtocolEngine
 
         _connection.bytesSent(_writtenBytes);
 
-        if (wait)
-        {
-            _sender.flush();
-        }
     }
+
+    private ByteBuffer asByteBuffer(AMQDataBlock block)
+    {
+        final ByteBuffer buf = ByteBuffer.allocate((int) block.getSize());
+
+        try
+        {
+            block.writePayload(new DataOutputStream(new OutputStream()
+            {
+
+
+                @Override
+                public void write(int b) throws IOException
+                {
+                    buf.put((byte) b);
+                }
+
+                @Override
+                public void write(byte[] b, int off, int len) throws IOException
+                {
+                    buf.put(b, off, len);
+                }
+            }));
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException(e);
+        }
+
+        buf.flip();
+        return buf;
+    }
+
 
     /**
      * Convenience method that writes a frame to the protocol session and waits for a particular response. Equivalent to
@@ -723,7 +707,7 @@ public class AMQProtocolHandler implements ProtocolEngine
                 _logger.debug("FailoverException interrupted connection close, ignoring as connection   close anyway.");
             }
         }
-        _poolReference.releaseExecutorService();
+
     }
 
     /** @return the number of bytes read from this protocol session */
@@ -841,8 +825,13 @@ public class AMQProtocolHandler implements ProtocolEngine
 
     public void setNetworkConnection(NetworkConnection network)
     {
+        setNetworkConnection(network, network.getSender());
+    }
+
+    public void setNetworkConnection(NetworkConnection network, Sender<ByteBuffer> sender)
+    {
         _network = network;
-        _sender = network.getSender();
+        _sender = sender;
     }
 
     /** @param delay delay in seconds (not ms) */

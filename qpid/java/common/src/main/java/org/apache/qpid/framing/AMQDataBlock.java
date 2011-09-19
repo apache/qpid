@@ -20,7 +20,10 @@
  */
 package org.apache.qpid.framing;
 
-import org.apache.mina.common.ByteBuffer;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+
 
 /**
  * A data block represents something that has a size in bytes and the ability to write itself to a byte
@@ -39,25 +42,6 @@ public abstract class AMQDataBlock implements EncodableAMQDataBlock
      * Writes the datablock to the specified buffer.
      * @param buffer
      */
-    public abstract void writePayload(ByteBuffer buffer);
-
-    public ByteBuffer toByteBuffer()
-    {
-        final ByteBuffer buffer = ByteBuffer.allocate((int)getSize());
-
-        writePayload(buffer);    
-        buffer.flip();
-        return buffer;
-    }
-
-    public java.nio.ByteBuffer toNioByteBuffer()
-    {
-        final java.nio.ByteBuffer buffer = java.nio.ByteBuffer.allocate((int) getSize());
-
-        ByteBuffer buf = ByteBuffer.wrap(buffer);
-        writePayload(buf);    
-        buffer.flip();
-        return buffer;
-    }
+    public abstract void writePayload(DataOutputStream buffer) throws IOException;
 
 }

@@ -30,6 +30,8 @@ import static org.apache.qpid.transport.Session.State.DETACHED;
 import static org.apache.qpid.transport.Session.State.NEW;
 import static org.apache.qpid.transport.Session.State.OPEN;
 import static org.apache.qpid.transport.Session.State.RESUMING;
+
+import org.apache.qpid.configuration.ClientProperties;
 import org.apache.qpid.transport.network.Frame;
 import static org.apache.qpid.transport.util.Functions.mod;
 import org.apache.qpid.transport.util.Logger;
@@ -42,7 +44,6 @@ import static org.apache.qpid.util.Serial.max;
 import static org.apache.qpid.util.Strings.toUTF8;
 
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -58,7 +59,6 @@ import java.util.concurrent.TimeUnit;
 
 public class Session extends SessionInvoker
 {
-
     private static final Logger log = Logger.get(Session.class);
 
     public enum State { NEW, DETACHED, RESUMING, OPEN, CLOSING, CLOSED }
@@ -92,7 +92,9 @@ public class Session extends SessionInvoker
     private int channel;
     private SessionDelegate delegate;
     private SessionListener listener = new DefaultSessionListener();
-    private long timeout = 60000;
+    private final long timeout = Long.getLong(ClientProperties.QPID_SYNC_OP_TIMEOUT,
+                                        Long.getLong(ClientProperties.AMQJ_DEFAULT_SYNCWRITE_TIMEOUT,
+                                                     ClientProperties.DEFAULT_SYNC_OPERATION_TIMEOUT));
     private boolean autoSync = false;
 
     private boolean incomingInit;
@@ -120,7 +122,9 @@ public class Session extends SessionInvoker
 
     private Thread resumer = null;
     private boolean transacted = false;
-    
+    private SessionDetachCode detachCode;
+    private final Object stateLock = new Object();
+
     protected Session(Connection connection, Binary name, long expiry)
     {
         this(connection, new SessionDelegate(), name, expiry);
@@ -962,16 +966,29 @@ public class Session extends SessionInvoker
 
     public void close()
     {
+        if (log.isDebugEnabled())
+        {
+            log.debug("Closing [%s] in state [%s]", this, state);
+        }
         synchronized (commands)
         {
-            state = CLOSING;
-            setClose(true);
-            sessionRequestTimeout(0);
-            sessionDetach(name.getBytes());
-
-            awaitClose();
- 
-
+            switch(state)
+            {
+                case DETACHED:
+                    state = CLOSED;
+                    delegate.closed(this);
+                    connection.removeSession(this);
+                    listener.closed(this);
+                    break;
+                case CLOSED:
+                    break;
+                default:
+                    state = CLOSING;
+                    setClose(true);
+                    sessionRequestTimeout(0);
+                    sessionDetach(name.getBytes());
+                    awaitClose();
+            }
         }
     }
 
@@ -1045,13 +1062,55 @@ public class Session extends SessionInvoker
     {
         return String.format("ssn:%s", name);
     }
-    
+
     public void setTransacted(boolean b) {
         this.transacted = b;
     }
-    
+
     public boolean isTransacted(){
         return transacted;
     }
-    
+
+    public void setDetachCode(SessionDetachCode dtc)
+    {
+        this.detachCode = dtc;
+    }
+
+    public SessionDetachCode getDetachCode()
+    {
+        return this.detachCode;
+    }
+
+    public void awaitOpen()
+    {
+        switch (state)
+        {
+        case NEW:
+            synchronized(stateLock)
+            {
+                Waiter w = new Waiter(stateLock, timeout);
+                while (w.hasTime() && state == NEW)
+                {
+                    w.await();
+                }
+            }
+
+            if (state != OPEN)
+            {
+                throw new SessionException("Timed out waiting for Session to open");
+            }
+            break;
+        case DETACHED:
+        case CLOSING:
+        case CLOSED:
+            throw new SessionException("Session closed");
+        default :
+            break;
+        }
+    }
+
+    public Object getStateLock()
+    {
+        return stateLock;
+    }
 }

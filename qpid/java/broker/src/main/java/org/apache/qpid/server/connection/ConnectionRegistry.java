@@ -29,6 +29,8 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.common.Closeable;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
+import org.apache.qpid.server.protocol.AMQProtocolEngine;
+import org.apache.qpid.transport.TransportException;
 
 public class ConnectionRegistry implements IConnectionRegistry, Closeable
 {
@@ -44,18 +46,23 @@ public class ConnectionRegistry implements IConnectionRegistry, Closeable
     /** Close all of the currently open connections. */
     public void close()
     {
+        _logger.debug("Closing connection registry :" + _registry.size() + " connections.");
         while (!_registry.isEmpty())
         {
             AMQConnectionModel connection = _registry.get(0);
-            closeConnection(connection, AMQConstant.INTERNAL_ERROR, "Broker is shutting down");
+            closeConnection(connection, AMQConstant.CONNECTION_FORCED, "Broker is shutting down");
         }
     }
-    
+
     public void closeConnection(AMQConnectionModel connection, AMQConstant cause, String message)
     {
         try
         {
             connection.close(cause, message);
+        }
+        catch (TransportException e)
+        {
+            _logger.warn("Error closing connection:" + e.getMessage());
         }
         catch (AMQException e)
         {

@@ -256,7 +256,15 @@ class SessionState : public qpid::SessionState,
           requiresAccept(m->requiresAccept()),
           requiresSync(m->getFrames().getMethod()->isSync()),
           pending(false) {}
-        virtual ~IncompleteIngressMsgXfer() {};
+        IncompleteIngressMsgXfer( const IncompleteIngressMsgXfer& x )
+          : AsyncCommandContext(x.session, x.msg->getCommandId()),
+          session(x.session),
+          msg(x.msg),
+          requiresAccept(x.requiresAccept),
+          requiresSync(x.requiresSync),
+          pending(x.pending) {}
+
+  virtual ~IncompleteIngressMsgXfer() {};
 
         virtual void completed(bool);
         virtual boost::intrusive_ptr<AsyncCompletion::Callback> clone();

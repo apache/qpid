@@ -39,17 +39,13 @@ import org.apache.commons.configuration.HierarchicalConfiguration;
 import org.apache.commons.configuration.SystemConfiguration;
 import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.log4j.Logger;
-import org.apache.qpid.server.configuration.management.ConfigurationManagementMBean;
 import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
 import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.signal.SignalHandlerTask;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
-import org.apache.qpid.transport.NetworkTransportConfiguration;
 
-import sun.misc.Signal;
-import sun.misc.SignalHandler;
-
-public class ServerConfiguration extends ConfigurationPlugin implements SignalHandler
+public class ServerConfiguration extends ConfigurationPlugin
 {
     protected static final Logger _logger = Logger.getLogger(ServerConfiguration.class);
 
@@ -60,9 +56,10 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
 
     public static final int DEFAULT_FRAME_SIZE = 65536;
     public static final int DEFAULT_PORT = 5672;
-    public static final int DEFAULT_SSL_PORT = 8672;
+    public static final int DEFAULT_SSL_PORT = 5671;
     public static final long DEFAULT_HOUSEKEEPING_PERIOD = 30000L;
-    public static final int DEFAULT_JMXPORT = 8999;
+    public static final int DEFAULT_JMXPORT_REGISTRYSERVER = 8999;
+    public static final int JMXPORT_CONNECTORSERVER_OFFSET = 100;
 
     public static final String QPID_HOME = "QPID_HOME";
     public static final String QPID_WORK = "QPID_WORK";
@@ -75,16 +72,14 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
     private File _configFile;
     private File _vhostsFile;
 
-    private Logger _log = Logger.getLogger(this.getClass());
-
-    private ConfigurationManagementMBean _mbean;
-
     // Map of environment variables to config items
     private static final Map<String, String> envVarMap = new HashMap<String, String>();
 
     // Configuration values to be read from the configuration file
     //todo Move all properties to static values to ensure system testing can be performed.
     public static final String MGMT_CUSTOM_REGISTRY_SOCKET = "management.custom-registry-socket";
+    public static final String MGMT_JMXPORT_REGISTRYSERVER = "management.jmxport.registryServer";
+    public static final String MGMT_JMXPORT_CONNECTORSERVER = "management.jmxport.connectorServer";
     public static final String STATUS_UPDATES = "status-updates";
     public static final String ADVANCED_LOCALE = "advanced.locale";
 
@@ -93,7 +88,8 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
         envVarMap.put("QPID_ENABLEDIRECTBUFFERS", "advanced.enableDirectBuffers");
         envVarMap.put("QPID_SSLPORT", "connector.ssl.port");
         envVarMap.put("QPID_WRITEBIASED", "advanced.useWriteBiasedPool");
-        envVarMap.put("QPID_JMXPORT", "management.jmxport");
+        envVarMap.put("QPID_JMXPORT_REGISTRYSERVER", MGMT_JMXPORT_REGISTRYSERVER);
+        envVarMap.put("QPID_JMXPORT_CONNECTORSERVER", MGMT_JMXPORT_CONNECTORSERVER);
         envVarMap.put("QPID_FRAMESIZE", "advanced.framesize");
         envVarMap.put("QPID_MSGAUTH", "security.msg-auth");
         envVarMap.put("QPID_AUTOREGISTER", "auto_register");
@@ -137,15 +133,26 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
     {
         this(parseConfig(configurationURL));
         _configFile = configurationURL;
-        try
+
+        SignalHandlerTask hupReparseTask = new SignalHandlerTask()
         {
-            Signal sig = new sun.misc.Signal("HUP");
-            sun.misc.Signal.handle(sig, this);
-        }
-        catch (Exception e)
+            public void handle()
+            {
+                try
+                {
+                    reparseConfigFileSecuritySections();
+                }
+                catch (ConfigurationException e)
+                {
+                    _logger.error("Could not reload configuration file security sections", e);
+                }
+            }
+        };
+
+        if(!hupReparseTask.register("HUP"))
         {
-            _logger.info("Signal HUP not supported for OS: " + System.getProperty("os.name"));
-            // We're on something that doesn't handle SIGHUP, how sad, Windows.
+            _logger.info("Unable to register Signal HUP handler to reload security configuration.");
+            _logger.info("Signal HUP not supported for this OS / JVM combination - " + SignalHandlerTask.getPlatformDescription());
         }
     }
 
@@ -214,6 +221,21 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
         if (getListValue("security.jmx.principal-database").size() > 0)
         {
             String message = "Validation error : security/jmx/principal-database is no longer a supported element within the configuration xml."
+                    + (_configFile == null ? "" : " Configuration file : " + _configFile);
+            throw new ConfigurationException(message);
+        }
+
+        if (getListValue("security.principal-databases.principal-database(0).class").size() > 0)
+        {
+            String message = "Validation error : security/principal-databases is no longer supported within the configuration xml." 
+                    + (_configFile == null ? "" : " Configuration file : " + _configFile);
+            throw new ConfigurationException(message);
+        }
+
+        // QPID-3266.  Tidy up housekeeping configuration option for scheduling frequency
+        if (contains("housekeeping.expiredMessageCheckPeriod"))
+        {
+            String message = "Validation error : housekeeping/expiredMessageCheckPeriod must be replaced by housekeeping/checkPeriod."
                     + (_configFile == null ? "" : " Configuration file : " + _configFile);
             throw new ConfigurationException(message);
         }
@@ -409,18 +431,6 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
         return _configFile == null ? "" : _configFile.getAbsolutePath();
     }
 
-    public void handle(Signal arg0)
-    {
-        try
-        {
-            reparseConfigFileSecuritySections();
-        }
-        catch (ConfigurationException e)
-        {
-             _logger.error("Could not reload configuration file security sections", e);
-        }
-    }
-
     public void reparseConfigFileSecuritySections() throws ConfigurationException
     {
         if (_configFile != null)
@@ -464,14 +474,24 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
         return System.getProperty(QPID_HOME);
     }
 
-    public void setJMXManagementPort(int mport)
+    public void setJMXPortRegistryServer(int registryServerPort)
     {
-        getConfig().setProperty("management.jmxport", mport);
+        getConfig().setProperty(MGMT_JMXPORT_REGISTRYSERVER, registryServerPort);
     }
 
-    public int getJMXManagementPort()
+    public int getJMXPortRegistryServer()
     {
-        return getIntValue("management.jmxport", DEFAULT_JMXPORT);
+        return getIntValue(MGMT_JMXPORT_REGISTRYSERVER, DEFAULT_JMXPORT_REGISTRYSERVER);
+    }
+
+    public void setJMXPortConnectorServer(int connectorServerPort)
+    {
+        getConfig().setProperty(MGMT_JMXPORT_CONNECTORSERVER, connectorServerPort);
+    }
+
+    public int getJMXConnectorServerPort()
+    {
+        return getIntValue(MGMT_JMXPORT_CONNECTORSERVER, getJMXPortRegistryServer() + JMXPORT_CONNECTORSERVER_OFFSET);
     }
 
     public boolean getUseCustomRMISocketFactory()
@@ -512,28 +532,6 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
     public void setVirtualHostConfig(VirtualHostConfiguration config)
     {
         _virtualHosts.put(config.getName(), config);
-    }
-
-    public List<String> getPrincipalDatabaseNames()
-    {
-        return getListValue("security.principal-databases.principal-database.name");
-    }
-
-    public List<String> getPrincipalDatabaseClass()
-    {
-        return getListValue("security.principal-databases.principal-database.class");
-    }
-
-    public List<String> getPrincipalDatabaseAttributeNames(int index)
-    {
-        String name = "security.principal-databases.principal-database(" + index + ")." + "attributes.attribute.name";
-        return getListValue(name);
-    }
-
-    public List<String> getPrincipalDatabaseAttributeValues(int index)
-    {
-        String name = "security.principal-databases.principal-database(" + index + ")." + "attributes.attribute.value";
-        return getListValue(name);
     }
 
     public int getFrameSize()
@@ -703,12 +701,12 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
 
     public String getKeystorePath()
     {
-        return getStringValue("connector.ssl.keystorePath", "none");
+        return getStringValue("connector.ssl.keystorePath");
     }
 
     public String getKeystorePassword()
     {
-        return getStringValue("connector.ssl.keystorePassword", "none");
+        return getStringValue("connector.ssl.keystorePassword");
     }
 
     public String getCertType()
@@ -731,16 +729,14 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
          getConfig().setProperty("virtualhosts.default", vhost);
     }    
 
-    public void setHousekeepingExpiredMessageCheckPeriod(long value)
+    public void setHousekeepingCheckPeriod(long value)
     {
-        getConfig().setProperty("housekeeping.expiredMessageCheckPeriod", value);
+        getConfig().setProperty("housekeeping.checkPeriod", value);
     }
 
     public long getHousekeepingCheckPeriod()
     {
-        return getLongValue("housekeeping.checkPeriod",
-                                   getLongValue("housekeeping.expiredMessageCheckPeriod",
-                                                       DEFAULT_HOUSEKEEPING_PERIOD));
+        return getLongValue("housekeeping.checkPeriod", DEFAULT_HOUSEKEEPING_PERIOD);
     }
 
     public long getStatisticsSamplePeriod()

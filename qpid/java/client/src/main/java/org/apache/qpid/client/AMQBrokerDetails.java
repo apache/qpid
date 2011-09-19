@@ -26,7 +26,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.qpid.jms.BrokerDetails;
-import org.apache.qpid.jms.ConnectionURL;
+import org.apache.qpid.transport.ConnectionSettings;
 import org.apache.qpid.url.URLHelper;
 import org.apache.qpid.url.URLSyntaxException;
 
@@ -37,8 +37,6 @@ public class AMQBrokerDetails implements BrokerDetails
     private String _transport;
 
     private Map<String, String> _options = new HashMap<String, String>();
-
-    private SSLConfiguration _sslConfiguration;
 
     public AMQBrokerDetails(){}
     
@@ -200,11 +198,10 @@ public class AMQBrokerDetails implements BrokerDetails
         }
     }
 
-    public AMQBrokerDetails(String host, int port, SSLConfiguration sslConfiguration)
+    public AMQBrokerDetails(String host, int port)
     {
         _host = host;
         _port = port;
-        _sslConfiguration = sslConfiguration;
     }
 
     public String getHost()
@@ -280,16 +277,6 @@ public class AMQBrokerDetails implements BrokerDetails
         setProperty(OPTIONS_CONNECT_TIMEOUT, Long.toString(timeout));
     }
 
-    public SSLConfiguration getSSLConfiguration()
-    {
-        return _sslConfiguration;
-    }
-
-    public void setSSLConfiguration(SSLConfiguration sslConfig)
-    {
-        _sslConfiguration = sslConfig;
-    }
-
     public String toString()
     {
         StringBuffer sb = new StringBuffer();
@@ -316,9 +303,8 @@ public class AMQBrokerDetails implements BrokerDetails
 
         return _host.equalsIgnoreCase(bd.getHost()) &&
                (_port == bd.getPort()) &&
-               _transport.equalsIgnoreCase(bd.getTransport()) &&
-               compareSSLConfigurations(bd.getSSLConfiguration());
-        //todo do we need to compare all the options as well?
+               _transport.equalsIgnoreCase(bd.getTransport());
+        //TODO do we need to compare all the options as well?
     }
 
     @Override
@@ -359,24 +345,6 @@ public class AMQBrokerDetails implements BrokerDetails
         return optionsURL.toString();
     }
 
-    // Do we need to do a more in-depth comparison?
-    private boolean compareSSLConfigurations(SSLConfiguration other)
-    {
-        boolean retval = false;
-        if (_sslConfiguration == null &&
-                other == null)
-        {
-            retval = true;
-        }
-        else if (_sslConfiguration != null &&
-                other != null)
-        {
-            retval = true;
-        }
-
-        return retval;
-    }
-
     public static String checkTransport(String broker)
     {
         if ((!broker.contains("://")))
@@ -397,5 +365,83 @@ public class AMQBrokerDetails implements BrokerDetails
     public void setProperties(Map<String, String> props)
     {
         _options = props;
+    }
+
+    public ConnectionSettings buildConnectionSettings()
+    {
+        ConnectionSettings conSettings = new ConnectionSettings();
+
+        conSettings.setHost(getHost());
+        conSettings.setPort(getPort());
+
+        // ------------ sasl options ---------------
+        if (getProperty(BrokerDetails.OPTIONS_SASL_MECHS) != null)
+        {
+            conSettings.setSaslMechs(
+                    getProperty(BrokerDetails.OPTIONS_SASL_MECHS));
+        }
+
+        // Sun SASL Kerberos client uses the
+        // protocol + servername as the service key.
+
+        if (getProperty(BrokerDetails.OPTIONS_SASL_PROTOCOL_NAME) != null)
+        {
+            conSettings.setSaslProtocol(
+                    getProperty(BrokerDetails.OPTIONS_SASL_PROTOCOL_NAME));
+        }
+
+
+        if (getProperty(BrokerDetails.OPTIONS_SASL_SERVER_NAME) != null)
+        {
+            conSettings.setSaslServerName(
+                    getProperty(BrokerDetails.OPTIONS_SASL_SERVER_NAME));
+        }
+
+        conSettings.setUseSASLEncryption(
+                getBooleanProperty(BrokerDetails.OPTIONS_SASL_ENCRYPTION));
+
+        // ------------- ssl options ---------------------
+        conSettings.setUseSSL(getBooleanProperty(BrokerDetails.OPTIONS_SSL));
+
+        if (getProperty(BrokerDetails.OPTIONS_TRUST_STORE) != null)
+        {
+            conSettings.setTrustStorePath(
+                    getProperty(BrokerDetails.OPTIONS_TRUST_STORE));
+        }
+
+        if (getProperty(BrokerDetails.OPTIONS_TRUST_STORE_PASSWORD) != null)
+        {
+            conSettings.setTrustStorePassword(
+                    getProperty(BrokerDetails.OPTIONS_TRUST_STORE_PASSWORD));
+        }
+
+        if (getProperty(BrokerDetails.OPTIONS_KEY_STORE) != null)
+        {
+            conSettings.setKeyStorePath(
+                    getProperty(BrokerDetails.OPTIONS_KEY_STORE));
+        }
+
+        if (getProperty(BrokerDetails.OPTIONS_KEY_STORE_PASSWORD) != null)
+        {
+            conSettings.setKeyStorePassword(
+                    getProperty(BrokerDetails.OPTIONS_KEY_STORE_PASSWORD));
+        }
+
+        if (getProperty(BrokerDetails.OPTIONS_SSL_CERT_ALIAS) != null)
+        {
+            conSettings.setCertAlias(
+                    getProperty(BrokerDetails.OPTIONS_SSL_CERT_ALIAS));
+        }
+        // ----------------------------
+
+        conSettings.setVerifyHostname(getBooleanProperty(BrokerDetails.OPTIONS_SSL_VERIFY_HOSTNAME));
+
+        if (getProperty(BrokerDetails.OPTIONS_TCP_NO_DELAY) != null)
+        {
+            conSettings.setTcpNodelay(
+                    getBooleanProperty(BrokerDetails.OPTIONS_TCP_NO_DELAY));
+        }
+
+        return conSettings;
     }
 }

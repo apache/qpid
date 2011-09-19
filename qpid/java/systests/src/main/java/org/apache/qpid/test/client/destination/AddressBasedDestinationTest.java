@@ -49,11 +49,13 @@ import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.AMQSession_0_10;
+import org.apache.qpid.client.message.QpidMessageProperties;
 import org.apache.qpid.client.messaging.address.Node.ExchangeNode;
 import org.apache.qpid.client.messaging.address.Node.QueueNode;
 import org.apache.qpid.jndi.PropertiesFileInitialContextFactory;
 import org.apache.qpid.messaging.Address;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
+import org.apache.qpid.transport.ExecutionErrorCode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -210,7 +212,7 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
                                  "durable: true ," +
                                  "x-declare: " +
                                  "{" + 
-                                     "auto-delete: true," +
+                                     "exclusive: true," +
                                      "arguments: {" +  
                                         "'qpid.max_size': 1000," +
                                         "'qpid.max_count': 100" +
@@ -226,6 +228,9 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
                       "}";
         AMQDestination dest = new AMQAnyDestination(addr);
         MessageConsumer cons = jmsSession.createConsumer(dest); 
+        cons.close();
+        
+        // Even if the consumer is closed the queue and the bindings should be intact.
         
         assertTrue("Queue not created as expected",(
                 (AMQSession_0_10)jmsSession).isQueueExist(dest,(QueueNode)dest.getSourceNode(), true));              
@@ -254,12 +259,44 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
                 (AMQSession_0_10)jmsSession).isQueueBound("amq.match", 
                     dest.getAddressName(),null, args));
         
+        MessageProducer prod = jmsSession.createProducer(dest);
+        prod.send(jmsSession.createTextMessage("test"));
+        
+        MessageConsumer cons2 = jmsSession.createConsumer(jmsSession.createQueue("ADDR:my-queue"));
+        Message m = cons2.receive(1000);
+        assertNotNull("Should receive message sent to my-queue",m);
+        assertEquals("The subject set in the message is incorrect","hello",m.getStringProperty(QpidMessageProperties.QPID_SUBJECT));
     }
     
     public void testCreateExchange() throws Exception
     {
+        createExchangeImpl(false, false);
+    }
+
+    /**
+     * Verify creating an exchange via an Address, with supported
+     * exchange-declare arguments.
+     */
+    public void testCreateExchangeWithArgs() throws Exception
+    {
+        createExchangeImpl(true, false);
+    }
+
+    /**
+     * Verify that when creating an exchange via an Address, if a
+     * nonsense argument is specified the broker throws an execution
+     * exception back on the session with NOT_IMPLEMENTED status.
+     */
+    public void testCreateExchangeWithNonsenseArgs() throws Exception
+    {
+        createExchangeImpl(true, true);
+    }
+
+    private void createExchangeImpl(final boolean withExchangeArgs,
+            final boolean useNonsenseArguments) throws Exception
+    {
         Session jmsSession = _connection.createSession(false,Session.AUTO_ACKNOWLEDGE);
-        
+
         String addr = "ADDR:my-exchange/hello; " + 
                       "{ " + 
                         "create: always, " +                        
@@ -269,17 +306,36 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
                              "x-declare: " +
                              "{ " + 
                                  "type:direct, " + 
-                                 "auto-delete: true, " +
-                                 "arguments: {" +  
-                                   "'qpid.msg_sequence': 1, " +
-                                   "'qpid.ive': 1" +
-                                 "}" +
+                                 "auto-delete: true" +
+                                 createExchangeArgsString(withExchangeArgs, useNonsenseArguments) +
                              "}" +
                         "}" +
                       "}";
         
         AMQDestination dest = new AMQAnyDestination(addr);
-        MessageConsumer cons = jmsSession.createConsumer(dest); 
+
+        MessageConsumer cons;
+        try
+        {
+            cons = jmsSession.createConsumer(dest);
+            if(useNonsenseArguments)
+            {
+                fail("Expected execution exception during exchange declare did not occur");
+            }
+        }
+        catch(JMSException e)
+        {
+            if(useNonsenseArguments && e.getCause().getMessage().contains(ExecutionErrorCode.NOT_IMPLEMENTED.toString()))
+            {
+                //expected because we used an argument which the broker doesn't have functionality
+                //for. We can't do the rest of the test as a result of the exception, just stop.
+                return;
+            }
+            else
+            {
+                fail("Unexpected exception whilst creating consumer: " + e);
+            }
+        }
         
         assertTrue("Exchange not created as expected",(
                 (AMQSession_0_10)jmsSession).isExchangeExist(dest, (ExchangeNode)dest.getTargetNode() , true));
@@ -294,6 +350,32 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
         cons = jmsSession.createConsumer(dest); 
     }
     
+    private String createExchangeArgsString(final boolean withExchangeArgs,
+                                            final boolean useNonsenseArguments)
+    {
+        String argsString;
+
+        if(withExchangeArgs && useNonsenseArguments)
+        {
+            argsString = ", arguments: {" +
+            "'abcd.1234.wxyz': 1, " +
+            "}";
+        }
+        else if(withExchangeArgs)
+        {
+            argsString = ", arguments: {" +
+            "'qpid.msg_sequence': 1, " +
+            "'qpid.ive': 1" +
+            "}";
+        }
+        else
+        {
+            argsString = "";
+        }
+
+        return argsString;
+    }
+
     public void checkQueueForBindings(Session jmsSession, AMQDestination dest,String headersBinding) throws Exception
     {
     	assertTrue("Queue not created as expected",(
@@ -547,10 +629,24 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
     }
     
     /**
-     * Test goal: Verifies that session.creatTopic method
-     *            works as expected both with the new and old addressing scheme.
+     * Test goal: Verifies that session.creatTopic method works as expected
+     * both with the new and old addressing scheme.
      */
     public void testSessionCreateTopic() throws Exception
+    {
+        sessionCreateTopicImpl(false);
+    }
+
+    /**
+     * Test goal: Verifies that session.creatTopic method works as expected
+     * both with the new and old addressing scheme when adding exchange arguments.
+     */
+    public void testSessionCreateTopicWithExchangeArgs() throws Exception
+    {
+        sessionCreateTopicImpl(true);
+    }
+
+    private void sessionCreateTopicImpl(boolean withExchangeArgs) throws Exception
     {
         Session ssn = _connection.createSession(false,Session.AUTO_ACKNOWLEDGE);
         
@@ -571,7 +667,7 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
         prod.send(ssn.createTextMessage("test"));
         assertNotNull("consumer should receive a message",cons.receive(1000));
         cons.close();
-        
+
         String addr = "ADDR:vehicles/bus; " + 
         "{ " + 
           "create: always, " +                        
@@ -581,11 +677,8 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
                "x-declare: " +
                "{ " + 
                    "type:direct, " + 
-                   "auto-delete: true, " +
-                   "arguments: {" +  
-                       "'qpid.msg_sequence': 1, " +
-                       "'qpid.ive': 1" + 
-                   "}" +
+                   "auto-delete: true" +
+                   createExchangeArgsString(withExchangeArgs, false) +
                "}" +
           "}, " +
           "link: {name : my-topic, " +
@@ -697,7 +790,7 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
     public void testSubscriptionForSameDestination() throws Exception
     {
         Session ssn = _connection.createSession(false,Session.AUTO_ACKNOWLEDGE);        
-        Destination dest = ssn.createTopic("ADDR:amq.topic/foo");
+        Destination dest = ssn.createTopic("ADDR:amq.topic/foo; {link:{durable:true}}");
         MessageConsumer consumer1 = ssn.createConsumer(dest);
         MessageConsumer consumer2 = ssn.createConsumer(dest);
         MessageProducer prod = ssn.createProducer(dest);

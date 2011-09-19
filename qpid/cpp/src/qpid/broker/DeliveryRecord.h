@@ -90,7 +90,7 @@ class DeliveryRecord
 
     bool isAcquired() const { return acquired; }
     bool isComplete() const { return completed; }
-    bool isRedundant() const { return ended && (!windowing || completed); }     // msg no longer needed - can discard
+    bool isRedundant() const { return ended && (!windowing || completed || cancelled); }
     bool isCancelled() const { return cancelled; }
     bool isAccepted() const { return !acceptExpected; }
     bool isEnded() const { return ended; }

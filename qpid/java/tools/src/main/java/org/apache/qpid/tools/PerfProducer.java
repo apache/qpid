@@ -23,13 +23,15 @@ package org.apache.qpid.tools;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.CountDownLatch;
 
 import javax.jms.BytesMessage;
 import javax.jms.DeliveryMode;
+import javax.jms.MapMessage;
 import javax.jms.Message;
-import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
 
+import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.thread.Threading;
 
 /**
@@ -51,9 +53,17 @@ import org.apache.qpid.thread.Threading;
  * System throughput and latencies calculated by the PerfConsumer are more realistic
  * numbers.
  *
+ * Answer by rajith : I agree about in memory buffering affecting rates. But Based on test runs
+ * I have done so far, it seems quite useful to compute the producer rate as it gives an
+ * indication of how the system behaves. For ex if there is a gap between producer and consumer rates
+ * you could clearly see the higher latencies and when producer and consumer rates are very close,
+ * latency is good.
+ *
  */
 public class PerfProducer extends PerfBase
 {
+    private static long SEC = 60000;
+
     MessageProducer producer;
     Message msg;
     Object payload;
@@ -63,51 +73,25 @@ public class PerfProducer extends PerfBase
     boolean durable = false;
     Random random;
     int msgSizeRange = 1024;
+    boolean rateLimitProducer = false;
+    double rateFactor = 0.4;
+    double rate = 0.0;
 
-    enum MessageType {
-        BYTES, TEXT, MAP, OBJECT;
-
-        public static MessageType getType(String s) throws Exception
-        {
-            if ("text".equalsIgnoreCase(s))
-            {
-                return TEXT;
-            }
-            else if ("bytes".equalsIgnoreCase(s))
-            {
-                return BYTES;
-            }
-            /*else if ("map".equalsIgnoreCase(s))
-            {
-                return MAP;
-            }
-            else if ("object".equalsIgnoreCase(s))
-            {
-                return OBJECT;
-            }*/
-            else
-            {
-                throw new Exception("Unsupported message type");
-            }
-        }
-    };
-
-    MessageType msgType = MessageType.BYTES;
-
-    public PerfProducer()
+    public PerfProducer(String prefix)
     {
-        super();
+        super(prefix);
+        System.out.println("Producer ID : " + id);
     }
 
     public void setUp() throws Exception
     {
         super.setUp();
-        feedbackDest = session.createTemporaryQueue();
-
         durable = params.isDurable();
-        msgType = MessageType.getType(params.getMessageType());
-
-        System.out.println("Using " + msgType + " messages");
+        rateLimitProducer = params.getRate() > 0 ? true : false;
+        if (rateLimitProducer)
+        {
+            System.out.println("The test will attempt to limit the producer to " + params.getRate() + " msg/sec");
+        }
 
         // if message caching is enabled we pre create the message
         // else we pre create the payload
@@ -138,8 +122,13 @@ public class PerfProducer extends PerfBase
         }
 
         producer = session.createProducer(dest);
+        System.out.println("Producer: " + id + " Sending messages to: " + ((AMQDestination)dest).getQueueName());
         producer.setDisableMessageID(params.isDisableMessageID());
         producer.setDisableMessageTimestamp(params.isDisableTimestamp());
+
+        MapMessage m = controllerSession.createMapMessage();
+        m.setInt(CODE, OPCode.REGISTER_PRODUCER.ordinal());
+        sendMessageToController(m);
     }
 
     Object createPayload(int size)
@@ -167,7 +156,6 @@ public class PerfProducer extends PerfBase
             return m;
         }
     }
-
 
     protected Message getNextMessage() throws Exception
     {
@@ -197,96 +185,109 @@ public class PerfProducer extends PerfBase
 
     public void warmup()throws Exception
     {
-        System.out.println("Warming up......");
-        MessageConsumer tmp = session.createConsumer(feedbackDest);
+        receiveFromController(OPCode.PRODUCER_STARTWARMUP);
+        System.out.println("Producer: " + id + " Warming up......");
 
         for (int i=0; i < params.getWarmupCount() -1; i++)
         {
             producer.send(getNextMessage());
         }
-        Message msg = session.createTextMessage("End");
-        msg.setJMSReplyTo(feedbackDest);
-        producer.send(msg);
+        sendEndMessage();
 
         if (params.isTransacted())
         {
             session.commit();
         }
-
-        tmp.receive();
-
-        if (params.isTransacted())
-        {
-            session.commit();
-        }
-
-        tmp.close();
     }
 
     public void startTest() throws Exception
     {
-        System.out.println("Starting test......");
+        resetCounters();
+        receiveFromController(OPCode.PRODUCER_START);
         int count = params.getMsgCount();
         boolean transacted = params.isTransacted();
         int tranSize =  params.getTransactionSize();
 
-        long start = System.currentTimeMillis();
+        long limit = (long)(params.getRate() * rateFactor); // in msecs
+        long timeLimit = (long)(SEC * rateFactor); // in msecs
+
+        long start = Clock.getTime(); // defaults to nano secs
+        long interval = start;
         for(int i=0; i < count; i++ )
         {
             Message msg = getNextMessage();
-            msg.setJMSTimestamp(System.currentTimeMillis());
+            msg.setLongProperty(TIMESTAMP, Clock.getTime());
             producer.send(msg);
             if ( transacted && ((i+1) % tranSize == 0))
             {
                 session.commit();
             }
+
+            if (rateLimitProducer && i%limit == 0)
+            {
+                long elapsed = (Clock.getTime() - interval)*Clock.convertToMiliSecs(); // in msecs
+                if (elapsed < timeLimit)
+                {
+                    Thread.sleep(elapsed);
+                }
+                interval = Clock.getTime();
+
+            }
         }
-        long time = System.currentTimeMillis() - start;
-        double rate = ((double)count/(double)time)*1000;
+        sendEndMessage();
+        if ( transacted)
+        {
+            session.commit();
+        }
+        long time = Clock.getTime() - start;
+        rate = (double)count*Clock.convertToSecs()/(double)time;
         System.out.println(new StringBuilder("Producer rate: ").
                                append(df.format(rate)).
                                append(" msg/sec").
                                toString());
     }
 
-    public void waitForCompletion() throws Exception
+    public void resetCounters()
     {
-        MessageConsumer tmp = session.createConsumer(feedbackDest);
-        Message msg = session.createTextMessage("End");
-        msg.setJMSReplyTo(feedbackDest);
-        producer.send(msg);
 
-        if (params.isTransacted())
-        {
-            session.commit();
-        }
-
-        tmp.receive();
-
-        if (params.isTransacted())
-        {
-            session.commit();
-        }
-
-        tmp.close();
-        System.out.println("Consumer has completed the test......");
     }
 
+    public void sendEndMessage() throws Exception
+    {
+        Message msg = session.createMessage();
+        msg.setBooleanProperty("End", true);
+        producer.send(msg);
+    }
+
+    public void sendResults() throws Exception
+    {
+        MapMessage msg = controllerSession.createMapMessage();
+        msg.setInt(CODE, OPCode.RECEIVED_PRODUCER_STATS.ordinal());
+        msg.setDouble(PROD_RATE, rate);
+        sendMessageToController(msg);
+    }
+
+    @Override
     public void tearDown() throws Exception
     {
-        producer.close();
-        session.close();
-        con.close();
+        super.tearDown();
     }
 
-    public void test()
+    public void run()
     {
         try
         {
             setUp();
             warmup();
-            startTest();
-            waitForCompletion();
+            boolean nextIteration = true;
+            while (nextIteration)
+            {
+                System.out.println("=========================================================\n");
+                System.out.println("Producer: " + id + " starting a new iteration ......\n");
+                startTest();
+                sendResults();
+                nextIteration = continueTest();
+            }
             tearDown();
         }
         catch(Exception e)
@@ -295,27 +296,63 @@ public class PerfProducer extends PerfBase
         }
     }
 
-
-    public static void main(String[] args)
+    public void startControllerIfNeeded()
     {
-        final PerfProducer prod = new PerfProducer();
-        Runnable r = new Runnable()
+        if (!params.isExternalController())
         {
-            public void run()
+            final PerfTestController controller = new PerfTestController();
+            Runnable r = new Runnable()
             {
-                prod.test();
-            }
-        };
+                public void run()
+                {
+                    controller.run();
+                }
+            };
 
-        Thread t;
-        try
-        {
-            t = Threading.getThreadFactory().createThread(r);
+            Thread t;
+            try
+            {
+                t = Threading.getThreadFactory().createThread(r);
+            }
+            catch(Exception e)
+            {
+                throw new Error("Error creating controller thread",e);
+            }
+            t.start();
         }
-        catch(Exception e)
+    }
+
+
+    public static void main(String[] args) throws InterruptedException
+    {
+        String scriptId = (args.length == 1) ? args[0] : "";
+        int conCount = Integer.getInteger("con_count",1);
+        final CountDownLatch testCompleted = new CountDownLatch(conCount);
+        for (int i=0; i < conCount; i++)
         {
-            throw new Error("Error creating producer thread",e);
+            final PerfProducer prod = new PerfProducer(scriptId + i);
+            prod.startControllerIfNeeded();
+            Runnable r = new Runnable()
+            {
+                public void run()
+                {
+                    prod.run();
+                    testCompleted.countDown();
+                }
+            };
+
+            Thread t;
+            try
+            {
+                t = Threading.getThreadFactory().createThread(r);
+            }
+            catch(Exception e)
+            {
+                throw new Error("Error creating producer thread",e);
+            }
+            t.start();
         }
-        t.start();
+        testCompleted.await();
+        System.out.println("Producers have completed the test......");
     }
 }

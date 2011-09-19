@@ -611,6 +611,28 @@ QPID_AUTO_TEST_CASE(testAssertPolicyQueue)
     fix.admin.deleteQueue("q");
 }
 
+QPID_AUTO_TEST_CASE(testAssertExchangeOption)
+{
+    MessagingFixture fix;
+    std::string a1 = "e; {create:always, assert:always, node:{type:topic, x-declare:{type:direct, arguments:{qpid.msg_sequence:True}}}}";
+    Sender s1 = fix.session.createSender(a1);
+    s1.close();
+    Receiver r1 = fix.session.createReceiver(a1);
+    r1.close();
+
+    std::string a2 = "e; {assert:receiver, node:{type:topic, x-declare:{type:fanout, arguments:{qpid.msg_sequence:True}}}}";
+    Sender s2 = fix.session.createSender(a2);
+    s2.close();
+    BOOST_CHECK_THROW(fix.session.createReceiver(a2), qpid::messaging::AssertionFailed);
+
+    std::string a3 = "e; {assert:sender, node:{x-declare:{arguments:{qpid.msg_sequence:False}}}}";
+    BOOST_CHECK_THROW(fix.session.createSender(a3), qpid::messaging::AssertionFailed);
+    Receiver r3 = fix.session.createReceiver(a3);
+    r3.close();
+
+    fix.admin.deleteExchange("e");
+}
+
 QPID_AUTO_TEST_CASE(testGetSender)
 {
     QueueFixture fix;
@@ -1062,6 +1084,20 @@ QPID_AUTO_TEST_CASE(testAcknowledgeUpTo)
     Message m;
     //check queue is empty
     BOOST_CHECK(!fix.session.createReceiver(fix.queue).fetch(m, Duration::IMMEDIATE));
+}
+
+QPID_AUTO_TEST_CASE(testCreateBindingsOnStandardExchange)
+{
+    QueueFixture fix;
+    Sender sender = fix.session.createSender((boost::format("amq.direct; {create:always, node:{type:topic, x-bindings:[{queue:%1%, key:my-subject}]}}") % fix.queue).str());
+    Message out("test-message");
+    out.setSubject("my-subject");
+    sender.send(out);
+    Receiver receiver = fix.session.createReceiver(fix.queue);
+    Message in = receiver.fetch(Duration::SECOND * 5);
+    fix.session.acknowledge();
+    BOOST_CHECK_EQUAL(in.getContent(), out.getContent());
+    BOOST_CHECK_EQUAL(in.getSubject(), out.getSubject());
 }
 
 QPID_AUTO_TEST_SUITE_END()

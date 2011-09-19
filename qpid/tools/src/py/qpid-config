@@ -39,11 +39,6 @@ Usage:  qpid-config [OPTIONS]
         qpid-config [OPTIONS] unbind <exchange-name> <queue-name> [binding-key]"""
 
 description = """
-ADDRESS syntax:
-
-      [username/password@] hostname [:<port>]
-      [username/password@] ip-address [:<port>]
-
 Examples:
 
 $ qpid-config add queue q
@@ -102,6 +97,7 @@ class Config:
         self._flowStopSize      = None
         self._flowResumeSize    = None
         self._extra_arguments   = []
+        self._returnCode        = 0
 
 config = Config()
 
@@ -159,7 +155,7 @@ def OptionsAndArguments(argv):
     group1 = OptionGroup(parser, "General Options")
     group1.add_option("-t", "--timeout", action="store", type="int", default=10, metavar="<secs>", help="Maximum time to wait for broker connection (in seconds)")
     group1.add_option("-b", "--bindings", action="store_true", help="Show bindings in queue or exchange list")
-    group1.add_option("-a", "--broker-addr", action="store", type="string", default="localhost:5672", metavar="<address>", help="Address of qpidd broker")
+    group1.add_option("-a", "--broker-addr", action="store", type="string", default="localhost:5672", metavar="<address>", help="Address of qpidd broker with syntax: [username/password@] hostname | ip-address [:<port>]")
     group1.add_option("--sasl-mechanism", action="store", type="string", metavar="<mech>", help="SASL mechanism for authentication (e.g. EXTERNAL, ANONYMOUS, PLAIN, CRAM-MD, DIGEST-MD5, GSSAPI). SASL automatically picks the most secure available mechanism - use this option to override.")
     parser.add_option_group(group1)
 
@@ -172,7 +168,7 @@ def OptionsAndArguments(argv):
     group3 = OptionGroup(parser, "Options for Adding Queues")
     group3.add_option("--cluster-durable", action="store_true", help="The new queue becomes durable if there is only one functioning cluster node")
     group3.add_option("--file-count", action="store", type="int", default=8, metavar="<n>", help="Number of files in queue's persistence journal")
-    group3.add_option("--file-size", action="store", type="int", default=24, metavar="<n>", help="File size in pages (64Kib/page)")
+    group3.add_option("--file-size", action="store", type="int", default=24, metavar="<n>", help="File size in pages (64KiB/page)")
     group3.add_option("--max-queue-size", action="store", type="int", metavar="<n>", help="Maximum in-memory queue size as bytes")
     group3.add_option("--max-queue-count", action="store", type="int", metavar="<n>", help="Maximum in-memory queue size as a number of messages")
     group3.add_option("--limit-policy", action="store", choices=["none", "reject", "flow-to-disk", "ring", "ring-strict"], metavar="<policy>", help="Action to take when queue limit is reached")
@@ -359,9 +355,16 @@ class BrokerManager:
         caption1 = "Type      "
         caption2 = "Exchange Name"
         maxNameLen = len(caption2)
+        found = False
         for ex in exchanges:
             if self.match(ex.name, filter):
                 if len(ex.name) > maxNameLen:  maxNameLen = len(ex.name)
+                found = True
+        if not found:
+            global config
+            config._returnCode = 1
+            return
+
         print "%s%-*s  Attributes" % (caption1, maxNameLen, caption2)
         line = ""
         for i in range(((maxNameLen + len(caption1)) / 5) + 5):
@@ -398,12 +401,18 @@ class BrokerManager:
 
     def QueueList(self, filter):
         queues = self.qmf.getObjects(_class="queue", _agent=self.brokerAgent)
-
         caption = "Queue Name"
         maxNameLen = len(caption)
+        found = False
         for q in queues:
             if self.match(q.name, filter):
                 if len(q.name) > maxNameLen:  maxNameLen = len(q.name)
+                found = True
+        if not found:
+            global config
+            config._returnCode = 1
+            return
+
         print "%-*s  Attributes" % (maxNameLen, caption)
         line = ""
         for i in range((maxNameLen / 5) + 5):
@@ -675,7 +684,7 @@ def main(argv=None):
                 print "Failed: %s: %s" % (e.__class__.__name__, e)
                 return 1
 
-    return 0
+    return config._returnCode
 
 if __name__ == "__main__":
         sys.exit(main())

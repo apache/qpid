@@ -164,6 +164,121 @@ acl allow all all
             self.fail("Expected exception")
         except messaging.exceptions.NotFound: pass
 
+    def test_sasl_join(self):
+        """Verify SASL authentication between brokers when joining a cluster."""
+        sasl_config=os.path.join(self.rootdir, "sasl_config")
+
+                # Valid user/password, ensure queue is created.
+        c = cluster[0].connect(username="zig", password="zig")
+        c.session().sender("ziggy;{create:always}")
+        c.close()
+        c = cluster[1].connect(username="zig", password="zig")
+        c.session().receiver("ziggy;{assert:always}")
+        c.close()
+        for b in cluster: b.ready()     # Make sure all brokers still running.
+
+        # Valid user, bad password
+        try:
+            cluster[0].connect(username="zig", password="foo").close()
+            self.fail("Expected exception")
+        except messaging.exceptions.ConnectionError: pass
+        for b in cluster: b.ready()     # Make sure all brokers still running.
+
+        # Bad user ID
+        try:
+            cluster[0].connect(username="foo", password="bar").close()
+            self.fail("Expected exception")
+        except messaging.exceptions.ConnectionError: pass
+        for b in cluster: b.ready()     # Make sure all brokers still running.
+
+        # Action disallowed by ACL
+        c = cluster[0].connect(username="zag", password="zag")
+        try:
+            s = c.session()
+            s.sender("zaggy;{create:always}")
+            s.close()
+            self.fail("Expected exception")
+        except messaging.exceptions.UnauthorizedAccess: pass
+        # make sure the queue was not created at the other node.
+        c = cluster[0].connect(username="zag", password="zag")
+        try:
+            s = c.session()
+            s.sender("zaggy;{assert:always}")
+            s.close()
+            self.fail("Expected exception")
+        except messaging.exceptions.NotFound: pass
+
+    def test_sasl_join(self):
+        """Verify SASL authentication between brokers when joining a cluster."""
+        # Valid user/password, ensure queue is created.
+        c = cluster[0].connect(username="zig", password="zig")
+        c.session().sender("ziggy;{create:always}")
+        c.close()
+        c = cluster[1].connect(username="zig", password="zig")
+        c.session().receiver("ziggy;{assert:always}")
+        c.close()
+        for b in cluster: b.ready()     # Make sure all brokers still running.
+
+        # Valid user, bad password
+        try:
+            cluster[0].connect(username="zig", password="foo").close()
+            self.fail("Expected exception")
+        except messaging.exceptions.ConnectionError: pass
+        for b in cluster: b.ready()     # Make sure all brokers still running.
+
+        # Bad user ID
+        try:
+            cluster[0].connect(username="foo", password="bar").close()
+            self.fail("Expected exception")
+        except messaging.exceptions.ConnectionError: pass
+        for b in cluster: b.ready()     # Make sure all brokers still running.
+
+        # Action disallowed by ACL
+        c = cluster[0].connect(username="zag", password="zag")
+        try:
+            s = c.session()
+            s.sender("zaggy;{create:always}")
+            s.close()
+            self.fail("Expected exception")
+        except messaging.exceptions.UnauthorizedAccess: pass
+        # make sure the queue was not created at the other node.
+        c = cluster[0].connect(username="zag", password="zag")
+        try:
+            s = c.session()
+            s.sender("zaggy;{assert:always}")
+            s.close()
+            self.fail("Expected exception")
+        except messaging.exceptions.NotFound: pass
+
+    def test_sasl_join(self):
+        """Verify SASL authentication between brokers when joining a cluster."""
+        sasl_config=os.path.join(self.rootdir, "sasl_config")
+        # Test with a valid username/password
+        cluster = self.cluster(1, args=["--auth", "yes",
+                                        "--sasl-config", sasl_config,
+                                        "--load-module", os.getenv("ACL_LIB"),
+                                        "--cluster-username=zig",
+                                        "--cluster-password=zig",
+                                        "--cluster-mechanism=PLAIN"
+                                        ])
+        cluster.start()
+        cluster.ready()
+        c = cluster[1].connect(username="zag", password="zag")
+
+        # Test with an invalid username/password
+        cluster = self.cluster(1, args=["--auth", "yes",
+                                        "--sasl-config", sasl_config,
+                                        "--load-module", os.getenv("ACL_LIB"),
+                                        "--cluster-username=x",
+                                        "--cluster-password=y",
+                                        "--cluster-mechanism=PLAIN"
+                                        ])
+        try:
+            cluster.start(expect=EXPECT_EXIT_OK)
+            cluster[1].ready()
+            self.fail("Expected exception")
+        except: pass
+
     def test_user_id_update(self):
         """Ensure that user-id of an open session is updated to new cluster members"""
         sasl_config=os.path.join(self.rootdir, "sasl_config")
@@ -713,6 +828,272 @@ acl allow all all
         cluster.start()
         fetch(cluster[2])
 
+# Some utility code for transaction tests
+XA_RBROLLBACK = 1
+XA_RBTIMEOUT = 2
+XA_OK = 0
+dtx_branch_counter = 0
+
+class DtxStatusException(Exception):
+    def __init__(self, expect, actual):
+        self.expect = expect
+        self.actual = actual
+
+    def str(self):
+        return "DtxStatusException(expect=%s, actual=%s)"%(self.expect, self.actual)
+
+class DtxTestFixture:
+    """Bundle together some common requirements for dtx tests."""
+    def __init__(self, test, broker, name, exclusive=False):
+        self.test = test
+        self.broker = broker
+        self.name = name
+        # Use old API. DTX is not supported in messaging API.
+        self.connection = broker.connect_old()
+        self.session = self.connection.session(name, 1) # 1 second timeout
+        self.queue = self.session.queue_declare(name, exclusive=exclusive)
+        self.session.dtx_select()
+        self.consumer = None
+
+    def xid(self, id=None):
+        if id is None: id = self.name
+        return self.session.xid(format=0, global_id=id)
+
+    def check_status(self, expect, actual):
+        if expect != actual: raise DtxStatusException(expect, actual)
+
+    def start(self, id=None, resume=False):
+        self.check_status(XA_OK, self.session.dtx_start(xid=self.xid(id), resume=resume).status)
+
+    def end(self, id=None, suspend=False):
+        self.check_status(XA_OK, self.session.dtx_end(xid=self.xid(id), suspend=suspend).status)
+
+    def prepare(self, id=None):
+        self.check_status(XA_OK, self.session.dtx_prepare(xid=self.xid(id)).status)
+
+    def commit(self, id=None, one_phase=True):
+        self.check_status(
+            XA_OK, self.session.dtx_commit(xid=self.xid(id), one_phase=one_phase).status)
+
+    def rollback(self, id=None):
+        self.check_status(XA_OK, self.session.dtx_rollback(xid=self.xid(id)).status)
+
+    def set_timeout(self, timeout, id=None):
+        self.session.dtx_set_timeout(xid=self.xid(id),timeout=timeout)
+
+    def send(self, messages):
+       for m in messages:
+           dp=self.session.delivery_properties(routing_key=self.name)
+           mp=self.session.message_properties()
+           self.session.message_transfer(message=qpid.datatypes.Message(dp, mp, m))
+
+    def accept(self):
+        """Accept 1 message from queue"""
+        consumer_tag="%s-consumer"%(self.name)
+        self.session.message_subscribe(queue=self.name, destination=consumer_tag)
+        self.session.message_flow(unit = self.session.credit_unit.message, value = 1, destination = consumer_tag)
+        self.session.message_flow(unit = self.session.credit_unit.byte, value = 0xFFFFFFFFL, destination = consumer_tag)
+        msg = self.session.incoming(consumer_tag).get(timeout=1)
+        self.session.message_cancel(destination=consumer_tag)
+        self.session.message_accept(qpid.datatypes.RangedSet(msg.id))
+        return msg
+
+
+    def verify(self, sessions, messages):
+        for s in sessions:
+            self.test.assert_browse(s, self.name, messages)
+
+class DtxTests(BrokerTest):
+
+    def test_dtx_update(self):
+        """Verify that DTX transaction state is updated to a new broker.
+        Start a collection of transactions, then add a new cluster member,
+        then verify they commit/rollback correctly on the new broker."""
+
+        # Note: multiple test have been bundled into one to avoid the need to start/stop
+        # multiple brokers per test.
+
+        cluster=self.cluster(1)
+        sessions = [cluster[0].connect().session()] # For verify
+
+        # Transaction that will be open when new member joins, then committed.
+        t1 = DtxTestFixture(self, cluster[0], "t1")
+        t1.start()
+        t1.send(["1", "2"])
+        t1.verify(sessions, [])          # Not visible outside of transaction
+
+        # Transaction that will be open when  new member joins, then rolled back.
+        t2 = DtxTestFixture(self, cluster[0], "t2")
+        t2.start()
+        t2.send(["1", "2"])
+
+        # Transaction that will be prepared when new member joins, then committed.
+        t3 = DtxTestFixture(self, cluster[0], "t3")
+        t3.start()
+        t3.send(["1", "2"])
+        t3.end()
+        t3.prepare()
+        t1.verify(sessions, [])          # Not visible outside of transaction
+
+        # Transaction that will be prepared when  new member joins, then rolled back.
+        t4 = DtxTestFixture(self, cluster[0], "t4")
+        t4.start()
+        t4.send(["1", "2"])
+        t4.end()
+        t4.prepare()
+
+        # Transaction using an exclusive queue
+        t5 = DtxTestFixture(self, cluster[0], "t5", exclusive=True)
+        t5.start()
+        t5.send(["1", "2"])
+
+        # Accept messages in a transaction before/after join then commit
+        t6 = DtxTestFixture(self, cluster[0], "t6")
+        t6.send(["a","b","c"])
+        t6.start()
+        self.assertEqual(t6.accept().body, "a");
+
+        # Accept messages in a transaction before/after join then roll back
+        t7 = DtxTestFixture(self, cluster[0], "t7")
+        t7.send(["a","b","c"])
+        t7.start()
+        self.assertEqual(t7.accept().body, "a");
+
+        # Ended, suspended transactions across join.
+        t8 = DtxTestFixture(self, cluster[0], "t8")
+        t8.start(id="1")
+        t8.send(["x"])
+        t8.end(id="1", suspend=True)
+        t8.start(id="2")
+        t8.send(["y"])
+        t8.end(id="2")
+        t8.start()
+        t8.send("z")
+
+
+        # Start new cluster member
+        cluster.start()
+        sessions.append(cluster[1].connect().session())
+
+        # Commit t1
+        t1.send(["3","4"])
+        t1.verify(sessions, [])
+        t1.end()
+        t1.commit(one_phase=True)
+        t1.verify(sessions, ["1","2","3","4"])
+
+        # Rollback t2
+        t2.send(["3","4"])
+        t2.end()
+        t2.rollback()
+        t2.verify(sessions, [])
+
+        # Commit t3
+        t3.commit(one_phase=False)
+        t3.verify(sessions, ["1","2"])
+
+        # Rollback t4
+        t4.rollback()
+        t4.verify(sessions, [])
+
+        # Commit t5
+        t5.send(["3","4"])
+        t5.verify(sessions, [])
+        t5.end()
+        t5.commit(one_phase=True)
+        t5.verify(sessions, ["1","2","3","4"])
+
+        # Commit t6
+        self.assertEqual(t6.accept().body, "b");
+        t6.verify(sessions, ["c"])
+        t6.end()
+        t6.commit(one_phase=True)
+        t6.session.close()              # Make sure they're not requeued by the session.
+        t6.verify(sessions, ["c"])
+
+        # Rollback t7
+        self.assertEqual(t7.accept().body, "b");
+        t7.end()
+        t7.rollback()
+        t7.verify(sessions, ["a", "b", "c"])
+
+        # Resume t8
+        t8.end()
+        t8.commit(one_phase=True)
+        t8.start("1", resume=True)
+        t8.end("1")
+        t8.commit("1", one_phase=True)
+        t8.commit("2", one_phase=True)
+        t8.verify(sessions, ["z", "x","y"])
+
+
+    def test_dtx_failover_rollback(self):
+       """Kill a broker during a transaction, verify we roll back correctly"""
+       cluster=self.cluster(1, expect=EXPECT_EXIT_FAIL)
+       cluster.start(expect=EXPECT_RUNNING)
+
+       # Test unprepared at crash
+       t1 = DtxTestFixture(self, cluster[0], "t1")
+       t1.send(["a"])                   # Not in transaction
+       t1.start()
+       t1.send(["b"])                   # In transaction
+
+       # Test prepared at crash
+       t2 = DtxTestFixture(self, cluster[0], "t2")
+       t2.send(["a"])                   # Not in transaction
+       t2.start()
+       t2.send(["b"])                   # In transaction
+       t2.end()
+       t2.prepare()
+
+       # Crash the broker
+       cluster[0].kill()
+
+       # Transactional changes should not appear
+       s = cluster[1].connect().session();
+       self.assert_browse(s, "t1", ["a"])
+       self.assert_browse(s, "t2", ["a"])
+
+    def test_dtx_timeout(self):
+        """Verify that dtx timeout works"""
+        cluster = self.cluster(1)
+        t1 = DtxTestFixture(self, cluster[0], "t1")
+        t1.start()
+        t1.set_timeout(1)
+        time.sleep(1.1)
+        try:
+            t1.end()
+            self.fail("Expected rollback timeout.")
+        except DtxStatusException, e:
+            self.assertEqual(e.actual, XA_RBTIMEOUT)
+
+class TxTests(BrokerTest):
+
+    def test_tx_update(self):
+        """Verify that transaction state is updated to a new broker"""
+
+        def make_message(session, body=None, key=None, id=None):
+            dp=session.delivery_properties(routing_key=key)
+            mp=session.message_properties(correlation_id=id)
+            return qpid.datatypes.Message(dp, mp, body)
+
+        cluster=self.cluster(1)
+        # Use old API. TX is not supported in messaging API.
+        c = cluster[0].connect_old()
+        s = c.session("tx-session", 1)
+        s.queue_declare(queue="q")
+        # Start transaction
+        s.tx_select()
+        s.message_transfer(message=make_message(s, "1", "q"))
+        # Start new member mid-transaction
+        cluster.start()
+        # Do more work
+        s.message_transfer(message=make_message(s, "2", "q"))
+        # Commit the transaction and verify the results.
+        s.tx_commit()
+        for b in cluster: self.assert_browse(b.connect().session(), "q", ["1","2"])
+
+
 class LongTests(BrokerTest):
     """Tests that can run for a long time if -DDURATION=<minutes> is set"""
     def duration(self):
@@ -1001,6 +1382,8 @@ class LongTests(BrokerTest):
         logger = logging.getLogger()
         log_level = logger.getEffectiveLevel()
         logger.setLevel(logging.ERROR)
+        sender = None
+        receiver = None
         try:
             # Start sender and receiver threads
             receiver = Receiver(cluster[0], "q;{create:always}")
@@ -1031,8 +1414,8 @@ class LongTests(BrokerTest):
 
         finally:
             # Detach to avoid slow reconnect attempts during shut-down if test fails.
-            sender.connection.detach()
-            receiver.connection.detach()
+            if sender: sender.connection.detach()
+            if receiver: receiver.connection.detach()
             logger.setLevel(log_level)
 
     def test_msg_group_failover(self):

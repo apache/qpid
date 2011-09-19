@@ -396,7 +396,7 @@ struct Controller : public Client {
     void run() {                // Controller
         try {
             // Wait for subscribers to be ready.
-            process(opts.totalSubs, fqn("sub_ready"), bind(expect, _1, "ready"));
+            process(opts.totalSubs, fqn("sub_ready"), boost::bind(expect, _1, "ready"));
 
             LocalQueue pubDone;
             LocalQueue subDone;
@@ -510,10 +510,11 @@ struct PublishThread : public Client {
             }
             SubscriptionManager subs(session);
             LocalQueue lq;
-            subs.setFlowControl(1, SubscriptionManager::UNLIMITED, true);
-            subs.subscribe(lq, fqn("pub_start"));
+            subs.setFlowControl(0, SubscriptionManager::UNLIMITED, false);
+            Subscription cs = subs.subscribe(lq, fqn("pub_start"));
 
             for (size_t j = 0; j < opts.iterations; ++j) {
+                cs.grantMessageCredit(1);
                 expect(lq.pop().getData(), "start");
                 AbsTime start=now();
                 for (size_t i=0; i<opts.count; i++) {

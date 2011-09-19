@@ -60,12 +60,14 @@ SessionImpl::SessionImpl(ConnectionImpl& c, bool t) : connection(&c), transactio
 
 void SessionImpl::checkError()
 {
+    ScopedLock l(lock);
     qpid::client::SessionBase_0_10Access s(session);
     s.get()->assertOpen();
 }
 
 bool SessionImpl::hasError()
 {
+    ScopedLock l(lock);
     qpid::client::SessionBase_0_10Access s(session);
     return s.get()->hasError();
 }
@@ -129,27 +131,29 @@ void SessionImpl::close()
         senders.clear();
         receivers.clear();
     } else {
-        while (true) {
-            Sender s;
-            {
-                ScopedLock l(lock);
-                if (senders.empty()) break;
-                s = senders.begin()->second;
-            }
-            s.close();  // outside the lock, will call senderCancelled
+        Senders sCopy;
+        Receivers rCopy;
+        {
+            ScopedLock l(lock);
+            senders.swap(sCopy);
+            receivers.swap(rCopy);
         }
-        while (true) {
-            Receiver r;
-            {
-                ScopedLock l(lock);
-                if (receivers.empty()) break;
-                r = receivers.begin()->second;
-            }
-            r.close();  // outside the lock, will call receiverCancelled
+        for (Senders::iterator i = sCopy.begin(); i != sCopy.end(); ++i)
+        {
+            // outside the lock, will call senderCancelled
+            i->second.close();
+        }
+        for (Receivers::iterator i = rCopy.begin(); i != rCopy.end(); ++i)
+        {
+            // outside the lock, will call receiverCancelled
+            i->second.close();
         }
     }
     connection->closed(*this);
-    if (!hasError()) session.close();
+    if (!hasError()) {
+        ScopedLock l(lock);
+        session.close();
+    }
 }
 
 template <class T, class S> boost::intrusive_ptr<S> getImplPtr(T& t)
@@ -432,8 +436,11 @@ uint32_t SessionImpl::getUnsettledAcksImpl(const std::string* destination)
 
 void SessionImpl::syncImpl(bool block)
 {
-    if (block) session.sync();
-    else session.flush();
+    {
+        ScopedLock l(lock);
+        if (block) session.sync();
+        else session.flush();
+    }
     //cleanup unconfirmed accept records:
     incoming.pendingAccept();
 }

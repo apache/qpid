@@ -43,7 +43,7 @@ public class TestParams
 
     private int msg_size = 1024;
 
-    private int msg_type = 1;   // not used yet
+    private int random_msg_size_start_from = 1;
 
     private boolean cacheMessage = false;
 
@@ -67,6 +67,14 @@ public class TestParams
 
     private String msgType = "bytes";
 
+    private boolean printStdDev = false;
+
+    private long rate = -1;
+
+    private boolean externalController = false;
+
+    private boolean useUniqueDest = false; // useful when using multiple connections.
+
     public TestParams()
     {
 
@@ -76,7 +84,6 @@ public class TestParams
         address = System.getProperty("address",address);
 
         msg_size  = Integer.getInteger("msg_size", 1024);
-        msg_type = Integer.getInteger("msg_type",1);
         cacheMessage = Boolean.getBoolean("cache_msg");
         disableMessageID = Boolean.getBoolean("disableMessageID");
         disableTimestamp = Boolean.getBoolean("disableTimestamp");
@@ -88,6 +95,11 @@ public class TestParams
         warmup_count = Integer.getInteger("warmup_count",warmup_count);
         random_msg_size = Boolean.getBoolean("random_msg_size");
         msgType = System.getProperty("msg_type","bytes");
+        printStdDev = Boolean.getBoolean("print_std_dev");
+        rate = Long.getLong("rate",-1);
+        externalController = Boolean.getBoolean("ext_controller");
+        useUniqueDest = Boolean.getBoolean("use_unique_dest");
+        random_msg_size_start_from = Integer.getInteger("random_msg_size_start_from", 1);
     }
 
     public String getUrl()
@@ -125,9 +137,9 @@ public class TestParams
         return msg_size;
     }
 
-    public int getMsgType()
+    public int getRandomMsgSizeStartFrom()
     {
-        return msg_type;
+        return random_msg_size_start_from;
     }
 
     public boolean isDurable()
@@ -173,5 +185,30 @@ public class TestParams
     public String getMessageType()
     {
         return msgType;
+    }
+
+    public boolean isPrintStdDev()
+    {
+        return printStdDev;
+    }
+
+    public long getRate()
+    {
+        return rate;
+    }
+
+    public boolean isExternalController()
+    {
+        return externalController;
+    }
+
+    public void setAddress(String addr)
+    {
+        address = addr;
+    }
+
+    public boolean isUseUniqueDests()
+    {
+        return useUniqueDest;
     }
 }

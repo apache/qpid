@@ -35,8 +35,8 @@ import org.apache.qpid.client.AMQDestination.AddressOption;
 import org.apache.qpid.client.AMQDestination.DestSyntax;
 import org.apache.qpid.client.message.AMQMessageDelegate_0_10;
 import org.apache.qpid.client.message.AbstractJMSMessage;
+import org.apache.qpid.client.message.QpidMessageProperties;
 import org.apache.qpid.client.messaging.address.Link.Reliability;
-import org.apache.qpid.client.messaging.address.Node.QueueNode;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.transport.DeliveryProperties;
 import org.apache.qpid.transport.Header;
@@ -46,6 +46,7 @@ import org.apache.qpid.transport.MessageDeliveryMode;
 import org.apache.qpid.transport.MessageDeliveryPriority;
 import org.apache.qpid.transport.MessageProperties;
 import org.apache.qpid.transport.Option;
+import org.apache.qpid.transport.TransportException;
 import org.apache.qpid.util.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -178,7 +179,7 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
         
         if (destination.getDestSyntax() == AMQDestination.DestSyntax.ADDR && 
            (destination.getSubject() != null || 
-              (messageProps.getApplicationHeaders() != null && messageProps.getApplicationHeaders().get("qpid.subject") != null))
+              (messageProps.getApplicationHeaders() != null && messageProps.getApplicationHeaders().get(QpidMessageProperties.QPID_SUBJECT) != null))
            )
         {
             Map<String,Object> appProps = messageProps.getApplicationHeaders();
@@ -188,20 +189,21 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
                 messageProps.setApplicationHeaders(appProps);          
             }
             
-            if (appProps.get("qpid.subject") == null)
+            if (appProps.get(QpidMessageProperties.QPID_SUBJECT) == null)
             {
                 // use default subject in address string
-                appProps.put("qpid.subject",destination.getSubject());
+                appProps.put(QpidMessageProperties.QPID_SUBJECT,destination.getSubject());
             }
                     
-            if (destination.getTargetNode().getType() == AMQDestination.TOPIC_TYPE)
+            if (destination.getAddressType() == AMQDestination.TOPIC_TYPE)
             {
                 deliveryProp.setRoutingKey((String)
-                        messageProps.getApplicationHeaders().get("qpid.subject"));                
+                        messageProps.getApplicationHeaders().get(QpidMessageProperties.QPID_SUBJECT));                
             }
         }
-        
-        messageProps.setContentLength(message.getContentLength());
+
+        ByteBuffer data = message.getData();
+        messageProps.setContentLength(data.remaining());
 
         // send the message
         try
@@ -220,8 +222,8 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
             boolean unreliable = (destination.getDestSyntax() == DestSyntax.ADDR) &&
                                  (destination.getLink().getReliability() == Reliability.UNRELIABLE);
             
-            org.apache.mina.common.ByteBuffer data = message.getData();
-            ByteBuffer buffer = data == null ? ByteBuffer.allocate(0) : data.buf().slice();
+
+            ByteBuffer buffer = data == null ? ByteBuffer.allocate(0) : data.slice();
             
             ssn.messageTransfer(destination.getExchangeName() == null ? "" : destination.getExchangeName().toString(), 
                                 MessageAcceptMode.NONE,
@@ -244,14 +246,14 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
         }
     }
 
-
+    @Override
     public boolean isBound(AMQDestination destination) throws JMSException
     {
         return _session.isQueueBound(destination);
     }
     
     @Override
-    public void close()
+    public void close() throws JMSException
     {
         super.close();
         AMQDestination dest = _destination;
@@ -260,10 +262,18 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
             if (dest.getDelete() == AddressOption.ALWAYS ||
                 dest.getDelete() == AddressOption.SENDER )
             {
-                ((AMQSession_0_10) getSession()).getQpidSession().queueDelete(
+                try
+                {
+                    ((AMQSession_0_10) getSession()).getQpidSession().queueDelete(
                         _destination.getQueueName());
+                }
+                catch(TransportException e)
+                {
+                    throw getSession().toJMSException("Exception while closing producer:" + e.getMessage(), e);
+                }
             }
         }
     }
+
 }
 

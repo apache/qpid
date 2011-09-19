@@ -52,7 +52,7 @@ class Decoder;
 class Link;
 class Bridge;
 class QueueObserver;
-
+class DtxBuffer;
 } // namespace broker
 
 namespace cluster {
@@ -88,7 +88,7 @@ class UpdateClient : public sys::Runnable {
     void update();
     void run();                 // Will delete this when finished.
 
-    void updateUnacked(const broker::DeliveryRecord&);
+    void updateUnacked(const broker::DeliveryRecord&, client::AsyncSession&);
 
   private:
     void updateQueue(client::AsyncSession&, const boost::shared_ptr<broker::Queue>&);
@@ -100,7 +100,8 @@ class UpdateClient : public sys::Runnable {
     void updateBinding(client::AsyncSession&, const std::string& queue, const broker::QueueBinding& binding);
     void updateConnection(const boost::intrusive_ptr<Connection>& connection);
     void updateSession(broker::SessionHandler& s);
-    void updateTxState(broker::SemanticState& s);
+    void updateBufferRef(const broker::DtxBuffer::shared_ptr& dtx, bool suspended);
+    void updateTransactionState(broker::SemanticState& s);
     void updateOutputTask(const sys::OutputTask* task);
     void updateConsumer(const broker::SemanticState::ConsumerImpl::shared_ptr&);
     void updateQueueListeners(const boost::shared_ptr<broker::Queue>&);
@@ -112,6 +113,9 @@ class UpdateClient : public sys::Runnable {
     void updateBridge(const boost::shared_ptr<broker::Bridge>&);
     void updateQueueObservers(const boost::shared_ptr<broker::Queue>&);
     void updateObserver(const boost::shared_ptr<broker::Queue>&, boost::shared_ptr<broker::QueueObserver>);
+    void updateDtxManager();
+    void updateDtxBuffer(const boost::shared_ptr<broker::DtxBuffer>& );
+    void updateDtxWorkRecord(const broker::DtxWorkRecord&);
 
 
     Numbering<broker::SemanticState::ConsumerImpl*> consumerNumbering;

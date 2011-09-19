@@ -30,7 +30,8 @@
  
 package org.apache.qpid.framing;
 
-import org.apache.mina.common.ByteBuffer;
+import java.io.DataInputStream;
+import java.io.IOException;
 
 import org.apache.qpid.framing.abstraction.ProtocolVersionMethodConverter;
 
@@ -53,8 +54,8 @@ public abstract class MethodRegistry
 #end
  			
 			
-    public abstract AMQMethodBody convertToBody(ByteBuffer in, long size)
-        throws AMQFrameDecodingException;
+    public abstract AMQMethodBody convertToBody(DataInputStream in, long size)
+        throws AMQFrameDecodingException, IOException;
 
     public abstract int getMaxClassId();
 

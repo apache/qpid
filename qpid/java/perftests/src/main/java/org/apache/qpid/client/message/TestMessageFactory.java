@@ -20,9 +20,6 @@
  */
 package org.apache.qpid.client.message;
 
-import org.apache.mina.common.ByteBuffer;
-import org.apache.mina.common.SimpleByteBufferAllocator;
-
 import javax.jms.JMSException;
 import javax.jms.Session;
 import javax.jms.ObjectMessage;

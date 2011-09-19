@@ -132,8 +132,6 @@
  	</sequential>
   </macrodef>
 
-
-
   <macrodef name="jython">
     <attribute name="path"/>
     <element name="args"/>

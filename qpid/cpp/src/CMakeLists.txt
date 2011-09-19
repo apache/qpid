@@ -580,6 +580,15 @@ include (ssl.cmake)
 check_symbol_exists (LOG_AUTHPRIV "sys/syslog.h" HAVE_LOG_AUTHPRIV)
 check_symbol_exists (LOG_FTP "sys/syslog.h" HAVE_LOG_FTP)
 
+# Allow MSVC user to select 'WinXP-SP3/Windows Server 2003' as build target version
+set (win32_winnt_default OFF)
+if (CMAKE_SYSTEM_NAME STREQUAL Windows)
+    if (MSVC)
+        set (win32_winnt_default ON)
+    endif (MSVC)
+endif (CMAKE_SYSTEM_NAME STREQUAL Windows)
+option(SET_WIN32_WINNT "In Windows-MSVC build: define _WIN32_WINNT=0x0502 to select target version: Windows XP with SP3" ${win32_winnt_default})
+
 if (CMAKE_SYSTEM_NAME STREQUAL Windows)
   if (MSVC)
     add_definitions(
@@ -590,9 +599,9 @@ if (CMAKE_SYSTEM_NAME STREQUAL Windows)
       /wd4800
       /wd4355
     )
-    if (MSVC80)
-      add_definitions(/D "_WIN32_WINNT=0x0501")
-    endif (MSVC80)
+    if (SET_WIN32_WINNT)
+        add_definitions(/D "_WIN32_WINNT=0x0502")
+    endif (SET_WIN32_WINNT)
 
     # set the RelWithDebInfo compile/link switches to equal Release
     set (CMAKE_CXX_FLAGS_RELWITHDEBINFO "/MD /O2 /Ob2 /D NDEBUG")
@@ -914,8 +923,6 @@ set (qpidmessaging_SOURCES
      qpid/client/amqp0_10/SessionImpl.cpp
      qpid/client/amqp0_10/SenderImpl.h
      qpid/client/amqp0_10/SenderImpl.cpp
-     qpid/client/amqp0_10/SimpleUrlParser.h
-     qpid/client/amqp0_10/SimpleUrlParser.cpp
 )
 add_msvc_version (qpidmessaging library dll)
 
@@ -937,7 +944,7 @@ if (NOT QPID_GENERATED_HEADERS_IN_SOURCE)
 endif (NOT QPID_GENERATED_HEADERS_IN_SOURCE)
 
 
-if (_MSC_VER)
+if (MSVC)
     # Install the DtcPlugin project and call it qpidxarm.
     set(AMQP_WCF_DIR ${qpid-cpp_SOURCE_DIR}/../wcf)
     set(qpidxarm_SOURCES ${AMQP_WCF_DIR}/src/Apache/Qpid/DtcPlugin/DtcPlugin.cpp)
@@ -950,7 +957,7 @@ if (_MSC_VER)
                  COMPONENT ${QPID_COMPONENT_CLIENT})
         install_pdb (qpidxarm ${QPID_COMPONENT_CLIENT})
     endif (EXISTS ${qpidxarm_SOURCES})
-endif (_MSC_VER)
+endif (MSVC)
 
 set (qpidbroker_SOURCES
      ${mgen_broker_cpp}
@@ -1093,6 +1100,7 @@ if(NOT WIN32)
         ../include/qmf/exceptions.h
         ../include/qmf/Handle.h
         ../include/qmf/ImportExport.h
+        ../include/qmf/posix/EventNotifier.h
         ../include/qmf/Query.h
         ../include/qmf/Schema.h
         ../include/qmf/SchemaId.h
@@ -1122,6 +1130,10 @@ if(NOT WIN32)
         qmf/DataAddrImpl.h
         qmf/Data.cpp
         qmf/DataImpl.h
+        qmf/EventNotifierImpl.h
+        qmf/EventNotifierImpl.cpp
+        qmf/PosixEventNotifier.cpp
+        qmf/PosixEventNotifierImpl.cpp
         qmf/exceptions.cpp
         qmf/Expression.cpp
         qmf/Expression.h

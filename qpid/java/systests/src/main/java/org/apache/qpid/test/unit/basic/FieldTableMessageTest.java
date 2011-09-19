@@ -20,8 +20,6 @@
  */
 package org.apache.qpid.test.unit.basic;
 
-import org.apache.mina.common.ByteBuffer;
-
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQQueue;
@@ -41,6 +39,8 @@ import javax.jms.Message;
 import javax.jms.MessageListener;
 import javax.jms.MessageProducer;
 
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.concurrent.CountDownLatch;
@@ -105,7 +105,7 @@ public class FieldTableMessageTest extends QpidBrokerTestCase implements Message
     {
         int count = _count;
         _waitForCompletion = new CountDownLatch(_count);
-        send(count);        
+        send(count);
         _waitForCompletion.await(20, TimeUnit.SECONDS);
         check();
         _logger.info("Completed without failure");
@@ -125,12 +125,15 @@ public class FieldTableMessageTest extends QpidBrokerTestCase implements Message
     }
 
 
-    void check() throws JMSException, AMQFrameDecodingException
+    void check() throws JMSException, AMQFrameDecodingException, IOException
     {
         for (Object m : received)
         {
-            ByteBuffer buffer = ((JMSBytesMessage) m).getData();
-            FieldTable actual = FieldTableFactory.newFieldTable(buffer, buffer.remaining());
+            final BytesMessage bytesMessage = (BytesMessage) m;
+            final long bodyLength = bytesMessage.getBodyLength();
+            byte[] data = new byte[(int) bodyLength];
+            bytesMessage.readBytes(data);
+            FieldTable actual = FieldTableFactory.newFieldTable(new DataInputStream(new ByteArrayInputStream(data)), bodyLength);
             for (String key : _expected.keys())
             {
                 assertEquals("Values for " + key + " did not match", _expected.getObject(key), actual.getObject(key));

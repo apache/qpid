@@ -20,13 +20,16 @@
  */
 package org.apache.qpid.server.protocol;
 
-import java.security.Principal;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+
+import javax.security.auth.Subject;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
@@ -39,6 +42,7 @@ import org.apache.qpid.server.message.MessageContentSource;
 import org.apache.qpid.server.output.ProtocolOutputConverter;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.transport.TestNetworkConnection;
 
@@ -47,21 +51,17 @@ public class InternalTestProtocolSession extends AMQProtocolEngine implements Pr
     // ChannelID(LIST)  -> LinkedList<Pair>
     final Map<Integer, Map<AMQShortString, LinkedList<DeliveryPair>>> _channelDelivers;
     private AtomicInteger _deliveryCount = new AtomicInteger(0);
+    private static final AtomicLong ID_GENERATOR = new AtomicLong(0);
 
     public InternalTestProtocolSession(VirtualHost virtualHost) throws AMQException
     {
-        super(ApplicationRegistry.getInstance().getVirtualHostRegistry(), new TestNetworkConnection());
+        super(ApplicationRegistry.getInstance().getVirtualHostRegistry(), new TestNetworkConnection(), ID_GENERATOR.getAndIncrement());
 
         _channelDelivers = new HashMap<Integer, Map<AMQShortString, LinkedList<DeliveryPair>>>();
 
         // Need to authenticate session for it to be representative testing.
-        setAuthorizedID(new Principal()
-        {
-            public String getName()
-            {
-                return "InternalTestProtocolSession";
-            }
-        });
+        setAuthorizedSubject(new Subject(true, Collections.singleton(new UsernamePrincipal("InternalTestProtocolSession")),
+                Collections.EMPTY_SET, Collections.EMPTY_SET));
 
         setVirtualHost(virtualHost);
     }
@@ -196,7 +196,7 @@ public class InternalTestProtocolSession extends AMQProtocolEngine implements Pr
         return _closed;
     }
 
-    public void closeProtocolSession(boolean waitLast)
+    public void closeProtocolSession()
     {
         // Override as we don't have a real IOSession to close.
         //  The alternative is to fully implement the TestIOSession to return a CloseFuture from close();

@@ -25,7 +25,6 @@ import static org.apache.qpid.transport.ConnectionSettings.WILDCARD_ADDRESS;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.List;
 import java.util.Locale;
 
 import org.apache.commons.configuration.ConfigurationException;
@@ -59,18 +58,45 @@ public class ServerConfigurationTest extends QpidTestCase
         ApplicationRegistry.remove();
     }
 
-    public void testSetJMXManagementPort() throws ConfigurationException
+    public void testSetJMXPortRegistryServer() throws ConfigurationException
     {
         _serverConfig.initialise();
-        _serverConfig.setJMXManagementPort(23);
-        assertEquals(23, _serverConfig.getJMXManagementPort());
+        _serverConfig.setJMXPortRegistryServer(23);
+        assertEquals(23, _serverConfig.getJMXPortRegistryServer());
     }
 
-    public void testGetJMXManagementPort() throws ConfigurationException
+    public void testGetJMXPortRegistryServer() throws ConfigurationException
     {
-        _config.setProperty("management.jmxport", 42);
+        _config.setProperty(ServerConfiguration.MGMT_JMXPORT_REGISTRYSERVER, 42);
         _serverConfig.initialise();
-        assertEquals(42, _serverConfig.getJMXManagementPort());
+        assertEquals(42, _serverConfig.getJMXPortRegistryServer());
+    }
+
+    public void testDefaultJMXPortRegistryServer() throws ConfigurationException
+    {
+        _serverConfig.initialise();
+        assertEquals(8999, _serverConfig.getJMXPortRegistryServer());
+    }
+
+    public void testSetJMXPortConnectorServer() throws ConfigurationException
+    {
+        ServerConfiguration serverConfig = new ServerConfiguration(_config);
+        serverConfig.setJMXPortConnectorServer(67);
+        assertEquals(67, serverConfig.getJMXConnectorServerPort());
+    }
+
+    public void testGetJMXPortConnectorServer() throws ConfigurationException
+    {
+        _config.setProperty(ServerConfiguration.MGMT_JMXPORT_CONNECTORSERVER, 67);
+        ServerConfiguration serverConfig = new ServerConfiguration(_config);
+        assertEquals(67, serverConfig.getJMXConnectorServerPort());
+    }
+
+    public void testDefaultJMXPortConnectorServer() throws ConfigurationException
+    {
+        ServerConfiguration serverConfig = new ServerConfiguration(_config);
+        assertEquals(ServerConfiguration.DEFAULT_JMXPORT_REGISTRYSERVER + ServerConfiguration.JMXPORT_CONNECTORSERVER_OFFSET,
+                        serverConfig.getJMXConnectorServerPort());
     }
 
     public void testGetPlatformMbeanserver() throws ConfigurationException
@@ -110,76 +136,6 @@ public class ServerConfigurationTest extends QpidTestCase
         _serverConfig.initialise();
         assertEquals("/path/to/cache", _serverConfig.getCacheDirectory());
     }
-
-    public void testGetPrincipalDatabaseNames() throws ConfigurationException
-    {
-        // Check default
-        _serverConfig.initialise();
-        assertEquals(0, _serverConfig.getPrincipalDatabaseNames().size());
-
-        // Check value we set
-        _config.setProperty("security.principal-databases.principal-database(0).name", "a");
-        _config.setProperty("security.principal-databases.principal-database(1).name", "b");
-        _serverConfig = new ServerConfiguration(_config);
-        _serverConfig.initialise();
-        List<String> dbs = _serverConfig.getPrincipalDatabaseNames();
-        assertEquals(2, dbs.size());
-        assertEquals("a", dbs.get(0));
-        assertEquals("b", dbs.get(1));
-    }
-
-    public void testGetPrincipalDatabaseClass() throws ConfigurationException
-    {
-        // Check default
-        _serverConfig.initialise();
-        assertEquals(0, _serverConfig.getPrincipalDatabaseClass().size());
-
-        // Check value we set
-        _config.setProperty("security.principal-databases.principal-database(0).class", "a");
-        _config.setProperty("security.principal-databases.principal-database(1).class", "b");
-        _serverConfig = new ServerConfiguration(_config);
-        _serverConfig.initialise();
-        List<String> dbs = _serverConfig.getPrincipalDatabaseClass();
-        assertEquals(2, dbs.size());
-        assertEquals("a", dbs.get(0));
-        assertEquals("b", dbs.get(1));
-    }
-
-    public void testGetPrincipalDatabaseAttributeNames() throws ConfigurationException
-    {
-        // Check default
-        _serverConfig.initialise();
-        assertEquals(0, _serverConfig.getPrincipalDatabaseAttributeNames(1).size());
-
-        // Check value we set
-        _config.setProperty("security.principal-databases.principal-database(0).attributes(0).attribute.name", "a");
-        _config.setProperty("security.principal-databases.principal-database(0).attributes(1).attribute.name", "b");
-        _serverConfig = new ServerConfiguration(_config);
-        _serverConfig.initialise();
-        List<String> dbs = _serverConfig.getPrincipalDatabaseAttributeNames(0);
-        assertEquals(2, dbs.size());
-        assertEquals("a", dbs.get(0));
-        assertEquals("b", dbs.get(1));
-    }
-
-    public void testGetPrincipalDatabaseAttributeValues() throws ConfigurationException
-    {
-        // Check default
-        _serverConfig.initialise();
-        assertEquals(0, _serverConfig.getPrincipalDatabaseAttributeValues(1).size());
-
-        // Check value we set
-        _config.setProperty("security.principal-databases.principal-database(0).attributes(0).attribute.value", "a");
-        _config.setProperty("security.principal-databases.principal-database(0).attributes(1).attribute.value", "b");
-        _serverConfig = new ServerConfiguration(_config);
-        _serverConfig.initialise();
-        List<String> dbs = _serverConfig.getPrincipalDatabaseAttributeValues(0);
-        assertEquals(2, dbs.size());
-        assertEquals("a", dbs.get(0));
-        assertEquals("b", dbs.get(1));
-    }
-
-
 
     public void testGetFrameSize() throws ConfigurationException
     {
@@ -582,7 +538,7 @@ public class ServerConfigurationTest extends QpidTestCase
     {
         // Check default
         _serverConfig.initialise();
-        assertEquals("none", _serverConfig.getKeystorePath());
+        assertNull(_serverConfig.getKeystorePath());
 
         // Check value we set
         _config.setProperty("connector.ssl.keystorePath", "a");
@@ -595,7 +551,7 @@ public class ServerConfigurationTest extends QpidTestCase
     {
         // Check default
         _serverConfig.initialise();
-        assertEquals("none", _serverConfig.getKeystorePassword());
+        assertNull(_serverConfig.getKeystorePassword());
 
         // Check value we set
         _config.setProperty("connector.ssl.keystorePassword", "a");
@@ -630,18 +586,17 @@ public class ServerConfigurationTest extends QpidTestCase
         assertEquals(true, _serverConfig.getUseBiasedWrites());
     }
 
-    public void testGetHousekeepingExpiredMessageCheckPeriod() throws ConfigurationException
+    public void testGetHousekeepingCheckPeriod() throws ConfigurationException
     {
         // Check default
         _serverConfig.initialise();
         assertEquals(30000, _serverConfig.getHousekeepingCheckPeriod());
 
         // Check value we set
-        _config.setProperty("housekeeping.expiredMessageCheckPeriod", 23L);
+        _config.setProperty("housekeeping.checkPeriod", 23L);
         _serverConfig = new ServerConfiguration(_config);
         _serverConfig.initialise();
-        assertEquals(23, _serverConfig.getHousekeepingCheckPeriod());
-        _serverConfig.setHousekeepingExpiredMessageCheckPeriod(42L);
+        _serverConfig.setHousekeepingCheckPeriod(42L);
         assertEquals(42, _serverConfig.getHousekeepingCheckPeriod());
     }
 
@@ -720,9 +675,8 @@ public class ServerConfigurationTest extends QpidTestCase
         out.write("<broker>\n");
         out.write("\t<management><enabled>false</enabled></management>\n");
         out.write("\t<security>\n");
-        out.write("\t\t<principal-databases>\n");
+        out.write("\t\t<pd-auth-manager>\n");
         out.write("\t\t\t<principal-database>\n");
-        out.write("\t\t\t\t<name>passwordfile</name>\n");
         out.write("\t\t\t\t<class>org.apache.qpid.server.security.auth.database.PlainPasswordFilePrincipalDatabase</class>\n");
         out.write("\t\t\t\t<attributes>\n");
         out.write("\t\t\t\t\t<attribute>\n");
@@ -731,7 +685,7 @@ public class ServerConfigurationTest extends QpidTestCase
         out.write("\t\t\t\t\t</attribute>\n");
         out.write("\t\t\t\t</attributes>\n");
         out.write("\t\t\t</principal-database>\n");
-        out.write("\t\t</principal-databases>\n");
+        out.write("\t\t</pd-auth-manager>\n");
         out.write("\t\t<firewall>\n");
         out.write("\t\t\t<rule access=\""+ ((allow) ? "allow" : "deny") +"\" network=\"127.0.0.1\"/>");
         out.write("\t\t</firewall>\n");
@@ -767,9 +721,8 @@ public class ServerConfigurationTest extends QpidTestCase
         out.write("<broker>\n");
         out.write("\t<management><enabled>false</enabled></management>\n");
         out.write("\t<security>\n");
-        out.write("\t\t<principal-databases>\n");
+        out.write("\t\t<pd-auth-manager>\n");
         out.write("\t\t\t<principal-database>\n");
-        out.write("\t\t\t\t<name>passwordfile</name>\n");
         out.write("\t\t\t\t<class>org.apache.qpid.server.security.auth.database.PlainPasswordFilePrincipalDatabase</class>\n");
         out.write("\t\t\t\t<attributes>\n");
         out.write("\t\t\t\t\t<attribute>\n");
@@ -778,7 +731,7 @@ public class ServerConfigurationTest extends QpidTestCase
         out.write("\t\t\t\t\t</attribute>\n");
         out.write("\t\t\t\t</attributes>\n");
         out.write("\t\t\t</principal-database>\n");
-        out.write("\t\t</principal-databases>\n");
+        out.write("\t\t</pd-auth-manager>\n");
         out.write("\t\t<firewall>\n");
         out.write("\t\t\t<rule access=\"allow\" network=\"127.0.0.1\"/>");
         out.write("\t\t</firewall>\n");
@@ -869,9 +822,8 @@ public class ServerConfigurationTest extends QpidTestCase
         out.write("<broker>\n");
         out.write("\t<management><enabled>false</enabled></management>\n");
         out.write("\t<security>\n");
-        out.write("\t\t<principal-databases>\n");
+        out.write("\t\t<pd-auth-manager>\n");
         out.write("\t\t\t<principal-database>\n");
-        out.write("\t\t\t\t<name>passwordfile</name>\n");
         out.write("\t\t\t\t<class>org.apache.qpid.server.security.auth.database.PlainPasswordFilePrincipalDatabase</class>\n");
         out.write("\t\t\t\t<attributes>\n");
         out.write("\t\t\t\t\t<attribute>\n");
@@ -880,7 +832,7 @@ public class ServerConfigurationTest extends QpidTestCase
         out.write("\t\t\t\t\t</attribute>\n");
         out.write("\t\t\t\t</attributes>\n");
         out.write("\t\t\t</principal-database>\n");
-        out.write("\t\t</principal-databases>\n");
+        out.write("\t\t</pd-auth-manager>\n");
         out.write("\t\t<firewall>\n");
         out.write("\t\t\t<rule access=\"allow\" network=\"127.0.0.1\"/>");
         out.write("\t\t</firewall>\n");
@@ -1387,7 +1339,7 @@ public class ServerConfigurationTest extends QpidTestCase
     }
 
     /*
-     * Tests that the old element security.jmx.principal-databases (that used to define the
+     * Tests that the old element security.jmx.principal-database (that used to define the
      * principal database used for JMX authentication) is rejected.
      */
     public void testManagementPrincipalDatabaseRejected() throws ConfigurationException
@@ -1408,6 +1360,56 @@ public class ServerConfigurationTest extends QpidTestCase
         {
             assertEquals("Incorrect error message",
                     "Validation error : security/jmx/principal-database is no longer a supported element within the configuration xml.",
+                    ce.getMessage());
+        }
+    }
+
+    /*
+     * Tests that the old element security.principal-databases. ... (that used to define 
+     * principal databases) is rejected.
+     */
+    public void testPrincipalDatabasesRejected() throws ConfigurationException
+    {
+        _serverConfig.initialise();
+
+        // Check value we set
+        _config.setProperty("security.principal-databases.principal-database.class", "myclass");
+        _serverConfig = new ServerConfiguration(_config);
+
+        try
+        {
+            _serverConfig.initialise();
+            fail("Exception not thrown");
+        }
+        catch (ConfigurationException ce)
+        {
+            assertEquals("Incorrect error message",
+                    "Validation error : security/principal-databases is no longer supported within the configuration xml.",
+                    ce.getMessage());
+        }
+    }
+
+    /*
+     * Tests that the old element housekeeping.expiredMessageCheckPeriod. ... (that was
+     * replaced by housekeeping.checkPeriod) is rejected.
+     */
+    public void testExpiredMessageCheckPeriodRejected() throws ConfigurationException
+    {
+        _serverConfig.initialise();
+
+        // Check value we set
+        _config.setProperty("housekeeping.expiredMessageCheckPeriod", 23L);
+        _serverConfig = new ServerConfiguration(_config);
+
+        try
+        {
+            _serverConfig.initialise();
+            fail("Exception not thrown");
+        }
+        catch (ConfigurationException ce)
+        {
+            assertEquals("Incorrect error message",
+                    "Validation error : housekeeping/expiredMessageCheckPeriod must be replaced by housekeeping/checkPeriod.",
                     ce.getMessage());
         }
     }

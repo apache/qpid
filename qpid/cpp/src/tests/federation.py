@@ -111,18 +111,18 @@ class FederationTests(TestBase010):
 
         broker = qmf.getObjects(_class="broker")[0]
         result = broker.connect(self.remote_host(), self.remote_port(), False, "PLAIN", "guest", "guest", "tcp")
-        self.assertEqual(result.status, 0)
+        self.assertEqual(result.status, 0, result)
 
         link = qmf.getObjects(_class="link")[0]
         result = link.bridge(False, "amq.direct", "amq.direct", "my-key", "", "", False, False, False, 0)
-        self.assertEqual(result.status, 0)
+        self.assertEqual(result.status, 0, result)
 
         bridge = qmf.getObjects(_class="bridge")[0]
         result = bridge.close()
-        self.assertEqual(result.status, 0)
+        self.assertEqual(result.status, 0, result)
 
         result = link.close()
-        self.assertEqual(result.status, 0)
+        self.assertEqual(result.status, 0, result)
 
         self.verify_cleanup()
 
@@ -133,11 +133,11 @@ class FederationTests(TestBase010):
         qmf = self.qmf
         broker = qmf.getObjects(_class="broker")[0]
         result = broker.connect(self.remote_host(), self.remote_port(), False, "PLAIN", "guest", "guest", "tcp")
-        self.assertEqual(result.status, 0)
+        self.assertEqual(result.status, 0, result)
 
         link = qmf.getObjects(_class="link")[0]
         result = link.bridge(False, "amq.direct", "amq.fanout", "my-key", "", "", False, False, False, 0)
-        self.assertEqual(result.status, 0)
+        self.assertEqual(result.status, 0, result)
 
         bridge = qmf.getObjects(_class="bridge")[0]
 
@@ -165,9 +165,9 @@ class FederationTests(TestBase010):
         except Empty: None
 
         result = bridge.close()
-        self.assertEqual(result.status, 0)
+        self.assertEqual(result.status, 0, result)
         result = link.close()
-        self.assertEqual(result.status, 0)
+        self.assertEqual(result.status, 0, result)
 
         self.verify_cleanup()
 
@@ -178,11 +178,11 @@ class FederationTests(TestBase010):
         qmf = self.qmf
         broker = qmf.getObjects(_class="broker")[0]
         result = broker.connect(self.remote_host(), self.remote_port(), False, "PLAIN", "guest", "guest", "tcp")
-        self.assertEqual(result.status, 0)
+        self.assertEqual(result.status, 0, result)
 
         link = qmf.getObjects(_class="link")[0]
         result = link.bridge(False, "amq.direct", "amq.fanout", "my-key", "", "", False, True, False, 0)
-        self.assertEqual(result.status, 0)
+        self.assertEqual(result.status, 0, result)
 
         bridge = qmf.getObjects(_class="bridge")[0]
 
@@ -209,9 +209,9 @@ class FederationTests(TestBase010):
         except Empty: None
 
         result = bridge.close()
-        self.assertEqual(result.status, 0)
+        self.assertEqual(result.status, 0, result)
         result = link.close()
-        self.assertEqual(result.status, 0)
+        self.assertEqual(result.status, 0, result)
 
         self.verify_cleanup()
 
@@ -236,14 +236,71 @@ class FederationTests(TestBase010):
         qmf = self.qmf
         broker = qmf.getObjects(_class="broker")[0]
         result = broker.connect(self.remote_host(), self.remote_port(), False, "PLAIN", "guest", "guest", "tcp")
-        self.assertEqual(result.status, 0)
+        self.assertEqual(result.status, 0, result)
 
         link = qmf.getObjects(_class="link")[0]
         result = link.bridge(False, "my-bridge-queue", "amq.fanout", "my-key", "", "", True, False, False, 1)
-        self.assertEqual(result.status, 0)
+        self.assertEqual(result.status, 0, result)
 
         bridge = qmf.getObjects(_class="bridge")[0]
         sleep(3)
+
+        #add some more messages (i.e. after bridge was created)
+        for i in range(6, 11):
+            dp = r_session.delivery_properties(routing_key="my-bridge-queue")
+            r_session.message_transfer(message=Message(dp, "Message %d" % i))
+
+        for i in range(1, 11):
+            try:
+                msg = queue.get(timeout=5)
+                self.assertEqual("Message %d" % i, msg.body)
+            except Empty:
+                self.fail("Failed to find expected message containing 'Message %d'" % i)
+        try:
+            extra = queue.get(timeout=1)
+            self.fail("Got unexpected message in queue: " + extra.body)
+        except Empty: None
+
+        result = bridge.close()
+        self.assertEqual(result.status, 0, result)
+        result = link.close()
+        self.assertEqual(result.status, 0, result)
+
+        self.verify_cleanup()
+
+    def test_pull_from_queue_recovery(self):
+        session = self.session
+
+        #setup queue on remote broker and add some messages
+        r_conn = self.connect(host=self.remote_host(), port=self.remote_port())
+        r_session = r_conn.session("test_pull_from_queue_recovery")
+        r_session.queue_declare(queue="my-bridge-queue", auto_delete=True)
+        for i in range(1, 6):
+            dp = r_session.delivery_properties(routing_key="my-bridge-queue")
+            r_session.message_transfer(message=Message(dp, "Message %d" % i))
+
+        #setup queue to receive messages from local broker
+        session.queue_declare(queue="fed1", exclusive=True, auto_delete=True)
+        session.exchange_bind(queue="fed1", exchange="amq.fanout")
+        self.subscribe(queue="fed1", destination="f1")
+        queue = session.incoming("f1")
+
+        self.startQmf()
+        qmf = self.qmf
+        broker = qmf.getObjects(_class="broker")[0]
+        result = broker.connect(self.remote_host(), self.remote_port(), False, "PLAIN", "guest", "guest", "tcp")
+        self.assertEqual(result.status, 0, result)
+
+        link = qmf.getObjects(_class="link")[0]
+        result = link.bridge(False, "my-bridge-queue", "amq.fanout", "my-key", "", "", True, False, False, 1)
+        self.assertEqual(result.status, 0, result)
+
+        bridge = qmf.getObjects(_class="bridge")[0]
+        sleep(5)
+        
+        #recreate the remote bridge queue to invalidate the bridge session
+        r_session.queue_delete (queue="my-bridge-queue", if_empty=False, if_unused=False)
+        r_session.queue_declare(queue="my-bridge-queue", auto_delete=True)
 
         #add some more messages (i.e. after bridge was created)
         for i in range(6, 11):

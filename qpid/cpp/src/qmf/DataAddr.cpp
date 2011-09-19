@@ -36,7 +36,9 @@ DataAddr::~DataAddr() { PI::dtor(*this); }
 DataAddr& DataAddr::operator=(const DataAddr& s) { return PI::assign(*this, s); }
 
 bool DataAddr::operator==(const DataAddr& o) { return *impl == *o.impl; }
+bool DataAddr::operator==(const DataAddr& o) const { return *impl == *o.impl; }
 bool DataAddr::operator<(const DataAddr& o) { return *impl < *o.impl; }
+bool DataAddr::operator<(const DataAddr& o) const { return *impl < *o.impl; }
 
 DataAddr::DataAddr(const qpid::types::Variant::Map& m) { PI::ctor(*this, new DataAddrImpl(m)); }
 DataAddr::DataAddr(const string& n, const string& a, uint32_t e) { PI::ctor(*this, new DataAddrImpl(n, a, e)); }
@@ -45,7 +47,7 @@ const string& DataAddr::getAgentName() const { return impl->getAgentName(); }
 uint32_t DataAddr::getAgentEpoch() const { return impl->getAgentEpoch(); }
 Variant::Map DataAddr::asMap() const { return impl->asMap(); }
 
-bool DataAddrImpl::operator==(const DataAddrImpl& other)
+bool DataAddrImpl::operator==(const DataAddrImpl& other) const
 {
     return
         agentName == other.agentName &&
@@ -54,7 +56,7 @@ bool DataAddrImpl::operator==(const DataAddrImpl& other)
 }
 
 
-bool DataAddrImpl::operator<(const DataAddrImpl& other)
+bool DataAddrImpl::operator<(const DataAddrImpl& other) const
 {
     if (agentName < other.agentName) return true;
     if (agentName > other.agentName) return false;

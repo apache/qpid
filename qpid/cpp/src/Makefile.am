@@ -89,7 +89,7 @@ rgen_cmd=ruby -I $(rgen_dir) $(rgen_dir)/generate . ../include $(specs) all
 
 $(rgen_srcs) $(srcdir)/rubygen.mk: rgen.timestamp
 rgen.timestamp: $(rgen_generator) $(specs)
-	$(rgen_cmd) $(srcdir)/rubygen.mk; touch $@
+	$(rgen_cmd) $(srcdir)/rubygen.mk && touch $@
 $(rgen_generator):
 
 # The CMake version is needed for dist
@@ -793,9 +793,7 @@ libqpidmessaging_la_SOURCES =			\
   qpid/client/amqp0_10/SessionImpl.h		\
   qpid/client/amqp0_10/SessionImpl.cpp		\
   qpid/client/amqp0_10/SenderImpl.h		\
-  qpid/client/amqp0_10/SenderImpl.cpp           \
-  qpid/client/amqp0_10/SimpleUrlParser.h	\
-  qpid/client/amqp0_10/SimpleUrlParser.cpp
+  qpid/client/amqp0_10/SenderImpl.cpp
 
 QPIDMESSAGING_VERSION_INFO  = 2:0:0
 libqpidmessaging_la_LDFLAGS = -version-info $(QPIDMESSAGING_VERSION_INFO)

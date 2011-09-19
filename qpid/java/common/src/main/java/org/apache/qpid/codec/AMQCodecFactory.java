@@ -20,9 +20,6 @@
  */
 package org.apache.qpid.codec;
 
-import org.apache.mina.filter.codec.ProtocolCodecFactory;
-import org.apache.mina.filter.codec.ProtocolDecoder;
-import org.apache.mina.filter.codec.ProtocolEncoder;
 import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
 
 /**
@@ -31,14 +28,11 @@ import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
  *
  * <p/><table id="crc"><caption>CRC Card</caption>
  * <tr><th> Responsibilities <th> Collaborations.
- * <tr><td> Supply the protocol encoder. <td> {@link AMQEncoder}
  * <tr><td> Supply the protocol decoder. <td> {@link AMQDecoder}
  * </table>
  */
-public class AMQCodecFactory implements ProtocolCodecFactory
+public class AMQCodecFactory
 {
-    /** Holds the protocol encoder. */
-    private final AMQEncoder _encoder = new AMQEncoder();
 
     /** Holds the protocol decoder. */
     private final AMQDecoder _frameDecoder;
@@ -56,15 +50,6 @@ public class AMQCodecFactory implements ProtocolCodecFactory
         _frameDecoder = new AMQDecoder(expectProtocolInitiation, session);
     }
 
-    /**
-     * Gets the AMQP encoder.
-     *
-     * @return The AMQP encoder.
-     */
-    public ProtocolEncoder getEncoder()
-    {
-        return _encoder;
-    }
 
     /**
      * Gets the AMQP decoder.

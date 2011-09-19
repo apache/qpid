@@ -24,18 +24,28 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+import java.net.DatagramSocket;
+import java.net.ServerSocket;
+import java.util.*;
 
 import junit.framework.TestCase;
 import junit.framework.TestResult;
 
+import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
-import org.apache.mina.util.AvailablePortFinder;
+
 
 public class QpidTestCase extends TestCase
 {
-    protected static final Logger _logger = Logger.getLogger(QpidTestCase.class);
+    public static final String QPID_HOME = System.getProperty("QPID_HOME");
+    public static final String TEST_RESOURCES_DIR = QPID_HOME + "/../test-profiles/test_resources/";
+
+    private static final Logger _logger = Logger.getLogger(QpidTestCase.class);
+
+    private final Map<Logger, Level> _loggerLevelSetForTest = new HashMap<Logger, Level>();
+    private final Map<String, String> _propertiesSetForTest = new HashMap<String, String>();
+
+    private String _testName;
 
     /**
      * Some tests are excluded when the property test.excludes is set to true.
@@ -129,8 +139,186 @@ public class QpidTestCase extends TestCase
         return storeClass != null ? storeClass : MEMORY_STORE_CLASS_NAME ;
     }
 
+
+    public static final int MIN_PORT_NUMBER = 1;
+    public static final int MAX_PORT_NUMBER = 49151;
+
+
+    /**
+     * Gets the next available port starting at a port.
+     *
+     * @param fromPort the port to scan for availability
+     * @throws NoSuchElementException if there are no ports available
+     */
+    protected int getNextAvailable(int fromPort)
+    {
+        if ((fromPort < MIN_PORT_NUMBER) || (fromPort > MAX_PORT_NUMBER))
+        {
+            throw new IllegalArgumentException("Invalid start port: " + fromPort);
+        }
+
+        for (int i = fromPort; i <= MAX_PORT_NUMBER; i++)
+        {
+            if (available(i)) {
+                return i;
+            }
+        }
+
+        throw new NoSuchElementException("Could not find an available port above " + fromPort);
+    }
+
+    /**
+     * Checks to see if a specific port is available.
+     *
+     * @param port the port to check for availability
+     */
+    private boolean available(int port)
+    {
+        if ((port < MIN_PORT_NUMBER) || (port > MAX_PORT_NUMBER))
+        {
+            throw new IllegalArgumentException("Invalid start port: " + port);
+        }
+
+        ServerSocket ss = null;
+        DatagramSocket ds = null;
+        try
+        {
+            ss = new ServerSocket(port);
+            ss.setReuseAddress(true);
+            ds = new DatagramSocket(port);
+            ds.setReuseAddress(true);
+            return true;
+        }
+        catch (IOException e)
+        {
+        }
+        finally
+        {
+            if (ds != null)
+            {
+                ds.close();
+            }
+
+            if (ss != null)
+            {
+                try
+                {
+                    ss.close();
+                }
+                catch (IOException e)
+                {
+                    /* should not be thrown */
+                }
+            }
+        }
+
+        return false;
+    }
+
     public int findFreePort()
     {
-        return AvailablePortFinder.getNextAvailable(10000);
+        return getNextAvailable(10000);
+    }
+
+    /**
+     * Set a System property for duration of this test only. The tearDown will
+     * guarantee to reset the property to its previous value after the test
+     * completes.
+     *
+     * @param property The property to set
+     * @param value the value to set it to, if null, the property will be cleared
+     */
+    protected void setTestSystemProperty(final String property, final String value)
+    {
+        if (!_propertiesSetForTest.containsKey(property))
+        {
+            // Record the current value so we can revert it later.
+            _propertiesSetForTest.put(property, System.getProperty(property));
+        }
+
+        if (value == null)
+        {
+            System.clearProperty(property);
+        }
+        else
+        {
+            System.setProperty(property, value);
+        }
+    }
+
+    /**
+     * Restore the System property values that were set by this test run.
+     */
+    protected void revertTestSystemProperties()
+    {
+        if(!_propertiesSetForTest.isEmpty())
+        {
+            _logger.debug("reverting " + _propertiesSetForTest.size() + " test properties");
+            for (String key : _propertiesSetForTest.keySet())
+            {
+                String value = _propertiesSetForTest.get(key);
+                if (value != null)
+                {
+                    System.setProperty(key, value);
+                }
+                else
+                {
+                    System.clearProperty(key);
+                }
+            }
+
+            _propertiesSetForTest.clear();
+        }
+    }
+
+    /**
+     * Adjust the VMs Log4j Settings just for this test run
+     *
+     * @param logger the logger to change
+     * @param level the level to set
+     */
+    protected void setLoggerLevel(Logger logger, Level level)
+    {
+        assertNotNull("Cannot set level of null logger", logger);
+        assertNotNull("Cannot set Logger("+logger.getName()+") to null level.",level);
+
+        if (!_loggerLevelSetForTest.containsKey(logger))
+        {
+            // Record the current value so we can revert it later.
+            _loggerLevelSetForTest.put(logger, logger.getLevel());
+        }
+
+        logger.setLevel(level);
+    }
+
+    /**
+     * Restore the logging levels defined by this test.
+     */
+    protected void revertLoggingLevels()
+    {
+        for (Logger logger : _loggerLevelSetForTest.keySet())
+        {
+            logger.setLevel(_loggerLevelSetForTest.get(logger));
+        }
+
+        _loggerLevelSetForTest.clear();
+    }
+
+    protected void tearDown() throws java.lang.Exception
+    {
+        _logger.info("========== tearDown " + _testName + " ==========");
+        revertTestSystemProperties();
+        revertLoggingLevels();
+    }
+
+    protected void setUp() throws Exception
+    {
+        _testName = getClass().getSimpleName() + "." + getName();
+        _logger.info("========== start " + _testName + " ==========");
+    }
+
+    protected String getTestName()
+    {
+        return _testName;
     }
 }

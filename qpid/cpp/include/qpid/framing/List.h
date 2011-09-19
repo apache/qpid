@@ -40,6 +40,7 @@ class QPID_COMMON_CLASS_EXTERN List
 {
   public:
     typedef boost::shared_ptr<FieldValue> ValuePtr;
+    typedef ValuePtr value_type;
     typedef std::list<ValuePtr> Values;
     typedef Values::const_iterator const_iterator;
     typedef Values::iterator iterator;

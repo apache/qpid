@@ -20,7 +20,6 @@
  */
 #include "ConnectionImpl.h"
 #include "SessionImpl.h"
-#include "SimpleUrlParser.h"
 #include "qpid/messaging/exceptions.h"
 #include "qpid/messaging/Session.h"
 #include "qpid/messaging/PrivateImplRef.h"
@@ -133,6 +132,8 @@ void ConnectionImpl::setOption(const std::string& name, const Variant& value)
         settings.protocol = value.asString();
     } else if (name == "ssl-cert-name" || name == "ssl_cert_name") {
         settings.sslCertName = value.asString();
+    } else if (name == "x-reconnect-on-limit-exceeded" || name == "x_reconnect_on_limit_exceeded") {
+        reconnectOnLimitExceeded = value;
     } else {
         throw qpid::messaging::MessagingException(QPID_MSG("Invalid option: " << name << " not recognised"));
     }
@@ -273,21 +274,14 @@ bool ConnectionImpl::tryConnect()
     for (std::vector<std::string>::const_iterator i = urls.begin(); i != urls.end(); ++i) {
         try {
             QPID_LOG(info, "Trying to connect to " << *i << "...");
-            //TODO: when url support is more complete can avoid this test here
-            if (i->find("amqp:") == 0) {
-                Url url(*i);
-                connection.open(url, settings);
-            } else {
-                SimpleUrlParser::parse(*i, settings);
-                connection.open(settings);
-            }
+            Url url(*i);
+            if (url.getUser().size()) settings.username = url.getUser();
+            if (url.getPass().size()) settings.password = url.getPass();
+            connection.open(url, settings);
             QPID_LOG(info, "Connected to " << *i);
             mergeUrls(connection.getInitialBrokers(), l);
             return resetSessions(l);
-        } catch (const qpid::ConnectionException& e) {
-            //TODO: need to fix timeout on
-            //qpid::client::Connection::open() so that it throws
-            //TransportFailure rather than a ConnectionException
+        } catch (const qpid::TransportFailure& e) {
             QPID_LOG(info, "Failed to connect to " << *i << ": " << e.what());
         }
     }

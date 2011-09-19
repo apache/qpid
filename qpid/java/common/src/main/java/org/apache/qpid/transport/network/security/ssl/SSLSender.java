@@ -31,35 +31,38 @@ import javax.net.ssl.SSLEngineResult.Status;
 import org.apache.qpid.transport.ConnectionSettings;
 import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.SenderException;
+import org.apache.qpid.transport.network.security.SSLStatus;
 import org.apache.qpid.transport.util.Logger;
 
 public class SSLSender implements Sender<ByteBuffer>
 {
-    private Sender<ByteBuffer> delegate;
-    private SSLEngine engine;
-    private int sslBufSize;
-    private ByteBuffer netData;
-    private long timeout = 30000;
-    private ConnectionSettings settings;
-    
-    private final Object engineState = new Object();
-    private final AtomicBoolean closed = new AtomicBoolean(false);
-    private final AtomicBoolean error = new AtomicBoolean(false);
-
     private static final Logger log = Logger.get(SSLSender.class);
 
-    public SSLSender(SSLEngine engine, Sender<ByteBuffer> delegate)
+    private final Sender<ByteBuffer> delegate;
+    private final SSLEngine engine;
+    private final int sslBufSize;
+    private final ByteBuffer netData;
+    private final long timeout;
+    private final SSLStatus _sslStatus;
+
+    private String _hostname;
+
+    private final AtomicBoolean closed = new AtomicBoolean(false);
+
+
+    public SSLSender(SSLEngine engine, Sender<ByteBuffer> delegate, SSLStatus sslStatus)
     {
         this.engine = engine;
         this.delegate = delegate;
         sslBufSize = engine.getSession().getPacketBufferSize();
         netData = ByteBuffer.allocate(sslBufSize);
         timeout = Long.getLong("qpid.ssl_timeout", 60000);
+        _sslStatus = sslStatus;
     }
     
-    public void setConnectionSettings(ConnectionSettings settings)
+    public void setHostname(String hostname)
     {
-        this.settings = settings;
+        _hostname = hostname;
     }
 
     public void close()
@@ -83,13 +86,13 @@ public class SSLSender implements Sender<ByteBuffer>
             }
 
 
-            synchronized(engineState)
+            synchronized(_sslStatus.getSslLock())
             {
                 while (!engine.isOutboundDone())
                 {
                     try
                     {
-                        engineState.wait();
+                        _sslStatus.getSslLock().wait();
                     }
                     catch(InterruptedException e)
                     {
@@ -148,7 +151,7 @@ public class SSLSender implements Sender<ByteBuffer>
         HandshakeStatus handshakeStatus;
         Status status;
 
-        while(appData.hasRemaining() && !error.get())
+        while(appData.hasRemaining() && !_sslStatus.getSslErrorFlag())
         {
             int read = 0;
             try
@@ -160,6 +163,7 @@ public class SSLSender implements Sender<ByteBuffer>
             }
             catch(SSLException e)
             {
+                // Should this set _sslError??
                 throw new SenderException("SSL, Error occurred while encrypting data",e);
             }
 
@@ -207,7 +211,7 @@ public class SSLSender implements Sender<ByteBuffer>
 
                 case NEED_UNWRAP:
                     flush();
-                    synchronized(engineState)
+                    synchronized(_sslStatus.getSslLock())
                     {
                         switch (engine.getHandshakeStatus())
                         {
@@ -215,7 +219,7 @@ public class SSLSender implements Sender<ByteBuffer>
                             long start = System.currentTimeMillis();
                             try
                             {
-                                engineState.wait(timeout);
+                                _sslStatus.getSslLock().wait(timeout);
                             }
                             catch(InterruptedException e)
                             {
@@ -234,9 +238,9 @@ public class SSLSender implements Sender<ByteBuffer>
                     break;
 
                 case FINISHED:
-                    if (this.settings != null && this.settings.isVerifyHostname() )
+                    if (_hostname != null)
                     {
-                        SSLUtil.verifyHostname(engine, this.settings.getHost());
+                        SSLUtil.verifyHostname(engine, _hostname);
                     }
                     
                 case NOT_HANDSHAKING:
@@ -249,22 +253,12 @@ public class SSLSender implements Sender<ByteBuffer>
         }
     }
 
-    public void doTasks()
+    private void doTasks()
     {
         Runnable runnable;
         while ((runnable = engine.getDelegatedTask()) != null) {
             runnable.run();
         }
-    }
-
-    public Object getNotificationToken()
-    {
-        return engineState;
-    }
-    
-    public void setErrorFlag()
-    {
-        error.set(true);
     }
 
     public void setIdleTimeout(int i)

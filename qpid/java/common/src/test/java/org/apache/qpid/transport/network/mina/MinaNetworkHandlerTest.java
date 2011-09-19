@@ -34,6 +34,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.qpid.framing.AMQDataBlock;
 import org.apache.qpid.protocol.ProtocolEngine;
 import org.apache.qpid.protocol.ProtocolEngineFactory;
+import org.apache.qpid.protocol.ServerProtocolEngine;
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.transport.ConnectionSettings;
 import org.apache.qpid.transport.NetworkTransportConfiguration;
@@ -333,7 +334,7 @@ public class MinaNetworkHandlerTest extends QpidTestCase
         }
     }
     
-    public class CountingProtocolEngine implements ProtocolEngine
+    public class CountingProtocolEngine implements ServerProtocolEngine
     {
         public ArrayList<ByteBuffer> _receivedBytes = new ArrayList<ByteBuffer>();
         private int _readBytes;
@@ -445,6 +446,11 @@ public class MinaNetworkHandlerTest extends QpidTestCase
         public boolean getClosed()
         {
             return _closed;
+        }
+
+        public long getConnectionId()
+        {
+            return -1;
         }
 
     }

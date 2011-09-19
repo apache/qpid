@@ -72,6 +72,7 @@ import org.apache.qpid.transport.RangeSet;
 import org.apache.qpid.transport.Session;
 import org.apache.qpid.transport.SessionException;
 import org.apache.qpid.transport.SessionListener;
+import org.apache.qpid.transport.TransportException;
 import org.apache.qpid.util.Serial;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -159,13 +160,20 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
      */
     AMQSession_0_10(org.apache.qpid.transport.Connection qpidConnection, AMQConnection con, int channelId,
                     boolean transacted, int acknowledgeMode, MessageFactoryRegistry messageFactoryRegistry,
-                    int defaultPrefetchHighMark, int defaultPrefetchLowMark)
+                    int defaultPrefetchHighMark, int defaultPrefetchLowMark,String name)
     {
 
         super(con, channelId, transacted, acknowledgeMode, messageFactoryRegistry, defaultPrefetchHighMark,
               defaultPrefetchLowMark);
         _qpidConnection = qpidConnection;
-        _qpidSession = _qpidConnection.createSession(1);
+        if (name == null)
+        {
+            _qpidSession = _qpidConnection.createSession(1);
+        }
+        else
+        {
+            _qpidSession = _qpidConnection.createSession(name,1);
+        }
         _qpidSession.setSessionListener(this);
         if (_transacted)
         {
@@ -192,11 +200,12 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
      * @param qpidConnection      The connection
      */
     AMQSession_0_10(org.apache.qpid.transport.Connection qpidConnection, AMQConnection con, int channelId,
-                    boolean transacted, int acknowledgeMode, int defaultPrefetchHigh, int defaultPrefetchLow)
+                    boolean transacted, int acknowledgeMode, int defaultPrefetchHigh, int defaultPrefetchLow,
+                    String name)
     {
 
         this(qpidConnection, con, channelId, transacted, acknowledgeMode, MessageFactoryRegistry.newDefaultRegistry(),
-             defaultPrefetchHigh, defaultPrefetchLow);
+             defaultPrefetchHigh, defaultPrefetchLow,name);
     }
 
     private void addUnacked(int id)
@@ -540,7 +549,6 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
     }
     
     public boolean isQueueBound(final String exchangeName, final String queueName, final String bindingKey,Map<String,Object> args)
-    throws JMSException
     {
         boolean res;
         ExchangeBoundResult bindingQueryResult =
@@ -683,6 +691,10 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
             ex.setLinkedException(e);
             
             throw ex;
+        }
+        catch(TransportException e)
+        {
+            throw toJMSException("Exception while creating message producer:" + e.getMessage(), e);
         }
 
     }
@@ -986,7 +998,8 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
         }
     }
 
-    @Override public void commit() throws JMSException
+    @Override
+    public void commit() throws JMSException
     {
         checkTransacted();
         try
@@ -998,6 +1011,10 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
                 _txSize = 0;
             }
             sendCommit();
+        }
+        catch(TransportException e)
+        {
+            throw toJMSException("Session exception occured while trying to commit: " + e.getMessage(), e);
         }
         catch (AMQException e)
         {
@@ -1368,5 +1385,5 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
         sb.append(">");
         return sb.toString();
     }
-    
+
 }

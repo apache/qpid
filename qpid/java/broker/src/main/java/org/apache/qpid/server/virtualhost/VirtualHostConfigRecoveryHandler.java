@@ -43,7 +43,10 @@ import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.AMQException;
 
 import org.apache.log4j.Logger;
+import org.apache.qpid.server.util.ByteBufferInputStream;
 
+import java.io.DataInputStream;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 
 import java.util.List;
@@ -236,7 +239,14 @@ public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHa
                 FieldTable argumentsFT = null;
                 if(buf != null)
                 {
-                    argumentsFT = new FieldTable(org.apache.mina.common.ByteBuffer.wrap(buf),buf.limit());
+                    try
+                    {
+                        argumentsFT = new FieldTable(new DataInputStream(new ByteBufferInputStream(buf)),buf.limit());
+                    }
+                    catch (IOException e)
+                    {
+                        throw new RuntimeException("IOException should not be thrown here", e);
+                    }
                 }
 
                 BindingFactory bf = _virtualHost.getBindingFactory();

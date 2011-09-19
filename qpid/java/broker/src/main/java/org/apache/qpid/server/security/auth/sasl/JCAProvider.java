@@ -21,12 +21,11 @@
 package org.apache.qpid.server.security.auth.sasl;
 
 import java.security.Provider;
-import java.security.Security;
 import java.util.Map;
 
 import javax.security.sasl.SaslServerFactory;
 
-public final class JCAProvider extends Provider
+public class JCAProvider extends Provider
 {
     public JCAProvider(String name, Map<String, Class<? extends SaslServerFactory>> providerMap)
     {

@@ -20,9 +20,11 @@
  */
 package org.apache.qpid.transport.network;
 
+/**
+ * A network transport is responsible for the establishment of network connections.
+ * NetworkTransport implementations are pluggable via the {@link Transport} class.
+ */
 public interface NetworkTransport
 {
     public void close();
-
-    public NetworkConnection getConnection();
 }

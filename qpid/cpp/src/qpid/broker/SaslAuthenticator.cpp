@@ -381,13 +381,17 @@ void CyrusAuthenticator::start(const string& mechanism, const string& response)
     const char *challenge;
     unsigned int challenge_len;
     
-    QPID_LOG(debug, "SASL: Starting authentication with mechanism: " << mechanism);
+    // This should be at same debug level as mech list in getMechanisms().
+    QPID_LOG(info, "SASL: Starting authentication with mechanism: " << mechanism);
     int code = sasl_server_start(sasl_conn,
                                  mechanism.c_str(),
-                                 response.c_str(), response.length(),
+                                 response.size() ? response.c_str() : 0, response.length(),
                                  &challenge, &challenge_len);
     
     processAuthenticationStep(code, challenge, challenge_len);
+    qmf::org::apache::qpid::broker::Connection* cnxMgmt = connection.getMgmtObject();
+    if ( cnxMgmt ) 
+        cnxMgmt->set_saslMechanism(mechanism);
 }
         
 void CyrusAuthenticator::step(const string& response)
@@ -424,10 +428,12 @@ void CyrusAuthenticator::processAuthenticationStep(int code, const char *challen
         client.secure(challenge_str);
     } else {
         std::string uid;
+        //save error detail before trying to retrieve username as error in doing so will overwrite it
+        std::string errordetail = sasl_errdetail(sasl_conn);
         if (!getUsername(uid)) {
-            QPID_LOG(info, "SASL: Authentication failed (no username available):" << sasl_errdetail(sasl_conn));
+            QPID_LOG(info, "SASL: Authentication failed (no username available yet):" << errordetail);
         } else {
-            QPID_LOG(info, "SASL: Authentication failed for " << uid << ":" << sasl_errdetail(sasl_conn));
+            QPID_LOG(info, "SASL: Authentication failed for " << uid << ":" << errordetail);
         }
 
         // TODO: Change to more specific exceptions, when they are
@@ -459,6 +465,9 @@ std::auto_ptr<SecurityLayer> CyrusAuthenticator::getSecurityLayer(uint16_t maxFr
     if (ssf) {
         securityLayer = std::auto_ptr<SecurityLayer>(new CyrusSecurityLayer(sasl_conn, maxFrameSize));
     }
+    qmf::org::apache::qpid::broker::Connection* cnxMgmt = connection.getMgmtObject();
+    if ( cnxMgmt ) 
+        cnxMgmt->set_saslSsf(ssf);
     return securityLayer;
 }
 

@@ -1,195 +1,172 @@
 /*
- *  Licensed to the Apache Software Foundation (ASF) under one
- *  or more contributor license agreements.  See the NOTICE file
- *  distributed with this work for additional information
- *  regarding copyright ownership.  The ASF licenses this file
- *  to you under the Apache License, Version 2.0 (the
- *  "License"); you may not use this file except in compliance
- *  with the License.  You may obtain a copy of the License at
  *
- *    http://www.apache.org/licenses/LICENSE-2.0
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
  *
- *  Unless required by applicable law or agreed to in writing,
- *  software distributed under the License is distributed on an
- *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- *  KIND, either express or implied.  See the License for the
- *  specific language governing permissions and limitations
- *  under the License.
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ *
  */
 package org.apache.qpid.server.security.access.plugins;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileWriter;
-import java.io.PrintWriter;
+import java.util.Arrays;
 
 import junit.framework.TestCase;
 
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.qpid.server.security.access.config.ConfigurationFile;
-import org.apache.qpid.server.security.access.config.PlainConfiguration;
+import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
+import org.apache.qpid.server.logging.UnitTestMessageLogger;
+import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.logging.actors.TestLogActor;
+import org.apache.qpid.server.security.Result;
+import org.apache.qpid.server.security.SecurityManager;
+import org.apache.qpid.server.security.access.ObjectProperties;
+import org.apache.qpid.server.security.access.ObjectType;
+import org.apache.qpid.server.security.access.Operation;
+import org.apache.qpid.server.security.access.Permission;
+import org.apache.qpid.server.security.access.config.Rule;
 import org.apache.qpid.server.security.access.config.RuleSet;
+import org.apache.qpid.server.security.auth.sasl.TestPrincipalUtils;
 
 /**
- * These tests check that the ACL file parsing works correctly.
+ * Unit test for ACL V2 plugin.  
  * 
- * For each message that can be returned in a {@link ConfigurationException}, an ACL file is created that should trigger this
- * particular message.
+ * This unit test tests the AccessControl class and it collaboration with {@link RuleSet},
+ * {@link SecurityManager} and {@link CurrentActor}.   The ruleset is configured programmatically,
+ * rather than from an external file.
+ * 
+ * @see RuleSetTest
  */
 public class AccessControlTest extends TestCase
 {
-    public void writeACLConfig(String...aclData) throws Exception
+    private AccessControl _plugin = null;  // Class under test
+    private final UnitTestMessageLogger messageLogger = new UnitTestMessageLogger();
+
+    protected void setUp() throws Exception
     {
-        File acl = File.createTempFile(getClass().getName() + getName(), "acl");
-        acl.deleteOnExit();
+        super.setUp();
+
+        final RuleSet rs = new RuleSet();
+        rs.addGroup("aclGroup1", Arrays.asList(new String[] {"member1", "member2"}));
+
+        // Rule expressed with username
+        rs.grant(0, "user1", Permission.ALLOW, Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY);
+        // Rule expressed with a acl group
+        rs.grant(1, "aclGroup1", Permission.ALLOW, Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY);
+        // Rule expressed with an external group
+        rs.grant(2, "extGroup1", Permission.DENY, Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY);
+        // Catch all rule
+        rs.grant(3, Rule.ALL, Permission.DENY_LOG, Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY);
+
+        _plugin = (AccessControl) AccessControl.FACTORY.newInstance(createConfiguration(rs));
+
+        SecurityManager.setThreadSubject(null);
         
-        // Write ACL file
-        PrintWriter aclWriter = new PrintWriter(new FileWriter(acl));
-        for (String line : aclData)
-        {
-            aclWriter.println(line);
-        }
-        aclWriter.close();
-
-        // Load ruleset
-        ConfigurationFile configFile = new PlainConfiguration(acl);
-        RuleSet ruleSet = configFile.load();
+        CurrentActor.set(new TestLogActor(messageLogger));
     }
 
-    public void testMissingACLConfig() throws Exception
+    protected void tearDown() throws Exception
     {
-        try
-        {
-            // Load ruleset
-	        ConfigurationFile configFile = new PlainConfiguration(new File("doesnotexist"));
-	        RuleSet ruleSet = configFile.load();
-            
-            fail("fail");
-        }
-        catch (ConfigurationException ce)
-        {
-            assertEquals(String.format(PlainConfiguration.CONFIG_NOT_FOUND_MSG, "doesnotexist"), ce.getMessage());
-            assertTrue(ce.getCause() instanceof FileNotFoundException);
-            assertEquals("doesnotexist (No such file or directory)", ce.getCause().getMessage());
-        }
+        super.tearDown();
+        SecurityManager.setThreadSubject(null);
     }
 
-    public void testACLFileSyntaxContinuation() throws Exception
+    /** 
+     * ACL plugin must always abstain if there is no  subject attached to the thread.
+     */
+    public void testNoSubjectAlwaysAbstains()
     {
-        try
-        {
-            writeACLConfig("ACL ALLOW ALL \\ ALL");
-            fail("fail");
-        }
-        catch (ConfigurationException ce)
-        {
-            assertEquals(String.format(PlainConfiguration.PREMATURE_CONTINUATION_MSG, 1), ce.getMessage());
-        }
+        SecurityManager.setThreadSubject(null);
+
+        final Result result = _plugin.authorise(Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY);
+        assertEquals(Result.ABSTAIN, result);
     }
 
-    public void testACLFileSyntaxTokens() throws Exception
+    /** 
+     * Tests that an allow rule expressed with a username allows an operation performed by a thread running
+     * with the same username.
+     */
+    public void testUsernameAllowsOperation()
     {
-        try
-        {
-            writeACLConfig("ACL unparsed ALL ALL");
-            fail("fail");
-        }
-        catch (ConfigurationException ce)
-        {
-            assertEquals(String.format(PlainConfiguration.PARSE_TOKEN_FAILED_MSG, 1), ce.getMessage());
-            assertTrue(ce.getCause() instanceof IllegalArgumentException);
-            assertEquals("Not a valid permission: unparsed", ce.getCause().getMessage());
-        }
+        SecurityManager.setThreadSubject(TestPrincipalUtils.createTestSubject("user1"));
+
+        final Result result = _plugin.authorise(Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY);
+        assertEquals(Result.ALLOWED, result);
     }
 
-    public void testACLFileSyntaxNotEnoughGroup() throws Exception
+    /** 
+     * Tests that an allow rule expressed with an <b>ACL groupname</b> allows an operation performed by a thread running
+     * by a user who belongs to the same group..
+     */
+    public void testAclGroupMembershipAllowsOperation()
     {
-        try
-        {
-            writeACLConfig("GROUP blah");
-            fail("fail");
-        }
-        catch (ConfigurationException ce)
-        {
-            assertEquals(String.format(PlainConfiguration.NOT_ENOUGH_GROUP_MSG, 1), ce.getMessage());
-        }
+        SecurityManager.setThreadSubject(TestPrincipalUtils.createTestSubject("member1"));
+
+        final Result result = _plugin.authorise(Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY);
+        assertEquals(Result.ALLOWED, result);
     }
 
-    public void testACLFileSyntaxNotEnoughACL() throws Exception
+    /** 
+     * Tests that a deny rule expressed with an <b>External groupname</b> denies an operation performed by a thread running
+     * by a user who belongs to the same group.
+     */
+    public void testExternalGroupMembershipDeniesOperation()
     {
-        try
-        {
-            writeACLConfig("ACL ALLOW");
-            fail("fail");
-        }
-        catch (ConfigurationException ce)
-        {
-            assertEquals(String.format(PlainConfiguration.NOT_ENOUGH_ACL_MSG, 1), ce.getMessage());
-        }
+        SecurityManager.setThreadSubject(TestPrincipalUtils.createTestSubject("user3", "extGroup1"));
+        
+        final Result result = _plugin.authorise(Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY);
+        assertEquals(Result.DENIED, result);
     }
 
-    public void testACLFileSyntaxNotEnoughConfig() throws Exception
+    /** 
+     * Tests that the catch all deny denies the operation and logs with the logging actor.
+     */
+    public void testCatchAllRuleDeniesUnrecognisedUsername()
     {
-        try
-        {
-            writeACLConfig("CONFIG");
-            fail("fail");
-        }
-        catch (ConfigurationException ce)
-        {
-            assertEquals(String.format(PlainConfiguration.NOT_ENOUGH_TOKENS_MSG, 1), ce.getMessage());
-        }
+        SecurityManager.setThreadSubject(TestPrincipalUtils.createTestSubject("unknown", "unkgroup1", "unkgroup2"));
+        
+        assertEquals("Expecting zero messages before test", 0, messageLogger.getLogMessages().size());
+        final Result result = _plugin.authorise(Operation.ACCESS, ObjectType.VIRTUALHOST, ObjectProperties.EMPTY);
+        assertEquals(Result.DENIED, result);
+        
+        assertEquals("Expecting one message before test", 1, messageLogger.getLogMessages().size());
+        assertTrue("Logged message does not contain expected string", messageLogger.messageContains(0, "ACL-1002"));
     }
-
-    public void testACLFileSyntaxNotEnough() throws Exception
+    
+    /**
+     * Creates a configuration plugin for the {@link AccessControl} plugin.
+     */
+    private ConfigurationPlugin createConfiguration(final RuleSet rs)
     {
-        try
+        final ConfigurationPlugin cp = new ConfigurationPlugin()
         {
-            writeACLConfig("INVALID");
-            fail("fail");
-        }
-        catch (ConfigurationException ce)
-        {
-            assertEquals(String.format(PlainConfiguration.NOT_ENOUGH_TOKENS_MSG, 1), ce.getMessage());
-        }
-    }
+            public AccessControlConfiguration  getConfiguration(final String plugin)
+            {
+                return new AccessControlConfiguration()
+                {
+                    public RuleSet getRuleSet()
+                    {
+                        return rs;
+                    }
+                };
+            }
 
-    public void testACLFileSyntaxPropertyKeyOnly() throws Exception
-    {
-        try
-        {
-            writeACLConfig("ACL ALLOW adk CREATE QUEUE name");
-            fail("fail");
-        }
-        catch (ConfigurationException ce)
-        {
-            assertEquals(String.format(PlainConfiguration.PROPERTY_KEY_ONLY_MSG, 1), ce.getMessage());
-        }
-    }
+            public String[] getElementsProcessed()
+            {
+                throw new UnsupportedOperationException();
+            }
+        };
 
-    public void testACLFileSyntaxPropertyNoEquals() throws Exception
-    {
-        try
-        {
-            writeACLConfig("ACL ALLOW adk CREATE QUEUE name test");
-            fail("fail");
-        }
-        catch (ConfigurationException ce)
-        {
-            assertEquals(String.format(PlainConfiguration.PROPERTY_NO_EQUALS_MSG, 1), ce.getMessage());
-        }
-    }
-
-    public void testACLFileSyntaxPropertyNoValue() throws Exception
-    {
-        try
-        {
-            writeACLConfig("ACL ALLOW adk CREATE QUEUE name =");
-            fail("fail");
-        }
-        catch (ConfigurationException ce)
-        {
-            assertEquals(String.format(PlainConfiguration.PROPERTY_NO_VALUE_MSG, 1), ce.getMessage());
-        }
+        return cp;
     }
 }

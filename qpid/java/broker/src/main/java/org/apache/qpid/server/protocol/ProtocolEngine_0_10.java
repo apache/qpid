@@ -20,7 +20,8 @@
  */
 package org.apache.qpid.server.protocol;
 
-import org.apache.qpid.protocol.ProtocolEngine;
+import org.apache.qpid.protocol.ServerProtocolEngine;
+import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.network.InputHandler;
 import org.apache.qpid.transport.network.Assembler;
 import org.apache.qpid.transport.network.Disassembler;
@@ -31,9 +32,10 @@ import org.apache.qpid.server.logging.messages.ConnectionMessages;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 
 import java.net.SocketAddress;
+import java.nio.ByteBuffer;
 import java.util.UUID;
 
-public class ProtocolEngine_0_10  extends InputHandler implements ProtocolEngine, ConnectionConfig
+public class ProtocolEngine_0_10  extends InputHandler implements ServerProtocolEngine, ConnectionConfig
 {
     public static final int MAX_FRAME_SIZE = 64 * 1024 - 1;
 
@@ -52,11 +54,16 @@ public class ProtocolEngine_0_10  extends InputHandler implements ProtocolEngine
         super(new Assembler(conn));
         _connection = conn;
         _connection.setConnectionConfig(this);
-        _network = network;
+
         _id = appRegistry.getConfigStore().createId();
         _appRegistry = appRegistry;
 
-        _connection.setSender(new Disassembler(_network.getSender(), MAX_FRAME_SIZE));
+        if(network != null)
+        {
+            setNetworkConnection(network);
+        }
+
+
         _connection.onOpen(new Runnable()
         {
             public void run()
@@ -64,6 +71,19 @@ public class ProtocolEngine_0_10  extends InputHandler implements ProtocolEngine
                 getConfigStore().addConfiguredObject(ProtocolEngine_0_10.this);
             }
         });
+
+    }
+
+    public void setNetworkConnection(NetworkConnection network)
+    {
+        setNetworkConnection(network, network.getSender());
+    }
+
+    public void setNetworkConnection(NetworkConnection network, Sender<ByteBuffer> sender)
+    {
+        _network = network;
+
+        _connection.setSender(new Disassembler(sender, MAX_FRAME_SIZE));
 
         // FIXME Two log messages to maintain compatibility with earlier protocol versions
         _connection.getLogActor().message(ConnectionMessages.OPEN(null, null, false, false));
@@ -127,7 +147,7 @@ public class ProtocolEngine_0_10  extends InputHandler implements ProtocolEngine
 
     public String getAuthId()
     {
-        return _connection.getAuthorizationID();
+        return _connection.getAuthorizedPrincipal() == null ? null : _connection.getAuthorizedPrincipal().getName();
     }
 
     public String getRemoteProcessName()
@@ -186,9 +206,14 @@ public class ProtocolEngine_0_10  extends InputHandler implements ProtocolEngine
     {
         return false;
     }
-    
+
     public void mgmtClose()
     {
         _connection.mgmtClose();
+    }
+
+    public long getConnectionId()
+    {
+        return _connection.getConnectionId();
     }
 }

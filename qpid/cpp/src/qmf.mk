@@ -43,6 +43,7 @@ QMF2_API =				\
   ../include/qmf/ConsoleSession.h	\
   ../include/qmf/DataAddr.h		\
   ../include/qmf/Data.h			\
+  ../include/qmf/posix/EventNotifier.h	\
   ../include/qmf/exceptions.h		\
   ../include/qmf/Handle.h		\
   ../include/qmf/ImportExport.h		\
@@ -104,6 +105,9 @@ libqmf2_la_SOURCES = 		\
   qmf/DataAddrImpl.h		\
   qmf/Data.cpp			\
   qmf/DataImpl.h		\
+  qmf/EventNotifierImpl.cpp	\
+  qmf/PosixEventNotifier.cpp	\
+  qmf/PosixEventNotifierImpl.cpp \
   qmf/exceptions.cpp		\
   qmf/Expression.cpp		\
   qmf/Expression.h		\

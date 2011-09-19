@@ -58,7 +58,7 @@ public class ConnectionSettings
     boolean verifyHostname;
     
     // SASL props
-    String saslMechs = System.getProperty("qpid.sasl_mechs", "PLAIN");
+    String saslMechs = System.getProperty("qpid.sasl_mechs", null);
     String saslProtocol = System.getProperty("qpid.sasl_protocol", "AMQP");
     String saslServerName = System.getProperty("qpid.sasl_server_name", "localhost");
     boolean useSASLEncryption;

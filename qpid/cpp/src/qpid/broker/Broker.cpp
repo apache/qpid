@@ -435,8 +435,9 @@ Manageable::status_t Broker::ManagementMethod (uint32_t methodId,
         _qmf::ArgsBrokerConnect& hp=
             dynamic_cast<_qmf::ArgsBrokerConnect&>(args);
 
-        QPID_LOG (debug, "Broker::connect()");
         string transport = hp.i_transport.empty() ? TCP_TRANSPORT : hp.i_transport;
+        QPID_LOG (debug, "Broker::connect() " << hp.i_host << ":" << hp.i_port << "; transport=" << transport <<
+                        "; durable=" << (hp.i_durable?"T":"F") << "; authMech=\"" << hp.i_authMechanism << "\"");
         if (!getProtocolFactory(transport)) {
             QPID_LOG(error, "Transport '" << transport << "' not supported");
             return  Manageable::STATUS_NOT_IMPLEMENTED;
@@ -455,7 +456,7 @@ Manageable::status_t Broker::ManagementMethod (uint32_t methodId,
         QPID_LOG (debug, "Broker::queueMoveMessages()");
         if (queueMoveMessages(moveArgs.i_srcQueue, moveArgs.i_destQueue, moveArgs.i_qty, moveArgs.i_filter))
             status = Manageable::STATUS_OK;
-	else
+        else
             return Manageable::STATUS_PARAMETER_INVALID;
         break;
       }
@@ -804,6 +805,7 @@ bool Broker::deferDeliveryImpl(const std::string& ,
 void Broker::setClusterTimer(std::auto_ptr<sys::Timer> t) {
     clusterTimer = t;
     queueCleaner.setTimer(clusterTimer.get());
+    dtxManager.setTimer(*clusterTimer.get());
 }
 
 const std::string Broker::TCP_TRANSPORT("tcp");
@@ -941,6 +943,9 @@ void Broker::deleteExchange(const std::string& name, const std::string& userId,
             throw framing::UnauthorizedAccessException(QPID_MSG("ACL denied exchange delete request from " << userId));
     }
 
+    if (name.empty()) {
+        throw framing::InvalidArgumentException(QPID_MSG("Delete not allowed for default exchange"));
+    }
     Exchange::shared_ptr exchange(exchanges.get(name));
     if (!exchange) throw framing::NotFoundException(QPID_MSG("Delete failed. No such exchange: " << name));
     if (exchange->inUseAsAlternate()) throw framing::NotAllowedException(QPID_MSG("Exchange in use as alternate-exchange."));
@@ -967,6 +972,9 @@ void Broker::bind(const std::string& queueName,
 
         if (!acl->authorise(userId,acl::ACT_BIND,acl::OBJ_EXCHANGE,exchangeName,&params))
             throw framing::UnauthorizedAccessException(QPID_MSG("ACL denied exchange bind request from " << userId));
+    }
+    if (exchangeName.empty()) {
+        throw framing::InvalidArgumentException(QPID_MSG("Bind not allowed for default exchange"));
     }
 
     Queue::shared_ptr queue = queues.find(queueName);
@@ -998,13 +1006,15 @@ void Broker::unbind(const std::string& queueName,
         if (!acl->authorise(userId,acl::ACT_UNBIND,acl::OBJ_EXCHANGE,exchangeName,&params) )
             throw framing::UnauthorizedAccessException(QPID_MSG("ACL denied exchange unbind request from " << userId));
     }
-
+    if (exchangeName.empty()) {
+        throw framing::InvalidArgumentException(QPID_MSG("Unbind not allowed for default exchange"));
+    }
     Queue::shared_ptr queue = queues.find(queueName);
     Exchange::shared_ptr exchange = exchanges.get(exchangeName);
     if (!queue) {
-        throw framing::NotFoundException(QPID_MSG("Bind failed. No such queue: " << queueName));
+        throw framing::NotFoundException(QPID_MSG("Unbind failed. No such queue: " << queueName));
     } else if (!exchange) {
-        throw framing::NotFoundException(QPID_MSG("Bind failed. No such exchange: " << exchangeName));
+        throw framing::NotFoundException(QPID_MSG("Unbind failed. No such exchange: " << exchangeName));
     } else {
         if (exchange->unbind(queue, key, 0)) {
             if (exchange->isDurable() && queue->isDurable()) {

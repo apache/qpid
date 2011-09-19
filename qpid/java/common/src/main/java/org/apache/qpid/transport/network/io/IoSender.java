@@ -31,6 +31,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.qpid.common.Closeable;
 import org.apache.qpid.thread.Threading;
 import org.apache.qpid.transport.Sender;
+import org.apache.qpid.transport.SenderClosedException;
 import org.apache.qpid.transport.SenderException;
 import org.apache.qpid.transport.TransportException;
 import org.apache.qpid.transport.util.Logger;
@@ -59,7 +60,7 @@ public final class IoSender implements Runnable, Sender<ByteBuffer>
     private final AtomicBoolean closed = new AtomicBoolean(false);
     private final Thread senderThread;
     private final List<Closeable> _listeners = new ArrayList<Closeable>();
-    
+
     private volatile Throwable exception = null;
 
     public IoSender(Socket socket, int bufferSize, long timeout)
@@ -80,13 +81,13 @@ public final class IoSender implements Runnable, Sender<ByteBuffer>
         try
         {
             //Create but deliberately don't start the thread.
-            senderThread = Threading.getThreadFactory().createThread(this);                      
+            senderThread = Threading.getThreadFactory().createThread(this);
         }
         catch(Exception e)
         {
             throw new Error("Error creating IOSender thread",e);
         }
-        
+
         senderThread.setDaemon(true);
         senderThread.setName(String.format("IoSender - %s", socket.getRemoteSocketAddress()));
     }
@@ -110,7 +111,7 @@ public final class IoSender implements Runnable, Sender<ByteBuffer>
     {
         if (closed.get())
         {
-            throw new SenderException("sender is closed", exception);
+            throw new SenderClosedException("sender is closed", exception);
         }
 
         final int size = buffer.length;
@@ -143,7 +144,7 @@ public final class IoSender implements Runnable, Sender<ByteBuffer>
 
                     if (closed.get())
                     {
-                        throw new SenderException("sender is closed", exception);
+                        throw new SenderClosedException("sender is closed", exception);
                     }
 
                     if (head - tail >= size)
@@ -255,7 +256,7 @@ public final class IoSender implements Runnable, Sender<ByteBuffer>
 
     public void run()
     {
-        final int size = buffer.length;       
+        final int size = buffer.length;
         while (true)
         {
             final int hd = head;

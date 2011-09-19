@@ -53,6 +53,7 @@ def filter_log(log):
         'stall for update|unstall, ignore update|cancelled offer .* unstall',
         'caught up',
         'active for links|Passivating links|Activating links',
+        'info Connecting: .*', # UpdateClient connection
         'info Connection.* connected to', # UpdateClient connection
         'warning Connection \\[[-0-9.: ]+\\] closed', # UpdateClient connection
         'warning Broker closed connection: 200, OK',

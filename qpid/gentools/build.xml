@@ -25,7 +25,7 @@
     <property name="java.target" value="1.5"/>
     
     <target name="compile">
-        <javac srcdir="${src}" source="${java.source}" target="${java.target}" fork="true" debug="on">
+        <javac srcdir="${src}" source="${java.source}" target="${java.target}" fork="true" debug="on" includeantruntime="false">
             <classpath>
                 <fileset dir="${src}/../lib">
                     <include name="**/*.jar"/>

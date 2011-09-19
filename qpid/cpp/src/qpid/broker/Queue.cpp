@@ -702,7 +702,7 @@ void Queue::push(boost::intrusive_ptr<Message>& msg, bool isRecovery){
     {
         Mutex::ScopedLock locker(messageLock);
         QueuedMessage qm(this, msg, ++sequence);
-        if (insertSeqNo) msg->getOrInsertHeaders().setInt64(seqNoKey, sequence);
+        if (insertSeqNo) msg->insertCustomProperty(seqNoKey, sequence);
 
         dequeueRequired = messages->push(qm, removed);
         listeners.populate(copy);
@@ -805,11 +805,6 @@ bool Queue::enqueue(TransactionContext* ctxt, boost::intrusive_ptr<Message>& msg
     }
 
     if (traceId.size()) {
-        //copy on write: take deep copy of message before modifying it
-        //as the frames may already be available for delivery on other
-        //threads
-        boost::intrusive_ptr<Message> copy(new Message(*msg));
-        msg = copy;
         msg->addTraceId(traceId);
     }
 

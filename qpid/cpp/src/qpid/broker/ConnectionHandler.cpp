@@ -68,8 +68,15 @@ void ConnectionHandler::handle(framing::AMQFrame& frame)
     AMQMethodBody* method=frame.getBody()->getMethod();
     Connection::ErrorListener* errorListener = handler->connection.getErrorListener();
     try{
-        if (!invoke(static_cast<AMQP_AllOperations::ConnectionHandler&>(*handler.get()), *method)) {
+        if (method && invoke(
+                static_cast<AMQP_AllOperations::ConnectionHandler&>(*handler), *method)) {
+            // This is a connection control frame, nothing more to do.
+        } else if (isOpen()) {
             handler->connection.getChannel(frame.getChannel()).in(frame);
+        } else {
+            handler->proxy.close(
+                connection::CLOSE_CODE_FRAMING_ERROR,
+                "Connection not yet open, invalid frame received.");
         }
     }catch(ConnectionException& e){
         if (errorListener) errorListener->connectionError(e.what());
@@ -185,7 +192,7 @@ void ConnectionHandler::Handler::secureOk(const string& response)
 void ConnectionHandler::Handler::tuneOk(uint16_t /*channelmax*/,
     uint16_t framemax, uint16_t heartbeat)
 {
-    connection.setFrameMax(framemax);
+    if (framemax) connection.setFrameMax(framemax);
     connection.setHeartbeatInterval(heartbeat);
 }
 

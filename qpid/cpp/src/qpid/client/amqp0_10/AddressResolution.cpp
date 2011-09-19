@@ -129,6 +129,10 @@ const std::string HEADERS_EXCHANGE("headers");
 const std::string XML_EXCHANGE("xml");
 const std::string WILDCARD_ANY("#");
 
+//exchange prefixes:
+const std::string PREFIX_AMQ("amq.");
+const std::string PREFIX_QPID("qpid.");
+
 const Verifier verifier;
 }
 
@@ -199,6 +203,7 @@ class Exchange : protected Node
     void checkCreate(qpid::client::AsyncSession&, CheckMode);
     void checkAssert(qpid::client::AsyncSession&, CheckMode);
     void checkDelete(qpid::client::AsyncSession&, CheckMode);
+    bool isReservedName();
 
   protected:
     const std::string specifiedType;
@@ -490,7 +495,7 @@ std::string Subscription::getSubscriptionName(const std::string& base, const std
     if (name.empty()) {
         return (boost::format("%1%_%2%") % base % Uuid(true).str()).str();
     } else {
-        return (boost::format("%1%_%2%") % base % name).str();
+        return name;
     }
 }
 
@@ -772,18 +777,32 @@ Exchange::Exchange(const Address& a) : Node(a),
     linkBindings.setDefaultExchange(name);
 }
 
+bool Exchange::isReservedName()
+{
+    return name.find(PREFIX_AMQ) != std::string::npos || name.find(PREFIX_QPID) != std::string::npos;
+}
+
 void Exchange::checkCreate(qpid::client::AsyncSession& session, CheckMode mode)
 {
     if (enabled(createPolicy, mode)) {
         try {
-            std::string type = specifiedType;
-            if (type.empty()) type = TOPIC_EXCHANGE;
-            session.exchangeDeclare(arg::exchange=name,
-                                          arg::type=type,
-                                          arg::durable=durable,
-                                          arg::autoDelete=autoDelete,
-                                          arg::alternateExchange=alternateExchange,
-                                          arg::arguments=arguments);
+            if (isReservedName()) {
+                try {
+                    sync(session).exchangeDeclare(arg::exchange=name, arg::passive=true);
+                } catch (const qpid::framing::NotFoundException& /*e*/) {
+                    throw ResolutionError((boost::format("Cannot create exchange %1%; names beginning with \"amq.\" or \"qpid.\" are reserved.") % name).str());
+                }
+
+            } else {
+                std::string type = specifiedType;
+                if (type.empty()) type = TOPIC_EXCHANGE;
+                session.exchangeDeclare(arg::exchange=name,
+                                        arg::type=type,
+                                        arg::durable=durable,
+                                        arg::autoDelete=autoDelete,
+                                        arg::alternateExchange=alternateExchange,
+                                        arg::arguments=arguments);
+            }
             nodeBindings.bind(session);
             session.sync();
         } catch (const qpid::framing::NotAllowedException& e) {
@@ -833,7 +852,7 @@ void Exchange::checkAssert(qpid::client::AsyncSession& session, CheckMode mode)
                 FieldTable::ValuePtr v = result.getArguments().get(i->first);
                 if (!v) {
                     throw AssertionFailed((boost::format("Option %1% not set for %2%") % i->first % name).str());
-                } else if (i->second != v) {
+                } else if (*i->second != *v) {
                     throw AssertionFailed((boost::format("Option %1% does not match for %2%, expected %3%, got %4%")
                                           % i->first % name % *(i->second) % *v).str());
                 }

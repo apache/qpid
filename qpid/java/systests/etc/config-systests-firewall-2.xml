@@ -42,13 +42,6 @@
     </connector>
     <management>
         <enabled>false</enabled>
-        <jmxport>8999</jmxport>
-        <ssl>
-            <enabled>false</enabled>
-            <!-- Update below path to your keystore location, eg ${conf}/qpid.keystore  -->
-            <keyStorePath>${prefix}/../test-profiles/test_resources/ssl/keystore.jks</keyStorePath>
-            <keyStorePassword>password</keyStorePassword>
-        </ssl>
     </management>
     <advanced>
         <filterchain enableExecutorPool="true"/>
@@ -61,10 +54,8 @@
     </advanced>
 
     <security>
-        <principal-databases>
-            <!-- Example use of Base64 encoded MD5 hashes for authentication via CRAM-MD5-Hashed -->
+        <pd-auth-manager>
             <principal-database>
-                <name>passwordfile</name>
                 <class>org.apache.qpid.server.security.auth.database.PlainPasswordFilePrincipalDatabase</class>
                 <attributes>
                     <attribute>
@@ -73,7 +64,7 @@
                     </attribute>
                 </attributes>
             </principal-database>
-        </principal-databases>
+        </pd-auth-manager>
 
         <msg-auth>false</msg-auth>
         

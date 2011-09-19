@@ -102,13 +102,6 @@ public class AMQUserManagementMBeanTest extends InternalBrokerBaseCase
         assertEquals("Unexpected number of users before test", 1,_amqumMBean.viewUsers().size());
     }
 
-    public void testFiveArgCreateUserWithNegativeRightsRemainsSupported()
-    {
-        assertEquals("Unexpected number of users before test", 1,_amqumMBean.viewUsers().size());
-        assertTrue("Create should return true to flag successful create", _amqumMBean.createUser("newuser", "mypass".toCharArray(), false, false, false));
-        assertEquals("Unexpected number of users before test", 2,_amqumMBean.viewUsers().size());
-    }
-
     public void testSetPassword()
     {
         assertTrue("Set password should return true to flag successful change", _amqumMBean.setPassword(TEST_USERNAME, "newpassword"));
@@ -135,33 +128,6 @@ public class AMQUserManagementMBeanTest extends InternalBrokerBaseCase
         assertTrue(userRec.containsKey(UserManagement.RIGHTS_READ_WRITE));
         assertTrue(userRec.containsKey(UserManagement.RIGHTS_ADMIN));
         assertEquals(false, userRec.get(UserManagement.RIGHTS_ADMIN));
-    }
-
-    // TEST DEPRECATED METHODS
-    public void testFiveArgCreateUserWithPositiveRightsThrowsUnsupportedOperation()
-    {
-        try 
-        {
-            _amqumMBean.createUser(TEST_USERNAME, "mypass", true, false, false);
-            fail("Exception not thrown");
-        }
-        catch (UnsupportedOperationException uoe)
-        {
-            // PASS
-        }
-    }
-
-    public void testSetRightsThrowsUnsupportedOperation()
-    {
-        try 
-        {
-            _amqumMBean.setRights("", false, false, false);
-            fail("Exception not thrown");
-        }
-        catch(UnsupportedOperationException nie)
-        {
-            // PASS
-        }
     }
 
     // ============================ Utility methods =========================

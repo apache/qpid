@@ -139,6 +139,9 @@ bool DirectExchange::unbind(Queue::shared_ptr queue, const string& routingKey, c
             if (mgmtExchange != 0) {
                 mgmtExchange->dec_bindingCount();
             }
+            if (bk.queues.empty()) {
+                bindings.erase(routingKey);
+            }
         } else {
             return false;
         }

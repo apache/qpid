@@ -26,6 +26,6 @@ public interface ProtocolEngineFactory
 { 
  
   // Returns a new instance of a ProtocolEngine 
-  ProtocolEngine newProtocolEngine(NetworkConnection network);
+  ProtocolEngine newProtocolEngine();
    
 } 

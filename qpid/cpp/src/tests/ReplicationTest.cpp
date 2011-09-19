@@ -74,7 +74,7 @@ QPID_AUTO_TEST_CASE(testReplicationExchange)
 {
     qpid::broker::Broker::Options brokerOpts(getBrokerOpts(list_of<string>("qpidd")
                                                            ("--replication-exchange-name=qpid.replication")));
-    ProxySessionFixture f(brokerOpts);
+    SessionFixture f(brokerOpts);
 
 
     std::string dataQ("queue-1");

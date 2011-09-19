@@ -39,6 +39,9 @@ public:
     /** Create a socket wrapper for descriptor. */
     QPID_COMMON_EXTERN Socket();
 
+    /** Create a new Socket which is the same address family as this one */
+    QPID_COMMON_EXTERN Socket* createSameTypeSocket() const;
+
     /** Set socket non blocking */
     void setNonblocking() const;
 
@@ -77,7 +80,7 @@ public:
      * Returns the error code stored in the socket.  This may be used
      * to determine the result of a non-blocking connect.
      */
-    int getError() const;
+    QPID_COMMON_EXTERN int getError() const;
 
     /** Accept a connection from a socket that is already listening
      * and has an incoming connection
@@ -92,7 +95,9 @@ private:
     /** Create socket */
     void createSocket(const SocketAddress&) const;
 
+    /** Construct socket with existing handle */
     Socket(IOHandlePrivate*);
+
     mutable std::string localname;
     mutable std::string peername;
     mutable bool nonblocking;

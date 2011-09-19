@@ -107,8 +107,8 @@ class Console:
 # BrokerURL
 #===================================================================================================
 class BrokerURL(URL):
-  def __init__(self, text):
-    URL.__init__(self, text)
+  def __init__(self, *args, **kwargs):
+    URL.__init__(self, *args, **kwargs)
     if self.port is None:
       if self.scheme == URL.AMQPS:
         self.port = 5671
@@ -122,7 +122,7 @@ class BrokerURL(URL):
       self.authPass = str(self.password)
 
   def name(self):
-    return self.host + ":" + str(self.port)
+    return str(self)
 
   def match(self, host, port):
     return socket.getaddrinfo(self.host, self.port)[0][4] == socket.getaddrinfo(host, port)[0][4]
@@ -645,7 +645,10 @@ class Session:
     Will raise an exception if the session is not managing the connection and
     the connection setup to the broker fails.
     """
-    url = BrokerURL(target)
+    if isinstance(target, BrokerURL):
+      url = target
+    else:
+      url = BrokerURL(target)
     broker = Broker(self, url.host, url.port, mechanisms, url.authName, url.authPass,
                     ssl = url.scheme == URL.AMQPS, connTimeout=timeout)
 
@@ -2346,18 +2349,19 @@ class Broker(Thread):
 
   def getUrl(self):
     """ """
-    return "%s:%d" % (self.host, self.port)
+    return BrokerURL(host=self.host, port=self.port)
 
   def getFullUrl(self, noAuthIfGuestDefault=True):
     """ """
-    ssl = ""
     if self.ssl:
-      ssl = "s"
-    auth = "%s/%s@" % (self.authUser, self.authPass)
+      scheme = "amqps"
+    else:
+      scheme = "amqp"
     if self.authUser == "" or \
           (noAuthIfGuestDefault and self.authUser == "guest" and self.authPass == "guest"):
-      auth = ""
-    return "amqp%s://%s%s:%d" % (ssl, auth, self.host, self.port or 5672)
+      return BrokerURL(scheme=scheme, host=self.host, port=(self.port or 5672))
+    else:
+      return BrokerURL(scheme=scheme, user=self.authUser, password=self.authPass, host=self.host, port=(self.port or 5672))
 
   def __repr__(self):
     if self.connected:

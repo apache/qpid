@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.queue;
 
-import org.apache.mina.common.ByteBuffer;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ContentHeaderBody;
@@ -289,7 +288,7 @@ public class AMQQueueAlertTest extends InternalBrokerBaseCase
     protected void configure()
     {
         // Increase Alert Check period
-        getConfiguration().setHousekeepingExpiredMessageCheckPeriod(200);
+        getConfiguration().setHousekeepingCheckPeriod(200);
     }
 
     private void sendMessages(AMQChannel channel, long messageCount, final long size) throws AMQException
@@ -312,18 +311,14 @@ public class AMQQueueAlertTest extends InternalBrokerBaseCase
         {
             messages[i].addContentBodyFrame(new ContentChunk(){
 
-                ByteBuffer _data = ByteBuffer.allocate((int)size);
-
-                {
-                    _data.limit((int)size);
-                }
+                byte[] _data = new byte[(int)size];
 
                 public int getSize()
                 {
                     return (int) size;
                 }
 
-                public ByteBuffer getData()
+                public byte[] getData()
                 {
                     return _data;
                 }

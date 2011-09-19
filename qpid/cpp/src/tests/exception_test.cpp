@@ -92,32 +92,30 @@ QPID_AUTO_TEST_CASE(TestSessionBusy) {
 }
 
 QPID_AUTO_TEST_CASE(DisconnectedPop) {
-    ProxySessionFixture fix;
-    ProxyConnection c(fix.broker->getPort(Broker::TCP_TRANSPORT));
+    SessionFixture fix;
     fix.session.queueDeclare(arg::queue="q");
     fix.subs.subscribe(fix.lq, "q");
     Catcher<TransportFailure> pop(bind(&LocalQueue::pop, &fix.lq, sys::TIME_SEC));
-    fix.connection.proxy.close();
+    fix.shutdownBroker();
     BOOST_CHECK(pop.join());
 }
 
 QPID_AUTO_TEST_CASE(DisconnectedListen) {
-    ProxySessionFixture fix;
+    SessionFixture fix;
     struct NullListener : public MessageListener {
         void received(Message&) { BOOST_FAIL("Unexpected message"); }
     } l;
-    ProxyConnection c(fix.broker->getPort(Broker::TCP_TRANSPORT));
     fix.session.queueDeclare(arg::queue="q");
     fix.subs.subscribe(l, "q");
 
     Catcher<TransportFailure> runner(bind(&SubscriptionManager::run, boost::ref(fix.subs)));
-    fix.connection.proxy.close();
-    runner.join();    
+    fix.shutdownBroker();
+    runner.join();
     BOOST_CHECK_THROW(fix.session.queueDeclare(arg::queue="x"), TransportFailure);
 }
 
 QPID_AUTO_TEST_CASE(NoSuchQueueTest) {
-    ProxySessionFixture fix;
+    SessionFixture fix;
     ScopedSuppressLogging sl; // Suppress messages for expected errors.
     BOOST_CHECK_THROW(fix.subs.subscribe(fix.lq, "no such queue"), NotFoundException);
 }
