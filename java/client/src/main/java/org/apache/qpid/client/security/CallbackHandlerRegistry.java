@@ -20,17 +20,22 @@
  */
 package org.apache.qpid.client.security;
 
-import org.apache.qpid.util.FileUtils;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
+import java.util.StringTokenizer;
+import java.util.TreeMap;
+
+import org.apache.qpid.util.FileUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * CallbackHandlerRegistry is a registry for call back handlers for user authentication and interaction during user
@@ -42,7 +47,7 @@ import java.util.Properties;
  * "amp.callbackhandler.properties". The format of the properties file is:
  *
  * <p/><pre>
- * CallbackHanlder.mechanism=fully.qualified.class.name
+ * CallbackHanlder.n.mechanism=fully.qualified.class.name where n is an ordinal
  * </pre>
  *
  * <p/>Where mechanism is an IANA-registered mechanism name and the fully qualified class name refers to a
@@ -66,51 +71,15 @@ public class CallbackHandlerRegistry
     public static final String DEFAULT_RESOURCE_NAME = "org/apache/qpid/client/security/CallbackHandlerRegistry.properties";
 
     /** A static reference to the singleton instance of this registry. */
-    private static CallbackHandlerRegistry _instance = new CallbackHandlerRegistry();
+    private static final CallbackHandlerRegistry _instance;
 
     /** Holds a map from SASL mechanism names to call back handlers. */
-    private Map<String, Class> _mechanismToHandlerClassMap = new HashMap<String, Class>();
+    private Map<String, Class<AMQCallbackHandler>> _mechanismToHandlerClassMap = new HashMap<String, Class<AMQCallbackHandler>>();
 
-    /** Holds a space delimited list of mechanisms that callback handlers exist for. */
-    private String _mechanisms;
+    /** Ordered collection of mechanisms for which callback handlers exist. */
+    private Collection<String> _mechanisms;
 
-    /**
-     * Gets the singleton instance of this registry.
-     *
-     * @return The singleton instance of this registry.
-     */
-    public static CallbackHandlerRegistry getInstance()
-    {
-        return _instance;
-    }
-
-    /**
-     * Gets the callback handler class for a given SASL mechanism name.
-     *
-     * @param mechanism The SASL mechanism name.
-     *
-     * @return The callback handler class for the mechanism, or null if none is configured for that mechanism.
-     */
-    public Class getCallbackHandlerClass(String mechanism)
-    {
-        return (Class) _mechanismToHandlerClassMap.get(mechanism);
-    }
-
-    /**
-     * Gets a space delimited list of supported SASL mechanisms.
-     *
-     * @return A space delimited list of supported SASL mechanisms.
-     */
-    public String getMechanisms()
-    {
-        return _mechanisms;
-    }
-
-    /**
-     * Creates the call back handler registry from its configuration resource or file. This also has the side effect
-     * of configuring and registering the SASL client factory implementations using {@link DynamicSaslRegistrar}.
-     */
-    private CallbackHandlerRegistry()
+    static
     {
         // Register any configured SASL client factories.
         DynamicSaslRegistrar.registerSaslProviders();
@@ -120,12 +89,12 @@ public class CallbackHandlerRegistry
             FileUtils.openFileOrDefaultResource(filename, DEFAULT_RESOURCE_NAME,
                 CallbackHandlerRegistry.class.getClassLoader());
 
+        final Properties props = new Properties();
+
         try
         {
-            Properties props = new Properties();
+
             props.load(is);
-            parseProperties(props);
-            _logger.info("Callback handlers available for SASL mechanisms: " + _mechanisms);
         }
         catch (IOException e)
         {
@@ -146,32 +115,68 @@ public class CallbackHandlerRegistry
                 }
             }
         }
+
+        _instance = new CallbackHandlerRegistry(props);
+        _logger.info("Callback handlers available for SASL mechanisms: " + _instance._mechanisms);
+
     }
 
-    /*private InputStream openPropertiesInputStream(String filename)
+    /**
+     * Gets the singleton instance of this registry.
+     *
+     * @return The singleton instance of this registry.
+     */
+    public static CallbackHandlerRegistry getInstance()
     {
-        boolean useDefault = true;
-        InputStream is = null;
-        if (filename != null)
+        return _instance;
+    }
+
+    public AMQCallbackHandler createCallbackHandler(final String mechanism)
+    {
+        final Class<AMQCallbackHandler> mechanismClass = _mechanismToHandlerClassMap.get(mechanism);
+
+        if (mechanismClass == null)
         {
-            try
-            {
-                is = new BufferedInputStream(new FileInputStream(new File(filename)));
-                useDefault = false;
-            }
-            catch (FileNotFoundException e)
-            {
-                _logger.error("Unable to read from file " + filename + ": " + e, e);
-            }
+            throw new IllegalArgumentException("Mechanism " + mechanism + " not known");
         }
 
-        if (useDefault)
+        try
         {
-            is = CallbackHandlerRegistry.class.getResourceAsStream(DEFAULT_RESOURCE_NAME);
+            return mechanismClass.newInstance();
         }
+        catch (InstantiationException e)
+        {
+            throw new IllegalArgumentException("Unable to create an instance of mechanism " + mechanism, e);
+        }
+        catch (IllegalAccessException e)
+        {
+            throw new IllegalArgumentException("Unable to create an instance of mechanism " + mechanism, e);
+        }
+    }
 
-        return is;
-    }*/
+    /**
+     * Gets collections of supported SASL mechanism names, ordered by preference
+     *
+     * @return collection of SASL mechanism names.
+     */
+    public Collection<String> getMechanisms()
+    {
+        return Collections.unmodifiableCollection(_mechanisms);
+    }
+
+    /**
+     * Creates the call back handler registry from its configuration resource or file.
+     *
+     * This also has the side effect of configuring and registering the SASL client factory
+     * implementations using {@link DynamicSaslRegistrar}.
+     *
+     * This constructor is default protection to allow for effective unit testing.  Clients must use
+     * {@link #getInstance()} to obtain the singleton instance.
+     */
+    CallbackHandlerRegistry(final Properties props)
+    {
+        parseProperties(props);
+    }
 
     /**
      * Scans the specified properties as a mapping from IANA registered SASL mechanism to call back handler
@@ -183,20 +188,20 @@ public class CallbackHandlerRegistry
      */
     private void parseProperties(Properties props)
     {
+
+        final Map<Integer, String> mechanisms = new TreeMap<Integer, String>();
+
         Enumeration e = props.propertyNames();
         while (e.hasMoreElements())
         {
-            String propertyName = (String) e.nextElement();
-            int period = propertyName.indexOf(".");
-            if (period < 0)
-            {
-                _logger.warn("Unable to parse property " + propertyName + " when configuring SASL providers");
+            final String propertyName = (String) e.nextElement();
+            final String[] parts = propertyName.split("\\.", 2);
 
-                continue;
-            }
+            checkPropertyNameFormat(propertyName, parts);
 
-            String mechanism = propertyName.substring(period + 1);
-            String className = props.getProperty(propertyName);
+            final String mechanism = parts[0];
+            final int ordinal = getPropertyOrdinal(propertyName, parts);
+            final String className = props.getProperty(propertyName);
             Class clazz = null;
             try
             {
@@ -205,20 +210,11 @@ public class CallbackHandlerRegistry
                 {
                     _logger.warn("SASL provider " + clazz + " does not implement " + AMQCallbackHandler.class
                         + ". Skipping");
-
                     continue;
                 }
-
                 _mechanismToHandlerClassMap.put(mechanism, clazz);
-                if (_mechanisms == null)
-                {
-                    _mechanisms = mechanism;
-                }
-                else
-                {
-                    // one time cost
-                    _mechanisms = _mechanisms + " " + mechanism;
-                }
+
+                mechanisms.put(ordinal, mechanism);
             }
             catch (ClassNotFoundException ex)
             {
@@ -227,5 +223,91 @@ public class CallbackHandlerRegistry
                 continue;
             }
         }
+
+        _mechanisms = mechanisms.values();  // order guaranteed by keys of treemap (i.e. our ordinals)
+
+
     }
+
+    private void checkPropertyNameFormat(final String propertyName, final String[] parts)
+    {
+        if (parts.length != 2)
+        {
+            throw new IllegalArgumentException("Unable to parse property " + propertyName + " when configuring SASL providers");
+        }
+    }
+
+    private int getPropertyOrdinal(final String propertyName, final String[] parts)
+    {
+        try
+        {
+            return Integer.parseInt(parts[1]);
+        }
+        catch(NumberFormatException nfe)
+        {
+            throw new IllegalArgumentException("Unable to parse property " + propertyName + " when configuring SASL providers", nfe);
+        }
+    }
+
+    /**
+     * Selects a SASL mechanism that is mutually available to both parties.  If more than one
+     * mechanism is mutually available the one appearing first (by ordinal) will be returned.
+     *
+     * @param peerMechanismList space separated list of mechanisms
+     * @return selected mechanism, or null if none available
+     */
+    public String selectMechanism(final String peerMechanismList)
+    {
+        final Set<String> peerList = mechListToSet(peerMechanismList);
+
+        return selectMechInternal(peerList, Collections.<String>emptySet());
+    }
+
+    /**
+     * Selects a SASL mechanism that is mutually available to both parties.
+     *
+     * @param peerMechanismList space separated list of mechanisms
+     * @param restrictionList space separated list of mechanisms
+     * @return selected mechanism, or null if none available
+     */
+    public String selectMechanism(final String peerMechanismList, final String restrictionList)
+    {
+        final Set<String> peerList = mechListToSet(peerMechanismList);
+        final Set<String> restrictionSet = mechListToSet(restrictionList);
+
+        return selectMechInternal(peerList, restrictionSet);
+    }
+
+    private String selectMechInternal(final Set<String> peerSet, final Set<String> restrictionSet)
+    {
+        for (final String mech : _mechanisms)
+        {
+            if (peerSet.contains(mech))
+            {
+                if (restrictionSet.isEmpty() || restrictionSet.contains(mech))
+                {
+                    return mech;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private Set<String> mechListToSet(final String mechanismList)
+    {
+        if (mechanismList == null)
+        {
+            return Collections.emptySet();
+        }
+
+        final StringTokenizer tokenizer = new StringTokenizer(mechanismList, " ");
+        final Set<String> mechanismSet = new HashSet<String>(tokenizer.countTokens());
+        while (tokenizer.hasMoreTokens())
+        {
+            mechanismSet.add(tokenizer.nextToken());
+        }
+        return Collections.unmodifiableSet(mechanismSet);
+    }
+
 }

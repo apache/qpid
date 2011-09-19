@@ -286,10 +286,11 @@ public class ConnectionTest extends QpidBrokerTestCase
         }
         catch (Exception e)
         {
-            assertTrue("Incorrect exception thrown",
-                       e.getMessage().contains("The following SASL mechanisms " +
-                       "[MY_MECH]"  +
-                       " specified by the client are not supported by the broker"));
+            assertTrue("Unexpected exception message : " + e.getMessage(),
+                       e.getMessage().contains("Client and broker have no SASL mechanisms in common."));
+            assertTrue("Unexpected exception message : " + e.getMessage(),
+                    e.getMessage().contains("Client restricted itself to : MY_MECH"));
+
         }
     }
 

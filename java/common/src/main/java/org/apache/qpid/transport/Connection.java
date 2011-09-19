@@ -239,7 +239,6 @@ public class Connection extends ConnectionInvoker
             conSettings = settings;
             state = OPENING;
             userID = settings.getUsername();
-            delegate = new ClientDelegate(settings);
 
             securityLayer = SecurityLayerFactory.newInstance(getConnectionSettings());
 
