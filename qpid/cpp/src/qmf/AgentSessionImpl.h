@@ -64,7 +64,6 @@ using namespace std;
 using namespace qpid::messaging;
 using namespace qmf;
 using qpid::types::Variant;
-using namespace boost;
 
 typedef qmf::PrivateImplRef<AgentSession> PI;
 
