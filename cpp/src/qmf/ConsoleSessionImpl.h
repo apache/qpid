@@ -47,7 +47,6 @@
 #include <map>
 #include <queue>
 
-using namespace boost;
 using namespace std;
 
 namespace qmf {
