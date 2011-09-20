@@ -28,7 +28,7 @@
 using namespace qpid::broker;
 
 bool MessageAllocator::nextConsumableMessage( Consumer::shared_ptr&, QueuedMessage& next,
-                                              const sys::Mutex::ScopedLock&)
+                                              const qpid::sys::Mutex::ScopedLock&)
 {
     Messages& messages(queue->getMessages());
     if (!messages.empty()) {
@@ -39,7 +39,7 @@ bool MessageAllocator::nextConsumableMessage( Consumer::shared_ptr&, QueuedMessa
 }
 
 bool MessageAllocator::nextBrowsableMessage( Consumer::shared_ptr& c, QueuedMessage& next,
-                                             const sys::Mutex::ScopedLock&)
+                                             const qpid::sys::Mutex::ScopedLock&)
 {
     Messages& messages(queue->getMessages());
     if (!messages.empty() && messages.next(c->position, next))
@@ -50,12 +50,12 @@ bool MessageAllocator::nextBrowsableMessage( Consumer::shared_ptr& c, QueuedMess
 
 bool MessageAllocator::acquirable( const std::string&,
                                    const QueuedMessage&,
-                                   const sys::Mutex::ScopedLock&)
+                                   const qpid::sys::Mutex::ScopedLock&)
 {
     return true;
 }
 
-void MessageAllocator::query(qpid::types::Variant::Map&, const sys::Mutex::ScopedLock&) const
+void MessageAllocator::query(qpid::types::Variant::Map&, const qpid::sys::Mutex::ScopedLock&) const
 {
 }
 
