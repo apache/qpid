@@ -702,8 +702,7 @@ void Queue::enqueueAborted(boost::intrusive_ptr<Message> msg)
 bool Queue::dequeue(TransactionContext* ctxt, const QueuedMessage& msg)
 {
     // FIXME aconway 2011-09-13: new cluster needs tx/dtx support.
-    if (!ctxt && broker)
-        if (!broker->getCluster().dequeue(msg)) return false;
+    if (!ctxt && broker) broker->getCluster().dequeue(msg);
 
     ScopedUse u(barrier);
     if (!u.acquired) return false;

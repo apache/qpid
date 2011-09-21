@@ -74,7 +74,7 @@ class Cluster
      *@return true if the message should be dequeued now, false if it
      * will be dequeued later.
      */
-    virtual bool dequeue(const QueuedMessage&) = 0;
+    virtual void dequeue(const QueuedMessage&) = 0;
 
     // Consumers
 

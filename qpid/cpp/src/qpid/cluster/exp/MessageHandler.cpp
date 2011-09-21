@@ -119,8 +119,6 @@ void MessageHandler::dequeue(const std::string& q, uint32_t position) {
     // BrokerContext::dequeue
 
     if (sender() != self()) {
-        // FIXME aconway 2011-09-15: new cluster, inefficient looks up
-        // message by position multiple times?
         boost::shared_ptr<Queue> queue = findQueue(q, "Cluster dequeue failed");
         // Remove fom the unacked list
         QueueContext::get(*queue)->dequeue(position);

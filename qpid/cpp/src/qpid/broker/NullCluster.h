@@ -42,7 +42,7 @@ class NullCluster : public Cluster
     virtual void routed(const boost::intrusive_ptr<Message>&) {}
     virtual void acquire(const QueuedMessage&) {}
     virtual void requeue(const QueuedMessage&) {}
-    virtual bool dequeue(const QueuedMessage&) { return false; }
+    virtual void dequeue(const QueuedMessage&) {}
 
     // Consumers
 

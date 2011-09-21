@@ -110,14 +110,13 @@ void BrokerContext::acquire(const broker::QueuedMessage& qm) {
                    ProtocolVersion(), qm.queue->getName(), qm.position));
 }
 
-bool BrokerContext::dequeue(const broker::QueuedMessage& qm) {
+void BrokerContext::dequeue(const broker::QueuedMessage& qm) {
     // FIXME aconway 2011-09-15: should dequeue locally immediately
     // instead of waiting for redeliver. No need for CPG order on
     // dequeues.
     if (!tssNoReplicate)
         core.mcast(ClusterMessageDequeueBody(
                        ProtocolVersion(), qm.queue->getName(), qm.position));
-    return false;               // FIXME aconway 2011-09-14: needed?
 }
 
 void BrokerContext::requeue(const broker::QueuedMessage& qm) {
