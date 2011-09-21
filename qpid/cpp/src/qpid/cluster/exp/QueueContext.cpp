@@ -20,8 +20,8 @@
  */
 
 #include "QueueContext.h"
-
 #include "Multicaster.h"
+#include "qpid/cluster/types.h"
 #include "BrokerContext.h"      // for ScopedSuppressReplication
 #include "qpid/framing/ProtocolVersion.h"
 #include "qpid/framing/ClusterQueueResubscribeBody.h"
@@ -43,6 +43,7 @@ QueueContext::QueueContext(broker::Queue& q, Multicaster& m)
       queue(q), mcast(m), consumers(0)
 {
     q.setClusterContext(boost::intrusive_ptr<QueueContext>(this));
+    q.stopConsumers();          // Stop queue initially.
 }
 
 QueueContext::~QueueContext() {}
@@ -52,24 +53,23 @@ bool isOwner(QueueOwnership o) { return o == SOLE_OWNER || o == SHARED_OWNER; }
 }
 
 // Called by QueueReplica in CPG deliver thread when state changes.
-void QueueContext::replicaState(QueueOwnership before, QueueOwnership after) {
-    assert(before != after);
-
+void QueueContext::replicaState(
+    QueueOwnership before, QueueOwnership after, bool selfDelivered)
+{
     // Invariants for ownership:
     // UNSUBSCRIBED, SUBSCRIBED <=> timer stopped, queue stopped
     // SOLE_OWNER <=> timer stopped, queue started
     // SHARED_OWNER <=> timer started, queue started
 
-    sys::Mutex::ScopedLock l(lock);
-    if (!isOwner(before) && isOwner(after)) { // Took ownership
+    // Interested in state changes and my own events which lead to
+    // ownership.
+    if ((before != after || selfDelivered) && isOwner(after)) {
+        sys::Mutex::ScopedLock l(lock);
         queue.startConsumers();
         if (after == SHARED_OWNER) timer.start();
+        else timer.stop();
     }
-    else if (isOwner(before) && isOwner(after)) {
-        // Changed from shared to sole owner or vice versa
-        if (after == SOLE_OWNER) timer.stop();
-        else timer.start();
-    }
+
     // If we lost ownership then the queue and timer will already have
     // been stopped by timeout()
 }

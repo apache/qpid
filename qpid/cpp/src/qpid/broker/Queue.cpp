@@ -246,7 +246,8 @@ struct ClusterAcquireScope {
     ClusterAcquireScope() {}
 
     ~ClusterAcquireScope() {
-        if (qmsg.queue) qmsg.queue->getBroker()->getCluster().acquire(qmsg);
+        if (qmsg.queue && qmsg.queue->getBroker())
+            qmsg.queue->getBroker()->getCluster().acquire(qmsg);
     }
 };
 

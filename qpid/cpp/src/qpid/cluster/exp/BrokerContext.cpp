@@ -127,7 +127,6 @@ void BrokerContext::requeue(const broker::QueuedMessage& qm) {
 
 // FIXME aconway 2011-06-08: should be be using shared_ptr to q here?
 void BrokerContext::create(broker::Queue& q) {
-    q.stopConsumers();          // Stop queue initially.
     if (tssNoReplicate) return;
     assert(!QueueContext::get(q));
     boost::intrusive_ptr<QueueContext> context(

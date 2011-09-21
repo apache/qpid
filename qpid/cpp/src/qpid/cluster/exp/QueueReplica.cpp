@@ -53,35 +53,30 @@ std::ostream& operator<<(std::ostream& o, QueueOwnership s) {
 void QueueReplica::subscribe(const MemberId& member) {
     QueueOwnership before = getState();
     subscribers.push_back(member);
-    update(before);
+    update(before, member);
 }
 
 // FIXME aconway 2011-09-20: need to requeue.
 void QueueReplica::unsubscribe(const MemberId& member) {
     QueueOwnership before = getState();
     MemberQueue::iterator i = std::remove(subscribers.begin(), subscribers.end(), member);
-    if (i != subscribers.end()) {
-        subscribers.erase(i, subscribers.end());
-        update(before);
-    }
+    if (i != subscribers.end()) subscribers.erase(i, subscribers.end());
+    update(before, member);
 }
 
 void QueueReplica::resubscribe(const MemberId& member) {
-    if (member == subscribers.front()) { // FIXME aconway 2011-09-13: should be assert?
-        QueueOwnership before = getState();
-        subscribers.pop_front();
-        subscribers.push_back(member);
-        update(before);
-    }
+    assert (member == subscribers.front());
+    QueueOwnership before = getState();
+    subscribers.pop_front();
+    subscribers.push_back(member);
+    update(before, member);
 }
 
-void QueueReplica::update(QueueOwnership before) {
+void QueueReplica::update(QueueOwnership before, MemberId member) {
     QueueOwnership after = getState();
-    if (before != after) {
-        QPID_LOG(trace, "cluster queue replica: " << queue->getName() << ": "
+    QPID_LOG(trace, "cluster queue replica: " << queue->getName() << ": "
                  << before << "->" << after << " [" << PrintSubscribers(subscribers, self) << "]");
-        context->replicaState(before, after);
-    }
+    context->replicaState(before, after, member == self);
 }
 
 QueueOwnership QueueReplica::getState() const {

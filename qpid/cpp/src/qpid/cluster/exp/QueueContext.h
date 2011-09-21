@@ -54,8 +54,12 @@ class QueueContext : public RefCounted {
     QueueContext(broker::Queue& q, Multicaster& m);
     ~QueueContext();
 
-    /** Replica state has changed, called in deliver thread. */
-    void replicaState(QueueOwnership before, QueueOwnership after);
+    /** Replica state has changed, called in deliver thread.
+     * @param before replica state before the event.
+     * @param before replica state after the event.
+     * @param self is true if this was a self-delivered event.
+     */
+    void replicaState(QueueOwnership before, QueueOwnership after, bool self);
 
     /** Called when queue is stopped, no threads are dispatching.
      * May be called in connection or deliver thread.
