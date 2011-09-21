@@ -89,6 +89,9 @@ void MessageHandler::routed(RoutingId routingId) {
 // FIXME aconway 2011-09-14: performance: pack acquires into a SequenceSet
 // and scan queue once.
 void MessageHandler::acquire(const std::string& q, uint32_t position) {
+    // FIXME aconway 2011-09-15: systematic logging across cluster module.
+    QPID_LOG(trace, "cluster message " << q << "[" << position
+             << "] acquired by " << PrettyId(sender(), self()));
     // Note acquires from other members. My own acquires were executed in
     // the connection thread
     if (sender() != self()) {
@@ -102,18 +105,20 @@ void MessageHandler::acquire(const std::string& q, uint32_t position) {
         assert(qm.payload);
         // Save on context for possible requeue if released/rejected.
         QueueContext::get(*queue)->acquire(qm);
+        // FIXME aconway 2011-09-19: need to record by member-ID to  requeue if member leaves.
     }
-    // FIXME aconway 2011-09-15: systematic logging across cluster module.
-    QPID_LOG(trace, "cluster message " << q << "[" << position
-             << "] acquired by " << PrettyId(sender(), self()));
- }
+}
 
 void MessageHandler::dequeue(const std::string& q, uint32_t position) {
-    if (sender() == self()) {
-        // FIXME aconway 2010-10-28: we should complete the ack that initiated
-        // the dequeue at this point, see BrokerContext::dequeue
-    }
-    else {
+    // FIXME aconway 2011-09-15: systematic logging across cluster module.
+    QPID_LOG(trace, "cluster message " << q << "[" << position
+             << "] dequeued by " << PrettyId(sender(), self()));
+
+    // FIXME aconway 2010-10-28: for local dequeues, we should
+    // complete the ack that initiated the dequeue at this point, see
+    // BrokerContext::dequeue
+
+    if (sender() != self()) {
         // FIXME aconway 2011-09-15: new cluster, inefficient looks up
         // message by position multiple times?
         boost::shared_ptr<Queue> queue = findQueue(q, "Cluster dequeue failed");

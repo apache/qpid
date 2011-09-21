@@ -46,14 +46,8 @@ std::ostream& operator<<(std::ostream& o, const PrintSubscribers& ps) {
 }
 
 std::ostream& operator<<(std::ostream& o, QueueOwnership s) {
-    static char* tags[] = { "UNSUBSCRIBED", "SUBSCRIBED", "SOLE_OWNER", "SHARED_OWNER" };
+    static char* tags[] = { "unsubscribed", "subscribed", "sole_owner", "shared_owner" };
     return o << tags[s];
-}
-
-std::ostream& operator<<(std::ostream& o, const QueueReplica& qr) {
-    o << qr.queue->getName() << "(" << qr.getState() << "): "
-      <<  PrintSubscribers(qr.subscribers, qr.getSelf());
-    return o;
 }
 
 void QueueReplica::subscribe(const MemberId& member) {
@@ -81,15 +75,17 @@ void QueueReplica::resubscribe(const MemberId& member) {
 }
 
 void QueueReplica::update(QueueOwnership before) {
-    QPID_LOG(trace, "cluster: queue replica " << *this << " (was " << before << ")");
     QueueOwnership after = getState();
+    QPID_LOG(trace, "cluster queue replica: " << queue->getName() << ": "
+             << before << "->" << after << " [" << PrintSubscribers(subscribers, self) << "]");
     if (before != after) context->replicaState(after);
 }
 
 QueueOwnership QueueReplica::getState() const {
     if (isOwner())
         return (subscribers.size() > 1) ? SHARED_OWNER : SOLE_OWNER;
-    return (isSubscriber(self)) ? SUBSCRIBED : UNSUBSCRIBED;
+    else
+        return (isSubscriber(self)) ? SUBSCRIBED : UNSUBSCRIBED;
 }
 
 bool QueueReplica::isOwner() const {

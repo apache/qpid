@@ -198,6 +198,10 @@ int main(int argc, char ** argv)
             std::map<std::string,Sender> replyTo;
 
             while (!done && receiver.fetch(msg, timeout)) {
+                // FIXME aconway 2011-09-19: 
+//                 std::ostringstream os;
+//                 os << "qpid-receive(" << getpid() << ") seq=" << msg.getProperties()[SN] << endl; // FIXME aconway 2011-09-19:
+//                 cerr << os.str() << flush;
                 if (!started) {
                     // Start the time on receipt of the first message to avoid counting
                     // idle time at process startup.
@@ -225,6 +229,7 @@ int main(int argc, char ** argv)
                         if (opts.printContent)
                             std::cout << msg.getContent() << std::endl;//TODO: handle map or list messages
                         if (opts.messages && count >= opts.messages) {
+                            cerr << "qpid-receive(" << getpid() << ") DONE" << endl;
                             done = true;
                         }
                     }

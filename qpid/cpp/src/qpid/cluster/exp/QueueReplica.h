@@ -72,7 +72,6 @@ class QueueReplica : public RefCounted
 
   friend struct PrintSubscribers;
   friend std::ostream& operator<<(std::ostream&, QueueOwnership);
-  friend std::ostream& operator<<(std::ostream&, const QueueReplica&);
   friend std::ostream& operator<<(std::ostream& o, const PrintSubscribers& ps);
 };
 

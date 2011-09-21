@@ -96,7 +96,6 @@ class DummyCluster : public broker::Cluster
     }
     virtual bool dequeue(const broker::QueuedMessage& qm) {
         if (!isRouting) recordQm("dequeue", qm);
-        return false;
     }
 
     // Consumers

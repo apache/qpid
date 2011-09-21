@@ -227,7 +227,7 @@ void Queue::requeue(const QueuedMessage& msg){
             }
         }
     }
-    if (broker) broker->getCluster().requeue(msg); // FIXME aconway 2011-09-12: review. rename requeue?
+    if (broker) broker->getCluster().requeue(msg);
     copy.notify();
 }
 
@@ -255,7 +255,6 @@ bool Queue::acquireMessageAt(const SequenceNumber& position, QueuedMessage& mess
     ClusterAcquireScope acquireScope; // Outside lock
     Mutex::ScopedLock locker(messageLock);
     assertClusterSafe();
-    QPID_LOG(debug, "Attempting to acquire message at " << position);
     if (messages->remove(position, message)) {
         QPID_LOG(debug, "Acquired message at " << position << " from " << name);
         acquireScope.qmsg = message;
@@ -307,13 +306,13 @@ Queue::ConsumeCode Queue::consumeNextMessage(QueuedMessage& m, Consumer::shared_
     while (true) {
         Stoppable::Scope consumeScope(consuming);
         if (!consumeScope) {
-            QPID_LOG(trace, "Queue is stopped: " << name);
+            QPID_LOG(trace, "Queue stopped, can't  consume: " << name);
             listeners.addListener(c);
             return NO_MESSAGES;
         }
         ClusterAcquireScope acquireScope; // Outside the lock
         Mutex::ScopedLock locker(messageLock);
-        if (messages->empty()) { // FIXME aconway 2011-06-07: ugly
+        if (messages->empty()) {
             QPID_LOG(debug, "No messages to dispatch on queue '" << name << "'");
             listeners.addListener(c);
             return NO_MESSAGES;
@@ -914,10 +913,6 @@ void Queue::notifyDeleted()
     set.notifyAll();
 }
 
-void Queue::consumingStopped() {
-    if (broker) broker->getCluster().stopped(*this);
-}
-
 void Queue::bound(const string& exchange, const string& key,
                   const FieldTable& args)
 {
@@ -1287,12 +1282,19 @@ void Queue::UsageBarrier::destroy()
 }
 
 void Queue::stopConsumers() {
-    QPID_LOG(trace, "Queue stopped: " << getName());
+    QPID_LOG(trace, "Stopping consumers on " << getName());
     consuming.stop();
 }
 
 void Queue::startConsumers() {
-    QPID_LOG(trace, "Queue started: " << getName());
+    QPID_LOG(trace, "Starting consumers on " << getName());
     consuming.start();
     notifyListener();
 }
+
+// Called when all busy threads exitd due to stopConsumers()
+void Queue::consumingStopped() {
+    QPID_LOG(trace, "Stopped consumers on " << getName());
+    if (broker) broker->getCluster().stopped(*this);
+}
+

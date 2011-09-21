@@ -48,36 +48,36 @@ QueueContext::QueueContext(broker::Queue& q, Multicaster& m)
 
 QueueContext::~QueueContext() {}
 
-// Invariant for ownership:
-// UNSUBSCRIBED, SUBSCRIBED => timer stopped, queue stopped
-// SOLE_OWNER => timer stopped, queue started
-// SHARED_OWNER => timer started, queue started
-
 namespace {
 bool isOwner(QueueOwnership o) { return o == SOLE_OWNER || o == SHARED_OWNER; }
 }
 
 // Called by QueueReplica in CPG deliver thread when state changes.
 void QueueContext::replicaState(QueueOwnership newOwnership) {
+
+    // Invariants for ownership:
+    // UNSUBSCRIBED, SUBSCRIBED <=> timer stopped, queue stopped
+    // SOLE_OWNER <=> timer stopped, queue started
+    // SHARED_OWNER <=> timer started, queue started
+
     sys::Mutex::ScopedLock l(lock);
     QueueOwnership before = ownership;
     QueueOwnership after = newOwnership;
-    ownership = after;
-    if (!isOwner(before) && !isOwner(after))
-        ;   // Nothing to do, now ownership change on this transition.
-    else if (isOwner(before) && !isOwner(after)) // Lost ownership
-        ; // Nothing to do, queue and timer were stopped before
-          // sending unsubscribe/resubscribe.
-    else if (!isOwner(before) && isOwner(after)) { // Took ownership
+    assert(before != after);
+    ownership = newOwnership;
+
+    if (!isOwner(before) && isOwner(after)) { // Took ownership
         queue.startConsumers();
         if (after == SHARED_OWNER) timer.start();
     }
     else if (isOwner(before) && isOwner(after) && before != after) {
+        // Changed from shared to sole owner or vice versa
         if (after == SOLE_OWNER) timer.stop();
         else timer.start();
     }
+    // If we lost ownership then the queue and timer will already have
+    // been stopped by timeout()
 }
-
 // FIXME aconway 2011-07-27: Dont spin the token on an empty or idle queue.
 
 // Called in connection threads when a consumer is added
@@ -101,6 +101,7 @@ void QueueContext::cancel(size_t n) {
 
 // Called in timer thread.
 void QueueContext::timeout() {
+    QPID_LOG(debug, "FIXME QueueContext::timeout");
     // When all threads have stopped, queue will call stopped()
     queue.stopConsumers();
 }
@@ -108,8 +109,8 @@ void QueueContext::timeout() {
 // Callback set up by queue.stopConsumers() called in connection thread.
 // Called when no threads are dispatching from the queue.
 void QueueContext::stopped() {
+    QPID_LOG(debug, "FIXME QueueContext::stopped");
     sys::Mutex::ScopedLock l(lock);
-    // FIXME aconway 2011-07-28: review thread safety of state.
     if (consumers == 0)
         mcast.mcast(framing::ClusterQueueUnsubscribeBody(
                         framing::ProtocolVersion(), queue.getName()));

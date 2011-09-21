@@ -68,7 +68,6 @@ class Stoppable {
      */
     void stop() {
         sys::Monitor::ScopedLock l(lock);
-        if (stopped) return;
         stopped = true;
         check(l);
     }
