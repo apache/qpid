@@ -108,8 +108,6 @@ class DummyCluster : public broker::Cluster
     }
 
     // Queues
-    // FIXME aconway 2011-05-18: update test to exercise empty()
-    virtual void empty(broker::Queue& q) { recordStr("empty", q.getName()); }
     virtual void stopped(broker::Queue& q) { recordStr("stopped", q.getName()); }
 
     // Wiring
@@ -249,9 +247,6 @@ QPID_AUTO_TEST_CASE(testReleaseReject) {
     BOOST_CHECK_EQUAL(h.at(i++), "enqueue(q, t)");
     BOOST_CHECK_EQUAL(h.at(i++), "routed(t)");
     BOOST_CHECK_EQUAL(h.at(i++), "dequeue(q, 2, t)");
-    // FIXME aconway 2011-07-25: empty called once per receiver?
-    BOOST_CHECK_EQUAL(h.at(i++), "empty(q)");
-    BOOST_CHECK_EQUAL(h.at(i++), "empty(q)");
     BOOST_CHECK_EQUAL(h.size(), i);
 
     // Message replaced on LVQ

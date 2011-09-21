@@ -66,7 +66,6 @@ class BrokerContext : public broker::Cluster
     void cancel(broker::Queue&, size_t);
 
     // Queues
-    void empty(broker::Queue&);
     void stopped(broker::Queue&);
 
     // Wiring

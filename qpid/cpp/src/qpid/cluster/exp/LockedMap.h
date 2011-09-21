@@ -75,6 +75,18 @@ class LockedMap
         return map.erase(key);
     }
 
+    /** Remove and return value associated with key, returns Value() if none. */
+    Value pop(const Key& key) {
+        sys::RWlock::ScopedWlock w(lock);
+        Value value;
+        typename Map::iterator i = map.find(key);
+        if (i != map.end()) {
+            value = i->second;
+            map.erase(i);
+        }
+        return value;
+    }
+
   private:
     typedef std::map<Key, Value> Map;
     Map map;

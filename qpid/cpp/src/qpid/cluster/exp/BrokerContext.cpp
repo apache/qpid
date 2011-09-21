@@ -51,7 +51,7 @@ using namespace broker;
 
 namespace {
 // noReplicate means the current thread is handling a message
-// received from the cluster so it should not be replciated.
+// received from the cluster so it should not be replicated.
 QPID_TSS bool tssNoReplicate = false;
 
 // Routing ID of the message being routed in the current thread.
@@ -111,9 +111,6 @@ void BrokerContext::acquire(const broker::QueuedMessage& qm) {
 }
 
 void BrokerContext::dequeue(const broker::QueuedMessage& qm) {
-    // FIXME aconway 2011-09-15: should dequeue locally immediately
-    // instead of waiting for redeliver. No need for CPG order on
-    // dequeues.
     if (!tssNoReplicate)
         core.mcast(ClusterMessageDequeueBody(
                        ProtocolVersion(), qm.queue->getName(), qm.position));
@@ -177,25 +174,19 @@ void BrokerContext::unbind(broker::Queue& q, broker::Exchange& ex,
 }
 
 // n is the number of consumers including the one just added.
-// FIXME aconway 2011-06-27: rename, conflicting terms. subscribe?
 void BrokerContext::consume(broker::Queue& q, size_t n) {
     QueueContext::get(q)->consume(n);
 }
 
-// FIXME aconway 2011-09-13: rename unsubscribe?
 // n is the number of consumers after the cancel.
 void BrokerContext::cancel(broker::Queue& q, size_t n) {
     QueueContext::get(q)->cancel(n);
 }
 
-void BrokerContext::empty(broker::Queue& ) {
-    // FIXME aconway 2011-06-28: is this needed?
-}
-
 void BrokerContext::stopped(broker::Queue& q) {
     boost::intrusive_ptr<QueueContext> qc = QueueContext::get(q);
     // Don't forward the stopped call if the queue does not yet have a
-    // cluster context this when the queue is first created locally.
+    // cluster context - this when the queue is first created locally.
     if (qc) qc->stopped();
 }
 

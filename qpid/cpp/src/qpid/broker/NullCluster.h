@@ -52,7 +52,6 @@ class NullCluster : public Cluster
     // Queues
 
     virtual void stopped(Queue&) {}
-    virtual void empty(Queue&) {}
 
     // Wiring
 

@@ -105,7 +105,8 @@ void MessageHandler::acquire(const std::string& q, uint32_t position) {
         assert(qm.payload);
         // Save on context for possible requeue if released/rejected.
         QueueContext::get(*queue)->acquire(qm);
-        // FIXME aconway 2011-09-19: need to record by member-ID to  requeue if member leaves.
+        // FIXME aconway 2011-09-19: need to record by member-ID to
+        // requeue if member leaves.
     }
 }
 
@@ -118,12 +119,11 @@ void MessageHandler::dequeue(const std::string& q, uint32_t position) {
     // complete the ack that initiated the dequeue at this point, see
     // BrokerContext::dequeue
 
+    // My own dequeues were processed in the connection thread before multicasting.
     if (sender() != self()) {
         boost::shared_ptr<Queue> queue = findQueue(q, "Cluster dequeue failed");
-        // Remove fom the unacked list
-        QueueContext::get(*queue)->dequeue(position);
+        QueuedMessage qm = QueueContext::get(*queue)->dequeue(position);
         BrokerContext::ScopedSuppressReplication ssr;
-        QueuedMessage qm = queue->find(position);
         if (qm.queue) queue->dequeue(0, qm);
     }
 }

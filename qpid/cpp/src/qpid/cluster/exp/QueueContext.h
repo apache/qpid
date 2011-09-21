@@ -55,7 +55,7 @@ class QueueContext : public RefCounted {
     ~QueueContext();
 
     /** Replica state has changed, called in deliver thread. */
-    void replicaState(QueueOwnership);
+    void replicaState(QueueOwnership before, QueueOwnership after);
 
     /** Called when queue is stopped, no threads are dispatching.
      * May be called in connection or deliver thread.
@@ -85,11 +85,10 @@ class QueueContext : public RefCounted {
     void acquire(const broker::QueuedMessage& qm);
 
     /** Called by MesageHandler when a message is dequeued. */
-    void dequeue(uint32_t position);
+    broker::QueuedMessage dequeue(uint32_t position);
 
   private:
     sys::Mutex lock;
-    QueueOwnership ownership;
     CountdownTimer timer;
     broker::Queue& queue;       // FIXME aconway 2011-06-08: should be shared/weak ptr?
     Multicaster& mcast;

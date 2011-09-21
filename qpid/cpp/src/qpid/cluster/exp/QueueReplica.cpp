@@ -56,6 +56,7 @@ void QueueReplica::subscribe(const MemberId& member) {
     update(before);
 }
 
+// FIXME aconway 2011-09-20: need to requeue.
 void QueueReplica::unsubscribe(const MemberId& member) {
     QueueOwnership before = getState();
     MemberQueue::iterator i = std::remove(subscribers.begin(), subscribers.end(), member);
@@ -76,9 +77,11 @@ void QueueReplica::resubscribe(const MemberId& member) {
 
 void QueueReplica::update(QueueOwnership before) {
     QueueOwnership after = getState();
-    QPID_LOG(trace, "cluster queue replica: " << queue->getName() << ": "
-             << before << "->" << after << " [" << PrintSubscribers(subscribers, self) << "]");
-    if (before != after) context->replicaState(after);
+    if (before != after) {
+        QPID_LOG(trace, "cluster queue replica: " << queue->getName() << ": "
+                 << before << "->" << after << " [" << PrintSubscribers(subscribers, self) << "]");
+        context->replicaState(before, after);
+    }
 }
 
 QueueOwnership QueueReplica::getState() const {
@@ -93,7 +96,6 @@ bool QueueReplica::isOwner() const {
 }
 
 bool QueueReplica::isSubscriber(const MemberId& member) const {
-    // FIXME aconway 2011-06-27: linear search here, is it a performance issue?
     return std::find(subscribers.begin(), subscribers.end(), member) != subscribers.end();
 }
 

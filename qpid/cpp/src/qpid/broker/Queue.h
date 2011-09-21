@@ -21,8 +21,6 @@
  * under the License.
  *
  */
-#include "qpid/log/Statement.h" // FIXME  XXX aconway 2011-06-08: remove
-
 #include "qpid/broker/BrokerImportExport.h"
 #include "qpid/broker/OwnershipToken.h"
 #include "qpid/broker/Consumer.h"
