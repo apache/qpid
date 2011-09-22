@@ -136,7 +136,7 @@ public class AlertingTest extends AbstractTestLogging
         stopBroker();
 
         // Rest the monitoring clearing the current output file.
-        _monitor.reset();
+        _monitor.markDiscardPoint();
         startBroker();
         wasAlertFired();
     }
@@ -169,7 +169,7 @@ public class AlertingTest extends AbstractTestLogging
 
         stopBroker();
 
-        _monitor.reset();
+        _monitor.markDiscardPoint();
 
         // Change max message count to 5, start broker and make sure that that's triggered at the right time
         setConfigurationProperty("virtualhosts.virtualhost." + VIRTUALHOST + ".queues.maximumMessageCount", "5");

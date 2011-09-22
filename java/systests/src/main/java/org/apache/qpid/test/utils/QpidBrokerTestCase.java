@@ -219,6 +219,11 @@ public class QpidBrokerTestCase extends QpidTestCase
             _outputFile = new File(String.format("%s/TEST-%s.out", _output, qname));
             out = new PrintStream(_outputFile);
             err = new PrintStream(String.format("%s/TEST-%s.err", _output, qname));
+
+            // This is relying on behaviour specific to log4j 1.2.12.   If we were to upgrade to 1.2.13 or
+            // beyond we must change either code (or config) to ensure that ConsoleAppender#setFollow
+            // is set to true otherwise log4j logging will not respect the following reassignment.
+
             System.setOut(out);
             System.setErr(err);
 
