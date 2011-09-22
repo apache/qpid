@@ -64,7 +64,7 @@ public class ProducerFlowControlTest extends AbstractTestLogging
         _jmxUtilConnected=false;
         super.setUp();
 
-        _monitor.reset();
+        _monitor.markDiscardPoint();
 
         producerConnection = getConnection();
         producerSession = producerConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);
