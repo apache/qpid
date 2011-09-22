@@ -27,10 +27,9 @@ import org.apache.log4j.SimpleLayout;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
+import java.io.LineNumberReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.LinkedList;
@@ -49,6 +48,8 @@ public class LogMonitor
 
     // The appender we added to the get messages
     private FileAppender _appender;
+
+    private int _linesToSkip = 0;
 
     /**
      * Create a new LogMonitor that creates a new Log4j Appender and monitors
@@ -116,7 +117,9 @@ public class LogMonitor
     }
 
     /**
-     * Checks the log for instances of the search string.
+     * Checks the log for instances of the search string. If the caller
+     * has previously called {@link #markDiscardPoint()}, lines up until the discard
+     * point are not considered.
      *
      * The pattern parameter can take any valid argument used in String.contains()
      *
@@ -130,17 +133,39 @@ public class LogMonitor
      */
     public List<String> findMatches(String pattern) throws IOException
     {
-        return FileUtils.searchFile(_logfile, pattern);
+
+        List<String> results = new LinkedList<String>();
+
+        LineNumberReader reader = new LineNumberReader(new FileReader(_logfile));
+        try
+        {
+            while (reader.ready())
+            {
+                String line = reader.readLine();
+                if (reader.getLineNumber()  > _linesToSkip && line.contains(pattern))
+                {
+                    results.add(line);
+                }
+            }
+        }
+        finally
+        {
+            reader.close();
+        }
+
+        return results;
     }
 
     /**
-     * Checks the log file for a given message to appear.
+     * Checks the log file for a given message to appear.  If the caller
+     * has previously called {@link #markDiscardPoint()}, lines up until the discard
+     * point are not considered.
      *
      * @param message the message to wait for in the log
      * @param wait    the time in ms to wait for the message to occur
      *
      * @param printFileOnFailure should we print the contents that have been
-     * read if we fail ot find the message.
+     * read if we fail to find the message.
      * @return true if the message was found
      *
      * @throws java.io.FileNotFoundException if the Log file can nolonger be found
@@ -151,38 +176,53 @@ public class LogMonitor
     {
         // Loop through alerts until we're done or wait ms seconds have passed,
         // just in case the logfile takes a while to flush.
-        BufferedReader reader = new BufferedReader(new FileReader(_logfile));
-        boolean found = false;
-        long endtime = System.currentTimeMillis() + wait;
-        ArrayList<String> contents = new ArrayList<String>();
-        while (!found && System.currentTimeMillis() < endtime)
+        LineNumberReader reader = null;
+        try
         {
-            while (reader.ready())
+            reader = new LineNumberReader(new FileReader(_logfile));
+
+            boolean found = false;
+            long endtime = System.currentTimeMillis() + wait;
+            ArrayList<String> contents = new ArrayList<String>();
+            while (!found && System.currentTimeMillis() < endtime)
             {
-                String line = reader.readLine();
-                contents.add(line);
-                if (line.contains(message))
+                while (reader.ready())
                 {
-                    found = true;
+                    String line = reader.readLine();
+
+                    if (reader.getLineNumber() > _linesToSkip)
+                    {
+                        contents.add(line);
+                        if (line.contains(message))
+                        {
+                            found = true;
+                        }
+                    }
                 }
             }
-        }
-        if (!found && printFileOnFailure)
-        {
-            for (String line : contents)
+            if (!found && printFileOnFailure)
             {
-                System.out.println(line);
+                for (String line : contents)
+                {
+                    System.out.println(line);
+                }
+            }
+            return found;
+
+        }
+        finally
+        {
+            if (reader != null)
+            {
+                reader.close();
             }
         }
-        return found;
     }
     
-
     public boolean waitForMessage(String message, long alertLogWaitPeriod) throws FileNotFoundException, IOException
     {
        return waitForMessage(message, alertLogWaitPeriod, true);
     }
-
 
     /**
      * Read the log file in to memory as a String
@@ -208,14 +248,37 @@ public class LogMonitor
     }
 
     /**
-     * Clears the log file and writes: 'Log Monitor Reset' at the start of the file
+     * Marks the discard point in the log file.
      *
-     * @throws java.io.FileNotFoundException if the Log file can nolonger be found
+     * @throws java.io.FileNotFoundException if the Log file can no longer be found
      * @throws IOException                   thrown if there is a problem with the log file
      */
-    public void reset() throws FileNotFoundException, IOException
+    public void markDiscardPoint() throws FileNotFoundException, IOException
     {
-        new FileOutputStream(_logfile).getChannel().truncate(0);
+        _linesToSkip = countLinesInFile();
+    }
+
+    private int countLinesInFile() throws IOException
+    {
+        int lineCount = 0;
+        BufferedReader br = null;
+        try
+        {
+            br = new BufferedReader(new FileReader(_logfile));
+            while(br.readLine() != null)
+            {
+                lineCount++;
+            }
+
+            return lineCount;
+        }
+        finally
+        {
+            if (br != null)
+            {
+                br.close();
+            }
+        }
     }
 
     /**

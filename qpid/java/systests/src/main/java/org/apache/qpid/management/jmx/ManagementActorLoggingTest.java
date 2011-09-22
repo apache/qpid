@@ -106,7 +106,7 @@ public class ManagementActorLoggingTest extends AbstractTestLogging
         });
 
         //Remove the connection close from any 0-10 connections
-        _monitor.reset();
+        _monitor.markDiscardPoint();
 
         // Get a managedConnection
         ManagedConnection mangedConnection = _jmxUtils.getManagedObject(ManagedConnection.class, "org.apache.qpid:type=VirtualHost.Connection,*");
@@ -147,7 +147,7 @@ public class ManagementActorLoggingTest extends AbstractTestLogging
      */
     public void testCreateExchangeDirectTransientViaManagementConsole() throws IOException, JMException
     {
-        _monitor.reset();
+        _monitor.markDiscardPoint();
 
         _jmxUtils.createExchange("test", getName(), "direct", false);
 
@@ -171,7 +171,7 @@ public class ManagementActorLoggingTest extends AbstractTestLogging
     public void testCreateExchangeTopicTransientViaManagementConsole() throws IOException, JMException
     {
         //Remove any previous exchange declares
-        _monitor.reset();
+        _monitor.markDiscardPoint();
 
         _jmxUtils.createExchange("test", getName(), "topic", false);
 
@@ -196,7 +196,7 @@ public class ManagementActorLoggingTest extends AbstractTestLogging
     public void testCreateExchangeFanoutTransientViaManagementConsole() throws IOException, JMException
     {
         //Remove any previous exchange declares
-        _monitor.reset();
+        _monitor.markDiscardPoint();
 
         _jmxUtils.createExchange("test", getName(), "fanout", false);
 
@@ -221,7 +221,7 @@ public class ManagementActorLoggingTest extends AbstractTestLogging
     public void testCreateExchangeHeadersTransientViaManagementConsole() throws IOException, JMException
     {
         //Remove any previous exchange declares
-        _monitor.reset();
+        _monitor.markDiscardPoint();
 
         _jmxUtils.createExchange("test", getName(), "headers", false);
 
@@ -265,7 +265,7 @@ public class ManagementActorLoggingTest extends AbstractTestLogging
     public void testCreateQueueTransientViaManagementConsole() throws IOException, JMException
     {
         //Remove any previous queue declares
-        _monitor.reset();
+        _monitor.markDiscardPoint();
 
         _jmxUtils.createQueue("test", getName(), null, false);
 
@@ -308,7 +308,7 @@ public class ManagementActorLoggingTest extends AbstractTestLogging
     public void testQueueDeleteViaManagementConsole() throws IOException, JMException
     {
         //Remove any previous queue declares
-        _monitor.reset();
+        _monitor.markDiscardPoint();
 
         _jmxUtils.createQueue("test", getName(), null, false);
 
@@ -354,7 +354,7 @@ public class ManagementActorLoggingTest extends AbstractTestLogging
     public void testBindingCreateOnDirectViaManagementConsole() throws IOException, JMException
     {
         //Remove any previous queue declares
-        _monitor.reset();
+        _monitor.markDiscardPoint();
 
         _jmxUtils.createQueue("test", getName(), null, false);
 
@@ -381,7 +381,7 @@ public class ManagementActorLoggingTest extends AbstractTestLogging
     public void testBindingCreateOnTopicViaManagementConsole() throws IOException, JMException
     {
         //Remove any previous queue declares
-        _monitor.reset();
+        _monitor.markDiscardPoint();
 
         _jmxUtils.createQueue("test", getName(), null, false);
 
@@ -408,7 +408,7 @@ public class ManagementActorLoggingTest extends AbstractTestLogging
     public void testBindingCreateOnFanoutViaManagementConsole() throws IOException, JMException
     {
         //Remove any previous queue declares
-        _monitor.reset();
+        _monitor.markDiscardPoint();
 
         _jmxUtils.createQueue("test", getName(), null, false);
 
@@ -455,7 +455,7 @@ public class ManagementActorLoggingTest extends AbstractTestLogging
     public void testUnRegisterExchangeViaManagementConsole() throws IOException, JMException
     {
         //Remove any previous queue declares
-        _monitor.reset();
+        _monitor.markDiscardPoint();
 
         _jmxUtils.createExchange("test", getName(), "direct", false);
 
