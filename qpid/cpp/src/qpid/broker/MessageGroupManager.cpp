@@ -28,13 +28,13 @@
 using namespace qpid::broker;
 
 namespace {
-    const std::string GroupQueryKey("qpid.message_group_queue");
-    const std::string GroupHeaderKey("group_header_key");
-    const std::string GroupStateKey("group_state");
-    const std::string GroupIdKey("group_id");
-    const std::string GroupMsgCount("msg_count");
-    const std::string GroupTimestamp("timestamp");
-    const std::string GroupConsumer("consumer");
+    const std::string GROUP_QUERY_KEY("qpid.message_group_queue");
+    const std::string GROUP_HEADER_KEY("group_header_key");
+    const std::string GROUP_STATE_KEY("group_state");
+    const std::string GROUP_ID_KEY("group_id");
+    const std::string GROUP_MSG_COUNT("msg_count");
+    const std::string GROUP_TIMESTAMP("timestamp");
+    const std::string GROUP_CONSUMER("consumer");
 }
 
 
@@ -66,12 +66,8 @@ void MessageGroupManager::enqueued( const QueuedMessage& qm )
     if (total == 1) {
         // newly created group, no owner
         state.group = group;
-#ifdef NDEBUG
+        assert(freeGroups.find(qm.position) == freeGroups.end());
         freeGroups[qm.position] = &state;
-#else
-        bool unique = freeGroups.insert(GroupFifo::value_type(qm.position, &state)).second;
-        (void) unique; assert(unique);
-#endif
     }
 }
 
@@ -261,22 +257,22 @@ void MessageGroupManager::query(qpid::types::Variant::Map& status,
         }
     **/
 
-    assert(status.find(GroupQueryKey) == status.end());
+    assert(status.find(GROUP_QUERY_KEY) == status.end());
     qpid::types::Variant::Map state;
     qpid::types::Variant::List groups;
 
-    state[GroupHeaderKey] = groupIdHeader;
+    state[GROUP_HEADER_KEY] = groupIdHeader;
     for (GroupMap::const_iterator g = messageGroups.begin();
          g != messageGroups.end(); ++g) {
         qpid::types::Variant::Map info;
-        info[GroupIdKey] = g->first;
-        info[GroupMsgCount] = g->second.members.size();
-        info[GroupTimestamp] = 0;   /** @todo KAG - NEED HEAD MSG TIMESTAMP */
-        info[GroupConsumer] = g->second.owner;
+        info[GROUP_ID_KEY] = g->first;
+        info[GROUP_MSG_COUNT] = g->second.members.size();
+        info[GROUP_TIMESTAMP] = 0;   /** @todo KAG - NEED HEAD MSG TIMESTAMP */
+        info[GROUP_CONSUMER] = g->second.owner;
         groups.push_back(info);
     }
-    state[GroupStateKey] = groups;
-    status[GroupQueryKey] = state;
+    state[GROUP_STATE_KEY] = groups;
+    status[GROUP_QUERY_KEY] = state;
 }
 
 

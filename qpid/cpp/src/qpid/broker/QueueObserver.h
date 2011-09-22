@@ -35,9 +35,11 @@ class Consumer;
  * the queue it has been delivered to.  A message can be considered in one of three states
  * with respect to the queue:
  *
- * 1) "Available" - available for transfer to consumers,
- * 2) "Locked" - to a particular consumer, no longer available for transfer, but not
- * considered fully dequeued.
+ * 1) "Available" - available for transfer to consumers (i.e. for browse or acquire),
+ *
+ * 2) "Acquired" - owned by a particular consumer, no longer available to other consumers
+ * (by either browse or acquire), but still considered on the queue.
+ *
  * 3) "Dequeued" - removed from the queue and no longer available to any consumer.
  *
  * The queue events that are observable are:
@@ -45,15 +47,15 @@ class Consumer;
  * "Enqueued" - the message is "Available" - on the queue for transfer to any consumer
  * (e.g. browse or acquire)
  *
- * "Acquired" - the message is "Locked" - a consumer has claimed exclusive access to it.
- * It is no longer available for other consumers to browse or acquire, but it is not yet
- * considered dequeued as it may be requeued by the consumer.
+ * "Acquired" - - a consumer has claimed exclusive access to it. It is no longer available
+ * for other consumers to browse or acquire, but it is not yet considered dequeued as it
+ * may be requeued by the consumer.
  *
- * "Requeued" - a previously-consumed message is 'unlocked': it is put back on the queue
- * at its original position and returns to the "Available" state.
+ * "Requeued" - a previously-acquired message is released by its owner: it is put back on
+ * the queue at its original position and returns to the "Available" state.
  *
- * "Dequeued" - a Locked message is no longer queued.  At this point, the queue no longer
- * tracks the message, and the broker considers the consumer's transaction complete.
+ * "Dequeued" - a message is no longer queued.  At this point, the queue no longer tracks
+ * the message, and the broker considers the consumer's transaction complete.
  */
 class QueueObserver
 {

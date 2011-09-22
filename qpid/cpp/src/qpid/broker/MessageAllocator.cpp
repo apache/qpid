@@ -52,6 +52,7 @@ bool MessageAllocator::acquirable( const std::string&,
                                    const QueuedMessage&,
                                    const qpid::sys::Mutex::ScopedLock&)
 {
+    // by default, all messages present on the queue are acquireable
     return true;
 }
 

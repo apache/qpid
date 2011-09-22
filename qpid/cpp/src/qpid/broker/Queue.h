@@ -142,16 +142,19 @@ class Queue : public boost::enable_shared_from_this<Queue>,
 
     bool isExcluded(boost::intrusive_ptr<Message>& msg);
 
-    /** update queue observers with new message state */
-    void enqueued(const QueuedMessage& msg);
-    void acquired(const QueuedMessage& msg);
-    void dequeued(const QueuedMessage& msg);
+    /** update queue observers, stats, policy, etc when the messages' state changes. Lock
+     * must be held by caller */
+    void observeEnqueue(const QueuedMessage& msg, const sys::Mutex::ScopedLock& lock);
+    void observeAcquire(const QueuedMessage& msg, const sys::Mutex::ScopedLock& lock);
+    void observeRequeue(const QueuedMessage& msg, const sys::Mutex::ScopedLock& lock);
+    void observeDequeue(const QueuedMessage& msg, const sys::Mutex::ScopedLock& lock);
 
     /** modify the Queue's message container - assumes messageLock held */
-    void pop();             // acquire front msg
-    void popAndDequeue();   // acquire and dequeue front msg
+    void pop(const sys::Mutex::ScopedLock& held);           // acquire front msg
+    void popAndDequeue(const sys::Mutex::ScopedLock& held); // acquire and dequeue front msg
     // acquire message @ position, return true and set msg if acquire succeeds
-    bool acquire(const qpid::framing::SequenceNumber& position, QueuedMessage& msg );
+    bool acquire(const qpid::framing::SequenceNumber& position, QueuedMessage& msg,
+                 const sys::Mutex::ScopedLock& held);
 
     void forcePersistent(QueuedMessage& msg);
     int getEventMode();
