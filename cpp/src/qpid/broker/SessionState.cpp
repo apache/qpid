@@ -346,10 +346,8 @@ void SessionState::completeRcvMsg(SequenceNumber id,
     }
 
     // if the sender has requested immediate notification of the completion...
-    if (requiresSync) {
+    if (requiresSync || callSendCompletion) {
         sendAcceptAndCompletion();
-    } else if (callSendCompletion) {
-        sendCompletion();
     }
 }
 
