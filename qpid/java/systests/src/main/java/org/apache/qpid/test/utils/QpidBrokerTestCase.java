@@ -52,7 +52,6 @@ import javax.naming.NamingException;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQConnectionFactory;
@@ -217,7 +216,7 @@ public class QpidBrokerTestCase extends QpidTestCase
         if (redirected)
         {
             _outputFile = new File(String.format("%s/TEST-%s.out", _output, qname));
-            out = new PrintStream(_outputFile);
+            out = new PrintStream(new FileOutputStream(_outputFile), true);
             err = new PrintStream(String.format("%s/TEST-%s.err", _output, qname));
 
             // This is relying on behaviour specific to log4j 1.2.12.   If we were to upgrade to 1.2.13 or
