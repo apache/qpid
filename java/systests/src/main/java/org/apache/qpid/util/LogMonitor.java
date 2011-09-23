@@ -30,7 +30,6 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.LineNumberReader;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.LinkedList;
 
@@ -44,10 +43,10 @@ import java.util.LinkedList;
 public class LogMonitor
 {
     // The file that the log statements will be written to.
-    private File _logfile;
+    private final File _logfile;
 
     // The appender we added to the get messages
-    private FileAppender _appender;
+    private final FileAppender _appender;
 
     private int _linesToSkip = 0;
 
@@ -79,6 +78,7 @@ public class LogMonitor
         if (file != null && file.exists())
         {
             _logfile = file;
+            _appender = null;
         }
         else
         {
@@ -100,13 +100,13 @@ public class LogMonitor
      * @param wait    the time in ms to wait for the message to occur
      * @return true if the message was found
      *
-     * @throws java.io.FileNotFoundException if the Log file can nolonger be found
+     * @throws java.io.FileNotFoundException if the Log file can no longer be found
      * @throws IOException                   thrown when reading the log file
      */
     public List<String> waitAndFindMatches(String message, long wait)
             throws FileNotFoundException, IOException
     {
-        if (waitForMessage(message, wait, true))
+        if (waitForMessage(message, wait))
         {
             return findMatches(message);
         }
@@ -163,15 +163,12 @@ public class LogMonitor
      *
      * @param message the message to wait for in the log
      * @param wait    the time in ms to wait for the message to occur
-     *
-     * @param printFileOnFailure should we print the contents that have been
-     * read if we fail to find the message.
      * @return true if the message was found
      *
-     * @throws java.io.FileNotFoundException if the Log file can nolonger be found
+     * @throws java.io.FileNotFoundException if the Log file can no longer be found
      * @throws IOException                   thrown when reading the log file
      */
-    public boolean waitForMessage(String message, long wait, boolean printFileOnFailure)
+    public boolean waitForMessage(String message, long wait)
             throws FileNotFoundException, IOException
     {
         // Loop through alerts until we're done or wait ms seconds have passed,
@@ -183,28 +180,32 @@ public class LogMonitor
 
             boolean found = false;
             long endtime = System.currentTimeMillis() + wait;
-            ArrayList<String> contents = new ArrayList<String>();
             while (!found && System.currentTimeMillis() < endtime)
             {
-                while (reader.ready())
+                boolean ready = true;
+                while (ready = reader.ready())
                 {
                     String line = reader.readLine();
 
                     if (reader.getLineNumber() > _linesToSkip)
                     {
-                        contents.add(line);
                         if (line.contains(message))
                         {
                             found = true;
+                            break;
                         }
                     }
                 }
-            }
-            if (!found && printFileOnFailure)
-            {
-                for (String line : contents)
+                if (!ready)
                 {
-                    System.out.println(line);
+                    try
+                    {
+                        Thread.sleep(50);
+                    }
+                    catch (InterruptedException ie)
+                    {
+                        Thread.currentThread().interrupt();
+                    }
                 }
             }
             return found;
@@ -219,17 +220,12 @@ public class LogMonitor
         }
     }
     
-    public boolean waitForMessage(String message, long alertLogWaitPeriod) throws FileNotFoundException, IOException
-    {
-       return waitForMessage(message, alertLogWaitPeriod, true);
-    }
-
     /**
      * Read the log file in to memory as a String
      *
      * @return the current contents of the log file
      *
-     * @throws java.io.FileNotFoundException if the Log file can nolonger be found
+     * @throws java.io.FileNotFoundException if the Log file can no longer be found
      * @throws IOException                   thrown when reading the log file
      */
     public String readFile() throws FileNotFoundException, IOException
