@@ -24,6 +24,7 @@
 
 #include "HandlerBase.h"
 #include "LockedMap.h"
+#include "Settings.h"
 #include "qpid/framing/AMQP_AllOperations.h"
 #include "boost/shared_ptr.hpp"
 #include "boost/intrusive_ptr.hpp"
@@ -53,7 +54,7 @@ class QueueHandler : public framing::AMQP_AllOperations::ClusterQueueHandler,
                      public HandlerBase
 {
   public:
-    QueueHandler(EventHandler&, Multicaster&);
+    QueueHandler(EventHandler&, Multicaster&, const Settings&);
 
     bool invoke(const framing::AMQBody& body);
 
@@ -76,6 +77,7 @@ class QueueHandler : public framing::AMQP_AllOperations::ClusterQueueHandler,
 
     QueueMap queues;
     Multicaster& multicaster;
+    sys::Duration consumeLock;
 };
 }} // namespace qpid::cluster
 

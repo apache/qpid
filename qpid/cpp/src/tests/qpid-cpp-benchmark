@@ -115,9 +115,7 @@ def start_receive(queue, index, opts, ready_queue, broker, host):
     if opts.connection_options:
         command += ["--connection-options",opts.connection_options]
     if host: command = ssh_command(host, command)
-    # FIXME aconway 2011-09-15: 
-    # return clients.add(Popen(command, stdout=PIPE, stderr=PIPE))
-    return clients.add(Popen(command, stdout=PIPE))
+    return clients.add(Popen(command, stdout=PIPE, stderr=PIPE))
 
 def start_send(queue, opts, broker, host):
     address="%s;{%s}"%(queue,",".join(opts.send_option + ["create:always"]))
@@ -130,9 +128,7 @@ def start_send(queue, opts, broker, host):
                "--report-total",
                "--report-header=no",
                "--timestamp=%s"%(opts.timestamp and "yes" or "no"),
-               # FIXME aconway 2011-09-15: 
-               # "--sequence=no",
-               "--sequence=yes",
+               "--sequence=no",
                "--flow-control", str(opts.flow_control),
                "--durable", str(opts.durable)
                ]

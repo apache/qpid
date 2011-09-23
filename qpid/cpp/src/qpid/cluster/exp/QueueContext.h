@@ -51,7 +51,7 @@ class Multicaster;
  */
 class QueueContext : public RefCounted {
   public:
-    QueueContext(broker::Queue& q, Multicaster& m);
+    QueueContext(broker::Queue& q, sys::Duration consumeLock, Multicaster& m);
     ~QueueContext();
 
     /** Replica state has changed, called in deliver thread.

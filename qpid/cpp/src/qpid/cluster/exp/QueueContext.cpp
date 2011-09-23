@@ -35,11 +35,10 @@
 namespace qpid {
 namespace cluster {
 
-// FIXME aconway 2011-09-16: configurable timeout.
-QueueContext::QueueContext(broker::Queue& q, Multicaster& m)
+QueueContext::QueueContext(broker::Queue& q, sys::Duration consumeLock, Multicaster& m)
     : timer(boost::bind(&QueueContext::timeout, this),
             q.getBroker()->getTimer(),
-            100*sys::TIME_MSEC),
+            consumeLock),
       queue(q), mcast(m), consumers(0)
 {
     q.setClusterContext(boost::intrusive_ptr<QueueContext>(this));

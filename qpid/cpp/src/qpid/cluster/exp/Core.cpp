@@ -39,10 +39,11 @@ namespace cluster {
 Core::Core(const Settings& s, broker::Broker& b) :
     broker(b),
     eventHandler(new EventHandler(*this)),
-    multicaster(eventHandler->getCpg(), b.getPoller(), boost::bind(&Core::fatal, this))
+    multicaster(eventHandler->getCpg(), b.getPoller(), boost::bind(&Core::fatal, this)),
+    settings(s)
 {
     boost::intrusive_ptr<QueueHandler> queueHandler(
-        new QueueHandler(*eventHandler, multicaster));
+        new QueueHandler(*eventHandler, multicaster, settings));
     eventHandler->add(queueHandler);
     eventHandler->add(boost::intrusive_ptr<HandlerBase>(
                           new WiringHandler(*eventHandler, queueHandler)));

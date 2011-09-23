@@ -26,9 +26,11 @@
 #include <memory>
 #include "LockedMap.h"
 #include "Multicaster.h"
+#include "Settings.h"
 #include "qpid/cluster/types.h"
 #include "qpid/cluster/Cpg.h"
 #include "qpid/broker/QueuedMessage.h"
+#include "qpid/sys/Time.h"
 
 // TODO aconway 2010-10-19: experimental cluster code.
 
@@ -56,11 +58,6 @@ class BrokerContext;
 class Core
 {
   public:
-    /** Configuration settings */
-    struct Settings {
-        std::string name;
-    };
-
     typedef LockedMap<RoutingId, boost::intrusive_ptr<broker::Message> > RoutingMap;
 
     /** Constructed during Plugin::earlyInitialize() */
@@ -84,12 +81,15 @@ class Core
      * Used to pass messages being routed from BrokerContext to MessageHandler
      */
     RoutingMap& getRoutingMap() { return routingMap; }
+
+    const Settings& getSettings() const { return settings; }
   private:
     broker::Broker& broker;
     std::auto_ptr<EventHandler> eventHandler; // Handles CPG events.
     BrokerContext* brokerHandler; // Handles broker events.
     RoutingMap routingMap;
     Multicaster multicaster;
+    Settings settings;
 };
 }} // namespace qpid::cluster
 

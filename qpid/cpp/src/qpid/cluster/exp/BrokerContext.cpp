@@ -130,7 +130,7 @@ void BrokerContext::create(broker::Queue& q) {
     if (tssNoReplicate) return;
     assert(!QueueContext::get(q));
     boost::intrusive_ptr<QueueContext> context(
-        new QueueContext(q, core.getMulticaster()));
+        new QueueContext(q, core.getSettings().getConsumeLock(), core.getMulticaster()));
     std::string data(q.encodedSize(), '\0');
     framing::Buffer buf(&data[0], data.size());
     q.encode(buf);

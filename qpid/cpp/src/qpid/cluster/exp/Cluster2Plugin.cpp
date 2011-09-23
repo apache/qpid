@@ -31,15 +31,16 @@ using broker::Broker;
  */
 struct Cluster2Plugin : public Plugin {
     struct Opts : public Options {
-        Core::Settings& settings;
-        Opts(Core::Settings& s) : Options("Cluster Options"), settings(s) {
+        Settings& settings;
+        Opts(Settings& s) : Options("Cluster Options"), settings(s) {
             addOptions()
-                ("cluster2-name", optValue(settings.name, "NAME"), "Name of cluster to join");
-            // TODO aconway 2010-10-19: copy across other options from ClusterPlugin.h
+                ("cluster2-name", optValue(settings.name, "NAME"), "Name of cluster to join")
+                ("consume-lock", optValue(settings.consumeLockMicros, "uS"), "Maximum time a broker can hold the consume lock on a shared queue, in microseconds.");
+                // TODO aconway 2010-10-19: copy across other options from ClusterPlugin.h
         }
     };
 
-    Core::Settings settings;
+    Settings settings;
     Opts options;
     Core* core;                 // Core deletes itself on shutdown.
 

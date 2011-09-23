@@ -20,39 +20,33 @@
 
 # Benchmark script for comparing cluster performance.
 
-# Default values
-PORT="5672"
-MESSAGES=10000
-FLOW=100	      # Flow control limit on queue depth for latency.
-REPEAT=10
-QUEUES=4
-CLIENTS=3
+# Default options
+MESSAGES="-m 10000"
+FLOW="--flow-control 100"	      # Flow control limit on queue depth for latency.
+REPEAT="--repeat 10"
+QUEUES="-q 4"
+SENDERS="-s 3"
+RECEIVERS="-r 3"
+BROKERS=			# Local broker
+CLIENT_HOSTS=			# No ssh, all clients are local
 
-while getopts "p:m:f:r:t:b:q:c" opt; do
+while getopts "m:f:n:b:q:s:r:c:" opt; do
     case $opt in
-	p) PORT=$OPTARG;;
-	m) MESSAGES=$OPTARG;;
-	f) FLOW=$OPTARG;;
-	r) REPEAT=$OPTARG;;
-	s) SCALE=$OPTARG;;
-	b) BROKERS=$OPTARG;;
-	q) QUEUES=$OPTARG;;
-	c) CLIENTS=$OPTARG;;
+	m) MESSAGES="-m $OPTARG";;
+	f) FLOW="--flow-control $OPTARG";;
+	n) REPEAT="--repeat $OPTARG";;
+	b) BROKERS="-b $OPTARG";;
+	q) QUEUES="-q $OPTARG";;
+	s) SENDERS="-s $OPTARG";;
+	r) RECEIVERS="-r $OPTARG";;
+	c) CLIENT_HOSTS="-c $OPTARG";;
 	*) echo "Unknown option"; exit 1;;
     esac
 done
 
-BROKERS=${BROKERS:-$(echo $HOSTS | sed "s/\>/:$PORT/g;s/ /,/g")} # Broker URL list
-BROKER=`echo $BROKERS | awk -F, '{print $1}'` # First broker
-
 run_test() { echo $*; shift; "$@"; echo; echo; echo; }
 
-# Multiple pubs/subs connect via multiple brokers (active-active)
-run_test "multi-host-thruput" qpid-cpp-benchmark --repeat $REPEAT -b $BROKERS --no-timestamp --summarize -q$QUEUES -s$CLIENTS -r$CLIENTS -m $MESSAGES
+run_test "Throughput:" qpid-cpp-benchmark $REPEAT $BROKERS --summarize $QUEUES $SENDERS $RECEIVERS $MESSAGES $CLIENT_HOSTS
 
-# Multiple pubs/subs connect via single broker (active-passive)
-run_test "single-host-thruput" qpid-cpp-benchmark --repeat $REPEAT -b $BROKER --no-timestamp --summarize -q$QUEUES -s$CLIENTS -r$CLIENTS -m $MESSAGES
-
-# Latency
-run_test "latency" qpid-cpp-benchmark --repeat $REPEAT -b $BROKER --connection-options '{tcp-nodelay:true}' -m $MESSAGES --flow-control $FLOW
+run_test "Latency:" qpid-cpp-benchmark $REPEAT $BROKERS --connection-options "{tcp-nodelay:true}" $MESSAGES $FLOW $CLIENT_HOSTS
 

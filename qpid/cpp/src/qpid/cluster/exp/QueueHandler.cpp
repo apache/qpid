@@ -33,8 +33,8 @@ namespace qpid {
 namespace cluster {
 
 // FIXME aconway 2011-05-11: make Multicaster+EventHandler available as Group, clean this up?
-QueueHandler::QueueHandler(EventHandler& eh, Multicaster& m)
-    : HandlerBase(eh), multicaster(m) {}
+QueueHandler::QueueHandler(EventHandler& eh, Multicaster& m, const Settings& s)
+    : HandlerBase(eh), multicaster(m),  consumeLock(s.getConsumeLock()) {}
 
 bool QueueHandler::invoke(const framing::AMQBody& body) {
     return framing::invoke(*this, body).wasHandled();
@@ -64,7 +64,7 @@ void QueueHandler::add(boost::shared_ptr<broker::Queue> q) {
 
     // Local queues already have a context, remote queues need one.
     if (!QueueContext::get(*q))
-        new QueueContext(*q, multicaster); // Context attaches itself to the Queue
+        new QueueContext(*q, consumeLock, multicaster); // Context attaches itself to the Queue
     // FIXME aconway 2011-09-15: thread safety: called from wiring handler..
     queues[q->getName()] = boost::intrusive_ptr<QueueReplica>(
         new QueueReplica(q, self()));

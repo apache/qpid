@@ -132,6 +132,8 @@ cluster2_la_SOURCES =				\
 	qpid/cluster/exp/QueueHandler.h		\
 	qpid/cluster/exp/QueueReplica.cpp	\
 	qpid/cluster/exp/QueueReplica.h		\
+	qpid/cluster/exp/Settings.cpp		\
+	qpid/cluster/exp/Settings.h		\
 	qpid/cluster/exp/WiringHandler.cpp	\
 	qpid/cluster/exp/WiringHandler.h
 
