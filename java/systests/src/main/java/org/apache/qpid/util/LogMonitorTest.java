@@ -168,7 +168,7 @@ public class LogMonitorTest extends TestCase
 
         // Verify that we can time out waiting for a message
         assertFalse("Message was logged ",
-                    _monitor.waitForMessage(message, TIME_OUT / 2, false));
+                    _monitor.waitForMessage(message, TIME_OUT / 2));
 
         // Verify that the message did eventually get logged.
         assertTrue("Message was never logged.",
