@@ -23,6 +23,7 @@ package org.apache.qpid.test.unit.transacted;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.jms.DeliveryMode;
 import javax.jms.ExceptionListener;
@@ -49,7 +50,7 @@ import org.apache.qpid.util.LogMonitor;
 /**
  * The {@link TestCase} for transaction timeout testing.
  */
-public class TransactionTimeoutTestCase extends QpidBrokerTestCase implements ExceptionListener
+public abstract class TransactionTimeoutTestCase extends QpidBrokerTestCase implements ExceptionListener
 {
     public static final String VIRTUALHOST = "test";
     public static final String TEXT = "0123456789abcdefghiforgettherest";
@@ -64,31 +65,16 @@ public class TransactionTimeoutTestCase extends QpidBrokerTestCase implements Ex
     protected Queue _queue;
     protected MessageConsumer _consumer;
     protected MessageProducer _producer;
-    protected CountDownLatch _caught = new CountDownLatch(1);
+    private CountDownLatch _exceptionLatch = new CountDownLatch(1);
+    protected AtomicInteger _exceptionCount = new AtomicInteger(0);
     protected String _message;
     protected Exception _exception;
     protected AMQConstant _code;
-    
-    protected void configure() throws Exception
-    {
-        // Setup housekeeping every second
-        setConfigurationProperty("virtualhosts.virtualhost." + VIRTUALHOST + ".housekeeping.checkPeriod", "100");
-        
-        /*
-         * Set transaction timout properties. The XML in the virtualhosts configuration is as follows:
-         * 
-         *  <transactionTimeout>
-         *      <openWarn>1000</openWarn>
-         *      <openClose>2000</openClose>
-         *      <idleWarn>500</idleWarn>
-         *      <idleClose>1500</idleClose>
-         *  </transactionTimeout>
-         */
-        setConfigurationProperty("virtualhosts.virtualhost." + VIRTUALHOST + ".transactionTimeout.openWarn", "1000");
-        setConfigurationProperty("virtualhosts.virtualhost." + VIRTUALHOST + ".transactionTimeout.openClose", "2000");
-        setConfigurationProperty("virtualhosts.virtualhost." + VIRTUALHOST + ".transactionTimeout.idleWarn", "500");
-        setConfigurationProperty("virtualhosts.virtualhost." + VIRTUALHOST + ".transactionTimeout.idleClose", "1000");
-    }
+
+    /**
+     * Subclasses must implement this to configure transaction timeout parameters.
+     */
+    protected abstract void configure() throws Exception;
         
     protected void setUp() throws Exception
     {
@@ -233,7 +219,7 @@ public class TransactionTimeoutTestCase extends QpidBrokerTestCase implements Ex
      */
     protected void check(String reason)throws InterruptedException
     {
-        assertTrue("Should have caught exception in listener", _caught.await(1, TimeUnit.SECONDS));
+        assertTrue("Should have caught exception in listener", _exceptionLatch.await(1, TimeUnit.SECONDS));
         assertNotNull("Should have thrown exception to client", _exception);
         assertTrue("Exception message should contain '" + reason + "': " + _message, _message.contains(reason + " transaction timed out"));
         assertNotNull("Exception should have an error code", _code);
@@ -243,11 +229,18 @@ public class TransactionTimeoutTestCase extends QpidBrokerTestCase implements Ex
     /** @see javax.jms.ExceptionListener#onException(javax.jms.JMSException) */
     public void onException(JMSException jmse)
     {
-        _caught.countDown();
+        _exceptionLatch.countDown();
+        _exceptionCount.incrementAndGet();
+
         _message = jmse.getLinkedException().getMessage();
         if (jmse.getLinkedException() instanceof AMQException)
         {
             _code = ((AMQException) jmse.getLinkedException()).getErrorCode();
         }
+    }
+
+    protected int getNumberOfDeliveredExceptions()
+    {
+        return _exceptionCount.get();
     }
 }
