@@ -30,6 +30,8 @@ public class TransactionTimeoutDisabledTest extends TransactionTimeoutTestCase
     {
         // Setup housekeeping every second
         setConfigurationProperty("virtualhosts.virtualhost." + VIRTUALHOST + ".housekeeping.checkPeriod", "100");
+
+        // No transaction timeout configuration.
     }
 
     public void testProducerIdleCommit() throws Exception
@@ -47,7 +49,7 @@ public class TransactionTimeoutDisabledTest extends TransactionTimeoutTestCase
             fail("Should have succeeded");
         }
         
-        assertTrue("Listener should not have received exception", _caught.getCount() == 1);
+        assertEquals("Listener should not have received exception", 0, getNumberOfDeliveredExceptions());
         
         monitor(0, 0);
     }
@@ -65,7 +67,7 @@ public class TransactionTimeoutDisabledTest extends TransactionTimeoutTestCase
             fail("Should have succeeded");
         }
         
-        assertTrue("Listener should not have received exception", _caught.getCount() == 1);
+        assertEquals("Listener should not have received exception", 0, getNumberOfDeliveredExceptions());
         
         monitor(0, 0);
     }
