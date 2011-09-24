@@ -16,19 +16,20 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-broker.version=v0_9_1
+
 broker.language=java
-broker.type=internal
+broker.type=spawned
 broker.command=${project.root}/build/bin/qpid-server -p @PORT -m @MPORT @EXCLUDES -c @CONFIG_FILE -l ${test.profiles}/log4j-test.xml
-broker.clean=${test.profiles}/clean-dir ${build.data} ${project.root}/build/work
+broker.clean=${test.profiles}/clean-dir ${build.data} ${project.root}/build/work/*
 broker.ready=BRK-1004
 broker.stopped=Exception
-broker.config=${project.root}/build/etc/config-systests-derby.xml
-broker.protocol.excludes=--exclude-0-10 @PORT --exclude-0-10 @SSL_PORT
-messagestore.class.name=org.apache.qpid.server.store.DerbyMessageStore
-profile.excludes=JavaPersistentExcludes JavaDerbyExcludes JavaPre010Excludes
+broker.config=${project.root}/build/etc/config-systests-bdb.xml
+messagestore.class.name=org.apache.qpid.server.store.berkeleydb.BDBMessageStore
+profile.excludes=JavaExcludes JavaPersistentExcludes JavaPre010Excludes JavaBDBExcludes
 broker.clean.between.tests=true
 broker.persistent=true
+broker.protocol.excludes=--exclude-0-10 @PORT --exclude-0-10 @SSL_PORT
+broker.version=v0_9_1
 #
 # Do not enable. Allow client to attempt 0-10 and negotiate downwards
 #
