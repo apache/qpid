@@ -1,3 +1,4 @@
+#!/bin/bash
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -16,21 +17,24 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-broker.version=v0_9_1
-broker.language=java
-broker.type=internal
-broker.command=${project.root}/build/bin/qpid-server -p @PORT -m @MPORT @EXCLUDES -c @CONFIG_FILE -l ${test.profiles}/log4j-test.xml
-broker.clean=${test.profiles}/clean-dir ${build.data} ${project.root}/build/work
-broker.ready=BRK-1004
-broker.stopped=Exception
-broker.config=${project.root}/build/etc/config-systests-derby.xml
-broker.protocol.excludes=--exclude-0-10 @PORT --exclude-0-10 @SSL_PORT
-messagestore.class.name=org.apache.qpid.server.store.DerbyMessageStore
-profile.excludes=JavaPersistentExcludes JavaDerbyExcludes JavaPre010Excludes
-broker.clean.between.tests=true
-broker.persistent=true
-#
-# Do not enable. Allow client to attempt 0-10 and negotiate downwards
-#
-#qpid.amqp.version=0-91
 
+# Parse arguments taking all - prefixed args as JAVA_OPTS
+for arg in "$@"; do
+    if [[ $arg == -java:* ]]; then
+        JAVA_OPTS="${JAVA_OPTS}-`echo $arg|cut -d ':' -f 2`  "
+    else
+        ARGS="${ARGS}$arg "
+    fi
+done
+
+WHEREAMI=`dirname $0`
+if [ -z "$QPID_HOME" ]; then
+   export QPID_HOME=`cd $WHEREAMI/../ && pwd`
+fi
+VERSION=0.13
+
+LIBS=$QPID_HOME/lib/je-4.0.103.jar:$QPID_HOME/lib/qpid-bdbstore-$VERSION.jar:$QPID_HOME/lib/qpid-all.jar
+
+
+echo "Starting Hot Backup Script"
+java -Dlog4j.configuration=backup-log4j.xml ${JAVA_OPTS} -cp $LIBS org.apache.qpid.server.store.berkeleydb.BDBBackup ${ARGS}
