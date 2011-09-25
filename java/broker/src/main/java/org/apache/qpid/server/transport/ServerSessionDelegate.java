@@ -606,6 +606,12 @@ public class ServerSessionDelegate extends SessionDelegate
 
         try
         {
+            if (nameNullOrEmpty(method.getExchange()))
+            {
+                exception(session, method, ExecutionErrorCode.INVALID_ARGUMENT, "Delete not allowed for default exchange");
+                return;
+            }
+
             Exchange exchange = getExchange(session, method.getExchange());
 
             if(exchange == null)
@@ -639,6 +645,16 @@ public class ServerSessionDelegate extends SessionDelegate
         {
             exception(session, method, e, "Cannot delete exchange '" + method.getExchange() );
         }
+    }
+
+    private boolean nameNullOrEmpty(String name)
+    {
+        if(name == null || name.length() == 0)
+        {
+            return true;
+        }
+
+        return false;
     }
 
     private boolean isStandardExchange(Exchange exchange, Collection<ExchangeType<? extends Exchange>> registeredTypes)
@@ -687,9 +703,9 @@ public class ServerSessionDelegate extends SessionDelegate
         {
             exception(session, method, ExecutionErrorCode.ILLEGAL_ARGUMENT, "queue not set");
         }
-        else if (!method.hasExchange())
+        else if (nameNullOrEmpty(method.getExchange()))
         {
-            exception(session, method, ExecutionErrorCode.ILLEGAL_ARGUMENT, "exchange not set");
+            exception(session, method, ExecutionErrorCode.INVALID_ARGUMENT, "Bind not allowed for default exchange");
         }
 /*
         else if (!method.hasBindingKey())
@@ -758,9 +774,9 @@ public class ServerSessionDelegate extends SessionDelegate
         {
             exception(session, method, ExecutionErrorCode.ILLEGAL_ARGUMENT, "queue not set");
         }
-        else if (!method.hasExchange())
+        else if (nameNullOrEmpty(method.getExchange()))
         {
-            exception(session, method, ExecutionErrorCode.ILLEGAL_ARGUMENT, "exchange not set");
+            exception(session, method, ExecutionErrorCode.INVALID_ARGUMENT, "Unbind not allowed for default exchange");
         }
         else if (!method.hasBindingKey())
         {
@@ -790,9 +806,6 @@ public class ServerSessionDelegate extends SessionDelegate
                 }
             }
         }
-
-
-        super.exchangeUnbind(session, method);
     }
 
     @Override
