@@ -65,7 +65,7 @@ public class QpidTestCase extends TestCase
             String exclusionListString = System.getProperties().getProperty("test.excludelist", "");
             List<String> exclusionList = new ArrayList<String>();
 
-            for (String uri : exclusionListURIs.split("\\s+"))
+            for (String uri : exclusionListURIs.split(";\\s*"))
             {
                 File file = new File(uri);
                 if (file.exists())
@@ -86,6 +86,10 @@ public class QpidTestCase extends TestCase
                     {
                         _logger.warn("Exception when reading exclusion list", e);
                     }
+                }
+                else
+                {
+                    _logger.info("Specified exclude file does not exist: " + uri);
                 }
             }
 
