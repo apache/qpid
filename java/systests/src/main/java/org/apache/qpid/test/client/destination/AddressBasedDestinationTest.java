@@ -1116,10 +1116,10 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
     public void testDestinationOnSend() throws Exception
     {
     	Session ssn = _connection.createSession(false,Session.CLIENT_ACKNOWLEDGE);
-        MessageConsumer cons = ssn.createConsumer(ssn.createTopic("amq.topic/test"));
+        MessageConsumer cons = ssn.createConsumer(ssn.createTopic("ADDR:amq.topic/test"));
         MessageProducer prod = ssn.createProducer(null);
         
-        Queue queue = ssn.createQueue("amq.topic/test");
+        Queue queue = ssn.createQueue("ADDR:amq.topic/test");
         prod.send(queue,ssn.createTextMessage("A"));
         
         Message msg = cons.receive(1000);
@@ -1147,7 +1147,7 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
 		Destination replyToDest = AMQDestination.createDestination(replyTo);
 	    MessageConsumer replyToCons = session.createConsumer(replyToDest);
 	    		    			
-		Destination dest = session.createQueue("amq.direct/test");
+		Destination dest = session.createQueue("ADDR:amq.direct/test");
 					
 		MessageConsumer cons = session.createConsumer(dest);
 		MessageProducer prod = session.createProducer(dest);
