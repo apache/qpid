@@ -32,9 +32,9 @@ import org.apache.qpid.transport.Connection;
 
 public class SSLTest extends QpidBrokerTestCase
 {
-    private static final String KEYSTORE = TEST_RESOURCES_DIR + "/ssl/java_client_keystore.jks";
+    private static final String KEYSTORE = "test-profiles/test_resources/ssl/java_client_keystore.jks";
     private static final String KEYSTORE_PASSWORD = "password";
-    private static final String TRUSTSTORE = TEST_RESOURCES_DIR + "/ssl/java_client_truststore.jks";
+    private static final String TRUSTSTORE = "test-profiles/test_resources/ssl/java_client_truststore.jks";
     private static final String TRUSTSTORE_PASSWORD = "password";
     private static final String CERT_ALIAS_APP1 = "app1";
     private static final String CERT_ALIAS_APP2 = "app2";
