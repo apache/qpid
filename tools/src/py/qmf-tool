@@ -31,6 +31,100 @@ from qpid.disp   import Display
 import cqpid
 import qmf2
 
+class OptsAndArgs(object):
+
+  def __init__(self, argv):
+    self.argv = argv
+    self.usage = """qmf-tool [OPTIONS] [<broker-host>[:<port>]]"""
+    self.option_parser = optparse.OptionParser(usage=self.usage)
+    self.conn_group = optparse.OptionGroup(self.option_parser, "Connection Options")
+    self.conn_group.add_option("-u", "--user", action="store", type="string", help="User name for authentication")
+    self.conn_group.add_option("-p", "--password", action="store", type="string", help="Password for authentication")
+    self.conn_group.add_option("-t", "--transport", action="store", type="string",  help="Transport type (tcp, ssl, rdma)")
+    self.conn_group.add_option("-m", "--mechanism", action="store", type="string", help="SASL Mechanism for security")
+    self.conn_group.add_option("-s", "--service", action="store", type="string", default="qpidd", help="SASL Service name")
+    self.conn_group.add_option("--min-ssf", action="store", type="int", metavar="<n>", help="Minimum acceptable security strength factor")
+    self.conn_group.add_option("--max-ssf", action="store", type="int", metavar="<n>", help="Maximum acceptable security strength factor")
+    self.conn_group.add_option("--conn-option", action="append", default=[], metavar="<NAME=VALUE>", help="Additional connection option(s)")
+    self.option_parser.add_option_group(self.conn_group)
+
+    self.qmf_group = optparse.OptionGroup(self.option_parser, "QMF Session Options")
+    self.qmf_group.add_option("--domain", action="store", type="string", help="QMF Domain")
+    self.qmf_group.add_option("--agent-age", action="store", type="int", metavar="<n>", help="Time, in minutes, to age out non-communicating agents")
+    self.qmf_group.add_option("--qmf-option", action="append", default=[], metavar="<NAME=VALUE>", help="Additional QMF session option(s)")
+    self.option_parser.add_option_group(self.qmf_group)
+
+  def parse(self):
+    host = "localhost"
+    conn_options = []
+    qmf_options = []
+
+    options, encArgs = self.option_parser.parse_args(args=self.argv)
+    try:
+      encoding = locale.getpreferredencoding()
+      args = [a.decode(encoding) for a in encArgs]
+    except:
+      args = encArgs
+
+    if len(args) > 1:
+      host = args[1]
+
+    if options.user:
+      conn_options.append("username:'%s'" % options.user)
+    if options.password:
+      conn_options.append("password:'%s'" % options.password)
+    if options.transport:
+      conn_options.append("transport:'%s'" % options.transport)
+    if options.mechanism:
+      conn_options.append("sasl_mechanisms:'%s'" % options.mechanism)
+    if options.service:
+      conn_options.append("sasl_service:'%s'" % options.service)
+    if options.min_ssf:
+      conn_options.append("sasl_min_ssf:%d" % options.min_ssf)
+    if options.max_ssf:
+      conn_options.append("sasl_max_ssf:%d" % options.max_ssf)
+    for x in options.conn_option:
+      try:
+        key, val = x.split('=')
+        conn_options.append("%s:%s" % (key, val))
+      except:
+        raise BaseException("Improperly formatted text for --conn-option: '%s'" % x)
+
+    if options.domain:
+      qmf_options.append("domain:'%s'" % options.domain)
+    if options.agent_age:
+      qmf_options.append("max-agent-age:%d" % options.agent_age)
+    for x in options.qmf_option:
+      try:
+        key, val = x.split('=')
+        qmf_options.append("%s:%s" % (key, val))
+      except:
+        raise BaseException("Improperly formatted text for --qmf-option: '%s'" % x)
+
+    conn_string = '{'
+    first = True
+    for x in conn_options:
+      if first:
+        first = None
+      else:
+        conn_string += ','
+      conn_string += x
+    conn_string += '}'
+
+    qmf_string = '{'
+    first = True
+    for x in qmf_options:
+      if first:
+        first = None
+      else:
+        qmf_string += ','
+      qmf_string += x
+    qmf_string += '}'
+
+    return host, conn_string, qmf_string
+
+
+
 class Mcli(Cmd):
   """ Management Command Interpreter """
 
@@ -55,10 +149,11 @@ class Mcli(Cmd):
     print
     print "Agent Commands:"
     print "    set filter <filter-string> - Filter the list of agents"
-    print "    show filter                - Show the agent filter currently in effect"
     print "    list agents                - Print a list of the known Agents"
-    print "    show agent <item-number>   - Print detailed information about an Agent"
     print "    set default <item-number>  - Set the default agent for operations"
+    print "    show filter                - Show the agent filter currently in effect"
+    print "    show agent <item-number>   - Print detailed information about an Agent"
+    print "    show options               - Show option strings used in the QMF session"
     print
     print "Schema Commands:"
     print "    list packages                            - Print a list of packages supported by the default agent"
@@ -112,7 +207,7 @@ class Mcli(Cmd):
   def complete_show(self, text, line, begidx, endidx):
     tokens = split(line[:begidx])
     if len(tokens) == 1:
-      return [i for i in ('filter', 'agent ', 'class ') if i.startswith(text)]
+      return [i for i in ('options', 'filter', 'agent ', 'class ') if i.startswith(text)]
     return []
 
   def do_show(self, data):
@@ -175,13 +270,15 @@ class Mcli(Cmd):
 class QmfData:
   """
   """
-  def __init__(self, disp, url):
+  def __init__(self, disp, url, conn_options, qmf_options):
     self.disp = disp
     self.url = url
+    self.conn_options = conn_options
+    self.qmf_options = qmf_options
     self.agent_filter = '[]'
-    self.connection = cqpid.Connection(self.url)
+    self.connection = cqpid.Connection(self.url, self.conn_options)
     self.connection.open()
-    self.session = qmf2.ConsoleSession(self.connection)
+    self.session = qmf2.ConsoleSession(self.connection, self.qmf_options)
     self.session.setAgentFilter(self.agent_filter)
     self.session.open()
     self.lock = Lock()
@@ -237,6 +334,12 @@ class QmfData:
     tokens = split(data)
     if len(tokens) == 0:
       print "What do you want to show?  Type 'help' for more information."
+      return
+
+    if tokens[0] == 'options':
+      print "Options used in this session:"
+      print "  Connection Options : %s" % self.scrubConnOptions()
+      print "  QMF Session Options: %s" % self.qmf_options
       return
 
     if tokens[0] == 'agent':
@@ -636,32 +739,29 @@ class QmfData:
         first = None
     return result
 
-def Usage():
-  print "Usage:  qpid-tool [[<username>/<password>@]<target-host>[:<tcp-port>]]"
-  print
+  def scrubConnOptions(self):
+    pw = self.conn_options.find('password:')
+    if pw < 0:
+      return self.conn_options
+    scrubbed = self.conn_options[:pw + 9] + "***"
+    delim = self.conn_options[pw:].find(',')
+    if delim < 0:
+      delim = self.conn_options[pw:].find('}')
+    scrubbed += self.conn_options[pw + delim:]
+    return scrubbed
+
 
 #=========================================================
 # Main Program
 #=========================================================
-
-# Get host name and port if specified on the command line
-cargs = sys.argv[1:]
-_host = "localhost"
-
-if len(cargs) > 0:
-  _host = cargs[0]
-
-if _host[0] == '-':
-  Usage()
-  if _host != '-h' and _host != "--help":
-    print "qpid-tool: error: no such option:", _host
-  sys.exit(1)
+oa = OptsAndArgs(sys.argv)
+host, conn_options, qmf_options = oa.parse()
 
 disp = Display()
 
 # Attempt to make a connection to the target broker
 try:
-  data = QmfData(disp, _host)
+  data = QmfData(disp, host, conn_options, qmf_options)
 except Exception, e:
   if str(e).find("Exchange not found") != -1:
     print "Management not enabled on broker:  Use '-m yes' option on broker startup."
