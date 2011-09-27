@@ -236,7 +236,7 @@ bool MessageGroupManager::allocate(const std::string& consumer, const QueuedMess
 
 bool MessageGroupManager::nextBrowsableMessage( Consumer::shared_ptr& c, QueuedMessage& next )
 {
-    // browse: allow access to any aquired msg, regardless of group ownership (?ok?)
+    // browse: allow access to any available msg, regardless of group ownership (?ok?)
     if (!messages.empty() && messages.next(c->position, next))
         return true;
     return false;
