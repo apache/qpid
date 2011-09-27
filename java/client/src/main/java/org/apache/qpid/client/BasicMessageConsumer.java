@@ -323,14 +323,14 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
             }
         }
 
-        if (!_receiving.compareAndSet(false, true))
-        {
-            throw new javax.jms.IllegalStateException("Another thread is already receiving.");
-        }
-
         if (isMessageListenerSet())
         {
             throw new javax.jms.IllegalStateException("A listener has already been set.");
+        }
+
+        if (!_receiving.compareAndSet(false, true))
+        {
+            throw new javax.jms.IllegalStateException("Another thread is already receiving.");
         }
 
         _receivingThread = Thread.currentThread();
