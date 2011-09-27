@@ -88,7 +88,7 @@ class OptsAndArgs(object):
         key, val = x.split('=')
         conn_options.append("%s:%s" % (key, val))
       except:
-        raise BaseException("Improperly formatted text for --conn-option: '%s'" % x)
+        raise Exception("Improperly formatted text for --conn-option: '%s'" % x)
 
     if options.domain:
       qmf_options.append("domain:'%s'" % options.domain)
@@ -99,7 +99,7 @@ class OptsAndArgs(object):
         key, val = x.split('=')
         qmf_options.append("%s:%s" % (key, val))
       except:
-        raise BaseException("Improperly formatted text for --qmf-option: '%s'" % x)
+        raise Exception("Improperly formatted text for --qmf-option: '%s'" % x)
 
     conn_string = '{'
     first = True
@@ -754,8 +754,12 @@ class QmfData:
 #=========================================================
 # Main Program
 #=========================================================
-oa = OptsAndArgs(sys.argv)
-host, conn_options, qmf_options = oa.parse()
+try:
+  oa = OptsAndArgs(sys.argv)
+  host, conn_options, qmf_options = oa.parse()
+except Exception, e:
+  print "Parse Error: %s" % e
+  sys.exit(1)
 
 disp = Display()
 
