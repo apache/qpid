@@ -25,8 +25,6 @@
 #include "QueueHandler.h"
 #include "Multicaster.h"
 #include "hash.h"
-#include "qpid/framing/ClusterMessageRoutingBody.h"
-#include "qpid/framing/ClusterMessageRoutedBody.h"
 #include "qpid/framing/ClusterMessageEnqueueBody.h"
 #include "qpid/framing/ClusterMessageAcquireBody.h"
 #include "qpid/framing/ClusterMessageDequeueBody.h"
@@ -57,10 +55,6 @@ const ProtocolVersion pv;     // shorthand
 // noReplicate means the current thread is handling a message
 // received from the cluster so it should not be replicated.
 QPID_TSS bool tssNoReplicate = false;
-
-// Routing ID of the message being routed in the current thread.
-// 0 if we are not currently routing a message.
-QPID_TSS RoutingId tssRoutingId = 0;
 }
 
 // FIXME aconway 2011-09-26: de-const the broker::Cluster interface,
@@ -90,38 +84,24 @@ BrokerContext::ScopedSuppressReplication::~ScopedSuppressReplication() {
 BrokerContext::BrokerContext(Core& c, boost::intrusive_ptr<QueueHandler> q)
     : core(c), queueHandler(q) {}
 
-RoutingId BrokerContext::nextRoutingId() {
-    RoutingId id = ++routingId;
-    if (id == 0) id = ++routingId; // Avoid 0 on wrap-around.
-    return id;
-}
-
-void BrokerContext::routing(const boost::intrusive_ptr<Message>&) { }
+BrokerContext::~BrokerContext() {}
 
 bool BrokerContext::enqueue(Queue& queue, const boost::intrusive_ptr<Message>& msg)
 {
     if (tssNoReplicate) return true;
-    if (!tssRoutingId) {             // This is the first enqueue, so send the message
-        tssRoutingId = nextRoutingId();
-        // FIXME aconway 2010-10-20: replicate message in fixed size buffers.
-        std::string data(msg->encodedSize(),char());
-        framing::Buffer buf(&data[0], data.size());
-        msg->encode(buf);
-        mcaster(queue).mcast(ClusterMessageRoutingBody(pv, tssRoutingId, data));
-        core.getRoutingMap().put(tssRoutingId, msg);
-    }
-    mcaster(queue).mcast(ClusterMessageEnqueueBody(pv, tssRoutingId, queue.getName()));
+    // FIXME aconway 2010-10-20: replicate message in fragments
+    // (frames), using fixed size bufffers.
+    std::string data(msg->encodedSize(),char());
+    framing::Buffer buf(&data[0], data.size());
+    msg->encode(buf);
+    mcaster(queue).mcast(ClusterMessageEnqueueBody(pv, queue.getName(), data));
     return false; // Strict order, wait for CPG self-delivery to enqueue.
 }
 
-void BrokerContext::routed(const boost::intrusive_ptr<Message>&) {
-    if (tssRoutingId) {             // we enqueued at least one message.
-        core.getGroup(tssRoutingId).getMulticaster().mcast(
-            ClusterMessageRoutedBody(pv, tssRoutingId));
-        // Note: routingMap is cleaned up on CPG delivery in MessageHandler.
-        tssRoutingId = 0;
-    }
-}
+// routing and routed are no-ops. They are needed to implement fanout
+// optimization, which is currently not implemnted
+void BrokerContext::routing(const boost::intrusive_ptr<broker::Message>&) {}
+void BrokerContext::routed(const boost::intrusive_ptr<Message>&) {}
 
 void BrokerContext::acquire(const broker::QueuedMessage& qm) {
     if (tssNoReplicate) return;

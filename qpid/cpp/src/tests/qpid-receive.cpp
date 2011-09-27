@@ -217,10 +217,7 @@ int main(int argc, char ** argv)
                         }
                         if (opts.printContent)
                             std::cout << msg.getContent() << std::endl;//TODO: handle map or list messages
-                        if (opts.messages && count >= opts.messages) {
-                            cerr << "qpid-receive(" << getpid() << ") DONE" << endl;
-                            done = true;
-                        }
+                        if (opts.messages && count >= opts.messages) done = true;
                     }
                 } else if (opts.checkRedelivered && !msg.getRedelivered()) {
                     throw qpid::Exception("duplicate sequence number received, message not marked as redelivered!");

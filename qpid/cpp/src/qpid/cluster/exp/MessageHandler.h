@@ -56,24 +56,15 @@ class MessageHandler : public framing::AMQP_AllOperations::ClusterMessageHandler
 
     bool invoke(const framing::AMQBody& body);
 
-    void routing(uint32_t routingId, const std::string& message);
-    void enqueue(uint32_t routingId, const std::string& queue);
-    void routed(uint32_t routingId);
+    void enqueue(const std::string& queue, const std::string& message);
     void acquire(const std::string& queue, uint32_t position);
     void dequeue(const std::string& queue, uint32_t position);
     void requeue(const std::string& queue, uint32_t position, bool redelivered);
 
   private:
-    struct Member {
-        typedef std::map<uint32_t, boost::intrusive_ptr<broker::Message> > RoutingMap;
-        RoutingMap routingMap;
-    };
-    typedef std::map<MemberId, Member> MemberMap;
-
     boost::shared_ptr<broker::Queue> findQueue(const std::string& q, const char* msg);
 
     broker::Broker& broker;
-    MemberMap memberMap;
     Core& core;
 };
 }} // namespace qpid::cluster

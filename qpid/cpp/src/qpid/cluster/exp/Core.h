@@ -60,7 +60,6 @@ class BrokerContext;
 class Core
 {
   public:
-    typedef LockedMap<RoutingId, boost::intrusive_ptr<broker::Message> > RoutingMap;
     typedef std::vector<boost::intrusive_ptr<Group> > Groups;
 
     /** Constructed during Plugin::earlyInitialize() */
@@ -75,11 +74,6 @@ class Core
     broker::Broker& getBroker() { return broker; }
     BrokerContext& getBrokerContext() { return *brokerHandler; }
 
-    /** Map of messages that are currently being routed.
-     * Used to pass messages being routed from BrokerContext to MessageHandler
-     */
-    RoutingMap& getRoutingMap() { return routingMap; }
-
     const Settings& getSettings() const { return settings; }
 
     /** Get group by hash value. */
@@ -88,7 +82,6 @@ class Core
   private:
     broker::Broker& broker;
     BrokerContext* brokerHandler; // Handles broker events.
-    RoutingMap routingMap;
     Settings settings;
     Groups groups;
 };

@@ -331,23 +331,11 @@
 
   <!-- Message delivery and disposition -->
   <class name="cluster-message" code="0x82">
-    <!-- FIXME aconway 2010-10-19: create message in fragments -->
-    <control name="routing" code="0x1">
-      <field name="routing-id" type="uint32"/>
+    <control name="enqueue" code="0x2">
+      <field name="queue" type="queue.name"/>
       <field name="message" type="str32"/>
     </control>
 
-    <!--  FIXME aconway 2011-04-27: reference queues by index, not name -->
-    <control name="enqueue" code="0x2">
-      <field name="routing-id" type="uint32"/>
-      <field name="queue" type="queue.name"/>
-    </control>
-
-    <control name="routed" code="0x3">
-      <field name="routing-id" type="uint32"/>
-    </control>
-
-    <!-- FIXME aconway 2011-04-27: review queue positions vs. global message IDs -->
     <control name="acquire" code="0x4">
       <field name="queue" type="queue.name"/>
       <field name="position" type="uint32"/>

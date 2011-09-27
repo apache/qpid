@@ -48,8 +48,7 @@ class BrokerContext : public broker::Cluster
     };
 
     BrokerContext(Core&, boost::intrusive_ptr<QueueHandler>);
-
-    // FIXME aconway 2010-10-20: implement all points.
+    ~BrokerContext();
 
     // Messages
 
@@ -81,7 +80,6 @@ class BrokerContext : public broker::Cluster
 
 
   private:
-    uint32_t nextRoutingId();
     // Get multicaster associated with a queue
     Multicaster& mcaster(const broker::QueuedMessage& qm);
     Multicaster& mcaster(const broker::Queue& q);
@@ -89,7 +87,6 @@ class BrokerContext : public broker::Cluster
 
     Core& core;
     boost::intrusive_ptr<QueueHandler> queueHandler;
-    sys::AtomicValue<uint32_t> routingId;
 };
 }} // namespace qpid::cluster
 

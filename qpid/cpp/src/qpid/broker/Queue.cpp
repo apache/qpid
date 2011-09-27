@@ -237,8 +237,6 @@ void Queue::requeue(const QueuedMessage& msg){
  * calling function sets qmsg with the lock held, but the call to
  * Cluster::acquire() will happen after the lock is released in
  * ~ClusterAcquireScope().
- *
- * Also marks a Stoppable as busy for the duration of the scope.
  **/
 struct ClusterAcquireScope {
     QueuedMessage qmsg;

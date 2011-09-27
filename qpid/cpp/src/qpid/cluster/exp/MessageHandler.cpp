@@ -49,16 +49,6 @@ bool MessageHandler::invoke(const framing::AMQBody& body) {
     return framing::invoke(*this, body).wasHandled();
 }
 
-void MessageHandler::routing(RoutingId routingId, const std::string& message) {
-    if (sender() == self()) return; // Already in core.getRoutingMap()
-    boost::intrusive_ptr<Message> msg = new Message;
-    // FIXME aconway 2010-10-28: decode message in bounded-size buffers.
-    framing::Buffer buf(const_cast<char*>(&message[0]), message.size());
-    msg->decodeHeader(buf);
-    msg->decodeContent(buf);
-    memberMap[sender()].routingMap[routingId] = msg;
-}
-
 boost::shared_ptr<broker::Queue> MessageHandler::findQueue(
     const std::string& q, const char* msg)
 {
@@ -67,24 +57,16 @@ boost::shared_ptr<broker::Queue> MessageHandler::findQueue(
     return queue;
 }
 
-void MessageHandler::enqueue(RoutingId routingId, const std::string& q) {
+void MessageHandler::enqueue(const std::string& q, const std::string& message) {
+
     boost::shared_ptr<Queue> queue = findQueue(q, "Cluster enqueue failed");
-    boost::intrusive_ptr<Message> msg;
-    if (sender() == self())
-        msg = core.getRoutingMap().get(routingId);
-    else
-        msg = memberMap[sender()].routingMap[routingId];
-    if (!msg) throw Exception(QPID_MSG("Cluster enqueue on " << q
-                                       << " failed: unknown message"));
+    // FIXME aconway 2010-10-28: decode message by frame in bounded-size buffers.
+    boost::intrusive_ptr<broker::Message> msg = new broker::Message();
+    framing::Buffer buf(const_cast<char*>(&message[0]), message.size());
+    msg->decodeHeader(buf);
+    msg->decodeContent(buf);
     BrokerContext::ScopedSuppressReplication ssr;
     queue->deliver(msg);
-}
-
-void MessageHandler::routed(RoutingId routingId) {
-    if (sender() == self())
-        core.getRoutingMap().erase(routingId);
-    else
-        memberMap[sender()].routingMap.erase(routingId);
 }
 
 // FIXME aconway 2011-09-14: performance: pack acquires into a SequenceSet

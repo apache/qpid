@@ -32,6 +32,7 @@
 #include "qpid/framing/Buffer.h"
 #include "qpid/log/Statement.h"
 #include <sys/uio.h>            // For iovec
+#include <boost/lexical_cast.hpp>
 
 namespace qpid {
 namespace cluster {
@@ -40,33 +41,38 @@ Core::Core(const Settings& s, broker::Broker& b) :
     broker(b),
     settings(s)
 {
-    // FIXME aconway 2011-09-23: multi-group
-    groups.push_back(new Group(*this));
-    boost::intrusive_ptr<QueueHandler> queueHandler(
-        new QueueHandler(groups[0]->getEventHandler(), groups[0]->getMulticaster(), settings));
-    groups[0]->getEventHandler().add(queueHandler);
-    groups[0]->getEventHandler().add(boost::intrusive_ptr<HandlerBase>(
-                              new WiringHandler(groups[0]->getEventHandler(), queueHandler, broker)));
-    groups[0]->getEventHandler().add(boost::intrusive_ptr<HandlerBase>(
-                              new MessageHandler(groups[0]->getEventHandler(), *this)));
+    // FIXME aconway 2011-09-26: this has to be consistent in a
+    // cluster, negotiate as part of join protocol.
+    size_t nGroups = broker.getOptions().workerThreads;
+    for (size_t i = 0; i < nGroups; ++i) {
+        // FIXME aconway 2011-09-26: review naming. Create group for non-message traffic, e.g. initial join protocol.
+        std::string groupName = s.name + "-" + boost::lexical_cast<std::string>(i);
+        QPID_LOG(critical, "FIXME create group " << i << " of " << "nGroups. " << groupName);
+        groups.push_back(new Group(*this));
+        boost::intrusive_ptr<QueueHandler> queueHandler(
+            new QueueHandler(groups[i]->getEventHandler(), groups[i]->getMulticaster(), settings));
+        groups[i]->getEventHandler().add(queueHandler);
+        groups[i]->getEventHandler().add(boost::intrusive_ptr<HandlerBase>(
+                                             new WiringHandler(groups[i]->getEventHandler(), queueHandler, broker)));
+        groups[i]->getEventHandler().add(boost::intrusive_ptr<HandlerBase>(
+                                             new MessageHandler(groups[i]->getEventHandler(), *this)));
 
-    std::auto_ptr<BrokerContext> bh(new BrokerContext(*this, queueHandler));
-    brokerHandler = bh.get();
-    // BrokerContext belongs to Broker
-    broker.setCluster(std::auto_ptr<broker::Cluster>(bh));
-    // FIXME aconway 2011-09-26: multi-group
-    groups[0]->getEventHandler().start();
-    groups[0]->getEventHandler().getCpg().join(s.name);
-    // TODO aconway 2010-11-18: logging standards
-    // FIXME aconway 2011-09-26: multi-group
-    QPID_LOG(notice, "cluster: joined " << s.name << ", member-id="<< groups[0]->getEventHandler().getSelf());
+        std::auto_ptr<BrokerContext> bh(new BrokerContext(*this, queueHandler));
+        brokerHandler = bh.get();
+        // BrokerContext belongs to Broker
+        broker.setCluster(std::auto_ptr<broker::Cluster>(bh));
+        // FIXME aconway 2011-09-26: multi-group
+        groups[i]->getEventHandler().start();
+        groups[i]->getEventHandler().getCpg().join(groupName);
+        // TODO aconway 2010-11-18: logging standards
+        // FIXME aconway 2011-09-26: multi-group
+        QPID_LOG(notice, "cluster: joined " << groupName << ", member-id="<< groups[i]->getEventHandler().getSelf());
+    }
 }
 
 void Core::initialize() {}
 
 void Core::fatal() {
-    // FIXME aconway 2010-10-20: error handling
-    assert(0);
     broker::SignalHandler::shutdown();
 }
 
