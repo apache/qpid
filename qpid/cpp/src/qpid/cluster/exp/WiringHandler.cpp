@@ -41,9 +41,10 @@ using namespace broker;
 using framing::FieldTable;
 
 WiringHandler::WiringHandler(EventHandler& e,
-                             const boost::intrusive_ptr<QueueHandler>& qh) :
+                             const boost::intrusive_ptr<QueueHandler>& qh,
+                             broker::Broker& b) :
     HandlerBase(e),
-    broker(e.getCore().getBroker()),
+    broker(b),
     recovery(broker.getQueues(), broker.getExchanges(),
              broker.getLinks(), broker.getDtxManager()),
     queueHandler(qh)

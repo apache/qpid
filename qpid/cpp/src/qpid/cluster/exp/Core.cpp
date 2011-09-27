@@ -38,26 +38,28 @@ namespace cluster {
 
 Core::Core(const Settings& s, broker::Broker& b) :
     broker(b),
-    eventHandler(new EventHandler(*this)),
-    multicaster(eventHandler->getCpg(), b.getPoller(), boost::bind(&Core::fatal, this)),
     settings(s)
 {
+    // FIXME aconway 2011-09-23: multi-group
+    groups.push_back(new Group(*this));
     boost::intrusive_ptr<QueueHandler> queueHandler(
-        new QueueHandler(*eventHandler, multicaster, settings));
-    eventHandler->add(queueHandler);
-    eventHandler->add(boost::intrusive_ptr<HandlerBase>(
-                          new WiringHandler(*eventHandler, queueHandler)));
-    eventHandler->add(boost::intrusive_ptr<HandlerBase>(
-                          new MessageHandler(*eventHandler)));
+        new QueueHandler(groups[0]->getEventHandler(), groups[0]->getMulticaster(), settings));
+    groups[0]->getEventHandler().add(queueHandler);
+    groups[0]->getEventHandler().add(boost::intrusive_ptr<HandlerBase>(
+                              new WiringHandler(groups[0]->getEventHandler(), queueHandler, broker)));
+    groups[0]->getEventHandler().add(boost::intrusive_ptr<HandlerBase>(
+                              new MessageHandler(groups[0]->getEventHandler(), *this)));
 
     std::auto_ptr<BrokerContext> bh(new BrokerContext(*this, queueHandler));
     brokerHandler = bh.get();
     // BrokerContext belongs to Broker
     broker.setCluster(std::auto_ptr<broker::Cluster>(bh));
-    eventHandler->start();
-    eventHandler->getCpg().join(s.name);
+    // FIXME aconway 2011-09-26: multi-group
+    groups[0]->getEventHandler().start();
+    groups[0]->getEventHandler().getCpg().join(s.name);
     // TODO aconway 2010-11-18: logging standards
-    QPID_LOG(notice, "cluster: joined " << s.name << ", member-id="<< eventHandler->getSelf());
+    // FIXME aconway 2011-09-26: multi-group
+    QPID_LOG(notice, "cluster: joined " << s.name << ", member-id="<< groups[0]->getEventHandler().getSelf());
 }
 
 void Core::initialize() {}
@@ -68,8 +70,8 @@ void Core::fatal() {
     broker::SignalHandler::shutdown();
 }
 
-void Core::mcast(const framing::AMQBody& body) {
-    multicaster.mcast(body);
+Group& Core::getGroup(size_t hashValue) {
+    return *groups[hashValue % groups.size()];
 }
 
 }} // namespace qpid::cluster

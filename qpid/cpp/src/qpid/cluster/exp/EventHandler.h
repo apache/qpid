@@ -37,7 +37,6 @@ class AMQBody;
 }
 
 namespace cluster {
-class Core;
 class HandlerBase;
 
 /**
@@ -48,7 +47,9 @@ class HandlerBase;
 class EventHandler : public Cpg::Handler
 {
   public:
-    EventHandler(Core&);
+    EventHandler(boost::shared_ptr<sys::Poller> poller,
+                 boost::function<void()> onError);
+    
     ~EventHandler();
 
     /** Add a handler */
@@ -75,13 +76,11 @@ class EventHandler : public Cpg::Handler
 
     MemberId getSender() { return sender; }
     MemberId getSelf() { return self; }
-    Core& getCore() { return core; }
     Cpg& getCpg() { return cpg; }
 
   private:
     void invoke(const framing::AMQBody& body);
 
-    Core& core;
     Cpg cpg;
     PollerDispatch dispatcher;
     MemberId sender;              // sender of current event.

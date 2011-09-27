@@ -33,10 +33,10 @@
 namespace qpid {
 namespace cluster {
 
-EventHandler::EventHandler(Core& c) :
-    core(c),
-    cpg(*this),                 // FIXME aconway 2010-10-20: belongs on Core.
-    dispatcher(cpg, core.getBroker().getPoller(), boost::bind(&Core::fatal, &core)),
+EventHandler::EventHandler(boost::shared_ptr<sys::Poller> poller,
+                           boost::function<void()> onError) :
+    cpg(*this),
+    dispatcher(cpg, poller, onError),
     self(cpg.self())
 {}
 

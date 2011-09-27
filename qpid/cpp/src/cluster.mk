@@ -120,6 +120,10 @@ cluster2_la_SOURCES =				\
 	qpid/cluster/exp/Core.h			\
 	qpid/cluster/exp/EventHandler.cpp	\
 	qpid/cluster/exp/EventHandler.h		\
+	qpid/cluster/exp/Group.cpp		\
+	qpid/cluster/exp/Group.h		\
+	qpid/cluster/exp/hash.cpp		\
+	qpid/cluster/exp/hash.h			\
 	qpid/cluster/exp/HandlerBase.cpp	\
 	qpid/cluster/exp/HandlerBase.h		\
 	qpid/cluster/exp/MessageHandler.cpp	\

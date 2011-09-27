@@ -82,6 +82,10 @@ class BrokerContext : public broker::Cluster
 
   private:
     uint32_t nextRoutingId();
+    // Get multicaster associated with a queue
+    Multicaster& mcaster(const broker::QueuedMessage& qm);
+    Multicaster& mcaster(const broker::Queue& q);
+    Multicaster& mcaster(const std::string&);
 
     Core& core;
     boost::intrusive_ptr<QueueHandler> queueHandler;

@@ -76,9 +76,6 @@ class QueueContext : public RefCounted {
      */
     void cancel(size_t n);
 
-    /** Get the context for a broker queue. */
-    static boost::intrusive_ptr<QueueContext> get(broker::Queue&);
-
     /** Called in timer thread when the timer runs out. */
     void timeout();
 
@@ -91,12 +88,19 @@ class QueueContext : public RefCounted {
     /** Called by MesageHandler when a message is dequeued. */
     broker::QueuedMessage dequeue(uint32_t position);
 
-  private:
+    size_t getHash() const { return hash; }
+
+
+    /** Get the cluster context for a broker queue. */
+    static boost::intrusive_ptr<QueueContext> get(broker::Queue&) ;
+
+private:
     sys::Mutex lock;
     CountdownTimer timer;
     broker::Queue& queue;       // FIXME aconway 2011-06-08: should be shared/weak ptr?
     Multicaster& mcast;
     size_t consumers;
+    size_t hash;
 
     typedef LockedMap<uint32_t, broker::QueuedMessage> UnackedMap; // FIXME aconway 2011-09-15: don't need read/write map? Rename
     UnackedMap unacked;

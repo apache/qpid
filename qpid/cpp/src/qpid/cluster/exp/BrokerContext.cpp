@@ -23,6 +23,8 @@
 #include "BrokerContext.h"
 #include "QueueContext.h"
 #include "QueueHandler.h"
+#include "Multicaster.h"
+#include "hash.h"
 #include "qpid/framing/ClusterMessageRoutingBody.h"
 #include "qpid/framing/ClusterMessageRoutedBody.h"
 #include "qpid/framing/ClusterMessageEnqueueBody.h"
@@ -50,6 +52,8 @@ using namespace framing;
 using namespace broker;
 
 namespace {
+const ProtocolVersion pv;     // shorthand
+
 // noReplicate means the current thread is handling a message
 // received from the cluster so it should not be replicated.
 QPID_TSS bool tssNoReplicate = false;
@@ -57,6 +61,20 @@ QPID_TSS bool tssNoReplicate = false;
 // Routing ID of the message being routed in the current thread.
 // 0 if we are not currently routing a message.
 QPID_TSS RoutingId tssRoutingId = 0;
+}
+
+// FIXME aconway 2011-09-26: de-const the broker::Cluster interface,
+// then de-const here.
+Multicaster& BrokerContext::mcaster(const broker::QueuedMessage& qm) {
+    return core.getGroup(hashof(qm)).getMulticaster();
+}
+
+Multicaster& BrokerContext::mcaster(const broker::Queue& q) {
+    return core.getGroup(hashof(q)).getMulticaster();
+}
+
+Multicaster& BrokerContext::mcaster(const std::string& name) {
+    return core.getGroup(hashof(name)).getMulticaster();
 }
 
 BrokerContext::ScopedSuppressReplication::ScopedSuppressReplication() {
@@ -89,16 +107,17 @@ bool BrokerContext::enqueue(Queue& queue, const boost::intrusive_ptr<Message>& m
         std::string data(msg->encodedSize(),char());
         framing::Buffer buf(&data[0], data.size());
         msg->encode(buf);
-        core.mcast(ClusterMessageRoutingBody(ProtocolVersion(), tssRoutingId, data));
+        mcaster(queue).mcast(ClusterMessageRoutingBody(pv, tssRoutingId, data));
         core.getRoutingMap().put(tssRoutingId, msg);
     }
-    core.mcast(ClusterMessageEnqueueBody(ProtocolVersion(), tssRoutingId, queue.getName()));
+    mcaster(queue).mcast(ClusterMessageEnqueueBody(pv, tssRoutingId, queue.getName()));
     return false; // Strict order, wait for CPG self-delivery to enqueue.
 }
 
 void BrokerContext::routed(const boost::intrusive_ptr<Message>&) {
     if (tssRoutingId) {             // we enqueued at least one message.
-        core.mcast(ClusterMessageRoutedBody(ProtocolVersion(), tssRoutingId));
+        core.getGroup(tssRoutingId).getMulticaster().mcast(
+            ClusterMessageRoutedBody(pv, tssRoutingId));
         // Note: routingMap is cleaned up on CPG delivery in MessageHandler.
         tssRoutingId = 0;
     }
@@ -106,20 +125,19 @@ void BrokerContext::routed(const boost::intrusive_ptr<Message>&) {
 
 void BrokerContext::acquire(const broker::QueuedMessage& qm) {
     if (tssNoReplicate) return;
-    core.mcast(ClusterMessageAcquireBody(
-                   ProtocolVersion(), qm.queue->getName(), qm.position));
+    mcaster(qm).mcast(ClusterMessageAcquireBody(pv, qm.queue->getName(), qm.position));
 }
 
 void BrokerContext::dequeue(const broker::QueuedMessage& qm) {
     if (!tssNoReplicate)
-        core.mcast(ClusterMessageDequeueBody(
-                       ProtocolVersion(), qm.queue->getName(), qm.position));
+        mcaster(qm).mcast(
+            ClusterMessageDequeueBody(pv, qm.queue->getName(), qm.position));
 }
 
 void BrokerContext::requeue(const broker::QueuedMessage& qm) {
     if (!tssNoReplicate)
-        core.mcast(ClusterMessageRequeueBody(
-                       ProtocolVersion(),
+        mcaster(qm).mcast(ClusterMessageRequeueBody(
+                       pv,
                        qm.queue->getName(),
                        qm.position,
                        qm.payload->getRedelivered()));
@@ -130,17 +148,17 @@ void BrokerContext::create(broker::Queue& q) {
     if (tssNoReplicate) return;
     assert(!QueueContext::get(q));
     boost::intrusive_ptr<QueueContext> context(
-        new QueueContext(q, core.getSettings().getConsumeLock(), core.getMulticaster()));
+        new QueueContext(q, core.getSettings().getConsumeLock(), mcaster(q.getName())));
     std::string data(q.encodedSize(), '\0');
     framing::Buffer buf(&data[0], data.size());
     q.encode(buf);
-    core.mcast(ClusterWiringCreateQueueBody(ProtocolVersion(), data));
+    mcaster(q).mcast(ClusterWiringCreateQueueBody(pv, data));
     // FIXME aconway 2011-07-29: Need asynchronous completion.
 }
 
 void BrokerContext::destroy(broker::Queue& q) {
     if (tssNoReplicate) return;
-    core.mcast(ClusterWiringDestroyQueueBody(ProtocolVersion(), q.getName()));
+     mcaster(q).mcast(ClusterWiringDestroyQueueBody(pv, q.getName()));
 }
 
 void BrokerContext::create(broker::Exchange& ex) {
@@ -148,28 +166,27 @@ void BrokerContext::create(broker::Exchange& ex) {
     std::string data(ex.encodedSize(), '\0');
     framing::Buffer buf(&data[0], data.size());
     ex.encode(buf);
-    core.mcast(ClusterWiringCreateExchangeBody(ProtocolVersion(), data));
+    mcaster(ex.getName()).mcast(ClusterWiringCreateExchangeBody(pv, data));
 }
 
 void BrokerContext::destroy(broker::Exchange& ex) {
     if (tssNoReplicate) return;
-    core.mcast(ClusterWiringDestroyExchangeBody(ProtocolVersion(), ex.getName()));
+    mcaster(ex.getName()).mcast(
+        ClusterWiringDestroyExchangeBody(pv, ex.getName()));
 }
 
 void BrokerContext::bind(broker::Queue& q, broker::Exchange& ex,
                          const std::string& key, const framing::FieldTable& args)
 {
     if (tssNoReplicate) return;
-    core.mcast(ClusterWiringBindBody(
-                   ProtocolVersion(), q.getName(), ex.getName(), key, args));
+    mcaster(q).mcast(ClusterWiringBindBody(pv, q.getName(), ex.getName(), key, args));
 }
 
 void BrokerContext::unbind(broker::Queue& q, broker::Exchange& ex,
                            const std::string& key, const framing::FieldTable& args)
 {
     if (tssNoReplicate) return;
-    core.mcast(ClusterWiringUnbindBody(
-                   ProtocolVersion(), q.getName(), ex.getName(), key, args));
+    mcaster(q).mcast(ClusterWiringUnbindBody(pv, q.getName(), ex.getName(), key, args));
 }
 
 // n is the number of consumers including the one just added.
@@ -190,3 +207,4 @@ void BrokerContext::stopped(broker::Queue& q) {
 }
 
 }} // namespace qpid::cluster
+

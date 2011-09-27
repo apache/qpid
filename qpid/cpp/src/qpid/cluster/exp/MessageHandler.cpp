@@ -39,9 +39,10 @@ namespace qpid {
 namespace cluster {
 using namespace broker;
 
-MessageHandler::MessageHandler(EventHandler& e) :
+MessageHandler::MessageHandler(EventHandler& e, Core& c) :
     HandlerBase(e),
-    broker(e.getCore().getBroker())
+    broker(c.getBroker()),
+    core(c)
 {}
 
 bool MessageHandler::invoke(const framing::AMQBody& body) {
@@ -49,7 +50,7 @@ bool MessageHandler::invoke(const framing::AMQBody& body) {
 }
 
 void MessageHandler::routing(RoutingId routingId, const std::string& message) {
-    if (sender() == self()) return; // Already in getCore().getRoutingMap()
+    if (sender() == self()) return; // Already in core.getRoutingMap()
     boost::intrusive_ptr<Message> msg = new Message;
     // FIXME aconway 2010-10-28: decode message in bounded-size buffers.
     framing::Buffer buf(const_cast<char*>(&message[0]), message.size());
@@ -70,7 +71,7 @@ void MessageHandler::enqueue(RoutingId routingId, const std::string& q) {
     boost::shared_ptr<Queue> queue = findQueue(q, "Cluster enqueue failed");
     boost::intrusive_ptr<Message> msg;
     if (sender() == self())
-        msg = eventHandler.getCore().getRoutingMap().get(routingId);
+        msg = core.getRoutingMap().get(routingId);
     else
         msg = memberMap[sender()].routingMap[routingId];
     if (!msg) throw Exception(QPID_MSG("Cluster enqueue on " << q
@@ -81,7 +82,7 @@ void MessageHandler::enqueue(RoutingId routingId, const std::string& q) {
 
 void MessageHandler::routed(RoutingId routingId) {
     if (sender() == self())
-        eventHandler.getCore().getRoutingMap().erase(routingId);
+        core.getRoutingMap().erase(routingId);
     else
         memberMap[sender()].routingMap.erase(routingId);
 }

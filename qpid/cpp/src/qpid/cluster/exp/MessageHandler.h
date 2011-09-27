@@ -40,6 +40,7 @@ class Queue;
 namespace cluster {
 class EventHandler;
 class BrokerContext;
+class Core;
 
 // FIXME aconway 2011-06-28: doesn't follow the same Handler/Replica/Context pattern as for queue.
 // Make this consistent.
@@ -51,7 +52,7 @@ class MessageHandler : public framing::AMQP_AllOperations::ClusterMessageHandler
                        public HandlerBase
 {
   public:
-    MessageHandler(EventHandler&);
+    MessageHandler(EventHandler&, Core&);
 
     bool invoke(const framing::AMQBody& body);
 
@@ -73,6 +74,7 @@ class MessageHandler : public framing::AMQP_AllOperations::ClusterMessageHandler
 
     broker::Broker& broker;
     MemberMap memberMap;
+    Core& core;
 };
 }} // namespace qpid::cluster
 

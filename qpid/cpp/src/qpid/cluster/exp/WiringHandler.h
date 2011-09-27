@@ -51,7 +51,7 @@ class WiringHandler : public framing::AMQP_AllOperations::ClusterWiringHandler,
                       public HandlerBase
 {
   public:
-    WiringHandler(EventHandler&, const boost::intrusive_ptr<QueueHandler>& qh);
+    WiringHandler(EventHandler&, const boost::intrusive_ptr<QueueHandler>& qh, broker::Broker&);
 
     bool invoke(const framing::AMQBody& body);
 

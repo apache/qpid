@@ -23,6 +23,7 @@
 #include "Multicaster.h"
 #include "qpid/cluster/types.h"
 #include "BrokerContext.h"      // for ScopedSuppressReplication
+#include "hash.h"
 #include "qpid/framing/ProtocolVersion.h"
 #include "qpid/framing/ClusterQueueResubscribeBody.h"
 #include "qpid/framing/ClusterQueueSubscribeBody.h"
@@ -39,7 +40,7 @@ QueueContext::QueueContext(broker::Queue& q, sys::Duration consumeLock, Multicas
     : timer(boost::bind(&QueueContext::timeout, this),
             q.getBroker()->getTimer(),
             consumeLock),
-      queue(q), mcast(m), consumers(0)
+      queue(q), mcast(m), consumers(0), hash(hashof(q.getName()))
 {
     q.setClusterContext(boost::intrusive_ptr<QueueContext>(this));
     q.stopConsumers();          // Stop queue initially.
