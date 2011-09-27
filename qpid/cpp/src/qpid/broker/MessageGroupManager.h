@@ -38,6 +38,8 @@ class MessageGroupManager : public StatefulQueueObserver, public MessageAllocato
 {
     const std::string groupIdHeader;    // msg header holding group identifier
     const unsigned int timestamp;       // mark messages with timestamp if set
+    Messages& messages;                 // parent Queue's in memory message container
+    const std::string qName;            // name of parent queue (for logs)
 
     struct GroupState {
         typedef std::list<framing::SequenceNumber> PositionFifo;
@@ -93,11 +95,14 @@ class MessageGroupManager : public StatefulQueueObserver, public MessageAllocato
 
  public:
 
-    static boost::shared_ptr<MessageGroupManager> create( Queue *q, const qpid::framing::FieldTable& settings );
+    static boost::shared_ptr<MessageGroupManager> create( const std::string& qName,
+                                                          Messages& messages,
+                                                          const qpid::framing::FieldTable& settings );
 
-    MessageGroupManager(const std::string& header, Queue *q, unsigned int _timestamp=0 )
-      : StatefulQueueObserver(std::string("MessageGroupManager:") + header), MessageAllocator(q),
-        groupIdHeader( header ), timestamp(_timestamp) {}
+    MessageGroupManager(const std::string& header, const std::string& _qName,
+                        Messages& container, unsigned int _timestamp=0 )
+      : StatefulQueueObserver(std::string("MessageGroupManager:") + header),
+      groupIdHeader( header ), timestamp(_timestamp), messages(container), qName(_qName) {}
     void enqueued( const QueuedMessage& qm );
     void acquired( const QueuedMessage& qm );
     void requeued( const QueuedMessage& qm );
@@ -107,12 +112,12 @@ class MessageGroupManager : public StatefulQueueObserver, public MessageAllocato
     void getState(qpid::framing::FieldTable& state ) const;
     void setState(const qpid::framing::FieldTable&);
 
-    bool nextConsumableMessage( Consumer::shared_ptr& c, QueuedMessage& next,
-                                const sys::Mutex::ScopedLock&);
-    // uses default nextBrowsableMessage()
-    bool acquirable(const std::string& consumer, const QueuedMessage& msg,
-                    const sys::Mutex::ScopedLock&);
-    void query(qpid::types::Variant::Map&, const sys::Mutex::ScopedLock&) const;
+    // MessageAllocator iface
+    bool nextConsumableMessage(Consumer::shared_ptr& c, QueuedMessage& next);
+    bool allocate(const std::string& c, const QueuedMessage& qm);
+    bool nextBrowsableMessage(Consumer::shared_ptr& c, QueuedMessage& next);
+    void query(qpid::types::Variant::Map&) const;
+
     bool match(const qpid::types::Variant::Map*, const QueuedMessage&) const;
 };
 

@@ -61,7 +61,7 @@ void MessageGroupManager::enqueued( const QueuedMessage& qm )
     GroupState &state(messageGroups[group]);
     state.members.push_back(qm.position);
     uint32_t total = state.members.size();
-    QPID_LOG( trace, "group queue " << queue->getName() <<
+    QPID_LOG( trace, "group queue " << qName <<
               ": added message to group id=" << group << " total=" << total );
     if (total == 1) {
         // newly created group, no owner
@@ -81,7 +81,7 @@ void MessageGroupManager::acquired( const QueuedMessage& qm )
     assert( gs != messageGroups.end() );
     GroupState& state( gs->second );
     state.acquired += 1;
-    QPID_LOG( trace, "group queue " << queue->getName() <<
+    QPID_LOG( trace, "group queue " << qName <<
               ": acquired message in group id=" << group << " acquired=" << state.acquired );
 }
 
@@ -99,11 +99,11 @@ void MessageGroupManager::requeued( const QueuedMessage& qm )
     assert( state.acquired != 0 );
     state.acquired -= 1;
     if (state.acquired == 0 && state.owned()) {
-        QPID_LOG( trace, "group queue " << queue->getName() <<
+        QPID_LOG( trace, "group queue " << qName <<
                   ": consumer name=" << state.owner << " released group id=" << gs->first);
         disown(state);
     }
-    QPID_LOG( trace, "group queue " << queue->getName() <<
+    QPID_LOG( trace, "group queue " << qName <<
               ": requeued message to group id=" << group << " acquired=" << state.acquired );
 }
 
@@ -138,16 +138,16 @@ void MessageGroupManager::dequeued( const QueuedMessage& qm )
         if (!state.owned()) {  // unlikely, but need to remove from the free list before erase
             unFree( state );
         }
-        QPID_LOG( trace, "group queue " << queue->getName() << ": deleting group id=" << gs->first);
+        QPID_LOG( trace, "group queue " << qName << ": deleting group id=" << gs->first);
         messageGroups.erase( gs );
     } else {
         if (state.acquired == 0 && state.owned()) {
-            QPID_LOG( trace, "group queue " << queue->getName() <<
+            QPID_LOG( trace, "group queue " << qName <<
                       ": consumer name=" << state.owner << " released group id=" << gs->first);
             disown(state);
         }
     }
-    QPID_LOG( trace, "group queue " << queue->getName() <<
+    QPID_LOG( trace, "group queue " << qName <<
               ": dequeued message from group id=" << group << " total=" << total );
 }
 
@@ -155,7 +155,7 @@ void MessageGroupManager::consumerAdded( const Consumer& c )
 {
     assert(consumers.find(c.getName()) == consumers.end());
     consumers[c.getName()] = 0;     // no groups owned yet
-    QPID_LOG( trace, "group queue " << queue->getName() << ": added consumer, name=" << c.getName() );
+    QPID_LOG( trace, "group queue " << qName << ": added consumer, name=" << c.getName() );
 }
 
 void MessageGroupManager::consumerRemoved( const Consumer& c )
@@ -172,20 +172,17 @@ void MessageGroupManager::consumerRemoved( const Consumer& c )
         if (state.owner == name) {
             --count;
             disown(state);
-            QPID_LOG( trace, "group queue " << queue->getName() <<
+            QPID_LOG( trace, "group queue " << qName <<
                       ": consumer name=" << name << " released group id=" << gs->first);
         }
     }
     consumers.erase( consumer );
-    QPID_LOG( trace, "group queue " << queue->getName() << ": removed consumer name=" << name );
+    QPID_LOG( trace, "group queue " << qName << ": removed consumer name=" << name );
 }
 
 
-bool MessageGroupManager::nextConsumableMessage( Consumer::shared_ptr& c, QueuedMessage& next,
-                                                 const qpid::sys::Mutex::ScopedLock& )
+bool MessageGroupManager::nextConsumableMessage( Consumer::shared_ptr& c, QueuedMessage& next )
 {
-    Messages& messages(queue->getMessages());
-
     if (messages.empty())
         return false;
 
@@ -220,8 +217,7 @@ bool MessageGroupManager::nextConsumableMessage( Consumer::shared_ptr& c, Queued
 }
 
 
-bool MessageGroupManager::acquirable(const std::string& consumer, const QueuedMessage& qm,
-                                     const qpid::sys::Mutex::ScopedLock&)
+bool MessageGroupManager::allocate(const std::string& consumer, const QueuedMessage& qm)
 {
     // @todo KAG avoid lookup: retrieve direct reference to group state from QueuedMessage
     std::string group( getGroupId(qm) );
@@ -231,16 +227,22 @@ bool MessageGroupManager::acquirable(const std::string& consumer, const QueuedMe
 
     if (!state.owned()) {
         own( state, consumer );
-        QPID_LOG( trace, "group queue " << queue->getName() <<
+        QPID_LOG( trace, "group queue " << qName <<
                   ": consumer name=" << consumer << " has acquired group id=" << gs->first);
         return true;
     }
     return state.owner == consumer;
 }
 
+bool MessageGroupManager::nextBrowsableMessage( Consumer::shared_ptr& c, QueuedMessage& next )
+{
+    // browse: allow access to any aquired msg, regardless of group ownership (?ok?)
+    if (!messages.empty() && messages.next(c->position, next))
+        return true;
+    return false;
+}
 
-void MessageGroupManager::query(qpid::types::Variant::Map& status,
-                                const qpid::sys::Mutex::ScopedLock&) const
+void MessageGroupManager::query(qpid::types::Variant::Map& status) const
 {
     /** Add a description of the current state of the message groups for this queue.
         FORMAT:
@@ -276,7 +278,8 @@ void MessageGroupManager::query(qpid::types::Variant::Map& status,
 }
 
 
-boost::shared_ptr<MessageGroupManager> MessageGroupManager::create( Queue *q,
+boost::shared_ptr<MessageGroupManager> MessageGroupManager::create( const std::string& qName,
+                                                                    Messages& messages,
                                                                     const qpid::framing::FieldTable& settings )
 {
     boost::shared_ptr<MessageGroupManager> empty;
@@ -285,16 +288,14 @@ boost::shared_ptr<MessageGroupManager> MessageGroupManager::create( Queue *q,
 
         std::string headerKey = settings.getAsString(qpidMessageGroupKey);
         if (headerKey.empty()) {
-            QPID_LOG( error, "A Message Group header key must be configured, queue=" << q->getName());
+            QPID_LOG( error, "A Message Group header key must be configured, queue=" << qName);
             return empty;
         }
         unsigned int timestamp = settings.getAsInt(qpidMessageGroupTimestamp);
 
-        boost::shared_ptr<MessageGroupManager> manager( new MessageGroupManager( headerKey, q, timestamp ) );
+        boost::shared_ptr<MessageGroupManager> manager( new MessageGroupManager( headerKey, qName, messages, timestamp ) );
 
-        q->addObserver( boost::static_pointer_cast<QueueObserver>(manager) );
-
-        QPID_LOG( debug, "Configured Queue '" << q->getName() <<
+        QPID_LOG( debug, "Configured Queue '" << qName <<
                   "' for message grouping using header key '" << headerKey << "'" <<
                   " (timestamp=" << timestamp << ")");
         return manager;
@@ -346,7 +347,7 @@ void MessageGroupManager::getState(qpid::framing::FieldTable& state ) const
     }
     state.setArray(GROUP_STATE, groupState);
 
-    QPID_LOG(debug, "Queue \"" << queue->getName() << "\": replicating message group state, key=" << groupIdHeader);
+    QPID_LOG(debug, "Queue \"" << qName << "\": replicating message group state, key=" << groupIdHeader);
 }
 
 
@@ -363,7 +364,7 @@ void MessageGroupManager::setState(const qpid::framing::FieldTable& state)
     bool ok = state.getArray(GROUP_STATE, groupState);
     if (!ok) {
         QPID_LOG(error, "Unable to find message group state information for queue \"" <<
-                 queue->getName() << "\": cluster inconsistency error!");
+                 qName << "\": cluster inconsistency error!");
         return;
     }
 
@@ -373,13 +374,13 @@ void MessageGroupManager::setState(const qpid::framing::FieldTable& state)
         ok = framing::getEncodedValue<FieldTable>(*g, group);
         if (!ok) {
             QPID_LOG(error, "Invalid message group state information for queue \"" <<
-                     queue->getName() << "\": table encoding error!");
+                     qName << "\": table encoding error!");
             return;
         }
         MessageGroupManager::GroupState state;
         if (!group.isSet(GROUP_NAME) || !group.isSet(GROUP_OWNER) || !group.isSet(GROUP_ACQUIRED_CT)) {
             QPID_LOG(error, "Invalid message group state information for queue \"" <<
-                     queue->getName() << "\": fields missing error!");
+                     qName << "\": fields missing error!");
             return;
         }
         state.group = group.getAsString(GROUP_NAME);
@@ -389,7 +390,7 @@ void MessageGroupManager::setState(const qpid::framing::FieldTable& state)
         ok = group.getArray(GROUP_POSITIONS, positions);
         if (!ok) {
             QPID_LOG(error, "Invalid message group state information for queue \"" <<
-                     queue->getName() << "\": position encoding error!");
+                     qName << "\": position encoding error!");
             return;
         }
 
@@ -404,5 +405,5 @@ void MessageGroupManager::setState(const qpid::framing::FieldTable& state)
         }
     }
 
-    QPID_LOG(debug, "Queue \"" << queue->getName() << "\": message group state replicated, key =" << groupIdHeader)
+    QPID_LOG(debug, "Queue \"" << qName << "\": message group state replicated, key =" << groupIdHeader)
 }

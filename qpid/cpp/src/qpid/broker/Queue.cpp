@@ -33,7 +33,7 @@
 #include "qpid/broker/QueueRegistry.h"
 #include "qpid/broker/QueueFlowLimit.h"
 #include "qpid/broker/ThresholdAlerts.h"
-#include "qpid/broker/MessageAllocator.h"
+#include "qpid/broker/FifoAllocator.h"
 #include "qpid/broker/MessageGroupManager.h"
 
 #include "qpid/StringUtils.h"
@@ -115,7 +115,7 @@ Queue::Queue(const string& _name, bool _autodelete,
     deleted(false),
     barrier(*this),
     autoDeleteTimeout(0),
-    allocator(new MessageAllocator( this ))
+    allocator(new FifoAllocator( *messages ))
 {
     if (parent != 0 && broker != 0) {
         ManagementAgent* agent = broker->getManagementAgent();
@@ -249,7 +249,7 @@ bool Queue::acquire(const QueuedMessage& msg, const std::string& consumer)
     assertClusterSafe();
     QPID_LOG(debug, consumer << " attempting to acquire message at " << msg.position);
 
-    if (!allocator->acquirable( consumer, msg, locker )) {
+    if (!allocator->allocate( consumer, msg )) {
         QPID_LOG(debug, "Not permitted to acquire msg at " << msg.position << " from '" << name);
         return false;
     }
@@ -300,7 +300,7 @@ Queue::ConsumeCode Queue::consumeNextMessage(QueuedMessage& m, Consumer::shared_
         Mutex::ScopedLock locker(messageLock);
         QueuedMessage msg;
 
-        if (!allocator->nextConsumableMessage(c, msg, locker)) { // no next available
+        if (!allocator->nextConsumableMessage(c, msg)) { // no next available
             QPID_LOG(debug, "No messages available to dispatch to consumer " <<
                      c->getName() << " on queue '" << name << "'");
             listeners.addListener(c);
@@ -319,7 +319,7 @@ Queue::ConsumeCode Queue::consumeNextMessage(QueuedMessage& m, Consumer::shared_
 
         if (c->filter(msg.payload)) {
             if (c->accept(msg.payload)) {
-                bool ok = allocator->acquirable( c->getName(), msg, locker );  // inform allocator
+                bool ok = allocator->allocate( c->getName(), msg );  // inform allocator
                 (void) ok; assert(ok);
                 ok = acquire( msg.position, msg, locker);
                 (void) ok; assert(ok);
@@ -346,7 +346,7 @@ bool Queue::browseNextMessage(QueuedMessage& m, Consumer::shared_ptr& c)
         Mutex::ScopedLock locker(messageLock);
         QueuedMessage msg;
 
-        if (!allocator->nextBrowsableMessage(c, msg, locker)) { // no next available
+        if (!allocator->nextBrowsableMessage(c, msg)) { // no next available
             QPID_LOG(debug, "No browsable messages available for consumer " <<
                      c->getName() << " on queue '" << name << "'");
             listeners.addListener(c);
@@ -990,22 +990,27 @@ void Queue::configureImpl(const FieldTable& _settings)
     if (lvqKey.size()) {
         QPID_LOG(debug, "Configured queue " <<  getName() << " as Last Value Queue with key " << lvqKey);
         messages = std::auto_ptr<Messages>(new MessageMap(lvqKey));
+        allocator = boost::shared_ptr<MessageAllocator>(new FifoAllocator( *messages ));
     } else if (_settings.get(qpidLastValueQueueNoBrowse)) {
         QPID_LOG(debug, "Configured queue " <<  getName() << " as Legacy Last Value Queue with 'no-browse' on");
         messages = LegacyLVQ::updateOrReplace(messages, qpidVQMatchProperty, true, broker);
+        allocator = boost::shared_ptr<MessageAllocator>(new FifoAllocator( *messages ));
     } else if (_settings.get(qpidLastValueQueue)) {
         QPID_LOG(debug, "Configured queue " <<  getName() << " as Legacy Last Value Queue");
         messages = LegacyLVQ::updateOrReplace(messages, qpidVQMatchProperty, false, broker);
+        allocator = boost::shared_ptr<MessageAllocator>(new FifoAllocator( *messages ));
     } else {
         std::auto_ptr<Messages> m = Fairshare::create(_settings);
         if (m.get()) {
             messages = m;
+            allocator = boost::shared_ptr<MessageAllocator>(new FifoAllocator( *messages ));
             QPID_LOG(debug, "Configured queue " <<  getName() << " as priority queue.");
         } else { // default (FIFO) queue type
             // override default message allocator if message groups configured.
-            boost::shared_ptr<MessageAllocator> ma = boost::static_pointer_cast<MessageAllocator>(MessageGroupManager::create( this, _settings ));
-            if (ma) {
-                allocator = ma;
+            boost::shared_ptr<MessageGroupManager> mgm(MessageGroupManager::create( getName(), *messages, _settings));
+            if (mgm) {
+                allocator = mgm;
+                addObserver(mgm);
             }
         }
     }
@@ -1300,7 +1305,7 @@ void Queue::query(qpid::types::Variant::Map& results) const
 {
     Mutex::ScopedLock locker(messageLock);
     /** @todo add any interesting queue state into results */
-    if (allocator) allocator->query( results, messageLock );
+    if (allocator) allocator->query(results);
 }
 
 void Queue::setPosition(SequenceNumber n) {

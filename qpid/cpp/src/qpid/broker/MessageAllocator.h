@@ -22,7 +22,9 @@
  *
  */
 
-/* Used by queues to allocate the next "most desirable" message to a consuming client */
+/** Abstraction used by Queue to determine the next "most desirable" message to provide to
+ * a particular consuming client
+ */
 
 
 #include "qpid/broker/Consumer.h"
@@ -30,48 +32,43 @@
 namespace qpid {
 namespace broker {
 
-class Queue;
 struct QueuedMessage;
 
 class MessageAllocator
 {
- protected:
-    Queue *queue;
  public:
-    MessageAllocator( Queue *q ) : queue(q) {}
     virtual ~MessageAllocator() {};
 
-    // Note: all methods taking a mutex assume the caller is holding the
-    // Queue::messageLock during the method call.
+    /** Locking Note: all methods assume the caller is holding the Queue::messageLock
+     * during the method call.
+     */
 
     /** Determine the next message available for consumption by the consumer
-     * @param next set to the next message that the consumer may acquire.
-     * @return true if message is available
+     * @param consumer the consumer that needs a message to consume
+     * @param next set to the next message that the consumer may consume.
+     * @return true if message is available and next is set
      */
     virtual bool nextConsumableMessage( Consumer::shared_ptr& consumer,
-                                        QueuedMessage& next,
-                                        const sys::Mutex::ScopedLock& lock);
+                                        QueuedMessage& next ) = 0;
+
+    /** Allow the comsumer to take ownership of the given message.
+     * @param consumer the name of the consumer that is attempting to acquire the message
+     * @param qm the message to be acquired, previously returned from nextConsumableMessage()
+     * @return true if ownership is permitted, false if ownership cannot be assigned.
+     */
+    virtual bool allocate( const std::string& consumer,
+                           const QueuedMessage& target) = 0;
 
     /** Determine the next message available for browsing by the consumer
+     * @param consumer the consumer that is browsing the queue
      * @param next set to the next message that the consumer may browse.
-     * @return true if a message is available
+     * @return true if a message is available and next is returned
      */
     virtual bool nextBrowsableMessage( Consumer::shared_ptr& consumer,
-                                       QueuedMessage& next,
-                                       const sys::Mutex::ScopedLock& lock);
-
-    /** check if a message previously returned via next*Message() may be acquired.
-     * @param consumer name of consumer that is attempting to acquire the message
-     * @param qm the message to be acquired
-     * @param messageLock - ensures caller is holding it!
-     * @return true if acquire is permitted, false if acquire is no longer permitted.
-     */
-    virtual bool acquirable( const std::string&,
-                             const QueuedMessage&,
-                             const sys::Mutex::ScopedLock&);
+                                       QueuedMessage& next ) = 0;
 
     /** hook to add any interesting management state to the status map */
-    virtual void query(qpid::types::Variant::Map&, const sys::Mutex::ScopedLock&) const;
+    virtual void query(qpid::types::Variant::Map&) const = 0;
 };
 
 }}
