@@ -583,7 +583,7 @@ void Subscription::cancel(qpid::client::AsyncSession& session, const std::string
 {
     linkBindings.unbind(session);
     session.messageCancel(destination);
-    if (reliable) session.queueDelete(arg::queue=queue, arg::ifUnused=true);
+    if (exclusiveQueue) session.queueDelete(arg::queue=queue, arg::ifUnused=true);
     checkDelete(session, FOR_RECEIVER);
 }
 
