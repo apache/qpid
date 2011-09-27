@@ -1100,6 +1100,24 @@ QPID_AUTO_TEST_CASE(testCreateBindingsOnStandardExchange)
     BOOST_CHECK_EQUAL(in.getSubject(), out.getSubject());
 }
 
+QPID_AUTO_TEST_CASE(testUnsubscribeOnClose)
+{
+    MessagingFixture fix;
+    Sender sender = fix.session.createSender("my-exchange/my-subject; {create: always, delete:sender, node:{type:topic, x-declare:{alternate-exchange:amq.fanout}}}");
+    Receiver receiver = fix.session.createReceiver("my-exchange/my-subject");
+    Receiver deadletters = fix.session.createReceiver("amq.fanout");
+
+    sender.send(Message("first"));
+    Message in = receiver.fetch(Duration::SECOND);
+    BOOST_CHECK_EQUAL(in.getContent(), std::string("first"));
+    fix.session.acknowledge();
+    receiver.close();
+    sender.send(Message("second"));
+    in = deadletters.fetch(Duration::SECOND);
+    BOOST_CHECK_EQUAL(in.getContent(), std::string("second"));
+    fix.session.acknowledge();
+}
+
 QPID_AUTO_TEST_SUITE_END()
 
 }} // namespace qpid::tests
