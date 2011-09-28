@@ -70,7 +70,6 @@ import org.apache.qpid.AMQDisconnectedException;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQInvalidArgumentException;
 import org.apache.qpid.AMQInvalidRoutingKeyException;
-import org.apache.qpid.client.AMQDestination.AddressOption;
 import org.apache.qpid.client.AMQDestination.DestSyntax;
 import org.apache.qpid.client.failover.FailoverException;
 import org.apache.qpid.client.failover.FailoverNoopSupport;
@@ -88,8 +87,6 @@ import org.apache.qpid.client.message.JMSTextMessage;
 import org.apache.qpid.client.message.MessageFactoryRegistry;
 import org.apache.qpid.client.message.UnprocessedMessage;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
-import org.apache.qpid.client.state.AMQState;
-import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.client.util.FlowControllingBlockingQueue;
 import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.framing.AMQShortString;
@@ -215,8 +212,6 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
      * silently drop messages where no queue is connected to the exchange for the message.
      */
     protected final boolean DEFAULT_MANDATORY = Boolean.parseBoolean(System.getProperty("qpid.default_mandatory", "true"));
-
-    protected final boolean DEFAULT_WAIT_ON_SEND = Boolean.parseBoolean(System.getProperty("qpid.default_wait_on_send", "false"));
 
     /**
      * The period to wait while flow controlled before sending a log message confirming that the session is still
@@ -1242,12 +1237,6 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
             throws JMSException
     {
         return createProducerImpl(destination, mandatory, immediate);
-    }
-
-    public P createProducer(Destination destination, boolean mandatory, boolean immediate,
-                                               boolean waitUntilSent) throws JMSException
-    {
-        return createProducerImpl(destination, mandatory, immediate, waitUntilSent);
     }
 
     public TopicPublisher createPublisher(Topic topic) throws JMSException
@@ -2637,14 +2626,8 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     public abstract void sendConsume(C consumer, AMQShortString queueName,
                                      AMQProtocolHandler protocolHandler, boolean nowait, String messageSelector, int tag) throws AMQException, FailoverException;
 
-    private P createProducerImpl(Destination destination, boolean mandatory, boolean immediate)
+    private P createProducerImpl(final Destination destination, final boolean mandatory, final boolean immediate)
             throws JMSException
-    {
-        return createProducerImpl(destination, mandatory, immediate, DEFAULT_WAIT_ON_SEND);
-    }
-
-    private P createProducerImpl(final Destination destination, final boolean mandatory,
-                                                    final boolean immediate, final boolean waitUntilSent) throws JMSException
     {
         return new FailoverRetrySupport<P, JMSException>(
                 new FailoverProtectedOperation<P, JMSException>()
@@ -2658,7 +2641,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                         try
                         {
                             producer = createMessageProducer(destination, mandatory,
-                                    immediate, waitUntilSent, producerId);
+                                    immediate, producerId);
                         }
                         catch (TransportException e)
                         {
@@ -2673,7 +2656,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     }
 
     public abstract P createMessageProducer(final Destination destination, final boolean mandatory,
-                                                               final boolean immediate, final boolean waitUntilSent, long producerId) throws JMSException;
+                                                               final boolean immediate, final long producerId) throws JMSException;
 
     private void declareExchange(AMQDestination amqd, AMQProtocolHandler protocolHandler, boolean nowait) throws AMQException
     {

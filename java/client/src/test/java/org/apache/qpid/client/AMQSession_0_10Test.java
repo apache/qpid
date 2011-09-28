@@ -97,7 +97,7 @@ public class AMQSession_0_10Test extends TestCase
         AMQSession_0_10 session = createThrowingExceptionAMQSession_0_10();
         try
         {
-            session.createMessageProducer(createDestination(), true, true, true, 1l);
+            session.createMessageProducer(createDestination(), true, true, 1l);
             fail("JMSException should be thrown");
         }
         catch (Exception e)
@@ -350,7 +350,7 @@ public class AMQSession_0_10Test extends TestCase
         AMQSession_0_10 session = createAMQSession_0_10();
         try
         {
-            session.createMessageProducer(createDestination(), true, true, true, 1l);
+            session.createMessageProducer(createDestination(), true, true, 1l);
         }
         catch (Exception e)
         {

@@ -30,7 +30,6 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.qpid.AMQConnectionClosedException;
@@ -66,7 +65,6 @@ import org.apache.qpid.protocol.ProtocolEngine;
 import org.apache.qpid.thread.Threading;
 import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.network.NetworkConnection;
-import org.apache.qpid.transport.network.NetworkTransport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -516,18 +514,7 @@ public class AMQProtocolHandler implements ProtocolEngine
         return getStateManager().createWaiter(states);
     }
 
-    /**
-     * Convenience method that writes a frame to the protocol session. Equivalent to calling
-     * getProtocolSession().write().
-     *
-     * @param frame the frame to write
-     */
-    public void writeFrame(AMQDataBlock frame)
-    {
-        writeFrame(frame, false);
-    }
-
-    public  synchronized void writeFrame(AMQDataBlock frame, boolean wait)
+    public  synchronized void writeFrame(AMQDataBlock frame)
     {
         final ByteBuffer buf = asByteBuffer(frame);
         _writtenBytes += buf.remaining();
