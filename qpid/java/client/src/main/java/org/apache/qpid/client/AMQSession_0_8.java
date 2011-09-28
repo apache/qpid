@@ -401,12 +401,12 @@ public final class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, B
 
 
     public BasicMessageProducer_0_8 createMessageProducer(final Destination destination, final boolean mandatory,
-            final boolean immediate, final boolean waitUntilSent, long producerId) throws JMSException
+            final boolean immediate, long producerId) throws JMSException
     {
        try
        {
            return new BasicMessageProducer_0_8(_connection, (AMQDestination) destination, _transacted, _channelId,
-                                 this, getProtocolHandler(), producerId, immediate, mandatory, waitUntilSent);
+                                 this, getProtocolHandler(), producerId, immediate, mandatory);
        }
        catch (AMQException e)
        {
@@ -615,5 +615,4 @@ public final class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, B
             return null;
         }
     }
-
 }
