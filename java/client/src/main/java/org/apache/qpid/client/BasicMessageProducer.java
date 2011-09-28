@@ -114,8 +114,6 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
 
     private final boolean _mandatory;
 
-    private final boolean _waitUntilSent;
-
     private boolean _disableMessageId;
 
     private UUIDGen _messageIdGenerator = UUIDs.newGenerator();
@@ -127,8 +125,7 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
     protected PublishMode publishMode = PublishMode.ASYNC_PUBLISH_ALL;
 
     protected BasicMessageProducer(AMQConnection connection, AMQDestination destination, boolean transacted, int channelId,
-                                   AMQSession session, AMQProtocolHandler protocolHandler, long producerId, boolean immediate, boolean mandatory,
-                                   boolean waitUntilSent) throws AMQException
+                                   AMQSession session, AMQProtocolHandler protocolHandler, long producerId, boolean immediate, boolean mandatory) throws AMQException
     {
         _connection = connection;
         _destination = destination;
@@ -144,7 +141,6 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
 
         _immediate = immediate;
         _mandatory = mandatory;
-        _waitUntilSent = waitUntilSent;
         _userID = connection.getUsername();
         setPublishMode();
     }
@@ -364,19 +360,6 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
         }
     }
 
-    public void send(Destination destination, Message message, int deliveryMode, int priority, long timeToLive,
-                     boolean mandatory, boolean immediate, boolean waitUntilSent) throws JMSException
-    {
-        checkPreConditions();
-        checkDestination(destination);
-        synchronized (_connection.getFailoverMutex())
-        {
-            validateDestination(destination);
-            sendImpl((AMQDestination) destination, message, deliveryMode, priority, timeToLive, mandatory, immediate,
-                     waitUntilSent);
-        }
-    }
-
     private AbstractJMSMessage convertToNativeMessage(Message message) throws JMSException
     {
         if (message instanceof AbstractJMSMessage)
@@ -451,12 +434,6 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
         }
     }
 
-    protected void sendImpl(AMQDestination destination, Message message, int deliveryMode, int priority, long timeToLive,
-                            boolean mandatory, boolean immediate) throws JMSException
-    {
-        sendImpl(destination, message, deliveryMode, priority, timeToLive, mandatory, immediate, _waitUntilSent);
-    }
-
     /**
      * The caller of this method must hold the failover mutex.
      *
@@ -471,7 +448,7 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
      * @throws JMSException
      */
     protected void sendImpl(AMQDestination destination, Message origMessage, int deliveryMode, int priority, long timeToLive,
-                            boolean mandatory, boolean immediate, boolean wait) throws JMSException
+                            boolean mandatory, boolean immediate) throws JMSException
     {
         checkTemporaryDestination(destination);
         origMessage.setJMSDestination(destination);
@@ -501,7 +478,7 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
 
         try
         {
-            sendMessage(destination, origMessage, message, messageId, deliveryMode, priority, timeToLive, mandatory, immediate, wait);
+            sendMessage(destination, origMessage, message, messageId, deliveryMode, priority, timeToLive, mandatory, immediate);
         }
         catch (TransportException e)
         {
@@ -526,7 +503,7 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
 
     abstract void sendMessage(AMQDestination destination, Message origMessage, AbstractJMSMessage message,
                               UUID messageId, int deliveryMode, int priority, long timeToLive, boolean mandatory,
-                              boolean immediate, boolean wait) throws JMSException;
+                              boolean immediate) throws JMSException;
 
     private void checkTemporaryDestination(AMQDestination destination) throws JMSException
     {
