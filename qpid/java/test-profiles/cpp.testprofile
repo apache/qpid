@@ -33,7 +33,7 @@ broker.modules=
 broker.args=
 
 broker.type=spawned
-broker.command=${broker.executable} -p @PORT --data-dir ${build.data}/@PORT -t --auth no --no-module-dir ${broker.modules} ${broker.args}
+broker.command=${broker.executable} -p @PORT --data-dir ${project.root}/build/work/@PORT -t --auth no --no-module-dir ${broker.modules} ${broker.args}
 
 profile.excludes=CPPPrefetchExcludes CPPTransientExcludes
 test.excludes=Excludes CPPExcludes ${profile}.excludes ${profile.excludes} cpp.excludes
