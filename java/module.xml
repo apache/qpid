@@ -207,7 +207,6 @@
     <mkdir dir="${build.etc}"/>
     <mkdir dir="${build.lib}"/>
     <mkdir dir="${build.results}"/>
-    <mkdir dir="${build.data}"/>
     <mkdir dir="${build.plugins}"/>
     <mkdir dir="${module.classes}"/>
     <mkdir dir="${module.precompiled}"/>
@@ -670,7 +669,6 @@
       <sysproperty key="java.naming.factory.initial" value="${java.naming.factory.initial}"/>
       <sysproperty key="java.naming.provider.url" value="${java.naming.provider.url}"/>
       <sysproperty key="broker" value="${broker}"/>
-      <sysproperty key="broker.clean" value="${broker.clean}"/>
       <sysproperty key="broker.version" value="${broker.version}"/>
       <sysproperty key="broker.ready" value="${broker.ready}" />
       <sysproperty key="test.output" value="${module.results}"/>
