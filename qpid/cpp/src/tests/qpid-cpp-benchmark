@@ -177,9 +177,9 @@ def recreate_queues(queues, brokers):
     c.close()
 
 def print_header(timestamp):
-    if timestamp: latency_header="\tl-min\tl-max\tl-avg"
+    if timestamp: latency_header="\tl-min\tl-max\tl-avg\ttotal-tp"
     else: latency_header=""
-    print "send-tp\t\trecv-tp%s"%latency_header
+    print "send-tp\trecv-tp%s"%latency_header
 
 def parse(parser, lines):               # Parse sender/receiver output
     return [map(lambda p: p[0](p[1]), zip(parser,line.split())) for line in lines]
@@ -190,25 +190,29 @@ def parse_senders(senders):
 def parse_receivers(receivers):
     return parse([int,float,float,float],[first_line(p) for p in receivers if p])
 
-def print_data(send_stats, recv_stats):
+def print_data(send_stats, recv_stats, total_tp):
     for send,recv in map(None, send_stats, recv_stats):
         line=""
         if send: line += "%d"%send[0]
         if recv:
-            line += "\t\t%d"%recv[0]
+            line += "\t%d"%recv[0]
             if len(recv) == 4: line += "\t%.2f\t%.2f\t%.2f"%tuple(recv[1:])
+        if total_tp is not None:
+            line += "\t%d"%total_tp
+            total_tp = None
         print line
 
-def print_summary(send_stats, recv_stats):
+def print_summary(send_stats, recv_stats, total_tp):
     def avg(s): sum(s) / len(s)
     send_tp = sum([l[0] for l in send_stats])
     recv_tp = sum([l[0] for l in recv_stats])
-    summary = "%d\t\t%d"%(send_tp, recv_tp)
+    summary = "%d\t%d"%(send_tp, recv_tp)
     if recv_stats and len(recv_stats[0]) == 4:
         l_min = sum(l[1] for l in recv_stats)/len(recv_stats)
         l_max = sum(l[2] for l in recv_stats)/len(recv_stats)
         l_avg = sum(l[3] for l in recv_stats)/len(recv_stats)
         summary += "\t%.2f\t%.2f\t%.2f"%(l_min, l_max, l_avg)
+    summary += "\t%d"%total_tp
     print summary
 
 
@@ -269,13 +273,17 @@ def main():
                                        brokers.next(), client_hosts.next())
                          for q in queues for j in xrange(opts.receivers)]
             ready_receiver.wait(filter(None, receivers)) # Wait for receivers to be ready.
+            start = time.time()
             senders = [start_send(q, opts,brokers.next(), client_hosts.next())
                        for q in queues for j in xrange(opts.senders)]
             if opts.report_header and i == 0: print_header(opts.timestamp)
+            for p in senders + receivers: p.wait()
+            total_sent = opts.queues * opts.senders * opts.messages
+            total_tp = total_sent / (time.time()-start)
             send_stats=parse_senders(senders)
             recv_stats=parse_receivers(receivers)
-            if opts.summarize: print_summary(send_stats, recv_stats)
-            else: print_data(send_stats, recv_stats)
+            if opts.summarize: print_summary(send_stats, recv_stats, total_tp)
+            else: print_data(send_stats, recv_stats, total_tp)
     finally: clients.kill()             # No strays
 
 if __name__ == "__main__": main()

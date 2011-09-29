@@ -150,6 +150,7 @@ class Cluster2Tests(BrokerTest):
                 self.session = session
                 self.receiver = session.receiver("q")
                 self.messages = []
+                self.error = None
                 Thread.__init__(self)
 
             def run(self):
@@ -158,6 +159,7 @@ class Cluster2Tests(BrokerTest):
                         self.messages.append(self.receiver.fetch(1))
                         self.session.acknowledge()
                 except Empty: pass
+                except Exception,e: self.error = e
 
         cluster = self.cluster(3, cluster2=True)
         connections = [ b.connect() for  b in cluster]
@@ -173,8 +175,11 @@ class Cluster2Tests(BrokerTest):
         while time.time() < t:
             sender.send(str(n))
             n += 1
-        for r in receivers: r.join();
-        for r in receivers: len(r.messages) > n/6 # Fairness test.
+        for r in receivers:
+            r.join();
+            if (r.error): self.fail("Receiver failed: %s" % r.error)
+        for r in receivers:
+            len(r.messages) > n/6 # Fairness test.
         messages = [int(m.content) for r in receivers for m in r.messages ]
         messages.sort()
         self.assertEqual(range(n), messages)

@@ -1,3 +1,4 @@
+
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -56,6 +57,8 @@ bool isOwner(QueueOwnership o) { return o == SOLE_OWNER || o == SHARED_OWNER; }
 void QueueContext::replicaState(
     QueueOwnership before, QueueOwnership after, bool selfDelivered)
 {
+    // No lock, this function does not touch any member variables.
+
     // Invariants for ownership:
     // UNSUBSCRIBED, SUBSCRIBED <=> timer stopped, queue stopped
     // SOLE_OWNER <=> timer stopped, queue started
@@ -64,7 +67,9 @@ void QueueContext::replicaState(
     // Interested in state changes and my own events which lead to
     // ownership.
     if ((before != after || selfDelivered) && isOwner(after)) {
-        sys::Mutex::ScopedLock l(lock);
+        QPID_LOG(trace, "cluster start consumers on " << queue.getName() << ", timer "
+                 << (after==SHARED_OWNER? "start" : "stop"));
+        sys::Mutex::ScopedLock l(lock); // FIXME aconway 2011-09-29: REMOVE
         queue.startConsumers();
         if (after == SHARED_OWNER) timer.start();
         else timer.stop();
@@ -90,6 +95,7 @@ void QueueContext::cancel(size_t n) {
     consumers = n;
     // When consuming threads are stopped, this->stopped will be called.
     if (n == 0) {
+        QPID_LOG(trace, "cluster stop consumers and timer on " << queue.getName());
         timer.stop();
         queue.stopConsumers();
     }
@@ -98,6 +104,7 @@ void QueueContext::cancel(size_t n) {
 // Called in timer thread.
 void QueueContext::timeout() {
     // When all threads have stopped, queue will call stopped()
+    QPID_LOG(trace, "cluster timeout, stopping consumers on " << queue.getName());
     queue.stopConsumers();
 }
 
@@ -105,6 +112,8 @@ void QueueContext::timeout() {
 // Called when no threads are dispatching from the queue.
 void QueueContext::stopped() {
     sys::Mutex::ScopedLock l(lock);
+    QPID_LOG(trace, "cluster timeout, stopped consumers on " << queue.getName()
+             << (consumers == 0 ? " unsubscribed" : " resubscribe"));
     if (consumers == 0)
         mcast.mcast(framing::ClusterQueueUnsubscribeBody(
                         framing::ProtocolVersion(), queue.getName()));

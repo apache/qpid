@@ -61,6 +61,7 @@ void MessageHandler::enqueue(const std::string& q, const std::string& message) {
 
     boost::shared_ptr<Queue> queue = findQueue(q, "Cluster enqueue failed");
     // FIXME aconway 2010-10-28: decode message by frame in bounded-size buffers.
+    // FIXME aconway 2011-09-28: don't re-decode my own messages
     boost::intrusive_ptr<broker::Message> msg = new broker::Message();
     framing::Buffer buf(const_cast<char*>(&message[0]), message.size());
     msg->decodeHeader(buf);

@@ -25,7 +25,7 @@ namespace qpid {
 namespace cluster {
 
 Settings::Settings() :    // Default settings
-    consumeLockMicros(100000)
+    consumeLockMicros(10000)
 {}
 
 }} // namespace qpid::cluster
