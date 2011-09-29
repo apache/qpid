@@ -59,6 +59,7 @@ Message::~Message() {}
 
 void Message::forcePersistent()
 {
+    sys::Mutex::ScopedLock l(lock);
     // only set forced bit if we actually need to force.
     if (! getAdapter().isPersistent(frames) ){
         forcePersistentPolicy = true;
@@ -95,16 +96,19 @@ bool Message::isImmediate() const
 
 const FieldTable* Message::getApplicationHeaders() const
 {
+    sys::Mutex::ScopedLock l(lock);
     return getAdapter().getApplicationHeaders(frames);
 }
 
 std::string Message::getAppId() const
 {
+    sys::Mutex::ScopedLock l(lock);
     return getAdapter().getAppId(frames);
 }
 
 bool Message::isPersistent() const
 {
+    sys::Mutex::ScopedLock l(lock);
     return (getAdapter().isPersistent(frames) || forcePersistentPolicy);
 }
 
@@ -319,6 +323,7 @@ const std::string X_QPID_TRACE("x-qpid.trace");
 
 bool Message::isExcluded(const std::vector<std::string>& excludes) const
 {
+    sys::Mutex::ScopedLock l(lock);
     const FieldTable* headers = getApplicationHeaders();
     if (headers) {
         std::string traceStr = headers->getAsString(X_QPID_TRACE);
@@ -490,6 +495,7 @@ void Message::resetDequeueCompleteCallback() {
 }
 
 uint8_t Message::getPriority() const {
+    sys::Mutex::ScopedLock l(lock);
     return getAdapter().getPriority(frames);
 }
 
