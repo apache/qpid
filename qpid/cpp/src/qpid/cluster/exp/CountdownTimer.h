@@ -45,7 +45,6 @@ class CountdownTimer {
 
     /** Start the countdown if not already started. */
     void start() {
-        QPID_LOG(debug, "FIXME CountdownTimer::start");
         sys::Mutex::ScopedLock l(lock);
         if (!timerRunning) {
             timerRunning = true;
@@ -56,7 +55,6 @@ class CountdownTimer {
 
     /** Stop the countdown if not already stopped. */
     void stop() {
-        QPID_LOG(debug, "FIXME CountdownTimer::stop");
         sys::Mutex::ScopedLock l(lock);
         if (timerRunning) {
             timerRunning = false;
@@ -76,7 +74,6 @@ class CountdownTimer {
 
     // Called when countdown expires.
     void fire() {
-        QPID_LOG(debug, "FIXME CountdownTimer::fire");
         bool doCallback = false;
         {
             sys::Mutex::ScopedLock l(lock);

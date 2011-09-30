@@ -47,7 +47,6 @@ Core::Core(const Settings& s, broker::Broker& b) :
     for (size_t i = 0; i < nGroups; ++i) {
         // FIXME aconway 2011-09-26: review naming. Create group for non-message traffic, e.g. initial join protocol.
         std::string groupName = s.name + "-" + boost::lexical_cast<std::string>(i);
-        QPID_LOG(critical, "FIXME create group " << i << " of " << "nGroups. " << groupName);
         groups.push_back(new Group(*this));
         boost::intrusive_ptr<QueueHandler> queueHandler(
             new QueueHandler(groups[i]->getEventHandler(), groups[i]->getMulticaster(), settings));
