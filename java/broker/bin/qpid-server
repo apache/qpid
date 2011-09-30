@@ -51,6 +51,6 @@ QPID_OPTS="$QPID_OPTS -Damqj.read_write_pool_size=32 -DQPID_LOG_APPEND=$QPID_LOG
 if [ -z "$QPID_PID_FILENAME" ]; then
     export QPID_PID_FILENAME="qpid-server.pid"
 fi
-echo $$ > ${QPID_WORK}/${QPID_PID_FILENAME}
+echo $$ > "${QPID_WORK}/${QPID_PID_FILENAME}"
 
-. ${QPID_HOME}/bin/qpid-run org.apache.qpid.server.Main "$@"
+. "${QPID_HOME}/bin/qpid-run" org.apache.qpid.server.Main "$@"
