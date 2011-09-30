@@ -303,8 +303,8 @@ bool Queue::getNextMessage(QueuedMessage& m, Consumer::shared_ptr c)
 Queue::ConsumeCode Queue::consumeNextMessage(QueuedMessage& m, Consumer::shared_ptr c)
 {
     while (true) {
-        ClusterAcquireScope acquireScope; // Outside the lock
         Activity::Scope consumeScope(consuming);
+        ClusterAcquireScope acquireScope;
         Mutex::ScopedLock locker(messageLock);
         if (!consumeScope) {
             QPID_LOG(trace, "Queue stopped, can't  consume: " << name);
