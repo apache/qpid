@@ -121,7 +121,7 @@ public class BDBUpgradeTest extends QpidBrokerTestCase
         upgradeBrokerStore(_fromDir, _toDir);
 
         //override the broker config used and then start the broker with the updated store
-        _configFile = new File(QPID_HOME, "etc/config-systests-bdb.xml");
+        _configFile = new File("build/etc/config-systests-bdb.xml");
         setConfigurationProperty("management.enabled", "true");
 
         super.setUp();       

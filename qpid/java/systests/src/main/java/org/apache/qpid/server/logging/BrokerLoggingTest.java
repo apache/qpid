@@ -246,7 +246,7 @@ public class BrokerLoggingTest extends AbstractTestLogging
         if (isJavaBroker() && isExternalBroker())
         {
             // Get custom -l value used during testing for the broker startup
-            String customLog4j = _brokerCommand.substring(_brokerCommand.indexOf("-l") + 2);
+            String customLog4j = _brokerCommand.substring(_brokerCommand.indexOf("-l") + 2).trim();
 
             String TESTID = "BRK-1007";
 
