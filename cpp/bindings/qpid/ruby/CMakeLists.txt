@@ -17,6 +17,15 @@
 # under the License.
 #
 
+##--------------------------------------------------
+## Properties used for generating the Ruby bindings.
+##--------------------------------------------------
+set(GEM_BINDINGS_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/ext/cqpid)
+set(GEM_BINDINGS_SOURCE_FILE ${GEM_BINDINGS_SOURCE_DIR}/cqpid.cpp)
+set(GEM_OUTPUT_PATH ${CMAKE_CURRENT_BINARY_DIR})
+set(GEM_OUTPUT_FILE ${GEM_OUTPUT_PATH}/pkg/qpid-${qpidc_version}.0.gem)
+
+
 ##------------------------------------------------------
 ## Use Swig to generate a literal binding to the C++ API
 ##------------------------------------------------------
@@ -36,3 +45,19 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libcqpid.so
         DESTINATION ${RUBY_SITEARCH_DIR}
         COMPONENT ${QPID_COMPONENT_CLIENT}
         )
+
+add_custom_command(OUTPUT ${GEM_BINDINGS_SOURCE_FILE}
+                   COMMAND cp ${swig_generated_file_fullname} ${GEM_BINDINGS_SOURCE_FILE}
+                   DEPENDS ${swig_generated_file_fullname}
+                   )
+
+add_custom_command(OUTPUT ${GEM_OUTPUT_FILE}
+                   COMMAND OUTPUT_DIR=${GEM_OUTPUT_PATH} rake clean clobber package
+                   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+                   DEPENDS ${swig_generated_file_fullname} ${GEM_BINDINGS_SOURCE_FILE}
+                   )
+
+add_custom_target(gemfile
+                  DEPENDS ${GEM_OUTPUT_FILE}
+                  )
+
