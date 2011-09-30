@@ -31,11 +31,10 @@
 #include "qpid/broker/QueueBindings.h"
 #include "qpid/broker/QueueListeners.h"
 #include "qpid/broker/QueueObserver.h"
-
 #include "qpid/framing/FieldTable.h"
+#include "qpid/sys/Activity.h"
 #include "qpid/sys/AtomicValue.h"
 #include "qpid/sys/Monitor.h"
-#include "qpid/sys/Stoppable.h"
 #include "qpid/sys/Timer.h"
 #include "qpid/management/Manageable.h"
 #include "qmf/org/apache/qpid/broker/Queue.h"
@@ -130,7 +129,7 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     UsageBarrier barrier;
     int autoDeleteTimeout;
     boost::intrusive_ptr<qpid::sys::TimerTask> autoDeleteTask;
-    sys::Stoppable consuming; // Allow consumer threads to be stopped, used by cluster
+    sys::Activity consuming; // Allow consumer threads to be stopped, used by cluster
     boost::intrusive_ptr<RefCounted> clusterContext; // Used by cluster
 
     void push(boost::intrusive_ptr<Message>& msg, bool isRecovery=false);
@@ -397,6 +396,9 @@ class Queue : public boost::enable_shared_from_this<Queue>,
 
     /** Start consumers. */
     void startConsumers();
+
+    /** Return true if consumers are stopped */
+    bool isConsumingStopped();
 
     /** Context information used in a cluster. */
     boost::intrusive_ptr<RefCounted> getClusterContext() { return clusterContext; }

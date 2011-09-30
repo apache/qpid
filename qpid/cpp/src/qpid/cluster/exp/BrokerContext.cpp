@@ -52,9 +52,9 @@ using namespace broker;
 namespace {
 const ProtocolVersion pv;     // shorthand
 
-// noReplicate means the current thread is handling a message
-// received from the cluster so it should not be replicated.
-QPID_TSS bool tssNoReplicate = false;
+// True means the current thread is handling a local event that should be replicated.
+// False means we're handling a cluster event it should not be replicated.
+QPID_TSS bool tssReplicate = true;
 }
 
 // FIXME aconway 2011-09-26: de-const the broker::Cluster interface,
@@ -72,13 +72,13 @@ Multicaster& BrokerContext::mcaster(const std::string& name) {
 }
 
 BrokerContext::ScopedSuppressReplication::ScopedSuppressReplication() {
-    assert(!tssNoReplicate);
-    tssNoReplicate = true;
+    assert(tssReplicate);
+    tssReplicate = false;
 }
 
 BrokerContext::ScopedSuppressReplication::~ScopedSuppressReplication() {
-    assert(tssNoReplicate);
-    tssNoReplicate = false;
+    assert(!tssReplicate);
+    tssReplicate = true;
 }
 
 BrokerContext::BrokerContext(Core& c, boost::intrusive_ptr<QueueHandler> q)
@@ -88,7 +88,7 @@ BrokerContext::~BrokerContext() {}
 
 bool BrokerContext::enqueue(Queue& queue, const boost::intrusive_ptr<Message>& msg)
 {
-    if (tssNoReplicate) return true;
+    if (!tssReplicate) return true;
     // FIXME aconway 2010-10-20: replicate message in fragments
     // (frames), using fixed size bufffers.
     std::string data(msg->encodedSize(),char());
@@ -104,18 +104,18 @@ void BrokerContext::routing(const boost::intrusive_ptr<broker::Message>&) {}
 void BrokerContext::routed(const boost::intrusive_ptr<Message>&) {}
 
 void BrokerContext::acquire(const broker::QueuedMessage& qm) {
-    if (tssNoReplicate) return;
-    mcaster(qm).mcast(ClusterMessageAcquireBody(pv, qm.queue->getName(), qm.position));
+    if (tssReplicate)
+        mcaster(qm).mcast(ClusterMessageAcquireBody(pv, qm.queue->getName(), qm.position));
 }
 
 void BrokerContext::dequeue(const broker::QueuedMessage& qm) {
-    if (!tssNoReplicate)
+    if (tssReplicate)
         mcaster(qm).mcast(
             ClusterMessageDequeueBody(pv, qm.queue->getName(), qm.position));
 }
 
 void BrokerContext::requeue(const broker::QueuedMessage& qm) {
-    if (!tssNoReplicate)
+    if (tssReplicate)
         mcaster(qm).mcast(ClusterMessageRequeueBody(
                        pv,
                        qm.queue->getName(),
@@ -125,7 +125,7 @@ void BrokerContext::requeue(const broker::QueuedMessage& qm) {
 
 // FIXME aconway 2011-06-08: should be be using shared_ptr to q here?
 void BrokerContext::create(broker::Queue& q) {
-    if (tssNoReplicate) return;
+    if (!tssReplicate) return;
     assert(!QueueContext::get(q));
     boost::intrusive_ptr<QueueContext> context(
         new QueueContext(q, core.getSettings().getConsumeLock(), mcaster(q.getName())));
@@ -137,12 +137,12 @@ void BrokerContext::create(broker::Queue& q) {
 }
 
 void BrokerContext::destroy(broker::Queue& q) {
-    if (tssNoReplicate) return;
+    if (!tssReplicate) return;
      mcaster(q).mcast(ClusterWiringDestroyQueueBody(pv, q.getName()));
 }
 
 void BrokerContext::create(broker::Exchange& ex) {
-    if (tssNoReplicate) return;
+    if (!tssReplicate) return;
     std::string data(ex.encodedSize(), '\0');
     framing::Buffer buf(&data[0], data.size());
     ex.encode(buf);
@@ -150,7 +150,7 @@ void BrokerContext::create(broker::Exchange& ex) {
 }
 
 void BrokerContext::destroy(broker::Exchange& ex) {
-    if (tssNoReplicate) return;
+    if (!tssReplicate) return;
     mcaster(ex.getName()).mcast(
         ClusterWiringDestroyExchangeBody(pv, ex.getName()));
 }
@@ -158,14 +158,14 @@ void BrokerContext::destroy(broker::Exchange& ex) {
 void BrokerContext::bind(broker::Queue& q, broker::Exchange& ex,
                          const std::string& key, const framing::FieldTable& args)
 {
-    if (tssNoReplicate) return;
+    if (!tssReplicate) return;
     mcaster(q).mcast(ClusterWiringBindBody(pv, q.getName(), ex.getName(), key, args));
 }
 
 void BrokerContext::unbind(broker::Queue& q, broker::Exchange& ex,
                            const std::string& key, const framing::FieldTable& args)
 {
-    if (tssNoReplicate) return;
+    if (!tssReplicate) return;
     mcaster(q).mcast(ClusterWiringUnbindBody(pv, q.getName(), ex.getName(), key, args));
 }
 

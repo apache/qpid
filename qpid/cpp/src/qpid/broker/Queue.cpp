@@ -304,7 +304,7 @@ Queue::ConsumeCode Queue::consumeNextMessage(QueuedMessage& m, Consumer::shared_
 {
     while (true) {
         ClusterAcquireScope acquireScope; // Outside the lock
-        Stoppable::Scope consumeScope(consuming);
+        Activity::Scope consumeScope(consuming);
         Mutex::ScopedLock locker(messageLock);
         if (!consumeScope) {
             QPID_LOG(trace, "Queue stopped, can't  consume: " << name);
@@ -1287,6 +1287,8 @@ void Queue::startConsumers() {
     consuming.start();
     notifyListener();
 }
+
+bool Queue::isConsumingStopped() { return consuming.isStopped(); }
 
 // Called when all busy threads exited after stopConsumers()
 void Queue::consumingStopped() {
