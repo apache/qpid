@@ -67,6 +67,8 @@ op.add_option("--flow-control", default=0, type="int", metavar="N",
               help="Flow control each sender to limit queue depth to 2*N. 0 means no flow control.")
 op.add_option("--durable", default=False, action="store_true",
               help="Use durable queues and messages")
+op.add_option("--save-received", default=False, action="store_true",
+              help="Save received message content to files <queuename>-receiver-<n>.msg")
 
 single_quote_re = re.compile("'")
 def posix_quote(string):
@@ -111,6 +113,8 @@ def start_receive(queue, index, opts, ready_queue, broker, host):
                "--ready-address", "%s;{create:always}"%ready_queue,
                "--report-header=no"
                ]
+    if opts.save_received:
+        command += ["--save-content=%s-receiver-%s.msg"%(queue,index)]
     command += opts.receive_arg
     if opts.connection_options:
         command += ["--connection-options",opts.connection_options]

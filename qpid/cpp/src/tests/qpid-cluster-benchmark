@@ -30,7 +30,7 @@ RECEIVERS="-r 3"
 BROKERS=			# Local broker
 CLIENT_HOSTS=			# No ssh, all clients are local
 
-while getopts "m:f:n:b:q:s:r:c:" opt; do
+while getopts "m:f:n:b:q:s:r:c:x" opt; do
     case $opt in
 	m) MESSAGES="-m $OPTARG";;
 	f) FLOW="--flow-control $OPTARG";;
@@ -40,13 +40,14 @@ while getopts "m:f:n:b:q:s:r:c:" opt; do
 	s) SENDERS="-s $OPTARG";;
 	r) RECEIVERS="-r $OPTARG";;
 	c) CLIENT_HOSTS="-c $OPTARG";;
+	x) SAVE_RECEIVED="--save-received";;
 	*) echo "Unknown option"; exit 1;;
     esac
 done
 BROKER=$(echo $BROKERS | sed s/,.*//)
 run_test() { echo $*; shift; "$@"; echo; echo; echo; }
 
-run_test "Multiple active brokers:" qpid-cpp-benchmark $REPEAT $BROKERS --summarize $QUEUES $SENDERS $RECEIVERS $MESSAGES $CLIENT_HOSTS
-run_test "Single active broker :" qpid-cpp-benchmark $REPEAT $BROKER --summarize $QUEUES $SENDERS $RECEIVERS $MESSAGES $CLIENT_HOSTS
+run_test "Multiple active brokers:" qpid-cpp-benchmark $REPEAT $BROKERS --summarize $QUEUES $SENDERS $RECEIVERS $MESSAGES $CLIENT_HOSTS $SAVE_RECEIVED
+run_test "Single active broker :" qpid-cpp-benchmark $REPEAT $BROKER --summarize $QUEUES $SENDERS $RECEIVERS $MESSAGES $CLIENT_HOSTS $SAVE_RECEIVED
 run_test "Latency under low load:" qpid-cpp-benchmark $REPEAT $BROKERS --connection-options "{tcp-nodelay:true}" $MESSAGES $FLOW $CLIENT_HOSTS
 
