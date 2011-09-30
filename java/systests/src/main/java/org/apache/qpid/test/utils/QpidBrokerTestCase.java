@@ -143,7 +143,7 @@ public class QpidBrokerTestCase extends QpidTestCase
     protected String _brokerCommand = System.getProperty(BROKER_COMMAND);
     private Boolean _brokerCleanBetweenTests = Boolean.getBoolean(BROKER_CLEAN_BETWEEN_TESTS);
     private final AmqpProtocolVersion _brokerVersion = AmqpProtocolVersion.valueOf(System.getProperty(BROKER_VERSION, ""));
-    protected String _output = System.getProperty(TEST_OUTPUT);
+    protected String _output = System.getProperty(TEST_OUTPUT, System.getProperty("java.io.tmpdir"));
     protected Boolean _brokerPersistent = Boolean.getBoolean(BROKER_PERSITENT);
     private String _brokerProtocolExcludes = System.getProperty(BROKER_PROTOCOL_EXCLUDES);
 
@@ -653,21 +653,28 @@ public class QpidBrokerTestCase extends QpidTestCase
 
     public String getTestConfigFile()
     {
-        String path = _output == null ? System.getProperty("java.io.tmpdir") : _output;
-        return path + "/" + getTestQueueName() + "-config.xml";
+        return _output + "/" + getTestQueueName() + "-config.xml";
     }
 
     public String getTestVirtualhostsFile()
     {
-        String path = _output == null ? System.getProperty("java.io.tmpdir") : _output;
-        return path + "/" + getTestQueueName() + "-virtualhosts.xml";
+        return _output + "/" + getTestQueueName() + "-virtualhosts.xml";
+    }
+
+    private String relativeToQpidHome(String file)
+    {
+        return file.replace(System.getProperty(QPID_HOME,"QPID_HOME") + "/","");
     }
 
     protected void saveTestConfiguration() throws ConfigurationException
     {
         // Specify the test config file
         String testConfig = getTestConfigFile();
-        setSystemProperty("test.config", testConfig);
+        String relative = relativeToQpidHome(testConfig);
+
+        setSystemProperty("test.config", relative);
+        _logger.info("Set test.config property to: " + relative);
+        _logger.info("Saving test virtualhosts file at: " + testConfig);
 
         // Create the file if configuration does not exist
         if (_testConfiguration.isEmpty())
@@ -681,7 +688,11 @@ public class QpidBrokerTestCase extends QpidTestCase
     {
         // Specify the test virtualhosts file
         String testVirtualhosts = getTestVirtualhostsFile();
-        setSystemProperty("test.virtualhosts", testVirtualhosts);
+        String relative = relativeToQpidHome(testVirtualhosts);
+
+        setSystemProperty("test.virtualhosts", relative);
+        _logger.info("Set test.virtualhosts property to: " + relative);
+        _logger.info("Saving test virtualhosts file at: " + testVirtualhosts);
 
         // Create the file if configuration does not exist
         if (_testVirtualhosts.isEmpty())
