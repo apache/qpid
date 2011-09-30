@@ -126,6 +126,8 @@ cluster2_la_SOURCES =				\
 	qpid/cluster/exp/hash.h			\
 	qpid/cluster/exp/HandlerBase.cpp	\
 	qpid/cluster/exp/HandlerBase.h		\
+	qpid/cluster/exp/MessageBuilders.cpp	\
+	qpid/cluster/exp/MessageBuilders.h	\
 	qpid/cluster/exp/MessageHandler.cpp	\
 	qpid/cluster/exp/MessageHandler.h	\
 	qpid/cluster/exp/Multicaster.cpp	\
@@ -138,6 +140,7 @@ cluster2_la_SOURCES =				\
 	qpid/cluster/exp/QueueReplica.h		\
 	qpid/cluster/exp/Settings.cpp		\
 	qpid/cluster/exp/Settings.h		\
+	qpid/cluster/exp/UniqueIds.h		\
 	qpid/cluster/exp/WiringHandler.cpp	\
 	qpid/cluster/exp/WiringHandler.h
 

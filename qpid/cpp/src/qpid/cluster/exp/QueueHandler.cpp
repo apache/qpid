@@ -36,8 +36,8 @@ namespace cluster {
 QueueHandler::QueueHandler(EventHandler& eh, Multicaster& m, const Settings& s)
     : HandlerBase(eh), multicaster(m),  consumeLock(s.getConsumeLock()) {}
 
-bool QueueHandler::invoke(const framing::AMQBody& body) {
-    return framing::invoke(*this, body).wasHandled();
+bool QueueHandler::handle(const framing::AMQFrame& frame) {
+    return framing::invoke(*this, *frame.getBody()).wasHandled();
 }
 
 void QueueHandler::subscribe(const std::string& queue) {

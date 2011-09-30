@@ -113,6 +113,8 @@ class Cpg : public sys::IOHandle {
     MemberId self() const;
 
     int getFd();
+
+    std::string getName() const { return str(group); }
     
   private:
 

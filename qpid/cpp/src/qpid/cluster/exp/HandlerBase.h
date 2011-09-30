@@ -28,6 +28,7 @@ namespace qpid {
 
 namespace framing {
 class AMQBody;
+class AMQFrame;
 }
 
 namespace cluster {
@@ -42,7 +43,7 @@ class HandlerBase : public RefCounted
     HandlerBase(EventHandler&);
     virtual ~HandlerBase();
 
-    virtual bool invoke(const framing::AMQBody& body) = 0;
+    virtual bool handle(const framing::AMQFrame&) = 0;
     virtual void left(const MemberId&) {}
     virtual void joined(const MemberId&) {}
 

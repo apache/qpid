@@ -50,8 +50,8 @@ WiringHandler::WiringHandler(EventHandler& e,
     queueHandler(qh)
 {}
 
-bool WiringHandler::invoke(const framing::AMQBody& body) {
-    return framing::invoke(*this, body).wasHandled();
+bool WiringHandler::handle(const framing::AMQFrame& frame) {
+    return framing::invoke(*this, *frame.getBody()).wasHandled();
 }
 
 void WiringHandler::createQueue(const std::string& data) {

@@ -31,22 +31,43 @@
 #include "qpid/broker/Queue.h"
 #include "qpid/framing/AllInvoker.h"
 #include "qpid/framing/Buffer.h"
+#include "qpid/framing/MessageTransferBody.h"
 #include "qpid/sys/Thread.h"
 #include "qpid/log/Statement.h"
 #include <boost/shared_ptr.hpp>
 
 namespace qpid {
 namespace cluster {
+
 using namespace broker;
+using namespace framing;
 
 MessageHandler::MessageHandler(EventHandler& e, Core& c) :
     HandlerBase(e),
     broker(c.getBroker()),
-    core(c)
+    core(c),
+    messageBuilders(&c.getBroker().getStore())
 {}
 
-bool MessageHandler::invoke(const framing::AMQBody& body) {
-    return framing::invoke(*this, body).wasHandled();
+bool MessageHandler::handle(const framing::AMQFrame& frame) {
+    assert(frame.getBody());
+    const AMQBody& body = *frame.getBody();
+    if (framing::invoke(*this, body).wasHandled()) return true;
+    // Test for message frame
+    if (body.type() == HEADER_BODY || body.type() == CONTENT_BODY ||
+        (body.getMethod() && body.getMethod()->isA<MessageTransferBody>()))
+    {
+        boost::shared_ptr<broker::Queue> queue;
+        boost::intrusive_ptr<broker::Message> message;
+        if (messageBuilders.handle(sender(), frame, queue, message)) {
+            BrokerContext::ScopedSuppressReplication ssr;
+            queue->deliver(message);
+        }
+        // FIXME aconway 2011-09-29: async completion goes here.
+        // For own messages need to release the channel assigned by BrokerContext.
+        return true;
+    }
+    return false;
 }
 
 boost::shared_ptr<broker::Queue> MessageHandler::findQueue(
@@ -57,17 +78,10 @@ boost::shared_ptr<broker::Queue> MessageHandler::findQueue(
     return queue;
 }
 
-void MessageHandler::enqueue(const std::string& q, const std::string& message) {
-
+void MessageHandler::enqueue(const std::string& q, uint16_t channel) {
     boost::shared_ptr<Queue> queue = findQueue(q, "Cluster enqueue failed");
-    // FIXME aconway 2010-10-28: decode message by frame in bounded-size buffers.
     // FIXME aconway 2011-09-28: don't re-decode my own messages
-    boost::intrusive_ptr<broker::Message> msg = new broker::Message();
-    framing::Buffer buf(const_cast<char*>(&message[0]), message.size());
-    msg->decodeHeader(buf);
-    msg->decodeContent(buf);
-    BrokerContext::ScopedSuppressReplication ssr;
-    queue->deliver(msg);
+    messageBuilders.announce(sender(), channel, queue);
 }
 
 // FIXME aconway 2011-09-14: performance: pack acquires into a SequenceSet

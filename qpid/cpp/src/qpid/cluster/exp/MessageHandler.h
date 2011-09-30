@@ -25,6 +25,7 @@
 // TODO aconway 2010-10-19: experimental cluster code.
 
 #include "HandlerBase.h"
+#include "MessageBuilders.h"
 #include "qpid/framing/AMQP_AllOperations.h"
 #include <boost/intrusive_ptr.hpp>
 #include <map>
@@ -54,9 +55,9 @@ class MessageHandler : public framing::AMQP_AllOperations::ClusterMessageHandler
   public:
     MessageHandler(EventHandler&, Core&);
 
-    bool invoke(const framing::AMQBody& body);
+    bool handle(const framing::AMQFrame&);
 
-    void enqueue(const std::string& queue, const std::string& message);
+    void enqueue(const std::string& queue, uint16_t channel);
     void acquire(const std::string& queue, uint32_t position);
     void dequeue(const std::string& queue, uint32_t position);
     void requeue(const std::string& queue, uint32_t position, bool redelivered);
@@ -66,6 +67,7 @@ class MessageHandler : public framing::AMQP_AllOperations::ClusterMessageHandler
 
     broker::Broker& broker;
     Core& core;
+    MessageBuilders messageBuilders;
 };
 }} // namespace qpid::cluster
 

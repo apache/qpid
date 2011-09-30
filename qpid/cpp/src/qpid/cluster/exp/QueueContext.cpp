@@ -108,7 +108,7 @@ void QueueContext::timeout() {
     queue.stopConsumers();
 }
 
-// Callback set up by queue.stopConsumers() called in connection thread.
+// Callback set up by queue.stopConsumers() called in connection or timer thread.
 // Called when no threads are dispatching from the queue.
 void QueueContext::stopped() {
     sys::Mutex::ScopedLock l(lock);

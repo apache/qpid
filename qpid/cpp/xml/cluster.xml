@@ -333,7 +333,7 @@
   <class name="cluster-message" code="0x82">
     <control name="enqueue" code="0x2">
       <field name="queue" type="queue.name"/>
-      <field name="message" type="str32"/>
+      <field name="channel" type="uint16"/>
     </control>
 
     <control name="acquire" code="0x4">

@@ -53,7 +53,7 @@ class WiringHandler : public framing::AMQP_AllOperations::ClusterWiringHandler,
   public:
     WiringHandler(EventHandler&, const boost::intrusive_ptr<QueueHandler>& qh, broker::Broker&);
 
-    bool invoke(const framing::AMQBody& body);
+    bool handle(const framing::AMQFrame&);
 
     void createQueue(const std::string& data);
     void destroyQueue(const std::string& name);

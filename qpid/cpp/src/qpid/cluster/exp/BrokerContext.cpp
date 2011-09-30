@@ -41,6 +41,7 @@
 #include "qpid/broker/Exchange.h"
 #include "qpid/framing/Buffer.h"
 #include "qpid/log/Statement.h"
+#include <boost/bind.hpp>
 
 namespace qpid {
 namespace cluster {
@@ -84,15 +85,26 @@ BrokerContext::BrokerContext(Core& c) : core(c) {}
 
 BrokerContext::~BrokerContext() {}
 
+
+namespace {
+void sendFrame(Multicaster& mcaster, const AMQFrame& frame, uint16_t channel) {
+    AMQFrame copy(frame);
+    copy.setChannel(channel);
+    mcaster.mcast(copy);
+}
+}
+
 bool BrokerContext::enqueue(Queue& queue, const boost::intrusive_ptr<Message>& msg)
 {
     if (!tssReplicate) return true;
-    // FIXME aconway 2010-10-20: replicate message in fragments
-    // (frames), using fixed size bufffers.
-    std::string data(msg->encodedSize(),char());
-    framing::Buffer buf(&data[0], data.size());
-    msg->encode(buf);
-    mcaster(queue).mcast(ClusterMessageEnqueueBody(pv, queue.getName(), data));
+    // FIXME aconway 2011-09-29: for async completion the
+    // UniqueIds::release must move to self-delivery so we can
+    // identify the same message.
+    UniqueIds<uint16_t>::Scope s(channels);
+    uint16_t channel = s.id;
+    mcaster(queue).mcast(ClusterMessageEnqueueBody(pv, queue.getName(), channel));
+    std::for_each(msg->getFrames().begin(), msg->getFrames().end(),
+                  boost::bind(&sendFrame, boost::ref(mcaster(queue)), _1, channel));
     return false; // Strict order, wait for CPG self-delivery to enqueue.
 }
 

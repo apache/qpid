@@ -49,7 +49,6 @@ class EventHandler : public Cpg::Handler
   public:
     EventHandler(boost::shared_ptr<sys::Poller> poller,
                  boost::function<void()> onError);
-    
     ~EventHandler();
 
     /** Add a handler */
@@ -79,7 +78,7 @@ class EventHandler : public Cpg::Handler
     Cpg& getCpg() { return cpg; }
 
   private:
-    void invoke(const framing::AMQBody& body);
+    void handle(const framing::AMQFrame&);
 
     Cpg cpg;
     PollerDispatch dispatcher;

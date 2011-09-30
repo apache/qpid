@@ -56,7 +56,7 @@ class QueueHandler : public framing::AMQP_AllOperations::ClusterQueueHandler,
   public:
     QueueHandler(EventHandler&, Multicaster&, const Settings&);
 
-    bool invoke(const framing::AMQBody& body);
+    bool handle(const framing::AMQFrame& body);
 
     // Events
     void subscribe(const std::string& queue);

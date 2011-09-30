@@ -62,26 +62,26 @@ void EventHandler::deliver(
     sender = MemberId(nodeid, pid);
     framing::Buffer buf(static_cast<char*>(msg), msg_len);
     framing::AMQFrame frame;
+    // FIXME aconway 2011-09-29: don't decode own frame bodies. Ignore based on channel.
     while (buf.available()) {
         frame.decode(buf);
-        assert(frame.getBody());
-        QPID_LOG(trace, "cluster deliver: " << PrettyId(sender, self) << " "
-                 << *frame.getBody());
+        QPID_LOG(trace, "cluster deliver on " << cpg.getName() << " from "<< PrettyId(sender, self) << ": " << frame);
         try {
-            invoke(*frame.getBody());
+            handle(frame);
         } catch (const std::exception& e) {
             // Note: exceptions are assumed to be survivable,
             // fatal errors should log a message and call Core::fatal.
             QPID_LOG(error, e.what());
+            // FIXME aconway 2011-09-29: error handling
         }
     }
 }
 
-void EventHandler::invoke(const framing::AMQBody& body) {
+void EventHandler::handle(const framing::AMQFrame& frame) {
     for (Handlers::iterator i = handlers.begin(); i != handlers.end(); ++i)
-        if ((*i)->invoke(body)) return;
-    QPID_LOG(error, "Cluster received unknown control: " << body );
-    assert(0);                  // Error handling
+        if ((*i)->handle(frame)) return;
+    QPID_LOG(error, "Cluster received unknown frame: " << frame );
+    assert(0);             // FIXME aconway 2011-09-29: Error handling
 }
 
 struct PrintAddrs {
