@@ -56,7 +56,7 @@ Core::Core(const Settings& s, broker::Broker& b) :
         groups[i]->getEventHandler().add(boost::intrusive_ptr<HandlerBase>(
                                              new MessageHandler(groups[i]->getEventHandler(), *this)));
 
-        std::auto_ptr<BrokerContext> bh(new BrokerContext(*this, queueHandler));
+        std::auto_ptr<BrokerContext> bh(new BrokerContext(*this));
         brokerHandler = bh.get();
         // BrokerContext belongs to Broker
         broker.setCluster(std::auto_ptr<broker::Cluster>(bh));

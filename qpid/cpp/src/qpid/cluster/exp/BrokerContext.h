@@ -28,7 +28,6 @@
 namespace qpid {
 namespace cluster {
 class Core;
-class QueueHandler;
 class QueueContext;
 
 // TODO aconway 2010-10-19: experimental cluster code.
@@ -47,7 +46,7 @@ class BrokerContext : public broker::Cluster
         ~ScopedSuppressReplication();
     };
 
-    BrokerContext(Core&, boost::intrusive_ptr<QueueHandler>);
+    BrokerContext(Core&);
     ~BrokerContext();
 
     // Messages
@@ -86,7 +85,6 @@ class BrokerContext : public broker::Cluster
     Multicaster& mcaster(const std::string&);
 
     Core& core;
-    boost::intrusive_ptr<QueueHandler> queueHandler;
 };
 }} // namespace qpid::cluster
 

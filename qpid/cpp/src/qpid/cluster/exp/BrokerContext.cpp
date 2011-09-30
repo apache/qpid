@@ -22,7 +22,6 @@
 #include "Core.h"
 #include "BrokerContext.h"
 #include "QueueContext.h"
-#include "QueueHandler.h"
 #include "Multicaster.h"
 #include "hash.h"
 #include "qpid/framing/ClusterMessageEnqueueBody.h"
@@ -81,8 +80,7 @@ BrokerContext::ScopedSuppressReplication::~ScopedSuppressReplication() {
     tssReplicate = true;
 }
 
-BrokerContext::BrokerContext(Core& c, boost::intrusive_ptr<QueueHandler> q)
-    : core(c), queueHandler(q) {}
+BrokerContext::BrokerContext(Core& c) : core(c) {}
 
 BrokerContext::~BrokerContext() {}
 
@@ -104,8 +102,10 @@ void BrokerContext::routing(const boost::intrusive_ptr<broker::Message>&) {}
 void BrokerContext::routed(const boost::intrusive_ptr<Message>&) {}
 
 void BrokerContext::acquire(const broker::QueuedMessage& qm) {
-    if (tssReplicate)
+    if (tssReplicate) {
+        assert(!qm.queue->isConsumingStopped());
         mcaster(qm).mcast(ClusterMessageAcquireBody(pv, qm.queue->getName(), qm.position));
+    }
 }
 
 void BrokerContext::dequeue(const broker::QueuedMessage& qm) {
