@@ -19,7 +19,7 @@
 broker.version=v0_10
 broker.language=java
 broker.type=spawned
-broker.command=${project.root}/build/bin/qpid-server -p @PORT -m @MPORT -c @CONFIG_FILE -l ${test.profiles}/log4j-test.xml
+broker.command=build/bin/qpid-server -p @PORT -m @MPORT -c @CONFIG_FILE -l test-profiles/log4j-test.xml
 broker.ready=BRK-1004
 broker.stopped=Exception
 #

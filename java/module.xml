@@ -334,7 +334,8 @@
     <echo message="Using profile:${profile}" level="info"/>
     <junit fork="yes" forkmode="once" maxmemory="${test.mem}" reloading="no"
            haltonfailure="${haltonfailure}" haltonerror="${haltonerror}"
-           failureproperty="test.failures" printsummary="on" timeout="6000000" >
+           failureproperty="test.failures" printsummary="on" timeout="6000000"
+           dir="${project.root}" >
 
       <jvmarg line="${jvm.args}" />
 
@@ -659,7 +660,8 @@
     <mkdir dir="${build.coveragereport}" />
     <junit fork="yes" forkmode="once" maxmemory="${test.mem}" reloading="no"
            haltonfailure="${haltonfailure}" haltonerror="${haltonerror}"
-           failureproperty="test.failures" printsummary="on" timeout="600000" >
+           failureproperty="test.failures" printsummary="on" timeout="600000"
+           dir="${project.root}" >
 
       <sysproperty key="amqj.logging.level" value="${amqj.logging.level}"/>
       <sysproperty key="amqj.protocol.logging.level" value="${amqj.protocol.logging.level}"/>

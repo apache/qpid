@@ -22,7 +22,7 @@
 <configuration>
     <system/>
     <override>
-        <xml fileName="${test.virtualhosts}" optional="true"/>
+        <xml fileName="${QPID_HOME}/${test.virtualhosts}" optional="true"/>
         <xml fileName="${QPID_FIREWALL_VIRTUALHOSTS_SETTINGS}" optional="true"/>
         <xml fileName="${QPID_HOME}/etc/virtualhosts.xml"/>                
     </override>

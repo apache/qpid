@@ -22,7 +22,7 @@
 <configuration>
     <system/>
     <override>
-        <xml fileName="${test.config}" optional="true"/>
+        <xml fileName="${QPID_HOME}/${test.config}" optional="true"/>
         <xml fileName="${QPID_FIREWALL_CONFIG_SETTINGS}" optional="true"/>
         <xml fileName="${QPID_HOME}/etc/config-systests-firewall-settings.xml"/>
         <xml fileName="${QPID_HOME}/etc/config-systests-settings.xml"/>
