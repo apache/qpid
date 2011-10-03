@@ -22,6 +22,7 @@ package org.apache.qpid.amqp_1_0.client;
 
 import org.apache.qpid.amqp_1_0.messaging.SectionDecoder;
 import org.apache.qpid.amqp_1_0.transport.DeliveryStateHandler;
+import org.apache.qpid.amqp_1_0.transport.LinkEndpoint;
 import org.apache.qpid.amqp_1_0.transport.ReceivingLinkEndpoint;
 import org.apache.qpid.amqp_1_0.transport.ReceivingLinkListener;
 
@@ -31,9 +32,8 @@ import org.apache.qpid.amqp_1_0.type.messaging.*;
 import org.apache.qpid.amqp_1_0.type.messaging.Source;
 import org.apache.qpid.amqp_1_0.type.messaging.Target;
 import org.apache.qpid.amqp_1_0.type.transaction.TransactionalState;
-import org.apache.qpid.amqp_1_0.type.transport.ReceiverSettleMode;
-import org.apache.qpid.amqp_1_0.type.transport.SenderSettleMode;
-import org.apache.qpid.amqp_1_0.type.transport.Transfer;
+import org.apache.qpid.amqp_1_0.type.transport.*;
+import org.apache.qpid.amqp_1_0.type.transport.Error;
 
 import java.nio.ByteBuffer;
 import java.util.*;
@@ -49,12 +49,13 @@ public class Receiver implements DeliveryStateHandler
     private Queue<Transfer> _prefetchQueue = new ConcurrentLinkedQueue<Transfer>();
     private Map<Binary, SettledAction> _unsettledMap = new HashMap<Binary, SettledAction>();
     private MessageArrivalListener _messageArrivalListener;
+    private org.apache.qpid.amqp_1_0.type.transport.Error _error;
 
     public Receiver(final Session session,
                     final String linkName,
                     final Target target,
                     final Source source,
-                    final AcknowledgeMode ackMode)
+                    final AcknowledgeMode ackMode) throws AmqpErrorException
     {
         this(session, linkName, target, source, ackMode, false);
     }
@@ -64,7 +65,7 @@ public class Receiver implements DeliveryStateHandler
                     final Target target,
                     final Source source,
                     final AcknowledgeMode ackMode,
-                    boolean isDurable)
+                    boolean isDurable) throws AmqpErrorException
     {
         this(session,linkName,target,source,ackMode,isDurable,null);
     }
@@ -75,7 +76,7 @@ public class Receiver implements DeliveryStateHandler
                     final Source source,
                     final AcknowledgeMode ackMode,
                     final boolean isDurable,
-                    final Map<Binary,Outcome> unsettled)
+                    final Map<Binary,Outcome> unsettled) throws AmqpErrorException
     {
 
         _session = session;
@@ -113,6 +114,13 @@ public class Receiver implements DeliveryStateHandler
                 _prefetchQueue.add(xfr);
                 postPrefetchAction();
             }
+
+            @Override
+            public void remoteDetached(final LinkEndpoint endpoint, final Detach detach)
+            {
+                _error = detach.getError();
+                super.remoteDetached(endpoint, detach);
+            }
         });
 
         _endpoint.setLocalUnsettled(unsettled);
@@ -121,7 +129,7 @@ public class Receiver implements DeliveryStateHandler
 
         synchronized(_endpoint.getLock())
         {
-            while(!_endpoint.isAttached() || _endpoint.isDetached())
+            while(!_endpoint.isAttached() && !_endpoint.isDetached())
             {
                 try
                 {
@@ -132,6 +140,25 @@ public class Receiver implements DeliveryStateHandler
                     e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
                 }
             }
+        }
+
+        if(_endpoint.getSource() == null)
+        {
+            synchronized(_endpoint.getLock())
+            {
+                while(!_endpoint.isDetached())
+                {
+                    try
+                    {
+                        _endpoint.getLock().wait();
+                    }
+                    catch (InterruptedException e)
+                    {
+                        e.printStackTrace();  //To change body of catch statement use File | Settings | File Templates.
+                    }
+                }
+            }
+            throw new AmqpErrorException(getError());
         }
     }
 
@@ -257,15 +284,15 @@ public class Receiver implements DeliveryStateHandler
             synchronized(lock)
             {
                 Transfer xfr;
-                while(((xfr = _prefetchQueue.peek()) == null) && !_endpoint.isDrained())
+                while(((xfr = _prefetchQueue.peek()) == null) && !_endpoint.isDrained() && wait != 0)
                 {
                     try
                     {
-                        if(wait>=0L)
+                        if(wait>0L)
                         {
                             lock.wait(wait);
                         }
-                        else
+                        else if(wait<0L)
                         {
                             lock.wait();
                         }
@@ -354,6 +381,11 @@ public class Receiver implements DeliveryStateHandler
         }
 
         _endpoint.updateDisposition(deliveryTag,state, settled);
+    }
+
+    public Error getError()
+    {
+        return _error;
     }
 
     public void acknowledgeAll(Message m)

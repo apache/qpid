@@ -31,9 +31,9 @@ import org.apache.qpid.amqp_1_0.type.*;
 
 import org.apache.qpid.amqp_1_0.type.messaging.*;
 import org.apache.qpid.amqp_1_0.type.messaging.Source;
-import org.apache.qpid.amqp_1_0.type.transport.Detach;
-import org.apache.qpid.amqp_1_0.type.transport.Transfer;
+import org.apache.qpid.amqp_1_0.type.transport.*;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.amqp_1_0.type.transport.Error;
 import org.apache.qpid.server.exchange.DirectExchange;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.ExchangeType;
@@ -71,6 +71,7 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
     public SendingLink_1_0(final SendingLinkAttachment linkAttachment,
                            final VirtualHost vhost,
                            final SendingDestination destination)
+            throws AmqpErrorException
     {
         _vhost = vhost;
         _destination = destination;
@@ -99,29 +100,36 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
 
             Map<Symbol,Filter> actualFilters = new HashMap<Symbol,Filter>();
 
-            for(Map.Entry<Symbol,Filter> entry : filters.entrySet())
+            if(filters != null)
             {
-                if(entry.getValue() instanceof NoLocalFilter)
+                for(Map.Entry<Symbol,Filter> entry : filters.entrySet())
                 {
-                    actualFilters.put(entry.getKey(), entry.getValue());
-                    noLocal = true;
-                }
-                else if(messageFilter == null && entry.getValue() instanceof JMSSelectorFilter)
-                {
-
-                    JMSSelectorFilter selectorFilter = (JMSSelectorFilter) entry.getValue();
-                    try
+                    if(entry.getValue() instanceof NoLocalFilter)
                     {
-                        messageFilter = new JMSSelectorMessageFilter(selectorFilter.getValue());
-
                         actualFilters.put(entry.getKey(), entry.getValue());
+                        noLocal = true;
                     }
-                    catch (AMQInvalidArgumentException e)
+                    else if(messageFilter == null && entry.getValue() instanceof JMSSelectorFilter)
                     {
 
+                        JMSSelectorFilter selectorFilter = (JMSSelectorFilter) entry.getValue();
+                        try
+                        {
+                            messageFilter = new JMSSelectorMessageFilter(selectorFilter.getValue());
+
+                            actualFilters.put(entry.getKey(), entry.getValue());
+                        }
+                        catch (AMQInvalidArgumentException e)
+                        {
+                            Error error = new Error();
+                            error.setCondition(AmqpError.INVALID_FIELD);
+                            error.setDescription("Invalid JMS Selector: " + selectorFilter.getValue());
+                            error.setInfo(Collections.singletonMap(Symbol.valueOf("field"), Symbol.valueOf("filter")));
+                            throw new AmqpErrorException(error);
+                        }
+
+
                     }
-
-
                 }
             }
             source.setFilter(actualFilters.isEmpty() ? null : actualFilters);
@@ -182,7 +190,10 @@ public class SendingLink_1_0 implements SendingLinkListener, Link_1_0, DeliveryS
 
         _subscription = new Subscription_1_0(this, qd);
         _subscription.setNoLocal(noLocal);
-        _subscription.setFilters(new SimpleFilterManager(messageFilter));
+        if(messageFilter!=null)
+        {
+            _subscription.setFilters(new SimpleFilterManager(messageFilter));
+        }
 
         try
         {

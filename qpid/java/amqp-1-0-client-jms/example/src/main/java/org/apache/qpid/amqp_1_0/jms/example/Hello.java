@@ -59,7 +59,7 @@ public class Hello
 
 
             Session consumerSession = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-            MessageConsumer messageConsumer = consumerSession.createConsumer(queue, "hello='true'");
+            MessageConsumer messageConsumer = consumerSession.createConsumer(queue, "hello='true' and 7");
 
             messageConsumer.setMessageListener(new MessageListener()
             {

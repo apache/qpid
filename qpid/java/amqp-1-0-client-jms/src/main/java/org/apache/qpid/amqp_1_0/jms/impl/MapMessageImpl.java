@@ -20,6 +20,7 @@
 package org.apache.qpid.amqp_1_0.jms.impl;
 
 import org.apache.qpid.amqp_1_0.jms.MapMessage;
+import org.apache.qpid.amqp_1_0.type.Binary;
 import org.apache.qpid.amqp_1_0.type.Section;
 import org.apache.qpid.amqp_1_0.type.messaging.*;
 import org.apache.qpid.amqp_1_0.type.messaging.Properties;
@@ -240,7 +241,7 @@ public class MapMessageImpl extends MessageImpl implements MapMessage
         {
             return (String) value;
         }
-        else if (value instanceof byte[])
+        else if (value instanceof byte[] || value instanceof Binary)
         {
             throw new MessageFormatException("Property " + name + " of type byte[] " + "cannot be converted to String.");
         }
@@ -262,6 +263,10 @@ public class MapMessageImpl extends MessageImpl implements MapMessage
         {
             return (byte[]) value;
         }
+        else if(value instanceof Binary)
+        {
+            return ((Binary)value).getArray();
+        }
         else
         {
             throw new MessageFormatException("Property " + name + " of type " + value.getClass().getName()
@@ -270,7 +275,8 @@ public class MapMessageImpl extends MessageImpl implements MapMessage
 
     public Object getObject(String s) throws JMSException
     {
-        return get(s);
+        Object val = get(s);
+        return val instanceof Binary ? ((Binary)val).getArray() : val;
     }
 
     public Enumeration getMapNames() throws JMSException
@@ -362,7 +368,7 @@ public class MapMessageImpl extends MessageImpl implements MapMessage
             System.arraycopy(bytes,offset,val,0,length);
         }
 
-        put(name, val);
+        put(name, new Binary(val));
     }
 
     public void setObject(String name, Object value) throws JMSException
@@ -404,6 +410,13 @@ public class MapMessageImpl extends MessageImpl implements MapMessage
     public Set<Object> keySet()
     {
         return _map.keySet();
+    }
+
+    @Override
+    public void clearBody() throws JMSException
+    {
+        super.clearBody();
+        _map.clear();
     }
 
     private void checkPropertyName(String propName)

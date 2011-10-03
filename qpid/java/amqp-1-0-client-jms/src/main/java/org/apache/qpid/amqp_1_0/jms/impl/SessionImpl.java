@@ -341,7 +341,17 @@ public class SessionImpl implements Session, QueueSession, TopicSession
     public TemporaryTopicImpl createTemporaryTopic() throws JMSException
     {
         checkClosed();
-        return null;  //TODO
+        try
+        {
+            Sender send = _session.createTemporaryQueueSender();
+
+            TemporaryTopicImpl tempQ = new TemporaryTopicImpl(((Target)send.getTarget()).getAddress(), send);
+            return tempQ;
+        }
+        catch (Sender.SenderCreationException e)
+        {
+            throw new JMSException("Unable to create temporary queue");
+        }
     }
 
     public void unsubscribe(final String s) throws JMSException

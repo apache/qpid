@@ -21,6 +21,7 @@
 
 package org.apache.qpid.amqp_1_0.client;
 
+import org.apache.qpid.amqp_1_0.type.AmqpErrorException;
 import org.apache.qpid.amqp_1_0.type.Symbol;
 import org.apache.qpid.amqp_1_0.type.UnsignedInteger;
 import org.apache.qpid.amqp_1_0.type.UnsignedLong;
@@ -226,6 +227,10 @@ public class Receive extends Util
             System.out.println("Total Messages Received: " + receivedCount);
         }
         catch (Connection.ConnectionException e)
+        {
+            e.printStackTrace();  //TODO.
+        }
+        catch (AmqpErrorException e)
         {
             e.printStackTrace();  //TODO.
         }

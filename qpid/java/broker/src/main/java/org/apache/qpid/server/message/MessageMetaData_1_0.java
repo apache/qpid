@@ -42,7 +42,7 @@ import java.util.*;
 public class MessageMetaData_1_0 implements StorableMessageMetaData
 {
     // TODO move to somewhere more useful
-    public static final Symbol JMS_TYPE = Symbol.valueOf("x-jms-type");
+    public static final Symbol JMS_TYPE = Symbol.valueOf("jms-type");
 
 
     private Header _header;
@@ -437,13 +437,13 @@ public class MessageMetaData_1_0 implements StorableMessageMetaData
         public String getType()
         {
 
-            if(_appProperties == null || _appProperties.get(JMS_TYPE) == null)
+            if(_messageAnnotations == null || _messageAnnotations.get(JMS_TYPE) == null)
             {
                 return null;
             }
             else
             {
-                return _appProperties.get(JMS_TYPE).toString();
+                return _messageAnnotations.get(JMS_TYPE).toString();
             }
         }
 

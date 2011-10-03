@@ -66,6 +66,13 @@ public class TextMessageImpl extends MessageImpl implements TextMessage
         return _text;
     }
 
+    @Override
+    public void clearBody() throws JMSException
+    {
+        super.clearBody();
+        _text = null;
+    }
+
     @Override Collection<Section> getSections()
     {
         List<Section> sections = new ArrayList<Section>();

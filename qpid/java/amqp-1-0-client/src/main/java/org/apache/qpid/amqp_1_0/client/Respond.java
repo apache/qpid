@@ -21,6 +21,7 @@
 
 package org.apache.qpid.amqp_1_0.client;
 
+import org.apache.qpid.amqp_1_0.type.AmqpErrorException;
 import org.apache.qpid.amqp_1_0.type.Section;
 import org.apache.qpid.amqp_1_0.type.UnsignedInteger;
 import org.apache.qpid.amqp_1_0.type.UnsignedLong;
@@ -278,6 +279,10 @@ public class Respond extends Util
             e.printStackTrace();  //TODO.
         }
         catch (Sender.SenderCreationException e)
+        {
+            e.printStackTrace();  //TODO.
+        }
+        catch (AmqpErrorException e)
         {
             e.printStackTrace();  //TODO.
         }

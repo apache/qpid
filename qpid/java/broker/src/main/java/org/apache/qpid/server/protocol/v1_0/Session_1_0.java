@@ -24,6 +24,7 @@ import org.apache.qpid.amqp_1_0.transport.LinkEndpoint;
 import org.apache.qpid.amqp_1_0.transport.ReceivingLinkEndpoint;
 import org.apache.qpid.amqp_1_0.transport.SendingLinkEndpoint;
 import org.apache.qpid.amqp_1_0.transport.SessionEventListener;
+import org.apache.qpid.amqp_1_0.type.AmqpErrorException;
 import org.apache.qpid.amqp_1_0.type.Binary;
 import org.apache.qpid.amqp_1_0.type.LifetimePolicy;
 import org.apache.qpid.amqp_1_0.type.Symbol;
@@ -130,22 +131,31 @@ public class Session_1_0 implements SessionEventListener
                 if(destination != null)
                 {
                     final SendingLinkEndpoint sendingLinkEndpoint = (SendingLinkEndpoint) endpoint;
-                    final SendingLink_1_0 sendingLink = new SendingLink_1_0(new SendingLinkAttachment(this, sendingLinkEndpoint),
-                                                                            _vhost,
-                                                                            (SendingDestination) destination
-                    );
-                    sendingLinkEndpoint.setLinkEventListener(sendingLink);
-                    link = sendingLink;
-                    if(TerminusDurability.UNSETTLED_STATE.equals(source.getDurable()))
+                    try
                     {
-                        linkRegistry.registerSendingLink(endpoint.getName(), sendingLink);
-                        sendingLink.setCloseAction(new Runnable() {
+                        final SendingLink_1_0 sendingLink = new SendingLink_1_0(new SendingLinkAttachment(this, sendingLinkEndpoint),
+                                                                                _vhost,
+                                                                                (SendingDestination) destination
+                        );
+                        sendingLinkEndpoint.setLinkEventListener(sendingLink);
+                        link = sendingLink;
+                        if(TerminusDurability.UNSETTLED_STATE.equals(source.getDurable()))
+                        {
+                            linkRegistry.registerSendingLink(endpoint.getName(), sendingLink);
+                            sendingLink.setCloseAction(new Runnable() {
 
-                            public void run()
-                            {
-                                linkRegistry.unregisterSendingLink(endpoint.getName());
-                            }
-                        });
+                                public void run()
+                                {
+                                    linkRegistry.unregisterSendingLink(endpoint.getName());
+                                }
+                            });
+                        }
+                    }
+                    catch(AmqpErrorException e)
+                    {
+                        destination = null;
+                        sendingLinkEndpoint.setSource(null);
+                        error = e.getError();
                     }
                 }
             }

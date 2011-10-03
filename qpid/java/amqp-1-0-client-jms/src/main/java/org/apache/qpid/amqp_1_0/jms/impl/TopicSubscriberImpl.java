@@ -21,6 +21,7 @@ package org.apache.qpid.amqp_1_0.jms.impl;
 import org.apache.qpid.amqp_1_0.client.Receiver;
 import org.apache.qpid.amqp_1_0.jms.Topic;
 import org.apache.qpid.amqp_1_0.jms.TopicSubscriber;
+import org.apache.qpid.amqp_1_0.type.AmqpErrorException;
 
 import javax.jms.*;
 
@@ -42,9 +43,16 @@ public class TopicSubscriberImpl extends MessageConsumerImpl implements TopicSub
     }
 
 
-    protected Receiver createClientReceiver() throws javax.jms.IllegalStateException
+    protected Receiver createClientReceiver() throws JMSException
     {
-        return getSession().getClientSession().createCopyingReceiver(getDestination().getAddress());
+        try
+        {
+            return getSession().getClientSession().createCopyingReceiver(getDestination().getAddress());
+        }
+        catch (AmqpErrorException e)
+        {
+            throw new JMSException(e.getMessage(), e.getError().getCondition().toString());
+        }
     }
 
 }

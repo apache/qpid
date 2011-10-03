@@ -26,10 +26,7 @@ import org.apache.qpid.amqp_1_0.messaging.SectionEncoder;
 import org.apache.qpid.amqp_1_0.messaging.SectionEncoderImpl;
 import org.apache.qpid.amqp_1_0.transport.SendingLinkEndpoint;
 import org.apache.qpid.amqp_1_0.transport.SessionEndpoint;
-import org.apache.qpid.amqp_1_0.type.Binary;
-import org.apache.qpid.amqp_1_0.type.DistributionMode;
-import org.apache.qpid.amqp_1_0.type.Outcome;
-import org.apache.qpid.amqp_1_0.type.Symbol;
+import org.apache.qpid.amqp_1_0.type.*;
 import org.apache.qpid.amqp_1_0.type.messaging.Filter;
 import org.apache.qpid.amqp_1_0.type.messaging.Source;
 import org.apache.qpid.amqp_1_0.type.messaging.StdDistMode;
@@ -104,73 +101,79 @@ public class Session
     }
 
 
-    public Receiver createReceiver(final String sourceAddr)
+    public Receiver createReceiver(final String sourceAddr) throws AmqpErrorException
     {
         return createReceiver(sourceAddr, null, AcknowledgeMode.ALO);
     }
 
 
-    public Receiver createReceiver(final String queue, final AcknowledgeMode mode)
+    public Receiver createReceiver(final String queue, final AcknowledgeMode mode) throws AmqpErrorException
     {
         return createReceiver(queue, null, mode);
     }
 
     public Receiver createReceiver(final String queue, final AcknowledgeMode mode, String linkName)
+            throws AmqpErrorException
     {
         return createReceiver(queue, null, mode, linkName);
     }
 
     public Receiver createReceiver(final String queue, final AcknowledgeMode mode, String linkName, boolean isDurable)
+            throws AmqpErrorException
     {
         return createReceiver(queue, null, mode, linkName, isDurable);
     }
 
     public Receiver createReceiver(final String queue, final AcknowledgeMode mode, String linkName, boolean isDurable,
                                    Map<Symbol, Filter> filters, Map<Binary, Outcome> unsettled)
+            throws AmqpErrorException
     {
         return createReceiver(queue, null, mode, linkName, isDurable, filters, unsettled);
     }
 
 
     public Receiver createReceiver(final String queue, final AcknowledgeMode mode, String linkName,
-                                   boolean isDurable, Map<Binary, Outcome> unsettled)
+                                   boolean isDurable, Map<Binary, Outcome> unsettled) throws AmqpErrorException
     {
         return createReceiver(queue, null, mode, linkName, isDurable, unsettled);
     }
 
 
     private synchronized Receiver createReceiver(final String sourceAddr, DistributionMode mode)
+            throws AmqpErrorException
     {
         return createReceiver(sourceAddr, mode, AcknowledgeMode.ALO);
     }
 
     private synchronized Receiver createReceiver(final String sourceAddr, DistributionMode mode, String linkName)
+            throws AmqpErrorException
     {
         return createReceiver(sourceAddr, mode, AcknowledgeMode.ALO, linkName);
     }
 
 
     private synchronized Receiver createReceiver(final String sourceAddr, DistributionMode mode,
-                                            final AcknowledgeMode ackMode)
+                                            final AcknowledgeMode ackMode) throws AmqpErrorException
     {
         return createReceiver(sourceAddr, mode, ackMode, null);
     }
 
     private synchronized Receiver createReceiver(final String sourceAddr, DistributionMode mode,
-                                            final AcknowledgeMode ackMode, String linkName)
+                                            final AcknowledgeMode ackMode, String linkName) throws AmqpErrorException
     {
         return createReceiver(sourceAddr,mode, ackMode, linkName, false);
     }
 
     private synchronized Receiver createReceiver(final String sourceAddr, DistributionMode mode,
                                             final AcknowledgeMode ackMode, String linkName, boolean isDurable)
+            throws AmqpErrorException
     {
         return createReceiver(sourceAddr, mode, ackMode, linkName, isDurable, null);
     }
 
     private synchronized Receiver createReceiver(final String sourceAddr, DistributionMode mode,
                                             final AcknowledgeMode ackMode, String linkName, boolean isDurable,
-                                            Map<Binary, Outcome> unsettled)
+                                            Map<Binary, Outcome> unsettled) throws AmqpErrorException
     {
         return createReceiver(sourceAddr,mode,ackMode, linkName, isDurable, null, unsettled);
     }
@@ -178,6 +181,7 @@ public class Session
     private synchronized Receiver createReceiver(final String sourceAddr, DistributionMode mode,
                                             final AcknowledgeMode ackMode, String linkName, boolean isDurable,
                                             Map<Symbol, Filter> filters, Map<Binary, Outcome> unsettled)
+            throws AmqpErrorException
     {
 
         final Target target = new Target();
@@ -200,17 +204,17 @@ public class Session
 
     }
 
-    public synchronized Receiver createCopyingReceiver(final String sourceAddr)
+    public synchronized Receiver createCopyingReceiver(final String sourceAddr) throws AmqpErrorException
     {
         return createReceiver(sourceAddr, StdDistMode.COPY);
     }
 
-    public synchronized Receiver createMovingReceiver(final String sourceAddr)
+    public synchronized Receiver createMovingReceiver(final String sourceAddr) throws AmqpErrorException
     {
         return createReceiver(sourceAddr, StdDistMode.MOVE);
     }
 
-    public Receiver createTemporaryQueueReceiver()
+    public Receiver createTemporaryQueueReceiver() throws AmqpErrorException
     {
         Source source = new Source();
         source.setDynamic(true);

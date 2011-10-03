@@ -1,9 +1,6 @@
 package org.apache.qpid.amqp_1_0.client;
 
-import org.apache.qpid.amqp_1_0.type.Binary;
-import org.apache.qpid.amqp_1_0.type.Outcome;
-import org.apache.qpid.amqp_1_0.type.Section;
-import org.apache.qpid.amqp_1_0.type.UnsignedInteger;
+import org.apache.qpid.amqp_1_0.type.*;
 import org.apache.qpid.amqp_1_0.type.messaging.*;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Options;
@@ -313,6 +310,10 @@ public class Filereceiver extends Util
             e.printStackTrace();  //TODO.
         }
         catch (IOException e)
+        {
+            e.printStackTrace();  //TODO.
+        }
+        catch (AmqpErrorException e)
         {
             e.printStackTrace();  //TODO.
         }

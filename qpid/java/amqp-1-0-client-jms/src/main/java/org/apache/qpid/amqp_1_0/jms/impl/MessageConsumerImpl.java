@@ -26,13 +26,12 @@ import org.apache.qpid.amqp_1_0.jms.QueueReceiver;
 import org.apache.qpid.amqp_1_0.jms.Queue;
 import org.apache.qpid.amqp_1_0.jms.Topic;
 import org.apache.qpid.amqp_1_0.jms.TopicSubscriber;
-import org.apache.qpid.amqp_1_0.type.Binary;
-import org.apache.qpid.amqp_1_0.type.Outcome;
-import org.apache.qpid.amqp_1_0.type.Symbol;
-import org.apache.qpid.amqp_1_0.type.UnsignedInteger;
+import org.apache.qpid.amqp_1_0.type.*;
 import org.apache.qpid.amqp_1_0.type.messaging.Filter;
 import org.apache.qpid.amqp_1_0.type.messaging.JMSSelectorFilter;
 import org.apache.qpid.amqp_1_0.type.messaging.NoLocalFilter;
+import org.apache.qpid.amqp_1_0.type.transport.*;
+import org.apache.qpid.amqp_1_0.type.transport.Error;
 
 import javax.jms.*;
 import javax.jms.IllegalStateException;
@@ -79,18 +78,37 @@ public class MessageConsumerImpl implements MessageConsumer, QueueReceiver, Topi
         }
         else
         {
-            throw new InvalidDestinationException("Invalid destination class");
+            throw new InvalidDestinationException("Invalid destination class " + destination.getClass().getName());
         }
         _session = session;
 
         _receiver = createClientReceiver();
 
+
     }
 
-    protected Receiver createClientReceiver() throws IllegalStateException
+    protected Receiver createClientReceiver() throws JMSException
     {
-        return _session.getClientSession(). createReceiver(_destination.getAddress(), AcknowledgeMode.ALO,
-                                                           null, false, getFilters(), null);
+        try
+        {
+            return _session.getClientSession(). createReceiver(_destination.getAddress(), AcknowledgeMode.ALO,
+                                                               null, false, getFilters(), null);
+        }
+        catch (AmqpErrorException e)
+        {
+            Error error = e.getError();
+            if(AmqpError.INVALID_FIELD.equals(error.getCondition())
+                &&  error.getInfo() != null && Symbol.valueOf("filter").equals(error.getInfo().get(Symbol.valueOf
+                    ("field"))))
+            {
+                throw new InvalidSelectorException(e.getMessage());
+            }
+            else
+            {
+                throw new JMSException(e.getMessage(), error.getCondition().getValue().toString());
+
+            }
+        }
     }
 
     private Map<Symbol, Filter> getFilters()

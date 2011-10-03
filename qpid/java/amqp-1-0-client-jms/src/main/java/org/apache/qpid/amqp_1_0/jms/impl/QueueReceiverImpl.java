@@ -21,6 +21,7 @@ package org.apache.qpid.amqp_1_0.jms.impl;
 import org.apache.qpid.amqp_1_0.client.Receiver;
 import org.apache.qpid.amqp_1_0.jms.Queue;
 import org.apache.qpid.amqp_1_0.jms.QueueReceiver;
+import org.apache.qpid.amqp_1_0.type.AmqpErrorException;
 
 import javax.jms.*;
 
@@ -36,9 +37,16 @@ public class QueueReceiverImpl extends MessageConsumerImpl implements QueueRecei
         setQueueConsumer(true);
     }
 
-    protected Receiver createClientReceiver() throws javax.jms.IllegalStateException
+    protected Receiver createClientReceiver() throws JMSException
     {
-        return getSession().getClientSession().createMovingReceiver(getDestination().getAddress());
+        try
+        {
+            return getSession().getClientSession().createMovingReceiver(getDestination().getAddress());
+        }
+        catch (AmqpErrorException e)
+        {
+            throw new JMSException(e.getMessage(), e.getError().getCondition().toString());
+        }
     }
 
     public Queue getQueue() throws JMSException

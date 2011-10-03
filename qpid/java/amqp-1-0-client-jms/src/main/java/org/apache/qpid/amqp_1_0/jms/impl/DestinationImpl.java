@@ -20,10 +20,13 @@
 package org.apache.qpid.amqp_1_0.jms.impl;
 
 import org.apache.qpid.amqp_1_0.jms.Destination;
+import org.apache.qpid.amqp_1_0.jms.Queue;
+import org.apache.qpid.amqp_1_0.jms.Topic;
 
+import javax.jms.JMSException;
 import java.util.WeakHashMap;
 
-public class DestinationImpl implements Destination
+public class DestinationImpl implements Destination, Queue, Topic
 {
     private static final WeakHashMap<String, DestinationImpl> DESTINATION_CACHE =
             new WeakHashMap<String, DestinationImpl>();
@@ -68,5 +71,15 @@ public class DestinationImpl implements Destination
             DESTINATION_CACHE.put(address, destination);
         }
         return destination;
+    }
+
+    public String getQueueName() throws JMSException
+    {
+        return getAddress();
+    }
+
+    public String getTopicName() throws JMSException
+    {
+        return getAddress();
     }
 }

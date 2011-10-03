@@ -469,7 +469,21 @@ public class BytesMessageImpl extends MessageImpl implements BytesMessage
 
     public void reset() throws JMSException
     {
-        //TODO
+        if(_bytesOut != null)
+        {
+            byte[] data = _bytesOut.toByteArray();
+            _dataIn = new Data(new Binary(data));
+            _dataAsInput = new DataInputStream(new ByteArrayInputStream(data));
+            _dataAsOutput = null;
+            _bytesOut = null;
+        }
+        else
+        {
+
+            final Binary dataBuffer = _dataIn.getValue();
+            _dataAsInput = new DataInputStream(new ByteArrayInputStream(dataBuffer.getArray(),dataBuffer.getArrayOffset(),dataBuffer.getLength()));
+
+        }
     }
 
     private JMSException handleInputException(final IOException e)
@@ -494,6 +508,15 @@ public class BytesMessageImpl extends MessageImpl implements BytesMessage
         ex.initCause(e);
         ex.setLinkedException(e);
         return ex;
+    }
+
+    @Override
+    public void clearBody() throws JMSException
+    {
+        super.clearBody();
+        _bytesOut = new ByteArrayOutputStream();
+        _dataAsOutput = new DataOutputStream(_bytesOut);
+        _dataAsInput = null;
     }
 
     @Override Collection<Section> getSections()

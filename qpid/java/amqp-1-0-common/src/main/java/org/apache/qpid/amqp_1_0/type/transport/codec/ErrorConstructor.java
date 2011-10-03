@@ -26,6 +26,7 @@ package org.apache.qpid.amqp_1_0.type.transport.codec;
 import org.apache.qpid.amqp_1_0.codec.DescribedTypeConstructor;
 import org.apache.qpid.amqp_1_0.codec.DescribedTypeConstructorRegistry;
 import org.apache.qpid.amqp_1_0.type.*;
+import org.apache.qpid.amqp_1_0.type.transaction.TransactionErrors;
 import org.apache.qpid.amqp_1_0.type.transport.*;
 
 
@@ -65,17 +66,32 @@ public class ErrorConstructor extends DescribedTypeConstructor<org.apache.qpid.a
 
                 if(val != null)
                 {
-
-                    try
+                    if(val instanceof ErrorCondition)
                     {
                         obj.setCondition( (ErrorCondition) val );
                     }
-                    catch(ClassCastException e)
+                    else if(val instanceof Symbol)
                     {
-
-                        // TODO Error
+                        ErrorCondition condition = null;
+                        condition = AmqpError.valueOf(val);
+                        if(condition == null)
+                        {
+                            condition = ConnectionError.valueOf(val);
+                            if(condition == null)
+                            {
+                                condition = SessionError.valueOf(val);
+                                if(condition == null)
+                                {
+                                    condition = LinkError.valueOf(val);
+                                    if(condition == null)
+                                    {
+                                        condition = TransactionErrors.valueOf(val);
+                                    }
+                                }
+                            }
+                        }
+                        obj.setCondition(condition);
                     }
-
                 }
 
 
