@@ -258,6 +258,7 @@ public class Receiver implements DeliveryStateHandler
                     m = new Message(sections);
                     m.setDeliveryTag(deliveryTag);
                     m.setResume(resume);
+                    m.setReceiver(this);
                     break;
                 }
             }

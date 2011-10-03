@@ -24,6 +24,9 @@ import org.apache.qpid.amqp_1_0.type.Binary;
 import org.apache.qpid.amqp_1_0.type.DeliveryState;
 import org.apache.qpid.amqp_1_0.type.Section;
 import org.apache.qpid.amqp_1_0.type.messaging.AmqpValue;
+import org.apache.qpid.amqp_1_0.type.messaging.ApplicationProperties;
+import org.apache.qpid.amqp_1_0.type.messaging.Header;
+import org.apache.qpid.amqp_1_0.type.messaging.Properties;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -37,6 +40,7 @@ public class Message
     private Boolean _resume;
     private boolean _settled;
     private DeliveryState _deliveryState;
+    private Receiver _receiver;
 
 
     public Message()
@@ -74,6 +78,34 @@ public class Message
         return Collections.unmodifiableList(_payload);
     }
 
+    private <T extends Section> T getSection(Class<T> clazz)
+    {
+        for(Section s : _payload)
+        {
+            if(clazz.isAssignableFrom(s.getClass()))
+            {
+                return (T) s;
+            }
+        }
+        return null;
+    }
+
+    public ApplicationProperties getApplicationProperties()
+    {
+        return getSection(ApplicationProperties.class);
+    }
+
+    public Properties getProperties()
+    {
+        return getSection(Properties.class);
+    }
+
+    public Header getHeader()
+    {
+        return getSection(Header.class);
+    }
+
+
     public void setResume(final Boolean resume)
     {
         _resume = resume;
@@ -102,5 +134,15 @@ public class Message
     public boolean getSettled()
     {
         return _settled;
+    }
+
+    public void setReceiver(final Receiver receiver)
+    {
+        _receiver = receiver;
+    }
+
+    public Receiver getReceiver()
+    {
+        return _receiver;
     }
 }

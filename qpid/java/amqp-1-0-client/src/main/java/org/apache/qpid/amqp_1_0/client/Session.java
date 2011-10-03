@@ -26,6 +26,7 @@ import org.apache.qpid.amqp_1_0.messaging.SectionEncoder;
 import org.apache.qpid.amqp_1_0.messaging.SectionEncoderImpl;
 import org.apache.qpid.amqp_1_0.transport.SendingLinkEndpoint;
 import org.apache.qpid.amqp_1_0.transport.SessionEndpoint;
+import org.apache.qpid.amqp_1_0.transport.SessionState;
 import org.apache.qpid.amqp_1_0.type.*;
 import org.apache.qpid.amqp_1_0.type.messaging.Filter;
 import org.apache.qpid.amqp_1_0.type.messaging.Source;
@@ -319,5 +320,29 @@ public class Session
         return new TransactionController(this, tcLinkEndpoint);
     }
 
+
+    public Message receive()
+    {
+        while(getEndpoint().getState() == SessionState.ACTIVE)
+        {
+            synchronized (getEndpoint().getLock())
+            {
+                try
+                {
+                    for(Receiver r : _receivers)
+                    {
+                        Message m = r.receive(false);
+                        if(m != null)
+                            return m;
+                    }
+                    wait();
+                }
+                catch (InterruptedException e)
+                {
+                }
+            }
+        }
+        return null;
+    }
 
 }
