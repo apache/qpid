@@ -33,7 +33,7 @@
 #include "qpid/broker/QueueRegistry.h"
 #include "qpid/broker/QueueFlowLimit.h"
 #include "qpid/broker/ThresholdAlerts.h"
-#include "qpid/broker/FifoAllocator.h"
+#include "qpid/broker/FifoDistributor.h"
 #include "qpid/broker/MessageGroupManager.h"
 
 #include "qpid/StringUtils.h"
@@ -115,7 +115,7 @@ Queue::Queue(const string& _name, bool _autodelete,
     deleted(false),
     barrier(*this),
     autoDeleteTimeout(0),
-    allocator(new FifoAllocator( *messages ))
+    allocator(new FifoDistributor( *messages ))
 {
     if (parent != 0 && broker != 0) {
         ManagementAgent* agent = broker->getManagementAgent();
@@ -617,7 +617,7 @@ namespace {
  * even if the queue is ordered by priority.
  *
  * An optional filter can be supplied that will be applied against each message.  The
- * message is purged only if the filter matches.  See MessageAllocator for more detail.
+ * message is purged only if the filter matches.  See MessageDistributor for more detail.
  */
 uint32_t Queue::purge(const uint32_t purge_request, boost::shared_ptr<Exchange> dest,
                       const qpid::types::Variant::Map *filter)
@@ -990,20 +990,20 @@ void Queue::configureImpl(const FieldTable& _settings)
     if (lvqKey.size()) {
         QPID_LOG(debug, "Configured queue " <<  getName() << " as Last Value Queue with key " << lvqKey);
         messages = std::auto_ptr<Messages>(new MessageMap(lvqKey));
-        allocator = boost::shared_ptr<MessageAllocator>(new FifoAllocator( *messages ));
+        allocator = boost::shared_ptr<MessageDistributor>(new FifoDistributor( *messages ));
     } else if (_settings.get(qpidLastValueQueueNoBrowse)) {
         QPID_LOG(debug, "Configured queue " <<  getName() << " as Legacy Last Value Queue with 'no-browse' on");
         messages = LegacyLVQ::updateOrReplace(messages, qpidVQMatchProperty, true, broker);
-        allocator = boost::shared_ptr<MessageAllocator>(new FifoAllocator( *messages ));
+        allocator = boost::shared_ptr<MessageDistributor>(new FifoDistributor( *messages ));
     } else if (_settings.get(qpidLastValueQueue)) {
         QPID_LOG(debug, "Configured queue " <<  getName() << " as Legacy Last Value Queue");
         messages = LegacyLVQ::updateOrReplace(messages, qpidVQMatchProperty, false, broker);
-        allocator = boost::shared_ptr<MessageAllocator>(new FifoAllocator( *messages ));
+        allocator = boost::shared_ptr<MessageDistributor>(new FifoDistributor( *messages ));
     } else {
         std::auto_ptr<Messages> m = Fairshare::create(_settings);
         if (m.get()) {
             messages = m;
-            allocator = boost::shared_ptr<MessageAllocator>(new FifoAllocator( *messages ));
+            allocator = boost::shared_ptr<MessageDistributor>(new FifoDistributor( *messages ));
             QPID_LOG(debug, "Configured queue " <<  getName() << " as priority queue.");
         } else { // default (FIFO) queue type
             // override default message allocator if message groups configured.

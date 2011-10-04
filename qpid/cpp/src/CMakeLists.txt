@@ -975,7 +975,7 @@ set (qpidbroker_SOURCES
      qpid/broker/Queue.cpp
      qpid/broker/QueueCleaner.cpp
      qpid/broker/QueueListeners.cpp
-     qpid/broker/FifoAllocator.cpp
+     qpid/broker/FifoDistributor.cpp
      qpid/broker/MessageGroupManager.cpp
      qpid/broker/PersistableMessage.cpp
      qpid/broker/Bridge.cpp

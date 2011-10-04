@@ -1,5 +1,5 @@
-#ifndef _broker_MessageAllocator_h
-#define _broker_MessageAllocator_h
+#ifndef _broker_MessageDistributor_h
+#define _broker_MessageDistributor_h
 
 /*
  *
@@ -34,10 +34,10 @@ namespace broker {
 
 struct QueuedMessage;
 
-class MessageAllocator
+class MessageDistributor
 {
  public:
-    virtual ~MessageAllocator() {};
+    virtual ~MessageDistributor() {};
 
     /** Locking Note: all methods assume the caller is holding the Queue::messageLock
      * during the method call.

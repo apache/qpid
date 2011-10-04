@@ -25,16 +25,16 @@
 /* for managing message grouping on Queues */
 
 #include "qpid/broker/StatefulQueueObserver.h"
-#include "qpid/broker/MessageAllocator.h"
+#include "qpid/broker/MessageDistributor.h"
 
 
 namespace qpid {
 namespace broker {
 
 class QueueObserver;
-class MessageAllocator;
+class MessageDistributor;
 
-class MessageGroupManager : public StatefulQueueObserver, public MessageAllocator
+class MessageGroupManager : public StatefulQueueObserver, public MessageDistributor
 {
     const std::string groupIdHeader;    // msg header holding group identifier
     const unsigned int timestamp;       // mark messages with timestamp if set
@@ -108,7 +108,7 @@ class MessageGroupManager : public StatefulQueueObserver, public MessageAllocato
     void getState(qpid::framing::FieldTable& state ) const;
     void setState(const qpid::framing::FieldTable&);
 
-    // MessageAllocator iface
+    // MessageDistributor iface
     bool nextConsumableMessage(Consumer::shared_ptr& c, QueuedMessage& next);
     bool allocate(const std::string& c, const QueuedMessage& qm);
     bool nextBrowsableMessage(Consumer::shared_ptr& c, QueuedMessage& next);

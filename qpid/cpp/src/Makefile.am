@@ -671,9 +671,9 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/TxPublish.h \
   qpid/broker/Vhost.cpp \
   qpid/broker/Vhost.h \
-  qpid/broker/MessageAllocator.h \
-  qpid/broker/FifoAllocator.h \
-  qpid/broker/FifoAllocator.cpp \
+  qpid/broker/MessageDistributor.h \
+  qpid/broker/FifoDistributor.h \
+  qpid/broker/FifoDistributor.cpp \
   qpid/broker/MessageGroupManager.cpp \
   qpid/broker/MessageGroupManager.h \
   qpid/management/ManagementAgent.cpp \

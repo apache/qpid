@@ -1,5 +1,5 @@
-#ifndef _broker_FifoAllocator_h
-#define _broker_FifoAllocator_h
+#ifndef _broker_FifoDistributor_h
+#define _broker_FifoDistributor_h
 
 /*
  *
@@ -22,27 +22,27 @@
  *
  */
 
-/** Simple MessageAllocator for FIFO Queues - the HEAD message is always the next
+/** Simple MessageDistributor for FIFO Queues - the HEAD message is always the next
  * available message for consumption.
  */
 
-#include "qpid/broker/MessageAllocator.h"
+#include "qpid/broker/MessageDistributor.h"
 
 namespace qpid {
 namespace broker {
 
 class Messages;
 
-class FifoAllocator : public MessageAllocator
+class FifoDistributor : public MessageDistributor
 {
  public:
-    FifoAllocator(Messages& container);
+    FifoDistributor(Messages& container);
 
     /** Locking Note: all methods assume the caller is holding the Queue::messageLock
      * during the method call.
      */
 
-    /** MessageAllocator interface */
+    /** MessageDistributor interface */
 
     bool nextConsumableMessage( Consumer::shared_ptr& consumer, QueuedMessage& next );
     bool allocate(const std::string& consumer, const QueuedMessage& target);

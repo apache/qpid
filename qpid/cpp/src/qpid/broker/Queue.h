@@ -59,7 +59,7 @@ class MessageStore;
 class QueueEvents;
 class QueueRegistry;
 class TransactionContext;
-class MessageAllocator;
+class MessageDistributor;
 
 /**
  * The brokers representation of an amqp queue. Messages are
@@ -129,7 +129,7 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     UsageBarrier barrier;
     int autoDeleteTimeout;
     boost::intrusive_ptr<qpid::sys::TimerTask> autoDeleteTask;
-    boost::shared_ptr<MessageAllocator> allocator;
+    boost::shared_ptr<MessageDistributor> allocator;
 
     void push(boost::intrusive_ptr<Message>& msg, bool isRecovery=false);
     void setPolicy(std::auto_ptr<QueuePolicy> policy);

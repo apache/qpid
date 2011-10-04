@@ -21,14 +21,14 @@
 
 
 #include "qpid/broker/Queue.h"
-#include "qpid/broker/FifoAllocator.h"
+#include "qpid/broker/FifoDistributor.h"
 
 using namespace qpid::broker;
 
-FifoAllocator::FifoAllocator(Messages& container)
+FifoDistributor::FifoDistributor(Messages& container)
     : messages(container) {}
 
-bool FifoAllocator::nextConsumableMessage( Consumer::shared_ptr&, QueuedMessage& next )
+bool FifoDistributor::nextConsumableMessage( Consumer::shared_ptr&, QueuedMessage& next )
 {
     if (!messages.empty()) {
         next = messages.front();    // by default, consume oldest msg
@@ -37,21 +37,21 @@ bool FifoAllocator::nextConsumableMessage( Consumer::shared_ptr&, QueuedMessage&
     return false;
 }
 
-bool FifoAllocator::allocate(const std::string&, const QueuedMessage& )
+bool FifoDistributor::allocate(const std::string&, const QueuedMessage& )
 {
     // by default, all messages present on the queue may be allocated as they have yet to
     // be acquired.
     return true;
 }
 
-bool FifoAllocator::nextBrowsableMessage( Consumer::shared_ptr& c, QueuedMessage& next )
+bool FifoDistributor::nextBrowsableMessage( Consumer::shared_ptr& c, QueuedMessage& next )
 {
     if (!messages.empty() && messages.next(c->position, next))
         return true;
     return false;
 }
 
-void FifoAllocator::query(qpid::types::Variant::Map&) const
+void FifoDistributor::query(qpid::types::Variant::Map&) const
 {
     // nothing to see here....
 }
