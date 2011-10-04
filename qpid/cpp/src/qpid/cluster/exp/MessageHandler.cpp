@@ -88,7 +88,7 @@ void MessageHandler::enqueue(const std::string& q, uint16_t channel) {
     // We only need to build message from other brokers, our own messages
     // are held by the MessageHolder.
     if (sender() != self()) {
-        boost::shared_ptr<Queue> queue = findQueue(q, "Cluster enqueue failed");
+        boost::shared_ptr<Queue> queue = findQueue(q, "Cluster enqueue");
         messageBuilders.announce(sender(), channel, queue);
     }
 }
@@ -102,7 +102,7 @@ void MessageHandler::acquire(const std::string& q, uint32_t position) {
     // Note acquires from other members. My own acquires were executed in
     // the connection thread
     if (sender() != self()) {
-        boost::shared_ptr<Queue> queue = findQueue(q, "Cluster acquire failed");
+        boost::shared_ptr<Queue> queue = findQueue(q, "Cluster acquire");
         QueuedMessage qm;
         BrokerContext::ScopedSuppressReplication ssr;
         if (!queue->acquireMessageAt(position, qm))
@@ -128,7 +128,7 @@ void MessageHandler::dequeue(const std::string& q, uint32_t position) {
 
     // My own dequeues were processed in the connection thread before multicasting.
     if (sender() != self()) {
-        boost::shared_ptr<Queue> queue = findQueue(q, "Cluster dequeue failed");
+        boost::shared_ptr<Queue> queue = findQueue(q, "Cluster dequeue");
         QueuedMessage qm = QueueContext::get(*queue)->dequeue(position);
         BrokerContext::ScopedSuppressReplication ssr;
         if (qm.queue) queue->dequeue(0, qm);
@@ -137,7 +137,7 @@ void MessageHandler::dequeue(const std::string& q, uint32_t position) {
 
 void MessageHandler::requeue(const std::string& q, uint32_t position, bool redelivered) {
     if (sender() != self()) {
-        boost::shared_ptr<Queue> queue = findQueue(q, "Cluster requeue failed");
+        boost::shared_ptr<Queue> queue = findQueue(q, "Cluster requeue");
         QueueContext::get(*queue)->requeue(position, redelivered);
     }
 }
