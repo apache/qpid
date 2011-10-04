@@ -128,6 +128,8 @@ cluster2_la_SOURCES =				\
 	qpid/cluster/exp/HandlerBase.h		\
 	qpid/cluster/exp/MessageBuilders.cpp	\
 	qpid/cluster/exp/MessageBuilders.h	\
+	qpid/cluster/exp/MessageHolder.cpp	\
+	qpid/cluster/exp/MessageHolder.h	\
 	qpid/cluster/exp/MessageHandler.cpp	\
 	qpid/cluster/exp/MessageHandler.h	\
 	qpid/cluster/exp/Multicaster.cpp	\

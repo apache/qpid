@@ -23,6 +23,7 @@
 #include "BrokerContext.h"
 #include "QueueContext.h"
 #include "Multicaster.h"
+#include "MessageHolder.h"
 #include "hash.h"
 #include "qpid/framing/ClusterMessageEnqueueBody.h"
 #include "qpid/framing/ClusterMessageAcquireBody.h"
@@ -85,7 +86,6 @@ BrokerContext::BrokerContext(Core& c) : core(c) {}
 
 BrokerContext::~BrokerContext() {}
 
-
 namespace {
 void sendFrame(Multicaster& mcaster, const AMQFrame& frame, uint16_t channel) {
     AMQFrame copy(frame);
@@ -96,15 +96,15 @@ void sendFrame(Multicaster& mcaster, const AMQFrame& frame, uint16_t channel) {
 
 bool BrokerContext::enqueue(Queue& queue, const boost::intrusive_ptr<Message>& msg)
 {
+    // FIXME aconway 2011-10-03: pass shared ptr on broker::Cluster interface.
     if (!tssReplicate) return true;
-    // FIXME aconway 2011-09-29: for async completion the
-    // UniqueIds::release must move to self-delivery so we can
-    // identify the same message.
-    UniqueIds<uint16_t>::Scope s(channels);
-    uint16_t channel = s.id;
-    mcaster(queue).mcast(ClusterMessageEnqueueBody(pv, queue.getName(), channel));
+    Group& group = core.getGroup(hashof(queue));
+    MessageHolder::Channel channel =
+        group.getMessageHolder().sending(msg, queue.shared_from_this());
+    group.getMulticaster().mcast(ClusterMessageEnqueueBody(pv, queue.getName(), channel));
     std::for_each(msg->getFrames().begin(), msg->getFrames().end(),
                   boost::bind(&sendFrame, boost::ref(mcaster(queue)), _1, channel));
+    msg->getIngressCompletion().startCompleter(); // Async completion
     return false; // Strict order, wait for CPG self-delivery to enqueue.
 }
 

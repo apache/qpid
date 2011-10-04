@@ -22,7 +22,6 @@
  *
  */
 
-#include "UniqueIds.h"
 #include "qpid/broker/Cluster.h"
 #include "qpid/sys/AtomicValue.h"
 
@@ -84,9 +83,9 @@ class BrokerContext : public broker::Cluster
     Multicaster& mcaster(const broker::QueuedMessage& qm);
     Multicaster& mcaster(const broker::Queue& q);
     Multicaster& mcaster(const std::string&);
+    Multicaster& mcaster(const uint32_t);
 
     Core& core;
-    UniqueIds<uint16_t> channels;
 };
 }} // namespace qpid::cluster
 

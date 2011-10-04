@@ -37,6 +37,8 @@ class Cpg;
 class Core;
 class EventHandler;
 class Multicaster;
+class MessageBuilders;
+class MessageHolder;
 
 /**
  * A CPG instance with an event handler and a multi-caster, 
@@ -50,13 +52,18 @@ class Group : public RefCounted
 
     EventHandler& getEventHandler() { return *eventHandler; }
     Multicaster& getMulticaster() { return *multicaster; }
+    MessageHolder& getMessageHolder() { return *messageHolder; }
+    MessageBuilders& getMessageBuilders() { return *messageBuilders; }
 
     void mcast(const framing::AMQBody&);
     void mcast(const framing::AMQFrame&);
   private:
     std::auto_ptr<EventHandler> eventHandler;
     std::auto_ptr<Multicaster> multicaster;
+    std::auto_ptr<MessageHolder> messageHolder;
+    std::auto_ptr<MessageBuilders> messageBuilders;
 };
+
 }} // namespace qpid::cluster::exp
 
 #endif  /*!QPID_CLUSTER_EXP_GROUP_H*/

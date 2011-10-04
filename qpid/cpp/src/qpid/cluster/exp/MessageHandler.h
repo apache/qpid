@@ -26,6 +26,7 @@
 
 #include "HandlerBase.h"
 #include "MessageBuilders.h"
+#include "MessageHolder.h"
 #include "qpid/framing/AMQP_AllOperations.h"
 #include <boost/intrusive_ptr.hpp>
 #include <map>
@@ -42,6 +43,8 @@ namespace cluster {
 class EventHandler;
 class BrokerContext;
 class Core;
+class Group;
+class MessageHolder;
 
 // FIXME aconway 2011-06-28: doesn't follow the same Handler/Replica/Context pattern as for queue.
 // Make this consistent.
@@ -53,7 +56,7 @@ class MessageHandler : public framing::AMQP_AllOperations::ClusterMessageHandler
                        public HandlerBase
 {
   public:
-    MessageHandler(EventHandler&, Core&);
+    MessageHandler(Group&, Core&);
 
     bool handle(const framing::AMQFrame&);
 
@@ -67,8 +70,10 @@ class MessageHandler : public framing::AMQP_AllOperations::ClusterMessageHandler
 
     broker::Broker& broker;
     Core& core;
-    MessageBuilders messageBuilders;
+    MessageBuilders& messageBuilders;
+    MessageHolder& messageHolder;
 };
+
 }} // namespace qpid::cluster
 
 #endif  /*!QPID_CLUSTER_MESSAGEHANDLER_H*/

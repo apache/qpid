@@ -22,6 +22,8 @@
 #include "Core.h"
 #include "EventHandler.h"
 #include "Multicaster.h"
+#include "MessageHolder.h"
+#include "MessageBuilders.h"
 
 #include "qpid/broker/Broker.h"
 
@@ -40,7 +42,9 @@ Group::Group(Core& core) :
     multicaster(
         new Multicaster(eventHandler->getCpg(),
                         core.getBroker().getPoller(),
-                        boost::bind(&Core::fatal, &core)))
+                        boost::bind(&Core::fatal, &core))),
+    messageHolder(new MessageHolder()),
+    messageBuilders(new MessageBuilders(&core.getBroker().getStore()))
 {}
 
 Group::~Group() {}
