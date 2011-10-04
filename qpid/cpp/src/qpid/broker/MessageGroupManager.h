@@ -42,7 +42,7 @@ class MessageGroupManager : public StatefulQueueObserver, public MessageAllocato
     const std::string qName;            // name of parent queue (for logs)
 
     struct GroupState {
-        typedef std::list<framing::SequenceNumber> PositionFifo;
+        typedef std::deque<framing::SequenceNumber> PositionFifo;
 
         std::string group;  // group identifier
         std::string owner;  // consumer with outstanding acquired messages
@@ -54,13 +54,13 @@ class MessageGroupManager : public StatefulQueueObserver, public MessageAllocato
         bool owned() const {return !owner.empty();}
     };
     typedef std::map<std::string, struct GroupState> GroupMap;
-    typedef std::map<std::string, uint32_t> Consumers;  // count of owned groups
+    //typedef std::map<std::string, uint32_t> Consumers;  // count of owned groups
     typedef std::map<framing::SequenceNumber, struct GroupState *> GroupFifo;
 
     // note: update getState()/setState() when changing this object's state implementation
     GroupMap messageGroups; // index: group name
     GroupFifo freeGroups;   // ordered by oldest free msg
-    Consumers consumers;    // index: consumer name
+    //Consumers consumers;    // index: consumer name
 
     static const std::string qpidMessageGroupKey;
     static const std::string qpidMessageGroupTimestamp;
@@ -76,21 +76,17 @@ class MessageGroupManager : public StatefulQueueObserver, public MessageAllocato
     void own( GroupState& state, const std::string& owner )
     {
         state.owner = owner;
-        consumers[state.owner]++;
+        //consumers[state.owner]++;
         unFree( state );
     }
     void disown( GroupState& state )
     {
-        assert(consumers[state.owner]);
-        consumers[state.owner]--;
+        //assert(consumers[state.owner]);
+        //consumers[state.owner]--;
         state.owner.clear();
         assert(state.members.size());
-#ifdef NDEBUG
+        assert(freeGroups.find(state.members.front()) == freeGroups.end());
         freeGroups[state.members.front()] = &state;
-#else
-        bool unique = freeGroups.insert(GroupFifo::value_type(state.members.front(), &state)).second;
-        (void) unique; assert(unique);
-#endif
     }
 
  public:

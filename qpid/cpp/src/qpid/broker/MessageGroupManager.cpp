@@ -90,8 +90,6 @@ void MessageGroupManager::requeued( const QueuedMessage& qm )
 {
     // @todo KAG  avoid lookup: retrieve direct reference to group state from QueuedMessage
     // issue: const-ness??
-    // @todo KAG BUG - how to ensure requeue happens in the correct order?
-    // @todo KAG BUG - if requeue is not in correct order - what do we do?  throw?
     std::string group( getGroupId(qm) );
     GroupMap::iterator gs = messageGroups.find( group );
     assert( gs != messageGroups.end() );
@@ -117,10 +115,21 @@ void MessageGroupManager::dequeued( const QueuedMessage& qm )
     assert( gs != messageGroups.end() );
     GroupState& state( gs->second );
     assert( state.members.size() != 0 );
+    assert( state.acquired != 0 );
+    state.acquired -= 1;
 
     // likely to be at or near begin() if dequeued in order
-    {
-        GroupState::PositionFifo::iterator pos = state.members.begin();
+    bool reFreeNeeded = false;
+    if (state.members.front() == qm.position) {
+        if (!state.owned()) {
+            // will be on the freeGroups list if mgmt is dequeueing rather than a consumer!
+            // if on freelist, it is indexed by first member, which is about to be removed!
+            unFree(state);
+            reFreeNeeded = true;
+        }
+        state.members.pop_front();
+    } else {
+        GroupState::PositionFifo::iterator pos = state.members.begin() + 1;
         GroupState::PositionFifo::iterator end = state.members.end();
         while (pos != end) {
             if (*pos == qm.position) {
@@ -131,35 +140,37 @@ void MessageGroupManager::dequeued( const QueuedMessage& qm )
         }
     }
 
-    assert( state.acquired != 0 );
-    state.acquired -= 1;
     uint32_t total = state.members.size();
     if (total == 0) {
-        if (!state.owned()) {  // unlikely, but need to remove from the free list before erase
-            unFree( state );
-        }
         QPID_LOG( trace, "group queue " << qName << ": deleting group id=" << gs->first);
         messageGroups.erase( gs );
-    } else {
-        if (state.acquired == 0 && state.owned()) {
-            QPID_LOG( trace, "group queue " << qName <<
-                      ": consumer name=" << state.owner << " released group id=" << gs->first);
-            disown(state);
-        }
+    } else if (state.acquired == 0 && state.owned()) {
+        QPID_LOG( trace, "group queue " << qName <<
+                  ": consumer name=" << state.owner << " released group id=" << gs->first);
+        disown(state);
+    } else if (reFreeNeeded) {
+        disown(state);
     }
     QPID_LOG( trace, "group queue " << qName <<
               ": dequeued message from group id=" << group << " total=" << total );
 }
 
-void MessageGroupManager::consumerAdded( const Consumer& c )
+void MessageGroupManager::consumerAdded( const Consumer& /*c*/ )
 {
-    assert(consumers.find(c.getName()) == consumers.end());
-    consumers[c.getName()] = 0;     // no groups owned yet
-    QPID_LOG( trace, "group queue " << qName << ": added consumer, name=" << c.getName() );
+#if 0
+    // allow a re-subscribing consumer
+    if (consumers.find(c.getName()) == consumers.end()) {
+        consumers[c.getName()] = 0;     // no groups owned yet
+        QPID_LOG( trace, "group queue " << qName << ": added consumer, name=" << c.getName() );
+    } else {
+        QPID_LOG( trace, "group queue " << qName << ": consumer re-subscribed, name=" << c.getName() );
+    }
+#endif
 }
 
-void MessageGroupManager::consumerRemoved( const Consumer& c )
+void MessageGroupManager::consumerRemoved( const Consumer& /*c*/ )
 {
+#if 0
     const std::string& name(c.getName());
     Consumers::iterator consumer = consumers.find(name);
     assert(consumer != consumers.end());
@@ -170,14 +181,22 @@ void MessageGroupManager::consumerRemoved( const Consumer& c )
 
         GroupState& state( gs->second );
         if (state.owner == name) {
-            --count;
-            disown(state);
-            QPID_LOG( trace, "group queue " << qName <<
-                      ": consumer name=" << name << " released group id=" << gs->first);
+            if (state.acquired == 0) {
+                --count;
+                disown(state);
+                QPID_LOG( trace, "group queue " << qName <<
+                          ": consumer name=" << name << " released group id=" << gs->first);
+            }
         }
     }
-    consumers.erase( consumer );
-    QPID_LOG( trace, "group queue " << qName << ": removed consumer name=" << name );
+    if (count == 0) {
+        consumers.erase( consumer );
+        QPID_LOG( trace, "group queue " << qName << ": removed consumer name=" << name );
+    } else {
+        // don't release groups with outstanding acquired msgs - consumer may re-subscribe!
+        QPID_LOG( trace, "group queue " << qName << ": consumer name=" << name << " unsubscribed with outstanding messages.");
+    }
+#endif
 }
 
 
@@ -196,9 +215,11 @@ bool MessageGroupManager::nextConsumableMessage( Consumer::shared_ptr& c, Queued
                 return false;           // shouldn't happen - should find nextFree
         }
     } else {  // no free groups available
+#if 0
         if (consumers[c->getName()] == 0) {  // and none currently owned
             return false;       // so nothing available to consume
         }
+#endif
         if (!messages.next( c->position, next ))
             return false;
     }
@@ -356,7 +377,7 @@ void MessageGroupManager::setState(const qpid::framing::FieldTable& state)
 {
     using namespace qpid::framing;
     messageGroups.clear();
-    consumers.clear();
+    //consumers.clear();
     freeGroups.clear();
 
     framing::Array groupState(TYPE_CODE_MAP);
@@ -398,7 +419,8 @@ void MessageGroupManager::setState(const qpid::framing::FieldTable& state)
             state.members.push_back((*p)->getIntegerValue<uint32_t, 4>());
         messageGroups[state.group] = state;
         if (state.owned())
-            consumers[state.owner]++;
+            //consumers[state.owner]++;
+            ;
         else {
             assert(state.members.size());
             freeGroups[state.members.front()] = &messageGroups[state.group];

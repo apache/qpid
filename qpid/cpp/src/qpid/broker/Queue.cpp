@@ -558,7 +558,7 @@ namespace {
     MessageFilter* MessageFilter::create( const ::qpid::types::Variant::Map *filter )
     {
         using namespace qpid::types;
-        if (filter) {
+        if (filter && !filter->empty()) {
             Variant::Map::const_iterator i = filter->find(MessageFilter::typeKey);
             if (i != filter->end()) {
 

@@ -33,3 +33,4 @@ from lvq import *
 from priority import *
 from threshold import *
 from extensions import *
+from msg_groups import *
