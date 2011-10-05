@@ -41,15 +41,14 @@ namespace {
 const std::string MessageGroupManager::qpidMessageGroupKey("qpid.group_header_key");
 const std::string MessageGroupManager::qpidSharedGroup("qpid.shared_msg_group");
 const std::string MessageGroupManager::qpidMessageGroupTimestamp("qpid.group_timestamp");
-const std::string MessageGroupManager::qpidMessageGroupDefault("qpid.no_group");     /** @todo KAG: make configurable in Broker options */
 
 
 const std::string MessageGroupManager::getGroupId( const QueuedMessage& qm ) const
 {
     const qpid::framing::FieldTable* headers = qm.payload->getApplicationHeaders();
-    if (!headers) return qpidMessageGroupDefault;
+    if (!headers) return defaultGroupId;
     qpid::framing::FieldTable::ValuePtr id = headers->get( groupIdHeader );
-    if (!id || !id->convertsTo<std::string>()) return qpidMessageGroupDefault;
+    if (!id || !id->convertsTo<std::string>()) return defaultGroupId;
     return id->get<std::string>();
 }
 
@@ -329,6 +328,12 @@ boost::shared_ptr<MessageGroupManager> MessageGroupManager::create( const std::s
         return manager;
     }
     return empty;
+}
+
+std::string MessageGroupManager::defaultGroupId;
+void MessageGroupManager::setDefaults(const std::string& groupId)   // static
+{
+    defaultGroupId = groupId;
 }
 
 /** Cluster replication:

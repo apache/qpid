@@ -36,6 +36,8 @@ class MessageDistributor;
 
 class MessageGroupManager : public StatefulQueueObserver, public MessageDistributor
 {
+    static std::string defaultGroupId;  // assigned if no group id header present
+
     const std::string groupIdHeader;    // msg header holding group identifier
     const unsigned int timestamp;       // mark messages with timestamp if set
     Messages& messages;                 // parent Queue's in memory message container
@@ -65,7 +67,6 @@ class MessageGroupManager : public StatefulQueueObserver, public MessageDistribu
     static const std::string qpidMessageGroupKey;
     static const std::string qpidSharedGroup;   // if specified, one group can be consumed by multiple receivers
     static const std::string qpidMessageGroupTimestamp;
-    static const std::string qpidMessageGroupDefault;
 
     const std::string getGroupId( const QueuedMessage& qm ) const;
     void unFree( const GroupState& state )
@@ -92,6 +93,7 @@ class MessageGroupManager : public StatefulQueueObserver, public MessageDistribu
 
  public:
 
+    static QPID_BROKER_EXTERN void setDefaults(const std::string& groupId);
     static boost::shared_ptr<MessageGroupManager> create( const std::string& qName,
                                                           Messages& messages,
                                                           const qpid::framing::FieldTable& settings );

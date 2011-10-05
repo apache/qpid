@@ -33,6 +33,7 @@
 #include "qpid/broker/Link.h"
 #include "qpid/broker/ExpiryPolicy.h"
 #include "qpid/broker/QueueFlowLimit.h"
+#include "qpid/broker/MessageGroupManager.h"
 
 #include "qmf/org/apache/qpid/broker/Package.h"
 #include "qmf/org/apache/qpid/broker/ArgsBrokerCreate.h"
@@ -123,7 +124,8 @@ Broker::Options::Options(const std::string& name) :
     qmf1Support(true),
     queueFlowStopRatio(80),
     queueFlowResumeRatio(70),
-    queueThresholdEventRatio(80)
+    queueThresholdEventRatio(80),
+    defaultMsgGroup("qpid.no-group")
 {
     int c = sys::SystemInfo::concurrency();
     workerThreads=c+1;
@@ -159,7 +161,8 @@ Broker::Options::Options(const std::string& name) :
         ("async-queue-events", optValue(asyncQueueEvents, "yes|no"), "Set Queue Events async, used for services like replication")
         ("default-flow-stop-threshold", optValue(queueFlowStopRatio, "PERCENT"), "Percent of queue's maximum capacity at which flow control is activated.")
         ("default-flow-resume-threshold", optValue(queueFlowResumeRatio, "PERCENT"), "Percent of queue's maximum capacity at which flow control is de-activated.")
-        ("default-event-threshold-ratio", optValue(queueThresholdEventRatio, "%age of limit"), "The ratio of any specified queue limit at which an event will be raised");
+        ("default-event-threshold-ratio", optValue(queueThresholdEventRatio, "%age of limit"), "The ratio of any specified queue limit at which an event will be raised")
+        ("default-message-group", optValue(defaultMsgGroup, "GROUP-IDENTIFER"), "Group identifier to assign to messages delivered to a message group queue that do not contain an identifier.");
 }
 
 const std::string empty;
@@ -250,6 +253,7 @@ Broker::Broker(const Broker::Options& conf) :
     Plugin::earlyInitAll(*this);
 
     QueueFlowLimit::setDefaults(conf.queueLimit, conf.queueFlowStopRatio, conf.queueFlowResumeRatio);
+    MessageGroupManager::setDefaults(conf.defaultMsgGroup);
 
     // If no plugin store module registered itself, set up the null store.
     if (NullMessageStore::isNullStore(store.get()))

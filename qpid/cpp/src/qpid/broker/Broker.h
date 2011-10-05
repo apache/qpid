@@ -121,6 +121,7 @@ public:
         uint queueFlowStopRatio;    // producer flow control: on
         uint queueFlowResumeRatio;  // producer flow control: off
         uint16_t queueThresholdEventRatio;
+        std::string defaultMsgGroup;
 
       private:
         std::string getHome();

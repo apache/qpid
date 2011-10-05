@@ -936,6 +936,42 @@ class MultiConsumerMsgGroupTests(Base):
         snd.close()
         self.ssn.close()
 
+    def test_default_group_id(self):
+        """ Verify the queue assigns the default group id should a message
+        arrive without a group identifier.
+        """
+        snd = self.ssn.sender("msg-group-q; {create:always, delete:sender," +
+                              " node: {x-declare: {arguments:" +
+                              " {'qpid.group_header_key':'THE-GROUP'," +
+                              "'qpid.shared_msg_group':1}}}}")
+
+        m = Message(content={}, properties={"NO-GROUP-HEADER":"HA-HA"})
+        snd.send(m)
+
+        # now setup a QMF session, so we can call methods
+        self.qmf_session = qmf.console.Session()
+        self.qmf_broker = self.qmf_session.addBroker(str(self.broker))
+        brokers = self.qmf_session.getObjects(_class="broker")
+        assert len(brokers) == 1
+        broker = brokers[0]
+
+        # grab the group state off the queue, and verify the default group is
+        # present ("qpid.no-group" is the broker default)
+        rc = broker.query("queue", "msg-group-q")
+        assert rc.status == 0
+        assert rc.text == "OK"
+        results = rc.outArgs['results']
+        assert 'qpid.message_group_queue' in results
+        q_info = results['qpid.message_group_queue']
+        assert 'group_header_key' in q_info and q_info['group_header_key'] == "THE-GROUP"
+        assert 'group_state' in q_info and len(q_info['group_state']) == 1
+        g_info = q_info['group_state'][0]
+        assert 'group_id' in g_info
+        assert g_info['group_id'] == 'qpid.no-group'
+
+        self.qmf_session.delBroker(self.qmf_broker)
+
+
 class StickyConsumerMsgGroupTests(Base):
     """
     Tests for the behavior of sticky-consumer message groups.  These tests
