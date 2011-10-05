@@ -48,7 +48,8 @@ class MultiConsumerMsgGroupTests(Base):
 
         snd = self.ssn.sender("msg-group-q; {create:always, delete:sender," +
                               " node: {x-declare: {arguments:" +
-                              " {'qpid.group_header_key':'THE-GROUP'}}}}")
+                              " {'qpid.group_header_key':'THE-GROUP'," +
+                              "'qpid.shared_msg_group':1}}}}")
 
         groups = ["A","A","A","B","B","B","C","C","C"]
         messages = [Message(content={}, properties={"THE-GROUP": g}) for g in groups]
@@ -172,7 +173,8 @@ class MultiConsumerMsgGroupTests(Base):
 
         snd = self.ssn.sender("msg-group-q; {create:always, delete:sender," +
                               " node: {x-declare: {arguments:" +
-                              " {'qpid.group_header_key':'THE-GROUP'}}}}")
+                              " {'qpid.group_header_key':'THE-GROUP'," +
+                              "'qpid.shared_msg_group':1}}}}")
 
         groups = ["A","B","A","B","C"]
         messages = [Message(content={}, properties={"THE-GROUP": g}) for g in groups]
@@ -228,7 +230,8 @@ class MultiConsumerMsgGroupTests(Base):
         """
         snd = self.ssn.sender("msg-group-q; {create:always, delete:sender," +
                               " node: {x-declare: {arguments:" +
-                              " {'qpid.group_header_key':'THE-GROUP'}}}}")
+                              " {'qpid.group_header_key':'THE-GROUP'," +
+                              "'qpid.shared_msg_group':1}}}}")
 
         groups = ["A","A","B","B"]
         messages = [Message(content={}, properties={"THE-GROUP": g}) for g in groups]
@@ -265,7 +268,8 @@ class MultiConsumerMsgGroupTests(Base):
         """
         snd = self.ssn.sender("msg-group-q; {create:always, delete:sender," +
                               " node: {x-declare: {arguments:" +
-                              " {'qpid.group_header_key':'THE-GROUP'}}}}")
+                              " {'qpid.group_header_key':'THE-GROUP'," +
+                              "'qpid.shared_msg_group':1}}}}")
 
         groups = ["A","A","B","B"]
         messages = [Message(content={}, properties={"THE-GROUP": g}) for g in groups]
@@ -301,7 +305,8 @@ class MultiConsumerMsgGroupTests(Base):
         """
         snd = self.ssn.sender("msg-group-q; {create:always, delete:sender," +
                               " node: {x-declare: {arguments:" +
-                              " {'qpid.group_header_key':'THE-GROUP'}}}}")
+                              " {'qpid.group_header_key':'THE-GROUP'," +
+                              "'qpid.shared_msg_group':1}}}}")
 
         groups = ["A","A","B","B"]
         messages = [Message(content={}, properties={"THE-GROUP": g}) for g in groups]
@@ -366,7 +371,8 @@ class MultiConsumerMsgGroupTests(Base):
         """
         snd = self.ssn.sender("msg-group-q; {create:always, delete:sender," +
                               " node: {x-declare: {arguments:" +
-                              " {'qpid.group_header_key':'THE-GROUP'}}}}")
+                              " {'qpid.group_header_key':'THE-GROUP'," +
+                              "'qpid.shared_msg_group':1}}}}")
 
         groups = ["A","A","B","B","A","B"]
         messages = [Message(content={}, properties={"THE-GROUP": g}) for g in groups]
@@ -476,7 +482,8 @@ class MultiConsumerMsgGroupTests(Base):
         """
         snd = self.ssn.sender("msg-group-q; {create:always, delete:sender," +
                               " node: {x-declare: {arguments:" +
-                              " {'qpid.group_header_key':'THE-GROUP'}}}}")
+                              " {'qpid.group_header_key':'THE-GROUP'," +
+                              "'qpid.shared_msg_group':1}}}}")
 
         groups = ["A","B","C","A","B","C","A"]
         messages = [Message(content={}, properties={"THE-GROUP": g}) for g in groups]
@@ -534,7 +541,8 @@ class MultiConsumerMsgGroupTests(Base):
         """
         snd = self.ssn.sender("msg-group-q; {create:always, delete:sender," +
                               " node: {x-declare: {arguments:" +
-                              " {'qpid.group_header_key':'THE-GROUP'}}}}")
+                              " {'qpid.group_header_key':'THE-GROUP'," + 
+                              "'qpid.shared_msg_group':1}}}}")
 
         groups = ["A","B","A","B","C","A"]
         messages = [Message(content={}, properties={"THE-GROUP": g}) for g in groups]
@@ -578,7 +586,8 @@ class MultiConsumerMsgGroupTests(Base):
         """
         snd = self.ssn.sender("msg-group-q; {create:always, delete:sender," +
                               " node: {x-declare: {arguments:" +
-                              " {'qpid.group_header_key':'THE-GROUP'}}}}")
+                              " {'qpid.group_header_key':'THE-GROUP'," +
+                              "'qpid.shared_msg_group':1}}}}")
 
         groups = ["A","B","A","B","C","A"]
         messages = [Message(content={}, properties={"THE-GROUP": g}) for g in groups]
@@ -630,7 +639,8 @@ class MultiConsumerMsgGroupTests(Base):
         """
         snd = self.ssn.sender("msg-group-q; {create:always, delete:sender," +
                               " node: {x-declare: {arguments:" +
-                              " {'qpid.group_header_key':'THE-GROUP'}}}}")
+                              " {'qpid.group_header_key':'THE-GROUP'," +
+                              "'qpid.shared_msg_group':1}}}}")
 
         groups = ["A","B","A","B","C","A"]
         messages = [Message(content={}, properties={"THE-GROUP": g}) for g in groups]
@@ -685,7 +695,8 @@ class MultiConsumerMsgGroupTests(Base):
         """
         snd = self.ssn.sender("msg-group-q; {create:always, delete:sender," +
                               " node: {x-declare: {arguments:" +
-                              " {'qpid.group_header_key':'THE-GROUP'}}}}")
+                              " {'qpid.group_header_key':'THE-GROUP'," +
+                              "'qpid.shared_msg_group':1}}}}")
 
         groups = ["A","B","A","B","C","A"]
         messages = [Message(content={}, properties={"THE-GROUP": g}) for g in groups]
@@ -698,7 +709,8 @@ class MultiConsumerMsgGroupTests(Base):
         # set up destination queue
         rcvr = self.ssn.receiver("dest-q; {create:always, delete:receiver," +
                                  " node: {x-declare: {arguments:" +
-                                 " {'qpid.group_header_key':'THE-GROUP'}}}}")
+                                 " {'qpid.group_header_key':'THE-GROUP'," +
+                                 "'qpid.shared_msg_group':1}}}}")
 
         # acquire group "A"
         s1 = self.setup_session()
@@ -754,7 +766,8 @@ class MultiConsumerMsgGroupTests(Base):
         """
         snd = self.ssn.sender("msg-group-q; {create:always, delete:sender," +
                               " node: {x-declare: {arguments:" +
-                              " {'qpid.group_header_key':'THE-GROUP'}}}}")
+                              " {'qpid.group_header_key':'THE-GROUP'," +
+                              "'qpid.shared_msg_group':1}}}}")
 
         groups = ["A","B","A","B","C","A"]
         messages = [Message(content={}, properties={"THE-GROUP": g}) for g in groups]
@@ -767,7 +780,8 @@ class MultiConsumerMsgGroupTests(Base):
         # set up destination queue
         rcvr = self.ssn.receiver("dest-q; {create:always, delete:receiver," +
                                  " node: {x-declare: {arguments:" +
-                                 " {'qpid.group_header_key':'THE-GROUP'}}}}")
+                                 " {'qpid.group_header_key':'THE-GROUP'," +
+                                 "'qpid.shared_msg_group':1}}}}")
 
         # now setup a QMF session, so we can move group B
         self.qmf_session = qmf.console.Session()
@@ -815,7 +829,8 @@ class MultiConsumerMsgGroupTests(Base):
         """
         snd = self.ssn.sender("msg-group-q; {create:always, delete:sender," +
                               " node: {x-declare: {arguments:" +
-                              " {'qpid.group_header_key':'THE-GROUP'}}}}")
+                              " {'qpid.group_header_key':'THE-GROUP'," +
+                              "'qpid.shared_msg_group':1}}}}")
 
         groups = ["A","B","A","B","C","A"]
         messages = [Message(content={}, properties={"THE-GROUP": g}) for g in groups]
@@ -886,7 +901,8 @@ class MultiConsumerMsgGroupTests(Base):
 
         snd = self.ssn.sender("msg-group-q; {create:always, delete:sender," +
                               " node: {x-declare: {arguments:" +
-                              " {'qpid.group_header_key':'THE-GROUP'}}}}")
+                              " {'qpid.group_header_key':'THE-GROUP'," +
+                              "'qpid.shared_msg_group':1}}}}")
 
         groups = ["A","B","A","B","C"]
         messages = [Message(content={}, properties={"THE-GROUP": g}) for g in groups]

@@ -39,6 +39,7 @@ namespace {
 
 
 const std::string MessageGroupManager::qpidMessageGroupKey("qpid.group_header_key");
+const std::string MessageGroupManager::qpidSharedGroup("qpid.shared_msg_group");
 const std::string MessageGroupManager::qpidMessageGroupTimestamp("qpid.group_timestamp");
 const std::string MessageGroupManager::qpidMessageGroupDefault("qpid.no_group");     /** @todo KAG: make configurable in Broker options */
 
@@ -306,6 +307,12 @@ boost::shared_ptr<MessageGroupManager> MessageGroupManager::create( const std::s
     boost::shared_ptr<MessageGroupManager> empty;
 
     if (settings.isSet(qpidMessageGroupKey)) {
+
+        // @todo: remove once "sticky" consumers are supported - see QPID-3347
+        if (!settings.isSet(qpidSharedGroup)) {
+            QPID_LOG( error, "Only shared groups are supported in this version of the broker. Use '--shared-groups' in qpid-config." );
+            return empty;
+        }
 
         std::string headerKey = settings.getAsString(qpidMessageGroupKey);
         if (headerKey.empty()) {

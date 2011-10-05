@@ -63,6 +63,7 @@ class MessageGroupManager : public StatefulQueueObserver, public MessageDistribu
     //Consumers consumers;    // index: consumer name
 
     static const std::string qpidMessageGroupKey;
+    static const std::string qpidSharedGroup;   // if specified, one group can be consumed by multiple receivers
     static const std::string qpidMessageGroupTimestamp;
     static const std::string qpidMessageGroupDefault;
 

@@ -1463,8 +1463,8 @@ class LongTests(BrokerTest):
 
         # create a queue with rather draconian flow control settings
         ssn0 = cluster[0].connect().session()
-        s0 = ssn0.sender("test-group-q; {create:always, node:{type:queue, x-declare:{arguments:{'qpid.group_header_key':'group-id'}}}}")
-
+        q_args = "{'qpid.group_header_key':'group-id', 'qpid.shared_msg_group':1}"
+        s0 = ssn0.sender("test-group-q; {create:always, node:{type:queue, x-declare:{arguments:%s}}}" % q_args)
 
         # Kill original brokers, start new ones for the duration.
         endtime = time.time() + self.duration();

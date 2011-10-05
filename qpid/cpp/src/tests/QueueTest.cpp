@@ -727,6 +727,7 @@ QPID_AUTO_TEST_CASE(testGroupsMultiConsumer) {
     FieldTable args;
     Queue::shared_ptr queue(new Queue("my_queue", true));
     args.setString("qpid.group_header_key", "GROUP-ID");
+    args.setInt("qpid.shared_msg_group", 1);
     queue->configure(args);
 
     std::string groups[] = { std::string("a"), std::string("a"), std::string("a"),
@@ -918,6 +919,7 @@ QPID_AUTO_TEST_CASE(testGroupsMultiConsumerDefaults) {
     FieldTable args;
     Queue::shared_ptr queue(new Queue("my_queue", true));
     args.setString("qpid.group_header_key", "GROUP-ID");
+    args.setInt("qpid.shared_msg_group", 1);
     queue->configure(args);
 
     for (int i = 0; i < 3; ++i) {
