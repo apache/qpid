@@ -20,6 +20,7 @@
  */
 
 #include "Core.h"
+#include "Group.h"
 #include "WiringHandler.h"
 #include "EventHandler.h"
 #include "QueueHandler.h"
@@ -40,10 +41,10 @@ namespace cluster {
 using namespace broker;
 using framing::FieldTable;
 
-WiringHandler::WiringHandler(EventHandler& e,
+WiringHandler::WiringHandler(Group& g,
                              const boost::intrusive_ptr<QueueHandler>& qh,
                              broker::Broker& b) :
-    HandlerBase(e),
+    HandlerBase(g.getEventHandler()),
     broker(b),
     recovery(broker.getQueues(), broker.getExchanges(),
              broker.getLinks(), broker.getDtxManager()),

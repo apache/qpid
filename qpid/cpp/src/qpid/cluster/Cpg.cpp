@@ -126,7 +126,7 @@ Cpg::Cpg(Handler& h) : IOHandle(new sys::IOHandlePrivate), handler(h), isShutdow
     callbacks.cpg_deliver_fn = &globalDeliver;
     callbacks.cpg_confchg_fn = &globalConfigChange;
 
-    QPID_LOG(notice, "Initializing CPG");
+    QPID_LOG(debug, "Initializing CPG");
     cpg_error_t err = cpg_initialize(&handle, &callbacks);
     int retries = 6; // FIXME aconway 2009-08-06: make this configurable.
     while (err == CPG_ERR_TRY_AGAIN && --retries) {

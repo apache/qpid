@@ -34,6 +34,7 @@ namespace qpid {
 
 namespace framing {
 class AMQBody;
+class AMQFrame;
 }
 
 namespace cluster {

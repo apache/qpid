@@ -35,8 +35,10 @@ struct Cluster2Plugin : public Plugin {
         Opts(Settings& s) : Options("Cluster Options"), settings(s) {
             addOptions()
                 ("cluster2-name", optValue(settings.name, "NAME"), "Name of cluster to join")
-                ("consume-lock", optValue(settings.consumeLockMicros, "uS"), "Maximum time a broker can hold the consume lock on a shared queue, in microseconds.");
-                // TODO aconway 2010-10-19: copy across other options from ClusterPlugin.h
+                ("cluster2-consume-lock", optValue(settings.consumeLockMicros, "uS"), "Maximum time a broker can hold the consume lock on a shared queue, in microseconds.")
+                ("cluster2-concurrency", optValue(settings.concurrency, "N"), "Number concurrent streams of processing for multicast/deliver.");
+                // FIXME aconway 2011-10-05: add all relevant options from ClusterPlugin.h.
+                // FIXME aconway 2011-10-05: rename to final option names.
         }
     };
 

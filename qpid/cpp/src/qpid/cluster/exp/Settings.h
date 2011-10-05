@@ -35,6 +35,8 @@ struct Settings {
     Settings();
     std::string name;
     uint32_t consumeLockMicros;
+    uint32_t concurrency;
+
     sys::Duration getConsumeLock() const { return consumeLockMicros * sys::TIME_USEC; }
 };
 

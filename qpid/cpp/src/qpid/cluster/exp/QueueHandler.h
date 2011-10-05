@@ -42,6 +42,7 @@ namespace cluster {
 class EventHandler;
 class QueueReplica;
 class Multicaster;
+class Group;
 
 /**
  * Handler for queue subscription events.
@@ -54,7 +55,7 @@ class QueueHandler : public framing::AMQP_AllOperations::ClusterQueueHandler,
                      public HandlerBase
 {
   public:
-    QueueHandler(EventHandler&, Multicaster&, const Settings&);
+    QueueHandler(Group&, const Settings&);
 
     bool handle(const framing::AMQFrame& body);
 

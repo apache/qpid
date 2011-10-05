@@ -41,7 +41,7 @@ bool MessageHolder::check(const framing::AMQFrame& frame,
         assert(i != messages.end());
         msgOut = i->second.first;
         queueOut = i->second.second;
-        messages.erase(frame.getChannel()); // re-use the frame.
+        messages.erase(frame.getChannel()); // re-use the channel.
         return true;
     }
     return false;

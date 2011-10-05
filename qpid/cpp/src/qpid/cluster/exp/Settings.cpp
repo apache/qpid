@@ -20,12 +20,14 @@
  */
 
 #include "Settings.h"
+#include "qpid/sys/SystemInfo.h"
 
 namespace qpid {
 namespace cluster {
 
 Settings::Settings() :    // Default settings
-    consumeLockMicros(10000)
+    consumeLockMicros(10000),
+    concurrency(sys::SystemInfo::concurrency() + 1)
 {}
 
 }} // namespace qpid::cluster

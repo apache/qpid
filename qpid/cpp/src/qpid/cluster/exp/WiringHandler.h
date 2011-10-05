@@ -41,7 +41,7 @@ class Broker;
 }
 
 namespace cluster {
-class EventHandler;
+class Group;
 class QueueHandler;
 
 /**
@@ -51,7 +51,7 @@ class WiringHandler : public framing::AMQP_AllOperations::ClusterWiringHandler,
                       public HandlerBase
 {
   public:
-    WiringHandler(EventHandler&, const boost::intrusive_ptr<QueueHandler>& qh, broker::Broker&);
+    WiringHandler(Group&, const boost::intrusive_ptr<QueueHandler>& qh, broker::Broker&);
 
     bool handle(const framing::AMQFrame&);
 

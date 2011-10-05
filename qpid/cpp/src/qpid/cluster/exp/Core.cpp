@@ -39,35 +39,36 @@ namespace cluster {
 
 Core::Core(const Settings& s, broker::Broker& b) : broker(b), settings(s)
 {
-    // FIXME aconway 2011-09-26: this has to be consistent in a
+    // FIXME aconway 2011-09-26: S.concurrency has to be consistent in a
     // cluster, negotiate as part of join protocol.
-    size_t nGroups = broker.getOptions().workerThreads;
+    uint32_t nGroups = s.concurrency ? s.concurrency : 1;
     for (size_t i = 0; i < nGroups; ++i) {
-        // FIXME aconway 2011-09-26: review naming. Create group for non-message traffic, e.g. initial join protocol.
+        // FIXME aconway 2011-09-26: review naming. Create group for non-message traffic, e.g. initial join protocol?
         std::string groupName = s.name + "-" + boost::lexical_cast<std::string>(i);
         groups.push_back(new Group(*this));
         boost::intrusive_ptr<Group> group(groups.back());
-        // FIXME aconway 2011-10-03:  clean up, all Handler ctors take Group.
-        boost::intrusive_ptr<QueueHandler> queueHandler(
-            new QueueHandler(group->getEventHandler(), group->getMulticaster(), settings));
-        group->getEventHandler().add(queueHandler);
-        group->getEventHandler().add(
-            boost::intrusive_ptr<HandlerBase>(
-                new WiringHandler(group->getEventHandler(), queueHandler, broker)));
-        group->getEventHandler().add(
-            boost::intrusive_ptr<HandlerBase>(new MessageHandler(*group, *this)));
+ 
+        EventHandler& eh(group->getEventHandler());
+        typedef boost::intrusive_ptr<HandlerBase>  HandlerBasePtr;
+        boost::intrusive_ptr<QueueHandler> queueHandler(new QueueHandler(*group, settings));
+        eh.add(queueHandler);
+        eh.add(HandlerBasePtr(new WiringHandler(*group, queueHandler, broker)));
+        eh.add(HandlerBasePtr(new MessageHandler(*group, *this)));
 
         std::auto_ptr<BrokerContext> bh(new BrokerContext(*this));
         brokerHandler = bh.get();
         // BrokerContext belongs to Broker
         broker.setCluster(std::auto_ptr<broker::Cluster>(bh));
         // FIXME aconway 2011-09-26: multi-group
-        group->getEventHandler().start();
-        group->getEventHandler().getCpg().join(groupName);
-        // TODO aconway 2010-11-18: logging standards
-        // FIXME aconway 2011-09-26: multi-group
-        QPID_LOG(notice, "cluster: joined " << groupName << ", member-id="<< group->getEventHandler().getSelf());
+        eh.start();
+        eh.getCpg().join(groupName);
+        // TODO aconway 2010-11-18: logging standards        // FIXME aconway 2011-09-26: multi-group
+        QPID_LOG(debug, "cluster: joined CPG group " << groupName << ", member-id=" << eh.getSelf());
     }
+    QPID_LOG(notice, "cluster: joined cluster " << s.name
+             << ", member-id="<< groups[0]->getEventHandler().getSelf());
+    QPID_LOG(debug, "cluster: consume-lock=" << s.consumeLockMicros << "us "
+             << " concurrency=" << s.concurrency);
 }
 
 void Core::initialize() {}

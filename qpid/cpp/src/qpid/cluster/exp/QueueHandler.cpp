@@ -19,22 +19,25 @@
  *
  */
 
-#include "QueueHandler.h"
 #include "EventHandler.h"
-#include "QueueReplica.h"
+#include "Group.h"
 #include "QueueContext.h"
+#include "QueueHandler.h"
+#include "QueueReplica.h"
+#include "qpid/Exception.h"
 #include "qpid/broker/Queue.h"
 #include "qpid/broker/QueuedMessage.h"
 #include "qpid/framing/AllInvoker.h"
-#include "qpid/Exception.h"
 #include "qpid/log/Statement.h"
 
 namespace qpid {
 namespace cluster {
 
-// FIXME aconway 2011-05-11: make Multicaster+EventHandler available as Group, clean this up?
-QueueHandler::QueueHandler(EventHandler& eh, Multicaster& m, const Settings& s)
-    : HandlerBase(eh), multicaster(m),  consumeLock(s.getConsumeLock()) {}
+QueueHandler::QueueHandler(Group& g, const Settings& s)
+    : HandlerBase(g.getEventHandler()),
+      multicaster(g.getMulticaster()),
+      consumeLock(s.getConsumeLock())
+{}
 
 bool QueueHandler::handle(const framing::AMQFrame& frame) {
     return framing::invoke(*this, *frame.getBody()).wasHandled();
