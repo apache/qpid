@@ -40,7 +40,7 @@ import java.util.Map;
 
 public class Demo extends Util
 {
-    private static final String USAGE_STRING = "demo [options] <address> [<content> ...]\n\nOptions:";
+    private static final String USAGE_STRING = "demo [options] <vendor> [<content> ...]\n\nOptions:";
     private static final String OPCODE = "opcode";
     private static final String ACTION = "action";
     private static final String MESSAGE_ID = "message-id";
@@ -60,6 +60,8 @@ public class Demo extends Util
     private static final String SENDER = "sender";
     private static final String SEND_MESSAGE = "send-message";
     private static final String ANNOUNCE = "announce";
+    private static final String MESSAGE_VENDOR = "message-vendor";
+    private static final String CREATE_LINK = "create-link";
 
     public static void main(String[] args)
     {
@@ -137,7 +139,7 @@ public class Demo extends Util
         try
         {
 
-
+            final String vendor = getArgs()[0];
             final String queue = "control";
 
             String message = "";
@@ -168,7 +170,7 @@ public class Demo extends Util
             ApplicationProperties appProperties = new ApplicationProperties(appPropMap);
 
             appPropMap.put(OPCODE, ANNOUNCE);
-            appPropMap.put(VENDOR, APACHE);
+            appPropMap.put(VENDOR, vendor);
             appPropMap.put(ADDRESS,responseReceiver.getAddress());
 
             AmqpValue amqpValue = new AmqpValue(message);
@@ -194,33 +196,97 @@ public class Demo extends Util
                     ApplicationProperties props = m.getApplicationProperties();
                     Map map = props.getValue();
                     String op = (String) map.get(OPCODE);
-                    if("create-link".equals(op))
+                    if("reset".equals(op))
+                    {
+                        for(Sender sender : sendingLinks.values())
+                        {
+                            try
+                            {
+                                sender.close();
+                                Session session1 = sender.getSession();
+                                session1.close();
+                                session1.getConnection().close();
+                            }
+                            catch(Exception e)
+                            {
+                                e.printStackTrace();
+                            }
+                        }
+                        for(Receiver receiver : receivingLinks.values())
+                        {
+                            try
+                            {
+                                receiver.close();
+                                receiver.getSession().close();
+                                receiver.getSession().getConnection().close();
+                            }
+                            catch(Exception e)
+                            {
+                                e.printStackTrace();
+                            }
+                        }
+                        sendingLinks.clear();
+                        receivingLinks.clear();
+                    }
+                    else if(CREATE_LINK.equals(op))
                     {
                         Object linkRef = map.get(LINK_REF);
                         String host = (String) map.get(HOST);
-                        int port = Integer.parseInt((String) map.get(PORT));
+                        Object o = map.get(PORT);
+                        int port = Integer.parseInt(String.valueOf(o));
                         String user = (String) map.get(SASL_USER);
                         String password = (String) map.get(SASL_PASSWORD);
                         String role = (String) map.get(ROLE);
                         String address = (String) map.get(ADDRESS);
+                        System.err.println("Host: " + host + "\tPort: " + port + "\t user: " + user +"\t password: " + password);
+                        try{
 
-                        Connection conn2 = new Connection(host, port, user, password);
-                        Session session2 = conn2.createSession();
-                        if(SENDER.equals(role))
-                        {
 
-                            System.err.println("%%% Creating sender (" + linkRef + ")");
-                            Sender sender = session2.createSender(address);
-                            sendingLinks.put(linkRef, sender);
+                            Connection conn2 = new Connection(host, port, user, password,
+                                                              "development.mycompany.mysystem.stormmq.com");
+                            Session session2 = conn2.createSession();
+                            if(sendingLinks.containsKey(linkRef))
+                            {
+                                try
+                                {
+                                    sendingLinks.remove(linkRef).close();
+                                }
+                                catch (Exception e)
+                                {
+
+                                }
+                            }
+                            if(receivingLinks.containsKey(linkRef))
+                            {
+                                try
+                                {
+                                    receivingLinks.remove(linkRef).close();
+                                }
+                                catch (Exception e)
+                                {
+
+                                }
+                            }
+                            if(SENDER.equals(role))
+                            {
+
+                                System.err.println("%%% Creating sender (" + linkRef + ")");
+                                Sender sender = session2.createSender(address);
+                                sendingLinks.put(linkRef, sender);
+                            }
+                            else
+                            {
+
+                                System.err.println("%%% Creating receiver (" + linkRef + ")");
+                                Receiver receiver2 = session2.createReceiver(address);
+                                receiver2.setCredit(UnsignedInteger.valueOf(getWindowSize()), true);
+
+                                receivingLinks.put(linkRef, receiver2);
+                            }
                         }
-                        else
+                        catch(Exception e)
                         {
-
-                            System.err.println("%%% Creating receiver (" + linkRef + ")");
-                            Receiver receiver2 = session2.createReceiver(address);
-                            receiver2.setCredit(UnsignedInteger.valueOf(getWindowSize()), true);
-
-                            receivingLinks.put(linkRef, receiver2);
+                            e.printStackTrace();
                         }
                     }
                     else if(SEND_MESSAGE.equals(op))
@@ -231,22 +297,25 @@ public class Demo extends Util
                         m2props.setMessageId(messageId);
                         Map m2propmap = new HashMap();
                         m2propmap.put(OPCODE, TEST);
-                        m2propmap.put(VENDOR, APACHE);
+                        m2propmap.put(VENDOR, vendor);
                         ApplicationProperties m2appProps = new ApplicationProperties(m2propmap);
-                        Message m2 = new Message(Arrays.asList(m2props, m2appProps, amqpValue));
+                        Message m2 = new Message(Arrays.asList(m2props, m2appProps, new AmqpValue("AMQP-"+messageId)));
                         sender.send(m2);
 
                         Map m3propmap = new HashMap();
                         m3propmap.put(OPCODE, LOG);
                         m3propmap.put(ACTION, SENT);
                         m3propmap.put(MESSAGE_ID, messageId);
-                        m3propmap.put(VENDOR, APACHE);
+                        m3propmap.put(VENDOR, vendor);
+                        m3propmap.put(MESSAGE_VENDOR, vendor);
+
 
                         Message m3 = new Message(Arrays.asList(new ApplicationProperties(m3propmap),
-                                                               amqpValue));
+                                                               new AmqpValue("AMQP-"+messageId)));
                         s.send(m3);
 
                     }
+
                     responseReceiver.acknowledge(m);
                 }
                 else
@@ -267,10 +336,11 @@ public class Demo extends Util
                             m3propmap.put(OPCODE, LOG);
                             m3propmap.put(ACTION, RECEIVED);
                             m3propmap.put(MESSAGE_ID, mp.getMessageId());
-                            m3propmap.put(VENDOR, ap.getValue().get(VENDOR));
+                            m3propmap.put(VENDOR, vendor);
+                            m3propmap.put(MESSAGE_VENDOR, ap.getValue().get(VENDOR));
 
                             Message m3 = new Message(Arrays.asList(new ApplicationProperties(m3propmap),
-                                                                   amqpValue));
+                                                                   new AmqpValue("AMQP-"+mp.getMessageId())));
                             s.send(m3);
 
                             entry.getValue().acknowledge(m);

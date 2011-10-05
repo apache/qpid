@@ -52,6 +52,8 @@ public abstract class Util
     private int _windowSize = 100;
     private String _subject;
     private String _filter;
+    private String _remoteHost;
+    private boolean _useSSL;
 
     protected Util(String[] args)
     {
@@ -89,6 +91,17 @@ public abstract class Util
                 .hasArg(true)
                 .withArgName("CONTAINER_NAME")
                 .create('C'));
+
+        options.addOption(OptionBuilder.withLongOpt("ssl")
+                                            .withDescription("Use SSL")
+                                            .create('S'));
+
+        options.addOption(OptionBuilder.withLongOpt("remote-hostname")
+                .withDescription( "hostname to supply in the open frame" )
+                .hasArg(true)
+                .withArgName("HOST")
+                .create('O'));
+
         if(hasBlockOption())
             options.addOption(OptionBuilder.withLongOpt("block")
                                     .withDescription("block until messages arrive")
@@ -207,9 +220,11 @@ public abstract class Util
             System.exit(0);
         }
         _host = cmdLine.getOptionValue('H',"0.0.0.0");
+        _remoteHost = cmdLine.getOptionValue('O',null);
         String portStr = cmdLine.getOptionValue('p',"5672");
         String countStr = cmdLine.getOptionValue('c',"1");
 
+        _useSSL = cmdLine.hasOption('S');
 
         if(hasWindowSizeOption())
         {
@@ -486,8 +501,10 @@ public abstract class Util
     public Connection newConnection() throws Connection.ConnectionException
     {
         Container container = getContainerName() == null ? new Container() : new Container(getContainerName());
-        return getUsername() == null ? new Connection(getHost(), getPort(), null, null, _frameSize, container)
-                                     : new Connection(getHost(), getPort(), getUsername(), getPassword(), _frameSize, container);
+        return getUsername() == null ? new Connection(getHost(), getPort(), null, null, _frameSize, container,
+                                                      _remoteHost, _useSSL)
+                                     : new Connection(getHost(), getPort(), getUsername(), getPassword(), _frameSize,
+                                                      container, _remoteHost, _useSSL);
     }
 
     public String getContainerName()

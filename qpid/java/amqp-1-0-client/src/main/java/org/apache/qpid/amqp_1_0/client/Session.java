@@ -49,9 +49,11 @@ public class Session
     private SectionEncoder _sectionEncoder;
     private SectionDecoder _sectionDecoder;
     private TransactionController _sessionLocalTC;
+    private Connection _connection;
 
     public Session(final Connection connection, String name)
     {
+        _connection = connection;
         _endpoint = connection.getEndpoint().createSession(name);
         _sectionEncoder = new SectionEncoderImpl(connection.getEndpoint().getDescribedTypeRegistry());
         _sectionDecoder = new SectionDecoderImpl(connection.getEndpoint().getDescribedTypeRegistry());
@@ -345,4 +347,8 @@ public class Session
         return null;
     }
 
+    public Connection getConnection()
+    {
+        return _connection;
+    }
 }

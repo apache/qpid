@@ -190,6 +190,11 @@ public class SASLFrameHandler implements ProtocolHandler
                         break;
                     }
 
+                    if(type != 1)
+                    {
+                        System.err.println("Wrong frame type for SASL Frame");
+                    }
+
                     // channel
 
                     /*if(channel > _connection.getChannelMax())

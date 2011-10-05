@@ -351,6 +351,11 @@ public class Sender implements DeliveryStateHandler
         return _endpoint.getInitialUnsettledMap();
     }
 
+    public Session getSession()
+    {
+        return _session;
+    }
+
     public class SenderCreationException extends Exception
     {
         public SenderCreationException(Throwable e)

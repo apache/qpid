@@ -444,6 +444,11 @@ public class Receiver implements DeliveryStateHandler
         }
     }
 
+    public Session getSession()
+    {
+        return _session;
+    }
+
     public static interface SettledAction
     {
         public void onSettled(Binary deliveryTag);

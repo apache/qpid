@@ -109,6 +109,7 @@ public class ConnectionEndpoint implements DescribedTypeConstructorRegistry.Sour
     private CallbackHanderSource _callbackHandlersource;
     private SaslServer _saslServer;
     private boolean _authenticated;
+    private String _remoteHostname;
 
     public ConnectionEndpoint(Container container, CallbackHanderSource cbs)
     {
@@ -221,6 +222,7 @@ public class ConnectionEndpoint implements DescribedTypeConstructorRegistry.Sour
         open.setChannelMax(UnsignedShort.valueOf(DEFAULT_CHANNEL_MAX));
         open.setContainerId(_container.getId());
         open.setMaxFrameSize(getDesiredMaxFrameSize());
+        open.setHostname(getRemoteHostname());
 
 
         send(CONNECTION_CONTROL_CHANNEL, open);
@@ -921,5 +923,15 @@ public class ConnectionEndpoint implements DescribedTypeConstructorRegistry.Sour
     public void setRemoteAddress(SocketAddress remoteAddress)
     {
         _remoteAddress = remoteAddress;
+    }
+
+    public String getRemoteHostname()
+    {
+        return _remoteHostname;
+    }
+
+    public void setRemoteHostname(final String remoteHostname)
+    {
+        _remoteHostname = remoteHostname;
     }
 }

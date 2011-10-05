@@ -30,6 +30,8 @@ import org.apache.qpid.amqp_1_0.type.FrameBody;
 import org.apache.qpid.amqp_1_0.type.SaslFrameBody;
 import org.apache.qpid.amqp_1_0.type.UnsignedInteger;
 
+import javax.net.ssl.SSLSocket;
+import javax.net.ssl.SSLSocketFactory;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -56,6 +58,15 @@ public class Connection
     {
         this(address, port, username, password, MAX_FRAME_SIZE);
     }
+
+    public Connection(final String address,
+                  final int port,
+                  final String username,
+                  final String password, String remoteHostname) throws ConnectionException
+    {
+        this(address, port, username, password, MAX_FRAME_SIZE,new Container(),remoteHostname);
+    }
+
     public Connection(final String address,
                   final int port,
                   final String username,
@@ -74,20 +85,48 @@ public class Connection
         this(address,port,username,password,MAX_FRAME_SIZE,container);
     }
 
+    public Connection(final String address,
+                      final int port,
+                      final String username,
+                      final String password,
+                      final int maxFrameSize,
+                      final Container container) throws ConnectionException
+    {
+        this(address,port,username,password,maxFrameSize,container, null);
+    }
 
     public Connection(final String address,
                   final int port,
                   final String username,
                   final String password,
                   final int maxFrameSize,
-                  final Container container) throws ConnectionException
+                  final Container container,
+                  final String remoteHostname) throws ConnectionException
+    {
+        this(address,port,username,password,maxFrameSize,container,remoteHostname,false);
+    }
+    public Connection(final String address,
+                  final int port,
+                  final String username,
+                  final String password,
+                  final int maxFrameSize,
+                  final Container container,
+                  final String remoteHostname, boolean ssl) throws ConnectionException
     {
 
         _address = address;
 
         try
         {
-            final Socket s = new Socket(address, port);
+            final Socket s;
+            if(ssl)
+            {
+                s = SSLSocketFactory.getDefault().createSocket(address, port);
+            }
+            else
+            {
+                s = new Socket(address, port);
+            }
 
 
             Principal principal = username == null ? null : new Principal()
@@ -101,6 +140,7 @@ public class Connection
             _conn = new ConnectionEndpoint(container, principal, password);
             _conn.setDesiredMaxFrameSize(UnsignedInteger.valueOf(maxFrameSize));
             _conn.setRemoteAddress(s.getRemoteSocketAddress());
+            _conn.setRemoteHostname(remoteHostname);
 
 
 
