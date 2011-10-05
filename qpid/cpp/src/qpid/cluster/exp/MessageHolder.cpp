@@ -48,7 +48,6 @@ bool MessageHolder::check(const framing::AMQFrame& frame,
 }
 
 MessageHolder::Channel MessageHolder::getChannel(const sys::Mutex::ScopedLock&) {
-    sys::Mutex::ScopedLock l(lock);
     Channel old = mark;
     while (messages.find(++mark) != messages.end())
         assert(mark != old); // check wrap-around
