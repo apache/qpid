@@ -485,26 +485,12 @@ public class Connection extends ConnectionInvoker
     {
         synchronized (lock)
         {
-            List <Binary> transactedSessions = new ArrayList();
             for (Session ssn : sessions.values())
             {
-                if (ssn.isTransacted())
-                {
-                    transactedSessions.add(ssn.getName());
-                    ssn.setState(Session.State.CLOSED);
-                }
-                else
-                {
-                    map(ssn);
-                    ssn.attach();
-                    ssn.resume();
-                }
+                map(ssn);
+                ssn.resume();
             }
 
-            for (Binary ssn_name : transactedSessions)
-            {
-                sessions.remove(ssn_name);
-            }
             setState(OPEN);
         }
     }
