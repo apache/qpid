@@ -21,10 +21,7 @@
 package org.apache.qpid.test.unit.topic;
 
 import javax.jms.InvalidDestinationException;
-import javax.jms.JMSException;
 import javax.jms.MessageConsumer;
-import javax.jms.Session;
-import javax.jms.TemporaryTopic;
 import javax.jms.TextMessage;
 import javax.jms.TopicPublisher;
 import javax.jms.TopicSession;
@@ -40,18 +37,6 @@ import org.apache.qpid.test.utils.QpidBrokerTestCase;
 /** @author Apache Software Foundation */
 public class TopicSessionTest extends QpidBrokerTestCase
 {
-
-    protected void setUp() throws Exception
-    {
-        super.setUp();
-    }
-
-    protected void tearDown() throws Exception
-    {
-        super.tearDown();
-    }
-
-
     public void testTopicSubscriptionUnsubscription() throws Exception
     {
 
@@ -228,83 +213,6 @@ public class TopicSessionTest extends QpidBrokerTestCase
         con.close();
     }
 
-    public void testSendingSameMessage() throws Exception
-    {
-        AMQConnection conn = (AMQConnection) getConnection("guest", "guest");
-        TopicSession session = conn.createTopicSession(true, Session.AUTO_ACKNOWLEDGE);
-        TemporaryTopic topic = session.createTemporaryTopic();
-        assertNotNull(topic);
-        TopicPublisher producer = session.createPublisher(topic);
-        MessageConsumer consumer = session.createConsumer(topic);
-        conn.start();
-        TextMessage sentMessage = session.createTextMessage("Test Message");
-        producer.send(sentMessage);
-        session.commit();
-        TextMessage receivedMessage = (TextMessage) consumer.receive(2000);
-        assertNotNull(receivedMessage);
-        assertEquals(sentMessage.getText(), receivedMessage.getText());
-        producer.send(sentMessage);
-        session.commit();
-        receivedMessage = (TextMessage) consumer.receive(2000);
-        assertNotNull(receivedMessage);
-        assertEquals(sentMessage.getText(), receivedMessage.getText());
-        session.commit();
-        conn.close();
-
-    }
-
-    public void testTemporaryTopic() throws Exception
-    {
-        AMQConnection conn = (AMQConnection) getConnection("guest", "guest");
-        TopicSession session = conn.createTopicSession(true, Session.AUTO_ACKNOWLEDGE);
-        TemporaryTopic topic = session.createTemporaryTopic();
-        assertNotNull(topic);
-        TopicPublisher producer = session.createPublisher(topic);
-        MessageConsumer consumer = session.createConsumer(topic);
-        conn.start();
-        producer.send(session.createTextMessage("hello"));
-        session.commit();
-        TextMessage tm = (TextMessage) consumer.receive(2000);
-        assertNotNull(tm);
-        assertEquals("hello", tm.getText());
-        session.commit();
-        try
-        {
-            topic.delete();
-            fail("Expected JMSException : should not be able to delete while there are active consumers");
-        }
-        catch (JMSException je)
-        {
-            ; //pass
-        }
-
-        consumer.close();
-
-        try
-        {
-            topic.delete();
-        }
-        catch (JMSException je)
-        {
-            fail("Unexpected Exception: " + je.getMessage());
-        }
-
-        TopicSession session2 = conn.createTopicSession(false, Session.AUTO_ACKNOWLEDGE);
-        try
-        {
-            session2.createConsumer(topic);
-            fail("Expected a JMSException when subscribing to a temporary topic created on adifferent session");
-        }
-        catch (JMSException je)
-        {
-            ; // pass
-        }
-
-
-        conn.close();
-    }
-
-
     public void testNoLocal() throws Exception
     {
 
@@ -444,10 +352,5 @@ public class TopicSessionTest extends QpidBrokerTestCase
         long depth = ((AMQTopicSessionAdaptor) session).getSession().getQueueDepth(topic);
         assertEquals("Queue depth was wrong", 0, depth);
 
-    }
-
-    public static junit.framework.Test suite()
-    {
-        return new junit.framework.TestSuite(TopicSessionTest.class);
     }
 }
