@@ -53,10 +53,14 @@ class AMQTemporaryTopic extends AMQTopic implements TemporaryTopic, TemporaryDes
             throw new JMSException("Temporary Topic has consumers so cannot be deleted");
         }
 
-        _deleted = true;
-        // Currently TemporaryQueue is set to be auto-delete which means that the queue will be deleted
-        // by the server when there are no more subscriptions to that queue.  This is probably not
-        // quite right for JMSCompliance.
+        try
+        {
+            _session.deleteTemporaryDestination(this);
+        }
+        finally
+        {
+            _deleted = true;
+        }
     }
 
     public AMQSession getSession()

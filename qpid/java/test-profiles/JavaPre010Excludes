@@ -60,3 +60,8 @@ org.apache.qpid.test.client.queue.LVQTest#*
 // Verification of unique client id is 0-10 specific
 org.apache.qpid.test.unit.client.connection.ConnectionTest#testClientIDVerificationForSameUser
 org.apache.qpid.test.unit.client.connection.ConnectionTest#testClientIDVerificationForDifferentUsers
+
+// Under AMQP 0-8..0-9-1 temporary queues are deleted on consumer close, rather than connection close
+// and for this reason this test would fail.
+org.apache.qpid.test.unit.client.temporaryqueue.TemporaryQueueTest#testTemporaryQueueReused
+
