@@ -203,9 +203,11 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
         super.notifyMessage(messageFrame);
     }
 
-    @Override protected void preApplicationProcessing(AbstractJMSMessage jmsMsg) throws JMSException
+    @Override
+    protected void preDeliver(AbstractJMSMessage jmsMsg)
     {
-        super.preApplicationProcessing(jmsMsg);
+        super.preDeliver(jmsMsg);
+
         if (!_session.getTransacted() && _session.getAcknowledgeMode() != org.apache.qpid.jms.Session.CLIENT_ACKNOWLEDGE)
         {
             _session.addUnacknowledgedMessage(jmsMsg.getDeliveryTag());

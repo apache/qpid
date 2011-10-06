@@ -63,7 +63,7 @@ public class SyncWaitTimeoutDelayTest extends SyncWaitDelayTest
         catch (JMSException e)
         {
             assertTrue("Wrong exception type received.", e.getLinkedException() instanceof AMQTimeoutException);
-            assertTrue("Wrong message received on exception.", e.getMessage().startsWith("Failed to commit"));
+            assertTrue("Wrong message received on exception.", e.getMessage().startsWith("Exception during commit"));
             // As we are using Nano time ensure to multiply up the millis.            
             assertTrue("Timeout was more than 30s default", (System.nanoTime() - start) < (1000000L * 1000 * 30));
         }
