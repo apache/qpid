@@ -23,9 +23,13 @@ package org.apache.qpid.client.message;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import javax.jms.JMSException;
+import javax.jms.Session;
+
 import org.apache.qpid.client.AMQAnyDestination;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQQueue;
+import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.AMQTopic;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
@@ -78,7 +82,25 @@ public abstract class AbstractAMQMessageDelegate implements AMQMessageDelegate
                          new ExchangeInfo(ExchangeDefaults.HEADERS_EXCHANGE_NAME.toString(),
                                           ExchangeDefaults.HEADERS_EXCHANGE_CLASS.toString(),
                                           AMQDestination.QUEUE_TYPE));        
-        
+    }
+
+    /** If the acknowledge mode is CLIENT_ACKNOWLEDGE the session is required */
+    private AMQSession<?,?> _session;
+    private final long _deliveryTag;
+
+    protected AbstractAMQMessageDelegate(long deliveryTag)
+    {
+        _deliveryTag = deliveryTag;
+    }
+
+    /**
+     * Get the AMQ message number assigned to this message
+     *
+     * @return the message number
+     */
+    public long getDeliveryTag()
+    {
+        return _deliveryTag;
     }
 
     /**
@@ -157,6 +179,47 @@ public abstract class AbstractAMQMessageDelegate implements AMQMessageDelegate
     {
         return _exchangeMap.containsKey(exchange);
     }
+
+    public void acknowledgeThis() throws JMSException
+    {
+        // the JMS 1.1 spec says in section 3.6 that calls to acknowledge are ignored when client acknowledge
+        // is not specified. In our case, we only set the session field where client acknowledge mode is specified.
+        if (_session != null && _session.getAcknowledgeMode() == Session.CLIENT_ACKNOWLEDGE)
+        {
+            if (_session.getAMQConnection().isClosed())
+            {
+                throw new javax.jms.IllegalStateException("Connection is already closed");
+            }
+
+            // we set multiple to true here since acknowledgement implies acknowledge of all previous messages
+            // received on the session
+            _session.acknowledgeMessage(getDeliveryTag(), true);
+        }
+    }
+
+    public void acknowledge() throws JMSException
+    {
+        if (_session != null && _session.getAcknowledgeMode() == Session.CLIENT_ACKNOWLEDGE)
+        {
+            _session.acknowledge();
+        }
+    }
+
+     /**
+     * The session is set when CLIENT_ACKNOWLEDGE mode is used so that the CHANNEL ACK can be sent when the user calls
+     * acknowledge()
+     *
+     * @param s the AMQ session that delivered this message
+     */
+    public void setAMQSession(AMQSession<?,?> s)
+    {
+        _session = s;
+    }
+
+    public AMQSession<?,?> getAMQSession()
+    {
+        return _session;
+    }
 }
 
 class ExchangeInfo
@@ -202,5 +265,5 @@ class ExchangeInfo
     public void setDestType(int destType)
     {
         this.destType = destType;
-    }        
+    }
 }

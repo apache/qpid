@@ -838,63 +838,6 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
         return null;
     }
 
-    /**
-     * Acknowledge up to last message delivered (if any). Used when commiting.
-     */
-    void acknowledgeDelivered()
-    {
-        synchronized(_commitLock)
-        {
-            ArrayList<Long> tagsToAck = new ArrayList<Long>();
-
-            while (!_receivedDeliveryTags.isEmpty())
-            {
-                tagsToAck.add(_receivedDeliveryTags.poll());
-            }
-
-            Collections.sort(tagsToAck);
-
-            long prevAcked = _lastAcked;
-            long oldAckPoint = -1;
-
-            while(oldAckPoint != prevAcked)
-            {
-                oldAckPoint = prevAcked;
-
-                Iterator<Long> tagsToAckIterator = tagsToAck.iterator();
-
-                while(tagsToAckIterator.hasNext() && tagsToAckIterator.next() == prevAcked+1)
-                {
-                    tagsToAckIterator.remove();
-                    prevAcked++;
-                }
-
-                Iterator<Long> previousAckIterator = _previouslyAcked.iterator();
-                while(previousAckIterator.hasNext() && previousAckIterator.next() == prevAcked+1)
-                {
-                    previousAckIterator.remove();
-                    prevAcked++;
-                }
-
-            }
-            if(prevAcked != _lastAcked)
-            {
-                _session.acknowledgeMessage(prevAcked, true);
-                _lastAcked = prevAcked;
-            }
-
-            Iterator<Long> tagsToAckIterator = tagsToAck.iterator();
-
-            while(tagsToAckIterator.hasNext())
-            {
-                Long tag = tagsToAckIterator.next();
-                _session.acknowledgeMessage(tag, false);
-                _previouslyAcked.add(tag);
-            }
-        }
-    }
-
-
     void notifyError(Throwable cause)
     {
         // synchronized (_closed)
