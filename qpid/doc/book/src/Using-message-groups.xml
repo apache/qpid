@@ -218,15 +218,40 @@
           Message grouping is not supported on LVQ or Priority queues.
         </para>
       </note>
+      <example>
+        <title>Creating a message group queue via qpid-config</title>
+        <para>
+          This example uses the qpid-config tool to create a message group queue called
+          "MyMsgQueue".  The message header that contains the group identifier will use
+          the key "GROUP_KEY".
+        </para>
+        <programlisting>
+          qpid-config add queue MyMsgQueue --group-header="GROUP_KEY" --shared-groups"
+        </programlisting>
+      </example>
+      <example>
+        <title>Creating a message group queue using address syntax (C++)</title>
+        <para>
+          This example uses the messaging address syntax to create a message group queue
+          with the same configuration as the previous example.
+        </para>
+        <programlisting>
+          sender = session.createSender("MyMsgQueue; {create:always, delete:receiver, node: {x-declare: {arguments:"
+                                        " {'qpid.group_header_key':'GROUP_KEY', 'qpid.shared_msg_group':1}}}}")
+        </programlisting>
+      </example>
       <section role="h3" id="usingmessagegroups-DefaultGroup">
         <title>
           Default Group
         </title>
         <para>
           Should a message without a group identifier arrive at a queue configured for message grouping, the broker assigns the message to the default group.  Therefore, all such "unidentified" messages are considered by the broker as part of the same group.  The name of the default group is <command>"qpid.no-group"</command>.  This default can be overridden by suppling a different value to the broker configuration item <command>"default-message-group"</command>:
-          <programlisting>
-            qpidd --default-msg-group "EMPTY-GROUP"
-          </programlisting>
+          <example>
+            <title>Overriding the default message group identifier for the broker</title>
+            <programlisting>
+              qpidd --default-msg-group "EMPTY-GROUP"
+            </programlisting>
+          </example>
         </para>
       </section>
     </section>
