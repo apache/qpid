@@ -37,10 +37,7 @@ import javax.jms.MessageListener;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
-import java.util.SortedSet;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.TreeSet;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -118,28 +115,9 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
     protected final int _acknowledgeMode;
 
     /**
-     * Number of messages unacknowledged in DUPS_OK_ACKNOWLEDGE mode
-     */
-    private int _outstanding;
-
-    /**
-     * Switch to enable sending of acknowledgements when using DUPS_OK_ACKNOWLEDGE mode. Enabled when _outstannding
-     * number of msgs >= _prefetchHigh and disabled at < _prefetchLow
-     */
-    private boolean _dups_ok_acknowledge_send;
-
-    /**
      * List of tags delievered, The last of which which should be acknowledged on commit in transaction mode.
      */
     private ConcurrentLinkedQueue<Long> _receivedDeliveryTags = new ConcurrentLinkedQueue<Long>();
-
-    /** The last tag that was "multiple" acknowledged on this session (if transacted) */
-    private long _lastAcked;
-
-    /** set of tags which have previously been acked; but not part of the multiple ack (transacted mode only) */
-    private final SortedSet<Long> _previouslyAcked = new TreeSet<Long>();
-
-    private final Object _commitLock = new Object();
 
     /**
      * The thread that was used to call receive(). This is important for being able to interrupt that thread if a
@@ -290,17 +268,6 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
         }
     }
 
-    protected void preApplicationProcessing(AbstractJMSMessage jmsMsg) throws JMSException
-    {
-        if (_session.getAcknowledgeMode() == Session.CLIENT_ACKNOWLEDGE)
-        {
-            _session.addUnacknowledgedMessage(jmsMsg.getDeliveryTag());
-        }
-        
-        _session.setInRecovery(false);
-        preDeliver(jmsMsg);
-    }
-
     /**
      * @param immediate if true then return immediately if the connection is failing over
      *
@@ -409,7 +376,7 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
             final AbstractJMSMessage m = returnMessageOrThrow(o);
             if (m != null)
             {
-                preApplicationProcessing(m);
+                preDeliver(m);
                 postDeliver(m);
             }
             return m;
@@ -482,7 +449,7 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
             final AbstractJMSMessage m = returnMessageOrThrow(o);
             if (m != null)
             {
-                preApplicationProcessing(m);
+                preDeliver(m);
                 postDeliver(m);
             }
 
@@ -734,7 +701,7 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
         {
             if (isMessageListenerSet())
             {
-                preApplicationProcessing(jmsMessage);
+                preDeliver(jmsMessage);
                 getMessageListener().onMessage(jmsMessage);
                 postDeliver(jmsMessage);
             }
@@ -758,19 +725,28 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
         }
     }
 
-    void preDeliver(AbstractJMSMessage msg)
+    protected void preDeliver(AbstractJMSMessage msg)
     {
+        _session.setInRecovery(false);
+
         switch (_acknowledgeMode)
         {
-
             case Session.PRE_ACKNOWLEDGE:
                 _session.acknowledgeMessage(msg.getDeliveryTag(), false);
                 break;
-
             case Session.CLIENT_ACKNOWLEDGE:
-                // we set the session so that when the user calls acknowledge() it can call the method on session
-                // to send out the appropriate frame
-                msg.setAMQSession(_session);
+                if (isNoConsume())
+                {
+                    _session.acknowledgeMessage(msg.getDeliveryTag(), false);
+                }
+                else
+                {
+                    // we set the session so that when the user calls acknowledge() it can call the method on session
+                    // to send out the appropriate frame
+                    msg.setAMQSession(_session);
+                    _session.addUnacknowledgedMessage(msg.getDeliveryTag());
+                    _session.markDirty();
+                }
                 break;
             case Session.SESSION_TRANSACTED:
                 if (isNoConsume())
@@ -792,15 +768,6 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
     {
         switch (_acknowledgeMode)
         {
-
-            case Session.CLIENT_ACKNOWLEDGE:
-                if (isNoConsume())
-                {
-                    _session.acknowledgeMessage(msg.getDeliveryTag(), false);
-                }
-                _session.markDirty();
-                break;
-
             case Session.DUPS_OK_ACKNOWLEDGE:
             case Session.AUTO_ACKNOWLEDGE:
                 // we do not auto ack a message if the application code called recover()

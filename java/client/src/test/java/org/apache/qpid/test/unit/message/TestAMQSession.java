@@ -64,7 +64,12 @@ public class TestAMQSession extends AMQSession<BasicMessageConsumer_0_8, BasicMe
 
     }
 
-    public void sendCommit() throws AMQException, FailoverException
+    public void commitImpl() throws AMQException, FailoverException
+    {
+
+    }
+
+    public void acknowledgeImpl()
     {
 
     }

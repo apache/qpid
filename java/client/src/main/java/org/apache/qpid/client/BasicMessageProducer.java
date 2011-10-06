@@ -455,16 +455,6 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
 
         AbstractJMSMessage message = convertToNativeMessage(origMessage);
 
-        if (_transacted)
-        {
-            if (_session.hasFailedOver() && _session.isDirty())
-            {
-                throw new JMSAMQException("Failover has occurred and session is dirty so unable to send.",
-                                          new AMQSessionDirtyException("Failover has occurred and session is dirty " +
-                                                                       "so unable to send."));
-            }
-        }
-
         UUID messageId = null;
         if (_disableMessageId)
         {

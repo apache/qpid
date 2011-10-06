@@ -76,6 +76,7 @@ import org.apache.qpid.framing.amqp_0_91.MethodRegistry_0_91;
 import org.apache.qpid.jms.Session;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.protocol.AMQMethodEvent;
+import org.apache.qpid.transport.TransportException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -125,6 +126,20 @@ public final class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, B
         return getProtocolHandler().getProtocolVersion();
     }
 
+    protected void acknowledgeImpl()
+    {
+        while (true)
+        {
+            Long tag = _unacknowledgedMessageTags.poll();
+            if (tag == null)
+            {
+                break;
+            }
+
+            acknowledgeMessage(tag, false);
+        }
+    }
+
     public void acknowledgeMessage(long deliveryTag, boolean multiple)
     {
         BasicAckBody body = getMethodRegistry().createBasicAckBody(deliveryTag, multiple);
@@ -170,8 +185,20 @@ public final class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, B
         }
     }
 
-    public void sendCommit() throws AMQException, FailoverException
+    public void commitImpl() throws AMQException, FailoverException, TransportException
     {
+        // Acknowledge all delivered messages
+        while (true)
+        {
+            Long tag = _deliveredMessageTags.poll();
+            if (tag == null)
+            {
+                break;
+            }
+
+            acknowledgeMessage(tag, false);
+        }
+
         final AMQProtocolHandler handler = getProtocolHandler();
 
         handler.syncWrite(getProtocolHandler().getMethodRegistry().createTxCommitBody().generateFrame(_channelId), TxCommitOkBody.class);
