@@ -52,7 +52,6 @@ import javax.naming.NamingException;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQConnectionFactory;
@@ -115,7 +114,6 @@ public class QpidBrokerTestCase extends QpidTestCase
     private static final String BROKER_LANGUAGE = "broker.language";
     private static final String BROKER_TYPE = "broker.type";
     private static final String BROKER_COMMAND = "broker.command";
-    private static final String BROKER_CLEAN = "broker.clean";
     private static final String BROKER_CLEAN_BETWEEN_TESTS = "broker.clean.between.tests";
     private static final String BROKER_EXISTING_QPID_WORK = "broker.existing.qpid.work";
     private static final String BROKER_VERSION = "broker.version";
@@ -143,10 +141,9 @@ public class QpidBrokerTestCase extends QpidTestCase
     protected String _brokerLanguage = System.getProperty(BROKER_LANGUAGE, JAVA);
     protected BrokerType _brokerType = BrokerType.valueOf(System.getProperty(BROKER_TYPE, "").toUpperCase());
     protected String _brokerCommand = System.getProperty(BROKER_COMMAND);
-    private String _brokerClean = System.getProperty(BROKER_CLEAN, null);
     private Boolean _brokerCleanBetweenTests = Boolean.getBoolean(BROKER_CLEAN_BETWEEN_TESTS);
     private final AmqpProtocolVersion _brokerVersion = AmqpProtocolVersion.valueOf(System.getProperty(BROKER_VERSION, ""));
-    protected String _output = System.getProperty(TEST_OUTPUT);
+    protected String _output = System.getProperty(TEST_OUTPUT, System.getProperty("java.io.tmpdir"));
     protected Boolean _brokerPersistent = Boolean.getBoolean(BROKER_PERSITENT);
     private String _brokerProtocolExcludes = System.getProperty(BROKER_PROTOCOL_EXCLUDES);
 
@@ -217,8 +214,13 @@ public class QpidBrokerTestCase extends QpidTestCase
         if (redirected)
         {
             _outputFile = new File(String.format("%s/TEST-%s.out", _output, qname));
-            out = new PrintStream(_outputFile);
+            out = new PrintStream(new FileOutputStream(_outputFile), true);
             err = new PrintStream(String.format("%s/TEST-%s.err", _output, qname));
+
+            // This is relying on behaviour specific to log4j 1.2.12.   If we were to upgrade to 1.2.13 or
+            // beyond we must change either code (or config) to ensure that ConsoleAppender#setFollow
+            // is set to true otherwise log4j logging will not respect the following reassignment.
+
             System.setOut(out);
             System.setErr(err);
 
@@ -259,14 +261,9 @@ public class QpidBrokerTestCase extends QpidTestCase
 
             if(_brokerCleanBetweenTests)
             {
-            	try
-            	{
-            		cleanBroker();
-            	}
-            	catch (Exception e)
-            	{
-            		_logger.error("exception cleaning up broker", e);
-            	}
+                final String qpidWork = System.getProperty("QPID_WORK");
+                cleanBrokerWork(qpidWork);
+                createBrokerWork(qpidWork);
             }
 
             _logger.info("==========  stop " + getTestName() + " ==========");
@@ -298,11 +295,11 @@ public class QpidBrokerTestCase extends QpidTestCase
         String existingQpidWorkPath = System.getProperty(BROKER_EXISTING_QPID_WORK);
         if(existingQpidWorkPath != null && !existingQpidWorkPath.equals(""))
         {
-            cleanBroker();
 
+            String qpidWork = getQpidWork(_brokerType, getPort());
             File existing = new File(existingQpidWorkPath);
-            File qpidWork = new File(getQpidWork(_brokerType, getPort()));
-            FileUtils.copyRecursive(existing, qpidWork);
+            cleanBrokerWork(qpidWork);
+            FileUtils.copyRecursive(existing, new File(qpidWork));
         }
 
         startBroker();
@@ -494,25 +491,22 @@ public class QpidBrokerTestCase extends QpidTestCase
         }
         else if (!_brokerType.equals(BrokerType.EXTERNAL))
         {
+            // Add the port to QPID_WORK to ensure unique working dirs for multi broker tests
+            final String qpidWork = getQpidWork(_brokerType, port);
             String cmd = getBrokerCommand(port);
             _logger.info("starting external broker: " + cmd);
             ProcessBuilder pb = new ProcessBuilder(cmd.split("\\s+"));
             pb.redirectErrorStream(true);
-
             Map<String, String> env = pb.environment();
-
             String qpidHome = System.getProperty(QPID_HOME);
             env.put(QPID_HOME, qpidHome);
-
             //Augment Path with bin directory in QPID_HOME.
             env.put("PATH", env.get("PATH").concat(File.pathSeparator + qpidHome + "/bin"));
 
             //Add the test name to the broker run.
             // DON'T change PNAME, qpid.stop needs this value.
             env.put("QPID_PNAME", "-DPNAME=QPBRKR -DTNAME=\"" + getTestName() + "\"");
-            // Add the port to QPID_WORK to ensure unique working dirs for multi broker tests
-            env.put("QPID_WORK", getQpidWork(_brokerType, port));
-
+            env.put("QPID_WORK", qpidWork);
 
             // Use the environment variable to set amqj.logging.level for the broker
             // The value used is a 'server' value in the test configuration to
@@ -563,6 +557,10 @@ public class QpidBrokerTestCase extends QpidTestCase
                     env.put("QPID_OPTS", QPID_OPTS);
                 }
             }
+
+            // cpp broker requires that the work directory is created
+            createBrokerWork(qpidWork);
+
             Process process = pb.start();;
 
             Piper p = new Piper(process.getInputStream(),
@@ -577,7 +575,7 @@ public class QpidBrokerTestCase extends QpidTestCase
                 _logger.info("broker failed to become ready (" + p.ready + "):" + p.getStopLine());
                 //Ensure broker has stopped
                 process.destroy();
-                cleanBroker();
+                cleanBrokerWork(qpidWork);
                 throw new RuntimeException("broker failed to become ready:"
                                            + p.getStopLine());
             }
@@ -587,7 +585,7 @@ public class QpidBrokerTestCase extends QpidTestCase
                 //test that the broker is still running and hasn't exited unexpectedly
                 int exit = process.exitValue();
                 _logger.info("broker aborted: " + exit);
-                cleanBroker();
+                cleanBrokerWork(qpidWork);
                 throw new RuntimeException("broker aborted: " + exit);
             }
             catch (IllegalThreadStateException e)
@@ -655,21 +653,28 @@ public class QpidBrokerTestCase extends QpidTestCase
 
     public String getTestConfigFile()
     {
-        String path = _output == null ? System.getProperty("java.io.tmpdir") : _output;
-        return path + "/" + getTestQueueName() + "-config.xml";
+        return _output + "/" + getTestQueueName() + "-config.xml";
     }
 
     public String getTestVirtualhostsFile()
     {
-        String path = _output == null ? System.getProperty("java.io.tmpdir") : _output;
-        return path + "/" + getTestQueueName() + "-virtualhosts.xml";
+        return _output + "/" + getTestQueueName() + "-virtualhosts.xml";
+    }
+
+    private String relativeToQpidHome(String file)
+    {
+        return file.replace(System.getProperty(QPID_HOME,"QPID_HOME") + "/","");
     }
 
     protected void saveTestConfiguration() throws ConfigurationException
     {
-        // Specifiy the test config file
+        // Specify the test config file
         String testConfig = getTestConfigFile();
-        setSystemProperty("test.config", testConfig);
+        String relative = relativeToQpidHome(testConfig);
+
+        setSystemProperty("test.config", relative);
+        _logger.info("Set test.config property to: " + relative);
+        _logger.info("Saving test virtualhosts file at: " + testConfig);
 
         // Create the file if configuration does not exist
         if (_testConfiguration.isEmpty())
@@ -681,9 +686,13 @@ public class QpidBrokerTestCase extends QpidTestCase
 
     protected void saveTestVirtualhosts() throws ConfigurationException
     {
-        // Specifiy the test virtualhosts file
+        // Specify the test virtualhosts file
         String testVirtualhosts = getTestVirtualhostsFile();
-        setSystemProperty("test.virtualhosts", testVirtualhosts);
+        String relative = relativeToQpidHome(testVirtualhosts);
+
+        setSystemProperty("test.virtualhosts", relative);
+        _logger.info("Set test.virtualhosts property to: " + relative);
+        _logger.info("Saving test virtualhosts file at: " + testVirtualhosts);
 
         // Create the file if configuration does not exist
         if (_testVirtualhosts.isEmpty())
@@ -693,30 +702,33 @@ public class QpidBrokerTestCase extends QpidTestCase
         _testVirtualhosts.save(testVirtualhosts);
     }
 
-    public void cleanBroker()
+    protected void cleanBrokerWork(final String qpidWork)
     {
-        if (_brokerClean != null)
+        if (qpidWork != null)
         {
-            _logger.info("clean: " + _brokerClean);
+            _logger.info("Cleaning broker work dir: " + qpidWork);
 
-            try
+            File file = new File(qpidWork);
+            if (file.exists())
             {
-                ProcessBuilder pb = new ProcessBuilder(_brokerClean.split("\\s+"));
-                pb.redirectErrorStream(true);
-                Process clean = pb.start();
-                new Piper(clean.getInputStream(),_brokerOutputStream).start();
-
-                clean.waitFor();
-
-                _logger.info("clean exited: " + clean.exitValue());
+                final boolean success = FileUtils.delete(file, true);
+                if(!success)
+                {
+                    throw new RuntimeException("Failed to recursively delete beneath : " + file);
+                }
             }
-            catch (IOException e)
+        }
+    }
+
+    protected void createBrokerWork(final String qpidWork)
+    {
+        if (qpidWork != null)
+        {
+            final File dir = new File(qpidWork);
+            dir.mkdirs();
+            if (!dir.isDirectory())
             {
-                throw new RuntimeException(e);
-            }
-            catch (InterruptedException e)
-            {
-                throw new RuntimeException(e);
+                throw new RuntimeException("Failed to created Qpid work directory : " + qpidWork);
             }
         }
     }
@@ -730,7 +742,7 @@ public class QpidBrokerTestCase extends QpidTestCase
     {
         port = getPort(port);
 
-        _logger.info("stopping broker: " + getBrokerCommand(port));
+        _logger.info("stopping broker on port : " + port);
         BrokerHolder broker = _brokers.remove(port);
         broker.shutdown();
     }
@@ -906,7 +918,7 @@ public class QpidBrokerTestCase extends QpidTestCase
     }
 
     /**
-     * Add an environtmen variable for the external broker environment
+     * Add an environment variable for the external broker environment
      *
      * @param property the property to set
      * @param value    the value to set it to
@@ -990,9 +1002,9 @@ public class QpidBrokerTestCase extends QpidTestCase
      * Get the default connection factory for the currently used broker
      * Default factory is "local"
      *
-     * @return A conection factory
+     * @return A connection factory
      *
-     * @throws Exception if there is an error getting the tactory
+     * @throws Exception if there is an error getting the factory
      */
     public AMQConnectionFactory getConnectionFactory() throws NamingException
     {
@@ -1016,7 +1028,7 @@ public class QpidBrokerTestCase extends QpidTestCase
      *
      * @param factoryName The factory name
      *
-     * @return A conection factory
+     * @return A connection factory
      *
      * @throws Exception if there is an error getting the tactory
      */
@@ -1054,7 +1066,7 @@ public class QpidBrokerTestCase extends QpidTestCase
     {
         _logger.info("get connection");
         Connection con = getConnectionFactory().createConnection(username, password);
-        //add the connection in the lis of connections
+        //add the connection in the list of connections
         _connections.add(con);
         return con;
     }
@@ -1063,7 +1075,7 @@ public class QpidBrokerTestCase extends QpidTestCase
     {
         _logger.info("get Connection");
         Connection con = getConnectionFactory().createConnection(username, password, id);
-        //add the connection in the lis of connections
+        //add the connection in the list of connections
         _connections.add(con);
         return con;
     }
@@ -1154,7 +1166,7 @@ public class QpidBrokerTestCase extends QpidTestCase
     /**
      * Send messages to the given destination.
      *
-     * If session is transacted then messages will be commited before returning
+     * If session is transacted then messages will be committed before returning
      *
      * @param session the session to use for sending
      * @param destination where to send them to
@@ -1162,7 +1174,7 @@ public class QpidBrokerTestCase extends QpidTestCase
      *
      * @param batchSize the batchSize in which to commit, 0 means no batching,
      * but a single commit at the end
-     * @return the sent messgse
+     * @return the sent message
      *
      * @throws Exception
      */
@@ -1175,7 +1187,7 @@ public class QpidBrokerTestCase extends QpidTestCase
     /**
      * Send messages to the given destination.
      *
-     * If session is transacted then messages will be commited before returning
+     * If session is transacted then messages will be committed before returning
      *
      * @param session the session to use for sending
      * @param destination where to send them to
@@ -1184,7 +1196,7 @@ public class QpidBrokerTestCase extends QpidTestCase
      * @param offset offset allows the INDEX value of the message to be adjusted.
      * @param batchSize the batchSize in which to commit, 0 means no batching,
      * but a single commit at the end
-     * @return the sent messgse
+     * @return the sent message
      *
      * @throws Exception
      */

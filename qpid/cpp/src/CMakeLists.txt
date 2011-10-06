@@ -598,6 +598,7 @@ if (CMAKE_SYSTEM_NAME STREQUAL Windows)
       /wd4244
       /wd4800
       /wd4355
+      /wd4267
     )
     if (SET_WIN32_WINNT)
         add_definitions(/D "_WIN32_WINNT=0x0502")

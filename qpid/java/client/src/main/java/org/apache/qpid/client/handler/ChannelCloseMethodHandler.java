@@ -78,7 +78,7 @@ public class ChannelCloseMethodHandler implements StateAwareMethodListener<Chann
                 {
                     throw new AMQNoRouteException("Error: " + reason, null, null);
                 }
-                else if (errorCode == AMQConstant.INVALID_ARGUMENT)
+                else if (errorCode == AMQConstant.ARGUMENT_INVALID)
                 {
                     _logger.debug("Broker responded with Invalid Argument.");
 

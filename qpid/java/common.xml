@@ -42,7 +42,6 @@
   <property name="build.report"          location="${build}/report"/>
   <property name="build.release"         location="${build}/release"/>
   <property name="build.release.prepare" location="${build.release}/prepare"/>
-  <property name="build.data"            location="${build.scratch}/data"/>
   <property name="build.plugins"         location="${build}/lib/plugins"/>
   <property name="build.coveragereport"  location="${build}/coverage"/>
   <property name="build.findbugs"        location="${build}/findbugs"/>

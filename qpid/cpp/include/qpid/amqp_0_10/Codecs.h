@@ -34,14 +34,14 @@ namespace amqp_0_10 {
  * Codec for encoding/decoding a map of Variants using the AMQP 0-10
  * map encoding.
  */
-class QPID_COMMON_EXTERN MapCodec
+class QPID_COMMON_CLASS_EXTERN MapCodec
 {
   public:
     typedef qpid::types::Variant::Map ObjectType;
-    static void encode(const ObjectType&, std::string&);
-    static void decode(const std::string&, ObjectType&);
-    static size_t encodedSize(const ObjectType&);
-    static const std::string contentType;
+    static void   QPID_COMMON_EXTERN encode(const ObjectType&, std::string&);
+    static void   QPID_COMMON_EXTERN decode(const std::string&, ObjectType&);
+    static size_t QPID_COMMON_EXTERN encodedSize(const ObjectType&);
+    static const  QPID_COMMON_EXTERN std::string contentType;
   private:
 };
 
@@ -49,14 +49,14 @@ class QPID_COMMON_EXTERN MapCodec
  * Codec for encoding/decoding a list of Variants using the AMQP 0-10
  * list encoding.
  */
-class QPID_COMMON_EXTERN ListCodec
+class QPID_COMMON_CLASS_EXTERN ListCodec
 {
   public:
     typedef qpid::types::Variant::List ObjectType;
-    static void encode(const ObjectType&, std::string&);
-    static void decode(const std::string&, ObjectType&);
-    static size_t encodedSize(const ObjectType&);
-    static const std::string contentType;
+    static void   QPID_COMMON_EXTERN encode(const ObjectType&, std::string&);
+    static void   QPID_COMMON_EXTERN decode(const std::string&, ObjectType&);
+    static size_t QPID_COMMON_EXTERN encodedSize(const ObjectType&);
+    static const  QPID_COMMON_EXTERN std::string contentType;
   private:
 };
 

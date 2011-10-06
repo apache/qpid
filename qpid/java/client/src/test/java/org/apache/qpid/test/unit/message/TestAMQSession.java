@@ -20,17 +20,24 @@
  */
 package org.apache.qpid.test.unit.message;
 
-import org.apache.qpid.client.*;
+import java.util.Map;
+
+import javax.jms.Destination;
+import javax.jms.JMSException;
+import javax.jms.TemporaryQueue;
+import javax.jms.Topic;
+import javax.jms.TopicSubscriber;
+
+import org.apache.qpid.AMQException;
+import org.apache.qpid.client.AMQDestination;
+import org.apache.qpid.client.AMQSession;
+import org.apache.qpid.client.BasicMessageConsumer_0_8;
+import org.apache.qpid.client.BasicMessageProducer_0_8;
+import org.apache.qpid.client.failover.FailoverException;
 import org.apache.qpid.client.message.AMQMessageDelegateFactory;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
-import org.apache.qpid.client.failover.FailoverException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.AMQException;
-
-import javax.jms.*;
-
-import java.util.Map;
 
 public class TestAMQSession extends AMQSession<BasicMessageConsumer_0_8, BasicMessageProducer_0_8>
 {
@@ -57,7 +64,12 @@ public class TestAMQSession extends AMQSession<BasicMessageConsumer_0_8, BasicMe
 
     }
 
-    public void sendCommit() throws AMQException, FailoverException
+    public void commitImpl() throws AMQException, FailoverException
+    {
+
+    }
+
+    public void acknowledgeImpl()
     {
 
     }
@@ -117,7 +129,7 @@ public class TestAMQSession extends AMQSession<BasicMessageConsumer_0_8, BasicMe
 
     }
 
-    public BasicMessageProducer_0_8 createMessageProducer(Destination destination, boolean mandatory, boolean immediate, boolean waitUntilSent, long producerId)
+    public BasicMessageProducer_0_8 createMessageProducer(Destination destination, boolean mandatory, boolean immediate, long producerId)
     {
         return null;
     }

@@ -34,7 +34,7 @@ import java.util.Set;
  *
  * On construction the current state and a set of States to await for is provided.
  *
- * When await() is called the state at constuction is compared against the awaitStates. If the state at construction is
+ * When await() is called the state at construction is compared against the awaitStates. If the state at construction is
  * a desired state then await() returns immediately.
  *
  * Otherwise it will block for the set timeout for a desired state to be achieved.
@@ -48,9 +48,9 @@ public class StateWaiter extends BlockingWaiter<AMQState>
 {
     private static final Logger _logger = LoggerFactory.getLogger(StateWaiter.class);
 
-    Set<AMQState> _awaitStates;
-    private AMQState _startState;
-    private AMQStateManager _stateManager;
+    private final Set<AMQState> _awaitStates;
+    private final AMQState _startState;
+    private final AMQStateManager _stateManager;
 
     /**
      *
@@ -78,9 +78,9 @@ public class StateWaiter extends BlockingWaiter<AMQState>
     }
 
     /**
-     * Await for the requried State to be achieved within the default timeout.
+     * Await for the required State to be achieved within the default timeout.
      * @return The achieved state that was requested.
-     * @throws AMQException The exception that prevented the required state from being achived.
+     * @throws AMQException The exception that prevented the required state from being achieved.
      */
     public AMQState await() throws AMQException
     {
@@ -88,13 +88,13 @@ public class StateWaiter extends BlockingWaiter<AMQState>
     }
 
     /**
-     * Await for the requried State to be achieved.
+     * Await for the required State to be achieved.
      *
      * <b>It is the responsibility of this class to remove the waiter from the StateManager
      *
-     * @param timeout The time in milliseconds to wait for any of the states to be achived.
+     * @param timeout The time in milliseconds to wait for any of the states to be achieved.
      * @return The achieved state that was requested.
-     * @throws AMQException The exception that prevented the required state from being achived.
+     * @throws AMQException The exception that prevented the required state from being achieved.
      */
     public AMQState await(long timeout) throws AMQException
     {

@@ -22,7 +22,7 @@ module Qpid
   module Version
 
     NUMBERS = [MAJOR = 0,
-               MINOR = 10,
+               MINOR = 13,
                BUILD = 0]
   end
 

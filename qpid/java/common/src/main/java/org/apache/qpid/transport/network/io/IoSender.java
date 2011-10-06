@@ -113,6 +113,10 @@ public final class IoSender implements Runnable, Sender<ByteBuffer>
         {
             throw new SenderClosedException("sender is closed", exception);
         }
+        if(!senderThread.isAlive())
+        {
+            throw new SenderException("sender thread not alive");
+        }
 
         final int size = buffer.length;
         int remaining = buf.remaining();

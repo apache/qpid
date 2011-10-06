@@ -54,8 +54,8 @@ public class IoNetworkConnection implements NetworkConnection
 
     public void start()
     {
-        _ioReceiver.initiate();
         _ioSender.initiate();
+        _ioReceiver.initiate();
     }
 
     public Sender<ByteBuffer> getSender()

@@ -30,306 +30,279 @@ package org.apache.qpid.test.unit.transacted;
  */
 public class TransactionTimeoutTest extends TransactionTimeoutTestCase
 {
+
+    protected void configure() throws Exception
+    {
+        // Setup housekeeping every second
+        setConfigurationProperty("virtualhosts.virtualhost." + VIRTUALHOST + ".housekeeping.checkPeriod", "100");
+
+        if (getName().contains("ProducerIdle"))
+        {
+            setConfigurationProperty("virtualhosts.virtualhost." + VIRTUALHOST + ".transactionTimeout.openWarn", "0");
+            setConfigurationProperty("virtualhosts.virtualhost." + VIRTUALHOST + ".transactionTimeout.openClose", "0");
+            setConfigurationProperty("virtualhosts.virtualhost." + VIRTUALHOST + ".transactionTimeout.idleWarn", "500");
+            setConfigurationProperty("virtualhosts.virtualhost." + VIRTUALHOST + ".transactionTimeout.idleClose", "1500");
+        }
+        else if (getName().contains("ProducerOpen"))
+        {
+            setConfigurationProperty("virtualhosts.virtualhost." + VIRTUALHOST + ".transactionTimeout.openWarn", "1000");
+            setConfigurationProperty("virtualhosts.virtualhost." + VIRTUALHOST + ".transactionTimeout.openClose", "2000");
+            setConfigurationProperty("virtualhosts.virtualhost." + VIRTUALHOST + ".transactionTimeout.idleWarn", "0");
+            setConfigurationProperty("virtualhosts.virtualhost." + VIRTUALHOST + ".transactionTimeout.idleClose", "0");
+        }
+        else
+        {
+            setConfigurationProperty("virtualhosts.virtualhost." + VIRTUALHOST + ".transactionTimeout.openWarn", "1000");
+            setConfigurationProperty("virtualhosts.virtualhost." + VIRTUALHOST + ".transactionTimeout.openClose", "2000");
+            setConfigurationProperty("virtualhosts.virtualhost." + VIRTUALHOST + ".transactionTimeout.idleWarn", "500");
+            setConfigurationProperty("virtualhosts.virtualhost." + VIRTUALHOST + ".transactionTimeout.idleClose", "1000");
+        }
+    }
+
     public void testProducerIdle() throws Exception
     {
+        sleep(2.0f);
+
+        _psession.commit();
+
+        assertEquals("Listener should not have received exception", 0, getNumberOfDeliveredExceptions());
+
+        monitor(0, 0);
+    }
+
+    public void testProducerIdleCommit() throws Exception
+    {
+        send(5, 0);
+        // Idle for more than idleClose to generate idle-warns and cause a close.
+        sleep(2.0f);
+
         try
         {
-            sleep(2.0f);
-    
             _psession.commit();
+            fail("Exception not thrown");
         }
         catch (Exception e)
         {
-            fail("Should have succeeded");
+            _exception = e;
         }
-        
-        assertTrue("Listener should not have received exception", _caught.getCount() == 1);
-        
-        monitor(0, 0);
+
+        monitor(10, 0);
+
+        check(IDLE);
     }
-    
-    public void testProducerIdleCommit() throws Exception
+
+    public void testProducerIdleCommitTwice() throws Exception
     {
+        send(5, 0);
+        // Idle for less than idleClose to generate idle-warns
+        sleep(1.0f);
+
+        _psession.commit();
+
+        send(5, 0);
+        // Now idle for more than idleClose to generate more idle-warns and cause a close.
+        sleep(2.0f);
+
         try
         {
-            send(5, 0);
-            
-            sleep(2.0f);
-    
             _psession.commit();
+            fail("Exception not thrown");
+        }
+        catch (Exception e)
+        {
+            _exception = e;
+        }
+
+        monitor(15, 0);
+
+        check(IDLE);
+    }
+
+    public void testProducerIdleRollback() throws Exception
+    {
+        send(5, 0);
+        // Now idle for more than idleClose to generate more idle-warns and cause a close.
+        sleep(2.0f);
+        try
+        {
+            _psession.rollback();
+            fail("Exception not thrown");
+        }
+        catch (Exception e)
+        {
+            _exception = e;
+        }
+
+        monitor(10, 0);
+
+        check(IDLE);
+    }
+
+    public void testProducerIdleRollbackTwice() throws Exception
+    {
+        send(5, 0);
+        // Idle for less than idleClose to generate idle-warns
+        sleep(1.0f);
+        _psession.rollback();
+        send(5, 0);
+        // Now idle for more than idleClose to generate more idle-warns and cause a close.
+        sleep(2.0f);
+        try
+        {
+            _psession.rollback();
             fail("should fail");
         }
         catch (Exception e)
         {
             _exception = e;
         }
-        
-        monitor(5, 0);
+
+        monitor(15, 0);
         
         check(IDLE);
     }
-    
+
     public void testProducerOpenCommit() throws Exception
     {
         try
         {
+            // Sleep between sends to cause open warns and then cause a close.
             send(6, 0.5f);
-    
             _psession.commit();
-            fail("should fail");
+            fail("Exception not thrown");
         }
         catch (Exception e)
         {
             _exception = e;
         }
-        
+
         monitor(0, 10);
-        
+
         check(OPEN);
-    }
-    
-    public void testProducerIdleCommitTwice() throws Exception
-    {
-        try
-        {
-            send(5, 0);
-            
-            sleep(1.0f);
-            
-            _psession.commit();
-            
-            send(5, 0);
-            
-            sleep(2.0f);
-    
-            _psession.commit();
-            fail("should fail");
-        }
-        catch (Exception e)
-        {
-            _exception = e;
-        }
-        
-        monitor(10, 0);
-        
-        check(IDLE);
     }
     
     public void testProducerOpenCommitTwice() throws Exception
     {
+        send(5, 0);
+        sleep(1.0f);
+        _psession.commit();
+
         try
         {
-            send(5, 0);
-            
-            sleep(1.0f);
-            
-            _psession.commit();
-            
+            // Now sleep between sends to cause open warns and then cause a close.
             send(6, 0.5f);
-    
             _psession.commit();
-            fail("should fail");
+            fail("Exception not thrown");
         }
         catch (Exception e)
         {
             _exception = e;
         }
-        
-        // the presistent store generates more idle messages?
-        monitor(isBrokerStorePersistent() ? 10 : 5, 10);
+
+        monitor(0, 10);
         
         check(OPEN);
     }
-    
-    public void testProducerIdleRollback() throws Exception
-    {
-        try
-        {
-            send(5, 0);
-            
-            sleep(2.0f);
-    
-            _psession.rollback();
-            fail("should fail");
-        }
-        catch (Exception e)
-        {
-            _exception = e;
-        }
-        
-        monitor(5, 0);
-        
-        check(IDLE);
-    }
-    
-    public void testProducerIdleRollbackTwice() throws Exception
-    {
-        try
-        {
-            send(5, 0);
-            
-            sleep(1.0f);
-            
-            _psession.rollback();
-            
-            send(5, 0);
-            
-            sleep(2.0f);
-    
-            _psession.rollback();
-            fail("should fail");
-        }
-        catch (Exception e)
-        {
-            _exception = e;
-        }
-        
-        monitor(10, 0);
-        
-        check(IDLE);
-    }
-    
+
     public void testConsumerCommitClose() throws Exception
     {
-        try
-        {
-            send(1, 0);
-    
-            _psession.commit();
-    
-            expect(1, 0);
-            
-            _csession.commit();
-            
-            sleep(3.0f);
-    
-            _csession.close();
-        }
-        catch (Exception e)
-        {
-            fail("should have succeeded: " + e.getMessage());
-        }
-        
-        assertTrue("Listener should not have received exception", _caught.getCount() == 1);
-        
+        send(1, 0);
+
+        _psession.commit();
+
+        expect(1, 0);
+
+        _csession.commit();
+
+        sleep(3.0f);
+
+        _csession.close();
+
+        assertEquals("Listener should not have received exception", 0, getNumberOfDeliveredExceptions());
+
         monitor(0, 0);
     }
     
     public void testConsumerIdleReceiveCommit() throws Exception
     {
-        try
-        {
-            send(1, 0);
-    
-            _psession.commit();
-    
-            sleep(2.0f);
-            
-            expect(1, 0);
-            
-            sleep(2.0f);
-    
-            _csession.commit();
-        }
-        catch (Exception e)
-        {
-            fail("Should have succeeded");
-        }
-        
-        assertTrue("Listener should not have received exception", _caught.getCount() == 1);
-        
+        send(1, 0);
+
+        _psession.commit();
+
+        sleep(2.0f);
+
+        expect(1, 0);
+
+        sleep(2.0f);
+
+        _csession.commit();
+
+        assertEquals("Listener should not have received exception", 0, getNumberOfDeliveredExceptions());
+
         monitor(0, 0);
     }
-    
+
     public void testConsumerIdleCommit() throws Exception
     {
-        try
-        {
-            send(1, 0);
-    
-            _psession.commit();
-    
-            expect(1, 0);
-            
-            sleep(2.0f);
-    
-            _csession.commit();
-        }
-        catch (Exception e)
-        {
-            fail("Should have succeeded");
-        }
-        
-        assertTrue("Listener should not have received exception", _caught.getCount() == 1);
-        
+        send(1, 0);
+
+        _psession.commit();
+
+        expect(1, 0);
+
+        sleep(2.0f);
+
+        _csession.commit();
+
+        assertEquals("Listener should not have received exception", 0, getNumberOfDeliveredExceptions());
+
         monitor(0, 0);
     }
     
     public void testConsumerIdleRollback() throws Exception
     {
-        try
-        {
-            send(1, 0);
-    
-            _psession.commit();
-            
-            expect(1, 0);
-            
-            sleep(2.0f);
-    
-            _csession.rollback();
-        }
-        catch (Exception e)
-        {
-            fail("Should have succeeded");
-        }
-        
-        assertTrue("Listener should not have received exception", _caught.getCount() == 1);
-        
+        send(1, 0);
+
+        _psession.commit();
+
+        expect(1, 0);
+
+        sleep(2.0f);
+
+        _csession.rollback();
+
+        assertEquals("Listener should not have received exception", 0, getNumberOfDeliveredExceptions());
+
         monitor(0, 0);
     }
-    
+
     public void testConsumerOpenCommit() throws Exception
     {
-        try
-        {
-            send(1, 0);
-    
-            _psession.commit();
-            
-            sleep(3.0f);
-    
-            _csession.commit();
-        }
-        catch (Exception e)
-        {
-            fail("Should have succeeded");
-        }
-        
-        assertTrue("Listener should not have received exception", _caught.getCount() == 1);
-        
+        send(1, 0);
+
+        _psession.commit();
+
+        sleep(3.0f);
+
+        _csession.commit();
+
+        assertEquals("Listener should not have received exception", 0, getNumberOfDeliveredExceptions());
+
         monitor(0, 0);
     }
     
     public void testConsumerOpenRollback() throws Exception
     {
-        try
-        {
-            send(1, 0);
-    
-            _psession.commit();
-    
-            sleep(3.0f);
-    
-            _csession.rollback();
-        }
-        catch (Exception e)
-        {
-            fail("Should have succeeded");
-        }
+        send(1, 0);
         
-        assertTrue("Listener should not have received exception", _caught.getCount() == 1);
-        
+        _psession.commit();
+
+        sleep(3.0f);
+
+        _csession.rollback();
+
+        assertEquals("Listener should not have received exception", 0, getNumberOfDeliveredExceptions());
+
         monitor(0, 0);
     }
 }

@@ -20,24 +20,42 @@
 
 task :noop
 
-require 'rubygems'
-require 'rake/clean'
-require 'rake/rdoctask'
-require 'rake/testtask'
+# look for a root directory for out-of-tree builds
 
-CLOBBER.include('pkg')
+OUTPUT_DIR=ENV["OUTPUT_DIR"] || "."
 
-load './lib/qpid/version.rb'
+require "rubygems"
+require "rubygems/package_task"
 
-desc 'Default: run all tests.'
-task :default => :'test:all'
+require "rake/clean"
+require "rake/extensiontask"
+require "rake/rdoctask"
+require "rake/testtask"
+
+CLOBBER.include("pkg")
+
+load "./lib/qpid/version.rb"
+
+#-------------
+# Gem Details.
+#-------------
+
+NAME     = "qpid"
+# VERSION  = Qpid::VERSION
+AUTHOR   = "Darryl L. Pierce"
+EMAIL    = "dpierce@redhat.com"
+HOMEPAGE = "http://qpid.apache.org"
+SUMMARY  = "Qpid is an enterprise messaging framework."
+
+desc "Default: run all tests."
+task :default => :"test:all"
 
 #---------------
 # Testing tasks.
 #---------------
 
-desc 'Run all tests (alias for test:all).'
-task :test => :'test:all'
+desc "Run all tests (alias for test:all)."
+task :test => :"test:all"
 
 namespace :test do
   desc "Run all tests (default)."
@@ -45,15 +63,15 @@ namespace :test do
 
   desc "Run unit tests."
   Rake::TestTask.new(:units) do |t|
-    t.libs << '.'
-    t.pattern = 'test/test*.rb'
+    t.libs << "."
+    t.pattern = "test/test*.rb"
     t.verbose = true
   end
 
   desc "Run integration tests."
   Rake::TestTask.new(:integrations) do |t|
-    t.libs << '.'
-    t.pattern = 'test/integration/*.rb'
+    t.libs << "."
+    t.pattern = "test/integration/*.rb"
     t.verbose = true
   end
 
@@ -63,12 +81,50 @@ end
 # Documentation tasks.
 #---------------------
 
-Rake::RDocTask.new(
-                   :rdoc => 'rdoc',
-                   :clobber_rdoc => 'rdoc:clean',
-                   :rerdoc => 'rdoc:force'
-                   ) do |rd|
-  rd.main    = 'README.rdoc'
-  rd.options << '--all'
-  rd.rdoc_files.include('README.rdoc', 'lib/**/*.rb')
+Rake::RDocTask.new(:rdoc => "rdoc",
+                   :clobber_rdoc => "rdoc:clean",
+                   :rerdoc => "rdoc:force") do |rd|
+  rd.main    = "README.rdoc"
+  rd.options << "--all"
+  rd.rdoc_files.include("README.rdoc", "lib/**/*.rb")
 end
+
+#-----------------
+# Package the gem.
+#-----------------
+
+spec = Gem::Specification.new do |s|
+  s.name             = NAME
+  s.version          = Qpid::VERSION
+  s.platform         = Gem::Platform::RUBY
+  s.extra_rdoc_files = ["README.rdoc"]
+  s.summary          = SUMMARY
+  s.description      = s.summary
+  s.author           = AUTHOR
+  s.email            = EMAIL
+  s.homepage         = HOMEPAGE
+
+  s.extensions = FileList["ext/**/extconf.rb"]
+
+  s.require_path    = "lib"
+  # DEPRECATED s.autorequire     = NAME
+  s.files           = FileList["LICENSE",
+                               "README.rdoc",
+                               "Rakefile",
+                               "TODO",
+                               "lib/**/*.rb",
+                               "test/**/*.rb",
+                               "examples/**/*.rb",
+                               "ext/**/*"]
+end
+
+Gem::PackageTask.new(spec) do |pkg|
+  pkg.package_dir = "#{OUTPUT_DIR}/pkg"
+end
+
+#------------------
+# Build native code
+#------------------
+
+Rake::ExtensionTask.new("cqpid", spec)
+

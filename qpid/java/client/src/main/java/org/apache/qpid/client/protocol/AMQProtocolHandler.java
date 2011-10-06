@@ -30,7 +30,6 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.qpid.AMQConnectionClosedException;
@@ -66,7 +65,6 @@ import org.apache.qpid.protocol.ProtocolEngine;
 import org.apache.qpid.thread.Threading;
 import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.network.NetworkConnection;
-import org.apache.qpid.transport.network.NetworkTransport;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -516,18 +514,7 @@ public class AMQProtocolHandler implements ProtocolEngine
         return getStateManager().createWaiter(states);
     }
 
-    /**
-     * Convenience method that writes a frame to the protocol session. Equivalent to calling
-     * getProtocolSession().write().
-     *
-     * @param frame the frame to write
-     */
-    public void writeFrame(AMQDataBlock frame)
-    {
-        writeFrame(frame, false);
-    }
-
-    public  synchronized void writeFrame(AMQDataBlock frame, boolean wait)
+    public  synchronized void writeFrame(AMQDataBlock frame)
     {
         final ByteBuffer buf = asByteBuffer(frame);
         _writtenBytes += buf.remaining();
@@ -678,22 +665,21 @@ public class AMQProtocolHandler implements ProtocolEngine
      * <p/>If a failover exception occurs whilst closing the connection it is ignored, as the connection is closed
      * anyway.
      *
-     * @param timeout The timeout to wait for an acknowledgement to the close request.
+     * @param timeout The timeout to wait for an acknowledgment to the close request.
      *
      * @throws AMQException If the close fails for any reason.
      */
     public void closeConnection(long timeout) throws AMQException
     {
-        ConnectionCloseBody body = _protocolSession.getMethodRegistry().createConnectionCloseBody(AMQConstant.REPLY_SUCCESS.getCode(), // replyCode
-                                                                                                  new AMQShortString("JMS client is closing the connection."), 0, 0);
-
-        final AMQFrame frame = body.generateFrame(0);
-
-        //If the connection is already closed then don't do a syncWrite
         if (!getStateManager().getCurrentState().equals(AMQState.CONNECTION_CLOSED))
         {
+            // Connection is already closed then don't do a syncWrite
             try
             {
+                final ConnectionCloseBody body = _protocolSession.getMethodRegistry().createConnectionCloseBody(AMQConstant.REPLY_SUCCESS.getCode(), // replyCode
+                        new AMQShortString("JMS client is closing the connection."), 0, 0);
+                final AMQFrame frame = body.generateFrame(0);
+
                 syncWrite(frame, ConnectionCloseOkBody.class, timeout);
                 _network.close();
                 closed();
@@ -704,10 +690,9 @@ public class AMQProtocolHandler implements ProtocolEngine
             }
             catch (FailoverException e)
             {
-                _logger.debug("FailoverException interrupted connection close, ignoring as connection   close anyway.");
+                _logger.debug("FailoverException interrupted connection close, ignoring as connection closed anyway.");
             }
         }
-
     }
 
     /** @return the number of bytes read from this protocol session */

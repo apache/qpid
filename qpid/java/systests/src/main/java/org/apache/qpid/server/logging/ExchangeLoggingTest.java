@@ -125,7 +125,7 @@ public class ExchangeLoggingTest extends AbstractTestLogging
     public void testExchangeCreate() throws JMSException, IOException
     {
         //Ignore broker startup messages
-        _monitor.reset();
+        _monitor.markDiscardPoint();
 
         _session.createConsumer(_queue);
         // Ensure we have received the EXH log msg.
@@ -179,7 +179,7 @@ public class ExchangeLoggingTest extends AbstractTestLogging
     public void testExchangeDelete() throws Exception, IOException
     {
         //Ignore broker startup messages
-        _monitor.reset();
+        _monitor.markDiscardPoint();
 
         //create the exchange by creating a consumer
         _session.createConsumer(_queue);
@@ -220,7 +220,7 @@ public class ExchangeLoggingTest extends AbstractTestLogging
     public void testDiscardedMessage() throws Exception
     {
         //Ignore broker startup messages
-        _monitor.reset();
+        _monitor.markDiscardPoint();
 
         if (!isBroker010())
         {

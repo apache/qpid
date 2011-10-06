@@ -19,9 +19,8 @@
 java.naming.factory.initial=org.apache.qpid.jndi.PropertiesFileInitialContextFactory
 java.naming.provider.url=${test.profiles}/test-provider.properties
 
-broker.clean=${test.profiles}/clean-dir ${build.data} ${project.root}/build/work
 broker.ready=Listening on TCP
-broker.config=${project.root}/build/etc/config-systests.xml
+broker.config=build/etc/config-systests.xml
 messagestore.class.name=org.apache.qpid.server.store.MemoryMessageStore
 broker.protocol.excludes=
 broker.persistent=false
