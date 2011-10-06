@@ -793,7 +793,7 @@ public abstract class AMQDestination implements Destination, Referenceable
         return _browseOnly;
     }
     
-    public void setBrowseOnly(boolean b)
+    private void setBrowseOnly(boolean b)
     {
         _browseOnly = b;
     }
