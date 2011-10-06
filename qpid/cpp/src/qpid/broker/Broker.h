@@ -122,6 +122,7 @@ public:
         uint queueFlowStopRatio;    // producer flow control: on
         uint queueFlowResumeRatio;  // producer flow control: off
         uint16_t queueThresholdEventRatio;
+        size_t outputPrefetch;
 
       private:
         std::string getHome();

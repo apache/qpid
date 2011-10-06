@@ -30,9 +30,10 @@ namespace amqp_0_10 {
 
 using sys::Mutex;
 
-Connection::Connection(sys::OutputControl& o, const std::string& id, bool _isClient)
+Connection::Connection(
+    sys::OutputControl& o, const std::string& id, bool _isClient, size_t prefetch_)
     : pushClosed(false), popClosed(false), output(o), identifier(id), initialized(false),
-      isClient(_isClient), buffered(0), version(0,10)
+      isClient(_isClient), buffered(0), version(0,10), prefetch(prefetch_)
 {}
 
 void Connection::setInputHandler(std::auto_ptr<sys::ConnectionInputHandler> c) {
@@ -90,6 +91,7 @@ size_t  Connection::encode(const char* buffer, size_t size) {
     }
     size_t frameSize=0;
     size_t encoded=0;
+    // Encode as much as possible into the IO buffer
     while (!workQueue.empty() && ((frameSize=workQueue.front().encodedSize()) <= out.available())) {
         workQueue.front().encode(out);
         QPID_LOG(trace, "SENT [" << identifier << "]: " << workQueue.front());
@@ -108,6 +110,12 @@ size_t  Connection::encode(const char* buffer, size_t size) {
         workQueue.clear();
         if (frameQueue.empty() && pushClosed)
             popClosed = true;
+        // Prefetch frames to be encoded on the next call.
+        bool more = true;
+        while (buffered < prefetch && more) {
+            Mutex::ScopedUnlock u(frameQueueLock);
+            more = connection->doOutput();
+        }
     }
     return out.getPosition();
 }

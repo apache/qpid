@@ -123,7 +123,8 @@ Broker::Options::Options(const std::string& name) :
     qmf1Support(true),
     queueFlowStopRatio(80),
     queueFlowResumeRatio(70),
-    queueThresholdEventRatio(80)
+    queueThresholdEventRatio(80),
+    outputPrefetch(0)
 {
     int c = sys::SystemInfo::concurrency();
     workerThreads=c+1;
@@ -159,7 +160,9 @@ Broker::Options::Options(const std::string& name) :
         ("async-queue-events", optValue(asyncQueueEvents, "yes|no"), "Set Queue Events async, used for services like replication")
         ("default-flow-stop-threshold", optValue(queueFlowStopRatio, "PERCENT"), "Percent of queue's maximum capacity at which flow control is activated.")
         ("default-flow-resume-threshold", optValue(queueFlowResumeRatio, "PERCENT"), "Percent of queue's maximum capacity at which flow control is de-activated.")
-        ("default-event-threshold-ratio", optValue(queueThresholdEventRatio, "%age of limit"), "The ratio of any specified queue limit at which an event will be raised");
+        ("default-event-threshold-ratio", optValue(queueThresholdEventRatio, "%age of limit"), "The ratio of any specified queue limit at which an event will be raised")
+        // FIXME aconway 2011-10-06: in or out? Needs a bettter name & description.
+        ("output-prefetch", optValue(outputPrefetch, "BYTES"), "Experimental: Pre fetch limit for connection output in bytes");
 }
 
 const std::string empty;

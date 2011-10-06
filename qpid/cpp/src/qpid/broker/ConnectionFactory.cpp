@@ -46,7 +46,8 @@ ConnectionFactory::create(ProtocolVersion v, sys::OutputControl& out, const std:
         return 0;
     }
     if (v == ProtocolVersion(0, 10)) {
-        ConnectionPtr c(new amqp_0_10::Connection(out, id, false));
+        ConnectionPtr c(
+            new amqp_0_10::Connection(out, id, false, broker.getOptions().outputPrefetch));
         c->setInputHandler(InputPtr(new broker::Connection(c.get(), broker, id, external, false)));
         return c.release();
     }
@@ -57,10 +58,10 @@ sys::ConnectionCodec*
 ConnectionFactory::create(sys::OutputControl& out, const std::string& id,
                           const SecuritySettings& external) {
     // used to create connections from one broker to another
-    ConnectionPtr c(new amqp_0_10::Connection(out, id, true));
+    ConnectionPtr c(
+        new amqp_0_10::Connection(out, id, true, broker.getOptions().outputPrefetch));
     c->setInputHandler(InputPtr(new broker::Connection(c.get(), broker, id, external, true)));
     return c.release();
 }
 
-    
 }} // namespace qpid::broker
