@@ -19,6 +19,7 @@
 
 //These tests require a persistent store
 org.apache.qpid.server.store.PersistentStoreTest#*
+org.apache.qpid.test.unit.ack.ClientAcknowledgeTest#testClientAckWithLargeFlusherPeriod
 
 org.apache.qpid.test.unit.ct.DurableSubscriberTest#*
 

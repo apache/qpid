@@ -612,29 +612,26 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         {
             throw new IllegalStateException("Session is already closed");
         }
-        else if (hasFailedOver())
+        else if (hasFailedOverDirty())
         {
+            //perform an implicit recover in this scenario
+            recover();
+
+            //notify the consumer
             throw new IllegalStateException("has failed over");
         }
 
-        while (true)
+        try
         {
-            Long tag = _unacknowledgedMessageTags.poll();
-            if (tag == null)
-            {
-                break;
-            }
-
-            try
-            {
-                acknowledgeMessage(tag, false);
-            }
-            catch (TransportException e)
-            {
-                throw toJMSException("Exception while acknowledging message(s):" + e.getMessage(), e);
-            }
+            acknowledgeImpl();
+        }
+        catch (TransportException e)
+        {
+            throw toJMSException("Exception while acknowledging message(s):" + e.getMessage(), e);
         }
     }
+
+    protected abstract void acknowledgeImpl() throws JMSException;
 
     /**
      * Acknowledge one or many messages.
@@ -844,42 +841,28 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
      * @throws JMSException If the JMS provider fails to commit the transaction due to some internal error. This does
      *                      not mean that the commit is known to have failed, merely that it is not known whether it
      *                      failed or not.
-     * @todo Be aware of possible changes to parameter order as versions change.
      */
     public void commit() throws JMSException
     {
         checkTransacted();
 
+        //Check that we are clean to commit.
+        if (_failedOverDirty)
+        {
+            rollback();
+
+            throw new TransactionRolledBackException("Connection failover has occured with uncommitted transaction activity." +
+                                                     "The session transaction was rolled back.");
+        }
+
         try
         {
-            //Check that we are clean to commit.
-            if (_failedOverDirty)
-            {
-                rollback();
-
-                throw new TransactionRolledBackException("Connection failover has occured since last send. " +
-                                                         "Forced rollback");
-            }
-
-
-            // Acknowledge all delivered messages
-            while (true)
-            {
-                Long tag = _deliveredMessageTags.poll();
-                if (tag == null)
-                {
-                    break;
-                }
-
-                acknowledgeMessage(tag, false);
-            }
-            // Commits outstanding messages and acknowledgments
-            sendCommit();
+            commitImpl();
             markClean();
         }
         catch (AMQException e)
         {
-            throw new JMSAMQException("Failed to commit: " + e.getMessage() + ":" + e.getCause(), e);
+            throw new JMSAMQException("Exception during commit: " + e.getMessage() + ":" + e.getCause(), e);
         }
         catch (FailoverException e)
         {
@@ -891,8 +874,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         }
     }
 
-    public abstract void sendCommit() throws AMQException, FailoverException;
-
+    protected abstract void commitImpl() throws AMQException, FailoverException, TransportException;
 
     public void confirmConsumerCancelled(int consumerTag)
     {
@@ -1580,10 +1562,8 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
     abstract public void sync() throws AMQException;
 
-    public int getAcknowledgeMode() throws JMSException
+    public int getAcknowledgeMode()
     {
-        checkNotClosed();
-
         return _acknowledgeMode;
     }
 
@@ -1643,10 +1623,8 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         return _ticket;
     }
 
-    public boolean getTransacted() throws JMSException
+    public boolean getTransacted()
     {
-        checkNotClosed();
-
         return _transacted;
     }
 
@@ -3096,19 +3074,9 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
      *
      * @return boolean true if failover has occured.
      */
-    public boolean hasFailedOver()
+    public boolean hasFailedOverDirty()
     {
         return _failedOverDirty;
-    }
-
-    /**
-     * Check to see if any message have been sent in this transaction and have not been commited.
-     *
-     * @return boolean true if a message has been sent but not commited
-     */
-    public boolean isDirty()
-    {
-        return _dirty;
     }
 
     public void setTicket(int ticket)
