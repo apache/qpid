@@ -198,7 +198,6 @@ public class AMQMessageDelegate_0_10 extends AbstractAMQMessageDelegate
         }
     }
 
-
     public long getJMSTimestamp() throws JMSException
     {
         return _deliveryProps.getTimestamp();

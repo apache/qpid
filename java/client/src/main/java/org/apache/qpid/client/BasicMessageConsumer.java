@@ -734,34 +734,27 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
             case Session.PRE_ACKNOWLEDGE:
                 _session.acknowledgeMessage(msg.getDeliveryTag(), false);
                 break;
+            case Session.AUTO_ACKNOWLEDGE:
+                //fall through
+            case Session.DUPS_OK_ACKNOWLEDGE:
+                _session.addUnacknowledgedMessage(msg.getDeliveryTag());
+                break;
             case Session.CLIENT_ACKNOWLEDGE:
-                if (isNoConsume())
-                {
-                    _session.acknowledgeMessage(msg.getDeliveryTag(), false);
-                }
-                else
-                {
-                    // we set the session so that when the user calls acknowledge() it can call the method on session
-                    // to send out the appropriate frame
-                    msg.setAMQSession(_session);
-                    _session.addUnacknowledgedMessage(msg.getDeliveryTag());
-                    _session.markDirty();
-                }
+                // we set the session so that when the user calls acknowledge() it can call the method on session
+                // to send out the appropriate frame
+                msg.setAMQSession(_session);
+                _session.addUnacknowledgedMessage(msg.getDeliveryTag());
+                _session.markDirty();
                 break;
             case Session.SESSION_TRANSACTED:
-                if (isNoConsume())
-                {
-                    _session.acknowledgeMessage(msg.getDeliveryTag(), false);
-                }
-                else
-                {
-                    _session.addDeliveredMessage(msg.getDeliveryTag());
-                    _session.markDirty();
-                }
-
+                _session.addDeliveredMessage(msg.getDeliveryTag());
+                _session.markDirty();
+                break;
+            case Session.NO_ACKNOWLEDGE:
+                //do nothing.
+                //path used for NO-ACK consumers, and browsers (see constructor).
                 break;
         }
-
     }
 
     void postDeliver(AbstractJMSMessage msg)
@@ -883,7 +876,7 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
 
     public boolean isNoConsume()
     {
-        return _noConsume || _destination.isBrowseOnly() ;
+        return _noConsume;
     }
 
     public void rollback()
