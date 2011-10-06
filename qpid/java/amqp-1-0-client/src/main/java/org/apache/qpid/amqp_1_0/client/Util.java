@@ -502,9 +502,9 @@ public abstract class Util
     {
         Container container = getContainerName() == null ? new Container() : new Container(getContainerName());
         return getUsername() == null ? new Connection(getHost(), getPort(), null, null, _frameSize, container,
-                                                      _remoteHost, _useSSL)
+                                                      _remoteHost == null ? getHost() : _remoteHost, _useSSL)
                                      : new Connection(getHost(), getPort(), getUsername(), getPassword(), _frameSize,
-                                                      container, _remoteHost, _useSSL);
+                                                      container, _remoteHost == null ? getHost() : _remoteHost, _useSSL);
     }
 
     public String getContainerName()

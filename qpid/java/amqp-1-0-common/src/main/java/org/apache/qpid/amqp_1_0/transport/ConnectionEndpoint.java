@@ -766,6 +766,7 @@ public class ConnectionEndpoint implements DescribedTypeConstructorRegistry.Sour
         {
             SaslInit init = new SaslInit();
             init.setMechanism(Symbol.valueOf("PLAIN"));
+            init.setHostname(_remoteHostname);
             byte[] usernameBytes = _user.getName().getBytes(Charset.forName("UTF-8"));
             byte[] passwordBytes = _password.getBytes(Charset.forName("UTF-8"));
             byte[] initResponse = new byte[usernameBytes.length+passwordBytes.length+2];

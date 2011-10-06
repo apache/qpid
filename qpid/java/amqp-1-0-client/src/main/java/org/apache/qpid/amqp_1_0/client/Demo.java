@@ -241,8 +241,7 @@ public class Demo extends Util
                         try{
 
 
-                            Connection conn2 = new Connection(host, port, user, password,
-                                                              "development.mycompany.mysystem.stormmq.com");
+                            Connection conn2 = new Connection(host, port, user, password, host);
                             Session session2 = conn2.createSession();
                             if(sendingLinks.containsKey(linkRef))
                             {
