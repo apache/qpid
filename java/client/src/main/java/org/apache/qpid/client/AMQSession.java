@@ -362,7 +362,13 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
      * Set when recover is called. This is to handle the case where recover() is called by application code during
      * onMessage() processing to ensure that an auto ack is not sent.
      */
-    private boolean _inRecovery;
+    private volatile boolean _sessionInRecovery;
+
+    /**
+     * Set when the dispatcher should direct incoming messages straight into the UnackedMessage list instead of
+     * to the syncRecieveQueue or MessageListener. Used during cleanup, e.g. in Session.recover().
+     */
+    private volatile boolean _usingDispatcherForCleanup;
 
     /** Used to indicates that the connection to which this session belongs, has been stopped. */
     private boolean _connectionStopped;
@@ -1703,8 +1709,8 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
             // flush any acks we are holding in the buffer.
             flushAcknowledgments();
 
-            // this is set only here, and the before the consumer's onMessage is called it is set to false
-            _inRecovery = true;
+            // this is only set true here, and only set false when the consumers preDeliver method is called
+            _sessionInRecovery = true;
 
             boolean isSuspended = isSuspended();
 
@@ -1712,9 +1718,18 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
             {
                 suspendChannel(true);
             }
-            
+
+            // Set to true to short circuit delivery of anything currently
+            //in the pre-dispatch queue.
+            _usingDispatcherForCleanup = true;
+
             syncDispatchQueue();
-            
+
+            // Set to false before sending the recover as 0-8/9/9-1 will
+            //send messages back before the recover completes, and we
+            //probably shouldn't clean those! ;-)
+            _usingDispatcherForCleanup = false;
+
             if (_dispatcher != null)
             {
                 _dispatcher.recover();
@@ -1723,10 +1738,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
             sendRecover();
             
             markClean();
-            
-            // Set inRecovery to false before you start message flow again again.            
-            _inRecovery = false; 
-            
+
             if (!isSuspended)
             {
                 suspendChannel(false);
@@ -2126,7 +2138,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
     boolean isInRecovery()
     {
-        return _inRecovery;
+        return _sessionInRecovery;
     }
 
     boolean isQueueBound(AMQShortString exchangeName, AMQShortString queueName) throws JMSException
@@ -2248,7 +2260,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
     void setInRecovery(boolean inRecovery)
     {
-        _inRecovery = inRecovery;
+        _sessionInRecovery = inRecovery;
     }
 
     boolean isStarted()
@@ -3325,7 +3337,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                 {
                     rejectMessage(message, true);
                 }
-                else if (isInRecovery())
+                else if (_usingDispatcherForCleanup)
                 {
                     _unacknowledgedMessageTags.add(deliveryTag);            
                 }
