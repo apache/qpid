@@ -2772,6 +2772,21 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         }
     }
 
+    /**
+     * Undeclares the specified temporary queue/topic.
+     *
+     * <p/>Note that this operation automatically retries in the event of fail-over.
+     *
+     * @param amqQueue The name of the temporary destination to delete.
+     *
+     * @throws JMSException If the queue could not be deleted for any reason.
+     * @todo Be aware of possible changes to parameter order as versions change.
+     */
+    protected void deleteTemporaryDestination(final TemporaryDestination amqQueue) throws JMSException
+    {
+        deleteQueue(amqQueue.getAMQQueueName());
+    }
+
     public abstract void sendQueueDelete(final AMQShortString queueName) throws AMQException, FailoverException;
 
     private long getNextProducerId()
