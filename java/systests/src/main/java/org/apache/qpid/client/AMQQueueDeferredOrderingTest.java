@@ -35,13 +35,11 @@ import org.slf4j.LoggerFactory;
 
 public class AMQQueueDeferredOrderingTest extends QpidBrokerTestCase
 {
-
-    private static final int NUM_MESSAGES = 1000;
-
     private Connection con;
     private Session session;
     private AMQQueue queue;
     private MessageConsumer consumer;
+    private int numMessages;
 
     private static final Logger _logger = LoggerFactory.getLogger(AMQQueueDeferredOrderingTest.class);
 
@@ -87,6 +85,8 @@ public class AMQQueueDeferredOrderingTest extends QpidBrokerTestCase
     {
         super.setUp();
 
+        numMessages = isBrokerStorePersistent() ? 300 : 1000;
+
         _logger.info("Create Connection");
         con = getConnection();
         _logger.info("Create Session");
@@ -105,19 +105,19 @@ public class AMQQueueDeferredOrderingTest extends QpidBrokerTestCase
 
         // Setup initial messages
         _logger.info("Creating first producer thread");
-        producerThread = new ASyncProducer(queue, 0, NUM_MESSAGES / 2);
+        producerThread = new ASyncProducer(queue, 0, numMessages / 2);
         producerThread.start();
         // Wait for them to be done
         producerThread.join();
 
         // Setup second set of messages to produce while we consume
         _logger.info("Creating second producer thread");
-        producerThread = new ASyncProducer(queue, NUM_MESSAGES / 2, NUM_MESSAGES);
+        producerThread = new ASyncProducer(queue, numMessages / 2, numMessages);
         producerThread.start();
 
         // Start consuming and checking they're in order
         _logger.info("Consuming messages");
-        for (int i = 0; i < NUM_MESSAGES; i++)
+        for (int i = 0; i < numMessages; i++)
         {
             Message msg = consumer.receive(3000);
             assertNotNull("Message should not be null", msg);
