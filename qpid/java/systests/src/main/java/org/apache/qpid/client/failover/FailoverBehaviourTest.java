@@ -463,6 +463,31 @@ public class FailoverBehaviourTest extends FailoverBaseCase implements Connectio
     }
 
     /**
+     * Test that calling acknowledge before failover leaves the session
+     * clean for use after failover.
+     */
+    public void testAcknowledgeBeforeFailover() throws Exception
+    {
+        init(Session.CLIENT_ACKNOWLEDGE, true);
+
+        produceMessages();
+
+        // consume messages and acknowledge them
+        Message lastMessage = consumeMessages();
+        lastMessage.acknowledge();
+
+        causeFailure();
+
+        assertFailoverException();
+
+        produceMessages();
+
+        // tests whether receiving and acknowledgment is working after recover
+        lastMessage = consumeMessages();
+        lastMessage.acknowledge();
+    }
+
+    /**
      * Test that receiving of messages after failover prior to calling
      * {@link Message#acknowledge()} still results in acknowledge throwing an exception.
      */
