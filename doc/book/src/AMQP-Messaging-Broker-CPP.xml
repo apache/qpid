@@ -52,6 +52,7 @@
     <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Starting-a-cluster.xml"/>
     <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="ACL.xml"/>
     <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="producer-flow-control.xml"/>
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Using-message-groups.xml"/>
 </chapter>
  
 

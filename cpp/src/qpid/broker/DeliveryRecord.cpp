@@ -153,7 +153,7 @@ uint32_t DeliveryRecord::getCredit() const
 }
 
 void DeliveryRecord::acquire(DeliveryIds& results) {
-    if (queue->acquire(msg)) {
+    if (queue->acquire(msg, tag)) {
         acquired = true;
         results.push_back(id);
         if (!acceptExpected) {

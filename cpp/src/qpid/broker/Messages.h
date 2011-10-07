@@ -76,7 +76,6 @@ class Messages
      * @return true if there is another message, false otherwise.
      */
     virtual bool next(const framing::SequenceNumber&, QueuedMessage&) = 0;
-
     /**
      * Note: Caller is responsible for ensuring that there is a front
      * (e.g. empty() returns false)

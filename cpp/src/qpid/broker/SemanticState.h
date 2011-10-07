@@ -75,7 +75,6 @@ class SemanticState : private boost::noncopyable {
     {
         mutable qpid::sys::Mutex lock;
         SemanticState* const parent;
-        const std::string name;
         const boost::shared_ptr<Queue> queue;
         const bool ackExpected;
         const bool acquire;
@@ -84,6 +83,7 @@ class SemanticState : private boost::noncopyable {
         bool windowActive;
         bool exclusive;
         std::string resumeId;
+        const std::string tag;  // <destination> from AMQP 0-10 Message.subscribe command
         uint64_t resumeTtl;
         framing::FieldTable arguments;
         uint32_t msgCredit;
@@ -103,7 +103,8 @@ class SemanticState : private boost::noncopyable {
         ConsumerImpl(SemanticState* parent,
                      const std::string& name, boost::shared_ptr<Queue> queue,
                      bool ack, bool acquire, bool exclusive,
-                     const std::string& resumeId, uint64_t resumeTtl, const framing::FieldTable& arguments);
+                     const std::string& tag, const std::string& resumeId,
+                     uint64_t resumeTtl, const framing::FieldTable& arguments);
         ~ConsumerImpl();
         OwnershipToken* getSession();
         bool deliver(QueuedMessage& msg);
@@ -130,8 +131,6 @@ class SemanticState : private boost::noncopyable {
 
         bool doOutput();
 
-        std::string getName() const { return name; }
-
         bool isAckExpected() const { return ackExpected; }
         bool isAcquire() const { return acquire; }
         bool isWindowing() const { return windowing; }
@@ -139,6 +138,7 @@ class SemanticState : private boost::noncopyable {
         uint32_t getMsgCredit() const { return msgCredit; }
         uint32_t getByteCredit() const { return byteCredit; }
         std::string getResumeId() const { return resumeId; };
+        const std::string& getTag() const { return tag; }
         uint64_t getResumeTtl() const { return resumeTtl; }
         const framing::FieldTable& getArguments() const { return arguments; }
 
@@ -190,7 +190,8 @@ class SemanticState : private boost::noncopyable {
     SessionContext& getSession() { return session; }
     const SessionContext& getSession() const { return session; }
 
-    ConsumerImpl& find(const std::string& destination);
+    const ConsumerImpl::shared_ptr find(const std::string& destination) const;
+    bool find(const std::string& destination, ConsumerImpl::shared_ptr&) const;
 
     /**
      * Get named queue, never returns 0.

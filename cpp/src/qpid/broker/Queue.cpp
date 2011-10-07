@@ -33,6 +33,8 @@
 #include "qpid/broker/QueueRegistry.h"
 #include "qpid/broker/QueueFlowLimit.h"
 #include "qpid/broker/ThresholdAlerts.h"
+#include "qpid/broker/FifoDistributor.h"
+#include "qpid/broker/MessageGroupManager.h"
 
 #include "qpid/StringUtils.h"
 #include "qpid/log/Statement.h"
@@ -42,6 +44,7 @@
 #include "qpid/sys/ClusterSafe.h"
 #include "qpid/sys/Monitor.h"
 #include "qpid/sys/Time.h"
+#include "qpid/types/Variant.h"
 #include "qmf/org/apache/qpid/broker/ArgsQueuePurge.h"
 #include "qmf/org/apache/qpid/broker/ArgsQueueReroute.h"
 
@@ -111,7 +114,8 @@ Queue::Queue(const string& _name, bool _autodelete,
     broker(b),
     deleted(false),
     barrier(*this),
-    autoDeleteTimeout(0)
+    autoDeleteTimeout(0),
+    allocator(new FifoDistributor( *messages ))
 {
     if (parent != 0 && broker != 0) {
         ManagementAgent* agent = broker->getManagementAgent();
@@ -220,6 +224,7 @@ void Queue::requeue(const QueuedMessage& msg){
             	enqueue(0, payload);
             }
         }
+        observeRequeue(msg, locker);
     }
     copy.notify();
 }
@@ -229,7 +234,7 @@ bool Queue::acquireMessageAt(const SequenceNumber& position, QueuedMessage& mess
     Mutex::ScopedLock locker(messageLock);
     assertClusterSafe();
     QPID_LOG(debug, "Attempting to acquire message at " << position);
-    if (messages->remove(position, message)) {
+    if (acquire(position, message, locker)) {
         QPID_LOG(debug, "Acquired message at " << position << " from " << name);
         return true;
     } else {
@@ -238,9 +243,24 @@ bool Queue::acquireMessageAt(const SequenceNumber& position, QueuedMessage& mess
     }
 }
 
-bool Queue::acquire(const QueuedMessage& msg) {
-    QueuedMessage copy = msg;
-    return acquireMessageAt(msg.position, copy);
+bool Queue::acquire(const QueuedMessage& msg, const std::string& consumer)
+{
+    Mutex::ScopedLock locker(messageLock);
+    assertClusterSafe();
+    QPID_LOG(debug, consumer << " attempting to acquire message at " << msg.position);
+
+    if (!allocator->allocate( consumer, msg )) {
+        QPID_LOG(debug, "Not permitted to acquire msg at " << msg.position << " from '" << name);
+        return false;
+    }
+
+    QueuedMessage copy(msg);
+    if (acquire( msg.position, copy, locker)) {
+        QPID_LOG(debug, "Acquired message at " << msg.position << " from " << name);
+        return true;
+    }
+    QPID_LOG(debug, "Could not acquire message at " << msg.position << " from " << name << "; no message at that position");
+    return false;
 }
 
 void Queue::notifyListener()
@@ -256,7 +276,7 @@ void Queue::notifyListener()
     set.notify();
 }
 
-bool Queue::getNextMessage(QueuedMessage& m, Consumer::shared_ptr c)
+bool Queue::getNextMessage(QueuedMessage& m, Consumer::shared_ptr& c)
 {
     checkNotDeleted();
     if (c->preAcquires()) {
@@ -274,46 +294,65 @@ bool Queue::getNextMessage(QueuedMessage& m, Consumer::shared_ptr c)
     }
 }
 
-Queue::ConsumeCode Queue::consumeNextMessage(QueuedMessage& m, Consumer::shared_ptr c)
+Queue::ConsumeCode Queue::consumeNextMessage(QueuedMessage& m, Consumer::shared_ptr& c)
 {
     while (true) {
         Mutex::ScopedLock locker(messageLock);
-        if (messages->empty()) {
-            QPID_LOG(debug, "No messages to dispatch on queue '" << name << "'");
+        QueuedMessage msg;
+
+        if (!allocator->nextConsumableMessage(c, msg)) { // no next available
+            QPID_LOG(debug, "No messages available to dispatch to consumer " <<
+                     c->getName() << " on queue '" << name << "'");
             listeners.addListener(c);
             return NO_MESSAGES;
-        } else {
-            QueuedMessage msg = messages->front();
-            if (msg.payload->hasExpired()) {
-                QPID_LOG(debug, "Message expired from queue '" << name << "'");
-                popAndDequeue();
-                continue;
-            }
+        }
 
-            if (c->filter(msg.payload)) {
-                if (c->accept(msg.payload)) {
-                    m = msg;
-                    pop();
-                    return CONSUMED;
-                } else {
-                    //message(s) are available but consumer hasn't got enough credit
-                    QPID_LOG(debug, "Consumer can't currently accept message from '" << name << "'");
-                    return CANT_CONSUME;
-                }
+        if (msg.payload->hasExpired()) {
+            QPID_LOG(debug, "Message expired from queue '" << name << "'");
+            c->position = msg.position;
+            acquire( msg.position, msg, locker);
+            dequeue( 0, msg );
+            continue;
+        }
+
+        // a message is available for this consumer - can the consumer use it?
+
+        if (c->filter(msg.payload)) {
+            if (c->accept(msg.payload)) {
+                bool ok = allocator->allocate( c->getName(), msg );  // inform allocator
+                (void) ok; assert(ok);
+                ok = acquire( msg.position, msg, locker);
+                (void) ok; assert(ok);
+                m = msg;
+                c->position = m.position;
+                return CONSUMED;
             } else {
-                //consumer will never want this message
-                QPID_LOG(debug, "Consumer doesn't want message from '" << name << "'");
+                //message(s) are available but consumer hasn't got enough credit
+                QPID_LOG(debug, "Consumer can't currently accept message from '" << name << "'");
                 return CANT_CONSUME;
             }
+        } else {
+            //consumer will never want this message
+            QPID_LOG(debug, "Consumer doesn't want message from '" << name << "'");
+            c->position = msg.position;
+            return CANT_CONSUME;
         }
     }
 }
 
-
-bool Queue::browseNextMessage(QueuedMessage& m, Consumer::shared_ptr c)
+bool Queue::browseNextMessage(QueuedMessage& m, Consumer::shared_ptr& c)
 {
-    QueuedMessage msg(this);
-    while (seek(msg, c)) {
+    while (true) {
+        Mutex::ScopedLock locker(messageLock);
+        QueuedMessage msg;
+
+        if (!allocator->nextBrowsableMessage(c, msg)) { // no next available
+            QPID_LOG(debug, "No browsable messages available for consumer " <<
+                     c->getName() << " on queue '" << name << "'");
+            listeners.addListener(c);
+            return false;
+        }
+
         if (c->filter(msg.payload) && !msg.payload->hasExpired()) {
             if (c->accept(msg.payload)) {
                 //consumer wants the message
@@ -327,8 +366,8 @@ bool Queue::browseNextMessage(QueuedMessage& m, Consumer::shared_ptr c)
             }
         } else {
             //consumer will never want this message, continue seeking
-            c->position = msg.position;
             QPID_LOG(debug, "Browser skipping message from '" << name << "'");
+            c->position = msg.position;
         }
     }
     return false;
@@ -358,61 +397,71 @@ bool Queue::dispatch(Consumer::shared_ptr c)
     }
 }
 
-// Find the next message
-bool Queue::seek(QueuedMessage& msg, Consumer::shared_ptr c) {
+bool Queue::find(SequenceNumber pos, QueuedMessage& msg) const {
+
     Mutex::ScopedLock locker(messageLock);
-    if (messages->next(c->position, msg)) {
+    if (messages->find(pos, msg))
         return true;
-    } else {
-        listeners.addListener(c);
-        return false;
-    }
-}
-
-QueuedMessage Queue::find(SequenceNumber pos) const {
-
-    Mutex::ScopedLock locker(messageLock);
-    QueuedMessage msg;
-    messages->find(pos, msg);
-    return msg;
+    return false;
 }
 
 void Queue::consume(Consumer::shared_ptr c, bool requestExclusive){
     assertClusterSafe();
-    Mutex::ScopedLock locker(consumerLock);
-    if(exclusive) {
-        throw ResourceLockedException(
-            QPID_MSG("Queue " << getName() << " has an exclusive consumer. No more consumers allowed."));
-    } else if(requestExclusive) {
-        if(consumerCount) {
+    {
+        Mutex::ScopedLock locker(consumerLock);
+        if(exclusive) {
             throw ResourceLockedException(
-                QPID_MSG("Queue " << getName() << " already has consumers. Exclusive access denied."));
-        } else {
-            exclusive = c->getSession();
+                                          QPID_MSG("Queue " << getName() << " has an exclusive consumer. No more consumers allowed."));
+        } else if(requestExclusive) {
+            if(consumerCount) {
+                throw ResourceLockedException(
+                                              QPID_MSG("Queue " << getName() << " already has consumers. Exclusive access denied."));
+            } else {
+                exclusive = c->getSession();
+            }
+        }
+        consumerCount++;
+        if (mgmtObject != 0)
+            mgmtObject->inc_consumerCount ();
+        //reset auto deletion timer if necessary
+        if (autoDeleteTimeout && autoDeleteTask) {
+            autoDeleteTask->cancel();
         }
     }
-    consumerCount++;
-    if (mgmtObject != 0)
-        mgmtObject->inc_consumerCount ();
-    //reset auto deletion timer if necessary
-    if (autoDeleteTimeout && autoDeleteTask) {
-        autoDeleteTask->cancel();
+    Mutex::ScopedLock locker(messageLock);
+    for (Observers::const_iterator i = observers.begin(); i != observers.end(); ++i) {
+        try{
+            (*i)->consumerAdded(*c);
+        } catch (const std::exception& e) {
+            QPID_LOG(warning, "Exception on notification of new consumer for queue " << getName() << ": " << e.what());
+        }
     }
 }
 
 void Queue::cancel(Consumer::shared_ptr c){
     removeListener(c);
-    Mutex::ScopedLock locker(consumerLock);
-    consumerCount--;
-    if(exclusive) exclusive = 0;
-    if (mgmtObject != 0)
-        mgmtObject->dec_consumerCount ();
+    {
+        Mutex::ScopedLock locker(consumerLock);
+        consumerCount--;
+        if(exclusive) exclusive = 0;
+        if (mgmtObject != 0)
+            mgmtObject->dec_consumerCount ();
+    }
+    Mutex::ScopedLock locker(messageLock);
+    for (Observers::const_iterator i = observers.begin(); i != observers.end(); ++i) {
+        try{
+            (*i)->consumerRemoved(*c);
+        } catch (const std::exception& e) {
+            QPID_LOG(warning, "Exception on notification of removed consumer for queue " << getName() << ": " << e.what());
+        }
+    }
 }
 
 QueuedMessage Queue::get(){
     Mutex::ScopedLock locker(messageLock);
     QueuedMessage msg(this);
-    messages->pop(msg);
+    if (messages->pop(msg))
+        observeAcquire(msg, locker);
     return msg;
 }
 
@@ -443,10 +492,117 @@ void Queue::purgeExpired(qpid::sys::Duration lapse)
             Mutex::ScopedLock locker(messageLock);
             messages->removeIf(boost::bind(&collect_if_expired, boost::ref(expired), _1));
         }
-        for_each(expired.begin(), expired.end(),
-                 boost::bind(&Queue::dequeue, this, (TransactionContext*) 0, _1));
+
+        for (std::deque<QueuedMessage>::const_iterator i = expired.begin();
+             i != expired.end(); ++i) {
+            {
+                Mutex::ScopedLock locker(messageLock);
+                observeAcquire(*i, locker);
+            }
+            dequeue( 0, *i );
+        }
     }
 }
+
+
+namespace {
+    // for use with purge/move below - collect messages that match a given filter
+    //
+    class MessageFilter
+    {
+    public:
+        static const std::string typeKey;
+        static const std::string paramsKey;
+        static MessageFilter *create( const ::qpid::types::Variant::Map *filter );
+        virtual bool match( const QueuedMessage& ) const { return true; }
+        virtual ~MessageFilter() {}
+    protected:
+        MessageFilter() {};
+    };
+    const std::string MessageFilter::typeKey("filter_type");
+    const std::string MessageFilter::paramsKey("filter_params");
+
+    // filter by message header string value exact match
+    class HeaderMatchFilter : public MessageFilter
+    {
+    public:
+        /* Config:
+           { 'filter_type' : 'header_match_str',
+             'filter_params' : { 'header_key' : "<header name>",
+                                 'header_value' : "<value to match>"
+                               }
+           }
+        */
+        static const std::string typeKey;
+        static const std::string headerKey;
+        static const std::string valueKey;
+        HeaderMatchFilter( const std::string& _header, const std::string& _value )
+            : MessageFilter (), header(_header), value(_value) {}
+        bool match( const QueuedMessage& msg ) const
+        {
+            const qpid::framing::FieldTable* headers = msg.payload->getApplicationHeaders();
+            if (!headers) return false;
+            FieldTable::ValuePtr h = headers->get(header);
+            if (!h || !h->convertsTo<std::string>()) return false;
+            return h->get<std::string>() == value;
+        }
+    private:
+        const std::string header;
+        const std::string value;
+    };
+    const std::string HeaderMatchFilter::typeKey("header_match_str");
+    const std::string HeaderMatchFilter::headerKey("header_key");
+    const std::string HeaderMatchFilter::valueKey("header_value");
+
+    // factory to create correct filter based on map
+    MessageFilter* MessageFilter::create( const ::qpid::types::Variant::Map *filter )
+    {
+        using namespace qpid::types;
+        if (filter && !filter->empty()) {
+            Variant::Map::const_iterator i = filter->find(MessageFilter::typeKey);
+            if (i != filter->end()) {
+
+                if (i->second.asString() == HeaderMatchFilter::typeKey) {
+                    Variant::Map::const_iterator p = filter->find(MessageFilter::paramsKey);
+                    if (p != filter->end() && p->second.getType() == VAR_MAP) {
+                        Variant::Map::const_iterator k = p->second.asMap().find(HeaderMatchFilter::headerKey);
+                        Variant::Map::const_iterator v = p->second.asMap().find(HeaderMatchFilter::valueKey);
+                        if (k != p->second.asMap().end() && v != p->second.asMap().end()) {
+                            std::string headerKey(k->second.asString());
+                            std::string value(v->second.asString());
+                            QPID_LOG(debug, "Message filtering by header value configured.  key: " << headerKey << " value: " << value );
+                            return new HeaderMatchFilter( headerKey, value );
+                        }
+                    }
+                }
+            }
+            QPID_LOG(error, "Ignoring unrecognized message filter: '" << *filter << "'");
+        }
+        return new MessageFilter();
+    }
+
+    // used by removeIf() to collect all messages matching a filter, maximum match count is
+    // optional.
+    struct Collector {
+        const uint32_t maxMatches;
+        MessageFilter& filter;
+        std::deque<QueuedMessage> matches;
+        Collector(MessageFilter& filter, uint32_t max)
+            : maxMatches(max), filter(filter) {}
+        bool operator() (QueuedMessage& qm)
+        {
+            if (maxMatches == 0 || matches.size() < maxMatches) {
+                if (filter.match( qm )) {
+                    matches.push_back(qm);
+                    return true;
+                }
+            }
+            return false;
+        }
+    };
+
+} // end namespace
+
 
 /**
  * purge - for purging all or some messages on a queue
@@ -459,62 +615,77 @@ void Queue::purgeExpired(qpid::sys::Duration lapse)
  * The dest exchange may be supplied to re-route messages through the exchange.
  * It is safe to re-route messages such that they arrive back on the same queue,
  * even if the queue is ordered by priority.
+ *
+ * An optional filter can be supplied that will be applied against each message.  The
+ * message is purged only if the filter matches.  See MessageDistributor for more detail.
  */
-uint32_t Queue::purge(const uint32_t purge_request, boost::shared_ptr<Exchange> dest)
+uint32_t Queue::purge(const uint32_t purge_request, boost::shared_ptr<Exchange> dest,
+                      const qpid::types::Variant::Map *filter)
 {
-    Mutex::ScopedLock locker(messageLock);
-    uint32_t purge_count = purge_request; // only comes into play if  >0
-    std::deque<DeliverableMessage> rerouteQueue;
+    std::auto_ptr<MessageFilter> mf(MessageFilter::create(filter));
+    Collector c(*mf.get(), purge_request);
 
-    uint32_t count = 0;
-    // Either purge them all or just the some (purge_count) while the queue isn't empty.
-    while((!purge_request || purge_count--) && !messages->empty()) {
+    Mutex::ScopedLock locker(messageLock);
+    messages->removeIf( boost::bind<bool>(boost::ref(c), _1) );
+    for (std::deque<QueuedMessage>::iterator qmsg = c.matches.begin();
+         qmsg != c.matches.end(); ++qmsg) {
+        // Update observers and message state:
+        observeAcquire(*qmsg, locker);
+        dequeue(0, *qmsg);
+        // now reroute if necessary
         if (dest.get()) {
-            //
-            // If there is a destination exchange, stage the messages onto a reroute queue
-            // so they don't wind up getting purged more than once.
-            //
-            DeliverableMessage msg(messages->front().payload);
-            rerouteQueue.push_back(msg);
+            assert(qmsg->payload);
+            DeliverableMessage dmsg(qmsg->payload);
+            dest->routeWithAlternate(dmsg);
         }
-        popAndDequeue();
-        count++;
     }
-
-    //
-    // Re-route purged messages into the destination exchange.  Note that there's no need
-    // to test dest.get() here because if it is NULL, the rerouteQueue will be empty.
-    //
-    while (!rerouteQueue.empty()) {
-        DeliverableMessage msg(rerouteQueue.front());
-        rerouteQueue.pop_front();
-        dest->routeWithAlternate(msg);
-    }
-
-    return count;
+    return c.matches.size();
 }
 
-uint32_t Queue::move(const Queue::shared_ptr destq, uint32_t qty) {
+uint32_t Queue::move(const Queue::shared_ptr destq, uint32_t qty,
+                     const qpid::types::Variant::Map *filter)
+{
+    std::auto_ptr<MessageFilter> mf(MessageFilter::create(filter));
+    Collector c(*mf.get(), qty);
+
     Mutex::ScopedLock locker(messageLock);
-    uint32_t move_count = qty; // only comes into play if  qty >0
-    uint32_t count = 0; // count how many were moved for returning
+    messages->removeIf( boost::bind<bool>(boost::ref(c), _1) );
 
-    while((!qty || move_count--) && !messages->empty()) {
-        QueuedMessage qmsg = messages->front();
-        boost::intrusive_ptr<Message> msg = qmsg.payload;
-        destq->deliver(msg); // deliver message to the destination queue
-        pop();
-        dequeue(0, qmsg);
-        count++;
+    for (std::deque<QueuedMessage>::iterator qmsg = c.matches.begin();
+         qmsg != c.matches.end(); ++qmsg) {
+        // Update observers and message state:
+        observeAcquire(*qmsg, locker);
+        dequeue(0, *qmsg);
+        // and move to destination Queue.
+        assert(qmsg->payload);
+        destq->deliver(qmsg->payload);
     }
-    return count;
+    return c.matches.size();
 }
 
-void Queue::pop()
+/** Acquire the front (oldest) message from the in-memory queue.
+ * assumes messageLock held by caller
+ */
+void Queue::pop(const Mutex::ScopedLock& locker)
 {
     assertClusterSafe();
-    messages->pop();
-    ++dequeueSincePurge;
+    QueuedMessage msg;
+    if (messages->pop(msg)) {
+        observeAcquire(msg, locker);
+        ++dequeueSincePurge;
+    }
+}
+
+/** Acquire the message at the given position, return true and msg if acquire succeeds */
+bool Queue::acquire(const qpid::framing::SequenceNumber& position, QueuedMessage& msg,
+                    const Mutex::ScopedLock& locker)
+{
+    if (messages->remove(position, msg)) {
+        observeAcquire(msg, locker);
+        ++dequeueSincePurge;
+        return true;
+    }
+    return false;
 }
 
 void Queue::push(boost::intrusive_ptr<Message>& msg, bool isRecovery){
@@ -528,8 +699,10 @@ void Queue::push(boost::intrusive_ptr<Message>& msg, bool isRecovery){
         if (insertSeqNo) msg->insertCustomProperty(seqNoKey, sequence);
 
         dequeueRequired = messages->push(qm, removed);
+        if (dequeueRequired)
+            observeAcquire(removed, locker);
         listeners.populate(copy);
-        enqueued(qm);
+        observeEnqueue(qm, locker);
     }
     copy.notify();
     if (dequeueRequired) {
@@ -663,7 +836,7 @@ bool Queue::dequeue(TransactionContext* ctxt, const QueuedMessage& msg)
         Mutex::ScopedLock locker(messageLock);
         if (!isEnqueued(msg)) return false;
         if (!ctxt) {
-            dequeued(msg);
+            observeDequeue(msg, locker);
         }
     }
     // This check prevents messages which have been forced persistent on one queue from dequeuing
@@ -683,7 +856,7 @@ bool Queue::dequeue(TransactionContext* ctxt, const QueuedMessage& msg)
 void Queue::dequeueCommitted(const QueuedMessage& msg)
 {
     Mutex::ScopedLock locker(messageLock);
-    dequeued(msg);
+    observeDequeue(msg, locker);
     if (mgmtObject != 0) {
         mgmtObject->inc_msgTxnDequeues();
         mgmtObject->inc_byteTxnDequeues(msg.payload->contentSize());
@@ -691,21 +864,23 @@ void Queue::dequeueCommitted(const QueuedMessage& msg)
 }
 
 /**
- * Removes a message from the in-memory delivery queue as well
- * dequeing it from the logical (and persistent if applicable) queue
+ * Removes the first (oldest) message from the in-memory delivery queue as well dequeing
+ * it from the logical (and persistent if applicable) queue
  */
-void Queue::popAndDequeue()
+void Queue::popAndDequeue(const Mutex::ScopedLock& held)
 {
-    QueuedMessage msg = messages->front();
-    pop();
-    dequeue(0, msg);
+    if (!messages->empty()) {
+        QueuedMessage msg = messages->front();
+        pop(held);
+        dequeue(0, msg);
+    }
 }
 
 /**
  * Updates policy and management when a message has been dequeued,
  * expects messageLock to be held
  */
-void Queue::dequeued(const QueuedMessage& msg)
+void Queue::observeDequeue(const QueuedMessage& msg, const Mutex::ScopedLock&)
 {
     if (policy.get()) policy->dequeued(msg);
     mgntDeqStats(msg.payload);
@@ -718,6 +893,33 @@ void Queue::dequeued(const QueuedMessage& msg)
     }
 }
 
+/** updates queue observers when a message has become unavailable for transfer,
+ * expects messageLock to be held
+ */
+void Queue::observeAcquire(const QueuedMessage& msg, const Mutex::ScopedLock&)
+{
+    for (Observers::const_iterator i = observers.begin(); i != observers.end(); ++i) {
+        try{
+            (*i)->acquired(msg);
+        } catch (const std::exception& e) {
+            QPID_LOG(warning, "Exception on notification of message removal for queue " << getName() << ": " << e.what());
+        }
+    }
+}
+
+/** updates queue observers when a message has become re-available for transfer,
+ * expects messageLock to be held
+ */
+void Queue::observeRequeue(const QueuedMessage& msg, const Mutex::ScopedLock&)
+{
+    for (Observers::const_iterator i = observers.begin(); i != observers.end(); ++i) {
+        try{
+            (*i)->requeued(msg);
+        } catch (const std::exception& e) {
+            QPID_LOG(warning, "Exception on notification of message requeue for queue " << getName() << ": " << e.what());
+        }
+    }
+}
 
 void Queue::create(const FieldTable& _settings)
 {
@@ -788,17 +990,28 @@ void Queue::configureImpl(const FieldTable& _settings)
     if (lvqKey.size()) {
         QPID_LOG(debug, "Configured queue " <<  getName() << " as Last Value Queue with key " << lvqKey);
         messages = std::auto_ptr<Messages>(new MessageMap(lvqKey));
+        allocator = boost::shared_ptr<MessageDistributor>(new FifoDistributor( *messages ));
     } else if (_settings.get(qpidLastValueQueueNoBrowse)) {
         QPID_LOG(debug, "Configured queue " <<  getName() << " as Legacy Last Value Queue with 'no-browse' on");
         messages = LegacyLVQ::updateOrReplace(messages, qpidVQMatchProperty, true, broker);
+        allocator = boost::shared_ptr<MessageDistributor>(new FifoDistributor( *messages ));
     } else if (_settings.get(qpidLastValueQueue)) {
         QPID_LOG(debug, "Configured queue " <<  getName() << " as Legacy Last Value Queue");
         messages = LegacyLVQ::updateOrReplace(messages, qpidVQMatchProperty, false, broker);
+        allocator = boost::shared_ptr<MessageDistributor>(new FifoDistributor( *messages ));
     } else {
         std::auto_ptr<Messages> m = Fairshare::create(_settings);
         if (m.get()) {
             messages = m;
+            allocator = boost::shared_ptr<MessageDistributor>(new FifoDistributor( *messages ));
             QPID_LOG(debug, "Configured queue " <<  getName() << " as priority queue.");
+        } else { // default (FIFO) queue type
+            // override default message allocator if message groups configured.
+            boost::shared_ptr<MessageGroupManager> mgm(MessageGroupManager::create( getName(), *messages, _settings));
+            if (mgm) {
+                allocator = mgm;
+                addObserver(mgm);
+            }
         }
     }
 
@@ -835,7 +1048,7 @@ void Queue::destroyed()
         while(!messages->empty()){
             DeliverableMessage msg(messages->front().payload);
             alternateExchange->routeWithAlternate(msg);
-            popAndDequeue();
+            popAndDequeue(locker);
         }
         alternateExchange->decAlternateUsers();
     }
@@ -1057,7 +1270,7 @@ Manageable::status_t Queue::ManagementMethod (uint32_t methodId, Args& args, str
     case _qmf::Queue::METHOD_PURGE :
         {
             _qmf::ArgsQueuePurge& purgeArgs = (_qmf::ArgsQueuePurge&) args;
-            purge(purgeArgs.i_request);
+            purge(purgeArgs.i_request, boost::shared_ptr<Exchange>(), &purgeArgs.i_filter);
             status = Manageable::STATUS_OK;
         }
         break;
@@ -1078,13 +1291,21 @@ Manageable::status_t Queue::ManagementMethod (uint32_t methodId, Args& args, str
                 }
             }
 
-            purge(rerouteArgs.i_request, dest);
+            purge(rerouteArgs.i_request, dest, &rerouteArgs.i_filter);
             status = Manageable::STATUS_OK;
         }
         break;
     }
 
     return status;
+}
+
+
+void Queue::query(qpid::types::Variant::Map& results) const
+{
+    Mutex::ScopedLock locker(messageLock);
+    /** @todo add any interesting queue state into results */
+    if (allocator) allocator->query(results);
 }
 
 void Queue::setPosition(SequenceNumber n) {
@@ -1121,7 +1342,10 @@ void Queue::insertSequenceNumbers(const std::string& key)
     QPID_LOG(debug, "Inserting sequence numbers as " << key);
 }
 
-void Queue::enqueued(const QueuedMessage& m)
+/** updates queue observers and state when a message has become available for transfer,
+ * expects messageLock to be held
+ */
+void Queue::observeEnqueue(const QueuedMessage& m, const Mutex::ScopedLock&)
 {
     for (Observers::iterator i = observers.begin(); i != observers.end(); ++i) {
         try {
@@ -1144,7 +1368,8 @@ void Queue::updateEnqueued(const QueuedMessage& m)
         if (policy.get()) {
             policy->recoverEnqueued(payload);
         }
-        enqueued(m);
+        Mutex::ScopedLock locker(messageLock);
+        observeEnqueue(m, locker);
     } else {
         QPID_LOG(warning, "Queue informed of enqueued message that has no payload");
     }
@@ -1168,6 +1393,7 @@ void Queue::checkNotDeleted()
 
 void Queue::addObserver(boost::shared_ptr<QueueObserver> observer)
 {
+    Mutex::ScopedLock locker(messageLock);
     observers.insert(observer);
 }
 

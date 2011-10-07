@@ -33,10 +33,12 @@
 #include "qpid/broker/Link.h"
 #include "qpid/broker/ExpiryPolicy.h"
 #include "qpid/broker/QueueFlowLimit.h"
+#include "qpid/broker/MessageGroupManager.h"
 
 #include "qmf/org/apache/qpid/broker/Package.h"
 #include "qmf/org/apache/qpid/broker/ArgsBrokerCreate.h"
 #include "qmf/org/apache/qpid/broker/ArgsBrokerDelete.h"
+#include "qmf/org/apache/qpid/broker/ArgsBrokerQuery.h"
 #include "qmf/org/apache/qpid/broker/ArgsBrokerEcho.h"
 #include "qmf/org/apache/qpid/broker/ArgsBrokerGetLogLevel.h"
 #include "qmf/org/apache/qpid/broker/ArgsBrokerQueueMoveMessages.h"
@@ -122,7 +124,8 @@ Broker::Options::Options(const std::string& name) :
     qmf1Support(true),
     queueFlowStopRatio(80),
     queueFlowResumeRatio(70),
-    queueThresholdEventRatio(80)
+    queueThresholdEventRatio(80),
+    defaultMsgGroup("qpid.no-group")
 {
     int c = sys::SystemInfo::concurrency();
     workerThreads=c+1;
@@ -158,7 +161,8 @@ Broker::Options::Options(const std::string& name) :
         ("async-queue-events", optValue(asyncQueueEvents, "yes|no"), "Set Queue Events async, used for services like replication")
         ("default-flow-stop-threshold", optValue(queueFlowStopRatio, "PERCENT"), "Percent of queue's maximum capacity at which flow control is activated.")
         ("default-flow-resume-threshold", optValue(queueFlowResumeRatio, "PERCENT"), "Percent of queue's maximum capacity at which flow control is de-activated.")
-        ("default-event-threshold-ratio", optValue(queueThresholdEventRatio, "%age of limit"), "The ratio of any specified queue limit at which an event will be raised");
+        ("default-event-threshold-ratio", optValue(queueThresholdEventRatio, "%age of limit"), "The ratio of any specified queue limit at which an event will be raised")
+        ("default-message-group", optValue(defaultMsgGroup, "GROUP-IDENTIFER"), "Group identifier to assign to messages delivered to a message group queue that do not contain an identifier.");
 }
 
 const std::string empty;
@@ -249,6 +253,7 @@ Broker::Broker(const Broker::Options& conf) :
     Plugin::earlyInitAll(*this);
 
     QueueFlowLimit::setDefaults(conf.queueLimit, conf.queueFlowStopRatio, conf.queueFlowResumeRatio);
+    MessageGroupManager::setDefaults(conf.defaultMsgGroup);
 
     // If no plugin store module registered itself, set up the null store.
     if (NullMessageStore::isNullStore(store.get()))
@@ -453,7 +458,7 @@ Manageable::status_t Broker::ManagementMethod (uint32_t methodId,
         _qmf::ArgsBrokerQueueMoveMessages& moveArgs=
             dynamic_cast<_qmf::ArgsBrokerQueueMoveMessages&>(args);
         QPID_LOG (debug, "Broker::queueMoveMessages()");
-        if (queueMoveMessages(moveArgs.i_srcQueue, moveArgs.i_destQueue, moveArgs.i_qty))
+        if (queueMoveMessages(moveArgs.i_srcQueue, moveArgs.i_destQueue, moveArgs.i_qty, moveArgs.i_filter))
             status = Manageable::STATUS_OK;
         else
             return Manageable::STATUS_PARAMETER_INVALID;
@@ -480,6 +485,13 @@ Manageable::status_t Broker::ManagementMethod (uint32_t methodId,
       {
           _qmf::ArgsBrokerDelete& a = dynamic_cast<_qmf::ArgsBrokerDelete&>(args);
           deleteObject(a.i_type, a.i_name, a.i_options, getManagementExecutionContext());
+          status = Manageable::STATUS_OK;
+          break;
+      }
+    case _qmf::Broker::METHOD_QUERY :
+      {
+          _qmf::ArgsBrokerQuery& a = dynamic_cast<_qmf::ArgsBrokerQuery&>(args);
+          status = queryObject(a.i_type, a.i_name, a.o_results, getManagementExecutionContext());
           status = Manageable::STATUS_OK;
           break;
       }
@@ -655,6 +667,50 @@ void Broker::deleteObject(const std::string& type, const std::string& name,
 
 }
 
+Manageable::status_t Broker::queryObject(const std::string& type,
+                                         const std::string& name,
+                                         Variant::Map& results,
+                                         const ConnectionState* context)
+{
+    std::string userId;
+    std::string connectionId;
+    if (context) {
+        userId = context->getUserId();
+        connectionId = context->getUrl();
+    }
+    QPID_LOG (debug, "Broker::query(" << type << ", " << name << ")");
+
+    if (type == TYPE_QUEUE)
+        return queryQueue( name, userId, connectionId, results );
+
+    if (type == TYPE_EXCHANGE ||
+        type == TYPE_TOPIC ||
+        type == TYPE_BINDING)
+        return Manageable::STATUS_NOT_IMPLEMENTED;
+
+    throw UnknownObjectType(type);
+}
+
+Manageable::status_t Broker::queryQueue( const std::string& name,
+                                         const std::string& userId,
+                                         const std::string& /*connectionId*/,
+                                         Variant::Map& results )
+{
+    (void) results;
+    if (acl) {
+        if (!acl->authorise(userId, acl::ACT_ACCESS, acl::OBJ_QUEUE, name, NULL) )
+            throw framing::UnauthorizedAccessException(QPID_MSG("ACL denied queue query request from " << userId));
+    }
+
+    boost::shared_ptr<Queue> q(queues.find(name));
+    if (!q) {
+        QPID_LOG(error, "Query failed: queue not found, name=" << name);
+        return Manageable::STATUS_UNKNOWN_OBJECT;
+    }
+    q->query( results );
+    return Manageable::STATUS_OK;;
+}
+
 void Broker::setLogLevel(const std::string& level)
 {
     QPID_LOG(notice, "Changing log level to " << level);
@@ -724,7 +780,8 @@ void Broker::connect(
 uint32_t Broker::queueMoveMessages(
      const std::string& srcQueue,
      const std::string& destQueue,
-     uint32_t  qty)
+     uint32_t  qty,
+     const Variant::Map& filter)
 {
   Queue::shared_ptr src_queue = queues.find(srcQueue);
   if (!src_queue)
@@ -733,7 +790,7 @@ uint32_t Broker::queueMoveMessages(
   if (!dest_queue)
     return 0;
 
-  return src_queue->move(dest_queue, qty);
+  return src_queue->move(dest_queue, qty, &filter);
 }
 
 

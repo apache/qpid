@@ -156,7 +156,7 @@ class ManagementTest (TestBase010):
         queues = self.qmf.getObjects(_class="queue")
 
         "Move 10 messages from src-queue to dest-queue"
-        result = self.qmf.getObjects(_class="broker")[0].queueMoveMessages("src-queue", "dest-queue", 10)
+        result = self.qmf.getObjects(_class="broker")[0].queueMoveMessages("src-queue", "dest-queue", 10, {})
         self.assertEqual (result.status, 0) 
 
         sq = self.qmf.getObjects(_class="queue", name="src-queue")[0]
@@ -166,7 +166,7 @@ class ManagementTest (TestBase010):
         self.assertEqual (dq.msgDepth,10)
 
         "Move all remaining messages to destination"
-        result = self.qmf.getObjects(_class="broker")[0].queueMoveMessages("src-queue", "dest-queue", 0)
+        result = self.qmf.getObjects(_class="broker")[0].queueMoveMessages("src-queue", "dest-queue", 0, {})
         self.assertEqual (result.status,0)
 
         sq = self.qmf.getObjects(_class="queue", name="src-queue")[0]
@@ -176,16 +176,16 @@ class ManagementTest (TestBase010):
         self.assertEqual (dq.msgDepth,20)
 
         "Use a bad source queue name"
-        result = self.qmf.getObjects(_class="broker")[0].queueMoveMessages("bad-src-queue", "dest-queue", 0)
+        result = self.qmf.getObjects(_class="broker")[0].queueMoveMessages("bad-src-queue", "dest-queue", 0, {})
         self.assertEqual (result.status,4)
 
         "Use a bad destination queue name"
-        result = self.qmf.getObjects(_class="broker")[0].queueMoveMessages("src-queue", "bad-dest-queue", 0)
+        result = self.qmf.getObjects(_class="broker")[0].queueMoveMessages("src-queue", "bad-dest-queue", 0, {})
         self.assertEqual (result.status,4)
 
         " Use a large qty (40) to move from dest-queue back to "
         " src-queue- should move all "
-        result = self.qmf.getObjects(_class="broker")[0].queueMoveMessages("dest-queue", "src-queue", 40)
+        result = self.qmf.getObjects(_class="broker")[0].queueMoveMessages("dest-queue", "src-queue", 40, {})
         self.assertEqual (result.status,0)
 
         sq = self.qmf.getObjects(_class="queue", name="src-queue")[0]
@@ -225,19 +225,19 @@ class ManagementTest (TestBase010):
         pq = self.qmf.getObjects(_class="queue", name="purge-queue")[0]
 
         "Purge top message from purge-queue"
-        result = pq.purge(1)
+        result = pq.purge(1, {})
         self.assertEqual (result.status, 0) 
         pq = self.qmf.getObjects(_class="queue", name="purge-queue")[0]
         self.assertEqual (pq.msgDepth,19)
 
         "Purge top 9 messages from purge-queue"
-        result = pq.purge(9)
+        result = pq.purge(9, {})
         self.assertEqual (result.status, 0) 
         pq = self.qmf.getObjects(_class="queue", name="purge-queue")[0]
         self.assertEqual (pq.msgDepth,10)
 
         "Purge all messages from purge-queue"
-        result = pq.purge(0)
+        result = pq.purge(0, {})
         self.assertEqual (result.status, 0) 
         pq = self.qmf.getObjects(_class="queue", name="purge-queue")[0]
         self.assertEqual (pq.msgDepth,0)
@@ -263,7 +263,7 @@ class ManagementTest (TestBase010):
         #reroute messages from test queue to amq.fanout (and hence to
         #rerouted queue):
         pq = self.qmf.getObjects(_class="queue", name="test-queue")[0]
-        result = pq.reroute(0, False, "amq.fanout")
+        result = pq.reroute(0, False, "amq.fanout", {})
         self.assertEqual(result.status, 0) 
 
         #verify messages are all rerouted:
@@ -301,7 +301,7 @@ class ManagementTest (TestBase010):
         pq = self.qmf.getObjects(_class="queue", name="reroute-queue")[0]
 
         "Reroute top message from reroute-queue to alternate exchange"
-        result = pq.reroute(1, True, "")
+        result = pq.reroute(1, True, "", {})
         self.assertEqual(result.status, 0) 
         pq.update()
         aq = self.qmf.getObjects(_class="queue", name="alt-queue1")[0]
@@ -309,7 +309,7 @@ class ManagementTest (TestBase010):
         self.assertEqual(aq.msgDepth,1)
 
         "Reroute top 9 messages from reroute-queue to alt.direct2"
-        result = pq.reroute(9, False, "alt.direct2")
+        result = pq.reroute(9, False, "alt.direct2", {})
         self.assertEqual(result.status, 0) 
         pq.update()
         aq = self.qmf.getObjects(_class="queue", name="alt-queue2")[0]
@@ -317,11 +317,11 @@ class ManagementTest (TestBase010):
         self.assertEqual(aq.msgDepth,9)
 
         "Reroute using a non-existent exchange"
-        result = pq.reroute(0, False, "amq.nosuchexchange")
+        result = pq.reroute(0, False, "amq.nosuchexchange", {})
         self.assertEqual(result.status, 4)
 
         "Reroute all messages from reroute-queue"
-        result = pq.reroute(0, False, "alt.direct2")
+        result = pq.reroute(0, False, "alt.direct2", {})
         self.assertEqual(result.status, 0) 
         pq.update()
         aq = self.qmf.getObjects(_class="queue", name="alt-queue2")[0]
@@ -337,7 +337,7 @@ class ManagementTest (TestBase010):
             session.message_transfer(destination="amq.direct", message=msg)
 
         "Reroute onto the same queue"
-        result = pq.reroute(0, False, "amq.direct")
+        result = pq.reroute(0, False, "amq.direct", {})
         self.assertEqual(result.status, 0) 
         pq.update()
         self.assertEqual(pq.msgDepth,20)
@@ -365,7 +365,7 @@ class ManagementTest (TestBase010):
         # 4. Call reroute on queue Y and specify that messages should
         # be sent to exchange A
         y = self.qmf.getObjects(_class="queue", name="Y")[0]
-        result = y.reroute(1, False, "A")
+        result = y.reroute(1, False, "A", {})
         self.assertEqual(result.status, 0)
 
         # 5. verify that the message is rerouted through B (as A has
