@@ -1418,6 +1418,76 @@ class LongTests(BrokerTest):
             if receiver: receiver.connection.detach()
             logger.setLevel(log_level)
 
+    def test_msg_group_failover(self):
+        """Test fail-over during continuous send-receive of grouped messages.
+        """
+
+        class GroupedTrafficGenerator(Thread):
+            def __init__(self, url, queue, group_key):
+                Thread.__init__(self)
+                self.url = url
+                self.queue = queue
+                self.group_key = group_key
+                self.status = -1
+
+            def run(self):
+                # generate traffic for approx 10 seconds (2011msgs / 200 per-sec)
+                cmd = ["msg_group_test",
+                       "--broker=%s" % self.url,
+                       "--address=%s" % self.queue,
+                       "--connection-options={%s}" % (Cluster.CONNECTION_OPTIONS),
+                       "--group-key=%s" % self.group_key,
+                       "--receivers=2",
+                       "--senders=3",
+                       "--messages=2011",
+                       "--send-rate=200",
+                       "--capacity=11",
+                       "--ack-frequency=23",
+                       "--allow-duplicates",
+                       "--group-size=37",
+                       "--randomize-group-size",
+                       "--interleave=13"]
+                #      "--trace"]
+                self.generator = Popen( cmd );
+                self.status = self.generator.wait()
+                return self.status
+
+            def results(self):
+                self.join(timeout=30)  # 3x assumed duration
+                if self.isAlive(): return -1
+                return self.status
+
+        # Original cluster will all be killed so expect exit with failure
+        cluster = self.cluster(3, expect=EXPECT_EXIT_FAIL, args=["-t"])
+        for b in cluster: b.ready()     # Wait for brokers to be ready
+
+        # create a queue with rather draconian flow control settings
+        ssn0 = cluster[0].connect().session()
+        q_args = "{'qpid.group_header_key':'group-id', 'qpid.shared_msg_group':1}"
+        s0 = ssn0.sender("test-group-q; {create:always, node:{type:queue, x-declare:{arguments:%s}}}" % q_args)
+
+        # Kill original brokers, start new ones for the duration.
+        endtime = time.time() + self.duration();
+        i = 0
+        while time.time() < endtime:
+            traffic = GroupedTrafficGenerator( cluster[i].host_port(),
+                                               "test-group-q", "group-id" )
+            traffic.start()
+            time.sleep(1)
+
+            for x in range(2):
+                for b in cluster[i:]: b.ready() # Check if any broker crashed.
+                cluster[i].kill()
+                i += 1
+                b = cluster.start(expect=EXPECT_EXIT_FAIL)
+                time.sleep(1)
+
+            # wait for traffic to finish, verify success
+            self.assertEqual(0, traffic.results())
+
+        for i in range(i, len(cluster)): cluster[i].kill()
+
+
 class StoreTests(BrokerTest):
     """
     Cluster tests that can only be run if there is a store available.

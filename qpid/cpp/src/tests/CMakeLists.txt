@@ -272,6 +272,11 @@ add_executable (datagen datagen.cpp ${platform_test_additions})
 target_link_libraries (datagen qpidclient)
 remember_location(datagen)
 
+add_executable (msg_group_test msg_group_test.cpp ${platform_test_additions})
+target_link_libraries (msg_group_test qpidmessaging)
+remember_location(msg_group_test)
+
+
 # qpid-perftest and qpid-latency-test are generally useful so install them
 install (TARGETS qpid-perftest qpid-latency-test RUNTIME
          DESTINATION ${QPID_INSTALL_BINDIR})

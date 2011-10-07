@@ -269,8 +269,7 @@ bool RingQueuePolicy::checkLimit(boost::intrusive_ptr<Message> m)
 
     do {
         QueuedMessage oldest  = queue.front();
-
-        if (oldest.queue->acquire(oldest) || !strict) {
+        if (oldest.queue->acquireMessageAt(oldest.position, oldest) || !strict) {
             queue.pop_front();
             pendingDequeues.push_back(oldest);
             QPID_LOG(debug, "Ring policy triggered in " << name 

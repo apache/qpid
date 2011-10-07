@@ -694,7 +694,8 @@ public class QMFService implements ConfigStore.ConfigEventListener, Closeable
         public BrokerSchema.BrokerClass.QueueMoveMessagesMethodResponseCommand queueMoveMessages(final BrokerSchema.BrokerClass.QueueMoveMessagesMethodResponseCommandFactory factory,
                                                                                                  final String srcQueue,
                                                                                                  final String destQueue,
-                                                                                                 final Long qty)
+                                                                                                 final Long qty,
+                                                                                                 final Map filter)  // TODO: move based on group identifier
         {
             // TODO
             return factory.createResponseCommand(CompletionCode.NOT_IMPLEMENTED);
@@ -726,6 +727,14 @@ public class QMFService implements ConfigStore.ConfigEventListener, Closeable
                                                                            final String type,
                                                                            final String name,
                                                                            final Map options)
+        {
+            //TODO:
+            return factory.createResponseCommand(CompletionCode.NOT_IMPLEMENTED);
+        }
+
+        public BrokerSchema.BrokerClass.QueryMethodResponseCommand query(final BrokerSchema.BrokerClass.QueryMethodResponseCommandFactory factory,
+                                                                         final String type,
+                                                                         final String name)
         {
             //TODO:
             return factory.createResponseCommand(CompletionCode.NOT_IMPLEMENTED);
@@ -1102,7 +1111,8 @@ public class QMFService implements ConfigStore.ConfigEventListener, Closeable
         }
 
         public BrokerSchema.QueueClass.PurgeMethodResponseCommand purge(final BrokerSchema.QueueClass.PurgeMethodResponseCommandFactory factory,
-                                                                        final Long request)
+                                                                        final Long request,
+                                                                        final Map filter)   // TODO: support for purge-by-group-identifier
         {
             try
             {
@@ -1118,7 +1128,8 @@ public class QMFService implements ConfigStore.ConfigEventListener, Closeable
         public BrokerSchema.QueueClass.RerouteMethodResponseCommand reroute(final BrokerSchema.QueueClass.RerouteMethodResponseCommandFactory factory, 
                                                                             final Long request, 
                                                                             final Boolean useAltExchange, 
-                                                                            final String exchange)
+                                                                            final String exchange,
+                                                                            final Map filter)   // TODO: support for re-route-by-group-identifier
         {
             //TODO
             return factory.createResponseCommand(CompletionCode.NOT_IMPLEMENTED);
