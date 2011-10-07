@@ -630,6 +630,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         try
         {
             acknowledgeImpl();
+            markClean();
         }
         catch (TransportException e)
         {
