@@ -377,7 +377,8 @@ void QueueFlowLimit::setState(const qpid::framing::FieldTable& state)
             ++i;
             fcmsg.add(first, last);
             for (SequenceNumber seq = first; seq <= last; ++seq) {
-                QueuedMessage msg(queue->find(seq));   // fyi: msg.payload may be null if msg is delivered & unacked
+                QueuedMessage msg;
+                queue->find(seq, msg);   // fyi: may not be found if msg is acquired & unacked
                 bool unique;
                 unique = index.insert(std::pair<framing::SequenceNumber, boost::intrusive_ptr<Message> >(seq, msg.payload)).second;
                 // Like this to avoid tripping up unused variable warning when NDEBUG set

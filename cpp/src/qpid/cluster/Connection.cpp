@@ -406,11 +406,11 @@ void Connection::shadowSetUser(const std::string& userId) {
 
 void Connection::consumerState(const string& name, bool blocked, bool notifyEnabled, const SequenceNumber& position)
 {
-    broker::SemanticState::ConsumerImpl& c = semanticState().find(name);
-    c.position = position;
-    c.setBlocked(blocked);
-    if (notifyEnabled) c.enableNotify(); else c.disableNotify();
-    updateIn.consumerNumbering.add(c.shared_from_this());
+    broker::SemanticState::ConsumerImpl::shared_ptr c = semanticState().find(name);
+    c->position = position;
+    c->setBlocked(blocked);
+    if (notifyEnabled) c->enableNotify(); else c->disableNotify();
+    updateIn.consumerNumbering.add(c);
 }
 
 
@@ -444,7 +444,7 @@ void Connection::outputTask(uint16_t channel, const std::string& name) {
     if (!session)
         throw Exception(QPID_MSG(cluster << " channel not attached " << *this
                                  << "[" <<  channel << "] "));
-    OutputTask* task = &session->getSemanticState().find(name);
+    OutputTask* task = session->getSemanticState().find(name).get();
     connection->getOutputTasks().addOutputTask(task);
 }
 
@@ -547,7 +547,7 @@ void Connection::deliveryRecord(const string& qname,
             m.position = position;
             if (enqueued) queue->updateEnqueued(m); //inform queue of the message
         } else {                // Message at original position in original queue
-            m = queue->find(position);
+            queue->find(position, m);
         }
         // FIXME aconway 2011-08-19: removed:
         // if (!m.payload)

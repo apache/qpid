@@ -84,6 +84,9 @@ class Broker;
     QPID_BROKER_EXTERN void enqueued(const QueuedMessage&);
     /** the queue has removed QueuedMessage.  Returns true if flow state changes */
     QPID_BROKER_EXTERN void dequeued(const QueuedMessage&);
+    /** ignored */
+    QPID_BROKER_EXTERN void acquired(const QueuedMessage&) {};
+    QPID_BROKER_EXTERN void requeued(const QueuedMessage&) {};
 
     /** for clustering: */
     QPID_BROKER_EXTERN void getState(qpid::framing::FieldTable&) const;
