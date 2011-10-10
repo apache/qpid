@@ -362,7 +362,7 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
 
     public void closeProtocolSession() throws AMQException
     {
-        _protocolHandler.closeConnection(0);
+        _protocolHandler.getNetworkConnection().close();
     }
 
     public void failover(String host, int port)
