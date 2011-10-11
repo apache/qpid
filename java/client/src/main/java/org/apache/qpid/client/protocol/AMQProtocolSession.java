@@ -47,6 +47,7 @@ import org.apache.qpid.framing.ProtocolVersion;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
 import org.apache.qpid.transport.Sender;
+import org.apache.qpid.transport.TransportException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -362,7 +363,15 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
 
     public void closeProtocolSession() throws AMQException
     {
-        _protocolHandler.getNetworkConnection().close();
+        try
+        {
+            _protocolHandler.getNetworkConnection().close();
+        }
+        catch(TransportException e)
+        {
+            //ignore such exceptions, they were already logged
+            //and this is a forcible close.
+        }
     }
 
     public void failover(String host, int port)
