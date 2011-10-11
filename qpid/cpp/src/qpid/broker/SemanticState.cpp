@@ -348,7 +348,8 @@ bool SemanticState::ConsumerImpl::deliver(QueuedMessage& msg)
         parent->record(record);
     }
     if (acquire && !ackExpected) {  // auto acquire && auto accept
-        record.accept( 0 /*no ctxt*/ );
+        queue->dequeue(0 /*ctxt*/, msg);
+        record.setEnded();
     }
     if (mgmtObject) { mgmtObject->inc_delivered(); }
     return true;

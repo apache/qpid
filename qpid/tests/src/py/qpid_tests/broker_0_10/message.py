@@ -954,6 +954,39 @@ class MessageTests(TestBase010):
         self.assertEmpty(messages)
 
 
+    def test_auto_ack(self):
+        """
+        Test implicit accept function
+        """
+        self.startQmf()
+        session = self.session
+        session.queue_declare(queue = "auto-ack", exclusive=True, auto_delete=True)
+        session.message_transfer(message=Message(session.delivery_properties(routing_key="auto-ack"), "ackackack"))
+
+        # verify one enqueued message, use both QMF and session query to verify consistency
+        self.assertEqual(1, session.queue_query(queue="auto-ack").message_count)
+        for queue in self.qmf.getObjects(_class="queue"):
+            if queue.name == "auto-ack":
+                break;
+        self.assertEquals("auto-ack", queue.name)
+        self.assertEquals(queue.msgDepth, 1)
+        self.assertEquals(queue.msgTotalEnqueues, 1)
+        self.assertEquals(queue.msgTotalDequeues, 0)
+
+        # implicit acquire and acknowledge
+        session.message_subscribe(queue = "auto-ack", destination = "a", acquire_mode=0, accept_mode=1)
+        session.message_flow(destination="a", unit=session.credit_unit.message, value=0xFFFFFFFFL)
+        session.message_flow(destination="a", unit=session.credit_unit.byte, value=0xFFFFFFFFL)
+        msg = session.incoming("a").get(timeout = 1)
+        self.assertEquals("ackackack", msg.body)
+
+        #message should not be on the queue:
+        self.assertEqual(0, session.queue_query(queue="auto-ack").message_count)
+        queue.update()
+        self.assertEquals(queue.msgDepth, 0)
+        self.assertEquals(queue.msgTotalEnqueues, 1)
+        self.assertEquals(queue.msgTotalDequeues, 1)
+
     def assertDataEquals(self, session, msg, expected):
         self.assertEquals(expected, msg.body)
 
