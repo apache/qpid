@@ -64,9 +64,6 @@ org.apache.qpid.test.unit.client.connection.ConnectionTest#testDefaultExchanges
 // 0-10 c++ broker in cpp.testprofile is started with no auth so won't pass this test
 org.apache.qpid.test.unit.client.connection.ConnectionTest#testPasswordFailureConnection
 
-// c++ broker doesn't do selectors, so this will fail
-org.apache.qpid.test.unit.topic.TopicSessionTest#testNonMatchingMessagesDoNotFillQueue
-
 // InVM Broker tests
 org.apache.qpid.test.client.timeouts.SyncWaitDelayTest#*
 
