@@ -33,10 +33,6 @@ namespace tests {
 
 QPID_AUTO_TEST_SUITE(exception_test)
 
-// FIXME aconway 2008-06-12: need to update our exception handling to
-// 0-10 handling and extend this test to provoke all the exceptional
-// conditions we know of and verify the correct exception is thrown.
-
 using namespace std;
 using namespace qpid;
 using namespace sys;
@@ -88,7 +84,7 @@ QPID_AUTO_TEST_CASE(TestSessionBusy) {
         ScopedSuppressLogging sl; // Suppress messages for expected errors.
         f.connection.newSession(f.session.getId().getName());
         BOOST_FAIL("Expected SessionBusyException for " << f.session.getId().getName());
-    } catch (const SessionBusyException&) {} // FIXME aconway 2008-09-22: client is not throwing correct exception.
+    } catch (const SessionBusyException&) {}
 }
 
 QPID_AUTO_TEST_CASE(DisconnectedPop) {

@@ -30,9 +30,6 @@
 #include "qpid/cluster/types.h"
 #include <boost/intrusive_ptr.hpp>
 
-// FIXME aconway 2011-06-08: refactor broker::Cluster to put queue ups on
-// class broker::Cluster::Queue. This becomes the cluster context.
-
 namespace qpid {
 namespace broker {
 class Queue;
@@ -97,7 +94,7 @@ class QueueContext : public RefCounted {
 private:
     sys::Mutex lock;
     CountdownTimer timer;
-    broker::Queue& queue;       // FIXME aconway 2011-06-08: should be shared/weak ptr?
+    broker::Queue& queue; // FIXME aconway 2011-06-08: should be shared/weak ptr?
     Multicaster& mcast;
     size_t consumers;
     size_t hash;

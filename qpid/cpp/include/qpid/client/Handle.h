@@ -63,7 +63,7 @@ template <class T> class Handle {
 
     Impl* impl;
 
-  friend class PrivateImplRef<T>; // FIXME aconway 2009-04-30: Specify
+  friend class PrivateImplRef<T>; 
 };
 
 }} // namespace qpid::client

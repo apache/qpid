@@ -59,10 +59,9 @@ Core::Core(const Settings& s, broker::Broker& b) : broker(b), settings(s)
         brokerHandler = bh.get();
         // BrokerContext belongs to Broker
         broker.setCluster(std::auto_ptr<broker::Cluster>(bh));
-        // FIXME aconway 2011-09-26: multi-group
         eh.start();
         eh.getCpg().join(groupName);
-        // TODO aconway 2010-11-18: logging standards        // FIXME aconway 2011-09-26: multi-group
+        // TODO aconway 2010-11-18: logging standards
         QPID_LOG(debug, "cluster: joined CPG group " << groupName << ", member-id=" << eh.getSelf());
     }
     QPID_LOG(notice, "cluster: joined cluster " << s.name

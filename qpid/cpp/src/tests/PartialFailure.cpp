@@ -111,11 +111,6 @@ QPID_AUTO_TEST_CASE(testCoincidentErrors) {
 
 // Verify normal cluster-wide errors.
 QPID_AUTO_TEST_CASE(testNormalErrors) {
-    // FIXME aconway 2009-04-10: Would like to put a scope just around
-    // the statements expected to fail (in BOOST_CHECK_yTHROW) but that
-    // sproadically lets out messages, possibly because they're in
-    // Connection thread.
-
     ClusterFixture cluster(3, updateArgs, -1);
     Client c0(cluster[0], "c0");
     Client c1(cluster[1], "c1");
@@ -240,9 +235,6 @@ QPID_AUTO_TEST_CASE(testMultiPartialFailure) {
         c0.session.messageTransfer(content=pMessage("b", "q"));
         c3.session.messageTransfer(content=pMessage("c", "q"));
         BOOST_CHECK_EQUAL(c3.session.queueQuery("q").getMessageCount(), 4u);
-        // FIXME aconway 2009-06-30: This check fails sporadically with 2 != 3.
-        // It should pass reliably.
-        // BOOST_CHECK_EQUAL(2u, knownBrokerPorts(c0.connection, 2).size());
 
         // Close inside ScopedSuppressLogging to avoid warnings 
         c0.close();

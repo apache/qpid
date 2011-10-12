@@ -10,9 +10,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -24,7 +24,7 @@
 
 #include <limits>
 #include <algorithm>
-#include "qpid/Exception.h"     // FIXME aconway 2008-04-03: proper exception class.
+#include "qpid/Exception.h"
 
 namespace qpid {
 
@@ -59,18 +59,18 @@ template <class Derived> class Serializer {
       public:
         ScopedLimit(Serializer& s, size_t l)
             : serializer(s), save(serializer.setLimit(l)) {}
-        
+
         ~ScopedLimit() { serializer.setAbsLimit(save); }
-        
+
       private:
         Serializer& serializer;
         size_t save;
     };
 
     static size_t maxLimit() { return  std::numeric_limits<size_t>::max(); }
-    
+
     Serializer() : bytes(0), limit(maxLimit()) {}
-    
+
     typedef Derived& result_type; // unary functor requirement.
 
     /** Wrapper functor to pass serializer functors by reference. */
@@ -112,7 +112,7 @@ template <class Derived> class Serializer {
     void setAbsLimit(size_t n) {
         limit = n;
         if (bytes > limit)
-            throw Exception("Framing error: data overrun"); // FIXME aconway 2008-04-03: proper exception.
+            throw Exception("Framing error: data overrun");
     }
 
   protected:
@@ -120,14 +120,14 @@ template <class Derived> class Serializer {
     void addBytes(size_t n) {
         size_t newBytes=bytes+n;
         if (newBytes > limit)
-            throw Exception("Framing error: data overrun"); // FIXME aconway 2008-04-03: proper exception.
+            throw Exception("Framing error: data overrun"); //
         bytes = newBytes;
     }
-    
+
   private:
     void checkLimit() {
     }
-        
+
     size_t bytes;               // how many bytes serialized.
     size_t limit;               // bytes may not exceed this limit.
 };
@@ -142,7 +142,7 @@ template <class Derived> class EncoderBase : public Serializer<Derived> {
   public:
     using Serializer<Derived>::operator();
     using Serializer<Derived>::self;
-    
+
     /** Default op() for non-primitive types. */
     template <class T> Derived& operator()(const T& t) {
         serializable(const_cast<T&>(t)).serialize(self()); return self();
@@ -180,7 +180,7 @@ template <class Derived> class DecoderBase : public Serializer<Derived> {
 /** Serialize a type by converting it to/from another type.
  * To serialize type Foo by converting to/from type Bar create
  * a serializable() overload like this:
- * 
+ *
  * SerializeAs<Foo,Bar> serializable(Foo& t) { return SerializeAs<Foo,Bar>(t); }
  */
 template <class Type, class AsType>

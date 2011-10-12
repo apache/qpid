@@ -104,7 +104,6 @@ void EventHandler::configChange (
     const cpg_address *left, int nLeft,
     const cpg_address *joined, int nJoined)
 {
-    // FIXME aconway 2010-10-20: TODO
     QPID_LOG(notice, "cluster: new membership: " << PrintAddrs(members, nMembers));
     QPID_LOG_IF(notice, nLeft, "cluster:   members left: " << PrintAddrs(left, nLeft));
     QPID_LOG_IF(notice, nJoined, "cluster:   members joined: " << PrintAddrs(joined, nJoined));

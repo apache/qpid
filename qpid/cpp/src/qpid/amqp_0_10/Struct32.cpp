@@ -24,8 +24,6 @@ namespace qpid {
 namespace amqp_0_10 {
 
 Struct32::Struct32() {
-    // FIXME aconway 2008-04-16: this is only here to force a valid
-    // default-constructed Struct32 for serialize tests, clean up.
     *this = in_place<message::MessageResumeResult>();
 }
 

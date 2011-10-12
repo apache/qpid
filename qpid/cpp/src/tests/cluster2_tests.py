@@ -98,7 +98,6 @@ class Cluster2Tests(BrokerTest):
         content = ["a","b","c"]
         for m in content: s0.send(Message(m))
         # Verify enqueued on members 0 and 1
-        # FIXME aconway 2011-05-13:
         self.verify_content(content, sn0.receiver("q;{mode:browse}"))
         self.verify_content(content, sn1.receiver("q;{mode:browse}"))
 

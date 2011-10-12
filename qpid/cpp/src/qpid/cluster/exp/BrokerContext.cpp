@@ -58,8 +58,6 @@ const ProtocolVersion pv;     // shorthand
 QPID_TSS bool tssReplicate = true;
 }
 
-// FIXME aconway 2011-09-26: de-const the broker::Cluster interface,
-// then de-const here.
 Multicaster& BrokerContext::mcaster(const broker::QueuedMessage& qm) {
     return core.getGroup(hashof(qm)).getMulticaster();
 }
@@ -96,7 +94,6 @@ void sendFrame(Multicaster& mcaster, const AMQFrame& frame, uint16_t channel) {
 
 bool BrokerContext::enqueue(Queue& queue, const boost::intrusive_ptr<Message>& msg)
 {
-    // FIXME aconway 2011-10-03: pass shared ptr on broker::Cluster interface.
     if (!tssReplicate) return true;
     Group& group = core.getGroup(hashof(queue));
     MessageHolder::Channel channel =
@@ -135,7 +132,6 @@ void BrokerContext::requeue(const broker::QueuedMessage& qm) {
                        qm.payload->getRedelivered()));
 }
 
-// FIXME aconway 2011-06-08: should be be using shared_ptr to q here?
 void BrokerContext::create(broker::Queue& q) {
     if (!tssReplicate) return;
     assert(!QueueContext::get(q));

@@ -59,16 +59,10 @@ void QueueHandler::left(const MemberId& member) {
         i->second->unsubscribe(member);
 }
 
-// FIXME aconway 2011-06-08: do we need to hold on to the shared pointer for lifecycle?
-// FIXME aconway 2011-09-13: called from wiring handler, need to consider for multi-cpg.
 void QueueHandler::add(boost::shared_ptr<broker::Queue> q) {
-    // FIXME aconway 2011-06-08: move create operation from Wiring to Queue handler.
-    // FIXME aconway 2011-05-10: assert not already in map.
-
     // Local queues already have a context, remote queues need one.
     if (!QueueContext::get(*q))
-        new QueueContext(*q, consumeLock, multicaster); // Context attaches itself to the Queue
-    // FIXME aconway 2011-09-15: thread safety: called from wiring handler..
+        new QueueContext(*q, consumeLock, multicaster); // Context attaches to the Queue
     queues[q->getName()] = boost::intrusive_ptr<QueueReplica>(
         new QueueReplica(q, self()));
 }

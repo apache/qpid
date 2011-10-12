@@ -119,7 +119,6 @@ bool Array::operator==(const Array& x) const {
 
 void Array::insert(iterator i, ValuePtr value) {
     if (type != value->getType()) {
-        // FIXME aconway 2008-10-31:  put meaningful strings in this message.
         throw Exception(QPID_MSG("Wrong type of value in Array, expected " << type
                                  << " but found " << TypeCode(value->getType())));
     }

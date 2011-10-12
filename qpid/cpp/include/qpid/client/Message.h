@@ -31,7 +31,7 @@ namespace qpid {
 
 namespace framing {
 class FieldTable;
-class SequenceNumber;           // FIXME aconway 2009-04-17: remove with getID?
+class SequenceNumber;
 }
 
 namespace client {
@@ -161,7 +161,6 @@ public:
     /** Get a non-modifyable reference to the message headers. */
     QPID_CLIENT_EXTERN const framing::FieldTable& getHeaders() const;
 
-    // FIXME aconway 2009-04-17: does this need to be in public API?
     ///@internal
     QPID_CLIENT_EXTERN const framing::SequenceNumber& getId() const;
 

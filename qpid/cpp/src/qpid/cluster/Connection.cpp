@@ -547,7 +547,7 @@ void Connection::deliveryRecord(const string& qname,
         } else {                // Message at original position in original queue
             m = queue->find(position);
         }
-        // FIXME aconway 2011-08-19: removed:
+        // Removed this line:
         // if (!m.payload)
         //      throw Exception(QPID_MSG("deliveryRecord no update message"));
         //

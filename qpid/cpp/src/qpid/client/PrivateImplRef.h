@@ -29,7 +29,6 @@
 namespace qpid {
 namespace client {
 
-// FIXME aconway 2009-04-24: details!
 /** @file
  *
  * Helper class to implement a class with a private, reference counted

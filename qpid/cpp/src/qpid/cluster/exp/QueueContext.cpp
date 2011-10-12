@@ -69,7 +69,6 @@ void QueueContext::replicaState(
     if ((before != after || selfDelivered) && isOwner(after)) {
         QPID_LOG(trace, "cluster start consumers on " << queue.getName() << ", timer "
                  << (after==SHARED_OWNER? "start" : "stop"));
-        sys::Mutex::ScopedLock l(lock); // FIXME aconway 2011-09-29: REMOVE
         queue.startConsumers();
         if (after == SHARED_OWNER) timer.start();
         else timer.stop();

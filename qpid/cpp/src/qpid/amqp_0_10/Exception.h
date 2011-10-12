@@ -33,8 +33,6 @@ namespace amqp_0_10 {
  * non-0 timeout may be available for re-attachment on another connection.
  */
 struct ConnectionException : public qpid::Exception {
-    // FIXME aconway 2008-04-04: Merge qpid::ConnectionException
-    // into this when the old code is removed.
     typedef connection::CloseCode Code;
     ConnectionException(Code c, const std::string m)
         : qpid::Exception(m), code(c) {}
@@ -46,15 +44,11 @@ struct ConnectionException : public qpid::Exception {
  * if an attempt is made to use a session that is not attached.
  */
 struct SessionException : public qpid::Exception  {
-    // FIXME aconway 2008-04-04: should not have a code at this level.
-    // Leave in place till old preview code is gone.
     SessionException(int /*code*/, const std::string& msg) : qpid::Exception(msg) {} 
 };
 
 /** Raised when the state of a session has been destroyed */
 struct SessionDestroyedException : public SessionException {
-    // FIXME aconway 2008-04-04: should not have a code at this level.
-    // Leave in place till old preview code is gone.
     SessionDestroyedException(int code, const std::string& msg) : SessionException(code, msg){} 
 };
 

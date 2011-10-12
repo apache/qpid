@@ -30,7 +30,7 @@ void Unit::updateVariant() {
       case COMMAND: variant=CommandHolder(); break;
       case HEADER: variant=Header(); break;
       case BODY: variant=Body(header.getDataSize()); break;
-      default: assert(0);       // FIXME aconway 2008-04-14: exception?
+      default: assert(0);
     }
 }
 

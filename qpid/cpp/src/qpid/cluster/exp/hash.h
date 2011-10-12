@@ -39,7 +39,6 @@ class QueueContext;
 /**@file hash functions */
 
 // The following all uses the cached hash value on the Queue::getContext()
-// FIXME aconway 2011-09-26: de-const broker::Cluster interface then de-const here.
 size_t hashof(const broker::Queue& q);
 size_t hashof(const QueueContext& qc);
 size_t hashof(const broker::QueuedMessage& qm);

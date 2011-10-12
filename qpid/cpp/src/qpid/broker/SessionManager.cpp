@@ -62,7 +62,7 @@ std::auto_ptr<SessionState>  SessionManager::attach(SessionHandler& h, const Ses
         state->attach(h);
     }
     return state;
-    // FIXME aconway 2008-04-29: implement force 
+    // FIXME: implement force 
 }
 
 void  SessionManager::detach(std::auto_ptr<SessionState> session) {

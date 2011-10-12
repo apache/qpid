@@ -350,11 +350,8 @@ bool SemanticState::ConsumerImpl::filter(intrusive_ptr<Message>)
 bool SemanticState::ConsumerImpl::accept(intrusive_ptr<Message> msg)
 {
     assertClusterSafe();
-    // FIXME aconway 2009-06-08: if we have byte & message credit but
-    // checkCredit fails because the message is to big, we should
-    // remain on queue's listener list for possible smaller messages
-    // in future.
-    //
+    // FIXME: QPID-1909: Consumer with byte credit can get ignored if
+    // a large message "eclipses" a small one.
     blocked = !(filter(msg) && checkCredit(msg));
     return !blocked;
 }

@@ -150,11 +150,10 @@ class UnknownType;
 template <class T> struct  ArrayDomain;
 typedef ArrayDomain<UnknownType> Array;
 
-// FIXME aconway 2008-04-08: TODO
 struct ByteRanges { template <class S> void serialize(S&) {} };
 struct List  { template <class S> void serialize(S&) {} };
 
-// FIXME aconway 2008-03-10: dummy ostream operators
+// Dummy ostream operators
 inline std::ostream& operator<<(std::ostream& o, const ByteRanges&) { return o; }
 inline std::ostream& operator<<(std::ostream& o, const SequenceSet&) { return o; }
 inline std::ostream& operator<<(std::ostream& o, const List&) { return o; }

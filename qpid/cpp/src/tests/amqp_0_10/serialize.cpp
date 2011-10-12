@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -106,7 +106,7 @@ QPID_AUTO_TEST_CASE(testSetLimit) {
     try {
         encode('4');
         BOOST_FAIL("Expected exception");
-    } catch (...) {}            // FIXME aconway 2008-04-03: catch proper exception
+    } catch (...) {}
     BOOST_CHECK_EQUAL(data, "123");
 }
 
@@ -121,14 +121,14 @@ QPID_AUTO_TEST_CASE(testScopedLimit) {
         try {
             encode('d');
             BOOST_FAIL("Expected exception");
-        } catch(...) {}         // FIXME aconway 2008-04-03: catch proper exception
+        } catch(...) {}
     }
     BOOST_CHECK_EQUAL(data, "\003123abc");
     encode('x')('y')('z');
     try {
         encode('!');
         BOOST_FAIL("Expected exception");
-    } catch(...) {}         // FIXME aconway 2008-04-03: catch proper exception
+    } catch(...) {}
     BOOST_CHECK_EQUAL(data.size(), 10u);
 }
 
@@ -197,7 +197,7 @@ QPID_AUTO_TEST_CASE(testControlEncodeDecode) {
     string data;
     Control::Holder h(in_place<connection::Tune>(1,2,3,4));
     Codec::encode(std::back_inserter(data))(h);
-    
+
     BOOST_CHECK_EQUAL(data.size(), Codec::size(h));
 
     Codec::Decoder<string::iterator> decode(data.begin());
@@ -226,7 +226,7 @@ QPID_AUTO_TEST_CASE(testStruct32) {
     Codec::decode(data.begin())(structSize);
     BOOST_CHECK_EQUAL(structSize, Codec::size(dp) + 2);  // +2 for code
     BOOST_CHECK_EQUAL(structSize, data.size()-4);        // encoded body
-    
+
     BOOST_CHECK_EQUAL(data.size(), Codec::size(s));
     Struct32 s2;
     Codec::decode(data.begin())(s2);
@@ -276,7 +276,7 @@ QPID_AUTO_TEST_CASE(testPacked) {
     Codec::encode(back_inserter(data))('a')(boost::optional<char>('b'))(boost::optional<char>())('c');
     BOOST_CHECK_EQUAL(data, "abc");
     data.clear();
-    
+
     DummyPacked dummy('a','b','c');
 
     Codec::encode(back_inserter(data))(dummy);
@@ -309,7 +309,7 @@ QPID_AUTO_TEST_CASE(testUnitControl) {
 
     string data2;
     Codec::encode(back_inserter(data2))(unit);
-    
+
     BOOST_CHECK_EQUAL(data, data2);
 }
 
@@ -325,7 +325,7 @@ QPID_AUTO_TEST_CASE(testArray) {
     string data3;
     Codec::encode(back_inserter(data3))(a);
     BOOST_CHECK_EQUAL(data, data3);
-    
+
     Array x;
     Codec::decode(data.begin())(x);
     BOOST_CHECK_EQUAL(x.size(), 3u);
@@ -354,10 +354,10 @@ QPID_AUTO_TEST_CASE(testStruct) {
     encodedBits <<= 8;
     encodedBits += uint8_t(data[4]);
     BOOST_CHECK_EQUAL(encodedBits, packBits(dp));
-        
+
     data.clear();
     Struct32 h(dp);
-    Codec::encode(back_inserter(data))(h);    
+    Codec::encode(back_inserter(data))(h);
 
     Struct32 h2;
     Codec::decode(data.begin())(h2);
@@ -403,7 +403,6 @@ struct RecodeUnit {
         BOOST_CHECK_MESSAGE(data == data2, BOOST_CURRENT_FUNCTION);
 
         // Decode unit
-        // FIXME aconway 2008-04-15: must set limit to decode a header.
         Codec::Decoder<string::iterator> decode(data2.begin(), data2.size()-1);
 
         FrameHeader h;
@@ -414,7 +413,7 @@ struct RecodeUnit {
 
         // Re-encode unit
         string data3;
-        Codec::encode(back_inserter(data3))(u2.getHeader())(u2);        
+        Codec::encode(back_inserter(data3))(u2.getHeader())(u2);
         data3.push_back(char(0xCE)); // Preview end-of-frame
 
         BOOST_CHECK_MESSAGE(data3 == data2, BOOST_CURRENT_FUNCTION);

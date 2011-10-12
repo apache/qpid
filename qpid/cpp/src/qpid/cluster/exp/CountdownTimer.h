@@ -23,7 +23,6 @@
  */
 
 #include "qpid/sys/Timer.h"
-#include "qpid/log/Statement.h" // FIXME aconway 2011-09-19: remove
 #include <boost/function.hpp>
 
 namespace qpid {

@@ -394,12 +394,10 @@ class AmqpClass < AmqpElement
     @methods_on[chassis] ||= methods_.select { |m| m.on_chassis? chassis }
   end
 
-  # FIXME aconway 2008-04-11: 
   def l4?()                     # preview
     !["connection", "session", "execution"].include?(name) && !control?
   end
 
-  # FIXME aconway 2008-04-11: 
   def control?()
     ["connection", "session"].include?(name)
   end

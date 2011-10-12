@@ -72,9 +72,6 @@ void WiringHandler::createQueue(const std::string& data) {
     }
     boost::shared_ptr<broker::Queue> q = broker.getQueues().find(name);
     assert(q);                  // FIXME aconway 2011-05-10: error handling.
-    // TODO aconway 2011-05-10: if we implement multi-group for queues
-    // then this call is a potential problem: comes from wiring
-    // delivery thread, not queues.
     queueHandler->add(q);
     QPID_LOG(debug, "cluster: create queue " << q->getName());
 }

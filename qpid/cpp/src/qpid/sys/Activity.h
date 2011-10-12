@@ -62,8 +62,6 @@ class Activity {
 
   friend class Scope;
 
-    // FIXME aconway 2011-09-30: fix pre-conditions with asserts, don't allow
-    // multiple stops/starts.
     /**
      * Set state to "stopped", so no new threads can enter.
      * Notify function will be called when all busy threads have left.
