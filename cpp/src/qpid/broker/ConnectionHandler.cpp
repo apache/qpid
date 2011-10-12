@@ -26,6 +26,7 @@
 #include "qpid/broker/SecureConnection.h"
 #include "qpid/Url.h"
 #include "qpid/framing/AllInvoker.h"
+#include "qpid/framing/ConnectionStartOkBody.h"
 #include "qpid/framing/enum.h"
 #include "qpid/log/Statement.h"
 #include "qpid/sys/SecurityLayer.h"
@@ -63,13 +64,24 @@ void ConnectionHandler::heartbeat()
     handler->proxy.heartbeat();
 }
 
+bool ConnectionHandler::handle(const framing::AMQMethodBody& method)
+{
+    //Need special handling for start-ok, in order to distinguish
+    //between null and empty response
+    if (method.isA<ConnectionStartOkBody>()) {
+        handler->startOk(dynamic_cast<const ConnectionStartOkBody&>(method));
+        return true;
+    } else {
+        return invoke(static_cast<AMQP_AllOperations::ConnectionHandler&>(*handler), method);
+    }
+}
+
 void ConnectionHandler::handle(framing::AMQFrame& frame)
 {
     AMQMethodBody* method=frame.getBody()->getMethod();
     Connection::ErrorListener* errorListener = handler->connection.getErrorListener();
     try{
-        if (method && invoke(
-                static_cast<AMQP_AllOperations::ConnectionHandler&>(*handler), *method)) {
+        if (method && handle(*method)) {
             // This is a connection control frame, nothing more to do.
         } else if (isOpen()) {
             handler->connection.getChannel(frame.getChannel()).in(frame);
@@ -125,13 +137,20 @@ ConnectionHandler::Handler::Handler(Connection& c, bool isClient, bool isShadow)
 ConnectionHandler::Handler::~Handler() {}
 
 
-void ConnectionHandler::Handler::startOk(const framing::FieldTable& clientProperties,
-                                         const string& mechanism,
-                                         const string& response,
+void ConnectionHandler::Handler::startOk(const framing::FieldTable& /*clientProperties*/,
+                                         const string& /*mechanism*/,
+                                         const string& /*response*/,
                                          const string& /*locale*/)
 {
+    //Need special handling for start-ok, in order to distinguish
+    //between null and empty response -> should never use this method
+    assert(false);
+}
+
+void ConnectionHandler::Handler::startOk(const ConnectionStartOkBody& body)
+{
     try {
-        authenticator->start(mechanism, response);
+        authenticator->start(body.getMechanism(), body.hasResponse() ? &body.getResponse() : 0);
     } catch (std::exception& /*e*/) {
         management::ManagementAgent* agent = connection.getAgent();
         if (agent) {
@@ -143,6 +162,7 @@ void ConnectionHandler::Handler::startOk(const framing::FieldTable& clientProper
         }
         throw;
     }
+    const framing::FieldTable& clientProperties = body.getClientProperties();
     connection.setFederationLink(clientProperties.get(QPID_FED_LINK));
     if (clientProperties.isSet(QPID_FED_TAG)) {
         connection.setFederationPeerTag(clientProperties.getAsString(QPID_FED_TAG));
@@ -308,11 +328,21 @@ void ConnectionHandler::Handler::start(const FieldTable& serverProperties,
     string response;
     if (sasl.get()) {
         const qpid::sys::SecuritySettings& ss = connection.getExternalSecuritySettings();
-        response = sasl->start ( requestedMechanism.empty()
-                                 ? supportedMechanismsList
-                                 : requestedMechanism,
-                                 & ss );
-        proxy.startOk ( ft, sasl->getMechanism(), response, en_US );
+        if (sasl->start ( requestedMechanism.empty()
+                          ? supportedMechanismsList
+                          : requestedMechanism,
+                          response,
+                          & ss )) {
+            proxy.startOk ( ft, sasl->getMechanism(), response, en_US );
+        } else {
+            //response was null
+            ConnectionStartOkBody body;
+            body.setClientProperties(ft);
+            body.setMechanism(sasl->getMechanism());
+            //Don't set response, as none was given
+            body.setLocale(en_US);
+            proxy.send(body);
+        }
     }
     else {
         response = ((char)0) + username + ((char)0) + password;

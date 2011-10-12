@@ -71,7 +71,7 @@ class WindowsSasl : public Sasl
   public:
     WindowsSasl( const std::string &, const std::string &, const std::string &, const std::string &, int, int );
     ~WindowsSasl();
-    std::string start(const std::string& mechanisms, const SecuritySettings* externalSettings);
+    bool start(const std::string& mechanisms, std::string& response, const SecuritySettings* externalSettings);
     std::string step(const std::string& challenge);
     std::string getMechanism();
     std::string getUserId();
@@ -121,8 +121,8 @@ WindowsSasl::~WindowsSasl()
 {
 }
 
-std::string WindowsSasl::start(const std::string& mechanisms,
-                               const SecuritySettings* /*externalSettings*/)
+bool WindowsSasl::start(const std::string& mechanisms, std::string& response,
+                        const SecuritySettings* /*externalSettings*/)
 {
     QPID_LOG(debug, "WindowsSasl::start(" << mechanisms << ")");
 
@@ -142,15 +142,15 @@ std::string WindowsSasl::start(const std::string& mechanisms,
     if (!haveAnon && !havePlain)
         throw InternalErrorException(QPID_MSG("Sasl error: no common mechanism"));
 
-    std::string resp = "";
     if (havePlain) {
         mechanism = PLAIN;
-        resp = ((char)0) + settings.username + ((char)0) + settings.password;
+        response = ((char)0) + settings.username + ((char)0) + settings.password;
     }
     else {
         mechanism = ANONYMOUS;
+        response = "";
     }
-    return resp;
+    return true;
 }
 
 std::string WindowsSasl::step(const std::string& /*challenge*/)
