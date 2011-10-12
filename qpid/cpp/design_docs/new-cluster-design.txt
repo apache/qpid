@@ -234,10 +234,10 @@ Note:
 - Updatee stalls clients until the update completes.
   (Note: May be possible to avoid updatee stall as well, needs thought)
 
-** Cluster API
+** Internal cluster interface
 
-The new cluster API is similar to the MessageStore interface, but
-provides more detail (message positions) qand some additional call
+The new cluster interface is similar to the MessageStore interface, but
+provides more detail (message positions) and some additional call
 points (e.g. acquire)
 
 The cluster interface captures these events:
@@ -284,13 +284,33 @@ cluster uses the same messagea allocation threading/logic as a
 standalone broker, with a little extra asynchronous book-keeping.
 
 If a queue has multiple consumers connected to multiple brokers, the
-new cluster time shares the queue which is less efficient than having
-all consumers connected to the same broker.
+new cluster time-shares the queue which is less efficient than having
+all consumers on a queue connected to the same broker.
 
 ** Flow control
 New design does not queue up CPG delivered messages, they are
 processed immediately in the CPG deliver thread. This means that CPG's
- flow control is sufficient for qpid.
+flow control is sufficient for qpid.
+
+** Live upgrades
+
+Live upgrades refers to the ability to upgrade a cluster while it is
+running, with no downtime. Each brokers in the cluster is shut down,
+and then re-started with a new version of the broker code.
+
+To achieve this
+- Cluster protocl XML file has a new element <version number=N> attached
+  to each method. This is the version at which the method was added.
+- New versions can only add methods, existing methods cannot be changed.
+- The cluster handshake for new members includes the protocol version
+  at each member.
+- The cluster's version is the lowest version among its members.
+- A newer broker can join and older cluster. When it does, it must restrict 
+  itself to speaking the older version protocol.
+- When the cluster version increases (because the lowest version member has left)
+  the remaining members may move up to the new version.
+
+
 * Design debates
 ** Active/active vs. active passive
 
