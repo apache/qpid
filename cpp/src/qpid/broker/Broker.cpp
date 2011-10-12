@@ -43,6 +43,8 @@
 #include "qmf/org/apache/qpid/broker/ArgsBrokerGetLogLevel.h"
 #include "qmf/org/apache/qpid/broker/ArgsBrokerQueueMoveMessages.h"
 #include "qmf/org/apache/qpid/broker/ArgsBrokerSetLogLevel.h"
+#include "qmf/org/apache/qpid/broker/ArgsBrokerSetTimestampConfig.h"
+#include "qmf/org/apache/qpid/broker/ArgsBrokerGetTimestampConfig.h"
 #include "qmf/org/apache/qpid/broker/EventExchangeDeclare.h"
 #include "qmf/org/apache/qpid/broker/EventExchangeDelete.h"
 #include "qmf/org/apache/qpid/broker/EventQueueDeclare.h"
@@ -125,7 +127,8 @@ Broker::Options::Options(const std::string& name) :
     queueFlowStopRatio(80),
     queueFlowResumeRatio(70),
     queueThresholdEventRatio(80),
-    defaultMsgGroup("qpid.no-group")
+    defaultMsgGroup("qpid.no-group"),
+    timestampRcvMsgs(false)     // set the 0.10 timestamp delivery property
 {
     int c = sys::SystemInfo::concurrency();
     workerThreads=c+1;
@@ -162,7 +165,8 @@ Broker::Options::Options(const std::string& name) :
         ("default-flow-stop-threshold", optValue(queueFlowStopRatio, "PERCENT"), "Percent of queue's maximum capacity at which flow control is activated.")
         ("default-flow-resume-threshold", optValue(queueFlowResumeRatio, "PERCENT"), "Percent of queue's maximum capacity at which flow control is de-activated.")
         ("default-event-threshold-ratio", optValue(queueThresholdEventRatio, "%age of limit"), "The ratio of any specified queue limit at which an event will be raised")
-        ("default-message-group", optValue(defaultMsgGroup, "GROUP-IDENTIFER"), "Group identifier to assign to messages delivered to a message group queue that do not contain an identifier.");
+        ("default-message-group", optValue(defaultMsgGroup, "GROUP-IDENTIFER"), "Group identifier to assign to messages delivered to a message group queue that do not contain an identifier.")
+        ("enable-timestamp", optValue(timestampRcvMsgs, "yes|no"), "Add current time to each received message.");
 }
 
 const std::string empty;
@@ -300,6 +304,11 @@ Broker::Broker(const Broker::Options& conf) :
     }
     else
         QPID_LOG(info, "Management not enabled");
+
+    // this feature affects performance, so let's be sure that gets logged!
+    if (conf.timestampRcvMsgs) {
+        QPID_LOG(notice, "Receive message timestamping is ENABLED.");
+    }
 
     /**
      * SASL setup, can fail and terminate startup
@@ -492,9 +501,20 @@ Manageable::status_t Broker::ManagementMethod (uint32_t methodId,
       {
           _qmf::ArgsBrokerQuery& a = dynamic_cast<_qmf::ArgsBrokerQuery&>(args);
           status = queryObject(a.i_type, a.i_name, a.o_results, getManagementExecutionContext());
-          status = Manageable::STATUS_OK;
           break;
       }
+    case _qmf::Broker::METHOD_GETTIMESTAMPCONFIG:
+        {
+          _qmf::ArgsBrokerGetTimestampConfig& a = dynamic_cast<_qmf::ArgsBrokerGetTimestampConfig&>(args);
+          status = getTimestampConfig(a.o_receive, getManagementExecutionContext());
+          break;
+        }
+    case _qmf::Broker::METHOD_SETTIMESTAMPCONFIG:
+        {
+          _qmf::ArgsBrokerSetTimestampConfig& a = dynamic_cast<_qmf::ArgsBrokerSetTimestampConfig&>(args);
+          status = setTimestampConfig(a.i_receive, getManagementExecutionContext());
+          break;
+        }
    default:
         QPID_LOG (debug, "Broker ManagementMethod not implemented: id=" << methodId << "]");
         status = Manageable::STATUS_NOT_IMPLEMENTED;
@@ -516,6 +536,8 @@ const std::string ALTERNATE_EXCHANGE("alternate-exchange");
 const std::string EXCHANGE_TYPE("exchange-type");
 const std::string QUEUE_NAME("queue");
 const std::string EXCHANGE_NAME("exchange");
+
+const std::string ATTRIBUTE_TIMESTAMP_0_10("timestamp-0.10");
 
 const std::string _TRUE("true");
 const std::string _FALSE("false");
@@ -709,6 +731,31 @@ Manageable::status_t Broker::queryQueue( const std::string& name,
     }
     q->query( results );
     return Manageable::STATUS_OK;;
+}
+
+Manageable::status_t Broker::getTimestampConfig(bool& receive,
+                                                const ConnectionState* context)
+{
+    std::string name;   // none needed for broker
+    std::string userId = context->getUserId();
+    if (acl && !acl->authorise(userId, acl::ACT_ACCESS, acl::OBJ_BROKER, name, NULL))  {
+        throw framing::UnauthorizedAccessException(QPID_MSG("ACL denied broker timestamp get request from " << userId));
+    }
+    receive = config.timestampRcvMsgs;
+    return Manageable::STATUS_OK;
+}
+
+Manageable::status_t Broker::setTimestampConfig(const bool receive,
+                                                const ConnectionState* context)
+{
+    std::string name;   // none needed for broker
+    std::string userId = context->getUserId();
+    if (acl && !acl->authorise(userId, acl::ACT_UPDATE, acl::OBJ_BROKER, name, NULL)) {
+        throw framing::UnauthorizedAccessException(QPID_MSG("ACL denied broker timestamp set request from " << userId));
+    }
+    config.timestampRcvMsgs = receive;
+    QPID_LOG(notice, "Receive message timestamping is " << ((config.timestampRcvMsgs) ? "ENABLED." : "DISABLED."));
+    return Manageable::STATUS_OK;
 }
 
 void Broker::setLogLevel(const std::string& level)

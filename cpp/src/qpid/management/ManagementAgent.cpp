@@ -622,7 +622,7 @@ void ManagementAgent::sendBufferLH(const string& data,
     dp->setRoutingKey(routingKey);
     if (ttl_msec) {
         dp->setTtl(ttl_msec);
-        msg->setTimestamp(broker->getExpiryPolicy());
+        msg->computeExpiration(broker->getExpiryPolicy());
     }
     msg->getFrames().append(content);
     msg->setIsManagementMessage(true);

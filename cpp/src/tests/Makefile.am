@@ -124,7 +124,8 @@ unit_test_SOURCES= unit_test.cpp unit_test.h \
 	Variant.cpp \
 	Address.cpp \
 	ClientMessage.cpp \
-	Qmf2.cpp
+	Qmf2.cpp \
+	BrokerOptions.cpp
 
 if HAVE_XML
 unit_test_SOURCES+= XmlClientSessionTest.cpp

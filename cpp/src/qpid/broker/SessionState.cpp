@@ -259,6 +259,8 @@ void SessionState::handleContent(AMQFrame& frame, const SequenceNumber& id)
             header.setEof(false);
             msg->getFrames().append(header);
         }
+        if (broker.isTimestamping())
+            msg->setTimestamp();
         msg->setPublisher(&getConnection());
         msg->getIngressCompletion().begin();
         semanticState.handle(msg);
