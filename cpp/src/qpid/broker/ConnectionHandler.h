@@ -59,7 +59,6 @@ class ConnectionHandler : public framing::FrameHandler
         Connection& connection;
         bool serverMode;
         std::auto_ptr<SaslAuthenticator> authenticator;
-        AclModule* acl;
         SecureConnection* secured;
         bool isOpen;
 
