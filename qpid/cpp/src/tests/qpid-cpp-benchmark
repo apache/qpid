@@ -69,7 +69,10 @@ op.add_option("--durable", default=False, action="store_true",
               help="Use durable queues and messages")
 op.add_option("--save-received", default=False, action="store_true",
               help="Save received message content to files <queuename>-receiver-<n>.msg")
-
+op.add_option("--group-receivers", default=False, action="store_true",
+              help="Run receivers for the same queue on the same host.")
+op.add_option("--verbose", default=False, action="store_true",
+              help="Show commands executed")
 single_quote_re = re.compile("'")
 def posix_quote(string):
     """ Quote a string for use as an argument in a posix shell"""
@@ -119,6 +122,7 @@ def start_receive(queue, index, opts, ready_queue, broker, host):
     if opts.connection_options:
         command += ["--connection-options",opts.connection_options]
     if host: command = ssh_command(host, command)
+    if opts.verbose: print "Receiver: ", command
     return clients.add(Popen(command, stdout=PIPE, stderr=PIPE))
 
 def start_send(queue, opts, broker, host):
@@ -140,6 +144,7 @@ def start_send(queue, opts, broker, host):
     if opts.connection_options:
         command += ["--connection-options",opts.connection_options]
     if host: command = ssh_command(host, command)
+    if opts.verbose: print "Sender: ", command
     return clients.add(Popen(command, stdout=PIPE, stderr=PIPE))
 
 def error_msg(out, err):
@@ -273,9 +278,19 @@ def main():
         for i in xrange(opts.repeat):
             recreate_queues(queues, opts.broker)
             ready_receiver = ReadyReceiver(ready_queue, opts.broker[0])
-            receivers = [start_receive(q, j, opts, ready_queue,
-                                       brokers.next(), client_hosts.next())
-                         for q in queues for j in xrange(opts.receivers)]
+
+            if opts.group_receivers: # Run receivers for same queue against same broker.
+                receivers = []
+                for q in queues:
+                    b = brokers.next()
+                    for j in xrange(opts.receivers):
+                        receivers.append(
+                            start_receive(q, j, opts, ready_queue, b, client_hosts.next()))
+            else:                       # Don't group receivers
+                receivers = [start_receive(q, j, opts, ready_queue,
+                                           brokers.next(), client_hosts.next())
+                             for q in queues for j in xrange(opts.receivers)]
+
             ready_receiver.wait(filter(None, receivers)) # Wait for receivers to be ready.
             start = time.time()
             senders = [start_send(q, opts,brokers.next(), client_hosts.next())
