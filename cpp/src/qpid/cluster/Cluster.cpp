@@ -278,7 +278,8 @@ Cluster::Cluster(const ClusterSettings& set, broker::Broker& b) :
     lastBroker(false),
     updateRetracted(false),
     updateClosed(false),
-    error(*this)
+    error(*this),
+    acl(0)
 {
     broker.setInCluster(true);
 
@@ -856,6 +857,8 @@ void Cluster::updateOffer(const MemberId& updater, uint64_t updateeInt, Lock& l)
     else if (updatee == self && url) {
         assert(state == JOINER);
         state = UPDATEE;
+        acl = broker.getAcl();
+        broker.setAcl(0);       // Disable ACL during update
         QPID_LOG(notice, *this << " receiving update from " << updater);
         checkUpdateIn(l);
     }
@@ -956,6 +959,7 @@ void Cluster::checkUpdateIn(Lock& l) {
         // NB: don't updateMgmtMembership() here as we are not in the deliver
         // thread. It will be updated on delivery of the "ready" we just mcast.
         broker.setClusterUpdatee(false);
+        broker.setAcl(acl);     // Restore ACL
         discarding = false;     // OK to set, we're stalled for update.
         QPID_LOG(notice, *this << " update complete, starting catch-up.");
         QPID_LOG(debug, debugSnapshot()); // OK to call because we're stalled.
