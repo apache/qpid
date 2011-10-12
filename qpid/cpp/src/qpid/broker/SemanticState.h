@@ -165,7 +165,6 @@ class SemanticState : private boost::noncopyable {
     DtxBufferMap suspendedXids;
     framing::SequenceSet accumulatedAck;
     boost::shared_ptr<Exchange> cacheExchange;
-    AclModule* acl;
     const bool authMsg;
     const std::string userID;
     const std::string userName;
