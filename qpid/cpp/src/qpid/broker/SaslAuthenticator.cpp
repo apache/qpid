@@ -57,7 +57,7 @@ public:
     NullAuthenticator(Connection& connection, bool encrypt);
     ~NullAuthenticator();
     void getMechanisms(framing::Array& mechanisms);
-    void start(const std::string& mechanism, const std::string& response);
+    void start(const std::string& mechanism, const std::string* response);
     void step(const std::string&) {}
     std::auto_ptr<SecurityLayer> getSecurityLayer(uint16_t maxFrameSize);
 };
@@ -81,7 +81,7 @@ public:
     ~CyrusAuthenticator();
     void init();
     void getMechanisms(framing::Array& mechanisms);
-    void start(const std::string& mechanism, const std::string& response);
+    void start(const std::string& mechanism, const std::string* response);
     void step(const std::string& response);
     void getError(std::string& error);
     void getUid(std::string& uid) { getUsername(uid); }
@@ -164,7 +164,7 @@ void NullAuthenticator::getMechanisms(Array& mechanisms)
     mechanisms.add(boost::shared_ptr<FieldValue>(new Str16Value("PLAIN")));//useful for testing
 }
 
-void NullAuthenticator::start(const string& mechanism, const string& response)
+void NullAuthenticator::start(const string& mechanism, const string* response)
 {
     if (encrypt) {
 #if HAVE_SASL
@@ -180,16 +180,16 @@ void NullAuthenticator::start(const string& mechanism, const string& response)
         }
     }
     if (mechanism == "PLAIN") { // Old behavior
-        if (response.size() > 0) {
+        if (response && response->size() > 0) {
             string uid;
-            string::size_type i = response.find((char)0);
-            if (i == 0 && response.size() > 1) {
+            string::size_type i = response->find((char)0);
+            if (i == 0 && response->size() > 1) {
                 //no authorization id; use authentication id
-                i = response.find((char)0, 1);
-                if (i != string::npos) uid = response.substr(1, i-1);
+                i = response->find((char)0, 1);
+                if (i != string::npos) uid = response->substr(1, i-1);
             } else if (i != string::npos) {
                 //authorization id is first null delimited field
-                uid = response.substr(0, i);
+                uid = response->substr(0, i);
             }//else not a valid SASL PLAIN response, throw error?            
             if (!uid.empty()) {
                 //append realm if it has not already been added
@@ -376,7 +376,7 @@ void CyrusAuthenticator::getMechanisms(Array& mechanisms)
     }
 }
 
-void CyrusAuthenticator::start(const string& mechanism, const string& response)
+void CyrusAuthenticator::start(const string& mechanism, const string* response)
 {
     const char *challenge;
     unsigned int challenge_len;
@@ -385,7 +385,7 @@ void CyrusAuthenticator::start(const string& mechanism, const string& response)
     QPID_LOG(info, "SASL: Starting authentication with mechanism: " << mechanism);
     int code = sasl_server_start(sasl_conn,
                                  mechanism.c_str(),
-                                 response.size() ? response.c_str() : 0, response.length(),
+                                 (response ? response->c_str() : 0), (response ? response->size() : 0),
                                  &challenge, &challenge_len);
     
     processAuthenticationStep(code, challenge, challenge_len);

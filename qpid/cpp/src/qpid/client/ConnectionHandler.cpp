@@ -254,8 +254,18 @@ void ConnectionHandler::start(const FieldTable& /*serverProps*/, const Array& me
     }
 
     if (sasl.get()) {
-        string response = sasl->start(join(mechlist), getSecuritySettings ? getSecuritySettings() : 0);
-        proxy.startOk(properties, sasl->getMechanism(), response, locale);
+        string response;
+        if (sasl->start(join(mechlist), response, getSecuritySettings ? getSecuritySettings() : 0)) {
+            proxy.startOk(properties, sasl->getMechanism(), response, locale);
+        } else {
+            //response was null
+            ConnectionStartOkBody body;
+            body.setClientProperties(properties);
+            body.setMechanism(sasl->getMechanism());
+            //Don't set response, as none was given
+            body.setLocale(locale);
+            proxy.send(body);
+        }
     } else {
         //TODO: verify that desired mechanism and locale are supported
         string response = ((char)0) + username + ((char)0) + password;
