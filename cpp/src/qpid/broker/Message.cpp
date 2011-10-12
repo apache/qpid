@@ -377,7 +377,15 @@ void Message::addTraceId(const std::string& id)
     }
 }
 
-void Message::setTimestamp(const boost::intrusive_ptr<ExpiryPolicy>& e)
+void Message::setTimestamp()
+{
+    sys::Mutex::ScopedLock l(lock);
+    DeliveryProperties* props = getModifiableProperties<DeliveryProperties>();
+    time_t now = ::time(0);
+    props->setTimestamp(now);   // AMQP-0.10: posix time_t - secs since Epoch
+}
+
+void Message::computeExpiration(const boost::intrusive_ptr<ExpiryPolicy>& e)
 {
     sys::Mutex::ScopedLock l(lock);
     DeliveryProperties* props = getModifiableProperties<DeliveryProperties>();

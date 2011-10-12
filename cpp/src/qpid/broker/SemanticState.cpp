@@ -472,7 +472,7 @@ const std::string nullstring;
 }
 
 void SemanticState::route(intrusive_ptr<Message> msg, Deliverable& strategy) {
-    msg->setTimestamp(getSession().getBroker().getExpiryPolicy());
+    msg->computeExpiration(getSession().getBroker().getExpiryPolicy());
 
     std::string exchangeName = msg->getExchangeName();
     if (!cacheExchange || cacheExchange->getName() != exchangeName || cacheExchange->isDestroyed())

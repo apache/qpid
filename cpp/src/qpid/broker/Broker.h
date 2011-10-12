@@ -122,6 +122,7 @@ public:
         uint queueFlowResumeRatio;  // producer flow control: off
         uint16_t queueThresholdEventRatio;
         std::string defaultMsgGroup;
+        bool timestampRcvMsgs;
 
       private:
         std::string getHome();
@@ -164,6 +165,10 @@ public:
                                      const std::string& userId,
                                      const std::string& connectionId,
                                      qpid::types::Variant::Map& results);
+    Manageable::status_t getTimestampConfig(bool& receive,
+                                            const ConnectionState* context);
+    Manageable::status_t setTimestampConfig(const bool receive,
+                                            const ConnectionState* context);
     boost::shared_ptr<sys::Poller> poller;
     sys::Timer timer;
     std::auto_ptr<sys::Timer> clusterTimer;
@@ -315,6 +320,7 @@ public:
                           const boost::intrusive_ptr<Message>& msg)> deferDelivery;
 
     bool isAuthenticating ( ) { return config.auth; }
+    bool isTimestamping() { return config.timestampRcvMsgs; }
 
     typedef boost::function1<void, boost::shared_ptr<Queue> > QueueFunctor;
 

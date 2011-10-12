@@ -1030,6 +1030,64 @@ class ACLTests(TestBase010):
             if (403 == e.args[0].error_code):
                 self.fail("ACL should allow message transfer to exchange amq.direct with routing key rk1");
 
+   #=====================================
+   # ACL broker configuration tests
+   #=====================================
+
+    def test_broker_timestamp_config(self):
+        """
+        Test ACL control of the broker timestamp configuration
+        """
+        aclf = self.get_acl_file()
+        # enable lots of stuff to allow QMF to work
+        aclf.write('acl allow all create exchange\n')
+        aclf.write('acl allow all access exchange\n')
+        aclf.write('acl allow all bind exchange\n')
+        aclf.write('acl allow all publish exchange\n')
+        aclf.write('acl allow all create queue\n')
+        aclf.write('acl allow all access queue\n')
+        aclf.write('acl allow all delete queue\n')
+        aclf.write('acl allow all consume queue\n')
+        aclf.write('acl allow all access method\n')
+        # this should let bob access the timestamp configuration
+        aclf.write('acl allow bob@QPID access broker\n')
+        aclf.write('acl allow admin@QPID all all\n')
+        aclf.write('acl deny all all')
+        aclf.close()
+
+        result = self.reload_acl()
+        if (result.text.find("format error",0,len(result.text)) != -1):
+            self.fail(result)
+
+        ts = None
+        bob = BrokerAdmin(self.config.broker, "bob", "bob")
+        ts = bob.get_timestamp_cfg() #should work
+        bob.set_timestamp_cfg(ts);   #should work
+
+        obo = BrokerAdmin(self.config.broker, "obo", "obo")
+        try:
+            ts = obo.get_timestamp_cfg() #should fail
+            failed = False
+        except Exception, e:
+            failed = True
+            self.assertEqual(7,e.args[0]["error_code"])
+            assert e.args[0]["error_text"].find("unauthorized-access") == 0
+        assert(failed)
+
+        try:
+            obo.set_timestamp_cfg(ts) #should fail
+            failed = False
+        except Exception, e:
+            failed = True
+            self.assertEqual(7,e.args[0]["error_code"])
+            assert e.args[0]["error_text"].find("unauthorized-access") == 0
+        assert(failed)
+
+        admin = BrokerAdmin(self.config.broker, "admin", "admin")
+        ts = admin.get_timestamp_cfg() #should pass
+        admin.set_timestamp_cfg(ts) #should pass
+
+
 class BrokerAdmin:
     def __init__(self, broker, username=None, password=None):
         self.connection = qpid.messaging.Connection(broker)
@@ -1075,3 +1133,9 @@ class BrokerAdmin:
 
     def delete_queue(self, name):
         self.invoke("delete", {"type": "queue", "name":name})
+
+    def get_timestamp_cfg(self):
+        return self.invoke("getTimestampConfig", {})
+
+    def set_timestamp_cfg(self, receive):
+        return self.invoke("getTimestampConfig", {"receive":receive})
