@@ -108,13 +108,10 @@ ConnectionHandler::ConnectionHandler(Connection& connection, bool isClient, bool
 
 ConnectionHandler::Handler::Handler(Connection& c, bool isClient, bool isShadow) :
     proxy(c.getOutput()),
-    connection(c), serverMode(!isClient), acl(0), secured(0),
+    connection(c), serverMode(!isClient), secured(0),
     isOpen(false)
 {
     if (serverMode) {
-
-    	acl =  connection.getBroker().getAcl();
-
         FieldTable properties;
         Array mechanisms(0x95);
 
@@ -168,6 +165,8 @@ void ConnectionHandler::Handler::startOk(const ConnectionStartOkBody& body)
         connection.setFederationPeerTag(clientProperties.getAsString(QPID_FED_TAG));
     }
     if (connection.isFederationLink()) {
+        AclModule* acl =  connection.getBroker().getAcl();
+        FieldTable properties;
     	if (acl && !acl->authorise(connection.getUserId(),acl::ACT_CREATE,acl::OBJ_LINK,"")){
             proxy.close(framing::connection::CLOSE_CODE_CONNECTION_FORCED,"ACL denied creating a federation link");
             return;
