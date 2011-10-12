@@ -672,7 +672,7 @@ void addMessagesToQueue(uint count, Queue& queue, uint oddTtl = 200, uint evenTt
 {
     for (uint i = 0; i < count; i++) {
         intrusive_ptr<Message> m = create_message("exchange", "key", i % 2 ? oddTtl : evenTtl);
-        m->setTimestamp(new broker::ExpiryPolicy);
+        m->computeExpiration(new broker::ExpiryPolicy);
         queue.deliver(m);
     }
 }

@@ -103,6 +103,14 @@
       <arg name="level"     dir="O" type="sstr"/>
     </method>
 
+    <method name="getTimestampConfig" desc="Get the message timestamping configuration">
+      <arg name="receive" dir="O" type="bool"  desc="True if received messages are timestamped."/>
+    </method>
+
+    <method name="setTimestampConfig" desc="Set the message timestamping configuration">
+      <arg name="receive"  dir="I" type="bool" desc="Set true to enable timestamping received messages."/>
+    </method>
+
     <method name="create" desc="Create an object of the specified type">
       <arg name="type" dir="I" type="sstr" desc="The type of object to create"/>
       <arg name="name" dir="I" type="sstr" desc="The name of the object to create"/> 

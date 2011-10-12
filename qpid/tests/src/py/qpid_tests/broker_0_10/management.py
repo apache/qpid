@@ -584,4 +584,63 @@ class ManagementTest (TestBase010):
         conn_qmf.update()
         self.assertEqual(conn_qmf.msgsToClient, 1)
 
-        
+    def test_timestamp_config(self):
+        """
+        Test message timestamping control.
+        """
+        self.startQmf()
+        conn = self.connect()
+        session = conn.session("timestamp-session")
+
+        #verify that receive message timestamping is OFF by default
+        broker = self.qmf.getObjects(_class="broker")[0]
+        rc = broker.getTimestampConfig()
+        self.assertEqual(rc.status, 0)
+        self.assertEqual(rc.text, "OK")
+        #self.assertEqual(rc.receive, False)
+
+        #try to enable it
+        rc = broker.setTimestampConfig(True)
+        self.assertEqual(rc.status, 0)
+        self.assertEqual(rc.text, "OK")
+
+        rc = broker.getTimestampConfig()
+        self.assertEqual(rc.status, 0)
+        self.assertEqual(rc.text, "OK")
+        self.assertEqual(rc.receive, True)
+
+        #send a message to a queue
+        session.queue_declare(queue="ts-q", exclusive=True, auto_delete=True)
+        session.message_transfer(message=Message(session.delivery_properties(routing_key="ts-q"), "abc"))
+
+        #receive message from queue, and verify timestamp is present
+        session.message_subscribe(destination="d", queue="ts-q")
+        session.message_flow(destination="d", unit=session.credit_unit.message, value=0xFFFFFFFFL)
+        session.message_flow(destination="d", unit=session.credit_unit.byte, value=0xFFFFFFFFL)
+        incoming = session.incoming("d")
+        msg = incoming.get(timeout=1)
+        self.assertEqual("abc", msg.body)
+        self.assertEqual(msg.has("delivery_properties"), True)
+        dp = msg.get("delivery_properties")
+        assert(dp.timestamp)
+
+        #try to disable it
+        rc = broker.setTimestampConfig(False)
+        self.assertEqual(rc.status, 0)
+        self.assertEqual(rc.text, "OK")
+
+        rc = broker.getTimestampConfig()
+        self.assertEqual(rc.status, 0)
+        self.assertEqual(rc.text, "OK")
+        self.assertEqual(rc.receive, False)
+
+        #send another message to the queue
+        session.message_transfer(message=Message(session.delivery_properties(routing_key="ts-q"), "def"))
+
+        #receive message from queue, and verify timestamp is NOT PRESENT
+        msg = incoming.get(timeout=1)
+        self.assertEqual("def", msg.body)
+        self.assertEqual(msg.has("delivery_properties"), True)
+        dp = msg.get("delivery_properties")
+        self.assertEqual(dp.timestamp, None)
+
