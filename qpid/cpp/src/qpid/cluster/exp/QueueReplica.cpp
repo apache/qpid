@@ -74,7 +74,7 @@ void QueueReplica::resubscribe(const MemberId& member) {
 
 void QueueReplica::update(QueueOwnership before, MemberId member) {
     QueueOwnership after = getState();
-    QPID_LOG(trace, "cluster queue replica: " << queue->getName() << ": "
+    QPID_LOG(trace, "cluster: queue replica: " << queue->getName() << ": "
                  << before << "->" << after << " [" << PrintSubscribers(subscribers, self) << "]");
     context->replicaState(before, after, member == self);
 }

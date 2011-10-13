@@ -88,7 +88,7 @@ void MessageHandler::enqueue(const std::string& q, uint16_t channel) {
     // We only need to build message from other brokers, our own messages
     // are held by the MessageHolder.
     if (sender() != self()) {
-        boost::shared_ptr<Queue> queue = findQueue(q, "Cluster enqueue");
+        boost::shared_ptr<Queue> queue = findQueue(q, "cluster: enqueue");
         messageBuilders.announce(sender(), channel, queue);
     }
 }
@@ -97,16 +97,16 @@ void MessageHandler::enqueue(const std::string& q, uint16_t channel) {
 // and scan queue once.
 void MessageHandler::acquire(const std::string& q, uint32_t position) {
     // FIXME aconway 2011-09-15: systematic logging across cluster module.
-    QPID_LOG(trace, "cluster message " << q << "[" << position
+    QPID_LOG(trace, "cluster: message " << q << "[" << position
              << "] acquired by " << PrettyId(sender(), self()));
     // Note acquires from other members. My own acquires were executed in
     // the connection thread
     if (sender() != self()) {
-        boost::shared_ptr<Queue> queue = findQueue(q, "Cluster acquire");
+        boost::shared_ptr<Queue> queue = findQueue(q, "cluster: acquire");
         QueuedMessage qm;
         BrokerContext::ScopedSuppressReplication ssr;
         if (!queue->acquireMessageAt(position, qm))
-            throw Exception(QPID_MSG("Cluster acquire: message not found: "
+            throw Exception(QPID_MSG("cluster: acquire: message not found: "
                                      << q << "[" << position << "]"));
         assert(qm.position.getValue() == position);
         assert(qm.payload);
@@ -119,7 +119,7 @@ void MessageHandler::acquire(const std::string& q, uint32_t position) {
 
 void MessageHandler::dequeue(const std::string& q, uint32_t position) {
     // FIXME aconway 2011-09-15: systematic logging across cluster module.
-    QPID_LOG(trace, "cluster message " << q << "[" << position
+    QPID_LOG(trace, "cluster: message " << q << "[" << position
              << "] dequeued by " << PrettyId(sender(), self()));
 
     // FIXME aconway 2010-10-28: for local dequeues, we should
@@ -128,7 +128,7 @@ void MessageHandler::dequeue(const std::string& q, uint32_t position) {
 
     // My own dequeues were processed in the connection thread before multicasting.
     if (sender() != self()) {
-        boost::shared_ptr<Queue> queue = findQueue(q, "Cluster dequeue");
+        boost::shared_ptr<Queue> queue = findQueue(q, "cluster: dequeue");
         QueuedMessage qm = QueueContext::get(*queue)->dequeue(position);
         BrokerContext::ScopedSuppressReplication ssr;
         if (qm.queue) queue->dequeue(0, qm);
@@ -137,7 +137,7 @@ void MessageHandler::dequeue(const std::string& q, uint32_t position) {
 
 void MessageHandler::requeue(const std::string& q, uint32_t position, bool redelivered) {
     if (sender() != self()) {
-        boost::shared_ptr<Queue> queue = findQueue(q, "Cluster requeue");
+        boost::shared_ptr<Queue> queue = findQueue(q, "cluster: requeue");
         QueueContext::get(*queue)->requeue(position, redelivered);
     }
 }

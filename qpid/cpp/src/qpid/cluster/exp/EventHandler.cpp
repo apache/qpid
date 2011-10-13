@@ -65,14 +65,14 @@ void EventHandler::deliver(
     // FIXME aconway 2011-09-29: don't decode own frame bodies. Ignore based on channel.
     while (buf.available()) {
         frame.decode(buf);
-        QPID_LOG(trace, "cluster deliver on " << cpg.getName() << " from "<< PrettyId(sender, self) << ": " << frame);
+        QPID_LOG(trace, "cluster: deliver on " << cpg.getName()
+                 << " from "<< PrettyId(sender, self) << ": " << frame);
         try {
             handle(frame);
         } catch (const std::exception& e) {
-            // Note: exceptions are assumed to be survivable,
-            // fatal errors should log a message and call Core::fatal.
-            QPID_LOG(error, e.what());
-            // FIXME aconway 2011-09-29: error handling
+            // Non-fatal error. Our state isn't compromized by receiving bad frames.
+            QPID_LOG(error, "cluster: error in deliver on " << cpg.getName()
+                     << " from " << PrettyId(sender, self) << ": " << frame);
         }
     }
 }
@@ -105,8 +105,8 @@ void EventHandler::configChange (
     const cpg_address *joined, int nJoined)
 {
     QPID_LOG(notice, "cluster: new membership: " << PrintAddrs(members, nMembers));
-    QPID_LOG_IF(notice, nLeft, "cluster:   members left: " << PrintAddrs(left, nLeft));
-    QPID_LOG_IF(notice, nJoined, "cluster:   members joined: " << PrintAddrs(joined, nJoined));
+    QPID_LOG_IF(notice, nLeft, "cluster:    left: " << PrintAddrs(left, nLeft));
+    QPID_LOG_IF(notice, nJoined, "cluster:    joined: " << PrintAddrs(joined, nJoined));
     for (Handlers::iterator i = handlers.begin(); i != handlers.end(); ++i) {
         for (int l = 0; l < nLeft; ++l) (*i)->left(left[l]);
         for (int j = 0; j < nJoined; ++j) (*i)->joined(joined[j]);

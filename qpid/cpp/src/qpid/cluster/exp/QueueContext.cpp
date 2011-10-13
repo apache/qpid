@@ -67,7 +67,7 @@ void QueueContext::replicaState(
     // Interested in state changes and my own events which lead to
     // ownership.
     if ((before != after || selfDelivered) && isOwner(after)) {
-        QPID_LOG(trace, "cluster start consumers on " << queue.getName() << ", timer "
+        QPID_LOG(trace, "cluster: start consumers on " << queue.getName() << ", timer "
                  << (after==SHARED_OWNER? "start" : "stop"));
         queue.startConsumers();
         if (after == SHARED_OWNER) timer.start();
@@ -94,7 +94,7 @@ void QueueContext::cancel(size_t n) {
     consumers = n;
     // When consuming threads are stopped, this->stopped will be called.
     if (n == 0) {
-        QPID_LOG(trace, "cluster stop consumers and timer on " << queue.getName());
+        QPID_LOG(trace, "cluster: all consumers canceled on " << queue.getName());
         timer.stop();
         queue.stopConsumers();
     }
@@ -103,7 +103,7 @@ void QueueContext::cancel(size_t n) {
 // Called in timer thread.
 void QueueContext::timeout() {
     // When all threads have stopped, queue will call stopped()
-    QPID_LOG(trace, "cluster timeout, stopping consumers on " << queue.getName());
+    QPID_LOG(trace, "cluster: lock timeout on " << queue.getName());
     queue.stopConsumers();
 }
 
@@ -111,8 +111,9 @@ void QueueContext::timeout() {
 // Called when no threads are dispatching from the queue.
 void QueueContext::stopped() {
     sys::Mutex::ScopedLock l(lock);
-    QPID_LOG(trace, "cluster timeout, stopped consumers on " << queue.getName()
-             << (consumers == 0 ? " unsubscribed" : " resubscribe"));
+    QPID_LOG(trace, "cluster: stopped consumers, "
+             << (consumers == 0 ? "unsubscribe" : "resubscribe")
+             << " to " << queue.getName());
     if (consumers == 0)
         mcast.mcast(framing::ClusterQueueUnsubscribeBody(
                         framing::ProtocolVersion(), queue.getName()));

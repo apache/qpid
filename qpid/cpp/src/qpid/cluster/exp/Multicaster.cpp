@@ -51,11 +51,11 @@ Multicaster::Multicaster(Cpg& cpg_,
     queue.start();
 }
 
-void Multicaster::mcast(const framing::AMQFrame& data) {
-    QPID_LOG(trace, "cluster multicast on " << cpg.getName() << ": " << data);
-    BufferRef bufRef = buffers.get(data.encodedSize());
+void Multicaster::mcast(const framing::AMQFrame& frame) {
+    QPID_LOG(trace, "cluster: multicast on " << cpg.getName() << ": " << frame);
+    BufferRef bufRef = buffers.get(frame.encodedSize());
     framing::Buffer buf(bufRef.begin(), bufRef.size());
-    data.encode(buf);
+    frame.encode(buf);
     queue.push(bufRef);
 }
 
@@ -82,7 +82,8 @@ Multicaster::sendMcast(const PollableEventQueue::Batch& buffers) {
         return i;
     }
     catch (const std::exception& e) {
-        QPID_LOG(critical, "Multicast error: " << e.what());
+        QPID_LOG(critical, "cluster: multicast error on " << cpg.getName()
+                 << ": " << e.what());
         queue.stop();
         onError();
         return buffers.end();
