@@ -94,7 +94,7 @@ public class CancelTest extends QpidBrokerTestCase
         browser.close();
 
         MessageConsumer consumer = _clientSession.createConsumer(_queue);
-        assertNotNull( consumer.receive() );
+        assertNotNull( consumer.receive(2000l) );
         consumer.close();
     }
 }
