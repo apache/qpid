@@ -94,6 +94,12 @@ class Clients:
             try: c.kill()
             except: pass
 
+class  PopenCommand(Popen):
+    """Like Popen but you can query for the command"""
+    def __init__(self, command, *args, **kwargs):
+        self.command = command
+        Popen.__init__(self, command, *args, **kwargs)
+
 clients = Clients()
 
 def start_receive(queue, index, opts, ready_queue, broker, host):
@@ -123,7 +129,7 @@ def start_receive(queue, index, opts, ready_queue, broker, host):
         command += ["--connection-options",opts.connection_options]
     if host: command = ssh_command(host, command)
     if opts.verbose: print "Receiver: ", command
-    return clients.add(Popen(command, stdout=PIPE, stderr=PIPE))
+    return clients.add(PopenCommand(command, stdout=PIPE, stderr=PIPE))
 
 def start_send(queue, opts, broker, host):
     address="%s;{%s}"%(queue,",".join(opts.send_option + ["create:always"]))
@@ -145,7 +151,7 @@ def start_send(queue, opts, broker, host):
         command += ["--connection-options",opts.connection_options]
     if host: command = ssh_command(host, command)
     if opts.verbose: print "Sender: ", command
-    return clients.add(Popen(command, stdout=PIPE, stderr=PIPE))
+    return clients.add(PopenCommand(command, stdout=PIPE, stderr=PIPE))
 
 def error_msg(out, err):
     return ("\n[stdout]\n%s\n[stderr]\n%s[end]"%(out, err))
@@ -243,7 +249,8 @@ class ReadyReceiver:
             for r in receivers:
                 if (r.poll() is not None):
                     out,err=r.communicate()
-                    raise Exception("Receiver error: %s"%error_msg(out,err))
+                    raise Exception("Receiver error: %s\n%s" %
+                                    (" ".join(r.command), error_msg(out,err)))
             raise Exception("Timed out waiting for receivers to be ready")
 
 def flatten(l):
