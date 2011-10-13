@@ -30,6 +30,7 @@
 #include <boost/format.hpp>
 
 #if HAVE_SASL
+#include <sys/stat.h>
 #include <sasl/sasl.h>
 #include "qpid/sys/cyrus/CyrusSecurityLayer.h"
 using qpid::sys::cyrus::CyrusSecurityLayer;
@@ -98,11 +99,33 @@ void SaslAuthenticator::init(const std::string& saslName, std::string const & sa
     //  Check if we have a version of SASL that supports sasl_set_path()
 #if (SASL_VERSION_FULL >= ((2<<16)|(1<<8)|22))
     //  If we are not given a sasl path, do nothing and allow the default to be used.
-    if ( ! saslConfigPath.empty() ) {
-        int code = sasl_set_path(SASL_PATH_TYPE_CONFIG,
-                                 const_cast<char *>(saslConfigPath.c_str()));
+    if ( saslConfigPath.empty() ) {
+        QPID_LOG ( info, "SASL: no config path set - using default." );
+    }
+    else {
+        struct stat st;
+
+        // Make sure the directory exists and we can read up to it.
+        if ( ::stat ( saslConfigPath.c_str(), & st) ) {
+          // Note: not using strerror() here because I think its messages are a little too hazy.
+          if ( errno == ENOENT )
+              throw Exception ( QPID_MSG ( "SASL: sasl_set_path failed: no such directory: " << saslConfigPath ) );
+          if ( errno == EACCES )
+              throw Exception ( QPID_MSG ( "SASL: sasl_set_path failed: cannot read parent of: " << saslConfigPath ) );
+          // catch-all stat failure
+          throw Exception ( QPID_MSG ( "SASL: sasl_set_path failed: cannot stat: " << saslConfigPath ) );
+        }
+
+        // Make sure the directory is readable.
+        if ( ::access ( saslConfigPath.c_str(), R_OK ) ) {
+            throw Exception ( QPID_MSG ( "SASL: sasl_set_path failed: directory not readable:" << saslConfigPath ) );
+        }
+
+        // This shouldn't fail now, but check anyway.
+        int code = sasl_set_path(SASL_PATH_TYPE_CONFIG, const_cast<char *>(saslConfigPath.c_str()));
         if(SASL_OK != code)
             throw Exception(QPID_MSG("SASL: sasl_set_path failed [" << code << "] " ));
+
         QPID_LOG(info, "SASL: config path set to " << saslConfigPath );
     }
 #endif
