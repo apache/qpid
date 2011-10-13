@@ -75,6 +75,7 @@ class Config:
         self._recursive         = False
         self._host              = "localhost"
         self._connTimeout       = 10
+        self._ignoreDefault     = False
         self._altern_ex         = None
         self._passive           = False
         self._durable           = False
@@ -164,6 +165,10 @@ def OptionsAndArguments(argv):
     group1.add_option("--sasl-mechanism", action="store", type="string", metavar="<mech>", help="SASL mechanism for authentication (e.g. EXTERNAL, ANONYMOUS, PLAIN, CRAM-MD, DIGEST-MD5, GSSAPI). SASL automatically picks the most secure available mechanism - use this option to override.")
     parser.add_option_group(group1)
 
+    group_ls = OptionGroup(parser, "Options for Listing Exchanges and Queues")
+    group_ls.add_option("--ignore-default", action="store_true", help="Ignore the default exchange in exchange or queue list")
+    parser.add_option_group(group_ls)
+
     group2 = OptionGroup(parser, "Options for Adding Exchanges and Queues")
     group2.add_option("--alternate-exchange", action="store", type="string", metavar="<aexname>", help="Name of the alternate-exchange for the new queue or exchange. Exchanges route messages to the alternate exchange if they are unable to route them elsewhere. Queues route messages to the alternate exchange if they are rejected by a subscriber or orphaned by queue deletion.")
     group2.add_option("--passive", "--dry-run", action="store_true", help="Do not actually add the exchange or queue, ensure that all parameters and permissions are correct and would allow it to be created.")
@@ -227,6 +232,8 @@ def OptionsAndArguments(argv):
         config._connTimeout = opts.timeout
         if config._connTimeout == 0:
             config._connTimeout = None
+    if opts.ignore_default:
+        config._ignoreDefault = True
     if opts.alternate_exchange:
         config._altern_ex = opts.alternate_exchange
     if opts.passive:
@@ -385,6 +392,7 @@ class BrokerManager:
         print line
 
         for ex in exchanges:
+            if config._ignoreDefault and not ex.name: continue
             if self.match(ex.name, filter):
                 print "%-10s%-*s " % (ex.type, maxNameLen, ex.name),
                 args = ex.arguments
@@ -401,6 +409,7 @@ class BrokerManager:
         bindings  = self.qmf.getObjects(_class="binding", _agent=self.brokerAgent)
         queues    = self.qmf.getObjects(_class="queue", _agent=self.brokerAgent)
         for ex in exchanges:
+            if config._ignoreDefault and not ex.name: continue
             if self.match(ex.name, filter):
                 print "Exchange '%s' (%s)" % (ex.name, ex.type)
                 for bind in bindings:
@@ -473,6 +482,7 @@ class BrokerManager:
                         if ex != None:
                             ename = ex.name
                             if ename == "":
+                                if config._ignoreDefault: continue
                                 ename = "''"
                         print "    bind [%s] => %s" % (bind.bindingKey, ename)
 
