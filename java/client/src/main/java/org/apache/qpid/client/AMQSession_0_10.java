@@ -1378,4 +1378,15 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
             getQpidSession().sync();
         }
     }
+
+    @Override
+    void resubscribe() throws AMQException
+    {
+        // Also reset the delivery tag tracker, to insure we dont
+        // return the first <total number of msgs received on session>
+        // messages sent by the brokers following the first rollback
+        // after failover
+        _highestDeliveryTag.set(-1);
+        super.resubscribe();
+    }
 }
