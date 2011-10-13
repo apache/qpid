@@ -227,21 +227,27 @@ The old cluster has workarounds in the broker code that can be removed.
 - [ ] drop security workarounds: cluster code now operates after message decoding.
 - [ ] drop connection tracking in cluster code.
 - [ ] simper inconsistent-error handling code, no need to stall.
+
 ** TODO [#C] Support for live upgrades.
 
 Allow brokers in a running cluster to be replaced one-by-one with a new version.
+(see new-cluster-design for design notes.)
 
 The old cluster protocol was unstable because any changes in broker
 state caused changes to the cluster protocol.The new design should be
 much more stable.
 
-Points to implement: 
-- Brokers should ignore unknown controls (with a warning) rather than an error.
-- Limit logging frequency for unknown control warnings.
-- Add a version number at front of every CPG message. Determines how the
-  rest of the message is decoded. (allows for entirely new encodings e.g. AMQP 1.0)
+Points to implement in anticipation of live upgrade:
+- Prefix each CPG message with a version number and length.
+  Version number determines how to decode the message.
+- Brokers ignore messages that have a higher version number than they understand.
 - Protocol version XML element in cluster.xml, on each control.
 - Initial status protocol to include protocol version number.
+
+New member udpates: use the store encode/decode for updates, use the
+same backward compatibility strategy as the store. This allows for
+adding new elements to the end of structures but not changing or
+removing new elements.
 
 ** TODO [#C] Support for AMQP 1.0.
 

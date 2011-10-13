@@ -83,20 +83,21 @@ context.
 
 ** A new cluster design.
 
-Clearly defined interface between broker code and cluster plug-in.
+1. Clearly defined interface between broker code and cluster plug-in.
 
-Replicate queue events rather than client data.
-- Broker behavior only needs to match per-queue.
-- Smaller amount of code (queue implementation) that must behave predictably.
-- Events only need be serialized per-queue, allows concurrency between queues
+2. Replicate queue events rather than client data.
+ - Only requires consistent enqueue order.
+ - Events only need be serialized per-queue, allows concurrency between queues
+ - Allows for replicated and non-replicated queues.
 
-Use a moving queue ownership protocol to agree order of dequeues.
-No longer relies on identical state and lock-step behavior to cause
-identical dequeues on each broker.
+3. Use a lock protocol to agree order of dequeues: only the broker
+   holding the lock can acqiure & dequeue.  No longer relies on
+   identical state and lock-step behavior to cause identical dequeues
+   on each broker.
 
-Use multiple CPG groups to process different queues in parallel. Use a
-fixed set of groups and hash queue names to choose the group for each
-queue.
+4. Use multiple CPG groups to process different queues in
+   parallel. Use a fixed set of groups and hash queue names to choose
+   the group for each queue.
 
 *** Requirements
 
@@ -295,20 +296,23 @@ flow control is sufficient for qpid.
 ** Live upgrades
 
 Live upgrades refers to the ability to upgrade a cluster while it is
-running, with no downtime. Each brokers in the cluster is shut down,
-and then re-started with a new version of the broker code.
+running, with no downtime. Brokers are shut down and re-start brokers
+in the cluster is shut down, and then re-started with a new version of
+the broker code.
 
 To achieve this
 - Cluster protocl XML file has a new element <version number=N> attached
   to each method. This is the version at which the method was added.
-- New versions can only add methods, existing methods cannot be changed.
+- New versions can add methods, existing methods cannot be changed.
 - The cluster handshake for new members includes the protocol version
   at each member.
 - The cluster's version is the lowest version among its members.
-- A newer broker can join and older cluster. When it does, it must restrict 
-  itself to speaking the older version protocol.
+- A newer broker can join and older cluster but not vice versa.
+- A newer broker in an old cluster must speak the old protocol for the
+  benefit of older brokers. It can also use newer controls which
+  will be ignored by old broekrs.
 - When the cluster version increases (because the lowest version member has left)
-  the remaining members may move up to the new version.
+  the remaining members may switch to using only the new version.
 
 
 * Design debates
