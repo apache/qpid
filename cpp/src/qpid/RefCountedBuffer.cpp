@@ -21,6 +21,7 @@
 
 #include "qpid/RefCountedBuffer.h"
 #include <new>
+#include <boost/cstdint.hpp>
 
 namespace qpid {
 
