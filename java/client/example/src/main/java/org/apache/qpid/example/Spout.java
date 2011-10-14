@@ -27,7 +27,7 @@ import javax.jms.Message;
 import javax.jms.MessageProducer;
 import javax.jms.Session;
 
-import org.apache.qpid.client.AMQAnyDestination;
+import org.apache.qpid.client.AddressBasedDestination;
 
 public class Spout extends OptionParser
 {
@@ -87,7 +87,7 @@ public class Spout extends OptionParser
         Connection con = createConnection();
         con.start();
         Session ssn = con.createSession(false,Session.AUTO_ACKNOWLEDGE);     
-        Destination dest = new AMQAnyDestination(address);
+        Destination dest = new AddressBasedDestination(address);
         MessageProducer producer = ssn.createProducer(dest);
         
         int count = Integer.parseInt(getOp(COUNT));

@@ -20,15 +20,10 @@
  */
 package org.apache.qpid.test.client.message;
 
-import org.apache.qpid.configuration.ClientProperties;
-import org.apache.qpid.client.AMQAnyDestination;
-import org.apache.qpid.client.AMQDestination;
-import org.apache.qpid.client.AMQTopic;
-import org.apache.qpid.client.CustomJMSXProperty;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.management.common.mbeans.ManagedQueue;
-import org.apache.qpid.test.utils.JMXTestUtils;
-import org.apache.qpid.test.utils.QpidBrokerTestCase;
+import java.nio.BufferOverflowException;
+import java.util.Iterator;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import javax.jms.Connection;
 import javax.jms.Destination;
@@ -41,10 +36,16 @@ import javax.jms.Session;
 import javax.jms.Topic;
 import javax.management.openmbean.CompositeDataSupport;
 import javax.management.openmbean.TabularData;
-import java.nio.BufferOverflowException;
-import java.util.Iterator;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
+
+import org.apache.qpid.client.AMQDestination;
+import org.apache.qpid.client.AMQQueue;
+import org.apache.qpid.client.AMQTopic;
+import org.apache.qpid.client.CustomJMSXProperty;
+import org.apache.qpid.configuration.ClientProperties;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.management.common.mbeans.ManagedQueue;
+import org.apache.qpid.test.utils.JMXTestUtils;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 /**
  * From the API Docs getJMSDestination:
@@ -338,12 +339,12 @@ public class JMSDestinationTest extends QpidBrokerTestCase
     public void testGetDestinationWithCustomExchange() throws Exception
     {
 
-        AMQDestination dest = new AMQAnyDestination(new AMQShortString("my-exchange"),
+        AMQDestination dest = new AMQQueue(new AMQShortString("my-exchange"),
                                                     new AMQShortString("direct"),
                                                     new AMQShortString("test"),
-                                                    false,
-                                                    false,
                                                     new AMQShortString("test"),
+                                                    false,
+                                                    false,                                                    
                                                     false,
                                                     new AMQShortString[]{new AMQShortString("test")});
         

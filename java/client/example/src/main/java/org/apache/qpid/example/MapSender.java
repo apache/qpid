@@ -33,8 +33,8 @@ import javax.jms.MapMessage;
 import javax.jms.MessageProducer;
 import javax.jms.Session;
 
-import org.apache.qpid.client.AMQAnyDestination;
 import org.apache.qpid.client.AMQConnection;
+import org.apache.qpid.client.AddressBasedDestination;
 
 
 public class MapSender {
@@ -45,7 +45,7 @@ public class MapSender {
             new AMQConnection("amqp://guest:guest@test/?brokerlist='tcp://localhost:5672'");
         
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        Destination queue = new AMQAnyDestination("ADDR:message_queue; {create: always}");
+        Destination queue = new AddressBasedDestination("ADDR:message_queue; {create: always}");
         MessageProducer producer = session.createProducer(queue);
 
         MapMessage m = session.createMapMessage();

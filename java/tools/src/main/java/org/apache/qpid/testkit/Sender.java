@@ -36,8 +36,8 @@ import javax.jms.MessageProducer;
 import javax.jms.Session;
 import javax.jms.TextMessage;
 
-import org.apache.qpid.client.AMQAnyDestination;
 import org.apache.qpid.client.AMQConnection;
+import org.apache.qpid.client.AddressBasedDestination;
 import org.apache.qpid.tools.MessageFactory;
 
 /**
@@ -95,7 +95,7 @@ public class Sender extends Client
        this.iterations = Integer.getInteger("iterations", -1);
        this.sleep_time = Long.getLong("sleep_time", 1000);
        this.setSsn(con.createSession(isTransacted(),Session.AUTO_ACKNOWLEDGE));
-       this.dest = new AMQAnyDestination(addr);
+       this.dest = new AddressBasedDestination(addr);
        this.producer = getSsn().createProducer(dest);
        this.replyTo = getSsn().createTemporaryQueue();
        

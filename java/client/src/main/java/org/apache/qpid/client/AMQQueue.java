@@ -30,12 +30,6 @@ import org.apache.qpid.url.BindingURL;
 
 public class AMQQueue extends AMQDestination implements Queue
 {
-
-    public AMQQueue(String address) throws URISyntaxException
-    {
-        super(address);
-    }
-    
     /**
      * Create a reference to a non temporary queue using a BindingURL object.
      * Note this does not actually imply the queue exists.
@@ -147,6 +141,12 @@ public class AMQQueue extends AMQDestination implements Queue
     public AMQQueue(AMQShortString exchangeName, AMQShortString routingKey, AMQShortString queueName, boolean exclusive, boolean autoDelete, boolean durable,AMQShortString[] bindingKeys)
     {
         super(exchangeName, ExchangeDefaults.DIRECT_EXCHANGE_CLASS, routingKey, exclusive,
+              autoDelete, queueName, durable, bindingKeys);
+    }
+    
+    public AMQQueue(AMQShortString exchangeName, AMQShortString exchangeClass, AMQShortString routingKey, AMQShortString queueName, boolean exclusive, boolean autoDelete, boolean durable,AMQShortString[] bindingKeys)
+    {
+        super(exchangeName, exchangeClass, routingKey, exclusive,
               autoDelete, queueName, durable, bindingKeys);
     }
 

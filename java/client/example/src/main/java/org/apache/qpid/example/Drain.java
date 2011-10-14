@@ -26,9 +26,7 @@ import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.Session;
 
-import org.apache.qpid.client.AMQAnyDestination;
-import org.apache.qpid.client.AMQConnection;
-import org.slf4j.Logger;
+import org.apache.qpid.client.AddressBasedDestination;
 
 public class Drain extends OptionParser
 {
@@ -66,7 +64,7 @@ public class Drain extends OptionParser
         Connection con = createConnection();
         con.start();
         Session ssn = con.createSession(false,Session.AUTO_ACKNOWLEDGE);     
-        Destination dest = new AMQAnyDestination(address);
+        Destination dest = new AddressBasedDestination(address);
         MessageConsumer consumer = ssn.createConsumer(dest);
         Message msg;
         

@@ -42,6 +42,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQPInvalidClassException;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQSession_0_10;
+import org.apache.qpid.client.AddressBasedDestination;
 import org.apache.qpid.client.CustomJMSXProperty;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.jms.Message;
@@ -271,13 +272,14 @@ public class AMQMessageDelegate_0_10 extends AbstractAMQMessageDelegate
     private Destination convertToAddressBasedDestination(String exchange, String routingKey, String subject)
     {
         String addr;
-        if ("".equals(exchange)) // type Queue
+        if ("".equals(exchange)) // type Queue and the routing key is the Queue name.
         {
             subject = (subject == null) ? "" : "/" + subject;
             addr = routingKey + subject;
         }
         else
         {
+            // routing key is the subject here.
             addr = exchange + "/" + routingKey;
         }
         
@@ -315,36 +317,14 @@ public class AMQMessageDelegate_0_10 extends AbstractAMQMessageDelegate
 
         if (amqd.getDestSyntax() == AMQDestination.DestSyntax.ADDR)
         {
-           try
-           {
-               int type = ((AMQSession_0_10)getAMQSession()).resolveAddressType(amqd);
-               if (type == AMQDestination.QUEUE_TYPE)
-               {
-                   ((AMQSession_0_10)getAMQSession()).setLegacyFiledsForQueueType(amqd);
-               }
-               else
-               {
-                   ((AMQSession_0_10)getAMQSession()).setLegacyFiledsForTopicType(amqd);
-               }
-           }
-           catch(AMQException ex)
-           {
-               JMSException e = new JMSException("Error occured while figuring out the node type");
-               e.initCause(ex);
-               e.setLinkedException(ex);
-               throw e;
-           }
-           catch (TransportException e)
-           {
-               JMSException jmse = new JMSException("Exception occured while figuring out the node type:" + e.getMessage());
-               jmse.initCause(e);
-               jmse.setLinkedException(e);
-               throw jmse;
-           }
-
+            AddressBasedDestination dest = (AddressBasedDestination)amqd;
+            dest.resolveAddress((AMQSession_0_10)_session);
         }
         
-        final ReplyTo replyTo = new ReplyTo(amqd.getExchangeName().toString(), amqd.getRoutingKey().toString());
+        String exchangeName = amqd.getExchangeName().asString();
+        String routingKey = amqd.getRoutingKey().asString();
+        
+        final ReplyTo replyTo = new ReplyTo(exchangeName, routingKey);
         _destinationCache.put(replyTo, new SoftReference<Destination>(destination));
         _messageProps.setReplyTo(replyTo);
 

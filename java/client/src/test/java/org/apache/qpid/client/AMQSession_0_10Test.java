@@ -154,7 +154,7 @@ public class AMQSession_0_10Test extends TestCase
     public void testExceptionOnCreateConsumer()
     {
         AMQSession_0_10 session = createThrowingExceptionAMQSession_0_10();
-        AMQAnyDestination destination = createDestination();
+        AMQDestination destination = createDestination();
         try
         {
             session.createConsumer(destination);
@@ -170,10 +170,9 @@ public class AMQSession_0_10Test extends TestCase
     public void testExceptionOnCreateSubscriber()
     {
         AMQSession_0_10 session = createThrowingExceptionAMQSession_0_10();
-        AMQAnyDestination destination = createDestination();
         try
         {
-            session.createSubscriber(destination);
+            session.createSubscriber(new AMQTopic(new AMQShortString("amq.topic"),new AMQShortString("test")));
             fail("JMSException should be thrown");
         }
         catch (Exception e)
@@ -518,13 +517,13 @@ public class AMQSession_0_10Test extends TestCase
         assertNotNull("ExchangeDeclare event was not sent", event);
     }
 
-    private AMQAnyDestination createDestination()
+    private AMQDestination createDestination()
     {
-        AMQAnyDestination destination = null;
+        AMQDestination destination = null;
         try
         {
-            destination = new AMQAnyDestination(new AMQShortString("amq.direct"), new AMQShortString("direct"),
-                    new AMQShortString("test"), false, true, new AMQShortString("test"), true, null);
+            destination = new AMQQueue(new AMQShortString("amq.direct"), new AMQShortString("direct"),
+                    new AMQShortString("test"),new AMQShortString("test"), false, true, true, null);
         }
         catch (Exception e)
         {

@@ -26,7 +26,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.jms.JMSException;
 import javax.jms.Session;
 
-import org.apache.qpid.client.AMQAnyDestination;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
@@ -85,7 +84,7 @@ public abstract class AbstractAMQMessageDelegate implements AMQMessageDelegate
     }
 
     /** If the acknowledge mode is CLIENT_ACKNOWLEDGE the session is required */
-    private AMQSession<?,?> _session;
+    protected AMQSession<?,?> _session;
     private final long _deliveryTag;
 
     protected AbstractAMQMessageDelegate(long deliveryTag)
@@ -132,14 +131,17 @@ public abstract class AbstractAMQMessageDelegate implements AMQMessageDelegate
         }
         else
         {
-            dest = new AMQAnyDestination(exchange,
-                                         new AMQShortString(exchangeInfo.exchangeType),
-                                         routingKey,
-                                         false,
-                                         false,
-                                         routingKey,
-                                         false,
-                                         new AMQShortString[] {routingKey});
+            // This is to cater to fanout, match and nameless exchange types.
+            // This method is only used if the syntax is BURL.
+            // See AMQMessageDelegate_0_10.java for more details.
+            dest = new AMQQueue(exchange,
+                                new AMQShortString(exchangeInfo.exchangeType),
+                                routingKey,
+                                routingKey,
+                                false,
+                                false,
+                                false,
+                                new AMQShortString[] {routingKey});
         }
 
         return dest;

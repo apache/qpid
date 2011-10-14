@@ -590,14 +590,6 @@ public final class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, B
     {    
         declareExchange(new AMQShortString("amq.direct"), new AMQShortString("direct"), false);
     }
-
-    public void handleAddressBasedDestination(AMQDestination dest, 
-                                              boolean isConsumer,
-                                              boolean noWait) throws AMQException
-    {
-        throw new UnsupportedOperationException("The new addressing based sytanx is "
-                + "not supported for AMQP 0-8/0-9 versions");
-    }
     
     protected void flushAcknowledgments()
     {

@@ -30,8 +30,8 @@ import javax.jms.MessageConsumer;
 import javax.jms.MessageListener;
 import javax.jms.Session;
 
-import org.apache.qpid.client.AMQAnyDestination;
 import org.apache.qpid.client.AMQBrokerDetails;
+import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.jms.Connection;
@@ -97,11 +97,12 @@ public class FailoverExchangeMethod implements FailoverMethod, MessageListener
         {
             _ssn = _conn.createSession(false,Session.AUTO_ACKNOWLEDGE);
             MessageConsumer cons = _ssn.createConsumer(
-                                        new AMQAnyDestination(new AMQShortString("amq.failover"),
-                                                              new AMQShortString("amq.failover"),
-                                                              new AMQShortString(""),
-                                                              true,true,null,false,
-                                                              new AMQShortString[0])); 
+                                        new AMQQueue(new AMQShortString("amq.failover"),
+                                                     new AMQShortString("amq.failover"),
+                                                     new AMQShortString(""),
+                                                     new AMQShortString(""),
+                                                     true,true,false,
+                                                     new AMQShortString[0])); 
             cons.setMessageListener(this);
         }                               
     }

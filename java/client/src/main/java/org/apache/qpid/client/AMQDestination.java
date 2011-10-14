@@ -20,22 +20,16 @@
  */
 package org.apache.qpid.client;
 
-import java.net.URISyntaxException;
-import java.util.Map;
-
 import javax.jms.Destination;
+import javax.jms.JMSException;
 import javax.naming.NamingException;
 import javax.naming.Reference;
 import javax.naming.Referenceable;
 import javax.naming.StringRefAddr;
 
-import org.apache.qpid.client.messaging.address.AddressHelper;
-import org.apache.qpid.client.messaging.address.Link;
-import org.apache.qpid.client.messaging.address.Node;
 import org.apache.qpid.configuration.ClientProperties;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.messaging.Address;
 import org.apache.qpid.url.AMQBindingURL;
 import org.apache.qpid.url.BindingURL;
 import org.apache.qpid.url.URLHelper;
@@ -57,10 +51,8 @@ public abstract class AMQDestination implements Destination, Referenceable
 
     protected boolean _isAutoDelete;
 
-    private boolean _browseOnly;
+    protected boolean _browseOnly;
     
-    private boolean _isAddressResolved;
-
     private AMQShortString _queueName;
 
     private AMQShortString _routingKey;
@@ -99,39 +91,12 @@ public abstract class AMQDestination implements Destination, Referenceable
                                                  " should be one of {BURL|ADDR}");
           }
       }
-    } 
-    
-    public enum AddressOption { 
-      ALWAYS, NEVER, SENDER, RECEIVER; 
-        
-      public static AddressOption getOption(String str)
-      {
-          if ("always".equals(str)) return ALWAYS;
-          else if ("never".equals(str)) return NEVER;
-          else if ("sender".equals(str)) return SENDER;
-          else if ("receiver".equals(str)) return RECEIVER;
-          else throw new IllegalArgumentException(str + " is not an allowed value");
-      }
-    }
+    }    
     
     protected final static DestSyntax defaultDestSyntax;
     
-    protected DestSyntax _destSyntax = DestSyntax.ADDR;
-
-    protected AddressHelper _addrHelper;
-    protected Address _address;
-    protected int _addressType = AMQDestination.UNKNOWN_TYPE;
-    protected String _name;
-    protected String _subject;
-    protected AddressOption _create = AddressOption.NEVER;
-    protected AddressOption _assert = AddressOption.NEVER;
-    protected AddressOption _delete = AddressOption.NEVER; 
-
-    protected Node _targetNode;
-    protected Node _sourceNode;
-    protected Link _targetLink;
-    protected Link _link;    
-        
+    protected DestSyntax _destSyntax = DestSyntax.BURL;
+            
     // ----- / Fields required to support new address syntax -------
     
     static
@@ -148,14 +113,6 @@ public abstract class AMQDestination implements Destination, Referenceable
         return defaultDestSyntax;
     }
 
-    protected AMQDestination(Address address) throws Exception
-    {
-        this._address = address;
-        getInfoFromAddress();
-        _destSyntax = DestSyntax.ADDR;
-        _logger.debug("Based on " + address + " the selected destination syntax is " + _destSyntax);
-    }
-    
     public  static DestSyntax getDestType(String str)
     {
         if (str.startsWith("BURL:") || 
@@ -181,30 +138,8 @@ public abstract class AMQDestination implements Destination, Referenceable
         }
     }
     
-    protected AMQDestination(String str) throws URISyntaxException
-    {
-        _destSyntax = getDestType(str);
-        str = stripSyntaxPrefix(str);
-        if (_destSyntax == DestSyntax.BURL)
-        {    
-            getInfoFromBindingURL(new AMQBindingURL(str));            
-        }
-        else
-        {
-            this._address = createAddressFromString(str);
-            try
-            {
-                getInfoFromAddress();
-            }
-            catch(Exception e)
-            {
-                URISyntaxException ex = new URISyntaxException(str,"Error parsing address");
-                ex.initCause(e);
-                throw ex;
-            }
-        }
-        _logger.debug("Based on " + str + " the selected destination syntax is " + _destSyntax);
-    }
+    // Used by the AddressBasedDestination impl
+    protected AMQDestination() {}
     
     //retained for legacy support
     protected AMQDestination(BindingURL binding)
@@ -400,15 +335,7 @@ public abstract class AMQDestination implements Destination, Referenceable
 
     public String toString()
     {
-        if (_destSyntax == DestSyntax.BURL)
-        {
-            return toURL();
-        }
-        else
-        {
-            return _address.toString();
-        }
-
+        return toURL();
     }
 
     public boolean isCheckedForQueueBinding()
@@ -559,7 +486,7 @@ public abstract class AMQDestination implements Destination, Referenceable
                 null);          // factory location
     }
 
-    public static Destination createDestination(BindingURL binding)
+    public static Destination createDestination(BindingURL binding) throws JMSException
     {
         AMQShortString type = binding.getExchangeClass();
 
@@ -575,9 +502,13 @@ public abstract class AMQDestination implements Destination, Referenceable
         {
             return new AMQHeadersExchange(binding);
         }
+        else if (type.equals(ExchangeDefaults.FANOUT_EXCHANGE_CLASS))
+        {
+            return new AMQQueue(binding);
+        }
         else
         {
-            return new AMQAnyDestination(binding);
+            throw new JMSException("Unsupported exchange type");
         }
     }
 
@@ -591,249 +522,36 @@ public abstract class AMQDestination implements Destination, Referenceable
          }
          else
          {
-             Address address = createAddressFromString(str);
-             return new AMQAnyDestination(address);
+             return new AddressBasedDestination(str);
          }
     }
     
-    // ----- new address syntax -----------
-    
-    public static class Binding
-    {
-        String exchange;
-        String bindingKey;
-        String queue;
-        Map<String,Object> args;
-        
-        public Binding(String exchange,
-                       String queue,
-                       String bindingKey,
-                       Map<String,Object> args)
-        {
-            this.exchange = exchange;
-            this.queue = queue;
-            this.bindingKey = bindingKey;
-            this.args = args;
-        }
-        
-        public String getExchange() 
-        {
-            return exchange;
-        }
-
-        public String getQueue() 
-        {
-            return queue;
-        }
-        
-        public String getBindingKey() 
-        {
-            return bindingKey;
-        }
-        
-        public Map<String, Object> getArgs() 
-        {
-            return args;
-        }
-    }
-    
-    public Address getAddress() {
-        return _address;
-    }
-    
-    protected void setAddress(Address addr) {
-        _address = addr;
-    }
-    
-    public int getAddressType(){
-        return _addressType;
-    }
-
-    public void setAddressType(int addressType){
-        _addressType = addressType;
-    }
-    
-    public String getAddressName() {
-        return _name;
-    }
-    
-    public void setAddressName(String name){
-        _name = name;
-    }
-
-    public String getSubject() {
-        return _subject;
-    }
-
-    public void setSubject(String subject) {
-        _subject = subject;
-    }
-    
-    public AddressOption getCreate() {
-        return _create;
-    }
-    
-    public void setCreate(AddressOption option) {
-        _create = option;
-    }
-   
-    public AddressOption getAssert() {
-        return _assert;
-    }
-
-    public void setAssert(AddressOption option) {
-        _assert = option;
-    }
-    
-    public AddressOption getDelete() {
-        return _delete;
-    }
-
-    public void setDelete(AddressOption option) {
-        _delete = option;
-    }
-
-    public Node getTargetNode()
-    {
-        return _targetNode;
-    }
-
-    public void setTargetNode(Node node)
-    {
-        _targetNode = node;
-    }
-
-    public Node getSourceNode()
-    {
-        return _sourceNode;
-    }
-
-    public void setSourceNode(Node node)
-    {
-        _sourceNode = node;
-    }
-
-    public Link getLink()
-    {
-        return _link;
-    }
-
-    public void setLink(Link link)
-    {
-        _link = link;
-    }
-    
-    public void setExchangeName(AMQShortString name)
-    {
-        this._exchangeName = name;
-    }
-    
-    public void setExchangeClass(AMQShortString type)
-    {
-        this._exchangeClass = type;
-    }
-    
-    public void setRoutingKey(AMQShortString rk)
-    {
-        this._routingKey = rk;
-    }
-    
-    public boolean isAddressResolved()
-    {
-        return _isAddressResolved;
-    }
-
-    public void setAddressResolved(boolean addressResolved)
-    {
-        _isAddressResolved = addressResolved;
-    }
-    
-    private static Address createAddressFromString(String str)
-    {
-        return Address.parse(str);
-    }
-    
-    private void getInfoFromAddress() throws Exception
-    {
-        _name = _address.getName();
-        _subject = _address.getSubject();
-        
-        _addrHelper = new AddressHelper(_address);
-        
-        _create = _addrHelper.getCreate() != null ?
-                 AddressOption.getOption(_addrHelper.getCreate()):AddressOption.NEVER;
-                
-        _assert = _addrHelper.getAssert() != null ?
-                 AddressOption.getOption(_addrHelper.getAssert()):AddressOption.NEVER;
-
-        _delete = _addrHelper.getDelete() != null ?
-                 AddressOption.getOption(_addrHelper.getDelete()):AddressOption.NEVER;
-                 
-        _browseOnly = _addrHelper.isBrowseOnly();
-                        
-        _addressType = _addrHelper.getTargetNodeType();         
-        _targetNode =  _addrHelper.getTargetNode(_addressType);
-        _sourceNode = _addrHelper.getSourceNode(_addressType);
-        _link = _addrHelper.getLink();       
-    }
-    
-    // This method is needed if we didn't know the node type at the beginning.
-    // Therefore we have to query the broker to figure out the type.
-    // Once the type is known we look for the necessary properties.
-    public void rebuildTargetAndSourceNodes(int addressType)
-    {
-        _targetNode =  _addrHelper.getTargetNode(addressType);
-        _sourceNode =  _addrHelper.getSourceNode(addressType);
-    }
-    
-    // ----- / new address syntax -----------    
-
     public boolean isBrowseOnly()
     {
         return _browseOnly;
     }
-    
-    private void setBrowseOnly(boolean b)
+  
+    public long getConsumerCapacity(AMQSession ssn) throws Exception
     {
-        _browseOnly = b;
+        if (ssn.prefetch())
+        {
+            return ssn.getAMQConnection().getMaxPrefetch();
+        }
+        else
+        {
+            return 0;
+        }
     }
     
-    public AMQDestination copyDestination()
+    public long getProducerCapacity(AMQSession ssn) throws Exception
     {
-        AMQDestination dest = 
-            new AMQAnyDestination(_exchangeName,
-                                  _exchangeClass,
-                                  _routingKey,
-                                  _isExclusive, 
-                                  _isAutoDelete,
-                                  _queueName, 
-                                  _isDurable,
-                                  _bindingKeys
-                                  );
-        
-        dest.setDestSyntax(_destSyntax);
-        dest.setAddress(_address);
-        dest.setAddressName(_name);
-        dest.setSubject(_subject);
-        dest.setCreate(_create); 
-        dest.setAssert(_assert); 
-        dest.setDelete(_create); 
-        dest.setBrowseOnly(_browseOnly);
-        dest.setAddressType(_addressType);
-        dest.setTargetNode(_targetNode);
-        dest.setSourceNode(_sourceNode);
-        dest.setLink(_link);
-        dest.setAddressResolved(_isAddressResolved);
-        return dest;        
-    }
-    
-    protected void setAutoDelete(boolean b)
-    {
-        _isAutoDelete = b;
-    }
-    
-    protected void setDurable(boolean b)
-    {
-        _isDurable = b;
+        if (ssn.prefetch())
+        {
+            return ssn.getAMQConnection().getMaxPrefetch();
+        }
+        else
+        {
+            return 0;
+        }
     }
 }

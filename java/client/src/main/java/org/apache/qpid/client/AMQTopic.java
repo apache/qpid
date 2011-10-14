@@ -33,16 +33,7 @@ import org.apache.qpid.url.BindingURL;
 
 public class AMQTopic extends AMQDestination implements Topic
 {
-    public AMQTopic(String address) throws URISyntaxException
-    {
-        super(address);
-    }
-
-    public AMQTopic(Address address) throws Exception
-    {
-        super(address);
-    }
-    
+   
     /**
      * Constructor for use in creating a topic using a BindingURL.
      *
@@ -102,37 +93,8 @@ public class AMQTopic extends AMQDestination implements Topic
         if (topic instanceof AMQDestination && topic instanceof javax.jms.Topic)
         {
             AMQDestination qpidTopic = (AMQDestination)topic;
-            if (qpidTopic.getDestSyntax() == DestSyntax.ADDR)
-            {
-                try
-                {
-                    AMQTopic t = new AMQTopic(qpidTopic.getAddress());
-                    AMQShortString queueName = getDurableTopicQueueName(subscriptionName, connection);
-                    // link is never null if dest was created using an address string.
-                    t.getLink().setName(queueName.asString());               
-                    t.getSourceNode().setAutoDelete(false);
-                    t.getSourceNode().setDurable(true);
-                    
-                    // The legacy fields are also populated just in case.
-                    t.setQueueName(queueName);
-                    t.setAutoDelete(false);
-                    t.setDurable(true);
-                    return t;
-                }
-                catch(Exception e)
-                {
-                    JMSException ex = new JMSException("Error creating durable topic");
-                    ex.initCause(e);
-                    ex.setLinkedException(e);
-                    throw ex;
-                }
-            }
-            else
-            {
                 return new AMQTopic(qpidTopic.getExchangeName(), qpidTopic.getRoutingKey(), false,
-                                getDurableTopicQueueName(subscriptionName, connection),
-                                true);
-            }
+                                    getDurableTopicQueueName(subscriptionName, connection),true);
         }
         else
         {
@@ -151,10 +113,6 @@ public class AMQTopic extends AMQDestination implements Topic
         {
             return getRoutingKey().asString();
         }
-        else if (getSubject() != null)
-        {
-            return getSubject();
-        }
         else
         {
             return null;
@@ -164,14 +122,7 @@ public class AMQTopic extends AMQDestination implements Topic
     @Override
     public AMQShortString getExchangeName()
     {
-        if (super.getExchangeName() == null && super.getAddressName() != null)
-        {
-            return new AMQShortString(super.getAddressName());
-        }
-        else
-        {
-            return _exchangeName;
-        }
+        return _exchangeName;
     }
 
     public AMQShortString getRoutingKey()
@@ -180,15 +131,9 @@ public class AMQTopic extends AMQDestination implements Topic
         {
             return super.getRoutingKey();            
         }
-        else if (getSubject() != null)
-        {
-            return new AMQShortString(getSubject());
-        }
         else
         {
-            setRoutingKey(new AMQShortString(""));
-            setSubject("");
-            return super.getRoutingKey();
+            return null;
         }
     }
 

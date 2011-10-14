@@ -31,11 +31,9 @@ import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
 import javax.jms.Session;
 
-import org.apache.qpid.client.AMQAnyDestination;
 import org.apache.qpid.client.AMQConnection;
-import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQSession_0_10;
-import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.client.AddressBasedDestination;
 import org.apache.qpid.messaging.Address;
 
 public class PerfBase
@@ -142,7 +140,7 @@ public class PerfBase
         controllerSession = con.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
         dest = createDestination();
-        controllerQueue = new AMQAnyDestination(CONTROLLER_ADDR);
+        controllerQueue = new AddressBasedDestination(CONTROLLER_ADDR);
         myControlQueue = session.createQueue(myControlQueueAddr);
         msgType = MessageType.getType(params.getMessageType());
         System.out.println("Using " + msgType + " messages");
@@ -157,10 +155,10 @@ public class PerfBase
         {
             System.out.println("Prefix : " + prefix);
             Address addr = Address.parse(params.getAddress());
-            AMQAnyDestination temp = new AMQAnyDestination(params.getAddress());
-            int type = ((AMQSession_0_10)session).resolveAddressType(temp);
+            AddressBasedDestination temp = new AddressBasedDestination(addr);
+            temp.resolveAddress((AMQSession_0_10)session);
 
-            if ( type == AMQDestination.TOPIC_TYPE)
+            if (temp.isTopic())
             {
                 addr = new Address(addr.getName(),addr.getSubject() + "." + prefix,addr.getOptions());
                 System.out.println("Setting subject : " + addr);
@@ -171,11 +169,11 @@ public class PerfBase
                 System.out.println("Setting name : " + addr);
             }
 
-            return new AMQAnyDestination(addr);
+            return new AddressBasedDestination(addr);
         }
         else
         {
-            return new AMQAnyDestination(params.getAddress());
+            return new AddressBasedDestination(params.getAddress());
         }
     }
 

@@ -25,15 +25,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javax.jms.Connection;
-import javax.jms.Destination;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageListener;
 import javax.jms.MessageProducer;
 import javax.jms.TextMessage;
 
-import org.apache.qpid.client.AMQAnyDestination;
 import org.apache.qpid.client.AMQConnection;
+import org.apache.qpid.client.AddressBasedDestination;
 
 /**
  * A generic receiver which consumes messages
@@ -82,7 +81,7 @@ public class Receiver extends Client implements MessageListener
     {
     	super(con);
     	setSsn(con.createSession(isTransacted(), getAck_mode()));
-    	consumer = getSsn().createConsumer(new AMQAnyDestination(addr));
+    	consumer = getSsn().createConsumer(new AddressBasedDestination(addr));
     	if (!syncRcv)
     	{
     		consumer.setMessageListener(this);

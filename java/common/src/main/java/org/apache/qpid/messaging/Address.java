@@ -34,6 +34,21 @@ import static org.apache.qpid.messaging.util.PyPrint.pprint;
 
 public class Address
 {
+  public enum AddressType {QUEUE_ADDRESS, TOPIC_ADDRESS, UNSPECIFIED };
+  
+  public enum PolicyType 
+  {
+      ALWAYS, NEVER, SENDER, RECEIVER;
+      public static PolicyType getPolicyType(String str)
+      {
+          if ( str == null || str.equals("") || "never".equals(str)) return PolicyType.NEVER;
+          if ("always".equals(str)) return PolicyType.ALWAYS;
+          else if ("sender".equals(str)) return PolicyType.SENDER;
+          else if ("receiver".equals(str)) return PolicyType.RECEIVER;
+          else throw new IllegalArgumentException(str + " is not an allowed value");
+      }
+  }
+
 
     public static Address parse(String address)
     {
@@ -43,6 +58,8 @@ public class Address
     private String name;
     private String subject;
     private Map options;
+    private AddressType type = AddressType.QUEUE_ADDRESS;
+    private boolean resolved = false;
 
     public Address(String name, String subject, Map options)
     {
@@ -50,7 +67,27 @@ public class Address
         this.subject = subject;
         this.options = options;
     }
-
+    
+    public AddressType getAddressType()
+    {
+        return type;
+    }
+  
+    public void setAddressType(AddressType type)
+    {
+        this.type = type;
+    }
+  
+    public boolean isResolved()
+    {
+       return resolved;
+    }
+  
+    public void setResolved(boolean b)
+    {
+       this.resolved = b;
+    }
+  
     public String getName()
     {
         return name;

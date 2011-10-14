@@ -27,8 +27,8 @@ import javax.jms.MapMessage;
 import javax.jms.MessageConsumer;
 import javax.jms.Session;
 
-import org.apache.qpid.client.AMQAnyDestination;
 import org.apache.qpid.client.AMQConnection;
+import org.apache.qpid.client.AddressBasedDestination;
 
 
 public class MapReceiver {
@@ -41,7 +41,7 @@ public class MapReceiver {
         connection.start();
         
         Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        Destination queue = new AMQAnyDestination("ADDR:message_queue; {create: always}");
+        Destination queue = new AddressBasedDestination("message_queue; {create: always}");
         MessageConsumer consumer = session.createConsumer(queue);
 
         MapMessage m = (MapMessage)consumer.receive();

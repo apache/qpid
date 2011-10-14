@@ -29,9 +29,7 @@ import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import javax.jms.Destination;
 import javax.jms.JMSException;
@@ -44,11 +42,8 @@ import org.apache.log4j.ConsoleAppender;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PatternLayout;
-import org.apache.qpid.client.AMQAnyDestination;
 import org.apache.qpid.client.AMQConnection;
-import org.apache.qpid.client.AMQQueue;
-import org.apache.qpid.client.AMQTopic;
-import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.client.AddressBasedDestination;
 import org.apache.qpid.thread.Threading;
 
 /**
@@ -144,7 +139,7 @@ public class TestLauncher implements ErrorHandler
             controlCon = new AMQConnection(url);
             controlCon.start();
             
-            controlDest = new AMQAnyDestination("control; {create: always}"); // durable
+            controlDest = new AddressBasedDestination("control; {create: always}"); // durable
 
             // Create the session to setup the messages
             controlSession = controlCon.createSession(false, Session.AUTO_ACKNOWLEDGE);
