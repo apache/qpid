@@ -644,7 +644,9 @@ struct SubscribeThread : public Client {
                     //
                     // For now verify order only for a single publisher.
                     size_t offset = opts.uniqueData ? 5 /*marker is 'data:'*/ : 0;
-                    size_t n = *reinterpret_cast<const size_t*>(msg.getData().data() + offset);
+                    size_t n;
+                    memcpy (&n, reinterpret_cast<const char*>(msg.getData().data() + offset),
+                        sizeof(n));
                     if (opts.pubs == 1) {
                         if (opts.subs == 1 || opts.mode == FANOUT) verify(n==expect, "==", expect, n);
                         else verify(n>=expect, ">=", expect, n);
