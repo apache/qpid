@@ -258,26 +258,26 @@ QPID_AUTO_TEST_CASE(testBound){
 
 QPID_AUTO_TEST_CASE(testPersistLastNodeStanding){
     client::QueueOptions args;
-	args.setPersistLastNode();
+    args.setPersistLastNode();
 
-	Queue::shared_ptr queue(new Queue("my-queue", true));
+    Queue::shared_ptr queue(new Queue("my-queue", true));
     queue->configure(args);
 
     intrusive_ptr<Message> msg1 = create_message("e", "A");
     intrusive_ptr<Message> msg2 = create_message("e", "B");
     intrusive_ptr<Message> msg3 = create_message("e", "C");
 
-	//enqueue 2 messages
+    //enqueue 2 messages
     queue->deliver(msg1);
     queue->deliver(msg2);
 
-	//change mode
-	queue->setLastNodeFailure();
+    //change mode
+    queue->setLastNodeFailure();
 
-	//enqueue 1 message
+    //enqueue 1 message
     queue->deliver(msg3);
 
-	//check all have persistent ids.
+    //check all have persistent ids.
     BOOST_CHECK(msg1->isPersistent());
     BOOST_CHECK(msg2->isPersistent());
     BOOST_CHECK(msg3->isPersistent());
@@ -287,13 +287,13 @@ QPID_AUTO_TEST_CASE(testPersistLastNodeStanding){
 
 QPID_AUTO_TEST_CASE(testSeek){
 
-	Queue::shared_ptr queue(new Queue("my-queue", true));
+    Queue::shared_ptr queue(new Queue("my-queue", true));
 
     intrusive_ptr<Message> msg1 = create_message("e", "A");
     intrusive_ptr<Message> msg2 = create_message("e", "B");
     intrusive_ptr<Message> msg3 = create_message("e", "C");
 
-	//enqueue 2 messages
+    //enqueue 2 messages
     queue->deliver(msg1);
     queue->deliver(msg2);
     queue->deliver(msg3);
@@ -313,13 +313,13 @@ QPID_AUTO_TEST_CASE(testSeek){
 
 QPID_AUTO_TEST_CASE(testSearch){
 
-	Queue::shared_ptr queue(new Queue("my-queue", true));
+    Queue::shared_ptr queue(new Queue("my-queue", true));
 
     intrusive_ptr<Message> msg1 = create_message("e", "A");
     intrusive_ptr<Message> msg2 = create_message("e", "B");
     intrusive_ptr<Message> msg3 = create_message("e", "C");
 
-	//enqueue 2 messages
+    //enqueue 2 messages
     queue->deliver(msg1);
     queue->deliver(msg2);
     queue->deliver(msg3);
@@ -424,10 +424,10 @@ QPID_AUTO_TEST_CASE(testLVQOrdering){
 
     client::QueueOptions args;
     // set queue mode
-	args.setOrdering(client::LVQ);
+    args.setOrdering(client::LVQ);
 
-	Queue::shared_ptr queue(new Queue("my-queue", true ));
-	queue->configure(args);
+    Queue::shared_ptr queue(new Queue("my-queue", true ));
+    queue->configure(args);
 
     intrusive_ptr<Message> msg1 = create_message("e", "A");
     intrusive_ptr<Message> msg2 = create_message("e", "B");
@@ -438,16 +438,16 @@ QPID_AUTO_TEST_CASE(testLVQOrdering){
     //set deliever match for LVQ a,b,c,a
 
     string key;
-	args.getLVQKey(key);
+    args.getLVQKey(key);
     BOOST_CHECK_EQUAL(key, "qpid.LVQ_key");
 
 
-	msg1->insertCustomProperty(key,"a");
-	msg2->insertCustomProperty(key,"b");
-	msg3->insertCustomProperty(key,"c");
-	msg4->insertCustomProperty(key,"a");
+    msg1->insertCustomProperty(key,"a");
+    msg2->insertCustomProperty(key,"b");
+    msg3->insertCustomProperty(key,"c");
+    msg4->insertCustomProperty(key,"a");
 
-	//enqueue 4 message
+    //enqueue 4 message
     queue->deliver(msg1);
     queue->deliver(msg2);
     queue->deliver(msg3);
@@ -467,9 +467,9 @@ QPID_AUTO_TEST_CASE(testLVQOrdering){
     intrusive_ptr<Message> msg5 = create_message("e", "A");
     intrusive_ptr<Message> msg6 = create_message("e", "B");
     intrusive_ptr<Message> msg7 = create_message("e", "C");
-	msg5->insertCustomProperty(key,"a");
-	msg6->insertCustomProperty(key,"b");
-	msg7->insertCustomProperty(key,"c");
+    msg5->insertCustomProperty(key,"a");
+    msg6->insertCustomProperty(key,"b");
+    msg7->insertCustomProperty(key,"c");
     queue->deliver(msg5);
     queue->deliver(msg6);
     queue->deliver(msg7);
@@ -652,7 +652,7 @@ QPID_AUTO_TEST_CASE(testLVQRecover){
 
     msg1->insertCustomProperty(key,"a");
     msg2->insertCustomProperty(key,"a");
-	// 3
+    // 3
     queue1->deliver(msg1);
     // 4
     queue1->setLastNodeFailure();
