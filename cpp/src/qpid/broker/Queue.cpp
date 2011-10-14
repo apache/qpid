@@ -952,6 +952,31 @@ int getIntegerSetting(const qpid::framing::FieldTable& settings, const std::stri
     }
 }
 
+bool getBoolSetting(const qpid::framing::FieldTable& settings, const std::string& key)
+{
+    qpid::framing::FieldTable::ValuePtr v = settings.get(key);
+    if (!v) {
+        return false;
+    } else if (v->convertsTo<int>()) {
+        return v->get<int>() != 0;
+    } else if (v->convertsTo<std::string>()){
+        std::string s = v->get<std::string>();
+        if (s == "True")  return true;
+        if (s == "true")  return true;
+        if (s == "False") return false;
+        if (s == "false") return false;
+        try {
+            return boost::lexical_cast<bool>(s);
+        } catch(const boost::bad_lexical_cast&) {
+            QPID_LOG(warning, "Ignoring invalid boolean value for " << key << ": " << s);
+            return false;
+        }
+    } else {
+        QPID_LOG(warning, "Ignoring invalid boolean value for " << key << ": " << *v);
+        return false;
+    }
+}
+
 void Queue::configure(const FieldTable& _settings)
 {
     settings = _settings;
@@ -983,7 +1008,7 @@ void Queue::configureImpl(const FieldTable& _settings)
     }
 
     //set this regardless of owner to allow use of no-local with exclusive consumers also
-    noLocal = _settings.get(qpidNoLocal);
+    noLocal = getBoolSetting(_settings, qpidNoLocal);
     QPID_LOG(debug, "Configured queue " << getName() << " with no-local=" << noLocal);
 
     std::string lvqKey = _settings.getAsString(qpidLastValueQueueKey);
@@ -991,11 +1016,11 @@ void Queue::configureImpl(const FieldTable& _settings)
         QPID_LOG(debug, "Configured queue " <<  getName() << " as Last Value Queue with key " << lvqKey);
         messages = std::auto_ptr<Messages>(new MessageMap(lvqKey));
         allocator = boost::shared_ptr<MessageDistributor>(new FifoDistributor( *messages ));
-    } else if (_settings.get(qpidLastValueQueueNoBrowse)) {
+    } else if (getBoolSetting(_settings, qpidLastValueQueueNoBrowse)) {
         QPID_LOG(debug, "Configured queue " <<  getName() << " as Legacy Last Value Queue with 'no-browse' on");
         messages = LegacyLVQ::updateOrReplace(messages, qpidVQMatchProperty, true, broker);
         allocator = boost::shared_ptr<MessageDistributor>(new FifoDistributor( *messages ));
-    } else if (_settings.get(qpidLastValueQueue)) {
+    } else if (getBoolSetting(_settings, qpidLastValueQueue)) {
         QPID_LOG(debug, "Configured queue " <<  getName() << " as Legacy Last Value Queue");
         messages = LegacyLVQ::updateOrReplace(messages, qpidVQMatchProperty, false, broker);
         allocator = boost::shared_ptr<MessageDistributor>(new FifoDistributor( *messages ));
@@ -1015,7 +1040,7 @@ void Queue::configureImpl(const FieldTable& _settings)
         }
     }
 
-    persistLastNode= _settings.get(qpidPersistLastNode);
+    persistLastNode = getBoolSetting(_settings, qpidPersistLastNode);
     if (persistLastNode) QPID_LOG(debug, "Configured queue to Persist data if cluster fails to one node for: " << getName());
 
     traceId = _settings.getAsString(qpidTraceIdentity);
