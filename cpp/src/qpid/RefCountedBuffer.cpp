@@ -26,15 +26,26 @@ namespace qpid {
 
 void RefCountedBuffer::released() const {
     this->~RefCountedBuffer();
-    ::delete[] reinterpret_cast<const char*>(this);
+    uintptr_t binStoreRaw = reinterpret_cast<uintptr_t>(this);
+    binStoreRaw -= alignPad;
+    ::delete[] reinterpret_cast<const char*>(binStoreRaw);
 }
 
 BufferRef RefCountedBuffer::create(size_t n) {
-    char* store=::new char[n+sizeof(RefCountedBuffer)];
+    char * storeRaw       = ::new char[n + sizeof(RefCountedBuffer) + 
+        refCountedBufferStructAlign];
+    uintptr_t binStoreRaw = reinterpret_cast<uintptr_t>(storeRaw);
+    uintptr_t binStore    = (binStoreRaw +
+        refCountedBufferStructAlign-1) & ~(refCountedBufferStructAlign-1);
+    char * store = reinterpret_cast<char*>(binStore);
+
     new(store) RefCountedBuffer;
+
+    reinterpret_cast<RefCountedBuffer*>((void *)store)->alignPad = binStore - binStoreRaw;
+
     char* start = store+sizeof(RefCountedBuffer);
     return BufferRef(
-        boost::intrusive_ptr<RefCounted>(reinterpret_cast<RefCountedBuffer*>(store)),
+        boost::intrusive_ptr<RefCounted>(reinterpret_cast<RefCountedBuffer*>((void *)store)),
         start, start+n);
 }
 
