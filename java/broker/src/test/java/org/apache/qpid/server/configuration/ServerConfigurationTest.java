@@ -256,7 +256,7 @@ public class ServerConfigurationTest extends QpidTestCase
         assertEquals(false, _serverConfig.getManagementSSLEnabled());
     }
 
-    public void testGetManagementKeyStorePassword() throws ConfigurationException
+    public void testGetManagementKeystorePassword() throws ConfigurationException
     {
         // Check default
         _serverConfig.initialise();
@@ -534,43 +534,57 @@ public class ServerConfigurationTest extends QpidTestCase
         assertEquals("10", _serverConfig.getSSLPorts().get(0));
     }
 
-    public void testGetKeystorePath() throws ConfigurationException
+    public void testGetConnectorKeystorePath() throws ConfigurationException
     {
         // Check default
         _serverConfig.initialise();
-        assertNull(_serverConfig.getKeystorePath());
+        assertNull(_serverConfig.getConnectorKeyStorePath());
 
         // Check value we set
-        _config.setProperty("connector.ssl.keystorePath", "a");
+        _config.setProperty("connector.ssl.keyStorePath", "a");
         _serverConfig = new ServerConfiguration(_config);
         _serverConfig.initialise();
-        assertEquals("a", _serverConfig.getKeystorePath());
+        assertEquals("a", _serverConfig.getConnectorKeyStorePath());
+
+        // Ensure we continue to support the old name keystorePath
+        _config.clearProperty("connector.ssl.keyStorePath");
+        _config.setProperty("connector.ssl.keystorePath", "b");
+        _serverConfig = new ServerConfiguration(_config);
+        _serverConfig.initialise();
+        assertEquals("b", _serverConfig.getConnectorKeyStorePath());
     }
 
-    public void testGetKeystorePassword() throws ConfigurationException
+    public void testGetConnectorKeystorePassword() throws ConfigurationException
     {
         // Check default
         _serverConfig.initialise();
-        assertNull(_serverConfig.getKeystorePassword());
+        assertNull(_serverConfig.getConnectorKeyStorePassword());
 
         // Check value we set
-        _config.setProperty("connector.ssl.keystorePassword", "a");
+        _config.setProperty("connector.ssl.keyStorePassword", "a");
         _serverConfig = new ServerConfiguration(_config);
         _serverConfig.initialise();
-        assertEquals("a", _serverConfig.getKeystorePassword());
+        assertEquals("a", _serverConfig.getConnectorKeyStorePassword());
+
+        // Ensure we continue to support the old name keystorePassword
+        _config.clearProperty("connector.ssl.keyStorePassword");
+        _config.setProperty("connector.ssl.keystorePassword", "b");
+        _serverConfig = new ServerConfiguration(_config);
+        _serverConfig.initialise();
+        assertEquals("b", _serverConfig.getConnectorKeyStorePassword());
     }
 
-    public void testGetCertType() throws ConfigurationException
+    public void testGetConnectorCertType() throws ConfigurationException
     {
         // Check default
         _serverConfig.initialise();
-        assertEquals("SunX509", _serverConfig.getCertType());
+        assertEquals("SunX509", _serverConfig.getConnectorCertType());
 
         // Check value we set
         _config.setProperty("connector.ssl.certType", "a");
         _serverConfig = new ServerConfiguration(_config);
         _serverConfig.initialise();
-        assertEquals("a", _serverConfig.getCertType());
+        assertEquals("a", _serverConfig.getConnectorCertType());
     }
 
     public void testGetUseBiasedWrites() throws ConfigurationException

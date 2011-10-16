@@ -35,8 +35,8 @@
             <enabled>false</enabled>
             <port>5671</port>
             <sslOnly>false</sslOnly>
-            <keystorePath>/path/to/keystore.ks</keystorePath>
-            <keystorePassword>keystorepass</keystorePassword>
+            <keyStorePath>/path/to/keystore.ks</keyStorePath>
+            <keyStorePassword>keystorepass</keyStorePassword>
         </ssl>
         <port>5672</port>
         <socketReceiveBuffer>262144</socketReceiveBuffer>

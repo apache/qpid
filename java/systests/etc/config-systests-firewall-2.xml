@@ -32,8 +32,8 @@
         <ssl>
             <enabled>false</enabled>
             <sslOnly>false</sslOnly>
-            <keystorePath>/path/to/keystore.ks</keystorePath>
-            <keystorePassword>keystorepass</keystorePassword>
+            <keyStorePath>/path/to/keystore.ks</keyStorePath>
+            <keyStorePassword>keystorepass</keyStorePassword>
         </ssl>
         <port>5672</port>
         <sslport>8672</sslport>
