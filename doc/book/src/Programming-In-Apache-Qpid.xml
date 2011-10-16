@@ -3443,9 +3443,8 @@ log4j.appender.console.layout.ConversionPattern=%t %d %p [%c{4}] %m%n
 	              <entry>qpid.amqp.version</entry>
 	              <entry>string</entry>
 	              <entry>0-10</entry>
-                  <entry>Sets the AMQP version to be used - currently supports one of {0-8,0-9,0-91,0-10}</entry>
-                </row>
-
+                      <entry><para>Sets the AMQP version to be used - currently supports one of {0-8,0-9,0-91,0-10}.</para><para>The client will begin negotiation at the specified version and only negotiate downwards if the Broker does not support the specified version.</para></entry>
+                    </row>
 	            <row>
 	              <entry>qpid.heartbeat</entry>
 	              <entry>int</entry>
@@ -3610,15 +3609,20 @@ log4j.appender.console.layout.ConversionPattern=%t %d %p [%c{4}] %m%n
 	              <entry>qpid.transport</entry>
 	              <entry>string</entry>
 	              <entry>org.apache.qpid.transport.network.io.IoNetworkTransport</entry>
-                  <entry><para>The transport implementation to be used.</para><para>A user could specify an alternative transport mechanism that implements the <varname>org.apache.qpid.transport.network.NetworkTransport</varname> interface.</para></entry>
-                </row>
-
+                      <entry><para>The transport implementation to be used.</para><para>A user could specify an alternative transport mechanism that implements the <varname>org.apache.qpid.transport.network.NetworkTransport</varname> interface.</para></entry>
+                    </row>
+	            <row>
+	              <entry>qpid.sync_op_timeout</entry>
+	              <entry>long</entry>
+	              <entry>60000</entry>
+                      <entry><para>The length of time (in milliseconds) to wait for a synchronous operation to complete.</para><para>For compatibility with older clients, the synonym <varname>amqj.default_syncwrite_timeout</varname> is supported.</para></entry>
+                    </row>
 	            <row>
 	              <entry>amqj.tcp_nodelay</entry>
 	              <entry>boolean</entry>
 	              <entry>false</entry>
-                  <entry><para>Sets the TCP_NODELAY property of the underlying socket.</para><para>This could also be set per connection as well (see connection paramters).</para></entry>
-                </row>
+                      <entry><para>Sets the TCP_NODELAY property of the underlying socket.</para><para>This could also be set per connection as well (see connection paramters).</para></entry>
+                    </row>
               </tbody>
             </tgroup>
           </table>
