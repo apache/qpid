@@ -25,8 +25,8 @@
             <port>15671</port>
             <enabled>false</enabled>
             <sslOnly>false</sslOnly>
-            <keystorePath>${QPID_HOME}/../test-profiles/test_resources/ssl/java_broker_keystore.jks</keystorePath>
-            <keystorePassword>password</keystorePassword>
+            <keyStorePath>${QPID_HOME}/../test-profiles/test_resources/ssl/java_broker_keystore.jks</keyStorePath>
+            <keyStorePassword>password</keyStorePassword>
         </ssl>
     </connector>
     <management>

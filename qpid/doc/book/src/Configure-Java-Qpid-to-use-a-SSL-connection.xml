@@ -51,8 +51,8 @@
 &lt;ssl&gt;
     &lt;enabled&gt;true&lt;/enabled&gt;
     &lt;sslOnly&gt;true&lt;/sslOnly&gt;
-    &lt;keystorePath&gt;/path/to/keystore.ks&lt;/keystorePath&gt;
-    &lt;keystorePassword&gt;keystorepass&lt;/keystorePassword&gt;
+    &lt;keyStorePath&gt;/path/to/keystore.ks&lt;/keyStorePath&gt;
+    &lt;keyStorePassword&gt;keystorepass&lt;/keyStorePassword&gt;
 &lt;/ssl&gt;
 </programlisting>
             
