@@ -93,6 +93,7 @@ libqmf2_la_SOURCES = 		\
   qmf/AgentEventImpl.h		\
   qmf/AgentImpl.h		\
   qmf/AgentSession.cpp		\
+  qmf/AgentSessionImpl.h	\
   qmf/AgentSubscription.cpp	\
   qmf/AgentSubscription.h	\
   qmf/ConsoleEvent.cpp		\
@@ -106,19 +107,21 @@ libqmf2_la_SOURCES = 		\
   qmf/Data.cpp			\
   qmf/DataImpl.h		\
   qmf/EventNotifierImpl.cpp	\
-  qmf/PosixEventNotifier.cpp	\
-  qmf/PosixEventNotifierImpl.cpp \
+  qmf/EventNotifierImpl.h	\
   qmf/exceptions.cpp		\
   qmf/Expression.cpp		\
   qmf/Expression.h		\
   qmf/Hash.cpp			\
   qmf/Hash.h			\
+  qmf/PosixEventNotifier.cpp	\
+  qmf/PosixEventNotifierImpl.cpp \
+  qmf/PosixEventNotifierImpl.h	\
   qmf/PrivateImplRef.h		\
   qmf/Query.cpp			\
   qmf/QueryImpl.h		\
-  qmf/Schema.cpp		\
   qmf/SchemaCache.cpp		\
   qmf/SchemaCache.h		\
+  qmf/Schema.cpp		\
   qmf/SchemaId.cpp		\
   qmf/SchemaIdImpl.h		\
   qmf/SchemaImpl.h		\
