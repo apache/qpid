@@ -59,7 +59,9 @@ void Uuid::clear() {
 
 // Force int 0/!0 to false/true; avoids compile warnings.
 bool Uuid::isNull() const {
-    return !!uuid_is_null(data());
+    // This const cast is for Solaris which has a 
+    // uuid_is_null that takes a non const argument
+    return !!uuid_is_null(const_cast<uint8_t*>(data()));
 }
 
 void Uuid::encode(Buffer& buf) const {
