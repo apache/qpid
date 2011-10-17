@@ -20,33 +20,24 @@
  */
 
 #include "qpid/RefCountedBuffer.h"
+#include <stdlib.h>
 #include <new>
-#include <boost/cstdint.hpp>
 
 namespace qpid {
 
 void RefCountedBuffer::released() const {
     this->~RefCountedBuffer();
-    uintptr_t binStoreRaw = reinterpret_cast<uintptr_t>(this);
-    binStoreRaw -= alignPad;
-    ::delete[] reinterpret_cast<const char*>(binStoreRaw);
+    ::free (reinterpret_cast<void *>(const_cast<RefCountedBuffer *>(this)));
 }
 
 BufferRef RefCountedBuffer::create(size_t n) {
-    char * storeRaw       = ::new char[n + sizeof(RefCountedBuffer) + 
-        refCountedBufferStructAlign];
-    uintptr_t binStoreRaw = reinterpret_cast<uintptr_t>(storeRaw);
-    uintptr_t binStore    = (binStoreRaw +
-        refCountedBufferStructAlign-1) & ~(refCountedBufferStructAlign-1);
-    char * store = reinterpret_cast<char*>(binStore);
-
+    void* store=::malloc (n + sizeof(RefCountedBuffer));
+    if (NULL == store)
+        throw std::bad_alloc();
     new(store) RefCountedBuffer;
-
-    reinterpret_cast<RefCountedBuffer*>((void *)store)->alignPad = binStore - binStoreRaw;
-
-    char* start = store+sizeof(RefCountedBuffer);
+    char* start = reinterpret_cast<char *>(store) + sizeof(RefCountedBuffer);
     return BufferRef(
-        boost::intrusive_ptr<RefCounted>(reinterpret_cast<RefCountedBuffer*>((void *)store)),
+        boost::intrusive_ptr<RefCounted>(reinterpret_cast<RefCountedBuffer*>(store)),
         start, start+n);
 }
 
