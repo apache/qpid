@@ -28,14 +28,8 @@
 namespace qpid {
 
 /**
- * Reference-counted byte buffer. Alignment guarantees:
- * The RefCountedBuffer structure is aligned to the 
- *   refCountedBUfferStructAlign byte boundary specified here.
- * The buffer itself has no alignment guarantees.
+ * Reference-counted byte buffer. No alignment guarantees.
  */
-
-static const size_t refCountedBufferStructAlign = 8;
-
 class RefCountedBuffer : public RefCounted {
   public:
     /** Create a reference counted buffer of size n */
@@ -43,8 +37,6 @@ class RefCountedBuffer : public RefCounted {
 
   protected:
     void released() const;
-
-    size_t alignPad;
 };
 
 } // namespace qpid
