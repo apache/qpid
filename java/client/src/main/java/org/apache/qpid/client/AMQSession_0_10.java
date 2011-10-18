@@ -294,23 +294,34 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
         }
     }
 
-    void messageAcknowledge(RangeSet ranges, boolean accept)
+    void messageAcknowledge(final RangeSet ranges, final boolean accept)
     {
         messageAcknowledge(ranges,accept,false);
     }
     
-    void messageAcknowledge(RangeSet ranges, boolean accept,boolean setSyncBit)
+    void messageAcknowledge(final RangeSet ranges, final boolean accept, final boolean setSyncBit)
     {
-        Session ssn = getQpidSession();
-        for (Range range : ranges)
+        final Session ssn = getQpidSession();
+        flushProcessed(ranges,accept);
+        if (accept)
+        {
+            ssn.messageAccept(ranges, UNRELIABLE, setSyncBit ? SYNC : NONE);
+        }
+    }
+
+    /**
+     * Flush any outstanding commands. This causes session complete to be sent.
+     * @param ranges the range of command ids.
+     * @param batch true if batched.
+     */
+    void flushProcessed(final RangeSet ranges, final boolean batch)
+    {
+        final Session ssn = getQpidSession();
+        for (final Range range : ranges)
         {
             ssn.processed(range);
         }
-        ssn.flushProcessed(accept ? BATCH : NONE);
-        if (accept)
-        {
-            ssn.messageAccept(ranges, UNRELIABLE,setSyncBit? SYNC : NONE);
-        }
+        ssn.flushProcessed(batch ? BATCH : NONE);
     }
 
     /**
