@@ -20,6 +20,7 @@
  */
 #include "qpid/types/Uuid.h"
 #include "qpid/sys/uuid.h"
+#include "qpid/sys/IntegerTypes.h"
 #include <sstream>
 #include <iostream>
 #include <string.h>
