@@ -269,8 +269,9 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
             {
                 if (_logger.isDebugEnabled())
                 {
-                    _logger.debug("filterMessage - not ack'ing messaage as not aquired");
+                    _logger.debug("filterMessage - not ack'ing message as not acquired");
                 }
+                flushUnwantedMessage(message);
             }
         }
 
@@ -303,6 +304,26 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
         _0_10session.messageAcknowledge
             (ranges,
              _acknowledgeMode != org.apache.qpid.jms.Session.NO_ACKNOWLEDGE);
+
+        final AMQException amqe = _0_10session.getCurrentException();
+        if (amqe != null)
+        {
+            throw amqe;
+        }
+    }
+
+    /**
+     * Flush an unwanted message. For 0-10 we need to ensure that all messages are indicated
+     * processed to ensure their AMQP command-id is marked completed.
+     *
+     * @param message The unwanted message to be flushed
+     * @throws AMQException If the unwanted message cannot be flushed due to some internal error.
+     */
+    private void flushUnwantedMessage(final AbstractJMSMessage message) throws AMQException
+    {
+        final RangeSet ranges = new RangeSet();
+        ranges.add((int) message.getDeliveryTag());
+        _0_10session.flushProcessed(ranges,false);
 
         final AMQException amqe = _0_10session.getCurrentException();
         if (amqe != null)

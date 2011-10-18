@@ -33,6 +33,7 @@ import javax.jms.TopicSession;
 import javax.jms.TopicSubscriber;
 
 import org.apache.qpid.client.AMQConnection;
+import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.AMQTopic;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
@@ -320,6 +321,7 @@ public class TopicSessionTest extends QpidBrokerTestCase
         final Connection con1 = getConnection();
         final Session session1 = con1.createSession(false, Session.AUTO_ACKNOWLEDGE);
         final Topic topic1 = session1.createTopic(topicName);
+        final AMQQueue internalNameOnBroker = new AMQQueue("amq.topic", "clientid" + ":" + clientId);
 
         // Setup subscriber with selector
         final TopicSubscriber subscriberWithSelector = session1.createDurableSubscriber(topic1, clientId, "Selector = 'select'", false);
@@ -339,13 +341,9 @@ public class TopicSessionTest extends QpidBrokerTestCase
 
         session1.close();
 
-        // Now recreate the session and subscriber (same clientid) but without selector and check that the message still
-        // is not received.  This defect meant that such a message would be received.
+        // Now verify queue depth on broker.
         final Session session2 = con1.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        final Topic topic2 = session2.createTopic(topicName);
-
-        final TopicSubscriber sameSubscriberWithoutSelector = session2.createDurableSubscriber(topic2, clientId, null, false);
-        final Message message2 = sameSubscriberWithoutSelector.receive(1000);
-        assertNull("still should not have received message", message2);
+        final long depth = ((AMQSession) session2).getQueueDepth(internalNameOnBroker);
+        assertEquals("Expected queue depth of zero", 0, depth);
     }
 }
