@@ -3295,6 +3295,7 @@ class Agent:
       self.lock.acquire()
       try:
         self.contextMap.pop(sequence)
+        self.seqMgr._release(sequence)
       except KeyError:
         pass   # @todo - shouldn't happen, log a warning.
     finally:
