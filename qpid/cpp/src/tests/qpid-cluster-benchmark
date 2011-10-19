@@ -23,8 +23,8 @@
 # Default options
 MESSAGES="-m 10000"
 FLOW="--flow-control 100"	      # Flow control limit on queue depth for latency.
-REPEAT="--repeat 5"
-QUEUES="-q 4"
+REPEAT="--repeat 10"
+QUEUES="-q 6"
 SENDERS="-s 3"
 RECEIVERS="-r 3"
 BROKERS=			# Local broker
