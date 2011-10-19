@@ -103,11 +103,6 @@ across the cluster once the commad completes.
 Name clashes: need to avoid race if same name queue/exchange declared
 on 2 brokers simultaneously
 
-** TODO [#A] Passing all existing cluster tests.
-
-The new cluster should be a drop-in replacement for the old, so it
-should be able to pass all the existing tests.
-
 ** TODO [#A] Update to new members joining.
 
 Need to resolve [[Queue sequence numbers vs. independant message IDs]] first.
@@ -192,6 +187,21 @@ Extend broker::Cluster interface to capture transaction context and completion.
 Running brokers exchange DTX information.
 New broker update includes DTX information.
 
+** TODO [#B] Passing all existing cluster tests.
+
+The new cluster should be a drop-in replacement for the old, so it
+should be able to pass all the existing tests.
+
+** TODO [#C] Remove old cluster and related hacks and workarounds ins the Broker.
+The old cluster has workarounds in the broker code that can be removed.
+- [ ] drop code to replicate management model.
+- [ ] drop timer workarounds for TTL, management, heartbeats.
+- [ ] drop "cluster-safe assertions" in broker code.
+- [ ] drop connections, sessions, management from cluster update.
+- [ ] drop security workarounds: cluster code now operates after message decoding.
+- [ ] drop connection tracking in cluster code.
+- [ ] simpler inconsistent-error handling code, no need to stall.
+
 ** TODO [#B] Async completion of accept.
 When this is fixed in the standalone broker, it should be fixed for cluster.
 
@@ -232,18 +242,6 @@ Look for ways to capitalize on the similarity & simplify the code.
 In particular QueuedEvents (async replication) strongly resembles
 cluster replication, but over TCP rather than multicast.
 
-** TODO [#C] Handling immediate messages in a cluster
-Include remote consumers in descision to deliver an immediate message?
-** TODO [#C] Remove old cluster hacks and workarounds
-The old cluster has workarounds in the broker code that can be removed.
-- [ ] drop code to replicate management model.
-- [ ] drop timer workarounds for TTL, management, heartbeats.
-- [ ] drop "cluster-safe assertions" in broker code.
-- [ ] drop connections, sessions, management from cluster update.
-- [ ] drop security workarounds: cluster code now operates after message decoding.
-- [ ] drop connection tracking in cluster code.
-- [ ] simpler inconsistent-error handling code, no need to stall.
-
 ** TODO [#C] Support for live upgrades.
 
 Allow brokers in a running cluster to be replaced one-by-one with a new version.
@@ -266,10 +264,8 @@ adding new elements to the end of structures but not changing or
 removing new elements.
 
 ** TODO [#C] Support for AMQP 1.0.
-
 * Testing
 ** TODO [#A] Pass all existing cluster tests.
-Requires [[Defer and async completion of wiring commands.]]
 ** TODO [#A] New cluster tests.
 Stress tests & performance benchmarks focused on changes in new cluster:
 - concurrency by queues rather than connections.
