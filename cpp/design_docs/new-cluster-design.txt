@@ -83,20 +83,21 @@ context.
 
 ** A new cluster design.
 
-Clearly defined interface between broker code and cluster plug-in.
+1. Clearly defined interface between broker code and cluster plug-in.
 
-Replicate queue events rather than client data.
-- Broker behavior only needs to match per-queue.
-- Smaller amount of code (queue implementation) that must behave predictably.
-- Events only need be serialized per-queue, allows concurrency between queues
+2. Replicate queue events rather than client data.
+ - Only requires consistent enqueue order.
+ - Events only need be serialized per-queue, allows concurrency between queues
+ - Allows for replicated and non-replicated queues.
 
-Use a moving queue ownership protocol to agree order of dequeues.
-No longer relies on identical state and lock-step behavior to cause
-identical dequeues on each broker.
+3. Use a lock protocol to agree order of dequeues: only the broker
+   holding the lock can acqiure & dequeue.  No longer relies on
+   identical state and lock-step behavior to cause identical dequeues
+   on each broker.
 
-Use multiple CPG groups to process different queues in parallel. Use a
-fixed set of groups and hash queue names to choose the group for each
-queue.
+4. Use multiple CPG groups to process different queues in
+   parallel. Use a fixed set of groups and hash queue names to choose
+   the group for each queue.
 
 *** Requirements
 
