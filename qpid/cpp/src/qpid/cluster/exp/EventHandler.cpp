@@ -64,15 +64,18 @@ void EventHandler::deliver(
     framing::AMQFrame frame;
     // FIXME aconway 2011-09-29: don't decode own frame bodies. Ignore based on channel.
     while (buf.available()) {
+        // FIXME aconway 2011-10-19: multi-version, skip unrecognized frames.
         frame.decode(buf);
         QPID_LOG(trace, "cluster: deliver on " << cpg.getName()
                  << " from "<< PrettyId(sender, self) << ": " << frame);
         try {
             handle(frame);
         } catch (const std::exception& e) {
-            // Non-fatal error. Our state isn't compromized by receiving bad frames.
-            QPID_LOG(error, "cluster: error in deliver on " << cpg.getName()
-                     << " from " << PrettyId(sender, self) << ": " << frame);
+        // FIXME aconway 2011-10-19: error handling.
+        QPID_LOG(error, "cluster: error in deliver on " << cpg.getName()
+                     << " from " << PrettyId(sender, self)
+                     << ": " << frame
+                     << ": " << e.what());
         }
     }
 }

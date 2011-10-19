@@ -124,9 +124,8 @@ void QueueContext::stopped() {
 
 void QueueContext::requeue(uint32_t position, bool redelivered) {
     // No lock, unacked has its own lock.
-    broker::QueuedMessage qm;
-    if (unacked.get(position, qm)) {
-        unacked.erase(position);
+    broker::QueuedMessage qm = unacked.pop(position);
+    if (qm.queue) {
         if (redelivered) qm.payload->redeliver();
         BrokerContext::ScopedSuppressReplication ssr;
         queue.requeue(qm);

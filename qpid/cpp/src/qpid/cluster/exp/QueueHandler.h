@@ -23,7 +23,6 @@
  */
 
 #include "HandlerBase.h"
-#include "LockedMap.h"
 #include "Settings.h"
 #include "qpid/framing/AMQP_AllOperations.h"
 #include "boost/shared_ptr.hpp"

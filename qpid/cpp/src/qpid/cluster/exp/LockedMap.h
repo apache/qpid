@@ -37,27 +37,14 @@ class LockedMap
   public:
     /** Get value associated with key, returns Value() if none. */
     Value get(const Key& key) const {
-        sys::RWlock::ScopedRlock r(lock);
+        sys::Mutex::ScopedLock r(lock);
         typename Map::const_iterator i = map.find(key);
         return (i == map.end()) ? Value() : i->second;
     }
 
-    /** Update value with the value for key.
-     *@return true if key was found.
-     */
-    bool get(const Key& key, Value& value) const {
-        sys::RWlock::ScopedRlock r(lock);
-        typename Map::const_iterator i = map.find(key);
-        if (i != map.end())  {
-            value = i->second;
-            return true;
-        }
-        return false;
-    }
-
     /** Associate value with key, overwriting any previous value for key. */
     void put(const Key& key, const Value& value) {
-        sys::RWlock::ScopedWlock w(lock);
+        sys::Mutex::ScopedLock w(lock);
         map[key] = value;
     }
 
@@ -65,19 +52,19 @@ class LockedMap
      * Returns true if the value was added.
      */
     bool add(const Key& key, const Value& value) {
-        sys::RWlock::ScopedWlock w(lock);
+        sys::Mutex::ScopedLock w(lock);
         return map.insert(std::make_pair(key, value)).second;
     }
 
     /** Erase the value associated with key if any. Return true if a value was erased. */
     bool erase(const Key& key) {
-        sys::RWlock::ScopedWlock w(lock);
+        sys::Mutex::ScopedLock w(lock);
         return map.erase(key);
     }
 
     /** Remove and return value associated with key, returns Value() if none. */
     Value pop(const Key& key) {
-        sys::RWlock::ScopedWlock w(lock);
+        sys::Mutex::ScopedLock w(lock);
         Value value;
         typename Map::iterator i = map.find(key);
         if (i != map.end()) {
@@ -90,7 +77,7 @@ class LockedMap
   private:
     typedef std::map<Key, Value> Map;
     Map map;
-    mutable sys::RWlock lock;
+    mutable sys::Mutex lock;
 };
 }} // namespace qpid::cluster
 

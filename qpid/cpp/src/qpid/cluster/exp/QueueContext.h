@@ -99,7 +99,7 @@ private:
     size_t consumers;
     size_t hash;
 
-    typedef LockedMap<uint32_t, broker::QueuedMessage> UnackedMap; // FIXME aconway 2011-09-15: don't need read/write map? Rename
+    typedef LockedMap<uint32_t, broker::QueuedMessage> UnackedMap; 
     UnackedMap unacked;
 };
 
