@@ -90,7 +90,9 @@ Independent message IDs that can be generated and sent with the message simplify
 this and potentially allow performance benefits by relaxing total ordering.
 However they imply additional map lookups that might hurt performance.
 
-- [ ] Prototype independent message IDs, check performance.
+- [X] Prototype independent message IDs, check performance.
+Throughput worse by 30% in contented case, 10% in uncontended.
+Sticking with queue sequence numbers.
 
 * Outstanding Tasks
 ** TODO [#A] Defer and async completion of wiring commands.
@@ -152,6 +154,10 @@ Status includes
 - persistent store state (clean, dirty)
 - cluster protocol version.
 
+** TODO [#B] Replace boost::hash with our own hash function.
+The hash function is effectively part of the interface so
+we need to be sure it doesn't change underneath us.
+
 ** TODO [#B] Persistent cluster support.
 Initial status protoocl to support persistent start-up (see existing code)
 
@@ -192,6 +198,16 @@ When this is fixed in the standalone broker, it should be fixed for cluster.
 ** TODO [#B] Network partitions and quorum.
 Re-use existing implementation.
 
+** TODO [#B] Review error handling, put in a consitent model.
+- [ ] Review all asserts, for possible throw.
+- [ ] Decide on fatal vs. non-fatal errors.
+
+** TODO [#B] Implement inconsistent error handling policy.
+What to do if a message is enqueued sucessfully on the local broker,
+but fails on one or more backups - e.g. due to store limits?
+- we have more flexibility, we don't *have* to crash
+- but we've loste some of our redundancy guarantee, how should we inform client? 
+
 ** TODO [#C] Allow non-replicated exchanges, queues.
 
 Set qpid.replicate=false in declare arguments, set flag on Exchange, Queue objects.
@@ -226,7 +242,7 @@ The old cluster has workarounds in the broker code that can be removed.
 - [ ] drop connections, sessions, management from cluster update.
 - [ ] drop security workarounds: cluster code now operates after message decoding.
 - [ ] drop connection tracking in cluster code.
-- [ ] simper inconsistent-error handling code, no need to stall.
+- [ ] simpler inconsistent-error handling code, no need to stall.
 
 ** TODO [#C] Support for live upgrades.
 

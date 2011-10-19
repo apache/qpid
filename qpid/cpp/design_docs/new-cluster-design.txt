@@ -296,23 +296,20 @@ flow control is sufficient for qpid.
 ** Live upgrades
 
 Live upgrades refers to the ability to upgrade a cluster while it is
-running, with no downtime. Brokers are shut down and re-start brokers
-in the cluster is shut down, and then re-started with a new version of
-the broker code.
+running, with no downtime. Each brokers in the cluster is shut down,
+and then re-started with a new version of the broker code.
 
 To achieve this
 - Cluster protocl XML file has a new element <version number=N> attached
   to each method. This is the version at which the method was added.
-- New versions can add methods, existing methods cannot be changed.
+- New versions can only add methods, existing methods cannot be changed.
 - The cluster handshake for new members includes the protocol version
   at each member.
 - The cluster's version is the lowest version among its members.
-- A newer broker can join and older cluster but not vice versa.
-- A newer broker in an old cluster must speak the old protocol for the
-  benefit of older brokers. It can also use newer controls which
-  will be ignored by old broekrs.
+- A newer broker can join and older cluster. When it does, it must restrict 
+  itself to speaking the older version protocol.
 - When the cluster version increases (because the lowest version member has left)
-  the remaining members may switch to using only the new version.
+  the remaining members may move up to the new version.
 
 
 * Design debates
