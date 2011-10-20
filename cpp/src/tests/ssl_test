@@ -47,13 +47,13 @@ delete_certs() {
     fi
 }
 
-COMMON_OPTS="--daemon --no-data-dir --no-module-dir --config $CONFIG --load-module $SSL_LIB --ssl-cert-db $CERT_DIR --ssl-cert-password-file $CERT_PW_FILE --ssl-cert-name $TEST_HOSTNAME --require-encryption"
+COMMON_OPTS="--daemon --no-data-dir --no-module-dir --config $CONFIG --load-module $SSL_LIB --ssl-cert-db $CERT_DIR --ssl-cert-password-file $CERT_PW_FILE --ssl-cert-name $TEST_HOSTNAME"
 start_broker() { # $1 = extra opts
-    ../qpidd --transport ssl --port 0 --ssl-port 0 $COMMON_OPTS --auth no $1;
+    ../qpidd --transport ssl --port 0 --ssl-port 0 $COMMON_OPTS --require-encryption --auth no $1;
 }
 
 start_authenticating_broker() {
-    ../qpidd --transport ssl --port 0 --ssl-port 0 $COMMON_OPTS --ssl-sasl-no-dict --ssl-require-client-authentication --auth yes;
+    ../qpidd --transport ssl --port 0 --ssl-port 0 $COMMON_OPTS --require-encryption --ssl-sasl-no-dict --ssl-require-client-authentication --auth yes;
 }
 
 stop_brokers() {
@@ -66,6 +66,13 @@ stop_brokers() {
 cleanup() {
     stop_brokers
     delete_certs
+}
+
+pick_port() {
+    # We need a fixed port to set --cluster-url. Use qpidd to pick a free port.
+    PICK=`../qpidd --no-module-dir -dp0`
+    ../qpidd --no-module-dir -qp $PICK
+    echo $PICK
 }
 
 CERTUTIL=$(type -p certutil)
@@ -113,19 +120,22 @@ test "$MSG3" = "" || { echo "receive succeeded without valid ssl cert '$MSG3' !=
 
 stop_brokers
 
+#Test multiplexed connection where SSL and plain TCP are served by the same port
+PORT=`pick_port`; ../qpidd --port $PORT --ssl-port $PORT $COMMON_OPTS --transport ssl --auth no
+echo "Running multiplexed SSL/TCP test on $PORT"
+
+./qpid-perftest --count ${COUNT} --port ${PORT} -P ssl -b $TEST_HOSTNAME --summary || { echo "SSL on multiplexed connection failed!"; exit 1; }
+./qpid-perftest --count ${COUNT} --port ${PORT} -P tcp -b $TEST_HOSTNAME --summary || { echo "Plain TCP on multiplexed connection failed!"; exit 1; }
+
+stop_brokers
+
 test -z $CLUSTER_LIB && exit 0	# Exit if cluster not supported.
 
 ## Test failover in a cluster using SSL only
 . $srcdir/ais_check		# Will exit if clustering not enabled.
 
-pick_port() {
-    # We need a fixed port to set --cluster-url. Use qpidd to pick a free port.
-    PICK=`../qpidd --no-module-dir -dp0`
-    ../qpidd --no-module-dir -qp $PICK
-    echo $PICK
-}
 ssl_cluster_broker() {		# $1 = port
-    ../qpidd $COMMON_OPTS --auth no --load-module  $CLUSTER_LIB --cluster-name ssl_test.$HOSTNAME.$$ --cluster-url amqp:ssl:$TEST_HOSTNAME:$1 --port 0 --ssl-port $1 --transport ssl > /dev/null
+    ../qpidd $COMMON_OPTS --require-encryption --auth no --load-module  $CLUSTER_LIB --cluster-name ssl_test.$HOSTNAME.$$ --cluster-url amqp:ssl:$TEST_HOSTNAME:$1 --port 0 --ssl-port $1 --transport ssl > /dev/null
     # Wait for broker to be ready
     qpid-ping -Pssl -b $TEST_HOSTNAME -qp $1 || { echo "Cannot connect to broker on $1"; exit 1; }
     echo "Running SSL cluster broker on port $1"

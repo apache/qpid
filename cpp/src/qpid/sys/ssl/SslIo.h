@@ -29,26 +29,30 @@
 
 namespace qpid {
 namespace sys {
+
+class Socket;
+
 namespace ssl {
-    
+
 class SslSocket;
 
 /*
  * Asynchronous ssl acceptor: accepts connections then does a callback
  * with the accepted fd
  */
-class SslAcceptor {
+template <class T>
+class SslAcceptorTmpl {
 public:
-    typedef boost::function1<void, const SslSocket&> Callback;
+    typedef boost::function1<void, const Socket&> Callback;
 
 private:
     Callback acceptedCallback;
     qpid::sys::DispatchHandle handle;
-    const SslSocket& socket;
+    const T& socket;
 
 public:
-    SslAcceptor(const SslSocket& s, Callback callback);
-    ~SslAcceptor();
+    SslAcceptorTmpl(const T& s, Callback callback);
+    ~SslAcceptorTmpl();
     void start(qpid::sys::Poller::shared_ptr poller);
 
 private:
