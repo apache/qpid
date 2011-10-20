@@ -41,7 +41,7 @@ class Session;
 /**   \ingroup messaging 
  * Interface through which messages are received.
  */
-class Receiver : public qpid::messaging::Handle<ReceiverImpl>
+class QPID_MESSAGING_CLASS_EXTERN Receiver : public qpid::messaging::Handle<ReceiverImpl>
 {
   public:
     QPID_MESSAGING_EXTERN Receiver(ReceiverImpl* impl = 0);

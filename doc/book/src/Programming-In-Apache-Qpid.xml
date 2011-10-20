@@ -1722,7 +1722,7 @@ try {
 
 	      <row>
 		<entry>
-		  username
+		  <literal>username</literal>
 		</entry>
 		<entry>
 		  string
@@ -1733,7 +1733,7 @@ try {
 	      </row>
 	      <row>
 		<entry>
-		  password
+		  <literal>password</literal>
 		</entry>
 		<entry>
 		  string
@@ -1744,35 +1744,22 @@ try {
 	      </row>
 	      <row>
 		<entry>
-		  sasl-mechanism
+		  <literal>sasl_mechanisms</literal>
 		</entry>
 		<entry>
 		  string
 		</entry>
 		<entry>
-		  The specific SASL mechanism to use with the c++
-		  client when authenticating to the broker. Only a
-		  single value can be specified at present. [C++ only].
-		</entry>
-	      </row>
-	      <row>
-		<entry>
-		  sasl_mechanisms
-		</entry>
-		<entry>
-		  string
-		</entry>
-		<entry>
-		  The specific SASL mechanism to use with the python
+		  The specific SASL mechanisms to use with the python
 		  client when authenticating to the broker. The value
-		  is a space separated list in order of preference. [Python only].
+		  is a space separated list.
 		</entry>
 	      </row>
 
 
 	      <row>
 		<entry>
-		  reconnect
+		  <literal>reconnect</literal>
 		</entry>
 		<entry>
 		  boolean
@@ -1783,7 +1770,7 @@ try {
 	      </row>
 	      <row>
 		<entry>
-		  <literal>reconnect_timeout&nbsp;[Python]</literal> <literal>reconnect-timeout&nbsp;[C++]</literal>
+		  <literal>reconnect_timeout</literal>
 		</entry>
 		<entry>
 		  integer
@@ -1794,7 +1781,7 @@ try {
 	      </row>
 	      <row>
 		<entry>
-		  <literal>reconnect_limit&nbsp;[Python]</literal> <literal>reconnect-limit&nbsp;[C++]</literal>
+		  <literal>reconnect_limit</literal>
 		</entry>
 		<entry>
 		  integer
@@ -1805,7 +1792,7 @@ try {
 	      </row>
 	      <row>
 		<entry>
-		  <literal>reconnect_interval_min&nbsp;[Python]</literal> <literal>reconnect-interval-min&nbsp;[C++]</literal>
+		  <literal>reconnect_interval_min</literal>
 		</entry>
 		<entry>
 		  integer representing time in seconds
@@ -1816,7 +1803,7 @@ try {
 	      </row>
 	      <row>
 		<entry>
-		  <literal>reconnect_interval_max&nbsp;[Python]</literal> <literal>reconnect-interval-max&nbsp;[C++]</literal>
+		  <literal>reconnect_interval_max</literal>
 		</entry>
 		<entry>
 		  integer representing time in seconds
@@ -1827,7 +1814,7 @@ try {
 	      </row>
 	      <row>
 		<entry>
-		  <literal>reconnect_interval&nbsp;[Python]</literal> <literal>reconnect-interval&nbsp;[C++]</literal>
+		  <literal>reconnect_interval</literal>
 		</entry>
 		<entry>
 		  integer representing time in seconds
@@ -1839,7 +1826,7 @@ try {
 
 	      <row>
 	        <entry>
-	          heartbeat
+	          <literal>heartbeat</literal>
 	        </entry>
 	        <entry>
 	          integer representing time in seconds
@@ -1852,7 +1839,7 @@ try {
 	      </row>
 	      <row>
 	        <entry>
-	          protocol
+	          <literal>protocol</literal>
 	        </entry>
 	        <entry>
 	          string
@@ -1863,7 +1850,7 @@ try {
 	      </row>
 	      <row>
 	        <entry>
-	          tcp-nodelay
+	          <literal>tcp-nodelay</literal>
 	        </entry>
 	        <entry>
 	          boolean
@@ -3456,9 +3443,8 @@ log4j.appender.console.layout.ConversionPattern=%t %d %p [%c{4}] %m%n
 	              <entry>qpid.amqp.version</entry>
 	              <entry>string</entry>
 	              <entry>0-10</entry>
-                  <entry>Sets the AMQP version to be used - currently supports one of {0-8,0-9,0-91,0-10}</entry>
-                </row>
-
+                      <entry><para>Sets the AMQP version to be used - currently supports one of {0-8,0-9,0-91,0-10}.</para><para>The client will begin negotiation at the specified version and only negotiate downwards if the Broker does not support the specified version.</para></entry>
+                    </row>
 	            <row>
 	              <entry>qpid.heartbeat</entry>
 	              <entry>int</entry>
@@ -3623,15 +3609,20 @@ log4j.appender.console.layout.ConversionPattern=%t %d %p [%c{4}] %m%n
 	              <entry>qpid.transport</entry>
 	              <entry>string</entry>
 	              <entry>org.apache.qpid.transport.network.io.IoNetworkTransport</entry>
-                  <entry><para>The transport implementation to be used.</para><para>A user could specify an alternative transport mechanism that implements the <varname>org.apache.qpid.transport.network.NetworkTransport</varname> interface.</para></entry>
-                </row>
-
+                      <entry><para>The transport implementation to be used.</para><para>A user could specify an alternative transport mechanism that implements the <varname>org.apache.qpid.transport.network.NetworkTransport</varname> interface.</para></entry>
+                    </row>
+	            <row>
+	              <entry>qpid.sync_op_timeout</entry>
+	              <entry>long</entry>
+	              <entry>60000</entry>
+                      <entry><para>The length of time (in milliseconds) to wait for a synchronous operation to complete.</para><para>For compatibility with older clients, the synonym <varname>amqj.default_syncwrite_timeout</varname> is supported.</para></entry>
+                    </row>
 	            <row>
 	              <entry>amqj.tcp_nodelay</entry>
 	              <entry>boolean</entry>
 	              <entry>false</entry>
-                  <entry><para>Sets the TCP_NODELAY property of the underlying socket.</para><para>This could also be set per connection as well (see connection paramters).</para></entry>
-                </row>
+                      <entry><para>Sets the TCP_NODELAY property of the underlying socket.</para><para>This could also be set per connection as well (see connection paramters).</para></entry>
+                    </row>
               </tbody>
             </tgroup>
           </table>

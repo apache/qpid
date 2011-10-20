@@ -49,6 +49,9 @@ void List::encode(Buffer& buffer) const
 void List::decode(Buffer& buffer)
 {
     values.clear();
+    if (buffer.available() < 4)
+        throw IllegalArgumentException(QPID_MSG("Not enough data for list, expected at least "
+                                                " 4 bytes but only " << buffer.available() << " available"));
     uint32_t size = buffer.getLong();
     uint32_t available = buffer.available();
     if (available < size) {
@@ -56,6 +59,9 @@ void List::decode(Buffer& buffer)
                                                 << size << " bytes but only " << available << " available"));
     }
     if (size) {
+        if (buffer.available() < 4)
+            throw IllegalArgumentException(QPID_MSG("Not enough data for list, expected at least "
+                                                    " 4 bytes but only " << buffer.available() << " available"));
         uint32_t count = buffer.getLong();        
         for (uint32_t i = 0; i < count; i++) {
             ValuePtr value(new FieldValue);

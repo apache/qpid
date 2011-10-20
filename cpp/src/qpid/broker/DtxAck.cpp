@@ -32,6 +32,10 @@ DtxAck::DtxAck(const qpid::framing::SequenceSet& acked, DeliveryRecords& unacked
                    not1(bind2nd(mem_fun_ref(&DeliveryRecord::coveredBy), &acked)));
 }
 
+DtxAck::DtxAck(DeliveryRecords& unacked) {
+    pending = unacked;
+}
+
 bool DtxAck::prepare(TransactionContext* ctxt) throw()
 {
     try{

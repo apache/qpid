@@ -22,6 +22,7 @@
 #include "qpid/client/ConnectionHandler.h"
 
 #include "qpid/SaslFactory.h"
+#include "qpid/StringUtils.h"
 #include "qpid/client/Bounds.h"
 #include "qpid/framing/amqp_framing.h"
 #include "qpid/framing/all_method_bodies.h"
@@ -142,7 +143,9 @@ void ConnectionHandler::outgoing(AMQFrame& frame)
 void ConnectionHandler::waitForOpen()
 {
     waitFor(ESTABLISHED);
-    if (getState() == FAILED || getState() == CLOSED) {
+    if (getState() == FAILED) {
+        throw TransportFailure(errorText);
+    } else if (getState() == CLOSED) {
         throw ConnectionException(errorCode, errorText);
     }
 }
@@ -202,6 +205,24 @@ void ConnectionHandler::fail(const std::string& message)
 
 namespace {
 std::string SPACE(" ");
+
+std::string join(const std::vector<std::string>& in)
+{
+    std::string result;
+    for (std::vector<std::string>::const_iterator i = in.begin(); i != in.end(); ++i) {
+        if (result.size()) result += SPACE;
+        result += *i;
+    }
+    return result;
+}
+
+void intersection(const std::vector<std::string>& a, const std::vector<std::string>& b, std::vector<std::string>& results)
+{
+    for (std::vector<std::string>::const_iterator i = a.begin(); i != a.end(); ++i) {
+        if (std::find(b.begin(), b.end(), *i) != b.end())  results.push_back(*i);
+    }
+}
+
 }
 
 void ConnectionHandler::start(const FieldTable& /*serverProps*/, const Array& mechanisms, const Array& /*locales*/)
@@ -216,26 +237,35 @@ void ConnectionHandler::start(const FieldTable& /*serverProps*/, const Array& me
                                               maxSsf
                                             );
 
-    std::string mechlist;
-    bool chosenMechanismSupported = mechanism.empty();
-    for (Array::const_iterator i = mechanisms.begin(); i != mechanisms.end(); ++i) {
-        if (!mechanism.empty() && mechanism == (*i)->get<std::string>()) {
-            chosenMechanismSupported = true;
-            mechlist = (*i)->get<std::string>() + SPACE + mechlist;
-        } else {
-            if (i != mechanisms.begin()) mechlist += SPACE;
-            mechlist += (*i)->get<std::string>();
+    std::vector<std::string> mechlist;
+    if (mechanism.empty()) {
+        //mechlist is simply what the server offers
+        mechanisms.collect(mechlist);
+    } else {
+        //mechlist is the intersection of those indicated by user and
+        //those supported by server, in the order listed by user
+        std::vector<std::string> allowed = split(mechanism, " ");
+        std::vector<std::string> supported;
+        mechanisms.collect(supported);
+        intersection(allowed, supported, mechlist);
+        if (mechlist.empty()) {
+            throw Exception(QPID_MSG("Desired mechanism(s) not valid: " << mechanism << " (supported: " << join(supported) << ")"));
         }
     }
 
-    if (!chosenMechanismSupported) {
-        fail("Selected mechanism not supported: " + mechanism);
-    }
-
     if (sasl.get()) {
-        string response = sasl->start(mechanism.empty() ? mechlist : mechanism,
-                                      getSecuritySettings ? getSecuritySettings() : 0);
-        proxy.startOk(properties, sasl->getMechanism(), response, locale);
+        string response;
+        if (sasl->start(join(mechlist), response, getSecuritySettings ? getSecuritySettings() : 0)) {
+            proxy.startOk(properties, sasl->getMechanism(), response, locale);
+        } else {
+            //response was null
+            ConnectionStartOkBody body;
+            body.setClientProperties(properties);
+            body.setMechanism(sasl->getMechanism());
+            //Don't set response, as none was given
+            body.setLocale(locale);
+            proxy.send(body);
+        }
     } else {
         //TODO: verify that desired mechanism and locale are supported
         string response = ((char)0) + username + ((char)0) + password;

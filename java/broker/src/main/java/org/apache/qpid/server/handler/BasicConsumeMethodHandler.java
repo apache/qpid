@@ -144,7 +144,7 @@ public class BasicConsumeMethodHandler implements StateAwareMethodListener<Basic
                     _logger.debug("Closing connection due to invalid selector");
 
                     MethodRegistry methodRegistry = protocolConnection.getMethodRegistry();
-                    AMQMethodBody responseBody = methodRegistry.createChannelCloseBody(AMQConstant.INVALID_ARGUMENT.getCode(),
+                    AMQMethodBody responseBody = methodRegistry.createChannelCloseBody(AMQConstant.ARGUMENT_INVALID.getCode(),
                                                                                        new AMQShortString(ise.getMessage()),
                                                                                        body.getClazz(),
                                                                                        body.getMethod());

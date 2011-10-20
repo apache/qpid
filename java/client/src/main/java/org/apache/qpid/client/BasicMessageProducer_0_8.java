@@ -27,14 +27,13 @@ import javax.jms.Message;
 import javax.jms.Topic;
 import javax.jms.Queue;
 
-import org.apache.mina.common.ByteBuffer;
+import java.nio.ByteBuffer;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.message.AbstractJMSMessage;
-import org.apache.qpid.client.message.AMQMessageDelegate;
 import org.apache.qpid.client.message.AMQMessageDelegate_0_8;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.framing.AMQFrame;
-import org.apache.qpid.framing.BasicConsumeBody;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.BasicPublishBody;
 import org.apache.qpid.framing.CompositeAMQDataBlock;
@@ -46,10 +45,9 @@ public class BasicMessageProducer_0_8 extends BasicMessageProducer
 {
 
     BasicMessageProducer_0_8(AMQConnection connection, AMQDestination destination, boolean transacted, int channelId,
-            AMQSession session, AMQProtocolHandler protocolHandler, long producerId, boolean immediate, boolean mandatory,
-            boolean waitUntilSent) throws AMQException
+            AMQSession session, AMQProtocolHandler protocolHandler, long producerId, boolean immediate, boolean mandatory) throws AMQException
     {
-        super(connection, destination,transacted,channelId,session, protocolHandler, producerId, immediate, mandatory,waitUntilSent);
+        super(connection, destination,transacted,channelId,session, protocolHandler, producerId, immediate, mandatory);
     }
 
     void declareDestination(AMQDestination destination)
@@ -74,7 +72,7 @@ public class BasicMessageProducer_0_8 extends BasicMessageProducer
 
     void sendMessage(AMQDestination destination, Message origMessage, AbstractJMSMessage message,
                      UUID messageId, int deliveryMode,int priority, long timeToLive, boolean mandatory,
-                     boolean immediate, boolean wait) throws JMSException
+                     boolean immediate) throws JMSException
     {
         BasicPublishBody body = getSession().getMethodRegistry().createBasicPublishBody(_session.getTicket(),
                                                                                         destination.getExchangeName(),
@@ -169,7 +167,7 @@ public class BasicMessageProducer_0_8 extends BasicMessageProducer
             throw jmse;
         }
 
-        _protocolHandler.writeFrame(compositeFrame, wait);
+        _protocolHandler.writeFrame(compositeFrame);
     }
 
     /**
@@ -186,7 +184,9 @@ public class BasicMessageProducer_0_8 extends BasicMessageProducer
 
         if (frames.length == (offset + 1))
         {
-            frames[offset] = ContentBody.createAMQFrame(channelId, new ContentBody(payload));
+            byte[] data = new byte[payload.remaining()];
+            payload.get(data);
+            frames[offset] = ContentBody.createAMQFrame(channelId, new ContentBody(data));
         }
         else
         {
@@ -198,7 +198,10 @@ public class BasicMessageProducer_0_8 extends BasicMessageProducer
                 payload.position((int) framePayloadMax * (i - offset));
                 int length = (remaining >= framePayloadMax) ? (int) framePayloadMax : (int) remaining;
                 payload.limit(payload.position() + length);
-                frames[i] = ContentBody.createAMQFrame(channelId, new ContentBody(payload.slice()));
+                byte[] data = new byte[payload.remaining()];
+                payload.get(data);
+
+                frames[i] = ContentBody.createAMQFrame(channelId, new ContentBody(data));
 
                 remaining -= length;
             }

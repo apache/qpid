@@ -23,7 +23,8 @@ package org.apache.qpid.client.message;
 import javax.jms.JMSException;
 import javax.jms.StreamMessage;
 
-import org.apache.mina.common.ByteBuffer;
+import java.nio.ByteBuffer;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
@@ -36,65 +37,76 @@ public class JMSStreamMessage extends AbstractBytesTypedMessage implements Strea
     public static final String MIME_TYPE="jms/stream-message";
 
 
-
-    /**
-     * This is set when reading a byte array. The readBytes(byte[]) method supports multiple calls to read
-     * a byte array in multiple chunks, hence this is used to track how much is left to be read
-     */
-    private int _byteArrayRemaining = -1;
+    private TypedBytesContentReader _typedBytesContentReader;
+    private TypedBytesContentWriter _typedBytesContentWriter;
 
     public JMSStreamMessage(AMQMessageDelegateFactory delegateFactory)
     {
-        this(delegateFactory,null);
+        super(delegateFactory,false);
+        _typedBytesContentWriter = new TypedBytesContentWriter();
 
     }
 
-    /**
-     * Construct a stream message with existing data.
-     *
-     * @param delegateFactory
-     * @param data the data that comprises this message. If data is null, you get a 1024 byte buffer that is
-     */
-    JMSStreamMessage(AMQMessageDelegateFactory delegateFactory, ByteBuffer data)
-    {
 
-        super(delegateFactory, data); // this instanties a content header
-    }
 
     JMSStreamMessage(AMQMessageDelegate delegate, ByteBuffer data) throws AMQException
     {
-
-        super(delegate, data);
+        super(delegate, data!=null);
+        _typedBytesContentReader = new TypedBytesContentReader(data);
     }
-
 
     public void reset()
     {
-        super.reset();
         _readableMessage = true;
+
+        if(_typedBytesContentReader != null)
+        {
+            _typedBytesContentReader.reset();
+        }
+        else if (_typedBytesContentWriter != null)
+        {
+            _typedBytesContentReader = new TypedBytesContentReader(_typedBytesContentWriter.getData());
+        }
     }
+
+    @Override
+    public void clearBody() throws JMSException
+    {
+        super.clearBody();
+        _typedBytesContentReader = null;
+        _typedBytesContentWriter = new TypedBytesContentWriter();
+
+    }
+
 
     protected String getMimeType()
     {
         return MIME_TYPE;
     }
 
-
+    @Override
+    public java.nio.ByteBuffer getData() throws JMSException
+    {
+        return _typedBytesContentWriter == null ? _typedBytesContentReader.getData() : _typedBytesContentWriter.getData();
+    }
 
     public boolean readBoolean() throws JMSException
     {
-        return super.readBoolean();
+        checkReadable();
+        return _typedBytesContentReader.readBoolean();
     }
 
 
     public byte readByte() throws JMSException
     {
-        return super.readByte();
+        checkReadable();
+        return _typedBytesContentReader.readByte();
     }
 
     public short readShort() throws JMSException
     {
-        return super.readShort();
+        checkReadable();
+        return _typedBytesContentReader.readShort();
     }
 
     /**
@@ -105,102 +117,127 @@ public class JMSStreamMessage extends AbstractBytesTypedMessage implements Strea
      */
     public char readChar() throws JMSException
     {
-        return super.readChar();
+        checkReadable();
+        return _typedBytesContentReader.readChar();
     }
 
     public int readInt() throws JMSException
     {
-        return super.readInt();
+        checkReadable();
+        return _typedBytesContentReader.readInt();
     }
 
     public long readLong() throws JMSException
     {
-        return super.readLong();
+        checkReadable();
+        return _typedBytesContentReader.readLong();
     }
 
     public float readFloat() throws JMSException
     {
-        return super.readFloat();
+        checkReadable();
+        return _typedBytesContentReader.readFloat();
     }
 
     public double readDouble() throws JMSException
     {
-        return super.readDouble();
+        checkReadable();
+        return _typedBytesContentReader.readDouble();
     }
 
     public String readString() throws JMSException
     {
-        return super.readString();
+        checkReadable();
+        return _typedBytesContentReader.readString();
     }
 
     public int readBytes(byte[] bytes) throws JMSException
     {
-        return super.readBytes(bytes);
+        if(bytes == null)
+        {
+            throw new IllegalArgumentException("Must provide non-null array to read into");
+        }
+
+        checkReadable();
+        return _typedBytesContentReader.readBytes(bytes);
     }
 
 
     public Object readObject() throws JMSException
     {
-        return super.readObject();
+        checkReadable();
+        return _typedBytesContentReader.readObject();
     }
 
     public void writeBoolean(boolean b) throws JMSException
     {
-        super.writeBoolean(b);
+        checkWritable();
+        _typedBytesContentWriter.writeBoolean(b);
     }
 
     public void writeByte(byte b) throws JMSException
     {
-        super.writeByte(b);
+        checkWritable();
+        _typedBytesContentWriter.writeByte(b);
     }
 
     public void writeShort(short i) throws JMSException
     {
-        super.writeShort(i);
+        checkWritable();
+        _typedBytesContentWriter.writeShort(i);
     }
 
     public void writeChar(char c) throws JMSException
     {
-        super.writeChar(c);
+        checkWritable();
+        _typedBytesContentWriter.writeChar(c);
     }
 
     public void writeInt(int i) throws JMSException
     {
-        super.writeInt(i);
+        checkWritable();
+        _typedBytesContentWriter.writeInt(i);
     }
 
     public void writeLong(long l) throws JMSException
     {
-        super.writeLong(l);
+        checkWritable();
+        _typedBytesContentWriter.writeLong(l);
     }
 
     public void writeFloat(float v) throws JMSException
     {
-        super.writeFloat(v);
+        checkWritable();
+        _typedBytesContentWriter.writeFloat(v);
     }
 
     public void writeDouble(double v) throws JMSException
     {
-        super.writeDouble(v);
+        checkWritable();
+        _typedBytesContentWriter.writeDouble(v);
     }
 
     public void writeString(String string) throws JMSException
     {
-        super.writeString(string);
+        checkWritable();
+        _typedBytesContentWriter.writeString(string);
     }
 
     public void writeBytes(byte[] bytes) throws JMSException
     {
-        super.writeBytes(bytes);
+        checkWritable();
+        _typedBytesContentWriter.writeBytes(bytes);
     }
 
     public void writeBytes(byte[] bytes, int offset, int length) throws JMSException
     {
-        super.writeBytes(bytes,offset,length);
+        checkWritable();
+        _typedBytesContentWriter.writeBytes(bytes, offset, length);
     }
 
     public void writeObject(Object object) throws JMSException
     {
-        super.writeObject(object);
+        checkWritable();
+        _typedBytesContentWriter.writeObject(object);
     }
 }

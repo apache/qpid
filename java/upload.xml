@@ -1,0 +1,90 @@
+<?xml version="1.0"?>
+<!--
+   Licensed to the Apache Software Foundation (ASF) under one or more
+   contributor license agreements.  See the NOTICE file distributed with
+   this work for additional information regarding copyright ownership.
+   The ASF licenses this file to You under the Apache License, Version 2.0
+   (the "License"); you may not use this file except in compliance with
+   the License.  You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.
+-->
+<project name="upload" default="upload" xmlns:ivy="antlib:org.apache.ivy.ant">
+    <description>Targets for uploading releases to ASF's Nexus instance</description>
+
+    <property name="nexus.organisation"  value="org.apache"/>
+    <property name="nexus.host"          value="repository.apache.org"/>
+    <property name="nexus.upload.url"    value="https://repository.apache.org/service/local/staging/deploy/maven2"/>
+
+    <!-- properties for downloading ivy if required -->
+    <property name="ivy.jar.dir"         value="lib/ivy" />
+    <property name="ivy.install.version" value="2.2.0" />
+    <property name="ivy.jar.file"        value="${ivy.jar.dir}/ivy-${ivy.install.version}.jar" />
+    <property name="ivy.repo.url"        value="http://repo1.maven.org/maven2/org/apache/ivy/ivy"/>
+
+    <target name="download-ivy">
+        <mkdir dir="${ivy.jar.dir}"/>
+        <!-- download Ivy from web site so that it can be used without any special installation -->
+        <echo message="Downloading ivy..."/>
+        <get src="${ivy.repo.url}/${ivy.install.version}/ivy-${ivy.install.version}.jar"
+             dest="${ivy.jar.file}" usetimestamp="true"/>
+    </target>
+
+    <target name="load-ivy">
+        <!-- Try to load Ivy from local ivy dir, in case the user has not already dropped it into
+             Ant's lib dir (note that the latter copy will always take precedence). Won't
+             fail so long as Ivy is in at least one of the locations. -->
+        <mkdir dir="${ivy.jar.dir}"/>
+        <path id="ivy.lib.path">
+            <fileset dir="${ivy.jar.dir}" includes="*.jar"/>
+        </path>
+        <taskdef resource="org/apache/ivy/ant/antlib.xml"
+                  uri="antlib:org.apache.ivy.ant" classpathref="ivy.lib.path"/>
+    </target>
+
+    <!-- check the following properties which must be specified by the user-->
+    <target name="check-props-exist" description="check that the required properties have been set">
+        <fail unless="nexus.user" message="You must supply the 'nexus.user' property"/>
+        <fail unless="nexus.password" message="You must supply the 'nexus.password' property"/>
+        <fail unless="maven.artifact.dir" message="You must supply the 'maven.artifact.dir' property"/>
+    </target>
+
+    <target name="perform-nexus-upload" description="really requires the prepare-upload target to be run first">
+        <ivy:configure file="ivysettings-nexus.xml"/>
+        <ivy:resolve file="ivy.xml"/>
+        <ivy:retrieve/>
+        <ivy:deliver/>
+        <ivy:publish publishivy="false" resolver="nexus"
+                 artifactspattern="${maven.artifact.dir}/[organisation]/[module]/[artifact]/[revision]/[artifact]-[revision](-[classifier]).[ext]"/>
+    </target>
+
+    <target name="upload" depends="load-ivy, check-props-exist, perform-nexus-upload"/>
+
+    <target name="help" description="display detailed build documentation">
+        <echo>
+Ivy can be leveraged either by installing it in the Ant lib dir yourself,
+or by running the following command in qpid/java to place it in the
+qpid/java/lib/ivy lib folder:
+
+    ant -buildfile upload.xml download-ivy
+
+The publishing task should be run once the release process has otherwise
+been completed and the artifacts signed. It can be performed from the
+qpid/java directory with a command as follows:
+
+    ant -buildfile upload.xml -Dnexus.user=&lt;apache_username&gt; -Dnexus.password=&lt;password&gt;
+        -Dmaven.artifact.dir=&lt;path to maven repo structure from release process&gt;
+
+Note: if you are behind a proxy server it is necessary to give Ant the
+proxy settings by doing something like:
+
+export ANT_OPTS=&quot;-Dhttp.proxyHost=&lt;host&gt; -Dhttp.proxyPort=&lt;port&gt; -Dhttps.proxyHost=&lt;host&gt; -Dhttps.proxyPort=&lt;port&gt;&quot;
+        </echo>
+    </target>
+</project>

@@ -50,11 +50,6 @@ void insertFieldTableFromMapValue(FieldTable& ft, const ClusterMap::Map::value_t
     ft.setString(vt.first.str(), vt.second.str());
 }
 
-void assignFieldTable(FieldTable& ft, const ClusterMap::Map& map) {
-    ft.clear();
-    for_each(map.begin(), map.end(), bind(&insertFieldTableFromMapValue, ref(ft), _1));
-}
-
 }
 
 ClusterMap::ClusterMap() : frameSeq(0) {}

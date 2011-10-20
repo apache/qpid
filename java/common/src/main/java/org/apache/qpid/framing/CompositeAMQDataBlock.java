@@ -20,7 +20,8 @@
  */
 package org.apache.qpid.framing;
 
-import org.apache.mina.common.ByteBuffer;
+import java.io.DataOutputStream;
+import java.io.IOException;
 
 public class CompositeAMQDataBlock extends AMQDataBlock implements EncodableAMQDataBlock
 {
@@ -49,7 +50,7 @@ public class CompositeAMQDataBlock extends AMQDataBlock implements EncodableAMQD
         return frameSize;
     }
 
-    public void writePayload(ByteBuffer buffer)
+    public void writePayload(DataOutputStream buffer) throws IOException
     {
         for (int i = 0; i < _blocks.length; i++)
         {

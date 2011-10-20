@@ -126,21 +126,25 @@ std::auto_ptr<TPCTransactionContext> NullMessageStore::begin(const std::string& 
 
 void NullMessageStore::prepare(TPCTransactionContext& ctxt)
 {
+    qpid::sys::ScopedLock<qpid::sys::Mutex> l(lock);
     prepared.insert(DummyCtxt::getXid(ctxt));
 }
 
 void NullMessageStore::commit(TransactionContext& ctxt)
 {
+    qpid::sys::ScopedLock<qpid::sys::Mutex> l(lock);
     prepared.erase(DummyCtxt::getXid(ctxt));
 }
 
 void NullMessageStore::abort(TransactionContext& ctxt)
 {
+    qpid::sys::ScopedLock<qpid::sys::Mutex> l(lock);
     prepared.erase(DummyCtxt::getXid(ctxt));
 }
 
 void NullMessageStore::collectPreparedXids(std::set<std::string>& out)
 {
+    qpid::sys::ScopedLock<qpid::sys::Mutex> l(lock);
     out.insert(prepared.begin(), prepared.end());
 }
 

@@ -25,11 +25,9 @@ import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.failover.FailoverException;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
-import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.framing.*;
 import org.apache.qpid.jms.ConnectionListener;
 import org.apache.qpid.protocol.AMQConstant;
-import org.apache.qpid.url.URLSyntaxException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,70 +47,67 @@ public class ChannelCloseTest extends QpidBrokerTestCase implements ExceptionLis
     private static final Logger _logger = LoggerFactory.getLogger(ChannelCloseTest.class);
 
     Connection _connection;
-    private String _brokerlist = "vm://:1";
     private Session _session;
     private static final long SYNC_TIMEOUT = 500;
     private int TEST = 0;
 
-    /*
-          close channel, use chanel with same id ensure error.
+    /**
+     * Close channel, use chanel with same id ensure error.
+     *
+     * This test is only valid for non 0-10 connection .
      */
     public void testReusingChannelAfterFullClosure() throws Exception
     {
-        // this is testing an inVM Connetion conneciton 
-        if (isJavaBroker() && !isExternalBroker())
-        {
-            _connection=newConnection();
+        _connection=newConnection();
 
-            // Create Producer
+        // Create Producer
+        try
+        {
+            _connection.start();
+
+            createChannelAndTest(1);
+
+            // Cause it to close
             try
             {
-                _connection.start();
-
-                createChannelAndTest(1);
-
-                // Cause it to close
-                try
-                {
-                    _logger.info("Testing invalid exchange");
-                    declareExchange(1, "", "name_that_will_lookup_to_null", false);
-                    fail("Exchange name is empty so this should fail ");
-                }
-                catch (AMQException e)
-                {
-                    assertEquals("Exchange should not be found", AMQConstant.NOT_FOUND, e.getErrorCode());
-                }
-
-                // Check that
-                try
-                {
-                    _logger.info("Testing valid exchange should fail");
-                    declareExchange(1, "topic", "amq.topic", false);
-                    fail("This should not succeed as the channel should be closed ");
-                }
-                catch (AMQException e)
-                {
-                    if (_logger.isInfoEnabled())
-                    {
-                        _logger.info("Exception occured was:" + e.getErrorCode());
-                    }
-
-                    assertEquals("Connection should be closed", AMQConstant.CHANNEL_ERROR, e.getErrorCode());
-
-                    _connection=newConnection();
-                }
-
-                checkSendingMessage();
-
-                _session.close();
-                _connection.close();
-
+                _logger.info("Testing invalid exchange");
+                declareExchange(1, "", "name_that_will_lookup_to_null", false);
+                fail("Exchange name is empty so this should fail ");
             }
-            catch (JMSException e)
+            catch (AMQException e)
             {
-                e.printStackTrace();
-                fail(e.getMessage());
+                assertEquals("Exchange should not be found", AMQConstant.NOT_FOUND, e.getErrorCode());
             }
+
+            // Check that
+            try
+            {
+                _logger.info("Testing valid exchange should fail");
+                declareExchange(1, "topic", "amq.topic", false);
+                fail("This should not succeed as the channel should be closed ");
+            }
+            catch (AMQException e)
+            {
+                if (_logger.isInfoEnabled())
+                {
+                    _logger.info("Exception occured was:" + e.getErrorCode());
+                }
+
+                assertEquals("Connection should be closed", AMQConstant.CHANNEL_ERROR, e.getErrorCode());
+
+                _connection=newConnection();
+            }
+
+            checkSendingMessage();
+
+            _session.close();
+            _connection.close();
+
+        }
+        catch (JMSException e)
+        {
+            e.printStackTrace();
+            fail(e.getMessage());
         }
     }
 
@@ -306,27 +301,19 @@ public class ChannelCloseTest extends QpidBrokerTestCase implements ExceptionLis
 
     private Connection newConnection()
     {
-        AMQConnection connection = null;
+        Connection connection = null;
         try
         {
-            connection = new AMQConnection("amqp://guest:guest@CCTTest/test?brokerlist='" + _brokerlist + "'");
+            connection = getConnection();
 
-            connection.setConnectionListener(this);
+            ((AMQConnection) connection).setConnectionListener(this);
 
             _session = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
 
             connection.start();
 
         }
-        catch (JMSException e)
-        {
-            fail("Creating new connection when:" + e.getMessage());
-        }
-        catch (AMQException e)
-        {
-            fail("Creating new connection when:" + e.getMessage());
-        }
-        catch (URLSyntaxException e)
+        catch (Exception e)
         {
             fail("Creating new connection when:" + e.getMessage());
         }

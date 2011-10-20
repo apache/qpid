@@ -32,7 +32,8 @@ struct QueuedMessage;
 
 /**
  * This interface abstracts out the access to the messages held for
- * delivery by a Queue instance.
+ * delivery by a Queue instance. Note the the assumption at present is
+ * that all locking is done in the Queue itself.
  */
 class Messages
 {
@@ -75,7 +76,6 @@ class Messages
      * @return true if there is another message, false otherwise.
      */
     virtual bool next(const framing::SequenceNumber&, QueuedMessage&) = 0;
-
     /**
      * Note: Caller is responsible for ensuring that there is a front
      * (e.g. empty() returns false)

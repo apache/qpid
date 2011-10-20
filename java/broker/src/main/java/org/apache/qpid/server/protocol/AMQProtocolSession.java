@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.protocol;
 
+import javax.security.auth.Subject;
 import javax.security.sasl.SaslServer;
 
 import org.apache.qpid.AMQException;
@@ -28,16 +29,15 @@ import org.apache.qpid.framing.*;
 import org.apache.qpid.AMQConnectionException;
 import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
 import org.apache.qpid.server.AMQChannel;
-import org.apache.qpid.server.security.PrincipalHolder;
+import org.apache.qpid.server.security.AuthorizationHolder;
 import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.output.ProtocolOutputConverter;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
-import java.security.Principal;
 import java.util.List;
 
 
-public interface AMQProtocolSession extends AMQVersionAwareProtocolSession, PrincipalHolder, AMQConnectionModel
+public interface AMQProtocolSession extends AMQVersionAwareProtocolSession, AuthorizationHolder, AMQConnectionModel
 {
     long getSessionID();
 
@@ -163,8 +163,10 @@ public interface AMQProtocolSession extends AMQVersionAwareProtocolSession, Prin
     /** This must be called when the session is _closed in order to free up any resources managed by the session. */
     void closeSession() throws AMQException;
 
+    void closeProtocolSession();
+
     /** This must be called to close the session in order to free up any resources managed by the session. */
-    void closeConnection(int channelId, AMQConnectionException e, boolean closeProtocolSession) throws AMQException;
+    void closeConnection(int channelId, AMQConnectionException e) throws AMQException;
 
 
     /** @return a key that uniquely identifies this session */
@@ -205,7 +207,7 @@ public interface AMQProtocolSession extends AMQVersionAwareProtocolSession, Prin
 
     public ProtocolOutputConverter getProtocolOutputConverter();
 
-    void setAuthorizedID(Principal authorizedID);
+    void setAuthorizedSubject(Subject authorizedSubject);
 
     public java.net.SocketAddress getRemoteAddress();
 
@@ -230,8 +232,6 @@ public interface AMQProtocolSession extends AMQVersionAwareProtocolSession, Prin
     void rollbackTransactions(AMQChannel channel) throws AMQException;
 
     List<AMQChannel> getChannels();
-
-    void closeIfLingeringClosedChannels();
 
     void mgmtCloseChannel(int channelId);
 }

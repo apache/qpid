@@ -21,12 +21,12 @@
 
 #include "config.h"
 #include "qpidd.h"
-#include "SCM.h"
 #include "qpid/Exception.h"
 #include "qpid/Options.h"
 #include "qpid/Plugin.h"
 #include "qpid/sys/IntegerTypes.h"
 #include "qpid/sys/windows/check.h"
+#include "qpid/sys/windows/SCM.h"
 #include "qpid/broker/Broker.h"
 
 #include <iostream>
@@ -147,7 +147,7 @@ NamedSharedMemory<T>::NamedSharedMemory(const std::string& n) :
     name(n),
     memory(NULL),
     data(0)
-{};
+{}
 
 template <typename T>
 NamedSharedMemory<T>::~NamedSharedMemory() {
@@ -155,7 +155,7 @@ NamedSharedMemory<T>::~NamedSharedMemory() {
         ::UnmapViewOfFile(data);
     if (memory != NULL)
         ::CloseHandle(memory);
-};
+}
 
 template <typename T>
 T& NamedSharedMemory<T>::create() {
@@ -291,12 +291,12 @@ struct ServiceOptions : public qpid::Options {
           depends("")
     {
         addOptions()
-            ("install", qpid::optValue(install), "Install as service")
-            ("start-type", qpid::optValue(startType, "auto|demand|disabled"), "Service start type\nApplied at install time only.")
+            ("install", qpid::optValue(install), "Install as service.")
+            ("start-type", qpid::optValue(startType, "auto|demand|disabled"), "Service start type.\nApplied at install time only.")
             ("arguments", qpid::optValue(startArgs, "COMMAND LINE ARGS"), "Arguments to pass when service auto-starts")
-            ("account", qpid::optValue(account, "(LocalService)"), "Account to run as, default is LocalService\nApplied at install time only.")
-            ("password", qpid::optValue(password, "PASSWORD"), "Account password, if needed\nApplied at install time only.")
-            ("depends", qpid::optValue(depends, "(comma delimited list)"), "Names of services that must start before this service\nApplied at install time only.")
+            ("account", qpid::optValue(account, "ACCOUNT"), "Account to run as.\nApplied at install time only.")
+            ("password", qpid::optValue(password, "PASSWORD"), "Account password, if needed.\nApplied at install time only.")
+            ("depends", qpid::optValue(depends, "(comma delimited list)"), "Names of services that must start before this service.\nApplied at install time only.")
             ("start", qpid::optValue(start), "Start the service.")
             ("stop", qpid::optValue(stop), "Stop the service.")
             ("uninstall", qpid::optValue(uninstall), "Uninstall the service.");

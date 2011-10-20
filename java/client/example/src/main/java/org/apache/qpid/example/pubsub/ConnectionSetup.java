@@ -33,7 +33,6 @@ import java.util.Properties;
  * It is equivalent to a PropertyFile of value:
  *
  * connectionfactory.local=amqp://guest:guest@clientid/test?brokerlist='localhost'
- * connectionfactory.vm=amqp://guest:guest@clientid/test?brokerlist='vm://:1'
  *
  * queue.queue=example.MyQueue
  * topic.topic=example.hierarical.topic
@@ -50,7 +49,7 @@ public class ConnectionSetup
     final static String QUEUE_NAME = "example.MyQueue";
 
     public static final String TOPIC_JNDI_NAME = "topic";
-    final static String TOPIC_NAME = "example.hierarical.topic";
+    final static String TOPIC_NAME = "usa.news";
 
     private Context _ctx;
 
@@ -61,7 +60,6 @@ public class ConnectionSetup
         Properties properties = new Properties();
         properties.put(Context.INITIAL_CONTEXT_FACTORY, INITIAL_CONTEXT_FACTORY);
         properties.put("connectionfactory." + CONNECTION_JNDI_NAME, CONNECTION_NAME);
-        properties.put("connectionfactory." + "vm", "amqp://guest:guest@clientid/test?brokerlist='vm://:1'");
 
         properties.put("queue." + QUEUE_JNDI_NAME, QUEUE_NAME);
         properties.put("topic." + TOPIC_JNDI_NAME, TOPIC_NAME);

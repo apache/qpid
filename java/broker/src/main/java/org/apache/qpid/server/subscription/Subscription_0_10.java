@@ -40,7 +40,6 @@ import org.apache.qpid.server.logging.actors.GenericActor;
 import org.apache.qpid.server.logging.messages.SubscriptionMessages;
 import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.LogSubject;
-import org.apache.qpid.server.logging.actors.SubscriptionActor;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.message.MessageTransferMessage;
 import org.apache.qpid.server.message.AMQMessage;
@@ -80,10 +79,7 @@ import java.nio.ByteBuffer;
 
 public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCreditManagerListener, SubscriptionConfig, LogSubject
 {
-
-    private static final AtomicLong idGenerator = new AtomicLong(0);
-    // Create a simple ID that increments for ever new Subscription
-    private final long _subscriptionID = idGenerator.getAndIncrement();
+    private final long _subscriptionID;
 
     private final QueueEntry.SubscriptionAcquiredState _owningState = new QueueEntry.SubscriptionAcquiredState(this);
     private final QueueEntry.SubscriptionAssignedState _assignedState = new QueueEntry.SubscriptionAssignedState(this);
@@ -96,7 +92,6 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
 
 
     private FlowCreditManager_0_10 _creditManager;
-
 
     private StateListener _stateListener = new StateListener()
                                             {
@@ -114,16 +109,15 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
     private final MessageAcquireMode _acquireMode;
     private MessageFlowMode _flowMode;
     private final ServerSession _session;
-    private AtomicBoolean _stopped = new AtomicBoolean(true);
-    private ConcurrentHashMap<Integer, QueueEntry> _sentMap = new ConcurrentHashMap<Integer, QueueEntry>();
+    private final AtomicBoolean _stopped = new AtomicBoolean(true);
     private static final Struct[] EMPTY_STRUCT_ARRAY = new Struct[0];
 
     private LogActor _logActor;
-    private Map<String, Object> _properties = new ConcurrentHashMap<String, Object>();
+    private final Map<String, Object> _properties = new ConcurrentHashMap<String, Object>();
     private UUID _id;
     private String _traceExclude;
     private String _trace;
-    private long _createTime = System.currentTimeMillis();
+    private final long _createTime = System.currentTimeMillis();
     private final AtomicLong _deliveredCount = new AtomicLong(0);
     private final Map<String, Object> _arguments;
 
@@ -132,8 +126,9 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
                              MessageAcquireMode acquireMode,
                              MessageFlowMode flowMode,
                              FlowCreditManager_0_10 creditManager,
-                             FilterManager filters,Map<String, Object> arguments)
+                             FilterManager filters,Map<String, Object> arguments, long subscriptionId)
     {
+        _subscriptionID = subscriptionId;
         _session = session;
         _destination = destination;
         _acceptMode = acceptMode;
@@ -199,7 +194,7 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
 
     public boolean isSuspended()
     {
-        return !isActive() || _deleted.get(); // TODO check for Session suspension
+        return !isActive() || _deleted.get() || _session.isClosing(); // TODO check for Session suspension
     }
 
     public boolean hasInterest(QueueEntry entry)
@@ -208,7 +203,7 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
 
 
         //check that the message hasn't been rejected
-        if (entry.isRejectedBy(this))
+        if (entry.isRejectedBy(getSubscriptionID()))
         {
 
             return false;
@@ -442,7 +437,7 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
             Struct[] headers = new Struct[] { deliveryProps, messageProps };
 
             BasicContentHeaderProperties properties =
-                    (BasicContentHeaderProperties) message_0_8.getContentHeaderBody().properties;
+                    (BasicContentHeaderProperties) message_0_8.getContentHeaderBody().getProperties();
             final AMQShortString exchange = message_0_8.getMessagePublishInfo().getExchange();
             if(exchange != null)
             {
@@ -732,13 +727,22 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
 
     public void stop()
     {
-        if(_state.compareAndSet(State.ACTIVE, State.SUSPENDED))
+        try
         {
-            _stateListener.stateChange(this, State.ACTIVE, State.SUSPENDED);
+            getSendLock();
+
+            if(_state.compareAndSet(State.ACTIVE, State.SUSPENDED))
+            {
+                _stateListener.stateChange(this, State.ACTIVE, State.SUSPENDED);
+            }
+            _stopped.set(true);
+            FlowCreditManager_0_10 creditManager = getCreditManager();
+            creditManager.clearCredit();
         }
-        _stopped.set(true);
-        FlowCreditManager_0_10 creditManager = getCreditManager();
-        creditManager.clearCredit();
+        finally
+        {
+            releaseSendLock();
+        }
     }
 
     public void addCredit(MessageCreditUnit unit, long value)

@@ -41,14 +41,14 @@ namespace framing {
  *
  * \ingroup clientapi
  */
-class FieldValueException : public qpid::Exception {};
+class QPID_COMMON_CLASS_EXTERN FieldValueException : public qpid::Exception {};
 
 /**
  * Exception thrown when we can't perform requested conversion
  *
  * \ingroup clientapi
  */
-struct InvalidConversionException : public FieldValueException {
+struct QPID_COMMON_CLASS_EXTERN InvalidConversionException : public FieldValueException {
     InvalidConversionException() {}
 };
 
@@ -59,7 +59,7 @@ class List;
  *
  * \ingroup clientapi
  */
-class FieldValue {
+class QPID_COMMON_CLASS_EXTERN FieldValue {
   public:
     /*
      * Abstract type for content of different types
@@ -90,7 +90,7 @@ class FieldValue {
     void encode(Buffer& buffer);
     void decode(Buffer& buffer);
     QPID_COMMON_EXTERN bool operator==(const FieldValue&) const;
-    QPID_COMMON_EXTERN bool operator!=(const FieldValue& v) const { return !(*this == v); }
+    QPID_COMMON_INLINE_EXTERN bool operator!=(const FieldValue& v) const { return !(*this == v); }
 
     QPID_COMMON_EXTERN void print(std::ostream& out) const;
 
@@ -98,6 +98,7 @@ class FieldValue {
     template <typename T> T get() const { throw InvalidConversionException(); }
 
     template <class T, int W> T getIntegerValue() const;
+    template <class T> T getIntegerValue() const;
     template <class T, int W> T getFloatingPointValue() const;
     template <int W> void getFixedWidthValue(unsigned char*) const;
     template <class T> bool get(T&) const;
@@ -191,6 +192,18 @@ inline T FieldValue::getIntegerValue() const
         }
         v |= octets[W-1];
         return v;
+    } else {
+        throw InvalidConversionException();
+    }
+}
+
+template <class T>
+inline T FieldValue::getIntegerValue() const
+{
+    FixedWidthValue<1>* const fwv = dynamic_cast< FixedWidthValue<1>* const>(data.get());
+    if (fwv) {
+        uint8_t* octets = fwv->rawOctets();
+        return octets[0];
     } else {
         throw InvalidConversionException();
     }

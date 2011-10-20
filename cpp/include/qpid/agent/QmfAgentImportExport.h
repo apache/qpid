@@ -20,14 +20,16 @@
  * under the License.
  */
 
-#if defined(WIN32) && !defined(QPID_DECLARE_STATIC)
-#if defined (qmf_EXPORTS)
-#define QMF_AGENT_EXTERN __declspec(dllexport)
+#include "qpid/ImportExport.h"
+
+#if defined(QMF_EXPORT) || defined (qmf_EXPORTS)
+#  define QMF_AGENT_EXTERN QPID_EXPORT
+#  define QMF_AGENT_CLASS_EXTERN QPID_CLASS_EXPORT
+#  define QMF_AGENT_INLINE_EXTERN QPID_INLINE_EXPORT
 #else
-#define QMF_AGENT_EXTERN __declspec(dllimport)
-#endif
-#else
-#define QMF_AGENT_EXTERN
+#  define QMF_AGENT_EXTERN QPID_IMPORT
+#  define QMF_AGENT_CLASS_EXTERN QPID_CLASS_IMPORT
+#  define QMF_AGENT_INLINE_EXTERN QPID_INLINE_IMPORT
 #endif
 
 #endif

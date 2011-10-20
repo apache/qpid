@@ -33,21 +33,20 @@ import org.apache.qpid.server.logging.RootMessageLogger;
 import org.apache.qpid.server.management.ManagedObjectRegistry;
 import org.apache.qpid.server.plugins.PluginManager;
 import org.apache.qpid.server.security.SecurityManager;
-import org.apache.qpid.server.security.auth.database.PrincipalDatabaseManager;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
+import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.transport.QpidAcceptor;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
 
-public interface IApplicationRegistry
+public interface IApplicationRegistry extends StatisticsGatherer
 {
     /**
      * Initialise the application registry. All initialisation must be done in this method so that any components
      * that need access to the application registry itself for initialisation are able to use it. Attempting to
      * initialise in the constructor will lead to failures since the registry reference will not have been set.
-     * @param instanceID the instanceID that we can use to identify this AR.
      */
-    void initialise(int instanceID) throws Exception;
+    void initialise() throws Exception;
 
     /**
      * Shutdown this Registry
@@ -62,8 +61,6 @@ public interface IApplicationRegistry
     ServerConfiguration getConfiguration();
 
     ManagedObjectRegistry getManagedObjectRegistry();
-
-    PrincipalDatabaseManager getDatabaseManager();
 
     AuthenticationManager getAuthenticationManager();
 
@@ -97,4 +94,6 @@ public interface IApplicationRegistry
     ConfigStore getConfigStore();
 
     void setConfigStore(ConfigStore store);
+    
+    void initialiseStatisticsReporting();
 }

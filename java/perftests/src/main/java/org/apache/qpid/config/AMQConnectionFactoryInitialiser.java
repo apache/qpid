@@ -21,8 +21,11 @@
 package org.apache.qpid.config;
 
 import org.apache.qpid.client.AMQConnectionFactory;
+import org.apache.qpid.client.AMQConnectionURL;
 import org.apache.qpid.config.ConnectionFactoryInitialiser;
 import org.apache.qpid.config.ConnectorConfig;
+import org.apache.qpid.jms.ConnectionURL;
+import org.apache.qpid.url.URLSyntaxException;
 
 import javax.jms.ConnectionFactory;
 
@@ -30,6 +33,15 @@ class AMQConnectionFactoryInitialiser implements ConnectionFactoryInitialiser
 {
     public ConnectionFactory getFactory(ConnectorConfig config)
     {
-        return new AMQConnectionFactory(config.getHost(), config.getPort(), "/test_path");
+        try
+        {
+            final ConnectionURL connectionUrl = new AMQConnectionURL(ConnectionURL.AMQ_PROTOCOL + 
+                    "://guest:guest@/test_path?brokerlist='tcp://" + config.getHost() + ":" + config.getPort() + "'");
+            return new AMQConnectionFactory(connectionUrl);
+        }
+        catch (URLSyntaxException e)
+        {
+            throw new RuntimeException("Problem building URL", e);
+        }
     }
 }

@@ -1,0 +1,57 @@
+#!/bin/sh
+
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+# 
+#   http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+
+# Run tests against Queue producer flow control.
+
+source ./test_env.sh
+test -d $PYTHON_DIR || { echo "Skipping queue flow control tests, no python dir."; exit 0; }
+
+LOG_FILE=queue_flow_limit_test.log
+PORT=""
+
+trap stop_broker INT TERM QUIT
+
+error() {
+    echo $*
+    exit 1;
+}
+
+start_broker() {
+    # Note: if you change the DEFAULT_THRESHOLDS, you will need to update queue_flow_limit_tests.py
+    DEFAULT_THRESHOLDS="--default-flow-stop-threshold=80 --default-flow-resume-threshold=70"
+    rm -rf $LOG_FILE
+    PORT=$($QPIDD_EXEC $DEFAULT_THRESHOLDS --auth=no --no-module-dir --daemon --port=0 -t --log-to-file $LOG_FILE) || error "Could not start broker"
+}
+
+stop_broker() {
+    test -n "$PORT" && $QPIDD_EXEC --no-module-dir --quit --port $PORT
+}
+
+start_broker
+echo "Running Queue flow limit tests using broker on port $PORT"
+$QPID_PYTHON_TEST -m queue_flow_limit_tests $SKIPTESTS -b localhost:$PORT $@
+RETCODE=$?
+stop_broker
+if test x$RETCODE != x0; then
+    echo "FAIL queue flow limit tests"; exit 1;
+fi
+rm -rf $LOG_FILE
+

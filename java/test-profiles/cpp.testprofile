@@ -16,7 +16,7 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-broker.version=0-10
+broker.version=v0_10
 broker.language=cpp
 
 broker.dir=${project.root}/../cpp/src
@@ -32,7 +32,8 @@ broker.stopped=Exception constructed
 broker.modules=
 broker.args=
 
-broker=${broker.executable} -p @PORT --data-dir ${build.data}/@PORT -t --auth no --no-module-dir ${broker.modules} ${broker.args}
+broker.type=spawned
+broker.command=${broker.executable} -p @PORT --data-dir ${project.root}/build/work/@PORT -t --auth no --no-module-dir ${broker.modules} ${broker.args}
 
 profile.excludes=CPPPrefetchExcludes CPPTransientExcludes
 test.excludes=Excludes CPPExcludes ${profile}.excludes ${profile.excludes} cpp.excludes

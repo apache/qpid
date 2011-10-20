@@ -34,9 +34,9 @@ rubylibarchdir = $(RUBY_LIB_ARCH)
 rubylibarch_LTLIBRARIES = cqmf2.la
 dist_rubylib_DATA = qmf2.rb
 
-cqmf2_la_LDFLAGS = -avoid-version -module -shrext ".$(RUBY_DLEXT)"
+cqmf2_la_LDFLAGS = -avoid-version -module -shared -shrext ".$(RUBY_DLEXT)"
 cqmf2_la_LIBADD = $(RUBY_LIBS) -L$(top_builddir)/src/.libs -lqmf2 $(top_builddir)/src/libqmf2.la
-cqmf2_la_CXXFLAGS = $(INCLUDES) -I$(RUBY_INC) -I$(RUBY_INC_ARCH)
+cqmf2_la_CXXFLAGS = $(INCLUDES) -I$(RUBY_INC) -I$(RUBY_INC_ARCH) -fno-strict-aliasing
 nodist_cqmf2_la_SOURCES = cqmf2.cpp
 
 CLEANFILES = cqmf2.cpp

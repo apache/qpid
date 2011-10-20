@@ -27,6 +27,7 @@ import java.util.Map;
 
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQDestination.Binding;
+import org.apache.qpid.client.messaging.address.Link.Reliability;
 import org.apache.qpid.client.messaging.address.Link.Subscription;
 import org.apache.qpid.client.messaging.address.Node.ExchangeNode;
 import org.apache.qpid.client.messaging.address.Node.QueueNode;
@@ -54,7 +55,7 @@ public class AddressHelper
     public static final String EXCLUSIVE = "exclusive";
     public static final String AUTO_DELETE = "auto-delete";
     public static final String TYPE = "type";
-    public static final String ALT_EXCHANGE = "alt-exchange";
+    public static final String ALT_EXCHANGE = "alternate-exchange";
     public static final String BINDINGS = "bindings";
     public static final String BROWSE = "browse";
     public static final String MODE = "mode";
@@ -231,14 +232,9 @@ public class AddressHelper
     
     private boolean getDurability(Map map)
     {
-        if (map != null && map.get(DURABLE) != null)
-        {
-            return Boolean.parseBoolean((String)map.get(DURABLE));
-        }
-        else
-        {
-            return false;
-        }
+        Accessor access = new MapAccessor(map);
+        Boolean result = access.getBoolean(DURABLE);
+        return (result == null) ? false : result.booleanValue();
     }
 
     /**
@@ -262,7 +258,7 @@ public class AddressHelper
         }
     }
 
-    public Link getLink()
+    public Link getLink() throws Exception
     {
         Link link = new Link();
         link.setSubscription(new Subscription());
@@ -272,6 +268,25 @@ public class AddressHelper
                     : linkProps.getBoolean(DURABLE));
             link.setName(linkProps.getString(NAME));
 
+            String reliability = linkProps.getString(RELIABILITY);
+            if ( reliability != null)
+            {
+                if (reliability.equalsIgnoreCase("unreliable"))
+                {
+                    link.setReliability(Reliability.UNRELIABLE);
+                }
+                else if (reliability.equalsIgnoreCase("at-least-once"))
+                {
+                    link.setReliability(Reliability.AT_LEAST_ONCE);
+                }
+                else
+                {
+                    throw new Exception("The reliability mode '" + 
+                            reliability + "' is not yet supported");
+                }
+                
+            }
+            
             if (((Map) address.getOptions().get(LINK)).get(CAPACITY) instanceof Map)
             {
                 MapAccessor capacityProps = new MapAccessor(

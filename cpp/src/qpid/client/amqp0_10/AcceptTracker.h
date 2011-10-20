@@ -42,7 +42,7 @@ class AcceptTracker
   public:
     void delivered(const std::string& destination, const qpid::framing::SequenceNumber& id);
     void accept(qpid::client::AsyncSession&);
-    void accept(qpid::framing::SequenceNumber, qpid::client::AsyncSession&);
+    void accept(qpid::framing::SequenceNumber, qpid::client::AsyncSession&, bool cumulative);
     void release(qpid::client::AsyncSession&);
     uint32_t acceptsPending();
     uint32_t acceptsPending(const std::string& destination);
@@ -62,7 +62,7 @@ class AcceptTracker
         qpid::framing::SequenceSet unconfirmed;
 
         void accept();
-        void accept(qpid::framing::SequenceNumber);
+        qpid::framing::SequenceSet accept(qpid::framing::SequenceNumber, bool cumulative);
         void release();
         uint32_t acceptsPending();
         void completed(qpid::framing::SequenceSet&);
@@ -79,6 +79,7 @@ class AcceptTracker
     StateMap destinationState;
     Records pending;
 
+    void addToPending(qpid::client::AsyncSession&, const Record&);
     void checkPending();
     void completed(qpid::framing::SequenceSet&);
 };

@@ -21,21 +21,18 @@
 package org.apache.qpid.server.queue;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.AMQSecurityException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
 import org.apache.qpid.server.logging.LogSubject;
-import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.configuration.QueueConfig;
-import org.apache.qpid.server.configuration.QueueConfiguration;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.ExchangeReferrer;
 import org.apache.qpid.server.management.Managable;
 import org.apache.qpid.server.management.ManagedObject;
-import org.apache.qpid.server.security.PrincipalHolder;
+import org.apache.qpid.server.security.AuthorizationHolder;
 import org.apache.qpid.server.store.TransactionLogResource;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.txn.ServerTransaction;
@@ -72,8 +69,8 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>, ExchangeRefer
     boolean isAutoDelete();
 
     AMQShortString getOwner();
-    PrincipalHolder getPrincipalHolder();
-    void setPrincipalHolder(PrincipalHolder principalHolder);
+    AuthorizationHolder getAuthorizationHolder();
+    void setAuthorizationHolder(AuthorizationHolder principalHolder);
 
     void setExclusiveOwningSession(AMQSessionModel owner);
     AMQSessionModel getExclusiveOwningSession();
@@ -108,22 +105,15 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>, ExchangeRefer
 
     boolean isDeleted();
 
-
     int delete() throws AMQException;
 
-
     void requeue(QueueEntry entry);
-
-    void requeue(QueueEntryImpl storeContext, Subscription subscription);
 
     void dequeue(QueueEntry entry, Subscription sub);
 
     void decrementUnackedMsgCount();
 
-
     boolean resend(final QueueEntry entry, final Subscription subscription) throws AMQException;
-
-
 
     void addQueueDeleteTask(final Task task);
     void removeQueueDeleteTask(final Task task);

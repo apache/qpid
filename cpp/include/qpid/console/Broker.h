@@ -55,12 +55,12 @@ namespace console {
                                    client::ConnectionSettings& settings);
         QPID_CONSOLE_EXTERN ~Broker();
 
-        QPID_CONSOLE_EXTERN bool isConnected() const { return connected; }
-        QPID_CONSOLE_EXTERN const std::string& getError() const { return error; }
-        QPID_CONSOLE_EXTERN const std::string& getSessionId() const { return amqpSessionId; }
-        QPID_CONSOLE_EXTERN const framing::Uuid& getBrokerId() const { return brokerId; }
-        QPID_CONSOLE_EXTERN uint32_t getBrokerBank() const { return 1; }
-        QPID_CONSOLE_EXTERN void addBinding(const std::string& key) {
+        QPID_CONSOLE_INLINE_EXTERN bool isConnected() const { return connected; }
+        QPID_CONSOLE_INLINE_EXTERN const std::string& getError() const { return error; }
+        QPID_CONSOLE_INLINE_EXTERN const std::string& getSessionId() const { return amqpSessionId; }
+        QPID_CONSOLE_INLINE_EXTERN const framing::Uuid& getBrokerId() const { return brokerId; }
+        QPID_CONSOLE_INLINE_EXTERN uint32_t getBrokerBank() const { return 1; }
+        QPID_CONSOLE_INLINE_EXTERN void addBinding(const std::string& key) {
             connThreadBody.bindExchange("qpid.management", key);
         }
         QPID_CONSOLE_EXTERN std::string getUrl() const;
@@ -123,10 +123,10 @@ namespace console {
         void setBrokerId(const framing::Uuid& id) { brokerId = id; }
         void appendAgents(std::vector<Agent*>& agents) const;
 
-        friend QPID_CONSOLE_EXTERN std::ostream& operator<<(std::ostream& o, const Broker& k);
+        friend std::ostream& operator<<(std::ostream& o, const Broker& k);
     };
 
-    QPID_CONSOLE_EXTERN std::ostream& operator<<(std::ostream& o, const Broker& k);
+    std::ostream& operator<<(std::ostream& o, const Broker& k);
 }
 }
 

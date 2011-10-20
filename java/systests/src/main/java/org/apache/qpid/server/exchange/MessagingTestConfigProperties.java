@@ -83,14 +83,8 @@ public class MessagingTestConfigProperties
     /** Holds the name of the default connection factory configuration property. */
     public static final String CONNECTION_PROPNAME = "connectionfactory.broker";
 
-    /** Defeins the default connection configuration. */
-    public static final String CONNECTION_DEFAULT = "amqp://guest:guest@clientid/?brokerlist='vm://:1'";
-
     /** Holds the name of the property to get the test broker url from. */
     public static final String BROKER_PROPNAME = "qpid.test.broker";
-
-    /** Holds the default broker url for the test. */
-    public static final String BROKER_DEFAULT = "vm://:1";
 
     /** Holds the name of the property to get the test broker virtual path. */
     public static final String VIRTUAL_HOST_PROPNAME = "virtualHost";
@@ -274,7 +268,6 @@ public class MessagingTestConfigProperties
     static
     {
         defaults.setPropertyIfNull(INITIAL_CONTEXT_FACTORY_PROPNAME, INITIAL_CONTEXT_FACTORY_DEFAULT);
-        defaults.setPropertyIfNull(CONNECTION_PROPNAME, CONNECTION_DEFAULT);
         defaults.setPropertyIfNull(MESSAGE_SIZE_PROPNAME, MESSAGE_SIZE_DEAFULT);
         defaults.setPropertyIfNull(PUBLISHER_PRODUCER_BIND_PROPNAME, PUBLISHER_PRODUCER_BIND_DEFAULT);
         defaults.setPropertyIfNull(PUBLISHER_CONSUMER_BIND_PROPNAME, PUBLISHER_CONSUMER_BIND_DEFAULT);
@@ -284,7 +277,6 @@ public class MessagingTestConfigProperties
         defaults.setPropertyIfNull(RECEIVE_DESTINATION_NAME_ROOT_PROPNAME, RECEIVE_DESTINATION_NAME_ROOT_DEFAULT);
         defaults.setPropertyIfNull(PERSISTENT_MODE_PROPNAME, PERSISTENT_MODE_DEFAULT);
         defaults.setPropertyIfNull(TRANSACTED_PROPNAME, TRANSACTED_DEFAULT);
-        defaults.setPropertyIfNull(BROKER_PROPNAME, BROKER_DEFAULT);
         defaults.setPropertyIfNull(VIRTUAL_HOST_PROPNAME, VIRTUAL_HOST_DEFAULT);
         defaults.setPropertyIfNull(RATE_PROPNAME, RATE_DEFAULT);
         defaults.setPropertyIfNull(VERBOSE_PROPNAME, VERBOSE_DEFAULT);

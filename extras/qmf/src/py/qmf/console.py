@@ -107,8 +107,8 @@ class Console:
 # BrokerURL
 #===================================================================================================
 class BrokerURL(URL):
-  def __init__(self, text):
-    URL.__init__(self, text)
+  def __init__(self, *args, **kwargs):
+    URL.__init__(self, *args, **kwargs)
     if self.port is None:
       if self.scheme == URL.AMQPS:
         self.port = 5671
@@ -122,7 +122,7 @@ class BrokerURL(URL):
       self.authPass = str(self.password)
 
   def name(self):
-    return self.host + ":" + str(self.port)
+    return str(self)
 
   def match(self, host, port):
     return socket.getaddrinfo(self.host, self.port)[0][4] == socket.getaddrinfo(host, port)[0][4]
@@ -359,8 +359,8 @@ class Object(object):
         for arg in method.arguments:
           if arg.dir.find("I") != -1:
             count += 1
-        if count != len(args):
-          raise Exception("Incorrect number of arguments: expected %d, got %d" % (count, len(args)))
+        if count != len(args) + len(kwargs):
+          raise Exception("Incorrect number of arguments: expected %d, got %d" % (count, len(args) + len(kwargs)))
 
         if self._agent.isV2:
           #
@@ -372,7 +372,10 @@ class Object(object):
           argMap = {}
           for arg in method.arguments:
             if arg.dir.find("I") != -1:
-              argMap[arg.name] = args[aIdx]
+              if aIdx < len(args):
+                argMap[arg.name] = args[aIdx]
+              else:
+                argMap[arg.name] = kwargs[arg.name]              
               aIdx += 1
           call['_arguments'] = argMap
 
@@ -438,6 +441,10 @@ class Object(object):
         timeout = None
     else:
       sync = True
+
+    # Remove special "meta" kwargs before handing to _sendMethodRequest() to process
+    if "_timeout" in kwargs: del kwargs["_timeout"]
+    if "_async" in kwargs: del kwargs["_async"]
 
     seq = self._sendMethodRequest(name, args, kwargs, sync, timeout)
     if seq:
@@ -638,7 +645,10 @@ class Session:
     Will raise an exception if the session is not managing the connection and
     the connection setup to the broker fails.
     """
-    url = BrokerURL(target)
+    if isinstance(target, BrokerURL):
+      url = target
+    else:
+      url = BrokerURL(target)
     broker = Broker(self, url.host, url.port, mechanisms, url.authName, url.authPass,
                     ssl = url.scheme == URL.AMQPS, connTimeout=timeout)
 
@@ -1211,11 +1221,22 @@ class Session:
     try:
       agentName = ah["qmf.agent"]
       values = content["_values"]
-      timestamp = values["_timestamp"]
-      interval = values["_heartbeat_interval"]
+
+      if '_timestamp' in values:
+        timestamp = values["_timestamp"]
+      else:
+        timestamp = values['timestamp']
+
+      if '_heartbeat_interval' in values:
+        interval = values['_heartbeat_interval']
+      else:
+        interval = values['heartbeat_interval']
+
       epoch = 0
       if '_epoch' in values:
         epoch = values['_epoch']
+      elif 'epoch' in values:
+        epoch = values['epoch']
     except Exception,e:
       return
 
@@ -2328,18 +2349,19 @@ class Broker(Thread):
 
   def getUrl(self):
     """ """
-    return "%s:%d" % (self.host, self.port)
+    return BrokerURL(host=self.host, port=self.port)
 
   def getFullUrl(self, noAuthIfGuestDefault=True):
     """ """
-    ssl = ""
     if self.ssl:
-      ssl = "s"
-    auth = "%s/%s@" % (self.authUser, self.authPass)
+      scheme = "amqps"
+    else:
+      scheme = "amqp"
     if self.authUser == "" or \
           (noAuthIfGuestDefault and self.authUser == "guest" and self.authPass == "guest"):
-      auth = ""
-    return "amqp%s://%s%s:%d" % (ssl, auth, self.host, self.port or 5672)
+      return BrokerURL(scheme=scheme, host=self.host, port=(self.port or 5672))
+    else:
+      return BrokerURL(scheme=scheme, user=self.authUser, password=self.authPass, host=self.host, port=(self.port or 5672))
 
   def __repr__(self):
     if self.connected:
@@ -2416,7 +2438,7 @@ class Broker(Thread):
       if uid.__class__ == tuple and len(uid) == 2:
         self.saslUser = uid[1]
       else:
-        self.saslUser = None
+        self.saslUser = self.authUser
 
       # prevent topic queues from filling up (and causing the agents to
       # disconnect) by discarding the oldest queued messages when full.

@@ -42,7 +42,7 @@ public:
     NullAuthenticator(Connection& connection);
     ~NullAuthenticator();
     void getMechanisms(framing::Array& mechanisms);
-    void start(const std::string& mechanism, const std::string& response);
+    void start(const std::string& mechanism, const std::string* response);
     void step(const std::string&) {}
     std::auto_ptr<SecurityLayer> getSecurityLayer(uint16_t maxFrameSize);
 };
@@ -57,7 +57,7 @@ public:
     SspiAuthenticator(Connection& connection);
     ~SspiAuthenticator();
     void getMechanisms(framing::Array& mechanisms);
-    void start(const std::string& mechanism, const std::string& response);
+    void start(const std::string& mechanism, const std::string* response);
     void step(const std::string& response);
     std::auto_ptr<SecurityLayer> getSecurityLayer(uint16_t maxFrameSize);
 };
@@ -93,14 +93,15 @@ NullAuthenticator::~NullAuthenticator() {}
 void NullAuthenticator::getMechanisms(Array& mechanisms)
 {
     mechanisms.add(boost::shared_ptr<FieldValue>(new Str16Value("ANONYMOUS")));
+    mechanisms.add(boost::shared_ptr<FieldValue>(new Str16Value("PLAIN")));
 }
 
-void NullAuthenticator::start(const string& mechanism, const string& response)
+void NullAuthenticator::start(const string& mechanism, const string* response)
 {
     QPID_LOG(warning, "SASL: No Authentication Performed");
     if (mechanism == "PLAIN") { // Old behavior
-        if (response.size() > 0 && response[0] == (char) 0) {
-            string temp = response.substr(1);
+        if (response && response->size() > 0 && (*response).c_str()[0] == (char) 0) {
+            string temp = response->substr(1);
             string::size_type i = temp.find((char)0);
             string uid = temp.substr(0, i);
             string pwd = temp.substr(i + 1);
@@ -138,7 +139,7 @@ void SspiAuthenticator::getMechanisms(Array& mechanisms)
     QPID_LOG(info, "SASL: Mechanism list: ANONYMOUS PLAIN");
 }
 
-void SspiAuthenticator::start(const string& mechanism, const string& response)
+void SspiAuthenticator::start(const string& mechanism, const string* response)
 {
     QPID_LOG(info, "SASL: Starting authentication with mechanism: " << mechanism);
     if (mechanism == "ANONYMOUS") {
@@ -151,16 +152,19 @@ void SspiAuthenticator::start(const string& mechanism, const string& response)
 
     // PLAIN's response is composed of 3 strings separated by 0 bytes:
     // authorization id, authentication id (user), clear-text password.
-    if (response.size() == 0)
+    if (!response || response->size() == 0)
         throw ConnectionForcedException("Authentication failed");
 
-    string::size_type i = response.find((char)0);
-    string auth = response.substr(0, i);
-    string::size_type j = response.find((char)0, i+1);
-    string uid = response.substr(i+1, j-1);
-    string pwd = response.substr(j+1);
+    string::size_type i = response->find((char)0);
+    string auth = response->substr(0, i);
+    string::size_type j = response->find((char)0, i+1);
+    string uid = response->substr(i+1, j-1);
+    string pwd = response->substr(j+1);
+    string dot(".");
     int error = 0;
-    if (!LogonUser(uid.c_str(), ".", pwd.c_str(),
+    if (!LogonUser(const_cast<char*>(uid.c_str()),
+                   const_cast<char*>(dot.c_str()),
+                   const_cast<char*>(pwd.c_str()),
                    LOGON32_LOGON_NETWORK,
                    LOGON32_PROVIDER_DEFAULT,
                    &userToken))
@@ -176,7 +180,7 @@ void SspiAuthenticator::start(const string& mechanism, const string& response)
     client.tune(framing::CHANNEL_MAX, connection.getFrameMax(), 0, 0);
 }
         
-void SspiAuthenticator::step(const string& response)
+void SspiAuthenticator::step(const string& /*response*/)
 {
   QPID_LOG(info, "SASL: Need another step!!!");
 }

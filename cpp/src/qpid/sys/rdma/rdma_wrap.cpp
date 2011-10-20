@@ -50,8 +50,9 @@ namespace Rdma {
         return count;
     }
 
-    Buffer::Buffer(uint32_t lkey, char* bytes, const int32_t byteCount) :
-        bufferSize(byteCount)
+    Buffer::Buffer(uint32_t lkey, char* bytes, const int32_t byteCount,
+                   const int32_t reserve) :
+        bufferSize(byteCount + reserve), reserved(reserve)
     {
         sge.addr = (uintptr_t) bytes;
         sge.length = 0;
@@ -163,21 +164,21 @@ namespace Rdma {
     }
 
     // Create buffers to use for writing
-    void QueuePair::createSendBuffers(int sendBufferCount, int bufferSize)
+    void QueuePair::createSendBuffers(int sendBufferCount, int bufferSize, int reserved)
     {
         assert(!smr);
 
         // Round up buffersize to cacheline (64 bytes)
-        bufferSize = (bufferSize+63) & (~63);
+        int dataLength = (bufferSize+reserved+63) & (~63);
 
         // Allocate memory block for all receive buffers
-        char* mem = new char [sendBufferCount * bufferSize];
-        smr = regMr(pd.get(), mem, sendBufferCount * bufferSize, ::IBV_ACCESS_LOCAL_WRITE);
+        char* mem = new char [sendBufferCount * dataLength];
+        smr = regMr(pd.get(), mem, sendBufferCount * dataLength, ::IBV_ACCESS_LOCAL_WRITE);
         sendBuffers.reserve(sendBufferCount);
         freeBuffers.reserve(sendBufferCount);
         for (int i = 0; i<sendBufferCount; ++i) {
             // Allocate xmit buffer
-            sendBuffers.push_back(Buffer(smr->lkey, &mem[i*bufferSize], bufferSize));
+            sendBuffers.push_back(Buffer(smr->lkey, &mem[i*dataLength], bufferSize, reserved));
             freeBuffers.push_back(i);
         }
     }

@@ -17,7 +17,7 @@
 # under the License.
 #
 
-import datetime
+import datetime, string
 from packer import Packer
 from datatypes import serial, timestamp, RangedSet, Struct, UUID
 from ops import Compound, PRIMITIVE, COMPOUND
@@ -241,15 +241,20 @@ class Codec(Packer):
       v = sc.read_primitive(type)
       result[k] = v
     return result
+
+  def _write_map_elem(self, k, v):
+    type = self.encoding(v)
+    sc = StringCodec()
+    sc.write_str8(k)
+    sc.write_uint8(type.CODE)
+    sc.write_primitive(type, v)
+    return sc.encoded
+
   def write_map(self, m):
     sc = StringCodec()
     if m is not None:
       sc.write_uint32(len(m))
-      for k, v in m.items():
-        type = self.encoding(v)
-        sc.write_str8(k)
-        sc.write_uint8(type.CODE)
-        sc.write_primitive(type, v)
+      sc.write(string.joinfields(map(self._write_map_elem, m.keys(), m.values()), ""))
     self.write_vbin32(sc.encoded)
 
   def read_array(self):

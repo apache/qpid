@@ -1,6 +1,6 @@
 package org.apache.qpid.client;
 /*
- * 
+ *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -8,16 +8,16 @@ package org.apache.qpid.client;
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
  * KIND, either express or implied.  See the License for the
  * specific language governing permissions and limitations
  * under the License.
- * 
+ *
  */
 
 
@@ -35,6 +35,7 @@ import javax.jms.XASession;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.failover.FailoverException;
 import org.apache.qpid.client.failover.FailoverProtectedOperation;
+import org.apache.qpid.client.transport.ClientConnectionDelegate;
 import org.apache.qpid.configuration.ClientProperties;
 import org.apache.qpid.framing.ProtocolVersion;
 import org.apache.qpid.jms.BrokerDetails;
@@ -43,10 +44,13 @@ import org.apache.qpid.jms.Session;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.transport.Connection;
 import org.apache.qpid.transport.ConnectionClose;
+import org.apache.qpid.transport.ConnectionCloseCode;
 import org.apache.qpid.transport.ConnectionException;
 import org.apache.qpid.transport.ConnectionListener;
 import org.apache.qpid.transport.ConnectionSettings;
 import org.apache.qpid.transport.ProtocolVersionException;
+import org.apache.qpid.transport.SessionDetachCode;
+import org.apache.qpid.transport.SessionException;
 import org.apache.qpid.transport.TransportException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,6 +63,10 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
     private static final Logger _logger = LoggerFactory.getLogger(AMQConnectionDelegate_0_10.class);
 
     /**
+     * The name of the UUID property
+     */
+    private static final String UUID_NAME = "qpid.federation_tag";
+    /**
      * The AMQ Connection.
      */
     private AMQConnection _conn;
@@ -68,6 +76,12 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
      */
     org.apache.qpid.transport.Connection _qpidConnection;
     private ConnectionException exception = null;
+
+    static
+    {
+        // Register any configured SASL client factories.
+        org.apache.qpid.client.security.DynamicSaslRegistrar.registerSaslProviders();
+    }
 
     //--- constructor
     public AMQConnectionDelegate_0_10(AMQConnection conn)
@@ -80,7 +94,14 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
     /**
      * create a Session and start it if required.
      */
+
     public Session createSession(boolean transacted, int acknowledgeMode, int prefetchHigh, int prefetchLow)
+    throws JMSException
+    {
+        return createSession(transacted,acknowledgeMode,prefetchHigh,prefetchLow,null);
+    }
+
+    public Session createSession(boolean transacted, int acknowledgeMode, int prefetchHigh, int prefetchLow, String name)
             throws JMSException
     {
         _conn.checkNotClosed();
@@ -95,7 +116,7 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
         try
         {
             session = new AMQSession_0_10(_qpidConnection, _conn, channelId, transacted, acknowledgeMode, prefetchHigh,
-                                          prefetchLow);
+                    prefetchLow,name);
             _conn.registerSession(channelId, session);
             if (_conn._started)
             {
@@ -173,8 +194,8 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
                         + _conn.getPassword());
             }
 
-            ConnectionSettings conSettings = new ConnectionSettings();
-            retriveConnectionSettings(conSettings,brokerDetail);
+            ConnectionSettings conSettings = retriveConnectionSettings(brokerDetail);
+            _qpidConnection.setConnectionDelegate(new ClientConnectionDelegate(conSettings, _conn.getConnectionURL()));
             _qpidConnection.connect(conSettings);
 
             _conn._connected = true;
@@ -211,6 +232,8 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
 
     public void resubscribeSessions() throws JMSException, AMQException, FailoverException
     {
+        _logger.info("Resuming connection");
+        getQpidConnection().resume();
         List<AMQSession> sessions = new ArrayList<AMQSession>(_conn.getSessions().values());
         _logger.info(String.format("Resubscribing sessions = %s sessions.size=%d", sessions, sessions.size()));
         for (AMQSession s : sessions)
@@ -254,10 +277,10 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
         }
 
         ConnectionClose close = exc.getClose();
-        if (close == null)
+        if (close == null || close.getReplyCode() == ConnectionCloseCode.CONNECTION_FORCED)
         {
             _conn.getProtocolHandler().setFailoverLatch(new CountDownLatch(1));
-            
+
             try
             {
                 if (_conn.firePreFailover(false) && _conn.attemptReconnection())
@@ -326,78 +349,20 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
     {
         return ProtocolVersion.v0_10;
     }
-    
-    private void retriveConnectionSettings(ConnectionSettings conSettings, BrokerDetails brokerDetail)
-    {
 
-        conSettings.setHost(brokerDetail.getHost());
-        conSettings.setPort(brokerDetail.getPort());
+    public String getUUID()
+    {
+        return (String)_qpidConnection.getServerProperties().get(UUID_NAME);
+    }
+
+    private ConnectionSettings retriveConnectionSettings(BrokerDetails brokerDetail)
+    {
+        ConnectionSettings conSettings = brokerDetail.buildConnectionSettings();
+
         conSettings.setVhost(_conn.getVirtualHost());
         conSettings.setUsername(_conn.getUsername());
         conSettings.setPassword(_conn.getPassword());
-        
-        // ------------ sasl options ---------------
-        if (brokerDetail.getProperty(BrokerDetails.OPTIONS_SASL_MECHS) != null)
-        {
-            conSettings.setSaslMechs(
-                    brokerDetail.getProperty(BrokerDetails.OPTIONS_SASL_MECHS));
-        }
 
-        // Sun SASL Kerberos client uses the
-        // protocol + servername as the service key.
-        
-        if (brokerDetail.getProperty(BrokerDetails.OPTIONS_SASL_PROTOCOL_NAME) != null)
-        {
-            conSettings.setSaslProtocol(
-                    brokerDetail.getProperty(BrokerDetails.OPTIONS_SASL_PROTOCOL_NAME));
-        }
-        
-        
-        if (brokerDetail.getProperty(BrokerDetails.OPTIONS_SASL_SERVER_NAME) != null)
-        {
-            conSettings.setSaslServerName(
-                    brokerDetail.getProperty(BrokerDetails.OPTIONS_SASL_SERVER_NAME));
-        }
-                        
-        conSettings.setUseSASLEncryption(
-                brokerDetail.getBooleanProperty(BrokerDetails.OPTIONS_SASL_ENCRYPTION));
-
-        // ------------- ssl options ---------------------
-        conSettings.setUseSSL(brokerDetail.getBooleanProperty(BrokerDetails.OPTIONS_SSL));
-        
-        if (brokerDetail.getProperty(BrokerDetails.OPTIONS_TRUST_STORE) != null)
-        {
-            conSettings.setTrustStorePath(
-                    brokerDetail.getProperty(BrokerDetails.OPTIONS_TRUST_STORE));
-        }
-
-        if (brokerDetail.getProperty(BrokerDetails.OPTIONS_TRUST_STORE_PASSWORD) != null)
-        {
-            conSettings.setTrustStorePassword(
-                    brokerDetail.getProperty(BrokerDetails.OPTIONS_TRUST_STORE_PASSWORD));
-        }
-        
-        if (brokerDetail.getProperty(BrokerDetails.OPTIONS_KEY_STORE) != null)
-        {
-            conSettings.setKeyStorePath(
-                    brokerDetail.getProperty(BrokerDetails.OPTIONS_KEY_STORE));
-        }
-        
-        if (brokerDetail.getProperty(BrokerDetails.OPTIONS_KEY_STORE_PASSWORD) != null)
-        {
-            conSettings.setKeyStorePassword(
-                    brokerDetail.getProperty(BrokerDetails.OPTIONS_KEY_STORE_PASSWORD));
-        }
-
-        if (brokerDetail.getProperty(BrokerDetails.OPTIONS_SSL_CERT_ALIAS) != null)
-        {
-            conSettings.setCertAlias(
-                    brokerDetail.getProperty(BrokerDetails.OPTIONS_SSL_CERT_ALIAS));
-        }
-        // ----------------------------
-        
-        conSettings.setVerifyHostname(brokerDetail.getBooleanProperty(BrokerDetails.OPTIONS_SSL_VERIFY_HOSTNAME));
-        
         // Pass client name from connection URL
         Map<String, Object> clientProps = new HashMap<String, Object>();
         try
@@ -409,16 +374,12 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
         {
             // Ignore
         }
-        
-        if (brokerDetail.getProperty(BrokerDetails.OPTIONS_TCP_NO_DELAY) != null)
-        {
-            conSettings.setTcpNodelay(
-                    brokerDetail.getBooleanProperty(BrokerDetails.OPTIONS_TCP_NO_DELAY));
-        }
-        
+
         conSettings.setHeartbeatInterval(getHeartbeatInterval(brokerDetail));
+
+        return conSettings;
     }
-    
+
     // The idle_timeout prop is in milisecs while
     // the new heartbeat prop is in secs
     private int getHeartbeatInterval(BrokerDetails brokerDetail)
@@ -433,7 +394,7 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
         {
             heartbeat = Integer.parseInt(brokerDetail.getProperty(BrokerDetails.OPTIONS_HEARTBEAT));
         }
-        else if (Integer.getInteger(ClientProperties.IDLE_TIMEOUT_PROP_NAME) != null) 
+        else if (Integer.getInteger(ClientProperties.IDLE_TIMEOUT_PROP_NAME) != null)
         {
             heartbeat = Integer.getInteger(ClientProperties.IDLE_TIMEOUT_PROP_NAME)/1000;
             _logger.warn("JVM arg -Didle_timeout=<mili_secs> is deprecated, please use -Dqpid.heartbeat=<secs>");
@@ -441,12 +402,37 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
         else
         {
             heartbeat = Integer.getInteger(ClientProperties.HEARTBEAT,ClientProperties.HEARTBEAT_DEFAULT);
-        } 
+        }
         return heartbeat;
     }
-    
+
     protected org.apache.qpid.transport.Connection getQpidConnection()
     {
         return _qpidConnection;
+    }
+
+    public boolean verifyClientID() throws JMSException, AMQException
+    {
+        int prefetch = (int)_conn.getMaxPrefetch();
+        AMQSession_0_10 ssn = (AMQSession_0_10)createSession(false, 1,prefetch,prefetch,_conn.getClientID());
+        org.apache.qpid.transport.Session ssn_0_10 = ssn.getQpidSession();
+        try
+        {
+            ssn_0_10.awaitOpen();
+        }
+        catch(SessionException se)
+        {
+            //if due to non unique client id for user return false, otherwise wrap and re-throw.
+            if (ssn_0_10.getDetachCode() != null &&
+                ssn_0_10.getDetachCode() == SessionDetachCode.SESSION_BUSY)
+            {
+                return false;
+            }
+            else
+            {
+                throw new AMQException(AMQConstant.INTERNAL_ERROR, "Unexpected SessionException thrown while awaiting session opening", se);
+            }
+        }
+        return true;
     }
 }

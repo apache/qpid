@@ -66,7 +66,6 @@ public class ExchangeMessagesTest extends AbstractTestMessages
         validateLogMessage(log, "EXH-1001", expected);
     }
 
-
     public void testExchangeDeleted()
     {
         _logMessage = ExchangeMessages.DELETED();
@@ -77,4 +76,21 @@ public class ExchangeMessagesTest extends AbstractTestMessages
         validateLogMessage(log, "EXH-1002", expected);
     }
 
+    public void testExchangeDiscardedMessage()
+    {
+        // Get the Default Exchange on the Test Vhost for testing
+        final Exchange exchange = ApplicationRegistry.getInstance().
+                getVirtualHostRegistry().getVirtualHost("test").
+                getExchangeRegistry().getDefaultExchange();
+
+        final String name = exchange.getNameShortString().toString();
+        final String routingKey = "routingKey";
+
+        _logMessage = ExchangeMessages.DISCARDMSG(name, routingKey);
+        List<Object> log = performLog();
+
+        String[] expected = {"Discarded Message :","Name:", name, "Routing Key:", routingKey};
+
+        validateLogMessage(log, "EXH-1003", expected);
+    }
 }

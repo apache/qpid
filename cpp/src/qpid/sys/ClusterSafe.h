@@ -52,19 +52,26 @@ QPID_COMMON_EXTERN void assertClusterSafe();
  */
 QPID_COMMON_EXTERN bool isClusterSafe();
 
-/** Return true in a clustered broker */
-QPID_COMMON_EXTERN bool isCluster();
-
 /**
- * Base class for classes that encapsulate state which is replicated
- * to all members of a cluster. Acts as a marker for clustered state
- * and provides functions to assist detecting bugs in cluster
- * behavior.
+ *  Mark a scope as cluster safe. Sets isClusterSafe in constructor and resets
+ *  to previous value in destructor.
  */
 class ClusterSafeScope {
   public:
     ClusterSafeScope();
     ~ClusterSafeScope();
+  private:
+    bool save;
+};
+
+/**
+ *  Mark a scope as cluster unsafe. Clears isClusterSafe in constructor and resets
+ *  to previous value in destructor.
+ */
+class ClusterUnsafeScope {
+  public:
+    QPID_COMMON_EXTERN ClusterUnsafeScope();
+    QPID_COMMON_EXTERN ~ClusterUnsafeScope();
   private:
     bool save;
 };

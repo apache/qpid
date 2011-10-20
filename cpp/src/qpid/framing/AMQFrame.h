@@ -33,7 +33,7 @@
 namespace qpid {
 namespace framing {
 
-class AMQFrame : public AMQDataBlock
+class QPID_COMMON_CLASS_EXTERN AMQFrame : public AMQDataBlock
 {
   public:
     QPID_COMMON_EXTERN AMQFrame(const boost::intrusive_ptr<AMQBody>& b=0);
@@ -58,6 +58,11 @@ class AMQFrame : public AMQDataBlock
     template <class T> const T* castBody() const {
         return boost::polymorphic_downcast<const T*>(getBody());
     }
+
+    /**
+     * Take a deep copy of the body currently referenced
+     */
+    QPID_COMMON_EXTERN void cloneBody();
 
     QPID_COMMON_EXTERN void encode(Buffer& buffer) const; 
     QPID_COMMON_EXTERN bool decode(Buffer& buffer); 

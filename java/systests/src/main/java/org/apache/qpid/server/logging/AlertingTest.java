@@ -46,7 +46,7 @@ public class AlertingTest extends AbstractTestLogging
     {
         // Update the configuration to make our virtualhost Persistent.
         makeVirtualHostPersistent(VIRTUALHOST);
-        setConfigurationProperty("virtualhosts.virtualhost." + VIRTUALHOST + ".housekeeping.expiredMessageCheckPeriod", "5000");
+        setConfigurationProperty("virtualhosts.virtualhost." + VIRTUALHOST + ".housekeeping.checkPeriod", "5000");
 
         _numMessages = 50;
 
@@ -136,7 +136,7 @@ public class AlertingTest extends AbstractTestLogging
         stopBroker();
 
         // Rest the monitoring clearing the current output file.
-        _monitor.reset();
+        _monitor.markDiscardPoint();
         startBroker();
         wasAlertFired();
     }
@@ -169,14 +169,14 @@ public class AlertingTest extends AbstractTestLogging
 
         stopBroker();
 
-        _monitor.reset();
+        _monitor.markDiscardPoint();
 
         // Change max message count to 5, start broker and make sure that that's triggered at the right time
         setConfigurationProperty("virtualhosts.virtualhost." + VIRTUALHOST + ".queues.maximumMessageCount", "5");
 
         startBroker();
 
-        if (!isExternalBroker())
+        if (isInternalBroker())
         {
             assertEquals("Alert Max Msg Count is not correct", 5, ApplicationRegistry.getInstance().getVirtualHostRegistry().
                     getVirtualHost(VIRTUALHOST).getQueueRegistry().getQueue(new AMQShortString(_destination.getQueueName())).

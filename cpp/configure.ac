@@ -68,8 +68,10 @@ if test x$GXX = xyes; then
 	# The following warnings are deliberately omitted, they warn on valid code.
 	# -Wunreachable-code -Wpadded -Winline
 	# -Wshadow - warns about boost headers.
+	# Can't test for -Werror as whether it fails or not depends on what's in
+	# CFLAGS/CXXFLAGS. In any case it's been in gcc for a long time (since 2.95 at least)
 	if test "${enableval}" = yes; then
-	    gl_COMPILER_FLAGS(-Werror)
+        COMPILER_FLAGS="-Werror"
 	    gl_COMPILER_FLAGS(-pedantic)
 	    gl_COMPILER_FLAGS(-Wall)
 	    gl_COMPILER_FLAGS(-Wextra)
@@ -521,18 +523,19 @@ AM_PATH_PYTHON()
 builddir_lib_suffix="/.libs"
 AC_SUBST([builddir_lib_suffix])
 
-# Files to generate	
+# Files to generate
 AC_CONFIG_FILES([
   Makefile
   examples/Makefile
-  examples/direct/Makefile
-  examples/fanout/Makefile
-  examples/pub-sub/Makefile
-  examples/request-response/Makefile
-  examples/failover/Makefile
-  examples/xml-exchange/Makefile
+  examples/old_api/Makefile
+  examples/old_api/direct/Makefile
+  examples/old_api/fanout/Makefile
+  examples/old_api/pub-sub/Makefile
+  examples/old_api/request-response/Makefile
+  examples/old_api/failover/Makefile
+  examples/old_api/xml-exchange/Makefile
   examples/qmf-console/Makefile
-  examples/tradedemo/Makefile
+  examples/old_api/tradedemo/Makefile
   examples/messaging/Makefile
   bindings/qpid/Makefile
   bindings/qpid/ruby/Makefile

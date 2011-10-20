@@ -266,7 +266,46 @@
  * else 
  *    session.rollback();
  * </pre>
- * 
+ *
+ * <h3>Exceptions</h3>
+ *
+ * All exceptions for the messaging API have MessagingException as
+ * their base class.
+
+ * A common class of exception are those related to processing
+ * addresses used to create senders and/or receivers. These all have
+ * AddressError as their base class.
+ *
+ * Where there is a syntax error in the address itself, a
+ * MalformedAddress will be thrown. Where the address is valid, but
+ * there is an error in interpreting (i.e. resolving) it, a
+ * ResolutionError - or a sub-class of it - will be thrown. If the
+ * address has assertions enabled for a given context and the asserted
+ * node properties are not in fact correct then AssertionFailed will
+ * be thrown. If the node is not found, NotFound will be thrown.
+ *
+ * The loss of the underlying connection (e.g. the TCP connection)
+ * results in TransportFailure being thrown. If automatic reconnect is
+ * enabled, this will be caught be the library which will then try to
+ * reconnect. If reconnection - as configured by the connection
+ * options - fails, then TransportFailure will be thrown. This can
+ * occur on any call to the messaging API.
+ *
+ * Sending a message may also result in an exception
+ * (e.g. TargetCapacityExceeded if a queue to which the message is
+ * delivered cannot enqueue it due to lack of capacity). For
+ * asynchronous send the exception may not be thrown on the send
+ * invocation that actually triggers it, but on a subsequent method
+ * call on the API.
+ *
+ * Certain exceptions may render the session invalid; once these
+ * occur, subsequent calls on the session will throw the same class of
+ * exception. This is not an intrinsic property of the class of
+ * exception, but is a result of the current mapping of the API to the
+ * underlying AMQP 0-10 protocol. You can test whether the session is
+ * valid at any time using the hasError() and/or checkError() methods
+ * on Session.
+ *
  * <h3>Logging</h3>
  * 
  * The Qpidd broker and C++ clients can both use environment variables to

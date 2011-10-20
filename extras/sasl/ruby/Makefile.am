@@ -35,7 +35,7 @@ rubylibarch_LTLIBRARIES = saslwrapper.la
 
 saslwrapper_la_LDFLAGS = -avoid-version -module -shared ".$(RUBY_DLEXT)"
 saslwrapper_la_LIBADD = $(RUBY_LIBS) $(top_builddir)/src/libsaslwrapper.la -lsasl2
-saslwrapper_la_CXXFLAGS = $(INCLUDES) -I$(RUBY_INC) -I$(RUBY_INC_ARCH)
+saslwrapper_la_CXXFLAGS = $(INCLUDES) -I$(RUBY_INC) -I$(RUBY_INC_ARCH) -fno-strict-aliasing
 nodist_saslwrapper_la_SOURCES = saslwrapper.cpp
 
 CLEANFILES = $(generated_file_list)

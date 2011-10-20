@@ -156,16 +156,7 @@ Connection::~Connection()
 void Connection::received(framing::AMQFrame& frame) {
     // Received frame on connection so delay timeout
     restartTimeout();
-
-    if (frame.getChannel() == 0 && frame.getMethod()) {
-        adapter.handle(frame);
-    } else {
-        if (adapter.isOpen())
-            getChannel(frame.getChannel()).in(frame);
-        else
-            close(connection::CLOSE_CODE_FRAMING_ERROR, "Connection not yet open, invalid frame received.");
-    }
-
+    adapter.handle(frame);
     if (isLink) //i.e. we are acting as the client to another broker
         recordFromServer(frame);
     else
@@ -278,8 +269,7 @@ void Connection::setUserId(const string& userId)
     ConnectionState::setUserId(userId);
     // In a cluster, the cluster code will raise the connect event
     // when the connection is replicated to the cluster.
-    if (!sys::isCluster())
-        raiseConnectEvent();
+    if (!broker.isInCluster()) raiseConnectEvent();
 }
 
 void Connection::raiseConnectEvent() {
@@ -289,11 +279,11 @@ void Connection::raiseConnectEvent() {
     }
 }
 
-void Connection::setFederationLink(bool b)
+void Connection::setUserProxyAuth(bool b)
 {
-    ConnectionState::setFederationLink(b);
+    ConnectionState::setUserProxyAuth(b);
     if (mgmtObject != 0)
-            mgmtObject->set_federationLink(b);
+        mgmtObject->set_userProxyAuth(b);
 }
 
 void Connection::close(connection::CloseCode code, const string& text)
@@ -332,31 +322,30 @@ void Connection::closed(){ // Physically closed, suspend open sessions.
     try {
         while (!channels.empty())
             ptr_map_ptr(channels.begin())->handleDetach();
-        while (!exclusiveQueues.empty()) {
-            boost::shared_ptr<Queue> q(exclusiveQueues.front());
-            q->releaseExclusiveOwnership();
-            if (q->canAutoDelete()) {
-                Queue::tryAutoDelete(broker, q);
-            }
-            exclusiveQueues.erase(exclusiveQueues.begin());
-        }
     } catch(std::exception& e) {
         QPID_LOG(error, QPID_MSG("While closing connection: " << e.what()));
         assert(0);
     }
 }
 
+void Connection::doIoCallbacks() {
+    {
+        ScopedLock<Mutex> l(ioCallbackLock);
+        // Although IO callbacks execute in the connection thread context, they are
+        // not cluster safe because they are queued for execution in non-IO threads.
+        ClusterUnsafeScope cus;
+        while (!ioCallbacks.empty()) {
+            boost::function0<void> cb = ioCallbacks.front();
+            ioCallbacks.pop();
+            ScopedUnlock<Mutex> ul(ioCallbackLock);
+            cb(); // Lend the IO thread for management processing
+        }
+    }
+}
+
 bool Connection::doOutput() {
     try {
-        {
-            ScopedLock<Mutex> l(ioCallbackLock);
-            while (!ioCallbacks.empty()) {
-                boost::function0<void> cb = ioCallbacks.front();
-                ioCallbacks.pop();
-                ScopedUnlock<Mutex> ul(ioCallbackLock);
-                cb(); // Lend the IO thread for management processing
-            }
-        }
+        doIoCallbacks();
         if (mgmtClosing) {
             closed();
             close(connection::CLOSE_CODE_CONNECTION_FORCED, "Closed by Management Request");
@@ -476,8 +465,8 @@ void Connection::OutboundFrameTracker::abort() { next->abort(); }
 void Connection::OutboundFrameTracker::activateOutput() { next->activateOutput(); }
 void Connection::OutboundFrameTracker::giveReadCredit(int32_t credit) { next->giveReadCredit(credit); }
 void Connection::OutboundFrameTracker::send(framing::AMQFrame& f)
-{ 
-    next->send(f); 
+{
+    next->send(f);
     con.sent(f);
 }
 void Connection::OutboundFrameTracker::wrap(sys::ConnectionOutputHandlerPtr& p)

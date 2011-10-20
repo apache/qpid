@@ -37,6 +37,7 @@ windows_dist = \
   qpid/sys/windows/IOHandle.cpp \
   qpid/sys/windows/IoHandlePrivate.h \
   qpid/sys/windows/LockFile.cpp \
+  qpid/sys/windows/mingw32_compat.h \
   qpid/sys/windows/PollableCondition.cpp \
   qpid/sys/windows/PipeHandle.cpp \
   ../include/qpid/sys/windows/Mutex.h \
@@ -88,7 +89,7 @@ rgen_cmd=ruby -I $(rgen_dir) $(rgen_dir)/generate . ../include $(specs) all
 
 $(rgen_srcs) $(srcdir)/rubygen.mk: rgen.timestamp
 rgen.timestamp: $(rgen_generator) $(specs)
-	$(rgen_cmd) $(srcdir)/rubygen.mk; touch $@
+	$(rgen_cmd) $(srcdir)/rubygen.mk && touch $@
 $(rgen_generator):
 
 # The CMake version is needed for dist
@@ -127,14 +128,14 @@ qpidexec_SCRIPTS =
 qpidtestdir = $(qpidexecdir)/tests
 qpidtest_PROGRAMS =
 qpidtest_SCRIPTS =
-tmoduledir = $(libdir)/qpid/tests
-tmodule_LTLIBRARIES=
+tmoduleexecdir = $(libdir)/qpid/tests
+tmoduleexec_LTLIBRARIES=
 
 AM_CXXFLAGS += -DBOOST_FILESYSTEM_VERSION=2
 
 ## Automake macros to build libraries and executables.
-qpidd_CXXFLAGS = $(AM_CXXFLAGS) -DQPIDD_MODULE_DIR=\"$(dmoduledir)\" -DQPIDD_CONF_FILE=\"$(sysconfdir)/qpidd.conf\"
-libqpidclient_la_CXXFLAGS = $(AM_CXXFLAGS) -DQPIDC_MODULE_DIR=\"$(cmoduledir)\" -DQPIDC_CONF_FILE=\"$(confdir)/qpidc.conf\"
+qpidd_CXXFLAGS = $(AM_CXXFLAGS) -DQPIDD_MODULE_DIR=\"$(dmoduleexecdir)\" -DQPIDD_CONF_FILE=\"$(sysconfdir)/qpidd.conf\"
+libqpidclient_la_CXXFLAGS = $(AM_CXXFLAGS) -DQPIDC_MODULE_DIR=\"$(cmoduleexecdir)\" -DQPIDC_CONF_FILE=\"$(confdir)/qpidc.conf\"
 
 qpidd_LDADD =					\
   libqpidbroker.la				\
@@ -176,7 +177,7 @@ nobase_include_HEADERS +=			\
   ../include/qpid/sys/posix/Time.h		\
   ../include/qpid/sys/posix/check.h
 
-if HAVE_EPOLL 
+if HAVE_EPOLL
   poller = qpid/sys/epoll/EpollPoller.cpp
 endif
 
@@ -195,15 +196,15 @@ libqpidcommon_la_SOURCES += $(poller) $(systeminfo)
 posix_broker_src = \
   qpid/broker/posix/BrokerDefaults.cpp
 
-lib_LTLIBRARIES = libqpidtypes.la libqpidcommon.la libqpidbroker.la libqpidclient.la libqpidmessaging.la 
+lib_LTLIBRARIES = libqpidtypes.la libqpidcommon.la libqpidbroker.la libqpidclient.la libqpidmessaging.la
 
 # Definitions for client and daemon plugins
 PLUGINLDFLAGS=-no-undefined -module -avoid-version
 confdir=$(sysconfdir)/qpid
-dmoduledir=$(libdir)/qpid/daemon
-cmoduledir=$(libdir)/qpid/client
-dmodule_LTLIBRARIES =
-cmodule_LTLIBRARIES = 
+dmoduleexecdir=$(libdir)/qpid/daemon
+cmoduleexecdir=$(libdir)/qpid/client
+dmoduleexec_LTLIBRARIES =
+cmoduleexec_LTLIBRARIES =
 
 include cluster.mk
 include acl.mk
@@ -245,7 +246,7 @@ rdma_la_LIBADD = \
 rdma_la_LDFLAGS = $(PLUGINLDFLAGS)
 rdma_la_CXXFLAGS = \
   $(AM_CXXFLAGS) -Wno-missing-field-initializers
-dmodule_LTLIBRARIES += \
+dmoduleexec_LTLIBRARIES += \
   rdma.la
 
 rdmaconnector_la_SOURCES = \
@@ -257,7 +258,7 @@ rdmaconnector_la_LIBADD = \
 rdmaconnector_la_LDFLAGS = $(PLUGINLDFLAGS)
 rdmaconnector_la_CXXFLAGS = \
   $(AM_CXXFLAGS) -Wno-missing-field-initializers
-cmodule_LTLIBRARIES += \
+cmoduleexec_LTLIBRARIES += \
   rdmaconnector.la
 
 # RDMA test/sample programs
@@ -332,6 +333,7 @@ libqpidcommon_la_SOURCES +=			\
   qpid/Address.cpp				\
   qpid/DataDir.cpp				\
   qpid/DataDir.h				\
+  qpid/DisableExceptionLogging.h		\
   qpid/Exception.cpp				\
   qpid/Modules.cpp				\
   qpid/Modules.h				\
@@ -341,6 +343,7 @@ libqpidcommon_la_SOURCES +=			\
   qpid/RefCounted.h				\
   qpid/RefCountedBuffer.cpp			\
   qpid/RefCountedBuffer.h			\
+  qpid/BufferRef.h				\
   qpid/Sasl.h                                   \
   qpid/SaslFactory.cpp                          \
   qpid/SaslFactory.h                            \
@@ -561,8 +564,7 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/HandlerImpl.h \
   qpid/broker/HeadersExchange.cpp \
   qpid/broker/HeadersExchange.h \
-  qpid/broker/IncompleteMessageList.cpp \
-  qpid/broker/IncompleteMessageList.h \
+  qpid/broker/AsyncCompletion.h \
   qpid/broker/LegacyLVQ.h \
   qpid/broker/LegacyLVQ.cpp \
   qpid/broker/Link.cpp \
@@ -612,9 +614,9 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/QueueRegistry.cpp \
   qpid/broker/QueueRegistry.h \
   qpid/broker/QueuedMessage.h \
+  qpid/broker/QueueFlowLimit.h \
+  qpid/broker/QueueFlowLimit.cpp \
   qpid/broker/RateFlowcontrol.h \
-  qpid/broker/RateTracker.cpp \
-  qpid/broker/RateTracker.h \
   qpid/broker/RecoverableConfig.h \
   qpid/broker/RecoverableExchange.h \
   qpid/broker/RecoverableMessage.h \
@@ -651,6 +653,7 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/SessionState.h \
   qpid/broker/SignalHandler.cpp \
   qpid/broker/SignalHandler.h \
+  qpid/broker/StatefulQueueObserver.h \
   qpid/broker/System.cpp \
   qpid/broker/System.h \
   qpid/broker/ThresholdAlerts.cpp \
@@ -668,6 +671,11 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/TxPublish.h \
   qpid/broker/Vhost.cpp \
   qpid/broker/Vhost.h \
+  qpid/broker/MessageDistributor.h \
+  qpid/broker/FifoDistributor.h \
+  qpid/broker/FifoDistributor.cpp \
+  qpid/broker/MessageGroupManager.cpp \
+  qpid/broker/MessageGroupManager.h \
   qpid/management/ManagementAgent.cpp \
   qpid/management/ManagementAgent.h \
   qpid/management/ManagementDirectExchange.cpp \
@@ -739,7 +747,7 @@ libqpidclient_la_SOURCES =			\
 QPIDCLIENT_VERSION_INFO  = 2:0:0
 libqpidclient_la_LDFLAGS = -version-info $(QPIDCLIENT_VERSION_INFO)
 
-libqpidtypes_la_libadd=-luuid
+libqpidtypes_la_LIBADD= -luuid
 libqpidtypes_la_SOURCES=			\
   qpid/types/Exception.cpp			\
   qpid/types/Uuid.cpp				\
@@ -786,9 +794,7 @@ libqpidmessaging_la_SOURCES =			\
   qpid/client/amqp0_10/SessionImpl.h		\
   qpid/client/amqp0_10/SessionImpl.cpp		\
   qpid/client/amqp0_10/SenderImpl.h		\
-  qpid/client/amqp0_10/SenderImpl.cpp           \
-  qpid/client/amqp0_10/SimpleUrlParser.h	\
-  qpid/client/amqp0_10/SimpleUrlParser.cpp
+  qpid/client/amqp0_10/SenderImpl.cpp
 
 QPIDMESSAGING_VERSION_INFO  = 2:0:0
 libqpidmessaging_la_LDFLAGS = -version-info $(QPIDMESSAGING_VERSION_INFO)
@@ -801,6 +807,7 @@ nobase_include_HEADERS +=			\
   ../include/qpid/Address.h			\
   ../include/qpid/CommonImportExport.h		\
   ../include/qpid/Exception.h			\
+  ../include/qpid/ImportExport.h		\
   ../include/qpid/InlineAllocator.h		\
   ../include/qpid/InlineVector.h		\
   ../include/qpid/Msg.h				\
@@ -883,14 +890,10 @@ nobase_include_HEADERS +=			\
   ../include/qpid/types/Variant.h		\
   ../include/qpid/types/ImportExport.h
 
-# Force build of qpidd during dist phase so help2man will work.
-dist-hook: $(BUILT_SOURCES)
-	$(MAKE) qpidd
-
 # Create the default data directory
 install-data-local:
 	$(mkinstalldirs) $(DESTDIR)/$(localstatedir)/lib/qpidd
 
-# Support for pkg-config 
+# Support for pkg-config
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = qpid.pc

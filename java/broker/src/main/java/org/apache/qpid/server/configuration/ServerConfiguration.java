@@ -20,6 +20,8 @@
 
 package org.apache.qpid.server.configuration;
 
+import static org.apache.qpid.transport.ConnectionSettings.WILDCARD_ADDRESS;
+
 import java.io.File;
 import java.util.Collections;
 import java.util.HashMap;
@@ -37,33 +39,28 @@ import org.apache.commons.configuration.HierarchicalConfiguration;
 import org.apache.commons.configuration.SystemConfiguration;
 import org.apache.commons.configuration.XMLConfiguration;
 import org.apache.log4j.Logger;
-import org.apache.qpid.server.configuration.management.ConfigurationManagementMBean;
 import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
 import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.signal.SignalHandlerTask;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
-import org.apache.qpid.transport.NetworkDriverConfiguration;
 
-import sun.misc.Signal;
-import sun.misc.SignalHandler;
-
-public class ServerConfiguration extends ConfigurationPlugin implements SignalHandler
+public class ServerConfiguration extends ConfigurationPlugin
 {
     protected static final Logger _logger = Logger.getLogger(ServerConfiguration.class);
 
     // Default Configuration values
-    public static final int DEFAULT_BUFFER_READ_LIMIT_SIZE = 262144;
-    public static final int DEFAULT_BUFFER_WRITE_LIMIT_SIZE = 262144;
-    public static final boolean DEFAULT_BROKER_CONNECTOR_PROTECTIO_ENABLED = false;
+    public static final int DEFAULT_BUFFER_SIZE = 262144;
     public static final String DEFAULT_STATUS_UPDATES = "on";
     public static final String SECURITY_CONFIG_RELOADED = "SECURITY CONFIGURATION RELOADED";
 
     public static final int DEFAULT_FRAME_SIZE = 65536;
     public static final int DEFAULT_PORT = 5672;
-    public static final int DEFAULT_SSL_PORT = 8672;
+    public static final int DEFAULT_SSL_PORT = 5671;
     public static final long DEFAULT_HOUSEKEEPING_PERIOD = 30000L;
-    public static final int DEFAULT_JMXPORT = 8999;
-    
+    public static final int DEFAULT_JMXPORT_REGISTRYSERVER = 8999;
+    public static final int JMXPORT_CONNECTORSERVER_OFFSET = 100;
+
     public static final String QPID_HOME = "QPID_HOME";
     public static final String QPID_WORK = "QPID_WORK";
     public static final String LIB_DIR = "lib";
@@ -75,19 +72,14 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
     private File _configFile;
     private File _vhostsFile;
 
-    private Logger _log = Logger.getLogger(this.getClass());
-
-    private ConfigurationManagementMBean _mbean;
-
     // Map of environment variables to config items
     private static final Map<String, String> envVarMap = new HashMap<String, String>();
 
     // Configuration values to be read from the configuration file
     //todo Move all properties to static values to ensure system testing can be performed.
-    public static final String CONNECTOR_PROTECTIO_ENABLED = "connector.protectio.enabled";
-    public static final String CONNECTOR_PROTECTIO_READ_BUFFER_LIMIT_SIZE = "connector.protectio.readBufferLimitSize";
-    public static final String CONNECTOR_PROTECTIO_WRITE_BUFFER_LIMIT_SIZE = "connector.protectio.writeBufferLimitSize";
     public static final String MGMT_CUSTOM_REGISTRY_SOCKET = "management.custom-registry-socket";
+    public static final String MGMT_JMXPORT_REGISTRYSERVER = "management.jmxport.registryServer";
+    public static final String MGMT_JMXPORT_CONNECTORSERVER = "management.jmxport.connectorServer";
     public static final String STATUS_UPDATES = "status-updates";
     public static final String ADVANCED_LOCALE = "advanced.locale";
 
@@ -95,9 +87,9 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
         envVarMap.put("QPID_PORT", "connector.port");
         envVarMap.put("QPID_ENABLEDIRECTBUFFERS", "advanced.enableDirectBuffers");
         envVarMap.put("QPID_SSLPORT", "connector.ssl.port");
-        envVarMap.put("QPID_NIO", "connector.qpidnio");
         envVarMap.put("QPID_WRITEBIASED", "advanced.useWriteBiasedPool");
-        envVarMap.put("QPID_JMXPORT", "management.jmxport");
+        envVarMap.put("QPID_JMXPORT_REGISTRYSERVER", MGMT_JMXPORT_REGISTRYSERVER);
+        envVarMap.put("QPID_JMXPORT_CONNECTORSERVER", MGMT_JMXPORT_CONNECTORSERVER);
         envVarMap.put("QPID_FRAMESIZE", "advanced.framesize");
         envVarMap.put("QPID_MSGAUTH", "security.msg-auth");
         envVarMap.put("QPID_AUTOREGISTER", "auto_register");
@@ -131,7 +123,7 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
      * Configuration Manager to be initialised in the Application Registry.
      * <p>
      * If using this ServerConfiguration via an ApplicationRegistry there is no
-     * need to explictly call {@link #initialise()} as this is done via the
+     * need to explicitly call {@link #initialise()} as this is done via the
      * {@link ApplicationRegistry#initialise()} method.
      *
      * @param configurationURL
@@ -141,15 +133,26 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
     {
         this(parseConfig(configurationURL));
         _configFile = configurationURL;
-        try
+
+        SignalHandlerTask hupReparseTask = new SignalHandlerTask()
         {
-            Signal sig = new sun.misc.Signal("HUP");
-            sun.misc.Signal.handle(sig, this);
-        }
-        catch (Exception e)
+            public void handle()
+            {
+                try
+                {
+                    reparseConfigFileSecuritySections();
+                }
+                catch (ConfigurationException e)
+                {
+                    _logger.error("Could not reload configuration file security sections", e);
+                }
+            }
+        };
+
+        if(!hupReparseTask.register("HUP"))
         {
-            _logger.error("Signal HUP not supported for OS: " + System.getProperty("os.name"));
-            // We're on something that doesn't handle SIGHUP, how sad, Windows.
+            _logger.info("Unable to register Signal HUP handler to reload security configuration.");
+            _logger.info("Signal HUP not supported for this OS / JVM combination - " + SignalHandlerTask.getPlatformDescription());
         }
     }
 
@@ -166,7 +169,7 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
      * Configuration Manager to be initialised in the Application Registry.
      * <p>
      * If using this ServerConfiguration via an ApplicationRegistry there is no 
-     * need to explictly call {@link #initialise()} as this is done via the
+     * need to explicitly call {@link #initialise()} as this is done via the
      * {@link ApplicationRegistry#initialise()} method.
      *
      * @param conf
@@ -205,7 +208,53 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
     @Override
     public void validateConfiguration() throws ConfigurationException
     {
-        //Currently doesn't do validation
+        // Support for security.jmx.access was removed when JMX access rights were incorporated into the main ACL.
+        // This ensure that users remove the element from their configuration file.
+        
+        if (getListValue("security.jmx.access").size() > 0)
+        {
+            String message = "Validation error : security/jmx/access is no longer a supported element within the configuration xml." 
+                    + (_configFile == null ? "" : " Configuration file : " + _configFile);
+            throw new ConfigurationException(message);
+        }
+
+        if (getListValue("security.jmx.principal-database").size() > 0)
+        {
+            String message = "Validation error : security/jmx/principal-database is no longer a supported element within the configuration xml."
+                    + (_configFile == null ? "" : " Configuration file : " + _configFile);
+            throw new ConfigurationException(message);
+        }
+
+        if (getListValue("security.principal-databases.principal-database(0).class").size() > 0)
+        {
+            String message = "Validation error : security/principal-databases is no longer supported within the configuration xml." 
+                    + (_configFile == null ? "" : " Configuration file : " + _configFile);
+            throw new ConfigurationException(message);
+        }
+
+        // QPID-3266.  Tidy up housekeeping configuration option for scheduling frequency
+        if (contains("housekeeping.expiredMessageCheckPeriod"))
+        {
+            String message = "Validation error : housekeeping/expiredMessageCheckPeriod must be replaced by housekeeping/checkPeriod."
+                    + (_configFile == null ? "" : " Configuration file : " + _configFile);
+            throw new ConfigurationException(message);
+        }
+
+        // QPID-3517: Inconsistency in capitalisation in the SSL configuration keys used within the connector and management configuration
+        // sections. For the moment, continue to understand both but generate a deprecated warning if the less preferred keystore is used.
+        for (String key : new String[] {"management.ssl.keystorePath",
+                "management.ssl.keystorePassword," +
+                "connector.ssl.keystorePath",
+                "connector.ssl.keystorePassword"})
+        {
+            if (contains(key))
+            {
+                final String deprecatedXpath = key.replaceAll("\\.", "/");
+                final String preferredXpath = deprecatedXpath.replaceAll("keystore", "keyStore");
+                _logger.warn("Validation warning: " + deprecatedXpath + " is deprecated and must be replaced by " + preferredXpath
+                        + (_configFile == null ? "" : " Configuration file : " + _configFile));
+            }
+        }
     }
 
     /*
@@ -371,7 +420,7 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
     public final static Configuration flatConfig(File file) throws ConfigurationException
     {
         // We have to override the interpolate methods so that
-        // interpolation takes place accross the entirety of the
+        // interpolation takes place across the entirety of the
         // composite configuration. Without doing this each
         // configuration object only interpolates variables defined
         // inside itself.
@@ -396,18 +445,6 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
     public String getConfigurationURL()
     {
         return _configFile == null ? "" : _configFile.getAbsolutePath();
-    }
-
-    public void handle(Signal arg0)
-    {
-        try
-        {
-            reparseConfigFileSecuritySections();
-        }
-        catch (ConfigurationException e)
-        {
-             _logger.error("Could not reload configuration file security sections", e);
-        }
     }
 
     public void reparseConfigFileSecuritySections() throws ConfigurationException
@@ -453,14 +490,24 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
         return System.getProperty(QPID_HOME);
     }
 
-    public void setJMXManagementPort(int mport)
+    public void setJMXPortRegistryServer(int registryServerPort)
     {
-        getConfig().setProperty("management.jmxport", mport);
+        getConfig().setProperty(MGMT_JMXPORT_REGISTRYSERVER, registryServerPort);
     }
 
-    public int getJMXManagementPort()
+    public int getJMXPortRegistryServer()
     {
-        return getIntValue("management.jmxport", DEFAULT_JMXPORT);
+        return getIntValue(MGMT_JMXPORT_REGISTRYSERVER, DEFAULT_JMXPORT_REGISTRYSERVER);
+    }
+
+    public void setJMXPortConnectorServer(int connectorServerPort)
+    {
+        getConfig().setProperty(MGMT_JMXPORT_CONNECTORSERVER, connectorServerPort);
+    }
+
+    public int getJMXConnectorServerPort()
+    {
+        return getIntValue(MGMT_JMXPORT_CONNECTORSERVER, getJMXPortRegistryServer() + JMXPORT_CONNECTORSERVER_OFFSET);
     }
 
     public boolean getUseCustomRMISocketFactory()
@@ -503,56 +550,9 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
         _virtualHosts.put(config.getName(), config);
     }
 
-    public List<String> getPrincipalDatabaseNames()
-    {
-        return getListValue("security.principal-databases.principal-database.name");
-    }
-
-    public List<String> getPrincipalDatabaseClass()
-    {
-        return getListValue("security.principal-databases.principal-database.class");
-    }
-
-    public List<String> getPrincipalDatabaseAttributeNames(int index)
-    {
-        String name = "security.principal-databases.principal-database(" + index + ")." + "attributes.attribute.name";
-        return getListValue(name);
-    }
-
-    public List<String> getPrincipalDatabaseAttributeValues(int index)
-    {
-        String name = "security.principal-databases.principal-database(" + index + ")." + "attributes.attribute.value";
-        return getListValue(name);
-    }
-
-    public List<String> getManagementPrincipalDBs()
-    {
-        return getListValue("security.jmx.principal-database");
-    }
-
-    public List<String> getManagementAccessList()
-    {
-        return getListValue("security.jmx.access");
-    }
-
     public int getFrameSize()
     {
         return getIntValue("advanced.framesize", DEFAULT_FRAME_SIZE);
-    }
-
-    public boolean getProtectIOEnabled()
-    {
-        return getBooleanValue(CONNECTOR_PROTECTIO_ENABLED, DEFAULT_BROKER_CONNECTOR_PROTECTIO_ENABLED);
-    }
-
-    public int getBufferReadLimit()
-    {
-        return getIntValue(CONNECTOR_PROTECTIO_READ_BUFFER_LIMIT_SIZE, DEFAULT_BUFFER_READ_LIMIT_SIZE);
-    }
-
-    public int getBufferWriteLimit()
-    {
-        return getIntValue(CONNECTOR_PROTECTIO_WRITE_BUFFER_LIMIT_SIZE, DEFAULT_BUFFER_WRITE_LIMIT_SIZE);
     }
 
     public boolean getSynchedClocks()
@@ -565,14 +565,10 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
         return getBooleanValue("security.msg-auth");
     }
 
-    public String getJMXPrincipalDatabase()
-    {
-        return getStringValue("security.jmx.principal-database");
-    }
-
     public String getManagementKeyStorePath()
     {
-        return getStringValue("management.ssl.keyStorePath");
+        final String fallback = getStringValue("management.ssl.keystorePath");
+        return getStringValue("management.ssl.keyStorePath", fallback);
     }
 
     public boolean getManagementSSLEnabled()
@@ -582,7 +578,8 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
 
     public String getManagementKeyStorePassword()
     {
-        return getStringValue("management.ssl.keyStorePassword");
+        final String fallback = getStringValue("management.ssl.keystorePassword");
+        return getStringValue("management.ssl.keyStorePassword", fallback);
     }
 
     public boolean getQueueAutoRegister()
@@ -650,14 +647,14 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
         return getLongValue("flowResumeCapacity", getCapacity());
     }
 
-    public int getProcessors()
+    public int getConnectorProcessors()
     {
         return getIntValue("connector.processors", 4);
     }
 
     public List getPorts()
     {
-        return getListValue("connector.port", Collections.singletonList(DEFAULT_PORT));
+        return getListValue("connector.port", Collections.<Integer>singletonList(DEFAULT_PORT));
     }
 
     public List getPortExclude010()
@@ -682,17 +679,17 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
 
     public String getBind()
     {
-        return getStringValue("connector.bind", "wildcard");
+        return getStringValue("connector.bind", WILDCARD_ADDRESS);
     }
 
     public int getReceiveBufferSize()
     {
-        return getIntValue("connector.socketReceiveBuffer", 32767);
+        return getIntValue("connector.socketReceiveBuffer", DEFAULT_BUFFER_SIZE);
     }
 
     public int getWriteBufferSize()
     {
-        return getIntValue("connector.socketWriteBuffer", 32767);
+        return getIntValue("connector.socketWriteBuffer", DEFAULT_BUFFER_SIZE);
     }
 
     public boolean getTcpNoDelay()
@@ -715,29 +712,26 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
         return getBooleanValue("connector.ssl.sslOnly");
     }
 
-    public int getSSLPort()
+    public List getSSLPorts()
     {
-        return getIntValue("connector.ssl.port", DEFAULT_SSL_PORT);
+        return getListValue("connector.ssl.port", Collections.<Integer>singletonList(DEFAULT_SSL_PORT));
     }
 
-    public String getKeystorePath()
+    public String getConnectorKeyStorePath()
     {
-        return getStringValue("connector.ssl.keystorePath", "none");
+        final String fallback = getStringValue("connector.ssl.keystorePath"); // pre-0.13 broker supported this name.
+        return getStringValue("connector.ssl.keyStorePath", fallback);
     }
 
-    public String getKeystorePassword()
+    public String getConnectorKeyStorePassword()
     {
-        return getStringValue("connector.ssl.keystorePassword", "none");
+        final String fallback = getStringValue("connector.ssl.keystorePassword"); // pre-0.13 brokers supported this name.
+        return getStringValue("connector.ssl.keyStorePassword", fallback);
     }
 
-    public String getCertType()
+    public String getConnectorCertType()
     {
         return getStringValue("connector.ssl.certType", "SunX509");
-    }
-
-    public boolean getQpidNIO()
-    {
-        return getBooleanValue("connector.qpidnio");
     }
 
     public boolean getUseBiasedWrites()
@@ -755,69 +749,44 @@ public class ServerConfiguration extends ConfigurationPlugin implements SignalHa
          getConfig().setProperty("virtualhosts.default", vhost);
     }    
 
-    public void setHousekeepingExpiredMessageCheckPeriod(long value)
+    public void setHousekeepingCheckPeriod(long value)
     {
-        getConfig().setProperty("housekeeping.expiredMessageCheckPeriod", value);
+        getConfig().setProperty("housekeeping.checkPeriod", value);
     }
 
     public long getHousekeepingCheckPeriod()
     {
-        return getLongValue("housekeeping.checkPeriod",
-                                   getLongValue("housekeeping.expiredMessageCheckPeriod",
-                                                       DEFAULT_HOUSEKEEPING_PERIOD));
+        return getLongValue("housekeeping.checkPeriod", DEFAULT_HOUSEKEEPING_PERIOD);
     }
 
-    public NetworkDriverConfiguration getNetworkConfiguration()
+    public long getStatisticsSamplePeriod()
     {
-        return new NetworkDriverConfiguration()
-        {
+        return getConfig().getLong("statistics.sample.period", 5000L);
+    }
 
-            public Integer getTrafficClass()
-            {
-                return null;
-            }
+    public boolean isStatisticsGenerationBrokerEnabled()
+    {
+        return getConfig().getBoolean("statistics.generation.broker", false);
+    }
 
-            public Boolean getTcpNoDelay()
-            {
-                // Can't call parent getTcpNoDelay since it just calls this one
-                return getBooleanValue("connector.tcpNoDelay", true);
-            }
+    public boolean isStatisticsGenerationVirtualhostsEnabled()
+    {
+        return getConfig().getBoolean("statistics.generation.virtualhosts", false);
+    }
 
-            public Integer getSoTimeout()
-            {
-                return null;
-            }
+    public boolean isStatisticsGenerationConnectionsEnabled()
+    {
+        return getConfig().getBoolean("statistics.generation.connections", false);
+    }
 
-            public Integer getSoLinger()
-            {
-                return null;
-            }
+    public long getStatisticsReportingPeriod()
+    {
+        return getConfig().getLong("statistics.reporting.period", 0L);
+    }
 
-            public Integer getSendBufferSize()
-            {
-                return getBufferWriteLimit();
-            }
-
-            public Boolean getReuseAddress()
-            {
-                return null;
-            }
-
-            public Integer getReceiveBufferSize()
-            {
-                return getBufferReadLimit();
-            }
-
-            public Boolean getOOBInline()
-            {
-                return null;
-            }
-
-            public Boolean getKeepAlive()
-            {
-                return null;
-            }
-        };
+    public boolean isStatisticsReportResetEnabled()
+    {
+        return getConfig().getBoolean("statistics.reporting.reset", false);
     }
 
     public int getMaxChannelCount()

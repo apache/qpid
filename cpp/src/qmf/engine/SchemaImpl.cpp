@@ -35,17 +35,17 @@ using qpid::framing::Uuid;
 SchemaHash::SchemaHash()
 {
     for (int idx = 0; idx < 16; idx++)
-        hash[idx] = 0x5A;
+        hash.b[idx] = 0x5A;
 }
 
 void SchemaHash::encode(Buffer& buffer) const
 {
-    buffer.putBin128(hash);
+    buffer.putBin128(hash.b);
 }
 
 void SchemaHash::decode(Buffer& buffer)
 {
-    buffer.getBin128(hash);
+    buffer.getBin128(hash.b);
 }
 
 void SchemaHash::update(uint8_t data)
@@ -55,9 +55,8 @@ void SchemaHash::update(uint8_t data)
 
 void SchemaHash::update(const char* data, uint32_t len)
 {
-    uint64_t* first  = (uint64_t*) hash;
-    uint64_t* second = (uint64_t*) hash + 1;
-
+    uint64_t* first  = &hash.q[0];
+    uint64_t* second = &hash.q[1];
     for (uint32_t idx = 0; idx < len; idx++) {
         *first = *first ^ (uint64_t) data[idx];
         *second = *second << 1;

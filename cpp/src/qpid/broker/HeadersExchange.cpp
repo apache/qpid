@@ -112,9 +112,14 @@ bool HeadersExchange::bind(Queue::shared_ptr queue, const string& bindingKey, co
 
         {
             Mutex::ScopedLock l(lock);
-            Binding::shared_ptr binding (new Binding (bindingKey, queue, this, *args));
+            //NOTE: do not include the fed op/tags/origin in the
+            //arguments as when x-match is 'all' these would prevent
+            //matching (they are internally added properties
+            //controlling binding propagation but not relevant to
+            //actual routing)
+            Binding::shared_ptr binding (new Binding (bindingKey, queue, this, extra_args));
             BoundKey bk(binding);
-            if (bindings.add_unless(bk, MatchArgs(queue, args))) {
+            if (bindings.add_unless(bk, MatchArgs(queue, &extra_args))) {
                 binding->startManagement();
                 propagate = bk.fedBinding.addOrigin(queue->getName(), fedOrigin);
                 if (mgmtExchange != 0) {
@@ -158,12 +163,13 @@ bool HeadersExchange::bind(Queue::shared_ptr queue, const string& bindingKey, co
     return true;
 }
 
-bool HeadersExchange::unbind(Queue::shared_ptr queue, const string& bindingKey, const FieldTable*){
+bool HeadersExchange::unbind(Queue::shared_ptr queue, const string& bindingKey, const FieldTable *args){
     bool propagate = false;
+    string fedOrigin(args ? args->getAsString(qpidFedOrigin) : "");
     {
         Mutex::ScopedLock l(lock);
 
-        FedUnbindModifier modifier;
+        FedUnbindModifier modifier(queue->getName(), fedOrigin);
         MatchKey match_key(queue, bindingKey);
         bindings.modify_if(match_key, modifier);
         propagate = modifier.shouldPropagate;
@@ -330,11 +336,7 @@ HeadersExchange::FedUnbindModifier::FedUnbindModifier() : shouldUnbind(false), s
 
 bool HeadersExchange::FedUnbindModifier::operator()(BoundKey & bk)
 {
-    if ("" == fedOrigin) {
-        shouldPropagate = bk.fedBinding.delOrigin();
-    } else {
-        shouldPropagate = bk.fedBinding.delOrigin(queueName, fedOrigin);
-    }
+    shouldPropagate = bk.fedBinding.delOrigin(queueName, fedOrigin);
     if (bk.fedBinding.countFedBindings(queueName) == 0)
     {
         shouldUnbind = true;

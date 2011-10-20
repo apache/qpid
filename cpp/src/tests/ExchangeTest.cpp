@@ -253,7 +253,7 @@ QPID_AUTO_TEST_CASE(testIVEOption)
     TopicExchange topic ("topic1", false, args);
 
     intrusive_ptr<Message> msg1 = cmessage("direct1", "abc");
-    msg1->getProperties<MessageProperties>()->getApplicationHeaders().setString("a", "abc");
+    msg1->insertCustomProperty("a", "abc");
     DeliverableMessage dmsg1(msg1);
 
     FieldTable args2;

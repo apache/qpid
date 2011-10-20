@@ -22,6 +22,7 @@ package org.apache.qpid.client;
 
 import java.net.URISyntaxException;
 
+import javax.jms.InvalidDestinationException;
 import javax.jms.JMSException;
 import javax.jms.Topic;
 
@@ -95,39 +96,47 @@ public class AMQTopic extends AMQDestination implements Topic
         super(exchangeName, exchangeClass, routingKey, isExclusive, isAutoDelete, queueName, isDurable,bindingKeys);
     }
 
-    public static AMQTopic createDurableTopic(AMQTopic topic, String subscriptionName, AMQConnection connection)
+    public static AMQTopic createDurableTopic(Topic topic, String subscriptionName, AMQConnection connection)
             throws JMSException
     {
-        if (topic.getDestSyntax() == DestSyntax.ADDR)
+        if (topic instanceof AMQDestination && topic instanceof javax.jms.Topic)
         {
-            try
+            AMQDestination qpidTopic = (AMQDestination)topic;
+            if (qpidTopic.getDestSyntax() == DestSyntax.ADDR)
             {
-                AMQTopic t = new AMQTopic(topic.getAddress());
-                AMQShortString queueName = getDurableTopicQueueName(subscriptionName, connection);
-                // link is never null if dest was created using an address string.
-                t.getLink().setName(queueName.asString());               
-                t.getSourceNode().setAutoDelete(false);
-                t.getSourceNode().setDurable(true);
-                
-                // The legacy fields are also populated just in case.
-                t.setQueueName(queueName);
-                t.setAutoDelete(false);
-                t.setDurable(true);
-                return t;
+                try
+                {
+                    AMQTopic t = new AMQTopic(qpidTopic.getAddress());
+                    AMQShortString queueName = getDurableTopicQueueName(subscriptionName, connection);
+                    // link is never null if dest was created using an address string.
+                    t.getLink().setName(queueName.asString());               
+                    t.getSourceNode().setAutoDelete(false);
+                    t.getSourceNode().setDurable(true);
+                    
+                    // The legacy fields are also populated just in case.
+                    t.setQueueName(queueName);
+                    t.setAutoDelete(false);
+                    t.setDurable(true);
+                    return t;
+                }
+                catch(Exception e)
+                {
+                    JMSException ex = new JMSException("Error creating durable topic");
+                    ex.initCause(e);
+                    ex.setLinkedException(e);
+                    throw ex;
+                }
             }
-            catch(Exception e)
+            else
             {
-                JMSException ex = new JMSException("Error creating durable topic");
-                ex.initCause(e);
-                ex.setLinkedException(e);
-                throw ex;
+                return new AMQTopic(qpidTopic.getExchangeName(), qpidTopic.getRoutingKey(), false,
+                                getDurableTopicQueueName(subscriptionName, connection),
+                                true);
             }
         }
         else
         {
-            return new AMQTopic(topic.getExchangeName(), topic.getRoutingKey(), false,
-                            getDurableTopicQueueName(subscriptionName, connection),
-                            true);
+            throw new InvalidDestinationException("The destination object used is not from this provider or of type javax.jms.Topic");
         }
     }
 
@@ -138,13 +147,17 @@ public class AMQTopic extends AMQDestination implements Topic
 
     public String getTopicName() throws JMSException
     {
-        if (super.getRoutingKey() == null && super.getSubject() != null)
+        if (getRoutingKey() != null)
         {
-            return super.getSubject();
+            return getRoutingKey().asString();
+        }
+        else if (getSubject() != null)
+        {
+            return getSubject();
         }
         else
         {
-            return super.getRoutingKey().toString();
+            return null;
         }
     }
     
@@ -163,12 +176,18 @@ public class AMQTopic extends AMQDestination implements Topic
 
     public AMQShortString getRoutingKey()
     {
-        if (super.getRoutingKey() == null && super.getSubject() != null)
+        if (super.getRoutingKey() != null)            
         {
-            return new AMQShortString(super.getSubject());
+            return super.getRoutingKey();            
+        }
+        else if (getSubject() != null)
+        {
+            return new AMQShortString(getSubject());
         }
         else
         {
+            setRoutingKey(new AMQShortString(""));
+            setSubject("");
             return super.getRoutingKey();
         }
     }

@@ -20,18 +20,23 @@ package org.apache.qpid.server.txn;
  * 
  */
 
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.message.EnqueableMessage;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.store.TransactionLog;
+import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.queue.BaseQueue;
+import org.apache.qpid.server.queue.QueueEntry;
+import org.apache.qpid.server.store.TransactionLog;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A concrete implementation of ServerTransaction where enqueue/dequeue
@@ -41,16 +46,27 @@ import org.apache.qpid.server.store.TransactionLog;
  */
 public class LocalTransaction implements ServerTransaction
 {
-    protected static final Logger _logger = Logger.getLogger(LocalTransaction.class);
+    protected static final Logger _logger = LoggerFactory.getLogger(LocalTransaction.class);
 
     private final List<Action> _postTransactionActions = new ArrayList<Action>();
 
     private volatile TransactionLog.Transaction _transaction;
     private TransactionLog _transactionLog;
+    private long _txnStartTime = 0L;
 
     public LocalTransaction(TransactionLog transactionLog)
     {
         _transactionLog = transactionLog;
+    }
+    
+    public boolean inTransaction()
+    {
+        return _transaction != null;
+    }
+    
+    public long getTransactionStartTime()
+    {
+        return _txnStartTime;
     }
 
     public void addPostTransactionAction(Action postTransactionAction)
@@ -89,7 +105,6 @@ public class LocalTransaction implements ServerTransaction
 
         try
         {
-
             for(QueueEntry entry : queueEntries)
             {
                 ServerMessage message = entry.getMessage();
@@ -113,7 +128,6 @@ public class LocalTransaction implements ServerTransaction
             _logger.error("Error during message dequeues", e);
             tidyUpOnError(e);
         }
-
     }
 
     private void tidyUpOnError(Exception e)
@@ -140,8 +154,7 @@ public class LocalTransaction implements ServerTransaction
             }
             finally
             {
-                _transaction = null;
-                _postTransactionActions.clear();
+		resetDetails();
             }
         }
 
@@ -192,6 +205,11 @@ public class LocalTransaction implements ServerTransaction
     public void enqueue(List<? extends BaseQueue> queues, EnqueableMessage message, Action postTransactionAction)
     {
         _postTransactionActions.add(postTransactionAction);
+
+        if (_txnStartTime == 0L)
+        {
+            _txnStartTime = System.currentTimeMillis();
+        }
 
         if(message.isPersistent())
         {
@@ -248,17 +266,14 @@ public class LocalTransaction implements ServerTransaction
         }
         finally
         {
-            _transaction = null;
-            _postTransactionActions.clear();
+            resetDetails();
         }
-
     }
 
     public void rollback()
     {
         try
         {
-
             if(_transaction != null)
             {
                 _transaction.abortTran();
@@ -280,9 +295,15 @@ public class LocalTransaction implements ServerTransaction
             }
             finally
             {
-                _transaction = null;
-                _postTransactionActions.clear();
+                resetDetails();
             }
         }
+    }
+    
+    private void resetDetails()
+    {
+        _transaction = null;
+	_postTransactionActions.clear();
+        _txnStartTime = 0L;
     }
 }

@@ -96,9 +96,9 @@ public class IncomingMessage implements Filterable, InboundMessage, EnqueableMes
     public void setExpiration()
     {
             long expiration =
-                    ((BasicContentHeaderProperties) _contentHeaderBody.properties).getExpiration();
+                    ((BasicContentHeaderProperties) _contentHeaderBody.getProperties()).getExpiration();
             long timestamp =
-                    ((BasicContentHeaderProperties) _contentHeaderBody.properties).getTimestamp();
+                    ((BasicContentHeaderProperties) _contentHeaderBody.getProperties()).getTimestamp();
 
             if (SYNCHED_CLOCKS)
             {
@@ -139,7 +139,7 @@ public class IncomingMessage implements Filterable, InboundMessage, EnqueableMes
     public int addContentBodyFrame(final ContentChunk contentChunk)
             throws AMQException
     {
-        _storedMessageHandle.addContent((int)_bodyLengthReceived, contentChunk.getData().buf());
+        _storedMessageHandle.addContent((int)_bodyLengthReceived, ByteBuffer.wrap(contentChunk.getData()));
         _bodyLengthReceived += contentChunk.getSize();
         _contentChunks.add(contentChunk);
 
@@ -193,8 +193,8 @@ public class IncomingMessage implements Filterable, InboundMessage, EnqueableMes
 
     public boolean isPersistent()
     {
-        return getContentHeader().properties instanceof BasicContentHeaderProperties &&
-             ((BasicContentHeaderProperties) getContentHeader().properties).getDeliveryMode() ==
+        return getContentHeader().getProperties() instanceof BasicContentHeaderProperties &&
+             ((BasicContentHeaderProperties) getContentHeader().getProperties()).getDeliveryMode() ==
                                                              BasicContentHeaderProperties.PERSISTENT;
     }
 
@@ -263,7 +263,7 @@ public class IncomingMessage implements Filterable, InboundMessage, EnqueableMes
         int written = 0;
         for(ContentChunk cb : _contentChunks)
         {
-            ByteBuffer data = cb.getData().buf();
+            ByteBuffer data = ByteBuffer.wrap(cb.getData());
             if(offset+written >= pos && offset < pos + data.limit())
             {
                 ByteBuffer src = data.duplicate();

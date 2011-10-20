@@ -89,7 +89,7 @@ namespace Messaging {
     }
 
 
-    // Copy constructor
+    // Copy constructor look-alike (C#)
     Receiver::Receiver(const Receiver ^ receiver) :
         parentSession(receiver->parentSession)
     {
@@ -99,6 +99,29 @@ namespace Messaging {
 		{
             receiverp = new ::qpid::messaging::Receiver(
                         *(const_cast<Receiver ^>(receiver)->NativeReceiver));
+        } 
+        catch (const ::qpid::types::Exception & error) 
+		{
+            String ^ errmsg = gcnew String(error.what());
+            newException    = gcnew QpidException(errmsg);
+        }
+
+		if (newException != nullptr) 
+		{
+	        throw newException;
+		}
+    }
+
+    // Copy constructor implicitly dereferenced (C++)
+    Receiver::Receiver(const Receiver % receiver) :
+        parentSession(receiver.parentSession)
+    {
+        System::Exception ^ newException = nullptr;
+
+        try 
+		{
+            receiverp = new ::qpid::messaging::Receiver(
+                        *(const_cast<Receiver %>(receiver).NativeReceiver));
         } 
         catch (const ::qpid::types::Exception & error) 
 		{

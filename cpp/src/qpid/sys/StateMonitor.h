@@ -41,9 +41,9 @@ class StateMonitor : public Waitable
     struct Set : public std::bitset<MaxEnum + 1> {
         Set() {}
         Set(Enum s) { set(s); }
-        Set(Enum s, Enum t) { set(s).set(t); }
-        Set(Enum s, Enum t, Enum u) { set(s).set(t).set(u); }
-        Set(Enum s, Enum t, Enum u, Enum v) { set(s).set(t).set(u).set(v); }
+        Set(Enum s, Enum t) { std::bitset<MaxEnum + 1>::set(s).set(t); }
+        Set(Enum s, Enum t, Enum u) { std::bitset<MaxEnum + 1>::set(s).set(t).set(u); }
+        Set(Enum s, Enum t, Enum u, Enum v) { std::bitset<MaxEnum + 1>::set(s).set(t).set(u).set(v); }
     };
 
 
@@ -60,13 +60,13 @@ class StateMonitor : public Waitable
     operator Enum() const { return state; }
 
     /** @pre Caller holds a ScopedLock */
-    void waitFor(Enum s) { ScopedWait(*this); while (s != state) wait(); }
+    void waitFor(Enum s) { ScopedWait w(*this); while (s != state) wait(); }
     /** @pre Caller holds a ScopedLock */
-    void waitFor(Set s) { ScopedWait(*this); while (!s.test(state)) wait(); }
+    void waitFor(Set s) { ScopedWait w(*this); while (!s.test(state)) wait(); }
     /** @pre Caller holds a ScopedLock */
-    void waitNot(Enum s) { ScopedWait(*this); while (s == state) wait(); }
+    void waitNot(Enum s) { ScopedWait w(*this); while (s == state) wait(); }
     /** @pre Caller holds a ScopedLock */
-    void waitNot(Set s) { ScopedWait(*this); while (s.test(state)) wait(); }
+    void waitNot(Set s) { ScopedWait w(*this); while (s.test(state)) wait(); }
     
   private:
     Enum state;

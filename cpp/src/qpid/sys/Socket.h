@@ -33,21 +33,21 @@ namespace sys {
 class Duration;
 class SocketAddress;
 
-class Socket : public IOHandle
+class QPID_COMMON_CLASS_EXTERN Socket : public IOHandle
 {
 public:
     /** Create a socket wrapper for descriptor. */
     QPID_COMMON_EXTERN Socket();
 
-    /** Set timeout for read and write */
-    void setTimeout(const Duration& interval) const;
+    /** Create a new Socket which is the same address family as this one */
+    QPID_COMMON_EXTERN Socket* createSameTypeSocket() const;
 
     /** Set socket non blocking */
     void setNonblocking() const;
 
     QPID_COMMON_EXTERN void setTcpNoDelay() const;
 
-    QPID_COMMON_EXTERN void connect(const std::string& host, uint16_t port) const;
+    QPID_COMMON_EXTERN void connect(const std::string& host, const std::string& port) const;
     QPID_COMMON_EXTERN void connect(const SocketAddress&) const;
 
     QPID_COMMON_EXTERN void close() const;
@@ -57,18 +57,8 @@ public:
      *@param backlog maximum number of pending connections.
      *@return The bound port.
      */
-    QPID_COMMON_EXTERN int listen(uint16_t port = 0, int backlog = 10) const;
+    QPID_COMMON_EXTERN int listen(const std::string& host = "", const std::string& port = "0", int backlog = 10) const;
     QPID_COMMON_EXTERN int listen(const SocketAddress&, int backlog = 10) const;
-
-    /** Returns the "socket name" ie the address bound to
-     * the near end of the socket
-     */
-    QPID_COMMON_EXTERN std::string getSockname() const;
-
-    /** Returns the "peer name" ie the address bound to
-     * the remote end of the socket
-     */
-    std::string getPeername() const;
 
     /**
      * Returns an address (host and port) for the remote end of the
@@ -84,16 +74,13 @@ public:
     /**
      * Returns the full address of the connection: local and remote host and port.
      */
-    QPID_COMMON_EXTERN std::string getFullAddress() const { return getLocalAddress()+"-"+getPeerAddress(); }
-
-    QPID_COMMON_EXTERN uint16_t getLocalPort() const;
-    uint16_t getRemotePort() const;
+    QPID_COMMON_INLINE_EXTERN std::string getFullAddress() const { return getLocalAddress()+"-"+getPeerAddress(); }
 
     /**
      * Returns the error code stored in the socket.  This may be used
      * to determine the result of a non-blocking connect.
      */
-    int getError() const;
+    QPID_COMMON_EXTERN int getError() const;
 
     /** Accept a connection from a socket that is already listening
      * and has an incoming connection
@@ -108,8 +95,11 @@ private:
     /** Create socket */
     void createSocket(const SocketAddress&) const;
 
+    /** Construct socket with existing handle */
     Socket(IOHandlePrivate*);
-    mutable std::string connectname;
+
+    mutable std::string localname;
+    mutable std::string peername;
     mutable bool nonblocking;
     mutable bool nodelay;
 };

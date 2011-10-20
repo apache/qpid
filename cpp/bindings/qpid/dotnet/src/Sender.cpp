@@ -84,7 +84,7 @@ namespace Messaging {
     }
 
 
-    // Copy constructor
+    // Copy constructor look-alike (C#)
     Sender::Sender(const Sender ^ sender)
         : parentSession(sender->parentSession)
     {
@@ -94,6 +94,29 @@ namespace Messaging {
 		{
             senderp = new ::qpid::messaging::Sender(
                         *(const_cast<Sender ^>(sender)->NativeSender));
+        } 
+        catch (const ::qpid::types::Exception & error) 
+		{
+            String ^ errmsg = gcnew String(error.what());
+            newException    = gcnew QpidException(errmsg);
+        }
+
+		if (newException != nullptr) 
+		{
+	        throw newException;
+		}
+    }
+
+    // Copy constructor implicitly dereferenced (C++)
+    Sender::Sender(const Sender % sender)
+        : parentSession(sender.parentSession)
+    {
+        System::Exception ^ newException = nullptr;
+
+        try 
+		{
+            senderp = new ::qpid::messaging::Sender(
+                        *(const_cast<Sender %>(sender).NativeSender));
         } 
         catch (const ::qpid::types::Exception & error) 
 		{

@@ -63,6 +63,10 @@ public abstract class HouseKeepingTask implements Runnable
         {
             _logger.warn(this.getClass().getSimpleName() + " throw exception: " + e, e);
         }
+        finally
+        {
+            CurrentActor.remove();
+        }
     }
 
     public VirtualHost getVirtualHost()

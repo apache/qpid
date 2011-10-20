@@ -52,6 +52,7 @@ import org.apache.qpid.server.store.StoredMessage;
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.util.InternalBrokerBaseCase;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -276,7 +277,7 @@ public class AbstractHeadersExchangeTestBase extends InternalBrokerBaseCase
     static ContentHeaderBody getContentHeader(FieldTable headers)
     {
         ContentHeaderBody header = new ContentHeaderBody();
-        header.properties = getProperties(headers);
+        header.setProperties(getProperties(headers));
         return header;
     }
 
@@ -428,19 +429,9 @@ public class AbstractHeadersExchangeTestBase extends InternalBrokerBaseCase
                     //To change body of implemented methods use File | Settings | File Templates.
                 }
 
-                public void reject(Subscription subscription)
-                {
-                    //To change body of implemented methods use File | Settings | File Templates.
-                }
-
-                public boolean isRejectedBy(Subscription subscription)
+                public boolean isRejectedBy(long subscriptionId)
                 {
                     return false;  //To change body of implemented methods use File | Settings | File Templates.
-                }
-
-                public void requeue(Subscription subscription) 
-                {
-                    //To change body of implemented methods use File | Settings | File Templates.
                 }
 
                 public void dequeue()
@@ -481,6 +472,16 @@ public class AbstractHeadersExchangeTestBase extends InternalBrokerBaseCase
                 public int compareTo(final QueueEntry o)
                 {
                     return 0;  //To change body of implemented methods use File | Settings | File Templates.
+                }
+
+                public boolean isDequeued()
+                {
+                    return false;
+                }
+
+                public boolean isDispensed()
+                {
+                    return false;
                 }
             };
 
@@ -565,8 +566,8 @@ public class AbstractHeadersExchangeTestBase extends InternalBrokerBaseCase
             int pos = 0;
             for(ContentBody body : bodies)
             {
-                storedMessage.addContent(pos, body.payload.duplicate().buf());
-                pos += body.payload.limit();
+                storedMessage.addContent(pos, ByteBuffer.wrap(body._payload));
+                pos += body._payload.length;
             }
 
             _incoming = new TestIncomingMessage(getMessageId(),publish, protocolsession);

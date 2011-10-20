@@ -36,7 +36,7 @@ namespace types {
 /**
  * Thrown when an illegal conversion of a variant is attempted.
  */
-struct InvalidConversion : public Exception 
+struct QPID_TYPES_CLASS_EXTERN InvalidConversion : public Exception 
 {
     InvalidConversion(const std::string& msg);
 };
@@ -60,12 +60,14 @@ enum VariantType {
     VAR_UUID
 };
 
+std::string getTypeName(VariantType type);
+
 class VariantImpl;
 
 /**
  * Represents a value of variable type.
  */
-class Variant
+class QPID_TYPES_CLASS_EXTERN Variant
 {
   public:
     typedef std::map<std::string, Variant> Map;

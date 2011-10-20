@@ -42,7 +42,7 @@ class Session;
  * A connection represents a network connection to a remote endpoint.
  */
 
-class Connection : public qpid::messaging::Handle<ConnectionImpl>
+class QPID_MESSAGING_CLASS_EXTERN Connection : public qpid::messaging::Handle<ConnectionImpl>
 {
   public:
     QPID_MESSAGING_EXTERN Connection(ConnectionImpl* impl);
@@ -54,27 +54,27 @@ class Connection : public qpid::messaging::Handle<ConnectionImpl>
      *     username
      *     password
      *     heartbeat
-     *     tcp-nodelay
-     *     sasl-mechanism
-     *     sasl-service
-     *     sasl-min-ssf
-     *     sasl-max-ssf
+     *     tcp_nodelay
+     *     sasl_mechanisms
+     *     sasl_service
+     *     sasl_min_ssf
+     *     sasl_max_ssf
      *     transport
      * 
      * Reconnect behaviour can be controlled through the following options:
      * 
      *     reconnect: true/false (enables/disables reconnect entirely)
-     *     reconnect-timeout: number of seconds (give up and report failure after specified time)
-     *     reconnect-limit: n (give up and report failure after specified number of attempts)
-     *     reconnect-interval-min: number of seconds (initial delay between failed reconnection attempts)
-     *     reconnect-interval-max: number of seconds (maximum delay between failed reconnection attempts)
-     *     reconnect-interval: shorthand for setting the same reconnect_interval_min/max
-     *     reconnect-urls: list of alternate urls to try when connecting
+     *     reconnect_timeout: number of seconds (give up and report failure after specified time)
+     *     reconnect_limit: n (give up and report failure after specified number of attempts)
+     *     reconnect_interval_min: number of seconds (initial delay between failed reconnection attempts)
+     *     reconnect_interval_max: number of seconds (maximum delay between failed reconnection attempts)
+     *     reconnect_interval: shorthand for setting the same reconnect_interval_min/max
+     *     reconnect_urls: list of alternate urls to try when connecting
      *
-     *     The reconnect-interval is the time that the client waits
+     *     The reconnect_interval is the time that the client waits
      *     for after a failed attempt to reconnect before retrying. It
-     *     starts at the value of the min-retry-interval and is
-     *     doubled every failure until the value of max-retry-interval
+     *     starts at the value of the min_retry_interval and is
+     *     doubled every failure until the value of max_retry_interval
      *     is reached.
      */
     QPID_MESSAGING_EXTERN Connection(const std::string& url, const qpid::types::Variant::Map& options = qpid::types::Variant::Map());

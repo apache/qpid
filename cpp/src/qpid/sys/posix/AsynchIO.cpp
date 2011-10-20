@@ -149,11 +149,12 @@ private:
     ConnectedCallback connCallback;
     FailedCallback failCallback;
     const Socket& socket;
+    SocketAddress sa;
 
 public:
     AsynchConnector(const Socket& socket,
-                    std::string hostname,
-                    uint16_t port,
+                    const std::string& hostname,
+                    const std::string& port,
                     ConnectedCallback connCb,
                     FailedCallback failCb);
     void start(Poller::shared_ptr poller);
@@ -161,8 +162,8 @@ public:
 };
 
 AsynchConnector::AsynchConnector(const Socket& s,
-                                 std::string hostname,
-                                 uint16_t port,
+                                 const std::string& hostname,
+                                 const std::string& port,
                                  ConnectedCallback connCb,
                                  FailedCallback failCb) :
     DispatchHandle(s,
@@ -171,11 +172,13 @@ AsynchConnector::AsynchConnector(const Socket& s,
                    boost::bind(&AsynchConnector::connComplete, this, _1)),
     connCallback(connCb),
     failCallback(failCb),
-    socket(s)
+    socket(s),
+    sa(hostname, port)
 {
     socket.setNonblocking();
-    SocketAddress sa(hostname, boost::lexical_cast<std::string>(port));
+
     // Note, not catching any exceptions here, also has effect of destructing
+    QPID_LOG(info, "Connecting: " << sa.asString());
     socket.connect(sa);
 }
 
@@ -191,11 +194,26 @@ void AsynchConnector::stop()
 
 void AsynchConnector::connComplete(DispatchHandle& h)
 {
-    h.stopWatch();
     int errCode = socket.getError();
     if (errCode == 0) {
+        h.stopWatch();
         connCallback(socket);
     } else {
+        // Retry while we cause an immediate exception
+        // (asynch failure will be handled by re-entering here at the top)
+        while (sa.nextAddress()) {
+            try {
+                // Try next address without deleting ourselves
+                QPID_LOG(debug, "Ignored socket connect error: " << strError(errCode));
+                QPID_LOG(info, "Retrying connect: " << sa.asString());
+                socket.connect(sa);
+                return;
+            } catch (const std::exception& e) {
+                QPID_LOG(debug, "Ignored socket connect exception: " << e.what());
+            }
+            errCode = socket.getError();
+        }
+        h.stopWatch();
         failCallback(socket, errCode, strError(errCode));
     }
     DispatchHandle::doDelete();
@@ -589,8 +607,8 @@ AsynchAcceptor* AsynchAcceptor::create(const Socket& s,
 }
 
 AsynchConnector* AsynchConnector::create(const Socket& s,
-                                         std::string hostname,
-                                         uint16_t port,
+                                         const std::string& hostname,
+                                         const std::string& port,
                                          ConnectedCallback connCb,
                                          FailedCallback failCb)
 {

@@ -129,7 +129,7 @@ FieldTable::ValuePtr FieldTable::get(const std::string& name) const
 namespace {
     template <class T> T default_value() { return T(); }
     template <> int default_value<int>() { return 0; }
-    template <> uint64_t default_value<uint64_t>() { return 0; }
+  //template <> uint64_t default_value<uint64_t>() { return 0; }
 }
 
 template <class T>
@@ -198,10 +198,12 @@ void FieldTable::encode(Buffer& buffer) const {
 
 void FieldTable::decode(Buffer& buffer){
     clear();
+    if (buffer.available() < 4)
+        throw IllegalArgumentException(QPID_MSG("Not enough data for field table."));
     uint32_t len = buffer.getLong();
     if (len) {
         uint32_t available = buffer.available();
-        if (available < len)
+        if ((available < len) || (available < 4))
             throw IllegalArgumentException(QPID_MSG("Not enough data for field table."));
         uint32_t count = buffer.getLong();
         uint32_t leftover = available - len;

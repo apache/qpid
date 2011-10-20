@@ -20,6 +20,13 @@
  */
 package org.apache.qpid.client.handler;
 
+import java.io.UnsupportedEncodingException;
+import java.util.StringTokenizer;
+
+import javax.security.sasl.Sasl;
+import javax.security.sasl.SaslClient;
+import javax.security.sasl.SaslException;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.apache.qpid.client.security.AMQCallbackHandler;
@@ -34,17 +41,8 @@ import org.apache.qpid.framing.ConnectionStartOkBody;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.FieldTableFactory;
 import org.apache.qpid.framing.ProtocolVersion;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import javax.security.sasl.Sasl;
-import javax.security.sasl.SaslClient;
-import javax.security.sasl.SaslException;
-
-import java.io.UnsupportedEncodingException;
-import java.util.HashSet;
-import java.util.StringTokenizer;
 
 public class ConnectionStartMethodHandler implements StateAwareMethodListener<ConnectionStartBody>
 {
@@ -197,40 +195,20 @@ public class ConnectionStartMethodHandler implements StateAwareMethodListener<Co
     private String chooseMechanism(byte[] availableMechanisms) throws UnsupportedEncodingException
     {
         final String mechanisms = new String(availableMechanisms, "utf8");
-        StringTokenizer tokenizer = new StringTokenizer(mechanisms, " ");
-        HashSet mechanismSet = new HashSet();
-        while (tokenizer.hasMoreTokens())
-        {
-            mechanismSet.add(tokenizer.nextToken());
-        }
-
-        String preferredMechanisms = CallbackHandlerRegistry.getInstance().getMechanisms();
-        StringTokenizer prefTokenizer = new StringTokenizer(preferredMechanisms, " ");
-        while (prefTokenizer.hasMoreTokens())
-        {
-            String mech = prefTokenizer.nextToken();
-            if (mechanismSet.contains(mech))
-            {
-                return mech;
-            }
-        }
-
-        return null;
+        return CallbackHandlerRegistry.getInstance().selectMechanism(mechanisms);
     }
 
     private AMQCallbackHandler createCallbackHandler(String mechanism, AMQProtocolSession protocolSession)
         throws AMQException
     {
-        Class mechanismClass = CallbackHandlerRegistry.getInstance().getCallbackHandlerClass(mechanism);
         try
         {
-            Object instance = mechanismClass.newInstance();
-            AMQCallbackHandler cbh = (AMQCallbackHandler) instance;
-            cbh.initialise(protocolSession);
+            AMQCallbackHandler instance = CallbackHandlerRegistry.getInstance().createCallbackHandler(mechanism);
+            instance.initialise(protocolSession.getAMQConnection().getConnectionURL());
 
-            return cbh;
+            return instance;
         }
-        catch (Exception e)
+        catch (IllegalArgumentException e)
         {
             throw new AMQException(null, "Unable to create callback handler: " + e, e);
         }

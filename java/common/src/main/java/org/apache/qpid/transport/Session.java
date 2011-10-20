@@ -30,6 +30,8 @@ import static org.apache.qpid.transport.Session.State.DETACHED;
 import static org.apache.qpid.transport.Session.State.NEW;
 import static org.apache.qpid.transport.Session.State.OPEN;
 import static org.apache.qpid.transport.Session.State.RESUMING;
+
+import org.apache.qpid.configuration.ClientProperties;
 import org.apache.qpid.transport.network.Frame;
 import static org.apache.qpid.transport.util.Functions.mod;
 import org.apache.qpid.transport.util.Logger;
@@ -42,7 +44,9 @@ import static org.apache.qpid.util.Serial.max;
 import static org.apache.qpid.util.Strings.toUTF8;
 
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
@@ -55,7 +59,6 @@ import java.util.concurrent.TimeUnit;
 
 public class Session extends SessionInvoker
 {
-
     private static final Logger log = Logger.get(Session.class);
 
     public enum State { NEW, DETACHED, RESUMING, OPEN, CLOSING, CLOSED }
@@ -89,7 +92,9 @@ public class Session extends SessionInvoker
     private int channel;
     private SessionDelegate delegate;
     private SessionListener listener = new DefaultSessionListener();
-    private long timeout = 60000;
+    private final long timeout = Long.getLong(ClientProperties.QPID_SYNC_OP_TIMEOUT,
+                                        Long.getLong(ClientProperties.AMQJ_DEFAULT_SYNCWRITE_TIMEOUT,
+                                                     ClientProperties.DEFAULT_SYNC_OPERATION_TIMEOUT));
     private boolean autoSync = false;
 
     private boolean incomingInit;
@@ -117,7 +122,9 @@ public class Session extends SessionInvoker
 
     private Thread resumer = null;
     private boolean transacted = false;
-    
+    private SessionDetachCode detachCode;
+    private final Object stateLock = new Object();
+
     protected Session(Connection connection, Binary name, long expiry)
     {
         this(connection, new SessionDelegate(), name, expiry);
@@ -252,6 +259,8 @@ public class Session extends SessionInvoker
     {
         synchronized (commands)
         {
+            attach();
+
             for (int i = maxComplete + 1; lt(i, commandsOut); i++)
             {
                 Method m = commands[mod(i, commands.length)];
@@ -262,16 +271,48 @@ public class Session extends SessionInvoker
                 }
                 else if (m instanceof MessageTransfer)
                 {
-                    ((MessageTransfer)m).getHeader().get(DeliveryProperties.class).setRedelivered(true);
+                	MessageTransfer xfr = (MessageTransfer)m;
+                	
+                	if (xfr.getHeader() != null)
+                	{
+                		if (xfr.getHeader().get(DeliveryProperties.class) != null)
+                		{
+                		   xfr.getHeader().get(DeliveryProperties.class).setRedelivered(true);
+                		}
+                		else
+                		{
+                			Struct[] structs = xfr.getHeader().getStructs();
+                			DeliveryProperties deliveryProps = new DeliveryProperties();
+                    		deliveryProps.setRedelivered(true);
+                    		
+                    		List<Struct> list = Arrays.asList(structs);
+                    		list.add(deliveryProps);
+                    		xfr.setHeader(new Header(list));
+                		}
+                		
+                	}
+                	else
+                	{
+                		DeliveryProperties deliveryProps = new DeliveryProperties();
+                		deliveryProps.setRedelivered(true);
+                		xfr.setHeader(new Header(deliveryProps));
+                	}
                 }
                 sessionCommandPoint(m.getId(), 0);
                 send(m);
             }
-           
+
             sessionCommandPoint(commandsOut, 0);
+
             sessionFlush(COMPLETED);
             resumer = Thread.currentThread();
             state = RESUMING;
+
+            if(isTransacted())
+            {
+                txSelect();
+            }
+
             listener.resumed(this);
             resumer = null;
         }
@@ -422,7 +463,10 @@ public class Session extends SessionInvoker
             {
                 return;
             }
-            sessionCompleted(copy, options);
+            if (copy.size() > 0)
+            {
+	            sessionCompleted(copy, options);
+            }
         }
     }
 
@@ -532,17 +576,6 @@ public class Session extends SessionInvoker
     {
         if (m.getEncodedTrack() == Frame.L4)
         {
-            
-            if (state == DETACHED && transacted)
-            {
-                state = CLOSED;
-                delegate.closed(this);
-                connection.removeSession(this);
-                throw new SessionException(
-                        "Session failed over, possibly in the middle of a transaction. " +
-                        "Closing the session. Any Transaction in progress will be rolledback.");
-            }
-            
             if (m.hasPayload())
             {
                 acquireCredit();
@@ -550,24 +583,30 @@ public class Session extends SessionInvoker
             
             synchronized (commands)
             {
-                if (state == DETACHED && m.isUnreliable())
-                {
-                    Thread current = Thread.currentThread();
-                    if (!current.equals(resumer))
-                    {
-                        return;
-                    }
-                }
+                //allow the txSelect operation to be invoked during resume
+                boolean skipWait = m instanceof TxSelect && state == RESUMING;
 
-                if (state != OPEN && state != CLOSED && state != CLOSING)
+                if(!skipWait)
                 {
-                    Thread current = Thread.currentThread();
-                    if (!current.equals(resumer))
+                    if (state == DETACHED && m.isUnreliable())
                     {
-                        Waiter w = new Waiter(commands, timeout);
-                        while (w.hasTime() && (state != OPEN && state != CLOSED))
+                        Thread current = Thread.currentThread();
+                        if (!current.equals(resumer))
                         {
-                            w.await();
+                            return;
+                        }
+                    }
+
+                    if (state != OPEN && state != CLOSED && state != CLOSING)
+                    {
+                        Thread current = Thread.currentThread();
+                        if (!current.equals(resumer))
+                        {
+                            Waiter w = new Waiter(commands, timeout);
+                            while (w.hasTime() && (state != OPEN && state != CLOSED))
+                            {
+                                w.await();
+                            }
                         }
                     }
                 }
@@ -661,7 +700,12 @@ public class Session extends SessionInvoker
                 {
                     sessionCommandPoint(0, 0);
                 }
-                if ((!closing && !transacted && m instanceof MessageTransfer) || m.hasCompletionListener())
+                
+                boolean replayTransfer = !closing && !transacted &&
+                                         m instanceof MessageTransfer &&
+                                         ! m.isUnreliable();
+                
+                if ((replayTransfer) || m.hasCompletionListener())
                 {
                     commands[mod(next, commands.length)] = m;
                     commandBytes += m.getBodySize();
@@ -926,16 +970,29 @@ public class Session extends SessionInvoker
 
     public void close()
     {
+        if (log.isDebugEnabled())
+        {
+            log.debug("Closing [%s] in state [%s]", this, state);
+        }
         synchronized (commands)
         {
-            state = CLOSING;
-            setClose(true);
-            sessionRequestTimeout(0);
-            sessionDetach(name.getBytes());
-
-            awaitClose();
- 
-
+            switch(state)
+            {
+                case DETACHED:
+                    state = CLOSED;
+                    delegate.closed(this);
+                    connection.removeSession(this);
+                    listener.closed(this);
+                    break;
+                case CLOSED:
+                    break;
+                default:
+                    state = CLOSING;
+                    setClose(true);
+                    sessionRequestTimeout(0);
+                    sessionDetach(name.getBytes());
+                    awaitClose();
+            }
         }
     }
 
@@ -995,7 +1052,8 @@ public class Session extends SessionInvoker
 
         if(state == CLOSED)
         {
-            connection.removeSession(this);            
+            connection.removeSession(this);   
+            listener.closed(this);
         }
     }
 
@@ -1008,13 +1066,55 @@ public class Session extends SessionInvoker
     {
         return String.format("ssn:%s", name);
     }
-    
+
     public void setTransacted(boolean b) {
         this.transacted = b;
     }
-    
+
     public boolean isTransacted(){
         return transacted;
     }
-    
+
+    public void setDetachCode(SessionDetachCode dtc)
+    {
+        this.detachCode = dtc;
+    }
+
+    public SessionDetachCode getDetachCode()
+    {
+        return this.detachCode;
+    }
+
+    public void awaitOpen()
+    {
+        switch (state)
+        {
+        case NEW:
+            synchronized(stateLock)
+            {
+                Waiter w = new Waiter(stateLock, timeout);
+                while (w.hasTime() && state == NEW)
+                {
+                    w.await();
+                }
+            }
+
+            if (state != OPEN)
+            {
+                throw new SessionException("Timed out waiting for Session to open");
+            }
+            break;
+        case DETACHED:
+        case CLOSING:
+        case CLOSED:
+            throw new SessionException("Session closed");
+        default :
+            break;
+        }
+    }
+
+    public Object getStateLock()
+    {
+        return stateLock;
+    }
 }
