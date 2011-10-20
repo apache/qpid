@@ -583,30 +583,24 @@ public class Session extends SessionInvoker
             
             synchronized (commands)
             {
-                //allow the txSelect operation to be invoked during resume
-                boolean skipWait = m instanceof TxSelect && state == RESUMING;
-
-                if(!skipWait)
+                if (state == DETACHED && m.isUnreliable())
                 {
-                    if (state == DETACHED && m.isUnreliable())
+                    Thread current = Thread.currentThread();
+                    if (!current.equals(resumer))
                     {
-                        Thread current = Thread.currentThread();
-                        if (!current.equals(resumer))
-                        {
-                            return;
-                        }
+                        return;
                     }
+                }
 
-                    if (state != OPEN && state != CLOSED && state != CLOSING)
+                if (state != OPEN && state != CLOSED && state != CLOSING)
+                {
+                    Thread current = Thread.currentThread();
+                    if (!current.equals(resumer))
                     {
-                        Thread current = Thread.currentThread();
-                        if (!current.equals(resumer))
+                        Waiter w = new Waiter(commands, timeout);
+                        while (w.hasTime() && (state != OPEN && state != CLOSED))
                         {
-                            Waiter w = new Waiter(commands, timeout);
-                            while (w.hasTime() && (state != OPEN && state != CLOSED))
-                            {
-                                w.await();
-                            }
+                            w.await();
                         }
                     }
                 }
