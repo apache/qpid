@@ -43,7 +43,7 @@ class AsynchIOProtocolFactory : public ProtocolFactory {
     uint16_t listeningPort;
 
   public:
-    AsynchIOProtocolFactory(const std::string& host, const std::string& port, int backlog, bool nodelay);
+    AsynchIOProtocolFactory(const std::string& host, const std::string& port, int backlog, bool nodelay, bool shouldListen);
     void accept(Poller::shared_ptr, ConnectionCodec::Factory*);
     void connect(Poller::shared_ptr, const std::string& host, const std::string& port,
                  ConnectionCodec::Factory*,
@@ -57,6 +57,20 @@ class AsynchIOProtocolFactory : public ProtocolFactory {
     void connectFailed(const Socket&, int, const std::string&, ConnectFailedCallback);
 };
 
+static bool sslMultiplexEnabled(void)
+{
+    Options o;
+    Plugin::addOptions(o);
+
+    if (o.find_nothrow("ssl-multiplex", false)) {
+        // This option is added by the SSL plugin when the SSL port
+        // is configured to be the same as the main port.
+        QPID_LOG(notice, "SSL multiplexing enabled");
+        return true;
+    }
+    return false;
+}
+
 // Static instance to initialise plugin
 static class TCPIOPlugin : public Plugin {
     void earlyInitialize(Target&) {
@@ -67,20 +81,31 @@ static class TCPIOPlugin : public Plugin {
         // Only provide to a Broker
         if (broker) {
             const broker::Broker::Options& opts = broker->getOptions();
+
+            // Check for SSL on the same port
+            bool shouldListen = !sslMultiplexEnabled();
+
             ProtocolFactory::shared_ptr protocolt(
                 new AsynchIOProtocolFactory(
                     "", boost::lexical_cast<std::string>(opts.port),
                     opts.connectionBacklog,
-                    opts.tcpNoDelay));
-            QPID_LOG(notice, "Listening on TCP/TCP6 port " << protocolt->getPort());
+                    opts.tcpNoDelay,
+                    shouldListen));
+            if (shouldListen) {
+                QPID_LOG(notice, "Listening on TCP/TCP6 port " << protocolt->getPort());
+            }
             broker->registerProtocolFactory("tcp", protocolt);
         }
     }
 } tcpPlugin;
 
-AsynchIOProtocolFactory::AsynchIOProtocolFactory(const std::string& host, const std::string& port, int backlog, bool nodelay) :
+AsynchIOProtocolFactory::AsynchIOProtocolFactory(const std::string& host, const std::string& port, int backlog, bool nodelay, bool shouldListen) :
     tcpNoDelay(nodelay)
 {
+    if (!shouldListen) {
+        return;
+    }
+
     SocketAddress sa(host, port);
 
     // We must have at least one resolved address
