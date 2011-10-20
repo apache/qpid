@@ -23,6 +23,7 @@
  */
 
 #include "qpid/sys/IOHandle.h"
+#include "qpid/sys/Socket.h"
 #include <nspr.h>
 
 #include <string>
@@ -36,7 +37,7 @@ class Duration;
 
 namespace ssl {
 
-class SslSocket : public qpid::sys::IOHandle
+class SslSocket : public qpid::sys::Socket
 {
 public:
     /** Create a socket wrapper for descriptor. */
@@ -75,45 +76,13 @@ public:
     int read(void *buf, size_t count) const;
     int write(const void *buf, size_t count) const;
 
-    /** Returns the "socket name" ie the address bound to
-     * the near end of the socket
-     */
-    std::string getSockname() const;
-
-    /** Returns the "peer name" ie the address bound to
-     * the remote end of the socket
-     */
-    std::string getPeername() const;
-
-    /**
-     * Returns an address (host and port) for the remote end of the
-     * socket
-     */
-    std::string getPeerAddress() const;
-    /**
-     * Returns an address (host and port) for the local end of the
-     * socket
-     */
-    std::string getLocalAddress() const;
-
-    /**
-     * Returns the full address of the connection: local and remote host and port.
-     */
-    std::string getFullAddress() const { return getLocalAddress()+"-"+getPeerAddress(); }
-
     uint16_t getLocalPort() const;
     uint16_t getRemotePort() const;
-
-    /**
-     * Returns the error code stored in the socket.  This may be used
-     * to determine the result of a non-blocking connect.
-     */
-    int getError() const;
 
     int getKeyLen() const;
     std::string getClientAuthId() const;
 
-private:
+protected:
     mutable std::string connectname;
     mutable PRFileDesc* socket;
     std::string certname;
@@ -126,6 +95,13 @@ private:
     mutable PRFileDesc* prototype;
 
     SslSocket(IOHandlePrivate* ioph, PRFileDesc* model);
+    friend class SslMuxSocket;
+};
+
+class SslMuxSocket : public SslSocket
+{
+public:
+    Socket* accept() const;
 };
 
 }}}
