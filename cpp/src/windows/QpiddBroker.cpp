@@ -19,17 +19,9 @@
  *
  */
 
-#ifdef HAVE_CONFIG_H
-#  include "config.h"
-#else
-// These need to be made something sensible, like reading a value from
-// the registry. But for now, get things going with a local definition.
-namespace {
-const char *QPIDD_CONF_FILE = "qpid_broker.conf";
-const char *QPIDD_MODULE_DIR = ".";
-}
-#endif
+#include "config.h"
 #include "qpidd.h"
+#include "SCM.h"
 #include "qpid/Exception.h"
 #include "qpid/Options.h"
 #include "qpid/Plugin.h"
@@ -205,7 +197,55 @@ struct BrokerInfo {
     DWORD pid;
 };
 
+// Service-related items. Only involved when running the broker as a Windows
+// service.
+
+const std::string svcName = "qpidd";
+SERVICE_STATUS svcStatus;
+SERVICE_STATUS_HANDLE svcStatusHandle = 0;
+
+// This function is only called when the broker is run as a Windows
+// service. It receives control requests from Windows.
+VOID WINAPI SvcCtrlHandler(DWORD control)
+{
+    switch(control) {
+    case SERVICE_CONTROL_STOP:
+        svcStatus.dwCurrentState = SERVICE_STOP_PENDING;
+        svcStatus.dwControlsAccepted = 0;
+        svcStatus.dwCheckPoint = 1;
+        svcStatus.dwWaitHint = 5000;  // 5 secs.
+        ::SetServiceStatus(svcStatusHandle, &svcStatus);
+        CtrlHandler(CTRL_C_EVENT);
+        break;
+ 
+    case SERVICE_CONTROL_INTERROGATE:
+        break;
+ 
+    default:
+        break;
+    }
 }
+
+VOID WINAPI ServiceMain(DWORD argc, LPTSTR *argv)
+{
+    ::memset(&svcStatus, 0, sizeof(svcStatus));
+    svcStatusHandle = ::RegisterServiceCtrlHandler(svcName.c_str(),
+                                                   SvcCtrlHandler);
+    svcStatus.dwServiceType = SERVICE_WIN32_OWN_PROCESS;
+    svcStatus.dwCheckPoint = 1;
+    svcStatus.dwWaitHint = 10000;  // 10 secs.
+    svcStatus.dwCurrentState = SERVICE_START_PENDING;
+    ::SetServiceStatus(svcStatusHandle, &svcStatus);
+    // QpiddBroker class resets state to running.
+    svcStatus.dwWin32ExitCode = run_broker(argc, argv, true);
+    svcStatus.dwCurrentState = SERVICE_STOPPED;
+    svcStatus.dwCheckPoint = 0;
+    svcStatus.dwWaitHint = 0;
+    ::SetServiceStatus(svcStatusHandle, &svcStatus);
+}
+
+}  // namespace
+
 
 struct ProcessControlOptions : public qpid::Options {
     bool quit;
@@ -225,9 +265,49 @@ struct ProcessControlOptions : public qpid::Options {
     }
 };
 
+struct ServiceOptions : public qpid::Options {
+    bool install;
+    bool start;
+    bool stop;
+    bool uninstall;
+    bool daemon;
+    std::string startType;
+    std::string startArgs;
+    std::string account;
+    std::string password;
+    std::string depends;
+
+    ServiceOptions() 
+        : qpid::Options("Service options"),
+          install(false),
+          start(false),
+          stop(false),
+          uninstall(false),
+          daemon(false),
+          startType("demand"),
+          startArgs(""),
+          account("NT AUTHORITY\\LocalService"),
+          password(""),
+          depends("")
+    {
+        addOptions()
+            ("install", qpid::optValue(install), "Install as service")
+            ("start-type", qpid::optValue(startType, "auto|demand|disabled"), "Service start type\nApplied at install time only.")
+            ("arguments", qpid::optValue(startArgs, "COMMAND LINE ARGS"), "Arguments to pass when service auto-starts")
+            ("account", qpid::optValue(account, "(LocalService)"), "Account to run as, default is LocalService\nApplied at install time only.")
+            ("password", qpid::optValue(password, "PASSWORD"), "Account password, if needed\nApplied at install time only.")
+            ("depends", qpid::optValue(depends, "(comma delimited list)"), "Names of services that must start before this service\nApplied at install time only.")
+            ("start", qpid::optValue(start), "Start the service.")
+            ("stop", qpid::optValue(stop), "Stop the service.")
+            ("uninstall", qpid::optValue(uninstall), "Uninstall the service.");
+    }
+};
+
 struct QpiddWindowsOptions : public QpiddOptionsPrivate {
     ProcessControlOptions control;
+    ServiceOptions service;
     QpiddWindowsOptions(QpiddOptions *parent) : QpiddOptionsPrivate(parent) {
+        parent->add(service);
         parent->add(control);
     }
 };
@@ -253,11 +333,62 @@ void QpiddOptions::usage() const {
 }
 
 int QpiddBroker::execute (QpiddOptions *options) {
+
+    // If running as a service, bump the status checkpoint to let SCM know
+    // we're still making progress.
+    if (svcStatusHandle != 0) {
+        svcStatus.dwCheckPoint++;
+        ::SetServiceStatus(svcStatusHandle, &svcStatus);
+    }
+
     // Options that affect a running daemon.
     QpiddWindowsOptions *myOptions =
-      reinterpret_cast<QpiddWindowsOptions *>(options->platform.get());
+        reinterpret_cast<QpiddWindowsOptions *>(options->platform.get());
     if (myOptions == 0)
         throw qpid::Exception("Internal error obtaining platform options");
+
+    if (myOptions->service.install) {
+        // Handle start type
+        DWORD startType;
+        if (myOptions->service.startType.compare("demand") == 0)
+            startType = SERVICE_DEMAND_START;
+        else if (myOptions->service.startType.compare("auto") == 0)
+            startType = SERVICE_AUTO_START;
+        else if (myOptions->service.startType.compare("disabled") == 0)
+            startType = SERVICE_DISABLED;
+        else if (!myOptions->service.startType.empty())
+            throw qpid::Exception("Invalid service start type: " +
+                                  myOptions->service.startType);
+
+        // Install service and exit
+        qpid::windows::SCM manager;
+        manager.install(svcName,
+                        "Apache Qpid Message Broker",
+                        myOptions->service.startArgs,
+                        startType,
+                        myOptions->service.account,
+                        myOptions->service.password,
+                        myOptions->service.depends);
+        return 0;
+    }
+
+    if (myOptions->service.start) {
+        qpid::windows::SCM manager;
+        manager.start(svcName);
+        return 0;
+    }
+
+    if (myOptions->service.stop) {
+        qpid::windows::SCM manager;
+        manager.stop(svcName);
+        return 0;
+    }
+
+    if (myOptions->service.uninstall) {
+        qpid::windows::SCM manager;
+        manager.uninstall(svcName);
+        return 0;
+    }
 
     if (myOptions->control.check || myOptions->control.quit) {
         // Relies on port number being set via --port or QPID_PORT env variable.
@@ -301,10 +432,41 @@ int QpiddBroker::execute (QpiddOptions *options) {
     ::SetConsoleCtrlHandler((PHANDLER_ROUTINE)CtrlHandler, TRUE);
     brokerPtr->accept();
     std::cout << options->broker.port << std::endl;
+
+    // If running as a service, tell SCM we're up. There's still a chance
+    // that store recovery will drag out the time before the broker actually
+    // responds to requests, but integrating that mechanism with the SCM
+    // updating is probably more work than it's worth.
+    if (svcStatusHandle != 0) {
+        svcStatus.dwCheckPoint = 0;
+        svcStatus.dwWaitHint = 0;
+        svcStatus.dwControlsAccepted = SERVICE_ACCEPT_STOP;
+        svcStatus.dwCurrentState = SERVICE_RUNNING;
+        ::SetServiceStatus(svcStatusHandle, &svcStatus);
+    }
+
     brokerPtr->run();
     waitShut.signal();   // In case we shut down some other way
     waitThr.join();
+    return 0;
+}
 
-    // CloseHandle(h);
+
+int main(int argc, char* argv[])
+{
+    // If started as a service, notify the SCM we're up. Else just run.
+    // If as a service, StartServiceControlDispatcher doesn't return until
+    // the service is stopped.
+    SERVICE_TABLE_ENTRY dispatchTable[] =
+    {
+        { "", (LPSERVICE_MAIN_FUNCTION)ServiceMain },
+        { NULL, NULL }
+    };
+    if (!StartServiceCtrlDispatcher(dispatchTable)) {
+        DWORD err = ::GetLastError();
+        if (err == ERROR_FAILED_SERVICE_CONTROLLER_CONNECT) // Run as console
+            return run_broker(argc, argv);
+        throw QPID_WINDOWS_ERROR(err);
+    }
     return 0;
 }
