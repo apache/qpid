@@ -238,7 +238,7 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
         }
         catch (Exception e)
         {
-            JMSException jmse = new JMSException("Exception when sending message");
+            JMSException jmse = new JMSException("Exception when sending message:" + e.getMessage());
             jmse.setLinkedException(e);
             jmse.initCause(e);
             throw jmse;
