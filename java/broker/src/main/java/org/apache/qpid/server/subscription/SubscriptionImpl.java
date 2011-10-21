@@ -88,9 +88,7 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
 
     private final Lock _stateChangeLock;
 
-    private static final AtomicLong idGenerator = new AtomicLong(0);
-    // Create a simple ID that increments for ever new Subscription
-    private final long _subscriptionID = idGenerator.getAndIncrement();
+    private final long _subscriptionID;
     private LogSubject _logSubject;
     private LogActor _logActor;
     private UUID _id;
@@ -104,10 +102,11 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
                                    AMQShortString consumerTag, FieldTable filters,
                                    boolean noLocal, FlowCreditManager creditManager,
                                    ClientDeliveryMethod deliveryMethod,
-                                   RecordDeliveryMethod recordMethod)
+                                   RecordDeliveryMethod recordMethod,
+                                   long subscriptionID)
             throws AMQException
         {
-            super(channel, protocolSession, consumerTag, filters, noLocal, creditManager, deliveryMethod, recordMethod);
+            super(channel, protocolSession, consumerTag, filters, noLocal, creditManager, deliveryMethod, recordMethod, subscriptionID);
         }
 
 
@@ -151,10 +150,11 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
                                  AMQShortString consumerTag, FieldTable filters,
                                  boolean noLocal, FlowCreditManager creditManager,
                                    ClientDeliveryMethod deliveryMethod,
-                                   RecordDeliveryMethod recordMethod)
+                                   RecordDeliveryMethod recordMethod,
+                                   long subscriptionID)
             throws AMQException
         {
-            super(channel, protocolSession, consumerTag, filters, noLocal, creditManager, deliveryMethod, recordMethod);
+            super(channel, protocolSession, consumerTag, filters, noLocal, creditManager, deliveryMethod, recordMethod, subscriptionID);
         }
 
 
@@ -211,16 +211,45 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
 
     }
 
+    /**
+     * NoAck Subscription for use with BasicGet method.
+     */
+    public static final class GetNoAckSubscription extends SubscriptionImpl.NoAckSubscription
+    {
+        public GetNoAckSubscription(AMQChannel channel, AMQProtocolSession protocolSession,
+                               AMQShortString consumerTag, FieldTable filters,
+                               boolean noLocal, FlowCreditManager creditManager,
+                                   ClientDeliveryMethod deliveryMethod,
+                                   RecordDeliveryMethod recordMethod,
+                                   long subscriptionID)
+            throws AMQException
+        {
+            super(channel, protocolSession, consumerTag, filters, noLocal, creditManager, deliveryMethod, recordMethod, subscriptionID);
+        }
+
+        public boolean isTransient()
+        {
+            return true;
+        }
+
+        public boolean wouldSuspend(QueueEntry msg)
+        {
+            return !getCreditManager().useCreditForMessage(msg.getMessage());
+        }
+
+    }
+
     static final class AckSubscription extends SubscriptionImpl
     {
         public AckSubscription(AMQChannel channel, AMQProtocolSession protocolSession,
                                AMQShortString consumerTag, FieldTable filters,
                                boolean noLocal, FlowCreditManager creditManager,
                                    ClientDeliveryMethod deliveryMethod,
-                                   RecordDeliveryMethod recordMethod)
+                                   RecordDeliveryMethod recordMethod,
+                                   long subscriptionID)
             throws AMQException
         {
-            super(channel, protocolSession, consumerTag, filters, noLocal, creditManager, deliveryMethod, recordMethod);
+            super(channel, protocolSession, consumerTag, filters, noLocal, creditManager, deliveryMethod, recordMethod, subscriptionID);
         }
 
 
@@ -296,10 +325,11 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
                             AMQShortString consumerTag, FieldTable arguments,
                             boolean noLocal, FlowCreditManager creditManager,
                             ClientDeliveryMethod deliveryMethod,
-                            RecordDeliveryMethod recordMethod)
+                            RecordDeliveryMethod recordMethod,
+                            long subscriptionID)
             throws AMQException
     {
-
+        _subscriptionID = subscriptionID;
         _channel = channel;
         _consumerTag = consumerTag;
 
@@ -445,7 +475,7 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
 
 
         //check that the message hasn't been rejected
-        if (entry.isRejectedBy(this))
+        if (entry.isRejectedBy(getSubscriptionID()))
         {
             if (_logger.isDebugEnabled())
             {

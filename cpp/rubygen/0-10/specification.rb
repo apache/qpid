@@ -252,7 +252,7 @@ class Specification < CppGen
       include "#{@dir}/specification"
       namespace(@ns) { 
         genl "template <class F, class R=typename F::result_type>"
-        cpp_class("ProxyTemplate") {
+        cpp_extern_class("QPID_COMMON_CLASS_EXTERN", "ProxyTemplate") {
           public
           genl "ProxyTemplate(F f=F()) : functor(f) {}"
           @amqp.classes.each { |c|

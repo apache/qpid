@@ -31,9 +31,9 @@ public class XAConnectionImpl extends AMQConnection implements XAConnection, XAQ
     /**
      * Create a XAConnection from a connectionURL
      */
-    public XAConnectionImpl(ConnectionURL connectionURL, SSLConfiguration sslConfig) throws AMQException
+    public XAConnectionImpl(ConnectionURL connectionURL) throws AMQException
     {
-        super(connectionURL, sslConfig);
+        super(connectionURL);
     }
 
     //-- interface XAConnection

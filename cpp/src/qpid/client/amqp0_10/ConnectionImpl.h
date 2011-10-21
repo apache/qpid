@@ -43,6 +43,7 @@ class ConnectionImpl : public qpid::messaging::ConnectionImpl
   public:
     ConnectionImpl(const std::string& url, const qpid::types::Variant::Map& options);
     void open();
+    void reopen();
     bool isOpen() const;
     void close();
     qpid::messaging::Session newSession(bool transactional, const std::string& name);
@@ -59,6 +60,7 @@ class ConnectionImpl : public qpid::messaging::ConnectionImpl
     qpid::sys::Semaphore semaphore;//used to coordinate reconnection
     Sessions sessions;
     qpid::client::Connection connection;
+    bool replaceUrls;     // Replace rather than merging with reconnect-urls
     std::vector<std::string> urls;
     qpid::client::ConnectionSettings settings;
     bool reconnect;

@@ -599,13 +599,12 @@ namespace qpid {
             // populate the agent with multiple test objects
             const size_t objCount = 50;
             std::vector<TestManageable *> tmv;
-            uint32_t objLen;
 
             for (size_t i = 0; i < objCount; i++) {
                 std::stringstream key;
                 key << "testobj-" << i;
                 TestManageable *tm = new TestManageable(agent, key.str());
-                objLen = tm->GetManagementObject()->writePropertiesSize();
+                (void) tm->GetManagementObject()->writePropertiesSize();
                 agent->addObject(tm->GetManagementObject(), key.str());
                 tmv.push_back(tm);
             }

@@ -23,7 +23,7 @@ package org.apache.qpid.thread;
 
 import org.apache.qpid.thread.Threading;
 
-import edu.emory.mathcs.backport.java.util.concurrent.Executor;
+import java.util.concurrent.Executor;
 
 public class QpidThreadExecutor implements Executor
 {

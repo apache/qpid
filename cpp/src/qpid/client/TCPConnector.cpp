@@ -88,7 +88,7 @@ TCPConnector::~TCPConnector() {
     close();
 }
 
-void TCPConnector::connect(const std::string& host, int port) {
+void TCPConnector::connect(const std::string& host, const std::string& port) {
     Mutex::ScopedLock l(lock);
     assert(closed);
     connector = AsynchConnector::create(
@@ -117,11 +117,11 @@ void TCPConnector::connected(const Socket&) {
 
 void TCPConnector::start(sys::AsynchIO* aio_) {
     aio = aio_;
-    for (int i = 0; i < 32; i++) {
+    for (int i = 0; i < 4; i++) {
         aio->queueReadBuffer(new Buff(maxFrameSize));
     }
 
-    identifier = str(format("[%1% %2%]") % socket.getLocalPort() % socket.getPeerAddress());
+    identifier = str(format("[%1%]") % socket.getFullAddress());
 }
 
 void TCPConnector::initAmqp() {

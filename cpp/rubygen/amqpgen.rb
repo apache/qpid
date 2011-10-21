@@ -61,7 +61,8 @@ end
 class Module
   # Add trailing _ to avoid conflict with Object methods.
   def mangle(sym)
-    (Object.method_defined? sym) ? (sym.to_s+"_").intern : sym
+    sym =  (sym.to_s+"_").to_sym if (Object.method_defined?(sym) or sym == :type)
+    sym
   end
 
   # Add attribute reader for XML attribute.
@@ -190,7 +191,8 @@ class AmqpElement
     "command-fragments" => "session.command-fragment",
     "in-doubt" => "dtx.xid",
     "tx-publish" => "str-8",
-    "queues" => "str-8"
+    "queues" => "str-8",
+    "prepared" => "str-8"
   }
 
   def array_type(name)

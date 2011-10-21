@@ -20,11 +20,20 @@
  -
  -->
 <broker>
+    <connector>
+        <ssl>
+            <port>15671</port>
+            <enabled>false</enabled>
+            <sslOnly>false</sslOnly>
+            <keyStorePath>${QPID_HOME}/../test-profiles/test_resources/ssl/java_broker_keystore.jks</keyStorePath>
+            <keyStorePassword>password</keyStorePassword>
+        </ssl>
+    </connector>
     <management>
         <enabled>false</enabled>
         <ssl>
             <enabled>false</enabled>
-            <keyStorePath>${QPID_HOME}/../test-profiles/test_resources/ssl/keystore.jks</keyStorePath>
+            <keyStorePath>${QPID_HOME}/../test-profiles/test_resources/ssl/java_broker_keystore.jks</keyStorePath>
             <keyStorePassword>password</keyStorePassword>
         </ssl>
     </management>

@@ -55,7 +55,7 @@ public class BindingLoggingTest extends AbstractTestLogging
     {
         super.setUp();
         //Ignore broker startup messages
-        _monitor.reset();
+        _monitor.markDiscardPoint();
 
         _connection = getConnection();
 

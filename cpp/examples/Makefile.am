@@ -16,15 +16,7 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-SUBDIRS = direct fanout pub-sub request-response failover qmf-console tradedemo messaging
-if HAVE_XML
-  SUBDIRS += xml-exchange
-  broker_args = "--no-module-dir --data-dir \"\" --auth no --load-module $(top_builddir)/src/.libs/xml.so"	
-endif
-if !HAVE_XML
-  exclude_examples_regexp="xml"	# Exclude XML examples.
-  broker_args = "--no-module-dir --data-dir \"\" --auth no"	
-endif
+SUBDIRS = qmf-console messaging old_api
 
 MAKEDIST=.libs/Makefile
 
@@ -37,13 +29,9 @@ $(MAKEDIST): Makefile
 examplesdir=$(pkgdatadir)/examples
 dist_examples_DATA = README.txt $(MAKEDIST)
 
-EXTRA_DIST = README.verify verify verify_all examples.sln CMakeLists.txt
+EXTRA_DIST = examples.sln CMakeLists.txt
 
 # For older versions of automake
 abs_top_srcdir = @abs_top_srcdir@
 abs_top_builddir = @abs_top_builddir@
-
-# Verify the examples in the buid tree.
-check-local: 
-	$(srcdir)/verify_all $(abs_top_srcdir)/.. $(abs_top_builddir) $(broker_args) $(exclude_examples_regexp)
 

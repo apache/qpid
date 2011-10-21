@@ -68,29 +68,33 @@ __thread int64_t threadMaxReadTimeNs = 2 * 1000000; // start at 2ms
  * Asynch Acceptor
  */
 
-SslAcceptor::SslAcceptor(const SslSocket& s, Callback callback) :
+template <class T>
+SslAcceptorTmpl<T>::SslAcceptorTmpl(const T& s, Callback callback) :
     acceptedCallback(callback),
-    handle(s, boost::bind(&SslAcceptor::readable, this, _1), 0, 0),
+    handle(s, boost::bind(&SslAcceptorTmpl<T>::readable, this, _1), 0, 0),
     socket(s) {
 
     s.setNonblocking();
     ignoreSigpipe();
 }
 
-SslAcceptor::~SslAcceptor() 
+template <class T>
+SslAcceptorTmpl<T>::~SslAcceptorTmpl()
 {
     handle.stopWatch();
 }
 
-void SslAcceptor::start(Poller::shared_ptr poller) {
+template <class T>
+void SslAcceptorTmpl<T>::start(Poller::shared_ptr poller) {
     handle.startWatch(poller);
 }
 
 /*
  * We keep on accepting as long as there is something to accept
  */
-void SslAcceptor::readable(DispatchHandle& h) {
-    SslSocket* s;
+template <class T>
+void SslAcceptorTmpl<T>::readable(DispatchHandle& h) {
+    Socket* s;
     do {
         errno = 0;
         // TODO: Currently we ignore the peers address, perhaps we should
@@ -110,6 +114,10 @@ void SslAcceptor::readable(DispatchHandle& h) {
     h.rewatch();
 }
 
+// Explicitly instantiate the templates we need
+template class SslAcceptorTmpl<SslSocket>;
+template class SslAcceptorTmpl<SslMuxSocket>;
+
 /*
  * Asynch Connector
  */
@@ -117,7 +125,7 @@ void SslAcceptor::readable(DispatchHandle& h) {
 SslConnector::SslConnector(const SslSocket& s,
                                  Poller::shared_ptr poller,
                                  std::string hostname,
-                                 uint16_t port,
+                                 std::string port,
                                  ConnectedCallback connCb,
                                  FailedCallback failCb) :
     DispatchHandle(s,

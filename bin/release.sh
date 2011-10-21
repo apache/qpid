@@ -41,6 +41,8 @@ usage()
     echo "--ruby  |-r : Generate the ruby artefacts"
     echo "--python|-p : Generate the python artefacts"
     echo "--wcf   |-w : Generate the WCF artefacts"
+    echo "--tools |-t : Generate the tools artefacts"
+    echo "--qmf   |-q : Generate the QMF artefacts"
     echo "--source|-e : Generate the source artefact"
     echo "--sign  |-s : Sign generated artefacts"
     echo "--upload|-u : Upload the artifacts directory to people.apache.org as qpid-\$VER"
@@ -74,11 +76,11 @@ for arg in $* ; do
  ;;
  --all|-a)
    CPP="CPP"
-   DOTNET="DOTNET"
    JAVA="JAVA"
-   RUBY="RUBY"
    PYTHON="PYTHON"
    WCF="WCF"
+   TOOLS="TOOLS"
+   QMF="QMF"
    SOURCE="SOURCE"
  ;;
  --cpp|-c)
@@ -98,6 +100,12 @@ for arg in $* ; do
  ;;
  --wcf|-w)
    WCF="WCF"
+ ;;
+ --tools|-t)
+   TOOLS="TOOLS"
+ ;;
+ --qmf|-q)
+   QMF="QMF"
  ;;
  --source|-e)
    SOURCE="SOURCE"
@@ -218,8 +226,8 @@ if [ "JAVA" == "$JAVA" ] ; then
   cp qpid-${VER}/java/management/eclipse-plugin/release/*.tar.gz qpid-${VER}/java/management/eclipse-plugin/release/*.zip artifacts/
 
   # copy the Maven artifacts
-  cp qpid-${VER}/java/client/release/maven artifacts/
-  cp qpid-${VER}/java/common/release/maven artifacts/
+  cp -a qpid-${VER}/java/client/release/maven artifacts/
+  cp -a qpid-${VER}/java/common/release/maven artifacts/
 fi
 
 if [ "DOTNET" == "$DOTNET" ] ; then
@@ -237,6 +245,26 @@ if [ "DOTNET" == "$DOTNET" ] ; then
 
   cp qpid-${VER}/dotnet/bin/mono-2.0/release/*.zip artifacts/qpid-dotnet-0-8-${VER}.zip
   cp qpid-${VER}/dotnet/client-010/bin/mono-2.0/debug/*.zip artifacts/qpid-dotnet-0-10-${VER}.zip
+fi
+
+if [ "TOOLS" = "$TOOLS" ] ; then
+    pushd qpid-${VER}/tools
+
+    python setup.py sdist
+    
+    popd
+
+    cp qpid-${VER}/tools/dist/*.tar.gz artifacts/qpid-tools-${VER}.tar.gz
+fi
+
+if [ "QMF" = "$QMF" ]; then
+    pushd qpid-${VER}/extras/qmf
+
+    python setup.py sdist
+
+    popd
+
+    cp qpid-${VER}/extras/qmf/dist/*.tar.gz artifacts/qpid-qmf-${VER}.tar.gz
 fi
 
 if [ "SIGN" == "$SIGN" ] ; then

@@ -35,7 +35,7 @@ enum QueueOrderingPolicy {FIFO, LVQ, LVQ_NO_BROWSE};
  * A help class to set options on the Queue. Create a configured args while
  * still allowing any custom configuration via the FieldTable base class
  */
-class QueueOptions: public framing::FieldTable
+class QPID_CLIENT_CLASS_EXTERN QueueOptions: public framing::FieldTable
 {
   public:
     QPID_CLIENT_EXTERN QueueOptions();

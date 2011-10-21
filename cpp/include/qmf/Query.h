@@ -43,7 +43,7 @@ namespace qmf {
     QUERY_SCHEMA_ID = 4
     };
 
-    class Query : public qmf::Handle<QueryImpl> {
+    class QMF_CLASS_EXTERN Query : public qmf::Handle<QueryImpl> {
     public:
         QMF_EXTERN Query(QueryImpl* impl = 0);
         QMF_EXTERN Query(const Query&);
@@ -65,7 +65,7 @@ namespace qmf {
 #ifndef SWIG
     private:
         friend class qmf::PrivateImplRef<Query>;
-        friend class QueryImplAccess;
+        friend struct QueryImplAccess;
 #endif
     };
 

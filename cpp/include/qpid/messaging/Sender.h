@@ -40,7 +40,7 @@ class Session;
 /**   \ingroup messaging 
  * Interface through which messages are sent.
  */
-class Sender : public qpid::messaging::Handle<SenderImpl>
+class QPID_MESSAGING_CLASS_EXTERN Sender : public qpid::messaging::Handle<SenderImpl>
 {
   public:
     QPID_MESSAGING_EXTERN Sender(SenderImpl* impl = 0);

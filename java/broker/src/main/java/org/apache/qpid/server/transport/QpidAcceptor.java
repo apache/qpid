@@ -20,21 +20,21 @@
  */
 package org.apache.qpid.server.transport;
 
-import org.apache.qpid.transport.NetworkDriver;
+import org.apache.qpid.transport.network.NetworkTransport;
 
 public class QpidAcceptor
 {
-    NetworkDriver _driver;
+    NetworkTransport _transport;
     String _protocol;
-    public QpidAcceptor(NetworkDriver driver, String protocol)
+    public QpidAcceptor(NetworkTransport transport, String protocol)
     {
-        _driver = driver;
+        _transport = transport;
         _protocol = protocol;
     }
 
-    public NetworkDriver getNetworkDriver()
+    public NetworkTransport getNetworkTransport()
     {
-        return _driver;
+        return _transport;
     }
 
     public String toString()

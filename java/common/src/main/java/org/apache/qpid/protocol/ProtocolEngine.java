@@ -21,10 +21,11 @@
 package org.apache.qpid.protocol;
 
 import java.net.SocketAddress;
+import java.nio.ByteBuffer;
 
-import org.apache.qpid.framing.AMQDataBlock;
-import org.apache.qpid.transport.NetworkDriver;
 import org.apache.qpid.transport.Receiver;
+import org.apache.qpid.transport.Sender;
+import org.apache.qpid.transport.network.NetworkConnection;
 
 /**
  * A ProtocolEngine is a Receiver for java.nio.ByteBuffers. It takes the data passed to it in the received
@@ -32,9 +33,6 @@ import org.apache.qpid.transport.Receiver;
  */
 public interface ProtocolEngine extends Receiver<java.nio.ByteBuffer>
 {
-   // Sets the network driver providing data for this ProtocolEngine
-   void setNetworkDriver (NetworkDriver driver);
-
    // Returns the remote address of the NetworkDriver
    SocketAddress getRemoteAddress();
 
@@ -57,5 +55,7 @@ public interface ProtocolEngine extends Receiver<java.nio.ByteBuffer>
    // Called when the NetworkEngine has not read data for the specified period of time (will close the connection)
    void readerIdle();
 
+
+    public void setNetworkConnection(NetworkConnection network, Sender<ByteBuffer> sender);
 
 }

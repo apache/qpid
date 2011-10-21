@@ -19,6 +19,7 @@ package org.apache.qpid.client;
 
 import static org.apache.qpid.transport.Option.NONE;
 import static org.apache.qpid.transport.Option.SYNC;
+import static org.apache.qpid.transport.Option.UNRELIABLE;
 
 import java.nio.ByteBuffer;
 import java.util.HashMap;
@@ -30,9 +31,12 @@ import javax.jms.JMSException;
 import javax.jms.Message;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.client.AMQDestination.AddressOption;
 import org.apache.qpid.client.AMQDestination.DestSyntax;
 import org.apache.qpid.client.message.AMQMessageDelegate_0_10;
 import org.apache.qpid.client.message.AbstractJMSMessage;
+import org.apache.qpid.client.message.QpidMessageProperties;
+import org.apache.qpid.client.messaging.address.Link.Reliability;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.transport.DeliveryProperties;
 import org.apache.qpid.transport.Header;
@@ -42,6 +46,7 @@ import org.apache.qpid.transport.MessageDeliveryMode;
 import org.apache.qpid.transport.MessageDeliveryPriority;
 import org.apache.qpid.transport.MessageProperties;
 import org.apache.qpid.transport.Option;
+import org.apache.qpid.transport.TransportException;
 import org.apache.qpid.util.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,10 +61,9 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
 
     BasicMessageProducer_0_10(AMQConnection connection, AMQDestination destination, boolean transacted, int channelId,
                               AMQSession session, AMQProtocolHandler protocolHandler, long producerId,
-                              boolean immediate, boolean mandatory, boolean waitUntilSent) throws AMQException
+                              boolean immediate, boolean mandatory) throws AMQException
     {
-        super(connection, destination, transacted, channelId, session, protocolHandler, producerId, immediate,
-              mandatory, waitUntilSent);
+        super(connection, destination, transacted, channelId, session, protocolHandler, producerId, immediate, mandatory);
         
         userIDBytes = Strings.toUTF8(_userID);
     }
@@ -68,12 +72,15 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
     {
         if (destination.getDestSyntax() == DestSyntax.BURL)
         {
-            String name = destination.getExchangeName().toString();
-            ((AMQSession_0_10) getSession()).getQpidSession().exchangeDeclare
-                (name,
-                 destination.getExchangeClass().toString(),
-                 null, null,
-                 name.startsWith("amq.") ? Option.PASSIVE : Option.NONE);
+        	if (getSession().isDeclareExchanges())
+        	{
+	            String name = destination.getExchangeName().toString();
+	            ((AMQSession_0_10) getSession()).getQpidSession().exchangeDeclare
+	                (name,
+	                 destination.getExchangeClass().toString(),
+	                 null, null,
+	                 name.startsWith("amq.") ? Option.PASSIVE : Option.NONE);
+        	}
         }
         else
         {       
@@ -96,7 +103,7 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
      */
     void sendMessage(AMQDestination destination, Message origMessage, AbstractJMSMessage message,
                      UUID messageId, int deliveryMode, int priority, long timeToLive, boolean mandatory,
-                     boolean immediate, boolean wait) throws JMSException
+                     boolean immediate) throws JMSException
     {
         message.prepareForSending();
 
@@ -171,7 +178,7 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
         
         if (destination.getDestSyntax() == AMQDestination.DestSyntax.ADDR && 
            (destination.getSubject() != null || 
-              (messageProps.getApplicationHeaders() != null && messageProps.getApplicationHeaders().get("qpid.subject") != null))
+              (messageProps.getApplicationHeaders() != null && messageProps.getApplicationHeaders().get(QpidMessageProperties.QPID_SUBJECT) != null))
            )
         {
             Map<String,Object> appProps = messageProps.getApplicationHeaders();
@@ -181,20 +188,21 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
                 messageProps.setApplicationHeaders(appProps);          
             }
             
-            if (appProps.get("qpid.subject") == null)
+            if (appProps.get(QpidMessageProperties.QPID_SUBJECT) == null)
             {
                 // use default subject in address string
-                appProps.put("qpid.subject",destination.getSubject());
+                appProps.put(QpidMessageProperties.QPID_SUBJECT,destination.getSubject());
             }
                     
-            if (destination.getTargetNode().getType() == AMQDestination.TOPIC_TYPE)
+            if (destination.getAddressType() == AMQDestination.TOPIC_TYPE)
             {
                 deliveryProp.setRoutingKey((String)
-                        messageProps.getApplicationHeaders().get("qpid.subject"));                
+                        messageProps.getApplicationHeaders().get(QpidMessageProperties.QPID_SUBJECT));                
             }
         }
-        
-        messageProps.setContentLength(message.getContentLength());
+
+        ByteBuffer data = message.getData();
+        messageProps.setContentLength(data.remaining());
 
         // send the message
         try
@@ -210,14 +218,17 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
                          deliveryMode == DeliveryMode.PERSISTENT)
                    );  
             
-            org.apache.mina.common.ByteBuffer data = message.getData();
-            ByteBuffer buffer = data == null ? ByteBuffer.allocate(0) : data.buf().slice();
+            boolean unreliable = (destination.getDestSyntax() == DestSyntax.ADDR) &&
+                                 (destination.getLink().getReliability() == Reliability.UNRELIABLE);
+            
+
+            ByteBuffer buffer = data == null ? ByteBuffer.allocate(0) : data.slice();
             
             ssn.messageTransfer(destination.getExchangeName() == null ? "" : destination.getExchangeName().toString(), 
                                 MessageAcceptMode.NONE,
                                 MessageAcquireMode.PRE_ACQUIRED,
                                 new Header(deliveryProp, messageProps),
-                    buffer, sync ? SYNC : NONE);
+                    buffer, sync ? SYNC : NONE, unreliable ? UNRELIABLE : NONE);
             if (sync)
             {
                 ssn.sync();
@@ -227,17 +238,41 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
         }
         catch (Exception e)
         {
-            JMSException jmse = new JMSException("Exception when sending message");
+            JMSException jmse = new JMSException("Exception when sending message:" + e.getMessage());
             jmse.setLinkedException(e);
             jmse.initCause(e);
             throw jmse;
         }
     }
 
-
+    @Override
     public boolean isBound(AMQDestination destination) throws JMSException
     {
         return _session.isQueueBound(destination);
     }
+    
+    @Override
+    public void close() throws JMSException
+    {
+        super.close();
+        AMQDestination dest = _destination;
+        if (dest != null && dest.getDestSyntax() == AMQDestination.DestSyntax.ADDR)
+        {
+            if (dest.getDelete() == AddressOption.ALWAYS ||
+                dest.getDelete() == AddressOption.SENDER )
+            {
+                try
+                {
+                    ((AMQSession_0_10) getSession()).getQpidSession().queueDelete(
+                        _destination.getQueueName());
+                }
+                catch(TransportException e)
+                {
+                    throw getSession().toJMSException("Exception while closing producer:" + e.getMessage(), e);
+                }
+            }
+        }
+    }
+
 }
 

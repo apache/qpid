@@ -36,6 +36,7 @@ import javax.jms.Queue;
 import javax.jms.Topic;
 import javax.naming.Context;
 import javax.naming.NamingException;
+import javax.naming.ConfigurationException;
 import javax.naming.spi.InitialContextFactory;
 
 import org.apache.qpid.client.AMQConnectionFactory;
@@ -139,7 +140,7 @@ public class PropertiesFileInitialContextFactory implements InitialContextFactor
         return new ReadOnlyContext(environment, data);
     }
 
-    protected void createConnectionFactories(Map data, Hashtable environment)
+    protected void createConnectionFactories(Map data, Hashtable environment) throws ConfigurationException
     {
         for (Iterator iter = environment.entrySet().iterator(); iter.hasNext();)
         {
@@ -157,7 +158,7 @@ public class PropertiesFileInitialContextFactory implements InitialContextFactor
         }
     }
 
-    protected void createDestinations(Map data, Hashtable environment)
+    protected void createDestinations(Map data, Hashtable environment) throws ConfigurationException
     {
         for (Iterator iter = environment.entrySet().iterator(); iter.hasNext();)
         {
@@ -225,7 +226,7 @@ public class PropertiesFileInitialContextFactory implements InitialContextFactor
     /**
      * Factory method to create new Connection Factory instances
      */
-    protected ConnectionFactory createFactory(String url)
+    protected ConnectionFactory createFactory(String url) throws ConfigurationException
     {
         try
         {
@@ -233,16 +234,18 @@ public class PropertiesFileInitialContextFactory implements InitialContextFactor
         }
         catch (URLSyntaxException urlse)
         {
-            _logger.warn("Unable to createFactories:" + urlse);
-        }
+            _logger.warn("Unable to create factory:" + urlse);
 
-        return null;
+            ConfigurationException ex = new ConfigurationException("Failed to parse entry: " + urlse + " due to : " +  urlse.getMessage());
+            ex.initCause(urlse);
+            throw ex;
+        }
     }
 
     /**
      * Factory method to create new Destination instances from an AMQP BindingURL
      */
-    protected Destination createDestination(String str)
+    protected Destination createDestination(String str) throws ConfigurationException
     {
         try
         {
@@ -252,7 +255,9 @@ public class PropertiesFileInitialContextFactory implements InitialContextFactor
         {
             _logger.warn("Unable to create destination:" + e, e);
 
-            return null;
+            ConfigurationException ex = new ConfigurationException("Failed to parse entry: " + str + " due to : " +  e.getMessage());
+            ex.initCause(e);
+            throw ex;
         }
     }
 

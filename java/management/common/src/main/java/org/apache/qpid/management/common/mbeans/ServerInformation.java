@@ -22,10 +22,15 @@ package org.apache.qpid.management.common.mbeans;
 
 import java.io.IOException;
 
+import javax.management.MBeanOperationInfo;
+
 import org.apache.qpid.management.common.mbeans.annotations.MBeanAttribute;
+import org.apache.qpid.management.common.mbeans.annotations.MBeanOperation;
 
 /**
  * Interface for the ServerInformation MBean
+ * 
+ * @version Qpid JMX API 2.3
  * @since Qpid JMX API 1.3
  */
 public interface ServerInformation
@@ -42,7 +47,7 @@ public interface ServerInformation
      *  Qpid JMX API 1.1 can be assumed.
      */
     int QPID_JMX_API_MAJOR_VERSION = 2;
-    int QPID_JMX_API_MINOR_VERSION = 0;
+    int QPID_JMX_API_MINOR_VERSION = 3;
     
     
     /**
@@ -80,4 +85,118 @@ public interface ServerInformation
     @MBeanAttribute(name="ProductVersion", 
                     description = "The product version string")
     String getProductVersion() throws IOException;
+    
+    /**
+     * Resets all message and data statistics for the broker.
+     * 
+     * @since Qpid JMX API 2.2
+     */
+    @MBeanOperation(name="resetStatistics",
+                    description="Resets all message and data statistics for the broker",
+                    impact= MBeanOperationInfo.ACTION)
+    void resetStatistics() throws Exception;
+
+    /**
+     * Peak rate of messages delivered per second for the virtual host.
+     * 
+     * @since Qpid JMX API 2.2
+     */
+    @MBeanAttribute(name="PeakMessageDeliveryRate", description=TYPE + " Peak Message Delivery Rate")
+    double getPeakMessageDeliveryRate();
+
+    /**
+     * Peak rate of bytes delivered per second for the broker.
+     * 
+     * @since Qpid JMX API 2.2
+     */
+    @MBeanAttribute(name="PeakDataDeliveryRate", description=TYPE + " Peak Data Delivery Rate")
+    double getPeakDataDeliveryRate();
+
+    /**
+     * Rate of messages delivered per second for the broker.
+     * 
+     * @since Qpid JMX API 2.2
+     */
+    @MBeanAttribute(name="MessageDeliveryRate", description=TYPE + " Message Delivery Rate")
+    double getMessageDeliveryRate();
+
+    /**
+     * Rate of bytes delivered per second for the broker.
+     * 
+     * @since Qpid JMX API 2.2
+     */
+    @MBeanAttribute(name="DataDeliveryRate", description=TYPE + " Data Delivery Rate")
+    double getDataDeliveryRate();
+
+    /**
+     * Total count of messages delivered for the broker.
+     * 
+     * @since Qpid JMX API 2.2
+     */
+    @MBeanAttribute(name="TotalMessagesDelivered", description=TYPE + " Total Messages Delivered")
+    long getTotalMessagesDelivered();
+
+    /**
+     * Total count of bytes for the broker.
+     * 
+     * @since Qpid JMX API 2.2
+     */
+    @MBeanAttribute(name="TotalDataDelivered", description=TYPE + " Total Data Delivered")
+    long getTotalDataDelivered();
+
+    /**
+     * Peak rate of messages received per second for the broker.
+     * 
+     * @since Qpid JMX API 2.2
+     */
+    @MBeanAttribute(name="PeakMessageReceiptRate", description=TYPE + " Peak Message Receipt Rate")
+    double getPeakMessageReceiptRate();
+
+    /**
+     * Peak rate of bytes received per second for the broker.
+     * 
+     * @since Qpid JMX API 2.2
+     */
+    @MBeanAttribute(name="PeakDataReceiptRate", description=TYPE + " Peak Data Receipt Rate")
+    double getPeakDataReceiptRate();
+
+    /**
+     * Rate of messages received per second for the broker.
+     * 
+     * @since Qpid JMX API 2.2
+     */
+    @MBeanAttribute(name="MessageReceiptRate", description=TYPE + " Message Receipt Rate")
+    double getMessageReceiptRate();
+
+    /**
+     * Rate of bytes received per second for the broker.
+     * 
+     * @since Qpid JMX API 2.2
+     */
+    @MBeanAttribute(name="DataReceiptRate", description=TYPE + " Data Receipt Rate")
+    double getDataReceiptRate();
+
+    /**
+     * Total count of messages received for the broker.
+     * 
+     * @since Qpid JMX API 2.2
+     */
+    @MBeanAttribute(name="TotalMessagesReceived", description=TYPE + " Total Messages Received")
+    long getTotalMessagesReceived();
+
+    /**
+     * Total count of bytes received for the broker.
+     * 
+     * @since Qpid JMX API 2.2
+     */
+    @MBeanAttribute(name="TotalDataReceived", description=TYPE + " Total Data Received")
+    long getTotalDataReceived();
+
+    /**
+     * Is statistics collection enabled for this connection.
+     * 
+     * @since Qpid JMX API 2.2
+     */
+    @MBeanAttribute(name="StatisticsEnabled", description=TYPE + " Statistics Enabled")
+    boolean isStatisticsEnabled();
 }

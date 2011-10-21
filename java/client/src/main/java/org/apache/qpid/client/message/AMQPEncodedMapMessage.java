@@ -23,11 +23,12 @@ package org.apache.qpid.client.message;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
+import java.nio.ByteBuffer;
 
 import javax.jms.JMSException;
 import javax.jms.MessageFormatException;
 
-import org.apache.mina.common.ByteBuffer;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.transport.codec.BBDecoder;
 import org.apache.qpid.transport.codec.BBEncoder;
@@ -65,7 +66,7 @@ public class AMQPEncodedMapMessage extends JMSMapMessage
         if ((value instanceof Boolean) || (value instanceof Byte) || (value instanceof Short) || (value instanceof Integer)
                 || (value instanceof Long) || (value instanceof Character) || (value instanceof Float)
                 || (value instanceof Double) || (value instanceof String) || (value instanceof byte[])
-                || (value instanceof List) || (value instanceof Map) || (value == null))
+                || (value instanceof List) || (value instanceof Map) || (value instanceof UUID) || (value == null))
         {
             _map.put(propName, value);
         }
@@ -80,18 +81,19 @@ public class AMQPEncodedMapMessage extends JMSMapMessage
     @ Override
     public ByteBuffer getData()
     {
-        writeMapToData();
-        return _data;
+        BBEncoder encoder = new BBEncoder(1024);
+        encoder.writeMap(_map);
+        return encoder.segment();
     }
     
     @ Override
-    protected void populateMapFromData() throws JMSException
+    protected void populateMapFromData(ByteBuffer data) throws JMSException
     {
-        if (_data != null)
+        if (data != null)
         {
-            _data.rewind();
+            data.rewind();
             BBDecoder decoder = new BBDecoder();
-            decoder.init(_data.buf());
+            decoder.init(data);
             _map = decoder.readMap();
         }
         else
@@ -100,16 +102,8 @@ public class AMQPEncodedMapMessage extends JMSMapMessage
         }
     }
 
-    @ Override
-    protected void writeMapToData()
-    {
-        BBEncoder encoder = new BBEncoder(1024);
-        encoder.writeMap(_map);
-        _data = ByteBuffer.wrap(encoder.segment());
-    }
-    
     // for testing
-    Map<String,Object> getMap()
+    public Map<String,Object> getMap()
     {
         return _map;
     }

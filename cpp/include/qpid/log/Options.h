@@ -39,7 +39,7 @@ struct Options : public qpid::Options {
     std::string argv0;
     std::string name;
     std::vector<std::string> selectors;
-    bool time, level, thread, source, function;
+    bool time, level, thread, source, function, hiresTs;
     bool trace;
     std::string prefix;
     std::auto_ptr<SinkOptions> sinkOptions;

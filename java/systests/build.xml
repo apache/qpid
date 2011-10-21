@@ -19,10 +19,18 @@ nn - or more contributor license agreements.  See the NOTICE file
  -
  -->
 <project name="System Tests" default="build">
-    <property name="module.depends" value="client management/tools/qpid-cli management/common broker broker/test common common/test junit-toolkit"/>
+
+    <condition property="systests.optional.depends" value="bdbstore" else="">
+        <and>
+            <contains string="${modules.opt}" substring="bdbstore"/>
+            <contains string="${profile}" substring="bdb"/>
+        </and>
+    </condition>
+
+    <property name="module.depends" value="client management/common broker broker/test common common/test junit-toolkit ${systests.optional.depends}"/>
     <property name="module.test.src" location="src/main/java"/>
     <property name="module.test.excludes"
-              value="**/TTLTest.java,**/DropInTest.java,**/TestClientControlledTest.java"/>
+              value="**/DropInTest.java,**/TestClientControlledTest.java"/>
 
     <import file="../module.xml"/>
 

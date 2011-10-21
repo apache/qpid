@@ -259,7 +259,24 @@ class QmfData(Console):
       return
     displayId = long(tokens[0])
     methodName = tokens[1]
-    args = tokens[2:]
+    args = []
+    for arg in tokens[2:]:
+      ##
+      ## If the argument is a map, list, boolean, integer, or floating (one decimal point),
+      ## run it through the Python evaluator so it is converted to the correct type.
+      ##
+      ## TODO: use a regex for this instead of this convoluted logic,
+      ## or even consider passing all args through eval() [which would
+      ## be a minor change to the interface as string args would then
+      ## always need to be quoted as strings within a map/list would
+      ## now]
+      if arg[0] == '{' or arg[0] == '[' or arg[0] == '"' or arg[0] == '\'' or arg == "True" or arg == "False" or \
+            ((arg.count('.') < 2 and (arg.count('-') == 0 or \
+            (arg.count('-') == 1 and  arg[0] == '-')) and \
+            arg.replace('.','').replace('-','').isdigit())):
+         args.append(eval(arg))
+      else:
+         args.append(arg)
 
     obj = None
     try:
@@ -333,7 +350,7 @@ class QmfData(Console):
              self.notNone(prop.unit), notes, self.notNone(prop.desc))
       rows.append(row)
     for stat in schema.getStatistics():
-      row = (stat.name, self.typeName(stat.type), "", self.notNone(prop.unit), "", self.notNone(prop.desc))
+      row = (stat.name, self.typeName(stat.type), "", self.notNone(stat.unit), "", self.notNone(stat.desc))
       rows.append(row)
     self.disp.table(title, heads, rows)
 

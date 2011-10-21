@@ -23,7 +23,7 @@ broker.modules=--load-module ${broker.module.ssl} --ssl-cert-name localhost.loca
 profile.use_ssl=true
 broker.ready= Listening for SSL connections
 
-javax.net.ssl.keyStore=${test.profiles}/test_resources/ssl/keystore.jks
+javax.net.ssl.keyStore=${test.profiles}/test_resources/ssl/java_client_keystore.jks
 javax.net.ssl.keyStorePassword=password
-javax.net.ssl.trustStore=${test.profiles}/test_resources/ssl/certstore.jks
+javax.net.ssl.trustStore=${test.profiles}/test_resources/ssl/java_client_truststore.jks
 javax.net.ssl.trustStorePassword=password

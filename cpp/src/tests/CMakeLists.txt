@@ -107,7 +107,6 @@ set(unit_tests_to_build
     MessagingSessionTests
     SequenceSet
     StringUtils
-    IncompleteMessageList
     RangeSet
     AtomicValue
     QueueTest
@@ -119,6 +118,7 @@ set(unit_tests_to_build
     MessageTest
     QueueRegistryTest
     QueuePolicyTest
+    QueueFlowLimitTest
     FramingTest
     HeaderTest
     SequenceNumberTest
@@ -264,6 +264,19 @@ add_executable (qpid-send qpid-send.cpp Statistics.cpp ${platform_test_additions
 target_link_libraries (qpid-send qpidmessaging)
 remember_location(qpid-send)
 
+add_executable (qpid-ping qpid-ping.cpp ${platform_test_additions})
+target_link_libraries (qpid-ping qpidclient)
+remember_location(qpid-ping)
+
+add_executable (datagen datagen.cpp ${platform_test_additions})
+target_link_libraries (datagen qpidclient)
+remember_location(datagen)
+
+add_executable (msg_group_test msg_group_test.cpp ${platform_test_additions})
+target_link_libraries (msg_group_test qpidmessaging)
+remember_location(msg_group_test)
+
+
 # qpid-perftest and qpid-latency-test are generally useful so install them
 install (TARGETS qpid-perftest qpid-latency-test RUNTIME
          DESTINATION ${QPID_INSTALL_BINDIR})
@@ -278,7 +291,7 @@ set(test_wrap ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/run_test${test_script_suffix}
 
 add_test (unit_test ${test_wrap} ${unit_test_LOCATION})
 add_test (start_broker ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/start_broker${test_script_suffix})
-add_test (qpid-client-test ${test_wrap} ${qpid-client_test_LOCATION})
+add_test (qpid-client-test ${test_wrap} ${qpid-client-test_LOCATION})
 add_test (quick_perftest ${test_wrap} ${qpid-perftest_LOCATION} --summary --count 100)
 add_test (quick_topictest ${test_wrap} ${CMAKE_CURRENT_SOURCE_DIR}/quick_topictest${test_script_suffix})
 add_test (quick_txtest ${test_wrap} ${qpid-txtest_LOCATION} --queues 4 --tx-count 10 --quiet)
@@ -288,6 +301,7 @@ if (PYTHON_EXECUTABLE)
 endif (PYTHON_EXECUTABLE)
 add_test (stop_broker ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/stop_broker${test_script_suffix})
 if (PYTHON_EXECUTABLE)
+  add_test (ipv6_test ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/ipv6_test${test_script_suffix})
   add_test (federation_tests ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/run_federation_tests${test_script_suffix})
 if (BUILD_ACL)
   add_test (acl_tests ${shell} ${CMAKE_CURRENT_SOURCE_DIR}/run_acl_tests${test_script_suffix})

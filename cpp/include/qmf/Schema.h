@@ -38,7 +38,7 @@ namespace qmf {
     class SchemaProperty;
     class SchemaMethod;
 
-    class Schema : public qmf::Handle<SchemaImpl> {
+    class QMF_CLASS_EXTERN Schema : public qmf::Handle<SchemaImpl> {
     public:
         QMF_EXTERN Schema(SchemaImpl* impl = 0);
         QMF_EXTERN Schema(const Schema&);

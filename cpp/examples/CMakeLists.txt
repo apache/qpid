@@ -77,25 +77,14 @@ macro(add_example subdir example)
 endmacro(add_example)
 
 install (FILES ${CMAKE_CURRENT_SOURCE_DIR}/README.txt
-               ${CMAKE_CURRENT_SOURCE_DIR}/README.verify
-               ${CMAKE_CURRENT_SOURCE_DIR}/verify
-               ${CMAKE_CURRENT_SOURCE_DIR}/verify_all
          DESTINATION ${QPID_INSTALL_EXAMPLESDIR}
          COMPONENT ${QPID_COMPONENT_EXAMPLES})
 if (MSVC)
   install (FILES ${CMAKE_CURRENT_SOURCE_DIR}/examples.sln
-				 ${CMAKE_CURRENT_SOURCE_DIR}/old-examples.sln
            DESTINATION ${QPID_INSTALL_EXAMPLESDIR}
            COMPONENT ${QPID_COMPONENT_EXAMPLES})
 endif (MSVC)
 
-add_subdirectory(direct)
-add_subdirectory(failover)
-add_subdirectory(fanout)
-add_subdirectory(pub-sub)
-#add_subdirectory(qmf-agent)
 add_subdirectory(qmf-console)
-add_subdirectory(request-response)
-add_subdirectory(tradedemo)
-add_subdirectory(xml-exchange)
 add_subdirectory(messaging)
+add_subdirectory(old_api)

@@ -30,6 +30,7 @@
 #include <boost/format.hpp>
 
 #if HAVE_SASL
+#include <sys/stat.h>
 #include <sasl/sasl.h>
 #include "qpid/sys/cyrus/CyrusSecurityLayer.h"
 using qpid::sys::cyrus::CyrusSecurityLayer;
@@ -57,7 +58,7 @@ public:
     NullAuthenticator(Connection& connection, bool encrypt);
     ~NullAuthenticator();
     void getMechanisms(framing::Array& mechanisms);
-    void start(const std::string& mechanism, const std::string& response);
+    void start(const std::string& mechanism, const std::string* response);
     void step(const std::string&) {}
     std::auto_ptr<SecurityLayer> getSecurityLayer(uint16_t maxFrameSize);
 };
@@ -81,7 +82,7 @@ public:
     ~CyrusAuthenticator();
     void init();
     void getMechanisms(framing::Array& mechanisms);
-    void start(const std::string& mechanism, const std::string& response);
+    void start(const std::string& mechanism, const std::string* response);
     void step(const std::string& response);
     void getError(std::string& error);
     void getUid(std::string& uid) { getUsername(uid); }
@@ -98,11 +99,33 @@ void SaslAuthenticator::init(const std::string& saslName, std::string const & sa
     //  Check if we have a version of SASL that supports sasl_set_path()
 #if (SASL_VERSION_FULL >= ((2<<16)|(1<<8)|22))
     //  If we are not given a sasl path, do nothing and allow the default to be used.
-    if ( ! saslConfigPath.empty() ) {
-        int code = sasl_set_path(SASL_PATH_TYPE_CONFIG,
-                                 const_cast<char *>(saslConfigPath.c_str()));
+    if ( saslConfigPath.empty() ) {
+        QPID_LOG ( info, "SASL: no config path set - using default." );
+    }
+    else {
+        struct stat st;
+
+        // Make sure the directory exists and we can read up to it.
+        if ( ::stat ( saslConfigPath.c_str(), & st) ) {
+          // Note: not using strerror() here because I think its messages are a little too hazy.
+          if ( errno == ENOENT )
+              throw Exception ( QPID_MSG ( "SASL: sasl_set_path failed: no such directory: " << saslConfigPath ) );
+          if ( errno == EACCES )
+              throw Exception ( QPID_MSG ( "SASL: sasl_set_path failed: cannot read parent of: " << saslConfigPath ) );
+          // catch-all stat failure
+          throw Exception ( QPID_MSG ( "SASL: sasl_set_path failed: cannot stat: " << saslConfigPath ) );
+        }
+
+        // Make sure the directory is readable.
+        if ( ::access ( saslConfigPath.c_str(), R_OK ) ) {
+            throw Exception ( QPID_MSG ( "SASL: sasl_set_path failed: directory not readable:" << saslConfigPath ) );
+        }
+
+        // This shouldn't fail now, but check anyway.
+        int code = sasl_set_path(SASL_PATH_TYPE_CONFIG, const_cast<char *>(saslConfigPath.c_str()));
         if(SASL_OK != code)
             throw Exception(QPID_MSG("SASL: sasl_set_path failed [" << code << "] " ));
+
         QPID_LOG(info, "SASL: config path set to " << saslConfigPath );
     }
 #endif
@@ -164,7 +187,7 @@ void NullAuthenticator::getMechanisms(Array& mechanisms)
     mechanisms.add(boost::shared_ptr<FieldValue>(new Str16Value("PLAIN")));//useful for testing
 }
 
-void NullAuthenticator::start(const string& mechanism, const string& response)
+void NullAuthenticator::start(const string& mechanism, const string* response)
 {
     if (encrypt) {
 #if HAVE_SASL
@@ -180,16 +203,16 @@ void NullAuthenticator::start(const string& mechanism, const string& response)
         }
     }
     if (mechanism == "PLAIN") { // Old behavior
-        if (response.size() > 0) {
+        if (response && response->size() > 0) {
             string uid;
-            string::size_type i = response.find((char)0);
-            if (i == 0 && response.size() > 1) {
+            string::size_type i = response->find((char)0);
+            if (i == 0 && response->size() > 1) {
                 //no authorization id; use authentication id
-                i = response.find((char)0, 1);
-                if (i != string::npos) uid = response.substr(1, i-1);
+                i = response->find((char)0, 1);
+                if (i != string::npos) uid = response->substr(1, i-1);
             } else if (i != string::npos) {
                 //authorization id is first null delimited field
-                uid = response.substr(0, i);
+                uid = response->substr(0, i);
             }//else not a valid SASL PLAIN response, throw error?            
             if (!uid.empty()) {
                 //append realm if it has not already been added
@@ -376,18 +399,22 @@ void CyrusAuthenticator::getMechanisms(Array& mechanisms)
     }
 }
 
-void CyrusAuthenticator::start(const string& mechanism, const string& response)
+void CyrusAuthenticator::start(const string& mechanism, const string* response)
 {
     const char *challenge;
     unsigned int challenge_len;
     
-    QPID_LOG(debug, "SASL: Starting authentication with mechanism: " << mechanism);
+    // This should be at same debug level as mech list in getMechanisms().
+    QPID_LOG(info, "SASL: Starting authentication with mechanism: " << mechanism);
     int code = sasl_server_start(sasl_conn,
                                  mechanism.c_str(),
-                                 response.c_str(), response.length(),
+                                 (response ? response->c_str() : 0), (response ? response->size() : 0),
                                  &challenge, &challenge_len);
     
     processAuthenticationStep(code, challenge, challenge_len);
+    qmf::org::apache::qpid::broker::Connection* cnxMgmt = connection.getMgmtObject();
+    if ( cnxMgmt ) 
+        cnxMgmt->set_saslMechanism(mechanism);
 }
         
 void CyrusAuthenticator::step(const string& response)
@@ -424,10 +451,12 @@ void CyrusAuthenticator::processAuthenticationStep(int code, const char *challen
         client.secure(challenge_str);
     } else {
         std::string uid;
+        //save error detail before trying to retrieve username as error in doing so will overwrite it
+        std::string errordetail = sasl_errdetail(sasl_conn);
         if (!getUsername(uid)) {
-            QPID_LOG(info, "SASL: Authentication failed (no username available):" << sasl_errdetail(sasl_conn));
+            QPID_LOG(info, "SASL: Authentication failed (no username available yet):" << errordetail);
         } else {
-            QPID_LOG(info, "SASL: Authentication failed for " << uid << ":" << sasl_errdetail(sasl_conn));
+            QPID_LOG(info, "SASL: Authentication failed for " << uid << ":" << errordetail);
         }
 
         // TODO: Change to more specific exceptions, when they are
@@ -459,6 +488,9 @@ std::auto_ptr<SecurityLayer> CyrusAuthenticator::getSecurityLayer(uint16_t maxFr
     if (ssf) {
         securityLayer = std::auto_ptr<SecurityLayer>(new CyrusSecurityLayer(sasl_conn, maxFrameSize));
     }
+    qmf::org::apache::qpid::broker::Connection* cnxMgmt = connection.getMgmtObject();
+    if ( cnxMgmt ) 
+        cnxMgmt->set_saslSsf(ssf);
     return securityLayer;
 }
 

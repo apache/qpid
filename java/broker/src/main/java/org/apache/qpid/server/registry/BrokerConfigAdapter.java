@@ -71,7 +71,7 @@ public class BrokerConfigAdapter implements BrokerConfig
 
     public Integer getWorkerThreads()
     {
-        return _instance.getConfiguration().getProcessors();
+        return _instance.getConfiguration().getConnectorProcessors();
     }
 
     public Integer getMaxConnections()

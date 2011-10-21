@@ -64,9 +64,7 @@ struct Main {
         Listener listener;
 
         //
-        // Declare connection settings for the messaging broker.  The settings default to
-        // localhost:5672 with user guest (password guest).  Refer to the header file
-        // <qpid/client/ConnectionSettings.h> for full details.
+        // Declare connection settings for the messaging broker.  
         //
         qpid::client::ConnectionSettings connSettings;
 

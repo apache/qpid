@@ -69,7 +69,7 @@ struct AclPlugin : public Plugin {
     	}
 
         acl = new Acl(values, b);
-		b.setAcl(acl.get());
+        b.setAcl(acl.get());
         b.addFinalizer(boost::bind(&AclPlugin::shutdown, this));
     }
 

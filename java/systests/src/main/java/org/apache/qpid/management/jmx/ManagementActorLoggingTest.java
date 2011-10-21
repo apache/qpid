@@ -68,61 +68,6 @@ public class ManagementActorLoggingTest extends AbstractTestLogging
 
     /**
      * Description:
-     * When a JMX Management connection is made then this will be logged out.
-     *
-     * Input:
-     *
-     * 1. Running Broker
-     * 2. Connect Management client via JMX
-     * Output:
-     *
-     * <date> MNG-1007 : Open <user>
-     *
-     * Validation Steps:
-     * 1. The MNG ID is correct
-     * 2. The user is correct
-     *
-     * On connection close a MNG-1008 is expected
-     *
-     * * <date> MNG-1008 : Close
-     *
-     * Validation Steps:
-     * 1. The MNG ID is correct
-     *
-     * @throws java.io.IOException - if there is a problem reseting the log monitor
-     */
-    public void testJMXManagementConsoleConnection() throws IOException
-    {
-        List<String> results = waitAndFindMatches("MNG-1007");
-
-        assertEquals("Unexpected Management Connection count", 1, results.size());
-
-        String log = getLogMessage(results, 0);
-
-        validateMessageID("MNG-1007", log);
-
-        assertTrue("User not in log message:" + log, log.endsWith(USER));
-        // Extract the id from the log string
-        //  MESSAGE [mng:1(rmi://169.24.29.116)] MNG-1007 : Open : User admin
-        int connectionID = Integer.parseInt(fromActor(getLog(results.get(0))).charAt(4) + "");
-
-        results = findMatches("MNG-1008");
-
-        assertEquals("Unexpected Management Connection close count", 0, results.size());
-
-        _jmxUtils.close();
-        _closed  = true;
-        
-        results = waitAndFindMatches("MNG-1008");
-
-        assertEquals("Unexpected Management Connection count", 1, results.size());
-
-        assertEquals("Close does not have same id as open,", connectionID,
-                     Integer.parseInt(fromActor(getLog(results.get(0))).charAt(4) + ""));
-    }
-
-    /**
-     * Description:
      * When a connected client has its connection closed via the Management Console this will be logged as a CON-1002 message.
      * Input:
      *
@@ -161,7 +106,7 @@ public class ManagementActorLoggingTest extends AbstractTestLogging
         });
 
         //Remove the connection close from any 0-10 connections
-        _monitor.reset();
+        _monitor.markDiscardPoint();
 
         // Get a managedConnection
         ManagedConnection mangedConnection = _jmxUtils.getManagedObject(ManagedConnection.class, "org.apache.qpid:type=VirtualHost.Connection,*");
@@ -202,7 +147,7 @@ public class ManagementActorLoggingTest extends AbstractTestLogging
      */
     public void testCreateExchangeDirectTransientViaManagementConsole() throws IOException, JMException
     {
-        _monitor.reset();
+        _monitor.markDiscardPoint();
 
         _jmxUtils.createExchange("test", getName(), "direct", false);
 
@@ -226,7 +171,7 @@ public class ManagementActorLoggingTest extends AbstractTestLogging
     public void testCreateExchangeTopicTransientViaManagementConsole() throws IOException, JMException
     {
         //Remove any previous exchange declares
-        _monitor.reset();
+        _monitor.markDiscardPoint();
 
         _jmxUtils.createExchange("test", getName(), "topic", false);
 
@@ -251,7 +196,7 @@ public class ManagementActorLoggingTest extends AbstractTestLogging
     public void testCreateExchangeFanoutTransientViaManagementConsole() throws IOException, JMException
     {
         //Remove any previous exchange declares
-        _monitor.reset();
+        _monitor.markDiscardPoint();
 
         _jmxUtils.createExchange("test", getName(), "fanout", false);
 
@@ -276,7 +221,7 @@ public class ManagementActorLoggingTest extends AbstractTestLogging
     public void testCreateExchangeHeadersTransientViaManagementConsole() throws IOException, JMException
     {
         //Remove any previous exchange declares
-        _monitor.reset();
+        _monitor.markDiscardPoint();
 
         _jmxUtils.createExchange("test", getName(), "headers", false);
 
@@ -320,7 +265,7 @@ public class ManagementActorLoggingTest extends AbstractTestLogging
     public void testCreateQueueTransientViaManagementConsole() throws IOException, JMException
     {
         //Remove any previous queue declares
-        _monitor.reset();
+        _monitor.markDiscardPoint();
 
         _jmxUtils.createQueue("test", getName(), null, false);
 
@@ -363,7 +308,7 @@ public class ManagementActorLoggingTest extends AbstractTestLogging
     public void testQueueDeleteViaManagementConsole() throws IOException, JMException
     {
         //Remove any previous queue declares
-        _monitor.reset();
+        _monitor.markDiscardPoint();
 
         _jmxUtils.createQueue("test", getName(), null, false);
 
@@ -409,7 +354,7 @@ public class ManagementActorLoggingTest extends AbstractTestLogging
     public void testBindingCreateOnDirectViaManagementConsole() throws IOException, JMException
     {
         //Remove any previous queue declares
-        _monitor.reset();
+        _monitor.markDiscardPoint();
 
         _jmxUtils.createQueue("test", getName(), null, false);
 
@@ -436,7 +381,7 @@ public class ManagementActorLoggingTest extends AbstractTestLogging
     public void testBindingCreateOnTopicViaManagementConsole() throws IOException, JMException
     {
         //Remove any previous queue declares
-        _monitor.reset();
+        _monitor.markDiscardPoint();
 
         _jmxUtils.createQueue("test", getName(), null, false);
 
@@ -463,7 +408,7 @@ public class ManagementActorLoggingTest extends AbstractTestLogging
     public void testBindingCreateOnFanoutViaManagementConsole() throws IOException, JMException
     {
         //Remove any previous queue declares
-        _monitor.reset();
+        _monitor.markDiscardPoint();
 
         _jmxUtils.createQueue("test", getName(), null, false);
 
@@ -510,7 +455,7 @@ public class ManagementActorLoggingTest extends AbstractTestLogging
     public void testUnRegisterExchangeViaManagementConsole() throws IOException, JMException
     {
         //Remove any previous queue declares
-        _monitor.reset();
+        _monitor.markDiscardPoint();
 
         _jmxUtils.createExchange("test", getName(), "direct", false);
 

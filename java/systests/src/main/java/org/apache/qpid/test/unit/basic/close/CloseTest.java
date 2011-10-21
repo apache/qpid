@@ -21,14 +21,13 @@
 package org.apache.qpid.test.unit.basic.close;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.client.AMQConnection;
-import org.apache.qpid.client.AMQQueue;
-import org.apache.qpid.url.AMQBindingURL;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
+import javax.jms.Queue;
 import javax.jms.Session;
 
 public class CloseTest extends QpidBrokerTestCase
@@ -41,7 +40,7 @@ public class CloseTest extends QpidBrokerTestCase
 
         Session session = connection.createQueueSession(false, Session.AUTO_ACKNOWLEDGE);
 
-        AMQQueue queue = new AMQQueue(new AMQBindingURL("test-queue"));
+        Queue queue = session.createQueue("test-queue");
         MessageConsumer consumer = session.createConsumer(queue);
 
         MessageProducer producer_not_used_but_created_for_testing = session.createProducer(queue);

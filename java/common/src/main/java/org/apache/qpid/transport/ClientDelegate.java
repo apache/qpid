@@ -20,27 +20,19 @@
  */
 package org.apache.qpid.transport;
 
-import org.ietf.jgss.GSSContext;
-import org.ietf.jgss.GSSException;
-import org.ietf.jgss.GSSManager;
-import org.ietf.jgss.GSSName;
-import org.ietf.jgss.Oid;
-
-import org.apache.qpid.security.UsernamePasswordCallbackHandler;
 import static org.apache.qpid.transport.Connection.State.OPEN;
 import static org.apache.qpid.transport.Connection.State.RESUMING;
-import org.apache.qpid.transport.util.Logger;
 
-import javax.security.sasl.Sasl;
-import javax.security.sasl.SaslClient;
-import javax.security.sasl.SaslException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import javax.security.sasl.SaslClient;
+import javax.security.sasl.SaslException;
+
+import org.apache.qpid.transport.util.Logger;
 
 
 /**
@@ -52,31 +44,13 @@ public class ClientDelegate extends ConnectionDelegate
 {
     private static final Logger log = Logger.get(ClientDelegate.class);
 
-    private static final String KRB5_OID_STR = "1.2.840.113554.1.2.2";
-    protected static final Oid KRB5_OID;
 
-    static
-    {
-        Oid oid;
-        try
-        {
-            oid = new Oid(KRB5_OID_STR);
-        }
-        catch (GSSException ignore)
-        {
-            oid = null;
-        }
 
-        KRB5_OID = oid;
-    }
-
-    private List<String> clientMechs;
-    private ConnectionSettings conSettings;
+    protected final ConnectionSettings _conSettings;
 
     public ClientDelegate(ConnectionSettings settings)
     {
-        this.conSettings = settings;
-        this.clientMechs = Arrays.asList(settings.getSaslMechs().split(" "));
+        this._conSettings = settings;
     }
 
     public void init(Connection conn, ProtocolHeader hdr)
@@ -92,9 +66,9 @@ public class ClientDelegate extends ConnectionDelegate
     {
         Map<String,Object> clientProperties = new HashMap<String,Object>();
 
-        if(this.conSettings.getClientProperties() != null)
+        if(this._conSettings.getClientProperties() != null)
         {
-            clientProperties.putAll(this.conSettings.getClientProperties());
+            clientProperties.putAll(_conSettings.getClientProperties());
         }
 
         clientProperties.put("qpid.session_flow", 1);
@@ -109,41 +83,12 @@ public class ClientDelegate extends ConnectionDelegate
                 (clientProperties, null, null, conn.getLocale());
             return;
         }
-
-        List<String> choosenMechs = new ArrayList<String>();
-        for (String mech:clientMechs)
-        {
-            if (brokerMechs.contains(mech))
-            {
-                choosenMechs.add(mech);
-            }
-        }
-
-        if (choosenMechs.size() == 0)
-        {
-            conn.exception(new ConnectionException("The following SASL mechanisms " +
-                    clientMechs.toString()  +
-                    " specified by the client are not supported by the broker"));
-            return;
-        }
-
-        String[] mechs = new String[choosenMechs.size()];
-        choosenMechs.toArray(mechs);
-
         conn.setServerProperties(start.getServerProperties());
 
         try
         {
-            Map<String,Object> saslProps = new HashMap<String,Object>();
-            if (conSettings.isUseSASLEncryption())
-            {
-                saslProps.put(Sasl.QOP, "auth-conf");
-            }
-            UsernamePasswordCallbackHandler handler =
-                new UsernamePasswordCallbackHandler();
-            handler.initialise(conSettings.getUsername(), conSettings.getPassword());
-            SaslClient sc = Sasl.createSaslClient
-                (mechs, null, conSettings.getSaslProtocol(), conSettings.getSaslServerName(), saslProps, handler);
+            final SaslClient sc = createSaslClient(brokerMechs);
+
             conn.setSaslClient(sc);
 
             byte[] response = sc.hasInitialResponse() ?
@@ -152,10 +97,20 @@ public class ClientDelegate extends ConnectionDelegate
                 (clientProperties, sc.getMechanismName(), response,
                  conn.getLocale());
         }
+        catch (ConnectionException ce)
+        {
+            conn.exception(ce);
+        }
         catch (SaslException e)
         {
             conn.exception(e);
         }
+    }
+
+
+    protected SaslClient createSaslClient(List<Object> brokerMechs) throws ConnectionException, SaslException
+    {
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -176,7 +131,7 @@ public class ClientDelegate extends ConnectionDelegate
     @Override
     public void connectionTune(Connection conn, ConnectionTune tune)
     {
-        int hb_interval = calculateHeartbeatInterval(conSettings.getHeartbeatInterval(),
+        int hb_interval = calculateHeartbeatInterval(_conSettings.getHeartbeatInterval(),
                                                      tune.getHeartbeatMin(),
                                                      tune.getHeartbeatMax()
                                                      );
@@ -191,32 +146,12 @@ public class ClientDelegate extends ConnectionDelegate
         //(or that forced by protocol limitations [0xFFFF])
         conn.setChannelMax(channelMax == 0 ? Connection.MAX_CHANNEL_MAX : channelMax);
 
-        conn.connectionOpen(conSettings.getVhost(), null, Option.INSIST);
+        conn.connectionOpen(_conSettings.getVhost(), null, Option.INSIST);
     }
 
     @Override
     public void connectionOpenOk(Connection conn, ConnectionOpenOk ok)
     {
-        SaslClient sc = conn.getSaslClient();
-        if (sc != null)
-        {
-            if (sc.getMechanismName().equals("GSSAPI"))
-            {
-                String id = getKerberosUser();
-                if (id != null)
-                {
-                    conn.setUserID(id);
-                }
-            }
-            else if (sc.getMechanismName().equals("EXTERNAL"))
-            {
-                if (conn.getSecurityLayer() != null)
-                {
-                    conn.setUserID(conn.getSecurityLayer().getUserID());
-                }
-            }
-        }
-        
         if (conn.isConnectionResuming())
         {
             conn.setState(RESUMING);
@@ -247,7 +182,7 @@ public class ClientDelegate extends ConnectionDelegate
         int i = heartbeat;
         if (i == 0)
         {
-            log.warn("Idle timeout is zero. Heartbeats are disabled");
+            log.info("Idle timeout is 0 sec. Heartbeats are disabled.");
             return 0; // heartbeats are disabled.
         }
         else if (i >= min && i <= max)
@@ -256,8 +191,8 @@ public class ClientDelegate extends ConnectionDelegate
         }
         else
         {
-            log.warn("Ignoring the idle timeout %s set by the connection," +
-            		" using the brokers max value %s", i,max);
+            log.info("The broker does not support the configured connection idle timeout of %s sec," +
+                     " using the brokers max supported value of %s sec instead.", i,max);
             return max;
         }
     }
@@ -286,35 +221,7 @@ public class ClientDelegate extends ConnectionDelegate
 
     }
 
-    private String getKerberosUser()
-    {
-        log.debug("Obtaining userID from kerberos");
-        String service = conSettings.getSaslProtocol() + "@" + conSettings.getSaslServerName();
-        GSSManager manager = GSSManager.getInstance();
 
-        try
-        {
-            GSSName acceptorName = manager.createName(service,
-                GSSName.NT_HOSTBASED_SERVICE, KRB5_OID);
 
-            GSSContext secCtx = manager.createContext(acceptorName,
-                                                      KRB5_OID,
-                                                      null,
-                                                      GSSContext.INDEFINITE_LIFETIME);
 
-            secCtx.initSecContext(new byte[0], 0, 1);
-
-            if (secCtx.getSrcName() != null)
-            {
-                return secCtx.getSrcName().toString();
-            }
-
-        }
-        catch (GSSException e)
-        {
-            log.warn("Unable to retrieve userID from Kerberos due to error",e);
-        }
-
-        return null;
-    }
 }

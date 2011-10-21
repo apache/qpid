@@ -1,0 +1,71 @@
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+
+# Sets the environment for running the scripts from a source checkout.
+txtbld=$(tput bold)             # Bold
+txtrst=$(tput sgr0)             # Reset
+txtred=$(tput setaf 1)          # red
+txtgreen=$(tput setaf 2)        # green
+
+echo "${txtbld}Setting the environment to run qpid java tools from a source checkout${txtrst}"
+
+abs_path()
+{
+  D=`dirname "$1"` 
+  echo "`cd \"$D\" 2>/dev/null && pwd`"
+}
+
+export QPID_CHECKOUT=`abs_path "../../../../"`
+echo "${txtgreen}Using source checkout at $QPID_CHECKOUT${txtrst}"
+
+export PATH=$QPID_CHECKOUT/java/tools/bin:$PATH
+
+if [ "$JAVA" = "" ] ; then
+    export JAVA=$(which java)
+fi
+
+#------------- Required for perf_report, qpid-bench & qpid-python-testkit ----------------
+
+export VENDOR_LIB=$QPID_CHECKOUT/java/build/lib
+export CLASSPATH=`find $VENDOR_LIB -name '*.jar' | tr '\n' ':'`
+export LOG_CONFIG="-Dlog4j.configuration=file:///$QPID_CHECKOUT/java/tools/etc/test.log4j"
+
+
+#------------- Required for qpid-python-testkit -----------------------------------------
+
+PYTHONPATH=$QPID_CHECKOUT/python/qpid:$QPID_CHECKOUT/cpp/src/test/brokertest.py:$PYTHONPATH
+export PATH=$QPID_CHECKOUT/python:$PATH
+
+if [ -x $QPID_CHECKOUT/cpp/src/qpidd ]; then
+   QPIDD_EXEC=$QPID_CHECKOUT/cpp/src/qpidd
+else
+      echo "${txtred}WARNING: Qpid CPP broker executable not found. You will not be able to run qpid-python-testkit${txtrst}"
+fi
+
+if [ -x $QPID_CHECKOUT/cpp/src/.libs/cluster.so ]; then
+      CLUSTER_LIB=$QPID_CHECKOUT/cpp/src/.libs/cluster.so
+else
+     echo "${txtred}WARNING: Qpid cluster.so not found.You will not be able to run qpid-python-testkit${txtrst}"
+fi
+
+if [ "$STORE_LIB" = "" ] ; then
+     echo "${txtred}WARNING: Please point the STORE_LIB variable to the message store module. If not persistence tests will not write messages to disk.${txtrst}"
+fi
+
+export PYTHONPATH QPIDD_EXEC CLUSTER_LIB

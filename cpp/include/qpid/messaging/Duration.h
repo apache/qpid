@@ -32,7 +32,7 @@ namespace messaging {
 /**   \ingroup messaging 
  * A duration is a time in milliseconds.
  */
-class Duration
+class QPID_MESSAGING_CLASS_EXTERN Duration
 {
   public:
     QPID_MESSAGING_EXTERN explicit Duration(uint64_t milliseconds);
@@ -46,9 +46,11 @@ class Duration
 };
 
 QPID_MESSAGING_EXTERN Duration operator*(const Duration& duration,
-                                      uint64_t multiplier);
+                                         uint64_t multiplier);
 QPID_MESSAGING_EXTERN Duration operator*(uint64_t multiplier,
-                                      const Duration& duration);
+                                         const Duration& duration);
+QPID_MESSAGING_EXTERN bool operator==(const Duration& a, const Duration& b);
+QPID_MESSAGING_EXTERN bool operator!=(const Duration& a, const Duration& b);
 
 }} // namespace qpid::messaging
 

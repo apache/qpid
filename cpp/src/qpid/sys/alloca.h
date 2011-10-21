@@ -21,19 +21,22 @@
  *
  */
 
-#if (defined(_WINDOWS) || defined (WIN32)) && defined(_MSC_VER)
-#include <malloc.h>
-#ifdef alloc
-#  undef alloc
-#endif
-#define alloc _alloc
-#ifdef alloca
-#  undef alloca
-#endif
-#define alloca _alloca
+#if (defined(_WINDOWS) || defined (WIN32))
+#  include <malloc.h>
+
+#  if defined(_MSC_VER)
+#    ifdef alloc
+#      undef alloc
+#    endif
+#    define alloc _alloc
+#    ifdef alloca
+#      undef alloca
+#    endif
+#    define alloca _alloca
+#  endif
 #endif
 #if !defined _WINDOWS && !defined WIN32
-#include <alloca.h>
+#  include <alloca.h>
 #endif
 
 #endif  /*!QPID_SYS_ALLOCA_H*/

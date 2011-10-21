@@ -80,7 +80,7 @@ public final class AMQConstant
     /**
      * An operator intervened to close the connection for some reason. The client may retry at some later date.
      */
-    public static final AMQConstant CONTEXT_IN_USE = new AMQConstant(320, "context in use", true);
+    public static final AMQConstant CONNECTION_FORCED = new AMQConstant(320, "connection forced", true);
 
     /** The client tried to work with an unknown virtual host or cluster. */
     public static final AMQConstant INVALID_PATH = new AMQConstant(402, "invalid path", true);
@@ -104,7 +104,7 @@ public final class AMQConstant
 
     public static final AMQConstant REQUEST_TIMEOUT = new AMQConstant(408, "Request Timeout", true);
 
-    public static final AMQConstant INVALID_ARGUMENT = new AMQConstant(409, "argument invalid", true);
+    public static final AMQConstant ARGUMENT_INVALID = new AMQConstant(409, "argument invalid", true);
 
     /**
      * The client sent a malformed frame that the server could not decode. This strongly implies a programming error
@@ -153,10 +153,7 @@ public final class AMQConstant
 
     public static final AMQConstant FRAME_MIN_SIZE = new AMQConstant(4096, "frame min size", true);
 
-    /**
-     * The server does not support the protocol version
-     */
-    public static final AMQConstant UNSUPPORTED_BROKER_PROTOCOL_ERROR = new AMQConstant(542, "broker unsupported protocol", true);
+    public static final AMQConstant INVALID_ARGUMENT = new AMQConstant(542, "invalid argument", true);
     /**
      * The client imp does not support the protocol version
      */

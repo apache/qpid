@@ -122,6 +122,7 @@ public class MessageStoreTest extends InternalBrokerBaseCase
             }
             catch (Exception e)
             {
+                e.printStackTrace();
                 fail(e.getMessage());
             }
         }
@@ -589,7 +590,7 @@ public class MessageStoreTest extends InternalBrokerBaseCase
         headerBody.classId = BasicConsumeBodyImpl.CLASS_ID;
         headerBody.bodySize = 0;
 
-        headerBody.properties = properties;
+        headerBody.setProperties(properties);
 
         try
         {

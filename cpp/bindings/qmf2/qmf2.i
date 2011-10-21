@@ -37,6 +37,7 @@
 
 %}
 
+%include <qpid/ImportExport.h>
 %include <qpid/messaging/ImportExport.h>
 %include <qpid/messaging/Duration.h>
 

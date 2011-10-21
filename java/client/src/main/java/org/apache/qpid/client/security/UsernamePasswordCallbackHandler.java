@@ -27,15 +27,19 @@ import javax.security.auth.callback.NameCallback;
 import javax.security.auth.callback.PasswordCallback;
 import javax.security.auth.callback.UnsupportedCallbackException;
 
-import org.apache.qpid.client.protocol.AMQProtocolSession;
+import org.apache.qpid.jms.ConnectionURL;
 
 public class UsernamePasswordCallbackHandler implements AMQCallbackHandler
 {
-    private AMQProtocolSession _protocolSession;
+    private ConnectionURL _connectionURL;
 
-    public void initialise(AMQProtocolSession protocolSession)
+    /**
+     * @see org.apache.qpid.client.security.AMQCallbackHandler#initialise(org.apache.qpid.jms.ConnectionURL)
+     */
+    @Override
+    public void initialise(final ConnectionURL connectionURL)
     {
-        _protocolSession = protocolSession;
+        _connectionURL = connectionURL;
     }
 
     public void handle(Callback[] callbacks) throws IOException, UnsupportedCallbackException
@@ -45,11 +49,11 @@ public class UsernamePasswordCallbackHandler implements AMQCallbackHandler
             Callback cb = callbacks[i];
             if (cb instanceof NameCallback)
             {
-                ((NameCallback)cb).setName(_protocolSession.getUsername());
+                ((NameCallback)cb).setName(_connectionURL.getUsername());
             }
             else if (cb instanceof PasswordCallback)
             {
-                ((PasswordCallback)cb).setPassword(_protocolSession.getPassword().toCharArray());
+                ((PasswordCallback)cb).setPassword(_connectionURL.getPassword().toCharArray());
             }
             else
             {
@@ -57,4 +61,5 @@ public class UsernamePasswordCallbackHandler implements AMQCallbackHandler
             }
         }
     }
+
 }

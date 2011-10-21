@@ -27,6 +27,7 @@
 #include <string>
 
 struct addrinfo;
+struct sockaddr;
 
 namespace qpid {
 namespace sys {
@@ -41,12 +42,19 @@ public:
     QPID_COMMON_EXTERN SocketAddress& operator=(const SocketAddress&);
     QPID_COMMON_EXTERN ~SocketAddress();
 
-    std::string asString() const;
+    QPID_COMMON_EXTERN bool nextAddress();
+    QPID_COMMON_EXTERN std::string asString(bool numeric=true) const;
+    QPID_COMMON_EXTERN void setAddrInfoPort(uint16_t port);
+
+    QPID_COMMON_EXTERN static std::string asString(::sockaddr const * const addr, size_t addrlen);
+    QPID_COMMON_EXTERN static uint16_t getPort(::sockaddr const * const addr);
+    
 
 private:
     std::string host;
     std::string port;
     mutable ::addrinfo* addrInfo;
+    mutable ::addrinfo* currentAddrInfo;
 };
 
 }}

@@ -61,7 +61,6 @@ class MockStoreTransaction implements Transaction
         return _state;
     }
 
-    @Override
     public void enqueueMessage(TransactionLogResource queue, Long messageId) throws AMQStoreException
     {
         if (_throwExceptionOnQueueOp)
@@ -83,8 +82,6 @@ class MockStoreTransaction implements Transaction
         return _numberOfEnqueuedMessages;
     }
 
-
-    @Override
     public void dequeueMessage(TransactionLogResource queue, Long messageId) throws AMQStoreException
     {
         if (_throwExceptionOnQueueOp)
@@ -95,19 +92,16 @@ class MockStoreTransaction implements Transaction
         _numberOfDequeuedMessages++;
     }
 
-    @Override
     public void commitTran() throws AMQStoreException
     {
         _state = TransactionState.COMMITTED;
     }
 
-    @Override
     public StoreFuture commitTranAsync() throws AMQStoreException
     {
         throw new NotImplementedException();
     }
 
-    @Override
     public void abortTran() throws AMQStoreException
     {
         _state = TransactionState.ABORTED;
@@ -117,14 +111,11 @@ class MockStoreTransaction implements Transaction
     {
         return new TransactionLog()
         {
-    
-            @Override
             public void configureTransactionLog(String name, TransactionLogRecoveryHandler recoveryHandler,
                     Configuration storeConfiguration, LogSubject logSubject) throws Exception
             {
             }
-    
-            @Override
+
             public Transaction newTransaction()
             {
                 storeTransaction.setState(TransactionState.STARTED);

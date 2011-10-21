@@ -44,14 +44,13 @@ import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.test.utils.QpidTestCase;
-import org.apache.qpid.util.MockChannel;
 
 
 public class InternalBrokerBaseCase extends QpidTestCase
 {
     private IApplicationRegistry _registry;
     private MessageStore _messageStore;
-    private MockChannel _channel;
+    private AMQChannel _channel;
     private InternalTestProtocolSession _session;
     private VirtualHost _virtualHost;
     private AMQQueue _queue;
@@ -111,7 +110,7 @@ public class InternalBrokerBaseCase extends QpidTestCase
         _session = new InternalTestProtocolSession(_virtualHost);
         CurrentActor.set(_session.getLogActor());
 
-        _channel = new MockChannel(_session, 1, _messageStore);
+        _channel = new AMQChannel(_session, 1, _messageStore);
 
         _session.addChannel(_channel);
     }
@@ -243,7 +242,7 @@ public class InternalBrokerBaseCase extends QpidTestCase
             //Make Message Persistent
             properties.setDeliveryMode((byte) 2);
 
-            _headerBody.properties = properties;
+            _headerBody.setProperties(properties);
 
             channel.publishContentHeader(_headerBody);
         }
@@ -283,12 +282,12 @@ public class InternalBrokerBaseCase extends QpidTestCase
         _messageStore = messageStore;
     }
 
-    public MockChannel getChannel()
+    public AMQChannel getChannel()
     {
         return _channel;
     }
 
-    public void setChannel(MockChannel channel)
+    public void setChannel(AMQChannel channel)
     {
         _channel = channel;
     }

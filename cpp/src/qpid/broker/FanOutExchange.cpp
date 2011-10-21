@@ -18,6 +18,7 @@
  * under the License.
  *
  */
+#include "qpid/log/Statement.h"
 #include "qpid/broker/FanOutExchange.h"
 #include "qpid/broker/FedOps.h"
 #include <algorithm>
@@ -65,7 +66,7 @@ bool FanOutExchange::bind(Queue::shared_ptr queue, const string& /*key*/, const 
     } else if (fedOp == fedOpUnbind) {
         propagate = fedBinding.delOrigin(queue->getName(), fedOrigin);
         if (fedBinding.countFedBindings(queue->getName()) == 0)
-            unbind(queue, "", 0);
+            unbind(queue, "", args);
     } else if (fedOp == fedOpReorigin) {
         if (fedBinding.hasLocal()) {
             propagateFedOp(string(), string(), fedOpBind, string());
@@ -78,12 +79,16 @@ bool FanOutExchange::bind(Queue::shared_ptr queue, const string& /*key*/, const 
     return true;
 }
 
-bool FanOutExchange::unbind(Queue::shared_ptr queue, const string& /*key*/, const FieldTable* /*args*/)
+bool FanOutExchange::unbind(Queue::shared_ptr queue, const string& /*key*/, const FieldTable* args)
 {
+    string fedOrigin(args ? args->getAsString(qpidFedOrigin) : "");
     bool propagate = false;
 
+    QPID_LOG(debug, "Unbinding queue " << queue->getName()
+             << " from exchange " << getName() << " origin=" << fedOrigin << ")" );
+
     if (bindings.remove_if(MatchQueue(queue))) {
-        propagate = fedBinding.delOrigin();
+        propagate = fedBinding.delOrigin(queue->getName(), fedOrigin);
         if (mgmtExchange != 0) {
             mgmtExchange->dec_bindingCount();
         }

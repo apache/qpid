@@ -25,6 +25,7 @@
 #include "qpid/broker/BrokerImportExport.h"
 #include "qpid/broker/MessageStore.h"
 #include "qpid/broker/Queue.h"
+#include "qpid/sys/Mutex.h"
 
 #include <boost/intrusive_ptr.hpp>
 
@@ -34,10 +35,11 @@ namespace broker {
 /**
  * A null implementation of the MessageStore interface
  */
-class NullMessageStore : public MessageStore
+class QPID_BROKER_CLASS_EXTERN NullMessageStore : public MessageStore
 {
     std::set<std::string> prepared;
     uint64_t nextPersistenceId;
+    qpid::sys::Mutex lock;
   public:
     QPID_BROKER_EXTERN NullMessageStore();
 

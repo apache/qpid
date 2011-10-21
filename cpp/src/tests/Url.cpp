@@ -60,6 +60,32 @@ QPID_AUTO_TEST_CASE(TestParseXyz) {
     BOOST_CHECK_EQUAL(Url("xyz:host").str(), "amqp:xyz:host:5672");
 }
 
+QPID_AUTO_TEST_CASE(TestParseTricky) {
+    BOOST_CHECK_EQUAL(Url("amqp").str(), "amqp:tcp:amqp:5672");
+    BOOST_CHECK_EQUAL(Url("amqp:tcp").str(), "amqp:tcp:tcp:5672");
+    // These are ambiguous parses and arguably not the best result
+    BOOST_CHECK_EQUAL(Url("amqp:876").str(), "amqp:tcp:876:5672");
+    BOOST_CHECK_EQUAL(Url("tcp:567").str(), "amqp:tcp:567:5672");
+}
+
+QPID_AUTO_TEST_CASE(TestParseIPv6) {
+    Url u1("[::]");
+    BOOST_CHECK_EQUAL(u1[0].host, "::");
+    BOOST_CHECK_EQUAL(u1[0].port, 5672);
+    Url u2("[::1]");
+    BOOST_CHECK_EQUAL(u2[0].host, "::1");
+    BOOST_CHECK_EQUAL(u2[0].port, 5672);
+    Url u3("[::127.0.0.1]");
+    BOOST_CHECK_EQUAL(u3[0].host, "::127.0.0.1");
+    BOOST_CHECK_EQUAL(u3[0].port, 5672);
+    Url u4("[2002::222:68ff:fe0b:e61a]");
+    BOOST_CHECK_EQUAL(u4[0].host, "2002::222:68ff:fe0b:e61a");
+    BOOST_CHECK_EQUAL(u4[0].port, 5672);
+    Url u5("[2002::222:68ff:fe0b:e61a]:123");
+    BOOST_CHECK_EQUAL(u5[0].host, "2002::222:68ff:fe0b:e61a");
+    BOOST_CHECK_EQUAL(u5[0].port, 123);
+}
+
 QPID_AUTO_TEST_CASE(TestParseMultiAddress) {
     Url::addProtocol("xyz");
     URL_CHECK_STR("amqp:tcp:host:0,xyz:foo:123,tcp:foo:0,xyz:bar:1");

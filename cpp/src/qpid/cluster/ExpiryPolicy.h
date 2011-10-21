@@ -36,12 +36,8 @@ namespace broker {
 class Message;
 }
 
-namespace sys {
-class Timer;
-}
-
 namespace cluster {
-class Multicaster;
+class Cluster;
 
 /**
  * Cluster expiry policy
@@ -49,43 +45,13 @@ class Multicaster;
 class ExpiryPolicy : public broker::ExpiryPolicy
 {
   public:
-    ExpiryPolicy(Multicaster&, const MemberId&, sys::Timer&);
+    ExpiryPolicy(Cluster& cluster);
 
-    void willExpire(broker::Message&);
     bool hasExpired(broker::Message&);
-    void forget(broker::Message&);
+    qpid::sys::AbsTime getCurrentTime();
 
-    // Send expiration notice to cluster.
-    void sendExpire(uint64_t);
-
-    // Cluster delivers expiry notice.
-    void deliverExpire(uint64_t);
-
-    void setId(uint64_t id);
-    uint64_t getId() const;
-    
-    boost::optional<uint64_t> getId(broker::Message&);
-    
   private:
-    typedef std::map<broker::Message*,  uint64_t> MessageIdMap;
-    // When messages are fanned out to multiple queues, update sends
-    // them as independenty messages so we can have multiple messages
-    // with the same expiry ID.
-    typedef std::multimap<uint64_t, broker::Message*> IdMessageMap;
-
-    struct Expired : public broker::ExpiryPolicy {
-        bool hasExpired(broker::Message&);
-        void willExpire(broker::Message&);
-    };
-
-    mutable sys::Mutex lock;
-    MessageIdMap unexpiredByMessage;
-    IdMessageMap unexpiredById;
-    uint64_t expiryId;
-    boost::intrusive_ptr<Expired> expiredPolicy;
-    Multicaster& mcast;
-    MemberId memberId;
-    sys::Timer& timer;
+    Cluster& cluster;
 };
 
 }} // namespace qpid::cluster

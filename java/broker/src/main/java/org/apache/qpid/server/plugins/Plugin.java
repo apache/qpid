@@ -27,5 +27,5 @@ public interface Plugin
     /**
      * Provide Configuration to this plugin
      */
-    public void configure(ConfigurationPlugin config);
+    public void configure(ConfigurationPlugin config) throws ConfigurationException;
 }

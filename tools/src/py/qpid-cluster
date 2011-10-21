@@ -247,7 +247,7 @@ def main(argv=None):
         parser.add_option("-k", "--all-stop", action="store_true", default=False, help="Shut down the whole cluster")
         parser.add_option("-f", "--force", action="store_true", default=False, help="Suppress the 'are you sure' prompt")
         parser.add_option("-n", "--numeric", action="store_true", default=False, help="Don't resolve names")
-	
+
         opts, args = parser.parse_args(args=argv)
 
         if args:
@@ -268,12 +268,12 @@ def main(argv=None):
 
         if opts.del_connection:
             config._delConn = opts.del_connection
-            if len(config._delConn.split(":")) != 2: 
+            if len(config._delConn.split(":")) != 2:
                 parser.error("Member ID must be of form: <host or ip>:<number>")
 
         if opts.stop:
-            config._stopID = opts.stop
-            if len(config._stopId.split(":")) != 2: 
+            config._stopId = opts.stop
+            if len(config._stopId.split(":")) != 2:
                 parser.error("Member ID must be of form: <host or ip>:<number>")
 
         config._stopAll = opts.all_stop
@@ -303,6 +303,7 @@ def main(argv=None):
 
         bm.Disconnect()
     except Exception, e:
+        raise
         print str(e)
         return 1
 

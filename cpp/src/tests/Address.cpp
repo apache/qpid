@@ -119,6 +119,17 @@ QPID_AUTO_TEST_CASE(testParseQuotedNameAndSubject)
     BOOST_CHECK_EQUAL(std::string("my subject with ; in it"), address.getSubject());
 }
 
+QPID_AUTO_TEST_CASE(testParseOptionsWithEmptyStringAsValue)
+{
+    Address address("my-topic; {a:'', x:101}");
+    BOOST_CHECK_EQUAL(std::string("my-topic"), address.getName());
+    Variant a = address.getOptions()["a"];
+    BOOST_CHECK_EQUAL(VAR_STRING, a.getType());
+    std::string aVal = a;
+    BOOST_CHECK(aVal.size() == 0);
+    BOOST_CHECK_EQUAL((uint16_t) 101, address.getOptions()["x"].asInt64());
+}
+
 QPID_AUTO_TEST_SUITE_END()
 
 }}

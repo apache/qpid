@@ -1,0 +1,7 @@
+TODO Items
+-----------------------------------------------------------------------------
+
+Version 0.11.0:
+ * Deliver the Ruby bindings as a gem.
+ * Rework the blocking tasks to not bring the main thread to a halt.
+

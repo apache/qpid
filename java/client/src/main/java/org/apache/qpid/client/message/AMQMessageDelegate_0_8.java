@@ -30,7 +30,6 @@ import java.util.UUID;
 import javax.jms.Destination;
 import javax.jms.JMSException;
 import javax.jms.MessageNotWriteableException;
-import javax.jms.Session;
 
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQQueue;
@@ -60,15 +59,12 @@ public class AMQMessageDelegate_0_8 extends AbstractAMQMessageDelegate
             Boolean.parseBoolean(System.getProperties().getProperty(AMQSession.STRICT_AMQP, AMQSession.STRICT_AMQP_DEFAULT));
 
     private ContentHeaderProperties _contentHeaderProperties;
-    /** If the acknowledge mode is CLIENT_ACKNOWLEDGE the session is required */
-    private AMQSession _session;
-    private final long _deliveryTag;
 
     // The base set of items that needs to be set. 
     private AMQMessageDelegate_0_8(BasicContentHeaderProperties properties, long deliveryTag)
     {
+        super(deliveryTag);
         _contentHeaderProperties = properties;
-        _deliveryTag = deliveryTag;
         _readableProperties = (_contentHeaderProperties != null);
         _headerAdapter = new JMSHeaderAdapter(_readableProperties ? ((BasicContentHeaderProperties) _contentHeaderProperties).getHeaders()
                                                                   : (new BasicContentHeaderProperties()).getHeaders() );
@@ -499,7 +495,6 @@ public class AMQMessageDelegate_0_8 extends AbstractAMQMessageDelegate
         {
             throw new MessageNotWriteableException("You need to call clearProperties() to make the message writable");
         }
-        _contentHeaderProperties.updated();
     }
 
 
@@ -519,58 +514,4 @@ public class AMQMessageDelegate_0_8 extends AbstractAMQMessageDelegate
 
         _readableProperties = false;
     }
-
-
-    public void acknowledgeThis() throws JMSException
-    {
-        // the JMS 1.1 spec says in section 3.6 that calls to acknowledge are ignored when client acknowledge
-        // is not specified. In our case, we only set the session field where client acknowledge mode is specified.
-        if (_session != null && _session.getAcknowledgeMode() == Session.CLIENT_ACKNOWLEDGE)
-        {
-            if (_session.getAMQConnection().isClosed())
-            {
-                throw new javax.jms.IllegalStateException("Connection is already closed");
-            }
-
-            // we set multiple to true here since acknowledgement implies acknowledge of all previous messages
-            // received on the session
-            _session.acknowledgeMessage(_deliveryTag, true);
-        }
-    }
-
-    public void acknowledge() throws JMSException
-    {
-        if (_session != null && _session.getAcknowledgeMode() == Session.CLIENT_ACKNOWLEDGE)
-        {
-            _session.acknowledge();
-        }
-    }
-    
-
-     /**
-     * The session is set when CLIENT_ACKNOWLEDGE mode is used so that the CHANNEL ACK can be sent when the user calls
-     * acknowledge()
-     *
-     * @param s the AMQ session that delivered this message
-     */
-    public void setAMQSession(AMQSession s)
-    {
-        _session = s;
-    }
-
-    public AMQSession getAMQSession()
-    {
-        return _session;
-    }
-
-    /**
-     * Get the AMQ message number assigned to this message
-     *
-     * @return the message number
-     */
-    public long getDeliveryTag()
-    {
-        return _deliveryTag;
-    }
-
 }

@@ -102,9 +102,9 @@ struct SimpleListener : public MessageListener
     }
 };
 
-struct ClientSessionFixture : public ProxySessionFixture
+struct ClientSessionFixture : public SessionFixture
 {
-    ClientSessionFixture(Broker::Options opts = Broker::Options()) : ProxySessionFixture(opts) {
+    ClientSessionFixture(Broker::Options opts = Broker::Options()) : SessionFixture(opts) {
         session.queueDeclare(arg::queue="my-queue");
     }
 };
@@ -150,16 +150,6 @@ QPID_AUTO_TEST_CASE(testDispatcherThread)
         BOOST_CHECK_EQUAL(boost::lexical_cast<string>(i), listener.messages[i].getData());
 }
 
-// FIXME aconway 2009-06-17: test for unimplemented feature, enable when implemented.
-void testSuspend0Timeout() {
-    ClientSessionFixture fix;
-    fix.session.suspend();  // session has 0 timeout.
-    try {
-        fix.connection.resume(fix.session);
-        BOOST_FAIL("Expected InvalidArgumentException.");
-    } catch(const InternalErrorException&) {}
-}
-
 QPID_AUTO_TEST_CASE(testUseSuspendedError)
 {
     ClientSessionFixture fix;
@@ -170,18 +160,6 @@ QPID_AUTO_TEST_CASE(testUseSuspendedError)
         BOOST_FAIL("Expected session suspended exception");
     } catch(const NotAttachedException&) {}
 }
-
-// FIXME aconway 2009-06-17: test for unimplemented feature, enable when implemented.
-void testSuspendResume() {
-    ClientSessionFixture fix;
-    fix.session.timeout(60);
-    fix.session.suspend();
-    // Make sure we are still subscribed after resume.
-    fix.connection.resume(fix.session);
-    fix.session.messageTransfer(arg::content=Message("my-message", "my-queue"));
-    BOOST_CHECK_EQUAL("my-message", fix.subs.get("my-queue", TIME_SEC).getData());
-}
-
 
 QPID_AUTO_TEST_CASE(testSendToSelf) {
     ClientSessionFixture fix;
@@ -271,8 +249,12 @@ QPID_AUTO_TEST_CASE(testOpenFailure) {
 QPID_AUTO_TEST_CASE(testPeriodicExpiration) {
     Broker::Options opts;
     opts.queueCleanInterval = 1;
+    opts.queueFlowStopRatio = 0;
+    opts.queueFlowResumeRatio = 0;
     ClientSessionFixture fix(opts);
-    fix.session.queueDeclare(arg::queue="my-queue", arg::exclusive=true, arg::autoDelete=true);
+    FieldTable args;
+    args.setInt("qpid.max_count",10);
+    fix.session.queueDeclare(arg::queue="my-queue", arg::exclusive=true, arg::autoDelete=true, arg::arguments=args);
 
     for (uint i = 0; i < 10; i++) {
         Message m((boost::format("Message_%1%") % (i+1)).str(), "my-queue");
@@ -283,6 +265,7 @@ QPID_AUTO_TEST_CASE(testPeriodicExpiration) {
     BOOST_CHECK_EQUAL(fix.session.queueQuery(string("my-queue")).getMessageCount(), 10u);
     qpid::sys::sleep(2);
     BOOST_CHECK_EQUAL(fix.session.queueQuery(string("my-queue")).getMessageCount(), 5u);
+    fix.session.messageTransfer(arg::content=Message("Message_11", "my-queue"));//ensure policy is also updated
 }
 
 QPID_AUTO_TEST_CASE(testExpirationOnPop) {

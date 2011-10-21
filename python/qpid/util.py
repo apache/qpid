@@ -39,12 +39,17 @@ except ImportError:
       self.sock.close()
 
 def connect(host, port):
-  sock = socket.socket()
-  sock.connect((host, port))
-  sock.setblocking(1)
-  # XXX: we could use this on read, but we'd have to put write in a
-  # loop as well
-  # sock.settimeout(1)
+  for res in socket.getaddrinfo(host, port, 0, socket.SOCK_STREAM):
+    af, socktype, proto, canonname, sa = res
+    sock = socket.socket(af, socktype, proto)
+    try:
+      sock.connect(sa)
+      break
+    except socket.error, msg:
+      sock.close
+  else:
+    # If we got here then we couldn't connect (yet)
+    raise
   return sock
 
 def listen(host, port, predicate = lambda: True, bound = lambda: None):
@@ -101,15 +106,23 @@ def fill(text, indent, heading = None):
 class URL:
 
   RE = re.compile(r"""
-        # [   <scheme>://  ] [    <user>   [   / <password>   ] @]   <host>   [   :<port>   ]
-        ^ (?: ([^:/@]+)://)? (?: ([^:/@]+) (?: / ([^:/@]+)   )? @)? ([^@:/]+) (?: :([0-9]+))?$
-""", re.X)
+        # [   <scheme>://  ] [    <user>   [   / <password>   ] @]    ( <host4>     | \[    <host6>    \] )  [   :<port>   ]
+        ^ (?: ([^:/@]+)://)? (?: ([^:/@]+) (?: / ([^:/@]+)   )? @)? (?: ([^@:/\[]+) | \[ ([a-f0-9:.]+) \] ) (?: :([0-9]+))?$
+""", re.X | re.I)
 
   AMQPS = "amqps"
   AMQP = "amqp"
 
-  def __init__(self, s):
-    if isinstance(s, URL):
+  def __init__(self, s=None, **kwargs):
+    if s is None:
+      self.scheme = kwargs.get('scheme', None)
+      self.user = kwargs.get('user', None)
+      self.password = kwargs.get('password', None)
+      self.host = kwargs.get('host', None)
+      self.port = kwargs.get('port', None)
+      if self.host is None:
+        raise ValueError('Host required for url')
+    elif isinstance(s, URL):
       self.scheme = s.scheme
       self.user = s.user
       self.password = s.password
@@ -119,7 +132,8 @@ class URL:
       match = URL.RE.match(s)
       if match is None:
         raise ValueError(s)
-      self.scheme, self.user, self.password, self.host, port = match.groups()
+      self.scheme, self.user, self.password, host4, host6, port = match.groups()
+      self.host = host4 or host6
       if port is None:
         self.port = None
       else:
@@ -137,10 +151,24 @@ class URL:
       if self.password:
         s += "/%s" % self.password
       s += "@"
-    s += self.host
+    if ':' not in self.host:
+      s += self.host
+    else:
+      s += "[%s]" % self.host
     if self.port:
       s += ":%s" % self.port
     return s
+
+  def __eq__(self, url):
+    if isinstance(url, basestring):
+      url = URL(url)
+    return \
+      self.scheme==url.scheme and \
+      self.user==url.user and self.password==url.password and \
+      self.host==url.host and self.port==url.port
+
+  def __ne__(self, url):
+    return not self.__eq__(url)
 
 def default(value, default):
   if value is None:

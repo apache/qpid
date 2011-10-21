@@ -29,14 +29,14 @@
 namespace qpid {
 namespace framing {
 
-struct OutOfBounds : qpid::Exception {
+struct QPID_COMMON_CLASS_EXTERN OutOfBounds : qpid::Exception {
     OutOfBounds() : qpid::Exception(std::string("Out of Bounds")) {}
 };
 
 class Content;
 class FieldTable;
 
-class Buffer
+class QPID_COMMON_CLASS_EXTERN Buffer
 {
     uint32_t size;
     char* data;
@@ -72,12 +72,12 @@ class Buffer
     QPID_COMMON_EXTERN void restore(bool reRecord = false);
     QPID_COMMON_EXTERN void reset();
 
-    QPID_COMMON_EXTERN uint32_t available() { return size - position; }
-    QPID_COMMON_EXTERN uint32_t getSize() { return size; }
-    QPID_COMMON_EXTERN uint32_t getPosition() { return position; }
-    QPID_COMMON_EXTERN void setPosition(uint32_t p) { position = p; }
-    QPID_COMMON_EXTERN Iterator getIterator() { return Iterator(*this); }
-    QPID_COMMON_EXTERN char* getPointer() { return data; }
+    QPID_COMMON_INLINE_EXTERN uint32_t available() { return size - position; }
+    QPID_COMMON_INLINE_EXTERN uint32_t getSize() { return size; }
+    QPID_COMMON_INLINE_EXTERN uint32_t getPosition() { return position; }
+    QPID_COMMON_INLINE_EXTERN void setPosition(uint32_t p) { position = p; }
+    QPID_COMMON_INLINE_EXTERN Iterator getIterator() { return Iterator(*this); }
+    QPID_COMMON_INLINE_EXTERN char* getPointer() { return data; }
 
     QPID_COMMON_EXTERN void putOctet(uint8_t i);
     QPID_COMMON_EXTERN void putShort(uint16_t i);

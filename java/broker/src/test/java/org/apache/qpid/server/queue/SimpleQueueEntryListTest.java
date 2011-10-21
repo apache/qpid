@@ -23,6 +23,7 @@ package org.apache.qpid.server.queue;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.apache.qpid.AMQException;
 import org.apache.qpid.server.message.AMQMessage;
 
 import junit.framework.TestCase;
@@ -155,5 +156,55 @@ public class SimpleQueueEntryListTest extends TestCase
         
         assertEquals("Count should have been equal",count,remainingMessages.size());
     }
-    
+
+    public void testDequedMessagedNotPresentInIterator()
+    {
+        int numberOfMessages = 10;
+        SimpleQueueEntryList entryList = new SimpleQueueEntryList(new MockAMQQueue("test"));
+        QueueEntry[] entries = new QueueEntry[numberOfMessages];
+
+        for(int i = 0; i < numberOfMessages ; i++)
+        {
+            AMQMessage message = null;;
+            try
+            {
+                message = new MockAMQMessage(i);
+            }
+            catch (AMQException e)
+            {
+                fail("Failure to create a mock message:" + e.getMessage());
+            }
+            QueueEntry entry = entryList.add(message);
+            assertNotNull("QE should not be null", entry);
+            entries[i]= entry;
+        }
+
+        // dequeue all even messages
+        for (QueueEntry queueEntry : entries)
+        {
+            long i = ((AMQMessage)queueEntry.getMessage()).getMessageId().longValue();
+            if (i%2 == 0)
+            {
+                queueEntry.acquire();
+                queueEntry.dequeue();
+            }
+        }
+
+        // iterate and check that dequeued messages are not returned by iterator
+        QueueEntryIterator it = entryList.iterator();
+        int counter = 0;
+        int i = 1;
+        while (it.advance())
+        {
+            QueueEntry entry = it.getNode();
+            Long id = ((AMQMessage)entry.getMessage()).getMessageId();
+            assertEquals("Expected message with id " + i + " but got message with id "
+                    + id, new Long(i), id);
+            counter++;
+            i += 2;
+        }
+        int expectedNumber = numberOfMessages / 2;
+        assertEquals("Expected  " + expectedNumber + " number of entries in iterator but got " + counter,
+                expectedNumber, counter);
+    }
 }

@@ -53,8 +53,10 @@ protected:
 
 // intrusive_ptr support.
 namespace boost {
-inline void intrusive_ptr_add_ref(const qpid::RefCounted* p) { p->addRef(); }
-inline void intrusive_ptr_release(const qpid::RefCounted* p) { p->release(); }
+template <typename T>
+inline void intrusive_ptr_add_ref(const T* p) { p->qpid::RefCounted::addRef(); }
+template <typename T>
+inline void intrusive_ptr_release(const T* p) { p->qpid::RefCounted::release(); }
 }
 
 

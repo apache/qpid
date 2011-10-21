@@ -30,7 +30,7 @@
 namespace qpid {
 namespace framing {
 
-class StructHelper
+class QPID_COMMON_CLASS_EXTERN StructHelper
 {
 public:
 

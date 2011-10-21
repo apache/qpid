@@ -69,6 +69,7 @@ namespace Messaging {
 
         // copy constructor
         Session(const Session ^ session);
+        Session(const Session % session);
 
         ~Session();
         !Session();
@@ -103,6 +104,8 @@ namespace Messaging {
         void Acknowledge(bool sync);
         void Acknowledge(Message ^ message);
         void Acknowledge(Message ^ message, bool sync);
+        void AcknowledgeUpTo(Message ^ message);
+        void AcknowledgeUpTo(Message ^ message, bool sync);
         void Reject(Message ^);
         void Release(Message ^);
         void Sync();

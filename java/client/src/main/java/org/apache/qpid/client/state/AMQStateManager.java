@@ -31,7 +31,6 @@ import org.slf4j.LoggerFactory;
 import java.util.Set;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.io.IOException;
 
 /**
  * The state manager is responsible for managing the state of the protocol session. <p/>
@@ -48,7 +47,7 @@ import java.io.IOException;
  *
  * The two step process is required as there is an inherit race condition between starting a process that will cause
  * the state to change and then attempting to wait for that change. The interest in the change must be first set up so
- * that any asynchrous errors that occur can be delivered to the correct waiters.
+ * that any asynchronous errors that occur can be delivered to the correct waiters.
  */
 public class AMQStateManager implements AMQMethodListener
 {
@@ -84,7 +83,10 @@ public class AMQStateManager implements AMQMethodListener
 
     public AMQState getCurrentState()
     {
-        return _currentState;
+        synchronized (_stateLock)
+        {
+            return _currentState;
+        }
     }
 
     public void changeState(AMQState newState)
@@ -114,7 +116,7 @@ public class AMQStateManager implements AMQMethodListener
     }
 
     /**
-     * Setting of the ProtocolSession will be required when Failover has been successfuly compeleted.
+     * Setting of the ProtocolSession will be required when Failover has been successfully completed.
      *
      * The new {@link AMQProtocolSession} that has been re-established needs to be provided as that is now the
      * connection to the network.
@@ -131,9 +133,9 @@ public class AMQStateManager implements AMQMethodListener
     }
 
     /**
-     * Propogate error to waiters
+     * Propagate error to waiters
      *
-     * @param error The error to propogate.
+     * @param error The error to propagate.
      */
     public void error(Exception error)
     {
@@ -177,7 +179,7 @@ public class AMQStateManager implements AMQMethodListener
     }
 
     /**
-     * Create and add a new waiter to the notifcation list.
+     * Create and add a new waiter to the notification list.
      *
      * @param states The waiter will attempt to wait for one of these desired set states to be achived.
      *

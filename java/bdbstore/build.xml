@@ -1,0 +1,84 @@
+<!--
+ - Licensed to the Apache Software Foundation (ASF) under one
+ - or more contributor license agreements.  See the NOTICE file
+ - distributed with this work for additional information
+ - regarding copyright ownership.  The ASF licenses this file
+ - to you under the Apache License, Version 2.0 (the
+ - "License"); you may not use this file except in compliance
+ - with the License.  You may obtain a copy of the License at
+ -
+ -   http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing,
+ - software distributed under the License is distributed on an
+ - "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ - KIND, either express or implied.  See the License for the
+ - specific language governing permissions and limitations
+ - under the License.
+ -->
+<project name="bdbstore" default="build">
+    <property name="module.depends" value="common client management/common broker perftests systests" />
+    <property name="module.test.depends" value="test common/test broker/test management/common perftests systests" />
+
+    <import file="../module.xml" />
+
+    <property name="bdb.lib.dir" value="${project.root}/lib/bdbstore" />
+    <property name="bdb.version" value="4.0.103" />
+    <property name="bdb.download.url" value="http://download.oracle.com/maven/com/sleepycat/je/${bdb.version}/je-${bdb.version}.jar" />
+    <property name="bdb.jar.file" value="${bdb.lib.dir}/je-${bdb.version}.jar" />
+
+    <!--check whether the BDB jar is present, possibly after download-->
+    <target name="check-bdb-jar">
+        <available file="${bdb.jar.file}" type="file" property="bdb.jar.available"/>
+    </target>
+
+    <!--echo that BDB is required if it isnt present, with associated licencing note-->
+    <target name="bdb-jar-required" depends="bdb-licence-note-optional" unless="bdb.jar.available">
+       <echo>The BDB JE library is required to use this optional module.
+
+The jar file may be downloaded by either:
+
+   Seperately running the following command from the qpid/java/bdbstore dir: ant download-bdb
+
+   OR
+
+   Adding -Ddownload-bdb=true to your regular build command.</echo>
+        <fail>The BDB JE library was not found</fail>
+    </target>
+
+    <!--issue BDB licencing note if BDB isnt already present-->
+    <target name="bdb-licence-note-optional" depends="check-bdb-jar" unless="bdb.jar.available">
+        <antcall target="bdb-licence-note"/>
+    </target>
+
+    <!--issue BDB licencing note-->
+    <target name="bdb-licence-note">
+       <echo>*NOTE* The BDB JE library required by this optional module is licensed under the Sleepycat Licence, which is not compatible with the Apache Licence v2.0.
+
+For a copy of the Sleepycat Licence, please see:
+http://www.oracle.com/technetwork/database/berkeleydb/downloads/jeoslicense-086837.html</echo>
+    </target>
+
+    <!--check if an inline BDB download was requested with the build-->
+    <target name="check-request-props" if="download-bdb">
+        <antcall target="download-bdb"/>
+    </target>
+
+    <!--download BDB, with licencing note-->
+    <target name="download-bdb" depends="bdb-licence-note">
+        <mkdir dir="${bdb.lib.dir}"/>
+        <echo>Downloading BDB JE</echo>
+        <get src="${bdb.download.url}" dest="${bdb.jar.file}" usetimestamp="true" />
+    </target>
+
+    <target name="build" depends="check-request-props, bdb-jar-required, module.build" />
+
+    <target name="postbuild" depends="copy-store-to-upgrade" />
+
+    <target name="copy-store-to-upgrade" description="copy the upgrade tool resource folder contents into the build tree">
+      <copy todir="${qpid.home}" failonerror="true">
+        <fileset dir="src/test/resources/upgrade"/>
+      </copy>
+    </target>
+
+</project>

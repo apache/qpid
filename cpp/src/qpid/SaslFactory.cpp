@@ -112,7 +112,7 @@ class CyrusSasl : public Sasl
   public:
     CyrusSasl(const std::string & username, const std::string & password, const std::string & serviceName, const std::string & hostName, int minSsf, int maxSsf, bool allowInteraction);
     ~CyrusSasl();
-    std::string start(const std::string& mechanisms, const SecuritySettings* externalSettings);
+    bool start(const std::string& mechanisms, std::string& response, const SecuritySettings* externalSettings);
     std::string step(const std::string& challenge);
     std::string getMechanism();
     std::string getUserId();
@@ -182,16 +182,17 @@ CyrusSasl::CyrusSasl(const std::string & username, const std::string & password,
         callbacks[i].id = SASL_CB_AUTHNAME;
         callbacks[i].proc = (CallbackProc*) &getUserFromSettings;
         callbacks[i++].context = &settings;
+
+        callbacks[i].id = SASL_CB_PASS;
+        if (settings.password.empty()) {
+            callbacks[i].proc = 0;
+            callbacks[i++].context = 0;        
+        } else {
+            callbacks[i].proc = (CallbackProc*) &getPasswordFromSettings;
+            callbacks[i++].context = &settings;
+        }
     }
 
-    callbacks[i].id = SASL_CB_PASS;
-    if (settings.password.empty()) {
-        callbacks[i].proc = 0;
-        callbacks[i++].context = 0;        
-    } else {
-        callbacks[i].proc = (CallbackProc*) &getPasswordFromSettings;
-        callbacks[i++].context = &settings;
-    }
 
     callbacks[i].id = SASL_CB_LIST_END;
     callbacks[i].proc = 0;
@@ -209,7 +210,7 @@ namespace {
     const std::string SSL("ssl");
 }
 
-std::string CyrusSasl::start(const std::string& mechanisms, const SecuritySettings* externalSettings)
+bool CyrusSasl::start(const std::string& mechanisms, std::string& response, const SecuritySettings* externalSettings)
 {
     QPID_LOG(debug, "CyrusSasl::start(" << mechanisms << ")");
     int result = sasl_client_new(settings.service.c_str(),
@@ -282,7 +283,12 @@ std::string CyrusSasl::start(const std::string& mechanisms, const SecuritySettin
     mechanism = std::string(chosenMechanism);
     QPID_LOG(debug, "CyrusSasl::start(" << mechanisms << "): selected "
              << mechanism << " response: '" << std::string(out, outlen) << "'");
-    return std::string(out, outlen);
+    if (out) {
+        response = std::string(out, outlen);
+        return true;
+    } else {
+        return false;
+    }
 }
 
 std::string CyrusSasl::step(const std::string& challenge)

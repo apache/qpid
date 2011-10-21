@@ -41,6 +41,9 @@
 #include <map>
 
 namespace qpid {
+namespace broker {
+class ConnectionState;
+}
 namespace management {
 
 class ManagementAgent
@@ -142,13 +145,7 @@ public:
     const framing::Uuid& getUuid() const { return uuid; }
     void setUuid(const framing::Uuid& id) { uuid = id; writeData(); }
 
-    // TODO: remove these when Variant API moved into common library.
     static types::Variant::Map toMap(const framing::FieldTable& from);
-    static framing::FieldTable fromMap(const types::Variant::Map& from);
-    static types::Variant::List toList(const framing::List& from);
-    static framing::List fromList(const types::Variant::List& from);
-    static boost::shared_ptr<framing::FieldValue> toFieldValue(const types::Variant& in);
-    static types::Variant toVariant(const boost::shared_ptr<framing::FieldValue>& val);
 
     // For Clustering: management objects that have been marked as
     // "deleted", but are waiting for their last published object
@@ -422,6 +419,8 @@ private:
     void debugSnapshot(const char* title);
 };
 
+void setManagementExecutionContext(const qpid::broker::ConnectionState*);
+const qpid::broker::ConnectionState* getManagementExecutionContext();
 }}
-            
+
 #endif  /*!_ManagementAgent_*/

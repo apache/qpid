@@ -22,6 +22,10 @@ package org.apache.qpid.framing;
 
 import org.apache.qpid.AMQException;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -62,35 +66,30 @@ public class ProtocolInitiation extends AMQDataBlock implements EncodableAMQData
              pv.equals(ProtocolVersion.v0_91) ? 1 : pv.getMinorVersion());
     }
 
-    public ProtocolInitiation(ByteBuffer in)
+    public ProtocolInitiation(DataInputStream in) throws IOException
     {
         _protocolHeader = new byte[4];
-        in.get(_protocolHeader);
+        in.read(_protocolHeader);
 
-        _protocolClass = in.get();
-        _protocolInstance = in.get();
-        _protocolMajor = in.get();
-        _protocolMinor = in.get();
+        _protocolClass = in.readByte();
+        _protocolInstance = in.readByte();
+        _protocolMajor = in.readByte();
+        _protocolMinor = in.readByte();
     }
 
-    public void writePayload(org.apache.mina.common.ByteBuffer buffer)
-    {
-        writePayload(buffer.buf());
-    }
-    
     public long getSize()
     {
         return 4 + 1 + 1 + 1 + 1;
     }
 
-    public void writePayload(ByteBuffer buffer)
+    public void writePayload(DataOutputStream buffer) throws IOException
     {
 
-        buffer.put(_protocolHeader);
-        buffer.put(_protocolClass);
-        buffer.put(_protocolInstance);
-        buffer.put(_protocolMajor);
-        buffer.put(_protocolMinor);
+        buffer.write(_protocolHeader);
+        buffer.write(_protocolClass);
+        buffer.write(_protocolInstance);
+        buffer.write(_protocolMajor);
+        buffer.write(_protocolMinor);
     }
 
     public boolean equals(Object o)
@@ -144,9 +143,9 @@ public class ProtocolInitiation extends AMQDataBlock implements EncodableAMQData
          * @return true if we have enough data to decode the PI frame fully, false if more
          * data is required
          */
-        public boolean decodable(ByteBuffer in)
+        public boolean decodable(DataInputStream in) throws IOException
         {
-            return (in.remaining() >= 8);
+            return (in.available() >= 8);
         }
 
     }

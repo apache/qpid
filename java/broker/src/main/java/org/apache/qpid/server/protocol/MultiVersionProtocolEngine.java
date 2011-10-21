@@ -22,44 +22,53 @@ package org.apache.qpid.server.protocol;
 
 
 import org.apache.log4j.Logger;
-import org.apache.qpid.protocol.ProtocolEngine;
-import org.apache.qpid.server.protocol.MultiVersionProtocolEngineFactory.VERSION;
+import org.apache.qpid.protocol.ServerProtocolEngine;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.transport.ServerConnection;
 import org.apache.qpid.transport.ConnectionDelegate;
-import org.apache.qpid.transport.NetworkDriver;
+import org.apache.qpid.transport.Sender;
+import org.apache.qpid.transport.network.NetworkConnection;
 
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.util.Set;
 
-public class MultiVersionProtocolEngine implements ProtocolEngine
+public class MultiVersionProtocolEngine implements ServerProtocolEngine
 {
     private static final Logger _logger = Logger.getLogger(MultiVersionProtocolEngine.class);
 
+    private final long _id;
 
-
-    private NetworkDriver _networkDriver;
-    private Set<VERSION> _supported;
+    private Set<AmqpProtocolVersion> _supported;
     private String _fqdn;
     private IApplicationRegistry _appRegistry;
+    private NetworkConnection _network;
+    private Sender<ByteBuffer> _sender;
 
-    private volatile ProtocolEngine _delegate = new SelfDelegateProtocolEngine();
+    private volatile ServerProtocolEngine _delegate = new SelfDelegateProtocolEngine();
 
     public MultiVersionProtocolEngine(IApplicationRegistry appRegistry,
                                       String fqdn,
-                                      Set<VERSION> supported, NetworkDriver networkDriver)
+                                      Set<AmqpProtocolVersion> supported,
+                                      NetworkConnection network,
+                                      long id)
     {
+        this(appRegistry,fqdn,supported,id);
+        setNetworkConnection(network);
+    }
+
+    public MultiVersionProtocolEngine(IApplicationRegistry appRegistry,
+                                      String fqdn,
+                                      Set<AmqpProtocolVersion> supported,
+                                      long id)
+    {
+        _id = id;
         _appRegistry = appRegistry;
         _fqdn = fqdn;
         _supported = supported;
-        _networkDriver = networkDriver;
+
     }
 
-    public void setNetworkDriver(NetworkDriver driver)
-    {
-        _delegate.setNetworkDriver(driver);
-    }
 
     public SocketAddress getRemoteAddress()
     {
@@ -96,6 +105,7 @@ public class MultiVersionProtocolEngine implements ProtocolEngine
         _delegate.readerIdle();
     }
 
+
     public void received(ByteBuffer msg)
     {
         _delegate.received(msg);
@@ -104,6 +114,11 @@ public class MultiVersionProtocolEngine implements ProtocolEngine
     public void exception(Throwable t)
     {
         _delegate.exception(t);
+    }
+
+    public long getConnectionId()
+    {
+        return _delegate.getConnectionId();
     }
 
     private static final int MINIMUM_REQUIRED_HEADER_BYTES = 8;
@@ -130,7 +145,7 @@ public class MultiVersionProtocolEngine implements ProtocolEngine
                          (byte) 9
             };
 
-private static final byte[] AMQP_0_9_1_HEADER =
+    private static final byte[] AMQP_0_9_1_HEADER =
             new byte[] { (byte) 'A',
                          (byte) 'M',
                          (byte) 'Q',
@@ -153,19 +168,31 @@ private static final byte[] AMQP_0_9_1_HEADER =
                          (byte) 10
             };
 
+    public void setNetworkConnection(NetworkConnection networkConnection)
+    {
+        setNetworkConnection(networkConnection, networkConnection.getSender());
+    }
+
+    public void setNetworkConnection(NetworkConnection network, Sender<ByteBuffer> sender)
+    {
+        _network = network;
+        _sender = sender;
+    }
+
+
     private static interface DelegateCreator
     {
-        VERSION getVersion();
+        AmqpProtocolVersion getVersion();
         byte[] getHeaderIdentifier();
-        ProtocolEngine getProtocolEngine();
+        ServerProtocolEngine getProtocolEngine();
     }
 
     private DelegateCreator creator_0_8 = new DelegateCreator()
     {
 
-        public VERSION getVersion()
+        public AmqpProtocolVersion getVersion()
         {
-            return VERSION.v0_8;
+            return AmqpProtocolVersion.v0_8;
         }
 
         public byte[] getHeaderIdentifier()
@@ -173,18 +200,18 @@ private static final byte[] AMQP_0_9_1_HEADER =
             return AMQP_0_8_HEADER;
         }
 
-        public ProtocolEngine getProtocolEngine()
+        public ServerProtocolEngine getProtocolEngine()
         {
-            return new AMQProtocolEngine(_appRegistry.getVirtualHostRegistry(), _networkDriver);
+            return new AMQProtocolEngine(_appRegistry.getVirtualHostRegistry(), _network, _id);
         }
     };
 
     private DelegateCreator creator_0_9 = new DelegateCreator()
     {
 
-        public VERSION getVersion()
+        public AmqpProtocolVersion getVersion()
         {
-            return VERSION.v0_9;
+            return AmqpProtocolVersion.v0_9;
         }
 
 
@@ -193,18 +220,18 @@ private static final byte[] AMQP_0_9_1_HEADER =
             return AMQP_0_9_HEADER;
         }
 
-        public ProtocolEngine getProtocolEngine()
+        public ServerProtocolEngine getProtocolEngine()
         {
-            return new AMQProtocolEngine(_appRegistry.getVirtualHostRegistry(), _networkDriver);
+            return new AMQProtocolEngine(_appRegistry.getVirtualHostRegistry(), _network, _id);
         }
     };
 
     private DelegateCreator creator_0_9_1 = new DelegateCreator()
     {
 
-        public VERSION getVersion()
+        public AmqpProtocolVersion getVersion()
         {
-            return VERSION.v0_9_1;
+            return AmqpProtocolVersion.v0_9_1;
         }
 
 
@@ -213,9 +240,9 @@ private static final byte[] AMQP_0_9_1_HEADER =
             return AMQP_0_9_1_HEADER;
         }
 
-        public ProtocolEngine getProtocolEngine()
+        public ServerProtocolEngine getProtocolEngine()
         {
-            return new AMQProtocolEngine(_appRegistry.getVirtualHostRegistry(), _networkDriver);
+            return new AMQProtocolEngine(_appRegistry.getVirtualHostRegistry(), _network, _id);
         }
     };
 
@@ -223,9 +250,9 @@ private static final byte[] AMQP_0_9_1_HEADER =
     private DelegateCreator creator_0_10 = new DelegateCreator()
     {
 
-        public VERSION getVersion()
+        public AmqpProtocolVersion getVersion()
         {
-            return VERSION.v0_10;
+            return AmqpProtocolVersion.v0_10;
         }
 
 
@@ -234,15 +261,15 @@ private static final byte[] AMQP_0_9_1_HEADER =
             return AMQP_0_10_HEADER;
         }
 
-        public ProtocolEngine getProtocolEngine()
+        public ServerProtocolEngine getProtocolEngine()
         {
             final ConnectionDelegate connDelegate =
                     new org.apache.qpid.server.transport.ServerConnectionDelegate(_appRegistry, _fqdn);
 
-            ServerConnection conn = new ServerConnection();
+            ServerConnection conn = new ServerConnection(_id);
             conn.setConnectionDelegate(connDelegate);
 
-            return new ProtocolEngine_0_10( conn, _networkDriver, _appRegistry);
+            return new ProtocolEngine_0_10( conn, _network, _appRegistry);
         }
     };
 
@@ -250,21 +277,16 @@ private static final byte[] AMQP_0_9_1_HEADER =
             new DelegateCreator[] { creator_0_8, creator_0_9, creator_0_9_1, creator_0_10 };
 
 
-    private class ClosedDelegateProtocolEngine implements ProtocolEngine
+    private class ClosedDelegateProtocolEngine implements ServerProtocolEngine
     {
-        public void setNetworkDriver(NetworkDriver driver)
-        {
-            _networkDriver = driver;
-        }
-
         public SocketAddress getRemoteAddress()
         {
-            return _networkDriver.getRemoteAddress();
+            return _network.getRemoteAddress();
         }
 
         public SocketAddress getLocalAddress()
         {
-            return _networkDriver.getLocalAddress();
+            return _network.getLocalAddress();
         }
 
         public long getWrittenBytes()
@@ -301,26 +323,30 @@ private static final byte[] AMQP_0_9_1_HEADER =
         {
 
         }
+
+        public void setNetworkConnection(NetworkConnection network, Sender<ByteBuffer> sender)
+        {
+
+        }
+
+        public long getConnectionId()
+        {
+            return _id;
+        }
     }
 
-    private class SelfDelegateProtocolEngine implements ProtocolEngine
+    private class SelfDelegateProtocolEngine implements ServerProtocolEngine
     {
-
         private final ByteBuffer _header = ByteBuffer.allocate(MINIMUM_REQUIRED_HEADER_BYTES);
-
-        public void setNetworkDriver(NetworkDriver driver)
-        {
-            _networkDriver = driver;
-        }
 
         public SocketAddress getRemoteAddress()
         {
-            return _networkDriver.getRemoteAddress();
+            return _network.getRemoteAddress();
         }
 
         public SocketAddress getLocalAddress()
         {
-            return _networkDriver.getLocalAddress();
+            return _network.getLocalAddress();
         }
 
         public long getWrittenBytes()
@@ -355,7 +381,7 @@ private static final byte[] AMQP_0_9_1_HEADER =
                 _header.get(headerBytes);
 
 
-                ProtocolEngine newDelegate = null;
+                ServerProtocolEngine newDelegate = null;
                 byte[] newestSupported = null;
 
                 for(int i = 0; newDelegate == null && i < _creators.length; i++)
@@ -380,17 +406,20 @@ private static final byte[] AMQP_0_9_1_HEADER =
                 // If no delegate is found then send back the most recent support protocol version id
                 if(newDelegate == null)
                 {
-                    _networkDriver.send(ByteBuffer.wrap(newestSupported));
+                    _sender.send(ByteBuffer.wrap(newestSupported));
+                    _sender.flush();
 
                     _delegate = new ClosedDelegateProtocolEngine();
+
+                    _network.close();
+
                 }
                 else
                 {
-                    newDelegate.setNetworkDriver(_networkDriver);
-
                     _delegate = newDelegate;
 
                     _header.flip();
+                    _delegate.setNetworkConnection(_network, _sender);
                     _delegate.received(_header);
                     if(msg.hasRemaining())
                     {
@@ -400,6 +429,11 @@ private static final byte[] AMQP_0_9_1_HEADER =
 
             }
 
+        }
+
+        public long getConnectionId()
+        {
+            return _id;
         }
 
         public void exception(Throwable t)
@@ -418,6 +452,11 @@ private static final byte[] AMQP_0_9_1_HEADER =
         }
 
         public void readerIdle()
+        {
+
+        }
+
+        public void setNetworkConnection(NetworkConnection network, Sender<ByteBuffer> sender)
         {
 
         }

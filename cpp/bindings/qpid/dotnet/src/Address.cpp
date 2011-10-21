@@ -141,7 +141,7 @@ namespace Messaging {
 		}
     }
 
-    // copy constructor
+    // Copy constructor look-alike (C#)
     Address::Address(const Address ^ address)
     {
         System::Exception ^ newException = nullptr;
@@ -150,6 +150,28 @@ namespace Messaging {
 		{
             addressp = new ::qpid::messaging::Address(
                         *(const_cast<Address ^>(address)->NativeAddress));
+        } 
+        catch (const ::qpid::types::Exception & error) 
+		{
+            String ^ errmsg = gcnew String(error.what());
+            newException    = gcnew QpidException(errmsg);
+        }
+
+		if (newException != nullptr) 
+		{
+	        throw newException;
+		}
+    }
+
+    // Copy constructor implicitly dereferenced (C++)
+    Address::Address(const Address % address)
+    {
+        System::Exception ^ newException = nullptr;
+
+        try 
+		{
+            addressp = new ::qpid::messaging::Address(
+                        *(const_cast<Address %>(address).NativeAddress));
         } 
         catch (const ::qpid::types::Exception & error) 
 		{

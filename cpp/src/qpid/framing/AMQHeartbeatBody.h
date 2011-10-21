@@ -29,7 +29,7 @@
 namespace qpid {
 namespace framing {
 
-class AMQHeartbeatBody :  public AMQBody
+class QPID_COMMON_CLASS_EXTERN AMQHeartbeatBody :  public AMQBody
 {
 public:
     QPID_COMMON_EXTERN virtual ~AMQHeartbeatBody();

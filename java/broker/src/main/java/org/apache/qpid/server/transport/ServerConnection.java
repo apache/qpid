@@ -20,10 +20,18 @@
  */
 package org.apache.qpid.server.transport;
 
-import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.*;
+import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.CONNECTION_FORMAT;
+import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.SOCKET_FORMAT;
+import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.USER_FORMAT;
 
+import java.security.Principal;
 import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import javax.security.auth.Subject;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.protocol.AMQConstant;
@@ -35,23 +43,39 @@ import org.apache.qpid.server.logging.actors.GenericActor;
 import org.apache.qpid.server.logging.messages.ConnectionMessages;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
+import org.apache.qpid.server.security.AuthorizationHolder;
+import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
+import org.apache.qpid.server.stats.StatisticsCounter;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.transport.Connection;
+import org.apache.qpid.transport.ConnectionCloseCode;
 import org.apache.qpid.transport.ExecutionErrorCode;
 import org.apache.qpid.transport.ExecutionException;
 import org.apache.qpid.transport.Method;
 import org.apache.qpid.transport.ProtocolEvent;
+import org.apache.qpid.transport.Session;
 
-public class ServerConnection extends Connection implements AMQConnectionModel, LogSubject
+public class ServerConnection extends Connection implements AMQConnectionModel, LogSubject, AuthorizationHolder
 {
     private ConnectionConfig _config;
     private Runnable _onOpenTask;
     private AtomicBoolean _logClosed = new AtomicBoolean(false);
     private LogActor _actor = GenericActor.getInstance(this);
 
-    public ServerConnection()
+    private Subject _authorizedSubject = null;
+    private Principal _authorizedPrincipal = null;
+    private boolean _statisticsEnabled = false;
+    private StatisticsCounter _messagesDelivered, _dataDelivered, _messagesReceived, _dataReceived;
+    private final long _connectionId;
+    
+    public ServerConnection(final long connectionId)
     {
+        _connectionId = connectionId;
+    }
 
+    public UUID getId()
+    {
+        return _config.getId();
     }
 
     @Override
@@ -72,8 +96,18 @@ public class ServerConnection extends Connection implements AMQConnectionModel, 
                 _onOpenTask.run();    
             }
             _actor.message(ConnectionMessages.OPEN(getClientId(), "0-10", true, true));
+
+            getVirtualHost().getConnectionRegistry().registerConnection(this);
         }
-        
+
+        if (state == State.CLOSE_RCVD || state == State.CLOSED || state == State.CLOSING)
+        {
+            if(_virtualHost != null)
+            {
+                _virtualHost.getConnectionRegistry().deregisterConnection(this);
+            }
+        }
+
         if (state == State.CLOSED)
         {
             logClosed();
@@ -110,6 +144,8 @@ public class ServerConnection extends Connection implements AMQConnectionModel, 
     public void setVirtualHost(VirtualHost virtualHost)
     {
         _virtualHost = virtualHost;
+        
+        initialiseStatistics();
     }
 
     public void setConnectionConfig(final ConnectionConfig config)
@@ -145,6 +181,11 @@ public class ServerConnection extends Connection implements AMQConnectionModel, 
 
         ((ServerSession)session).close();
     }
+    
+    public LogSubject getLogSubject()
+    {
+        return (LogSubject) this;
+    }
 
     @Override
     public void received(ProtocolEvent event)
@@ -179,9 +220,9 @@ public class ServerConnection extends Connection implements AMQConnectionModel, 
     public String toLogString()
     {
         boolean hasVirtualHost = (null != this.getVirtualHost());
-        boolean hasPrincipal = (null != getAuthorizationID());
+        boolean hasClientId = (null != getClientId());
 
-        if (hasPrincipal && hasVirtualHost)
+        if (hasClientId && hasVirtualHost)
         {
             return "[" +
                     MessageFormat.format(CONNECTION_FORMAT,
@@ -191,7 +232,7 @@ public class ServerConnection extends Connection implements AMQConnectionModel, 
                                          getVirtualHost().getName())
                  + "] ";
         }
-        else if (hasPrincipal)
+        else if (hasClientId)
         {
             return "[" +
                     MessageFormat.format(USER_FORMAT,
@@ -214,5 +255,148 @@ public class ServerConnection extends Connection implements AMQConnectionModel, 
     public LogActor getLogActor()
     {
         return _actor;
+    }
+
+    public void close(AMQConstant cause, String message) throws AMQException
+    {
+        ConnectionCloseCode replyCode = ConnectionCloseCode.NORMAL;
+        try
+        {
+	        replyCode = ConnectionCloseCode.get(cause.getCode());
+        }
+        catch (IllegalArgumentException iae)
+        {
+            // Ignore
+        }
+        close(replyCode, message);
+    }
+
+    public List<AMQSessionModel> getSessionModels()
+    {
+        List<AMQSessionModel> sessions = new ArrayList<AMQSessionModel>();
+        for (Session ssn : getChannels())
+        {
+            sessions.add((AMQSessionModel) ssn);
+        }
+        return sessions;
+    }
+
+    public void registerMessageDelivered(long messageSize)
+    {
+        if (isStatisticsEnabled())
+        {
+            _messagesDelivered.registerEvent(1L);
+            _dataDelivered.registerEvent(messageSize);
+        }
+        _virtualHost.registerMessageDelivered(messageSize);
+    }
+
+    public void registerMessageReceived(long messageSize, long timestamp)
+    {
+        if (isStatisticsEnabled())
+        {
+            _messagesReceived.registerEvent(1L, timestamp);
+            _dataReceived.registerEvent(messageSize, timestamp);
+        }
+        _virtualHost.registerMessageReceived(messageSize, timestamp);
+    }
+    
+    public StatisticsCounter getMessageReceiptStatistics()
+    {
+        return _messagesReceived;
+    }
+    
+    public StatisticsCounter getDataReceiptStatistics()
+    {
+        return _dataReceived;
+    }
+    
+    public StatisticsCounter getMessageDeliveryStatistics()
+    {
+        return _messagesDelivered;
+    }
+    
+    public StatisticsCounter getDataDeliveryStatistics()
+    {
+        return _dataDelivered;
+    }
+    
+    public void resetStatistics()
+    {
+        _messagesDelivered.reset();
+        _dataDelivered.reset();
+        _messagesReceived.reset();
+        _dataReceived.reset();
+    }
+
+    public void initialiseStatistics()
+    {
+        setStatisticsEnabled(!StatisticsCounter.DISABLE_STATISTICS &&
+                _virtualHost.getApplicationRegistry().getConfiguration().isStatisticsGenerationConnectionsEnabled());
+        
+        _messagesDelivered = new StatisticsCounter("messages-delivered-" + getConnectionId());
+        _dataDelivered = new StatisticsCounter("data-delivered-" + getConnectionId());
+        _messagesReceived = new StatisticsCounter("messages-received-" + getConnectionId());
+        _dataReceived = new StatisticsCounter("data-received-" + getConnectionId());
+    }
+
+    public boolean isStatisticsEnabled()
+    {
+        return _statisticsEnabled;
+    }
+
+    public void setStatisticsEnabled(boolean enabled)
+    {
+        _statisticsEnabled = enabled;
+    }
+
+    /**
+     * @return authorizedSubject
+     */
+    public Subject getAuthorizedSubject()
+    {
+        return _authorizedSubject;
+    }
+
+    /**
+     * Sets the authorized subject.  It also extracts the UsernamePrincipal from the subject
+     * and caches it for optimisation purposes.
+     *
+     * @param authorizedSubject
+     */
+    public void setAuthorizedSubject(final Subject authorizedSubject)
+    {
+        if (authorizedSubject == null)
+        {
+            _authorizedSubject = null;
+            _authorizedPrincipal = null;
+        }
+        else
+        {
+            _authorizedSubject = authorizedSubject;
+            _authorizedPrincipal = UsernamePrincipal.getUsernamePrincipalFromSubject(_authorizedSubject);
+        }
+    }
+
+    public Principal getAuthorizedPrincipal()
+    {
+        return _authorizedPrincipal;
+    }
+
+    public long getConnectionId()
+    {
+        return _connectionId;
+    }
+
+    @Override
+    public boolean isSessionNameUnique(String name)
+    {
+        return !super.hasSessionWithName(name);
+    }
+
+    @Override
+    public String getUserName()
+    {
+        return _authorizedPrincipal.getName();
     }
 }

@@ -1,0 +1,239 @@
+-*-org-*-
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+* Another new design for Qpid clustering.
+
+For background see [[./new-cluster-design.txt]] which describes the issues
+with the old design and a new active-active design that could replace it.
+
+This document describes an alternative hot-standby approach.
+
+** Delivery guarantee
+
+We guarantee N-way redundant, at least once delivey. Once a message
+from a client has been acknowledged by the broker, it will be
+delivered even if N-1 brokers subsequently fail. There may be
+duplicates in the event of a failure. We don't make duplicates 
+during normal operation (i.e when no brokers have failed)
+
+This is the same guarantee as the old cluster and the alternative
+active-active design.
+
+** Active-active vs. hot standby (aka primary-backup)
+
+An active-active cluster allows clients to connect to any broker in
+the cluster. If a broker fails, clients can fail-over to any other
+live broker.
+
+A hot-standby cluster has only one active broker at a time (the
+"primary") and one or more brokers on standby (the "backups"). Clients
+are only served by the leader, clients that connect to a backup are
+redirected to the leader. The backpus are kept up-to-date in real time
+by the primary, if the primary fails a backup is elected to be the new
+primary.
+
+Aside: A cold-standby cluster is possible using a standalone broker,
+CMAN and shared storage. In this scenario only one broker runs at a
+time writing to a shared store. If it fails, another broker is started
+(by CMAN) and recovers from the store. This bears investigation but
+the store recovery time is probably too long for failover.
+
+** Why hot standby?
+
+Active-active has some advantages:
+- Finding a broker on startup or failover is simple, just pick any live broker.
+- All brokers are always running in active mode, there's no
+- Distributing clients across brokers gives better performance, but see [1].
+- A broker failure affects only clients connected to that broker.
+
+The main problem with active-active is co-ordinating consumers of the
+same queue on multiple brokers such that there are no duplicates in
+normal operation. There are 2 approaches:
+
+Predictive: each broker predicts which messages others will take. This
+the main weakness of the old design so not appealing.
+
+Locking: brokers "lock" a queue in order to take messages. This is
+complex to implement, its not straighforward to determine the most
+performant strategie for passing the lock.
+
+Hot-standby removes this problem. Only the primary can modify queues
+so it just has to tell the backups what it is doing, there's no
+locking.
+
+The primary can enqueue messages and replicate asynchronously -
+exactly like the store does, but it "writes" to the replicas over the
+network rather than writing to disk.
+
+** Failover in a hot-standby cluster.
+
+Hot-standby has some potential performance issues around failover:
+
+- Failover "spike": when the primary fails every client will fail over
+  at the same time, putting strain on the system.
+
+- Until a new primary is elected, cluster cannot serve any clients or
+  redirect clients to the primary.
+
+We want to minimize the number of re-connect attempts that clients
+have to make. The cluster can use a well-known algorithm to choose the
+new primary (e.g. round robin on a known sequence of brokers) so that
+clients can guess the new primary correctly in most cases.
+
+Even if clients do guess correctly it may be that the new primary is
+not yet aware of the death of the old primary, which is may to cause
+multiple failed connect attempts before clients eventually get
+connected. We will need to prototype to see how much this happens in
+reality and how we can best get clients redirected.
+
+** Threading and performance.
+
+The primary-backup cluster operates analogously to the way the disk store does now:
+- use the same MessageStore interface as the store to interact with the broker
+- use the same asynchronous-completion model for replicating messages.
+- use the same recovery interfaces (?) for new backups joining.
+
+Re-using the well-established store design gives credibility to the new cluster design.
+
+The single CPG dispatch thread was a severe performance bottleneck for the old cluster.
+
+The primary has the same threading model as a a standalone broker with
+a store, which we know that this performs well.
+
+If we use CPG for replication of messages, the backups will receive
+messages in the CPG dispatch thread. To get more concurency, the CPG
+thread can dump work onto internal PollableQueues to be processed in
+parallel. 
+
+Messages from the same broker queue need to go onto the same
+PollableQueue. There could be a separate PollableQueue for each broker
+queue. If that's too resource intensive we can use a fixed set of
+PollableQueues and assign broker queues to PollableQueues via hashing
+or round robin.
+
+Another possible optimization is to use multiple CPG queues: one per
+queue or a hashed set, to get more concurrency in the CPG layer. The
+old cluster is not able to keep CPG busy.
+
+TODO: Transactions pose a challenge with these concurrent models: how
+to co-ordinate multiple messages being added (commit a publish or roll
+back an accept) to multiple queues so that all replicas end up with
+the same message sequence while respecting atomicity.
+
+** Use of CPG
+
+CPG provides several benefits in the old cluster:
+- tracking membership (essential for determining the primary)
+- handling "spit brain" (integrates with partition support from CMAN)
+- reliable multicast protocol to distribute messages.
+
+I believe we still need CPG for membership and split brain. We could
+experiment with sending the bulk traffic over AMQP conections.
+
+** Flow control
+
+Need to ensure that
+1) In-memory internal queues used by the cluster don't overflow.
+2) The backups don't fall too far behind on processing CPG messages
+
+** Recovery
+When a new backup joins an active cluster it must get a snapshot
+from one of the other backups, or the primary if there are none. In
+store terms this is "recovery" (old cluster called it an "update)
+
+Compared to old cluster we only replidate well defined data set of the store.
+This is the crucial sore spot of old cluster. 
+
+We can also replicated it more efficiently by recovering queues in
+reverse (LIFO) order. That means as clients actively consume messages
+from the front of the queue, they are redeucing the work we have to do
+in recovering from the back. (NOTE: this may not be compatible with
+using the same recovery interfaces as the store.)
+
+** Selective replication
+In this model it's easy to support selective replication of individual queues via
+configuration. 
+- Explicit exchange/queue declare argument and message boolean: x-qpid-replicate. 
+  Treated analogously to persistent/durable properties for the store.
+- if not explicitly marked, provide a choice of default
+  - default is replicate (replicated message on replicated queue)
+  - default is don't replicate
+  - default is replicate persistent/durable messages.
+
+** Inconsistent errors
+
+The new design eliminates most sources of inconsistent errors in the
+old design (connections, sessions, security, management etc.) and
+eliminates the need to stall the whole cluster till an error is
+resolved. We still have to handle inconsistent store errors when store
+and cluster are used together.
+
+We also have to include error handling in the async completion loop to
+guarantee N-way at least once: we should only report success to the
+client when we know the message was replicated and stored on all N-1
+backups.
+
+TODO: We have a lot more options than the old cluster, need to figure
+out the best approach, or possibly allow mutliple approaches. Need to
+go thru the various failure cases. We may be able to do recovery on a
+per-queue basis rather than restarting an entire node.
+
+** New members joining
+
+We should be able to catch up much faster than the the old design. A
+new backup can catch up ("recover") the current cluster state on a
+per-queue basis.
+- queues can be updated in parallel
+- "live" updates avoid the the "endless chase"
+
+During a "live" update several things are happening on a queue:
+- clients are publishing messages to the back of the queue, replicated to the backup
+- clients are consuming messages from the front of the queue, replicated to the backup.
+- the primary is sending pre-existing messages to the new backup.
+
+The primary sends pre-existing messages in LIFO order - starting from
+the back of the queue, at the same time clients are consuming from the front.
+The active consumers actually reduce the amount of work to be done, as there's
+no need to replicate messages that are no longer on the queue.
+
+* Steps to get there
+
+** Baseline replication
+Validate the overall design get initial notion of performance. Just
+message+wiring replication, no update/recovery for new members joining,
+single CPG dispatch thread on backups, no failover, no transactions.
+
+** Failover
+Electing primary, backups redirect to primary. Measure failover time
+for large # clients.  Strategies to minimise number of retries after a
+failure.
+
+** Flow Control
+Keep internal queues from over-flowing. Similar to internal flow control in old cluster.
+Needed for realistic performance/stress tests
+
+** Concurrency
+Experiment with multiple threads on backups, multiple CPG groups.
+
+** Recovery/new member joining
+Initial status handshake for new member. Recovering queues from the back.
+
+** Transactions
+TODO: How to implement transactions with concurrency.  Worst solution:
+a global --cluster-use-transactions flag that forces single thread
+mode. Need to find a better solution.

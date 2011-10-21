@@ -70,7 +70,7 @@ public class CRAMMD5HexInitialiser extends UsernamePasswordInitialiser
             for (char c : password)
             {
                 //toHexString does not prepend 0 so we have to
-                if (((byte) c > -1) && (byte) c < 10)
+                if (((byte) c > -1) && (byte) c < 0x10 )
                 {
                     sb.append(0);
                 }

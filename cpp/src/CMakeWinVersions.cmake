@@ -34,11 +34,11 @@
 # set ("winver_PACKAGE_NAME"         "qpid-cpp")
 # set ("winver_DESCRIPTION_SUMMARY"  "Apache Qpid C++")
 # set ("winver_FILE_VERSION_N1"      "0")
-# set ("winver_FILE_VERSION_N2"      "9")
+# set ("winver_FILE_VERSION_N2"      "11")
 # set ("winver_FILE_VERSION_N3"      "0")
 # set ("winver_FILE_VERSION_N4"      "0")
 # set ("winver_PRODUCT_VERSION_N1"   "0")
-# set ("winver_PRODUCT_VERSION_N2"   "9")
+# set ("winver_PRODUCT_VERSION_N2"   "11")
 # set ("winver_PRODUCT_VERSION_N3"   "0")
 # set ("winver_PRODUCT_VERSION_N4"   "0")
 # set ("winver_LEGAL_COPYRIGHT"      "")
@@ -46,10 +46,10 @@
 #
 # Specification of per-project settings:
 #
-# set ("winver_${projectName}_FileVersionBinary"    "0,9,0,0")
-# set ("winver_${projectName}_ProductVersionBinary" "0,9,0,0")
-# set ("winver_${projectName}_FileVersionString"    "0, 9, 0, 0")
-# set ("winver_${projectName}_ProductVersionString" "0, 9, 0, 0")
+# set ("winver_${projectName}_FileVersionBinary"    "0,11,0,0")
+# set ("winver_${projectName}_ProductVersionBinary" "0,11,0,0")
+# set ("winver_${projectName}_FileVersionString"    "0, 11, 0, 0")
+# set ("winver_${projectName}_ProductVersionString" "0, 11, 0, 0")
 # set ("winver_${projectName}_FileDescription"      "qpid-cpp-qpidcommon Library")
 # set ("winver_${projectName}_LegalCopyright"       "")
 # set ("winver_${projectName}_InternalName"         "qpidcommon")

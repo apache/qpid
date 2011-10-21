@@ -147,7 +147,7 @@ NamedSharedMemory<T>::NamedSharedMemory(const std::string& n) :
     name(n),
     memory(NULL),
     data(0)
-{};
+{}
 
 template <typename T>
 NamedSharedMemory<T>::~NamedSharedMemory() {
@@ -155,7 +155,7 @@ NamedSharedMemory<T>::~NamedSharedMemory() {
         ::UnmapViewOfFile(data);
     if (memory != NULL)
         ::CloseHandle(memory);
-};
+}
 
 template <typename T>
 T& NamedSharedMemory<T>::create() {

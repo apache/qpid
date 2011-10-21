@@ -119,7 +119,7 @@ class Duration {
     friend class AbsTime;
 
 public:
-    QPID_COMMON_EXTERN inline Duration(int64_t time0 = 0);
+    QPID_COMMON_INLINE_EXTERN inline Duration(int64_t time0 = 0);
     QPID_COMMON_EXTERN explicit Duration(const AbsTime& start, const AbsTime& finish);
     inline operator int64_t() const;
 };
@@ -166,6 +166,9 @@ QPID_COMMON_EXTERN void usleep(uint64_t usecs);
 
 /** Output formatted date/time for now*/
 void outputFormattedNow(std::ostream&);
+
+/** Output unformatted nanosecond-resolution time for now */
+void outputHiresNow(std::ostream&);
 
 }}
 

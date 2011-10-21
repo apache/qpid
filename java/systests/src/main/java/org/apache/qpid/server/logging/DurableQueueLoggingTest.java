@@ -58,7 +58,7 @@ public class DurableQueueLoggingTest extends AbstractTestLogging
     {
         super.setUp();
         //Ensure we only have logs from our test
-        _monitor.reset();
+        _monitor.markDiscardPoint();
 
         _connection = getConnection();
         _session = _connection.createSession(false, Session.AUTO_ACKNOWLEDGE);

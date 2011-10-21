@@ -94,7 +94,7 @@ bool DirectExchange::bind(Queue::shared_ptr queue, const string& routingKey, con
 
         propagate = bk.fedBinding.delOrigin(queue->getName(), fedOrigin);
         if (bk.fedBinding.countFedBindings(queue->getName()) == 0)
-            unbind(queue, routingKey, 0);
+            unbind(queue, routingKey, args);
 
     } else if (fedOp == fedOpReorigin) {
         /** gather up all the keys that need rebinding in a local vector
@@ -124,19 +124,23 @@ bool DirectExchange::bind(Queue::shared_ptr queue, const string& routingKey, con
     return true;
 }
 
-bool DirectExchange::unbind(Queue::shared_ptr queue, const string& routingKey, const FieldTable* /*args*/)
+bool DirectExchange::unbind(Queue::shared_ptr queue, const string& routingKey, const FieldTable* args)
 {
+    string fedOrigin(args ? args->getAsString(qpidFedOrigin) : "");
     bool propagate = false;
 
-    QPID_LOG(debug, "Unbind key [" << routingKey << "] from queue " << queue->getName());
-
+    QPID_LOG(debug, "Unbinding key [" << routingKey << "] from queue " << queue->getName()
+             << " on exchange " << getName() << " origin=" << fedOrigin << ")" );
     {
         Mutex::ScopedLock l(lock);
         BoundKey& bk = bindings[routingKey];
         if (bk.queues.remove_if(MatchQueue(queue))) {
-            propagate = bk.fedBinding.delOrigin();
+            propagate = bk.fedBinding.delOrigin(queue->getName(), fedOrigin);
             if (mgmtExchange != 0) {
                 mgmtExchange->dec_bindingCount();
+            }
+            if (bk.queues.empty()) {
+                bindings.erase(routingKey);
             }
         } else {
             return false;

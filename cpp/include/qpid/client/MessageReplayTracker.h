@@ -34,7 +34,7 @@ namespace client {
  * Utility to track messages sent asynchronously, allowing those that
  * are indoubt to be replayed over a new session.
  */
-class MessageReplayTracker
+class QPID_CLIENT_CLASS_EXTERN MessageReplayTracker
 {
   public:
     QPID_CLIENT_EXTERN MessageReplayTracker(uint flushInterval);

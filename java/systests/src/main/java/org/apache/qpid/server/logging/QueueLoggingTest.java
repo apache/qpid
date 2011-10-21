@@ -53,7 +53,7 @@ public class QueueLoggingTest extends AbstractTestLogging
     {
         super.setUp();
         //Remove broker startup logging messages
-        _monitor.reset();
+        _monitor.markDiscardPoint();
         
         _connection = getConnection();
         _session = _connection.createSession(false, Session.AUTO_ACKNOWLEDGE);

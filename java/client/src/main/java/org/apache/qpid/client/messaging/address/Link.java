@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.client.messaging.address;
 
+import static org.apache.qpid.client.messaging.address.Link.Reliability.UNSPECIFIED;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -28,6 +30,8 @@ import org.apache.qpid.client.messaging.address.Node.QueueNode;
 public class Link
 { 
     public enum FilterType { SQL92, XQUERY, SUBJECT }
+    
+    public enum Reliability { UNRELIABLE, AT_MOST_ONCE, AT_LEAST_ONCE, EXACTLY_ONCE, UNSPECIFIED }
     
     protected String name;
     protected String _filter;
@@ -38,7 +42,18 @@ public class Link
     protected int _producerCapacity = 0;
     protected Node node;
     protected Subscription subscription;
+    protected Reliability reliability = UNSPECIFIED;
     
+    public Reliability getReliability()
+    {
+        return reliability;
+    }
+
+    public void setReliability(Reliability reliability)
+    {
+        this.reliability = reliability;
+    }
+
     public Node getNode()
     {
         return node;
