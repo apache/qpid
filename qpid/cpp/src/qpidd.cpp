@@ -31,7 +31,8 @@ using namespace std;
 
 auto_ptr<QpiddOptions> options;
 
-int main(int argc, char* argv[])
+// Broker real entry; various system-invoked entrypoints call here.
+int run_broker(int argc, char *argv[], bool hidden)
 {
     try
     {
@@ -43,6 +44,8 @@ int main(int argc, char* argv[])
         // module-supplied options.
         try {
             bootOptions.parse (argc, argv, bootOptions.common.config, true);
+            if (hidden)
+                bootOptions.log.sinkOptions->detached();
             qpid::log::Logger::instance().configure(bootOptions.log);
         } catch (const std::exception& e) {
             // Couldn't configure logging so write the message direct to stderr.

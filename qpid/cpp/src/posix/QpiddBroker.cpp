@@ -196,3 +196,8 @@ int QpiddBroker::execute (QpiddOptions *options) {
     }
     return 0;
 }
+
+int main(int argc, char* argv[])
+{
+    return run_broker(argc, argv);
+}

@@ -67,4 +67,7 @@ public:
     int execute (QpiddOptions *options);
 };
 
+// Broker real entry; various system-invoked entrypoints call here.
+int run_broker(int argc, char *argv[], bool hidden = false);
+
 #endif  /*!QPID_H*/
