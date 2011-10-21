@@ -22,6 +22,7 @@ package org.apache.qpid.client;
 
 import java.net.URISyntaxException;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicLong;
 
 import javax.jms.Destination;
 import javax.naming.NamingException;
@@ -59,7 +60,7 @@ public abstract class AMQDestination implements Destination, Referenceable
 
     private boolean _browseOnly;
     
-    private boolean _isAddressResolved;
+    private AtomicLong _addressResolved = new AtomicLong(0);
 
     private AMQShortString _queueName;
 
@@ -77,7 +78,7 @@ public abstract class AMQDestination implements Destination, Referenceable
     public static final int QUEUE_TYPE = 1;
     public static final int TOPIC_TYPE = 2;
     public static final int UNKNOWN_TYPE = 3;
-    
+
     // ----- Fields required to support new address syntax -------
     
     public enum DestSyntax {        
@@ -740,12 +741,12 @@ public abstract class AMQDestination implements Destination, Referenceable
     
     public boolean isAddressResolved()
     {
-        return _isAddressResolved;
+        return _addressResolved.get() > 0;
     }
 
-    public void setAddressResolved(boolean addressResolved)
+    public void setAddressResolved(long addressResolved)
     {
-        _isAddressResolved = addressResolved;
+        _addressResolved.set(addressResolved);
     }
     
     private static Address createAddressFromString(String str)
@@ -823,7 +824,7 @@ public abstract class AMQDestination implements Destination, Referenceable
         dest.setTargetNode(_targetNode);
         dest.setSourceNode(_sourceNode);
         dest.setLink(_link);
-        dest.setAddressResolved(_isAddressResolved);
+        dest.setAddressResolved(_addressResolved.get());
         return dest;        
     }
     
@@ -835,5 +836,10 @@ public abstract class AMQDestination implements Destination, Referenceable
     protected void setDurable(boolean b)
     {
         _isDurable = b;
+    }
+
+    public boolean isResolvedAfter(long time)
+    {
+        return _addressResolved.get() > time;
     }
 }

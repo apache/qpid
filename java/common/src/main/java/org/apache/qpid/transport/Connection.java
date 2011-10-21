@@ -526,10 +526,6 @@ public class Connection extends ConnectionInvoker
     {
         synchronized (lock)
         {
-            for (Session ssn : channels.values())
-            {
-                ssn.closeCode(close);
-            }
             ConnectionCloseCode code = close.getReplyCode();
             if (code != ConnectionCloseCode.NORMAL)
             {
@@ -704,5 +700,14 @@ public class Connection extends ConnectionInvoker
     public boolean hasSessionWithName(final String name)
     {
         return sessions.containsKey(new Binary(name.getBytes()));
+    }
+
+    public void notifyFailoverRequired()
+    {
+        List<Session> values = new ArrayList<Session>(channels.values());
+        for (Session ssn : values)
+        {
+            ssn.notifyFailoverRequired();
+        }
     }
 }
