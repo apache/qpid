@@ -46,7 +46,7 @@ class DeliveryRecord
 {
     QueuedMessage msg;
     mutable boost::shared_ptr<Queue> queue;
-    std::string tag;    // name of consumer
+    std::string tag;
     DeliveryId id;
     bool acquired : 1;
     bool acceptExpected : 1;
@@ -90,7 +90,7 @@ class DeliveryRecord
 
     bool isAcquired() const { return acquired; }
     bool isComplete() const { return completed; }
-    bool isRedundant() const { return ended && (!windowing || completed || cancelled); }
+    bool isRedundant() const { return ended && (!windowing || completed); }
     bool isCancelled() const { return cancelled; }
     bool isAccepted() const { return !acceptExpected; }
     bool isEnded() const { return ended; }

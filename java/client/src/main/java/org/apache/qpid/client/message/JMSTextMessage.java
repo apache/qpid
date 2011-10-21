@@ -20,21 +20,15 @@
  */
 package org.apache.qpid.client.message;
 
-import java.io.DataInputStream;
 import java.io.UnsupportedEncodingException;
-import java.nio.ByteBuffer;
-import java.nio.CharBuffer;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
-import java.nio.charset.CharsetDecoder;
-import java.nio.charset.CharsetEncoder;
 
 import javax.jms.JMSException;
-import javax.jms.MessageFormatException;
 
+import org.apache.mina.common.ByteBuffer;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.CustomJMSXProperty;
-import org.apache.qpid.framing.AMQFrameDecodingException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.util.Strings;
@@ -43,7 +37,6 @@ public class JMSTextMessage extends AbstractJMSMessage implements javax.jms.Text
 {
     private static final String MIME_TYPE = "text/plain";
 
-    private Exception _exception;
     private String _decodedValue;
 
     /**
@@ -52,41 +45,36 @@ public class JMSTextMessage extends AbstractJMSMessage implements javax.jms.Text
     private static final String PAYLOAD_NULL_PROPERTY = CustomJMSXProperty.JMS_AMQP_NULL.toString();
     private static final Charset DEFAULT_CHARSET = Charset.forName("UTF-8");
 
-    private CharsetDecoder _decoder = DEFAULT_CHARSET.newDecoder();
-    private CharsetEncoder _encoder = DEFAULT_CHARSET.newEncoder();
-
-    private static final ByteBuffer EMPTY_BYTE_BUFFER = ByteBuffer.allocate(0);
-
     public JMSTextMessage(AMQMessageDelegateFactory delegateFactory) throws JMSException
     {
-        super(delegateFactory, false); // this instantiates a content header
+        this(delegateFactory, null, null);
+    }
+
+    JMSTextMessage(AMQMessageDelegateFactory delegateFactory, ByteBuffer data, String encoding) throws JMSException
+    {
+        super(delegateFactory, data); // this instantiates a content header
+        setContentType(getMimeType());
+        setEncoding(encoding);
     }
 
     JMSTextMessage(AMQMessageDelegate delegate, ByteBuffer data)
             throws AMQException
     {
-        super(delegate, data!=null);
+        super(delegate, data);
+        setContentType(getMimeType());
+        _data = data;
+    }
 
-        try
+
+    public void clearBodyImpl() throws JMSException
+    {
+        if (_data != null)
         {
-            if(propertyExists(PAYLOAD_NULL_PROPERTY))
-            {
-                _decodedValue = null;
-            }
-            else
-            {
-                _decodedValue = _decoder.decode(data).toString();
-            }
-        }
-        catch (CharacterCodingException e)
-        {
-            _exception = e;
-        }
-        catch (JMSException e)
-        {
-            _exception = e;
+            _data.release();
+            _data = null;
         }
 
+        _decodedValue = null;
     }
 
     public String toBodyString() throws JMSException
@@ -99,62 +87,95 @@ public class JMSTextMessage extends AbstractJMSMessage implements javax.jms.Text
         return MIME_TYPE;
     }
 
-    @Override
-    public ByteBuffer getData() throws JMSException
-    {
-        _encoder.reset();
-        try
-        {
-            if(_exception != null)
-            {
-                final MessageFormatException messageFormatException = new MessageFormatException("Cannot decode original message");
-                messageFormatException.setLinkedException(_exception);
-                throw messageFormatException;
-            }
-            else if(_decodedValue == null)
-            {
-                return EMPTY_BYTE_BUFFER;
-            }
-            else
-            {
-                return _encoder.encode(CharBuffer.wrap(_decodedValue));
-            }
-        }
-        catch (CharacterCodingException e)
-        {
-            final JMSException jmsException = new JMSException("Cannot encode string in UFT-8: " + _decodedValue);
-            jmsException.setLinkedException(e);
-            throw jmsException;
-        }
-    }
-
-    @Override
-    public void clearBody() throws JMSException
-    {
-        super.clearBody();
-        _decodedValue = null;
-        _exception = null;
-    }
-
     public void setText(String text) throws JMSException
     {
         checkWritable();
 
         clearBody();
-        _decodedValue = text;
-
+        try
+        {
+            if (text != null)
+            {
+                final String encoding = getEncoding();
+                if (encoding == null || encoding.equalsIgnoreCase("UTF-8"))
+                {
+                    _data = ByteBuffer.wrap(Strings.toUTF8(text));
+                    setEncoding("UTF-8");
+                }
+                else
+                {
+                    _data = ByteBuffer.wrap(text.getBytes(encoding));
+                }
+                _data.position(_data.limit());
+                _changedData=true;
+            }
+            _decodedValue = text;
+        }
+        catch (UnsupportedEncodingException e)
+        {
+            // should never occur
+            JMSException jmse = new JMSException("Unable to decode text data");
+            jmse.setLinkedException(e);
+            jmse.initCause(e);
+            throw jmse;
+        }
     }
 
     public String getText() throws JMSException
     {
-        return _decodedValue;
+        if (_data == null && _decodedValue == null)
+        {
+            return null;
+        }
+        else if (_decodedValue != null)
+        {
+            return _decodedValue;
+        }
+        else
+        {
+            _data.rewind();
+
+            if (propertyExists(PAYLOAD_NULL_PROPERTY) && getBooleanProperty(PAYLOAD_NULL_PROPERTY))
+            {
+                return null;
+            }
+            if (getEncoding() != null)
+            {
+                try
+                {
+                    _decodedValue = _data.getString(Charset.forName(getEncoding()).newDecoder());
+                }
+                catch (CharacterCodingException e)
+                {
+                    JMSException jmse = new JMSException("Could not decode string data: " + e);
+                    jmse.setLinkedException(e);
+                    jmse.initCause(e);
+                    throw jmse;
+                }
+            }
+            else
+            {
+                try
+                {
+                    _decodedValue = _data.getString(DEFAULT_CHARSET.newDecoder());
+                }
+                catch (CharacterCodingException e)
+                {
+                    JMSException jmse = new JMSException("Could not decode string data: " + e);
+                    jmse.setLinkedException(e);
+                    jmse.initCause(e);
+                    throw jmse;
+                }
+            }
+            return _decodedValue;
+        }
     }
 
     @Override
     public void prepareForSending() throws JMSException
     {
         super.prepareForSending();
-        if (_decodedValue == null)
+        if (_data == null)
         {
             setBooleanProperty(PAYLOAD_NULL_PROPERTY, true);
         }

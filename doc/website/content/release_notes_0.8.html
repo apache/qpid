@@ -1,0 +1,437 @@
+<!--
+ -
+ - Licensed to the Apache Software Foundation (ASF) under one
+ - or more contributor license agreements.  See the NOTICE file
+ - distributed with this work for additional information
+ - regarding copyright ownership.  The ASF licenses this file
+ - to you under the Apache License, Version 2.0 (the
+ - "License"); you may not use this file except in compliance
+ - with the License.  You may obtain a copy of the License at
+ -
+ -   http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing,
+ - software distributed under the License is distributed on an
+ - "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ - KIND, either express or implied.  See the License for the
+ - specific language governing permissions and limitations
+ - under the License.
+ -
+-->
+<div class="main_text_area_body">
+  <h1>0.8 Release Notes</h1>
+
+<p>The full list of changes in the Qpid 0.8 release incorporates both the issues worked on during the 0.7 development stream and any final touches made during the 0.8 release process. A list of these JIRA issues can be found below.</p>
+
+<h3>JIRA Issues</h3>
+    
+<h4>New Feature</h4>
+<ul>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-664'>QPID-664</a>] - High-level C++ client API.</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-1403'>QPID-1403</a>] - Add SSL support for C++ Windows broker/client</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-1940'>QPID-1940</a>] - QMF Feature Request - Structured exceptions for method failure</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2321'>QPID-2321</a>] - [Java Broker] Add "conflation queue" to Java Broker</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2363'>QPID-2363</a>] - JMS Map Message Should Support AMQP 0-10 Encoded Map As Message Body</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2365'>QPID-2365</a>] - Reroute messages on a queue - remove messages from a queue and send them to an exchange</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2412'>QPID-2412</a>] - Support for SASL EXTERNAL when using SSL</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2500'>QPID-2500</a>] - Transport security for the WCF channel</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2555'>QPID-2555</a>] - Qpid Info OSGI plugin</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2581'>QPID-2581</a>] - Create a ConfigurationManager to allow plugins to provide configuration handling classes</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2589'>QPID-2589</a>] - Add a .NET binding to QPID Messaging API</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2614'>QPID-2614</a>] - QueueConfiguration requires to configurations to be provided on construction</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2646'>QPID-2646</a>] - Qpid Messaging address support for WCF Channel</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2700'>QPID-2700</a>] - Ability to remove queue binding in QPID</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2807'>QPID-2807</a>] - More flexible acknowledgement</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2867'>QPID-2867</a>] - enable the JMX management console to remove bindings from direct/topic exchanges</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2909'>QPID-2909</a>] - Hybrid SQL-CLFS persistence store for C++ broker on Windows</li>
+</ul>
+        
+<h4>Bug</h4>
+<ul>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-1662'>QPID-1662</a>] - TimeToLiveTest.testPassive occasionally receives more messages.</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-1879'>QPID-1879</a>] - The client library uses a new thread for every connection</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-1904'>QPID-1904</a>] - Timestamps are incorrect</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2137'>QPID-2137</a>] - StringIndexOutOfBounds when formating Connection Message during failed systest run.</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2165'>QPID-2165</a>] - MINANetworkDriverTest fails to socket already in use</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2173'>QPID-2173</a>] - Java client should set the process ID in the client properties during Connection open</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2174'>QPID-2174</a>] - When kerberos auth is used, Java client should use the kerberos userid &amp; domain when setting the userid in messages</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2186'>QPID-2186</a>] - Windows - "vector iterator not dereferencable"</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2262'>QPID-2262</a>] - Random test failures in SimpleACLTest</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2265'>QPID-2265</a>] - Ruby Rakfile References an old file</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2297'>QPID-2297</a>] - ACL policy won't allow "." in the realm for users added to a group</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2298'>QPID-2298</a>] - CMake-based install based on released sources tries to include generated headers from build tree</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2299'>QPID-2299</a>] - C++ Messaging drain and spout examples need vcproj files</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2300'>QPID-2300</a>] - C++ packaging directory not included in release</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2301'>QPID-2301</a>] - C++ examples changed at r880718; obsolete vcproj files not removed</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2302'>QPID-2302</a>] - Missing header.html, footer.html in C++ docs/api distribution</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2306'>QPID-2306</a>] - C++ uninstaller does not uninstall some header files.</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2318'>QPID-2318</a>] - qpid-tool does not seem to issue session acknowledgements </li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2320'>QPID-2320</a>] - Failed acquire on LVQ causes broker crash</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2323'>QPID-2323</a>] - Add uuid to variant</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2325'>QPID-2325</a>] - [Java Broker] SASL PLAIN authentication does not work when both an authentication and authorization id are supplied</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2328'>QPID-2328</a>] - Querying for 500 objects causes C++ based ruby console to hang</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2336'>QPID-2336</a>] - Cannot disable heatbeats in JMS client</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2338'>QPID-2338</a>] - [C++ Broker] Ring queue does not properly implement byte size limits</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2339'>QPID-2339</a>] - JMS (0-10 client) does not verify if it supports the SASL mechanisms sent by the broker.</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2340'>QPID-2340</a>] - [Java] ProducerFlowControlTest failing due to race condition in test</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2344'>QPID-2344</a>] - qpid/messaging/uuid.h r899657 breaks Windows build...</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2347'>QPID-2347</a>] - Subscribers are never notified if queue is deleted from under them</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2355'>QPID-2355</a>] - QMF bindings build conflicts with installed qmf headers</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2360'>QPID-2360</a>] - declaring virtualhost level firewall configuration in virtualhosts.xml leads to NPE on startup</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2361'>QPID-2361</a>] - exchange configuration attributes are ignored when configuration is placed in virtualhosts.xml</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2366'>QPID-2366</a>] - Windows C++ broker port written to stdout at startup is wrong</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2370'>QPID-2370</a>] - TTR-Qpid-07-NA failed due to channel error 504 during tear down</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2372'>QPID-2372</a>] - PeriodicTimerImpl addition broker Windows build</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2374'>QPID-2374</a>] - qpidd: --require-encryption with "--auth no" will reject SSL connections as being "un-encrypted" </li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2376'>QPID-2376</a>] - C++ broker build broken at 20:00 Thurs Jan 28, 2010</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2378'>QPID-2378</a>] - WCF/C++ Client subtree lacks Apache licensing files</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2387'>QPID-2387</a>] - qpidd does not replicate management agent lists, causes brokers to exit. </li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2388'>QPID-2388</a>] - user-defined signals can cause process terminate</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2392'>QPID-2392</a>] - Powershell scripts not included in release source kits</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2395'>QPID-2395</a>] - fd leak in Connection</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2398'>QPID-2398</a>] - C++ examples'  Visual Studio projects need BOOST_ALL_DYN_LINK to build against installed kit</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2406'>QPID-2406</a>] - Consistent approach to durations in qpid::messaging api</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2407'>QPID-2407</a>] - C++ SSL session can get bad buffer management</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2413'>QPID-2413</a>] - ACL - error handling/bounds checking</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2418'>QPID-2418</a>] -  Existing durable subscription with selector is not unsubscribed during change to new subscription</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2420'>QPID-2420</a>] - Windows SQL-based persistence loses prepared two-phase transactions on broker restart</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2422'>QPID-2422</a>] - DerbyStore does not persist queue exclusivity or arguments</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2426'>QPID-2426</a>] - Better error message and logging when receving/sending from/to empty address</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2427'>QPID-2427</a>] - Modify browse option in-line with path chosen for python client</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2428'>QPID-2428</a>] - qpid.subject should be set on outgoing messages if the address specifies a suject</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2429'>QPID-2429</a>] - headers exchange does not match correctly on a map entry with a null value</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2430'>QPID-2430</a>] - Java broker emits NPE following qpid-tool being connected</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2431'>QPID-2431</a>] - .NET csproj files missing Apache license text</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2433'>QPID-2433</a>] - qpid-server.bat fails if the path contains a space character</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2434'>QPID-2434</a>] - make clean in qpid/cpp/src/tests/testagent breaks build</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2435'>QPID-2435</a>] - Deadlock can occur during the registration of a qmf agent</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2437'>QPID-2437</a>] - Define exceptions for messaging API</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2438'>QPID-2438</a>] - Performance tests do not correctly populate the message with the given MessageSize</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2439'>QPID-2439</a>] - CMake builds broken 08-Mar-2010</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2441'>QPID-2441</a>] - make check fails because of wrong sorting</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2444'>QPID-2444</a>] - JMS client does not verify that the hostname connected to matches that specified in the servers certificate</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2445'>QPID-2445</a>] - JMS Client needs to extract the user ID from the external auth mechanism when SASL EXTERNAL is used</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2452'>QPID-2452</a>] - Inconsistent handling on strings between C++ and Python messaging APIs</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2463'>QPID-2463</a>] - C++ install step puts api docs in wrong place on Windows</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2465'>QPID-2465</a>] - Ant 1.8.x javac task prints warning message during builds</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2467'>QPID-2467</a>] - Windows install doesn't include qpidxarm.dll or broker plugins</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2468'>QPID-2468</a>] - WCF client samples can't resolve the DLLs when installed</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2471'>QPID-2471</a>] - Java client releases messages in an unpredictable order on recover</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2472'>QPID-2472</a>] - QpidCompositeRollingAppender log4j configuration is misleading</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2474'>QPID-2474</a>] - ACL file reader can trip vector iter validity checking</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2475'>QPID-2475</a>] - qpid/messaging/Session.h r928855 breaks Windows build - macro conflict</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2481'>QPID-2481</a>] - Deadlock in Qpid 0.6</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2482'>QPID-2482</a>] - Topic Exchange can duplicate messages.</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2484'>QPID-2484</a>] - Interoperability tests fail due to attempts to print out contents of JMS Message objects, and do not parse command line properies</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2487'>QPID-2487</a>] - Tearing down one dynamic route may delete other independent routes in the federation.</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2488'>QPID-2488</a>] - ACL - error handling/bounds checking</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2493'>QPID-2493</a>] - AMQPEncodedMapMessage does not support nested maps and lists</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2497'>QPID-2497</a>] - messaging api silently ignores unrecognised/invalid address options</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2502'>QPID-2502</a>] - securityTracker open() call  is made  on exchangeTracker instance instead</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2503'>QPID-2503</a>] - CommandLineParser does not print '-' when showing options</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2506'>QPID-2506</a>] - QMF: fix encoding/decoding of map and list method call arguments</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2507'>QPID-2507</a>] - C++ broker can deadlock when processing a bind.</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2511'>QPID-2511</a>] - ConnectionImpl instance may be deleted before IO threads are finished with the underllying DispatchHandle</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2515'>QPID-2515</a>] - Need to be able to set flow control in Java on a per destination level</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2520'>QPID-2520</a>] - Broken POM generation on Windows</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2521'>QPID-2521</a>] - ACL module core dumps if management is disabled</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2523'>QPID-2523</a>] - When reloading a large acl file while acl lookup is in progress, the broker core dumps</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2526'>QPID-2526</a>] - Ant build fails if the path contains a space character</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2553'>QPID-2553</a>] - CMakeLists wrong file name </li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2558'>QPID-2558</a>] - client connection.open to a non-broker on qpid 0.6 windows segfaults with: access violation</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2561'>QPID-2561</a>] - Download page does not follow ASF standards</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2562'>QPID-2562</a>] - website does not have any links to the Issue tracker</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2563'>QPID-2563</a>] - Website does not have required ASF elements</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2564'>QPID-2564</a>] - Wcf functional test source file is absent</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2570'>QPID-2570</a>] - Broker uses NotAllowedException for ACL violations, should use UnauthorisedAccessException</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2587'>QPID-2587</a>] - PollableCondition test fails on Windows</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2600'>QPID-2600</a>] - ACL policy doesn't permit certain characters in usernames added to groups</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2605'>QPID-2605</a>] - Recovered messages larger than 65523 bytes result in framing violation ()</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2607'>QPID-2607</a>] - Package name typo for CRAMMD5HexInitialiserTest.java</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2608'>QPID-2608</a>] - AMQPException messages contain duplicate AMQConstant text</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2609'>QPID-2609</a>] - MockAMQQueue does not implement getName</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2610'>QPID-2610</a>] - AMQConstant Map usage is not correct</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2611'>QPID-2611</a>] - AMQConnectionFailureException does not record reason for underlying cause if it is an AMQPException</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2612'>QPID-2612</a>] - Recent DLL qpidtypes breaks the build on Windows</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2613'>QPID-2613</a>] - message data is not commited to the persistent store on 0-8/0-9 codepath</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2615'>QPID-2615</a>] - JMX Management Console fails to connect to 0.5 and below brokers if run in a Java5 VM</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2626'>QPID-2626</a>] - Typo in ServerConnectionDelegate</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2631'>QPID-2631</a>] - Race in qpid::client::Bounds causes (rare) deadlock</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2634'>QPID-2634</a>] - CRLF line endings in the shell scripts</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2635'>QPID-2635</a>] - Ant tests fail with OutOfMemoryError due to PermGen space exhaustion</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2636'>QPID-2636</a>] - disconnect() callback on broker results in leaked connections</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2637'>QPID-2637</a>] - connection.start() hangs if the connection is not accepted</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2640'>QPID-2640</a>] - options string for connection does not work for some types</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2641'>QPID-2641</a>] - The bitwise  AND operator used instead of logical AND in QpidLog4JConfigurator.java</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2642'>QPID-2642</a>] - The bitwise  AND operator used instead of logical AND in QpidLog4JConfigurator.java</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2644'>QPID-2644</a>] - Console examples sometimes fail due to not waiting for the broker connection to complete</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2647'>QPID-2647</a>] - Typo in str8-latin type definition for 0-10</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2649'>QPID-2649</a>] - Segfault on shutting down qpidd</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2650'>QPID-2650</a>] - DerbyStore only ever uses auto-commit connections</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2653'>QPID-2653</a>] - Double checked locking in org.apache.qpid.server.transport.ThreadPoolFilter</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2654'>QPID-2654</a>] - Access control plugin should use Actor logging</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2657'>QPID-2657</a>] - Verify/correct error handling on client 0-10 codepath</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2658'>QPID-2658</a>] - Update Java 0-10 profile excludes</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2661'>QPID-2661</a>] - The 0-8 BasicGetMethodHandler should return NOT_IMPLEMENTED for 0-10 messages</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2662'>QPID-2662</a>] - The FirewallPlugin should accept a ServerSocket, not the string representation</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2665'>QPID-2665</a>] - Remove BROKER from object types for plugins</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2668'>QPID-2668</a>] - PlainPasswordPrincipalDatabase - code improvement </li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2670'>QPID-2670</a>] - Concurrent tagging of message with trace id while message is delivered from another queue causes segfault</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2673'>QPID-2673</a>] - retained 0-10 ImplicitAcceptDispositionChangeListener objects can lead to connection closure timeout and broker OOM</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2674'>QPID-2674</a>] - heartbeats can cause seg faults under tcp on linux</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2677'>QPID-2677</a>] - QMF: console.py sends agent locate request before it has enabled receiving data indications.</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2686'>QPID-2686</a>] - Update Ant doc task with better configuration</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2687'>QPID-2687</a>] - The PluginManager does not auto-deploy bundles properly</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2688'>QPID-2688</a>] - Exclusive queues deleted before unacked messages are requeued; unacked messages not routed to alternate-exchange as a result.</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2691'>QPID-2691</a>] - ttl is lost for federation routes where trace id is added</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2694'>QPID-2694</a>] - Memory leak in 0-8/0-9 AMQSessions on channel close</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2695'>QPID-2695</a>] - VirtualHostConfigRecoveryHandler can NPE or bind to the wrong exchange on binding recovery</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2696'>QPID-2696</a>] - Addressing strings in the jndi properties file is interpreted as binding urls</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2697'>QPID-2697</a>] - AMQConnectionURL options do not appear in the toString representation</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2698'>QPID-2698</a>] - Certain amqp 0-10 message properties are not exposed through messaging apis message class</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2702'>QPID-2702</a>] - --max-connections not work when using cluster</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2704'>QPID-2704</a>] - Provide scavenge() for SimpleQueueEntryList - TRUNK MERGE</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2706'>QPID-2706</a>] - Visual Basic example includes a directory whose name contains a space</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2707'>QPID-2707</a>] - Cmake build doesn't output all needed settings to build a valid shared library name for loading</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2716'>QPID-2716</a>] - QMF: c++ agent does not set the agent name attribute in an object id during addObject() call.</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2718'>QPID-2718</a>] - Update the common.bnd to match client.bnd, release version</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2719'>QPID-2719</a>] - Some SSL errors do not get reported up the stack or in the log file.</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2722'>QPID-2722</a>] - The JMS 0-10 client does not make use of the subject specified via "qpid.subject" in the application properties.</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2723'>QPID-2723</a>] - NullPointerException thrown when you pass an address based destination to the setJMSReplyTo() in a Message.</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2724'>QPID-2724</a>] - Docbook generation is fixed on xsl-stylesheets-1.75.2 </li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2727'>QPID-2727</a>] - ./src/qpidd --load-module ./src/.libs/cluster.so --cluster-name blah --known-hosts-url amqpx:blah segfaults</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2728'>QPID-2728</a>] - Windows icon/version additions broke nightly builds</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2734'>QPID-2734</a>] - testAuthenticatedUsername fails on cmake builds</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2735'>QPID-2735</a>] - If no subject is specified and if the exchange type is topic, "#" should be used as the default. </li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2741'>QPID-2741</a>] - DerbyMessageStore is not shut down when told to close</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2742'>QPID-2742</a>] - DerbyMessageStore createExchange() method does not function</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2744'>QPID-2744</a>] - FieldTable throws a NullPointerException in setObjectProperty rather than expected AMQPInvalidClassException</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2749'>QPID-2749</a>] - [Java Broker] Add -XX:+ExplicitGCInvokesConcurrent to qpid-server[.bat]</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2752'>QPID-2752</a>] - Cannot create LVQ's using the JMS client.</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2754'>QPID-2754</a>] - C++ broker crashes due to management object database corruption</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2755'>QPID-2755</a>] - Windows SDK has no README</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2757'>QPID-2757</a>] - Remove double-checked-locking in ThreadPoolFilter</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2758'>QPID-2758</a>] - Remove call to Thread.run() in FirewallPlugin</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2760'>QPID-2760</a>] - Only client 0-10 session sync should throw any exceptions</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2764'>QPID-2764</a>] - WinSdk cpp examples do not compile</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2766'>QPID-2766</a>] - string to double conversion results in questionable precision</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2769'>QPID-2769</a>] - UnexpectedMethodException is serializable but does not implement serialVersionUID</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2774'>QPID-2774</a>] - Incorrect logic when querying for existance of an exchange while parsing an address string.</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2781'>QPID-2781</a>] - QPBRKR process name tag should be declared in qpid-server script, not qpid-run</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2785'>QPID-2785</a>] - QpidTypes.pdb is not installed</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2786'>QPID-2786</a>] - Cannot create a durable subscription using a destination created with an addressing string</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2788'>QPID-2788</a>] - jmx management console can throw ConcurrentModificationException whilst connected to (older) brokers with MBeans actively (un)registering</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2791'>QPID-2791</a>] - QMF: c++ agent publishes all data object updates in a single message.</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2797'>QPID-2797</a>] - Add an extra boolean to 0-10 session to indicate closing</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2798'>QPID-2798</a>] - C++ Messaging Client .NET binding fails to clone managed objects correctly</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2799'>QPID-2799</a>] - Temporary queue names should be more meaningful</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2805'>QPID-2805</a>] - The windows resource version for qmfengine dll is hard coded to an unusable value</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2806'>QPID-2806</a>] - QMF: python console will incorrectly delete agents if the session is configured with rcvHeartbeats=False</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2810'>QPID-2810</a>] - QMF: python console does not properly shutdown broker thread in some error cases.</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2817'>QPID-2817</a>] - Connection::close() may hang if broker is suspended</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2828'>QPID-2828</a>] - jmx management console can NPE when adding a queue to the navigation tree after its MBean has just been unregistered but before the view is refreshed</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2842'>QPID-2842</a>] - references to other objects in qpid-tool use id that doesn't match anything else</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2844'>QPID-2844</a>] - JMS client should use the exchange given in the address if the exchange name is not explicitly given in x-bindings </li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2845'>QPID-2845</a>] - JMS client should allow arbitary arguments map in the x-bindings section</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2846'>QPID-2846</a>] - QMF: python console crashes on race condition when deleting an agent.</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2851'>QPID-2851</a>] - Programming with Apache Qpid doc confusing over confirmations</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2854'>QPID-2854</a>] - [Java Broker] 0-10 Queue Exclusive behaviour not correctly implemented</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2855'>QPID-2855</a>] - [Java Broker] 0-10 Transport should not block on awaiting for close confirmation from client</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2856'>QPID-2856</a>] - [Java Broker] Should send 530 not-allowed exception onattempt to delete a defautl exchange (e.g. amq.direct, amq.topic)</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2857'>QPID-2857</a>] - [Java] Running FindBugs against Java codebase reveals room for improvement</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2860'>QPID-2860</a>] - C++ hello_xml example receives all message content, not just what's wanted</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2861'>QPID-2861</a>] - JMS client needs to handle duplicate commands replayed after failover</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2868'>QPID-2868</a>] - throw exception users when attempt is made to move/copy messages to a non-existent queue</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2869'>QPID-2869</a>] - prevent specifying the souce queue as destination when moving/copying messages</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2870'>QPID-2870</a>] - an unauthorised attempt to delete a queue will prevent all further deletion attempts</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2872'>QPID-2872</a>] - Java broker incorrectly indicates it supports sending 0-10 heartbeats when it currently does not</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2875'>QPID-2875</a>] - Federation route propagation tests fail occassionally.</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2876'>QPID-2876</a>] - Design issues in Java client failover</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2877'>QPID-2877</a>] - QPID_JAVA_MEM usage in windows qpid-server.bat fails and prevents startup</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2879'>QPID-2879</a>] - The 0-10 Java Client  is sending null arguments on messageSubscribe</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2880'>QPID-2880</a>] - QMF: C++ agent does not accept method calls with map/list arguments that contain booleans</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2883'>QPID-2883</a>] - QMF: python console does not pass V2-style events to the console callback</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2885'>QPID-2885</a>] - C++ qmf console shows memory leaks under valgrind.</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2886'>QPID-2886</a>] - Address the issues outlined by findbugs on 0.5.x-dev branch</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2888'>QPID-2888</a>] - QMF: C++ agent does not re-publish all management data on reconnect to the broker.</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2892'>QPID-2892</a>] - IBM JVM throws different exception when signal handler fails, stopping broker execution</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2896'>QPID-2896</a>] - Incorrect detection of data types in address parameters - C++ client</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2898'>QPID-2898</a>] - broker is unable to evaulate "JMSMessageID IS NULL" correctly when using 0-10</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2910'>QPID-2910</a>] - Small fix for python timeout tests</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2914'>QPID-2914</a>] - address parser doesn't recognize None</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2915'>QPID-2915</a>] - Qpid Cpp Messaging .NET Binding does not properly handle Qpid type VAR_VOID</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2916'>QPID-2916</a>] - C++ broker &amp; Python client will silently truncate strings whose length is greater than the max length supported by the type.</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2918'>QPID-2918</a>] - Assembly mis-named in csharp.example.declare_queues</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2919'>QPID-2919</a>] - hello_world, hello_xml examples left out of CMakeLists.txt</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2922'>QPID-2922</a>] - Qpid Cpp Messaging .NET Binding does not implement FailoverUpdate class</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2923'>QPID-2923</a>] - Qpid Messaging .NET Binding fails to translate exceptions from C++ to .NET</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2925'>QPID-2925</a>] - MSSQL-based message store throws uncaught exception if db recovery throws an error</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2926'>QPID-2926</a>] - Simple example code does not link under Windows</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2927'>QPID-2927</a>] - JMX Shutdown plugin throws InstanceNotFoundException during broker shutdown</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2928'>QPID-2928</a>] - Java client always create exclusive lock for the queue when use with the new addressing scheme</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2929'>QPID-2929</a>] - the broker-plugins jars are not incorporated into the broker release binary when using 'ant release-bin'</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2931'>QPID-2931</a>] - nulling the MessageReference handle on the Message during QueueEntry disposal can result in NPE</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2940'>QPID-2940</a>] - message-accept records are not cleaned up unless getUnsettledAcks() is called</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2941'>QPID-2941</a>] - CLFS store recovery can encounter invalid C++ iterator</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2948'>QPID-2948</a>] - Generated API docs have extraneous macro names in method signatures</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2950'>QPID-2950</a>] - DerbyMessageStore incorrectly logs an error for an expected exception indicating successfull database shutdown</li>
+</ul>
+    
+<h4>Improvement</h4>
+<ul>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-1308'>QPID-1308</a>] - JMS Temprory Queue naming</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-1447'>QPID-1447</a>] - Broker does not handle with slow consumers effectively</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-1825'>QPID-1825</a>] - Improve TimeToLiveTest.testActive to prevent spurious failures</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-1831'>QPID-1831</a>] - Improve JMS Destination abstraction to better support AMQP and Qpid specific features</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2213'>QPID-2213</a>] - qpid/framing/BodyHolder.* still needed?</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2251'>QPID-2251</a>] - Provide portable signal mechanism for the C++ QMF agent API</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2283'>QPID-2283</a>] - java Testkit scripts should have sensible defaults when setting up the environment</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2313'>QPID-2313</a>] - Release notes for the WCF/C++ client </li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2322'>QPID-2322</a>] - remove redundant "version" key property from the ObjectName of the JMX MBeans</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2327'>QPID-2327</a>] - Enhance qpid-config to deal with xml and headers brokers</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2348'>QPID-2348</a>] - [C++] The HeadersExchange does not support federation</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2351'>QPID-2351</a>] - Allow the following config properties to be set in the ConnectionURL</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2371'>QPID-2371</a>] - Missing includes for MSVC 2005 compiler</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2380'>QPID-2380</a>] - define and implement reliability options for senders and receivers</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2415'>QPID-2415</a>] - Update doc for new SSL support in Windows broker and client</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2421'>QPID-2421</a>] - Augment performance tests to allow pre-filling broker, fill and consume only runs.</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2423'>QPID-2423</a>] - Add Constructors to set initial value of content for MapContent and ListContent</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2424'>QPID-2424</a>] - Augment CPU/GC processing scripts to provide additional stats.</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2425'>QPID-2425</a>] - Augment TKTestRunner to provide latency data for throughput tests.</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2446'>QPID-2446</a>] - JMS Client should allow a trust/key store per connection rather than one per JVM</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2447'>QPID-2447</a>] - JMS Client should allow multiple connections, each with it's own SSL certificate from the same JVM</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2466'>QPID-2466</a>] - Replace WeakReference use with SoftReference for enhanced message caching</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2477'>QPID-2477</a>] - std::cout in agent not used anymore</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2479'>QPID-2479</a>] - Log in debug aevery time the housekeeping thread runs</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2483'>QPID-2483</a>] - Can't build samples from Windows  installer</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2489'>QPID-2489</a>] - Remove references to boost:: and qpid::framing:: from QMF-generated cpp files</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2492'>QPID-2492</a>] - Changes to brokertest.py to better manage Windows brokers</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2496'>QPID-2496</a>] - The following changes needs to be done for JMS Client to support the changes made in addressing</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2501'>QPID-2501</a>] - WCF Binding Configuration parameters</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2508'>QPID-2508</a>] - Replace org.apache.qpid.util.concurrent.Condition with a CountDownLatch</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2512'>QPID-2512</a>] - Change Default Destination Syntax to ADDR (addressing)</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2513'>QPID-2513</a>] - Expose the ServerConfiguration as an OSGI service for use in plugins</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2516'>QPID-2516</a>] - New sample to show how to specify WCF bindings in config files</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2522'>QPID-2522</a>] - Remove the dependency on Commons Lang for the Java client</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2525'>QPID-2525</a>] - Update QueueInformation</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2529'>QPID-2529</a>] - Update the Felix OSGI framework to a recent release</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2530'>QPID-2530</a>] - Refactor the broker-plugins directory setup to allow adding new modules </li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2533'>QPID-2533</a>] - Modify config.xml to have ${QPID_HOME}/lib/plugins as the standard OSGI plugin directory</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2534'>QPID-2534</a>] - Add org.apache.qpid.protocol and org.apache.junit.extensions.util  to the packages exported by the PluginManager </li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2547'>QPID-2547</a>] - Improve PluginTest.java in order to test new OSGI plugins</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2557'>QPID-2557</a>] - Hello World example</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2569'>QPID-2569</a>] - Implement the SimpleXML as an OSGI plugin</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2573'>QPID-2573</a>] - Implement the Firewall functionality as an OSGI plugin</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2575'>QPID-2575</a>] - Create a Connection and Session model to abstract protocol versions</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2579'>QPID-2579</a>] - InternalBrokerBaseCase can fail to test tearDown</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2580'>QPID-2580</a>] - Update build path to allow plugins to use systests</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2582'>QPID-2582</a>] - Update QTC to print stack traces from AppRegistry during InVM startup</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2585'>QPID-2585</a>] - Upgrade Felix to 2.0.5</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2590'>QPID-2590</a>] - Update install notes for transactions</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2594'>QPID-2594</a>] - Exception chaining for JMSExceptions</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2595'>QPID-2595</a>] - WCF programming guide documentation</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2599'>QPID-2599</a>] - Allow Qpid users to configure the Java client logging using an sl4j binding of their choice, instead of Qpid shipping a defualt binding.</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2618'>QPID-2618</a>] - Add org.apache.common to the PluginManager exported packages</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2619'>QPID-2619</a>] - Capture the PID for the qpid broker on unix platforms</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2628'>QPID-2628</a>] - c++ messaging API dotnet binding needs received message callback</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2629'>QPID-2629</a>] - Remove Java client dependency on commons-collection.jar</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2651'>QPID-2651</a>] - replace the deprecated Derby 10.3.2.1 (data corruption bug) with a newer version</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2663'>QPID-2663</a>] - QMF: Improvement the behavior of the python console implementation based on scale testing. </li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2667'>QPID-2667</a>] - Cpp INSTALL-WINDOWS build instructions are out of date</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2669'>QPID-2669</a>] - Base64MD5PasswordFilePrincipalDatabase - code  improvement</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2671'>QPID-2671</a>] - Doc Book Programming-In-Apache-Qpid needs update for Messaging .NET binding</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2678'>QPID-2678</a>] - Qpid Shutdown OSGI plugin</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2689'>QPID-2689</a>] - Cpp build on Windows does not produce debug symbol PDB file</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2710'>QPID-2710</a>] - C++ Messaging Client .NET binding is not compiled in SDK</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2711'>QPID-2711</a>] - Add version and icon resources to Windows C++ exe/dll files</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2717'>QPID-2717</a>] - Update the bnd tool to version 0.0.384</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2731'>QPID-2731</a>] - enable getting/setting queue exclusivity property via the JMX management interface</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2736'>QPID-2736</a>] - Allow session.createQueue and session.createTopic methods to accept an address string</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2737'>QPID-2737</a>] - Add support in the JMS client for x-subscribe props defined in the new addressing format</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2738'>QPID-2738</a>] - Add support in the JMS client for "mode" option defined in the new addressing format</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2761'>QPID-2761</a>] - Add tests 4 and 5 to the .NET client (0.8)</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2765'>QPID-2765</a>] - WinSdk does not .NET Binding examples</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2771'>QPID-2771</a>] - Use plugins rather than plugin in package naming</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2772'>QPID-2772</a>] - Add fully qualified path to Regex class on default.build</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2775'>QPID-2775</a>] - use JMX to reload the security configuration for FirewallConfigTest</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2780'>QPID-2780</a>] - Improve the operational logging for 0-10 code path</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2782'>QPID-2782</a>] - QMF: improve the console api for selective filtering of unsolicited V2 indications.</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2783'>QPID-2783</a>] - Eliminate the UnknownMessageTypeException from o.a.q.server.protocol package</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2801'>QPID-2801</a>] - Implement LogSubject Interface in 0-10 Subscription/ServerConnection/ServerSession Objects</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2802'>QPID-2802</a>] - Implement selective operational logging via log4j.xml configuration</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2803'>QPID-2803</a>] - Abbreviate the log messages and optimize the log string operations for speed and size</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2809'>QPID-2809</a>] - Once an AMQDestination object resolves an address, it should not try to resolve it again when used in subsequent operations.  </li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2820'>QPID-2820</a>] - Remove the ManagedChannel interface from broker code</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2822'>QPID-2822</a>] - Move the documentation from o.a.q.server.logging.messages.*_logmessages.properties into qpid docbook documentation</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2824'>QPID-2824</a>] - Use toLogString rather than toString on LogSubject(s)</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2825'>QPID-2825</a>] - The class o.a.q.transport.Sink is not used and can be safely removed</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2826'>QPID-2826</a>] - The class o.a.q.transport.Result is not used and can be safely removed</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2827'>QPID-2827</a>] - QPID Cpp WinSDK does not contain 64-bit libraries</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2829'>QPID-2829</a>] - The o.a.q.transport.Echo class is not used and can be safely removed</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2831'>QPID-2831</a>] - Use slf4j as the logging mechanism across all code paths</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2832'>QPID-2832</a>] - Collate all the LogSubject formatting strings in a static class</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2833'>QPID-2833</a>] - Add a Generic Actor for 0-10 Logging</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2834'>QPID-2834</a>] - Implement subscriptions (SUB) operational logging on 0-10 </li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2835'>QPID-2835</a>] - Implement connections (CON) operational logging on 0-10</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2837'>QPID-2837</a>] - The o.a.q.server.transport.ThreadPoolFilter class is not used and can be safely removed</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2838'>QPID-2838</a>] - reduce code duplication in logging tests</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2839'>QPID-2839</a>] - Implement Channel  (CHN) operational logging on 0-10 protocol </li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2840'>QPID-2840</a>] - Use a configurable message prefix on the AbstractActor class</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2841'>QPID-2841</a>] - QMF: set TTL on agent heartbeat messages</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2843'>QPID-2843</a>] - remove redundant/duplicated logging</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2853'>QPID-2853</a>] - ReadMe for WinSDK is unclear about Visual Studio version support.</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2858'>QPID-2858</a>] - Implement FilterManager for 0-10 subscriptions</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2859'>QPID-2859</a>] - QMF: C++ agent should store its configured name in the config file if available.</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2862'>QPID-2862</a>] - QMF: python console should abort any pending transactions when the broker is deleted.</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2863'>QPID-2863</a>] - Propagate WinSDK Build Version numbers to the Messaging .NET Binding</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2865'>QPID-2865</a>] - Cpp messaging examples compile problems for x64</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2866'>QPID-2866</a>] - Remove unneeded build files and directory</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2884'>QPID-2884</a>] - Add the method arguments to Subscription_0_10 </li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2887'>QPID-2887</a>] - Remove the System.out.println statements from SlowConsumerDetectionConfiguration</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2897'>QPID-2897</a>] - C++ broker: improve scale and speed of route matching algorithm for topic exchanges.</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2906'>QPID-2906</a>] - Qpid WinSDK .NET Binding does not support Release configuration</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2907'>QPID-2907</a>] - Developing Qpid Cpp Messaging .NET Binding requires setup help</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2911'>QPID-2911</a>] - Remove the class printing from the log4j layout as the  (%F:%L) provides sufficient debug information</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2913'>QPID-2913</a>] - QPID Cpp Messaging Libraries for WinSDK Are Not Signed</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2924'>QPID-2924</a>] - Refactor WinSDK to create separate debug and release /bin directories</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2942'>QPID-2942</a>] - enable the Java broker convenience binary release package to be run out-of-the-box</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2943'>QPID-2943</a>] - add the examples to the Java client binary convenience release package</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2947'>QPID-2947</a>] - use a newer sl4j-api release to allow the Java client binary convenience package to be used out-of-the-box</li>
+</ul>
+
+<h4>Test</h4>
+<ul>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2359'>QPID-2359</a>] - Need functional tests for the transactional AMQP WCF channel</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2419'>QPID-2419</a>] - DurableSubscriptionTest is not thorough enough</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2510'>QPID-2510</a>] - Python messaging SetupTests.testConnectError false fail on Windows</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2532'>QPID-2532</a>] - stale lock file</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2787'>QPID-2787</a>] - enhance the MessageStoreTest</li>
+</ul>
+
+<h4>Sub-task</h4>
+<ul>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-1811'>QPID-1811</a>] - Unable to compile qpid on FreeBSD</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2284'>QPID-2284</a>] - Add new qpidxarm dll to the Windows installer build</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2539'>QPID-2539</a>] - Update ACL file syntax to be clearer and add extra operations</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2540'>QPID-2540</a>] - Create parser and implementation of C++ style ACL files for Java broker</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2542'>QPID-2542</a>] - Implement ACL checking as OSGi plugin</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2659'>QPID-2659</a>] - Change message stores to throw exceptions with internal error code 541</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2660'>QPID-2660</a>] - FieldTable does not throw AMQFrameDecodingException</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2675'>QPID-2675</a>] - Remove obsolete QpidException</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2679'>QPID-2679</a>] - Cache Queues during bind and remove from cache on queue.close()</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2680'>QPID-2680</a>] - Provide user documentation for configuring SCD</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2681'>QPID-2681</a>] - Process topic configuration section</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2682'>QPID-2682</a>] - Move SCD Plugin to part of the Core Broker</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2715'>QPID-2715</a>] - Document new SecurityPlugin design and implementation</li>
+</ul>
+
+<h4>Task</h4>
+<ul>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2315'>QPID-2315</a>] - remove unused client package jar dependencies</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2417'>QPID-2417</a>] - Enhance topic test coverage</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2527'>QPID-2527</a>] - Remove Thread::id() dependency</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2709'>QPID-2709</a>] - Replace the remaining references to the incubator</li>
+<li>[<a href='https://issues.apache.org/jira/browse/QPID-2946'>QPID-2946</a>] - remove QMan binary convenience package from the 0.8 release</li>
+</ul>
+
+</div>

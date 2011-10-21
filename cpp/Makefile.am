@@ -33,7 +33,3 @@ SUBDIRS = managementgen etc src docs/api docs/man examples bindings/qmf bindings
 # Update libtool, if needed.
 libtool: $(LIBTOOL_DEPS)
 	$(SHELL) ./config.status --recheck
-
-check-long: all
-	$(MAKE) -C src/tests check-long
-	

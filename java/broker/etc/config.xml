@@ -30,27 +30,28 @@
     <connector>
         <!-- To enable SSL edit the keystorePath and keystorePassword
 	     and set enabled to true. 
-             To disable Non-SSL port set sslOnly to true -->
+             To disasble Non-SSL port set sslOnly to true -->
         <ssl>
             <enabled>false</enabled>
-            <port>5671</port>
             <sslOnly>false</sslOnly>
-            <keyStorePath>/path/to/keystore.ks</keyStorePath>
-            <keyStorePassword>keystorepass</keyStorePassword>
+            <keystorePath>/path/to/keystore.ks</keystorePath>
+            <keystorePassword>keystorepass</keystorePassword>
         </ssl>
+        <qpidnio>false</qpidnio>
+        <protectio>
+            <enabled>false</enabled>
+            <readBufferLimitSize>262144</readBufferLimitSize>
+            <writeBufferLimitSize>262144</writeBufferLimitSize>	    
+        </protectio>
+        <transport>nio</transport>
         <port>5672</port>
-        <socketReceiveBuffer>262144</socketReceiveBuffer>
-        <socketSendBuffer>262144</socketSendBuffer>
+        <sslport>8672</sslport>
+        <socketReceiveBuffer>32768</socketReceiveBuffer>
+        <socketSendBuffer>32768</socketSendBuffer>
     </connector>
     <management>
         <enabled>true</enabled>
-        <jmxport>
-            <registryServer>8999</registryServer>
-            <!--
-             If unspecified, connectorServer defaults to 100 + registryServer port.
-            <connectorServer>9099</connectionServer>
-            -->
-        </jmxport>
+        <jmxport>8999</jmxport>
         <ssl>
             <enabled>false</enabled>
             <!-- Update below path to your keystore location, or run the bin/create-example-ssl-stores(.sh|.bat)
@@ -68,8 +69,10 @@
     </advanced>
 
     <security>
-        <pd-auth-manager>
+        <principal-databases>
+            <!-- Example use of Base64 encoded MD5 hashes for authentication via CRAM-MD5-Hashed -->
             <principal-database>
+                <name>passwordfile</name>
                 <class>org.apache.qpid.server.security.auth.database.PlainPasswordFilePrincipalDatabase</class>
                 <attributes>
                     <attribute>
@@ -78,11 +81,16 @@
                     </attribute>
                 </attributes>
             </principal-database>
-        </pd-auth-manager>
+        </principal-databases>
 
         <allow-all />
         
         <msg-auth>false</msg-auth>
+        
+        <jmx>
+            <access>${conf}/jmxremote.access</access>
+            <principal-database>passwordfile</principal-database>
+        </jmx>
     </security>
 
     <virtualhosts>${conf}/virtualhosts.xml</virtualhosts>

@@ -20,7 +20,7 @@
  */
 package org.apache.qpid.server.security.access.plugins;
 
-import javax.security.auth.Subject;
+import java.security.Principal;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.log4j.Logger;
@@ -89,19 +89,20 @@ public class AccessControl extends AbstractPlugin
     
     /**
      * Check if an operation is authorised by asking the  configuration object about the access
-     * control rules granted to the current thread's {@link Subject}. If there is no current
+     * control rules granted to the current thread's {@link Principal}. If there is no current
      * user the plugin will abstain.
      */
     public Result authorise(Operation operation, ObjectType objectType, ObjectProperties properties)
     {
-        final Subject subject = SecurityManager.getThreadSubject();
-        // Abstain if there is no subject/principal associated with this thread
-        if (subject == null  || subject.getPrincipals().size() == 0)
+        Principal principal = SecurityManager.getThreadPrincipal();
+        
+        // Abstain if there is no user associated with this thread
+        if (principal == null)
         {
             return Result.ABSTAIN;
         }
- 
-        return  _ruleSet.check(subject, operation, objectType, properties);
+        
+        return _ruleSet.check(principal.getName(), operation, objectType, properties);
     }
 
     public void configure(ConfigurationPlugin config)

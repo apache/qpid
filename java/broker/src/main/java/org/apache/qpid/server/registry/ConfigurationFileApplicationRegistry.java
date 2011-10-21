@@ -29,18 +29,12 @@ import org.apache.qpid.server.logging.actors.BrokerActor;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.management.JMXManagedObjectRegistry;
 import org.apache.qpid.server.management.NoopManagedObjectRegistry;
-import org.osgi.framework.BundleContext;
 
 public class ConfigurationFileApplicationRegistry extends ApplicationRegistry
 {
     public ConfigurationFileApplicationRegistry(File configurationURL) throws ConfigurationException
     {
-        this(configurationURL, null);
-    }
-
-    public ConfigurationFileApplicationRegistry(File configurationURL, BundleContext bundleContext) throws ConfigurationException
-    {
-        super(new ServerConfiguration(configurationURL), bundleContext);
+        super(new ServerConfiguration(configurationURL));
     }
 
     @Override

@@ -114,7 +114,7 @@ class SslConnector : public Connector
 
     std::string identifier;
 
-    void connect(const std::string& host, const std::string& port);
+    void connect(const std::string& host, int port);
     void init();
     void close();
     void send(framing::AMQFrame& frame);
@@ -190,14 +190,14 @@ SslConnector::~SslConnector() {
     close();
 }
 
-void SslConnector::connect(const std::string& host, const std::string& port){
+void SslConnector::connect(const std::string& host, int port){
     Mutex::ScopedLock l(closedLock);
     assert(closed);
     try {
         socket.connect(host, port);
     } catch (const std::exception& e) {
         socket.close();
-        throw TransportFailure(e.what());
+        throw ConnectionException(framing::connection::CLOSE_CODE_FRAMING_ERROR, e.what());
     }
 
     identifier = str(format("[%1% %2%]") % socket.getLocalPort() % socket.getPeerAddress());

@@ -25,17 +25,17 @@ generated_file_list = \
 	cqpid.cpp \
 	cqpid.py
 
-EXTRA_DIST = CMakeLists.txt python.i
+EXTRA_DIST = python.i
 BUILT_SOURCES = $(generated_file_list)
 SWIG_FLAGS = -w362,401
 
 $(generated_file_list): $(srcdir)/python.i $(srcdir)/../qpid.i $(srcdir)/../../swig_python_typemaps.i
-	$(SWIG) -c++ -python $(SWIG_FLAGS) $(INCLUDES) $(QPID_CXXFLAGS) -I$(top_srcdir)/src/qmf -I/usr/include -o cqpid.cpp $(srcdir)/python.i
+	swig -c++ -python $(SWIG_FLAGS) $(INCLUDES) $(QPID_CXXFLAGS) -I$(top_srcdir)/src/qmf -I/usr/include -o cqpid.cpp $(srcdir)/python.i
 
 pylibdir = $(PYTHON_LIB)
 
 lib_LTLIBRARIES = _cqpid.la
-cqpiddir = $(pyexecdir)
+cqpiddir = $(pythondir)
 cqpid_PYTHON = cqpid.py
 
 _cqpid_la_LDFLAGS = -avoid-version -module -shared

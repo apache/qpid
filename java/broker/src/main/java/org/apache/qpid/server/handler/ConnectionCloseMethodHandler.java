@@ -68,7 +68,5 @@ public class ConnectionCloseMethodHandler implements StateAwareMethodListener<Co
         ConnectionCloseOkBody responseBody = methodRegistry.createConnectionCloseOkBody();
         session.writeFrame(responseBody.generateFrame(channelId));
 
-        session.closeProtocolSession();
-
     }
 }

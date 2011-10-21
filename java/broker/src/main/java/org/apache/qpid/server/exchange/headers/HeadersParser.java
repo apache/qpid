@@ -274,6 +274,132 @@ public class HeadersParser
         
     }
 
+    public static void main(String[] args) throws AMQFrameDecodingException
+    {        
+
+        FieldTable bindingTable = new FieldTable();
+
+        bindingTable.setString(new AMQShortString("x-match"),"all");
+        bindingTable.setInteger("a",1);
+        bindingTable.setVoid(new AMQShortString("b"));
+        bindingTable.setString("c","");
+        bindingTable.setInteger("d",4);
+        bindingTable.setInteger("e",1);
+
+
+
+        FieldTable bindingTable2 = new FieldTable();
+        bindingTable2.setString(new AMQShortString("x-match"),"all");
+        bindingTable2.setInteger("a",1);
+        bindingTable2.setVoid(new AMQShortString("b"));
+        bindingTable2.setString("c","");
+        bindingTable2.setInteger("d",4);
+        bindingTable2.setInteger("e",1);
+        bindingTable2.setInteger("f",1);
+
+
+        FieldTable table = new FieldTable();
+        table.setInteger("a",1);
+        table.setInteger("b",2);
+        table.setString("c","");
+        table.setInteger("d",4);
+        table.setInteger("e",1);
+        table.setInteger("f",1);
+        table.setInteger("h",1);
+        table.setInteger("i",1);
+        table.setInteger("j",1);
+        table.setInteger("k",1);
+        table.setInteger("l",1);
+
+        org.apache.mina.common.ByteBuffer buffer = org.apache.mina.common.ByteBuffer.allocate( (int) table.getEncodedSize());
+        EncodingUtils.writeFieldTableBytes(buffer, table);
+        buffer.flip();
+
+        FieldTable table2 = EncodingUtils.readFieldTable(buffer);
+
+
+
+        FieldTable bindingTable3 = new FieldTable();
+        bindingTable3.setString(new AMQShortString("x-match"),"any");
+        bindingTable3.setInteger("a",1);
+        bindingTable3.setInteger("b",3);
+
+
+        FieldTable bindingTable4 = new FieldTable();
+        bindingTable4.setString(new AMQShortString("x-match"),"any");
+        bindingTable4.setVoid(new AMQShortString("a"));
+
+
+        FieldTable bindingTable5 = new FieldTable();
+        bindingTable5.setString(new AMQShortString("x-match"),"all");
+        bindingTable5.setString(new AMQShortString("h"),"hello");
+
+        for(int i = 0; i < 100; i++)
+        {
+            printMatches(new FieldTable[] {bindingTable5} , table2);
+        }
+
+
+
+    }
+
+
+
+    private static void printMatches(final FieldTable[] bindingKeys, final FieldTable routingKey)
+    {
+        HeadersMatcherDFAState sm = null;
+        Map<HeaderMatcherResult, String> resultMap = new HashMap<HeaderMatcherResult, String>();
+
+        HeadersParser parser = new HeadersParser();
+
+        for(int i = 0; i < bindingKeys.length; i++)
+        {
+            HeaderMatcherResult r = new HeaderMatcherResult();
+            resultMap.put(r, bindingKeys[i].toString());
+
+
+            if(i==0)
+            {
+                sm = parser.createStateMachine(bindingKeys[i], r);
+            }
+            else
+            {
+                sm = sm.mergeStateMachines(parser.createStateMachine(bindingKeys[i], r));
+            }
+        }
+
+        Collection<HeaderMatcherResult> results = null;
+        long beforeTime = System.currentTimeMillis();
+        for(int i = 0; i < 1000000; i++)
+        {
+            routingKey.size();
+
+            assert sm != null;
+            results = sm.match(routingKey);
+
+        }
+        long elapsed = System.currentTimeMillis() - beforeTime;
+        System.out.println("1000000 Iterations took: " + elapsed);
+        Collection<String> resultStrings = new ArrayList<String>();
+
+        assert results != null;
+        for(HeaderMatcherResult result : results)
+        {
+            resultStrings.add(resultMap.get(result));
+        }
+
+        final ArrayList<String> nonMatches = new ArrayList<String>();
+        for(FieldTable key : bindingKeys)
+        {
+            nonMatches.add(key.toString());
+        }
+        nonMatches.removeAll(resultStrings);
+        System.out.println("\""+routingKey+"\" matched with " + resultStrings + " DID NOT MATCH with " + nonMatches);
+
+
+    }
+
+
     public final static class KeyValuePair
     {
         public final HeaderKey _key;

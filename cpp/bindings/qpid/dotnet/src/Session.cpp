@@ -89,7 +89,7 @@ namespace Messaging {
     }
 
 
-    // Copy constructor look-alike (C#)
+    // Copy constructor
     Session::Session(const Session ^ session)
         : parentConnectionp(session->parentConnectionp)
     {
@@ -99,30 +99,6 @@ namespace Messaging {
 		{
             sessionp = new ::qpid::messaging::Session(
                         *(const_cast<Session ^>(session)->NativeSession));
-          
-        } 
-        catch (const ::qpid::types::Exception & error) 
-		{
-            String ^ errmsg = gcnew String(error.what());
-            newException    = gcnew QpidException(errmsg);
-        }
-
-		if (newException != nullptr) 
-		{
-	        throw newException;
-		}
-    }
-
-    // Copy constructor implicitly dereferenced (C++)
-    Session::Session(const Session % session)
-        : parentConnectionp(session.parentConnectionp)
-    {
-        System::Exception ^ newException = nullptr;
-
-        try 
-		{
-            sessionp = new ::qpid::messaging::Session(
-                        *(const_cast<Session %>(session).NativeSession));
           
         } 
         catch (const ::qpid::types::Exception & error) 
@@ -235,31 +211,6 @@ namespace Messaging {
         try 
 		{
             sessionp->acknowledge(*(message->NativeMessage), sync);
-        } 
-        catch (const ::qpid::types::Exception & error) 
-		{
-            String ^ errmsg = gcnew String(error.what());
-            newException    = gcnew QpidException(errmsg);
-        }
-
-		if (newException != nullptr) 
-		{
-	        throw newException;
-		}
-    }
-
-    void Session::AcknowledgeUpTo(Message ^ message)
-    {
-        AcknowledgeUpTo(message, false);
-    }
-
-    void Session::AcknowledgeUpTo(Message ^ message, bool sync)
-    {
-        System::Exception ^ newException = nullptr;
-
-        try 
-		{
-            sessionp->acknowledgeUpTo(*(message->NativeMessage), sync);
         } 
         catch (const ::qpid::types::Exception & error) 
 		{

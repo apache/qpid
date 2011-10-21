@@ -23,11 +23,8 @@
 using namespace qpid::broker;
 using qpid::sys::Mutex;
 
-DtxBuffer::DtxBuffer(
-    const std::string& _xid,
-    bool ended_, bool suspended_, bool failed_, bool expired_)
-    : xid(_xid), ended(ended_), suspended(suspended_), failed(failed_), expired(expired_)
-{}
+DtxBuffer::DtxBuffer(const std::string& _xid) 
+    : xid(_xid), ended(false), suspended(false), failed(false), expired(false) {}
 
 DtxBuffer::~DtxBuffer() {}
 
@@ -37,7 +34,7 @@ void DtxBuffer::markEnded()
     ended = true; 
 }
 
-bool DtxBuffer::isEnded() const
+bool DtxBuffer::isEnded() 
 { 
     Mutex::ScopedLock locker(lock); 
     return ended; 
@@ -48,7 +45,7 @@ void DtxBuffer::setSuspended(bool isSuspended)
     suspended = isSuspended; 
 }
 
-bool DtxBuffer::isSuspended() const
+bool DtxBuffer::isSuspended() 
 { 
     return suspended; 
 }
@@ -61,13 +58,13 @@ void DtxBuffer::fail()
     ended = true;
 }
 
-bool DtxBuffer::isRollbackOnly() const
+bool DtxBuffer::isRollbackOnly()
 {
     Mutex::ScopedLock locker(lock); 
     return failed;
 }
 
-std::string DtxBuffer::getXid() const
+const std::string& DtxBuffer::getXid()
 {
     return xid;
 }
@@ -79,13 +76,8 @@ void DtxBuffer::timedout()
     fail();
 }
 
-bool DtxBuffer::isExpired() const
+bool DtxBuffer::isExpired()
 {
     Mutex::ScopedLock locker(lock); 
     return expired;
-}
-
-bool DtxBuffer::isFailed() const
-{
-    return failed;
 }

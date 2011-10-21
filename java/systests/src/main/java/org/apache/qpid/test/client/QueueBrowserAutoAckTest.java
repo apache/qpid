@@ -59,7 +59,7 @@ public class QueueBrowserAutoAckTest extends FailoverBaseCase
 
         _queue = _clientSession.createQueue(getTestQueueName());
         _clientSession.createConsumer(_queue).close();
-
+        
         //Ensure there are no messages on the queue to start with.
         checkQueueDepth(0);
     }
@@ -490,7 +490,7 @@ public class QueueBrowserAutoAckTest extends FailoverBaseCase
             }
         }
 
-        assertTrue("We should get atleast " + messages + " msgs (found " + msgCount +").", msgCount >= messages);
+        assertTrue("We should get atleast " + messages + " msgs.", msgCount >= messages);
 
         if (_logger.isDebugEnabled())
         {

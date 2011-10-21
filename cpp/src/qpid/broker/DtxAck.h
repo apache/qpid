@@ -1,6 +1,3 @@
-#ifndef QPID_BROKER_DTXACK_H
-#define QPID_BROKER_DTXACK_H
-
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -21,6 +18,9 @@
  * under the License.
  *
  */
+#ifndef _DtxAck_
+#define _DtxAck_
+
 #include <algorithm>
 #include <functional>
 #include <list>
@@ -29,21 +29,20 @@
 #include "qpid/broker/TxOp.h"
 
 namespace qpid {
-namespace broker {
-class DtxAck : public TxOp{
-    DeliveryRecords pending;
+    namespace broker {
+        class DtxAck : public TxOp{
+            DeliveryRecords pending;
 
-  public:
-    DtxAck(const framing::SequenceSet& acked, DeliveryRecords& unacked);
-    DtxAck(DeliveryRecords& unacked);
-    virtual bool prepare(TransactionContext* ctxt) throw();
-    virtual void commit() throw();
-    virtual void rollback() throw();
-    virtual ~DtxAck(){}
-    virtual void accept(TxOpConstVisitor& visitor) const { visitor(*this); }
-    const DeliveryRecords& getPending() const { return pending; }
-};
+        public:
+            DtxAck(const framing::SequenceSet& acked, DeliveryRecords& unacked);
+            virtual bool prepare(TransactionContext* ctxt) throw();
+            virtual void commit() throw();
+            virtual void rollback() throw();
+            virtual ~DtxAck(){}
+            virtual void accept(TxOpConstVisitor& visitor) const { visitor(*this); }
+        };
+    }
+}
 
-}} // qpid::broker
 
-#endif  /*!QPID_BROKER_DTXACK_H*/
+#endif

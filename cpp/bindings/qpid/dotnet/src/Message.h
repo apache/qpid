@@ -71,7 +71,6 @@ namespace Messaging {
 
         // Copy constructor
         Message(const Message ^ message);
-        Message(const Message % message);
 
 	    // unmanaged clone
         Message(const ::qpid::messaging::Message & msgp);

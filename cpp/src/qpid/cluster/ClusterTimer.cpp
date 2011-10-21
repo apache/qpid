@@ -70,7 +70,6 @@ void ClusterTimer::add(intrusive_ptr<TimerTask> task)
     if (i != map.end())
         throw Exception(QPID_MSG("Task already exists with name " << task->getName()));
     map[task->getName()] = task;
-
     // Only the elder actually activates the task with the Timer base class.
     if (cluster.isElder()) {
         QPID_LOG(trace, "Elder activating cluster timer task " << task->getName());
@@ -113,9 +112,6 @@ void ClusterTimer::deliverWakeup(const std::string& name) {
     else {
         intrusive_ptr<TimerTask> t = i->second;
         map.erase(i);
-        // Move the nextFireTime so readyToFire() is true. This is to ensure we
-        // don't get an error if the fired task calls setupNextFire()
-        t->setFired();
         Timer::fire(t);
     }
 }

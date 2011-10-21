@@ -40,10 +40,10 @@ namespace console {
         ObjectId() : first(0), second(0) {}
         ObjectId(framing::Buffer& buffer);
 
-        uint8_t getFlags() const { return (uint8_t)((first & 0xF000000000000000LL) >> 60); }
-        uint16_t getSequence() const { return (uint16_t)((first & 0x0FFF000000000000LL) >> 48); }
-        uint32_t getBrokerBank() const { return (uint32_t)((first & 0x0000FFFFF0000000LL) >> 28); }
-        uint32_t getAgentBank() const { return (uint32_t) (first & 0x000000000FFFFFFFLL); }
+        uint8_t getFlags() const { return (first & 0xF000000000000000LL) >> 60; }
+        uint16_t getSequence() const { return (first & 0x0FFF000000000000LL) >> 48; }
+        uint32_t getBrokerBank() const { return (first & 0x0000FFFFF0000000LL) >> 28; }
+        uint32_t getAgentBank() const { return first & 0x000000000FFFFFFFLL; }
         uint64_t getObject() const { return second; }
         bool isDurable() const { return getSequence() == 0; }
         void decode(framing::Buffer& buffer);

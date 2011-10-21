@@ -53,7 +53,7 @@ static int eventTypes[qpid::log::LevelTraits::COUNT] = {
 
 class EventLogOutput : public qpid::log::Logger::Output {
 public:
-    EventLogOutput(const std::string& /*sourceName*/) : logHandle(0)
+    EventLogOutput(const std::string& sourceName) : logHandle(0)
     {
         logHandle = OpenEventLog(0, "Application");
     }
@@ -83,7 +83,7 @@ private:
     HANDLE logHandle;
 };
 
-SinkOptions::SinkOptions(const std::string& /*argv0*/)
+SinkOptions::SinkOptions(const std::string& argv0)
     : qpid::log::SinkOptions(),
       logToStderr(true),
       logToStdout(false),

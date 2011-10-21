@@ -22,7 +22,6 @@ package org.apache.qpid.server.logging;
 
 import junit.framework.AssertionFailedError;
 
-import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.util.LogMonitor;
 
 import java.util.List;
@@ -77,8 +76,9 @@ public class ManagementLoggingTest extends AbstractTestLogging
      */
     public void testManagementStartupEnabled() throws Exception
     {
-        // This test only works on java brokers
-        if (isJavaBroker())
+        // This test only works on external java brokers due to the fact that
+        // Management is disabled on InVM brokers.
+        if (isJavaBroker() && isExternalBroker())
         {
             startBrokerAndCreateMonitor(true, false);
 
@@ -130,7 +130,9 @@ public class ManagementLoggingTest extends AbstractTestLogging
      */
     public void testManagementStartupDisabled() throws Exception
     {
-        if (isJavaBroker())
+        // This test only works on external java brokers due to the fact that
+        // Management is disabled on InVM brokers.
+        if (isJavaBroker() && isExternalBroker())
         {
             startBrokerAndCreateMonitor(false, false);
 
@@ -189,7 +191,9 @@ public class ManagementLoggingTest extends AbstractTestLogging
      */
     public void testManagementStartupRMIEntries() throws Exception
     {
-        if (isJavaBroker())
+        // This test only works on external java brokers due to the fact that
+        // Management is disabled on InVM brokers.
+        if (isJavaBroker() && isExternalBroker())
         {
             startBrokerAndCreateMonitor(true, false);
             
@@ -207,7 +211,7 @@ public class ManagementLoggingTest extends AbstractTestLogging
                 validateMessageID("MNG-1002", log);
 
                 //Check the RMI Registry port is as expected
-                int mPort = getManagementPort(getPort());
+                int mPort = getPort() + (DEFAULT_MANAGEMENT_PORT - DEFAULT_PORT);
                 assertTrue("RMI Registry port not as expected(" + mPort + ").:" + getMessageString(log),
                            getMessageString(log).endsWith(String.valueOf(mPort)));
 
@@ -218,7 +222,7 @@ public class ManagementLoggingTest extends AbstractTestLogging
 
                 // We expect the RMI Registry port (the defined 'management port') to be
                 // 100 lower than the JMX RMIConnector Server Port (the actual JMX server)
-                int jmxPort = mPort + ServerConfiguration.JMXPORT_CONNECTORSERVER_OFFSET;
+                int jmxPort = mPort + 100;
                 assertTrue("JMX RMIConnectorServer port not as expected(" + jmxPort + ").:" + getMessageString(log),
                            getMessageString(log).endsWith(String.valueOf(jmxPort)));
             }
@@ -246,7 +250,9 @@ public class ManagementLoggingTest extends AbstractTestLogging
      */
     public void testManagementStartupSSLKeystore() throws Exception
     {
-        if (isJavaBroker())
+        // This test only works on external java brokers due to the fact that
+        // Management is disabled on InVM brokers.
+        if (isJavaBroker() && isExternalBroker())
         {
             startBrokerAndCreateMonitor(true, true);
 

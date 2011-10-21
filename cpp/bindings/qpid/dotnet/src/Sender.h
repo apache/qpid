@@ -62,7 +62,6 @@ namespace Messaging {
         
         // copy constructor
         Sender(const Sender ^ sender);
-        Sender(const Sender % sender);
 
         ~Sender();
         !Sender();

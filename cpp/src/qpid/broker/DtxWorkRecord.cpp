@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
+ * 
  *   http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -28,19 +28,19 @@ using qpid::sys::Mutex;
 using namespace qpid::broker;
 using namespace qpid::framing;
 
-DtxWorkRecord::DtxWorkRecord(const std::string& _xid, TransactionalStore* const _store) :
+DtxWorkRecord::DtxWorkRecord(const std::string& _xid, TransactionalStore* const _store) : 
     xid(_xid), store(_store), completed(false), rolledback(false), prepared(false), expired(false) {}
 
-DtxWorkRecord::~DtxWorkRecord()
+DtxWorkRecord::~DtxWorkRecord() 
 {
-    if (timeout.get()) {
+    if (timeout.get()) {  
         timeout->cancel();
     }
 }
 
 bool DtxWorkRecord::prepare()
 {
-    Mutex::ScopedLock locker(lock);
+    Mutex::ScopedLock locker(lock);     
     if (check()) {
         txn = store->begin(xid);
         if (prepare(txn.get())) {
@@ -68,7 +68,7 @@ bool DtxWorkRecord::prepare(TransactionContext* _txn)
 
 bool DtxWorkRecord::commit(bool onePhase)
 {
-    Mutex::ScopedLock locker(lock);
+    Mutex::ScopedLock locker(lock); 
     if (check()) {
         if (prepared) {
             //already prepared i.e. 2pc
@@ -78,13 +78,13 @@ bool DtxWorkRecord::commit(bool onePhase)
 
             store->commit(*txn);
             txn.reset();
-
+            
             std::for_each(work.begin(), work.end(), mem_fn(&TxBuffer::commit));
             return true;
         } else {
             //1pc commit optimisation, don't need a 2pc transaction context:
             if (!onePhase) {
-                throw IllegalStateException(QPID_MSG("Branch with xid " << xid << " has not been prepared, one-phase option required!"));
+                throw IllegalStateException(QPID_MSG("Branch with xid " << xid << " has not been prepared, one-phase option required!"));        
             }
             std::auto_ptr<TransactionContext> localtxn = store->begin();
             if (prepare(localtxn.get())) {
@@ -107,16 +107,16 @@ bool DtxWorkRecord::commit(bool onePhase)
 
 void DtxWorkRecord::rollback()
 {
-    Mutex::ScopedLock locker(lock);
+    Mutex::ScopedLock locker(lock); 
     check();
     abort();
 }
 
 void DtxWorkRecord::add(DtxBuffer::shared_ptr ops)
 {
-    Mutex::ScopedLock locker(lock);
+    Mutex::ScopedLock locker(lock); 
     if (expired) {
-        throw DtxTimeoutException(QPID_MSG("Branch with xid " << xid << " has timed out."));
+        throw DtxTimeoutException();
     }
     if (completed) {
         throw CommandInvalidException(QPID_MSG("Branch with xid " << xid << " has been completed!"));
@@ -163,7 +163,7 @@ void DtxWorkRecord::recover(std::auto_ptr<TPCTransactionContext> _txn, DtxBuffer
 
 void DtxWorkRecord::timedout()
 {
-    Mutex::ScopedLock locker(lock);
+    Mutex::ScopedLock locker(lock); 
     expired = true;
     rolledback = true;
     if (!completed) {
@@ -174,18 +174,4 @@ void DtxWorkRecord::timedout()
         }
     }
     abort();
-}
-
-size_t DtxWorkRecord::indexOf(const DtxBuffer::shared_ptr& buf) {
-    Work::iterator i = std::find(work.begin(), work.end(), buf);
-    if (i == work.end()) throw NotFoundException(
-        QPID_MSG("Can't find DTX buffer for xid: " << buf->getXid()));
-    return i - work.begin();
-}
-
-DtxBuffer::shared_ptr DtxWorkRecord::operator[](size_t i) const {
-    if (i > work.size())
-        throw NotFoundException(
-            QPID_MSG("Can't find DTX buffer " << i << " for xid: " << xid));
-    return work[i];
 }

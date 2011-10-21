@@ -20,7 +20,7 @@
 #
 
 import os
-import optparse
+import optparse 
 from optparse import IndentedHelpFormatter
 import sys
 import socket
@@ -62,11 +62,11 @@ _usage = "%prog [options] [broker-addr]..."
 
 _description = \
 """
-Collect and print events from one or more Qpid message brokers.
+Collect and print events from one or more Qpid message brokers.  
 
 If no broker-addr is supplied, %prog connects to 'localhost:5672'.
 
-[broker-addr] syntax:
+[broker-addr] syntax:   
 
           [username/password@] hostname
           ip-address [:<port>]
@@ -91,20 +91,20 @@ def main(argv=None):
   session = Session(console, rcvObjects=False, rcvHeartbeats=options.heartbeats, manageConnections=True)
   brokers = []
   try:
-    try:
-      for host in arguments:
-        brokers.append(session.addBroker(host, None, options.sasl_mechanism))
+    for host in arguments:
+      brokers.append(session.addBroker(host, None, options.sasl_mechanism))
 
-        while (True):
-          sleep(10)
+      while (True):
+        sleep(10)
 
-    except KeyboardInterrupt:
-        print
-        return 0
+  except KeyboardInterrupt:
+      print
+      return 0
 
-    except Exception, e:
-        print "Failed: %s - %s" % (e.__class__.__name__, e)
-        return 1
+  except Exception, e:
+      print "Failed: %s - %s" % (e.__class__.__name__, e)
+      return 1
+
   finally:
     while len(brokers):
       b = brokers.pop()

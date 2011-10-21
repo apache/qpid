@@ -20,8 +20,7 @@
  */
 package org.apache.qpid.framing;
 
-import java.io.DataInputStream;
-import java.io.IOException;
+import org.apache.mina.common.ByteBuffer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,7 +41,7 @@ public class ContentHeaderBodyFactory implements BodyFactory
         _log.debug("Creating content header body factory");
     }
 
-    public AMQBody createBody(DataInputStream in, long bodySize) throws AMQFrameDecodingException, IOException
+    public AMQBody createBody(ByteBuffer in, long bodySize) throws AMQFrameDecodingException
     {
         // all content headers are the same - it is only the properties that differ.
         // the content header body further delegates construction of properties

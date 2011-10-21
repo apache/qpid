@@ -43,7 +43,6 @@ QMF2_API =				\
   ../include/qmf/ConsoleSession.h	\
   ../include/qmf/DataAddr.h		\
   ../include/qmf/Data.h			\
-  ../include/qmf/posix/EventNotifier.h	\
   ../include/qmf/exceptions.h		\
   ../include/qmf/Handle.h		\
   ../include/qmf/ImportExport.h		\
@@ -93,7 +92,6 @@ libqmf2_la_SOURCES = 		\
   qmf/AgentEventImpl.h		\
   qmf/AgentImpl.h		\
   qmf/AgentSession.cpp		\
-  qmf/AgentSessionImpl.h	\
   qmf/AgentSubscription.cpp	\
   qmf/AgentSubscription.h	\
   qmf/ConsoleEvent.cpp		\
@@ -106,22 +104,17 @@ libqmf2_la_SOURCES = 		\
   qmf/DataAddrImpl.h		\
   qmf/Data.cpp			\
   qmf/DataImpl.h		\
-  qmf/EventNotifierImpl.cpp	\
-  qmf/EventNotifierImpl.h	\
   qmf/exceptions.cpp		\
   qmf/Expression.cpp		\
   qmf/Expression.h		\
   qmf/Hash.cpp			\
   qmf/Hash.h			\
-  qmf/PosixEventNotifier.cpp	\
-  qmf/PosixEventNotifierImpl.cpp \
-  qmf/PosixEventNotifierImpl.h	\
   qmf/PrivateImplRef.h		\
   qmf/Query.cpp			\
   qmf/QueryImpl.h		\
+  qmf/Schema.cpp		\
   qmf/SchemaCache.cpp		\
   qmf/SchemaCache.h		\
-  qmf/Schema.cpp		\
   qmf/SchemaId.cpp		\
   qmf/SchemaIdImpl.h		\
   qmf/SchemaImpl.h		\

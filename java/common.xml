@@ -23,9 +23,7 @@
   <dirname property="project.root" file="${ant.file.common}"/>
 
   <property name="project.name"          value="qpid"/>
-  <property name="project.version"       value="0.13"/>
-  <property name="project.url"           value="http://qpid.apache.org"/>
-  <property name="project.groupid"       value="org.apache.qpid"/>
+  <property name="project.version"       value="0.9"/>
   <property name="project.namever"       value="${project.name}-${project.version}"/>
 
   <property name="resources"             location="${project.root}/resources"/>
@@ -42,6 +40,7 @@
   <property name="build.report"          location="${build}/report"/>
   <property name="build.release"         location="${build}/release"/>
   <property name="build.release.prepare" location="${build.release}/prepare"/>
+  <property name="build.data"            location="${build.scratch}/data"/>
   <property name="build.plugins"         location="${build}/lib/plugins"/>
   <property name="build.coveragereport"  location="${build}/coverage"/>
   <property name="build.findbugs"        location="${build}/findbugs"/>
@@ -64,11 +63,6 @@
   <property name="mllib.dir" value="${project.root}/../python" />
   <property name="findbugs.dir" value="${project.root}/lib/findbugs" />
 
-  <!-- properties used to control Ant Eclipse for Eclipse classpath/project files etc -->
-  <property name="eclipse.updatealways" value="false"/>
-  <property name="eclipse.compilercompliance" value="5.0"/>
-  <property name="eclipse.container" value="JVM 1.5"/>
-
   <path id="cobertura.classpath">
     <fileset dir="${cobertura.dir}">
         <include name="cobertura.jar" />
@@ -77,7 +71,6 @@
   </path>
 
   <property name="maven.local.repo"      value="${build.scratch}/maven-local-repo"/>
-  <property name="maven.settings.xml"    value="${project.root}/maven-settings.xml"/>
   <property name="maven.unique.version"  value="false"/>
   <property name="maven.snapshot"        value="true"/>
   <condition property="maven.version.suffix" value="" else="-SNAPSHOT">
@@ -130,6 +123,8 @@
           </pathconvert>
  	</sequential>
   </macrodef>
+
+
 
   <macrodef name="jython">
     <attribute name="path"/>
@@ -327,20 +322,6 @@
     results directory:
 
       ${build.results}
-
-  ant eclipse
-
-    Generates project and classpath files for the Eclispe IDE.  Requires that
-    the Ant Eclipse task (http://ant-eclipse.sourceforge.net/) has been installed
-    in $ANT_HOME/lib.
-
-    The following system properties will be passed to the task. These can be usefully
-    overridden from the command line.
-
-    eclipse.updatealways - forces Eclipse files to be regenerated even if they are newer then the build.xml (default ${eclipse.updatealways}).
-    eclipse.container - controls the Eclipse container (default ${eclipse.container}).
-    eclipse.compilercompliance" - controls the Eclipse compiler compliance (default ${eclipse.compilercompliance}).
-
     </echo>
   </target>
 

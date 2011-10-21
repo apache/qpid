@@ -20,10 +20,7 @@
  */
 package org.apache.qpid.framing;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
-
+import org.apache.mina.common.ByteBuffer;
 import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
 import org.apache.qpid.AMQException;
 
@@ -37,12 +34,12 @@ public class HeartbeatBody implements AMQBody
 
     }
 
-    public HeartbeatBody(DataInputStream buffer, long size) throws IOException
+    public HeartbeatBody(ByteBuffer buffer, long size)
     {
         if(size > 0)
         {
             //allow other implementations to have a payload, but ignore it:
-            buffer.skip(size);
+            buffer.skip((int) size);
         }
     }
 
@@ -56,7 +53,7 @@ public class HeartbeatBody implements AMQBody
         return 0;//heartbeats we generate have no payload
     }
 
-    public void writePayload(DataOutputStream buffer)
+    public void writePayload(ByteBuffer buffer)
     {
     }
 
@@ -66,12 +63,12 @@ public class HeartbeatBody implements AMQBody
         session.heartbeatBodyReceived(channelId, this);
     }
 
-    protected void populateFromBuffer(DataInputStream buffer, long size) throws AMQFrameDecodingException, IOException
+    protected void populateFromBuffer(ByteBuffer buffer, long size) throws AMQFrameDecodingException
     {
         if(size > 0)
         {
             //allow other implementations to have a payload, but ignore it:
-            buffer.skip(size);
+            buffer.skip((int) size);
         }
     }
 

@@ -57,7 +57,7 @@ namespace qmf {
     AGENT_DEL_FILTER = 2 
     };
 
-    class QMF_CLASS_EXTERN ConsoleEvent : public qmf::Handle<ConsoleEventImpl> {
+    class ConsoleEvent : public qmf::Handle<ConsoleEventImpl> {
     public:
         QMF_EXTERN ConsoleEvent(ConsoleEventImpl* impl = 0);
         QMF_EXTERN ConsoleEvent(const ConsoleEvent&);

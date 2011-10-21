@@ -38,7 +38,6 @@ Options::Options(const std::string& argv0_, const std::string& name_) :
     thread(false),
     source(false),
     function(false),
-    hiresTs(false),
     trace(false),
     sinkOptions (SinkOptions::create(argv0_))
 {
@@ -66,7 +65,6 @@ Options::Options(const std::string& argv0_, const std::string& name_) :
         ("log-source", optValue(source,"yes|no"), "Include source file:line in log messages")
         ("log-thread", optValue(thread,"yes|no"), "Include thread ID in log messages")
         ("log-function", optValue(function,"yes|no"), "Include function signature in log messages")
-        ("log-hires-timestamp", optValue(hiresTs,"yes|no"), "Use unformatted hi-res timestamp in log messages")
         ("log-prefix", optValue(prefix,"STRING"), "Prefix to append to all log messages")
         ;
     add(*sinkOptions);
@@ -82,7 +80,6 @@ Options::Options(const Options &o) :
     thread(o.thread),
     source(o.source),
     function(o.function),
-    hiresTs(o.hiresTs),
     trace(o.trace),
     prefix(o.prefix),
     sinkOptions (SinkOptions::create(o.argv0))
@@ -100,7 +97,6 @@ Options& Options::operator=(const Options& x) {
         thread = x.thread;
         source = x.source;
         function = x.function;
-        hiresTs = x.hiresTs;
         trace = x.trace;
         prefix = x.prefix;
         *sinkOptions = *x.sinkOptions;

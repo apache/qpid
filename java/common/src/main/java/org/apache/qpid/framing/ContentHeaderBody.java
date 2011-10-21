@@ -20,10 +20,7 @@
  */
 package org.apache.qpid.framing;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
-
+import org.apache.mina.common.ByteBuffer;
 import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
 import org.apache.qpid.AMQException;
 
@@ -39,18 +36,18 @@ public class ContentHeaderBody implements AMQBody
     public long bodySize;
 
     /** must never be null */
-    private ContentHeaderProperties properties;
+    public ContentHeaderProperties properties;
 
     public ContentHeaderBody()
     {
     }
 
-    public ContentHeaderBody(DataInputStream buffer, long size) throws AMQFrameDecodingException, IOException
+    public ContentHeaderBody(ByteBuffer buffer, long size) throws AMQFrameDecodingException
     {
-        classId = buffer.readUnsignedShort();
-        weight = buffer.readUnsignedShort();
-        bodySize = buffer.readLong();
-        int propertyFlags = buffer.readUnsignedShort();
+        classId = buffer.getUnsignedShort();
+        weight = buffer.getUnsignedShort();
+        bodySize = buffer.getLong();
+        int propertyFlags = buffer.getUnsignedShort();
         ContentHeaderPropertiesFactory factory = ContentHeaderPropertiesFactory.getInstance();
         properties = factory.createContentHeaderProperties(classId, propertyFlags, buffer, (int)size - 14);
 
@@ -75,13 +72,13 @@ public class ContentHeaderBody implements AMQBody
         return TYPE;
     }
 
-    protected void populateFromBuffer(DataInputStream buffer, long size)
-        throws AMQFrameDecodingException, AMQProtocolVersionException, IOException
+    protected void populateFromBuffer(ByteBuffer buffer, long size)
+        throws AMQFrameDecodingException, AMQProtocolVersionException
     {
-        classId = buffer.readUnsignedShort();
-        weight = buffer.readUnsignedShort();
-        bodySize = buffer.readLong();
-        int propertyFlags = buffer.readUnsignedShort();
+        classId = buffer.getUnsignedShort();
+        weight = buffer.getUnsignedShort();
+        bodySize = buffer.getLong();
+        int propertyFlags = buffer.getUnsignedShort();
         ContentHeaderPropertiesFactory factory = ContentHeaderPropertiesFactory.getInstance();
         properties = factory.createContentHeaderProperties(classId, propertyFlags, buffer, (int)size - 14);
     }
@@ -93,8 +90,8 @@ public class ContentHeaderBody implements AMQBody
      * @return
      * @throws AMQFrameDecodingException
      */
-    public static ContentHeaderBody createFromBuffer(DataInputStream buffer, long size)
-        throws AMQFrameDecodingException, AMQProtocolVersionException, IOException
+    public static ContentHeaderBody createFromBuffer(ByteBuffer buffer, long size)
+        throws AMQFrameDecodingException, AMQProtocolVersionException
     {
         ContentHeaderBody body = new ContentHeaderBody(buffer, size);
         
@@ -106,11 +103,11 @@ public class ContentHeaderBody implements AMQBody
         return 2 + 2 + 8 + 2 + properties.getPropertyListSize();
     }
 
-    public void writePayload(DataOutputStream buffer) throws IOException
+    public void writePayload(ByteBuffer buffer)
     {
         EncodingUtils.writeUnsignedShort(buffer, classId);
         EncodingUtils.writeUnsignedShort(buffer, weight);
-        buffer.writeLong(bodySize);
+        buffer.putLong(bodySize);
         EncodingUtils.writeUnsignedShort(buffer, properties.getPropertyFlags());
         properties.writePropertyListPayload(buffer);
     }
@@ -130,26 +127,5 @@ public class ContentHeaderBody implements AMQBody
     public static AMQFrame createAMQFrame(int channelId, ContentHeaderBody body)
     {
         return new AMQFrame(channelId, body);
-    }
-
-    public ContentHeaderProperties getProperties()
-    {
-        return properties;
-    }
-
-    public void setProperties(ContentHeaderProperties props)
-    {
-        properties = props;
-    }
-
-    @Override
-    public String toString()
-    {
-        return "ContentHeaderBody{" +
-                "classId=" + classId +
-                ", weight=" + weight +
-                ", bodySize=" + bodySize +
-                ", properties=" + properties +
-                '}';
     }
 }

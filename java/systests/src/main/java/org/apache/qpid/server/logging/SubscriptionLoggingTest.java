@@ -58,7 +58,7 @@ public class SubscriptionLoggingTest extends AbstractTestLogging
     {
         super.setUp();
         //Remove broker startup logging messages
-        _monitor.markDiscardPoint();
+        _monitor.reset();
 
         _connection = getConnection();
 

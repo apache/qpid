@@ -20,21 +20,13 @@
  */
 package org.apache.qpid.server.subscription;
 
-import java.util.Map;
-
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.server.filter.FilterManager;
 import org.apache.qpid.server.flow.FlowCreditManager;
-import org.apache.qpid.server.flow.FlowCreditManager_0_10;
 import org.apache.qpid.server.subscription.Subscription;
-import org.apache.qpid.server.transport.ServerSession;
 import org.apache.qpid.server.AMQChannel;
-import org.apache.qpid.transport.MessageAcceptMode;
-import org.apache.qpid.transport.MessageAcquireMode;
-import org.apache.qpid.transport.MessageFlowMode;
 
 /**
  * Allows the customisation of the creation of a subscription. This is typically done within an AMQQueue. This factory
@@ -64,23 +56,4 @@ public interface SubscriptionFactory
                                             RecordDeliveryMethod recordMethod
     )
             throws AMQException;
-
-
-    SubscriptionImpl.GetNoAckSubscription createBasicGetNoAckSubscription(AMQChannel channel,
-                                                                          AMQProtocolSession session,
-                                                                          AMQShortString consumerTag,
-                                                                          FieldTable filters,
-                                                                          boolean noLocal,
-                                                                          FlowCreditManager creditManager,
-                                                                          ClientDeliveryMethod deliveryMethod,
-                                                                          RecordDeliveryMethod recordMethod) throws AMQException;
-
-    Subscription_0_10 createSubscription(final ServerSession session,
-                                         final String destination,
-                                         final MessageAcceptMode acceptMode,
-                                         final MessageAcquireMode acquireMode,
-                                         final MessageFlowMode flowMode,
-                                         final FlowCreditManager_0_10 creditManager,
-                                         final FilterManager filterManager,
-                                         final Map<String,Object> arguments);
 }

@@ -36,7 +36,6 @@
 
 #include <boost/bind.hpp>
 #include <boost/format.hpp>
-#include <boost/lexical_cast.hpp>
 #include <boost/shared_ptr.hpp>
 
 #include <limits>
@@ -259,16 +258,16 @@ void ConnectionImpl::open()
     connector->setInputHandler(&handler);
     connector->setShutdownHandler(this);
     try {
-        std::string p = boost::lexical_cast<std::string>(port);
-        connector->connect(host, p);
-
+        connector->connect(host, port);
+    
     } catch (const std::exception& e) {
         QPID_LOG(debug, "Failed to connect to " << protocol << ":" << host << ":" << port << " " << e.what());
         connector.reset();
-        throw TransportFailure(e.what());
+        throw;
     }
     connector->init();
-
+    QPID_LOG(info, *this << " connected to " << protocol << ":" << host << ":" << port);
+ 
     // Enable heartbeat if requested
     uint16_t heartbeat = static_cast<ConnectionSettings&>(handler).heartbeat;
     if (heartbeat) {
@@ -282,7 +281,6 @@ void ConnectionImpl::open()
     // - in that case in connector.reset() above;
     // - or when we are deleted
     handler.waitForOpen();
-    QPID_LOG(info, *this << " connected to " << protocol << ":" << host << ":" << port);
 
     // If the SASL layer has provided an "operational" userId for the connection,
     // put it in the negotiated settings.

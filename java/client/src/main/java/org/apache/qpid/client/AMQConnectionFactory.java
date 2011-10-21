@@ -44,34 +44,210 @@ public class AMQConnectionFactory implements ConnectionFactory, QueueConnectionF
                                              ObjectFactory, Referenceable, XATopicConnectionFactory,
                                              XAQueueConnectionFactory, XAConnectionFactory
 {
-    private final ConnectionURL _connectionDetails;
+    private String _host;
+    private int _port;
+    private String _defaultUsername;
+    private String _defaultPassword;
+    private String _virtualPath;
 
-    public AMQConnectionFactory(final String url) throws URLSyntaxException
+    private ConnectionURL _connectionDetails;
+    private SSLConfiguration _sslConfig;
+
+    public AMQConnectionFactory()
     {
-        if (url == null)
-        {
-            throw new IllegalArgumentException("url cannot be null");
-        }
+    }
 
+    /**
+     * This is the Only constructor used!
+     * It is used form the context and from the JNDI objects.
+     */
+    public AMQConnectionFactory(String url) throws URLSyntaxException
+    {
         _connectionDetails = new AMQConnectionURL(url);
     }
 
+    /**
+     * This constructor is never used!
+     */
     public AMQConnectionFactory(ConnectionURL url)
     {
-        if (url == null)
-        {
-            throw new IllegalArgumentException("url cannot be null");
-        }
-
         _connectionDetails = url;
     }
 
     /**
-     * @return the virtualPath of the connection details.
+     * This constructor is never used!
+     */
+    public AMQConnectionFactory(String broker, String username, String password, String clientName, String virtualHost)
+            throws URLSyntaxException
+    {
+        this(new AMQConnectionURL(
+                ConnectionURL.AMQ_PROTOCOL + "://" + username + ":" + password + "@" + clientName + "/" + virtualHost + "?brokerlist='" + broker + "'"));
+    }
+
+    /**
+     * This constructor is never used!
+     */
+    public AMQConnectionFactory(String host, int port, String virtualPath)
+    {
+        this(host, port, "guest", "guest", virtualPath);
+    }
+
+    /**
+     * This constructor is never used!
+     */
+    public AMQConnectionFactory(String host, int port, String defaultUsername, String defaultPassword,
+                                String virtualPath)
+    {
+        _host = host;
+        _port = port;
+        _defaultUsername = defaultUsername;
+        _defaultPassword = defaultPassword;
+        _virtualPath = virtualPath;
+
+//todo when setting Host/Port has been resolved then we can use this otherwise those methods won't work with the following line.
+//        _connectionDetails = new AMQConnectionURL(
+//                ConnectionURL.AMQ_PROTOCOL + "://" +
+//                        _defaultUsername + ":" + _defaultPassword + "@" +
+//                        virtualPath + "?brokerlist='tcp://" + host + ":" + port + "'");
+    }
+
+    /**
+     * @return The _defaultPassword.
+     */
+    public final String getDefaultPassword(String password)
+    {
+        if (_connectionDetails != null)
+        {
+            return _connectionDetails.getPassword();
+        }
+        else
+        {
+            return _defaultPassword;
+        }
+    }
+
+    /**
+     * @param password The _defaultPassword to set.
+     */
+    public final void setDefaultPassword(String password)
+    {
+        if (_connectionDetails != null)
+        {
+            _connectionDetails.setPassword(password);
+        }
+        _defaultPassword = password;
+    }
+
+    /**
+     * Getter for SSLConfiguration
+     *
+     * @return SSLConfiguration if set, otherwise null
+     */
+    public final SSLConfiguration getSSLConfiguration()
+    {
+        return _sslConfig;
+    }
+
+    /**
+     * Setter for SSLConfiguration
+     *
+     * @param sslConfig config to store
+     */
+    public final void setSSLConfiguration(SSLConfiguration sslConfig)
+    {
+        _sslConfig = sslConfig;
+    }
+
+    /**
+     * @return The _defaultPassword.
+     */
+    public final String getDefaultUsername(String password)
+    {
+        if (_connectionDetails != null)
+        {
+            return _connectionDetails.getUsername();
+        }
+        else
+        {
+            return _defaultUsername;
+        }
+    }
+
+    /**
+     * @param username The _defaultUsername to set.
+     */
+    public final void setDefaultUsername(String username)
+    {
+        if (_connectionDetails != null)
+        {
+            _connectionDetails.setUsername(username);
+        }
+        _defaultUsername = username;
+    }
+
+    /**
+     * @return The _host .
+     */
+    public final String getHost()
+    {
+        //todo this doesn't make sense in a multi broker URL as we have no current as that is done by AMQConnection
+        return _host;
+    }
+
+    /**
+     * @param host The _host to set.
+     */
+    public final void setHost(String host)
+    {
+        //todo if _connectionDetails is set then run _connectionDetails.addBrokerDetails()
+        // Should perhaps have this method changed to setBroker(host,port)
+        _host = host;
+    }
+
+    /**
+     * @return _port The _port to set.
+     */
+    public final int getPort()
+    {
+        //todo see getHost
+        return _port;
+    }
+
+    /**
+     * @param port The port to set.
+     */
+    public final void setPort(int port)
+    {
+        //todo see setHost
+        _port = port;
+    }
+
+    /**
+     * @return he _virtualPath.
      */
     public final String getVirtualPath()
     {
-        return _connectionDetails.getVirtualHost();
+        if (_connectionDetails != null)
+        {
+            return _connectionDetails.getVirtualHost();
+        }
+        else
+        {
+            return _virtualPath;
+        }
+    }
+
+    /**
+     * @param path The _virtualPath to set.
+     */
+    public final void setVirtualPath(String path)
+    {
+        if (_connectionDetails != null)
+        {
+            _connectionDetails.setVirtualHost(path);
+        }
+
+        _virtualPath = path;
     }
 
     public static String getUniqueClientID()
@@ -91,11 +267,19 @@ public class AMQConnectionFactory implements ConnectionFactory, QueueConnectionF
     {
         try
         {
-            if (_connectionDetails.getClientName() == null || _connectionDetails.getClientName().equals(""))
+            if (_connectionDetails != null)
             {
-                _connectionDetails.setClientName(getUniqueClientID());
+                if (_connectionDetails.getClientName() == null || _connectionDetails.getClientName().equals(""))
+                {
+                    _connectionDetails.setClientName(getUniqueClientID());
+                }
+                return new AMQConnection(_connectionDetails, _sslConfig);
             }
-            return new AMQConnection(_connectionDetails);
+            else
+            {
+                return new AMQConnection(_host, _port, _defaultUsername, _defaultPassword, getUniqueClientID(),
+                                         _virtualPath);
+            }
         }
         catch (Exception e)
         {
@@ -104,6 +288,8 @@ public class AMQConnectionFactory implements ConnectionFactory, QueueConnectionF
             jmse.initCause(e);
             throw jmse;
         }
+
+
     }
 
     public Connection createConnection(String userName, String password) throws JMSException
@@ -113,35 +299,34 @@ public class AMQConnectionFactory implements ConnectionFactory, QueueConnectionF
     
     public Connection createConnection(String userName, String password, String id) throws JMSException
     {
-        if (_connectionDetails != null)
+        try
         {
-            try
+            if (_connectionDetails != null)
             {
-                ConnectionURL connectionDetails = new AMQConnectionURL(_connectionDetails.toString());
-                connectionDetails.setUsername(userName);
-                connectionDetails.setPassword(password);
+                _connectionDetails.setUsername(userName);
+                _connectionDetails.setPassword(password);
                 
                 if (id != null && !id.equals(""))
                 {
-                    connectionDetails.setClientName(id);
+                    _connectionDetails.setClientName(id);
                 } 
-                else if (connectionDetails.getClientName() == null || connectionDetails.getClientName().equals(""))
+                else if (_connectionDetails.getClientName() == null || _connectionDetails.getClientName().equals(""))
                 {
-                    connectionDetails.setClientName(getUniqueClientID());
+                    _connectionDetails.setClientName(getUniqueClientID());
                 }
-                return new AMQConnection(connectionDetails);
+                return new AMQConnection(_connectionDetails, _sslConfig);
             }
-            catch (Exception e)
+            else
             {
-                JMSException jmse = new JMSException("Error creating connection: " + e.getMessage());
-                jmse.setLinkedException(e);
-                jmse.initCause(e);
-                throw jmse;
+                return new AMQConnection(_host, _port, userName, password, (id != null ? id : getUniqueClientID()), _virtualPath);
             }
         }
-        else
+        catch (Exception e)
         {
-            throw new JMSException("The connection factory wasn't created with a proper URL, the connection details are empty");
+            JMSException jmse = new JMSException("Error creating connection: " + e.getMessage());
+            jmse.setLinkedException(e);
+            jmse.initCause(e);
+            throw jmse;
         }
     }
 
@@ -174,6 +359,12 @@ public class AMQConnectionFactory implements ConnectionFactory, QueueConnectionF
     public String getConnectionURLString()
     {
         return _connectionDetails.toString();
+    }
+
+
+    public final void setConnectionURLString(String url) throws URLSyntaxException
+    {
+        _connectionDetails = new AMQConnectionURL(url);
     }
 
     /**
@@ -266,7 +457,7 @@ public class AMQConnectionFactory implements ConnectionFactory, QueueConnectionF
     {
         try
         {
-            return new XAConnectionImpl(_connectionDetails);
+            return new XAConnectionImpl(_connectionDetails, _sslConfig);
         }
         catch (Exception e)
         {
@@ -293,30 +484,19 @@ public class AMQConnectionFactory implements ConnectionFactory, QueueConnectionF
     {
         if (_connectionDetails != null)
         {
-            try
+            _connectionDetails.setUsername(username);
+            _connectionDetails.setPassword(password);
+
+            if (_connectionDetails.getClientName() == null || _connectionDetails.getClientName().equals(""))
             {
-                ConnectionURL connectionDetails = new AMQConnectionURL(_connectionDetails.toString());
-                connectionDetails.setUsername(username);
-                connectionDetails.setPassword(password);
-    
-                if (connectionDetails.getClientName() == null || connectionDetails.getClientName().equals(""))
-                {
-                    connectionDetails.setClientName(getUniqueClientID());
-                }
-                return new XAConnectionImpl(connectionDetails);
-            }
-            catch (Exception e)
-            {
-                JMSException jmse = new JMSException("Error creating XA Connection: " + e.getMessage());
-                jmse.setLinkedException(e);
-                jmse.initCause(e);
-                throw jmse;
+                _connectionDetails.setClientName(getUniqueClientID());
             }
         }
         else
         {
-            throw new JMSException("The connection factory wasn't created with a proper URL, the connection details are empty");
-        }        
+            throw new JMSException("A URL must be specified to access XA connections");
+        }
+        return createXAConnection();
     }
 
 

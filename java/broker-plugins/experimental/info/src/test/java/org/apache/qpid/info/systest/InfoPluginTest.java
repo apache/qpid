@@ -210,13 +210,12 @@ public class InfoPluginTest extends QpidBrokerTestCase
                 }
                 br.close();
                 System.out.println("*** Received buffer: " + buf);
+                System.out.println("*** Latch countdown");
+                _latch.countDown();
                 synchronized (_recv)
                 {
                     _recv.add(buf);
                 }
-
-                System.out.println("*** Latch countdown");
-                _latch.countDown();
             }
             catch (Exception ex)
             {

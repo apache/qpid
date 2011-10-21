@@ -126,7 +126,7 @@ public class AckTest extends InternalBrokerBaseCase
             //IncomingMessage msg2 = null;
             BasicContentHeaderProperties b = new BasicContentHeaderProperties();
             ContentHeaderBody cb = new ContentHeaderBody();
-            cb.setProperties(b);
+            cb.properties = b;
 
             if (persistent)
             {

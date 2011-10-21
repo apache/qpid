@@ -30,7 +30,6 @@
 #include "qpid/log/Statement.h"
 
 #include "qpid/sys/windows/check.h"
-#include "qpid/sys/windows/mingw32_compat.h"
 
 #include <boost/thread/once.hpp>
 
@@ -47,13 +46,16 @@ namespace {
 
 /*
  * The function pointers for AcceptEx and ConnectEx need to be looked up
- * at run time.
+ * at run time. Make sure this is done only once.
  */
-const LPFN_ACCEPTEX lookUpAcceptEx(const qpid::sys::Socket& s) {
-    SOCKET h = toSocketHandle(s);
+boost::once_flag lookUpAcceptExOnce = BOOST_ONCE_INIT;
+LPFN_ACCEPTEX fnAcceptEx = 0;
+typedef void (*lookUpFunc)(const qpid::sys::Socket &);
+
+void lookUpAcceptEx() {
+    SOCKET h = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     GUID guidAcceptEx = WSAID_ACCEPTEX;
     DWORD dwBytes = 0;
-    LPFN_ACCEPTEX fnAcceptEx;
     WSAIoctl(h,
              SIO_GET_EXTENSION_FUNCTION_POINTER,
              &guidAcceptEx,
@@ -63,9 +65,9 @@ const LPFN_ACCEPTEX lookUpAcceptEx(const qpid::sys::Socket& s) {
              &dwBytes,
              NULL,
              NULL);
+    closesocket(h);
     if (fnAcceptEx == 0)
         throw qpid::Exception(QPID_MSG("Failed to look up AcceptEx"));
-    return fnAcceptEx;
 }
 
 }
@@ -92,15 +94,18 @@ private:
 
     AsynchAcceptor::Callback acceptedCallback;
     const Socket& socket;
-    const LPFN_ACCEPTEX fnAcceptEx;
 };
 
 AsynchAcceptor::AsynchAcceptor(const Socket& s, Callback callback)
   : acceptedCallback(callback),
-    socket(s),
-    fnAcceptEx(lookUpAcceptEx(s)) {
+    socket(s) {
 
     s.setNonblocking();
+#if (BOOST_VERSION >= 103500)   /* boost 1.35 or later reversed the args */
+    boost::call_once(lookUpAcceptExOnce, lookUpAcceptEx);
+#else
+    boost::call_once(lookUpAcceptEx, lookUpAcceptExOnce);
+#endif
 }
 
 AsynchAcceptor::~AsynchAcceptor()
@@ -109,8 +114,7 @@ AsynchAcceptor::~AsynchAcceptor()
 }
 
 void AsynchAcceptor::start(Poller::shared_ptr poller) {
-    PollerHandle ph = PollerHandle(socket);
-    poller->monitorHandle(ph, Poller::INPUT);
+    poller->monitorHandle(PollerHandle(socket), Poller::INPUT);
     restart ();
 }
 
@@ -118,26 +122,25 @@ void AsynchAcceptor::restart(void) {
     DWORD bytesReceived = 0;  // Not used, needed for AcceptEx API
     AsynchAcceptResult *result = new AsynchAcceptResult(acceptedCallback,
                                                         this,
-                                                        socket);
+                                                        toSocketHandle(socket));
     BOOL status;
-    status = fnAcceptEx(toSocketHandle(socket),
-                        toSocketHandle(*result->newSocket),
-                        result->addressBuffer,
-                        0,
-                        AsynchAcceptResult::SOCKADDRMAXLEN,
-                        AsynchAcceptResult::SOCKADDRMAXLEN,
-                        &bytesReceived,
-                        result->overlapped());
+    status = ::fnAcceptEx(toSocketHandle(socket),
+                          toSocketHandle(*result->newSocket),
+                          result->addressBuffer,
+                          0,
+                          AsynchAcceptResult::SOCKADDRMAXLEN,
+                          AsynchAcceptResult::SOCKADDRMAXLEN,
+                          &bytesReceived,
+                          result->overlapped());
     QPID_WINDOWS_CHECK_ASYNC_START(status);
 }
 
 
 AsynchAcceptResult::AsynchAcceptResult(AsynchAcceptor::Callback cb,
                                        AsynchAcceptor *acceptor,
-                                       const Socket& listener)
-  : callback(cb), acceptor(acceptor),
-    listener(toSocketHandle(listener)),
-    newSocket(listener.createSameTypeSocket()) {
+                                       SOCKET listener)
+  : callback(cb), acceptor(acceptor), listener(listener) {
+    newSocket.reset (new Socket());
 }
 
 void AsynchAcceptResult::success(size_t /*bytesTransferred*/) {
@@ -151,7 +154,7 @@ void AsynchAcceptResult::success(size_t /*bytesTransferred*/) {
     delete this;
 }
 
-void AsynchAcceptResult::failure(int /*status*/) {
+void AsynchAcceptResult::failure(int status) {
     //if (status != WSA_OPERATION_ABORTED)
     // Can there be anything else?  ;
     delete this;
@@ -170,20 +173,20 @@ private:
     FailedCallback failCallback;
     const Socket& socket;
     const std::string hostname;
-    const std::string port;
+    const uint16_t port;
 
 public:
     AsynchConnector(const Socket& socket,
-                    const std::string& hostname,
-                    const std::string& port,
+                    std::string hostname,
+                    uint16_t port,
                     ConnectedCallback connCb,
                     FailedCallback failCb = 0);
     void start(Poller::shared_ptr poller);
 };
 
 AsynchConnector::AsynchConnector(const Socket& sock,
-                                 const std::string& hname,
-                                 const std::string& p,
+                                 std::string hname,
+                                 uint16_t p,
                                  ConnectedCallback connCb,
                                  FailedCallback failCb) :
     connCallback(connCb), failCallback(failCb), socket(sock),
@@ -213,8 +216,8 @@ AsynchAcceptor* AsynchAcceptor::create(const Socket& s,
 }
 
 AsynchConnector* qpid::sys::AsynchConnector::create(const Socket& s,
-                                                    const std::string& hostname,
-                                                    const std::string& port,
+                                                    std::string hostname,
+                                                    uint16_t port,
                                                     ConnectedCallback connCb,
                                                     FailedCallback failCb)
 {
@@ -407,9 +410,8 @@ void AsynchIO::queueForDeletion() {
 }
 
 void AsynchIO::start(Poller::shared_ptr poller0) {
-    PollerHandle ph = PollerHandle(socket);
     poller = poller0;
-    poller->monitorHandle(ph, Poller::INPUT);
+    poller->monitorHandle(PollerHandle(socket), Poller::INPUT);
     if (writeQueue.size() > 0)  // Already have data queued for write
         notifyPendingWrite();
     startReading();
@@ -582,6 +584,7 @@ void AsynchIO::notifyIdle(void) {
 void AsynchIO::startWrite(AsynchIO::BufferBase* buff) {
     writeInProgress = true;
     InterlockedIncrement(&opsInProgress);
+    int writeCount = buff->byteCount-buff->dataCount;
     AsynchWriteResult *result =
         new AsynchWriteResult(boost::bind(&AsynchIO::completion, this, _1),
                               buff,

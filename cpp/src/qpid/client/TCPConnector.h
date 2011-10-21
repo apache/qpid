@@ -98,7 +98,7 @@ class TCPConnector : public Connector, public sys::Codec
 
 protected:
     virtual ~TCPConnector();
-    void connect(const std::string& host, const std::string& port);
+    void connect(const std::string& host, int port);
     void start(sys::AsynchIO* aio_);
     void initAmqp();
     virtual void connectFailed(const std::string& msg);

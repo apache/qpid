@@ -22,7 +22,7 @@
  *
  */
 #include "qpid/broker/Consumer.h"
-#include <deque>
+#include <vector>
 
 namespace qpid {
 namespace broker {
@@ -40,7 +40,7 @@ namespace broker {
 class QueueListeners
 {
   public:
-    typedef std::deque<Consumer::shared_ptr> Listeners;
+    typedef std::vector<Consumer::shared_ptr> Listeners;
 
     class NotificationSet
     {

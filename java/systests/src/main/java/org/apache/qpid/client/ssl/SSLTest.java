@@ -31,72 +31,62 @@ import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.transport.Connection;
 
 public class SSLTest extends QpidBrokerTestCase
-{
-    private static final String KEYSTORE = "test-profiles/test_resources/ssl/java_client_keystore.jks";
-    private static final String KEYSTORE_PASSWORD = "password";
-    private static final String TRUSTSTORE = "test-profiles/test_resources/ssl/java_client_truststore.jks";
-    private static final String TRUSTSTORE_PASSWORD = "password";
-    private static final String CERT_ALIAS_APP1 = "app1";
-    private static final String CERT_ALIAS_APP2 = "app2";
-
+{      
+    
     @Override
     protected void setUp() throws Exception
     {
-        if(isJavaBroker())
-        {
-            setTestClientSystemProperty("profile.use_ssl", "true");
-            setConfigurationProperty("connector.ssl.enabled", "true");
-            setConfigurationProperty("connector.ssl.sslOnly", "true");
-        }
-
-        // set the ssl system properties
-        setSystemProperty("javax.net.ssl.keyStore", KEYSTORE);
-        setSystemProperty("javax.net.ssl.keyStorePassword", KEYSTORE_PASSWORD);
-        setSystemProperty("javax.net.ssl.trustStore", TRUSTSTORE);
-        setSystemProperty("javax.net.ssl.trustStorePassword", TRUSTSTORE_PASSWORD);
-        setSystemProperty("javax.net.debug", "ssl");
+        System.setProperty("javax.net.debug", "ssl");
         super.setUp();
     }
 
-    public void testCreateSSLConnectionUsingConnectionURLParams() throws Exception
+    @Override
+    protected void tearDown() throws Exception
+    {
+        System.setProperty("javax.net.debug", "");
+        super.tearDown();
+    }
+        
+    public void testCreateSSLContextFromConnectionURLParams()
     {
         if (Boolean.getBoolean("profile.use_ssl"))
-        {
-            // Clear the ssl system properties
-            setSystemProperty("javax.net.ssl.keyStore", null);
-            setSystemProperty("javax.net.ssl.keyStorePassword", null);
-            setSystemProperty("javax.net.ssl.trustStore", null);
-            setSystemProperty("javax.net.ssl.trustStorePassword", null);
-            
+        {   
             String url = "amqp://guest:guest@test/?brokerlist='tcp://localhost:%s" +
             "?ssl='true'&ssl_verify_hostname='true'" + 
             "&key_store='%s'&key_store_password='%s'" +
             "&trust_store='%s'&trust_store_password='%s'" +
             "'";
             
-            url = String.format(url,QpidBrokerTestCase.DEFAULT_SSL_PORT,
-                    KEYSTORE,KEYSTORE_PASSWORD,TRUSTSTORE,TRUSTSTORE_PASSWORD);
+            String keyStore = System.getProperty("javax.net.ssl.keyStore");
+            String keyStorePass = System.getProperty("javax.net.ssl.keyStorePassword");
+            String trustStore = System.getProperty("javax.net.ssl.trustStore");
+            String trustStorePass = System.getProperty("javax.net.ssl.trustStorePassword");
             
-            AMQConnection con = new AMQConnection(url);
-            assertNotNull("connection should be successful", con);
-            Session ssn = con.createSession(false,Session.AUTO_ACKNOWLEDGE); 
-            assertNotNull("create session should be successful", ssn);
-        }        
-    }
-
-    public void testCreateSSLConnectionUsingSystemProperties() throws Exception
-    {
-        if (Boolean.getBoolean("profile.use_ssl"))
-        {
-
-            String url = "amqp://guest:guest@test/?brokerlist='tcp://localhost:%s?ssl='true''";
-
-            url = String.format(url,QpidBrokerTestCase.DEFAULT_SSL_PORT);
+            url = String.format(url,System.getProperty("test.port.ssl"),
+                    keyStore,keyStorePass,trustStore,trustStorePass);
             
-            AMQConnection con = new AMQConnection(url);
-            assertNotNull("connection should be successful", con);
-            Session ssn = con.createSession(false,Session.AUTO_ACKNOWLEDGE); 
-            assertNotNull("create session should be successful", ssn);
+            // temporarily set the trust/key store jvm args to something else
+            // to ensure we only read from the connection URL param.
+            System.setProperty("javax.net.ssl.trustStore","fessgsdgd");
+            System.setProperty("javax.net.ssl.trustStorePassword","fessgsdgd");
+            System.setProperty("javax.net.ssl.keyStore","fessgsdgd");
+            System.setProperty("javax.net.ssl.keyStorePassword","fessgsdgd");
+            try
+            {
+                AMQConnection con = new AMQConnection(url);
+                Session ssn = con.createSession(false,Session.AUTO_ACKNOWLEDGE); 
+            }
+            catch (Exception e)
+            {
+                fail("SSL Connection should be successful");
+            }
+            finally
+            {
+                System.setProperty("javax.net.ssl.trustStore",trustStore);
+                System.setProperty("javax.net.ssl.trustStorePassword",trustStorePass);
+                System.setProperty("javax.net.ssl.keyStore",keyStore);
+                System.setProperty("javax.net.ssl.keyStorePassword",keyStorePass);
+            }
         }        
     }
 
@@ -105,8 +95,8 @@ public class SSLTest extends QpidBrokerTestCase
         if (Boolean.getBoolean("profile.use_ssl"))
         {
             String url = "amqp://guest:guest@test/?brokerlist='tcp://localhost:" + 
-            QpidBrokerTestCase.DEFAULT_SSL_PORT + 
-            "?ssl='true'&ssl_cert_alias='" + CERT_ALIAS_APP1 + "''";
+            System.getProperty("test.port.ssl") + 
+            "?ssl='true'&ssl_cert_alias='app1''";
             
             AMQTestConnection_0_10 con = new AMQTestConnection_0_10(url);      
             Connection transportCon = con.getConnection();
@@ -115,8 +105,8 @@ public class SSLTest extends QpidBrokerTestCase
             con.close();
             
             url = "amqp://guest:guest@test/?brokerlist='tcp://localhost:" + 
-            QpidBrokerTestCase.DEFAULT_SSL_PORT + 
-            "?ssl='true'&ssl_cert_alias='" + CERT_ALIAS_APP2 + "''";
+            System.getProperty("test.port.ssl") + 
+            "?ssl='true'&ssl_cert_alias='app2''";
             
             con = new AMQTestConnection_0_10(url);      
             transportCon = con.getConnection();
@@ -126,12 +116,12 @@ public class SSLTest extends QpidBrokerTestCase
         }        
     }
     
-    public void testVerifyHostNameWithIncorrectHostname()
+    public void testVerifyHostName()
     {
         if (Boolean.getBoolean("profile.use_ssl"))
         {
             String url = "amqp://guest:guest@test/?brokerlist='tcp://127.0.0.1:" + 
-            QpidBrokerTestCase.DEFAULT_SSL_PORT + 
+            System.getProperty("test.port.ssl") + 
             "?ssl='true'&ssl_verify_hostname='true''";
             
             try
@@ -150,53 +140,42 @@ public class SSLTest extends QpidBrokerTestCase
         }        
     }
     
-    public void testVerifyLocalHost() throws Exception
+    public void testVerifyLocalHost()
     {
         if (Boolean.getBoolean("profile.use_ssl"))
         {
             String url = "amqp://guest:guest@test/?brokerlist='tcp://localhost:" + 
-            QpidBrokerTestCase.DEFAULT_SSL_PORT + 
+            System.getProperty("test.port.ssl") + 
             "?ssl='true'&ssl_verify_hostname='true''";
-
-            AMQConnection con = new AMQConnection(url);
-            assertNotNull("connection should have been created", con); 
-        }
+            
+            try
+            {
+                AMQConnection con = new AMQConnection(url);
+            }
+            catch (Exception e)
+            {
+                fail("Hostname verification should succeed");
+            }            
+        }        
     }
     
-    public void testVerifyLocalHostLocalDomain() throws Exception
+    public void testVerifyLocalHostLocalDomain()
     {
         if (Boolean.getBoolean("profile.use_ssl"))
         {
             String url = "amqp://guest:guest@test/?brokerlist='tcp://localhost.localdomain:" + 
-            QpidBrokerTestCase.DEFAULT_SSL_PORT + 
+            System.getProperty("test.port.ssl") + 
             "?ssl='true'&ssl_verify_hostname='true''";
-
-            AMQConnection con = new AMQConnection(url);
-            assertNotNull("connection should have been created", con);
-        }        
-    }
-
-    public void testCreateSSLConnectionUsingConnectionURLParamsTrustStoreOnly() throws Exception
-    {
-        if (Boolean.getBoolean("profile.use_ssl"))
-        {
-            // Clear the ssl system properties
-            setSystemProperty("javax.net.ssl.keyStore", null);
-            setSystemProperty("javax.net.ssl.keyStorePassword", null);
-            setSystemProperty("javax.net.ssl.trustStore", null);
-            setSystemProperty("javax.net.ssl.trustStorePassword", null);
             
-            String url = "amqp://guest:guest@test/?brokerlist='tcp://localhost:%s" +
-            "?ssl='true'&ssl_verify_hostname='true'" + 
-            "&trust_store='%s'&trust_store_password='%s'" +
-            "'";
-
-            url = String.format(url,QpidBrokerTestCase.DEFAULT_SSL_PORT, TRUSTSTORE,TRUSTSTORE_PASSWORD);
-
-            AMQConnection con = new AMQConnection(url);
-            assertNotNull("connection should be successful", con);
-            Session ssn = con.createSession(false,Session.AUTO_ACKNOWLEDGE); 
-            assertNotNull("create session should be successful", ssn);
+            try
+            {
+                AMQConnection con = new AMQConnection(url);
+            }
+            catch (Exception e)
+            {
+                fail("Hostname verification should succeed");
+            }
+            
         }        
     }
 }

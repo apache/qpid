@@ -52,6 +52,7 @@ import org.apache.qpid.url.URLSyntaxException;
  * 
  * TODO move the pre broker-startup setup method invocation code to {@link QpidBrokerTestCase}
  * 
+ * @see SimpleACLTest
  * @see ExternalACLTest
  * @see ExternalACLFileTest
  * @see ExternalACLJMXTest
@@ -64,7 +65,10 @@ public abstract class AbstractACLTestCase extends QpidBrokerTestCase implements 
 	protected CountDownLatch _exceptionReceived;
 	
     /** Override this to return the name of the configuration XML file. */
-    public abstract String getConfig();
+    public String getConfig()
+    {
+        return "config-systests-acl.xml";
+    }
     
     /** Override this to setup external ACL files for virtual hosts. */
     public List<String> getHostList()
@@ -83,8 +87,14 @@ public abstract class AbstractACLTestCase extends QpidBrokerTestCase implements 
     @Override
     public void setUp() throws Exception
     {
+        if (QpidHome == null)
+        {
+            fail("QPID_HOME not set");
+        }
+
         // Initialise ACLs.
-        _configFile = new File("build" + File.separator + "etc" + File.separator + getConfig());
+        _configFile = new File(QpidHome, "etc" + File.separator + getConfig());
+        
         // Initialise ACL files
         for (String virtualHost : getHostList())
         {
@@ -150,7 +160,7 @@ public abstract class AbstractACLTestCase extends QpidBrokerTestCase implements 
      */
     public void setUpACLFile(String virtualHost) throws IOException, ConfigurationException
     {
-        String path = "build" + File.separator + "etc";
+        String path = QpidHome + File.separator + "etc";
         String className = StringUtils.substringBeforeLast(getClass().getSimpleName().toLowerCase(), "test");
         String testName = StringUtils.substringAfter(getName(), "test").toLowerCase();
         
@@ -190,7 +200,7 @@ public abstract class AbstractACLTestCase extends QpidBrokerTestCase implements 
         }
 
         PrintWriter out = new PrintWriter(new FileWriter(aclFile));
-        out.println(String.format("# %s", getTestName()));
+        out.println(String.format("# %s", _testName));
         for (String line : rules)
         {
             out.println(line);

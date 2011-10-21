@@ -10,9 +10,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
+ * 
  *   http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -34,7 +34,7 @@
 
 namespace qpid {
 
-struct Url;
+class Url;
 
 namespace broker {
 
@@ -42,8 +42,8 @@ class Broker;
 class Queue;
 class Exchange;
 class QueueBindings;
-struct QueueBinding;
-struct QueuedMessage;
+class QueueBinding;
+class QueuedMessage;
 class SessionHandler;
 class DeliveryRecord;
 class SessionState;
@@ -51,8 +51,7 @@ class SemanticState;
 class Decoder;
 class Link;
 class Bridge;
-class QueueObserver;
-class DtxBuffer;
+
 } // namespace broker
 
 namespace cluster {
@@ -69,26 +68,21 @@ class ExpiryPolicy;
 class UpdateClient : public sys::Runnable {
   public:
     static const std::string UPDATE; // Name for special update queue and exchange.
-    static const std::string X_QPID_EXPIRATION; // Update message expiration
-    // Flag to remove props/headers that were added by the UpdateClient
-    static const std::string X_QPID_NO_MESSAGE_PROPS;
-    static const std::string X_QPID_NO_HEADERS;
-
     static client::Connection catchUpConnection();
-
+    
     UpdateClient(const MemberId& updater, const MemberId& updatee, const Url&,
                  broker::Broker& donor, const ClusterMap& map, ExpiryPolicy& expiry,
                  const std::vector<boost::intrusive_ptr<Connection> >&, Decoder&,
                  const boost::function<void()>& done,
                  const boost::function<void(const std::exception&)>& fail,
-                 const client::ConnectionSettings&
+                 const client::ConnectionSettings& 
     );
 
     ~UpdateClient();
     void update();
     void run();                 // Will delete this when finished.
 
-    void updateUnacked(const broker::DeliveryRecord&, client::AsyncSession&);
+    void updateUnacked(const broker::DeliveryRecord&);
 
   private:
     void updateQueue(client::AsyncSession&, const boost::shared_ptr<broker::Queue>&);
@@ -100,8 +94,7 @@ class UpdateClient : public sys::Runnable {
     void updateBinding(client::AsyncSession&, const std::string& queue, const broker::QueueBinding& binding);
     void updateConnection(const boost::intrusive_ptr<Connection>& connection);
     void updateSession(broker::SessionHandler& s);
-    void updateBufferRef(const broker::DtxBuffer::shared_ptr& dtx, bool suspended);
-    void updateTransactionState(broker::SemanticState& s);
+    void updateTxState(broker::SemanticState& s);
     void updateOutputTask(const sys::OutputTask* task);
     void updateConsumer(const broker::SemanticState::ConsumerImpl::shared_ptr&);
     void updateQueueListeners(const boost::shared_ptr<broker::Queue>&);
@@ -111,11 +104,6 @@ class UpdateClient : public sys::Runnable {
     void updateLinks();
     void updateLink(const boost::shared_ptr<broker::Link>&);
     void updateBridge(const boost::shared_ptr<broker::Bridge>&);
-    void updateQueueObservers(const boost::shared_ptr<broker::Queue>&);
-    void updateObserver(const boost::shared_ptr<broker::Queue>&, boost::shared_ptr<broker::QueueObserver>);
-    void updateDtxManager();
-    void updateDtxBuffer(const boost::shared_ptr<broker::DtxBuffer>& );
-    void updateDtxWorkRecord(const broker::DtxWorkRecord&);
 
 
     Numbering<broker::SemanticState::ConsumerImpl*> consumerNumbering;

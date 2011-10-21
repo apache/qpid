@@ -54,7 +54,6 @@ namespace Messaging {
 
         // copy constructor
         FailoverUpdates(const FailoverUpdates ^ failoverUpdates) {}
-        FailoverUpdates(const FailoverUpdates % failoverUpdates) {}
 
         // assignment operator
         FailoverUpdates % operator=(const FailoverUpdates % rhs) 

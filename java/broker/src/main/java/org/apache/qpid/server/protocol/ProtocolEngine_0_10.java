@@ -20,26 +20,25 @@
  */
 package org.apache.qpid.server.protocol;
 
-import org.apache.qpid.protocol.ServerProtocolEngine;
-import org.apache.qpid.transport.Sender;
+import org.apache.qpid.protocol.ProtocolEngine;
+import org.apache.qpid.transport.NetworkDriver;
 import org.apache.qpid.transport.network.InputHandler;
 import org.apache.qpid.transport.network.Assembler;
 import org.apache.qpid.transport.network.Disassembler;
-import org.apache.qpid.transport.network.NetworkConnection;
 import org.apache.qpid.server.configuration.*;
 import org.apache.qpid.server.transport.ServerConnection;
+import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.messages.ConnectionMessages;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 
 import java.net.SocketAddress;
-import java.nio.ByteBuffer;
 import java.util.UUID;
 
-public class ProtocolEngine_0_10  extends InputHandler implements ServerProtocolEngine, ConnectionConfig
+public class ProtocolEngine_0_10  extends InputHandler implements ProtocolEngine, ConnectionConfig
 {
     public static final int MAX_FRAME_SIZE = 64 * 1024 - 1;
 
-    private NetworkConnection _network;
+    private NetworkDriver _networkDriver;
     private long _readBytes;
     private long _writtenBytes;
     private ServerConnection _connection;
@@ -48,22 +47,26 @@ public class ProtocolEngine_0_10  extends InputHandler implements ServerProtocol
     private long _createTime = System.currentTimeMillis();
 
     public ProtocolEngine_0_10(ServerConnection conn,
-                               NetworkConnection network,
+                               NetworkDriver networkDriver,
                                final IApplicationRegistry appRegistry)
     {
         super(new Assembler(conn));
         _connection = conn;
         _connection.setConnectionConfig(this);
-
+        _networkDriver = networkDriver;
         _id = appRegistry.getConfigStore().createId();
         _appRegistry = appRegistry;
 
-        if(network != null)
-        {
-            setNetworkConnection(network);
-        }
+        // FIXME Two log messages to maintain compatinbility with earlier protocol versions
+        _connection.getLogActor().message(ConnectionMessages.OPEN(null, null, false, false));
+        _connection.getLogActor().message(ConnectionMessages.OPEN(null, "0-10", false, true));
+    }
 
-
+    public void setNetworkDriver(NetworkDriver driver)
+    {
+        _networkDriver = driver;
+        Disassembler dis = new Disassembler(driver, MAX_FRAME_SIZE);
+        _connection.setSender(dis);
         _connection.onOpen(new Runnable()
         {
             public void run()
@@ -74,30 +77,14 @@ public class ProtocolEngine_0_10  extends InputHandler implements ServerProtocol
 
     }
 
-    public void setNetworkConnection(NetworkConnection network)
-    {
-        setNetworkConnection(network, network.getSender());
-    }
-
-    public void setNetworkConnection(NetworkConnection network, Sender<ByteBuffer> sender)
-    {
-        _network = network;
-
-        _connection.setSender(new Disassembler(sender, MAX_FRAME_SIZE));
-
-        // FIXME Two log messages to maintain compatibility with earlier protocol versions
-        _connection.getLogActor().message(ConnectionMessages.OPEN(null, null, false, false));
-        _connection.getLogActor().message(ConnectionMessages.OPEN(null, "0-10", false, true));
-    }
-
     public SocketAddress getRemoteAddress()
     {
-        return _network.getRemoteAddress();
+        return _networkDriver.getRemoteAddress();
     }
 
     public SocketAddress getLocalAddress()
     {
-        return _network.getLocalAddress();
+        return _networkDriver.getLocalAddress();
     }
 
     public long getReadBytes()
@@ -147,7 +134,7 @@ public class ProtocolEngine_0_10  extends InputHandler implements ServerProtocol
 
     public String getAuthId()
     {
-        return _connection.getAuthorizedPrincipal() == null ? null : _connection.getAuthorizedPrincipal().getName();
+        return _connection.getAuthorizationID();
     }
 
     public String getRemoteProcessName()
@@ -206,14 +193,9 @@ public class ProtocolEngine_0_10  extends InputHandler implements ServerProtocol
     {
         return false;
     }
-
+    
     public void mgmtClose()
     {
         _connection.mgmtClose();
-    }
-
-    public long getConnectionId()
-    {
-        return _connection.getConnectionId();
     }
 }

@@ -72,7 +72,7 @@ class IncomingMessages
     bool get(Handler& handler, qpid::sys::Duration timeout);
     bool getNextDestination(std::string& destination, qpid::sys::Duration timeout);
     void accept();
-    void accept(qpid::framing::SequenceNumber id, bool cumulative);
+    void accept(qpid::framing::SequenceNumber id);
     void releaseAll();
     void releasePending(const std::string& destination);
 

@@ -37,16 +37,6 @@ Duration operator*(uint64_t multiplier, const Duration& duration)
     return Duration(duration.getMilliseconds() * multiplier);
 }
 
-bool operator==(const Duration& a, const Duration& b)
-{
-    return a.getMilliseconds() == b.getMilliseconds();
-}
-
-bool operator!=(const Duration& a, const Duration& b)
-{
-    return a.getMilliseconds() != b.getMilliseconds();
-}
-
 const Duration Duration::FOREVER(std::numeric_limits<uint64_t>::max());
 const Duration Duration::IMMEDIATE(0);
 const Duration Duration::SECOND(1000);

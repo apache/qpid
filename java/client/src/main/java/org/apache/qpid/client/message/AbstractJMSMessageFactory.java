@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.client.message;
 
+import org.apache.mina.common.ByteBuffer;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ContentBody;
@@ -35,8 +37,6 @@ import javax.jms.JMSException;
 
 import java.util.Iterator;
 import java.util.List;
-
-import java.nio.ByteBuffer;
 
 public abstract class AbstractJMSMessageFactory implements MessageFactory
 {
@@ -57,7 +57,7 @@ public abstract class AbstractJMSMessageFactory implements MessageFactory
                 _logger.debug("Non-fragmented message body (bodySize=" + contentHeader.bodySize + ")");
             }
 
-            data = ByteBuffer.wrap(((ContentBody) bodies.get(0))._payload);
+            data = ((ContentBody) bodies.get(0)).payload;
         }
         else if (bodies != null)
         {
@@ -72,7 +72,7 @@ public abstract class AbstractJMSMessageFactory implements MessageFactory
             while (it.hasNext())
             {
                 ContentBody cb = (ContentBody) it.next();
-                final ByteBuffer payload = ByteBuffer.wrap(cb._payload);
+                final ByteBuffer payload = cb.payload;
                 if(payload.isDirect() || payload.isReadOnly())
                 {
                     data.put(payload);
@@ -82,6 +82,7 @@ public abstract class AbstractJMSMessageFactory implements MessageFactory
                     data.put(payload.array(), payload.arrayOffset(), payload.limit());
                 }
 
+                payload.release();
             }
 
             data.flip();
@@ -98,7 +99,7 @@ public abstract class AbstractJMSMessageFactory implements MessageFactory
         }
 
         AMQMessageDelegate delegate = new AMQMessageDelegate_0_8(messageNbr,
-                                                                 (BasicContentHeaderProperties) contentHeader.getProperties(),
+                                                                 (BasicContentHeaderProperties) contentHeader.properties,
                                                                  exchange, routingKey);
 
         return createMessage(delegate, data);
@@ -108,7 +109,7 @@ public abstract class AbstractJMSMessageFactory implements MessageFactory
 
 
     protected AbstractJMSMessage create010MessageWithBody(long messageNbr, MessageProperties msgProps,
-                                                          DeliveryProperties deliveryProps,
+                                                          DeliveryProperties deliveryProps,  
                                                           java.nio.ByteBuffer body) throws AMQException
     {
         ByteBuffer data;
@@ -117,7 +118,7 @@ public abstract class AbstractJMSMessageFactory implements MessageFactory
 
         if (body != null)
         {
-            data = body;
+            data = ByteBuffer.wrap(body);
         }
         else // body == null
         {
@@ -154,7 +155,7 @@ public abstract class AbstractJMSMessageFactory implements MessageFactory
     {
         final AbstractJMSMessage msg = create08MessageWithBody(messageNbr, contentHeader, exchange, routingKey, bodies);
         msg.setJMSRedelivered(redelivered);
-        msg.setReceivedFromServer();
+        msg.receivedFromServer();
         return msg;
     }
 
@@ -165,7 +166,7 @@ public abstract class AbstractJMSMessageFactory implements MessageFactory
         final AbstractJMSMessage msg =
                 create010MessageWithBody(messageNbr,msgProps,deliveryProps, body);
         msg.setJMSRedelivered(redelivered);
-        msg.setReceivedFromServer();
+        msg.receivedFromServer();
         return msg;
     }
 

@@ -20,16 +20,14 @@
  * under the License.
  */
 
-#include "qpid/ImportExport.h"
-
+#if defined(WIN32) && !defined(QPID_DECLARE_STATIC)
 #if defined(TYPES_EXPORT) || defined (qpidtypes_EXPORTS)
-#  define QPID_TYPES_EXTERN QPID_EXPORT
-#  define QPID_TYPES_CLASS_EXTERN QPID_CLASS_EXPORT
-#  define QPID_TYPES_INLINE_EXTERN QPID_INLINE_EXPORT
+#define QPID_TYPES_EXTERN __declspec(dllexport)
 #else
-#  define QPID_TYPES_EXTERN QPID_IMPORT
-#  define QPID_TYPES_CLASS_EXTERN QPID_CLASS_IMPORT
-#  define QPID_TYPES_INLINE_EXTERN QPID_INLINE_IMPORT
+#define QPID_TYPES_EXTERN __declspec(dllimport)
+#endif
+#else
+#define QPID_TYPES_EXTERN
 #endif
 
 #endif  /*!QPID_TYPES_IMPORTEXPORT_H*/

@@ -20,10 +20,13 @@
  */
 package org.apache.qpid.server.failover;
 
+import org.apache.mina.common.WriteTimeoutException;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.apache.qpid.jms.ConnectionListener;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.test.utils.FailoverBaseCase;
+import org.apache.qpid.AMQConnectionClosedException;
 
 import javax.jms.Destination;
 import javax.jms.Message;
@@ -31,7 +34,6 @@ import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.Session;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
@@ -193,7 +195,7 @@ public class MessageDisappearWithIOExceptionTest extends FailoverBaseCase implem
 
         // Send IO Exception - causing failover
         _connection.getProtocolHandler().
-                exception(new IOException("IOException to cause failover."));
+                exception(new WriteTimeoutException("WriteTimeoutException to cause failover."));
 
         // Verify Failover occured through ConnectionListener
         assertTrue("Failover did not occur",

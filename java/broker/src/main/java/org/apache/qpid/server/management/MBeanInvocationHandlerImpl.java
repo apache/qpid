@@ -26,6 +26,8 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.security.AccessControlContext;
 import java.security.AccessController;
+import java.security.Principal;
+import java.util.Properties;
 import java.util.Set;
 
 import javax.management.Attribute;
@@ -42,6 +44,7 @@ import javax.management.remote.MBeanServerForwarder;
 import javax.security.auth.Subject;
 
 import org.apache.log4j.Logger;
+import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.ManagementActor;
 import org.apache.qpid.server.logging.messages.ManagementConsoleMessages;
 import org.apache.qpid.server.registry.ApplicationRegistry;
@@ -49,15 +52,20 @@ import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.security.access.Operation;
 
 /**
- * This class can be used by the JMXConnectorServer as an InvocationHandler for the mbean operations. It delegates
- * JMX access decisions to the SecurityPlugin.
+ * This class can be used by the JMXConnectorServer as an InvocationHandler for the mbean operations. This implements
+ * the logic for allowing the users to invoke MBean operations and implements the restrictions for readOnly, readWrite
+ * and admin users.
  */
 public class MBeanInvocationHandlerImpl implements InvocationHandler, NotificationListener
 {
     private static final Logger _logger = Logger.getLogger(MBeanInvocationHandlerImpl.class);
 
+    public final static String ADMIN = "admin";
+    public final static String READWRITE = "readwrite";
+    public final static String READONLY = "readonly";
     private final static String DELEGATE = "JMImplementation:type=MBeanServerDelegate";
     private MBeanServer _mbs;
+    private static Properties _userRoles = new Properties();
     private static ManagementActor  _logActor;
     
     public static MBeanServerForwarder newProxyInstance()
@@ -129,13 +137,14 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler, Notificati
             Set<JMXPrincipal> principals = subject.getPrincipals(JMXPrincipal.class);
             if (principals == null || principals.isEmpty())
             {
-                throw new SecurityException("Access denied: no JMX principal");
+                throw new SecurityException("Access denied: no principal");
             }
-
-            // Save the subject
-            SecurityManager.setThreadSubject(subject);
-   
-            // Get the component, type and impact, which may be null
+			
+            // Save the principal
+            Principal principal = principals.iterator().next();
+            SecurityManager.setThreadPrincipal(principal);
+    
+			// Get the component, type and impact, which may be null
             String type = getType(method, args);
             String vhost = getVirtualHost(method, args);
             int impact = getImpact(method, args);
@@ -204,20 +213,6 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler, Notificati
             ObjectName object = (ObjectName) args[0];
             String vhost = object.getKeyProperty("VirtualHost");
             
-            if(vhost != null)
-            {
-                try
-                {
-                    //if the name is quoted in the ObjectName, unquote it
-                    vhost = ObjectName.unquote(vhost);
-                }
-                catch(IllegalArgumentException e)
-                {
-                    //ignore, this just means the name is not quoted
-                    //and can be left unchanged
-                }
-            }
-
             return vhost;
         }
         return null;
@@ -277,7 +272,7 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler, Notificati
             }
             catch (JMException ex)
             {
-                _logger.error("Unable to determine mbean impact for method : " + mbeanMethod, ex);
+                ex.printStackTrace();
             }
         }
 
@@ -313,7 +308,7 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler, Notificati
         else if (notification.getType().equals(JMXConnectionNotification.CLOSED) ||
                  notification.getType().equals(JMXConnectionNotification.FAILED))
         {
-            _logActor.message(ManagementConsoleMessages.CLOSE(user));
+            _logActor.message(ManagementConsoleMessages.CLOSE());
         }
     }
 }

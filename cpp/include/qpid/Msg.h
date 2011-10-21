@@ -24,7 +24,6 @@
 
 #include <sstream>
 #include <iostream>
-#include "qpid/types/ImportExport.h"
 
 namespace qpid {
 

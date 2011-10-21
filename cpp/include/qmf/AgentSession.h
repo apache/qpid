@@ -40,7 +40,7 @@ namespace qmf {
     class Data;
     class DataAddr;
 
-    class QMF_CLASS_EXTERN AgentSession : public qmf::Handle<AgentSessionImpl> {
+    class AgentSession : public qmf::Handle<AgentSessionImpl> {
     public:
         QMF_EXTERN AgentSession(AgentSessionImpl* impl = 0);
         QMF_EXTERN AgentSession(const AgentSession&);
@@ -71,20 +71,15 @@ namespace qmf {
          *                                    If False: Listen only on the routable direct address
          *    strict-security:{True,False}  - If True:  Cooperate with the broker to enforce strict access control to the network
          *                                  - If False: Operate more flexibly with regard to use of messaging facilities [default]
-         *    max-thread-wait-time:N     - Time (in seconds) the session thread will wait for messages from the network between
-         *                                 periodic background processing passes. [default: 5]
-         *                                 Must not be greater than 'interval'.  Larger numbers will cause fewer wake-ups but will
-         *                                 increase the time it takes to shut down the process.  This setting will not affect the
-         *                                 agent's response time for queries or method invocation.
          */
-        QMF_EXTERN AgentSession(qpid::messaging::Connection& conn, const std::string& options="");
+        QMF_EXTERN AgentSession(qpid::messaging::Connection&, const std::string& options="");
 
         /**
          * setDomain - Change the QMF domain that this agent will operate in.  If this is not called,
          * the domain will be "default".  Agents in a domain can be seen only by consoles in the same domain.
          * This must be called prior to opening the agent session.
          */
-        QMF_EXTERN void setDomain(const std::string& domain);
+        QMF_EXTERN void setDomain(const std::string&);
 
         /**
          * Set identifying attributes of this agent.
@@ -93,16 +88,16 @@ namespace qmf {
          * setInstance - Set the unique instance name (if not set, a UUID will be assigned)
          * These must be called prior to opening the agent session.
          */
-        QMF_EXTERN void setVendor(const std::string& vendor);
-        QMF_EXTERN void setProduct(const std::string& product);
-        QMF_EXTERN void setInstance(const std::string& instance);
+        QMF_EXTERN void setVendor(const std::string&);
+        QMF_EXTERN void setProduct(const std::string&);
+        QMF_EXTERN void setInstance(const std::string&);
 
         /**
          * setAttribute - Set an arbitrary attribute for this agent.  The attributes are not used
          * to uniquely identify the agent but can be used as a search criteria when looking for agents.
          * This must be called prior to opening the agent session.
          */
-        QMF_EXTERN void setAttribute(const std::string& key, const qpid::types::Variant& value);
+        QMF_EXTERN void setAttribute(const std::string&, const qpid::types::Variant&);
 
         /**
          * Get the identifying name of the agent.
@@ -124,19 +119,13 @@ namespace qmf {
          * Get the next event from the agent session.  Events represent actions that must be acted upon by the
          * agent application.  This method blocks for up to the timeout if there are no events to be handled.
          * This method will typically be the focus of the agent application's main execution loop.
-         * If the timeout is set to Duration::IMMEDIATE, the call will not block.
          */
-        QMF_EXTERN bool nextEvent(AgentEvent& outEvent, qpid::messaging::Duration timeout=qpid::messaging::Duration::FOREVER);
-
-        /**
-         * Return the number of events pending for nextEvent.  This method will never block.
-         */
-        QMF_EXTERN int pendingEvents() const;
+        QMF_EXTERN bool nextEvent(AgentEvent&, qpid::messaging::Duration timeout=qpid::messaging::Duration::FOREVER);
 
         /**
          * Register a schema to be exposed by this agent.
          */
-        QMF_EXTERN void registerSchema(Schema& schema);
+        QMF_EXTERN void registerSchema(Schema&);
 
         /**
          * Add data to be managed internally by the agent.  If the option external:True is selected, this call
@@ -149,12 +138,12 @@ namespace qmf {
          *                     across different sessions.  If persistent, it is the agent application's
          *                     responsibility to ensure the name is the same each time it is added.
          */
-        QMF_EXTERN DataAddr addData(Data& data, const std::string& name="", bool persistent=false);
+        QMF_EXTERN DataAddr addData(Data&, const std::string& name="", bool persistent=false);
 
         /**
          * Delete data from internal agent management.
          */
-        QMF_EXTERN void delData(const DataAddr& dataAddr);
+        QMF_EXTERN void delData(const DataAddr&);
 
         /**
          * The following methods are used to respond to events received in nextEvent.
@@ -166,13 +155,13 @@ namespace qmf {
          * complete - Indicate that the response to a query is complete (external:True only)
          * methodSuccess - Indicate the successful completion of a method call.
          */
-        QMF_EXTERN void authAccept(AgentEvent& event);
-        QMF_EXTERN void authReject(AgentEvent& event, const std::string& diag="");
-        QMF_EXTERN void raiseException(AgentEvent& event, const std::string& errorText);
-        QMF_EXTERN void raiseException(AgentEvent& event, const Data& errorData);
-        QMF_EXTERN void response(AgentEvent& event, const Data& responseData);
-        QMF_EXTERN void complete(AgentEvent& event);
-        QMF_EXTERN void methodSuccess(AgentEvent& event);
+        QMF_EXTERN void authAccept(AgentEvent&);
+        QMF_EXTERN void authReject(AgentEvent&, const std::string& diag="");
+        QMF_EXTERN void raiseException(AgentEvent&, const std::string&);
+        QMF_EXTERN void raiseException(AgentEvent&, const Data&);
+        QMF_EXTERN void response(AgentEvent&, const Data&);
+        QMF_EXTERN void complete(AgentEvent&);
+        QMF_EXTERN void methodSuccess(AgentEvent&);
 
         /**
          * Raise an event to be sent into the QMF network.
@@ -188,7 +177,6 @@ namespace qmf {
 #ifndef SWIG
     private:
         friend class qmf::PrivateImplRef<AgentSession>;
-        friend struct AgentSessionImplAccess;
 #endif
     };
 

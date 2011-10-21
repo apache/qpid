@@ -18,8 +18,8 @@
 #
 #
 # acl library makefile fragment, to be included in Makefile.am
-#
-dmoduleexec_LTLIBRARIES += acl.la
+# 
+dmodule_LTLIBRARIES += acl.la
 
 acl_la_SOURCES = \
   qpid/acl/Acl.cpp \

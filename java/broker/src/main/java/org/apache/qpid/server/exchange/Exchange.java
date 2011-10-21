@@ -30,12 +30,15 @@ import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.message.InboundMessage;
+import org.apache.qpid.server.binding.BindingFactory;
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.configuration.ExchangeConfig;
 
 import javax.management.JMException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Collection;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public interface Exchange extends ExchangeReferrer, ExchangeConfig
 {
@@ -64,12 +67,7 @@ public interface Exchange extends ExchangeReferrer, ExchangeConfig
 
     void close() throws AMQException;
 
-    /**
-     * Returns a list of queues to which to route this message.   If there are
-     * no queues the empty list must be returned.
-     *
-     * @return list of queues to which to route the message.
-     */
+
     ArrayList<? extends BaseQueue> route(InboundMessage message);
 
 

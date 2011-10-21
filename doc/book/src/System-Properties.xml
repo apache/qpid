@@ -135,7 +135,7 @@
 
 
 	<varlistentry>
-	  <term>qpid.sync_op_timeout</term>
+	  <term>amqj.default_syncwrite_timeout</term>
 	  <listitem>
 	    <variablelist>
 	      <varlistentry>
@@ -144,11 +144,12 @@
 	      </varlistentry>
 	      <varlistentry>
 		<term>Default</term>
-		<listitem><para>60000</para></listitem>
+		<listitem><para>30000</para></listitem>
 	      </varlistentry>
 	    </variablelist>
-	    <para>The length of time (in milliseconds) to wait for a synchronous operation to complete.
-                  For compatibility with older	clients, the synonym amqj.default_syncwrite_timeout is supported.</para>
+	    <para> The number length of time in millisecond to wait
+	    for a synchronous write to complete.
+            </para>
 	  </listitem>
 	</varlistentry>       
 
@@ -192,7 +193,7 @@
 
 
 	<varlistentry>
-	  <term>amqj.tcp_nodelay</term>
+	  <term>amqj.tcpNoDelay</term>
 	  <listitem>
 	    <variablelist>
 	      <varlistentry>
@@ -209,6 +210,65 @@
 	  </listitem>
 	</varlistentry>       
 
+	<varlistentry>
+	  <term>amqj.sendBufferSize</term>
+	  <listitem>
+	    <variablelist>
+	      <varlistentry>
+		<term>integer</term>
+		<listitem><para>Boolean</para></listitem>
+	      </varlistentry>
+	      <varlistentry>
+		<term>Default</term>
+		<listitem><para>32768</para></listitem>
+	      </varlistentry>
+	    </variablelist>
+	    <para>This is the default buffer sized created by Mina.
+            </para>
+	  </listitem>
+	</varlistentry>   
+
+	<varlistentry>
+	  <term>amqj.receiveBufferSize</term>
+	  <listitem>
+	    <variablelist>
+	      <varlistentry>
+		<term>Type</term>
+		<listitem><para>integer</para></listitem>
+	      </varlistentry>
+	      <varlistentry>
+		<term>Default</term>
+		<listitem><para>32768</para></listitem>
+	      </varlistentry>
+	    </variablelist>
+	    <para>This is the default buffer sized created by Mina.
+            </para>
+	  </listitem>
+	</varlistentry>      
+
+
+	<varlistentry>
+	  <term>amqj.protocolprovider.class</term>
+	  <listitem>
+	    <variablelist>
+	      <varlistentry>
+		<term>Type</term>
+		<listitem><para>String</para></listitem>
+	      </varlistentry>
+	      <varlistentry>
+		<term>Default</term>
+		<listitem><para>org.apache.qpid.server.protocol.AMQPFastProtocolHandler</para></listitem>
+	      </varlistentry>
+	    </variablelist>
+	    <para> This specifies the default IoHandlerAdapter that
+	    represents the InVM broker. The IoHandlerAdapter must have
+	    a constructor that takes a single Integer that represents
+	    the InVM port number.
+            </para>
+	  </listitem>
+	</varlistentry>          
+              
+                 
 	<varlistentry>
 	  <term>amqj.protocol.logging.level</term>
 	  <listitem>

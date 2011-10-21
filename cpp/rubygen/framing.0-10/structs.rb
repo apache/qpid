@@ -406,7 +406,7 @@ EOS
 namespace qpid {
 namespace framing {
 
-class QPID_COMMON_CLASS_EXTERN #{classname} #{inheritance} {
+class #{classname} #{inheritance} {
 EOS
   if (is_packed(s))
     indent { s.fields.each { |f| genl "#{f.cpptype.name} #{f.cppname};" unless f.type_ == "bit"} }

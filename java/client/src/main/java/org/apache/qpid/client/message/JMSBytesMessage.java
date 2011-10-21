@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.client.message;
 
-import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
@@ -29,56 +28,47 @@ import java.nio.charset.CharsetEncoder;
 
 import javax.jms.BytesMessage;
 import javax.jms.JMSException;
-import javax.jms.MessageEOFException;
 import javax.jms.MessageFormatException;
 
+import org.apache.mina.common.ByteBuffer;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 
-public class JMSBytesMessage extends AbstractBytesTypedMessage implements BytesMessage
+public class JMSBytesMessage extends AbstractBytesMessage implements BytesMessage
 {
     public static final String MIME_TYPE = "application/octet-stream";
 
 
-    private TypedBytesContentReader _typedBytesContentReader;
-    private TypedBytesContentWriter _typedBytesContentWriter;
-
 
     public JMSBytesMessage(AMQMessageDelegateFactory delegateFactory)
     {
-        super(delegateFactory,false);
-        _typedBytesContentWriter = new TypedBytesContentWriter();
+        this(delegateFactory,null);
+
+    }
+
+    /**
+     * Construct a bytes message with existing data.
+     *
+     * @param delegateFactory
+     * @param data the data that comprises this message. If data is null, you get a 1024 byte buffer that is
+     */
+    JMSBytesMessage(AMQMessageDelegateFactory delegateFactory, ByteBuffer data)
+    {
+
+        super(delegateFactory, data); // this instanties a content header
     }
 
     JMSBytesMessage(AMQMessageDelegate delegate, ByteBuffer data) throws AMQException
     {
-        super(delegate, data!=null);
-        _typedBytesContentReader = new TypedBytesContentReader(data);
+        super(delegate, data);
     }
 
 
     public void reset()
     {
+        super.reset();
         _readableMessage = true;
-
-        if(_typedBytesContentReader != null)
-        {
-            _typedBytesContentReader.reset();
-        }
-        else if (_typedBytesContentWriter != null)
-        {
-            _typedBytesContentReader = new TypedBytesContentReader(_typedBytesContentWriter.getData());
-        }
-    }
-
-    @Override
-    public void clearBody() throws JMSException
-    {
-        super.clearBody();
-        _typedBytesContentReader = null;
-        _typedBytesContentWriter = new TypedBytesContentWriter();
-
     }
 
     protected String getMimeType()
@@ -86,57 +76,45 @@ public class JMSBytesMessage extends AbstractBytesTypedMessage implements BytesM
         return MIME_TYPE;
     }
 
-    @Override
-    public java.nio.ByteBuffer getData() throws JMSException
-    {
-        return _typedBytesContentWriter == null ? _typedBytesContentReader.getData() : _typedBytesContentWriter.getData();
-    }
-
     public long getBodyLength() throws JMSException
     {
         checkReadable();
-        return _typedBytesContentReader.size();
+        return _data.limit();
     }
 
     public boolean readBoolean() throws JMSException
     {
         checkReadable();
         checkAvailable(1);
-
-        return _typedBytesContentReader.readBooleanImpl();
-    }
-
-    private void checkAvailable(final int i) throws MessageEOFException
-    {
-        _typedBytesContentReader.checkAvailable(1);
+        return _data.get() != 0;
     }
 
     public byte readByte() throws JMSException
     {
         checkReadable();
         checkAvailable(1);
-        return _typedBytesContentReader.readByteImpl();
+        return _data.get();
     }
 
     public int readUnsignedByte() throws JMSException
     {
         checkReadable();
         checkAvailable(1);
-        return _typedBytesContentReader.readByteImpl() & 0xFF;
+        return _data.getUnsigned();
     }
 
     public short readShort() throws JMSException
     {
         checkReadable();
         checkAvailable(2);
-        return _typedBytesContentReader.readShortImpl();
+        return _data.getShort();
     }
 
     public int readUnsignedShort() throws JMSException
     {
         checkReadable();
         checkAvailable(2);
-        return _typedBytesContentReader.readShortImpl() & 0xFFFF;
+        return _data.getUnsignedShort();
     }
 
     /**
@@ -149,35 +127,35 @@ public class JMSBytesMessage extends AbstractBytesTypedMessage implements BytesM
     {
         checkReadable();
         checkAvailable(2);
-        return _typedBytesContentReader.readCharImpl();
+        return _data.getChar();
     }
 
     public int readInt() throws JMSException
     {
         checkReadable();
         checkAvailable(4);
-        return _typedBytesContentReader.readIntImpl();
+        return _data.getInt();
     }
 
     public long readLong() throws JMSException
     {
         checkReadable();
         checkAvailable(8);
-        return _typedBytesContentReader.readLongImpl();
+        return _data.getLong();
     }
 
     public float readFloat() throws JMSException
     {
         checkReadable();
         checkAvailable(4);
-        return _typedBytesContentReader.readFloatImpl();
+        return _data.getFloat();
     }
 
     public double readDouble() throws JMSException
     {
         checkReadable();
         checkAvailable(8);
-        return _typedBytesContentReader.readDoubleImpl();
+        return _data.getDouble();
     }
 
     public String readUTF() throws JMSException
@@ -186,7 +164,34 @@ public class JMSBytesMessage extends AbstractBytesTypedMessage implements BytesM
         // we check only for one byte since theoretically the string could be only a
         // single byte when using UTF-8 encoding
 
-        return _typedBytesContentReader.readLengthPrefixedUTF();
+        try
+        {
+            short length = readShort();
+            if(length == 0)
+            {
+                return "";
+            }
+            else
+            {
+                CharsetDecoder decoder = Charset.forName("UTF-8").newDecoder();
+                ByteBuffer encodedString = _data.slice();
+                encodedString.limit(length);
+                _data.position(_data.position()+length);
+                CharBuffer string = decoder.decode(encodedString.buf());
+                
+                return string.toString();
+            }
+
+
+            
+        }
+        catch (CharacterCodingException e)
+        {
+            JMSException jmse = new JMSException("Error decoding byte stream as a UTF8 string: " + e);
+            jmse.setLinkedException(e);
+            jmse.initCause(e);
+            throw jmse;
+        }
     }
 
     public int readBytes(byte[] bytes) throws JMSException
@@ -196,14 +201,14 @@ public class JMSBytesMessage extends AbstractBytesTypedMessage implements BytesM
             throw new IllegalArgumentException("byte array must not be null");
         }
         checkReadable();
-        int count = (_typedBytesContentReader.remaining() >= bytes.length ? bytes.length : _typedBytesContentReader.remaining());
+        int count = (_data.remaining() >= bytes.length ? bytes.length : _data.remaining());
         if (count == 0)
         {
             return -1;
         }
         else
         {
-            _typedBytesContentReader.readRawBytes(bytes, 0, count);
+            _data.get(bytes, 0, count);
             return count;
         }
     }
@@ -219,82 +224,110 @@ public class JMSBytesMessage extends AbstractBytesTypedMessage implements BytesM
             throw new IllegalArgumentException("maxLength must be <= bytes.length");
         }
         checkReadable();
-        int count = (_typedBytesContentReader.remaining() >= maxLength ? maxLength : _typedBytesContentReader.remaining());
+        int count = (_data.remaining() >= maxLength ? maxLength : _data.remaining());
         if (count == 0)
         {
             return -1;
         }
         else
         {
-            _typedBytesContentReader.readRawBytes(bytes, 0, count);
+            _data.get(bytes, 0, count);
             return count;
         }
     }
 
-
     public void writeBoolean(boolean b) throws JMSException
     {
         checkWritable();
-        _typedBytesContentWriter.writeBooleanImpl(b);
+        _changedData = true;
+        _data.put(b ? (byte) 1 : (byte) 0);
     }
 
     public void writeByte(byte b) throws JMSException
     {
         checkWritable();
-        _typedBytesContentWriter.writeByteImpl(b);
+        _changedData = true;
+        _data.put(b);
     }
 
     public void writeShort(short i) throws JMSException
     {
         checkWritable();
-        _typedBytesContentWriter.writeShortImpl(i);
+        _changedData = true;
+        _data.putShort(i);
     }
 
     public void writeChar(char c) throws JMSException
     {
         checkWritable();
-        _typedBytesContentWriter.writeCharImpl(c);
+        _changedData = true;
+        _data.putChar(c);
     }
 
     public void writeInt(int i) throws JMSException
     {
         checkWritable();
-        _typedBytesContentWriter.writeIntImpl(i);
+        _changedData = true;
+        _data.putInt(i);
     }
 
     public void writeLong(long l) throws JMSException
     {
         checkWritable();
-        _typedBytesContentWriter.writeLongImpl(l);
+        _changedData = true;
+        _data.putLong(l);
     }
 
     public void writeFloat(float v) throws JMSException
     {
         checkWritable();
-        _typedBytesContentWriter.writeFloatImpl(v);
+        _changedData = true;
+        _data.putFloat(v);
     }
 
     public void writeDouble(double v) throws JMSException
     {
         checkWritable();
-        _typedBytesContentWriter.writeDoubleImpl(v);
+        _changedData = true;
+        _data.putDouble(v);
     }
 
     public void writeUTF(String string) throws JMSException
     {
         checkWritable();
-        _typedBytesContentWriter.writeLengthPrefixedUTF(string);
+        try
+        {
+            CharsetEncoder encoder = Charset.forName("UTF-8").newEncoder();
+            java.nio.ByteBuffer encodedString = encoder.encode(CharBuffer.wrap(string));
+            
+            _data.putShort((short)encodedString.limit());
+            _data.put(encodedString);
+            _changedData = true;
+            //_data.putString(string, Charset.forName("UTF-8").newEncoder());
+            // we must add the null terminator manually
+            //_data.put((byte)0);
+        }
+        catch (CharacterCodingException e)
+        {
+            JMSException jmse = new JMSException("Unable to encode string: " + e);
+            jmse.setLinkedException(e);
+            jmse.initCause(e);
+            throw jmse;
+        }
     }
 
     public void writeBytes(byte[] bytes) throws JMSException
     {
-        writeBytes(bytes, 0, bytes.length);
+        checkWritable();
+        _data.put(bytes);
+        _changedData = true;
     }
 
     public void writeBytes(byte[] bytes, int offset, int length) throws JMSException
     {
         checkWritable();
-        _typedBytesContentWriter.writeBytesRaw(bytes, offset, length);
+        _data.put(bytes, offset, length);
+        _changedData = true;
     }
 
     public void writeObject(Object object) throws JMSException

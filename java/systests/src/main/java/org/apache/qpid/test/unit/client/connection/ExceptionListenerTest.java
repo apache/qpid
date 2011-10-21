@@ -47,15 +47,13 @@ public class ExceptionListenerTest extends QpidBrokerTestCase
         {
             public void onException(JMSException e)
             {
-                _logger.debug("&&&&&&&&&&&&&&&&&&&&&&&&&&&& Caught exception &&&&&&&&&&&&&&&&&&&&&&&&&&&& ", e);
                 fired.countDown();
             }
         });
-        _logger.debug("%%%%%%%%%%%%%%%% Stopping Broker %%%%%%%%%%%%%%%%%%%%%");
-        stopBroker();
-        _logger.debug("%%%%%%%%%%%%%%%% Stopped Broker  %%%%%%%%%%%%%%%%%%%%%");
 
-        if (!fired.await(5, TimeUnit.SECONDS))
+        stopBroker();
+
+        if (!fired.await(3, TimeUnit.SECONDS))
         {
             fail("exception listener was not fired");
         }

@@ -24,52 +24,18 @@
 namespace qpid {
 namespace broker {
 
-struct QueuedMessage;
-class Consumer;
-
+class QueuedMessage;
 /**
- * Interface for notifying classes who want to act as 'observers' of a queue of particular
- * events.
- *
- * The events that are monitored reflect the relationship between a particular message and
- * the queue it has been delivered to.  A message can be considered in one of three states
- * with respect to the queue:
- *
- * 1) "Available" - available for transfer to consumers (i.e. for browse or acquire),
- *
- * 2) "Acquired" - owned by a particular consumer, no longer available to other consumers
- * (by either browse or acquire), but still considered on the queue.
- *
- * 3) "Dequeued" - removed from the queue and no longer available to any consumer.
- *
- * The queue events that are observable are:
- *
- * "Enqueued" - the message is "Available" - on the queue for transfer to any consumer
- * (e.g. browse or acquire)
- *
- * "Acquired" - - a consumer has claimed exclusive access to it. It is no longer available
- * for other consumers to browse or acquire, but it is not yet considered dequeued as it
- * may be requeued by the consumer.
- *
- * "Requeued" - a previously-acquired message is released by its owner: it is put back on
- * the queue at its original position and returns to the "Available" state.
- *
- * "Dequeued" - a message is no longer queued.  At this point, the queue no longer tracks
- * the message, and the broker considers the consumer's transaction complete.
+ * Interface for notifying classes who want to act as 'observers' of a
+ * queue of particular events.
  */
 class QueueObserver
 {
   public:
     virtual ~QueueObserver() {}
-
-    // note: the Queue will hold the messageLock while calling these methods!
     virtual void enqueued(const QueuedMessage&) = 0;
     virtual void dequeued(const QueuedMessage&) = 0;
-    virtual void acquired(const QueuedMessage&) = 0;
-    virtual void requeued(const QueuedMessage&) = 0;
-    virtual void consumerAdded( const Consumer& ) {};
-    virtual void consumerRemoved( const Consumer& ) {};
- private:
+  private:
 };
 }} // namespace qpid::broker
 

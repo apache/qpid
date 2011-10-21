@@ -349,7 +349,7 @@ public class AbstractTestLogging extends QpidBrokerTestCase
 
     public boolean waitForMessage(String message, long wait) throws FileNotFoundException, IOException
     {
-        return _monitor.waitForMessage(message, wait);
+        return _monitor.waitForMessage(message, wait, true);
     }
 
     /**

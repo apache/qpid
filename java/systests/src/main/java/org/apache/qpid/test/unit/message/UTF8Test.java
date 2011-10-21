@@ -20,20 +20,17 @@
  */
 package org.apache.qpid.test.unit.message;
 
-import java.io.BufferedReader;
-import java.io.FileInputStream;
-import java.io.InputStreamReader;
-import java.util.Properties;
-
-import javax.jms.Connection;
-import javax.jms.Destination;
-import javax.jms.MessageConsumer;
-import javax.jms.MessageProducer;
-import javax.jms.Session;
-import javax.jms.TextMessage;
-import javax.naming.InitialContext;
-
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
+import org.apache.qpid.transport.Connection;
+import org.apache.qpid.transport.Session;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.naming.InitialContext;
+import javax.jms.*;
+import java.util.Properties;
+import java.io.*;
 
 
 /**
@@ -44,6 +41,8 @@ import org.apache.qpid.test.utils.QpidBrokerTestCase;
  */
 public class UTF8Test extends QpidBrokerTestCase
 {
+    private static final Logger _logger = LoggerFactory.getLogger(UTF8Test.class);
+
     public void testPlainEn() throws Exception
     {
          invoke("UTF8En");
@@ -66,22 +65,36 @@ public class UTF8Test extends QpidBrokerTestCase
 
     private void runTest(String exchangeName, String queueName, String routingKey, String data) throws Exception
     {
-        Connection con =  getConnection();
-        Session sess = con.createSession(false, javax.jms.Session.AUTO_ACKNOWLEDGE);
-        final Destination dest = getDestination(exchangeName, routingKey, queueName);
+        _logger.info("Running test for exchange: " + exchangeName
+                + " queue Name: " + queueName
+                + " routing key: " + routingKey);       
+        declareQueue(exchangeName, routingKey, queueName);
 
-        final MessageConsumer msgCons = sess.createConsumer(dest);
-        con.start();
-
+        javax.jms.Connection con =  getConnection();
+        javax.jms.Session sess = con.createSession(false, javax.jms.Session.AUTO_ACKNOWLEDGE);
+        Destination dest = getDestination(exchangeName, routingKey, queueName);
         // Send data
         MessageProducer msgProd = sess.createProducer(dest);
         TextMessage message = sess.createTextMessage(data);
         msgProd.send(message);
-
         // consume data
+        MessageConsumer msgCons = sess.createConsumer(dest);
+        con.start();
         TextMessage m = (TextMessage) msgCons.receive(RECEIVE_TIMEOUT);
         assertNotNull(m);
         assertEquals(m.getText(), data);
+    }
+
+    private void declareQueue(String exch, String routkey, String qname) throws Exception
+    {
+        Connection conn = new Connection();
+        conn.connect("localhost", QpidBrokerTestCase.DEFAULT_PORT, "test", "guest", "guest",false);
+        Session sess = conn.createSession(0);
+        sess.exchangeDeclare(exch, "direct", null, null);
+        sess.queueDeclare(qname, null, null);
+        sess.exchangeBind(qname, exch, routkey, null);
+        sess.sync();
+        conn.close();        
     }
 
     private Destination getDestination(String exch, String routkey, String qname) throws Exception

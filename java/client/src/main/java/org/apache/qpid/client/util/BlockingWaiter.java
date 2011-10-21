@@ -28,8 +28,9 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQTimeoutException;
 import org.apache.qpid.client.failover.FailoverException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.qpid.framing.AMQMethodBody;
+import org.apache.qpid.protocol.AMQMethodEvent;
+import org.apache.qpid.protocol.AMQMethodListener;
 
 /**
  * BlockingWaiter is a 'rendezvous' which delegates handling of
@@ -63,8 +64,6 @@ import org.slf4j.LoggerFactory;
  */
 public abstract class BlockingWaiter<T>
 {
-    private static final Logger _logger = LoggerFactory.getLogger(BlockingWaiter.class);
-
     /** This flag is used to indicate that the blocked for method has been received. */
     private volatile boolean _ready = false;
 
@@ -181,7 +180,7 @@ public abstract class BlockingWaiter<T>
                     }
                     catch (InterruptedException e)
                     {
-                        _logger.error(e.getMessage(), e);
+                        System.err.println(e.getMessage());
                         // IGNORE    -- //fixme this isn't ideal as being interrupted isn't equivellant to sucess
                         // if (!_ready && timeout != -1)
                         // {
@@ -229,12 +228,12 @@ public abstract class BlockingWaiter<T>
     }
 
     /**
-     * This is a callback, called when an error has occurred that should interrupt any waiter.
+     * This is a callback, called when an error has occured that should interupt any waiter.
      * It is also called from within this class to avoid code repetition but it should only be called by the MINA threads.
      *
      * Once closed any notification of an exception will be ignored.
      *
-     * @param e The exception being propagated.
+     * @param e The exception being propogated.
      */
     public void error(Exception e)
     {
@@ -256,7 +255,7 @@ public abstract class BlockingWaiter<T>
             }
             else
             {
-                _logger.error("WARNING: new error '" + e == null ? "null" : e.getMessage() + "' arrived while old one not yet processed:" + _error.getMessage());
+                System.err.println("WARNING: new error '" + e == null ? "null" : e.getMessage() + "' arrived while old one not yet processed:" + _error.getMessage());
             }
 
             if (_waiting.get())
@@ -273,7 +272,7 @@ public abstract class BlockingWaiter<T>
                     }
                     catch (InterruptedException e1)
                     {
-                        _logger.error(e1.getMessage(), e1);
+                        System.err.println(e.getMessage());
                     }
                 }
                 _errorAck = false;

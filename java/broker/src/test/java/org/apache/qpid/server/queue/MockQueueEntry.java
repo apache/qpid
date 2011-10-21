@@ -139,7 +139,7 @@ public class MockQueueEntry implements QueueEntry
     }
 
 
-    public boolean isRejectedBy(long subscriptionId)
+    public boolean isRejectedBy(Subscription subscription)
     {
 
         return false;
@@ -147,6 +147,13 @@ public class MockQueueEntry implements QueueEntry
 
 
     public void reject()
+    {
+
+
+    }
+
+
+    public void reject(Subscription subscription)
     {
 
 
@@ -222,16 +229,6 @@ public class MockQueueEntry implements QueueEntry
     public void setMessage(AMQMessage msg)
     {
         _message = msg;
-    }
-
-    public boolean isDequeued()
-    {
-        return false;
-    }
-
-    public boolean isDispensed()
-    {
-        return false;
     }
 
 }

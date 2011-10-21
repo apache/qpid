@@ -31,7 +31,7 @@
 namespace qpid {
 namespace cluster {
 
-struct EventFrame;
+class EventFrame;
 class EventHeader;
 
 /**

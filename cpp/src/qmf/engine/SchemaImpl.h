@@ -35,10 +35,7 @@ namespace engine {
     //       they've been registered.
 
     class SchemaHash {
-        union h {
-            uint8_t  b[16];
-            uint64_t q[2];
-        } hash;
+        uint8_t hash[16];
     public:
         SchemaHash();
         void encode(qpid::framing::Buffer& buffer) const;
@@ -50,7 +47,7 @@ namespace engine {
         void update(Direction d) { update((uint8_t) d); }
         void update(Access a) { update((uint8_t) a); }
         void update(bool b) { update((uint8_t) (b ? 1 : 0)); }
-        const uint8_t* get() const { return hash.b; }
+        const uint8_t* get() const { return hash; }
         bool operator==(const SchemaHash& other) const;
         bool operator<(const SchemaHash& other) const;
         bool operator>(const SchemaHash& other) const;

@@ -29,7 +29,8 @@ BUILT_SOURCES = $(generated_file_list)
 $(generated_file_list): python.i $(top_srcdir)/src/saslwrapper.i
 	$(SWIG) -c++ -python -Wall -I/usr/include $(INCLUDES) -o saslwrapper.cpp $(srcdir)/python.i
 
-pyexec_PYTHON = saslwrapper.py
+pylibdir = $(PYTHON_LIB)
+python_PYTHON = saslwrapper.py
 pyexec_LTLIBRARIES = _saslwrapper.la
 
 _saslwrapper_la_LDFLAGS = -avoid-version -module -shared

@@ -20,9 +20,7 @@
  */
 package org.apache.qpid.framing;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import org.apache.mina.common.ByteBuffer;
 
 public class AMQFrame extends AMQDataBlock implements EncodableAMQDataBlock
 {
@@ -38,7 +36,7 @@ public class AMQFrame extends AMQDataBlock implements EncodableAMQDataBlock
         _bodyFrame = bodyFrame;
     }
 
-    public AMQFrame(final DataInputStream in, final int channel, final long bodySize, final BodyFactory bodyFactory) throws AMQFrameDecodingException, IOException
+    public AMQFrame(final ByteBuffer in, final int channel, final long bodySize, final BodyFactory bodyFactory) throws AMQFrameDecodingException
     {
         this._channel = channel;
         this._bodyFrame = bodyFactory.createBody(in,bodySize);
@@ -55,13 +53,13 @@ public class AMQFrame extends AMQDataBlock implements EncodableAMQDataBlock
     }
 
 
-    public void writePayload(DataOutputStream buffer) throws IOException
+    public void writePayload(ByteBuffer buffer)
     {
-        buffer.writeByte(_bodyFrame.getFrameType());
+        buffer.put(_bodyFrame.getFrameType());
         EncodingUtils.writeUnsignedShort(buffer, _channel);
         EncodingUtils.writeUnsignedInteger(buffer, _bodyFrame.getSize());
         _bodyFrame.writePayload(buffer);
-        buffer.writeByte(FRAME_END_BYTE);
+        buffer.put(FRAME_END_BYTE);
     }
 
     public final int getChannel()
@@ -79,48 +77,48 @@ public class AMQFrame extends AMQDataBlock implements EncodableAMQDataBlock
         return "Frame channelId: " + _channel + ", bodyFrame: " + String.valueOf(_bodyFrame);
     }
 
-    public static void writeFrame(DataOutputStream buffer, final int channel, AMQBody body) throws IOException
+    public static void writeFrame(ByteBuffer buffer, final int channel, AMQBody body)
     {
-        buffer.writeByte(body.getFrameType());
+        buffer.put(body.getFrameType());
         EncodingUtils.writeUnsignedShort(buffer, channel);
         EncodingUtils.writeUnsignedInteger(buffer, body.getSize());
         body.writePayload(buffer);
-        buffer.writeByte(FRAME_END_BYTE);
+        buffer.put(FRAME_END_BYTE);
 
     }
 
-    public static void writeFrames(DataOutputStream buffer, final int channel, AMQBody body1, AMQBody body2) throws IOException
+    public static void writeFrames(ByteBuffer buffer, final int channel, AMQBody body1, AMQBody body2)
     {
-        buffer.writeByte(body1.getFrameType());
+        buffer.put(body1.getFrameType());
         EncodingUtils.writeUnsignedShort(buffer, channel);
         EncodingUtils.writeUnsignedInteger(buffer, body1.getSize());
         body1.writePayload(buffer);
-        buffer.writeByte(FRAME_END_BYTE);
-        buffer.writeByte(body2.getFrameType());
+        buffer.put(FRAME_END_BYTE);
+        buffer.put(body2.getFrameType());
         EncodingUtils.writeUnsignedShort(buffer, channel);
         EncodingUtils.writeUnsignedInteger(buffer, body2.getSize());
         body2.writePayload(buffer);
-        buffer.writeByte(FRAME_END_BYTE);
+        buffer.put(FRAME_END_BYTE);
 
     }
 
-    public static void writeFrames(DataOutputStream buffer, final int channel, AMQBody body1, AMQBody body2, AMQBody body3) throws IOException
+    public static void writeFrames(ByteBuffer buffer, final int channel, AMQBody body1, AMQBody body2, AMQBody body3)
     {
-        buffer.writeByte(body1.getFrameType());
+        buffer.put(body1.getFrameType());
         EncodingUtils.writeUnsignedShort(buffer, channel);
         EncodingUtils.writeUnsignedInteger(buffer, body1.getSize());
         body1.writePayload(buffer);
-        buffer.writeByte(FRAME_END_BYTE);
-        buffer.writeByte(body2.getFrameType());
+        buffer.put(FRAME_END_BYTE);
+        buffer.put(body2.getFrameType());
         EncodingUtils.writeUnsignedShort(buffer, channel);
         EncodingUtils.writeUnsignedInteger(buffer, body2.getSize());
         body2.writePayload(buffer);
-        buffer.writeByte(FRAME_END_BYTE);
-        buffer.writeByte(body3.getFrameType());
+        buffer.put(FRAME_END_BYTE);
+        buffer.put(body3.getFrameType());
         EncodingUtils.writeUnsignedShort(buffer, channel);
         EncodingUtils.writeUnsignedInteger(buffer, body3.getSize());
         body3.writePayload(buffer);
-        buffer.writeByte(FRAME_END_BYTE);
+        buffer.put(FRAME_END_BYTE);
 
     }
 

@@ -47,8 +47,8 @@ class Sasl
      *             client supports.
      * @param externalSecuritySettings security related details from the underlying transport
      */
-    virtual bool start(const std::string& mechanisms, std::string& response,
-                       const qpid::sys::SecuritySettings* externalSecuritySettings = 0) = 0;
+    virtual std::string start(const std::string& mechanisms,
+                              const qpid::sys::SecuritySettings* externalSecuritySettings = 0) = 0;
     virtual std::string step(const std::string& challenge) = 0;
     virtual std::string getMechanism() = 0;
     virtual std::string getUserId() = 0;

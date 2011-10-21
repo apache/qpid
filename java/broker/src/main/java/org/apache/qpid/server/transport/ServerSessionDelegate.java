@@ -25,34 +25,31 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
 
-import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQUnknownExchangeType;
+import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.server.exchange.Exchange;
-import org.apache.qpid.server.exchange.ExchangeFactory;
-import org.apache.qpid.server.exchange.ExchangeInUseException;
-import org.apache.qpid.server.exchange.ExchangeRegistry;
-import org.apache.qpid.server.exchange.ExchangeType;
-import org.apache.qpid.server.exchange.HeadersExchange;
+import org.apache.qpid.server.exchange.*;
 import org.apache.qpid.server.filter.FilterManager;
 import org.apache.qpid.server.filter.FilterManagerFactory;
 import org.apache.qpid.server.flow.FlowCreditManager_0_10;
 import org.apache.qpid.server.flow.WindowCreditManager;
-import org.apache.qpid.server.logging.messages.ExchangeMessages;
+import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.logging.actors.GenericActor;
 import org.apache.qpid.server.message.MessageMetaData_0_10;
 import org.apache.qpid.server.message.MessageTransferMessage;
+import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StoredMessage;
-import org.apache.qpid.server.subscription.SubscriptionFactoryImpl;
 import org.apache.qpid.server.subscription.Subscription_0_10;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.transport.Acquired;
@@ -98,33 +95,25 @@ import org.apache.qpid.transport.TxSelect;
 
 public class ServerSessionDelegate extends SessionDelegate
 {
-    private static final Logger LOGGER = Logger.getLogger(ServerSessionDelegate.class);
+    private final IApplicationRegistry _appRegistry;
 
-    public ServerSessionDelegate()
+    public ServerSessionDelegate(IApplicationRegistry appRegistry)
     {
-
+        _appRegistry = appRegistry;
     }
 
     @Override
     public void command(Session session, Method method)
     {
-        try
-        {
-            setThreadSubject(session);
+        SecurityManager.setThreadPrincipal(session.getConnection().getAuthorizationID());
 
-            if(!session.isClosing())
-            {
-                super.command(session, method);
-                if (method.isSync())
-                {
-                    session.flushProcessed();
-                }
-            }
-        }
-        catch(RuntimeException e)
+        if(!session.isClosing())
         {
-            LOGGER.error("Exception processing command", e);
-            exception(session, method, ExecutionErrorCode.INTERNAL_ERROR, "Exception processing command: " + e);
+            super.command(session, method);
+            if (method.isSync())
+            {
+                session.flushProcessed();
+            }
         }
     }
 
@@ -133,6 +122,8 @@ public class ServerSessionDelegate extends SessionDelegate
     {
         ((ServerSession)session).accept(method.getTransfers());
     }
+
+
 
     @Override
     public void messageReject(Session session, MessageReject method)
@@ -168,6 +159,7 @@ public class ServerSessionDelegate extends SessionDelegate
     @Override
     public void messageSubscribe(Session session, MessageSubscribe method)
     {
+
         //TODO - work around broken Python tests
         if(!method.hasAcceptMode())
         {
@@ -211,32 +203,31 @@ public class ServerSessionDelegate extends SessionDelegate
                 {
                     exception(session,method,ExecutionErrorCode.NOT_FOUND, "Queue: " + queueName + " not found");
                 }
-                else if(queue.getAuthorizationHolder() != null && queue.getAuthorizationHolder() != session)
+                else if(queue.getPrincipalHolder() != null && queue.getPrincipalHolder() != session)
                 {
                     exception(session,method,ExecutionErrorCode.RESOURCE_LOCKED, "Exclusive Queue: " + queueName + " owned exclusively by another session");
                 }
                 else
                 {
+
                     if(queue.isExclusive())
                     {
-                        ServerSession s = (ServerSession) session;
-                        queue.setExclusiveOwningSession(s);
-                        if(queue.getAuthorizationHolder() == null)
+                        if(queue.getPrincipalHolder() == null)
                         {
-                            queue.setAuthorizationHolder(s);
-                            queue.setExclusiveOwningSession(s);
+                            queue.setPrincipalHolder((ServerSession)session);
                             ((ServerSession) session).addSessionCloseTask(new ServerSession.Task()
                             {
+
                                 public void doTask(ServerSession session)
                                 {
-                                    if(queue.getAuthorizationHolder() == session)
+                                    if(queue.getPrincipalHolder() == session)
                                     {
-                                        queue.setAuthorizationHolder(null);
-                                        queue.setExclusiveOwningSession(null);
+                                        queue.setPrincipalHolder(null);
                                     }
                                 }
                             });
                         }
+
 
                     }
 
@@ -253,7 +244,7 @@ public class ServerSessionDelegate extends SessionDelegate
                         return;
                     }
 
-                    Subscription_0_10 sub = SubscriptionFactoryImpl.INSTANCE.createSubscription((ServerSession)session,
+                    Subscription_0_10 sub = new Subscription_0_10((ServerSession)session,
                                                                   destination,
                                                                   method.getAcceptMode(),
                                                                   method.getAcquireMode(),
@@ -284,10 +275,25 @@ public class ServerSessionDelegate extends SessionDelegate
         }
     }
 
+
     @Override
     public void messageTransfer(Session ssn, MessageTransfer xfr)
     {
-        final Exchange exchange = getExchangeForMessage(ssn, xfr);
+        ExchangeRegistry exchangeRegistry = getExchangeRegistry(ssn);
+        Exchange exchange;
+        if(xfr.hasDestination())
+        {
+            exchange = exchangeRegistry.getExchange(xfr.getDestination());
+            if(exchange == null)
+            {
+                exchange = exchangeRegistry.getDefaultExchange();
+            }
+        }
+        else
+        {
+            exchange = exchangeRegistry.getDefaultExchange();
+        }
+        
 
         DeliveryProperties delvProps = null;
         if(xfr.getHeader() != null && (delvProps = xfr.getHeader().get(DeliveryProperties.class)) != null && delvProps.hasTtl() && !delvProps.hasExpiration())
@@ -295,7 +301,7 @@ public class ServerSessionDelegate extends SessionDelegate
             delvProps.setExpiration(System.currentTimeMillis() + delvProps.getTtl());
         }
 
-        final MessageMetaData_0_10 messageMetaData = new MessageMetaData_0_10(xfr);
+        MessageMetaData_0_10 messageMetaData = new MessageMetaData_0_10(xfr);
         
         if (!getVirtualHost(ssn).getSecurityManager().authorisePublish(messageMetaData.isImmediate(), messageMetaData.getRoutingKey(), exchange.getName()))
         {
@@ -305,63 +311,65 @@ public class ServerSessionDelegate extends SessionDelegate
             
             return;
         }
-
-        final Exchange exchangeInUse;
-        ArrayList<? extends BaseQueue> queues = exchange.route(messageMetaData);
-        if(queues.isEmpty() && exchange.getAlternateExchange() != null)
-        {
-            final Exchange alternateExchange = exchange.getAlternateExchange();
-            queues = alternateExchange.route(messageMetaData);
-            if (!queues.isEmpty())
-            {
-                exchangeInUse = alternateExchange;
-            }
-            else
-            {
-                exchangeInUse = exchange;
-            }
-        }
-        else
-        {
-            exchangeInUse = exchange;
-        }
-
-        if(!queues.isEmpty())
-        {
-            final MessageStore store = getVirtualHost(ssn).getMessageStore();
-            final StoredMessage<MessageMetaData_0_10> storeMessage = createAndFlushStoreMessage(xfr, messageMetaData, store);
-            MessageTransferMessage message = new MessageTransferMessage(storeMessage, ((ServerSession)ssn).getReference());
-            ((ServerSession) ssn).enqueue(message, queues);
-        }
-        else
-        {
-            if((delvProps == null || !delvProps.getDiscardUnroutable()) && xfr.getAcceptMode() == MessageAcceptMode.EXPLICIT)
-            {
-                RangeSet rejects = new RangeSet();
-                rejects.add(xfr.getId());
-                MessageReject reject = new MessageReject(rejects, MessageRejectCode.UNROUTABLE, "Unroutable");
-                ssn.invoke(reject);
-            }
-            else
-            {
-                ((ServerSession) ssn).getLogActor().message(ExchangeMessages.DISCARDMSG(exchangeInUse.getName(), messageMetaData.getRoutingKey()));
-            }
-        }
-
-        ssn.processed(xfr);
-    }
-
-    private StoredMessage<MessageMetaData_0_10> createAndFlushStoreMessage(final MessageTransfer xfr,
-            final MessageMetaData_0_10 messageMetaData, final MessageStore store)
-    {
-        final StoredMessage<MessageMetaData_0_10> storeMessage = store.addMessage(messageMetaData);
+        
+        final MessageStore store = getVirtualHost(ssn).getMessageStore();
+        StoredMessage<MessageMetaData_0_10> storeMessage = store.addMessage(messageMetaData);
         ByteBuffer body = xfr.getBody();
         if(body != null)
         {
             storeMessage.addContent(0, body);
         }
         storeMessage.flushToStore();
-        return storeMessage;
+        MessageTransferMessage message = new MessageTransferMessage(storeMessage, ((ServerSession)ssn).getReference());
+
+        ArrayList<? extends BaseQueue> queues = exchange.route(message);
+
+
+
+        if(queues != null && queues.size() != 0)
+        {
+            ((ServerSession) ssn).enqueue(message, queues);
+        }
+        else
+        {
+            if(delvProps == null || !delvProps.hasDiscardUnroutable() || !delvProps.getDiscardUnroutable())
+            {
+                if(xfr.getAcceptMode() == MessageAcceptMode.EXPLICIT)
+                {
+                    RangeSet rejects = new RangeSet();
+                    rejects.add(xfr.getId());
+                    MessageReject reject = new MessageReject(rejects, MessageRejectCode.UNROUTABLE, "Unroutable");
+                    ssn.invoke(reject);
+                }
+                else
+                {
+                    Exchange alternate = exchange.getAlternateExchange();
+                    if(alternate != null)
+                    {
+                        queues = alternate.route(message);
+                        if(queues != null && queues.size() != 0)
+                        {
+                            ((ServerSession) ssn).enqueue(message, queues);
+                        }
+                        else
+                        {
+                            //TODO - log the message discard
+                        }
+                    }
+                    else
+                    {
+                        //TODO - log the message discard
+                    }
+
+
+                }
+            }
+
+
+        }
+
+        ssn.processed(xfr);
+
     }
 
     @Override
@@ -381,7 +389,7 @@ public class ServerSessionDelegate extends SessionDelegate
             ((ServerSession)session).unregister(sub);
             if(!queue.isDeleted() && queue.isExclusive() && queue.getConsumerCount() == 0)
             {
-                queue.setAuthorizationHolder(null);
+                queue.setPrincipalHolder(null);
             }
         }
     }
@@ -440,19 +448,6 @@ public class ServerSessionDelegate extends SessionDelegate
         VirtualHost virtualHost = getVirtualHost(session);
         Exchange exchange = getExchange(session, exchangeName);
 
-        //we must check for any unsupported arguments present and throw not-implemented
-        if(method.hasArguments())
-        {
-            Map<String,Object> args = method.getArguments();
-
-            //QPID-3392: currently we don't support any!
-            if(!args.isEmpty())
-            {
-                exception(session, method, ExecutionErrorCode.NOT_IMPLEMENTED, "Unsupported exchange argument(s) found " + args.keySet().toString());
-                return;
-            }
-        }
-
         if(method.getPassive())
         {
             if(exchange == null)
@@ -462,6 +457,7 @@ public class ServerSessionDelegate extends SessionDelegate
             }
             else
             {
+                // TODO - check exchange has same properties
                 if(!exchange.getTypeShortString().toString().equals(method.getType()))
                 {
                     exception(session, method, ExecutionErrorCode.NOT_ALLOWED, "Cannot redeclare with a different exchange type");
@@ -566,25 +562,6 @@ public class ServerSessionDelegate extends SessionDelegate
 
     }
 
-    private Exchange getExchangeForMessage(Session ssn, MessageTransfer xfr)
-    {
-        final ExchangeRegistry exchangeRegistry = getExchangeRegistry(ssn);
-        Exchange exchange;
-        if(xfr.hasDestination())
-        {
-            exchange = exchangeRegistry.getExchange(xfr.getDestination());
-            if(exchange == null)
-            {
-                exchange = exchangeRegistry.getDefaultExchange();
-            }
-        }
-        else
-        {
-            exchange = exchangeRegistry.getDefaultExchange();
-        }
-        return exchange;
-    }
-
     private VirtualHost getVirtualHost(Session session)
     {
         ServerConnection conn = getServerConnection(session);
@@ -606,12 +583,6 @@ public class ServerSessionDelegate extends SessionDelegate
 
         try
         {
-            if (nameNullOrEmpty(method.getExchange()))
-            {
-                exception(session, method, ExecutionErrorCode.INVALID_ARGUMENT, "Delete not allowed for default exchange");
-                return;
-            }
-
             Exchange exchange = getExchange(session, method.getExchange());
 
             if(exchange == null)
@@ -645,16 +616,6 @@ public class ServerSessionDelegate extends SessionDelegate
         {
             exception(session, method, e, "Cannot delete exchange '" + method.getExchange() );
         }
-    }
-
-    private boolean nameNullOrEmpty(String name)
-    {
-        if(name == null || name.length() == 0)
-        {
-            return true;
-        }
-
-        return false;
     }
 
     private boolean isStandardExchange(Exchange exchange, Collection<ExchangeType<? extends Exchange>> registeredTypes)
@@ -703,9 +664,9 @@ public class ServerSessionDelegate extends SessionDelegate
         {
             exception(session, method, ExecutionErrorCode.ILLEGAL_ARGUMENT, "queue not set");
         }
-        else if (nameNullOrEmpty(method.getExchange()))
+        else if (!method.hasExchange())
         {
-            exception(session, method, ExecutionErrorCode.INVALID_ARGUMENT, "Bind not allowed for default exchange");
+            exception(session, method, ExecutionErrorCode.ILLEGAL_ARGUMENT, "exchange not set");
         }
 /*
         else if (!method.hasBindingKey())
@@ -774,9 +735,9 @@ public class ServerSessionDelegate extends SessionDelegate
         {
             exception(session, method, ExecutionErrorCode.ILLEGAL_ARGUMENT, "queue not set");
         }
-        else if (nameNullOrEmpty(method.getExchange()))
+        else if (!method.hasExchange())
         {
-            exception(session, method, ExecutionErrorCode.INVALID_ARGUMENT, "Unbind not allowed for default exchange");
+            exception(session, method, ExecutionErrorCode.ILLEGAL_ARGUMENT, "exchange not set");
         }
         else if (!method.hasBindingKey())
         {
@@ -806,6 +767,9 @@ public class ServerSessionDelegate extends SessionDelegate
                 }
             }
         }
+
+
+        super.exchangeUnbind(session, method);
     }
 
     @Override
@@ -1005,10 +969,10 @@ public class ServerSessionDelegate extends SessionDelegate
 
                         }
 
-                        if (method.hasAutoDelete()
-                            && method.getAutoDelete()
-                            && method.hasExclusive()
-                            && method.getExclusive())
+                        if(method.hasAutoDelete()
+                           && method.getAutoDelete()
+                           && method.hasExclusive()
+                           && method.getExclusive())
                         {
                             final AMQQueue q = queue;
                             final ServerSession.Task deleteQueueTask = new ServerSession.Task()
@@ -1035,23 +999,23 @@ public class ServerSessionDelegate extends SessionDelegate
                                     }
                                 });
                         }
-                        if (method.hasExclusive()
-                            && method.getExclusive())
+                        else if(method.getExclusive())
                         {
                             final AMQQueue q = queue;
                             final ServerSession.Task removeExclusive = new ServerSession.Task()
                             {
+
                                 public void doTask(ServerSession session)
                                 {
-                                    q.setAuthorizationHolder(null);
+                                    q.setPrincipalHolder(null);
                                     q.setExclusiveOwningSession(null);
                                 }
                             };
                             final ServerSession s = (ServerSession) session;
-                            q.setExclusiveOwningSession(s);
                             s.addSessionCloseTask(removeExclusive);
                             queue.addQueueDeleteTask(new AMQQueue.Task()
                             {
+
                                 public void doTask(AMQQueue queue) throws AMQException
                                 {
                                     s.removeSessionCloseTask(removeExclusive);
@@ -1065,7 +1029,7 @@ public class ServerSessionDelegate extends SessionDelegate
                     }
                 }
             }
-            else if (method.getExclusive() && (queue.getExclusiveOwningSession() != null && !queue.getExclusiveOwningSession().equals(session)))
+            else if (method.getExclusive() && (queue.getPrincipalHolder() != null && !queue.getPrincipalHolder().equals(session)))
             {
                     String description = "Cannot declare queue('" + queueName + "'),"
                                                                            + " as exclusive queue with same name "
@@ -1113,7 +1077,7 @@ public class ServerSessionDelegate extends SessionDelegate
             }
             else
             {
-                if(queue.getAuthorizationHolder() != null && queue.getAuthorizationHolder() != session)
+                if(queue.getPrincipalHolder() != null && queue.getPrincipalHolder() != session)
                 {
                     exception(session,method,ExecutionErrorCode.RESOURCE_LOCKED, "Exclusive Queue: " + queueName + " owned exclusively by another session");
                 }
@@ -1259,8 +1223,6 @@ public class ServerSessionDelegate extends SessionDelegate
     @Override
     public void closed(Session session)
     {
-        setThreadSubject(session);
-
         for(Subscription_0_10 sub : getSubscriptions(session))
         {
             ((ServerSession)session).unregister(sub);
@@ -1279,9 +1241,4 @@ public class ServerSessionDelegate extends SessionDelegate
         return ((ServerSession)session).getSubscriptions();
     }
 
-    private void setThreadSubject(Session session)
-    {
-        final ServerConnection scon = (ServerConnection) session.getConnection();
-        SecurityManager.setThreadSubject(scon.getAuthorizedSubject());
-    }
 }

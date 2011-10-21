@@ -180,10 +180,7 @@ Acl::Acl (AclValues& av, Broker& b): aclValues(av), broker(&b), transferAcl(fals
       {
       case _qmf::Acl::METHOD_RELOADACLFILE :
           readAclFile(text);
-          if (text.empty())
-              status = Manageable::STATUS_OK;
-          else
-              status = Manageable::STATUS_USER;
+          status = Manageable::STATUS_USER;
           break;
       }
 

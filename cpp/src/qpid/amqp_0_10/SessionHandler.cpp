@@ -130,6 +130,9 @@ void SessionHandler::handleException(const qpid::SessionException& e)
 }
 
 namespace {
+bool isControl(const AMQFrame& f) {
+    return f.getMethod() && f.getMethod()->type() == framing::SEGMENT_TYPE_CONTROL;
+}
 bool isCommand(const AMQFrame& f) {
     return f.getMethod() && f.getMethod()->type() == framing::SEGMENT_TYPE_COMMAND;
 }
@@ -188,10 +191,9 @@ void SessionHandler::detach(const std::string& name) {
 void SessionHandler::detached(const std::string& name, uint8_t code) {
     CHECK_NAME(name, "session.detached");
     awaitingDetached = false;
-    if (code != session::DETACH_CODE_NORMAL) {
-        sendReady = receiveReady = false;
+    if (code != session::DETACH_CODE_NORMAL)
         channelException(convert(code), "session.detached from peer.");
-    } else {
+    else {
         handleDetach();
     }
 }

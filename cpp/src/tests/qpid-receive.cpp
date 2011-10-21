@@ -53,7 +53,6 @@ struct Options : public qpid::Options
     bool forever;
     uint messages;
     bool ignoreDuplicates;
-    bool checkRedelivered;
     uint capacity;
     uint ackFrequency;
     uint tx;
@@ -76,7 +75,6 @@ struct Options : public qpid::Options
           forever(false),
           messages(0),
           ignoreDuplicates(false),
-          checkRedelivered(false),
           capacity(1000),
           ackFrequency(100),
           tx(0),
@@ -94,11 +92,10 @@ struct Options : public qpid::Options
             ("broker,b", qpid::optValue(url, "URL"), "url of broker to connect to")
             ("address,a", qpid::optValue(address, "ADDRESS"), "address to receive from")
             ("connection-options", qpid::optValue(connectionOptions, "OPTIONS"), "options for the connection")
-            ("timeout", qpid::optValue(timeout, "TIMEOUT"), "timeout in seconds to wait before exiting")
+            ("timeout,t", qpid::optValue(timeout, "TIMEOUT"), "timeout in seconds to wait before exiting")
             ("forever,f", qpid::optValue(forever), "ignore timeout and wait forever")
             ("messages,m", qpid::optValue(messages, "N"), "Number of messages to receive; 0 means receive indefinitely")
             ("ignore-duplicates", qpid::optValue(ignoreDuplicates), "Detect and ignore duplicates (by checking 'sn' header)")
-            ("check-redelivered", qpid::optValue(checkRedelivered), "Fails with exception if a duplicate is not marked as redelivered (only relevant when ignore-duplicates is selected)")
             ("capacity", qpid::optValue(capacity, "N"), "Pre-fetch window (0 implies no pre-fetch)")
             ("ack-frequency", qpid::optValue(ackFrequency, "N"), "Ack frequency (0 implies none of the messages will get accepted)")
             ("tx", qpid::optValue(tx, "N"), "batch size for transactions (0 implies transaction are not used)")
@@ -219,8 +216,6 @@ int main(int argc, char ** argv)
                             std::cout << msg.getContent() << std::endl;//TODO: handle map or list messages
                         if (opts.messages && count >= opts.messages) done = true;
                     }
-                } else if (opts.checkRedelivered && !msg.getRedelivered()) {
-                    throw qpid::Exception("duplicate sequence number received, message not marked as redelivered!");
                 }
                 if (opts.tx && (count % opts.tx == 0)) {
                     if (opts.rollbackFrequency && (++txCount % opts.rollbackFrequency == 0)) {
@@ -262,7 +257,7 @@ int main(int argc, char ** argv)
             return 0;
         }
     } catch(const std::exception& error) {
-        std::cerr << "qpid-receive: " << error.what() << std::endl;
+        std::cerr << "Failure: " << error.what() << std::endl;
         connection.close();
         return 1;
     }

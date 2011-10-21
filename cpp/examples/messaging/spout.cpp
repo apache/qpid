@@ -65,7 +65,7 @@ struct Options : OptionParser
         add("property,P", properties, "specify message property");
         add("map,M", entries, "specify entry for map content");
         add("content", content, "specify textual content");
-        add("connection-options", connectionOptions, "connection options string in the form {name1:value1, name2:value2}");
+        add("connection-options", connectionOptions, "connection options string in the form {name1=value1, name2=value2}");
     }
 
     static bool nameval(const std::string& in, std::string& name, std::string& value)

@@ -20,9 +20,9 @@
  */
 package org.apache.qpid.framing;
 
-import junit.framework.TestCase;
+import org.apache.mina.common.ByteBuffer;
 
-import java.io.*;
+import junit.framework.TestCase;
 
 
 public class BasicContentHeaderPropertiesTest extends TestCase
@@ -76,14 +76,15 @@ public class BasicContentHeaderPropertiesTest extends TestCase
         assertEquals(99, _testProperties.getPropertyFlags());
     }
 
-    public void testWritePropertyListPayload() throws IOException
+    public void testWritePropertyListPayload()
     {
-        _testProperties.writePropertyListPayload(new DataOutputStream(new ByteArrayOutputStream(300)));
+        ByteBuffer buf = ByteBuffer.allocate(300);
+        _testProperties.writePropertyListPayload(buf);
     }
 
     public void testPopulatePropertiesFromBuffer() throws Exception
     {
-        DataInputStream buf = new DataInputStream(new ByteArrayInputStream(new byte[300]));
+        ByteBuffer buf = ByteBuffer.allocate(300);
         _testProperties.populatePropertiesFromBuffer(buf, 99, 99);
     }
 

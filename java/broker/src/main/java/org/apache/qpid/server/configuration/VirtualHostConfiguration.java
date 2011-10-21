@@ -86,9 +86,9 @@ public class VirtualHostConfiguration extends ConfigurationPlugin
         return _name;
     }
 
-    public long getHousekeepingCheckPeriod()
+    public long getHousekeepingExpiredMessageCheckPeriod()
     {
-        return getLongValue("housekeeping.checkPeriod", ApplicationRegistry.getInstance().getConfiguration().getHousekeepingCheckPeriod());
+        return getLongValue("housekeeping.expiredMessageCheckPeriod", ApplicationRegistry.getInstance().getConfiguration().getHousekeepingCheckPeriod());
     }
 
     public String getAuthenticationDatabase()
@@ -306,45 +306,11 @@ public class VirtualHostConfiguration extends ConfigurationPlugin
     @Override
     public void validateConfiguration() throws ConfigurationException
     {
-        // QPID-3249.  Support for specifying authentication name at vhost level is no longer supported.
-        if (getListValue("security.authentication.name").size() > 0)
-        {
-            String message = "Validation error : security/authentication/name is no longer a supported element within the configuration xml."
-                    + " It appears in virtual host definition : " + _name;
-            throw new ConfigurationException(message);
-        }
-
-        // QPID-3266.  Tidy up housekeeping configuration option for scheduling frequency
-        if (contains("housekeeping.expiredMessageCheckPeriod"))
-        {
-            String message = "Validation error : housekeeping/expiredMessageCheckPeriod must be replaced by housekeeping/checkPeriod."
-                    + " It appears in virtual host definition : " + _name;
-            throw new ConfigurationException(message);
-        }
+        //Currently doesn't do validation
     }
 
     public int getHouseKeepingThreadCount()
     {
         return getIntValue("housekeeping.poolSize", Runtime.getRuntime().availableProcessors());
-    }
-
-    public long getTransactionTimeoutOpenWarn()
-    {
-        return getLongValue("transactionTimeout.openWarn", 0L);
-    }
-
-    public long getTransactionTimeoutOpenClose()
-    {
-        return getLongValue("transactionTimeout.openClose", 0L);
-    }
-
-    public long getTransactionTimeoutIdleWarn()
-    {
-        return getLongValue("transactionTimeout.idleWarn", 0L);
-    }
-
-    public long getTransactionTimeoutIdleClose()
-    {
-        return getLongValue("transactionTimeout.idleClose", 0L);
     }
 }

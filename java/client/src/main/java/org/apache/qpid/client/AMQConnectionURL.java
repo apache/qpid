@@ -27,14 +27,18 @@ import java.util.Map;
 
 import org.apache.qpid.client.url.URLParser;
 import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.ProtocolVersion;
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.jms.ConnectionURL;
 import org.apache.qpid.url.URLHelper;
 import org.apache.qpid.url.URLSyntaxException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class AMQConnectionURL implements ConnectionURL
 {
- 
+    private static final Logger _logger = LoggerFactory.getLogger(AMQConnectionURL.class);
+
     private String _url;
     private String _failoverMethod;
     private Map<String, String> _failoverOptions;
@@ -290,5 +294,18 @@ public class AMQConnectionURL implements ConnectionURL
         }
 
         return sb.toString();
+    }
+
+    public static void main(String[] args) throws URLSyntaxException
+    {
+        String url2 =
+            "amqp://ritchiem:bob@temp/testHost?brokerlist='tcp://localhost:5672;tcp://fancyserver:3000/',failover='roundrobin'";
+        // "amqp://user:pass@clientid/virtualhost?brokerlist='tcp://host:1?option1=\'value\',option2=\'value\';vm://:3?option1=\'value\'',failover='method?option1=\'value\',option2='value''";
+
+        ConnectionURL connectionurl2 = new AMQConnectionURL(url2);
+
+        System.out.println(url2);
+        System.out.println(connectionurl2);
+
     }
 }

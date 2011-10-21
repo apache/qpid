@@ -29,10 +29,7 @@ import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.store.StorableMessageMetaData;
 import org.apache.qpid.server.store.MessageMetaDataType;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.server.util.ByteBufferInputStream;
-import org.apache.qpid.server.util.ByteBufferOutputStream;
 
-import java.io.*;
 import java.nio.ByteBuffer;
 import java.util.Set;
 
@@ -123,38 +120,38 @@ public class MessageMetaData implements StorableMessageMetaData
         return size;
     }
 
-
     public int writeToBuffer(int offset, ByteBuffer dest)
     {
-        int oldPosition = dest.position();
-        try
+        ByteBuffer src = ByteBuffer.allocate((int)getStorableSize());
+
+        org.apache.mina.common.ByteBuffer minaSrc = org.apache.mina.common.ByteBuffer.wrap(src);
+        EncodingUtils.writeInteger(minaSrc, _contentHeaderBody.getSize());
+        _contentHeaderBody.writePayload(minaSrc);
+        EncodingUtils.writeShortStringBytes(minaSrc, _messagePublishInfo.getExchange());
+        EncodingUtils.writeShortStringBytes(minaSrc, _messagePublishInfo.getRoutingKey());
+        byte flags = 0;
+        if(_messagePublishInfo.isMandatory())
         {
-
-            DataOutputStream dataOutputStream = new DataOutputStream(new ByteBufferOutputStream(dest));
-            EncodingUtils.writeInteger(dataOutputStream, _contentHeaderBody.getSize());
-            _contentHeaderBody.writePayload(dataOutputStream);
-            EncodingUtils.writeShortStringBytes(dataOutputStream, _messagePublishInfo.getExchange());
-            EncodingUtils.writeShortStringBytes(dataOutputStream, _messagePublishInfo.getRoutingKey());
-            byte flags = 0;
-            if(_messagePublishInfo.isMandatory())
-            {
-                flags |= MANDATORY_FLAG;
-            }
-            if(_messagePublishInfo.isImmediate())
-            {
-                flags |= IMMEDIATE_FLAG;
-            }
-            dest.put(flags);
-            dest.putLong(_arrivalTime);
-
+            flags |= MANDATORY_FLAG;
         }
-        catch (IOException e)
+        if(_messagePublishInfo.isImmediate())
         {
-            // This shouldn't happen as we are not actually using anything that can throw an IO Exception
-            throw new RuntimeException(e);
+            flags |= IMMEDIATE_FLAG;
         }
+        EncodingUtils.writeByte(minaSrc, flags);
+        EncodingUtils.writeLong(minaSrc,_arrivalTime);
+        src.position(minaSrc.position());
+        src.flip();
+        src.position(offset);
+        src = src.slice();
+        if(dest.remaining() < src.limit())
+        {
+            src.limit(dest.remaining());
+        }
+        dest.put(src);
 
-        return dest.position()-oldPosition;
+
+        return src.limit();
     }
 
     public int getContentSize()
@@ -164,7 +161,7 @@ public class MessageMetaData implements StorableMessageMetaData
 
     public boolean isPersistent()
     {
-        BasicContentHeaderProperties properties = (BasicContentHeaderProperties) (_contentHeaderBody.getProperties());
+        BasicContentHeaderProperties properties = (BasicContentHeaderProperties) (_contentHeaderBody.properties);
         return properties.getDeliveryMode() ==  BasicContentHeaderProperties.PERSISTENT;
     }
 
@@ -176,15 +173,14 @@ public class MessageMetaData implements StorableMessageMetaData
         {
             try
             {
-                ByteBufferInputStream bbis = new ByteBufferInputStream(buf);
-                DataInputStream dais = new DataInputStream(bbis);
-                int size = EncodingUtils.readInteger(dais);
-                ContentHeaderBody chb = ContentHeaderBody.createFromBuffer(dais, size);
-                final AMQShortString exchange = EncodingUtils.readAMQShortString(dais);
-                final AMQShortString routingKey = EncodingUtils.readAMQShortString(dais);
+                org.apache.mina.common.ByteBuffer minaSrc = org.apache.mina.common.ByteBuffer.wrap(buf);
+                int size = EncodingUtils.readInteger(minaSrc);
+                ContentHeaderBody chb = ContentHeaderBody.createFromBuffer(minaSrc, size);
+                final AMQShortString exchange = EncodingUtils.readAMQShortString(minaSrc);
+                final AMQShortString routingKey = EncodingUtils.readAMQShortString(minaSrc);
 
-                final byte flags = EncodingUtils.readByte(dais);
-                long arrivalTime = EncodingUtils.readLong(dais);
+                final byte flags = EncodingUtils.readByte(minaSrc);
+                long arrivalTime = EncodingUtils.readLong(minaSrc);
 
                 MessagePublishInfo publishBody =
                         new MessagePublishInfo()
@@ -220,10 +216,6 @@ public class MessageMetaData implements StorableMessageMetaData
             {
                 throw new RuntimeException(e);
             }
-            catch (IOException e)
-            {
-                throw new RuntimeException(e);
-            }
 
         }
     };
@@ -237,7 +229,7 @@ public class MessageMetaData implements StorableMessageMetaData
     {
         private BasicContentHeaderProperties getProperties()
         {
-            return (BasicContentHeaderProperties) getContentHeaderBody().getProperties();
+            return (BasicContentHeaderProperties) getContentHeaderBody().properties;
         }
 
         public String getCorrelationId()

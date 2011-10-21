@@ -23,8 +23,6 @@ package org.apache.qpid.client;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.nio.channels.UnresolvedAddressException;
-import java.security.GeneralSecurityException;
-import java.security.Security;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -33,17 +31,15 @@ import java.util.Set;
 
 import javax.jms.JMSException;
 import javax.jms.XASession;
-import javax.net.ssl.SSLContext;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.AMQTimeoutException;
 import org.apache.qpid.client.failover.FailoverException;
 import org.apache.qpid.client.failover.FailoverProtectedOperation;
 import org.apache.qpid.client.failover.FailoverRetrySupport;
 import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.apache.qpid.client.state.AMQState;
-import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.client.state.StateWaiter;
+import org.apache.qpid.client.transport.TransportConnection;
 import org.apache.qpid.framing.BasicQosBody;
 import org.apache.qpid.framing.BasicQosOkBody;
 import org.apache.qpid.framing.ChannelOpenBody;
@@ -53,13 +49,6 @@ import org.apache.qpid.framing.TxSelectBody;
 import org.apache.qpid.framing.TxSelectOkBody;
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.jms.ChannelLimitReachedException;
-import org.apache.qpid.ssl.SSLContextFactory;
-import org.apache.qpid.transport.ConnectionSettings;
-import org.apache.qpid.transport.network.NetworkConnection;
-import org.apache.qpid.transport.network.OutgoingNetworkTransport;
-import org.apache.qpid.transport.network.Transport;
-import org.apache.qpid.transport.network.security.SecurityLayer;
-import org.apache.qpid.transport.network.security.SecurityLayerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -71,30 +60,8 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
 
     public void closeConnection(long timeout) throws JMSException, AMQException
     {
-        final AMQStateManager stateManager = _conn.getProtocolHandler().getStateManager();
-        final AMQState currentState = stateManager.getCurrentState();
+        _conn.getProtocolHandler().closeConnection(timeout);
 
-        if (currentState.equals(AMQState.CONNECTION_CLOSED))
-        {
-            _logger.debug("Connection already closed.");
-        }
-        else if (currentState.equals(AMQState.CONNECTION_CLOSING))
-        {
-            _logger.debug("Connection already closing, awaiting closed state.");
-            final StateWaiter closeWaiter = new StateWaiter(stateManager, currentState, EnumSet.of(AMQState.CONNECTION_CLOSED));
-            try
-            {
-                closeWaiter.await(timeout);
-            }
-            catch (AMQTimeoutException te)
-            {
-                throw new AMQTimeoutException("Close did not complete in timely fashion", te);
-            }
-        }
-        else
-        {
-            _conn.getProtocolHandler().closeConnection(timeout);
-        }
     }
 
     public AMQConnectionDelegate_8_0(AMQConnection conn)
@@ -122,34 +89,15 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
 
         StateWaiter waiter = _conn._protocolHandler.createWaiter(openOrClosedStates);
 
-        ConnectionSettings settings = brokerDetail.buildConnectionSettings();
-        settings.setProtocol(brokerDetail.getTransport());
-
-        SSLContext sslContext = null;
-        if (settings.isUseSSL())
+        // TODO: use system property thingy for this
+        if (System.getProperty("UseTransportIo", "false").equals("false"))
         {
-            try
-            {
-                sslContext = SSLContextFactory.buildClientContext(
-                                settings.getTrustStorePath(),
-                                settings.getTrustStorePassword(),
-                                settings.getTrustStoreCertType(),
-                                settings.getKeyStorePath(),
-                                settings.getKeyStorePassword(),
-                                settings.getKeyStoreCertType(),
-                                settings.getCertAlias());
-            }
-            catch (GeneralSecurityException e)
-            {
-                throw new AMQException("Unable to create SSLContext: " + e.getMessage(), e);
-            }
+            TransportConnection.getInstance(brokerDetail).connect(_conn._protocolHandler, brokerDetail);
         }
-
-        SecurityLayer securityLayer = SecurityLayerFactory.newInstance(settings);
-
-        OutgoingNetworkTransport transport = Transport.getOutgoingTransportInstance(getProtocolVersion());
-        NetworkConnection network = transport.connect(settings, securityLayer.receiver(_conn._protocolHandler), sslContext);
-        _conn._protocolHandler.setNetworkConnection(network, securityLayer.sender(network.getSender()));
+        else
+        {
+            _conn.getProtocolHandler().createIoTransportSession(brokerDetail);
+        }
         _conn._protocolHandler.getProtocolSession().init();
         // this blocks until the connection has been set up or when an error
         // has prevented the connection being set up
@@ -373,10 +321,5 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
     public ProtocolVersion getProtocolVersion()
     {
         return ProtocolVersion.v8_0;
-    }
-
-    public boolean verifyClientID() throws JMSException
-    {
-        return true;
     }
 }

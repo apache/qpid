@@ -61,6 +61,21 @@ public class ServerConfigurationFileTest extends QpidBrokerTestCase
                       _serverConfig.getConfig().getProperty(property));
     }
 
+    public void testProtectIOEnabled() throws ConfigurationException
+    {
+        validatePropertyDefinedInFile(ServerConfiguration.CONNECTOR_PROTECTIO_ENABLED);
+    }
+
+    public void testProtectIOReadBufferLimitSize() throws ConfigurationException
+    {
+        validatePropertyDefinedInFile(ServerConfiguration.CONNECTOR_PROTECTIO_READ_BUFFER_LIMIT_SIZE);
+    }
+
+    public void testProtectIOWriteBufferLimitSize() throws ConfigurationException
+    {
+        validatePropertyDefinedInFile(ServerConfiguration.CONNECTOR_PROTECTIO_WRITE_BUFFER_LIMIT_SIZE);
+    }
+
     public void testStatusUpdates() throws ConfigurationException
     {
         validatePropertyDefinedInFile(ServerConfiguration.STATUS_UPDATES);

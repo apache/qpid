@@ -29,7 +29,7 @@ namespace qpid {
 namespace framing {
 class Buffer;
 
-class QPID_COMMON_CLASS_EXTERN SequenceSet : public RangeSet<SequenceNumber> {
+class SequenceSet : public RangeSet<SequenceNumber> {
   public:
     SequenceSet() {}
     SequenceSet(const RangeSet<SequenceNumber>& r)

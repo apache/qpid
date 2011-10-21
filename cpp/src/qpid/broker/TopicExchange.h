@@ -56,7 +56,7 @@ class TopicExchange : public virtual Exchange {
     //    |   +-->d-->...
     //    +-->x-->y-->...
     //
-    class QPID_BROKER_CLASS_EXTERN BindingNode {
+    class BindingNode {
     public:
 
         typedef boost::shared_ptr<BindingNode> shared_ptr;
@@ -135,31 +135,8 @@ class TopicExchange : public virtual Exchange {
     BindingNode bindingTree;
     unsigned long nBindings;
     qpid::sys::RWlock lock;     // protects bindingTree and nBindings
-    qpid::sys::RWlock cacheLock;     // protects cache
-    std::map<std::string, BindingList> bindingCache; // cache of matched routes.
-    class ClearCache {
-    private:
-        qpid::sys::RWlock* cacheLock;
-        std::map<std::string, BindingList>* bindingCache;
-	bool cleared; 
-    public:
-        ClearCache(qpid::sys::RWlock* l, std::map<std::string, BindingList>* bc): cacheLock(l),
-             bindingCache(bc),cleared(false) {};
-        void clearCache() {
-             qpid::sys::RWlock::ScopedWlock l(*cacheLock);
-             if (!cleared) {
-                 bindingCache->clear();
-                 cleared =true;
-             }
-        };
-        ~ClearCache(){ 
-	     clearCache();
-        };
-    };
-    BindingKey *getQueueBinding(Queue::shared_ptr queue, const std::string& pattern);
-    bool deleteBinding(Queue::shared_ptr queue,
-                       const std::string& routingKey,
-                       BindingKey *bk);
+
+    bool isBound(Queue::shared_ptr queue, const std::string& pattern);
 
     class ReOriginIter;
     class BindingsFinderIter;

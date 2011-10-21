@@ -26,7 +26,10 @@ import org.apache.qpid.framing.abstraction.ContentChunk;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.framing.abstraction.AbstractMethodConverter;
 import org.apache.qpid.framing.abstraction.MessagePublishInfoImpl;
+import org.apache.qpid.framing.amqp_8_0.BasicPublishBodyImpl;
 import org.apache.qpid.framing.*;
+
+import org.apache.mina.common.ByteBuffer;
 
 public class MethodConverter_8_0 extends AbstractMethodConverter implements ProtocolVersionMethodConverter
 {
@@ -57,9 +60,9 @@ public class MethodConverter_8_0 extends AbstractMethodConverter implements Prot
                 return contentBodyChunk.getSize();
             }
 
-            public byte[] getData()
+            public ByteBuffer getData()
             {
-                return contentBodyChunk._payload;
+                return contentBodyChunk.payload;
             }
 
             public void reduceToFit()
@@ -78,9 +81,9 @@ public class MethodConverter_8_0 extends AbstractMethodConverter implements Prot
                 
     }
    
-    public AMQBody convertToBody(byte[] data)
+    public AMQBody convertToBody(java.nio.ByteBuffer buf)
     {
-        return new ContentBody(data);
+        return new ContentBody(ByteBuffer.wrap(buf));
     }
 
     public MessagePublishInfo convertToInfo(AMQMethodBody methodBody)

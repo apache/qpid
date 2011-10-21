@@ -20,27 +20,32 @@
  */
 package org.apache.qpid.transport;
 
-import static org.apache.qpid.transport.Option.EXPECTED;
-import static org.apache.qpid.transport.Option.NONE;
-import static org.apache.qpid.transport.Option.SYNC;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
+import org.apache.mina.util.AvailablePortFinder;
 
 import org.apache.qpid.test.utils.QpidTestCase;
 import org.apache.qpid.transport.network.ConnectionBinding;
 import org.apache.qpid.transport.network.io.IoAcceptor;
+import org.apache.qpid.transport.util.Logger;
 import org.apache.qpid.transport.util.Waiter;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Collections;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.io.IOException;
+
+import static org.apache.qpid.transport.Option.*;
 
 /**
  * ConnectionTest
  */
+
 public class ConnectionTest extends QpidTestCase implements SessionListener
 {
+
+    private static final Logger log = Logger.get(ConnectionTest.class);
+
     private int port;
     private volatile boolean queue = false;
     private List<MessageTransfer> messages = new ArrayList<MessageTransfer>();
@@ -53,7 +58,7 @@ public class ConnectionTest extends QpidTestCase implements SessionListener
     {
         super.setUp();
 
-        port = findFreePort();
+        port = AvailablePortFinder.getNextAvailable(12000);
     }
 
     protected void tearDown() throws Exception
@@ -153,8 +158,7 @@ public class ConnectionTest extends QpidTestCase implements SessionListener
 
     private Connection connect(final CountDownLatch closed)
     {
-        final Connection conn = new Connection();
-        conn.setConnectionDelegate(new ClientDelegate(new ConnectionSettings()));
+        Connection conn = new Connection();
         conn.addConnectionListener(new ConnectionListener()
         {
             public void opened(Connection conn) {}
@@ -178,9 +182,9 @@ public class ConnectionTest extends QpidTestCase implements SessionListener
     {
         // Force os.name to be windows to exercise code in IoReceiver
         // that looks for the value of os.name
-        setTestSystemProperty("os.name","windows");
+        System.setProperty("os.name","windows");
 
-        // Start server as 0-9 to force a ProtocolVersionException
+        // Start server as 0-9 to froce a ProtocolVersionException
         startServer(new ProtocolHeader(1, 0, 9));
         
         CountDownLatch closed = new CountDownLatch(1);
@@ -215,7 +219,7 @@ public class ConnectionTest extends QpidTestCase implements SessionListener
                 conn.send(protocolHeader);
                 List<Object> utf8 = new ArrayList<Object>();
                 utf8.add("utf8");
-                conn.connectionStart(null, Collections.emptyList(), utf8);
+                conn.connectionStart(null, Collections.EMPTY_LIST, utf8);
             }
 
             @Override
@@ -266,7 +270,40 @@ public class ConnectionTest extends QpidTestCase implements SessionListener
         }
     }
 
+    class FailoverConnectionListener implements ConnectionListener
+    {
+        public void opened(Connection conn) {}
 
+        public void exception(Connection conn, ConnectionException e)
+        {
+            throw e;
+        }
+
+        public void closed(Connection conn)
+        {
+            queue = true;
+            conn.connect("localhost", port, null, "guest", "guest");
+            conn.resume();
+        }
+    }
+
+    class TestSessionListener implements SessionListener
+    {
+        public void opened(Session s) {}
+        public void resumed(Session s) {}
+        public void exception(Session s, SessionException e) {}
+        public void message(Session s, MessageTransfer xfr)
+        {
+            synchronized (incoming)
+            {
+                incoming.add(xfr);
+                incoming.notifyAll();
+            }
+
+            s.processed(xfr);
+        }
+        public void closed(Session s) {}
+    }
 
     public void testResumeNonemptyReplayBuffer() throws Exception
     {
@@ -274,7 +311,6 @@ public class ConnectionTest extends QpidTestCase implements SessionListener
 
         Connection conn = new Connection();
         conn.addConnectionListener(new FailoverConnectionListener());
-        conn.setConnectionDelegate(new ClientDelegate(new ConnectionSettings()));
         conn.connect("localhost", port, null, "guest", "guest");
         Session ssn = conn.createSession(1);
         ssn.setSessionListener(new TestSessionListener());
@@ -329,7 +365,6 @@ public class ConnectionTest extends QpidTestCase implements SessionListener
         startServer();
 
         Connection conn = new Connection();
-        conn.setConnectionDelegate(new ClientDelegate(new ConnectionSettings()));
         conn.addConnectionListener(new FailoverConnectionListener());
         conn.connect("localhost", port, null, "guest", "guest");
         Session ssn = conn.createSession(1);
@@ -352,7 +387,6 @@ public class ConnectionTest extends QpidTestCase implements SessionListener
         startServer();
 
         Connection conn = new Connection();
-        conn.setConnectionDelegate(new ClientDelegate(new ConnectionSettings()));
         conn.connect("localhost", port, null, "guest", "guest");
         Session ssn = conn.createSession();
         ssn.sessionFlush(EXPECTED);
@@ -366,7 +400,6 @@ public class ConnectionTest extends QpidTestCase implements SessionListener
     {
         startServer();
         Connection conn = new Connection();
-        conn.setConnectionDelegate(new ClientDelegate(new ConnectionSettings()));
         conn.connect("localhost", port, null, "guest", "guest");
         conn.connectionHeartbeat();
         conn.close();
@@ -377,7 +410,6 @@ public class ConnectionTest extends QpidTestCase implements SessionListener
         startServer();
 
         Connection conn = new Connection();
-        conn.setConnectionDelegate(new ClientDelegate(new ConnectionSettings()));
         conn.connect("localhost", port, null, "guest", "guest");
         Session ssn = conn.createSession();
         send(ssn, "EXCP 0");
@@ -397,7 +429,6 @@ public class ConnectionTest extends QpidTestCase implements SessionListener
         startServer();
 
         Connection conn = new Connection();
-        conn.setConnectionDelegate(new ClientDelegate(new ConnectionSettings()));
         conn.connect("localhost", port, null, "guest", "guest");
         Session ssn = conn.createSession();
         send(ssn, "EXCP 0", true);
@@ -412,38 +443,4 @@ public class ConnectionTest extends QpidTestCase implements SessionListener
         }
     }
 
-    class FailoverConnectionListener implements ConnectionListener
-    {
-        public void opened(Connection conn) {}
-
-        public void exception(Connection conn, ConnectionException e)
-        {
-            throw e;
-        }
-
-        public void closed(Connection conn)
-        {
-            queue = true;
-            conn.connect("localhost", port, null, "guest", "guest");
-            conn.resume();
-        }
-    }
-
-    class TestSessionListener implements SessionListener
-    {
-        public void opened(Session s) {}
-        public void resumed(Session s) {}
-        public void exception(Session s, SessionException e) {}
-        public void message(Session s, MessageTransfer xfr)
-        {
-            synchronized (incoming)
-            {
-                incoming.add(xfr);
-                incoming.notifyAll();
-            }
-
-            s.processed(xfr);
-        }
-        public void closed(Session s) {}
-    }
 }

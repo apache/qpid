@@ -75,7 +75,7 @@ void DeliveryRecord::deliver(framing::FrameHandler& h, DeliveryId deliveryId, ui
 {
     id = deliveryId;
     if (msg.payload->getRedelivered()){
-        msg.payload->setRedelivered();
+        msg.payload->getProperties<framing::DeliveryProperties>()->setRedelivered(true);
     }
     msg.payload->adjustTtl();
 
@@ -131,20 +131,18 @@ void DeliveryRecord::committed() const{
 
 void DeliveryRecord::reject() 
 {    
-    if (acquired && !ended) {
-        Exchange::shared_ptr alternate = queue->getAlternateExchange();
-        if (alternate) {
-            DeliverableMessage delivery(msg.payload);
-            alternate->routeWithAlternate(delivery);
-            QPID_LOG(info, "Routed rejected message from " << queue->getName() << " to "
-                     << alternate->getName());
-        } else {
-            //just drop it
-            QPID_LOG(info, "Dropping rejected message from " << queue->getName());
-        }
-        dequeue();
-        setEnded();
+    Exchange::shared_ptr alternate = queue->getAlternateExchange();
+    if (alternate) {
+        DeliverableMessage delivery(msg.payload);
+        alternate->route(delivery, msg.payload->getRoutingKey(), msg.payload->getApplicationHeaders());
+        QPID_LOG(info, "Routed rejected message from " << queue->getName() << " to " 
+                 << alternate->getName());
+    } else {
+        //just drop it
+        QPID_LOG(info, "Dropping rejected message from " << queue->getName());
     }
+
+    dequeue();
 }
 
 uint32_t DeliveryRecord::getCredit() const
@@ -153,7 +151,7 @@ uint32_t DeliveryRecord::getCredit() const
 }
 
 void DeliveryRecord::acquire(DeliveryIds& results) {
-    if (queue->acquire(msg, tag)) {
+    if (queue->acquire(msg)) {
         acquired = true;
         results.push_back(id);
         if (!acceptExpected) {

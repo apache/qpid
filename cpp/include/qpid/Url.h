@@ -66,7 +66,7 @@ struct Url : public std::vector<Address> {
      *@exception Invalid if the url is invalid.
      */
     QPID_COMMON_EXTERN void parse(const char* url);
-    QPID_COMMON_INLINE_EXTERN void parse(const std::string& url) { parse(url.c_str()); }
+    QPID_COMMON_EXTERN void parse(const std::string& url) { parse(url.c_str()); }
 
     /** Replace contesnts with parsed URL. Replace with empty URL if invalid. */
     QPID_COMMON_EXTERN void parseNoThrow(const char* url);

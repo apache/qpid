@@ -46,7 +46,7 @@ public class RecoverTest extends FailoverBaseCase
 {
     static final Logger _logger = LoggerFactory.getLogger(RecoverTest.class);
 
-    private volatile Exception _error;
+    private Exception _error;
     private AtomicInteger count;
 
     protected AMQConnection _connection;
@@ -249,13 +249,14 @@ public class RecoverTest extends FailoverBaseCase
                     {
                         if (!message.getJMSRedelivered())
                         {
-                            setError(new Exception("Message not marked as redelivered on what should be second delivery attempt"));
+                            setError(
+                                    new Exception("Message not marked as redelivered on what should be second delivery attempt"));
                         }
                     }
                     else
                     {
-                        _logger.error(message.toString());
-                        setError(new Exception("Message delivered too many times!: " + count));
+                        System.err.println(message);
+                        fail("Message delivered too many times!: " + count);
                     }
                 }
                 catch (JMSException e)

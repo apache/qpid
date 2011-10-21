@@ -26,7 +26,9 @@ import org.apache.qpid.client.AMQSession;
 import javax.jms.Destination;
 import javax.jms.JMSException;
 
+import java.nio.ByteBuffer;
 import java.util.Enumeration;
+import java.util.Map;
 import java.util.UUID;
 
 public interface AMQMessageDelegate
@@ -128,9 +130,9 @@ public interface AMQMessageDelegate
 
     void removeProperty(final String propertyName) throws JMSException;
 
-    void setAMQSession(final AMQSession<?,?> s);
+    void setAMQSession(final AMQSession s);
 
-    AMQSession<?,?> getAMQSession();
+    AMQSession getAMQSession();
 
     long getDeliveryTag();
 

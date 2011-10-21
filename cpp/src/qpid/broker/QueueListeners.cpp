@@ -26,25 +26,19 @@ namespace broker {
 
 void QueueListeners::addListener(Consumer::shared_ptr c)
 {
-    if (!c->inListeners) {
-        if (c->acquires) {
-            add(consumers, c);
-        } else {
-            add(browsers, c);
-        }
-        c->inListeners = true;
+    if (c->preAcquires()) {
+        add(consumers, c);
+    } else {
+        add(browsers, c);
     }
 }
 
 void QueueListeners::removeListener(Consumer::shared_ptr c)
 {
-    if (c->inListeners) {
-        if (c->acquires) {
-            remove(consumers, c);
-        } else {
-            remove(browsers, c);
-        }
-        c->inListeners = false;
+    if (c->preAcquires()) {
+        remove(consumers, c);
+    } else {
+        remove(browsers, c);
     }
 }
 
@@ -52,20 +46,18 @@ void QueueListeners::populate(NotificationSet& set)
 {
     if (consumers.size()) {
         set.consumer = consumers.front();
-        consumers.pop_front();
-        set.consumer->inListeners = false;
+        consumers.erase(consumers.begin());
     } else {
-        // Don't swap the deques, hang on to the memory allocated.
+        // Don't swap the vectors, hang on to the memory allocated.
         set.browsers = browsers;
         browsers.clear();
-        for (Listeners::iterator i = set.browsers.begin(); i != set.browsers.end(); i++)
-            (*i)->inListeners = false;
     }
 }
 
 void QueueListeners::add(Listeners& listeners, Consumer::shared_ptr c)
 {
-    listeners.push_back(c);
+    Listeners::iterator i = std::find(listeners.begin(), listeners.end(), c);
+    if (i == listeners.end()) listeners.push_back(c);
 }
 
 void QueueListeners::remove(Listeners& listeners, Consumer::shared_ptr c)
@@ -81,7 +73,9 @@ void QueueListeners::NotificationSet::notify()
 }
 
 bool QueueListeners::contains(Consumer::shared_ptr c) const {
-    return c->inListeners;
+    return
+        std::find(browsers.begin(), browsers.end(), c) != browsers.end() ||
+        std::find(consumers.begin(), consumers.end(), c) != consumers.end();
 }
 
 void QueueListeners::ListenerSet::notifyAll()

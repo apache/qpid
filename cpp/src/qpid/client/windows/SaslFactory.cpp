@@ -71,7 +71,7 @@ class WindowsSasl : public Sasl
   public:
     WindowsSasl( const std::string &, const std::string &, const std::string &, const std::string &, int, int );
     ~WindowsSasl();
-    bool start(const std::string& mechanisms, std::string& response, const SecuritySettings* externalSettings);
+    std::string start(const std::string& mechanisms, const SecuritySettings* externalSettings);
     std::string step(const std::string& challenge);
     std::string getMechanism();
     std::string getUserId();
@@ -121,8 +121,8 @@ WindowsSasl::~WindowsSasl()
 {
 }
 
-bool WindowsSasl::start(const std::string& mechanisms, std::string& response,
-                        const SecuritySettings* /*externalSettings*/)
+std::string WindowsSasl::start(const std::string& mechanisms,
+                               const SecuritySettings* /*externalSettings*/)
 {
     QPID_LOG(debug, "WindowsSasl::start(" << mechanisms << ")");
 
@@ -142,18 +142,18 @@ bool WindowsSasl::start(const std::string& mechanisms, std::string& response,
     if (!haveAnon && !havePlain)
         throw InternalErrorException(QPID_MSG("Sasl error: no common mechanism"));
 
+    std::string resp = "";
     if (havePlain) {
         mechanism = PLAIN;
-        response = ((char)0) + settings.username + ((char)0) + settings.password;
+        resp = ((char)0) + settings.username + ((char)0) + settings.password;
     }
     else {
         mechanism = ANONYMOUS;
-        response = "";
     }
-    return true;
+    return resp;
 }
 
-std::string WindowsSasl::step(const std::string& /*challenge*/)
+std::string WindowsSasl::step(const std::string& challenge)
 {
     // Shouldn't get this for PLAIN...
     throw InternalErrorException(QPID_MSG("Sasl step error"));
@@ -169,7 +169,7 @@ std::string WindowsSasl::getUserId()
     return std::string(); // TODO - when GSSAPI is supported, return userId for connection.
 }
 
-std::auto_ptr<SecurityLayer> WindowsSasl::getSecurityLayer(uint16_t /*maxFrameSize*/)
+std::auto_ptr<SecurityLayer> WindowsSasl::getSecurityLayer(uint16_t maxFrameSize)
 {
     return std::auto_ptr<SecurityLayer>(0);
 }

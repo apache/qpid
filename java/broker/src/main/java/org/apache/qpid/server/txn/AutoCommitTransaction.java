@@ -50,11 +50,6 @@ public class AutoCommitTransaction implements ServerTransaction
         _transactionLog = transactionLog;
     }
 
-    public long getTransactionStartTime()
-    {
-        return 0L;
-    }
-
     /**
      * Since AutoCommitTransaction have no concept of a long lived transaction, any Actions registered
      * by the caller are executed immediately.

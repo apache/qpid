@@ -34,9 +34,23 @@ public class FailoverBaseCase extends QpidBrokerTestCase
 {
     protected static final Logger _logger = LoggerFactory.getLogger(FailoverBaseCase.class);
 
+    public static int FAILING_VM_PORT = 2;
+    public static int FAILING_PORT = Integer.parseInt(System.getProperty("test.port.alt"));
     public static final long DEFAULT_FAILOVER_TIME = 10000L;
 
     protected int failingPort;
+
+    protected int getFailingPort()
+    {
+        if (_broker.equals(VM))
+        {
+            return FAILING_VM_PORT;
+        }
+        else
+        {
+        	return FAILING_PORT;
+        }
+    }
 
     protected void setUp() throws java.lang.Exception
     {
@@ -68,14 +82,6 @@ public class FailoverBaseCase extends QpidBrokerTestCase
         return _connectionFactory;
     }
 
-    @Override
-    public void stopBroker(int port) throws Exception
-    {
-        if (isBrokerPresent(port))
-        {
-            super.stopBroker(port);
-        }
-    }
 
     public void tearDown() throws Exception
     {

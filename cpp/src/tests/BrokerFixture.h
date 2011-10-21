@@ -22,6 +22,8 @@
  *
  */
 
+#include "SocketProxy.h"
+
 #include "qpid/broker/Broker.h"
 #include "qpid/client/Connection.h"
 #include "qpid/client/ConnectionImpl.h"
@@ -69,15 +71,16 @@ struct  BrokerFixture : private boost::noncopyable {
         brokerThread = qpid::sys::Thread(*broker);
     };
 
-    void shutdownBroker() {
-        if (broker) {
-            broker->shutdown();
-            brokerThread.join();
-            broker = BrokerPtr();
-        }
+    void shutdownBroker()
+    {
+        broker->shutdown();
+        broker = BrokerPtr();
     }
 
-    ~BrokerFixture() {  shutdownBroker(); }
+    ~BrokerFixture() {
+        if (broker) broker->shutdown();
+        brokerThread.join();
+    }
 
     /** Open a connection to the broker. */
     void open(qpid::client::Connection& c) {
@@ -92,6 +95,20 @@ struct LocalConnection : public qpid::client::Connection {
     LocalConnection(uint16_t port) { open("localhost", port); }
     LocalConnection(const qpid::client::ConnectionSettings& s) { open(s); }
     ~LocalConnection() { close(); }
+};
+
+/** A local client connection via a socket proxy. */
+struct ProxyConnection : public qpid::client::Connection {
+    SocketProxy proxy;
+    ProxyConnection(int brokerPort) : proxy(brokerPort) {
+        open("localhost", proxy.getPort());
+    }
+    ProxyConnection(const qpid::client::ConnectionSettings& s) : proxy(s.port) {
+        qpid::client::ConnectionSettings proxySettings(s);
+        proxySettings.port = proxy.getPort();
+        open(proxySettings);
+    }
+    ~ProxyConnection() { close(); }
 };
 
 /** Convenience class to create and open a connection and session
@@ -130,6 +147,7 @@ struct  SessionFixtureT : BrokerFixture, ClientT<ConnectionType,SessionType> {
 };
 
 typedef SessionFixtureT<LocalConnection> SessionFixture;
+typedef SessionFixtureT<ProxyConnection> ProxySessionFixture;
 
 }} // namespace qpid::tests
 

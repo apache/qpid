@@ -21,49 +21,57 @@
 package org.apache.qpid.transport.network.io;
 
 import java.io.IOException;
-import java.net.*;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.Socket;
+import java.net.SocketException;
 import java.nio.ByteBuffer;
 
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLServerSocketFactory;
-
-import org.apache.qpid.protocol.ProtocolEngine;
-import org.apache.qpid.protocol.ProtocolEngineFactory;
-import org.apache.qpid.transport.*;
-import org.apache.qpid.transport.network.IncomingNetworkTransport;
-import org.apache.qpid.transport.network.NetworkConnection;
-import org.apache.qpid.transport.network.OutgoingNetworkTransport;
+import org.apache.qpid.transport.ConnectionSettings;
+import org.apache.qpid.transport.Receiver;
+import org.apache.qpid.transport.Sender;
+import org.apache.qpid.transport.TransportException;
+import org.apache.qpid.transport.network.NetworkTransport;
 import org.apache.qpid.transport.util.Logger;
 
-public class IoNetworkTransport implements OutgoingNetworkTransport, IncomingNetworkTransport
+public class IoNetworkTransport implements NetworkTransport, IoContext
 {
-
-    private static final Logger LOGGER = Logger.get(IoNetworkTransport.class);
-
-    private Socket _socket;
-    private IoNetworkConnection _connection;
-    private long _timeout = 60000;
-    private AcceptingThread _acceptor;
-
-    public NetworkConnection connect(ConnectionSettings settings, Receiver<ByteBuffer> delegate, SSLContext sslContext)
+    static
     {
-        int sendBufferSize = settings.getWriteBufferSize();
-        int receiveBufferSize = settings.getReadBufferSize();
+        org.apache.mina.common.ByteBuffer.setAllocator
+            (new org.apache.mina.common.SimpleByteBufferAllocator());
+        org.apache.mina.common.ByteBuffer.setUseDirectBuffers
+            (Boolean.getBoolean("amqj.enableDirectBuffers"));
+    }
 
+    private static final Logger log = Logger.get(IoNetworkTransport.class);
+
+    private Socket socket;
+    private Sender<ByteBuffer> sender;
+    private IoReceiver receiver;
+    private long timeout = 60000; 
+    private ConnectionSettings settings;    
+    
+    public void init(ConnectionSettings settings)
+    {
         try
         {
-            _socket = new Socket();
-            _socket.setReuseAddress(true);
-            _socket.setTcpNoDelay(settings.isTcpNodelay());
-            _socket.setSendBufferSize(sendBufferSize);
-            _socket.setReceiveBufferSize(receiveBufferSize);
-
-            LOGGER.debug("SO_RCVBUF : %s", _socket.getReceiveBufferSize());
-            LOGGER.debug("SO_SNDBUF : %s", _socket.getSendBufferSize());
-
+            this.settings = settings;
             InetAddress address = InetAddress.getByName(settings.getHost());
+            socket = new Socket();
+            socket.setReuseAddress(true);
+            socket.setTcpNoDelay(settings.isTcpNodelay());
 
-            _socket.connect(new InetSocketAddress(address, settings.getPort()));
+            log.debug("default-SO_RCVBUF : %s", socket.getReceiveBufferSize());
+            log.debug("default-SO_SNDBUF : %s", socket.getSendBufferSize());
+
+            socket.setSendBufferSize(settings.getWriteBufferSize());
+            socket.setReceiveBufferSize(settings.getReadBufferSize());
+
+            log.debug("new-SO_RCVBUF : %s", socket.getReceiveBufferSize());
+            log.debug("new-SO_SNDBUF : %s", socket.getSendBufferSize());
+
+            socket.connect(new InetSocketAddress(address, settings.getPort()));
         }
         catch (SocketException e)
         {
@@ -73,159 +81,36 @@ public class IoNetworkTransport implements OutgoingNetworkTransport, IncomingNet
         {
             throw new TransportException("Error connecting to broker", e);
         }
+    }
 
-        try
-        {
-            _connection = new IoNetworkConnection(_socket, delegate, sendBufferSize, receiveBufferSize, _timeout);
-            _connection.start();
-        }
-        catch(Exception e)
-        {
-            try
-            {
-                _socket.close();
-            }
-            catch(IOException ioe)
-            {
-                //ignored, throw based on original exception
-            }
+    public void receiver(Receiver<ByteBuffer> delegate)
+    {
+        receiver = new IoReceiver(this, delegate,
+                2*settings.getReadBufferSize() , timeout);
+    }
 
-            throw new TransportException("Error creating network connection", e);
-        }
-
-        return _connection;
+    public Sender<ByteBuffer> sender()
+    {
+        return new IoSender(this, 2*settings.getWriteBufferSize(), timeout);
     }
 
     public void close()
     {
-        if(_connection != null)
-        {
-            _connection.close();
-        }
-        if(_acceptor != null)
-        {
-            _acceptor.close();
-        }
+        
     }
 
-    public NetworkConnection getConnection()
+    public Sender<ByteBuffer> getSender()
     {
-        return _connection;
+        return sender;
     }
 
-    public void accept(NetworkTransportConfiguration config, ProtocolEngineFactory factory, SSLContext sslContext)
+    public IoReceiver getReceiver()
     {
-
-        try
-        {
-            _acceptor = new AcceptingThread(config, factory, sslContext);
-
-            _acceptor.start();
-        }
-        catch (IOException e)
-        {
-            throw new TransportException("Unable to start server socket", e);
-        }
-
-
+        return receiver;
     }
 
-    private class AcceptingThread extends Thread
+    public Socket getSocket()
     {
-        private NetworkTransportConfiguration _config;
-        private ProtocolEngineFactory _factory;
-        private SSLContext _sslContent;
-        private ServerSocket _serverSocket;
-
-        private AcceptingThread(NetworkTransportConfiguration config,
-                                ProtocolEngineFactory factory,
-                                SSLContext sslContext)
-                throws IOException
-        {
-            _config = config;
-            _factory = factory;
-            _sslContent = sslContext;
-
-            InetSocketAddress address = new InetSocketAddress(config.getHost(), config.getPort());
-
-            if(sslContext == null)
-            {
-                _serverSocket = new ServerSocket();
-            }
-            else
-            {
-                SSLServerSocketFactory socketFactory = sslContext.getServerSocketFactory();
-                _serverSocket = socketFactory.createServerSocket();
-            }
-
-            _serverSocket.bind(address);
-            _serverSocket.setReuseAddress(true);
-
-
-        }
-
-
-        /**
-            Close the underlying ServerSocket if it has not already been closed.
-         */
-        public void close()
-        {
-            if (!_serverSocket.isClosed())
-            {
-                try
-                {
-                    _serverSocket.close();
-                }
-                catch (IOException e)
-                {
-                    throw new TransportException(e);
-                }
-            }
-        }
-
-        @Override
-        public void run()
-        {
-            try
-            {
-                while (true)
-                {
-                    try
-                    {
-                        Socket socket = _serverSocket.accept();
-                        socket.setTcpNoDelay(_config.getTcpNoDelay());
-
-                        final Integer sendBufferSize = _config.getSendBufferSize();
-                        final Integer receiveBufferSize = _config.getReceiveBufferSize();
-
-                        socket.setSendBufferSize(sendBufferSize);
-                        socket.setReceiveBufferSize(receiveBufferSize);
-
-                        ProtocolEngine engine = _factory.newProtocolEngine();
-
-                        NetworkConnection connection = new IoNetworkConnection(socket, engine, sendBufferSize, receiveBufferSize, _timeout);
-
-
-                        engine.setNetworkConnection(connection, connection.getSender());
-
-                        connection.start();
-
-
-                    }
-                    catch(RuntimeException e)
-                    {
-                        LOGGER.error(e, "Error in Acceptor thread " + _config.getPort());
-                    }
-                }
-            }
-            catch (IOException e)
-            {
-                LOGGER.debug(e, "SocketException - no new connections will be accepted on port "
-                        + _config.getPort());
-            }
-        }
-
-
+        return socket;
     }
-
 }

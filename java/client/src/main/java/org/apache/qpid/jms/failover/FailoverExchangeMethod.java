@@ -32,9 +32,9 @@ import javax.jms.Session;
 
 import org.apache.qpid.client.AMQAnyDestination;
 import org.apache.qpid.client.AMQBrokerDetails;
+import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.jms.BrokerDetails;
-import org.apache.qpid.jms.Connection;
 import org.apache.qpid.jms.ConnectionURL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,7 +58,7 @@ public class FailoverExchangeMethod implements FailoverMethod, MessageListener
     private static final Logger _logger = LoggerFactory.getLogger(FailoverExchangeMethod.class);
    
     /** This is not safe to use until attainConnection is called */
-    private Connection _conn;
+    private AMQConnection _conn;
     
     /** Protects the broker list when modifications happens */
     private Object _brokerListLock = new Object();
@@ -80,7 +80,7 @@ public class FailoverExchangeMethod implements FailoverMethod, MessageListener
     /** Denotes the number of failed attempts **/
     private int _failedAttemps = 0;
     
-    public FailoverExchangeMethod(ConnectionURL connectionDetails, Connection conn)
+    public FailoverExchangeMethod(ConnectionURL connectionDetails, AMQConnection conn)
     {
         _connectionDetails = connectionDetails;
         _originalBrokerDetail = _connectionDetails.getBrokerDetails(0);
@@ -140,6 +140,7 @@ public class FailoverExchangeMethod implements FailoverMethod, MessageListener
                         broker.setHost(tokens[1]);
                         broker.setPort(Integer.parseInt(tokens[2]));
                         broker.setProperties(_originalBrokerDetail.getProperties());
+                        broker.setSSLConfiguration(_originalBrokerDetail.getSSLConfiguration());
                         brokerList.add(broker);
                         
                         if (currentBrokerIP.equals(broker.getHost()) && 

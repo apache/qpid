@@ -21,6 +21,7 @@ package org.apache.qpid.test.unit.basic;
 
 import junit.framework.Assert;
 
+import org.apache.mina.common.ByteBuffer;
 
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQDestination;
@@ -44,7 +45,6 @@ import javax.jms.MessageNotWriteableException;
 import javax.jms.MessageProducer;
 import javax.jms.Session;
 
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;

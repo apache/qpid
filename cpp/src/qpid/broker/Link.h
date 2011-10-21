@@ -10,9 +10,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
+ * 
  *   http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -85,7 +85,6 @@ namespace qpid {
             void destroy();                  // Called when mgmt deletes this link
             void ioThreadProcessing();       // Called on connection's IO thread by request
             bool tryFailover();              // Called during maintenance visit
-            bool hideManagement() const;
 
         public:
             typedef boost::shared_ptr<Link> shared_ptr;
@@ -123,12 +122,12 @@ namespace qpid {
 
             void notifyConnectionForced(const std::string text);
             void setPassive(bool p);
-
+            
             // PersistableConfig:
             void     setPersistenceId(uint64_t id) const;
             uint64_t getPersistenceId() const { return persistenceId; }
             uint32_t encodedSize() const;
-            void     encode(framing::Buffer& buffer) const;
+            void     encode(framing::Buffer& buffer) const; 
             const std::string& getName() const;
 
             static Link::shared_ptr decode(LinkRegistry& links, framing::Buffer& buffer);
@@ -136,7 +135,6 @@ namespace qpid {
             // Manageable entry points
             management::ManagementObject*    GetManagementObject(void) const;
             management::Manageable::status_t ManagementMethod(uint32_t, management::Args&, std::string&);
-
         };
     }
 }

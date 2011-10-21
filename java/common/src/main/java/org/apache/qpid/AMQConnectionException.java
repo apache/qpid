@@ -62,10 +62,9 @@ public class AMQConnectionException extends AMQException
         MethodRegistry reg = MethodRegistry.getMethodRegistry(new ProtocolVersion(major,minor));
         return new AMQFrame(0,
                             reg.createConnectionCloseBody(getErrorCode().getCode(),
-                                                          getMessageAsShortString(),
+                                                          new AMQShortString(getMessage()),
                                                           _classId,
                                                           _methodId));
 
     }
-
 }

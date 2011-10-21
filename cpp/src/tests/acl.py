@@ -26,11 +26,10 @@ from qpid.datatypes import uuid4
 from qpid.testlib import TestBase010
 from qmf.console import Session
 from qpid.datatypes import Message
-import qpid.messaging
 
 class ACLFile:
-    def __init__(self, policy='data_dir/policy.acl'):
-        self.f = open(policy,'w')
+    def __init__(self):
+        self.f = open('data_dir/policy.acl','w');
    
     def write(self,line):
         self.f.write(line)
@@ -51,24 +50,14 @@ class ACLTests(TestBase010):
         acl = self.qmf.getObjects(_class="acl")[0]    
         return acl.reloadACLFile()
 
-    def get_acl_file(self):
-        return ACLFile(self.config.defines.get("policy-file", "data_dir/policy.acl"))
-
     def setUp(self):
-        aclf = self.get_acl_file()
+        aclf = ACLFile()
         aclf.write('acl allow all all\n')
         aclf.close()
         TestBase010.setUp(self)
         self.startQmf()
         self.reload_acl()
-
-    def tearDown(self):
-        aclf = self.get_acl_file()
-        aclf.write('acl allow all all\n')
-        aclf.close()
-        self.reload_acl()
-        TestBase010.tearDown(self)
-
+        
    #=====================================
    # ACL general tests
    #=====================================     
@@ -77,7 +66,7 @@ class ACLTests(TestBase010):
         """
         Test the deny all mode
         """
-        aclf = self.get_acl_file()
+        aclf = ACLFile()
         aclf.write('acl allow anonymous all all\n')
         aclf.write('acl allow bob@QPID create queue\n')
         aclf.write('acl deny all all')
@@ -105,7 +94,7 @@ class ACLTests(TestBase010):
         """
         Test the allow all mode
         """
-        aclf = self.get_acl_file()
+        aclf = ACLFile()
         aclf.write('acl deny bob@QPID bind exchange\n')
         aclf.write('acl allow all all')
         aclf.close()        
@@ -137,7 +126,7 @@ class ACLTests(TestBase010):
         """
         Test empty groups
         """
-        aclf = self.get_acl_file()
+        aclf = ACLFile()
         aclf.write('acl group\n')
         aclf.write('acl group admins bob@QPID joe@QPID\n')
         aclf.write('acl allow all all')
@@ -151,7 +140,7 @@ class ACLTests(TestBase010):
         """
         Test illegal acl formats
         """
-        aclf = self.get_acl_file()
+        aclf = ACLFile()
         aclf.write('acl group admins bob@QPID joe@QPID\n')
         aclf.write('acl allow all all')
         aclf.close()
@@ -165,7 +154,7 @@ class ACLTests(TestBase010):
         Test illegal extension lines
         """
          
-        aclf = self.get_acl_file()
+        aclf = ACLFile()
         aclf.write('group admins bob@QPID \n')
         aclf.write('          \ \n')
         aclf.write('joe@QPID \n')
@@ -183,7 +172,7 @@ class ACLTests(TestBase010):
         """
         Test proper extention lines
         """
-        aclf = self.get_acl_file()
+        aclf = ACLFile()        
         aclf.write('group test1 joe@EXAMPLE.com \\ \n') # should be allowed
         aclf.write('            jack@EXAMPLE.com \\ \n') # should be allowed
         aclf.write('jill@TEST.COM \\ \n') # should be allowed
@@ -200,7 +189,7 @@ class ACLTests(TestBase010):
         Test a user defined without a realm
         Ex. group admin rajith
         """
-        aclf = self.get_acl_file()
+        aclf = ACLFile()        
         aclf.write('group admin bob\n') # shouldn't be allowed
         aclf.write('acl deny admin bind exchange\n')
         aclf.write('acl allow all all')
@@ -215,7 +204,7 @@ class ACLTests(TestBase010):
         Test a user defined without a realm
         Ex. group admin rajith
         """
-        aclf = self.get_acl_file()
+        aclf = ACLFile()        
         aclf.write('group test1 joe@EXAMPLE.com\n') # should be allowed
         aclf.write('group test2 jack_123-jill@EXAMPLE.com\n') # should be allowed
         aclf.write('group test4 host/somemachine.example.com@EXAMPLE.COM\n') # should be allowed
@@ -226,7 +215,7 @@ class ACLTests(TestBase010):
         if (result.text.find("ACL format error",0,len(result.text)) != -1):
             self.fail(result)
 
-        aclf = self.get_acl_file()
+        aclf = ACLFile()        
         aclf.write('group test1 joe$H@EXAMPLE.com\n') # shouldn't be allowed
         aclf.write('acl allow all all')
         aclf.close() 
@@ -244,7 +233,7 @@ class ACLTests(TestBase010):
         Test illegal queue policy
         """
          
-        aclf = self.get_acl_file()
+        aclf = ACLFile()
         aclf.write('acl deny bob@QPID create queue name=q2 exclusive=true policytype=ding\n')
         aclf.write('acl allow all all')
         aclf.close()        
@@ -260,7 +249,7 @@ class ACLTests(TestBase010):
         Test illegal queue policy
         """
          
-        aclf = self.get_acl_file()
+        aclf = ACLFile()
         aclf.write('acl deny bob@QPID create queue name=q2 maxqueuesize=-1\n')
         aclf.write('acl allow all all')
         aclf.close()        
@@ -271,7 +260,7 @@ class ACLTests(TestBase010):
         if (result.text != expected): 
             self.fail(result) 
 
-        aclf = self.get_acl_file()
+        aclf = ACLFile()
         aclf.write('acl deny bob@QPID create queue name=q2 maxqueuesize=9223372036854775808\n')
         aclf.write('acl allow all all')                                 
         aclf.close()        
@@ -288,7 +277,7 @@ class ACLTests(TestBase010):
         Test illegal queue policy
         """
          
-        aclf = self.get_acl_file()
+        aclf = ACLFile()
         aclf.write('acl deny bob@QPID create queue name=q2 maxqueuecount=-1\n')
         aclf.write('acl allow all all')
         aclf.close()        
@@ -299,7 +288,7 @@ class ACLTests(TestBase010):
         if (result.text != expected): 
             self.fail(result) 
 
-        aclf = self.get_acl_file()
+        aclf = ACLFile()
         aclf.write('acl deny bob@QPID create queue name=q2 maxqueuecount=9223372036854775808\n')
         aclf.write('acl allow all all')                                 
         aclf.close()        
@@ -319,7 +308,7 @@ class ACLTests(TestBase010):
         """
         Test cases for queue acl in allow mode
         """
-        aclf = self.get_acl_file()
+        aclf = ACLFile()
         aclf.write('acl deny bob@QPID create queue name=q1 durable=true passive=true\n')
         aclf.write('acl deny bob@QPID create queue name=q2 exclusive=true policytype=ring\n')
         aclf.write('acl deny bob@QPID access queue name=q3\n')
@@ -422,7 +411,7 @@ class ACLTests(TestBase010):
         """
         Test cases for queue acl in deny mode
         """
-        aclf = self.get_acl_file()
+        aclf = ACLFile()
         aclf.write('acl allow bob@QPID create queue name=q1 durable=true passive=true\n')
         aclf.write('acl allow bob@QPID create queue name=q2 exclusive=true policytype=ring\n')
         aclf.write('acl allow bob@QPID access queue name=q3\n')
@@ -545,7 +534,7 @@ class ACLTests(TestBase010):
         """
         Test cases for exchange acl in allow mode
         """
-        aclf = self.get_acl_file()
+        aclf = ACLFile()
         aclf.write('acl deny bob@QPID create exchange name=testEx durable=true passive=true\n')
         aclf.write('acl deny bob@QPID create exchange name=ex1 type=direct\n')
         aclf.write('acl deny bob@QPID access exchange name=myEx queuename=q1 routingkey=rk1.*\n')
@@ -676,7 +665,7 @@ class ACLTests(TestBase010):
         """
         Test cases for exchange acl in deny mode
         """
-        aclf = self.get_acl_file()
+        aclf = ACLFile()
         aclf.write('acl allow bob@QPID create exchange name=myEx durable=true passive=false\n')
         aclf.write('acl allow bob@QPID bind exchange name=amq.topic queuename=bar routingkey=foo.*\n') 
         aclf.write('acl allow bob@QPID unbind exchange name=amq.topic queuename=bar routingkey=foo.*\n')
@@ -783,52 +772,6 @@ class ACLTests(TestBase010):
             if (403 == e.args[0].error_code):
                 self.fail("ACL should allow exchange delete request for myEx");
 
-    def test_create_and_delete_exchange_via_qmf(self):
-        """
-        Test acl is enforced when creating/deleting via QMF
-        methods. Note that in order to be able to send the QMF methods
-        and receive the responses a significant amount of permissions
-        need to be enabled (TODO: can the set below be narrowed down
-        at all?)
-        """
-        aclf = self.get_acl_file()
-        aclf.write('acl allow bob@QPID create exchange\n')
-        aclf.write('acl allow admin@QPID delete exchange\n')
-        aclf.write('acl allow all access exchange\n')
-        aclf.write('acl allow all bind exchange\n')
-        aclf.write('acl allow all create queue\n')
-        aclf.write('acl allow all access queue\n')
-        aclf.write('acl allow all delete queue\n')
-        aclf.write('acl allow all consume queue\n')
-        aclf.write('acl allow all access method\n')
-        aclf.write('acl deny all all')
-        aclf.close()
-
-        result = self.reload_acl()
-        if (result.text.find("format error",0,len(result.text)) != -1):
-            self.fail(result)
-
-        bob = BrokerAdmin(self.config.broker, "bob", "bob")
-        bob.create_exchange("my-exchange") #should pass
-        #cleanup by deleting exchange
-        try:
-            bob.delete_exchange("my-exchange") #should fail
-            self.fail("ACL should deny exchange delete request for my-exchange");
-        except Exception, e:
-            self.assertEqual(7,e.args[0]["error_code"])
-            assert e.args[0]["error_text"].find("unauthorized-access") == 0
-        admin = BrokerAdmin(self.config.broker, "admin", "admin")
-        admin.delete_exchange("my-exchange") #should pass
-
-        anonymous = BrokerAdmin(self.config.broker)
-        try:
-            anonymous.create_exchange("another-exchange") #should fail
-            self.fail("ACL should deny exchange create request for another-exchange");
-        except Exception, e:
-            self.assertEqual(7,e.args[0]["error_code"])
-            assert e.args[0]["error_text"].find("unauthorized-access") == 0
-
-
    #=====================================
    # ACL consume tests
    #=====================================
@@ -837,7 +780,7 @@ class ACLTests(TestBase010):
         """
         Test cases for consume in allow mode
         """
-        aclf = self.get_acl_file()
+        aclf = ACLFile()
         aclf.write('acl deny bob@QPID consume queue name=q1\n')
         aclf.write('acl deny bob@QPID consume queue name=q2\n')                
         aclf.write('acl allow all all')
@@ -883,7 +826,7 @@ class ACLTests(TestBase010):
         """
         Test cases for consume in allow mode
         """
-        aclf = self.get_acl_file()
+        aclf = ACLFile()
         aclf.write('acl allow bob@QPID consume queue name=q1\n')
         aclf.write('acl allow bob@QPID consume queue name=q2\n')
         aclf.write('acl allow bob@QPID create queue\n')                                
@@ -929,7 +872,7 @@ class ACLTests(TestBase010):
         """
         Test various publish acl
         """
-        aclf = self.get_acl_file()
+        aclf = ACLFile()
         aclf.write('acl deny bob@QPID publish exchange name=amq.direct routingkey=rk1\n')
         aclf.write('acl deny bob@QPID publish exchange name=amq.topic\n')
         aclf.write('acl deny bob@QPID publish exchange name=myEx routingkey=rk2\n')                
@@ -978,7 +921,7 @@ class ACLTests(TestBase010):
         """
         Test various publish acl
         """
-        aclf = self.get_acl_file()
+        aclf = ACLFile()
         aclf.write('acl allow bob@QPID publish exchange name=amq.direct routingkey=rk1\n')
         aclf.write('acl allow bob@QPID publish exchange name=amq.topic\n')
         aclf.write('acl allow bob@QPID publish exchange name=myEx routingkey=rk2\n')
@@ -1029,113 +972,3 @@ class ACLTests(TestBase010):
         except qpid.session.SessionException, e:
             if (403 == e.args[0].error_code):
                 self.fail("ACL should allow message transfer to exchange amq.direct with routing key rk1");
-
-   #=====================================
-   # ACL broker configuration tests
-   #=====================================
-
-    def test_broker_timestamp_config(self):
-        """
-        Test ACL control of the broker timestamp configuration
-        """
-        aclf = self.get_acl_file()
-        # enable lots of stuff to allow QMF to work
-        aclf.write('acl allow all create exchange\n')
-        aclf.write('acl allow all access exchange\n')
-        aclf.write('acl allow all bind exchange\n')
-        aclf.write('acl allow all publish exchange\n')
-        aclf.write('acl allow all create queue\n')
-        aclf.write('acl allow all access queue\n')
-        aclf.write('acl allow all delete queue\n')
-        aclf.write('acl allow all consume queue\n')
-        aclf.write('acl allow all access method\n')
-        # this should let bob access the timestamp configuration
-        aclf.write('acl allow bob@QPID access broker\n')
-        aclf.write('acl allow admin@QPID all all\n')
-        aclf.write('acl deny all all')
-        aclf.close()
-
-        result = self.reload_acl()
-        if (result.text.find("format error",0,len(result.text)) != -1):
-            self.fail(result)
-
-        ts = None
-        bob = BrokerAdmin(self.config.broker, "bob", "bob")
-        ts = bob.get_timestamp_cfg() #should work
-        bob.set_timestamp_cfg(ts);   #should work
-
-        obo = BrokerAdmin(self.config.broker, "obo", "obo")
-        try:
-            ts = obo.get_timestamp_cfg() #should fail
-            failed = False
-        except Exception, e:
-            failed = True
-            self.assertEqual(7,e.args[0]["error_code"])
-            assert e.args[0]["error_text"].find("unauthorized-access") == 0
-        assert(failed)
-
-        try:
-            obo.set_timestamp_cfg(ts) #should fail
-            failed = False
-        except Exception, e:
-            failed = True
-            self.assertEqual(7,e.args[0]["error_code"])
-            assert e.args[0]["error_text"].find("unauthorized-access") == 0
-        assert(failed)
-
-        admin = BrokerAdmin(self.config.broker, "admin", "admin")
-        ts = admin.get_timestamp_cfg() #should pass
-        admin.set_timestamp_cfg(ts) #should pass
-
-
-class BrokerAdmin:
-    def __init__(self, broker, username=None, password=None):
-        self.connection = qpid.messaging.Connection(broker)
-        if username:
-            self.connection.username = username
-            self.connection.password = password
-            self.connection.sasl_mechanisms = "PLAIN"
-        self.connection.open()
-        self.session = self.connection.session()
-        self.sender = self.session.sender("qmf.default.direct/broker")
-        self.reply_to = "responses-#; {create:always}"
-        self.receiver = self.session.receiver(self.reply_to)
-
-    def invoke(self, method, arguments):
-        content = {
-            "_object_id": {"_object_name": "org.apache.qpid.broker:broker:amqp-broker"},
-            "_method_name": method,
-            "_arguments": arguments
-            }
-        request = qpid.messaging.Message(reply_to=self.reply_to, content=content)
-        request.properties["x-amqp-0-10.app-id"] = "qmf2"
-        request.properties["qmf.opcode"] = "_method_request"
-        self.sender.send(request)
-        response = self.receiver.fetch()
-        self.session.acknowledge()
-        if response.properties['x-amqp-0-10.app-id'] == 'qmf2':
-            if response.properties['qmf.opcode'] == '_method_response':
-                return response.content['_arguments']
-            elif response.properties['qmf.opcode'] == '_exception':
-                raise Exception(response.content['_values'])
-            else: raise Exception("Invalid response received, unexpected opcode: %s" % response.properties['qmf.opcode'])
-        else: raise Exception("Invalid response received, not a qmfv2 method: %s" % response.properties['x-amqp-0-10.app-id'])
-    def create_exchange(self, name, exchange_type=None, options={}):
-        properties = options
-        if exchange_type: properties["exchange_type"] = exchange_type
-        self.invoke("create", {"type": "exchange", "name":name, "properties":properties})
-
-    def create_queue(self, name, properties={}):
-        self.invoke("create", {"type": "queue", "name":name, "properties":properties})
-
-    def delete_exchange(self, name):
-        self.invoke("delete", {"type": "exchange", "name":name})
-
-    def delete_queue(self, name):
-        self.invoke("delete", {"type": "queue", "name":name})
-
-    def get_timestamp_cfg(self):
-        return self.invoke("getTimestampConfig", {})
-
-    def set_timestamp_cfg(self, receive):
-        return self.invoke("getTimestampConfig", {"receive":receive})

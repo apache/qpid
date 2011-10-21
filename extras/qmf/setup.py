@@ -20,10 +20,10 @@
 from distutils.core import setup
 
 setup(name="qpid-qmf",
-      version="0.13",
+      version="0.9",
       author="Apache Qpid",
       author_email="dev@qpid.apache.org",
-      packages=["qmf"],
+      packages=["qmf", "qmf2", "qmf2.tests"],
       package_dir={"": "src/py"},
       url="http://qpid.apache.org/",
       license="Apache Software License",

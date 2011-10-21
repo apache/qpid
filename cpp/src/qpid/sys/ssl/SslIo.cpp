@@ -117,7 +117,7 @@ void SslAcceptor::readable(DispatchHandle& h) {
 SslConnector::SslConnector(const SslSocket& s,
                                  Poller::shared_ptr poller,
                                  std::string hostname,
-                                 std::string port,
+                                 uint16_t port,
                                  ConnectedCallback connCb,
                                  FailedCallback failCb) :
     DispatchHandle(s,

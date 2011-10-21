@@ -99,6 +99,7 @@ namespace qmf {
         uint32_t capability;
         qpid::messaging::Sender sender;
         qpid::types::Variant::Map attributes;
+        uint32_t nextCorrelator;
         std::map<uint32_t, boost::shared_ptr<SyncContext> > contextMap;
         boost::shared_ptr<SchemaCache> schemaCache;
         mutable std::set<std::string> packageSet;

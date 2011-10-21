@@ -33,24 +33,24 @@ namespace console {
      *
      * \ingroup qmfconsoleapi
      */
-    class QPID_CONSOLE_CLASS_EXTERN ClassKey {
+    class QPID_CONSOLE_EXTERN ClassKey {
     public:
-        QPID_CONSOLE_EXTERN static const int HASH_SIZE = 16;
+        static const int HASH_SIZE = 16;
 
-        QPID_CONSOLE_EXTERN ClassKey(const std::string& package, const std::string& name, const uint8_t* hash);
+        ClassKey(const std::string& package, const std::string& name, const uint8_t* hash);
 
-        const QPID_CONSOLE_EXTERN std::string& getPackageName() const { return package; }
-        const QPID_CONSOLE_EXTERN std::string& getClassName() const { return name; }
-        const QPID_CONSOLE_EXTERN uint8_t* getHash() const { return hash; }
-        QPID_CONSOLE_EXTERN std::string getHashString() const;
-        QPID_CONSOLE_EXTERN std::string str() const;
-        QPID_CONSOLE_EXTERN bool operator==(const ClassKey& other) const;
-        QPID_CONSOLE_EXTERN bool operator!=(const ClassKey& other) const;
-        QPID_CONSOLE_EXTERN bool operator<(const ClassKey& other) const;
-        QPID_CONSOLE_EXTERN bool operator>(const ClassKey& other) const;
-        QPID_CONSOLE_EXTERN bool operator<=(const ClassKey& other) const;
-        QPID_CONSOLE_EXTERN bool operator>=(const ClassKey& other) const;
-        QPID_CONSOLE_EXTERN void encode(framing::Buffer& buffer) const;
+        const std::string& getPackageName() const { return package; }
+        const std::string& getClassName() const { return name; }
+        const uint8_t* getHash() const { return hash; }
+        std::string getHashString() const;
+        std::string str() const;
+        bool operator==(const ClassKey& other) const;
+        bool operator!=(const ClassKey& other) const;
+        bool operator<(const ClassKey& other) const;
+        bool operator>(const ClassKey& other) const;
+        bool operator<=(const ClassKey& other) const;
+        bool operator>=(const ClassKey& other) const;
+        void encode(framing::Buffer& buffer) const;
 
     private:
         std::string package;

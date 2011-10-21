@@ -694,8 +694,7 @@ public class QMFService implements ConfigStore.ConfigEventListener, Closeable
         public BrokerSchema.BrokerClass.QueueMoveMessagesMethodResponseCommand queueMoveMessages(final BrokerSchema.BrokerClass.QueueMoveMessagesMethodResponseCommandFactory factory,
                                                                                                  final String srcQueue,
                                                                                                  final String destQueue,
-                                                                                                 final Long qty,
-                                                                                                 final Map filter)  // TODO: move based on group identifier
+                                                                                                 final Long qty)
         {
             // TODO
             return factory.createResponseCommand(CompletionCode.NOT_IMPLEMENTED);
@@ -710,46 +709,6 @@ public class QMFService implements ConfigStore.ConfigEventListener, Closeable
         public BrokerSchema.BrokerClass.SetLogLevelMethodResponseCommand setLogLevel(final BrokerSchema.BrokerClass.SetLogLevelMethodResponseCommandFactory factory, String level)
         {
             // TODO: The Java broker has numerous loggers, so we can't really implement this method properly.
-            return factory.createResponseCommand(CompletionCode.NOT_IMPLEMENTED);
-        }
-
-        public BrokerSchema.BrokerClass.GetTimestampConfigMethodResponseCommand getTimestampConfig(final BrokerSchema.BrokerClass.GetTimestampConfigMethodResponseCommandFactory factory)
-        {
-            // TODO: timestamp support
-            return factory.createResponseCommand(CompletionCode.NOT_IMPLEMENTED);
-        }
-
-        public BrokerSchema.BrokerClass.SetTimestampConfigMethodResponseCommand setTimestampConfig(final BrokerSchema.BrokerClass.SetTimestampConfigMethodResponseCommandFactory factory,
-                                                                                                   final java.lang.Boolean receive)
-        {
-            // TODO: timestamp support
-            return factory.createResponseCommand(CompletionCode.NOT_IMPLEMENTED);
-        }
-
-        public BrokerSchema.BrokerClass.CreateMethodResponseCommand create(final BrokerSchema.BrokerClass.CreateMethodResponseCommandFactory factory,
-                                                                           final String type,
-                                                                           final String name,
-                                                                           final Map properties,
-                                                                           final java.lang.Boolean lenient)
-        {
-            //TODO:
-            return factory.createResponseCommand(CompletionCode.NOT_IMPLEMENTED);
-        }
-
-        public BrokerSchema.BrokerClass.DeleteMethodResponseCommand delete(final BrokerSchema.BrokerClass.DeleteMethodResponseCommandFactory factory,
-                                                                           final String type,
-                                                                           final String name,
-                                                                           final Map options)
-        {
-            //TODO:
-            return factory.createResponseCommand(CompletionCode.NOT_IMPLEMENTED);
-        }
-
-        public BrokerSchema.BrokerClass.QueryMethodResponseCommand query(final BrokerSchema.BrokerClass.QueryMethodResponseCommandFactory factory,
-                                                                         final String type,
-                                                                         final String name)
-        {
-            //TODO:
             return factory.createResponseCommand(CompletionCode.NOT_IMPLEMENTED);
         }
 
@@ -1113,19 +1072,8 @@ public class QMFService implements ConfigStore.ConfigEventListener, Closeable
             return 0l;
         }
 
-        public Boolean getFlowStopped()
-        {
-            return Boolean.FALSE;
-        }
-
-        public Long getFlowStoppedCount()
-        {
-            return 0L;
-        }
-
         public BrokerSchema.QueueClass.PurgeMethodResponseCommand purge(final BrokerSchema.QueueClass.PurgeMethodResponseCommandFactory factory,
-                                                                        final Long request,
-                                                                        final Map filter)   // TODO: support for purge-by-group-identifier
+                                                                        final Long request)
         {
             try
             {
@@ -1141,8 +1089,7 @@ public class QMFService implements ConfigStore.ConfigEventListener, Closeable
         public BrokerSchema.QueueClass.RerouteMethodResponseCommand reroute(final BrokerSchema.QueueClass.RerouteMethodResponseCommandFactory factory, 
                                                                             final Long request, 
                                                                             final Boolean useAltExchange, 
-                                                                            final String exchange,
-                                                                            final Map filter)   // TODO: support for re-route-by-group-identifier
+                                                                            final String exchange)
         {
             //TODO
             return factory.createResponseCommand(CompletionCode.NOT_IMPLEMENTED);
@@ -1334,23 +1281,6 @@ public class QMFService implements ConfigStore.ConfigEventListener, Closeable
         public Boolean getShadow()
         {
             return _obj.isShadow();
-        }
-        
-        public Boolean getUserProxyAuth()
-        {
-            // TODO
-            return false;
-        }
-
-        public String getSaslMechanism()
-        {
-            // TODO
-            return null;
-        }
-        public Integer getSaslSsf()
-        {
-            // TODO
-            return 0;
         }
     }
 

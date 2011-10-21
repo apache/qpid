@@ -74,9 +74,11 @@ class UpdateDataExchange : public broker::Exchange
     void updateManagementAgent(management::ManagementAgent* agent);
 
   private:
+    MemberId clusterId;
     std::string managementAgents;
     std::string managementSchemas;
     std::string managementDeletedObjects;
+  friend std::ostream& operator<<(std::ostream&, const UpdateDataExchange&);
 };
 
 }} // namespace qpid::cluster

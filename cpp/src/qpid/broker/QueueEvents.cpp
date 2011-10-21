@@ -129,10 +129,6 @@ class EventGenerator : public QueueObserver
     {
         if (!enqueueOnly) manager.dequeued(m);
     }
-
-    void acquired(const QueuedMessage&) {};
-    void requeued(const QueuedMessage&) {};
-
   private:
     QueueEvents& manager;
     const bool enqueueOnly;

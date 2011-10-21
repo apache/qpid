@@ -96,7 +96,7 @@ MACRO (add_msvc_version_full verProject verProjectType verProjectFileExt verFN1 
         inherit_value ("winver_${verProject}_InternalName"         "${verProject}")
         inherit_value ("winver_${verProject}_OriginalFilename"     "${verProject}.${verProjectFileExt}")
         inherit_value ("winver_${verProject}_ProductName"          "${winver_DESCRIPTION_SUMMARY}")
-
+        
         # Create strings to be substituted into the template file
         set ("winverFileVersionBinary"     "${winver_${verProject}_FileVersionBinary}")
         set ("winverProductVersionBinary"  "${winver_${verProject}_ProductVersionBinary}")
@@ -126,7 +126,7 @@ ENDMACRO (add_msvc_version_full)
 #
 MACRO (add_msvc_version verProject verProjectType verProjectFileExt)
     if (MSVC)
-        add_msvc_version_full (${verProject}
+        add_msvc_version_full (${verProject} 
                                ${verProjectType}
                                ${verProjectFileExt}
                                ${winver_FILE_VERSION_N1}
@@ -312,6 +312,10 @@ endif (NOT Boost_PROGRAM_OPTIONS_LIBRARY)
 if (NOT Boost_FILESYSTEM_LIBRARY)
   set(Boost_FILESYSTEM_LIBRARY boost_filesystem)
 endif (NOT Boost_FILESYSTEM_LIBRARY)
+
+if (NOT Boost_SYSTEM_LIBRARY)
+  set(Boost_SYSTEM_LIBRARY boost_system)
+endif (NOT Boost_SYSTEM_LIBRARY)
 
 if (NOT Boost_UNIT_TEST_FRAMEWORK_LIBRARY)
   set(Boost_UNIT_TEST_FRAMEWORK_LIBRARY boost_unit_test_framework)
@@ -580,15 +584,6 @@ include (ssl.cmake)
 check_symbol_exists (LOG_AUTHPRIV "sys/syslog.h" HAVE_LOG_AUTHPRIV)
 check_symbol_exists (LOG_FTP "sys/syslog.h" HAVE_LOG_FTP)
 
-# Allow MSVC user to select 'WinXP-SP3/Windows Server 2003' as build target version
-set (win32_winnt_default OFF)
-if (CMAKE_SYSTEM_NAME STREQUAL Windows)
-    if (MSVC)
-        set (win32_winnt_default ON)
-    endif (MSVC)
-endif (CMAKE_SYSTEM_NAME STREQUAL Windows)
-option(SET_WIN32_WINNT "In Windows-MSVC build: define _WIN32_WINNT=0x0502 to select target version: Windows XP with SP3" ${win32_winnt_default})
-
 if (CMAKE_SYSTEM_NAME STREQUAL Windows)
   if (MSVC)
     add_definitions(
@@ -598,11 +593,10 @@ if (CMAKE_SYSTEM_NAME STREQUAL Windows)
       /wd4244
       /wd4800
       /wd4355
-      /wd4267
     )
-    if (SET_WIN32_WINNT)
-        add_definitions(/D "_WIN32_WINNT=0x0502")
-    endif (SET_WIN32_WINNT)
+    if (MSVC80)
+      add_definitions(/D "_WIN32_WINNT=0x0501")
+    endif (MSVC80)
 
     # set the RelWithDebInfo compile/link switches to equal Release
     set (CMAKE_CXX_FLAGS_RELWITHDEBINFO "/MD /O2 /Ob2 /D NDEBUG")
@@ -634,7 +628,6 @@ if (CMAKE_SYSTEM_NAME STREQUAL Windows)
     qpid/sys/windows/LockFile.cpp
     qpid/sys/windows/PipeHandle.cpp
     qpid/sys/windows/PollableCondition.cpp
-    qpid/sys/windows/SCM.cpp
     qpid/sys/windows/Shlib.cpp
     qpid/sys/windows/Socket.cpp
     qpid/sys/windows/SocketAddress.cpp
@@ -647,7 +640,8 @@ if (CMAKE_SYSTEM_NAME STREQUAL Windows)
   )
 
   set (qpidcommon_platform_LIBS
-    ${Boost_THREAD_LIBRARY} ${windows_ssl_libs} ${Boost_PROGRAM_OPTIONS_LIBRARY} ${Boost_DATE_TIME_LIBRARY} ${Boost_FILESYSTEM_LIBRARY} ${Boost_SYSTEM_LIBRARY} ws2_32  )
+    ${windows_ssl_libs} ws2_32
+  )
   set (qpidbroker_platform_SOURCES
     qpid/broker/windows/BrokerDefaults.cpp
     qpid/broker/windows/SaslAuthenticator.cpp
@@ -666,8 +660,9 @@ if (CMAKE_SYSTEM_NAME STREQUAL Windows)
 
   set (qpidd_platform_SOURCES
     windows/QpiddBroker.cpp
+    windows/SCM.cpp
   )
-
+  
   set (qpidmessaging_platform_SOURCES
      qpid/messaging/HandleInstantiator.cpp
   )
@@ -925,6 +920,8 @@ set (qpidmessaging_SOURCES
      qpid/client/amqp0_10/SessionImpl.cpp
      qpid/client/amqp0_10/SenderImpl.h
      qpid/client/amqp0_10/SenderImpl.cpp
+     qpid/client/amqp0_10/SimpleUrlParser.h
+     qpid/client/amqp0_10/SimpleUrlParser.cpp
 )
 add_msvc_version (qpidmessaging library dll)
 
@@ -946,7 +943,7 @@ if (NOT QPID_GENERATED_HEADERS_IN_SOURCE)
 endif (NOT QPID_GENERATED_HEADERS_IN_SOURCE)
 
 
-if (MSVC)
+if (WIN32)
     # Install the DtcPlugin project and call it qpidxarm.
     set(AMQP_WCF_DIR ${qpid-cpp_SOURCE_DIR}/../wcf)
     set(qpidxarm_SOURCES ${AMQP_WCF_DIR}/src/Apache/Qpid/DtcPlugin/DtcPlugin.cpp)
@@ -959,7 +956,7 @@ if (MSVC)
                  COMPONENT ${QPID_COMPONENT_CLIENT})
         install_pdb (qpidxarm ${QPID_COMPONENT_CLIENT})
     endif (EXISTS ${qpidxarm_SOURCES})
-endif (MSVC)
+endif (WIN32)
 
 set (qpidbroker_SOURCES
      ${mgen_broker_cpp}
@@ -977,8 +974,6 @@ set (qpidbroker_SOURCES
      qpid/broker/Queue.cpp
      qpid/broker/QueueCleaner.cpp
      qpid/broker/QueueListeners.cpp
-     qpid/broker/FifoDistributor.cpp
-     qpid/broker/MessageGroupManager.cpp
      qpid/broker/PersistableMessage.cpp
      qpid/broker/Bridge.cpp
      qpid/broker/Connection.cpp
@@ -995,6 +990,7 @@ set (qpidbroker_SOURCES
      qpid/broker/ExchangeRegistry.cpp
      qpid/broker/FanOutExchange.cpp
      qpid/broker/HeadersExchange.cpp
+     qpid/broker/IncompleteMessageList.cpp
      qpid/broker/Link.cpp
      qpid/broker/LinkRegistry.cpp
      qpid/broker/Message.cpp
@@ -1007,7 +1003,7 @@ set (qpidbroker_SOURCES
      qpid/broker/QueueEvents.cpp
      qpid/broker/QueuePolicy.cpp
      qpid/broker/QueueRegistry.cpp
-     qpid/broker/QueueFlowLimit.cpp
+     qpid/broker/RateTracker.cpp
      qpid/broker/RecoveryManagerImpl.cpp
      qpid/broker/RecoveredEnqueue.cpp
      qpid/broker/RecoveredDequeue.cpp
@@ -1073,15 +1069,13 @@ endif (CPACK_GENERATOR STREQUAL "NSIS")
 #  REVISION => Version of underlying implementation.
 #              Bump if implementation changes but API/ABI doesn't
 #  AGE      => Number of API/ABI versions this is backward compatible with
-set (qmf_version 2.0.0)
-set (qmf2_version 1.0.0)
+set (qmf_version 1.0.0)
 set (qmfengine_version 1.0.0)
 
 set (qmf_SOURCES
     qpid/agent/ManagementAgentImpl.cpp
     qpid/agent/ManagementAgentImpl.h
     )
-
 add_msvc_version (qmf library dll)
 add_library (qmf SHARED ${qmf_SOURCES})
 target_link_libraries (qmf qpidclient)
@@ -1091,88 +1085,6 @@ install (TARGETS qmf OPTIONAL
          DESTINATION ${QPID_INSTALL_LIBDIR}
          COMPONENT ${QPID_COMPONENT_QMF})
 install_pdb (qmf ${QPID_COMPONENT_QMF})
-
-if(NOT WIN32)
-    set (qmf2_HEADERS
-        ../include/qmf/AgentEvent.h
-        ../include/qmf/Agent.h
-        ../include/qmf/AgentSession.h
-        ../include/qmf/ConsoleEvent.h
-        ../include/qmf/ConsoleSession.h
-        ../include/qmf/DataAddr.h
-        ../include/qmf/Data.h
-        ../include/qmf/exceptions.h
-        ../include/qmf/Handle.h
-        ../include/qmf/ImportExport.h
-        ../include/qmf/posix/EventNotifier.h
-        ../include/qmf/Query.h
-        ../include/qmf/Schema.h
-        ../include/qmf/SchemaId.h
-        ../include/qmf/SchemaMethod.h
-        ../include/qmf/SchemaProperty.h
-        ../include/qmf/SchemaTypes.h
-        ../include/qmf/Subscription.h
-        )
-
-    set (qmf2_SOURCES
-        ${qmf2_HEADERS}
-        qmf/agentCapability.h
-        qmf/Agent.cpp
-        qmf/AgentEvent.cpp
-        qmf/AgentEventImpl.h
-        qmf/AgentImpl.h
-        qmf/AgentSession.cpp
-        qmf/AgentSubscription.cpp
-        qmf/AgentSubscription.h
-        qmf/ConsoleEvent.cpp
-        qmf/ConsoleEventImpl.h
-        qmf/ConsoleSession.cpp
-        qmf/ConsoleSessionImpl.h
-        qmf/constants.cpp
-        qmf/constants.h
-        qmf/DataAddr.cpp
-        qmf/DataAddrImpl.h
-        qmf/Data.cpp
-        qmf/DataImpl.h
-        qmf/EventNotifierImpl.h
-        qmf/EventNotifierImpl.cpp
-        qmf/PosixEventNotifier.cpp
-        qmf/PosixEventNotifierImpl.cpp
-        qmf/exceptions.cpp
-        qmf/Expression.cpp
-        qmf/Expression.h
-        qmf/Hash.cpp
-        qmf/Hash.h
-        qmf/PrivateImplRef.h
-        qmf/Query.cpp
-        qmf/QueryImpl.h
-        qmf/Schema.cpp
-        qmf/SchemaCache.cpp
-        qmf/SchemaCache.h
-        qmf/SchemaId.cpp
-        qmf/SchemaIdImpl.h
-        qmf/SchemaImpl.h
-        qmf/SchemaMethod.cpp
-        qmf/SchemaMethodImpl.h
-        qmf/SchemaProperty.cpp
-        qmf/SchemaPropertyImpl.h
-        qmf/Subscription.cpp
-        qmf/SubscriptionImpl.h
-        )
-
-    add_msvc_version (qmf2 library dll)
-    add_library (qmf2 SHARED ${qmf2_SOURCES})
-    target_link_libraries (qmf2 qpidmessaging qpidtypes qpidclient qpidcommon)
-    set_target_properties (qmf2 PROPERTIES
-                        VERSION ${qmf2_version})
-    install (TARGETS qmf2 OPTIONAL
-            DESTINATION ${QPID_INSTALL_LIBDIR}
-            COMPONENT ${QPID_COMPONENT_QMF})
-    install (FILES ${qmf2_HEADERS}
-            DESTINATION ${QPID_INSTALL_INCLUDEDIR}/qmf
-            COMPONENT ${QPID_COMPONENT_QMF})
-    install_pdb (qmf2 ${QPID_COMPONENT_QMF})
-endif (NOT WIN32)
 
 set (qmfengine_SOURCES
      qmf/engine/Agent.cpp

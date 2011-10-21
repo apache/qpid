@@ -21,10 +21,10 @@
 package org.apache.qpid.test.unit.jndi;
 
 import junit.framework.TestCase;
-
 import org.apache.qpid.client.AMQConnectionFactory;
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.jms.ConnectionURL;
+import org.apache.qpid.url.URLSyntaxException;
 
 public class ConnectionFactoryTest extends TestCase
 {
@@ -34,9 +34,21 @@ public class ConnectionFactoryTest extends TestCase
     public static final String URL = "amqp://guest:guest@clientID/test?brokerlist='tcp://localhost:5672'";
     public static final String URL_STAR_PWD = "amqp://guest:********@clientID/test?brokerlist='tcp://localhost:5672'";
 
-    public void testConnectionURLStringMasksPassword() throws Exception
+    public void testConnectionURLString()
     {
-        AMQConnectionFactory factory = new AMQConnectionFactory(URL);
+        AMQConnectionFactory factory = new AMQConnectionFactory();
+
+        assertNull("ConnectionURL should have no value at start",
+                   factory.getConnectionURL());
+
+        try
+        {
+            factory.setConnectionURLString(URL);
+        }
+        catch (URLSyntaxException e)
+        {
+            fail(e.getMessage());
+        }
 
         //URL will be returned with the password field swapped for '********'
         assertEquals("Connection URL not correctly set", URL_STAR_PWD, factory.getConnectionURLString());

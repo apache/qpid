@@ -50,25 +50,25 @@ public class QueueSenderAdapter implements QueueSender
 
     public void send(Message msg) throws JMSException
     {
-        checkQueuePreConditions(_queue);
+        checkPreConditions();
         _delegate.send(msg);
     }
 
     public void send(Queue queue, Message msg) throws JMSException
     {
-        checkQueuePreConditions(queue);
+        checkPreConditions(queue);
         _delegate.send(queue, msg);
     }
 
     public void publish(Message msg, int deliveryMode, int priority, long timeToLive) throws JMSException
     {
-        checkQueuePreConditions(_queue);
+        checkPreConditions();
         _delegate.send(msg, deliveryMode, priority, timeToLive);
     }
 
     public void send(Queue queue, Message msg, int deliveryMode, int priority, long timeToLive) throws JMSException
     {
-        checkQueuePreConditions(queue);
+        checkPreConditions(queue);
         _delegate.send(queue, msg, deliveryMode, priority, timeToLive);
     }
 
@@ -122,19 +122,19 @@ public class QueueSenderAdapter implements QueueSender
 
     public void send(Destination dest, Message msg) throws JMSException
     {
-        checkQueuePreConditions((Queue) dest);
+        checkPreConditions((Queue) dest);
         _delegate.send(dest, msg);
     }
 
     public void send(Message msg, int deliveryMode, int priority, long timeToLive) throws JMSException
     {
-        checkQueuePreConditions(_queue);
+        checkPreConditions();
         _delegate.send(msg, deliveryMode, priority, timeToLive);
     }
 
     public void send(Destination dest, Message msg, int deliveryMode, int priority, long timeToLive) throws JMSException
     {
-        checkQueuePreConditions((Queue) dest);
+        checkPreConditions((Queue) dest);
         _delegate.send(dest, msg, deliveryMode, priority, timeToLive);
     }
 
@@ -170,6 +170,11 @@ public class QueueSenderAdapter implements QueueSender
 
     private void checkPreConditions() throws JMSException
     {
+        checkPreConditions(_queue);
+    }
+
+    private void checkPreConditions(Queue queue) throws JMSException
+    {
         if (closed)
         {
             throw new javax.jms.IllegalStateException("Publisher is closed");
@@ -181,43 +186,39 @@ public class QueueSenderAdapter implements QueueSender
         {
             throw new javax.jms.IllegalStateException("Invalid Session");
         }
-    }
 
-    private void checkQueuePreConditions(Queue queue) throws JMSException
-    {
-       checkPreConditions() ;
-       
-       if (queue == null)
-       {
-          throw new UnsupportedOperationException("Queue is null.");
-       }
-       
-       if (!(queue instanceof AMQDestination))
-       {
-           throw new InvalidDestinationException("Queue: " + queue + " is not a valid Qpid queue");
-       }
-  
-       AMQDestination destination = (AMQDestination) queue;
-       if (!destination.isCheckedForQueueBinding() && checkQueueBeforePublish())
-       {
-           if (_delegate.getSession().isStrictAMQP())
-           {
-               _delegate._logger.warn("AMQP does not support destination validation before publish, ");
-               destination.setCheckedForQueueBinding(true);
-           }
-           else
-           {
-               if (_delegate.isBound(destination))
-               {
-                   destination.setCheckedForQueueBinding(true);
-               }
-               else
-               {
-                   throw new InvalidDestinationException("Queue: " + queue
-                       + " is not a valid destination (no bindings on server");
-               }
-           }
-       }
+        if (queue == null)
+        {
+            throw new UnsupportedOperationException("Queue is null.");
+        }
+
+        if (!(queue instanceof AMQDestination))
+        {
+            throw new InvalidDestinationException("Queue: " + queue + " is not a valid Qpid queue");
+        }
+
+        AMQDestination destination = (AMQDestination) queue;
+        if (!destination.isCheckedForQueueBinding() && checkQueueBeforePublish())
+        {
+
+            if (_delegate.getSession().isStrictAMQP())
+            {
+                _delegate._logger.warn("AMQP does not support destination validation before publish, ");
+                destination.setCheckedForQueueBinding(true);
+            }
+            else
+            {
+                if (_delegate.isBound(destination))
+                {
+                    destination.setCheckedForQueueBinding(true);
+                }
+                else
+                {
+                    throw new InvalidDestinationException("Queue: " + queue
+                        + " is not a valid destination (no bindings on server");
+                }
+            }
+        }
     }
 
     private boolean checkQueueBeforePublish()

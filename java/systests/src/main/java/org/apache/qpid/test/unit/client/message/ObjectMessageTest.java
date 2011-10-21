@@ -20,10 +20,14 @@
  */
 package org.apache.qpid.test.unit.client.message;
 
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
+import org.apache.qpid.client.AMQConnection;
+import org.apache.qpid.client.AMQDestination;
+import org.apache.qpid.client.AMQQueue;
+import org.apache.qpid.client.AMQSession;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.jms.JMSException;
 import javax.jms.Message;
@@ -31,13 +35,10 @@ import javax.jms.MessageListener;
 import javax.jms.MessageProducer;
 import javax.jms.ObjectMessage;
 
-import org.apache.qpid.client.AMQConnection;
-import org.apache.qpid.client.AMQDestination;
-import org.apache.qpid.client.AMQQueue;
-import org.apache.qpid.client.AMQSession;
-import org.apache.qpid.test.utils.QpidBrokerTestCase;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 
 public class ObjectMessageTest extends QpidBrokerTestCase implements MessageListener
 {
@@ -66,7 +67,7 @@ public class ObjectMessageTest extends QpidBrokerTestCase implements MessageList
         connection.start();
 
         // create a publisher
-        producer = session.createProducer(destination, false, false);
+        producer = session.createProducer(destination, false, false, true);
         A a1 = new A(1, "A");
         A a2 = new A(2, "a");
         B b = new B(1, "B");

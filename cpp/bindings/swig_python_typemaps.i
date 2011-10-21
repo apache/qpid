@@ -17,25 +17,6 @@
  * under the License.
  */
 
-/* For UUID objects, to convert them to Python uuid.UUID objects,
- * we'll need a reference to the uuid module.
- */
-%{
-static PyObject* pUuidModule;
-%}
-
-%init %{
-  pUuidModule = PyImport_ImportModule("uuid");
-
-  /* Although it is not required, we'll publish the uuid module in our
-   * module, as if this module was a python module and we called
-   * "import uuid"
-   */
-  Py_INCREF(pUuidModule);
-  PyModule_AddObject(m, "uuid", pUuidModule);
-%}
-
-
 %wrapper %{
 
 #if PY_VERSION_HEX < 0x02050000 && !defined(PY_SSIZE_T_MIN)
@@ -47,7 +28,6 @@ typedef int Py_ssize_t;
 
     PyObject* MapToPy(const qpid::types::Variant::Map*);
     PyObject* ListToPy(const qpid::types::Variant::List*);
-    PyObject* UuidToPy(const qpid::types::Uuid*);
     void PyToMap(PyObject*, qpid::types::Variant::Map*);
     void PyToList(PyObject*, qpid::types::Variant::List*);
 
@@ -124,9 +104,6 @@ typedef int Py_ssize_t;
                 break;
             }
             case qpid::types::VAR_UUID : {
-                qpid::types::Uuid uuid = v->asUuid();
-                result = UuidToPy(&uuid);
-                break;
             }
             }
         } catch (qpid::types::Exception& ex) {
@@ -165,30 +142,6 @@ typedef int Py_ssize_t;
         }
         return result;
     }
-
-    PyObject* UuidToPy(const qpid::types::Uuid * uuid) {
-        PyObject* pUuidClass = PyObject_GetAttrString(pUuidModule, "UUID");
-        if (!pUuidClass) {
-          // Failed to get UUID class
-          return 0;
-        }
-
-        PyObject* pArgs = PyTuple_New(0);
-        PyObject* pKw = PyDict_New();
-        PyObject* pData = PyString_FromStringAndSize(
-          (const char*)(uuid->data()), 16);
-        PyDict_SetItemString(pKw, "bytes", pData);
-
-        PyObject* result = PyObject_Call(pUuidClass, pArgs, pKw);
-
-        Py_DECREF(pData);
-        Py_DECREF(pKw);
-        Py_DECREF(pArgs);
-        Py_DECREF(pUuidClass);
-
-        return result;
-    }
-
 
     void PyToMap(PyObject* obj, qpid::types::Variant::Map* map) {
         map->clear();
@@ -347,15 +300,6 @@ typedef int Py_ssize_t;
 
 %typemap(out) qpid::types::Variant& {
     $result = VariantToPy($1);
-    if ($result)
-        Py_INCREF($result);
-}
-
-/*
- * UUID type: C++ --> Python
- */
-%typemap(out) qpid::types::UUID & {
-    $result = UuidToPy($1);
     if ($result)
         Py_INCREF($result);
 }

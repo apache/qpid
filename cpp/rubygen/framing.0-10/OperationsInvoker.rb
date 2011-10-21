@@ -69,7 +69,7 @@ class OperationsInvokerGen < CppGen
   def invoker_h(invoker, target, methods)
     return if methods.empty?
     genl
-    cpp_extern_class("QPID_COMMON_CLASS_EXTERN", invoker, "public qpid::framing::Invoker") {
+    cpp_class(invoker, "public qpid::framing::Invoker") {
       genl "#{target}& target;"
       public
       genl("Invoker(#{target}& target_) : target(target_) {}")

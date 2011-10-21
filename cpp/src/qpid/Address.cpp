@@ -28,13 +28,7 @@ namespace qpid {
 const string Address::TCP("tcp");
 
 ostream& operator<<(ostream& os, const Address& a) {
-    // If the host is an IPv6 literal we need to print "[]" around it
-    // (we detect IPv6 literals because they contain ":" which is otherwise illegal)
-    if (a.host.find(':') != string::npos) {
-        return os << a.protocol << ":[" << a.host << "]:" << a.port;
-    } else {
-        return os << a.protocol << ":" << a.host << ":" << a.port;
-    }
+    return os << a.protocol << ":" << a.host << ":" << a.port;
 }
 
 bool operator==(const Address& x, const Address& y) {

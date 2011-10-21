@@ -23,7 +23,6 @@ package org.apache.qpid.client;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
-import java.util.List;
 
 import org.apache.qpid.framing.AMQShortString;
 
@@ -35,18 +34,6 @@ public enum CustomJMSXProperty
     JMSXGroupSeq,
     JMSXUserID;
 
-    private static List<String> _names;
-
-    static
-    {
-        CustomJMSXProperty[] properties = values();
-        _names = new ArrayList<String>(properties.length);
-        for(CustomJMSXProperty property :  properties)
-        {
-            _names.add(property.toString());
-        }
-
-    }
 
     private final AMQShortString _nameAsShortString;
 
@@ -60,8 +47,20 @@ public enum CustomJMSXProperty
         return _nameAsShortString;
     }
 
-    public static Enumeration asEnumeration()
+    private static Enumeration _names;
+
+    public static synchronized Enumeration asEnumeration()
     {
-        return Collections.enumeration(_names);
+        if(_names == null)
+        {
+            CustomJMSXProperty[] properties = values();
+            ArrayList<String> nameList = new ArrayList<String>(properties.length);
+            for(CustomJMSXProperty property :  properties)
+            {
+                nameList.add(property.toString());
+            }
+            _names = Collections.enumeration(nameList);
+        }
+        return _names;    
     }
 }

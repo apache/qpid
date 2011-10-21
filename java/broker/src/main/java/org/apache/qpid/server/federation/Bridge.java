@@ -38,7 +38,6 @@ import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StoredMessage;
-import org.apache.qpid.server.subscription.SubscriptionFactoryImpl;
 import org.apache.qpid.server.subscription.Subscription_0_10;
 import org.apache.qpid.server.transport.ServerSession;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
@@ -697,7 +696,7 @@ public class Bridge implements BridgeConfig
 
             //TODO Handle the passing of non-null Filters and Arguments here
             
-            Subscription_0_10 sub = SubscriptionFactoryImpl.INSTANCE.createSubscription((ServerSession)session,
+            Subscription_0_10 sub = new Subscription_0_10((ServerSession)session,
                                                           _destination,
                                                           MessageAcceptMode.NONE,
                                                           MessageAcquireMode.PRE_ACQUIRED,
@@ -769,7 +768,7 @@ public class Bridge implements BridgeConfig
 
           //TODO Handle the passing of non-null Filters and Arguments here
             
-            Subscription_0_10 sub = SubscriptionFactoryImpl.INSTANCE.createSubscription((ServerSession)session,
+            Subscription_0_10 sub = new Subscription_0_10((ServerSession)session,
                                                           _destination,
                                                           MessageAcceptMode.NONE,
                                                           MessageAcquireMode.PRE_ACQUIRED,

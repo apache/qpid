@@ -20,16 +20,12 @@
  */
 package org.apache.qpid.framing;
 
+import org.apache.mina.common.ByteBuffer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.AMQPInvalidClassException;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -47,8 +43,8 @@ public class FieldTable
     private static final String STRICT_AMQP = "STRICT_AMQP";
     private final boolean _strictAMQP = Boolean.valueOf(System.getProperty(STRICT_AMQP, "false"));
 
-    private byte[] _encodedForm;
-    private LinkedHashMap<AMQShortString, AMQTypedValue> _properties = null;
+    private ByteBuffer _encodedForm;
+    private LinkedHashMap<AMQShortString, AMQTypedValue> _properties;
     private long _encodedSize;
     private static final int INITIAL_HASHMAP_CAPACITY = 16;
     private static final int INITIAL_ENCODED_FORM_SIZE = 256;
@@ -56,6 +52,9 @@ public class FieldTable
     public FieldTable()
     {
         super();
+        // _encodedForm = ByteBuffer.allocate(INITIAL_ENCODED_FORM_SIZE);
+        // _encodedForm.setAutoExpand(true);
+        // _encodedForm.limit(0);
     }
 
     /**
@@ -64,12 +63,16 @@ public class FieldTable
      * @param buffer the buffer from which to read data. The length byte must be read already
      * @param length the length of the field table. Must be > 0.
      */
-    public FieldTable(DataInputStream buffer, long length) throws IOException
+    public FieldTable(ByteBuffer buffer, long length)
     {
         this();
-        _encodedForm = new byte[(int) length];
-        buffer.read(_encodedForm);
+        ByteBuffer encodedForm = buffer.slice();
+        encodedForm.limit((int) length);
+        _encodedForm = ByteBuffer.allocate((int)length);
+        _encodedForm.put(encodedForm);
+        _encodedForm.flip();
         _encodedSize = length;
+        buffer.skip((int) length);
     }
 
     public AMQTypedValue getProperty(AMQShortString string)
@@ -105,18 +108,12 @@ public class FieldTable
     {
         try
         {
-            setFromBuffer();
+            setFromBuffer(_encodedForm, _encodedSize);
         }
         catch (AMQFrameDecodingException e)
         {
             _logger.error("Error decoding FieldTable in deferred decoding mode ", e);
             throw new IllegalArgumentException(e);
-        }
-        catch (IOException e)
-        {
-            _logger.error("Unexpected IO exception decoding field table");
-            throw new IllegalArgumentException(e);
-
         }
     }
 
@@ -769,7 +766,7 @@ public class FieldTable
 
     // *************************  Byte Buffer Processing
 
-    public void writeToBuffer(DataOutputStream buffer) throws IOException
+    public void writeToBuffer(ByteBuffer buffer)
     {
         final boolean trace = _logger.isDebugEnabled();
 
@@ -789,21 +786,17 @@ public class FieldTable
 
     public byte[] getDataAsBytes()
     {
-        if(_encodedForm == null)
-        {
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            try
-            {
-                putDataInBuffer(new DataOutputStream(baos));
-                return baos.toByteArray();
-            }
-            catch (IOException e)
-            {
-                throw new IllegalArgumentException("IO Exception should never be thrown here");
-            }
+        final int encodedSize = (int) getEncodedSize();
+        final ByteBuffer buffer = ByteBuffer.allocate(encodedSize); // FIXME XXX: Is cast a problem?
 
-        }
-        return _encodedForm.clone();
+        putDataInBuffer(buffer);
+
+        final byte[] result = new byte[encodedSize];
+        buffer.flip();
+        buffer.get(result);
+        buffer.release();
+
+        return result;
     }
 
     public long getEncodedSize()
@@ -933,8 +926,15 @@ public class FieldTable
 
     public Iterator<Map.Entry<AMQShortString, AMQTypedValue>> iterator()
     {
-        initMapIfNecessary();
-        return _properties.entrySet().iterator();
+        if(_encodedForm != null)
+        {
+            return new FieldTableIterator(_encodedForm.duplicate().rewind(),(int)_encodedSize);
+        }
+        else
+        {
+            initMapIfNecessary();
+            return _properties.entrySet().iterator();
+        }
     }
 
     public Object get(String key)
@@ -1002,12 +1002,26 @@ public class FieldTable
         return _properties.keySet();
     }
 
-    private void putDataInBuffer(DataOutputStream buffer) throws IOException
+    private void putDataInBuffer(ByteBuffer buffer)
     {
 
         if (_encodedForm != null)
         {
-            buffer.write(_encodedForm);
+            if(buffer.isDirect() || buffer.isReadOnly())
+            {
+                ByteBuffer encodedForm = _encodedForm.duplicate();
+
+                if (encodedForm.position() != 0)
+                {
+                    encodedForm.flip();
+                }
+
+                buffer.put(encodedForm);
+            }
+            else
+            {
+                buffer.put(_encodedForm.array(),_encodedForm.arrayOffset(),(int)_encodedSize);
+            }
         }
         else if (_properties != null)
         {
@@ -1021,27 +1035,41 @@ public class FieldTable
                 final Map.Entry<AMQShortString, AMQTypedValue> me = it.next();
                 try
                 {
+                    if (_logger.isDebugEnabled())
+                    {
+                        _logger.debug("Writing Property:" + me.getKey() + " Type:" + me.getValue().getType() + " Value:"
+                            + me.getValue().getValue());
+                        _logger.debug("Buffer Position:" + buffer.position() + " Remaining:" + buffer.remaining());
+                    }
+
                     // Write the actual parameter name
                     EncodingUtils.writeShortStringBytes(buffer, me.getKey());
                     me.getValue().writeToBuffer(buffer);
                 }
                 catch (Exception e)
                 {
+                    if (_logger.isDebugEnabled())
+                    {
+                        _logger.debug("Exception thrown:" + e);
+                        _logger.debug("Writing Property:" + me.getKey() + " Type:" + me.getValue().getType() + " Value:"
+                            + me.getValue().getValue());
+                        _logger.debug("Buffer Position:" + buffer.position() + " Remaining:" + buffer.remaining());
+                    }
+
                     throw new RuntimeException(e);
                 }
             }
         }
     }
 
-    private void setFromBuffer() throws AMQFrameDecodingException, IOException
+    private void setFromBuffer(ByteBuffer buffer, long length) throws AMQFrameDecodingException
     {
 
-        final ByteArrayInputStream in = new ByteArrayInputStream(_encodedForm);
-        DataInputStream buffer = new DataInputStream(in);
         final boolean trace = _logger.isDebugEnabled();
-        if (_encodedSize > 0)
+        if (length > 0)
         {
 
+            final int expectedRemaining = buffer.remaining() - (int) length;
 
             _properties = new LinkedHashMap<AMQShortString, AMQTypedValue>(INITIAL_HASHMAP_CAPACITY);
 
@@ -1049,15 +1077,120 @@ public class FieldTable
             {
 
                 final AMQShortString key = EncodingUtils.readAMQShortString(buffer);
+
+                _logger.debug("FieldTable::PropFieldTable(buffer," + length + "): Read key '" + key);
+
                 AMQTypedValue value = AMQTypedValue.readFromBuffer(buffer);
+
+                if (trace)
+                {
+                    _logger.debug("FieldTable::PropFieldTable(buffer," + length + "): Read type '" + value.getType()
+                        + "', key '" + key + "', value '" + value.getValue() + "'");
+                }
+
                 _properties.put(key, value);
 
             }
-            while (in.available() > 0);
+            while (buffer.remaining() > expectedRemaining);
 
         }
 
+        _encodedSize = length;
+
+        if (trace)
+        {
+            _logger.debug("FieldTable::FieldTable(buffer," + length + "): Done.");
+        }
     }
+
+    private static final class FieldTableEntry implements Map.Entry<AMQShortString, AMQTypedValue>
+    {
+        private final AMQTypedValue _value;
+        private final AMQShortString _key;
+
+        public FieldTableEntry(final AMQShortString key, final AMQTypedValue value)
+        {
+            _key = key;
+            _value = value;
+        }
+
+        public AMQShortString getKey()
+        {
+            return _key;
+        }
+
+        public AMQTypedValue getValue()
+        {
+            return _value;
+        }
+
+        public AMQTypedValue setValue(final AMQTypedValue value)
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        public boolean equals(Object o)
+        {
+            if(o instanceof FieldTableEntry)
+            {
+                FieldTableEntry other = (FieldTableEntry) o;
+                return (_key == null ? other._key == null : _key.equals(other._key))
+                       && (_value == null ? other._value == null : _value.equals(other._value));
+            }
+            else
+            {
+                return false;
+            }
+        }
+
+        public int hashCode()
+        {
+            return (getKey()==null   ? 0 : getKey().hashCode())
+                   ^ (getValue()==null ? 0 : getValue().hashCode());
+        }
+
+    }
+
+
+    private static final class FieldTableIterator implements Iterator<Map.Entry<AMQShortString, AMQTypedValue>>
+    {
+
+        private final ByteBuffer _buffer;
+        private int _expectedRemaining;
+
+        public FieldTableIterator(ByteBuffer buffer, int length)
+        {
+            _buffer = buffer;
+            _expectedRemaining = buffer.remaining() - length;
+        }
+
+        public boolean hasNext()
+        {
+            return (_buffer.remaining() > _expectedRemaining);
+        }
+
+        public Map.Entry<AMQShortString, AMQTypedValue> next()
+        {
+            if(hasNext())
+            {
+                final AMQShortString key = EncodingUtils.readAMQShortString(_buffer);
+                AMQTypedValue value = AMQTypedValue.readFromBuffer(_buffer);
+                return new FieldTableEntry(key, value);
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        public void remove()
+        {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+
+
 
     public int hashCode()
     {

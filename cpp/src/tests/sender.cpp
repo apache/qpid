@@ -120,7 +120,7 @@ void Sender::execute(AsyncSession& session, bool isRetry)
     string data;
     while (getline(std::cin, data)) {
         message.setData(data);
-        //message.getHeaders().setInt("SN", ++sent);
+        message.getHeaders().setInt("SN", ++sent);
         string matchKey;
         if (lvqMatchValues && getline(lvqMatchValues, matchKey)) {
             message.getHeaders().setString(QueueOptions::strLVQMatchProperty, matchKey);

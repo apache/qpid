@@ -20,7 +20,7 @@
 use strict;
 use warnings;
 
-use cqpid_perl;
+use cqpid;
 
 my $broker            = ( @ARGV > 0 ) ? $ARGV[0] : "localhost:5672";
 my $connectionOptions = ( @ARGV > 1 ) ? $ARGV[1] : "";
@@ -44,7 +44,7 @@ x-bindings: [{ exchange: xml-exchange, key: weather, arguments: { xquery:" $quer
 END
 
 
-my $connection = new cqpid_perl::Connection($broker, $connectionOptions);
+my $connection = new cqpid::Connection($broker, $connectionOptions);
 
 eval {
     $connection->open();
@@ -52,7 +52,7 @@ eval {
 
     my $receiver = $session->createReceiver($address);
     
-    my $message = new cqpid_perl::Message();
+    my $message = new cqpid::Message();
 
     my $content = <<END;
     <weather>

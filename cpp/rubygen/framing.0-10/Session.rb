@@ -56,8 +56,8 @@ module SyncAsync
   def decl_ctor_opeq()
     genl
     genl "QPID_CLIENT_EXTERN #{@classname}();"
-    genl "QPID_CLIENT_INLINE_EXTERN #{@classname}(const #{@version_base}& other);"
-    genl "QPID_CLIENT_INLINE_EXTERN #{@classname}& operator=(const #{@version_base}& other);"
+    genl "QPID_CLIENT_EXTERN #{@classname}(const #{@version_base}& other);"
+    genl "QPID_CLIENT_EXTERN #{@classname}& operator=(const #{@version_base}& other);"
   end
 
   def defn_ctor_opeq(inline="")

@@ -42,7 +42,7 @@ struct CannotConnectException : qpid::Exception
 /**
  * Utility to manage failover.
  */
-class QPID_CLIENT_CLASS_EXTERN FailoverManager
+class FailoverManager
 {
   public:
     /**

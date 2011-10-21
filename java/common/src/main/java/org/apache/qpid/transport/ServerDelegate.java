@@ -75,7 +75,10 @@ public class ServerDelegate extends ConnectionDelegate
 
         if (mechanism == null || mechanism.length() == 0)
         {
-            tuneAuthorizedConnection(conn);
+            conn.connectionTune
+                (getChannelMax(),
+                 org.apache.qpid.transport.network.ConnectionBinding.MAX_FRAME_SIZE,
+                 0, getHeartbeatMax());
             return;
         }
 
@@ -94,7 +97,8 @@ public class ServerDelegate extends ConnectionDelegate
         }
         catch (SaslException e)
         {
-            connectionAuthFailed(conn, e);
+            conn.exception(e);
+            conn.connectionClose(ConnectionCloseCode.CONNECTION_FORCED, e.getMessage());
         }
     }
 
@@ -105,50 +109,31 @@ public class ServerDelegate extends ConnectionDelegate
         return ss;
     }
 
-    protected void secure(final SaslServer ss, final Connection conn, final byte[] response)
+    private void secure(Connection conn, byte[] response)
     {
+        SaslServer ss = conn.getSaslServer();
         try
         {
             byte[] challenge = ss.evaluateResponse(response);
             if (ss.isComplete())
             {
                 ss.dispose();
-                tuneAuthorizedConnection(conn);
+                conn.connectionTune
+                    (getChannelMax(),
+                     org.apache.qpid.transport.network.ConnectionBinding.MAX_FRAME_SIZE,
+                     0, getHeartbeatMax());
+                conn.setAuthorizationID(ss.getAuthorizationID());
             }
             else
             {
-                connectionAuthContinue(conn, challenge);
+                conn.connectionSecure(challenge);
             }
         }
         catch (SaslException e)
         {
-            connectionAuthFailed(conn, e);
+            conn.exception(e);
+            conn.connectionClose(ConnectionCloseCode.CONNECTION_FORCED, e.getMessage());
         }
-    }
-
-    protected void connectionAuthFailed(final Connection conn, Exception e)
-    {
-        conn.exception(e);
-        conn.connectionClose(ConnectionCloseCode.CONNECTION_FORCED, e.getMessage());
-    }
-
-    protected void connectionAuthContinue(final Connection conn, byte[] challenge)
-    {
-        conn.connectionSecure(challenge);
-    }
-
-    protected void tuneAuthorizedConnection(final Connection conn)
-    {
-        conn.connectionTune
-            (getChannelMax(),
-             org.apache.qpid.transport.network.ConnectionBinding.MAX_FRAME_SIZE,
-             0, getHeartbeatMax());
-    }
-    
-    protected void secure(final Connection conn, final byte[] response)
-    {
-        final SaslServer ss = conn.getSaslServer();
-        secure(ss, conn, response);
     }
 
     protected int getHeartbeatMax()
@@ -170,7 +155,22 @@ public class ServerDelegate extends ConnectionDelegate
     @Override
     public void connectionTuneOk(Connection conn, ConnectionTuneOk ok)
     {
+        int okChannelMax = ok.getChannelMax();
+        
+        if (okChannelMax > getChannelMax())
+        {
+            _logger.error("Connection '" + conn.getConnectionId() + "' being severed, " +
+                    "client connectionTuneOk returned a channelMax (" + okChannelMax +
+                    ") above the servers offered limit (" + getChannelMax() +")");
 
+            //Due to the error we must forcefully close the connection without negotiation
+            conn.getSender().close();
+            return;
+        }
+
+        //0 means no implied limit, except available server resources
+        //(or that forced by protocol limitations [0xFFFF])
+        conn.setChannelMax(okChannelMax == 0 ? Connection.MAX_CHANNEL_MAX : okChannelMax);
     }
 
     @Override
@@ -199,12 +199,5 @@ public class ServerDelegate extends ConnectionDelegate
         conn.map(ssn, atc.getChannel());
         ssn.sessionAttached(atc.getName());
         ssn.setState(Session.State.OPEN);
-    }
-
-    protected void setConnectionTuneOkChannelMax(final Connection conn, final int okChannelMax)
-    {
-        //0 means no implied limit, except available server resources
-        //(or that forced by protocol limitations [0xFFFF])
-        conn.setChannelMax(okChannelMax == 0 ? Connection.MAX_CHANNEL_MAX : okChannelMax);
     }
 }

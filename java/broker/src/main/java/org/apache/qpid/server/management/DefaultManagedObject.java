@@ -26,9 +26,8 @@ import javax.management.NotCompliantMBeanException;
 import javax.management.ObjectName;
 import javax.management.StandardMBean;
 
-import org.apache.log4j.Logger;
+import org.apache.qpid.AMQException;
 import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.registry.IApplicationRegistry;
 
 /**
  * Provides implementation of the boilerplate ManagedObject interface. Most managed objects should find it useful
@@ -37,13 +36,9 @@ import org.apache.qpid.server.registry.IApplicationRegistry;
  */
 public abstract class DefaultManagedObject extends StandardMBean implements ManagedObject
 {
-    private static final Logger LOGGER = Logger.getLogger(ApplicationRegistry.class);
-    
     private Class<?> _managementInterface;
 
     private String _typeName;
-
-    private ManagedObjectRegistry _registry;
 
     protected DefaultManagedObject(Class<?> managementInterface, String typeName)
         throws NotCompliantMBeanException
@@ -70,26 +65,23 @@ public abstract class DefaultManagedObject extends StandardMBean implements Mana
 
     public void register() throws JMException
     {
-        _registry = ApplicationRegistry.getInstance().getManagedObjectRegistry();
-        _registry.registerObject(this);
+        getManagedObjectRegistry().registerObject(this);
     }
 
-    public void unregister()
+    protected ManagedObjectRegistry getManagedObjectRegistry()
+    {
+        return ApplicationRegistry.getInstance().getManagedObjectRegistry();
+    }
+
+    public void unregister() throws AMQException
     {
         try
         {
-            if(_registry != null)
-            {
-                _registry.unregisterObject(this);
-            }
+            getManagedObjectRegistry().unregisterObject(this);
         }
         catch (JMException e)
         {
-            LOGGER.error("Error unregistering managed object: " + this + ": " + e, e);
-        }
-        finally
-        {
-            _registry = null;
+            throw new AMQException("Error unregistering managed object: " + this + ": " + e, e);
         }
     }
 
@@ -161,4 +153,32 @@ public abstract class DefaultManagedObject extends StandardMBean implements Mana
             return "";
     }
 
+    protected static StringBuffer jmxEncode(StringBuffer jmxName, int attrPos)
+    {
+        for (int i = attrPos; i < jmxName.length(); i++)
+        {
+            if (jmxName.charAt(i) == ',')
+            {
+                jmxName.setCharAt(i, ';');
+            }
+            else if (jmxName.charAt(i) == ':')
+            {
+                jmxName.setCharAt(i, '-');
+            }
+            else if (jmxName.charAt(i) == '?' ||
+                    jmxName.charAt(i) == '*' ||
+                    jmxName.charAt(i) == '\\')
+            {
+                jmxName.insert(i, '\\');
+                i++;
+            }
+            else if (jmxName.charAt(i) == '\n')
+            {
+                jmxName.insert(i, '\\');
+                i++;
+                jmxName.setCharAt(i, 'n');
+            }
+        }
+        return jmxName;
+    }
 }

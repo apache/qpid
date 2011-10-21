@@ -259,7 +259,7 @@ public class AMQStateManager implements AMQMethodListener
 
     public AMQProtocolSession getProtocolSession()
     {
-        SecurityManager.setThreadSubject(_protocolSession.getAuthorizedSubject());
+        SecurityManager.setThreadPrincipal(_protocolSession.getPrincipal());
         return _protocolSession;
     }
 }

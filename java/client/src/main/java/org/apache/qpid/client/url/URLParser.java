@@ -45,7 +45,7 @@ public class URLParser
     private void parseURL(String fullURL) throws URLSyntaxException
     {
         // Connection URL format
-        // amqp://[user:pass@][clientid]/virtualhost?brokerlist='tcp://host:port?option=\'value\',option=\'value\';tcp://host:port?option=\'value\'',failover='method?option=\'value\',option='value''"
+        // amqp://[user:pass@][clientid]/virtualhost?brokerlist='tcp://host:port?option=\'value\',option=\'value\';vm://:3/virtualpath?option=\'value\'',failover='method?option=\'value\',option='value''"
         // Options are of course optional except for requiring a single broker in the broker list.
         try
         {
@@ -195,7 +195,7 @@ public class URLParser
         {
             String brokerlist = _url.getOptions().get(AMQConnectionURL.OPTIONS_BROKERLIST);
 
-            // brokerlist tcp://host:port?option='value',option='value';tcp://host:port/virtualpath?option='value'
+            // brokerlist tcp://host:port?option='value',option='value';vm://:3/virtualpath?option='value'
             StringTokenizer st = new StringTokenizer(brokerlist, "" + URLHelper.BROKER_SEPARATOR);
 
             while (st.hasMoreTokens())

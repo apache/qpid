@@ -23,7 +23,7 @@ package org.apache.qpid.configuration;
  */
 public class ClientProperties
 {
-
+  
     /**
      * Currently with Qpid it is not possible to change the client ID.
      * If one is not specified upon connection construction, an id is generated automatically.
@@ -68,50 +68,67 @@ public class ClientProperties
      * by the broker in TuneOK it will be used as the heartbeat interval.
      * If not a warning will be printed and the max value specified for
      * heartbeat in TuneOK will be used
-     *
+     * 
      * The default idle timeout is set to 120 secs
      */
     public static final String IDLE_TIMEOUT_PROP_NAME = "idle_timeout";
     public static final long DEFAULT_IDLE_TIMEOUT = 120000;
-
+    
     public static final String HEARTBEAT = "qpid.heartbeat";
     public static final int HEARTBEAT_DEFAULT = 120;
-
+    
     /**
      * This value will be used to determine the default destination syntax type.
      * Currently the two types are Binding URL (java only) and the Addressing format (used by
-     * all clients).
+     * all clients). 
      */
     public static final String DEST_SYNTAX = "qpid.dest_syntax";
-
+    
     public static final String USE_LEGACY_MAP_MESSAGE_FORMAT = "qpid.use_legacy_map_message";
 
+     /**
+     * ==========================================================
+     * Those properties are used when the io size should be bounded
+     * ==========================================================
+     */
+
+    /**
+     * When set to true the io layer throttle down producers and consumers
+     * when written or read messages are accumulating and exceeding a certain size.
+     * This is especially useful when a the producer rate is greater than the network
+     * speed.
+     * type: boolean
+     */
+    public static final String PROTECTIO_PROP_NAME = "protectio";
+
+    //=== The following properties are only used when the previous one is true.
+    /**
+     * Max size of read messages that can be stored within the MINA layer
+     * type: int
+     */
+    public static final String READ_BUFFER_LIMIT_PROP_NAME = "qpid.read.buffer.limit";
+    public static final String READ_BUFFER_LIMIT_DEFAULT = "262144";
+    /**
+     * Max size of written messages that can be stored within the MINA layer
+     * type: int
+     */
+    public static final String WRITE_BUFFER_LIMIT_PROP_NAME = "qpid.read.buffer.limit";
+    public static final String WRITE_BUFFER_LIMIT_DEFAULT = "262144";
+
     public static final String AMQP_VERSION = "qpid.amqp.version";
-
-    public static final String QPID_VERIFY_CLIENT_ID = "qpid.verify_client_id";
-
-    /**
-     * System properties to change the default timeout used during
-     * synchronous operations.
-     */
-    public static final String QPID_SYNC_OP_TIMEOUT = "qpid.sync_op_timeout";
-    public static final String AMQJ_DEFAULT_SYNCWRITE_TIMEOUT = "amqj.default_syncwrite_timeout";
-
-    /**
-     * A default timeout value for synchronous operations
-     */
-    public static final int DEFAULT_SYNC_OPERATION_TIMEOUT = 60000;
-
+    
+    private static ClientProperties _instance = new ClientProperties();
+    
     /*
-    public static final QpidProperty<Boolean>  IGNORE_SET_CLIENTID_PROP_NAME =
+    public static final QpidProperty<Boolean>  IGNORE_SET_CLIENTID_PROP_NAME = 
         QpidProperty.booleanProperty(false,"qpid.ignore_set_client_id","ignore_setclientID");
-
+    
     public static final QpidProperty<Boolean> SYNC_PERSISTENT_PROP_NAME =
         QpidProperty.booleanProperty(false,"qpid.sync_persistence","sync_persistence");
-
-
+    
+    
     public static final QpidProperty<Integer> MAX_PREFETCH_PROP_NAME =
         QpidProperty.intProperty(500,"qpid.max_prefetch","max_prefetch"); */
-
-
+    
+    
 }

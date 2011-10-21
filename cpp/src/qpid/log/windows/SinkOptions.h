@@ -26,7 +26,7 @@ namespace qpid {
 namespace log {
 namespace windows {
 
-struct QPID_COMMON_CLASS_EXTERN SinkOptions : public qpid::log::SinkOptions {
+struct SinkOptions : public qpid::log::SinkOptions {
     QPID_COMMON_EXTERN SinkOptions(const std::string& argv0);
     virtual ~SinkOptions() {}
 

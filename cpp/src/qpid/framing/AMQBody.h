@@ -46,7 +46,7 @@ struct AMQBodyConstVisitor {
     virtual void visit(const AMQMethodBody&) = 0;
 };
 
-class QPID_COMMON_CLASS_EXTERN AMQBody : public RefCounted {
+class AMQBody : public RefCounted {
   public:
     AMQBody() {}
     QPID_COMMON_EXTERN virtual ~AMQBody();

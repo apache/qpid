@@ -20,6 +20,32 @@
  */
 package org.apache.qpid.server.management;
 
+import org.apache.commons.configuration.ConfigurationException;
+import org.apache.log4j.Logger;
+import org.apache.qpid.AMQException;
+import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.registry.IApplicationRegistry;
+import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
+import org.apache.qpid.server.security.auth.rmi.RMIPasswordAuthenticator;
+import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.logging.messages.ManagementConsoleMessages;
+
+import javax.management.JMException;
+import javax.management.MBeanServer;
+import javax.management.MBeanServerFactory;
+import javax.management.ObjectName;
+import javax.management.NotificationListener;
+import javax.management.NotificationFilterSupport;
+import javax.management.remote.JMXConnectorServer;
+import javax.management.remote.JMXServiceURL;
+import javax.management.remote.MBeanServerForwarder;
+import javax.management.remote.JMXConnectionNotification;
+import javax.management.remote.rmi.RMIConnectorServer;
+import javax.management.remote.rmi.RMIJRMPServerImpl;
+import javax.management.remote.rmi.RMIServerImpl;
+import javax.rmi.ssl.SslRMIClientSocketFactory;
+import javax.rmi.ssl.SslRMIServerSocketFactory;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -38,31 +64,7 @@ import java.rmi.server.RMIClientSocketFactory;
 import java.rmi.server.RMIServerSocketFactory;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.HashMap;
-
-import javax.management.JMException;
-import javax.management.MBeanServer;
-import javax.management.MBeanServerFactory;
-import javax.management.NotificationFilterSupport;
-import javax.management.NotificationListener;
-import javax.management.ObjectName;
-import javax.management.remote.JMXConnectionNotification;
-import javax.management.remote.JMXConnectorServer;
-import javax.management.remote.JMXServiceURL;
-import javax.management.remote.MBeanServerForwarder;
-import javax.management.remote.rmi.RMIConnectorServer;
-import javax.management.remote.rmi.RMIJRMPServerImpl;
-import javax.management.remote.rmi.RMIServerImpl;
-import javax.rmi.ssl.SslRMIClientSocketFactory;
-import javax.rmi.ssl.SslRMIServerSocketFactory;
-
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.log4j.Logger;
-import org.apache.qpid.AMQException;
-import org.apache.qpid.server.logging.actors.CurrentActor;
-import org.apache.qpid.server.logging.messages.ManagementConsoleMessages;
-import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.registry.IApplicationRegistry;
-import org.apache.qpid.server.security.auth.rmi.RMIPasswordAuthenticator;
+import java.util.Map;
 
 /**
  * This class starts up an MBeanserver. If out of the box agent has been enabled then there are no 
@@ -72,13 +74,14 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
 {
     private static final Logger _log = Logger.getLogger(JMXManagedObjectRegistry.class);
     
+    public static final String MANAGEMENT_PORT_CONFIG_PATH = "management.jmxport";
+    public static final int MANAGEMENT_PORT_DEFAULT = 8999;
+    public static final int PORT_EXPORT_OFFSET = 100;
+
     private final MBeanServer _mbeanServer;
     private JMXConnectorServer _cs;
     private Registry _rmiRegistry;
     private boolean _useCustomSocketFactory;
-
-    private final int _jmxPortRegistryServer;
-    private final int _jmxPortConnectorServer;
 
     public JMXManagedObjectRegistry() throws AMQException
     {
@@ -92,11 +95,8 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
         _mbeanServer =
                 platformServer ? ManagementFactory.getPlatformMBeanServer()
                 : MBeanServerFactory.createMBeanServer(ManagedObject.DOMAIN);
-
-        _jmxPortRegistryServer = appRegistry.getConfiguration().getJMXPortRegistryServer();
-        _jmxPortConnectorServer = appRegistry.getConfiguration().getJMXConnectorServerPort();
-
     }
+
 
     public void start() throws IOException, ConfigurationException
     {
@@ -111,7 +111,14 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
         }
 
         IApplicationRegistry appRegistry = ApplicationRegistry.getInstance();
+        int port = appRegistry.getConfiguration().getJMXManagementPort();
 
+        //retrieve the Principal Database assigned to JMX authentication duties
+        String jmxDatabaseName = appRegistry.getConfiguration().getJMXPrincipalDatabase();
+        Map<String, PrincipalDatabase> map = appRegistry.getDatabaseManager().getDatabases();        
+        PrincipalDatabase db = map.get(jmxDatabaseName);
+
+        HashMap<String,Object> env = new HashMap<String,Object>();
 
         //Socket factories for the RMIConnectorServer, either default or SLL depending on configuration
         RMIClientSocketFactory csf;
@@ -193,8 +200,7 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
 
         //add a JMXAuthenticator implementation the env map to authenticate the RMI based JMX connector server
         RMIPasswordAuthenticator rmipa = new RMIPasswordAuthenticator();
-        rmipa.setAuthenticationManager(appRegistry.getAuthenticationManager());
-        HashMap<String,Object> env = new HashMap<String,Object>();
+        rmipa.setPrincipalDatabase(db);
         env.put(JMXConnectorServer.AUTHENTICATOR, rmipa);
 
         /*
@@ -205,14 +211,14 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
         System.setProperty("java.rmi.server.randomIDs", "true");
         if(_useCustomSocketFactory)
         {
-            _rmiRegistry = LocateRegistry.createRegistry(_jmxPortRegistryServer, null, new CustomRMIServerSocketFactory());
+            _rmiRegistry = LocateRegistry.createRegistry(port, null, new CustomRMIServerSocketFactory());
         }
         else
         {
-            _rmiRegistry = LocateRegistry.createRegistry(_jmxPortRegistryServer, null, null);
+            _rmiRegistry = LocateRegistry.createRegistry(port, null, null);
         }
         
-        CurrentActor.get().message(ManagementConsoleMessages.LISTENING("RMI Registry", _jmxPortRegistryServer));
+        CurrentActor.get().message(ManagementConsoleMessages.LISTENING("RMI Registry", port));
 
         /*
          * We must now create the RMI ConnectorServer manually, as the JMX Factory methods use RMI calls 
@@ -223,7 +229,7 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
          * The registry is exported on the defined management port 'port'. We will export the RMIConnectorServer
          * on 'port +1'. Use of these two well-defined ports will ease any navigation through firewall's. 
          */
-        final RMIServerImpl rmiConnectorServerStub = new RMIJRMPServerImpl(_jmxPortConnectorServer, csf, ssf, env);
+        final RMIServerImpl rmiConnectorServerStub = new RMIJRMPServerImpl(port+PORT_EXPORT_OFFSET, csf, ssf, env);
         String localHost;
         try
         {
@@ -235,9 +241,9 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
         }
         final String hostname = localHost;
         final JMXServiceURL externalUrl = new JMXServiceURL(
-                "service:jmx:rmi://"+hostname+":"+(_jmxPortConnectorServer)+"/jndi/rmi://"+hostname+":"+_jmxPortRegistryServer+"/jmxrmi");
+                "service:jmx:rmi://"+hostname+":"+(port+PORT_EXPORT_OFFSET)+"/jndi/rmi://"+hostname+":"+port+"/jmxrmi");
 
-        final JMXServiceURL internalUrl = new JMXServiceURL("rmi", hostname, _jmxPortConnectorServer);
+        final JMXServiceURL internalUrl = new JMXServiceURL("rmi", hostname, port+PORT_EXPORT_OFFSET);
         _cs = new RMIConnectorServer(internalUrl, env, rmiConnectorServerStub, _mbeanServer)
         {   
             @Override  
@@ -306,7 +312,7 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
         _cs.start();
 
         String connectorServer = (sslEnabled ? "SSL " : "") + "JMX RMIConnectorServer";
-        CurrentActor.get().message(ManagementConsoleMessages.LISTENING(connectorServer, _jmxPortConnectorServer));
+        CurrentActor.get().message(ManagementConsoleMessages.LISTENING(connectorServer, port + PORT_EXPORT_OFFSET));
 
         CurrentActor.get().message(ManagementConsoleMessages.READY(false));
     }
@@ -401,7 +407,7 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
         if (_rmiRegistry != null)
         {
             // Stopping the RMI registry
-            CurrentActor.get().message(ManagementConsoleMessages.SHUTTING_DOWN("RMI Registry", _jmxPortRegistryServer));
+            CurrentActor.get().message(ManagementConsoleMessages.SHUTTING_DOWN("RMI Registry", _cs.getAddress().getPort() - PORT_EXPORT_OFFSET));
             try
             {
                 UnicastRemoteObject.unexportObject(_rmiRegistry, false);

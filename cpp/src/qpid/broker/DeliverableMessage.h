@@ -29,7 +29,7 @@
 
 namespace qpid {
     namespace broker {
-        class QPID_BROKER_CLASS_EXTERN DeliverableMessage : public Deliverable{
+        class DeliverableMessage : public Deliverable{
             boost::intrusive_ptr<Message> msg;
         public:
             QPID_BROKER_EXTERN DeliverableMessage(const boost::intrusive_ptr<Message>& msg);

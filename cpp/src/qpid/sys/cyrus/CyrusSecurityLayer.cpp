@@ -57,7 +57,6 @@ size_t CyrusSecurityLayer::decode(const char* input, size_t size)
             copied += count;
             decodeBuffer.position += count;
             size_t decodedSize = codec->decode(decodeBuffer.data, decodeBuffer.position);
-            if (decodedSize == 0) break;
             if (decodedSize < decodeBuffer.position) {
                 ::memmove(decodeBuffer.data, decodeBuffer.data + decodedSize, decodeBuffer.position - decodedSize);
             }
@@ -107,7 +106,7 @@ size_t CyrusSecurityLayer::encode(const char* buffer, size_t size)
 
 bool CyrusSecurityLayer::canEncode()
 {
-    return codec && (encrypted || codec->canEncode());
+    return encrypted || codec->canEncode();
 }
 
 void CyrusSecurityLayer::init(qpid::sys::Codec* c)

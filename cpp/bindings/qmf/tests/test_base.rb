@@ -24,7 +24,6 @@ require 'socket'
 
 class ConsoleTestBase < Qmf::ConsoleHandler
   def initialize
-    sleep(2)
     @settings = Qmf::ConnectionSettings.new
     @settings.host = ARGV[0] if ARGV.size > 0
     @settings.port = ARGV[1].to_i if ARGV.size > 1
@@ -68,7 +67,7 @@ class ConsoleTestBase < Qmf::ConsoleHandler
 
   def assert(condition, in_text=nil)
     text = " (#{in_text})" if in_text
-    raise "Assertion failed: #{condition} #{text}" unless condition
+    raise "Assertion failed: #{left} != #{right}#{text}" unless condition
   end
 
   def fail(text)

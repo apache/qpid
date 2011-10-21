@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
+ * 
  *   http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -39,7 +39,7 @@ pair<Exchange::shared_ptr, bool> ExchangeRegistry::declare(const string& name, c
     return declare(name, type, false, FieldTable());
 }
 
-pair<Exchange::shared_ptr, bool> ExchangeRegistry::declare(const string& name, const string& type,
+pair<Exchange::shared_ptr, bool> ExchangeRegistry::declare(const string& name, const string& type, 
                                                            bool durable, const FieldTable& args){
     RWlock::ScopedWlock locker(lock);
     ExchangeMap::iterator i =  exchanges.find(name);
@@ -61,7 +61,7 @@ pair<Exchange::shared_ptr, bool> ExchangeRegistry::declare(const string& name, c
         }else{
             FunctionMap::iterator i =  factory.find(type);
             if (i == factory.end()) {
-                throw UnknownExchangeTypeException();
+                throw UnknownExchangeTypeException();    
             } else {
                 exchange = i->second(name, durable, args, parent, broker);
             }
@@ -82,7 +82,6 @@ void ExchangeRegistry::destroy(const string& name){
     RWlock::ScopedWlock locker(lock);
     ExchangeMap::iterator i =  exchanges.find(name);
     if (i != exchanges.end()) {
-        i->second->destroy();
         exchanges.erase(i);
     }
 }
@@ -105,7 +104,7 @@ void ExchangeRegistry::registerType(const std::string& type, FactoryFunction f)
 }
 
 
-namespace
+namespace 
 {
 const std::string empty;
 }

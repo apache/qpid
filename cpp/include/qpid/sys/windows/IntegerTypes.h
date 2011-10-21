@@ -22,17 +22,13 @@
  */
 
 typedef unsigned char    uint8_t;
+typedef char             int8_t;
 typedef unsigned short   uint16_t;
 typedef short            int16_t;
 typedef unsigned int     uint32_t;
 typedef int              int32_t;
-#if defined(_MSC_VER)
-typedef signed char      int8_t;
 typedef unsigned __int64 uint64_t;
 typedef          __int64 int64_t;
-#else
-#include <stdint.h>
-#endif
 
 // Visual Studio doesn't define other common types, so set them up here too.
 typedef unsigned int     uint;

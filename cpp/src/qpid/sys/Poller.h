@@ -120,7 +120,7 @@ class PollerHandle {
     friend struct Poller::Event;
 
     PollerHandlePrivate* const impl;
-    QPID_COMMON_INLINE_EXTERN virtual void processEvent(Poller::EventType) {};
+    QPID_COMMON_EXTERN virtual void processEvent(Poller::EventType) {};
 
 public:
     QPID_COMMON_EXTERN PollerHandle(const IOHandle& h);

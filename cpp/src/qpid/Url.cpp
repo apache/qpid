@@ -156,34 +156,17 @@ class UrlParser {
         return false;
     }
 
-    // A liberal interpretation of http://www.ietf.org/rfc/rfc3986.txt.
-    // Works for DNS names and and ipv4 and ipv6 literals
+    // TODO aconway 2008-11-20: this does not fully implement
+    // http://www.ietf.org/rfc/rfc3986.txt. Works for DNS names and
+    // ipv4 literals but won't handle ipv6.
     // 
     bool host(string& h) {
-        if (ip6literal(h)) return true;
-
         const char* start=i;
         while (unreserved() || pctEncoded())
             ;
         if (start == i) return false;//host is required
         else h.assign(start, i);
         return true;
-    }
-
-    // This is a bit too liberal for IPv6 literal addresses, but probably good enough
-    bool ip6literal(string& h) {
-        if (literal("[")) {
-            const char* start = i;
-            while (hexDigit() || literal(":") || literal("."))
-                ;
-            const char* end = i;
-            if ( end-start < 2 ) return false; // Smallest valid address is "::"
-            if (literal("]")) {
-                h.assign(start, end);
-                return true;
-            }
-        }
-        return false;
     }
 
     bool unreserved() { return (::isalnum(*i) || ::strchr("-._~", *i)) && advance(); }

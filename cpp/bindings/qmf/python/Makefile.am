@@ -30,13 +30,11 @@ BUILT_SOURCES = $(generated_file_list)
 SWIG_FLAGS = -w362,401
 
 $(generated_file_list): $(srcdir)/python.i $(srcdir)/../qmfengine.i
-	$(SWIG) -c++ -python $(SWIG_FLAGS) $(INCLUDES) $(QPID_CXXFLAGS) -I$(top_srcdir)/src/qmf -I/usr/include -o qmfengine.cpp $(srcdir)/python.i
+	swig -c++ -python $(SWIG_FLAGS) $(INCLUDES) $(QPID_CXXFLAGS) -I$(top_srcdir)/src/qmf -I/usr/include -o qmfengine.cpp $(srcdir)/python.i
 
 pylibdir = $(PYTHON_LIB)
 
 lib_LTLIBRARIES = _qmfengine.la
-qenginedir = $(pyexecdir)
-qengine_PYTHON = qmfengine.py qmf.py
 
 #_qmfengine_la_LDFLAGS = -avoid-version -module -shrext "$(PYTHON_SO)"
 #_qmfengine_la_LDFLAGS = -avoid-version -module -shrext ".so"

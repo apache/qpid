@@ -235,7 +235,7 @@ namespace Messaging {
         }
     }
 
-    // Copy constructor look-alike (C#)
+    // Copy constructor
     Message::Message(const Message ^ message)
     {
         System::Exception ^ newException = nullptr;
@@ -257,29 +257,7 @@ namespace Messaging {
 		}
     }
 
-    // Copy constructor implicitly dereferenced (C++)
-    Message::Message(const Message % message)
-    {
-        System::Exception ^ newException = nullptr;
-
-        try 
-		{
-            messagep = new ::qpid::messaging::Message(
-                        *(const_cast<Message %>(message).NativeMessage));
-        } 
-        catch (const ::qpid::types::Exception & error) 
-		{
-            String ^ errmsg = gcnew String(error.what());
-            newException    = gcnew QpidException(errmsg);
-        }
-
-		if (newException != nullptr) 
-		{
-	        throw newException;
-		}
-    }
-
-    // Property
+	// Property
     void Message::SetProperty(System::String ^ name, System::Object ^ value)
     {
         System::Exception ^ newException = nullptr;

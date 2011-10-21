@@ -20,8 +20,7 @@
  */
 package org.apache.qpid.framing;
 
-import java.io.DataInputStream;
-import java.io.IOException;
+import org.apache.mina.common.ByteBuffer;
 
 import org.apache.qpid.framing.amqp_8_0.BasicConsumeBodyImpl;
 
@@ -39,8 +38,8 @@ public class ContentHeaderPropertiesFactory
     }
 
     public ContentHeaderProperties createContentHeaderProperties(int classId, int propertyFlags,
-                                                                 DataInputStream buffer, int size)
-             throws AMQFrameDecodingException, IOException
+                                                                 ByteBuffer buffer, int size)
+             throws AMQFrameDecodingException
     {
         ContentHeaderProperties properties;
         // AMQP version change: "Hardwired" version to major=8, minor=0

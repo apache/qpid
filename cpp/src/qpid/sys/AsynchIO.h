@@ -64,8 +64,8 @@ public:
     // deletes. To correctly manage heaps when needed, the allocate and
     // delete should both be done from the same class/library.
     QPID_COMMON_EXTERN static AsynchConnector* create(const Socket& s,
-                                   const std::string& hostname,
-                                   const std::string& port,
+                                   std::string hostname,
+                                   uint16_t port,
                                    ConnectedCallback connCb,
                                    FailedCallback failCb);
     virtual void start(boost::shared_ptr<Poller> poller) = 0;

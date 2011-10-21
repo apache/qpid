@@ -51,7 +51,7 @@ public class QueueEntryImpl implements QueueEntry
 
     private MessageReference _message;
 
-    private Set<Long> _rejectedBy = null;
+    private Set<Subscription> _rejectedBy = null;
 
     private volatile EntryState _state = AVAILABLE_STATE;
 
@@ -325,16 +325,19 @@ public class QueueEntryImpl implements QueueEntry
 
     public void reject()
     {
-        Subscription subscription = getDeliveredSubscription();
+        reject(getDeliveredSubscription());
+    }
 
+    public void reject(Subscription subscription)
+    {
         if (subscription != null)
         {
             if (_rejectedBy == null)
             {
-                _rejectedBy = new HashSet<Long>();
+                _rejectedBy = new HashSet<Subscription>();
             }
 
-            _rejectedBy.add(subscription.getSubscriptionID());
+            _rejectedBy.add(subscription);
         }
         else
         {
@@ -342,16 +345,25 @@ public class QueueEntryImpl implements QueueEntry
         }
     }
 
-    public boolean isRejectedBy(long subscriptionId)
+    public boolean isRejectedBy(Subscription subscription)
     {
 
         if (_rejectedBy != null) // We have subscriptions that rejected this message
         {
-            return _rejectedBy.contains(subscriptionId);
+            return _rejectedBy.contains(subscription);
         }
         else // This messasge hasn't been rejected yet.
         {
             return false;
+        }
+    }
+
+    public void requeue(Subscription subscription)
+    {
+        getQueue().requeue(this, subscription);
+        if(_stateChangeListeners != null)
+        {
+            notifyStateChange(QueueEntry.State.ACQUIRED, QueueEntry.State.AVAILABLE);
         }
     }
 
@@ -496,7 +508,7 @@ public class QueueEntryImpl implements QueueEntry
     {
 
         QueueEntryImpl next = nextNode();
-        while(next != null && next.isDispensed() )
+        while(next != null && next.isDeleted())
         {
 
             final QueueEntryImpl newNext = next.nextNode();
@@ -542,16 +554,6 @@ public class QueueEntryImpl implements QueueEntry
     public QueueEntryList getQueueEntryList()
     {
         return _queueEntryList;
-    }
-
-    public boolean isDequeued()
-    {
-        return _state == DEQUEUED_STATE;
-    }
-
-    public boolean isDispensed()
-    {
-        return _state.isDispensed();
     }
 
 }

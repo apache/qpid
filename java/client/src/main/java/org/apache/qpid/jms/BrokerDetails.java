@@ -22,7 +22,7 @@ package org.apache.qpid.jms;
 
 import java.util.Map;
 
-import org.apache.qpid.transport.ConnectionSettings;
+import org.apache.qpid.client.SSLConfiguration;
 
 public interface BrokerDetails
 {
@@ -52,7 +52,9 @@ public interface BrokerDetails
     
     public static final int DEFAULT_PORT = 5672;
 
+    public static final String SOCKET = "socket";
     public static final String TCP = "tcp";
+    public static final String VM = "vm";
 
     public static final String DEFAULT_TRANSPORT = TCP;
 
@@ -104,12 +106,14 @@ public interface BrokerDetails
     long getTimeout();
 
     void setTimeout(long timeout);
+
+    SSLConfiguration getSSLConfiguration();
+
+    void setSSLConfiguration(SSLConfiguration sslConfiguration);
     
     boolean getBooleanProperty(String propName);
 
     String toString();
 
     boolean equals(Object o);
-
-    ConnectionSettings buildConnectionSettings();
 }

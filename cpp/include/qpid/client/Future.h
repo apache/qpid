@@ -34,7 +34,7 @@ namespace qpid {
 namespace client {
 
 /**@internal */
-class QPID_CLIENT_CLASS_EXTERN Future
+class Future
 {
     framing::SequenceNumber command;
     boost::shared_ptr<FutureResult> result;

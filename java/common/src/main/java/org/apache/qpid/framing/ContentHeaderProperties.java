@@ -20,10 +20,7 @@
  */
 package org.apache.qpid.framing;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
-
+import org.apache.mina.common.ByteBuffer;
 
 /**
  * There will be an implementation of this interface for each content type. All content types have associated
@@ -35,7 +32,7 @@ public interface ContentHeaderProperties
      * Writes the property list to the buffer, in a suitably encoded form.
      * @param buffer The buffer to write to
      */
-    void writePropertyListPayload(DataOutputStream buffer) throws IOException;
+    void writePropertyListPayload(ByteBuffer buffer);
 
     /**
      * Populates the properties from buffer.
@@ -43,8 +40,8 @@ public interface ContentHeaderProperties
      * @param propertyFlags he property flags.
      * @throws AMQFrameDecodingException when the buffer does not contain valid data
      */
-    void populatePropertiesFromBuffer(DataInputStream buffer, int propertyFlags, int size)
-        throws AMQFrameDecodingException, IOException;
+    void populatePropertiesFromBuffer(ByteBuffer buffer, int propertyFlags, int size)
+        throws AMQFrameDecodingException;
 
     /**
      * @return the size of the encoded property list in bytes.
@@ -59,4 +56,5 @@ public interface ContentHeaderProperties
      */
     int getPropertyFlags();
 
+    void updated();
 }

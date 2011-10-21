@@ -20,13 +20,12 @@
  */
 package org.apache.qpid.framing;
 
-import java.io.DataInputStream;
-import java.io.IOException;
+import org.apache.mina.common.ByteBuffer;
 
 /**
  * Any class that is capable of turning a stream of bytes into an AMQ structure must implement this interface.
  */
 public interface BodyFactory
 {
-    AMQBody createBody(DataInputStream in, long bodySize) throws AMQFrameDecodingException, IOException;
+    AMQBody createBody(ByteBuffer in, long bodySize) throws AMQFrameDecodingException;
 }

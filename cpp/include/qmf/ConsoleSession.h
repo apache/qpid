@@ -38,7 +38,7 @@ namespace qmf {
     class ConsoleSessionImpl;
     class ConsoleEvent;
 
-    class QMF_CLASS_EXTERN ConsoleSession : public qmf::Handle<ConsoleSessionImpl> {
+    class ConsoleSession : public qmf::Handle<ConsoleSessionImpl> {
     public:
         QMF_EXTERN ConsoleSession(ConsoleSessionImpl* impl = 0);
         QMF_EXTERN ConsoleSession(const ConsoleSession&);
@@ -61,53 +61,15 @@ namespace qmf {
          *                                    If False: Listen only on the routable direct address
          *    strict-security:{True,False}  - If True:  Cooperate with the broker to enforce strict access control to the network
          *                                  - If False: Operate more flexibly with regard to use of messaging facilities [default]
-         *    max-thread-wait-time:N     - Time (in seconds) the session thread will wait for messages from the network between
-         *                                 periodic background processing passes.
-         *                                 Must not be greater than 60.  Larger numbers will cause fewer wake-ups but will
-         *                                 increase the time it takes to shut down the process. [default: 5]
          */
-        QMF_EXTERN ConsoleSession(qpid::messaging::Connection& conn, const std::string& options="");
-
-        /**
-         * setDomain - Change the QMF domain that this console will operate in.  If this is not called,
-         * the domain will be "default".  Agents in a domain can be seen only by consoles in the same domain.
-         * This must be called prior to opening the console session.
-         */
-        QMF_EXTERN void setDomain(const std::string& domain);
-        QMF_EXTERN void setAgentFilter(const std::string& filter);
-
-        /**
-         * Open the console session.  After opening the session, the domain cannot be changed.
-         */
+        QMF_EXTERN ConsoleSession(qpid::messaging::Connection&, const std::string& options="");
+        QMF_EXTERN void setDomain(const std::string&);
+        QMF_EXTERN void setAgentFilter(const std::string&);
         QMF_EXTERN void open();
-
-        /**
-         * Close the session.  Once closed, the session no longer communicates on the messaging network.
-         */
         QMF_EXTERN void close();
-
-        /**
-         * Get the next event from the console session.  Events represent actions that must be acted upon by the
-         * console application.  This method blocks for up to the timeout if there are no events to be handled.
-         * This method will typically be the focus of the console application's main execution loop.
-         * If the timeout is set to Duration::IMMEDIATE, the call will not block.
-         */
-        QMF_EXTERN bool nextEvent(ConsoleEvent& outEvent, qpid::messaging::Duration timeout=qpid::messaging::Duration::FOREVER);
-
-        /**
-         * Return the number of events pending for nextEvent.  This method will never block.
-         */
-        QMF_EXTERN int pendingEvents() const;
-
-        /**
-         * getAgentCount, getAgent - Retrieve the set of agents that match the console session's agent filter.
-         */
+        QMF_EXTERN bool nextEvent(ConsoleEvent&, qpid::messaging::Duration timeout=qpid::messaging::Duration::FOREVER);
         QMF_EXTERN uint32_t getAgentCount() const;
-        QMF_EXTERN Agent getAgent(uint32_t agentIndex) const;
-
-        /**
-         * Get the agent for the connected broker (i.e. the agent embedded in the broker to which we have a connection).
-         */
+        QMF_EXTERN Agent getAgent(uint32_t) const;
         QMF_EXTERN Agent getConnectedBrokerAgent() const;
 
         /**
@@ -117,13 +79,12 @@ namespace qmf {
          * will involve all known agents.  If agentFilter is non-empty, it will be applied only to the set of known
          * agents.  A subscription cannot be created that involves an agent not known by the session.
          */
-        QMF_EXTERN Subscription subscribe(const Query& query,       const std::string& agentFilter = "", const std::string& options = "");
-        QMF_EXTERN Subscription subscribe(const std::string& query, const std::string& agentFilter = "", const std::string& options = "");
+        QMF_EXTERN Subscription subscribe(const Query&,       const std::string& agentFilter = "", const std::string& options = "");
+        QMF_EXTERN Subscription subscribe(const std::string&, const std::string& agentFilter = "", const std::string& options = "");
 
 #ifndef SWIG
     private:
         friend class qmf::PrivateImplRef<ConsoleSession>;
-        friend struct ConsoleSessionImplAccess;
 #endif
     };
 

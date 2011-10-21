@@ -26,10 +26,8 @@
 #include "qpid/broker/SaslAuthenticator.h"
 #include "qpid/framing/amqp_types.h"
 #include "qpid/framing/AMQFrame.h"
-#include "qpid/framing/AMQMethodBody.h"
 #include "qpid/framing/AMQP_AllOperations.h"
 #include "qpid/framing/AMQP_AllProxy.h"
-#include "qpid/framing/ConnectionStartOkBody.h"
 #include "qpid/framing/enum.h"
 #include "qpid/framing/FrameHandler.h"
 #include "qpid/framing/ProtocolInitiation.h"
@@ -59,12 +57,12 @@ class ConnectionHandler : public framing::FrameHandler
         Connection& connection;
         bool serverMode;
         std::auto_ptr<SaslAuthenticator> authenticator;
+        AclModule* acl;
         SecureConnection* secured;
         bool isOpen;
 
         Handler(Connection& connection, bool isClient, bool isShadow=false);
         ~Handler();
-        void startOk(const qpid::framing::ConnectionStartOkBody& body);
         void startOk(const qpid::framing::FieldTable& clientProperties,
                      const std::string& mechanism, const std::string& response,
                      const std::string& locale);
@@ -98,7 +96,7 @@ class ConnectionHandler : public framing::FrameHandler
     };
     std::auto_ptr<Handler> handler;
 
-    bool handle(const qpid::framing::AMQMethodBody& method);
+
   public:
     ConnectionHandler(Connection& connection, bool isClient, bool isShadow=false );
     void close(framing::connection::CloseCode code, const std::string& text);

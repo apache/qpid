@@ -192,7 +192,7 @@ public class MessageStoreTool
 
         if (_initialised)
         {
-            ApplicationRegistry.remove();
+            ApplicationRegistry.remove(1);
         }
 
         _console.println("...exiting");
@@ -274,7 +274,7 @@ public class MessageStoreTool
         {
             ConfigurationFileApplicationRegistry registry = new ConfigurationFileApplicationRegistry(configFile);
 
-            ApplicationRegistry.remove();
+            ApplicationRegistry.remove(1);
 
             ApplicationRegistry.initialise(registry);
 

@@ -21,14 +21,10 @@ import javax.transaction.xa.XAException;
 import javax.transaction.xa.XAResource;
 import javax.transaction.xa.Xid;
 
+import org.apache.qpid.AMQInvalidArgumentException;
 import org.apache.qpid.dtx.XidImpl;
-import org.apache.qpid.transport.DtxXaStatus;
-import org.apache.qpid.transport.ExecutionErrorCode;
-import org.apache.qpid.transport.Future;
-import org.apache.qpid.transport.Option;
-import org.apache.qpid.transport.RecoverResult;
-import org.apache.qpid.transport.SessionException;
-import org.apache.qpid.transport.XaResult;
+import org.apache.qpid.transport.*;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -215,28 +211,9 @@ public class XAResourceImpl implements XAResource
      * @throws XAException An error has occurred. Possible exception values are XAER_RMERR, XAER_RMFAIL.
      */
     public boolean isSameRM(XAResource xaResource) throws XAException
-    {       
-        if(this == xaResource)
-        {
-            return true;            
-        }       
-        if(!(xaResource instanceof XAResourceImpl))
-        {
-            return false;           
-        }
-        
-        XAResourceImpl other = (XAResourceImpl)xaResource;
-
-        String myUUID = ((AMQSession_0_10)_xaSession).getAMQConnection().getBrokerUUID();
-        String otherUUID = ((AMQSession_0_10)other._xaSession).getAMQConnection().getBrokerUUID();
-        
-        if(_logger.isDebugEnabled())
-        {
-            _logger.debug("Comparing my UUID " + myUUID + " with other UUID " + otherUUID);
-        }
-        
-        return (myUUID != null && otherUUID != null && myUUID.equals(otherUUID));
-                
+    {
+        // TODO : get the server identity of xaResource and compare it with our own one
+        return false;
     }
 
     /**

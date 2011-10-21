@@ -21,12 +21,11 @@
 
 package org.apache.qpid.framing;
 
+import org.apache.mina.common.ByteBuffer;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
 import java.util.*;
 import java.lang.ref.WeakReference;
 
@@ -38,10 +37,6 @@ import java.lang.ref.WeakReference;
  */
 public final class AMQShortString implements CharSequence, Comparable<AMQShortString>
 {
-    /**
-     * The maximum number of octets in AMQ short string as defined in AMQP specification
-     */
-    public static final int MAX_LENGTH = 255;
     private static final byte MINUS = (byte)'-';
     private static final byte ZERO = (byte) '0';
 
@@ -123,16 +118,19 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
 
     public AMQShortString(byte[] data)
     {
-        if (data == null)
-        {
-            throw new NullPointerException("Cannot create AMQShortString with null data[]");
-        }
-        if (data.length > MAX_LENGTH)
-        {
-            throw new IllegalArgumentException("Cannot create AMQShortString with number of octets over 255!");
-        }
+
         _data = data.clone();
         _length = data.length;
+        _offset = 0;
+    }
+
+    public AMQShortString(byte[] data, int pos)
+    {
+        final int size = data[pos++];
+        final byte[] dataCopy = new byte[size];
+        System.arraycopy(data,pos,dataCopy,0,size);
+        _length = size;
+        _data = dataCopy;
         _offset = 0;
     }
 
@@ -148,12 +146,7 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
         {
             throw new NullPointerException("Cannot create AMQShortString with null char[]");
         }
-        // the current implementation of 0.8/0.9.x short string encoding
-        // supports only ASCII characters
-        if (data.length> MAX_LENGTH)
-        {
-            throw new IllegalArgumentException("Cannot create AMQShortString with number of octets over 255!");
-        }
+
         final int length = data.length;
         final byte[] stringBytes = new byte[length];
         int hash = 0;
@@ -172,17 +165,6 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
 
     public AMQShortString(CharSequence charSequence)
     {
-        if (charSequence == null)
-        {
-            // it should be possible to create short string for null data
-            charSequence = "";
-        }
-        // the current implementation of 0.8/0.9.x short string encoding
-        // supports only ASCII characters
-        if (charSequence.length() > MAX_LENGTH)
-        {
-            throw new IllegalArgumentException("Cannot create AMQShortString with number of octets over 255!");
-        }
         final int length = charSequence.length();
         final byte[] stringBytes = new byte[length];
         int hash = 0;
@@ -200,33 +182,31 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
 
     }
 
-    private AMQShortString(DataInputStream data, final int length) throws IOException
+    private AMQShortString(ByteBuffer data, final int length)
     {
-        if (length > MAX_LENGTH)
+        if(data.isDirect() || data.isReadOnly())
         {
-            throw new IllegalArgumentException("Cannot create AMQShortString with number of octets over 255!");
+            byte[] dataBytes = new byte[length];
+            data.get(dataBytes);
+            _data = dataBytes;
+            _offset = 0;
         }
-        byte[] dataBytes = new byte[length];
-        data.read(dataBytes);
-        _data = dataBytes;
-        _offset = 0;
+        else
+        {
+
+            _data = data.array();
+            _offset = data.arrayOffset() + data.position();
+            data.skip(length);
+
+        }
         _length = length;
 
     }
 
     private AMQShortString(final byte[] data, final int from, final int to)
     {
-        if (data == null)
-        {
-            throw new NullPointerException("Cannot create AMQShortString with null data[]");
-        }
-        int length = to - from;
-        if (length > MAX_LENGTH)
-        {
-            throw new IllegalArgumentException("Cannot create AMQShortString with number of octets over 255!");
-        }
         _offset = from;
-        _length = length;
+        _length = to - from;
         _data = data;
     }
 
@@ -265,9 +245,32 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
         return new CharSubSequence(start, end);
     }
 
-    public static AMQShortString readFromBuffer(DataInputStream buffer) throws IOException
+    public int writeToByteArray(byte[] encoding, int pos)
     {
-        final int length = buffer.readUnsignedByte();
+        final int size = length();
+        encoding[pos++] = (byte) size;
+        System.arraycopy(_data,_offset,encoding,pos,size);
+        return pos+size;
+    }
+
+    public static AMQShortString readFromByteArray(byte[] byteEncodedDestination, int pos)
+    {
+
+
+        final AMQShortString shortString = new AMQShortString(byteEncodedDestination, pos);
+        if(shortString.length() == 0)
+        {
+            return null;
+        }
+        else
+        {
+            return shortString;
+        }
+    }
+
+    public static AMQShortString readFromBuffer(ByteBuffer buffer)
+    {
+        final short length = buffer.getUnsigned();
         if (length == 0)
         {
             return null;
@@ -293,13 +296,13 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
         }
     }
 
-    public void writeToBuffer(DataOutputStream buffer) throws IOException
+    public void writeToBuffer(ByteBuffer buffer)
     {
 
         final int size = length();
         //buffer.setAutoExpand(true);
-        buffer.write((byte) size);
-        buffer.write(_data, _offset, size);
+        buffer.put((byte) size);
+        buffer.put(_data, _offset, size);
 
     }
 
@@ -687,10 +690,6 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
             size += term.length();
         }
 
-        if (size > MAX_LENGTH)
-        {
-            throw new IllegalArgumentException("Cannot create AMQShortString with number of octets over 255!");
-        }
         byte[] data = new byte[size];
         int pos = 0;
         final byte[] delimData = delim._data;

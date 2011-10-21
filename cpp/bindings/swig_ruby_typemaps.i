@@ -49,7 +49,7 @@
     }
 
     VALUE VariantToRb(const qpid::types::Variant* v) {
-        VALUE result = Qnil;
+        VALUE result;
         try {
             switch (v->getType()) {
             case qpid::types::VAR_VOID: {

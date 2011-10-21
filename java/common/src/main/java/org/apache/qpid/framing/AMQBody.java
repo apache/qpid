@@ -20,9 +20,7 @@
  */
 package org.apache.qpid.framing;
 
-import java.io.DataOutputStream;
-import java.io.IOException;
-
+import org.apache.mina.common.ByteBuffer;
 import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
 import org.apache.qpid.AMQException;
 
@@ -36,7 +34,7 @@ public interface AMQBody
      */
     public abstract int getSize();
     
-    public void writePayload(DataOutputStream buffer) throws IOException;
+    public void writePayload(ByteBuffer buffer);
     
-    void handle(final int channelId, final AMQVersionAwareProtocolSession amqProtocolSession) throws AMQException;
+    void handle(final int channelId, final AMQVersionAwareProtocolSession amqMinaProtocolSession) throws AMQException;
 }

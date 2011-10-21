@@ -60,7 +60,7 @@ class ConnectionImpl;
  *  
  */
 
-class QPID_CLIENT_CLASS_EXTERN Connection
+class Connection
 {
     framing::ProtocolVersion version;
 
@@ -102,8 +102,8 @@ class QPID_CLIENT_CLASS_EXTERN Connection
      * within a single broker).
      */
     QPID_CLIENT_EXTERN void open(const std::string& host, int port = 5672,
-              const std::string& uid = "",
-              const std::string& pwd = "",
+              const std::string& uid = "guest",
+              const std::string& pwd = "guest",
               const std::string& virtualhost = "/", uint16_t maxFrameSize=65535);
 
     /**
@@ -124,8 +124,8 @@ class QPID_CLIENT_CLASS_EXTERN Connection
      * within a single broker).
      */
     QPID_CLIENT_EXTERN void open(const Url& url,
-              const std::string& uid = "",
-              const std::string& pwd = "",
+              const std::string& uid = "guest",
+              const std::string& pwd = "guest",
               const std::string& virtualhost = "/", uint16_t maxFrameSize=65535);
 
     /**

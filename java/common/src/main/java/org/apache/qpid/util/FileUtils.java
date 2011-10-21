@@ -143,9 +143,8 @@ public class FileUtils
     }
 
     /**
-     * Either opens the specified filename as an input stream or either the filesystem or classpath,
-     * or uses the default resource loaded using the specified class loader, if opening the file fails
-     * or no file name is specified.
+     * Either opens the specified filename as an input stream, or uses the default resource loaded using the
+     * specified class loader, if opening the file fails or no file name is specified.
      *
      * @param filename        The name of the file to open.
      * @param defaultResource The name of the default resource on the classpath if the file cannot be opened.
@@ -157,28 +156,28 @@ public class FileUtils
     {
         InputStream is = null;
 
+        // Flag to indicate whether the default resource should be used. By default this is true, so that the default
+        // is used when opening the file fails.
+        boolean useDefault = true;
+
         // Try to open the file if one was specified.
         if (filename != null)
         {
-            // try on filesystem
             try
             {
                 is = new BufferedInputStream(new FileInputStream(new File(filename)));
+
+                // Clear the default flag because the file was succesfully opened.
+                useDefault = false;
             }
             catch (FileNotFoundException e)
             {
-                is = null;
-            }
-
-            if (is == null)
-            {
-                // failed on filesystem, so try on classpath
-                is = cl.getResourceAsStream(filename);
+                // Ignore this exception, the default will be used instead.
             }
         }
 
         // Load the default resource if a file was not specified, or if opening the file failed.
-        if (is == null)
+        if (useDefault)
         {
             is = cl.getResourceAsStream(defaultResource);
         }
@@ -340,7 +339,7 @@ public class FileUtils
         }
 
         //else we have a source directory
-        if (!dst.isDirectory() && !dst.mkdirs())
+        if (!dst.isDirectory() && !dst.mkdir())
         {
             throw new UnableToCopyException("Unable to create destination directory");
         }

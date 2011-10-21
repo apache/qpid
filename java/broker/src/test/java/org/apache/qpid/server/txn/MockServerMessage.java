@@ -46,56 +46,67 @@ class MockServerMessage implements ServerMessage
         this.persistent = persistent;
     }
 
+    @Override
     public boolean isPersistent()
     {
         return persistent;
     }
 
+    @Override
     public MessageReference newReference()
     {
         throw new NotImplementedException();
     }
 
+    @Override
     public boolean isImmediate()
     {
         throw new NotImplementedException();
     }
 
+    @Override
     public long getSize()
     {
         throw new NotImplementedException();
     }
 
+    @Override
     public SessionConfig getSessionConfig()
     {
         throw new NotImplementedException();
     }
 
+    @Override
     public String getRoutingKey()
     {
         throw new NotImplementedException();
     }
 
+    @Override
     public AMQMessageHeader getMessageHeader()
     {
         throw new NotImplementedException();
     }
 
+    @Override
     public long getExpiration()
     {
         throw new NotImplementedException();
     }
 
+    @Override
     public int getContent(ByteBuffer buf, int offset)
     {
         throw new NotImplementedException();
     }
 
+    @Override
     public long getArrivalTime()
     {
         throw new NotImplementedException();
     }
 
+    @Override
     public Long getMessageNumber()
     {
         return 0L;

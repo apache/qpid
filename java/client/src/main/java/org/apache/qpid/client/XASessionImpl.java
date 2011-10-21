@@ -52,7 +52,7 @@ public class XASessionImpl extends AMQSession_0_10 implements XASession, XATopic
     {
         super(qpidConnection, con, channelId, false,  // this is not a transacted session
               Session.AUTO_ACKNOWLEDGE, // the ack mode is transacted
-              MessageFactoryRegistry.newDefaultRegistry(), defaultPrefetchHigh, defaultPrefetchLow,null);
+              MessageFactoryRegistry.newDefaultRegistry(), defaultPrefetchHigh, defaultPrefetchLow);
         createSession();
         _xaResource = new XAResourceImpl(this);
     }

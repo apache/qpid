@@ -39,7 +39,6 @@ import org.apache.qpid.client.message.AbstractJMSMessage;
 import org.apache.qpid.client.message.MessageConverter;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.framing.ContentBody;
-import org.apache.qpid.transport.TransportException;
 import org.apache.qpid.util.UUIDGen;
 import org.apache.qpid.util.UUIDs;
 import org.slf4j.Logger;
@@ -114,6 +113,8 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
 
     private final boolean _mandatory;
 
+    private final boolean _waitUntilSent;
+
     private boolean _disableMessageId;
 
     private UUIDGen _messageIdGenerator = UUIDs.newGenerator();
@@ -125,7 +126,8 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
     protected PublishMode publishMode = PublishMode.ASYNC_PUBLISH_ALL;
 
     protected BasicMessageProducer(AMQConnection connection, AMQDestination destination, boolean transacted, int channelId,
-                                   AMQSession session, AMQProtocolHandler protocolHandler, long producerId, boolean immediate, boolean mandatory) throws AMQException
+                                   AMQSession session, AMQProtocolHandler protocolHandler, long producerId, boolean immediate, boolean mandatory,
+                                   boolean waitUntilSent) throws AMQException
     {
         _connection = connection;
         _destination = destination;
@@ -141,6 +143,7 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
 
         _immediate = immediate;
         _mandatory = mandatory;
+        _waitUntilSent = waitUntilSent;
         _userID = connection.getUsername();
         setPublishMode();
     }
@@ -263,7 +266,7 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
         return _destination;
     }
 
-    public void close() throws JMSException
+    public void close()
     {
         _closed.set(true);
         _session.deregisterProducer(_producerId);
@@ -360,6 +363,19 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
         }
     }
 
+    public void send(Destination destination, Message message, int deliveryMode, int priority, long timeToLive,
+                     boolean mandatory, boolean immediate, boolean waitUntilSent) throws JMSException
+    {
+        checkPreConditions();
+        checkDestination(destination);
+        synchronized (_connection.getFailoverMutex())
+        {
+            validateDestination(destination);
+            sendImpl((AMQDestination) destination, message, deliveryMode, priority, timeToLive, mandatory, immediate,
+                     waitUntilSent);
+        }
+    }
+
     private AbstractJMSMessage convertToNativeMessage(Message message) throws JMSException
     {
         if (message instanceof AbstractJMSMessage)
@@ -434,6 +450,12 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
         }
     }
 
+    protected void sendImpl(AMQDestination destination, Message message, int deliveryMode, int priority, long timeToLive,
+                            boolean mandatory, boolean immediate) throws JMSException
+    {
+        sendImpl(destination, message, deliveryMode, priority, timeToLive, mandatory, immediate, _waitUntilSent);
+    }
+
     /**
      * The caller of this method must hold the failover mutex.
      *
@@ -448,12 +470,22 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
      * @throws JMSException
      */
     protected void sendImpl(AMQDestination destination, Message origMessage, int deliveryMode, int priority, long timeToLive,
-                            boolean mandatory, boolean immediate) throws JMSException
+                            boolean mandatory, boolean immediate, boolean wait) throws JMSException
     {
         checkTemporaryDestination(destination);
         origMessage.setJMSDestination(destination);
 
         AbstractJMSMessage message = convertToNativeMessage(origMessage);
+
+        if (_transacted)
+        {
+            if (_session.hasFailedOver() && _session.isDirty())
+            {
+                throw new JMSAMQException("Failover has occurred and session is dirty so unable to send.",
+                                          new AMQSessionDirtyException("Failover has occurred and session is dirty " +
+                                                                       "so unable to send."));
+            }
+        }
 
         UUID messageId = null;
         if (_disableMessageId)
@@ -466,14 +498,7 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
             message.setJMSMessageID(messageId);
         }
 
-        try
-        {
-            sendMessage(destination, origMessage, message, messageId, deliveryMode, priority, timeToLive, mandatory, immediate);
-        }
-        catch (TransportException e)
-        {
-            throw getSession().toJMSException("Exception whilst sending:" + e.getMessage(), e);
-        }
+        sendMessage(destination, origMessage, message, messageId, deliveryMode, priority, timeToLive, mandatory, immediate, wait);
 
         if (message != origMessage)
         {
@@ -493,7 +518,7 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
 
     abstract void sendMessage(AMQDestination destination, Message origMessage, AbstractJMSMessage message,
                               UUID messageId, int deliveryMode, int priority, long timeToLive, boolean mandatory,
-                              boolean immediate) throws JMSException;
+                              boolean immediate, boolean wait) throws JMSException;
 
     private void checkTemporaryDestination(AMQDestination destination) throws JMSException
     {
@@ -571,13 +596,6 @@ public abstract class BasicMessageProducer extends Closeable implements org.apac
 
     public boolean isBound(AMQDestination destination) throws JMSException
     {
-        try
-        {
-            return _session.isQueueBound(destination.getExchangeName(), null, destination.getRoutingKey());
-        }
-        catch (TransportException e)
-        {
-            throw getSession().toJMSException("Exception whilst checking destination binding:" + e.getMessage(), e);
-        }
+        return _session.isQueueBound(destination.getExchangeName(), null, destination.getRoutingKey());
     }
 }

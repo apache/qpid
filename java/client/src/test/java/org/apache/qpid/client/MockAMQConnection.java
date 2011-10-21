@@ -23,6 +23,7 @@ package org.apache.qpid.client;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.state.AMQState;
 import org.apache.qpid.framing.ProtocolVersion;
+import org.apache.qpid.jms.ConnectionURL;
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.url.URLSyntaxException;
 
@@ -36,16 +37,51 @@ public class MockAMQConnection extends AMQConnection
         super(broker, username, password, clientName, virtualHost);
     }
 
+    public MockAMQConnection(String broker, String username, String password, String clientName, String virtualHost, SSLConfiguration sslConfig)
+            throws AMQException, URLSyntaxException
+    {
+        super(broker, username, password, clientName, virtualHost, sslConfig);
+    }
+
     public MockAMQConnection(String host, int port, String username, String password, String clientName, String virtualHost)
             throws AMQException, URLSyntaxException
     {
         super(host, port, username, password, clientName, virtualHost);
     }
 
+    public MockAMQConnection(String host, int port, String username, String password, String clientName, String virtualHost, SSLConfiguration sslConfig)
+            throws AMQException, URLSyntaxException
+    {
+        super(host, port, username, password, clientName, virtualHost, sslConfig);
+    }
+
+    public MockAMQConnection(String host, int port, boolean useSSL, String username, String password, String clientName, String virtualHost, SSLConfiguration sslConfig)
+            throws AMQException, URLSyntaxException
+    {
+        super(host, port, useSSL, username, password, clientName, virtualHost, sslConfig);
+    }
+
     public MockAMQConnection(String connection)
             throws AMQException, URLSyntaxException
     {
         super(connection);
+    }
+
+    public MockAMQConnection(String connection, SSLConfiguration sslConfig)
+            throws AMQException, URLSyntaxException
+    {
+        super(connection, sslConfig);
+    }
+
+    public MockAMQConnection(ConnectionURL connectionURL, SSLConfiguration sslConfig)
+            throws AMQException
+    {
+        super(connectionURL, sslConfig);
+    }
+
+    protected MockAMQConnection(String username, String password, String clientName, String virtualHost)
+    {
+        super(username, password, clientName, virtualHost);
     }
 
     @Override

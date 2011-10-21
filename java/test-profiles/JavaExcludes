@@ -17,29 +17,38 @@
 // under the License.
 //
 
+// Those tests are not finished
+org.apache.qpid.test.testcases.TTLTest#*
+org.apache.qpid.test.testcases.FailoverTest#*
+
+// This is a long running test so should exclude from normal runs
+org.apache.qpid.test.client.failover.FailoverTest#test4MinuteFailover
+
+//QPID-1818 : Client code path does not correctly restore a transacted session after failover.
+org.apache.qpid.server.persistent.NoLocalAfterRecoveryTest#*
+
 // QPID-1823: this takes ages to run
 org.apache.qpid.client.SessionCreateTest#*
+
+// related to QPID-2471. Temporarily disabling these tests until I figure out why they are failing with the Java broker.
+org.apache.qpid.test.unit.ack.RecoverTest#testRecoverResendsMsgs
+org.apache.qpid.test.unit.ack.RecoverTest#testRecoverResendsMsgsAckOnEarlier
+org.apache.qpid.test.unit.ack.RecoverTest#testAcknowledgePerConsumer
+org.apache.qpid.test.unit.ack.FailoverBeforeConsumingRecoverTest#testRecoverResendsMsgs
+org.apache.qpid.test.unit.ack.FailoverBeforeConsumingRecoverTest#testRecoverResendsMsgsAckOnEarlier
+org.apache.qpid.test.unit.ack.FailoverBeforeConsumingRecoverTest#testAcknowledgePerConsumer
+
+// related to QPID-2471. These are new test cases and fail with the Java broker.
+org.apache.qpid.test.unit.ack.RecoverTest#testOderingWithAsyncConsumer
+org.apache.qpid.test.unit.ack.RecoverTest#testOderingWithSyncConsumer
+org.apache.qpid.test.unit.ack.FailoverBeforeConsumingRecoverTest#testOderingWithAsyncConsumer
+org.apache.qpid.test.unit.ack.FailoverBeforeConsumingRecoverTest#testOderingWithSyncConsumer
+
+org.apache.qpid.test.client.queue.LVQTest#*
+
+// Session resume is not supported in the Java client
+org.apache.qpid.transport.ConnectionTest#testResumeNonemptyReplayBuffer
 
 //QPID-2845: The queue policy types used by the C++ broker are not currently supported by the Java broker
 org.apache.qpid.test.client.queue.QueuePolicyTest#testRingPolicy
 org.apache.qpid.test.client.queue.QueuePolicyTest#testRejectPolicy
-
-///////////////////////////////////////////////////////
-//Moved from JavaStandaloneExcludes when it was removed
-///////////////////////////////////////////////////////
-
-// QPID-3426: The following test is broken.
-// This is a long running test so should exclude from normal runs
-org.apache.qpid.test.client.failover.FailoverTest#test4MinuteFailover
-
-// This test may use QpidTestCase but it is not using the getConnection and is hardwired to InVM
-org.apache.qpid.test.unit.client.connection.CloseAfterConnectionFailureTest#*
-
-//QPID-1818, QPID-1821 : Client code path does not correctly restore a transacted session after failover.
-org.apache.qpid.server.persistent.NoLocalAfterRecoveryTest#*
-
-//XA functionality is not fully implemented yet
-org.apache.qpid.jms.xa.XAResourceTest#*
-
-//The Java broker doesnt support client auth
-org.apache.qpid.client.ssl.SSLTest#testMultipleCertsInSingleStore

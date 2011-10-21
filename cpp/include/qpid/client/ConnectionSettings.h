@@ -37,7 +37,7 @@ namespace client {
 /**
  * Settings for a Connection.
  */
-struct QPID_CLIENT_CLASS_EXTERN ConnectionSettings {
+struct ConnectionSettings {
 
     QPID_CLIENT_EXTERN ConnectionSettings();
     QPID_CLIENT_EXTERN virtual ~ConnectionSettings();

@@ -19,7 +19,6 @@
 
 //These tests require a persistent store
 org.apache.qpid.server.store.PersistentStoreTest#*
-org.apache.qpid.test.unit.ack.ClientAcknowledgeTest#testClientAckWithLargeFlusherPeriod
 
 org.apache.qpid.test.unit.ct.DurableSubscriberTest#*
 
@@ -31,6 +30,3 @@ org.apache.qpid.server.store.MessageStoreTest#testQueuePersistence
 org.apache.qpid.server.store.MessageStoreTest#testDurableQueueRemoval
 org.apache.qpid.server.store.MessageStoreTest#testExchangePersistence
 org.apache.qpid.server.store.MessageStoreTest#testDurableExchangeRemoval
-
-org.apache.qpid.server.store.berkeleydb.BDBMessageStoreTest#*
-org.apache.qpid.server.store.berkeleydb.BDBUpgradeTest#*

@@ -90,7 +90,7 @@ struct SimpleListener : public MessageListener
     }
 };
 
-struct ClientSessionFixture : public SessionFixture
+struct ClientSessionFixture : public ProxySessionFixture
 {
     void declareSubscribe(const string& q="odd_blue",
                           const string& dest="xml")

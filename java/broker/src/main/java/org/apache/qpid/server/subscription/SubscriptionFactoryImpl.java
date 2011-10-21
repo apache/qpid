@@ -20,28 +20,17 @@
  */
 package org.apache.qpid.server.subscription;
 
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicLong;
-
 import org.apache.qpid.AMQException;
 import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.AMQChannel;
-import org.apache.qpid.server.filter.FilterManager;
 import org.apache.qpid.server.flow.FlowCreditManager;
-import org.apache.qpid.server.flow.FlowCreditManager_0_10;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.server.transport.ServerSession;
-import org.apache.qpid.transport.MessageAcceptMode;
-import org.apache.qpid.transport.MessageAcquireMode;
-import org.apache.qpid.transport.MessageFlowMode;
 
 public class SubscriptionFactoryImpl implements SubscriptionFactory
 {
-    private static final AtomicLong SUB_ID_GENERATOR = new AtomicLong(0);
-
     public Subscription createSubscription(int channelId, AMQProtocolSession protocolSession,
                                            AMQShortString consumerTag, boolean acks, FieldTable filters,
                                            boolean noLocal, FlowCreditManager creditManager) throws AMQException
@@ -89,47 +78,18 @@ public class SubscriptionFactoryImpl implements SubscriptionFactory
 
         if(isBrowser)
         {
-            return new SubscriptionImpl.BrowserSubscription(channel, protocolSession, consumerTag,  filters, noLocal, creditManager, clientMethod, recordMethod, getNextSubscriptionId());
+            return new SubscriptionImpl.BrowserSubscription(channel, protocolSession, consumerTag,  filters, noLocal, creditManager, clientMethod, recordMethod);
         }
         else if(acks)
         {
-            return new SubscriptionImpl.AckSubscription(channel, protocolSession, consumerTag,  filters, noLocal, creditManager, clientMethod, recordMethod, getNextSubscriptionId());
+            return new SubscriptionImpl.AckSubscription(channel, protocolSession, consumerTag,  filters, noLocal, creditManager, clientMethod, recordMethod);
         }
         else
         {
-            return new SubscriptionImpl.NoAckSubscription(channel, protocolSession, consumerTag,  filters, noLocal, creditManager, clientMethod, recordMethod, getNextSubscriptionId());
+            return new SubscriptionImpl.NoAckSubscription(channel, protocolSession, consumerTag,  filters, noLocal, creditManager, clientMethod, recordMethod);
         }
     }
 
-    public SubscriptionImpl.GetNoAckSubscription createBasicGetNoAckSubscription(final AMQChannel channel,
-                                                                                 final AMQProtocolSession session,
-                                                                                 final AMQShortString consumerTag,
-                                                                                 final FieldTable filters,
-                                                                                 final boolean noLocal,
-                                                                                 final FlowCreditManager creditManager,
-                                                                                 final ClientDeliveryMethod deliveryMethod,
-                                                                                 final RecordDeliveryMethod recordMethod) throws AMQException
-    {
-        return new SubscriptionImpl.GetNoAckSubscription(channel, session, null, null, false, creditManager, deliveryMethod, recordMethod, getNextSubscriptionId());
-    }
-
-    public Subscription_0_10 createSubscription(final ServerSession session,
-                                                final String destination,
-                                                final MessageAcceptMode acceptMode,
-                                                final MessageAcquireMode acquireMode,
-                                                final MessageFlowMode flowMode,
-                                                final FlowCreditManager_0_10 creditManager,
-                                                final FilterManager filterManager,
-                                                final Map<String,Object> arguments)
-    {
-        return new Subscription_0_10(session, destination, acceptMode, acquireMode,
-                                flowMode, creditManager, filterManager, arguments, getNextSubscriptionId());
-    }
 
     public static final SubscriptionFactoryImpl INSTANCE = new SubscriptionFactoryImpl();
-
-    private static long getNextSubscriptionId()
-    {
-        return SUB_ID_GENERATOR.getAndIncrement();
-    }
 }

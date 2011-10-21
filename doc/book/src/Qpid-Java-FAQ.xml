@@ -736,6 +736,35 @@ amqj.logging.level
           </para>
 <!--h3--></section>
 
+	  <section role="h3" id="QpidJavaFAQ-HowdoIuseanInVMBrokerformyowntests-3F"><title>
+            How do I
+            use an InVM Broker for my own tests?
+          </title>
+
+	  <para>
+            I would take a look at the testPassiveTTL in
+	    <ulink url="https://svn.apache.org/repos/asf/qpid/trunk/qpid/java/systests/src/main/java/org/apache/qpid/server/queue/TimeToLiveTest.java">TimeToLiveTest.java</ulink>
+          </para><para>
+            The setUp and tearDown methods show how to correctly start up a
+            broker for InVM testing. If you write your tests using a file for
+            the JNDI you can then very easily swap between running your tests
+            InVM and against a real broker.
+          </para><para>
+            See our <xref linkend="How-to-Use-JNDI"/> on how to confgure it
+          </para><para>
+            Basically though you just need to set two System Properites:
+          </para><para>
+            java.naming.factory.initial =
+            org.apache.qpid.jndi.PropertiesFileInitialContextFactory
+            java.naming.provider.url = &lt;your JNDI file&gt;
+          </para><para>
+            and call getInitialContext() in your code.
+          </para><para>
+            You will of course need to have the broker libraries on your
+            class path for this to run.
+          </para>
+<!--h3--></section>
+
 	  <section role="h3" id="QpidJavaFAQ-HowcanIinspectthecontentsofmyMessageStore-3F"><title>
             How
             can I inspect the contents of my MessageStore?
@@ -875,6 +904,31 @@ java.lang.NullPointerException
             You have not configured the console's SSL trust store properly,
             see <xref linkend="qpid_Management-Console-Security"/> for
             more details.
+          </para>
+<!--h3--></section>
+
+	  <section role="h3" id="QpidJavaFAQ-Clientkeepsthrowing-27Serverdidnotrespondinatimelyfashion-27-5Cerrorcode408-3ARequestTimeout-5C."><title>
+            Client keeps throwing 'Server did not respond in a timely
+            fashion' [error code 408: Request Timeout].
+          </title>
+
+	  <para>
+            Certain operations wait for a response from the Server. One such
+            operations is commit. If the server does not respond to the
+            commit request within a set time a Request Timeout [error code:
+            408] exception is thrown (Server did not respond in a timely
+            fashion). This is to ensure that a server that has hung does not
+            cause the client process to be come unresponsive.
+          </para><para>
+            However, it is possible that the server just needs a long time to
+            process a give request. For example, sending a large persistent
+            message when using a persistent store will take some time to a)
+            Transfer accross the network and b) to be fully written to disk.
+          </para><para>
+            These situations require that the default timeout value be
+            increased. A cilent <xref linkend="qpid_System-Properties"/> 'amqj.default_syncwrite_timeout' can be set
+            on the client to increase the wait time. The default in 0.5 is
+            30000 (30s).
           </para>
 <!--h3--></section>
 

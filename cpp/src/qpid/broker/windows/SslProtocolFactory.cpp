@@ -27,14 +27,10 @@
 #include "qpid/sys/AsynchIOHandler.h"
 #include "qpid/sys/ConnectionCodec.h"
 #include "qpid/sys/Socket.h"
-#include "qpid/sys/SocketAddress.h"
 #include "qpid/sys/SystemInfo.h"
 #include "qpid/sys/windows/SslAsynchIO.h"
-
 #include <boost/bind.hpp>
-#include <boost/ptr_container/ptr_vector.hpp>
 #include <memory>
-
 // security.h needs to see this to distinguish from kernel use.
 #define SECURITY_WIN32
 #include <security.h>
@@ -72,10 +68,9 @@ struct SslServerOptions : qpid::Options
 };
 
 class SslProtocolFactory : public qpid::sys::ProtocolFactory {
+    qpid::sys::Socket listener;
     const bool tcpNoDelay;
-    boost::ptr_vector<Socket> listeners;
-    boost::ptr_vector<AsynchAcceptor> acceptors;
-    uint16_t listeningPort;
+    const uint16_t listeningPort;
     std::string brokerHost;
     const bool clientAuthSelected;
     std::auto_ptr<qpid::sys::AsynchAcceptor> acceptor;
@@ -83,14 +78,15 @@ class SslProtocolFactory : public qpid::sys::ProtocolFactory {
     CredHandle credHandle;
 
   public:
-    SslProtocolFactory(const SslServerOptions&, const std::string& host, const std::string& port, int backlog, bool nodelay);
+    SslProtocolFactory(const SslServerOptions&, int backlog, bool nodelay);
     ~SslProtocolFactory();
     void accept(sys::Poller::shared_ptr, sys::ConnectionCodec::Factory*);
-    void connect(sys::Poller::shared_ptr, const std::string& host, const std::string& port,
+    void connect(sys::Poller::shared_ptr, const std::string& host, int16_t port,
                  sys::ConnectionCodec::Factory*,
                  ConnectFailedCallback failed);
 
     uint16_t getPort() const;
+    std::string getHost() const;
     bool supports(const std::string& capability);
 
   private:
@@ -119,7 +115,6 @@ static struct SslPlugin : public Plugin {
             try {
                 const broker::Broker::Options& opts = broker->getOptions();
                 ProtocolFactory::shared_ptr protocol(new SslProtocolFactory(options,
-                                                                            "", boost::lexical_cast<std::string>(options.port),
                                                                             opts.connectionBacklog,
                                                                             opts.tcpNoDelay));
                 QPID_LOG(notice, "Listening for SSL connections on TCP port " << protocol->getPort());
@@ -132,13 +127,12 @@ static struct SslPlugin : public Plugin {
 } sslPlugin;
 
 SslProtocolFactory::SslProtocolFactory(const SslServerOptions& options,
-                                       const std::string& host, const std::string& port, int backlog,
+                                       int backlog,
                                        bool nodelay)
     : tcpNoDelay(nodelay),
+      listeningPort(listener.listen(options.port, backlog)),
       clientAuthSelected(options.clientAuth) {
 
-    // Make sure that certificate store is good before listening to sockets
-    // to avoid having open and listening sockets when there is no cert store
     SecInvalidateHandle(&credHandle);
 
     // Get the certificate for this server.
@@ -183,23 +177,6 @@ SslProtocolFactory::SslProtocolFactory(const SslServerOptions& options,
         throw QPID_WINDOWS_ERROR(status);
     ::CertFreeCertificateContext(certContext);
     ::CertCloseStore(certStoreHandle, 0);
-
-    // Listen to socket(s)
-    SocketAddress sa(host, port);
-
-    // We must have at least one resolved address
-    QPID_LOG(info, "SSL Listening to: " << sa.asString())
-    Socket* s = new Socket;
-    listeningPort = s->listen(sa, backlog);
-    listeners.push_back(s);
-
-    // Try any other resolved addresses
-    while (sa.nextAddress()) {
-        QPID_LOG(info, "SSL Listening to: " << sa.asString())
-        Socket* s = new Socket;
-        s->listen(sa, backlog);
-        listeners.push_back(s);
-    }
 }
 
 SslProtocolFactory::~SslProtocolFactory() {
@@ -260,19 +237,21 @@ uint16_t SslProtocolFactory::getPort() const {
     return listeningPort; // Immutable no need for lock.
 }
 
+std::string SslProtocolFactory::getHost() const {
+    return listener.getSockname();
+}
+
 void SslProtocolFactory::accept(sys::Poller::shared_ptr poller,
                                 sys::ConnectionCodec::Factory* fact) {
-    for (unsigned i = 0; i<listeners.size(); ++i) {
-        acceptors.push_back(
-            AsynchAcceptor::create(listeners[i],
-                            boost::bind(&SslProtocolFactory::established, this, poller, _1, fact, false)));
-        acceptors[i].start(poller);
-    }
+    acceptor.reset(
+        AsynchAcceptor::create(listener,
+                               boost::bind(&SslProtocolFactory::established, this, poller, _1, fact, false)));
+    acceptor->start(poller);
 }
 
 void SslProtocolFactory::connect(sys::Poller::shared_ptr poller,
                                  const std::string& host,
-                                 const std::string& port,
+                                 int16_t port,
                                  sys::ConnectionCodec::Factory* fact,
                                  ConnectFailedCallback failed)
 {

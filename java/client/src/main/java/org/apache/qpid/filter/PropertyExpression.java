@@ -19,7 +19,6 @@ package org.apache.qpid.filter;
 
 import java.util.HashMap;
 
-import javax.jms.DeliveryMode;
 import javax.jms.JMSException;
 
 import org.apache.qpid.AMQInternalException;
@@ -33,7 +32,7 @@ import org.slf4j.LoggerFactory;
 public class PropertyExpression implements Expression
 {
     // Constants - defined the same as JMS
-    private static enum JMSDeliveryMode { NON_PERSISTENT, PERSISTENT }
+    private static final int NON_PERSISTENT = 1;
     private static final int DEFAULT_PRIORITY = 4;
 
     private static final Logger _logger = LoggerFactory.getLogger(PropertyExpression.class);
@@ -80,24 +79,22 @@ public class PropertyExpression implements Expression
                                      {
                                          public Object evaluate(AbstractJMSMessage message)
                                          {
-
-                                             JMSDeliveryMode mode = JMSDeliveryMode.NON_PERSISTENT;
                                              try
                                              {
-                                                 mode = message.getJMSDeliveryMode() == DeliveryMode.PERSISTENT ?
-                                                         JMSDeliveryMode.PERSISTENT : JMSDeliveryMode.NON_PERSISTENT;
-
+                                                 int mode = message.getJMSDeliveryMode();
                                                  if (_logger.isDebugEnabled())
                                                  {
                                                      _logger.debug("JMSDeliveryMode is :" + mode);
                                                  }
+
+                                                 return mode;
                                              }
                                              catch (JMSException e)
                                              {
                                                  _logger.warn("Error evaluating property",e);
                                              }
 
-                                             return mode.toString();
+                                             return NON_PERSISTENT;
                                          }
                                      });
 

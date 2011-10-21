@@ -18,6 +18,18 @@
 # under the License.
 #
 
-. check-qpid-java-env
+if [ -z "$QPID_HOME" ]; then
+    export QPID_HOME=$(dirname $(dirname $(readlink -f $0)))
+    export PATH=${PATH}:${QPID_HOME}/bin
+fi
 
-$JAVA -cp $CLASSPATH -server $JAVA_MEM $LOG_CONFIG org.apache.qpid.tools.QpidBench "$@"
+# Set classpath to include Qpid jar with all required jars in manifest
+QPID_LIBS=$QPID_HOME/lib/qpid-all.jar
+
+# Set other variables used by the qpid-run script before calling
+export JAVA=java \
+       JAVA_VM=-server \
+       JAVA_MEM=-Xmx1024m \
+       QPID_CLASSPATH=$QPID_LIBS
+
+. qpid-run org.apache.qpid.tools.QpidBench "$@"

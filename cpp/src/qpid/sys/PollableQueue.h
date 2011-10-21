@@ -10,9 +10,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
+ * 
  *   http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -28,8 +28,7 @@
 #include <boost/function.hpp>
 #include <boost/bind.hpp>
 #include <algorithm>
-#include <deque>
-#include "qpid/log/Statement.h" // FIXME aconway 2011-08-05:
+#include <vector>
 
 namespace qpid {
 namespace sys {
@@ -45,7 +44,7 @@ class Poller;
 template <class T>
 class PollableQueue {
   public:
-    typedef std::deque<T> Batch;
+    typedef std::vector<T> Batch;
     typedef T value_type;
 
     /**
@@ -69,11 +68,11 @@ class PollableQueue {
                   const boost::shared_ptr<sys::Poller>& poller);
 
     ~PollableQueue();
-
+    
     /** Push a value onto the queue. Thread safe */
     void push(const T& t);
 
-    /** Start polling. */
+    /** Start polling. */ 
     void start();
 
     /** Stop polling and wait for the current callback, if any, to complete. */
@@ -91,14 +90,14 @@ class PollableQueue {
      * ensure clean shutdown with no events left on the queue.
      */
     void shutdown();
-
+    
   private:
     typedef sys::Monitor::ScopedLock ScopedLock;
     typedef sys::Monitor::ScopedUnlock ScopedUnlock;
 
     void dispatch(PollableCondition& cond);
     void process();
-
+    
     mutable sys::Monitor lock;
     Callback callback;
     PollableCondition condition;
@@ -108,7 +107,7 @@ class PollableQueue {
 };
 
 template <class T> PollableQueue<T>::PollableQueue(
-    const Callback& cb, const boost::shared_ptr<sys::Poller>& p)
+    const Callback& cb, const boost::shared_ptr<sys::Poller>& p) 
   : callback(cb),
     condition(boost::bind(&PollableQueue<T>::dispatch, this, _1), p),
     stopped(true)
@@ -152,7 +151,7 @@ template <class T> void PollableQueue<T>::process() {
             putBack = callback(batch);
         }
         // put back unprocessed items.
-        queue.insert(queue.begin(), putBack, typename Batch::const_iterator(batch.end()));
+        queue.insert(queue.begin(), putBack, typename Batch::const_iterator(batch.end())); 
         batch.clear();
     }
 }

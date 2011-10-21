@@ -138,9 +138,6 @@ struct QpiddDaemon : public Daemon {
         brokerPtr->accept();
         uint16_t port=brokerPtr->getPort(options->daemon.transport);
         ready(port);            // Notify parent.
-        if (options->parent->broker.enableMgmt && (options->parent->broker.port == 0 || options->daemon.transport != TCP)) {
-            dynamic_cast<qmf::org::apache::qpid::broker::Broker*>(brokerPtr->GetManagementObject())->set_port(port);
-        }
         brokerPtr->run();
     }
 };
@@ -185,13 +182,8 @@ int QpiddBroker::execute (QpiddOptions *options) {
         boost::intrusive_ptr<Broker> brokerPtr(new Broker(options->broker));
         ScopedSetBroker ssb(brokerPtr);
         brokerPtr->accept();
-        if (options->broker.port == 0 || myOptions->daemon.transport != TCP) {
-            uint16_t port = brokerPtr->getPort(myOptions->daemon.transport);
-            cout << port << endl;
-            if (options->broker.enableMgmt) {
-                dynamic_cast<qmf::org::apache::qpid::broker::Broker*>(brokerPtr->GetManagementObject())->set_port(port);
-            }
-        }
+        if (options->broker.port == 0 || myOptions->daemon.transport != TCP)
+            cout << uint16_t(brokerPtr->getPort(myOptions->daemon.transport)) << endl;
         brokerPtr->run();
     }
     return 0;

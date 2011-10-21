@@ -66,8 +66,6 @@
   <property name="module.release.bz2"  location="${module.release}/${module.namever}.tar.bz2"/>
 
   <property name="module.genpom.args"  value=""/>
-  <property name="maven.remote.repo"     value="file://${module.release.base}/maven"/>
-
   <property name="broker.log.prefix" value="BROKER: "/> 
   <property name="broker.log.interleave" value="true"/>
 
@@ -76,7 +74,6 @@
 
   <property name="module.coverage"     location="${module.build}/coverage"/>
   <property name="cobertura.datafile"  location="${module.instrumented}/cobetura.ser"/>
-
 
   <available property="module.test.src.exists" file="${module.test.src}"/>
   <available property="module.etc.exists" file="${module.etc}"/>
@@ -207,6 +204,7 @@
     <mkdir dir="${build.etc}"/>
     <mkdir dir="${build.lib}"/>
     <mkdir dir="${build.results}"/>
+    <mkdir dir="${build.data}"/>
     <mkdir dir="${build.plugins}"/>
     <mkdir dir="${module.classes}"/>
     <mkdir dir="${module.precompiled}"/>
@@ -222,8 +220,8 @@
         <arg line='"${project.root}/genpom"'/>
         <arg line='-s "${project.root}/lib/poms"'/>
         <arg line='-o "${build.scratch}/qpid-${module.name}.pom"'/>
-        <arg line="-u ${project.url}"/>
-        <arg line="-g ${project.groupid}"/>
+        <arg line="-u http://qpid.apache.org"/>
+        <arg line="-g org.apache.qpid"/>
         <arg line="-v ${project.version}${maven.version.suffix}"/>
         <arg line="-p qpid"/>
         <arg line='-m "${module.depends}"'/>
@@ -239,14 +237,14 @@
 
     <artifact:pom id="module.pom" file="${build.scratch}/qpid-${module.name}.pom"/>
 
-    <artifact:install file="${module.jar}" pomRefId="module.pom" settingsFile="${maven.settings.xml}">
+    <artifact:install file="${module.jar}" pomRefId="module.pom">
         <localRepository path="${maven.local.repo}"/>
     </artifact:install>
 
-    <artifact:deploy file="${module.jar}" pomRefId="module.pom" uniqueVersion="${maven.unique.version}" settingsFile="${maven.settings.xml}">
+    <artifact:deploy file="${module.jar}" pomRefId="module.pom" uniqueVersion="${maven.unique.version}">
       <attach file="${module.source.jar}" classifier="sources"/>
       <localRepository path="${maven.local.repo}"/>
-      <remoteRepository url="${maven.remote.repo}"/>
+      <remoteRepository url="file://${module.release.base}/maven"/>
     </artifact:deploy>
   </target>
 
@@ -280,8 +278,7 @@
     <javac target="${java.target}" source="${java.source}"
            destdir="${module.test.classes}" debug="on"
            deprecation="${javac.deprecation}"
-           srcdir="${module.test.src}"
-           includeantruntime="false">
+           srcdir="${module.test.src}">
       <classpath refid="module.test.path"/>
     </javac>
 
@@ -295,7 +292,7 @@
   </target>
 
 
-  <property name="profile" value="java-mms.0-10"/>
+  <property name="profile" value="default"/>
   <property name="testprofile.file" value="${test.profiles}/${profile}.testprofile"/>
   
   <available file="${testprofile.file}" property="testprofile.file.present"/>
@@ -303,29 +300,29 @@
 
   <property file="${testprofile.file}" prefix="preload"/>
   <property name="preload.include" value=""/>
-  <property name="profiles" value="${preload.include} ${profile}"/>
+  <condition property="profiles"
+             value="${preload.include} ${profile}"
+             else="default ${preload.include} ${profile}">
+    <equals arg1="${profile}" arg2="default"/>
+  </condition>
   <map property="_profile_files" value="${profiles}" join=" ">
     <globmapper from="*" to="*.testprofile"/>
   </map>
-  
-  <delete file="${build.scratch}/test-${profile}.properties" quiet="true"/>
   <concat destfile="${build.scratch}/test-${profile}.properties" force="no" fixlastline="yes">
-    <filelist dir="${test.profiles}" files="testprofile.defaults"/>
     <filelist dir="${test.profiles}" files="${_profile_files}"/>
   </concat>
   <property file="${build.scratch}/test-${profile}.properties"/>
 
   <map property="test.excludefiles" value="${test.excludes}">
-    <globmapper from="*" to="${test.profiles}/*;"/>
+    <globmapper from="*" to="${test.profiles}/*"/>
   </map>
+
 
   <condition property="dontruntest" value="dontruntest" else="runtest">
          <contains substring="${module.name}" string="${exclude.modules}" />
   </condition>
 
   <property name="jvm.args" value=""/>
-  <property name="broker.existing.qpid.work" value=""/>
-
   <target name="test" depends="build,compile-tests" if="module.test.src.exists"
          unless="${dontruntest}" description="execute unit tests">
 
@@ -334,8 +331,7 @@
     <echo message="Using profile:${profile}" level="info"/>
     <junit fork="yes" forkmode="once" maxmemory="${test.mem}" reloading="no"
            haltonfailure="${haltonfailure}" haltonerror="${haltonerror}"
-           failureproperty="test.failures" printsummary="on" timeout="6000000"
-           dir="${project.root}" >
+           failureproperty="test.failures" printsummary="on" timeout="6000000" >
 
       <jvmarg line="${jvm.args}" />
 
@@ -347,6 +343,14 @@
       <sysproperty key="log4j.configuration" value="${log4j.configuration}"/>
       <sysproperty key="java.naming.factory.initial" value="${java.naming.factory.initial}"/>
       <sysproperty key="java.naming.provider.url" value="${java.naming.provider.url}"/>
+      <sysproperty key="broker" value="${broker}"/>
+      <sysproperty key="broker.clean" value="${broker.clean}"/>
+      <sysproperty key="broker.clean.between.tests" value="${broker.clean.between.tests}"/>
+      <sysproperty key="broker.persistent" value="${broker.persistent}"/>
+      <sysproperty key="broker.version" value="${broker.version}"/>
+      <sysproperty key="broker.ready" value="${broker.ready}" />
+      <sysproperty key="broker.stopped" value="${broker.stopped}" />
+      <sysproperty key="broker.config" value="${broker.config}" />
       <sysproperty key="messagestore.class.name" value="${messagestore.class.name}" />
       <sysproperty key="test.output" value="${module.results}"/>
       <sysproperty key="qpid.amqp.version" value="${qpid.amqp.version}"/>
@@ -395,15 +399,6 @@
 
     <fail if="failed" message="TEST SUITE FAILED"/>
 
-  </target>
-
-  <target name="report-module" description="generate junit reports for each module">
-    <junitreport todir="${module.results}">
-        <fileset dir="${module.results}">
-            <include name="TEST-*.xml"/>
-        </fileset>
-        <report format="frames" todir="${module.results}/report/html"/>
-    </junitreport> 
   </target>
 
   <target name="touch-failed" if="test.failures">
@@ -652,6 +647,9 @@
       <fileset dir="${module.classes}">
         <include name="**/*.class"/>
       </fileset>
+      <fileset dir="${module.test.classes}">
+        <include name="**/*.class"/>
+      </fileset>      
     </cobertura-instrument>
   </target>
 
@@ -660,8 +658,7 @@
     <mkdir dir="${build.coveragereport}" />
     <junit fork="yes" forkmode="once" maxmemory="${test.mem}" reloading="no"
            haltonfailure="${haltonfailure}" haltonerror="${haltonerror}"
-           failureproperty="test.failures" printsummary="on" timeout="600000"
-           dir="${project.root}" >
+           failureproperty="test.failures" printsummary="on" timeout="600000" >
 
       <sysproperty key="amqj.logging.level" value="${amqj.logging.level}"/>
       <sysproperty key="amqj.protocol.logging.level" value="${amqj.protocol.logging.level}"/>
@@ -671,6 +668,7 @@
       <sysproperty key="java.naming.factory.initial" value="${java.naming.factory.initial}"/>
       <sysproperty key="java.naming.provider.url" value="${java.naming.provider.url}"/>
       <sysproperty key="broker" value="${broker}"/>
+      <sysproperty key="broker.clean" value="${broker.clean}"/>
       <sysproperty key="broker.version" value="${broker.version}"/>
       <sysproperty key="broker.ready" value="${broker.ready}" />
       <sysproperty key="test.output" value="${module.results}"/>
@@ -816,84 +814,4 @@ qpid.name=${project.name}
       <touch file="${velocity.timestamp}" />
     </target>
 
-    <target name="eclipse" depends="eclipse-setup,eclipse-project,eclipse-source-only,eclipse-source-and-test"/>
-
-    <target name="eclipse-setup">
-      <taskdef name="eclipse" classname="prantl.ant.eclipse.EclipseTask" />
-
-      <!-- Build set of directories representing the dependencies -->
-
-      <dirset id="eclipse.required.projectdirs.path" dir="${project.root}" includes="${module.depends} ${module.test.depends} neverBeEmpty">
-        <!-- Select only those projects from module.depends that contain a build.xml.  This serves to exclude dependencies that
-             don't become Eclipse projects e.g. broker-plugins and common-tests -->
-        <present targetdir="${project.root}">
-          <mapper type="glob" from="*" to="*/build.xml"/>
-        </present>
-      </dirset>
-
-      <!-- Convert from the set of directories into Eclipse project names proceeded by forward slashes -->
-
-      <pathconvert property="eclipse.required.projectnames" refid="eclipse.required.projectdirs.path" pathsep=" " dirsep="-">
-        <map from="${project.root}${file.separator}" to=''/>
-      </pathconvert>
-      <map property="eclipse.required.slashedprojectnames" value="${eclipse.required.projectnames}" join="${path.separator}">
-        <globmapper from="*" to="/*"/>
-      </map>
-
-      <echo message="Ant module dependencies : ${module.depends} ${module.test.depends} converted to Eclipse required project(s): ${eclipse.required.slashedprojectnames}"/>
-      <path id="eclipse.required.slashedprojectnames.path">
-        <pathelement path="${eclipse.required.slashedprojectnames}"/>
-      </path>
-    </target>
-
-    <!-- Create the Eclipse .project -->
-    <target name="eclipse-project">
-      <eclipse updatealways="${eclipse.updatealways}">
-        <project name="${module.name}"/>
-
-        <!-- If the Eclipse task were to ever support the generation of
-             linked resources, we would configure it to generate
-             the following:
-
-             scratch_src -> ${module.precompiled}
-
-             in each project.   This would avoid the 'linked sources'
-             manual step documented on the Wiki.
-        -->
-      </eclipse>
-    </target>
-    
-    <!-- Create the Eclipse .classpath -->
-    <target name="eclipse-source-only" unless="module.test.src.exists">
-      <eclipse updatealways="${eclipse.updatealways}">
-        <settings>
-          <jdtcore compilercompliance="${eclipse.compilercompliance}" />
-        </settings>
-        <classpath>
-          <container path="${eclipse.container}" />
-          <source path="${module.src}" />
-          <source pathref="eclipse.required.slashedprojectnames.path" />
-          <library pathref="module.libs"/>
-          <output path="classes" />
-        </classpath>
-      </eclipse>
-    </target>
-
-    <!-- Create the Eclipse .classpath -->
-    <target name="eclipse-source-and-test" if="module.test.src.exists">
-      <eclipse updatealways="${eclipse.updatealways}">
-        <settings>
-          <jdtcore compilercompliance="${eclipse.compilercompliance}" />
-        </settings>
-        <classpath>
-          <container path="${eclipse.container}" />
-          <source path="${module.src}" />
-          <source path="${module.test.src}" />
-          <source pathref="eclipse.required.slashedprojectnames.path" />
-          <library pathref="module.libs"/>
-          <library pathref="module.test.libs"/>
-          <output path="classes" />
-        </classpath>
-      </eclipse>
-    </target>
 </project>

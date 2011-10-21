@@ -34,6 +34,8 @@ QPID_TSS bool inContext = false;
 
 bool isClusterSafe() { return !inCluster || inContext; }
 
+bool isCluster() { return inCluster; }
+
 void assertClusterSafe()  {
     if (!isClusterSafe()) {
         QPID_LOG(critical, "Modified cluster state outside of cluster context");
@@ -48,16 +50,6 @@ ClusterSafeScope::ClusterSafeScope()  {
 
 ClusterSafeScope::~ClusterSafeScope() {
     assert(inContext);
-    inContext = save;
-}
-
-ClusterUnsafeScope::ClusterUnsafeScope()  {
-    save = inContext;
-    inContext = false;
-}
-
-ClusterUnsafeScope::~ClusterUnsafeScope() {
-    assert(!inContext);
     inContext = save;
 }
 

@@ -24,7 +24,6 @@ import java.util.Properties;
 
 import javax.jms.Queue;
 import javax.jms.Topic;
-import javax.naming.ConfigurationException;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 
@@ -67,23 +66,5 @@ public class JNDIPropertyFileTest extends TestCase
             i++;
             assertEquals("Topic" + i + "WithSpace",bindingKey.asString());            
         }
-    }
-    
-    public void testConfigurationErrors() throws Exception
-    {
-        Properties properties = new Properties();
-        properties.put("java.naming.factory.initial", "org.apache.qpid.jndi.PropertiesFileInitialContextFactory");
-        properties.put("destination.my-queue","amq.topic/test;create:always}");
-        
-        try
-        {
-            ctx = new InitialContext(properties);
-            fail("A configuration exception should be thrown with details about the address syntax error");
-        }
-        catch(ConfigurationException e)
-        {
-            assertTrue("Incorrect exception", e.getMessage().contains("Failed to parse entry: amq.topic/test;create:always}"));
-        }
-        
     }
 }

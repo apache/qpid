@@ -51,7 +51,7 @@ class ReplayBufferChecker
 
 QPID_AUTO_TEST_CASE(testReplay)
 {
-    SessionFixture fix;
+    ProxySessionFixture fix;
     fix.session.queueDeclare(arg::queue="my-queue", arg::exclusive=true, arg::autoDelete=true);
 
     MessageReplayTracker tracker(10);
@@ -77,7 +77,7 @@ QPID_AUTO_TEST_CASE(testReplay)
 
 QPID_AUTO_TEST_CASE(testCheckCompletion)
 {
-    SessionFixture fix;
+    ProxySessionFixture fix;
     fix.session.queueDeclare(arg::queue="my-queue", arg::exclusive=true, arg::autoDelete=true);
 
     MessageReplayTracker tracker(10);

@@ -37,8 +37,8 @@ import org.apache.qpid.server.queue.Filterable;
 public class PropertyExpression implements Expression
 {
     // Constants - defined the same as JMS
-    private static enum JMSDeliveryMode { NON_PERSISTENT, PERSISTENT }
-
+    private static final int NON_PERSISTENT = 1;
+    private static final int PERSISTENT = 2;
     private static final int DEFAULT_PRIORITY = 4;
 
     private static final Logger _logger = org.apache.log4j.Logger.getLogger(PropertyExpression.class);
@@ -172,14 +172,13 @@ public class PropertyExpression implements Expression
     {
         public Object evaluate(Filterable message)
         {
-                JMSDeliveryMode mode = message.isPersistent() ? JMSDeliveryMode.PERSISTENT :
-                                                                JMSDeliveryMode.NON_PERSISTENT;
+                int mode = message.isPersistent() ? PERSISTENT : NON_PERSISTENT;
                 if (_logger.isDebugEnabled())
                 {
                     _logger.debug("JMSDeliveryMode is :" + mode);
                 }
 
-                return mode.toString();
+                return mode;
         }
     }
 

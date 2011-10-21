@@ -20,7 +20,7 @@
  */
 package org.apache.qpid.test.unit.ack;
 
-import java.util.concurrent.CountDownLatch;
+import edu.emory.mathcs.backport.java.util.concurrent.CountDownLatch;
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.jms.ConnectionListener;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;

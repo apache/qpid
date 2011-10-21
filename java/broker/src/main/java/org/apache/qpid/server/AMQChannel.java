@@ -22,7 +22,6 @@ package org.apache.qpid.server;
 
 import org.apache.log4j.Logger;
 
-import org.apache.qpid.AMQConnectionException;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQSecurityException;
 import org.apache.qpid.framing.AMQMethodBody;
@@ -50,7 +49,6 @@ import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.actors.AMQPChannelActor;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.messages.ChannelMessages;
-import org.apache.qpid.server.logging.messages.ExchangeMessages;
 import org.apache.qpid.server.logging.subjects.ChannelLogSubject;
 import org.apache.qpid.server.message.AMQMessage;
 import org.apache.qpid.server.message.MessageMetaData;
@@ -76,7 +74,6 @@ import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.txn.LocalTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.transport.TransportException;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -139,12 +136,11 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
     private final AtomicBoolean _suspended = new AtomicBoolean(false);
 
     private ServerTransaction _transaction;
-
+    
     private final AtomicLong _txnStarts = new AtomicLong(0);
     private final AtomicLong _txnCommits = new AtomicLong(0);
     private final AtomicLong _txnRejects = new AtomicLong(0);
     private final AtomicLong _txnCount = new AtomicLong(0);
-    private final AtomicLong _txnUpdateTime = new AtomicLong(0);
 
     private final AMQProtocolSession _session;
     private AtomicBoolean _closing = new AtomicBoolean(false);
@@ -203,12 +199,7 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
         // theory
         return !(_transaction instanceof AutoCommitTransaction);
     }
-
-    public boolean inTransaction()
-    {
-        return isTransactional() && _txnUpdateTime.get() > 0 && _transaction.getTransactionStartTime() > 0;
-    }
-
+    
     private void incrementOutstandingTxnsIfNecessary()
     {
         if(isTransactional())
@@ -218,7 +209,7 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
             _txnCount.compareAndSet(0,1);
         }
     }
-
+    
     private void decrementOutstandingTxnsIfNecessary()
     {
         if(isTransactional())
@@ -304,6 +295,7 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
             });
 
             deliverCurrentMessageIfComplete();
+
         }
     }
 
@@ -316,6 +308,7 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
             try
             {
                 _currentMessage.getStoredMessage().flushToStore();
+                
                 final ArrayList<? extends BaseQueue> destinationQueues = _currentMessage.getDestinationQueues();
 
                 if(!checkMessageUserId(_currentMessage.getContentHeader()))
@@ -324,7 +317,7 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
                 }
                 else
                 {
-                    if(destinationQueues == null || destinationQueues.isEmpty())
+                    if(destinationQueues == null || _currentMessage.getDestinationQueues().isEmpty())
                     {
                         if (_currentMessage.isMandatory() || _currentMessage.isImmediate())
                         {
@@ -332,7 +325,7 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
                         }
                         else
                         {
-                            _actor.message(ExchangeMessages.DISCARDMSG(_currentMessage.getExchange().asString(), _currentMessage.getRoutingKey()));
+                            _logger.warn("MESSAGE DISCARDED: No routes for message - " + createAMQMessage(_currentMessage));
                         }
 
                     }
@@ -340,15 +333,11 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
                     {
                         _transaction.enqueue(destinationQueues, _currentMessage, new MessageDeliveryAction(_currentMessage, destinationQueues, isTransactional()));
                         incrementOutstandingTxnsIfNecessary();
-			            updateTransactionalActivity();
                     }
                 }
             }
             finally
             {
-                long bodySize = _currentMessage.getSize();
-                long timestamp = ((BasicContentHeaderProperties) _currentMessage.getContentHeader().getProperties()).getTimestamp();
-                _session.registerMessageReceived(bodySize, timestamp);
                 _currentMessage = null;
             }
         }
@@ -380,13 +369,6 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
             deliverCurrentMessageIfComplete();
         }
         catch (AMQException e)
-        {
-            // we want to make sure we don't keep a reference to the message in the
-            // event of an error
-            _currentMessage = null;
-            throw e;
-        }
-        catch (RuntimeException e)
         {
             // we want to make sure we don't keep a reference to the message in the
             // event of an error
@@ -443,7 +425,7 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
         {
             throw new AMQException("Consumer already exists with same tag: " + tag);
         }
-
+        
          Subscription subscription =
                 SubscriptionFactoryImpl.INSTANCE.createSubscription(_channelId, _session, tag, acks, filters, noLocal, _creditManager);
 
@@ -460,11 +442,6 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
             queue.registerSubscription(subscription, exclusive);
         }
         catch (AMQException e)
-        {
-            _tag2SubscriptionMap.remove(tag);
-            throw e;
-        }
-        catch (RuntimeException e)
         {
             _tag2SubscriptionMap.remove(tag);
             throw e;
@@ -526,11 +503,7 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
         }
         catch (AMQException e)
         {
-            _logger.error("Caught AMQException whilst attempting to requeue:" + e);
-        }
-        catch (TransportException e)
-        {
-            _logger.error("Caught TransportException whilst attempting to requeue:" + e);
+            _logger.error("Caught AMQException whilst attempting to reque:" + e);
         }
 
         getConfigStore().removeConfiguredObject(this);
@@ -821,7 +794,6 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
     {
         Collection<QueueEntry> ackedMessages = getAckedMessages(deliveryTag, multiple);
         _transaction.dequeue(ackedMessages, new MessageAcknowledgeAction(ackedMessages));
-	    updateTransactionalActivity();
     }
 
     private Collection<QueueEntry> getAckedMessages(long deliveryTag, boolean multiple)
@@ -961,7 +933,7 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
         finally
         {
             _rollingBack = false;
-
+            
             _txnRejects.incrementAndGet();
             _txnStarts.incrementAndGet();
             decrementOutstandingTxnsIfNecessary();
@@ -994,17 +966,6 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
         }
 
 
-    }
-
-    /**
-     * Update last transaction activity timestamp
-     */
-    private void updateTransactionalActivity()
-    {
-        if (isTransactional())
-        {
-            _txnUpdateTime.set(System.currentTimeMillis());
-        }
     }
 
     public String toString()
@@ -1055,7 +1016,6 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
             public void deliverToClient(final Subscription sub, final QueueEntry entry, final long deliveryTag)
                     throws AMQException
             {
-                _session.registerMessageDelivered(entry.getMessage().getSize());
                 getProtocolSession().getProtocolOutputConverter().writeDeliver(entry, getChannelId(),
                                                                                deliveryTag, sub.getConsumerTag());
             }
@@ -1096,11 +1056,11 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
     private boolean checkMessageUserId(ContentHeaderBody header)
     {
         AMQShortString userID =
-                header.getProperties() instanceof BasicContentHeaderProperties
-                    ? ((BasicContentHeaderProperties) header.getProperties()).getUserId()
+                header.properties instanceof BasicContentHeaderProperties
+                    ? ((BasicContentHeaderProperties) header.properties).getUserId()
                     : null;
 
-        return (!MSG_AUTH || _session.getAuthorizedPrincipal().getName().equals(userID == null? "" : userID.toString()));
+        return (!MSG_AUTH || _session.getPrincipal().getName().equals(userID == null? "" : userID.toString()));
 
     }
 
@@ -1442,41 +1402,9 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
     {
         return _createTime;
     }
-
+    
     public void mgmtClose() throws AMQException
     {
         _session.mgmtCloseChannel(_channelId);
-    }
-
-    public void checkTransactionStatus(long openWarn, long openClose, long idleWarn, long idleClose) throws AMQException
-    {
-        if (inTransaction())
-        {
-            long currentTime = System.currentTimeMillis();
-            long openTime = currentTime - _transaction.getTransactionStartTime();
-            long idleTime = currentTime - _txnUpdateTime.get();
-
-            // Log a warning on idle or open transactions
-            if (idleWarn > 0L && idleTime > idleWarn)
-            {
-                CurrentActor.get().message(_logSubject, ChannelMessages.IDLE_TXN(idleTime));
-                _logger.warn("IDLE TRANSACTION ALERT " + _logSubject.toString() + " " + idleTime + " ms");
-            }
-            else if (openWarn > 0L && openTime > openWarn)
-            {
-                CurrentActor.get().message(_logSubject, ChannelMessages.OPEN_TXN(openTime));
-                _logger.warn("OPEN TRANSACTION ALERT " + _logSubject.toString() + " " + openTime + " ms");
-            }
-
-            // Close connection for idle or open transactions that have timed out
-            if (idleClose > 0L && idleTime > idleClose)
-            {
-                getConnectionModel().closeSession(this, AMQConstant.RESOURCE_ERROR, "Idle transaction timed out");
-            }
-            else if (openClose > 0L && openTime > openClose)
-            {
-                getConnectionModel().closeSession(this, AMQConstant.RESOURCE_ERROR, "Open transaction timed out");
-            }
-        }
     }
 }

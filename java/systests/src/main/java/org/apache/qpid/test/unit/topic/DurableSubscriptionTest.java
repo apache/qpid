@@ -262,7 +262,7 @@ public class DurableSubscriptionTest extends QpidBrokerTestCase
         producer.send(session1.createTextMessage("B"));
 
         _logger.info("Receive message on consumer 1 :expecting B");
-        msg = consumer1.receive(POSITIVE_RECEIVE_TIMEOUT);
+        msg = consumer1.receive(500);
         assertNotNull("Consumer 1 should get message 'B'.", msg);
         assertEquals("Incorrect Message received on consumer1.", "B", ((TextMessage) msg).getText());
         _logger.info("Receive message on consumer 1 :expecting null");
@@ -287,13 +287,13 @@ public class DurableSubscriptionTest extends QpidBrokerTestCase
         else
         {
             _logger.info("Receive message on consumer 3 :expecting B");
-            msg = consumer3.receive(POSITIVE_RECEIVE_TIMEOUT);
+            msg = consumer3.receive(500);
             assertNotNull("Consumer 3 should get message 'B'.", msg);
             assertEquals("Incorrect Message received on consumer3.", "B", ((TextMessage) msg).getText());
         }
 
         _logger.info("Receive message on consumer 1 :expecting C");
-        msg = consumer1.receive(POSITIVE_RECEIVE_TIMEOUT);
+        msg = consumer1.receive(500);
         assertNotNull("Consumer 1 should get message 'C'.", msg);
         assertEquals("Incorrect Message received on consumer1.", "C", ((TextMessage) msg).getText());
         _logger.info("Receive message on consumer 1 :expecting null");
@@ -301,7 +301,7 @@ public class DurableSubscriptionTest extends QpidBrokerTestCase
         assertNull("There should be no more messages for consumption on consumer1.", msg);
 
         _logger.info("Receive message on consumer 3 :expecting C");
-        msg = consumer3.receive(POSITIVE_RECEIVE_TIMEOUT);
+        msg = consumer3.receive(500);
         assertNotNull("Consumer 3 should get message 'C'.", msg);
         assertEquals("Incorrect Message received on consumer3.", "C", ((TextMessage) msg).getText());
         _logger.info("Receive message on consumer 3 :expecting null");
@@ -358,7 +358,7 @@ public class DurableSubscriptionTest extends QpidBrokerTestCase
         // Send message and check that both consumers get it and only it.
         producer.send(session0.createTextMessage("A"));
 
-        msg = consumer1.receive(POSITIVE_RECEIVE_TIMEOUT);
+        msg = consumer1.receive(500);
         assertNotNull("Message should be available", msg);
         assertEquals("Message Text doesn't match", "A", ((TextMessage) msg).getText());
         msg = consumer1.receive(500);
@@ -729,7 +729,7 @@ public class DurableSubscriptionTest extends QpidBrokerTestCase
 
         conn.start();
         
-        Message rMsg = subB.receive(POSITIVE_RECEIVE_TIMEOUT);
+        Message rMsg = subB.receive(1000);
         assertNotNull(rMsg);
         assertEquals("Content was wrong", 
                      "testResubscribeWithChangedSelectorAndRestart2",
@@ -797,7 +797,7 @@ public class DurableSubscriptionTest extends QpidBrokerTestCase
         
         conn.start();
         
-        Message rMsg = subTwo.receive(POSITIVE_RECEIVE_TIMEOUT);
+        Message rMsg = subTwo.receive(1000);
         assertNotNull(rMsg);
         assertEquals("Content was wrong", 
                      "testResubscribeWithChangedSelectorAndRestart1",

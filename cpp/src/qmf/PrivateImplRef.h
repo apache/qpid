@@ -23,8 +23,8 @@
  */
 
 #include "qmf/ImportExport.h"
-#include "qpid/RefCounted.h"
 #include <boost/intrusive_ptr.hpp>
+#include "qpid/RefCounted.h"
 
 namespace qmf {
 

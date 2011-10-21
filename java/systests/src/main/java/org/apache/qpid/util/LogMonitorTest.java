@@ -155,7 +155,7 @@ public class LogMonitorTest extends TestCase
 
         String notLogged = "This text was not logged";
 
-        validateLogDoesNotContainMessage(_monitor, notLogged);
+        validateLogDoesNotContainsMessage(_monitor, notLogged);
     }
 
     public void testWaitForMessage_Timeout() throws IOException
@@ -168,27 +168,28 @@ public class LogMonitorTest extends TestCase
 
         // Verify that we can time out waiting for a message
         assertFalse("Message was logged ",
-                    _monitor.waitForMessage(message, TIME_OUT / 2));
+                    _monitor.waitForMessage(message, TIME_OUT / 2, false));
 
         // Verify that the message did eventually get logged.
         assertTrue("Message was never logged.",
                     _monitor.waitForMessage(message, TIME_OUT));
     }
 
-    public void testDiscardPoint() throws IOException
+    public void testReset() throws IOException
     {
-        String firstMessage = getName() + ": Test Message1";
-        Logger.getRootLogger().warn(firstMessage);
+        String message = getName() + ": Test Message";
 
-        validateLogContainsMessage(_monitor, firstMessage);
+        Logger.getRootLogger().warn(message);
 
-        _monitor.markDiscardPoint();
+        validateLogContainsMessage(_monitor, message);
 
-        validateLogDoesNotContainMessage(_monitor, firstMessage);
+        String LOG_RESET_TEXT = "Log Monitor Reset";
 
-        String secondMessage = getName() + ": Test Message2";
-        Logger.getRootLogger().warn(secondMessage);
-        validateLogContainsMessage(_monitor, secondMessage);
+        validateLogDoesNotContainsMessage(_monitor, LOG_RESET_TEXT);
+
+        _monitor.reset();
+
+        assertEquals("", _monitor.readFile());
     }
 
     public void testRead() throws IOException
@@ -213,7 +214,7 @@ public class LogMonitorTest extends TestCase
      *
      * @throws IOException if a problems occurs
      */
-    protected void validateLogDoesNotContainMessage(LogMonitor log, String message)
+    protected void validateLogDoesNotContainsMessage(LogMonitor log, String message)
             throws IOException
     {
         List<String> results = log.findMatches(message);

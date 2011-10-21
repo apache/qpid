@@ -27,7 +27,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import javax.jms.Connection;
-import javax.jms.JMSException;
 import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
 import javax.jms.Queue;
@@ -97,31 +96,6 @@ public class ConnectionCloseTest extends QpidBrokerTestCase
         assertTrue("Spurious thread creation exceeded threshold, " +
                    delta.size() + " threads created.",
                    delta.size() < deltaThreshold);
-    }
-
-    /**
-     * This test is added due to QPID-3453 to test connection closing when AMQ
-     * session is not closed but underlying transport session is in detached
-     * state and transport connection is closed
-     */
-    public void testConnectionCloseOnOnForcibleBrokerStop() throws Exception
-    {
-        Connection connection = getConnection();
-        connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        stopBroker();
-
-        // we need to close connection explicitly in order to verify that
-        // closing of connection having transport session in DETACHED state and
-        // transport connection in CLOSED state does not throw an exception
-        try
-        {
-            connection.close();
-        }
-        catch (JMSException e)
-        {
-            // session closing should not fail
-            fail("Cannot close connection:" + e.getMessage());
-        }
     }
 
     private void dumpStacks(Map<Thread,StackTraceElement[]> map)

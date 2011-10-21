@@ -18,19 +18,8 @@
  */
 package org.apache.qpid.server.security;
 
-import static org.apache.qpid.server.security.access.ObjectType.EXCHANGE;
-import static org.apache.qpid.server.security.access.ObjectType.METHOD;
-import static org.apache.qpid.server.security.access.ObjectType.OBJECT;
-import static org.apache.qpid.server.security.access.ObjectType.QUEUE;
-import static org.apache.qpid.server.security.access.ObjectType.VIRTUALHOST;
-import static org.apache.qpid.server.security.access.Operation.ACCESS;
-import static org.apache.qpid.server.security.access.Operation.BIND;
-import static org.apache.qpid.server.security.access.Operation.CONSUME;
-import static org.apache.qpid.server.security.access.Operation.CREATE;
-import static org.apache.qpid.server.security.access.Operation.DELETE;
-import static org.apache.qpid.server.security.access.Operation.PUBLISH;
-import static org.apache.qpid.server.security.access.Operation.PURGE;
-import static org.apache.qpid.server.security.access.Operation.UNBIND;
+import static org.apache.qpid.server.security.access.ObjectType.*;
+import static org.apache.qpid.server.security.access.Operation.*;
 
 import java.net.SocketAddress;
 import java.security.Principal;
@@ -40,8 +29,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import javax.security.auth.Subject;
-
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.log4j.Logger;
@@ -50,9 +37,11 @@ import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
 import org.apache.qpid.server.configuration.plugins.ConfigurationPluginFactory;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.plugins.PluginManager;
+import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.security.access.ObjectProperties;
 import org.apache.qpid.server.security.access.Operation;
+import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
 
 /**
  * The security manager contains references to all loaded {@link SecurityPlugin}s and delegates security decisions to them based
@@ -66,7 +55,7 @@ public class SecurityManager
     private static final Logger _logger = Logger.getLogger(SecurityManager.class);
     
     /** Container for the {@link Principal} that is using to this thread. */
-    private static final ThreadLocal<Subject> _subject = new ThreadLocal<Subject>();
+    private static final ThreadLocal<Principal> _principal = new ThreadLocal<Principal>();
     
     private PluginManager _pluginManager;
     private Map<String, SecurityPluginFactory> _pluginFactories = new HashMap<String, SecurityPluginFactory>();
@@ -137,14 +126,19 @@ public class SecurityManager
         configureHostPlugins(configuration);
     }
 
-    public static Subject getThreadSubject()
+    public static Principal getThreadPrincipal()
     {
-        return _subject.get();
+        return _principal.get();
     }
 
-    public static void setThreadSubject(final Subject subject)
+    public static void setThreadPrincipal(Principal principal)
     {
-        _subject.set(subject);
+        _principal.set(principal);
+    }
+
+    public static void setThreadPrincipal(String authId)
+    {
+        setThreadPrincipal(new UsernamePrincipal(authId));
     }
 
     public void configureHostPlugins(ConfigurationPlugin hostConfig) throws ConfigurationException

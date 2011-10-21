@@ -22,20 +22,18 @@
 
   <import file="common.xml"/>
 
-  <property file="${project.root}/build.overrides"/>
 
   <findSubProjects name="broker-plugins" dir="broker-plugins"/>
-  <findSubProjects name="client-plugins" dir="client-plugins"/>
-  <findSubProjects name="management" dir="management" excludes="common,example"/>
+  <findSubProjects name="management" dir="management" excludes="common,example,tools/qpid-cli"/>
 
   <property name="modules.core"       value="junit-toolkit common management/common broker client tools"/>
   <property name="modules.examples"   value="client/example management/example"/>
   <property name="modules.tests"      value="systests perftests integrationtests testkit"/>
   <property name="modules.management" value="${management}"/>
-  <property name="modules.plugin"     value="${broker-plugins} ${client-plugins}"/>
-  <property name="modules.opt"        value=""/>
+  <property name="modules.plugin"     value="${broker-plugins}"/>
+  <property name="modules.management.tools" value="management/tools/qpid-cli"/>
   <property name="modules"            value="${modules.core} ${modules.examples}
-   ${modules.management} ${modules.tests} ${modules.plugin} ${modules.opt}"/>
+   ${modules.management} ${modules.management.tools} ${modules.tests} ${modules.plugin}"/>
 
   <property name="qpid.jar"           location="${build.lib}/qpid-all.jar"/>
   <basename property="qpid.jar.name"  file="${qpid.jar}"/>
@@ -80,7 +78,7 @@
     <iterate target="compile-tests"/>
   </target>
 
-  <target name="test" description="execute tests" depends="manifest">
+  <target name="test" description="execute tests">
 
     <delete file="${build.failed}"/>
 
@@ -94,10 +92,6 @@
 
     <fail if="failed" message="TEST SUITE FAILED"/>
 
-  </target>
-  
-  <target name="report-module" description="generate junitreport for modules">
-    <iterate target="report-module"/>
   </target>
 
   <target name="jar" description="create module jars">
@@ -219,18 +213,7 @@
         <include name="**/*.ser"/>
       </fileset>
     </cobertura-merge>
-    <cobertura-report format="xml"
-                      destdir="${build.coveragereport}"
-		      datafile="${build.coveragereport}/cobertura.ser"
-		      >
-      <fileset dir="${project.root}/common/src/main/java" includes="**/*.java" />
-      <fileset dir="${project.root}/build/scratch/common/src" includes="**/*.java" />
-      <fileset dir="${project.root}/broker/src/main/java" includes="**/*.java" />
-      <fileset dir="${project.root}/build/scratch/broker/src" includes="**/*.java" />
-      <fileset dir="${project.root}/client/src/main/java" includes="**/*.java" />
-      <fileset dir="${project.root}/build/scratch/client/src" includes="**/*.java" />
-    </cobertura-report>
-	<cobertura-report format="html"
+    <cobertura-report format="html"
                       destdir="${build.coveragereport}"
 		      datafile="${build.coveragereport}/cobertura.ser"
 		      >
@@ -294,7 +277,4 @@
     </findbugs>
   </target>
 
-  <target name="eclipse" description="build eclipse project and classpath files">
-    <iterate target="eclipse"/>
-  </target>
 </project>

@@ -138,7 +138,6 @@ class Queue;
         bool isLocal(const ConnectionToken* t) const; 
 
         void destroyExclusiveQueues();
-        void checkDelete(boost::shared_ptr<Queue> queue, bool ifUnused, bool ifEmpty);
         template <class F> void eachExclusiveQueue(F f) 
         { 
             std::for_each(exclusiveQueues.begin(), exclusiveQueues.end(), f);

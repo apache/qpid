@@ -23,35 +23,11 @@
 #include "qmf/QueryImpl.h"
 #include "qmf/SchemaImpl.h"
 #include "qmf/exceptions.h"
-#include "qpid/messaging/Connection.h"
-#include "qmf/PosixEventNotifierImpl.h"
-#include "qmf/AgentSession.h"
-#include "qmf/AgentSessionImpl.h"
-#include "qmf/ConsoleSession.h"
-#include "qmf/ConsoleSessionImpl.h"
+
 #include "unit_test.h"
 
-using namespace std;
 using namespace qpid::types;
-using namespace qpid::messaging;
 using namespace qmf;
-
-bool isReadable(int fd)
-{
-    fd_set rfds;
-    struct timeval tv;
-    int nfds, result;
-
-    FD_ZERO(&rfds);
-    FD_SET(fd, &rfds);
-    nfds = fd + 1;
-    tv.tv_sec = 0;
-    tv.tv_usec = 0;
-
-    result = select(nfds, &rfds, NULL, NULL, &tv);
-
-    return result > 0;
-}
 
 namespace qpid {
 namespace tests {
@@ -337,84 +313,6 @@ QPID_AUTO_TEST_CASE(testSchema)
     BOOST_CHECK_EQUAL(prop.getDirection(), DIR_IN_OUT);
 
     BOOST_CHECK_THROW(method.getArgument(3), QmfException);
-}
-
-QPID_AUTO_TEST_CASE(testAgentSessionEventListener)
-{
-    Connection connection("localhost");
-    AgentSession session(connection, "");
-    posix::EventNotifier notifier(session);
-
-    AgentSessionImpl& sessionImpl = AgentSessionImplAccess::get(session);
-            
-    BOOST_CHECK(sessionImpl.getEventNotifier() != 0);
-}
-
-QPID_AUTO_TEST_CASE(testConsoleSessionEventListener)
-{
-    Connection connection("localhost");
-    ConsoleSession session(connection, "");
-    posix::EventNotifier notifier(session);
-
-    ConsoleSessionImpl& sessionImpl = ConsoleSessionImplAccess::get(session);
-
-    BOOST_CHECK(sessionImpl.getEventNotifier() != 0);
-}
-
-QPID_AUTO_TEST_CASE(testGetHandle)
-{
-    Connection connection("localhost");
-    ConsoleSession session(connection, "");
-    posix::EventNotifier notifier(session);
-
-    BOOST_CHECK(notifier.getHandle() > 0);
-}
-
-QPID_AUTO_TEST_CASE(testSetReadableToFalse)
-{
-    Connection connection("localhost");
-    ConsoleSession session(connection, "");
-    posix::EventNotifier notifier(session);
-    PosixEventNotifierImplAccess::get(notifier).setReadable(false);
-
-    bool readable(isReadable(notifier.getHandle()));
-    BOOST_CHECK(!readable);
-}
-
-QPID_AUTO_TEST_CASE(testSetReadable)
-{
-    Connection connection("localhost");
-    ConsoleSession session(connection, "");
-    posix::EventNotifier notifier(session);
-    PosixEventNotifierImplAccess::get(notifier).setReadable(true);
-
-    bool readable(isReadable(notifier.getHandle()));
-    BOOST_CHECK(readable);
-}
-
-QPID_AUTO_TEST_CASE(testSetReadableMultiple)
-{
-    Connection connection("localhost");
-    ConsoleSession session(connection, "");
-    posix::EventNotifier notifier(session);
-    for (int i = 0; i < 15; i++)
-        PosixEventNotifierImplAccess::get(notifier).setReadable(true);
-    PosixEventNotifierImplAccess::get(notifier).setReadable(false);
-
-    bool readable(isReadable(notifier.getHandle()));
-    BOOST_CHECK(!readable);
-}
-
-QPID_AUTO_TEST_CASE(testDeleteNotifier)
-{
-    Connection connection("localhost");
-    ConsoleSession session(connection, "");
-    ConsoleSessionImpl& sessionImpl = ConsoleSessionImplAccess::get(session);
-    {
-        posix::EventNotifier notifier(session);
-        BOOST_CHECK(sessionImpl.getEventNotifier() != 0);
-    }
-    BOOST_CHECK(sessionImpl.getEventNotifier() == 0);
 }
 
 QPID_AUTO_TEST_SUITE_END()

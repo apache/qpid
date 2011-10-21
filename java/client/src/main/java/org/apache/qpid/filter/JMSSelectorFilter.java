@@ -37,9 +37,9 @@ public class JMSSelectorFilter implements MessageFilter
     public JMSSelectorFilter(String selector) throws AMQInternalException
     {
         _selector = selector;
-        if (_logger.isDebugEnabled())
+        if (JMSSelectorFilter._logger.isDebugEnabled())
         {
-            _logger.debug("Created JMSSelectorFilter with selector:" + _selector);
+            JMSSelectorFilter._logger.debug("Created JMSSelectorFilter with selector:" + _selector);
         }
         _matcher = new SelectorParser().parse(selector);
     }
@@ -49,16 +49,16 @@ public class JMSSelectorFilter implements MessageFilter
         try
         {
             boolean match = _matcher.matches(message);
-            if (_logger.isDebugEnabled())
+            if (JMSSelectorFilter._logger.isDebugEnabled())
             {
-                _logger.debug(message + " match(" + match + ") selector(" + System
+                JMSSelectorFilter._logger.debug(message + " match(" + match + ") selector(" + System
                         .identityHashCode(_selector) + "):" + _selector);
             }
             return match;
         }
         catch (AMQInternalException e)
         {
-            _logger.warn("Caught exception when evaluating message selector for message  " + message, e);
+            JMSSelectorFilter._logger.warn("Caght exception when evaluating message selector for message  " + message, e);
         }
         return false;
     }

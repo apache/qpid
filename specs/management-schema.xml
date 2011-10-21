@@ -92,7 +92,6 @@
       <arg name="srcQueue"          dir="I" type="sstr" desc="Source queue"/>
       <arg name="destQueue"         dir="I" type="sstr" desc="Destination queue"/>
       <arg name="qty"               dir="I" type="uint32" desc="# of messages to move. 0 means all messages"/>
-      <arg name="filter"  dir="I" type="map" default="{}"   desc="if specified, move only those messages matching this filter"/>
     </method>
 
     <method name="setLogLevel" desc="Set the log level">
@@ -102,34 +101,6 @@
     <method name="getLogLevel" desc="Get the current log level">
       <arg name="level"     dir="O" type="sstr"/>
     </method>
-
-    <method name="getTimestampConfig" desc="Get the message timestamping configuration">
-      <arg name="receive" dir="O" type="bool"  desc="True if received messages are timestamped."/>
-    </method>
-
-    <method name="setTimestampConfig" desc="Set the message timestamping configuration">
-      <arg name="receive"  dir="I" type="bool" desc="Set true to enable timestamping received messages."/>
-    </method>
-
-    <method name="create" desc="Create an object of the specified type">
-      <arg name="type" dir="I" type="sstr" desc="The type of object to create"/>
-      <arg name="name" dir="I" type="sstr" desc="The name of the object to create"/> 
-      <arg name="properties" dir="I" type="map" desc="Type specific object properties"/> 
-      <arg name="strict" dir="I" type="bool" desc="If specified, treat unrecognised object properties as an error"/> 
-    </method>
-
-    <method name="delete" desc="Delete an object of the specified type">
-      <arg name="type" dir="I" type="sstr" desc="The type of object to delete"/>
-      <arg name="name" dir="I" type="sstr" desc="The name of the object to delete"/> 
-      <arg name="options" dir="I" type="map" desc="Type specific object options for deletion"/> 
-    </method>
-
-    <method name="query" desc="Query the current state of an object.">
-      <arg name="type" dir="I" type="sstr" desc="The type of object to query."/>
-      <arg name="name" dir="I" type="sstr" desc="The name of the object to query"/> 
-      <arg name="results" dir="O" type="map"  desc="A snapshot of the object's state."/>
-    </method>
-
 
   </class>
 
@@ -179,8 +150,8 @@
     <statistic name="msgTxnDequeues"      type="count64"  unit="message"     desc="Transactional messages dequeued"/>
     <statistic name="msgPersistEnqueues"  type="count64"  unit="message"     desc="Persistent messages enqueued"/>
     <statistic name="msgPersistDequeues"  type="count64"  unit="message"     desc="Persistent messages dequeued"/>
-    <statistic name="msgDepth"            type="count64"  unit="message"     desc="Current size of queue in messages" assign="msgTotalEnqueues - msgTotalDequeues"/>
-    <statistic name="byteDepth"           type="count64"  unit="octet"       desc="Current size of queue in bytes"    assign="byteTotalEnqueues - byteTotalDequeues"/>
+    <statistic name="msgDepth"            type="count32"  unit="message"     desc="Current size of queue in messages" assign="msgTotalEnqueues - msgTotalDequeues"/>
+    <statistic name="byteDepth"           type="count32"  unit="octet"       desc="Current size of queue in bytes"    assign="byteTotalEnqueues - byteTotalDequeues"/>
     <statistic name="byteTotalEnqueues"   type="count64"  unit="octet"       desc="Total messages enqueued"/>
     <statistic name="byteTotalDequeues"   type="count64"  unit="octet"       desc="Total messages dequeued"/>
     <statistic name="byteTxnEnqueues"     type="count64"  unit="octet"       desc="Transactional messages enqueued"/>
@@ -191,19 +162,15 @@
     <statistic name="bindingCount"        type="hilo32"   unit="binding"     desc="Current bindings"/>
     <statistic name="unackedMessages"     type="hilo32"   unit="message"     desc="Messages consumed but not yet acked"/>
     <statistic name="messageLatency"      type="mmaTime"  unit="nanosecond"  desc="Broker latency through this queue"/>
-    <statistic name="flowStopped"         type="bool"     desc="Flow control active."/>
-    <statistic name="flowStoppedCount"    type="count32"  desc="Number of times flow control was activated for this queue"/>
 
     <method name="purge" desc="Discard all or some messages on a queue">
       <arg name="request" dir="I" type="uint32" desc="0 for all messages or n>0 for n messages"/>
-      <arg name="filter"  dir="I" type="map" default="{}"  desc="if specified, purge only those messages matching this filter"/>
     </method>
 
     <method name="reroute" desc="Remove all or some messages on this queue and route them to an exchange">
       <arg name="request"        dir="I" type="uint32" desc="0 for all messages or n>0 for n messages"/>
       <arg name="useAltExchange" dir="I" type="bool"   desc="Iff true, use the queue's configured alternate exchange; iff false, use exchange named in the 'exchange' argument"/>
       <arg name="exchange"       dir="I" type="sstr"   desc="Name of the exchange to route the messages through"/>
-      <arg name="filter"  dir="I" type="map" default="{}" desc="if specified, reroute only those messages matching this filter"/>
     </method>
   </class>
 
@@ -272,16 +239,13 @@
     <property name="vhostRef" type="objId"  references="Vhost" access="RC" index="y" parentRef="y"/>
     <property name="address"  type="sstr"   access="RC" index="y"/>
     <property name="incoming" type="bool"   access="RC"/>
-    <property name="SystemConnection"   type="bool"   access="RC" desc="Infrastructure/ Inter-system connection (Cluster, Federation, ...)"/>
-    <property name="userProxyAuth"      type="bool"   access="RO" desc="Authorization to proxy for users not on broker"/>
+    <property name="SystemConnection"   type="bool"   access="RC" desc="Infrastucture/ Inter-system connection (Cluster, Federation, ...)"/>
     <property name="federationLink"     type="bool"   access="RO" desc="Is this a federation link"/>
     <property name="authIdentity"       type="sstr"   access="RO" desc="authId of connection if authentication enabled"/>
     <property name="remoteProcessName"  type="lstr"   access="RO" optional="y" desc="Name of executable running as remote client"/>
     <property name="remotePid"          type="uint32" access="RO" optional="y" desc="Process ID of remote client"/>
     <property name="remoteParentPid"    type="uint32" access="RO" optional="y" desc="Parent Process ID of remote client"/>
     <property name="shadow"             type="bool"   access="RO" desc="True for shadow connections"/>
-    <property name="saslMechanism"      type="sstr"   access="RO" desc="SASL mechanism"/>
-    <property name="saslSsf"            type="uint16"   access="RO" desc="SASL security strength factor"/>
     <statistic name="closing"          type="bool" desc="This client is closing by management request"/>
     <statistic name="framesFromClient" type="count64"/>
     <statistic name="framesToClient"   type="count64"/>
@@ -416,8 +380,8 @@
     <arg name="reason"  type="lstr"   desc="Reason for a failure"/>
     <arg name="rhost"   type="sstr"   desc="Address (i.e. DNS name, IP address, etc.) of a remotely connected host"/>
     <arg name="user"    type="sstr"   desc="Authentication identity"/>
-    <arg name="msgDepth" type="count64" desc="Current size of queue in messages"/>
-    <arg name="byteDepth" type="count64" desc="Current size of queue in bytes"/>
+    <arg name="msgDepth" type="count32" desc="Current size of queue in messages"/>
+    <arg name="byteDepth" type="count32" desc="Current size of queue in bytes"/>
   </eventArguments>
 
   <event name="clientConnect"     sev="inform" args="rhost, user"/>

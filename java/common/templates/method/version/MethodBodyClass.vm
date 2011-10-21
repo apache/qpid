@@ -46,11 +46,9 @@
  
 package org.apache.qpid.framing.amqp_$version.getMajor()_$version.getMinor();
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
 import java.util.HashMap;
 
+import org.apache.mina.common.ByteBuffer;
 import org.apache.qpid.framing.*;
 import org.apache.qpid.AMQException;
 
@@ -58,7 +56,7 @@ public class ${javaClassName} extends AMQMethodBody_$version.getMajor()_$version
 {
     private static final AMQMethodBodyInstanceFactory FACTORY_INSTANCE = new AMQMethodBodyInstanceFactory()
     {
-        public AMQMethodBody newInstance(DataInputStream in, long size) throws AMQFrameDecodingException, IOException
+        public AMQMethodBody newInstance(ByteBuffer in, long size) throws AMQFrameDecodingException
         {
             return new ${javaClassName}(in);
         }
@@ -86,7 +84,7 @@ public class ${javaClassName} extends AMQMethodBody_$version.getMajor()_$version
     
     // Constructor
 
-    public ${javaClassName}(DataInputStream buffer) throws AMQFrameDecodingException, IOException
+    public ${javaClassName}(ByteBuffer buffer) throws AMQFrameDecodingException
     {
 #foreach( $field in $method.ConsolidatedFields )
         _$field.Name = read$field.getEncodingType()( buffer );
@@ -171,7 +169,7 @@ public class ${javaClassName} extends AMQMethodBody_$version.getMajor()_$version
         return size;        
     }
 
-    public void writeMethodPayload(DataOutputStream buffer) throws IOException
+    public void writeMethodPayload(ByteBuffer buffer)
     {
 #foreach( $field in $method.ConsolidatedFields )
         write$field.getEncodingType()( buffer, _$field.Name );

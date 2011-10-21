@@ -83,22 +83,22 @@ class AsynchAcceptResult : public AsynchResult {
 public:
     AsynchAcceptResult(qpid::sys::AsynchAcceptor::Callback cb,
                        AsynchAcceptor *acceptor,
-                       const qpid::sys::Socket& listener);
+                       SOCKET listener);
     virtual void success (size_t bytesTransferred);
     virtual void failure (int error);
 
 private:
     virtual void complete(void) {}  // No-op for this class.
 
+    std::auto_ptr<qpid::sys::Socket> newSocket;
     qpid::sys::AsynchAcceptor::Callback callback;
     AsynchAcceptor *acceptor;
     SOCKET listener;
-    std::auto_ptr<qpid::sys::Socket> newSocket;
 
     // AcceptEx needs a place to write the local and remote addresses
     // when accepting the connection. Place those here; get enough for
     // IPv6 addresses, even if the socket is IPv4.
-    enum { SOCKADDRMAXLEN = sizeof(sockaddr_in6) + 16,
+    enum { SOCKADDRMAXLEN = sizeof sockaddr_in6 + 16,
            SOCKADDRBUFLEN = 2 * SOCKADDRMAXLEN };
     char addressBuffer[SOCKADDRBUFLEN];
 };

@@ -21,10 +21,12 @@
 
 package org.apache.qpid.framing.abstraction;
 
+import org.apache.mina.common.ByteBuffer;
+
 public interface ContentChunk
 {
     int getSize();
-    byte[] getData();
+    ByteBuffer getData();
 
     void reduceToFit();
 }

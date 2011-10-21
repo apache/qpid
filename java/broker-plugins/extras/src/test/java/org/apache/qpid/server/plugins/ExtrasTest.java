@@ -67,7 +67,7 @@ public class ExtrasTest extends TestCase
     
     public void testNoExchanges() throws Exception
     {
-        PluginManager manager = new PluginManager("/path/to/nowhere", "/tmp", null);
+        PluginManager manager = new PluginManager("/path/to/nowhere", "/tmp");
         Map<String, ExchangeType<?>> exchanges = manager.getExchanges();
         assertTrue("Exchanges found", exchanges.isEmpty());
     }

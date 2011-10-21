@@ -356,7 +356,7 @@ public abstract class AbstractExchange implements Exchange, Managable
         _receivedMessageCount.incrementAndGet();
         _receivedMessageSize.addAndGet(message.getSize());
         final ArrayList<? extends BaseQueue> queues = doRoute(message);
-        if(!queues.isEmpty())
+        if(queues != null && !queues.isEmpty())
         {
             _routedMessageCount.incrementAndGet();
             _routedMessageSize.addAndGet(message.getSize());

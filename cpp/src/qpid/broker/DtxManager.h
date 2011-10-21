@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
+ * 
  *   http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -26,8 +26,8 @@
 #include "qpid/broker/DtxWorkRecord.h"
 #include "qpid/broker/TransactionalStore.h"
 #include "qpid/framing/amqp_types.h"
+#include "qpid/sys/Timer.h"
 #include "qpid/sys/Mutex.h"
-#include "qpid/ptr_map.h"
 
 namespace qpid {
 namespace broker {
@@ -39,21 +39,22 @@ class DtxManager{
     {
         DtxManager& mgr;
         const std::string& xid;
-
-        DtxCleanup(uint32_t timeout, DtxManager& mgr, const std::string& xid);
+        
+        DtxCleanup(uint32_t timeout, DtxManager& mgr, const std::string& xid);    
         void fire();
     };
 
     WorkMap work;
     TransactionalStore* store;
     qpid::sys::Mutex lock;
-    qpid::sys::Timer* timer;
+    qpid::sys::Timer& timer;
 
     void remove(const std::string& xid);
-    DtxWorkRecord* createWork(const std::string& xid);
+    DtxWorkRecord* getWork(const std::string& xid);
+    DtxWorkRecord* createWork(std::string xid);
 
 public:
-    DtxManager(sys::Timer&);
+    DtxManager(qpid::sys::Timer&);
     ~DtxManager();
     void start(const std::string& xid, DtxBuffer::shared_ptr work);
     void join(const std::string& xid, DtxBuffer::shared_ptr work);
@@ -65,15 +66,6 @@ public:
     uint32_t getTimeout(const std::string& xid);
     void timedout(const std::string& xid);
     void setStore(TransactionalStore* store);
-    void setTimer(sys::Timer& t) { timer = &t; }
-
-    // Used by cluster for replication.
-    template<class F> void each(F f) const {
-        for (WorkMap::const_iterator i = work.begin(); i != work.end(); ++i)
-            f(*ptr_map_ptr(i));
-    }
-    DtxWorkRecord* getWork(const std::string& xid);
-    bool exists(const std::string& xid);
 };
 
 }

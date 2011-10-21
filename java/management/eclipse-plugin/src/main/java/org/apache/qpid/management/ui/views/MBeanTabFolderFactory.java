@@ -131,8 +131,6 @@ public class MBeanTabFolderFactory
                 }
                 break;
             case VHOST_MANAGER:
-                createAttributesTab(tabFolder, mbean);
-
                 tab = new TabItem(tabFolder, SWT.NONE);
                 tab.setText("Operations");
                 controller = new VHostTabControl(tabFolder, mbean, mbsc);

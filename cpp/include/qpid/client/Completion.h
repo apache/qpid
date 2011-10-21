@@ -41,7 +41,7 @@ template <class T> class PrivateImplRef;
  *
  *\ingroup clientapi
  */
-class QPID_CLIENT_CLASS_EXTERN Completion : public Handle<CompletionImpl>
+class Completion : public Handle<CompletionImpl>
 {
 public:
     QPID_CLIENT_EXTERN Completion(CompletionImpl* = 0);

@@ -33,7 +33,7 @@
 namespace qpid {
 namespace cluster {
 
-struct EventFrame;
+class EventFrame;
 class Cluster;
 class Multicaster;
 class Connection;

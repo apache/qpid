@@ -10,9 +10,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
+ * 
  *   http://www.apache.org/licenses/LICENSE-2.0
- *
+ * 
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -23,7 +23,7 @@
  */
 
 #include "qpid/cluster/types.h"
-#include "qpid/BufferRef.h"
+#include "qpid/RefCountedBuffer.h"
 #include "qpid/framing/AMQFrame.h"
 #include <sys/uio.h>            // For iovec
 #include <iosfwd>
@@ -53,7 +53,7 @@ class EventHeader {
 
     /** Size of payload data, excluding header. */
     size_t getSize() const { return size; }
-    /** Size of header + payload. */
+    /** Size of header + payload. */ 
     size_t getStoreSize() const { return size + HEADER_SIZE; }
 
     bool isCluster() const { return connectionId.getNumber() == 0; }
@@ -62,7 +62,7 @@ class EventHeader {
 
   protected:
     static const size_t HEADER_SIZE;
-
+    
     EventType type;
     ConnectionId connectionId;
     size_t size;
@@ -86,25 +86,25 @@ class Event : public EventHeader {
 
     /** Create a control event. */
     static Event control(const framing::AMQFrame&, const ConnectionId&);
-
+    
     // Data excluding header.
-    char* getData() { return store.begin() + HEADER_SIZE; }
-    const char* getData() const { return store.begin() + HEADER_SIZE; }
+    char* getData() { return store + HEADER_SIZE; }
+    const char* getData() const { return store + HEADER_SIZE; }
 
     // Store including header
-    char* getStore() { return store.begin(); }
-    const char* getStore() const { return store.begin(); }
+    char* getStore() { return store; }
+    const char* getStore() const { return store; }
 
-    const framing::AMQFrame& getFrame() const;
-
+    const framing::AMQFrame& getFrame() const;        
+    
     operator framing::Buffer() const;
 
     iovec toIovec() const;
-
+    
   private:
     void encodeHeader() const;
 
-    BufferRef store;
+    RefCountedBuffer::pointer store;
     mutable framing::AMQFrame frame;
 };
 

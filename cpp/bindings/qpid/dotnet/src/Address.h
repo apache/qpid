@@ -64,7 +64,6 @@ namespace Messaging {
 
         // copy constructor
         Address(const Address ^ address);
-        Address(const Address % address);
 
         // unmanaged clone
         Address(const ::qpid::messaging::Address & addrp);

@@ -20,12 +20,13 @@
  */
 package org.apache.qpid.client;
 
-import java.util.UUID;
-
 import javax.jms.JMSException;
 import javax.jms.TemporaryQueue;
 
 import org.apache.qpid.framing.AMQShortString;
+
+import java.util.Random;
+import java.util.UUID;
 
 /** AMQ implementation of a TemporaryQueue. */
 final class AMQTemporaryQueue extends AMQQueue implements TemporaryQueue, TemporaryDestination
@@ -49,15 +50,11 @@ final class AMQTemporaryQueue extends AMQQueue implements TemporaryQueue, Tempor
         {
             throw new JMSException("Temporary Queue has consumers so cannot be deleted");
         }
+        _deleted = true;
 
-        try
-        {
-            _session.deleteTemporaryDestination(this);
-        }
-        finally
-        {
-            _deleted = true;
-        }
+        // Currently TemporaryQueue is set to be auto-delete which means that the queue will be deleted
+        // by the server when there are no more subscriptions to that queue.  This is probably not
+        // quite right for JMSCompliance.
     }
 
     public AMQSession getSession()

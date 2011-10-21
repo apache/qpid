@@ -76,10 +76,6 @@
         <copy todir="${module.release}/lib/plugins" failonerror="true">
             <fileset dir="${build.lib}/plugins"/>
         </copy>
-        <!--copy optional bdbstore module if it exists -->
-        <copy todir="${module.release}/lib/" failonerror="false">
-            <fileset file="${build.lib}/${project.name}-bdbstore-${project.version}.jar"/>
-        </copy>
     </target>
 
     <target name="release-bin" depends="release-bin-tasks"/>

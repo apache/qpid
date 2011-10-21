@@ -20,27 +20,34 @@
  */
 
 #include "qpid/RefCountedBuffer.h"
-#include <stdlib.h>
 #include <new>
 
 namespace qpid {
 
-void RefCountedBuffer::released() const {
+RefCountedBuffer::RefCountedBuffer() : count(0) {}
+
+void RefCountedBuffer::destroy() const {
     this->~RefCountedBuffer();
-    ::free (reinterpret_cast<void *>(const_cast<RefCountedBuffer *>(this)));
+    ::delete[] reinterpret_cast<const char*>(this);
 }
 
-BufferRef RefCountedBuffer::create(size_t n) {
-    void* store=::malloc (n + sizeof(RefCountedBuffer));
-    if (NULL == store)
-        throw std::bad_alloc();
+char* RefCountedBuffer::addr() const {
+    return const_cast<char*>(reinterpret_cast<const char*>(this)+sizeof(RefCountedBuffer));
+}
+
+RefCountedBuffer::pointer RefCountedBuffer::create(size_t n) {
+    char* store=::new char[n+sizeof(RefCountedBuffer)];
     new(store) RefCountedBuffer;
-    char* start = reinterpret_cast<char *>(store) + sizeof(RefCountedBuffer);
-    return BufferRef(
-        boost::intrusive_ptr<RefCounted>(reinterpret_cast<RefCountedBuffer*>(store)),
-        start, start+n);
+    return pointer(reinterpret_cast<RefCountedBuffer*>(store));
 }
 
+RefCountedBuffer::pointer::pointer() {}
+RefCountedBuffer::pointer::pointer(RefCountedBuffer* x) : p(x) {}
+RefCountedBuffer::pointer::pointer(const pointer& x) : p(x.p) {}
+RefCountedBuffer::pointer::~pointer() {}
+RefCountedBuffer::pointer& RefCountedBuffer::pointer::operator=(const RefCountedBuffer::pointer& x) { p = x.p; return *this; }
+
+char* RefCountedBuffer::pointer::cp() const { return p ? p->get() : 0; }
 } // namespace qpid
 
 

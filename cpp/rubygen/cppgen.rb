@@ -377,9 +377,6 @@ class CppGen < Generator
   def cpp_class(name, *bases, &block)
     struct_class("class", name, bases, &block);
   end
-  def cpp_extern_class(scope, name, *bases, &block)
-    struct_class("class "+scope, name, bases, &block);
-  end
 
   def typedef(type, name) genl "typedef #{type} #{name};\n"; end
 

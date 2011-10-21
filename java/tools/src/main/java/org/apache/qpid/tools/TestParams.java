@@ -25,25 +25,25 @@ import javax.jms.Session;
 public class TestParams
 {
     /*
-     * By default the connection URL is used.
+     * By default the connection URL is used. 
      * This allows a user to easily specify a fully fledged URL any given property.
      * Ex. SSL parameters
-     *
+     *  
      * By providing a host & port allows a user to simply override the URL.
      * This allows to create multiple clients in test scripts easily,
-     * without having to deal with the long URL format.
+     * without having to deal with the long URL format. 
      */
     private String url = "amqp://guest:guest@clientid/testpath?brokerlist='tcp://localhost:5672'";
-
+    
     private String host = "";
-
+    
     private int port = -1;
 
     private String address = "queue; {create : always}";
 
     private int msg_size = 1024;
 
-    private int random_msg_size_start_from = 1;
+    private int msg_type = 1;   // not used yet
 
     private boolean cacheMessage = false;
 
@@ -62,28 +62,19 @@ public class TestParams
     private int msg_count = 10;
 
     private int warmup_count = 1;
-
+    
     private boolean random_msg_size = false;
-
-    private String msgType = "bytes";
-
-    private boolean printStdDev = false;
-
-    private long rate = -1;
-
-    private boolean externalController = false;
-
-    private boolean useUniqueDest = false; // useful when using multiple connections.
 
     public TestParams()
     {
-
+     
         url = System.getProperty("url",url);
         host = System.getProperty("host","");
         port = Integer.getInteger("port", -1);
-        address = System.getProperty("address",address);
+        address = System.getProperty("address","queue");
 
         msg_size  = Integer.getInteger("msg_size", 1024);
+        msg_type = Integer.getInteger("msg_type",1);
         cacheMessage = Boolean.getBoolean("cache_msg");
         disableMessageID = Boolean.getBoolean("disableMessageID");
         disableTimestamp = Boolean.getBoolean("disableTimestamp");
@@ -94,12 +85,6 @@ public class TestParams
         msg_count = Integer.getInteger("msg_count",msg_count);
         warmup_count = Integer.getInteger("warmup_count",warmup_count);
         random_msg_size = Boolean.getBoolean("random_msg_size");
-        msgType = System.getProperty("msg_type","bytes");
-        printStdDev = Boolean.getBoolean("print_std_dev");
-        rate = Long.getLong("rate",-1);
-        externalController = Boolean.getBoolean("ext_controller");
-        useUniqueDest = Boolean.getBoolean("use_unique_dest");
-        random_msg_size_start_from = Integer.getInteger("random_msg_size_start_from", 1);
     }
 
     public String getUrl()
@@ -137,9 +122,9 @@ public class TestParams
         return msg_size;
     }
 
-    public int getRandomMsgSizeStartFrom()
+    public int getMsgType()
     {
-        return random_msg_size_start_from;
+        return msg_type;
     }
 
     public boolean isDurable()
@@ -176,39 +161,10 @@ public class TestParams
     {
         return disableTimestamp;
     }
-
+    
     public boolean isRandomMsgSize()
     {
         return random_msg_size;
     }
 
-    public String getMessageType()
-    {
-        return msgType;
-    }
-
-    public boolean isPrintStdDev()
-    {
-        return printStdDev;
-    }
-
-    public long getRate()
-    {
-        return rate;
-    }
-
-    public boolean isExternalController()
-    {
-        return externalController;
-    }
-
-    public void setAddress(String addr)
-    {
-        address = addr;
-    }
-
-    public boolean isUseUniqueDests()
-    {
-        return useUniqueDest;
-    }
 }

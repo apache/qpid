@@ -110,12 +110,17 @@ public class QueueDepthWithSelectorTest extends QpidBrokerTestCase
         try
         {
             Connection connection = getConnection();
-            AMQSession session = (AMQSession)connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
 
-            long queueDepth = session.getQueueDepth((AMQDestination) _queue);
+            Thread.sleep(2000);
+            long queueDepth = ((AMQSession) session).getQueueDepth((AMQDestination) _queue);
             assertEquals("Session reports Queue depth not as expected", expectedDepth, queueDepth);
             
             connection.close();
+        }
+        catch (InterruptedException e)
+        {
+            fail(e.getMessage());
         }
         catch (AMQException e)
         {
@@ -153,10 +158,6 @@ public class QueueDepthWithSelectorTest extends QpidBrokerTestCase
         {
             assertTrue("Message " + msgId + " not received.", msgIdRecevied[msgId]);
         }
-
-        //do a synchronous op to ensure the acks are processed
-        //on the broker before proceeding
-        ((AMQSession)_clientSession).sync();
     }
 
     /**

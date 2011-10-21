@@ -20,15 +20,12 @@
  */
 package org.apache.qpid.client.message;
 
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
 import java.util.Enumeration;
 
 import javax.jms.JMSException;
 import javax.jms.MessageFormatException;
 
-import java.nio.ByteBuffer;
+import org.apache.mina.common.ByteBuffer;
 import org.apache.qpid.AMQPInvalidClassException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
@@ -285,7 +282,7 @@ public final class JMSHeaderAdapter
                         s = String.valueOf(o);
                     }
                 }
-            }//else return s // null;
+            }//else return s // null; 
         }
 
         return s;
@@ -461,29 +458,9 @@ public final class JMSHeaderAdapter
         return getHeaders().isEmpty();
     }
 
-    public void writeToBuffer(final ByteBuffer data)
+    public void writeToBuffer(ByteBuffer data)
     {
-        try
-        {
-            getHeaders().writeToBuffer(new DataOutputStream(new OutputStream()
-            {
-                @Override
-                public void write(final int b)
-                {
-                    data.put((byte)b);
-                }
-
-                @Override
-                public void write(final byte[] b, final int off, final int len)
-                {
-                    data.put(b, off, len);
-                }
-            }));
-        }
-        catch (IOException e)
-        {
-            throw new IllegalArgumentException("Unexpected IO Exception - should never happen", e);
-        }
+        getHeaders().writeToBuffer(data);
     }
 
     public Enumeration getMapNames()

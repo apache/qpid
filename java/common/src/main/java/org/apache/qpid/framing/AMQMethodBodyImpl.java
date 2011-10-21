@@ -21,15 +21,12 @@ package org.apache.qpid.framing;
  *
  */
 
+import org.apache.mina.common.ByteBuffer;
 import org.apache.qpid.AMQChannelException;
 import org.apache.qpid.AMQConnectionException;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
-
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
 
 public abstract class AMQMethodBodyImpl implements AMQMethodBody
 {
@@ -101,7 +98,7 @@ public abstract class AMQMethodBodyImpl implements AMQMethodBody
         return 2 + 2 + getBodySize();
     }
 
-    public void writePayload(DataOutputStream buffer) throws IOException
+        public void writePayload(ByteBuffer buffer)
     {
         EncodingUtils.writeUnsignedShort(buffer, getClazz());
         EncodingUtils.writeUnsignedShort(buffer, getMethod());
@@ -109,12 +106,12 @@ public abstract class AMQMethodBodyImpl implements AMQMethodBody
     }
 
 
-    protected byte readByte(DataInputStream buffer) throws IOException
+    protected byte readByte(ByteBuffer buffer)
     {
-        return buffer.readByte();
+        return buffer.get();
     }
 
-    protected AMQShortString readAMQShortString(DataInputStream buffer) throws IOException
+    protected AMQShortString readAMQShortString(ByteBuffer buffer)
     {
         return EncodingUtils.readAMQShortString(buffer);
     }
@@ -124,27 +121,27 @@ public abstract class AMQMethodBodyImpl implements AMQMethodBody
         return EncodingUtils.encodedShortStringLength(string);
     }
 
-    protected void writeByte(DataOutputStream buffer, byte b) throws IOException
+    protected void writeByte(ByteBuffer buffer, byte b)
     {
-        buffer.writeByte(b);
+        buffer.put(b);
     }
 
-    protected void writeAMQShortString(DataOutputStream buffer, AMQShortString string) throws IOException
+    protected void writeAMQShortString(ByteBuffer buffer, AMQShortString string)
     {
         EncodingUtils.writeShortStringBytes(buffer, string);
     }
 
-    protected int readInt(DataInputStream buffer) throws IOException
+    protected int readInt(ByteBuffer buffer)
     {
-        return buffer.readInt();
+        return buffer.getInt();
     }
 
-    protected void writeInt(DataOutputStream buffer, int i) throws IOException
+    protected void writeInt(ByteBuffer buffer, int i)
     {
-        buffer.writeInt(i);
+        buffer.putInt(i);
     }
 
-    protected FieldTable readFieldTable(DataInputStream buffer) throws AMQFrameDecodingException, IOException
+    protected FieldTable readFieldTable(ByteBuffer buffer) throws AMQFrameDecodingException
     {
         return EncodingUtils.readFieldTable(buffer);
     }
@@ -154,19 +151,19 @@ public abstract class AMQMethodBodyImpl implements AMQMethodBody
         return EncodingUtils.encodedFieldTableLength(table);  //To change body of created methods use File | Settings | File Templates.
     }
 
-    protected void writeFieldTable(DataOutputStream buffer, FieldTable table) throws IOException
+    protected void writeFieldTable(ByteBuffer buffer, FieldTable table)
     {
         EncodingUtils.writeFieldTableBytes(buffer, table);
     }
 
-    protected long readLong(DataInputStream buffer) throws IOException
+    protected long readLong(ByteBuffer buffer)
     {
-        return buffer.readLong();
+        return buffer.getLong();
     }
 
-    protected void writeLong(DataOutputStream buffer, long l) throws IOException
+    protected void writeLong(ByteBuffer buffer, long l)
     {
-        buffer.writeLong(l);
+        buffer.putLong(l);
     }
 
     protected int getSizeOf(byte[] response)
@@ -174,86 +171,87 @@ public abstract class AMQMethodBodyImpl implements AMQMethodBody
         return (response == null) ? 4 : response.length + 4;
     }
 
-    protected void writeBytes(DataOutputStream buffer, byte[] data) throws IOException
+    protected void writeBytes(ByteBuffer buffer, byte[] data)
     {
         EncodingUtils.writeBytes(buffer,data);
     }
 
-    protected byte[] readBytes(DataInputStream buffer) throws IOException
+    protected byte[] readBytes(ByteBuffer buffer)
     {
         return EncodingUtils.readBytes(buffer);
     }
 
-    protected short readShort(DataInputStream buffer) throws IOException
+    protected short readShort(ByteBuffer buffer)
     {
         return EncodingUtils.readShort(buffer);
     }
 
-    protected void writeShort(DataOutputStream buffer, short s) throws IOException
+    protected void writeShort(ByteBuffer buffer, short s)
     {
         EncodingUtils.writeShort(buffer, s);
     }
 
-    protected Content readContent(DataInputStream buffer)
+    protected Content readContent(ByteBuffer buffer)
     {
-        return null;
+        return null;  //To change body of created methods use File | Settings | File Templates.
     }
 
     protected int getSizeOf(Content body)
     {
-        return 0;
+        return 0;  //To change body of created methods use File | Settings | File Templates.
     }
 
-    protected void writeContent(DataOutputStream buffer, Content body)
+    protected void writeContent(ByteBuffer buffer, Content body)
     {
+        //To change body of created methods use File | Settings | File Templates.
     }
 
-    protected byte readBitfield(DataInputStream buffer) throws IOException
+    protected byte readBitfield(ByteBuffer buffer)
     {
-        return readByte(buffer);
+        return readByte(buffer);  //To change body of created methods use File | Settings | File Templates.
     }
 
-    protected int readUnsignedShort(DataInputStream buffer) throws IOException
+    protected int readUnsignedShort(ByteBuffer buffer)
     {
-        return buffer.readUnsignedShort();
+        return buffer.getUnsignedShort();  //To change body of created methods use File | Settings | File Templates.
     }
 
-    protected void writeBitfield(DataOutputStream buffer, byte bitfield0) throws IOException
+    protected void writeBitfield(ByteBuffer buffer, byte bitfield0)
     {
-        buffer.writeByte(bitfield0);
+        buffer.put(bitfield0);
     }
 
-    protected void writeUnsignedShort(DataOutputStream buffer, int s) throws IOException
+    protected void writeUnsignedShort(ByteBuffer buffer, int s)
     {
         EncodingUtils.writeUnsignedShort(buffer, s);
     }
 
-    protected long readUnsignedInteger(DataInputStream buffer) throws IOException
+    protected long readUnsignedInteger(ByteBuffer buffer)
     {
-        return EncodingUtils.readUnsignedInteger(buffer);
+        return buffer.getUnsignedInt();
     }
-    protected void writeUnsignedInteger(DataOutputStream buffer, long i) throws IOException
+    protected void writeUnsignedInteger(ByteBuffer buffer, long i)
     {
         EncodingUtils.writeUnsignedInteger(buffer, i);
     }
 
 
-    protected short readUnsignedByte(DataInputStream buffer) throws IOException
+    protected short readUnsignedByte(ByteBuffer buffer)
     {
-        return (short) buffer.readUnsignedByte();
+        return buffer.getUnsigned();
     }
 
-    protected void writeUnsignedByte(DataOutputStream buffer, short unsignedByte) throws IOException
+    protected void writeUnsignedByte(ByteBuffer buffer, short unsignedByte)
     {
         EncodingUtils.writeUnsignedByte(buffer, unsignedByte);
     }
 
-    protected long readTimestamp(DataInputStream buffer) throws IOException
+    protected long readTimestamp(ByteBuffer buffer)
     {
         return EncodingUtils.readTimestamp(buffer);
     }
 
-    protected void writeTimestamp(DataOutputStream buffer, long t) throws IOException
+    protected void writeTimestamp(ByteBuffer buffer, long t)
     {
         EncodingUtils.writeTimestamp(buffer, t);
     }

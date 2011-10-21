@@ -496,7 +496,7 @@ public class DerbyMessageStoreLoggingTest extends MemoryMessageStoreLoggingTest
             stopBroker();
 
             // Clear our monitor
-            _monitor.markDiscardPoint();
+            _monitor.reset();
 
             startBroker();
 

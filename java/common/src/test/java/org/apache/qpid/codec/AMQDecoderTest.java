@@ -21,9 +21,6 @@ package org.apache.qpid.codec;
  */
 
 
-import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 
@@ -49,16 +46,9 @@ public class AMQDecoderTest extends TestCase
     }
    
     
-    private ByteBuffer getHeartbeatBodyBuffer() throws IOException
+    public void testSingleFrameDecode() throws AMQProtocolVersionException, AMQFrameDecodingException
     {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        HeartbeatBody.FRAME.writePayload(new DataOutputStream(baos));
-        return ByteBuffer.wrap(baos.toByteArray());
-    }
-    
-    public void testSingleFrameDecode() throws AMQProtocolVersionException, AMQFrameDecodingException, IOException
-    {
-        ByteBuffer msg = getHeartbeatBodyBuffer();
+        ByteBuffer msg = HeartbeatBody.FRAME.toNioByteBuffer();
         ArrayList<AMQDataBlock> frames = _decoder.decodeBuffer(msg);
         if (frames.get(0) instanceof AMQFrame)
         {
@@ -70,9 +60,9 @@ public class AMQDecoderTest extends TestCase
         }
     }
     
-    public void testPartialFrameDecode() throws AMQProtocolVersionException, AMQFrameDecodingException, IOException
+    public void testPartialFrameDecode() throws AMQProtocolVersionException, AMQFrameDecodingException
     {
-        ByteBuffer msg = getHeartbeatBodyBuffer();
+        ByteBuffer msg = HeartbeatBody.FRAME.toNioByteBuffer();
         ByteBuffer msgA = msg.slice();
         int msgbPos = msg.remaining() / 2;
         int msgaLimit = msg.remaining() - msgbPos;
@@ -93,10 +83,10 @@ public class AMQDecoderTest extends TestCase
         }
     }
     
-    public void testMultipleFrameDecode() throws AMQProtocolVersionException, AMQFrameDecodingException, IOException
+    public void testMultipleFrameDecode() throws AMQProtocolVersionException, AMQFrameDecodingException
     {
-        ByteBuffer msgA = getHeartbeatBodyBuffer();
-        ByteBuffer msgB = getHeartbeatBodyBuffer();
+        ByteBuffer msgA = HeartbeatBody.FRAME.toNioByteBuffer();
+        ByteBuffer msgB = HeartbeatBody.FRAME.toNioByteBuffer();
         ByteBuffer msg = ByteBuffer.allocate(msgA.remaining() + msgB.remaining());
         msg.put(msgA);
         msg.put(msgB);
@@ -116,11 +106,11 @@ public class AMQDecoderTest extends TestCase
         }
     }
     
-    public void testMultiplePartialFrameDecode() throws AMQProtocolVersionException, AMQFrameDecodingException, IOException
+    public void testMultiplePartialFrameDecode() throws AMQProtocolVersionException, AMQFrameDecodingException
     {
-        ByteBuffer msgA = getHeartbeatBodyBuffer();
-        ByteBuffer msgB = getHeartbeatBodyBuffer();
-        ByteBuffer msgC = getHeartbeatBodyBuffer();
+        ByteBuffer msgA = HeartbeatBody.FRAME.toNioByteBuffer();
+        ByteBuffer msgB = HeartbeatBody.FRAME.toNioByteBuffer();
+        ByteBuffer msgC = HeartbeatBody.FRAME.toNioByteBuffer();
         
         ByteBuffer sliceA = ByteBuffer.allocate(msgA.remaining() + msgB.remaining() / 2);
         sliceA.put(msgA);

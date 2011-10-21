@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 #
 # Licensed to the Apache Software Foundation (ASF) under one
@@ -47,13 +47,9 @@ delete_certs() {
     fi
 }
 
-COMMON_OPTS="--daemon --no-data-dir --no-module-dir --config $CONFIG --load-module $SSL_LIB --ssl-cert-db $CERT_DIR --ssl-cert-password-file $CERT_PW_FILE --ssl-cert-name $TEST_HOSTNAME --require-encryption"
+COMMON_OPTS="--daemon --no-data-dir --no-module-dir --auth no --config $CONFIG --load-module $SSL_LIB --ssl-cert-db $CERT_DIR --ssl-cert-password-file $CERT_PW_FILE --ssl-cert-name $TEST_HOSTNAME --require-encryption"
 start_broker() { # $1 = extra opts
-    ../qpidd --transport ssl --port 0 --ssl-port 0 $COMMON_OPTS --auth no $1;
-}
-
-start_authenticating_broker() {
-    ../qpidd --transport ssl --port 0 --ssl-port 0 $COMMON_OPTS --ssl-sasl-no-dict --ssl-require-client-authentication --auth yes;
+    ../qpidd --transport ssl --port 0 --ssl-port 0 $COMMON_OPTS $1;
 }
 
 stop_brokers() {
@@ -97,7 +93,7 @@ test "$MSG" = "hello" || { echo "receive failed '$MSG' != 'hello'"; exit 1; }
 
 #### Client Authentication tests
 
-PORT2=`start_authenticating_broker`  || error "Could not start broker"
+PORT2=`start_broker --ssl-require-client-authentication`  || error "Could not start broker"
 echo "Running SSL client authentication test on port $PORT2"
 URL=amqp:ssl:$TEST_HOSTNAME:$PORT2
 
@@ -125,7 +121,7 @@ pick_port() {
     echo $PICK
 }
 ssl_cluster_broker() {		# $1 = port
-    ../qpidd $COMMON_OPTS --auth no --load-module  $CLUSTER_LIB --cluster-name ssl_test.$HOSTNAME.$$ --cluster-url amqp:ssl:$TEST_HOSTNAME:$1 --port 0 --ssl-port $1 --transport ssl > /dev/null
+    ../qpidd $COMMON_OPTS --load-module  $CLUSTER_LIB --cluster-name ssl_test.$HOSTNAME.$$ --cluster-url amqp:ssl:$TEST_HOSTNAME:$1 --port 0 --ssl-port $1 --transport ssl > /dev/null
     # Wait for broker to be ready
     qpid-ping -Pssl -b $TEST_HOSTNAME -qp $1 || { echo "Cannot connect to broker on $1"; exit 1; }
     echo "Running SSL cluster broker on port $1"

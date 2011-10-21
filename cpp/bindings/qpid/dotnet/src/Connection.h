@@ -56,7 +56,6 @@ namespace Messaging {
 
         // copy constructor
         Connection(const Connection ^ connection);
-        Connection(const Connection % connection);
 
 		// unmanaged clone
 		// not defined

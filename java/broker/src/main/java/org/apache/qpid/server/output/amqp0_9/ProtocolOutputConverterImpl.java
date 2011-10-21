@@ -20,6 +20,9 @@ package org.apache.qpid.server.output.amqp0_9;
  *
  */
 
+
+import org.apache.mina.common.ByteBuffer;
+
 import org.apache.qpid.server.output.ProtocolOutputConverter;
 import org.apache.qpid.server.output.HeaderPropertiesConverter;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
@@ -35,13 +38,11 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.transport.DeliveryProperties;
 import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
 
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.nio.ByteBuffer;
-
 public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
 {
     private static final MethodRegistry METHOD_REGISTRY = MethodRegistry.getMethodRegistry(ProtocolVersion.v0_9);
+    private static final ProtocolVersionMethodConverter
+            PROTOCOL_CONVERTER = METHOD_REGISTRY.getProtocolVersionMethodConverter();
 
 
     public static Factory getInstanceFactory()
@@ -120,12 +121,15 @@ public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
             int maxBodySize = (int) getProtocolSession().getMaxFrameSize() - AMQFrame.getFrameOverhead();
 
 
-            int capacity = bodySize > maxBodySize ? maxBodySize : bodySize;
+            final int capacity = bodySize > maxBodySize ? maxBodySize : bodySize;
+            java.nio.ByteBuffer buf = java.nio.ByteBuffer.allocate(capacity);
 
-            int writtenSize = capacity;
+            int writtenSize = 0;
 
-            AMQBody firstContentBody = new MessageContentSourceBody(message,0,capacity);
 
+            writtenSize += message.getContent(buf, writtenSize);
+            buf.flip();
+            AMQBody firstContentBody = PROTOCOL_CONVERTER.convertToBody(buf);
 
             CompositeAMQBodyBlock
                     compositeBlock = new CompositeAMQBodyBlock(channelId, deliverBody, contentHeaderBody, firstContentBody);
@@ -133,54 +137,14 @@ public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
 
             while(writtenSize < bodySize)
             {
-                capacity = bodySize - writtenSize > maxBodySize ? maxBodySize : bodySize - writtenSize;
-                MessageContentSourceBody body = new MessageContentSourceBody(message, writtenSize, capacity);
-                writtenSize += capacity;
+                buf = java.nio.ByteBuffer.allocate(capacity);
 
-                writeFrame(new AMQFrame(channelId, body));
+                writtenSize += message.getContent(buf, writtenSize);
+                buf.flip();
+                writeFrame(new AMQFrame(channelId, PROTOCOL_CONVERTER.convertToBody(buf)));
             }
         }
     }
-
-    private class MessageContentSourceBody implements AMQBody
-    {
-        public static final byte TYPE = 3;
-        private int _length;
-        private MessageContentSource _message;
-        private int _offset;
-
-        public MessageContentSourceBody(MessageContentSource message, int offset, int length)
-        {
-            _message = message;
-            _offset = offset;
-            _length = length;
-        }
-
-        public byte getFrameType()
-        {
-            return TYPE;
-        }
-
-        public int getSize()
-        {
-            return _length;
-        }
-
-        public void writePayload(DataOutputStream buffer) throws IOException
-        {
-            byte[] data = new byte[_length];
-
-            _message.getContent(ByteBuffer.wrap(data), _offset);
-
-            buffer.write(data);
-        }
-
-        public void handle(int channelId, AMQVersionAwareProtocolSession amqProtocolSession) throws AMQException
-        {
-            throw new UnsupportedOperationException();
-        }
-    }
-
 
     private AMQDataBlock createContentHeaderBlock(final int channelId, final ContentHeaderBody contentHeaderBody)
     {
@@ -257,7 +221,7 @@ public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
                 return _underlyingBody.getSize();
             }
 
-            public void writePayload(DataOutputStream buffer) throws IOException
+            public void writePayload(ByteBuffer buffer)
             {
                 if(_underlyingBody == null)
                 {
@@ -382,7 +346,7 @@ public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
             return OVERHEAD + _methodBody.getSize() + _headerBody.getSize() + _contentBody.getSize();
         }
 
-        public void writePayload(DataOutputStream buffer) throws IOException
+        public void writePayload(ByteBuffer buffer)
         {
             AMQFrame.writeFrames(buffer, _channel, _methodBody, _headerBody, _contentBody);
         }
@@ -410,7 +374,7 @@ public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
             return OVERHEAD + _methodBody.getSize() + _headerBody.getSize() ;
         }
 
-        public void writePayload(DataOutputStream buffer) throws IOException
+        public void writePayload(ByteBuffer buffer)
         {
             AMQFrame.writeFrames(buffer, _channel, _methodBody, _headerBody);
         }

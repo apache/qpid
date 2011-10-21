@@ -59,6 +59,10 @@
     <level value="ERROR"/>
   </logger>
 
+  <logger name="org.apache.qpid.server.virtualhost.VirtualHostImpl$1HouseKeepingTask">
+    <level value="WARN"/>
+  </logger>
+
   <root>
     <level value="${root.logging.level}"/>
     <appender-ref ref="console" />

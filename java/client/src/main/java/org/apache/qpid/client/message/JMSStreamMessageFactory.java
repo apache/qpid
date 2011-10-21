@@ -22,9 +22,10 @@ package org.apache.qpid.client.message;
 
 import javax.jms.JMSException;
 
-import java.nio.ByteBuffer;
-
+import org.apache.mina.common.ByteBuffer;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.BasicContentHeaderProperties;
 
 public class JMSStreamMessageFactory extends AbstractJMSMessageFactory
 {

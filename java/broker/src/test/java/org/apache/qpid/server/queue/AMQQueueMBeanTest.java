@@ -37,6 +37,7 @@ import org.apache.qpid.server.subscription.SubscriptionFactoryImpl;
 import org.apache.qpid.server.protocol.InternalTestProtocolSession;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
+import org.apache.mina.common.ByteBuffer;
 
 import javax.management.JMException;
 
@@ -274,14 +275,18 @@ public class AMQQueueMBeanTest extends InternalBrokerBaseCase
 
         msg.addContentBodyFrame(new ContentChunk()
         {
-            byte[] _data = new byte[((int)MESSAGE_SIZE)];
+            ByteBuffer _data = ByteBuffer.allocate((int)MESSAGE_SIZE);
+
+            {
+                _data.limit((int)MESSAGE_SIZE);
+            }
 
             public int getSize()
             {
                 return (int) MESSAGE_SIZE;
             }
 
-            public byte[] getData()
+            public ByteBuffer getData()
             {
                 return _data;
             }
@@ -397,8 +402,8 @@ public class AMQQueueMBeanTest extends InternalBrokerBaseCase
 
         ContentHeaderBody contentHeaderBody = new ContentHeaderBody();
         contentHeaderBody.bodySize = MESSAGE_SIZE;   // in bytes
-        contentHeaderBody.setProperties(new BasicContentHeaderProperties());
-        ((BasicContentHeaderProperties) contentHeaderBody.getProperties()).setDeliveryMode((byte) (persistent ? 2 : 1));
+        contentHeaderBody.properties = new BasicContentHeaderProperties();
+        ((BasicContentHeaderProperties) contentHeaderBody.properties).setDeliveryMode((byte) (persistent ? 2 : 1));
         IncomingMessage msg = new IncomingMessage(publish);
         msg.setContentHeaderBody(contentHeaderBody);
         return msg;
@@ -436,7 +441,8 @@ public class AMQQueueMBeanTest extends InternalBrokerBaseCase
                     getSession().getMethodRegistry()
                                                        .getProtocolVersionMethodConverter()
                                                        .convertToContentChunk(
-                                                       new ContentBody(new byte[(int) MESSAGE_SIZE])));
+                                                       new ContentBody(ByteBuffer.allocate((int) MESSAGE_SIZE),
+                                                                       MESSAGE_SIZE)));
 
             AMQMessage m = new AMQMessage(currentMessage.getStoredMessage());
             for(BaseQueue q : currentMessage.getDestinationQueues())

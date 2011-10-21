@@ -31,7 +31,7 @@
 
             <housekeeping>
                 <threadCount>2</threadCount>
-                <checkPeriod>20000</checkPeriod>
+                <expiredMessageCheckPeriod>20000</expiredMessageCheckPeriod>
             </housekeeping>
 
             <exchanges>

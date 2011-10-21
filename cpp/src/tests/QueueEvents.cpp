@@ -147,7 +147,7 @@ struct EventRecorder
 
 QPID_AUTO_TEST_CASE(testSystemLevelEventProcessing)
 {
-    SessionFixture fixture;
+    ProxySessionFixture fixture;
     //register dummy event listener to broker
     EventRecorder listener;
     fixture.broker->getQueueEvents().registerListener("recorder", boost::bind(&EventRecorder::handle, &listener, _1));
@@ -194,7 +194,7 @@ QPID_AUTO_TEST_CASE(testSystemLevelEventProcessing)
 
 QPID_AUTO_TEST_CASE(testSystemLevelEventProcessing_enqueuesOnly)
 {
-    SessionFixture fixture;
+    ProxySessionFixture fixture;
     //register dummy event listener to broker
     EventRecorder listener;
     fixture.broker->getQueueEvents().registerListener("recorder", boost::bind(&EventRecorder::handle, &listener, _1));

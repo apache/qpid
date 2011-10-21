@@ -135,7 +135,7 @@ public class ResetMessageListenerTest extends QpidBrokerTestCase
         try
         {
             assertTrue("Did not receive all first batch of messages", 
-                    _allFirstMessagesSent.await(MSG_COUNT, TimeUnit.SECONDS));
+                    _allFirstMessagesSent.await(1000, TimeUnit.MILLISECONDS));
             _logger.info("Received first batch of messages");
         }
         catch (InterruptedException e)
@@ -212,7 +212,7 @@ public class ResetMessageListenerTest extends QpidBrokerTestCase
 
         try
         {
-            assertTrue(_allSecondMessagesSent.await(MSG_COUNT, TimeUnit.SECONDS));
+            assertTrue(_allSecondMessagesSent.await(1000, TimeUnit.MILLISECONDS));
         }
         catch (InterruptedException e)
         {

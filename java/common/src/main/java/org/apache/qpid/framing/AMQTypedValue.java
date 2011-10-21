@@ -20,9 +20,8 @@
  */
 package org.apache.qpid.framing;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import org.apache.mina.common.ByteBuffer;
+
 import java.util.Date;
 import java.util.Map;
 import java.math.BigDecimal;
@@ -61,7 +60,7 @@ public class AMQTypedValue
         _value = type.toNativeValue(value);
     }
 
-    private AMQTypedValue(AMQType type, DataInputStream buffer) throws IOException
+    private AMQTypedValue(AMQType type, ByteBuffer buffer)
     {
         _type = type;
         _value = type.readValueFromBuffer(buffer);
@@ -77,7 +76,7 @@ public class AMQTypedValue
         return _value;
     }
 
-    public void writeToBuffer(DataOutputStream buffer) throws IOException
+    public void writeToBuffer(ByteBuffer buffer)
     {
         _type.writeToBuffer(_value, buffer);
     }
@@ -87,9 +86,9 @@ public class AMQTypedValue
         return _type.getEncodingSize(_value);
     }
 
-    public static AMQTypedValue readFromBuffer(DataInputStream buffer) throws IOException
+    public static AMQTypedValue readFromBuffer(ByteBuffer buffer)
     {
-        AMQType type = AMQTypeMap.getType(buffer.readByte());
+        AMQType type = AMQTypeMap.getType(buffer.get());
 
         return new AMQTypedValue(type, buffer);
     }

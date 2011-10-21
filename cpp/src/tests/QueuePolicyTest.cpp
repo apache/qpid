@@ -23,7 +23,6 @@
 #include "test_tools.h"
 
 #include "qpid/broker/QueuePolicy.h"
-#include "qpid/broker/QueueFlowLimit.h"
 #include "qpid/client/QueueOptions.h"
 #include "qpid/sys/Time.h"
 #include "qpid/framing/reply_exceptions.h"
@@ -39,7 +38,6 @@ namespace tests {
 
 QPID_AUTO_TEST_SUITE(QueuePolicyTestSuite)
 
-namespace {
 QueuedMessage createMessage(uint32_t size)
 {
     QueuedMessage msg;
@@ -47,7 +45,7 @@ QueuedMessage createMessage(uint32_t size)
     MessageUtils::addContent(msg.payload, std::string (size, 'x'));
     return msg;
 }
-}
+
 
 QPID_AUTO_TEST_CASE(testCount)
 {
@@ -152,7 +150,7 @@ QPID_AUTO_TEST_CASE(testRingPolicyCount)
     std::auto_ptr<QueuePolicy> policy = QueuePolicy::createQueuePolicy("test", 5, 0, QueuePolicy::RING);
     policy->update(args);
 
-    SessionFixture f;
+    ProxySessionFixture f;
     std::string q("my-ring-queue");
     f.session.queueDeclare(arg::queue=q, arg::exclusive=true, arg::autoDelete=true, arg::arguments=args);
     for (int i = 0; i < 10; i++) {
@@ -187,7 +185,7 @@ QPID_AUTO_TEST_CASE(testRingPolicySize)
     std::auto_ptr<QueuePolicy> policy = QueuePolicy::createQueuePolicy("test", 0, 500, QueuePolicy::RING);
     policy->update(args);
 
-    SessionFixture f;
+    ProxySessionFixture f;
     std::string q("my-ring-queue");
     f.session.queueDeclare(arg::queue=q, arg::exclusive=true, arg::autoDelete=true, arg::arguments=args);
 
@@ -259,7 +257,7 @@ QPID_AUTO_TEST_CASE(testStrictRingPolicy)
     std::auto_ptr<QueuePolicy> policy = QueuePolicy::createQueuePolicy("test", 5, 0, QueuePolicy::RING_STRICT);
     policy->update(args);
 
-    SessionFixture f;
+    ProxySessionFixture f;
     std::string q("my-ring-queue");
     f.session.queueDeclare(arg::queue=q, arg::exclusive=true, arg::autoDelete=true, arg::arguments=args);
     LocalQueue incoming;
@@ -285,7 +283,7 @@ QPID_AUTO_TEST_CASE(testPolicyWithDtx)
     std::auto_ptr<QueuePolicy> policy = QueuePolicy::createQueuePolicy("test", 5, 0, QueuePolicy::REJECT);
     policy->update(args);
 
-    SessionFixture f;
+    ProxySessionFixture f;
     std::string q("my-policy-queue");
     f.session.queueDeclare(arg::queue=q, arg::exclusive=true, arg::autoDelete=true, arg::arguments=args);
     LocalQueue incoming;
@@ -342,10 +340,8 @@ QPID_AUTO_TEST_CASE(testFlowToDiskWithNoStore)
     //fallback to rejecting messages
     QueueOptions args;
     args.setSizePolicy(FLOW_TO_DISK, 0, 5);
-    // Disable flow control, or else we'll never hit the max limit
-    args.setInt(QueueFlowLimit::flowStopCountKey, 0);
 
-    SessionFixture f;
+    ProxySessionFixture f;
     std::string q("my-queue");
     f.session.queueDeclare(arg::queue=q, arg::exclusive=true, arg::autoDelete=true, arg::arguments=args);
     LocalQueue incoming;
@@ -371,7 +367,7 @@ QPID_AUTO_TEST_CASE(testPolicyFailureOnCommit)
     std::auto_ptr<QueuePolicy> policy = QueuePolicy::createQueuePolicy("test", 5, 0, QueuePolicy::REJECT);
     policy->update(args);
 
-    SessionFixture f;
+    ProxySessionFixture f;
     std::string q("q");
     f.session.queueDeclare(arg::queue=q, arg::exclusive=true, arg::autoDelete=true, arg::arguments=args);
     f.session.txSelect();
@@ -386,9 +382,8 @@ QPID_AUTO_TEST_CASE(testCapacityConversion)
 {
     FieldTable args;
     args.setString("qpid.max_count", "5");
-    args.setString("qpid.flow_stop_count", "0");
 
-    SessionFixture f;
+    ProxySessionFixture f;
     std::string q("q");
     f.session.queueDeclare(arg::queue=q, arg::exclusive=true, arg::autoDelete=true, arg::arguments=args);
     for (int i = 0; i < 5; i++) {

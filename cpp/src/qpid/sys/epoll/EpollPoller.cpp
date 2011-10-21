@@ -384,12 +384,7 @@ void PollerPrivate::resetMode(PollerHandlePrivate& eh) {
         epe.data.u64 = 0; // Keep valgrind happy
         epe.data.ptr = &eh;
 
-        int rc = ::epoll_ctl(epollFd, EPOLL_CTL_MOD, eh.fd(), &epe);
-        // If something has closed the fd in the meantime try adding it back
-        if (rc ==-1 && errno == ENOENT) {
-            rc = ::epoll_ctl(epollFd, EPOLL_CTL_ADD, eh.fd(), &epe);
-        }
-        QPID_POSIX_CHECK(rc);
+        QPID_POSIX_CHECK(::epoll_ctl(epollFd, EPOLL_CTL_MOD, eh.fd(), &epe));
 
         eh.setActive();
         return;

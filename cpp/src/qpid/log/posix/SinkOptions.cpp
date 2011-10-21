@@ -180,7 +180,7 @@ qpid::log::SinkOptions& SinkOptions::operator=(const qpid::log::SinkOptions& rhs
 }
 
 void SinkOptions::detached(void) {
-    if (logToStderr && !logToStdout && !logToSyslog && logFile.empty()) {
+    if (logToStderr && !logToStdout && !logToSyslog) {
         logToStderr = false;
         logToSyslog = true;
     }

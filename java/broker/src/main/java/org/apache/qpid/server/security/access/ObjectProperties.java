@@ -149,9 +149,9 @@ public class ObjectProperties extends HashMap<ObjectProperties.Property, String>
         {
             put(Property.OWNER, queue.getOwner());
         }
-        else if (queue.getAuthorizationHolder() != null)
+        else if (queue.getPrincipalHolder() != null)
         {
-            put(Property.OWNER, queue.getAuthorizationHolder().getAuthorizedPrincipal().getName());
+            put(Property.OWNER, queue.getPrincipalHolder().getPrincipal().getName());
         }
     }
     

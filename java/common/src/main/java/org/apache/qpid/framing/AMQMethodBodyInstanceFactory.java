@@ -21,11 +21,10 @@
 
 package org.apache.qpid.framing;
 
-import java.io.DataInputStream;
-import java.io.IOException;
+import org.apache.mina.common.ByteBuffer;
 
 
 public abstract interface AMQMethodBodyInstanceFactory
 {
-    public AMQMethodBody newInstance(DataInputStream buffer, long size) throws AMQFrameDecodingException, IOException;
+    public AMQMethodBody newInstance(ByteBuffer buffer, long size) throws AMQFrameDecodingException;    
 }

@@ -94,7 +94,7 @@ class SubscriptionManagerImpl;
  * </ul>
  *
  */
-class QPID_CLIENT_CLASS_EXTERN SubscriptionManager : public sys::Runnable, public Handle<SubscriptionManagerImpl>
+class SubscriptionManager : public sys::Runnable, public Handle<SubscriptionManagerImpl>
 {
   public:
     /** Create a new SubscriptionManager associated with a session */
