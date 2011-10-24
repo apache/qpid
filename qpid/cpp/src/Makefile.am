@@ -54,6 +54,8 @@ windows_dist = \
   qpid/sys/windows/uuid.cpp \
   qpid/sys/windows/uuid.h \
   windows/QpiddBroker.cpp \
+  windows/SCM.h \
+  windows/SCM.cpp \
   qpid/broker/windows/BrokerDefaults.cpp \
   qpid/broker/windows/SaslAuthenticator.cpp \
   qpid/broker/windows/SslProtocolFactory.cpp \
