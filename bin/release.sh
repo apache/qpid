@@ -203,14 +203,20 @@ if [ "CPP" == "$CPP" ] ; then
 fi
 
 if [ "JAVA" == "$JAVA" ] ; then
+  # generate the java 'release' archive seperately to ensure it doesnt have any optional feature dependencies in it
   pushd qpid-${VER}/java
-  ant build release release-bin release-mvn -Dsvnversion.output=${REV} -Dmaven.snapshot=false
+  ant build release -Dsvnversion.output=${REV}
   popd
 
   cp qpid-${VER}/java/release/*.tar.gz  artifacts/qpid-java-${VER}.tar.gz
+
+  # now generate the binary packages, with the glue for optional features
+  pushd qpid-${VER}/java
+  ant build release-bin release-mvn -Dsvnversion.output=${REV} -Dmaven.snapshot=false -Dmodules.opt=bdbstore -Ddownload-bdb=true
+  popd
+
   cp qpid-${VER}/java/broker/release/*.tar.gz artifacts/qpid-java-broker-${VER}.tar.gz
   cp qpid-${VER}/java/client/release/*.tar.gz artifacts/qpid-java-client-${VER}.tar.gz
-  #cp qpid-${VER}/java/client/example/release/*.tar.gz 
   cp qpid-${VER}/java/management/eclipse-plugin/release/*.tar.gz qpid-${VER}/java/management/eclipse-plugin/release/*.zip artifacts/
 
   # copy the Maven artifacts
