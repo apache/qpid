@@ -22,8 +22,6 @@
 
   <import file="common.xml"/>
 
-  <property file="${project.root}/build.overrides"/>
-
   <findSubProjects name="broker-plugins" dir="broker-plugins"/>
   <findSubProjects name="client-plugins" dir="client-plugins"/>
   <findSubProjects name="management" dir="management" excludes="common,example"/>
