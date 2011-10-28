@@ -81,7 +81,8 @@ public:
     QPID_BROKER_EXTERN bool isPersistent() const;
     bool requiresAccept();
 
-    QPID_BROKER_EXTERN void setTimestamp(const boost::intrusive_ptr<ExpiryPolicy>& e);
+    /** determine msg expiration time using the TTL value if present */
+    QPID_BROKER_EXTERN void computeExpiration(const boost::intrusive_ptr<ExpiryPolicy>& e);
     void setExpiryPolicy(const boost::intrusive_ptr<ExpiryPolicy>& e);
     bool hasExpired();
     sys::AbsTime getExpiration() const { return expiration; }
@@ -93,6 +94,8 @@ public:
     QPID_BROKER_EXTERN void removeCustomProperty(const std::string& key);
     void setExchange(const std::string&);
     void clearApplicationHeadersFlag();
+    /** set the timestamp delivery property to the current time-of-day */
+    QPID_BROKER_EXTERN void setTimestamp();
 
     framing::FrameSet& getFrames() { return frames; }
     const framing::FrameSet& getFrames() const { return frames; }

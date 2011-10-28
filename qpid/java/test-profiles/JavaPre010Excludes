@@ -28,6 +28,7 @@ org.apache.qpid.test.client.message.JMSDestinationTest#testReceiveResend
 org.apache.qpid.test.client.message.JMSDestinationTest#testGetDestinationWithCustomExchange
 
 // The new addressing based syntax is not supported for AMQP 0-8/0-9 versions
+org.apache.qpid.client.failover.AddressBasedFailoverBehaviourTest#*
 org.apache.qpid.test.client.destination.AddressBasedDestinationTest#*
 org.apache.qpid.test.client.queue.QueuePolicyTest#testRingPolicy
 org.apache.qpid.test.client.queue.QueuePolicyTest#testRejectPolicy
@@ -43,20 +44,14 @@ org.apache.qpid.test.unit.client.connection.ConnectionTest#testUnsupportedSASLMe
 // uses AMQP 0-10 related properties
 org.apache.qpid.test.unit.message.JMSPropertiesTest#testQpidExtensionProperties
 
-// QPID-3034: tests are passing on 0.10 profiles but failing on 0.9.1 profiles
-org.apache.qpid.test.unit.ack.RecoverTest#testRecoverResendsMsgs
-org.apache.qpid.test.unit.ack.RecoverTest#testRecoverResendsMsgsAckOnEarlier
-org.apache.qpid.test.unit.ack.RecoverTest#testAcknowledgePerConsumer
-org.apache.qpid.test.unit.ack.FailoverBeforeConsumingRecoverTest#testRecoverResendsMsgs
-org.apache.qpid.test.unit.ack.FailoverBeforeConsumingRecoverTest#testRecoverResendsMsgsAckOnEarlier
-org.apache.qpid.test.unit.ack.FailoverBeforeConsumingRecoverTest#testAcknowledgePerConsumer
-org.apache.qpid.test.unit.ack.RecoverTest#testOderingWithSyncConsumer
-org.apache.qpid.test.unit.ack.FailoverBeforeConsumingRecoverTest#testOderingWithSyncConsumer
-
-
 // LVQ tests use new address syntax and can not be run on 0.9.1 profiles
 org.apache.qpid.test.client.queue.LVQTest#*
 
 // Verification of unique client id is 0-10 specific
 org.apache.qpid.test.unit.client.connection.ConnectionTest#testClientIDVerificationForSameUser
 org.apache.qpid.test.unit.client.connection.ConnectionTest#testClientIDVerificationForDifferentUsers
+
+// Under AMQP 0-8..0-9-1 temporary queues are deleted on consumer close, rather than connection close
+// and for this reason this test would fail.
+org.apache.qpid.test.unit.client.temporaryqueue.TemporaryQueueTest#testTemporaryQueueReused
+

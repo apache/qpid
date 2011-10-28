@@ -82,7 +82,6 @@ import org.slf4j.LoggerFactory;
 
 public final class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, BasicMessageProducer_0_8>
 {
-
     /** Used for debugging. */
     private static final Logger _logger = LoggerFactory.getLogger(AMQSession.class);
 
@@ -92,7 +91,7 @@ public final class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, B
      * @param con                     The connection on which to create the session.
      * @param channelId               The unique identifier for the session.
      * @param transacted              Indicates whether or not the session is transactional.
-     * @param acknowledgeMode         The acknoledgement mode for the session.
+     * @param acknowledgeMode         The acknowledgement mode for the session.
      * @param messageFactoryRegistry  The message factory factory for the session.
      * @param defaultPrefetchHighMark The maximum number of messages to prefetched before suspending the session.
      * @param defaultPrefetchLowMark  The number of prefetched messages at which to resume the session.
@@ -110,7 +109,7 @@ public final class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, B
      * @param con                     The connection on which to create the session.
      * @param channelId               The unique identifier for the session.
      * @param transacted              Indicates whether or not the session is transactional.
-     * @param acknowledgeMode         The acknoledgement mode for the session.
+     * @param acknowledgeMode         The acknowledgement mode for the session.
      * @param defaultPrefetchHigh     The maximum number of messages to prefetched before suspending the session.
      * @param defaultPrefetchLow      The number of prefetched messages at which to resume the session.
      */
@@ -169,7 +168,7 @@ public final class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, B
         // we also need to check the state manager for 08/09 as the
         // _connection variable may not be updated in time by the error receiving
         // thread.
-        // We can't close the session if we are alreadying in the process of
+        // We can't close the session if we are already in the process of
         // closing/closed the connection.
                 
         if (!(getProtocolHandler().getStateManager().getCurrentState().equals(AMQState.CONNECTION_CLOSED)
@@ -603,6 +602,18 @@ public final class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, B
     protected void flushAcknowledgments()
     {
         
+    }
+
+    @Override
+    protected void deleteTemporaryDestination(final TemporaryDestination amqQueue)
+            throws JMSException
+    {
+        // Currently TemporaryDestination is set to be auto-delete which, for 0-8..0-9-1, means that the queue will be deleted
+        // by the server when there are no more subscriptions to that queue/topic (rather than when the client disconnects).
+        // This is not quite right for JMSCompliance as the queue/topic should remain until the connection closes, or the
+        // client explicitly deletes it.
+
+        /* intentional no-op */
     }
 
     public boolean isQueueBound(String exchangeName, String queueName,

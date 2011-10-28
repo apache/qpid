@@ -20,6 +20,7 @@
  */
 #include "qpid/types/Uuid.h"
 #include "qpid/sys/uuid.h"
+#include "qpid/sys/IntegerTypes.h"
 #include <sstream>
 #include <iostream>
 #include <string.h>
@@ -71,7 +72,8 @@ void Uuid::clear()
 // Force int 0/!0 to false/true; avoids compile warnings.
 bool Uuid::isNull() const
 {
-    return !!uuid_is_null(bytes);
+    // This const cast is for Solaris which has non const arguments
+    return !!uuid_is_null(const_cast<uint8_t*>(bytes));
 }
 
 Uuid::operator bool() const { return !isNull(); }
@@ -86,7 +88,8 @@ const unsigned char* Uuid::data() const
 
 bool operator==(const Uuid& a, const Uuid& b)
 {
-    return uuid_compare(a.bytes, b.bytes) == 0;
+    // This const cast is for Solaris which has non const arguments
+    return uuid_compare(const_cast<uint8_t*>(a.bytes), const_cast<uint8_t*>(b.bytes)) == 0;
 }
 
 bool operator!=(const Uuid& a, const Uuid& b)
@@ -96,22 +99,26 @@ bool operator!=(const Uuid& a, const Uuid& b)
 
 bool operator<(const Uuid& a, const Uuid& b)
 {
-    return uuid_compare(a.bytes, b.bytes) < 0;
+    // This const cast is for Solaris which has non const arguments
+    return uuid_compare(const_cast<uint8_t*>(a.bytes), const_cast<uint8_t*>(b.bytes)) < 0;
 }
 
 bool operator>(const Uuid& a, const Uuid& b)
 {
-    return uuid_compare(a.bytes, b.bytes) > 0;
+    // This const cast is for Solaris which has non const arguments
+    return uuid_compare(const_cast<uint8_t*>(a.bytes), const_cast<uint8_t*>(b.bytes)) > 0;
 }
 
 bool operator<=(const Uuid& a, const Uuid& b)
 {
-    return uuid_compare(a.bytes, b.bytes) <= 0;
+    // This const cast is for Solaris which has non const arguments
+    return uuid_compare(const_cast<uint8_t*>(a.bytes), const_cast<uint8_t*>(b.bytes)) <= 0;
 }
 
 bool operator>=(const Uuid& a, const Uuid& b)
 {
-    return uuid_compare(a.bytes, b.bytes) >= 0;
+    // This const cast is for Solaris which has non const arguments
+    return uuid_compare(const_cast<uint8_t*>(a.bytes), const_cast<uint8_t*>(b.bytes)) >= 0;
 }
 
 ostream& operator<<(ostream& out, Uuid uuid)

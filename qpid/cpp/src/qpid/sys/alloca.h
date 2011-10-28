@@ -34,9 +34,9 @@
 #    endif
 #    define alloca _alloca
 #  endif
-#  if !defined _WINDOWS && !defined WIN32
-#    include <alloca.h>
-#  endif
+#endif
+#if !defined _WINDOWS && !defined WIN32
+#  include <alloca.h>
 #endif
 
 #endif  /*!QPID_SYS_ALLOCA_H*/

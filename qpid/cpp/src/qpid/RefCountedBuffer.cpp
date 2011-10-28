@@ -20,19 +20,22 @@
  */
 
 #include "qpid/RefCountedBuffer.h"
+#include <stdlib.h>
 #include <new>
 
 namespace qpid {
 
 void RefCountedBuffer::released() const {
     this->~RefCountedBuffer();
-    ::delete[] reinterpret_cast<const char*>(this);
+    ::free (reinterpret_cast<void *>(const_cast<RefCountedBuffer *>(this)));
 }
 
 BufferRef RefCountedBuffer::create(size_t n) {
-    char* store=::new char[n+sizeof(RefCountedBuffer)];
+    void* store=::malloc (n + sizeof(RefCountedBuffer));
+    if (NULL == store)
+        throw std::bad_alloc();
     new(store) RefCountedBuffer;
-    char* start = store+sizeof(RefCountedBuffer);
+    char* start = reinterpret_cast<char *>(store) + sizeof(RefCountedBuffer);
     return BufferRef(
         boost::intrusive_ptr<RefCounted>(reinterpret_cast<RefCountedBuffer*>(store)),
         start, start+n);

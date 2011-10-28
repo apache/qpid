@@ -56,6 +56,7 @@ namespace qpid {
 
 namespace broker {
 class Message;
+class AclModule;
 }
 
 namespace framing {
@@ -312,6 +313,7 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     sys::Timer clockTimer;
     sys::AbsTime clusterTime;
     sys::Duration clusterTimeOffset;
+    broker::AclModule* acl;
 
   friend std::ostream& operator<<(std::ostream&, const Cluster&);
   friend struct ClusterDispatcher;

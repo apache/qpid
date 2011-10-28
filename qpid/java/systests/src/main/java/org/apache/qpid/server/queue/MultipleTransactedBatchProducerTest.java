@@ -122,7 +122,8 @@ public class MultipleTransactedBatchProducerTest extends QpidBrokerTestCase
         producer2.start();
 
         //await delivery of the messages
-        boolean result = _receivedLatch.await(75, TimeUnit.SECONDS);
+        int timeout = isBrokerStorePersistent() ? 300 : 75;
+        boolean result = _receivedLatch.await(timeout, TimeUnit.SECONDS);
 
         assertNull("Test failed because: " + String.valueOf(_failMsg), _failMsg);
         assertTrue("Some of the messages were not all recieved in the given timeframe, remaining count was: "+_receivedLatch.getCount(),

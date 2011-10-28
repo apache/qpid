@@ -115,19 +115,22 @@ class ShortTests(BrokerTest):
         acl=os.path.join(os.getcwd(), "policy.acl")
         aclf=file(acl,"w")
         aclf.write("""
-acl deny zag@QPID create queue
-acl allow all all
+acl allow zig@QPID all all
+acl deny all all
 """)
         aclf.close()
-        cluster = self.cluster(2, args=["--auth", "yes",
+        cluster = self.cluster(1, args=["--auth", "yes",
                                         "--sasl-config", sasl_config,
                                         "--load-module", os.getenv("ACL_LIB"),
                                         "--acl-file", acl])
 
         # Valid user/password, ensure queue is created.
         c = cluster[0].connect(username="zig", password="zig")
-        c.session().sender("ziggy;{create:always}")
+        c.session().sender("ziggy;{create:always,node:{x-declare:{exclusive:true}}}")
         c.close()
+        cluster.start()                 # Start second node.
+
+        # Check queue is created on second node.
         c = cluster[1].connect(username="zig", password="zig")
         c.session().receiver("ziggy;{assert:always}")
         c.close()
@@ -156,93 +159,7 @@ acl allow all all
             self.fail("Expected exception")
         except messaging.exceptions.UnauthorizedAccess: pass
         # make sure the queue was not created at the other node.
-        c = cluster[0].connect(username="zag", password="zag")
-        try:
-            s = c.session()
-            s.sender("zaggy;{assert:always}")
-            s.close()
-            self.fail("Expected exception")
-        except messaging.exceptions.NotFound: pass
-
-    def test_sasl_join(self):
-        """Verify SASL authentication between brokers when joining a cluster."""
-        sasl_config=os.path.join(self.rootdir, "sasl_config")
-
-                # Valid user/password, ensure queue is created.
-        c = cluster[0].connect(username="zig", password="zig")
-        c.session().sender("ziggy;{create:always}")
-        c.close()
         c = cluster[1].connect(username="zig", password="zig")
-        c.session().receiver("ziggy;{assert:always}")
-        c.close()
-        for b in cluster: b.ready()     # Make sure all brokers still running.
-
-        # Valid user, bad password
-        try:
-            cluster[0].connect(username="zig", password="foo").close()
-            self.fail("Expected exception")
-        except messaging.exceptions.ConnectionError: pass
-        for b in cluster: b.ready()     # Make sure all brokers still running.
-
-        # Bad user ID
-        try:
-            cluster[0].connect(username="foo", password="bar").close()
-            self.fail("Expected exception")
-        except messaging.exceptions.ConnectionError: pass
-        for b in cluster: b.ready()     # Make sure all brokers still running.
-
-        # Action disallowed by ACL
-        c = cluster[0].connect(username="zag", password="zag")
-        try:
-            s = c.session()
-            s.sender("zaggy;{create:always}")
-            s.close()
-            self.fail("Expected exception")
-        except messaging.exceptions.UnauthorizedAccess: pass
-        # make sure the queue was not created at the other node.
-        c = cluster[0].connect(username="zag", password="zag")
-        try:
-            s = c.session()
-            s.sender("zaggy;{assert:always}")
-            s.close()
-            self.fail("Expected exception")
-        except messaging.exceptions.NotFound: pass
-
-    def test_sasl_join(self):
-        """Verify SASL authentication between brokers when joining a cluster."""
-        # Valid user/password, ensure queue is created.
-        c = cluster[0].connect(username="zig", password="zig")
-        c.session().sender("ziggy;{create:always}")
-        c.close()
-        c = cluster[1].connect(username="zig", password="zig")
-        c.session().receiver("ziggy;{assert:always}")
-        c.close()
-        for b in cluster: b.ready()     # Make sure all brokers still running.
-
-        # Valid user, bad password
-        try:
-            cluster[0].connect(username="zig", password="foo").close()
-            self.fail("Expected exception")
-        except messaging.exceptions.ConnectionError: pass
-        for b in cluster: b.ready()     # Make sure all brokers still running.
-
-        # Bad user ID
-        try:
-            cluster[0].connect(username="foo", password="bar").close()
-            self.fail("Expected exception")
-        except messaging.exceptions.ConnectionError: pass
-        for b in cluster: b.ready()     # Make sure all brokers still running.
-
-        # Action disallowed by ACL
-        c = cluster[0].connect(username="zag", password="zag")
-        try:
-            s = c.session()
-            s.sender("zaggy;{create:always}")
-            s.close()
-            self.fail("Expected exception")
-        except messaging.exceptions.UnauthorizedAccess: pass
-        # make sure the queue was not created at the other node.
-        c = cluster[0].connect(username="zag", password="zag")
         try:
             s = c.session()
             s.sender("zaggy;{assert:always}")

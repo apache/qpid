@@ -173,7 +173,7 @@ struct Opts : public TestOptions {
             if (count % subs) {
                 count += subs - (count % subs);
                 cout << "WARNING: Adjusted --count to " << count
-                     << " the nearest multiple of --nsubs" << endl;
+                     << " the next multiple of --nsubs" << endl;
             }
             totalPubs = pubs*qt;
             totalSubs = subs*qt;
@@ -413,7 +413,7 @@ struct Controller : public Client {
                 AbsTime start=now();
                 send(opts.totalPubs, fqn("pub_start"), "start"); // Start publishers
                 if (j) {
-		    send(opts.totalPubs, fqn("sub_iteration"), "next"); // Start subscribers on next iteration
+                    send(opts.totalSubs, fqn("sub_iteration"), "next"); // Start subscribers on next iteration
                 }
 
                 Stats pubRates;
@@ -546,9 +546,9 @@ struct PublishThread : public Client {
                 if (opts.confirm) session.sync();
                 AbsTime end=now();
                 double time=secs(start,end);
-		if (time <= 0.0) {
-		  throw Exception("ERROR: Test completed in zero seconds. Try again with a larger message count.");
-		}
+                if (time <= 0.0) {
+                    throw Exception("ERROR: Test completed in zero seconds. Try again with a larger message count.");
+                }
 
                 // Send result to controller.
                 Message report(lexical_cast<string>(opts.count/time), fqn("pub_done"));
@@ -644,7 +644,9 @@ struct SubscribeThread : public Client {
                     //
                     // For now verify order only for a single publisher.
                     size_t offset = opts.uniqueData ? 5 /*marker is 'data:'*/ : 0;
-                    size_t n = *reinterpret_cast<const size_t*>(msg.getData().data() + offset);
+                    size_t n;
+                    memcpy (&n, reinterpret_cast<const char*>(msg.getData().data() + offset),
+                        sizeof(n));
                     if (opts.pubs == 1) {
                         if (opts.subs == 1 || opts.mode == FANOUT) verify(n==expect, "==", expect, n);
                         else verify(n>=expect, ">=", expect, n);

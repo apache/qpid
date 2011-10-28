@@ -36,9 +36,7 @@ usage()
     echo "--all   |-a : Generate all artefacts"
     echo "--source|-e : Generate the source artefact"
     echo "--cpp   |-c : Generate the CPP artefacts"
-    echo "--dotnet|-d : Generate the dotnet artefacts"
     echo "--java  |-j : Generate the java artefacts"
-    echo "--ruby  |-r : Generate the ruby artefacts"
     echo "--python|-p : Generate the python artefacts"
     echo "--wcf   |-w : Generate the WCF artefacts"
     echo "--tools |-t : Generate the tools artefacts"
@@ -47,6 +45,19 @@ usage()
     echo "--sign  |-s : Sign generated artefacts"
     echo "--upload|-u : Upload the artifacts directory to people.apache.org as qpid-\$VER"
     echo
+}
+
+all_artefacts()
+{
+   echo ALL_ARTEFACTS
+
+   CPP="CPP"
+   JAVA="JAVA"
+   PYTHON="PYTHON"
+   WCF="WCF"
+   TOOLS="TOOLS"
+   QMF="QMF"
+   SOURCE="SOURCE"
 }
 
 REPO="SVN"
@@ -75,25 +86,13 @@ for arg in $* ; do
    SIGN="SIGN"
  ;;
  --all|-a)
-   CPP="CPP"
-   JAVA="JAVA"
-   PYTHON="PYTHON"
-   WCF="WCF"
-   TOOLS="TOOLS"
-   QMF="QMF"
-   SOURCE="SOURCE"
+   all_artefacts
  ;;
  --cpp|-c)
    CPP="CPP"
  ;;
- --dotnet|-d)
-   DOTNET="DOTNET"
- ;;
  --java|-j)
    JAVA="JAVA"
- ;;
- --ruby|-r)
-   RUBY="RUBY"
  ;;
  --python|-p)
    PYTHON="PYTHON"
@@ -147,16 +146,9 @@ echo REV:$REV
 echo VER:$VER
 
 # If nothing is specified then do it all
-if [ -z "${CLEAN}${PREPARE}${CPP}${DOTNET}${JAVA}${RUBY}${PYTHON}${WCF}${SOURCE}${SIGN}${UPLOAD}" ] ; then
+if [ -z "${CLEAN}${PREPARE}${CPP}${JAVA}${PYTHON}${QMF}${TOOLS}${WCF}${SOURCE}${SIGN}${UPLOAD}" ] ; then
    PREPARE="PREPARE"
-   CPP="CPP"
-   DOTNET="DOTNET"
-   JAVA="JAVA"
-   RUBY="RUBY"
-   PYTHON="PYTHON"
-   WCF="WCF"
-   SOURCE="SOURCE"
-
+   all_artefacts
    SIGN="SIGN"
 fi
 
@@ -192,10 +184,6 @@ if [ "SOURCE" == "$SOURCE" ] ; then
   tar -czf artifacts/qpid-${VER}.tar.gz qpid-${VER}
 fi
 
-if [ "RUBY" == "$RUBY" ] ; then
-  tar -czf artifacts/qpid-ruby-${VER}.tar.gz qpid-${VER}/ruby qpid-${VER}/specs
-fi
-
 if [ "PYTHON" == "$PYTHON" ] ; then
   tar -czf artifacts/qpid-python-${VER}.tar.gz qpid-${VER}/python qpid-${VER}/specs
 fi
@@ -215,36 +203,25 @@ if [ "CPP" == "$CPP" ] ; then
 fi
 
 if [ "JAVA" == "$JAVA" ] ; then
+  # generate the java 'release' archive seperately to ensure it doesnt have any optional feature dependencies in it
   pushd qpid-${VER}/java
-  ant build release release-bin release-mvn -Dsvnversion.output=${REV} -Dmaven.snapshot=false
+  ant build release -Dsvnversion.output=${REV}
   popd
 
   cp qpid-${VER}/java/release/*.tar.gz  artifacts/qpid-java-${VER}.tar.gz
+
+  # now generate the binary packages, with the glue for optional features
+  pushd qpid-${VER}/java
+  ant build release-bin release-mvn -Dsvnversion.output=${REV} -Dmaven.snapshot=false -Dmodules.opt=bdbstore -Ddownload-bdb=true
+  popd
+
   cp qpid-${VER}/java/broker/release/*.tar.gz artifacts/qpid-java-broker-${VER}.tar.gz
   cp qpid-${VER}/java/client/release/*.tar.gz artifacts/qpid-java-client-${VER}.tar.gz
-  #cp qpid-${VER}/java/client/example/release/*.tar.gz 
   cp qpid-${VER}/java/management/eclipse-plugin/release/*.tar.gz qpid-${VER}/java/management/eclipse-plugin/release/*.zip artifacts/
 
   # copy the Maven artifacts
   cp -a qpid-${VER}/java/client/release/maven artifacts/
   cp -a qpid-${VER}/java/common/release/maven artifacts/
-fi
-
-if [ "DOTNET" == "$DOTNET" ] ; then
-  pushd qpid-${VER}/dotnet
-  cd Qpid.Common
-  ant
-  cd ..
-  ./build-nant-release mono-2.0
-
-  cd client-010/gentool
-  ant
-  cd ..
-  nant -t:mono-2.0 release-pkg
-  popd
-
-  cp qpid-${VER}/dotnet/bin/mono-2.0/release/*.zip artifacts/qpid-dotnet-0-8-${VER}.zip
-  cp qpid-${VER}/dotnet/client-010/bin/mono-2.0/debug/*.zip artifacts/qpid-dotnet-0-10-${VER}.zip
 fi
 
 if [ "TOOLS" = "$TOOLS" ] ; then

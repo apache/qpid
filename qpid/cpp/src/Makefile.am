@@ -54,6 +54,8 @@ windows_dist = \
   qpid/sys/windows/uuid.cpp \
   qpid/sys/windows/uuid.h \
   windows/QpiddBroker.cpp \
+  windows/SCM.h \
+  windows/SCM.cpp \
   qpid/broker/windows/BrokerDefaults.cpp \
   qpid/broker/windows/SaslAuthenticator.cpp \
   qpid/broker/windows/SslProtocolFactory.cpp \
@@ -497,6 +499,7 @@ libqpidcommon_la_SOURCES +=			\
   qpid/sys/Waitable.h				\
   qpid/sys/alloca.h				\
   qpid/sys/uuid.h				\
+  qpid/sys/unordered_map.h			\
   qpid/amqp_0_10/Codecs.cpp
 
 if HAVE_SASL

@@ -75,9 +75,7 @@ SemanticState::SemanticState(DeliveryAdapter& da, SessionContext& ss)
       userName(getSession().getConnection().getUserId().substr(0,getSession().getConnection().getUserId().find('@'))),
       isDefaultRealm(userID.find('@') != std::string::npos && getSession().getBroker().getOptions().realm == userID.substr(userID.find('@')+1,userID.size())),
       closeComplete(false)
-{
-    acl = getSession().getBroker().getAcl();
-}
+{}
 
 SemanticState::~SemanticState() {
     closed();
@@ -348,7 +346,8 @@ bool SemanticState::ConsumerImpl::deliver(QueuedMessage& msg)
         parent->record(record);
     }
     if (acquire && !ackExpected) {  // auto acquire && auto accept
-        record.accept( 0 /*no ctxt*/ );
+        queue->dequeue(0 /*ctxt*/, msg);
+        record.setEnded();
     }
     if (mgmtObject) { mgmtObject->inc_delivered(); }
     return true;
@@ -471,7 +470,7 @@ const std::string nullstring;
 }
 
 void SemanticState::route(intrusive_ptr<Message> msg, Deliverable& strategy) {
-    msg->setTimestamp(getSession().getBroker().getExpiryPolicy());
+    msg->computeExpiration(getSession().getBroker().getExpiryPolicy());
 
     std::string exchangeName = msg->getExchangeName();
     if (!cacheExchange || cacheExchange->getName() != exchangeName || cacheExchange->isDestroyed())
@@ -487,6 +486,7 @@ void SemanticState::route(intrusive_ptr<Message> msg, Deliverable& strategy) {
         throw UnauthorizedAccessException(QPID_MSG("authorised user id : " << userID << " but user id in message declared as " << id));
     }
 
+    AclModule* acl = getSession().getBroker().getAcl();
     if (acl && acl->doTransferAcl())
     {
         if (!acl->authorise(getSession().getConnection().getUserId(),acl::ACT_PUBLISH,acl::OBJ_EXCHANGE,exchangeName, msg->getRoutingKey() ))

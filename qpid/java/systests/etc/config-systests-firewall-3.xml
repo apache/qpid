@@ -28,12 +28,12 @@
     <connector>
         <!-- To enable SSL edit the keystorePath and keystorePassword
 	     and set enabled to true. 
-             To disasble Non-SSL port set sslOnly to true -->
+             To disable Non-SSL port set sslOnly to true -->
         <ssl>
             <enabled>false</enabled>
             <sslOnly>false</sslOnly>
-            <keystorePath>/path/to/keystore.ks</keystorePath>
-            <keystorePassword>keystorepass</keystorePassword>
+            <keyStorePath>/path/to/keystore.ks</keyStorePath>
+            <keyStorePassword>keystorepass</keyStorePassword>
         </ssl>
         <port>5672</port>
         <sslport>8672</sslport>

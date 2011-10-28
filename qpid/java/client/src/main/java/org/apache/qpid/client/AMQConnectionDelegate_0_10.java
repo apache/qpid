@@ -281,24 +281,29 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
         {
             _conn.getProtocolHandler().setFailoverLatch(new CountDownLatch(1));
 
-            try
+            _qpidConnection.notifyFailoverRequired();
+
+            synchronized (_conn.getFailoverMutex())
             {
-                if (_conn.firePreFailover(false) && _conn.attemptReconnection())
+                try
                 {
-                    _conn.failoverPrep();
-                    _conn.resubscribeSessions();
-                    _conn.fireFailoverComplete();
-                    return;
+                    if (_conn.firePreFailover(false) && _conn.attemptReconnection())
+                    {
+                        _conn.failoverPrep();
+                        _conn.resubscribeSessions();
+                        _conn.fireFailoverComplete();
+                        return;
+                    }
                 }
-            }
-            catch (Exception e)
-            {
-                _logger.error("error during failover", e);
-            }
-            finally
-            {
-                _conn.getProtocolHandler().getFailoverLatch().countDown();
-                _conn.getProtocolHandler().setFailoverLatch(null);
+                catch (Exception e)
+                {
+                    _logger.error("error during failover", e);
+                }
+                finally
+                {
+                    _conn.getProtocolHandler().getFailoverLatch().countDown();
+                    _conn.getProtocolHandler().setFailoverLatch(null);
+                }
             }
         }
 
@@ -324,6 +329,18 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
 
     public <T, E extends Exception> T executeRetrySupport(FailoverProtectedOperation<T,E> operation) throws E
     {
+        if (_conn.isFailingOver())
+        {
+            try
+            {
+                _conn.blockUntilNotFailingOver();
+            }
+            catch (InterruptedException e)
+            {
+                //ignore
+            }
+        }
+
         try
         {
             return operation.execute();
