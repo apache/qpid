@@ -26,7 +26,7 @@
 
 #include "qpid/broker/StatefulQueueObserver.h"
 #include "qpid/broker/MessageDistributor.h"
-
+#include "qpid/sys/unordered_map.h"
 
 namespace qpid {
 namespace broker {
@@ -55,7 +55,8 @@ class MessageGroupManager : public StatefulQueueObserver, public MessageDistribu
         GroupState() : acquired(0) {}
         bool owned() const {return !owner.empty();}
     };
-    typedef std::map<std::string, struct GroupState> GroupMap;
+
+    typedef sys::unordered_map<std::string, struct GroupState> GroupMap;
     typedef std::map<framing::SequenceNumber, struct GroupState *> GroupFifo;
 
     GroupMap messageGroups; // index: group name
@@ -66,7 +67,12 @@ class MessageGroupManager : public StatefulQueueObserver, public MessageDistribu
     static const std::string qpidSharedGroup;   // if specified, one group can be consumed by multiple receivers
     static const std::string qpidMessageGroupTimestamp;
 
-    const std::string getGroupId( const QueuedMessage& qm ) const;
+    GroupState& findGroup( const QueuedMessage& qm );
+    unsigned long hits, misses; // for debug
+    uint32_t lastMsg;
+    std::string lastGroup;
+    GroupState *cachedGroup;
+
     void unFree( const GroupState& state );
     void own( GroupState& state, const std::string& owner );
     void disown( GroupState& state );
@@ -81,7 +87,10 @@ class MessageGroupManager : public StatefulQueueObserver, public MessageDistribu
     MessageGroupManager(const std::string& header, const std::string& _qName,
                         Messages& container, unsigned int _timestamp=0 )
       : StatefulQueueObserver(std::string("MessageGroupManager:") + header),
-      groupIdHeader( header ), timestamp(_timestamp), messages(container), qName(_qName) {}
+      groupIdHeader( header ), timestamp(_timestamp), messages(container), qName(_qName),
+      hits(0), misses(0),
+      lastMsg(0), cachedGroup(0) {}
+    virtual ~MessageGroupManager();
 
     // QueueObserver iface
     void enqueued( const QueuedMessage& qm );
