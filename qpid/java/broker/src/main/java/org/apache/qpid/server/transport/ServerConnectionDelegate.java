@@ -234,22 +234,22 @@ public class ServerConnectionDelegate extends ServerDelegate
     @Override
     public void sessionAttach(final Connection conn, final SessionAttach atc)
     {
-        final String clientId = new String(atc.getName());
-        final Session ssn = getSession(conn, atc);
+        final Session ssn;
 
-        if(isSessionNameUnique(clientId,conn))
+        if(isSessionNameUnique(atc.getName(), conn))
         {
+            ssn = sessionAttachImpl(conn, atc);
             conn.registerSession(ssn);
-            super.sessionAttach(conn, atc);
         }
         else
         {
+            ssn = getSession(conn, atc);
             ssn.invoke(new SessionDetached(atc.getName(), SessionDetachCode.SESSION_BUSY));
             ssn.closed();
         }
     }
 
-    private boolean isSessionNameUnique(final String name, final Connection conn)
+    private boolean isSessionNameUnique(final byte[] name, final Connection conn)
     {
         final ServerConnection sconn = (ServerConnection) conn;
         final String userId = sconn.getUserName();
