@@ -697,9 +697,9 @@ public class Connection extends ConnectionInvoker
         return channels.values();
     }
 
-    public boolean hasSessionWithName(final String name)
+    public boolean hasSessionWithName(final byte[] name)
     {
-        return sessions.containsKey(new Binary(name.getBytes()));
+        return sessions.containsKey(new Binary(name));
     }
 
     public void notifyFailoverRequired()

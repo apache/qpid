@@ -389,7 +389,7 @@ public class ServerConnection extends Connection implements AMQConnectionModel, 
     }
 
     @Override
-    public boolean isSessionNameUnique(String name)
+    public boolean isSessionNameUnique(byte[] name)
     {
         return !super.hasSessionWithName(name);
     }
