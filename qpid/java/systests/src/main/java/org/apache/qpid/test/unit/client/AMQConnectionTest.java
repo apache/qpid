@@ -205,7 +205,7 @@ public class AMQConnectionTest extends QpidBrokerTestCase
         Session consSessA = _connection.createSession(true, Session.AUTO_ACKNOWLEDGE);
         MessageConsumer consumerA = consSessA.createConsumer(_queue);
 
-        Session producerSession = _connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        Session producerSession = _connection.createSession(true, Session.SESSION_TRANSACTED);
         MessageProducer producer = producerSession.createProducer(_queue);
 
         // Send 3 messages
@@ -213,6 +213,7 @@ public class AMQConnectionTest extends QpidBrokerTestCase
         {
             producer.send(producerSession.createTextMessage("test"));
         }
+        producerSession.commit();
         
         MessageConsumer consumerB = null;
         // 0-8, 0-9, 0-9-1 prefetch is per session, not consumer.
