@@ -1396,8 +1396,9 @@ public class AMQProtocolEngine implements ServerProtocolEngine, Managable, AMQPr
     }
 
     @Override
-    public boolean isSessionNameUnique(String name)
+    public boolean isSessionNameUnique(byte[] name)
     {
+        // 0-8/0-9/0-9-1 sessions don't have names
         return true;
     }
 
