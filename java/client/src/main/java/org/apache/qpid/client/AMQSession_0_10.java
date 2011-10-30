@@ -980,17 +980,23 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
 
     /**
      * Store non committed messages for this session
-     * With 0.10 messages are consumed with window mode, we must send a completion
-     * before the window size is reached so credits don't dry up.
      * @param id
      */
     @Override protected void addDeliveredMessage(long id)
     {
         _txRangeSet.add((int) id);
         _txSize++;
+    }
+
+    /**
+     * With 0.10 messages are consumed with window mode, we must send a completion
+     * before the window size is reached so credits don't dry up.
+     */
+    protected void sendTxCompletionsIfNecessary()
+    {
         // this is a heuristic, we may want to have that configurable
-        if (_connection.getMaxPrefetch() == 1 ||
-                _connection.getMaxPrefetch() != 0 && _txSize % (_connection.getMaxPrefetch() / 2) == 0)
+        if (_txSize > 0 && (_connection.getMaxPrefetch() == 1 ||
+                _connection.getMaxPrefetch() != 0 && _txSize % (_connection.getMaxPrefetch() / 2) == 0))
         {
             // send completed so consumer credits don't dry up
             messageAcknowledge(_txRangeSet, false);

@@ -31,6 +31,7 @@ import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.transport.*;
 import org.apache.qpid.filter.MessageFilter;
 import org.apache.qpid.filter.JMSSelectorFilter;
+import org.apache.qpid.jms.Session;
 
 import javax.jms.InvalidSelectorException;
 import javax.jms.JMSException;
@@ -447,16 +448,26 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
     void postDeliver(AbstractJMSMessage msg)
     {
         super.postDeliver(msg);
-        if (_acknowledgeMode == org.apache.qpid.jms.Session.NO_ACKNOWLEDGE && !_session.isInRecovery())
+
+        switch (_acknowledgeMode)
         {
-          _session.acknowledgeMessage(msg.getDeliveryTag(), false);
+            case Session.SESSION_TRANSACTED:
+                _0_10session.sendTxCompletionsIfNecessary();
+                break;
+            case Session.NO_ACKNOWLEDGE:
+                if (!_session.isInRecovery())
+                {
+                  _session.acknowledgeMessage(msg.getDeliveryTag(), false);
+                }
+                break;
+            case Session.AUTO_ACKNOWLEDGE:
+                if (!_session.isInRecovery() && _session.getAMQConnection().getSyncAck())
+                {
+                    ((AMQSession_0_10) getSession()).getQpidSession().sync();
+                }
+                break;
         }
         
-        if (_acknowledgeMode == org.apache.qpid.jms.Session.AUTO_ACKNOWLEDGE  &&
-             !_session.isInRecovery() && _session.getAMQConnection().getSyncAck())
-        {
-            ((AMQSession_0_10) getSession()).getQpidSession().sync();
-        }
     }
 
     Message receiveBrowse() throws JMSException
