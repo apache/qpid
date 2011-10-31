@@ -379,7 +379,7 @@ size_t RdmaConnector::encode(const char* buffer, size_t size)
         Mutex::ScopedLock l(lock);
         while (!frames.empty() && out.available() >= frames.front().encodedSize() ) {
             frames.front().encode(out);
-            QPID_LOG(trace, "SENT " << identifier << ": " << frames.front());
+            QPID_LOG(trace, "SENT [" << identifier << "]: " << frames.front());
             frames.pop_front();
             if (lastEof) --lastEof;
         }
@@ -402,13 +402,13 @@ size_t RdmaConnector::decode(const char* buffer, size_t size)
         framing::ProtocolInitiation protocolInit;
         if (protocolInit.decode(in)) {
             //TODO: check the version is correct
-            QPID_LOG(debug, "RECV " << identifier << " INIT(" << protocolInit << ")");
+            QPID_LOG(debug, "RECV [" << identifier << "]: INIT(" << protocolInit << ")");
         }
         initiated = true;
     }
     AMQFrame frame;
     while(frame.decode(in)){
-        QPID_LOG(trace, "RECV " << identifier << ": " << frame);
+        QPID_LOG(trace, "RECV [" << identifier << "]: " << frame);
         input->received(frame);
     }
     return size - in.available();

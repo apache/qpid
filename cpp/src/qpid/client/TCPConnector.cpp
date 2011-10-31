@@ -254,7 +254,7 @@ size_t TCPConnector::encode(const char* buffer, size_t size)
         Mutex::ScopedLock l(lock);
         while (!frames.empty() && out.available() >= frames.front().encodedSize() ) {
             frames.front().encode(out);
-            QPID_LOG(trace, "SENT " << identifier << ": " << frames.front());
+            QPID_LOG(trace, "SENT [" << identifier << "]: " << frames.front());
             frames.pop_front();
             if (lastEof) --lastEof;
         }
@@ -289,7 +289,7 @@ size_t TCPConnector::decode(const char* buffer, size_t size)
     if (!initiated) {
         framing::ProtocolInitiation protocolInit;
         if (protocolInit.decode(in)) {
-            QPID_LOG(debug, "RECV " << identifier << " INIT(" << protocolInit << ")");
+            QPID_LOG(debug, "RECV [" << identifier << "]: INIT(" << protocolInit << ")");
             if(!(protocolInit==version)){
                 throw Exception(QPID_MSG("Unsupported version: " << protocolInit
                                          << " supported version " << version));
@@ -299,7 +299,7 @@ size_t TCPConnector::decode(const char* buffer, size_t size)
     }
     AMQFrame frame;
     while(frame.decode(in)){
-        QPID_LOG(trace, "RECV " << identifier << ": " << frame);
+        QPID_LOG(trace, "RECV [" << identifier << "]: " << frame);
         input->received(frame);
     }
     return size - in.available();
