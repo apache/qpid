@@ -68,7 +68,7 @@ void AsynchIOHandler::init(AsynchIO* a, int numBuffs) {
 
 void AsynchIOHandler::write(const framing::ProtocolInitiation& data)
 {
-    QPID_LOG(debug, "SENT [" << identifier << "] INIT(" << data << ")");
+    QPID_LOG(debug, "SENT [" << identifier << "]: INIT(" << data << ")");
     AsynchIO::BufferBase* buff = aio->getQueuedBuffer();
     if (!buff)
         buff = new Buff;
@@ -143,7 +143,7 @@ void AsynchIOHandler::readbuff(AsynchIO& , AsynchIO::BufferBase* buff) {
         framing::ProtocolInitiation protocolInit;
         if (protocolInit.decode(in)) {
             decoded = in.getPosition();
-            QPID_LOG(debug, "RECV [" << identifier << "] INIT(" << protocolInit << ")");
+            QPID_LOG(debug, "RECV [" << identifier << "]: INIT(" << protocolInit << ")");
             try {
                 codec = factory->create(protocolInit.getVersion(), *this, identifier, SecuritySettings());
                 if (!codec) {

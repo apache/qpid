@@ -281,7 +281,7 @@ void SslConnector::Writer::handle(framing::AMQFrame& frame) {
         lastEof = frames.size();
         aio->notifyPendingWrite();
     }
-    QPID_LOG(trace, "SENT " << identifier << ": " << frame);
+    QPID_LOG(trace, "SENT [" << identifier << "]: " << frame);
 }
 
 void SslConnector::Writer::writeOne() {
@@ -328,13 +328,13 @@ void SslConnector::readbuff(SslIO& aio, SslIO::BufferBase* buff) {
         framing::ProtocolInitiation protocolInit;
         if (protocolInit.decode(in)) {
             //TODO: check the version is correct
-            QPID_LOG(debug, "RECV " << identifier << " INIT(" << protocolInit << ")");
+            QPID_LOG(debug, "RECV [" << identifier << "]: INIT(" << protocolInit << ")");
         }
         initiated = true;
     }
     AMQFrame frame;
     while(frame.decode(in)){
-        QPID_LOG(trace, "RECV " << identifier << ": " << frame);
+        QPID_LOG(trace, "RECV [" << identifier << "]: " << frame);
         input->received(frame);
     }
     // TODO: unreading needs to go away, and when we can cope
