@@ -17,8 +17,9 @@
  - under the License.
  -->
 <project name="bdbstore" default="build">
-    <property name="module.depends" value="common client management/common broker perftests systests" />
-    <property name="module.test.depends" value="test common/test broker/test management/common perftests systests" />
+    <property name="module.depends" value="common broker" />
+    <property name="module.test.depends" value="test client common/test broker/test management/common perftests systests" />
+    <property name="module.genpom" value="true"/>
 
     <import file="../module.xml" />
 
@@ -80,5 +81,4 @@ http://www.oracle.com/technetwork/database/berkeleydb/downloads/jeoslicense-0868
         <fileset dir="src/test/resources/upgrade"/>
       </copy>
     </target>
-
 </project>
