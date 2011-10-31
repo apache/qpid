@@ -222,6 +222,9 @@ if [ "JAVA" == "$JAVA" ] ; then
   # copy the Maven artifacts
   cp -a qpid-${VER}/java/client/release/maven artifacts/
   cp -a qpid-${VER}/java/common/release/maven artifacts/
+  cp -a qpid-${VER}/java/broker/release/maven artifacts/
+  cp -a qpid-${VER}/java/bdbstore/release/maven artifacts/
+  cp -a qpid-${VER}/java/management/common/release/maven artifacts/
 fi
 
 if [ "TOOLS" = "$TOOLS" ] ; then
