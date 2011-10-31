@@ -305,6 +305,9 @@ To achieve this
 - New versions can only add methods, existing methods cannot be changed.
 - The cluster handshake for new members includes the protocol version
   at each member.
+- Each cpg message starts with header: version,size. Allows new encodings later.
+- Brokers ignore messages of higher version.
+
 - The cluster's version is the lowest version among its members.
 - A newer broker can join and older cluster. When it does, it must restrict 
   itself to speaking the older version protocol.
