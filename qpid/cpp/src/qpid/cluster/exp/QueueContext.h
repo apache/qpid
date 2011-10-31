@@ -63,12 +63,12 @@ class QueueContext : public RefCounted {
      */
     void stopped();
 
-    /** Called in connection thread when a consumer is added.
+    /** Called in broker thread when a consumer is added.
      *@param n: nubmer of consumers after new one is added.
      */
     void consume(size_t n);
 
-    /** Called in connection thread when a consumer is cancelled on the queue.
+    /** Called in broker thread when a consumer is cancelled on the queue.
      *@param n: nubmer of consumers after the cancel.
      */
     void cancel(size_t n);

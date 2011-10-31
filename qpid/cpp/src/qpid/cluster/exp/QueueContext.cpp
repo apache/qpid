@@ -80,7 +80,7 @@ void QueueContext::replicaState(
 
 // FIXME aconway 2011-07-27: Dont spin the token on an empty queue.
 
-// Called in connection threads when a consumer is added
+// Called in broker threads when a consumer is added
 void QueueContext::consume(size_t n) {
     sys::Mutex::ScopedLock l(lock);
     consumers = n;
@@ -88,7 +88,7 @@ void QueueContext::consume(size_t n) {
         framing::ClusterQueueSubscribeBody(framing::ProtocolVersion(), queue.getName()));
 }
 
-// Called in connection threads when a consumer is cancelled
+// Called in broker threads when a consumer is cancelled
 void QueueContext::cancel(size_t n) {
     sys::Mutex::ScopedLock l(lock);
     consumers = n;

@@ -100,7 +100,7 @@ void MessageHandler::acquire(const std::string& q, uint32_t position) {
     QPID_LOG(trace, "cluster: message " << q << "[" << position
              << "] acquired by " << PrettyId(sender(), self()));
     // Note acquires from other members. My own acquires were executed in
-    // the connection thread
+    // the broker thread
     if (sender() != self()) {
         boost::shared_ptr<Queue> queue = findQueue(q, "cluster: acquire");
         QueuedMessage qm;
@@ -126,7 +126,7 @@ void MessageHandler::dequeue(const std::string& q, uint32_t position) {
     // complete the ack that initiated the dequeue at this point, see
     // BrokerContext::dequeue
 
-    // My own dequeues were processed in the connection thread before multicasting.
+    // My own dequeues were processed in the broker thread before multicasting.
     if (sender() != self()) {
         boost::shared_ptr<Queue> queue = findQueue(q, "cluster: dequeue");
         QueuedMessage qm = QueueContext::get(*queue)->dequeue(position);

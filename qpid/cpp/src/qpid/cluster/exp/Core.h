@@ -55,7 +55,7 @@ class BrokerContext;
  * Holds together the various objects that implement cluster behavior,
  * and holds state that is shared by multiple components.
  *
- * Thread safe: called from broker connection threads and CPG dispatch threads.
+ * Thread safe: called from broker broker threads and CPG dispatch threads.
  */
 class Core
 {

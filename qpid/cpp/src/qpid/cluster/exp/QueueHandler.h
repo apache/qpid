@@ -66,7 +66,7 @@ class QueueHandler : public framing::AMQP_AllOperations::ClusterQueueHandler,
 
     void add(boost::shared_ptr<broker::Queue>);
 
-    // NB: These functions ar called in connection threads, not deliver threads.
+    // NB: These functions ar called in broker threads, not deliver threads.
     void acquired(const broker::QueuedMessage& qm);
     void empty(const broker::Queue& q);
 
