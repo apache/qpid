@@ -276,6 +276,7 @@ void IncomingMessages::retrieve(FrameSetPtr command, qpid::messaging::Message* m
     }
     const MessageTransferBody* transfer = command->as<MessageTransferBody>(); 
     if (transfer->getAcquireMode() == ACQUIRE_MODE_PRE_ACQUIRED && transfer->getAcceptMode() == ACCEPT_MODE_EXPLICIT) {
+        sys::Mutex::ScopedLock l(lock);
         acceptTracker.delivered(transfer->getDestination(), command->getId());
     }
     session.markCompleted(command->getId(), false, false);
