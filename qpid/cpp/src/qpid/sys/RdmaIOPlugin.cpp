@@ -114,7 +114,7 @@ void RdmaIOHandler::start(Poller::shared_ptr poller) {
 
 void RdmaIOHandler::write(const framing::ProtocolInitiation& data)
 {
-    QPID_LOG(debug, "Rdma: SENT [" << identifier << "] INIT(" << data << ")");
+    QPID_LOG(debug, "Rdma: SENT [" << identifier << "]: INIT(" << data << ")");
     Rdma::Buffer* buff = aio->getSendBuffer();
     assert(buff);
     framing::Buffer out(buff->bytes(), buff->byteCount());
@@ -229,7 +229,7 @@ void RdmaIOHandler::initProtocolIn(Rdma::Buffer* buff) {
     framing::Buffer in(buff->bytes(), buff->dataCount());
     framing::ProtocolInitiation protocolInit;
     if (protocolInit.decode(in)) {
-        QPID_LOG(debug, "Rdma: RECV [" << identifier << "] INIT(" << protocolInit << ")");
+        QPID_LOG(debug, "Rdma: RECV [" << identifier << "]: INIT(" << protocolInit << ")");
 
         codec = factory->create(protocolInit.getVersion(), *this, identifier, SecuritySettings());
 

@@ -48,7 +48,7 @@ size_t  Connection::decode(const char* buffer, size_t size) {
             if(!(pi==version))
                 throw Exception(QPID_MSG("Unsupported version: " << pi
                                          << " supported version " << version));
-            QPID_LOG(trace, "RECV " << identifier << " INIT(" << pi << ")");
+            QPID_LOG(trace, "RECV [" << identifier << "]: INIT(" << pi << ")");
         }
         initialized = true;
     }
@@ -86,7 +86,7 @@ size_t  Connection::encode(const char* buffer, size_t size) {
         framing::ProtocolInitiation pi(getVersion());
         pi.encode(out);
         initialized = true;
-        QPID_LOG(trace, "SENT " << identifier << " INIT(" << pi << ")");
+        QPID_LOG(trace, "SENT [" << identifier << "]: INIT(" << pi << ")");
     }
     size_t frameSize=0;
     size_t encoded=0;

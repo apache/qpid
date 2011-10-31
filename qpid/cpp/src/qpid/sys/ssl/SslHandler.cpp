@@ -69,7 +69,7 @@ void SslHandler::init(SslIO* a, int numBuffs) {
 
 void SslHandler::write(const framing::ProtocolInitiation& data)
 {
-    QPID_LOG(debug, "SENT [" << identifier << "] INIT(" << data << ")");
+    QPID_LOG(debug, "SENT [" << identifier << "]: INIT(" << data << ")");
     SslIO::BufferBase* buff = aio->getQueuedBuffer();
     if (!buff)
         buff = new Buff;
@@ -110,7 +110,7 @@ void SslHandler::readbuff(SslIO& , SslIO::BufferBase* buff) {
         framing::ProtocolInitiation protocolInit;
         if (protocolInit.decode(in)) {
             decoded = in.getPosition();
-            QPID_LOG(debug, "RECV [" << identifier << "] INIT(" << protocolInit << ")");
+            QPID_LOG(debug, "RECV [" << identifier << "]: INIT(" << protocolInit << ")");
             try {
                 codec = factory->create(protocolInit.getVersion(), *this, identifier, getSecuritySettings(aio));
                 if (!codec) {
