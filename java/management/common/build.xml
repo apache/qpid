@@ -19,8 +19,9 @@
  -
  -->
 <project name="Management Common" default="build">
-
     <import file="../../module.xml"/>
+
+    <property name="module.genpom" value="true"/>
 
     <target name="bundle" depends="bundle-tasks"/>
 </project>

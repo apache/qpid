@@ -19,10 +19,10 @@
  -
  -->
 <project name="AMQ Broker" default="build">
-
     <property name="module.depends" value="management/common common"/>
     <property name="module.test.depends" value="common/test" />
     <property name="module.main" value="org.apache.qpid.server.Main"/>
+    <property name="module.genpom" value="true"/>
 
     <import file="../module.xml"/>
 
@@ -84,4 +84,5 @@
 
     <target name="release-bin" depends="release-bin-tasks"/>
 
+    <target name="bundle" depends="bundle-tasks"/>
 </project>
