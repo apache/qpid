@@ -77,38 +77,31 @@ Implements multiple CPG groups for better concurrency.
    CLOSED: [2011-10-05 Wed 17:22]
 Multicast using fixed-size (64k) buffers, allow fragmetation of messages across buffers (frame by frame)
 
-* Open questions
+* Design Questions
+** [[Queue sequence numbers vs. independant message IDs]] 
 
-** TODO [#A] Queue sequence numbers vs. independant message IDs.
-   SCHEDULED: <2011-10-07 Fri>
+Current prototype uses queue+sequence number to identify message. This
+is tricky for updating new members as the sequence numbers are only
+known on delivery.
 
-Current prototype uses queue sequence numbers to identify
-message. This is tricky for updating new members as the sequence
-numbers are only known on delivery.
-
-Independent message IDs that can be generated and sent with the message simplify
-this and potentially allow performance benefits by relaxing total ordering.
-However they imply additional map lookups that might hurt performance.
+Independent message IDs that can be generated and sent as part of the
+message simplify this and potentially allow performance benefits by
+relaxing total ordering.  However they require additional map lookups
+that hurt performance.
 
 - [X] Prototype independent message IDs, check performance.
 Throughput worse by 30% in contented case, 10% in uncontended.
-Sticking with queue sequence numbers.
 
-* Outstanding Tasks
-** TODO [#A] Defer and async completion of wiring commands.
-
+* Tasks to match existing cluster
+** TODO [#A] Review old cluster code for more tasks. 1
+** TODO [#A] Defer and async completion of wiring commands. 5
 Testing requirement: Many tests assume wiring changes are visible
 across the cluster once the commad completes.
 
 Name clashes: need to avoid race if same name queue/exchange declared
 on 2 brokers simultaneously
 
-** TODO [#A] Passing all existing cluster tests.
-
-The new cluster should be a drop-in replacement for the old, so it
-should be able to pass all the existing tests.
-
-** TODO [#A] Update to new members joining.
+** TODO [#A] Update to new members joining. 10.
 
 Need to resolve [[Queue sequence numbers vs. independant message IDs]] first.
 - implicit sequence numbers are more tricky to replicate to new member.
@@ -145,27 +138,33 @@ Updating queue/exchange/binding objects is via the same encode/decode
 that is used by the store. Updatee to use recovery interfaces to
 recover?
 
-** TODO [#A] Failover updates to client.
+** TODO [#A] Failover updates to client. 2
 Implement the amq.failover exchange to notify clients of membership.
+** TODO [#A] Passing all existing cluster tests. 5
 
-** TODO [#B] Initial status protocol.
+The new cluster should be a drop-in replacement for the old, so it
+should be able to pass all the existing tests.
+
+** TODO [#B] Initial status protocol. 3
 Handshake to give status of each broker member to new members joining.
 Status includes
-- persistent store state (clean, dirty)
 - cluster protocol version.
+- persistent store state (clean, dirty)
+- make it extensible, so additional state can be added in new protocols
 
-** TODO [#B] Replace boost::hash with our own hash function.
+** TODO [#B] Persistent cluster startup. 4
+
+Based on existing code:
+- Exchange dirty/clean exchanged in initial status.
+- Only one broker recovers from store, others update.
+** TODO [#B] Replace boost::hash with our own hash function. 1  
 The hash function is effectively part of the interface so
 we need to be sure it doesn't change underneath us.
 
-** TODO [#B] Persistent cluster support.
-Initial status protoocl to support persistent start-up (see existing code)
+** TODO [#B] Management model. 3
+Alerts for inconsistent message loss.
 
-Only one broker recovers from store, update to others.
-
-Assign cluster IDs to messages recovered from store, don't replicate. See Queue::recover.
-
-** TODO [#B] Management support
+** TODO [#B] Management methods that modify queues. 5
 Replicate management methods that modify queues - e.g. move, purge.
 Target broker may not have all messages on other brokers for purge/destroy.
 - Queue::move() - need to wait for lock? Replicate?
@@ -174,8 +173,7 @@ Target broker may not have all messages on other brokers for purge/destroy.
 - Queue::destroy() - messages to alternate exchange on all brokers.?
 
 Need to add callpoints & mcast messages to replicate these?
-
-** TODO [#B] TX transaction support.
+** TODO [#B] TX transaction support. 5
 Extend broker::Cluster interface to capture transaction context and completion.
 Running brokers exchange TX information.
 New broker update includes TX information.
@@ -187,54 +185,67 @@ New broker update includes TX information.
     // - no transaction context associated with messages in the Cluster interface.
     // - no call to Cluster::accept in Queue::dequeueCommitted
 
-** TODO [#B] DTX transaction support.
+Injecting holes into a queue:
+- Multicast a 'non-message' that just consumes one queue position.
+- Used to reserve a message ID (position) for a non-commited message.
+- Also could allow non-replicated messages on a replicated queue if required.
+
+** TODO [#B] DTX transaction support. 5
 Extend broker::Cluster interface to capture transaction context and completion.
 Running brokers exchange DTX information.
 New broker update includes DTX information.
 
-** TODO [#B] Async completion of accept.
+** TODO [#B] Async completion of accept. 4
 When this is fixed in the standalone broker, it should be fixed for cluster.
 
-** TODO [#B] Network partitions and quorum.
+** TODO [#B] Network partitions and quorum. 2
 Re-use existing implementation.
 
-** TODO [#B] Review error handling, put in a consitent model.
+** TODO [#B] Review error handling, put in a consitent model. 4.
 - [ ] Review all asserts, for possible throw.
 - [ ] Decide on fatal vs. non-fatal errors.
 
-** TODO [#B] Implement inconsistent error handling policy.
-What to do if a message is enqueued sucessfully on the local broker,
-but fails on one or more backups - e.g. due to store limits?
-- we have more flexibility, we don't *have* to crash
-- but we've loste some of our redundancy guarantee, how should we inform client? 
+** TODO [#B] Implement inconsistent error handling policy. 5
+What to do if a message is enqueued sucessfully on some broker(s),
+but fails on other(s) - e.g. due to store limits?
+- fail on local broker = possible message loss.
+- fail on non-local broker = possible duplication.
 
-** TODO [#C] Allow non-replicated exchanges, queues.
+We have more flexibility now, we don't *have* to crash
+- but we've lost some of our redundancy guarantee, how to inform user? 
 
-Set qpid.replicate=false in declare arguments, set flag on Exchange, Queue objects.
-- save replicated status to store.
+Options to respond to inconsistent error:
+- stop broker
+- reset broker (exec a new qpidd)
+- reset queue
+- log critical
+- send management event
+
+Most important is to inform of the risk of message loss.
+Current favourite: reset queue+log critical+ management event.
+Configurable choices?
+
+** TODO [#C] Allow non-replicated exchanges, queues. 5
+
+3 levels set in declare arguments:
+- qpid.replicate=no - nothing is replicated.
+- qpid.replicate=wiring - queues/exchanges are replicated but not messages.
+- qpid.replicate=yes - queues exchanges and messages are replicated.
+
+Wiring use case: it's OK to lose some messages (up to the max depth of
+the queue) but the queue/exchange structure must be highly available
+so clients can resume communication after fail over.
+
+Configurable default? Default same as old cluster?
+
+Need to
+- save replicated status to stored (in arguments).
 - support in management tools.
-Replicated queue: replicate all messages.
-Replicated exchange: replicate bindings to replicated queues only.
 
-Configurable default? Defaults to true.
-
-** TODO [#C] Refactoring of common concerns.
-
-There are a bunch of things that act as "Queue observers" with intercept
-points in similar places.
-- QueuePolicy
-- QueuedEvents (async replication)
-- MessageStore
-- Cluster
-
-Look for ways to capitalize on the similarity & simplify the code.
-
-In particular QueuedEvents (async replication) strongly resembles
-cluster replication, but over TCP rather than multicast.
-
-** TODO [#C] Handling immediate messages in a cluster
-Include remote consumers in descision to deliver an immediate message?
-** TODO [#C] Remove old cluster hacks and workarounds
+** TODO [#C] Handling immediate messages in a cluster. 2
+Include remote consumers in descision to deliver an immediate message.
+* Improvements over existing cluster
+** TODO [#C] Remove old cluster hacks and workarounds. 
 The old cluster has workarounds in the broker code that can be removed.
 - [ ] drop code to replicate management model.
 - [ ] drop timer workarounds for TTL, management, heartbeats.
@@ -264,6 +275,23 @@ New member udpates: use the store encode/decode for updates, use the
 same backward compatibility strategy as the store. This allows for
 adding new elements to the end of structures but not changing or
 removing new elements.
+
+NOTE: Any change to the association of CPG group names and queues will
+break compatibility. How to work around this?
+
+** TODO [#C] Refactoring of common concerns.
+
+There are a bunch of things that act as "Queue observers" with intercept
+points in similar places.
+- QueuePolicy
+- QueuedEvents (async replication)
+- MessageStore
+- Cluster
+
+Look for ways to capitalize on the similarity & simplify the code.
+
+In particular QueuedEvents (async replication) strongly resembles
+cluster replication, but over TCP rather than multicast.
 
 ** TODO [#C] Support for AMQP 1.0.
 
