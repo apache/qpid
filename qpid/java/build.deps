@@ -137,6 +137,6 @@ management-eclipse-plugin.test.libs=${test.libs}
 management-common.test.libs=${test.libs}
 
 # optional bdbstore module deps
-bdb-je=lib/bdbstore/je-4.0.103.jar
+bdb-je=lib/bdbstore/je-4.0.117.jar
 bdbstore.libs=${bdb-je}
 bdbstore.test.libs=${test.libs}
