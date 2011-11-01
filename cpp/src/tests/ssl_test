@@ -47,25 +47,36 @@ delete_certs() {
     fi
 }
 
-COMMON_OPTS="--daemon --no-data-dir --no-module-dir --config $CONFIG --load-module $SSL_LIB --ssl-cert-db $CERT_DIR --ssl-cert-password-file $CERT_PW_FILE --ssl-cert-name $TEST_HOSTNAME"
-start_broker() { # $1 = extra opts
-    ../qpidd --transport ssl --port 0 --ssl-port 0 $COMMON_OPTS --require-encryption --auth no $1;
+# Don't need --no-module-dir or --no-data-dir as they are set as env vars in test_env.sh
+COMMON_OPTS="--daemon --config $CONFIG --load-module $SSL_LIB --ssl-cert-db $CERT_DIR --ssl-cert-password-file $CERT_PW_FILE --ssl-cert-name $TEST_HOSTNAME"
+
+# Start new brokers:
+#   $1 must be integer
+#   $2 = extra opts
+# Append used ports to PORTS variable
+start_brokers() {
+    local -a ports
+    for (( i=0; $i<$1; i++)) do
+        ports[$i]=$($QPIDD_EXEC --port 0 $COMMON_OPTS $2) || error "Could not start broker $i"
+    done
+    PORTS=( ${PORTS[@]} ${ports[@]} )
 }
 
-start_authenticating_broker() {
-    ../qpidd --transport ssl --port 0 --ssl-port 0 $COMMON_OPTS --require-encryption --ssl-sasl-no-dict --ssl-require-client-authentication --auth yes;
+# Stop single broker:
+#   $1 is number of broker to stop (0 based)
+stop_broker() {
+    $QPIDD_EXEC -qp ${PORTS[$1]}
+
+    # Remove from ports array
+    unset PORTS[$1]
 }
 
 stop_brokers() {
-    test -n "$PORT" && ../qpidd --no-module-dir -qp $PORT
-    test -n "$PORT2" && ../qpidd --no-module-dir -qp $PORT2
-    PORT=""
-    PORT2=""
-}
-
-cleanup() {
-    stop_brokers
-    delete_certs
+    for port in "${PORTS[@]}";
+    do
+        $QPIDD_EXEC -qp $port
+    done
+    PORTS=()
 }
 
 pick_port() {
@@ -73,6 +84,31 @@ pick_port() {
     PICK=`../qpidd --no-module-dir -dp0`
     ../qpidd --no-module-dir -qp $PICK
     echo $PICK
+}
+
+cleanup() {
+    stop_brokers
+    delete_certs
+}
+
+start_ssl_broker() {
+    start_brokers 1 "--transport ssl --ssl-port 0 --require-encryption --auth no"
+}
+
+start_ssl_mux_broker() {
+    ../qpidd $COMMON_OPTS --port $1 --ssl-port $1
+    PORTS=( ${PORTS[@]} $1 )
+}
+
+start_authenticating_broker() {
+    start_brokers 1 "--transport ssl --ssl-port 0 --require-encryption --ssl-sasl-no-dict --ssl-require-client-authentication --auth yes"
+}
+
+ssl_cluster_broker() {		# $1 = port
+    start_brokers 1 "--ssl-port $1 --auth no --load-module  $CLUSTER_LIB --cluster-name ssl_test.$HOSTNAME.$$ --cluster-url amqp:ssl:$TEST_HOSTNAME:$1"
+
+    # Wait for broker to be ready
+    qpid-ping -Pssl -b $TEST_HOSTNAME -qp $1 || { echo "Cannot connect to broker on $1"; exit 1; }
 }
 
 CERTUTIL=$(type -p certutil)
@@ -86,7 +122,9 @@ if [[ !(-e ${CERT_PW_FILE}) ]] ;  then
 fi
 delete_certs
 create_certs || error "Could not create test certificate"
-PORT=`start_broker` || error "Could not start broker"
+
+start_ssl_broker
+PORT=${PORTS[0]}
 echo "Running SSL test on port $PORT"
 export QPID_NO_MODULE_DIR=1
 export QPID_LOAD_MODULE=$SSLCONNECTOR_LIB
@@ -104,7 +142,8 @@ test "$MSG" = "hello" || { echo "receive failed '$MSG' != 'hello'"; exit 1; }
 
 #### Client Authentication tests
 
-PORT2=`start_authenticating_broker`  || error "Could not start broker"
+start_authenticating_broker
+PORT2=${PORTS[1]}
 echo "Running SSL client authentication test on port $PORT2"
 URL=amqp:ssl:$TEST_HOSTNAME:$PORT2
 
@@ -120,12 +159,25 @@ test "$MSG3" = "" || { echo "receive succeeded without valid ssl cert '$MSG3' !=
 
 stop_brokers
 
-#Test multiplexed connection where SSL and plain TCP are served by the same port
-PORT=`pick_port`; ../qpidd --port $PORT --ssl-port $PORT $COMMON_OPTS --transport ssl --auth no
-echo "Running multiplexed SSL/TCP test on $PORT"
+# Test ssl muxed with plain TCP on the same connection
 
-./qpid-perftest --count ${COUNT} --port ${PORT} -P ssl -b $TEST_HOSTNAME --summary || { echo "SSL on multiplexed connection failed!"; exit 1; }
-./qpid-perftest --count ${COUNT} --port ${PORT} -P tcp -b $TEST_HOSTNAME --summary || { echo "Plain TCP on multiplexed connection failed!"; exit 1; }
+# Test a specified port number - since tcp/ssl are the same port don't need to specify --transport ssl
+PORT=`pick_port`
+start_ssl_mux_broker $PORT || error "Could not start broker"
+echo "Running SSL/TCP mux test on fixed port $PORT"
+
+## Test connection via connection settings
+./qpid-perftest --count ${COUNT} --port ${PORT} -P ssl -b $TEST_HOSTNAME --summary
+./qpid-perftest --count ${COUNT} --port ${PORT} -P tcp -b $TEST_HOSTNAME --summary
+
+# Test a broker chosen port - since ssl chooses port need to use --transport ssl here
+start_ssl_broker
+PORT=${PORTS[0]}
+echo "Running SSL/TCP mux test on random port $PORT"
+
+## Test connection via connection settings
+./qpid-perftest --count ${COUNT} --port ${PORT} -P ssl -b $TEST_HOSTNAME --summary
+./qpid-perftest --count ${COUNT} --port ${PORT} -P tcp -b $TEST_HOSTNAME --summary
 
 stop_brokers
 
@@ -134,20 +186,19 @@ test -z $CLUSTER_LIB && exit 0	# Exit if cluster not supported.
 ## Test failover in a cluster using SSL only
 . $srcdir/ais_check		# Will exit if clustering not enabled.
 
-ssl_cluster_broker() {		# $1 = port
-    ../qpidd $COMMON_OPTS --require-encryption --auth no --load-module  $CLUSTER_LIB --cluster-name ssl_test.$HOSTNAME.$$ --cluster-url amqp:ssl:$TEST_HOSTNAME:$1 --port 0 --ssl-port $1 --transport ssl > /dev/null
-    # Wait for broker to be ready
-    qpid-ping -Pssl -b $TEST_HOSTNAME -qp $1 || { echo "Cannot connect to broker on $1"; exit 1; }
-    echo "Running SSL cluster broker on port $1"
-}
-
 PORT1=`pick_port`; ssl_cluster_broker $PORT1
+echo "Running SSL cluster broker on port $PORT1"
+
 PORT2=`pick_port`; ssl_cluster_broker $PORT2
+echo "Running SSL cluster broker on port $PORT2"
 
 # Pipe receive output to uniq to remove duplicates
 ./qpid-receive --connection-options "{reconnect:true, reconnect-timeout:5}" --failover-updates -b amqp:ssl:$TEST_HOSTNAME:$PORT1 -a "foo;{create:always}" -f | uniq > ssl_test_receive.tmp &
 ./qpid-send -b amqp:ssl:$TEST_HOSTNAME:$PORT2 --content-string=one -a "foo;{create:always}"
-../qpidd --no-module-dir -qp $PORT1 # Kill broker 1 receiver should fail-over.
+
+stop_broker 0 # Kill broker 1 - receiver should fail-over.
+echo "Killed SSL cluster broker on port $PORT1"
+
 ./qpid-send -b amqp:ssl:$TEST_HOSTNAME:$PORT2 --content-string=two -a "foo;{create:always}" --send-eos 1
 wait				# Wait for qpid-receive
 { echo one; echo two; } > ssl_test_receive.cmp
