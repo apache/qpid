@@ -86,11 +86,7 @@ public class ReferenceCountingTest extends QpidTestCase
 
         AMQMessage message = new AMQMessage(storedMessage);
 
-        message = message.takeReference();
-
-        // we call routing complete to set up the handle
- //       message.routingComplete(_store, _storeContext, new MessageHandleFactory());
-
+        message.incrementReference();
 
         assertEquals(1, _store.getMessageCount());
         message.decrementReference();
@@ -146,12 +142,12 @@ public class ReferenceCountingTest extends QpidTestCase
         AMQMessage message = new AMQMessage(storedMessage);
 
 
-        message = message.takeReference();
+        message.incrementReference();
         // we call routing complete to set up the handle
      //   message.routingComplete(_store, _storeContext, new MessageHandleFactory());
 
         assertEquals(1, _store.getMessageCount());
-        message = message.takeReference();
+        message.incrementReference();
         message.decrementReference();
         assertEquals(1, _store.getMessageCount());
     }

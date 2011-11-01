@@ -29,11 +29,11 @@ public class TransferMessageReference extends MessageReference<MessageTransferMe
 
     protected void onReference(MessageTransferMessage message)
     {
-
+        message.incrementReference();
     }
 
     protected void onRelease(MessageTransferMessage message)
     {
-
+        message.decrementReference();
     }
 }
