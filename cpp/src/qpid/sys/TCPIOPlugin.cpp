@@ -91,9 +91,11 @@ static class TCPIOPlugin : public Plugin {
                     opts.connectionBacklog,
                     opts.tcpNoDelay,
                     shouldListen));
+
             if (shouldListen) {
                 QPID_LOG(notice, "Listening on TCP/TCP6 port " << protocolt->getPort());
             }
+
             broker->registerProtocolFactory("tcp", protocolt);
         }
     }
@@ -103,6 +105,7 @@ AsynchIOProtocolFactory::AsynchIOProtocolFactory(const std::string& host, const 
     tcpNoDelay(nodelay)
 {
     if (!shouldListen) {
+        listeningPort = boost::lexical_cast<uint16_t>(port);
         return;
     }
 
