@@ -84,8 +84,8 @@ class BrokerManager(Console):
         if x.match(name):                 
           match = True
           break
-        if match == False:
-          return
+      if match == False:
+        return
 
     if last == None:
       lastSample = first
