@@ -49,7 +49,7 @@ $srcdir = Get-ScriptPath
 . $srcdir\background.ps1 $cmdblock
 
 $wait_time = 0
-while (!(Test-Path qpidd.port) -and ($wait_time -lt 10)) {
+while (!(Test-Path qpidd.port) -and ($wait_time -lt 30)) {
    Start-Sleep 2
    $wait_time += 2
 }
