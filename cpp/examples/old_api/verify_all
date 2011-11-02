@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 #
 # Licensed to the Apache Software Foundation (ASF) under one
@@ -27,6 +27,12 @@ topbuilddir=$2
 qpidd=$topbuilddir/src/qpidd
 broker_args=$3
 exclude_regexp=$4
+
+# Use temporary directory if $HOME does not exist
+if ! test -e "$HOME"; then
+    export QPID_DATA_DIR=/tmp/qpid
+    export QPID_PID_DIR=/tmp/qpid
+fi
 
 trap "$qpidd -q" exit
 QPID_PORT=`$qpidd -dp0 $broker_args` || { echo "Can't run qpidd" ; exit 1; }

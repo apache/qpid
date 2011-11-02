@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 #
 # Licensed to the Apache Software Foundation (ASF) under one
@@ -30,9 +30,16 @@ export LC_ALL=C
 # If $QPID_HOST or $QPID_PORT are set, use them to connect.
 #
 
-QPID_DATA_DIR=
 QPID_NO_MODULE_DIR=1
-export QPID_DATA_DIR QPID_NO_MODULE_DIR
+QPID_DATA_DIR=
+
+# Use temporary directory if $HOME does not exist
+if [ ! -e "$HOME" ]; then
+    QPID_DATA_DIR=/tmp/qpid
+    QPID_PID_DIR=/tmp/qpid
+fi
+
+export QPID_DATA_DIR QPID_NO_MODULE_DIR QPID_PID_DIR
 
 cleanup() {
     test -n "$QPIDD" &&  $QPIDD -q # Private broker
