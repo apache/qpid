@@ -50,7 +50,7 @@ Function start_broker($acl_options)
   . $srcdir\background.ps1 $cmdblock
   # Wait for the broker to start
   $wait_time = 0
-  while (!(Test-Path qpidd.port) -and ($wait_time -lt 10)) {
+  while (!(Test-Path qpidd.port) -and ($wait_time -lt 30)) {
     Start-Sleep 2
     $wait_time += 2
   }
