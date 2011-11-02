@@ -77,15 +77,12 @@ MessageGroupManager::GroupState& MessageGroupManager::findGroup( const QueuedMes
     if (headers) {
         qpid::framing::FieldTable::ValuePtr id = headers->get( groupIdHeader );
         if (id && id->convertsTo<std::string>()) {
-            std::string tmp = id->get<std::string>();
-            if (!tmp.empty())   // empty group is reserved
-                group = tmp;
+            group = id->get<std::string>();
         }
     }
 
     if (cachedGroup && group == lastGroup) {
         hits++;
-        lastMsg = thisMsg;
         return *cachedGroup;
     }
 
