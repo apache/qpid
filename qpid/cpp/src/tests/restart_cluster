@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 #
 # Licensed to the Apache Software Foundation (ASF) under one
@@ -24,13 +24,13 @@
 srcdir=`dirname $0`
 $srcdir/stop_cluster
 exec $srcdir/start_cluster "$@"
-#!/bin/sh
+#!/bin/bash
 # Re-start a cluster on the local host.
 
 srcdir=`dirname $0`
 $srcdir/stop_cluster
 exec $srcdir/start_cluster "$@"
-#!/bin/sh
+#!/bin/bash
 # Re-start a cluster on the local host.
 
 srcdir=`dirname $0`
