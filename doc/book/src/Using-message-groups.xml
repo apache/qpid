@@ -63,7 +63,7 @@
       </title>
       <para>
         In order to group messages, the application would designate a particular
-        application header as containing a message's <emphasis>group identifier</emphasis>.  The group
+        message header as containing a message's <emphasis>group identifier</emphasis>.  The group
         identifier stored in that header field would be a string value set by the message
         producer.  Messages from the same group would have the same group identifier
         value. The key that identifies the header must also be known to the message
@@ -91,17 +91,23 @@
       <para>
         This means that only one consumer can be processing messages from a particular
         group at a given time.  When the consumer acknowledges all of its acquired
-        messages, then the broker <emphasis>may</emphasis> pass the next message from that group to
-        another consumer.
+        messages, then the broker <emphasis>may</emphasis> pass the next pending message
+        from that group to a different consumer.
       </para>
       <para>
-        Specifically, for any given group, the broker allows only the first N messages in
-        the group to be available for delivery to a particular consumer.  The value of N
-        would be determined by the selected consumer's configured prefetch capacity.  The
-        broker blocks access to the remaining messages in that group by any other
-        consumer.  Once the selected consumer has acknowledged that first set of delivered
-        messages, the broker allows the next messages in the group to be available for
-        delivery.  The next set of messages may be delivered to a different consumer.
+        Specifically, for any given group the broker allows only the first N messages in
+        the group to be delivered to a consumer.  The value of N would be determined by
+        the selected consumer's configured prefetch capacity.  The broker blocks access by
+        any other consumer to any remaining undelivered messages in that group.  Once the
+        receiving consumer has:
+        <itemizedlist>
+          <listitem>acknowledged,</listitem>
+          <listitem>released, or</listitem>
+          <listitem>rejected</listitem>
+        </itemizedlist>
+        all the delivered messages, the broker allows the next messages in the group to be
+        delivered.  The next messages <emphasis>may</emphasis> be delivered to a different
+        consumer.
       </para>
       <para>
         Note well that distinct message groups would not block each other from delivery.
@@ -118,33 +124,40 @@
         Well Behaved Consumers
       </title>
       <para>
-        In order to guarantee the ordering policy, the consuming application has to ensure
-        that it has completely processed the data in a received message before accepting
-        that message, as described in Section 2.6.2. Transfer of Responsibility, of the
-        AMQP-0.10 specification.
-      </para>
-      <para>
-        The term <emphasis>processed</emphasis> means that the application has finished updating all
-        state related to the message that has been received.
+        The broker can only enforce policy when delivering messages. To guarantee that
+        strict message ordering is preserved, the consuming application must adhere to the
+        following rules:
+        <itemizedlist>
+          <listitem>completely process the data in a received message before accepting
+          that message</listitem>
+          <listitem>acknowledge (or reject) messages in the same order as they are
+          received</listitem>
+          <listitem>avoid releasing messages (see below)</listitem>
+        </itemizedlist>
+        The term <emphasis>processed</emphasis> means that the consumer has finished
+        updating all application state affected by the message that has been received.
+        See section 2.6.2. Transfer of Responsibility, of the AMQP-0.10 specification for
+        more detail.
       </para>
       <note>
         <title>Be Advised</title>
         <para>
-          It is possible for a consumer to affect the ordering of grouped messages even
-          when the broker is enforcing consumption order.  This can be done by selectively
-          acknowledging and releasing messages from the same group.
+          If a consumer does not adhere to the above rules, it may affect the ordering of
+          grouped messages even when the broker is enforcing consumption order.  This can
+          be done by selectively acknowledging and releasing messages from the same group.
         </para>
         <para>
           Assume a consumer has received two messages from group "A", "A-1" and "A-2", in
           that order.  If the consumer releases "A-1" then acknowledges "A-2", "A-1" will
           be put back onto the queue and "A-2" will be removed from the queue.  This
-          allows another consumer to acquire and process "A-1" <emphasis>after</emphasis> "A-2" has been
-          processed.
+          allows another consumer to acquire and process "A-1" <emphasis>after</emphasis>
+          "A-2" has been processed.
         </para>
         <para>
           Under some application-defined circumstances, this may be acceptable behavior.
-          However, if order must be preserved, the client should either release <emphasis>all</emphasis>
-          currently held messages, or discard the target message using reject.
+          However, if order must be preserved, the client should either release
+          <emphasis>all</emphasis> currently held messages, or discard the target message
+          using reject.
         </para>
       </note>
     </section>
