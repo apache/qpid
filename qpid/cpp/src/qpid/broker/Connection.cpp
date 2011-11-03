@@ -443,10 +443,14 @@ void Connection::setHeartbeatInterval(uint16_t heartbeat)
 {
     setHeartbeat(heartbeat);
     if (heartbeat > 0 && !isShadow()) {
-        heartbeatTimer = new ConnectionHeartbeatTask(heartbeat, timer, *this);
-        timer.add(heartbeatTimer);
-        timeoutTimer = new ConnectionTimeoutTask(heartbeat, timer, *this);
-        timer.add(timeoutTimer);
+        if (!heartbeatTimer) {
+            heartbeatTimer = new ConnectionHeartbeatTask(heartbeat, timer, *this);
+            timer.add(heartbeatTimer);
+        }
+        if (!timeoutTimer) {
+            timeoutTimer = new ConnectionTimeoutTask(heartbeat, timer, *this);
+            timer.add(timeoutTimer);
+        }
     }
 }
 
