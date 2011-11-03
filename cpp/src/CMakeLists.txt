@@ -460,12 +460,14 @@ else (NOT CLOCK_GETTIME_IN_RT)
   set(QPID_HAS_CLOCK_GETTIME YES CACHE BOOL "Platform has clock_gettime")
 endif (NOT CLOCK_GETTIME_IN_RT)
 
-# Ensure that we have uuid library
-CHECK_LIBRARY_EXISTS (uuid uuid_compare "" HAVE_UUID)
-CHECK_INCLUDE_FILES(uuid/uuid.h HAVE_UUID_H)
-IF (NOT HAVE_UUID AND NOT HAVE_UUID_H)
-  message(FATAL_ERROR "Uuid library and/or header file not found")
-ENDIF (NOT HAVE_UUID AND NOT HAVE_UUID_H)
+# If not windows ensure that we have uuid library
+if (NOT CMAKE_SYSTEM_NAME STREQUAL Windows)
+  CHECK_LIBRARY_EXISTS (uuid uuid_compare "" HAVE_UUID)
+  CHECK_INCLUDE_FILES(uuid/uuid.h HAVE_UUID_H)
+  if (NOT HAVE_UUID AND NOT HAVE_UUID_H)
+    message(FATAL_ERROR "Uuid library and/or header file not found")
+  endif (NOT HAVE_UUID AND NOT HAVE_UUID_H)
+endif (NOT CMAKE_SYSTEM_NAME STREQUAL Windows)
 
 # See if Cyrus SASL is desired and available
 CHECK_LIBRARY_EXISTS (sasl2 sasl_checkpass "" HAVE_SASL)
