@@ -281,13 +281,14 @@ endif (NOT ENABLE_WARNINGS)
 set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COMPILER_FLAGS} ${WARNING_FLAGS}")
 
 # Expand a bit from the basic Find_Boost; be specific about what's needed.
-# TODO: Not all these libs are needed everywhere:
-# Linux only uses filesystem program_options unit_test_framework
-# (which itself uses regex).
 # Boost.system is sometimes needed; it's handled separately, below.
-find_package(Boost 1.33 REQUIRED
-             COMPONENTS filesystem program_options date_time thread
-                        regex unit_test_framework)
+if (CMAKE_SYSTEM_NAME STREQUAL Windows)
+  set (Boost_components filesystem program_options date_time thread unit_test_framework regex)
+else (CMAKE_SYSTEM_NAME STREQUAL Windows)
+  set (Boost_components filesystem program_options unit_test_framework)
+endif (CMAKE_SYSTEM_NAME STREQUAL Windows)
+
+find_package(Boost 1.33 REQUIRED COMPONENTS ${Boost_components})
 if(NOT Boost_FOUND)
   message(FATAL_ERROR "Boost C++ libraries not found.  Please install or try setting BOOST_ROOT")
 endif(NOT Boost_FOUND)
