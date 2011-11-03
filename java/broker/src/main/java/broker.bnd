@@ -17,7 +17,7 @@
 # under the License.
 #
 
-ver: 0.13.0
+ver: 0.15.0
 
 Bundle-SymbolicName: qpid-broker
 Bundle-Version: ${ver}
