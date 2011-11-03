@@ -17,16 +17,21 @@
 # under the License.
 #
 
-install(FILES qpidc.conf
-        DESTINATION ${QPID_INSTALL_CONFDIR}
-        COMPONENT ${QPID_COMPONENT_CLIENT})
-install(FILES qpidd.conf
-        DESTINATION ${QPID_INSTALL_CONFDIR}
-        COMPONENT ${QPID_COMPONENT_BROKER})
-if (BUILD_SASL)
-  install(FILES sasl2/qpidd.conf
-          DESTINATION ${QPID_INSTALL_SASLDIR}
-          COMPONENT ${QPID_COMPONENT_BROKER}
-          RENAME ${BROKER_SASL_NAME}.conf)
-endif (BUILD_SASL)
 
+include(FindSWIG)
+include(UseSWIG)
+include(FindRuby)
+include(FindPythonLibs)
+include(FindPerlLibs)
+
+if (SWIG_FOUND)
+    set(CMAKE_SWIG_FLAGS "-w362,401")
+
+    if (PYTHONLIBS_FOUND)
+        add_subdirectory(python)
+    endif (PYTHONLIBS_FOUND)
+
+    if (RUBY_FOUND)
+        add_subdirectory(ruby)
+    endif (RUBY_FOUND)
+endif (SWIG_FOUND)

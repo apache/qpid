@@ -17,16 +17,22 @@
 # under the License.
 #
 
-install(FILES qpidc.conf
-        DESTINATION ${QPID_INSTALL_CONFDIR}
-        COMPONENT ${QPID_COMPONENT_CLIENT})
-install(FILES qpidd.conf
-        DESTINATION ${QPID_INSTALL_CONFDIR}
-        COMPONENT ${QPID_COMPONENT_BROKER})
-if (BUILD_SASL)
-  install(FILES sasl2/qpidd.conf
-          DESTINATION ${QPID_INSTALL_SASLDIR}
-          COMPONENT ${QPID_COMPONENT_BROKER}
-          RENAME ${BROKER_SASL_NAME}.conf)
-endif (BUILD_SASL)
+# Library Version Information (CURRENT.REVISION.AGE):
+#
+#  CURRENT  => API/ABI version.  Bump this if the interface changes
+#  REVISION => Version of underlying implementation.
+#              Bump if implementation changes but API/ABI doesn't
+#  AGE      => Number of API/ABI versions this is backward compatible with
+
+set (qmf_version 1.0.0)
+set (qmf2_version 1.0.0)
+set (qmfconsole_version 2.0.0)
+set (qmfengine_version 1.1.0)
+set (qpidbroker_version 2.0.0)
+set (qpidclient_version 2.0.0)
+set (qpidcommon_version 2.0.0)
+set (qpidmessaging_version 2.0.0)
+set (qpidtypes_version 1.0.0)
+set (rdmawrap_version 2.0.0)
+set (sslcommon_version 2.0.0)
 

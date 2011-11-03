@@ -20,19 +20,20 @@
 ##------------------------------------------------------
 ## Use Swig to generate a literal binding to the C++ API
 ##------------------------------------------------------
-set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/perl.i PROPERTIES CPLUSPLUS ON)
-set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/perl.i PROPERTIES SWIG_FLAGS "-I${qpid-cpp_SOURCE_DIR}/include")
+set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/ruby.i PROPERTIES CPLUSPLUS ON)
+set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/ruby.i PROPERTIES SWIG_FLAGS "-I${qpid-cpp_SOURCE_DIR}/include")
 
-swig_add_module(cqpid_perl perl ${CMAKE_CURRENT_SOURCE_DIR}/perl.i)
-swig_link_libraries(cqpid_perl qpidmessaging qpidtypes qmf2 ${PERL_LIBRARY})
+swig_add_module(cqmf2_ruby ruby ${CMAKE_CURRENT_SOURCE_DIR}/ruby.i)
+swig_link_libraries(cqmf2_ruby qmf2 ${RUBY_LIBRARY})
 
-set_source_files_properties(${swig_generated_file_fullname} PROPERTIES COMPILE_FLAGS "-fno-strict-aliasing -I${PERL_INCLUDE_PATH} -I${qpid-cpp_SOURCE_DIR}/include")
+set_source_files_properties(${swig_generated_file_fullname} PROPERTIES COMPILE_FLAGS "-I${RUBY_INCLUDE_DIR} -I${qpid-cpp_SOURCE_DIR}/include")
 
 ##----------------------------------
-## Install the complete Perl binding
+## Install the complete Ruby binding
 ##----------------------------------
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libcqpid_perl.so
-              ${CMAKE_CURRENT_BINARY_DIR}/cqpid_perl.pm
-        DESTINATION ${PERL_ARCHLIB}
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libcqmf2_ruby.so
+        RENAME cqmf2.so
+        DESTINATION ${RUBY_ARCH_DIR}
         COMPONENT ${QPID_COMPONENT_CLIENT}
         )
+

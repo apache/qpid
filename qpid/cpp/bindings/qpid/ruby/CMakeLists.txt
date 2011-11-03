@@ -32,17 +32,17 @@ set(GEM_OUTPUT_FILE ${GEM_OUTPUT_PATH}/pkg/qpid-${qpidc_version}.0.gem)
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/ruby.i PROPERTIES CPLUSPLUS ON)
 set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}/ruby.i PROPERTIES SWIG_FLAGS "-I${qpid-cpp_SOURCE_DIR}/include")
 
-swig_add_module(cqpid ruby ${CMAKE_CURRENT_SOURCE_DIR}/ruby.i)
-swig_link_libraries(cqpid qpidmessaging qpidtypes qmf2 ${RUBY_LIBRARY})
+swig_add_module(cqpid_ruby ruby ${CMAKE_CURRENT_SOURCE_DIR}/ruby.i)
+swig_link_libraries(cqpid_ruby qpidmessaging qpidtypes qmf2 ${RUBY_LIBRARY})
 
 set_source_files_properties(${swig_generated_file_fullname} PROPERTIES COMPILE_FLAGS "-fno-strict-aliasing -I${RUBY_INCLUDE_DIR} -I${qpid-cpp_SOURCE_DIR}/include")
 
 ##----------------------------------
 ## Install the complete Ruby binding
 ##----------------------------------
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libcqpid.so
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libcqpid_ruby.so
         RENAME cqpid.so
-        DESTINATION ${RUBY_SITEARCH_DIR}
+        DESTINATION ${RUBY_ARCH_DIR}
         COMPONENT ${QPID_COMPONENT_CLIENT}
         )
 
