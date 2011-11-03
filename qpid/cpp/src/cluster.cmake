@@ -149,7 +149,9 @@ if (BUILD_CLUSTER)
   target_link_libraries (cluster_shared ${LIBCPG} ${CMAN_LIB} qpidbroker qpidclient ${Boost_FILESYSTEM_LIBRARY})
 
   if (CMAKE_COMPILER_IS_GNUCXX)
-    set_target_properties(cluster PROPERTIES
+    # Turn off optimisation based on strict-aliasing because we get warnings about violations
+    set_target_properties(cluster cluster_shared PROPERTIES
+                          COMPILE_FLAGS "-fno-strict-aliasing"
                           LINK_FLAGS "-Wl,--no-undefined -pthread")
   endif (CMAKE_COMPILER_IS_GNUCXX)
 
