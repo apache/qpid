@@ -32,17 +32,17 @@ SWIG_FLAGS = -w362,401
 $(generated_file_list): $(srcdir)/python.i $(srcdir)/../qmfengine.i
 	$(SWIG) -c++ -python $(SWIG_FLAGS) $(INCLUDES) $(QPID_CXXFLAGS) -I$(top_srcdir)/src/qmf -I/usr/include -o qmfengine.cpp $(srcdir)/python.i
 
-pylibdir = $(PYTHON_LIB)
+pylibdir = $(pyexecdir)
 
-lib_LTLIBRARIES = _qmfengine.la
-qenginedir = $(pyexecdir)
+pylib_LTLIBRARIES = _qmfengine.la
+qenginedir = $(pythondir)
 qengine_PYTHON = qmfengine.py qmf.py
 
 #_qmfengine_la_LDFLAGS = -avoid-version -module -shrext "$(PYTHON_SO)"
 #_qmfengine_la_LDFLAGS = -avoid-version -module -shrext ".so"
 _qmfengine_la_LDFLAGS = -avoid-version -module -shared
 _qmfengine_la_LIBADD = $(PYTHON_LIBS) -L$(top_builddir)/src/.libs -lqpidclient $(top_builddir)/src/libqmf.la
-_qmfengine_la_CXXFLAGS = $(INCLUDES) -I$(srcdir)/qmf -I$(PYTHON_INC) -fno-strict-aliasing
+_qmfengine_la_CXXFLAGS = $(INCLUDES) -I$(srcdir)/qmf $(PYTHON_CFLAGS) -fno-strict-aliasing
 nodist__qmfengine_la_SOURCES = qmfengine.cpp
 
 CLEANFILES = $(generated_file_list)

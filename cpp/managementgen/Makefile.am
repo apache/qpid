@@ -20,14 +20,14 @@ qmfpythondir = $(pythondir)
 dist_bin_SCRIPTS = \
 	qmf-gen
 
-pkgpyexec_qmfgendir = $(pyexecdir)/qmfgen
+pkgpyexec_qmfgendir = $(pythondir)/qmfgen
 pkgpyexec_qmfgen_PYTHON = \
 	qmfgen/__init__.py \
 	qmfgen/generate.py \
 	qmfgen/schema.py \
 	qmfgen/management-types.xml
 
-pkgpyexec_qmfgentmpldir = $(pyexecdir)/qmfgen/templates
+pkgpyexec_qmfgentmpldir = $(pythondir)/qmfgen/templates
 pkgpyexec_qmfgentmpl_PYTHON = \
 	qmfgen/templates/Args.h \
 	qmfgen/templates/Class.cpp \

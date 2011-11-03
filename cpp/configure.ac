@@ -201,34 +201,19 @@ fi
 AM_CONDITIONAL([HAVE_RUBY_DEVEL], [test -f $RUBY_INC/ruby.h && test -n "$SWIG"])
 
 # Python bindings: To build python wrappers, the python-devel files must be present.
-
 AM_PATH_PYTHON()
-if test -n "$PYTHON" ; then
-    AC_MSG_CHECKING([$PYTHON include dir])
-    if $PYTHON -c 'import distutils.sysconfig' 2>/dev/null ; then
-        PYTHON_INC=`$PYTHON -c 'import os,distutils.sysconfig;print(distutils.sysconfig.get_python_inc().replace(os.sep,"/"))'`
-	AC_SUBST(PYTHON_INC)
-    else
+AS_IF([test -n "$PYTHON"], [
+    PKG_CHECK_MODULES([PYTHON], [python], [have_python_dev=yes],[
         if test yes = "$with_python" ; then
-	    AC_MSG_ERROR([Couldn't import Python module distutils.sysconfig - you probably need to install a python-dev or python-devel package])
-	else
-	    AC_MSG_WARN([Couldn't import Python module distutils.sysconfig - you probably don't have a python-dev or python-devel package installed])
-	fi
-    fi
-    AC_MSG_RESULT([$PYTHON_INC])
-    AC_MSG_CHECKING([for directory to install python bindings in])
-    if test -z "$PYTHON_LIB" ; then
-	  PYTHON_LIB=`$PYTHON -c 'import os,distutils.sysconfig;print(distutils.sysconfig.get_python_lib(1).replace(os.sep,"/"))'`
-    fi
-    AC_MSG_RESULT([$PYTHON_LIB])
-    AC_ARG_VAR(PYTHON_LIB, [Directory to install python bindings in])
-
-    AC_MSG_CHECKING([for python libraries to link against])
-	PYTHON_LIBS=`$PYTHON -c 'import os,sys;print("-L"+os.path.join(sys.path[[3]],"config")+" -lpython"+sys.version[[:3]])'`
+            AC_MSG_ERROR([Couldn't find Python developer libs - you probably need to install a python-dev or python-devel package])
+        else
+            AC_MSG_WARN([Couldn't find Python developer libs - you probably don't have a python-dev or python-devel package installed])
+        fi
+    ])
+    AC_SUBST(PYTHON_CFLAGS)
     AC_SUBST(PYTHON_LIBS)
-    AC_MSG_RESULT([$PYTHON_LIBS])
-fi
-AM_CONDITIONAL([HAVE_PYTHON_DEVEL], [test -f $PYTHON_INC/Python.h && test -n "$SWIG"])
+])
+AM_CONDITIONAL([HAVE_PYTHON_DEVEL], [test x$have_python_dev = xyes && test -n "$SWIG"])
 
 
 # Perl bindings:
