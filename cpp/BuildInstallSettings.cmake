@@ -88,6 +88,8 @@ if (WIN32)
        "Directory to install user executables")
   set (QPID_INSTALL_CONFDIR conf CACHE STRING
        "Directory to install configuration files")
+  set (QPID_INSTALL_SASLDIR conf CACHE STRING
+       "Directory to install SASL configuration files")
   set (QPID_INSTALL_DATADIR conf CACHE STRING
        "Directory to install read-only arch.-independent data root")
   set (QPID_INSTALL_EXAMPLESDIR examples CACHE STRING
@@ -124,6 +126,8 @@ if (UNIX)
        "Directory to install configuration files")
   set (QPID_INSTALL_DATADIR share/qpid CACHE STRING
        "Directory to install read-only arch.-independent data root")
+  set (QPID_INSTALL_SASLDIR etc/sasl2 CACHE STRING
+       "Directory to install SASL configuration files")
   set (QPID_INSTALL_EXAMPLESDIR share/examples CACHE STRING
        "Directory to install programming examples in")
   set (QPID_INSTALL_HTMLDIR html CACHE STRING
@@ -140,4 +144,8 @@ if (UNIX)
        "Directory to load broker plug-in modules from")
   set (QPID_LIBEXEC_DIR libexec/qpid CACHE STRING
        "Directory for executables used by qpid libs")
+  set (QPID_LOCALSTATE_DIR var CACHE STRING
+       "Directory to store local state data")
+  set (QPID_MAN_DIR man CACHE STRING
+       "Directory to install manual files")
 endif (UNIX)

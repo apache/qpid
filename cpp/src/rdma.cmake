@@ -64,7 +64,7 @@ if (BUILD_RDMA)
 
   add_library (rdmawrap SHARED ${rdma_SOURCES})
   target_link_libraries (rdmawrap qpidcommon rdmacm ibverbs)
-  set_target_properties (rdmawrap PROPERTIES VERSION ${qpidc_version})
+  set_target_properties (rdmawrap PROPERTIES VERSION ${rdmawrap_version})
   if (CMAKE_COMPILER_IS_GNUCXX)
     set_target_properties(rdmawrap PROPERTIES
                           COMPILE_FLAGS -Wno-missing-field-initializers
