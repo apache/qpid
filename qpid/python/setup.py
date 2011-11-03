@@ -298,7 +298,7 @@ class install_lib(_install_lib):
     return outfiles + extra
 
 setup(name="qpid-python",
-      version="0.13",
+      version="0.14",
       author="Apache Qpid",
       author_email="dev@qpid.apache.org",
       packages=["mllib", "qpid", "qpid.messaging", "qpid.tests",

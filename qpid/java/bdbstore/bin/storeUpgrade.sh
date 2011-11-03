@@ -36,7 +36,7 @@ if [ -z "$BDB_HOME" ]; then
     export BDB_HOME=$(dirname $(dirname $(readlink -f $0)))
 fi
 
-VERSION=0.13
+VERSION=0.14
 
 LIBS=$BDB_HOME/lib/je-4.0.103.jar:$BDB_HOME/lib/qpid-bdbstore-$VERSION.jar:$QPID_HOME/lib/qpid-all.jar
 

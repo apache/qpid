@@ -218,9 +218,9 @@
 	    OutputFile="boost_dlls.wxs" />
 	<Candle
 	    ToolPath="$(WixToolPath)"
-	    DefineConstants="qpidc_version=0.13"
+	    DefineConstants="qpidc_version=0.14"
 	    InstallerPlatform="x64"
-	    OutputFile="qpidc-0.13-x64.msi" />
+	    OutputFile="qpidc-0.14-x64.msi" />
     -->
         <Exec
 	    Command="heat dir $(staging_dir)\include\qpid -var var.qpid_headers_dir -dr QpidInclude -gg -cg group_QpidHeaders -out qpid_headers.wxs" />
@@ -240,9 +240,9 @@
 	<Exec
 	    Command="heat dir $(staging_dir)\docs\api  -var var.api_docs_dir -dr QpidDoc -gg -cg group_APIDocs -out api_docs.wxs" />
 	<Exec
-	    Command="candle -dqpidc_version=0.13 -dProgramFiles=$(ProgramFiles) -dstaging_dir=$(staging_dir) -dqpid_headers_dir=$(staging_dir)\include\qpid -dboost_headers_dir=$(staging_dir)\include\boost -dboost_dll_dir=$(staging_dir)\bin\boost -dexamples_dir=$(staging_dir)\examples -dapi_docs_dir=$(staging_dir)\docs\api  -ext WiXNetFxExtension qpidc.wxs qpid_headers.wxs boost_headers.wxs boost_dlls.wxs examples.wxs api_docs.wxs -arch $(Architecture)" />
+	    Command="candle -dqpidc_version=0.14 -dProgramFiles=$(ProgramFiles) -dstaging_dir=$(staging_dir) -dqpid_headers_dir=$(staging_dir)\include\qpid -dboost_headers_dir=$(staging_dir)\include\boost -dboost_dll_dir=$(staging_dir)\bin\boost -dexamples_dir=$(staging_dir)\examples -dapi_docs_dir=$(staging_dir)\docs\api  -ext WiXNetFxExtension qpidc.wxs qpid_headers.wxs boost_headers.wxs boost_dlls.wxs examples.wxs api_docs.wxs -arch $(Architecture)" />
 	<Exec
-	    Command="light -ext WiXNetFxExtension -ext WixUtilExtension -ext WixUIExtension -cultures:en-us -out qpidc-0.13-$(Architecture).msi qpidc.wixobj qpid_headers.wixobj boost_headers.wixobj boost_dlls.wixobj examples_README.wixobj examples_examples.wixobj examples_messaging.wixobj examples_qmf-console.wixobj api_docs.wixobj" />
+	    Command="light -ext WiXNetFxExtension -ext WixUtilExtension -ext WixUIExtension -cultures:en-us -out qpidc-0.14-$(Architecture).msi qpidc.wixobj qpid_headers.wixobj boost_headers.wixobj boost_dlls.wixobj examples_README.wixobj examples_examples.wixobj examples_messaging.wixobj examples_qmf-console.wixobj api_docs.wixobj" />
     </Target>
 
 </Project>

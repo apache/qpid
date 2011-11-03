@@ -72,11 +72,11 @@ public class OsgiSystemPackageUtilTest extends QpidTestCase
         _map.put("org.apache.qpid.xyz", "1.0.0");
         _map.put("org.abc", "1.2.3");
 
-        _util = new OsgiSystemPackageUtil(new Version("0.13"), _map);
+        _util = new OsgiSystemPackageUtil(new Version("0.14"), _map);
 
         final String systemPackageString = _util.getFormattedSystemPackageString();
 
-        assertEquals("org.abc; version=1.2.3, org.apache.qpid.xyz; version=0.13.0", systemPackageString);   
+        assertEquals("org.abc; version=1.2.3, org.apache.qpid.xyz; version=0.14.0", systemPackageString);   
     }
 
     public void testWithQpidPackageWithoutQpidReleaseNumberSet() throws Exception
