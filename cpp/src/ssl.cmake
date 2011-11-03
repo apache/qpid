@@ -40,15 +40,15 @@ endif (CMAKE_SYSTEM_NAME STREQUAL Windows)
 
 option(BUILD_SSL "Build with support for SSL" ${ssl_default})
 if (BUILD_SSL)
-  if (CMAKE_SYSTEM_NAME STREQUAL Windows)
-    set (sslclient_windows_SOURCES qpid/client/windows/SslConnector.cpp)
-    set (sslbroker_windows_SOURCES qpid/broker/windows/SslProtocolFactory.cpp)
-    set (sslcommon_windows_SOURCES
-         qpid/sys/windows/SslAsynchIO.cpp
-        )
-    set (windows_ssl_libs Secur32.lib)
-    set (windows_ssl_server_libs Crypt32.lib)
-  else (CMAKE_SYSTEM_NAME STREQUAL Windows)
+    if (CMAKE_SYSTEM_NAME STREQUAL Windows)
+      set (sslclient_windows_SOURCES qpid/client/windows/SslConnector.cpp)
+      set (sslbroker_windows_SOURCES qpid/broker/windows/SslProtocolFactory.cpp)
+      set (sslcommon_windows_SOURCES
+           qpid/sys/windows/SslAsynchIO.cpp
+          )
+      set (windows_ssl_libs Secur32.lib)
+      set (windows_ssl_server_libs Crypt32.lib)
+    else (CMAKE_SYSTEM_NAME STREQUAL Windows)
 
     if (NOT NSS_FOUND)
       message(FATAL_ERROR "nss/nspr not found, required for ssl support")
@@ -76,9 +76,14 @@ if (BUILD_SSL)
     add_library (sslcommon SHARED ${sslcommon_SOURCES})
     target_link_libraries (sslcommon qpidcommon)
     set_target_properties (sslcommon PROPERTIES
-                           VERSION ${qpidc_version}
+                           VERSION ${sslcommon_version}
                            COMPILE_FLAGS ${NSS_COMPILE_FLAGS}
                            LINK_FLAGS ${NSS_LINK_FLAGS})
+
+    install (TARGETS sslcommon
+             DESTINATION ${QPID_INSTALL_LIBDIR}
+             COMPONENT ${QPID_COMPONENT_COMMON})
+    install_pdb (sslcommon ${QPID_COMPONENT_COMMON})
 
     set (ssl_SOURCES
          qpid/sys/SslPlugin.cpp

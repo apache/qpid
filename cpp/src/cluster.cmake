@@ -153,14 +153,17 @@ if (BUILD_CLUSTER)
                           LINK_FLAGS "-Wl,--no-undefined -pthread")
   endif (CMAKE_COMPILER_IS_GNUCXX)
 
-  install (TARGETS cluster
-           DESTINATION ${QPIDD_MODULE_DIR}
-           COMPONENT ${QPID_COMPONENT_BROKER})
-
   add_library (watchdog MODULE qpid/cluster/WatchDogPlugin.cpp)
   set_target_properties (watchdog PROPERTIES PREFIX "")
 
   add_executable(qpidd_watchdog qpid/cluster/qpidd_watchdog.cpp)
+
+  install (TARGETS cluster watchdog
+           DESTINATION ${QPIDD_MODULE_DIR}
+           COMPONENT ${QPID_COMPONENT_BROKER})
+  install (TARGETS qpidd_watchdog
+           DESTINATION ${QPID_LIBEXEC_DIR}
+           COMPONENT ${QPID_COMPONENT_BROKER})
 
 endif (BUILD_CLUSTER)
 
