@@ -78,6 +78,14 @@ class EventHandler : public Cpg::Handler
     MemberId getSelf() { return self; }
     Cpg& getCpg() { return cpg; }
 
+    template <class HandlerT> boost::intrusive_ptr<HandlerT> getHandler() {
+        for (size_t i = 0; i < handlers.size(); ++i) {
+            boost::intrusive_ptr<HandlerT> p(dynamic_cast<HandlerT*>(handlers[i].get()));
+            if (p) return p;
+        }
+        return 0;
+    }
+
   private:
     void handle(const framing::AMQFrame&);
 

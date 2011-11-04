@@ -60,15 +60,17 @@ class QueueHandler : public framing::AMQP_AllOperations::ClusterQueueHandler,
 
     // Events
     void subscribe(const std::string& queue);
-    void unsubscribe(const std::string& queue);
-    void resubscribe(const std::string& queue);
+
+    void unsubscribe(const std::string& queue, bool resubscribe);
+
+    void consumed(const std::string& queue,
+                  const framing::SequenceSet& acquired,
+                  const framing::SequenceSet& dequeued);
+
     void left(const MemberId&);
 
-    void add(boost::shared_ptr<broker::Queue>);
-
-    // NB: These functions ar called in broker threads, not deliver threads.
-    void acquired(const broker::QueuedMessage& qm);
-    void empty(const broker::Queue& q);
+    void add(broker::Queue&);
+    void remove(broker::Queue&);
 
   private:
     typedef std::map<std::string, boost::intrusive_ptr<QueueReplica> > QueueMap;

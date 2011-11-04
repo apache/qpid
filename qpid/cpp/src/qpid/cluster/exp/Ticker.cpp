@@ -34,21 +34,21 @@ Ticker::Ticker(sys::Duration tick, sys::Timer& timer_,
     timer.add(this);
 }
 
-void Ticker::add(boost::intrusive_ptr<Tickable> t) {
+void Ticker::add(Tickable* t) {
     sys::Mutex::ScopedLock l(lock);
     tickables.push_back(t);
 }
 
-void Ticker::remove(boost::intrusive_ptr<Tickable> t) {
+void Ticker::remove(Tickable* t) {
     sys::Mutex::ScopedLock l(lock);
     Tickables::iterator i = std::find(tickables.begin(), tickables.end(), t);
     if (i != tickables.end()) tickables.erase(i);
 }
 
-// Called by timer thread, sets condition
+// Called by timer thread
 void Ticker::fire() {
     condition.set();
-    setupNextFire();
+    setupNextFire();            // FIXME aconway 2011-11-03: restart()?
     timer.add(this);
 }
 

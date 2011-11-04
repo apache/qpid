@@ -53,18 +53,18 @@ namespace cluster {
 class Ticker : public  sys::TimerTask
 {
   public:
-    struct Tickable : public RefCounted {
+    struct Tickable {
         virtual ~Tickable();
         virtual void tick() = 0;
     };
 
     Ticker(sys::Duration tick, sys::Timer&, boost::shared_ptr<sys::Poller>);
 
-    void add(boost::intrusive_ptr<Tickable>);
-    void remove(boost::intrusive_ptr<Tickable>);
+    void add(Tickable*);
+    void remove(Tickable*);
 
   private:
-    typedef std::vector<boost::intrusive_ptr<Tickable> > Tickables;
+    typedef std::vector<Tickable*> Tickables;
 
     void fire();                // Called in timer thread.
     void dispatch(sys::PollableCondition&); // Called in IO thread

@@ -36,7 +36,7 @@ struct Cluster2Plugin : public Plugin {
             addOptions()
                 ("cluster2-name", optValue(settings.name, "NAME"), "Name of cluster to join")
                 ("cluster2-concurrency", optValue(settings.concurrency, "N"), "Number concurrent streams of processing for multicast/deliver.")
-                ("cluster2-tick", optValue(settings.tick, "uS"), "Length of 'tick' used for timing events in the cluster.")
+                ("cluster2-tick", optValue(settings.tick, "uS"), "Length of 'tick' used for timing events in microseconds.")
                 ("cluster2-consume-ticks", optValue(settings.consumeTicks, "N"), "Maximum number of ticks a broker can hold the consume lock on a shared queue.");
                 // FIXME aconway 2011-10-05: add all relevant options from ClusterPlugin.h.
                 // FIXME aconway 2011-10-05: rename to final option names.

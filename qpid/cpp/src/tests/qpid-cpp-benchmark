@@ -184,8 +184,7 @@ def recreate_queues(queues, brokers):
         # FIXME aconway 2011-05-04: new cluster async wiring, wait for changes to propagate
         for b in brokers:
             while queue_exists(q,b): time.sleep(0.1);
-        for q in queues:
-            s.sender("%s;{create:always}"%q)
+        s.sender("%s;{create:always}"%q)
         # FIXME aconway 2011-05-04: new cluster async wiring, wait for changes to propagate
         for b in brokers:
             while not queue_exists(q,b): time.sleep(0.1);

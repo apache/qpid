@@ -22,6 +22,7 @@
  *
  */
 
+#include "qpid/cluster/types.h"
 #include "qpid/RefCounted.h"
 #include <memory>
 
@@ -57,6 +58,7 @@ class Group : public RefCounted
     MessageHolder& getMessageHolder() { return *messageHolder; }
     MessageBuilders& getMessageBuilders() { return *messageBuilders; }
     Ticker& getTicker() { return *ticker; }
+    MemberId getSelf() const;
 
     void mcast(const framing::AMQBody&);
     void mcast(const framing::AMQFrame&);

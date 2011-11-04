@@ -61,6 +61,8 @@ class CountdownTimer {
         }
     }
 
+    bool isRunning() const { return timerRunning; }
+
   private:
 
     class Task : public sys::TimerTask {

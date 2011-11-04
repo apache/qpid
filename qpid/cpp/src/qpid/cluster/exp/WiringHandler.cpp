@@ -72,7 +72,7 @@ void WiringHandler::createQueue(const std::string& data) {
     }
     boost::shared_ptr<broker::Queue> q = broker.getQueues().find(name);
     assert(q);                  // FIXME aconway 2011-05-10: error handling.
-    queueHandler->add(q);
+    queueHandler->add(*q);
     QPID_LOG(debug, "cluster: create queue " << q->getName());
 }
 

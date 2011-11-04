@@ -351,7 +351,6 @@
       <field name="position" type="uint32"/>
       <field name="redelivered" type="bit"/>
     </control>
-
   </class>
 
   <class name="cluster-wiring" code="0x83">
@@ -387,6 +386,9 @@
 
   </class>
 
+  <!--  FIXME aconway 2011-10-31: terminology. Use lock/acquire/release terminology
+  rather than subscription-->
+
   <!-- Manage subscriptions to a queue.
 
        Each queue has a "subscriber queue" of members waiting take
@@ -394,18 +396,23 @@
        is the only one allowed to take messages. -->
 
   <class name="cluster-queue" code="0x84">
+
     <!-- Join at the back of the subscriber queue -->
     <control name="subscribe" code="0x1">
       <field name="queue" type="queue.name"/>
     </control>
-    <!-- Leave the subscriber queue -->
+
+    <!-- Unsubscribe from queue to release the lock. -->
     <control name="unsubscribe" code="0x2">
       <field name="queue" type="queue.name"/>
+      <!-- Set this bit to automatically re-subscribe -->
+      <field name="resubscribe" type="bit"/>
     </control>
-    <!-- Move the member at the front to the back. -->
-    <control name="resubscribe" code="0x3">
+
+    <control name="consumed" code="0x3">
       <field name="queue" type="queue.name"/>
+      <field name="acquired" type="sequence-set"/>
+      <field name="dequeued" type="sequence-set"/>
     </control>
   </class>
-
 </amqp>

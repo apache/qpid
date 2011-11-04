@@ -54,4 +54,7 @@ Group::~Group() {}
 
 void Group::mcast(const framing::AMQBody& b) { multicaster->mcast(b); }
 void Group::mcast(const framing::AMQFrame& f) { multicaster->mcast(f); }
+
+MemberId Group::getSelf() const { return eventHandler->getSelf(); }
+
 }} // namespace qpid::cluster::exp

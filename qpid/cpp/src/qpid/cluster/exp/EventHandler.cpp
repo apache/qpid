@@ -71,11 +71,11 @@ void EventHandler::deliver(
         try {
             handle(frame);
         } catch (const std::exception& e) {
-        // FIXME aconway 2011-10-19: error handling.
-        QPID_LOG(error, "cluster: error in deliver on " << cpg.getName()
-                     << " from " << PrettyId(sender, self)
-                     << ": " << frame
-                     << ": " << e.what());
+            // FIXME aconway 2011-10-19: error handling.
+            QPID_LOG(error, "cluster event: " << e.what()
+                     << " (sender=" << PrettyId(sender, self) << " group=" << cpg.getName()
+                     << " " << frame << ")");
+
         }
     }
 }

@@ -24,6 +24,7 @@
 #include "qpid/broker/BrokerImportExport.h"
 #include "qpid/broker/OwnershipToken.h"
 #include "qpid/broker/Consumer.h"
+#include "qpid/broker/Context.h"
 #include "qpid/broker/Message.h"
 #include "qpid/broker/Messages.h"
 #include "qpid/broker/PersistableQueue.h"
@@ -130,7 +131,7 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     int autoDeleteTimeout;
     boost::intrusive_ptr<qpid::sys::TimerTask> autoDeleteTask;
     sys::Activity consuming; // Allow consumer threads to be stopped, used by cluster
-    boost::intrusive_ptr<RefCounted> clusterContext; // Used by cluster
+    std::auto_ptr<Context> clusterContext; // Clustering state.
 
     void push(boost::intrusive_ptr<Message>& msg, bool isRecovery=false);
     void setPolicy(std::auto_ptr<QueuePolicy> policy);
@@ -401,8 +402,8 @@ class Queue : public boost::enable_shared_from_this<Queue>,
     bool isConsumingStopped();
 
     /** Context information used in a cluster. */
-    boost::intrusive_ptr<RefCounted> getClusterContext() { return clusterContext; }
-    void setClusterContext(boost::intrusive_ptr<RefCounted> context) { clusterContext = context; }
+    Context* getClusterContext() { return clusterContext.get(); }
+    void setClusterContext(std::auto_ptr<Context> context) { clusterContext = context; }
 
 };
 }} // qpid::broker

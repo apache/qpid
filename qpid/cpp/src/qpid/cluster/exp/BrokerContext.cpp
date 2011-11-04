@@ -26,8 +26,6 @@
 #include "QueueContext.h"
 #include "hash.h"
 #include "qpid/framing/ClusterMessageEnqueueBody.h"
-#include "qpid/framing/ClusterMessageAcquireBody.h"
-#include "qpid/framing/ClusterMessageDequeueBody.h"
 #include "qpid/framing/ClusterMessageRequeueBody.h"
 #include "qpid/framing/ClusterWiringCreateQueueBody.h"
 #include "qpid/framing/ClusterWiringCreateExchangeBody.h"
@@ -113,14 +111,13 @@ void BrokerContext::routed(const boost::intrusive_ptr<Message>&) {}
 void BrokerContext::acquire(const broker::QueuedMessage& qm) {
     if (tssReplicate) {
         assert(!qm.queue->isConsumingStopped());
-        mcaster(qm).mcast(ClusterMessageAcquireBody(pv, qm.queue->getName(), qm.position));
+        QueueContext::get(*qm.queue)->localAcquire(qm.position);
     }
 }
 
 void BrokerContext::dequeue(const broker::QueuedMessage& qm) {
     if (tssReplicate)
-        mcaster(qm).mcast(
-            ClusterMessageDequeueBody(pv, qm.queue->getName(), qm.position));
+        QueueContext::get(*qm.queue)->localDequeue(qm.position);
 }
 
 void BrokerContext::requeue(const broker::QueuedMessage& qm) {
@@ -135,8 +132,7 @@ void BrokerContext::requeue(const broker::QueuedMessage& qm) {
 void BrokerContext::create(broker::Queue& q) {
     if (!tssReplicate) return;
     assert(!QueueContext::get(q));
-    boost::intrusive_ptr<QueueContext> context(
-        new QueueContext(q, core.getGroup(q.getName()), core.getSettings().consumeTicks));
+    new QueueContext(q, core.getGroup(q.getName()), core.getSettings().consumeTicks);
     std::string data(q.encodedSize(), '\0');
     framing::Buffer buf(&data[0], data.size());
     q.encode(buf);
@@ -188,7 +184,7 @@ void BrokerContext::cancel(broker::Queue& q, size_t n) {
 }
 
 void BrokerContext::stopped(broker::Queue& q) {
-    boost::intrusive_ptr<QueueContext> qc = QueueContext::get(q);
+    QueueContext* qc = QueueContext::get(q);
     // Don't forward the stopped call if the queue does not yet have a
     // cluster context - this when the queue is first created locally.
     if (qc) qc->stopped();
