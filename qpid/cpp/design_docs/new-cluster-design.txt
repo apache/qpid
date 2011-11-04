@@ -342,10 +342,15 @@ Active/passive benefits:
 - Don't need to replicate message allocation, can feed consumers at top speed.
 
 Active/passive drawbacks:
-- All clients on one node so a failure affects every client in the system.
-- After a failure there is a "reconnect storm" as every client reconnects to the new active node.
-- After a failure there is a period where no broker is active, until the other brokers realize the primary is gone and agree on the new primary.
-- Clients must find the single active node, may involve multiple connect attempts.
+- All clients on one node so a failure affects every client in the
+  system.
+- After a failure there is a "reconnect storm" as every client
+  reconnects to the new active node.
+- After a failure there is a period where no broker is active, until
+  the other brokers realize the primary is gone and agree on the new
+  primary.
+- Clients must find the single active node, may involve multiple
+  connect attempts.
 - No service if a partition separates a client from the active broker,
   even if the client can see other brokers.
 
