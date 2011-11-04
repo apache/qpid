@@ -78,7 +78,7 @@ Implements multiple CPG groups for better concurrency.
 Multicast using fixed-size (64k) buffers, allow fragmetation of messages across buffers (frame by frame)
 
 * Design Questions
-** [[Queue sequence numbers vs. independant message IDs]] 
+** [[Queue sequence numbers vs. independant message IDs]]
 
 Current prototype uses queue+sequence number to identify message. This
 is tricky for updating new members as the sequence numbers are only
@@ -94,16 +94,38 @@ Throughput worse by 30% in contented case, 10% in uncontended.
 
 * Tasks to match existing cluster
 ** TODO [#A] Review old cluster code for more tasks. 1
+** TODO [#A] Put cluster enqueue after all policy & other checks.
+
+gsim: we do policy check after multicasting enqueue so
+could have inconsistent outcome. 
+
+aconway: Multicast should be after enqueue and any other code that may
+decide to send/not send the message.
+
+gsime: while later is better, is moving it that late the right thing?
+That will mean for example that any dequeues triggered by the enqueue
+(e.g. ring queue or lvq) will happen before the enqueue is broadcast.
+
 ** TODO [#A] Defer and async completion of wiring commands. 5
 Testing requirement: Many tests assume wiring changes are visible
-across the cluster once the commad completes.
+across the cluster once the wiring commad completes.
 
-Name clashes: need to avoid race if same name queue/exchange declared
-on 2 brokers simultaneously
+Name clashes: avoid race if same name queue/exchange declared on 2
+brokers simultaneously.
+
+Ken async accept, never merged: http://svn.apache.org/viewvc/qpid/branches/qpid-3079/
+
+Clashes with non-replicated: see [[Allow non-replicated]] below.
+
+** TODO [#A] defer & async completion for explicit accept.
+
+Explicit accept currently ignores the consume lock. Defer and complete
+it when the lock is acquired.
 
 ** TODO [#A] Update to new members joining. 10.
 
-Need to resolve [[Queue sequence numbers vs. independant message IDs]] first.
+Need to resolve [[Queue sequence numbers vs. independant message IDs]]
+first.
 - implicit sequence numbers are more tricky to replicate to new member.
 
 Update individual  objects (queues and exchanges) independently.
@@ -152,12 +174,15 @@ Status includes
 - persistent store state (clean, dirty)
 - make it extensible, so additional state can be added in new protocols
 
+Clean store if last man standing or clean shutdown.
+Need to add multicast controls for shutdown.
+
 ** TODO [#B] Persistent cluster startup. 4
 
 Based on existing code:
 - Exchange dirty/clean exchanged in initial status.
 - Only one broker recovers from store, others update.
-** TODO [#B] Replace boost::hash with our own hash function. 1  
+** TODO [#B] Replace boost::hash with our own hash function. 1
 The hash function is effectively part of the interface so
 we need to be sure it doesn't change underneath us.
 
@@ -165,13 +190,13 @@ we need to be sure it doesn't change underneath us.
 Alerts for inconsistent message loss.
 
 ** TODO [#B] Management methods that modify queues. 5
+
 Replicate management methods that modify queues - e.g. move, purge.
 Target broker may not have all messages on other brokers for purge/destroy.
-- Queue::move() - need to wait for lock? Replicate?
+- Queue::purge() - wait for lock, purge local, mcast dequeues.
+- Queue::move() - wait for lock, move msgs (mcasts enqueues), mcast dequeues.
+- Queue::destroy() - messages to alternate exchange on all brokers.
 - Queue::get() - ???
-- Queue::purge() - replicate purge? or just delete what's on broker ?
-- Queue::destroy() - messages to alternate exchange on all brokers.?
-
 Need to add callpoints & mcast messages to replicate these?
 ** TODO [#B] TX transaction support. 5
 Extend broker::Cluster interface to capture transaction context and completion.
@@ -195,6 +220,13 @@ Extend broker::Cluster interface to capture transaction context and completion.
 Running brokers exchange DTX information.
 New broker update includes DTX information.
 
+** TODO [#B] Replicate message groups?
+Message groups may require additional state to be replicated.
+** TODO [#B] Replicate state for Fairshare?
+gsim: fairshare would need explicit code to keep it in sync across
+nodes; that may not be required however.
+** TODO [#B] Timed auto-delete queues?
+gsim: may need specific attention?
 ** TODO [#B] Async completion of accept. 4
 When this is fixed in the standalone broker, it should be fixed for cluster.
 
@@ -212,7 +244,7 @@ but fails on other(s) - e.g. due to store limits?
 - fail on non-local broker = possible duplication.
 
 We have more flexibility now, we don't *have* to crash
-- but we've lost some of our redundancy guarantee, how to inform user? 
+- but we've lost some of our redundancy guarantee, how to inform user?
 
 Options to respond to inconsistent error:
 - stop broker
@@ -242,10 +274,14 @@ Need to
 - save replicated status to stored (in arguments).
 - support in management tools.
 
+Avoid name clashes between replicated/non-replicated: multicast
+local-only names as well, all brokers keep a map and refuse to create
+clashes.
+
 ** TODO [#C] Handling immediate messages in a cluster. 2
 Include remote consumers in descision to deliver an immediate message.
 * Improvements over existing cluster
-** TODO [#C] Remove old cluster hacks and workarounds. 
+** TODO [#C] Remove old cluster hacks and workarounds.
 The old cluster has workarounds in the broker code that can be removed.
 - [ ] drop code to replicate management model.
 - [ ] drop timer workarounds for TTL, management, heartbeats.
