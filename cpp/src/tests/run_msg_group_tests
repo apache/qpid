@@ -54,6 +54,8 @@ tests=("qpid-config -a $BROKER_URL add queue $QUEUE_NAME --group-header=${GROUP_
     "qpid-config -a $BROKER_URL del queue ${QUEUE_NAME}-two --force"
     "msg_group_test -b $BROKER_URL -a $QUEUE_NAME --group-key $GROUP_KEY --messages 59  --group-size 3  --receivers 2 --senders 3 --capacity 1 --ack-frequency 1 --randomize-group-size"
     "msg_group_test -b $BROKER_URL -a $QUEUE_NAME --group-key $GROUP_KEY --messages 211 --group-size 13 --receivers 2 --senders 3 --capacity 47 --ack-frequency 79 --interleave 53"
+    "msg_group_test -b $BROKER_URL -a $QUEUE_NAME --group-key $GROUP_KEY --messages 10000  --group-size 1 --receivers 0 --senders 1"
+    "msg_group_test -b $BROKER_URL -a $QUEUE_NAME --group-key $GROUP_KEY --messages 10000  --receivers 5 --senders 0"
     "qpid-config -a $BROKER_URL del queue $QUEUE_NAME --force")
 
 while [ -n "${tests[i]}" ]; do
