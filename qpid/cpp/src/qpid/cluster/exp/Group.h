@@ -39,10 +39,12 @@ class EventHandler;
 class Multicaster;
 class MessageBuilders;
 class MessageHolder;
+class Ticker;
 
 /**
- * A CPG instance with an event handler and a multi-caster, 
- * along with all the per-group handler objects.
+ * Resources used by a group of queues. Includes a CPG instance with
+ * an event handler and a multi-caster, along with all the per-group
+ * handler objects and a Ticker.
  */
 class Group : public RefCounted
 {
@@ -54,6 +56,7 @@ class Group : public RefCounted
     Multicaster& getMulticaster() { return *multicaster; }
     MessageHolder& getMessageHolder() { return *messageHolder; }
     MessageBuilders& getMessageBuilders() { return *messageBuilders; }
+    Ticker& getTicker() { return *ticker; }
 
     void mcast(const framing::AMQBody&);
     void mcast(const framing::AMQFrame&);
@@ -62,6 +65,7 @@ class Group : public RefCounted
     std::auto_ptr<Multicaster> multicaster;
     std::auto_ptr<MessageHolder> messageHolder;
     std::auto_ptr<MessageBuilders> messageBuilders;
+    std::auto_ptr<Ticker> ticker;
 };
 
 }} // namespace qpid::cluster::exp

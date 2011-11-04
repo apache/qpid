@@ -115,23 +115,21 @@ cluster2_la_SOURCES =				\
 	qpid/cluster/exp/BrokerContext.h	\
 	qpid/cluster/exp/BufferFactory.h	\
 	qpid/cluster/exp/Cluster2Plugin.cpp	\
-	qpid/cluster/exp/CountdownTimer.h	\
 	qpid/cluster/exp/Core.cpp		\
 	qpid/cluster/exp/Core.h			\
+	qpid/cluster/exp/CountdownTimer.h	\
 	qpid/cluster/exp/EventHandler.cpp	\
 	qpid/cluster/exp/EventHandler.h		\
 	qpid/cluster/exp/Group.cpp		\
 	qpid/cluster/exp/Group.h		\
-	qpid/cluster/exp/hash.cpp		\
-	qpid/cluster/exp/hash.h			\
 	qpid/cluster/exp/HandlerBase.cpp	\
 	qpid/cluster/exp/HandlerBase.h		\
 	qpid/cluster/exp/MessageBuilders.cpp	\
 	qpid/cluster/exp/MessageBuilders.h	\
-	qpid/cluster/exp/MessageHolder.cpp	\
-	qpid/cluster/exp/MessageHolder.h	\
 	qpid/cluster/exp/MessageHandler.cpp	\
 	qpid/cluster/exp/MessageHandler.h	\
+	qpid/cluster/exp/MessageHolder.cpp	\
+	qpid/cluster/exp/MessageHolder.h	\
 	qpid/cluster/exp/Multicaster.cpp	\
 	qpid/cluster/exp/Multicaster.h		\
 	qpid/cluster/exp/QueueContext.cpp	\
@@ -142,9 +140,13 @@ cluster2_la_SOURCES =				\
 	qpid/cluster/exp/QueueReplica.h		\
 	qpid/cluster/exp/Settings.cpp		\
 	qpid/cluster/exp/Settings.h		\
+	qpid/cluster/exp/Ticker.h		\
+	qpid/cluster/exp/Ticker.cpp		\
 	qpid/cluster/exp/UniqueIds.h		\
 	qpid/cluster/exp/WiringHandler.cpp	\
-	qpid/cluster/exp/WiringHandler.h
+	qpid/cluster/exp/WiringHandler.h	\
+	qpid/cluster/exp/hash.cpp		\
+	qpid/cluster/exp/hash.h
 
 
 # The watchdog plugin and helper executable

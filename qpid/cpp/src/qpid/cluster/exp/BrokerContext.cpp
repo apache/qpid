@@ -19,11 +19,11 @@
  *
  */
 
-#include "Core.h"
 #include "BrokerContext.h"
-#include "QueueContext.h"
-#include "Multicaster.h"
+#include "Core.h"
 #include "MessageHolder.h"
+#include "Multicaster.h"
+#include "QueueContext.h"
 #include "hash.h"
 #include "qpid/framing/ClusterMessageEnqueueBody.h"
 #include "qpid/framing/ClusterMessageAcquireBody.h"
@@ -136,7 +136,7 @@ void BrokerContext::create(broker::Queue& q) {
     if (!tssReplicate) return;
     assert(!QueueContext::get(q));
     boost::intrusive_ptr<QueueContext> context(
-        new QueueContext(q, core.getSettings().getConsumeLock(), mcaster(q.getName())));
+        new QueueContext(q, core.getGroup(q.getName()), core.getSettings().consumeTicks));
     std::string data(q.encodedSize(), '\0');
     framing::Buffer buf(&data[0], data.size());
     q.encode(buf);

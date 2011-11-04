@@ -76,8 +76,8 @@ class Core
 
     const Settings& getSettings() const { return settings; }
 
-    /** Get group by hash value. */
     Group& getGroup(size_t hashValue);
+    Group& getGroup(const std::string& queueName);
 
   private:
     broker::Broker& broker;

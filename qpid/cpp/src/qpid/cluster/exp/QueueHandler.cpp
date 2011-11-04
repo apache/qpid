@@ -24,6 +24,7 @@
 #include "QueueContext.h"
 #include "QueueHandler.h"
 #include "QueueReplica.h"
+#include "Settings.h"
 #include "qpid/Exception.h"
 #include "qpid/broker/Queue.h"
 #include "qpid/broker/QueuedMessage.h"
@@ -33,10 +34,8 @@
 namespace qpid {
 namespace cluster {
 
-QueueHandler::QueueHandler(Group& g, const Settings& s)
-    : HandlerBase(g.getEventHandler()),
-      multicaster(g.getMulticaster()),
-      consumeLock(s.getConsumeLock())
+QueueHandler::QueueHandler(Group& g, Settings& s)
+    : HandlerBase(g.getEventHandler()), group(g), consumeTicks(s.consumeTicks)
 {}
 
 bool QueueHandler::handle(const framing::AMQFrame& frame) {
@@ -62,7 +61,7 @@ void QueueHandler::left(const MemberId& member) {
 void QueueHandler::add(boost::shared_ptr<broker::Queue> q) {
     // Local queues already have a context, remote queues need one.
     if (!QueueContext::get(*q))
-        new QueueContext(*q, consumeLock, multicaster); // Context attaches to the Queue
+        new QueueContext(*q, group, consumeTicks); // Context attaches to the Queue
     queues[q->getName()] = boost::intrusive_ptr<QueueReplica>(
         new QueueReplica(q, self()));
 }

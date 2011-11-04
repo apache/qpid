@@ -53,7 +53,7 @@ std::ostream& operator<<(std::ostream& o, QueueOwnership s) {
 void QueueReplica::subscribe(const MemberId& member) {
     QueueOwnership before = getState();
     subscribers.push_back(member);
-    update(before, member);
+    update(before);
 }
 
 // FIXME aconway 2011-09-20: need to requeue.
@@ -61,7 +61,7 @@ void QueueReplica::unsubscribe(const MemberId& member) {
     QueueOwnership before = getState();
     MemberQueue::iterator i = std::remove(subscribers.begin(), subscribers.end(), member);
     if (i != subscribers.end()) subscribers.erase(i, subscribers.end());
-    update(before, member);
+    update(before);
 }
 
 void QueueReplica::resubscribe(const MemberId& member) {
@@ -69,14 +69,14 @@ void QueueReplica::resubscribe(const MemberId& member) {
     QueueOwnership before = getState();
     subscribers.pop_front();
     subscribers.push_back(member);
-    update(before, member);
+    update(before);
 }
 
-void QueueReplica::update(QueueOwnership before, MemberId member) {
+void QueueReplica::update(QueueOwnership before) {
     QueueOwnership after = getState();
     QPID_LOG(trace, "cluster: queue replica: " << queue->getName() << ": "
                  << before << "->" << after << " [" << PrintSubscribers(subscribers, self) << "]");
-    context->replicaState(before, after, member == self);
+    context->replicaState(before, after);
 }
 
 QueueOwnership QueueReplica::getState() const {

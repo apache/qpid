@@ -26,7 +26,8 @@ namespace qpid {
 namespace cluster {
 
 Settings::Settings() :    // Default settings
-    consumeLockMicros(10000),
+    tick(10000),                // FIXME aconway 2011-11-03: smaller default
+    consumeTicks(2),
     concurrency(sys::SystemInfo::concurrency() + 1)
 {}
 

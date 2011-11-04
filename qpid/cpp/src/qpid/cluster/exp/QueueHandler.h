@@ -23,7 +23,6 @@
  */
 
 #include "HandlerBase.h"
-#include "Settings.h"
 #include "qpid/framing/AMQP_AllOperations.h"
 #include "boost/shared_ptr.hpp"
 #include "boost/intrusive_ptr.hpp"
@@ -42,6 +41,7 @@ class EventHandler;
 class QueueReplica;
 class Multicaster;
 class Group;
+class Settings;
 
 /**
  * Handler for queue subscription events.
@@ -54,7 +54,7 @@ class QueueHandler : public framing::AMQP_AllOperations::ClusterQueueHandler,
                      public HandlerBase
 {
   public:
-    QueueHandler(Group&, const Settings&);
+    QueueHandler(Group&, Settings&);
 
     bool handle(const framing::AMQFrame& body);
 
@@ -76,8 +76,8 @@ class QueueHandler : public framing::AMQP_AllOperations::ClusterQueueHandler,
     boost::intrusive_ptr<QueueReplica> find(const std::string& queue);
 
     QueueMap queues;
-    Multicaster& multicaster;
-    sys::Duration consumeLock;
+    Group& group;
+    size_t consumeTicks;
 };
 }} // namespace qpid::cluster
 

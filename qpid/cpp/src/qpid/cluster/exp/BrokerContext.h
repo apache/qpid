@@ -29,6 +29,7 @@ namespace qpid {
 namespace cluster {
 class Core;
 class QueueContext;
+class Multicaster;
 
 // TODO aconway 2010-10-19: experimental cluster code.
 

@@ -68,7 +68,7 @@ class QueueReplica : public RefCounted
     QueueOwnership getState() const;
     bool isOwner() const;
     bool isSubscriber(const MemberId&) const;
-    void update(QueueOwnership before, MemberId from);
+    void update(QueueOwnership before);
 
   friend struct PrintSubscribers;
   friend std::ostream& operator<<(std::ostream&, QueueOwnership);

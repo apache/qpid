@@ -19,13 +19,14 @@
  *
  */
 
+#include "BrokerContext.h"
 #include "Core.h"
 #include "EventHandler.h"
-#include "BrokerContext.h"
-#include "WiringHandler.h"
 #include "MessageHandler.h"
 #include "QueueContext.h"
 #include "QueueHandler.h"
+#include "WiringHandler.h"
+#include "hash.h"
 #include "qpid/broker/Broker.h"
 #include "qpid/broker/SignalHandler.h"
 #include "qpid/framing/AMQFrame.h"
@@ -47,7 +48,7 @@ Core::Core(const Settings& s, broker::Broker& b) : broker(b), settings(s)
         std::string groupName = s.name + "-" + boost::lexical_cast<std::string>(i);
         groups.push_back(new Group(*this));
         boost::intrusive_ptr<Group> group(groups.back());
- 
+
         EventHandler& eh(group->getEventHandler());
         typedef boost::intrusive_ptr<HandlerBase>  HandlerBasePtr;
         boost::intrusive_ptr<QueueHandler> queueHandler(new QueueHandler(*group, settings));
@@ -66,8 +67,6 @@ Core::Core(const Settings& s, broker::Broker& b) : broker(b), settings(s)
     }
     QPID_LOG(notice, "cluster: joined cluster " << s.name
              << ", member-id="<< groups[0]->getEventHandler().getSelf());
-    QPID_LOG(debug, "cluster: consume-lock=" << s.consumeLockMicros << "us "
-             << " concurrency=" << s.concurrency);
 }
 
 void Core::initialize() {}
@@ -78,6 +77,10 @@ void Core::fatal() {
 
 Group& Core::getGroup(size_t hashValue) {
     return *groups[hashValue % groups.size()];
+}
+
+Group& Core::getGroup(const std::string& q) {
+    return getGroup(hashof(q));
 }
 
 }} // namespace qpid::cluster

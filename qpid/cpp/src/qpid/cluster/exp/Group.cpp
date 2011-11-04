@@ -18,13 +18,13 @@
  * under the License.
  *
  */
-#include "Group.h"
 #include "Core.h"
 #include "EventHandler.h"
-#include "Multicaster.h"
-#include "MessageHolder.h"
+#include "Group.h"
 #include "MessageBuilders.h"
-
+#include "MessageHolder.h"
+#include "Multicaster.h"
+#include "Ticker.h"
 #include "qpid/broker/Broker.h"
 
 namespace qpid {
@@ -44,7 +44,10 @@ Group::Group(Core& core) :
                         core.getBroker().getPoller(),
                         boost::bind(&Core::fatal, &core))),
     messageHolder(new MessageHolder()),
-    messageBuilders(new MessageBuilders(&core.getBroker().getStore()))
+    messageBuilders(new MessageBuilders(&core.getBroker().getStore())),
+    ticker(new Ticker(core.getSettings().getTick(),
+                      core.getBroker().getTimer(),
+                      core.getBroker().getPoller()))
 {}
 
 Group::~Group() {}

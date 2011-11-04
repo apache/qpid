@@ -23,8 +23,9 @@
  */
 
 #include "LockedMap.h"
-#include "CountdownTimer.h"
+#include "Ticker.h"
 #include "qpid/RefCounted.h"
+#include "qpid/sys/AtomicValue.h"
 #include "qpid/sys/Time.h"
 #include "qpid/sys/Mutex.h"
 #include "qpid/cluster/types.h"
@@ -39,24 +40,24 @@ class QueuedMessage;
 namespace cluster {
 
 class Multicaster;
+class Group;
 
  /**
  * Queue state that is not replicated to the cluster.
  * Manages the local queue start/stop status.
  *
- * Thread safe: Called by connection, dispatch and timer threads.
+* THREAD SAFE: Called by connection threads and Ticker dispatch threads.
  */
-class QueueContext : public RefCounted {
+class QueueContext : public Ticker::Tickable {
   public:
-    QueueContext(broker::Queue& q, sys::Duration consumeLock, Multicaster& m);
+    QueueContext(broker::Queue&, Group&, size_t consumeTicks);
     ~QueueContext();
 
     /** Replica state has changed, called in deliver thread.
      * @param before replica state before the event.
      * @param before replica state after the event.
-     * @param self is true if this was a self-delivered event.
      */
-    void replicaState(QueueOwnership before, QueueOwnership after, bool self);
+    void replicaState(QueueOwnership before, QueueOwnership after);
 
     /** Called when queue is stopped, no threads are dispatching.
      * May be called in connection or deliver thread.
@@ -73,8 +74,8 @@ class QueueContext : public RefCounted {
      */
     void cancel(size_t n);
 
-    /** Called in timer thread when the timer runs out. */
-    void timeout();
+    /** Called regularly at the tick interval in an IO thread.*/
+    void tick();
 
     /** Called by MessageHandler to requeue a message. */
     void requeue(uint32_t position, bool redelivered);
@@ -93,13 +94,18 @@ class QueueContext : public RefCounted {
 
 private:
     sys::Mutex lock;
-    CountdownTimer timer;
+    size_t consumers;           // Number of local consumers
+    bool consuming;             // True if we have the lock & local consumers are active
+    size_t ticks;               // Ticks since we got the lock.
+
+    // Following members are immutable
     broker::Queue& queue; // FIXME aconway 2011-06-08: should be shared/weak ptr?
     Multicaster& mcast;
-    size_t consumers;
     size_t hash;
+    size_t maxTicks;            // Max ticks we are allowed.
 
-    typedef LockedMap<uint32_t, broker::QueuedMessage> UnackedMap; 
+    // Following members are safe to use without holding a lock
+    typedef LockedMap<uint32_t, broker::QueuedMessage> UnackedMap;
     UnackedMap unacked;
 };
 

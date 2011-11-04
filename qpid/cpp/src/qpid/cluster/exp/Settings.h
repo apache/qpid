@@ -34,10 +34,11 @@ namespace cluster {
 struct Settings {
     Settings();
     std::string name;
-    uint32_t consumeLockMicros;
+    uint32_t tick;
+    uint32_t consumeTicks;
     uint32_t concurrency;
 
-    sys::Duration getConsumeLock() const { return consumeLockMicros * sys::TIME_USEC; }
+    sys::Duration getTick() const { return tick * sys::TIME_USEC; }
 };
 
 }} // namespace qpid::cluster
