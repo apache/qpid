@@ -43,13 +43,61 @@ const std::string MessageGroupManager::qpidSharedGroup("qpid.shared_msg_group");
 const std::string MessageGroupManager::qpidMessageGroupTimestamp("qpid.group_timestamp");
 
 
-const std::string MessageGroupManager::getGroupId( const QueuedMessage& qm ) const
+void MessageGroupManager::unFree( const GroupState& state )
 {
+    GroupFifo::iterator pos = freeGroups.find( state.members.front() );
+    assert( pos != freeGroups.end() && pos->second == &state );
+    freeGroups.erase( pos );
+}
+
+void MessageGroupManager::own( GroupState& state, const std::string& owner )
+{
+    state.owner = owner;
+    unFree( state );
+}
+
+void MessageGroupManager::disown( GroupState& state )
+{
+    state.owner.clear();
+    assert(state.members.size());
+    assert(freeGroups.find(state.members.front()) == freeGroups.end());
+    freeGroups[state.members.front()] = &state;
+}
+
+MessageGroupManager::GroupState& MessageGroupManager::findGroup( const QueuedMessage& qm )
+{
+    uint32_t thisMsg = qm.position.getValue();
+    if (cachedGroup && lastMsg == thisMsg) {
+        hits++;
+        return *cachedGroup;
+    }
+
+    std::string group = defaultGroupId;
     const qpid::framing::FieldTable* headers = qm.payload->getApplicationHeaders();
-    if (!headers) return defaultGroupId;
-    qpid::framing::FieldTable::ValuePtr id = headers->get( groupIdHeader );
-    if (!id || !id->convertsTo<std::string>()) return defaultGroupId;
-    return id->get<std::string>();
+    if (headers) {
+        qpid::framing::FieldTable::ValuePtr id = headers->get( groupIdHeader );
+        if (id && id->convertsTo<std::string>()) {
+            std::string tmp = id->get<std::string>();
+            if (!tmp.empty())   // empty group is reserved
+                group = tmp;
+        }
+    }
+
+    if (cachedGroup && group == lastGroup) {
+        hits++;
+        lastMsg = thisMsg;
+        return *cachedGroup;
+    }
+
+    misses++;
+
+    GroupState& found = messageGroups[group];
+    if (found.group.empty())
+        found.group = group;    // new group, assign name
+    lastMsg = thisMsg;
+    lastGroup = group;
+    cachedGroup = &found;
+    return found;
 }
 
 
@@ -57,15 +105,13 @@ void MessageGroupManager::enqueued( const QueuedMessage& qm )
 {
     // @todo KAG optimization - store reference to group state in QueuedMessage
     // issue: const-ness??
-    std::string group( getGroupId(qm) );
-    GroupState &state(messageGroups[group]);
+    GroupState& state = findGroup(qm);
     state.members.push_back(qm.position);
     uint32_t total = state.members.size();
     QPID_LOG( trace, "group queue " << qName <<
-              ": added message to group id=" << group << " total=" << total );
+              ": added message to group id=" << state.group << " total=" << total );
     if (total == 1) {
         // newly created group, no owner
-        state.group = group;
         assert(freeGroups.find(qm.position) == freeGroups.end());
         freeGroups[qm.position] = &state;
     }
@@ -76,13 +122,11 @@ void MessageGroupManager::acquired( const QueuedMessage& qm )
 {
     // @todo KAG  avoid lookup: retrieve direct reference to group state from QueuedMessage
     // issue: const-ness??
-    std::string group( getGroupId(qm) );
-    GroupMap::iterator gs = messageGroups.find( group );
-    assert( gs != messageGroups.end() );
-    GroupState& state( gs->second );
+    GroupState& state = findGroup(qm);
+    assert(state.members.size());   // there are msgs present
     state.acquired += 1;
     QPID_LOG( trace, "group queue " << qName <<
-              ": acquired message in group id=" << group << " acquired=" << state.acquired );
+              ": acquired message in group id=" << state.group << " acquired=" << state.acquired );
 }
 
 
@@ -90,19 +134,16 @@ void MessageGroupManager::requeued( const QueuedMessage& qm )
 {
     // @todo KAG  avoid lookup: retrieve direct reference to group state from QueuedMessage
     // issue: const-ness??
-    std::string group( getGroupId(qm) );
-    GroupMap::iterator gs = messageGroups.find( group );
-    assert( gs != messageGroups.end() );
-    GroupState& state( gs->second );
+    GroupState& state = findGroup(qm);
     assert( state.acquired != 0 );
     state.acquired -= 1;
     if (state.acquired == 0 && state.owned()) {
         QPID_LOG( trace, "group queue " << qName <<
-                  ": consumer name=" << state.owner << " released group id=" << gs->first);
+                  ": consumer name=" << state.owner << " released group id=" << state.group);
         disown(state);
     }
     QPID_LOG( trace, "group queue " << qName <<
-              ": requeued message to group id=" << group << " acquired=" << state.acquired );
+              ": requeued message to group id=" << state.group << " acquired=" << state.acquired );
 }
 
 
@@ -110,10 +151,7 @@ void MessageGroupManager::dequeued( const QueuedMessage& qm )
 {
     // @todo KAG  avoid lookup: retrieve direct reference to group state from QueuedMessage
     // issue: const-ness??
-    std::string group( getGroupId(qm) );
-    GroupMap::iterator gs = messageGroups.find( group );
-    assert( gs != messageGroups.end() );
-    GroupState& state( gs->second );
+    GroupState& state = findGroup(qm);
     assert( state.members.size() != 0 );
     assert( state.acquired != 0 );
     state.acquired -= 1;
@@ -141,99 +179,55 @@ void MessageGroupManager::dequeued( const QueuedMessage& qm )
     }
 
     uint32_t total = state.members.size();
+    QPID_LOG( trace, "group queue " << qName <<
+              ": dequeued message from group id=" << state.group << " total=" << total );
+
     if (total == 0) {
-        QPID_LOG( trace, "group queue " << qName << ": deleting group id=" << gs->first);
-        messageGroups.erase( gs );
+        QPID_LOG( trace, "group queue " << qName << ": deleting group id=" << state.group);
+        if (cachedGroup == &state) {
+            cachedGroup = 0;
+        }
+        std::string key(state.group);
+        messageGroups.erase( key );
     } else if (state.acquired == 0 && state.owned()) {
         QPID_LOG( trace, "group queue " << qName <<
-                  ": consumer name=" << state.owner << " released group id=" << gs->first);
+                  ": consumer name=" << state.owner << " released group id=" << state.group);
         disown(state);
     } else if (reFreeNeeded) {
         disown(state);
     }
-    QPID_LOG( trace, "group queue " << qName <<
-              ": dequeued message from group id=" << group << " total=" << total );
 }
 
-void MessageGroupManager::consumerAdded( const Consumer& /*c*/ )
+MessageGroupManager::~MessageGroupManager()
 {
-#if 0
-    // allow a re-subscribing consumer
-    if (consumers.find(c.getName()) == consumers.end()) {
-        consumers[c.getName()] = 0;     // no groups owned yet
-        QPID_LOG( trace, "group queue " << qName << ": added consumer, name=" << c.getName() );
-    } else {
-        QPID_LOG( trace, "group queue " << qName << ": consumer re-subscribed, name=" << c.getName() );
-    }
-#endif
+    QPID_LOG( debug, "group queue " << qName << " cache results: hits=" << hits << " misses=" << misses );
 }
-
-void MessageGroupManager::consumerRemoved( const Consumer& /*c*/ )
-{
-#if 0
-    const std::string& name(c.getName());
-    Consumers::iterator consumer = consumers.find(name);
-    assert(consumer != consumers.end());
-    size_t count = consumer->second;
-
-    for (GroupMap::iterator gs = messageGroups.begin();
-         count && gs != messageGroups.end(); ++gs) {
-
-        GroupState& state( gs->second );
-        if (state.owner == name) {
-            if (state.acquired == 0) {
-                --count;
-                disown(state);
-                QPID_LOG( trace, "group queue " << qName <<
-                          ": consumer name=" << name << " released group id=" << gs->first);
-            }
-        }
-    }
-    if (count == 0) {
-        consumers.erase( consumer );
-        QPID_LOG( trace, "group queue " << qName << ": removed consumer name=" << name );
-    } else {
-        // don't release groups with outstanding acquired msgs - consumer may re-subscribe!
-        QPID_LOG( trace, "group queue " << qName << ": consumer name=" << name << " unsubscribed with outstanding messages.");
-    }
-#endif
-}
-
-
 bool MessageGroupManager::nextConsumableMessage( Consumer::shared_ptr& c, QueuedMessage& next )
 {
     if (messages.empty())
         return false;
 
+    next.position = c->position;
     if (!freeGroups.empty()) {
-        framing::SequenceNumber nextFree = freeGroups.begin()->first;
-        if (nextFree < c->position) {  // next free group's msg is older than current position
-            bool ok = messages.find(nextFree, next);
-            (void) ok; assert( ok );
-        } else {
-            if (!messages.next( c->position, next ))
-                return false;           // shouldn't happen - should find nextFree
+        const framing::SequenceNumber& nextFree = freeGroups.begin()->first;
+        if (nextFree < next.position) {     // a free message is older than current
+            next.position = nextFree;
+            --next.position;
         }
-    } else {  // no free groups available
-#if 0
-        if (consumers[c->getName()] == 0) {  // and none currently owned
-            return false;       // so nothing available to consume
-        }
-#endif
-        if (!messages.next( c->position, next ))
-            return false;
     }
 
-    do {
-        // @todo KAG  avoid lookup: retrieve direct reference to group state from QueuedMessage
-        std::string group( getGroupId( next ) );
-        GroupMap::iterator gs = messageGroups.find( group );
-        assert( gs != messageGroups.end() );
-        GroupState& state( gs->second );
-        if (!state.owned() || state.owner == c->getName()) {
+    while (messages.next( next.position, next )) {
+        GroupState& group = findGroup(next);
+        if (!group.owned()) {
+            if (group.members.front() == next.position) {    // only take from head!
+                return true;
+            }
+            QPID_LOG(debug, "Skipping " << next.position << " since group " << group.group
+                     << "'s head message still pending. pos=" << group.members.front());
+        } else if (group.owner == c->getName()) {
             return true;
         }
-    } while (messages.next( next.position, next ));
+    }
     return false;
 }
 
@@ -241,15 +235,12 @@ bool MessageGroupManager::nextConsumableMessage( Consumer::shared_ptr& c, Queued
 bool MessageGroupManager::allocate(const std::string& consumer, const QueuedMessage& qm)
 {
     // @todo KAG avoid lookup: retrieve direct reference to group state from QueuedMessage
-    std::string group( getGroupId(qm) );
-    GroupMap::iterator gs = messageGroups.find( group );
-    assert( gs != messageGroups.end() );
-    GroupState& state( gs->second );
+    GroupState& state = findGroup(qm);
 
     if (!state.owned()) {
         own( state, consumer );
         QPID_LOG( trace, "group queue " << qName <<
-                  ": consumer name=" << consumer << " has acquired group id=" << gs->first);
+                  ": consumer name=" << consumer << " has acquired group id=" << state.group);
         return true;
     }
     return state.owner == consumer;
@@ -389,8 +380,8 @@ void MessageGroupManager::setState(const qpid::framing::FieldTable& state)
 {
     using namespace qpid::framing;
     messageGroups.clear();
-    //consumers.clear();
     freeGroups.clear();
+    cachedGroup = 0;
 
     framing::Array groupState(TYPE_CODE_MAP);
 
@@ -430,10 +421,7 @@ void MessageGroupManager::setState(const qpid::framing::FieldTable& state)
         for (Array::const_iterator p = positions.begin(); p != positions.end(); ++p)
             state.members.push_back((*p)->getIntegerValue<uint32_t, 4>());
         messageGroups[state.group] = state;
-        if (state.owned())
-            //consumers[state.owner]++;
-            ;
-        else {
+        if (!state.owned()) {
             assert(state.members.size());
             freeGroups[state.members.front()] = &messageGroups[state.group];
         }

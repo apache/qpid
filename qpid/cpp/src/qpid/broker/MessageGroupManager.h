@@ -26,7 +26,7 @@
 
 #include "qpid/broker/StatefulQueueObserver.h"
 #include "qpid/broker/MessageDistributor.h"
-
+#include "qpid/sys/unordered_map.h"
 
 namespace qpid {
 namespace broker {
@@ -44,22 +44,21 @@ class MessageGroupManager : public StatefulQueueObserver, public MessageDistribu
     const std::string qName;            // name of parent queue (for logs)
 
     struct GroupState {
+        // note: update getState()/setState() when changing this object's state implementation
         typedef std::deque<framing::SequenceNumber> PositionFifo;
 
         std::string group;  // group identifier
         std::string owner;  // consumer with outstanding acquired messages
         uint32_t acquired;  // count of outstanding acquired messages
-        //uint32_t total;     // count of enqueued messages in this group
         PositionFifo members;   // msgs belonging to this group
 
         GroupState() : acquired(0) {}
         bool owned() const {return !owner.empty();}
     };
-    typedef std::map<std::string, struct GroupState> GroupMap;
-    //typedef std::map<std::string, uint32_t> Consumers;  // count of owned groups
+
+    typedef sys::unordered_map<std::string, struct GroupState> GroupMap;
     typedef std::map<framing::SequenceNumber, struct GroupState *> GroupFifo;
 
-    // note: update getState()/setState() when changing this object's state implementation
     GroupMap messageGroups; // index: group name
     GroupFifo freeGroups;   // ordered by oldest free msg
     //Consumers consumers;    // index: consumer name
@@ -68,28 +67,15 @@ class MessageGroupManager : public StatefulQueueObserver, public MessageDistribu
     static const std::string qpidSharedGroup;   // if specified, one group can be consumed by multiple receivers
     static const std::string qpidMessageGroupTimestamp;
 
-    const std::string getGroupId( const QueuedMessage& qm ) const;
-    void unFree( const GroupState& state )
-    {
-        GroupFifo::iterator pos = freeGroups.find( state.members.front() );
-        assert( pos != freeGroups.end() && pos->second == &state );
-        freeGroups.erase( pos );
-    }
-    void own( GroupState& state, const std::string& owner )
-    {
-        state.owner = owner;
-        //consumers[state.owner]++;
-        unFree( state );
-    }
-    void disown( GroupState& state )
-    {
-        //assert(consumers[state.owner]);
-        //consumers[state.owner]--;
-        state.owner.clear();
-        assert(state.members.size());
-        assert(freeGroups.find(state.members.front()) == freeGroups.end());
-        freeGroups[state.members.front()] = &state;
-    }
+    GroupState& findGroup( const QueuedMessage& qm );
+    unsigned long hits, misses; // for debug
+    uint32_t lastMsg;
+    std::string lastGroup;
+    GroupState *cachedGroup;
+
+    void unFree( const GroupState& state );
+    void own( GroupState& state, const std::string& owner );
+    void disown( GroupState& state );
 
  public:
 
@@ -101,13 +87,18 @@ class MessageGroupManager : public StatefulQueueObserver, public MessageDistribu
     MessageGroupManager(const std::string& header, const std::string& _qName,
                         Messages& container, unsigned int _timestamp=0 )
       : StatefulQueueObserver(std::string("MessageGroupManager:") + header),
-      groupIdHeader( header ), timestamp(_timestamp), messages(container), qName(_qName) {}
+      groupIdHeader( header ), timestamp(_timestamp), messages(container), qName(_qName),
+      hits(0), misses(0),
+      lastMsg(0), cachedGroup(0) {}
+    virtual ~MessageGroupManager();
+
+    // QueueObserver iface
     void enqueued( const QueuedMessage& qm );
     void acquired( const QueuedMessage& qm );
     void requeued( const QueuedMessage& qm );
     void dequeued( const QueuedMessage& qm );
-    void consumerAdded( const Consumer& );
-    void consumerRemoved( const Consumer& );
+    void consumerAdded( const Consumer& ) {};
+    void consumerRemoved( const Consumer& ) {};
     void getState(qpid::framing::FieldTable& state ) const;
     void setState(const qpid::framing::FieldTable&);
 
