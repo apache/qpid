@@ -95,11 +95,16 @@ Throughput worse by 30% in contented case, 10% in uncontended.
 * Tasks to match existing cluster
 ** TODO [#A] Review old cluster code for more tasks. 1
 ** TODO [#A] Put cluster enqueue after all policy & other checks.
-   SCHEDULED: <2011-10-31 Mon>
 
-gsim points out that we do policy check after multicasting enqueue so
-could have inconsistent. Multicast should be after enqueue and any
-other code that may decide to send/not send the message.
+gsim: we do policy check after multicasting enqueue so
+could have inconsistent outcome. 
+
+aconway: Multicast should be after enqueue and any other code that may
+decide to send/not send the message.
+
+gsime: while later is better, is moving it that late the right thing?
+That will mean for example that any dequeues triggered by the enqueue
+(e.g. ring queue or lvq) will happen before the enqueue is broadcast.
 
 ** TODO [#A] Defer and async completion of wiring commands. 5
 Testing requirement: Many tests assume wiring changes are visible
@@ -108,11 +113,19 @@ across the cluster once the wiring commad completes.
 Name clashes: avoid race if same name queue/exchange declared on 2
 brokers simultaneously.
 
+Ken async accept, never merged: http://svn.apache.org/viewvc/qpid/branches/qpid-3079/
+
 Clashes with non-replicated: see [[Allow non-replicated]] below.
+
+** TODO [#A] defer & async completion for explicit accept.
+
+Explicit accept currently ignores the consume lock. Defer and complete
+it when the lock is acquired.
 
 ** TODO [#A] Update to new members joining. 10.
 
-Need to resolve [[Queue sequence numbers vs. independant message IDs]] first.
+Need to resolve [[Queue sequence numbers vs. independant message IDs]]
+first.
 - implicit sequence numbers are more tricky to replicate to new member.
 
 Update individual  objects (queues and exchanges) independently.
@@ -207,6 +220,8 @@ Extend broker::Cluster interface to capture transaction context and completion.
 Running brokers exchange DTX information.
 New broker update includes DTX information.
 
+** TODO [#B] Replicate message groups?
+Message groups may require additional state to be replicated.
 ** TODO [#B] Replicate state for Fairshare?
 gsim: fairshare would need explicit code to keep it in sync across
 nodes; that may not be required however.
