@@ -204,7 +204,7 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
     private boolean checkPreConditions(AbstractJMSMessage message) throws AMQException
     {
         boolean messageOk = true;
-        // TODO Use a tag for fiding out if message filtering is done here or by the broker.
+        // TODO Use a tag for finding out if message filtering is done here or by the broker.
         try
         {
             if (_messageSelectorFilter != null)
