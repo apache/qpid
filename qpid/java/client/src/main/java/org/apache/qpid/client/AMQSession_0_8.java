@@ -41,6 +41,7 @@ import org.apache.qpid.client.state.AMQState;
 import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.client.state.listener.SpecificMethodFrameListener;
 import org.apache.qpid.common.AMQPFilterTypes;
+import org.apache.qpid.filter.MessageFilter;
 import org.apache.qpid.framing.AMQFrame;
 import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.framing.AMQShortString;
@@ -333,13 +334,13 @@ public final class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, B
                                       AMQShortString queueName,
                                       AMQProtocolHandler protocolHandler,
                                       boolean nowait,
-                                      String messageSelector,
+                                      MessageFilter messageSelector,
                                       int tag) throws AMQException, FailoverException
     {
         FieldTable arguments = FieldTableFactory.newFieldTable();
-        if ((messageSelector != null) && !messageSelector.equals(""))
+        if (messageSelector != null)
         {
-            arguments.put(AMQPFilterTypes.JMS_SELECTOR.getValue(), messageSelector);
+            arguments.put(AMQPFilterTypes.JMS_SELECTOR.getValue(), messageSelector.getSelector());
         }
 
         if (consumer.isAutoClose())
@@ -347,7 +348,7 @@ public final class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, B
             arguments.put(AMQPFilterTypes.AUTO_CLOSE.getValue(), Boolean.TRUE);
         }
 
-        if (consumer.isNoConsume())
+        if (consumer.isBrowseOnly())
         {
             arguments.put(AMQPFilterTypes.NO_CONSUME.getValue(), Boolean.TRUE);
         }

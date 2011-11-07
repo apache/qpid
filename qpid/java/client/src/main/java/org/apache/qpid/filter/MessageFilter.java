@@ -17,11 +17,11 @@
  */
 package org.apache.qpid.filter;
 
-import org.apache.qpid.AMQInternalException;
 import org.apache.qpid.client.message.AbstractJMSMessage;
 
 
 public interface MessageFilter
 {
-    boolean matches(AbstractJMSMessage message) throws AMQInternalException;
+    boolean matches(AbstractJMSMessage message);
+    String getSelector();
 }
