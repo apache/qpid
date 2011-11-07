@@ -259,10 +259,11 @@ public class ServerConnection extends Connection implements AMQConnectionModel, 
 
     public void close(AMQConstant cause, String message) throws AMQException
     {
+        closeSubscriptions();
         ConnectionCloseCode replyCode = ConnectionCloseCode.NORMAL;
         try
         {
-	        replyCode = ConnectionCloseCode.get(cause.getCode());
+            replyCode = ConnectionCloseCode.get(cause.getCode());
         }
         catch (IllegalArgumentException iae)
         {
@@ -399,4 +400,20 @@ public class ServerConnection extends Connection implements AMQConnectionModel, 
     {
         return _authorizedPrincipal.getName();
     }
+
+    @Override
+    public void closed()
+    {
+        closeSubscriptions();
+        super.closed();
+    }
+
+    private void closeSubscriptions()
+    {
+        for (Session ssn : getChannels())
+        {
+            ((ServerSession)ssn).unregisterSubscriptions();
+        }
+    }
+
 }
