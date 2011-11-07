@@ -83,14 +83,16 @@ LONG_TESTS +=					\
 qpidtest_PROGRAMS += cluster_test
 
 cluster_test_SOURCES =				\
-	cluster_test.cpp			\
-	unit_test.cpp				\
-	ClusterFixture.cpp			\
-	ClusterFixture.h			\
-	ForkedBroker.h				\
-	ForkedBroker.cpp			\
-	PartialFailure.cpp			\
-	ClusterFailover.cpp
+    cluster_test.cpp			\
+    unit_test.cpp				\
+    ClusterFixture.cpp			\
+    ClusterFixture.h			\
+    ForkedBroker.h				\
+    ForkedBroker.cpp			\
+    PartialFailure.cpp			\
+    ClusterFailover.cpp         \
+    InitialStatusMap.cpp        \
+    StoreStatus.cpp
 
 cluster_test_LDADD=$(lib_client) $(lib_broker) ../cluster.la -lboost_unit_test_framework
 
