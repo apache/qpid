@@ -38,7 +38,7 @@
 dist_man_MANS = qpidd.1
 
 man_aux = $(dist_man_MANS:.1=.x)
-EXTRA_DIST = $(man_aux) generate_manpage groffify_options.sed groffify_template.sed
+EXTRA_DIST = $(man_aux) CMakeLists.txt generate_manpage groffify_options.sed groffify_template.sed
 DISTCLEANFILES = $(dist_man_MANS)
 CLEANFILES=qpidd.1
 
