@@ -1070,19 +1070,6 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
         {
             assertTrue(e.getCause().getMessage().contains("The reliability mode 'exactly-once' is not yet supported"));
         }
-        
-        String addr4 = "ADDR:amq.topic/test;{link : {reliability : at-least-once}}";        
-        try
-        {
-            AMQAnyDestination dest = new AMQAnyDestination(addr4);
-            Session ssn = _connection.createSession(false,Session.CLIENT_ACKNOWLEDGE);
-            MessageConsumer cons = ssn.createConsumer(dest);
-            fail("An exception should be thrown indicating it's an unsupported combination");
-        }
-        catch(Exception e)
-        {
-            assertTrue(e.getCause().getMessage().contains("AT-LEAST-ONCE is not yet supported for Topics"));
-        }
     }
     
     private void acceptModeTest(String address, int expectedQueueDepth) throws Exception
@@ -1285,5 +1272,53 @@ public class AddressBasedDestinationTest extends QpidBrokerTestCase
 
         Message m = consumer.receive(RECEIVE_TIMEOUT);
         assertNull("Unexpected message received", m);
+    }
+
+    /**
+     * Tests that a client using a session in {@link Session#CLIENT_ACKNOWLEDGE} can correctly
+     * recover a session and re-receive the same message.
+     */
+    public void testTopicRereceiveAfterRecover() throws Exception
+    {
+        final Session jmsSession = _connection.createSession(false,Session.CLIENT_ACKNOWLEDGE);
+        final Destination topic = jmsSession.createTopic("ADDR:amq.topic/topic1; {link:{name: queue1}}");
+
+        final MessageProducer prod = jmsSession.createProducer(topic);
+        final MessageConsumer consForTopic1 = jmsSession.createConsumer(topic);
+        final Message sentMessage = jmsSession.createTextMessage("Hello");
+
+        prod.send(sentMessage);
+        Message receivedMessage = consForTopic1.receive(1000);
+        assertNotNull("message should be received by consumer", receivedMessage);
+
+        jmsSession.recover();
+        receivedMessage = consForTopic1.receive(1000);
+        assertNotNull("message should be re-received by consumer after recover", receivedMessage);
+        receivedMessage.acknowledge();
+    }
+
+    /**
+    * Tests that a client using a session in {@link Session#SESSION_TRANSACTED} can correctly
+    * rollback a session and re-receive the same message.
+    */
+    public void testTopicRereceiveAfterRollback() throws Exception
+    {
+        final Session jmsSession = _connection.createSession(true,Session.SESSION_TRANSACTED);
+        final Destination topic = jmsSession.createTopic("ADDR:amq.topic/topic1; {link:{name: queue1}}");
+
+        final MessageProducer prod = jmsSession.createProducer(topic);
+        final MessageConsumer consForTopic1 = jmsSession.createConsumer(topic);
+        final Message sentMessage = jmsSession.createTextMessage("Hello");
+
+        prod.send(sentMessage);
+        jmsSession.commit();
+
+        Message receivedMessage = consForTopic1.receive(1000);
+        assertNotNull("message should be received by consumer", receivedMessage);
+
+        jmsSession.rollback();
+        receivedMessage = consForTopic1.receive(1000);
+        assertNotNull("message should be re-received by consumer after rollback", receivedMessage);
+        jmsSession.commit();
     }
 }
