@@ -1261,22 +1261,16 @@ public class ServerSessionDelegate extends SessionDelegate
     {
         setThreadSubject(session);
 
-        for(Subscription_0_10 sub : getSubscriptions(session))
-        {
-            ((ServerSession)session).unregister(sub);
-        }
-        ((ServerSession)session).onClose();
+        ServerSession serverSession = (ServerSession)session;
+
+        serverSession.unregisterSubscriptions();
+        serverSession.onClose();
     }
 
     @Override
     public void detached(Session session)
     {
         closed(session);
-    }
-
-    public Collection<Subscription_0_10> getSubscriptions(Session session)
-    {
-        return ((ServerSession)session).getSubscriptions();
     }
 
     private void setThreadSubject(Session session)
