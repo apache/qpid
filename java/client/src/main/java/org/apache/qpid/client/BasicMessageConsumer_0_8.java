@@ -20,16 +20,13 @@
  */
 package org.apache.qpid.client;
 
-import javax.jms.InvalidSelectorException;
 import javax.jms.JMSException;
 import javax.jms.Message;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.AMQInternalException;
 import org.apache.qpid.client.failover.FailoverException;
 import org.apache.qpid.client.message.*;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
-import org.apache.qpid.filter.JMSSelectorFilter;
 import org.apache.qpid.framing.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,23 +38,11 @@ public class BasicMessageConsumer_0_8 extends BasicMessageConsumer<UnprocessedMe
     protected BasicMessageConsumer_0_8(int channelId, AMQConnection connection, AMQDestination destination,
                                        String messageSelector, boolean noLocal, MessageFactoryRegistry messageFactory, AMQSession session,
                                        AMQProtocolHandler protocolHandler, FieldTable arguments, int prefetchHigh, int prefetchLow,
-                                       boolean exclusive, int acknowledgeMode, boolean noConsume, boolean autoClose) throws JMSException
+                                       boolean exclusive, int acknowledgeMode, boolean browseOnly, boolean autoClose) throws JMSException
     {
         super(channelId, connection, destination,messageSelector,noLocal,messageFactory,session,
               protocolHandler, arguments, prefetchHigh, prefetchLow, exclusive,
-              acknowledgeMode, noConsume, autoClose);
-        try
-        {
-            
-            if (messageSelector != null && messageSelector.length() > 0)
-            {
-                JMSSelectorFilter _filter = new JMSSelectorFilter(messageSelector);
-            }
-        }
-        catch (AMQInternalException e)
-        {
-            throw new InvalidSelectorException("cannot create consumer because of selector issue");
-        }
+              acknowledgeMode, browseOnly, autoClose);
     }
 
     void sendCancel() throws AMQException, FailoverException

@@ -53,6 +53,7 @@ import org.apache.qpid.client.messaging.address.Node.ExchangeNode;
 import org.apache.qpid.client.messaging.address.Node.QueueNode;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.exchange.ExchangeDefaults;
+import org.apache.qpid.filter.MessageFilter;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.protocol.AMQConstant;
@@ -579,55 +580,29 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
      * Registers the consumer with the broker
      */
     public void sendConsume(BasicMessageConsumer_0_10 consumer, AMQShortString queueName, AMQProtocolHandler protocolHandler,
-                            boolean nowait, String messageSelector, int tag)
+                            boolean nowait, MessageFilter messageSelector, int tag)
             throws AMQException, FailoverException
     {        
-        boolean preAcquire;
-        
-        long capacity = getCapacity(consumer.getDestination());
-        
-        try
+        boolean preAcquire = consumer.isPreAcquire();
+
+        AMQDestination destination = consumer.getDestination();
+        long capacity = consumer.getCapacity();
+
+        Map<String, Object> arguments = FieldTable.convertToMap(consumer.getArguments());
+
+        Link link = destination.getLink();
+        if (link != null && link.getSubscription() != null && link.getSubscription().getArgs() != null)
         {
-            boolean isTopic;
-            Map<String, Object> arguments = FieldTable.convertToMap(consumer.getArguments());
-            
-            if (consumer.getDestination().getDestSyntax() == AMQDestination.DestSyntax.BURL)
-            {
-                isTopic = consumer.getDestination() instanceof AMQTopic ||
-                          consumer.getDestination().getExchangeClass().equals(ExchangeDefaults.TOPIC_EXCHANGE_CLASS) ;
-                
-                preAcquire = isTopic || (!consumer.isNoConsume()  && 
-                        (consumer.getMessageSelector() == null || consumer.getMessageSelector().equals("")));
-            }
-            else
-            {
-                isTopic = consumer.getDestination().getAddressType() == AMQDestination.TOPIC_TYPE;
-                
-                preAcquire = !consumer.isNoConsume() && 
-                             (isTopic || consumer.getMessageSelector() == null || 
-                              consumer.getMessageSelector().equals(""));
-                
-                arguments.putAll(
-                        (Map<? extends String, ? extends Object>) consumer.getDestination().getLink().getSubscription().getArgs());
-            }
-            
-            boolean acceptModeNone = getAcknowledgeMode() == NO_ACKNOWLEDGE;
-            
-            if (consumer.getDestination().getLink() != null)
-            {
-                acceptModeNone = consumer.getDestination().getLink().getReliability() == Link.Reliability.UNRELIABLE;
-            }
-            
-            getQpidSession().messageSubscribe
-                (queueName.toString(), String.valueOf(tag),
-                 acceptModeNone ? MessageAcceptMode.NONE : MessageAcceptMode.EXPLICIT,
-                 preAcquire ? MessageAcquireMode.PRE_ACQUIRED : MessageAcquireMode.NOT_ACQUIRED, null, 0, arguments,
-                 consumer.isExclusive() ? Option.EXCLUSIVE : Option.NONE);
+            arguments.putAll((Map<? extends String, ? extends Object>) link.getSubscription().getArgs());
         }
-        catch (JMSException e)
-        {
-            throw new AMQException(AMQConstant.INTERNAL_ERROR, "problem when registering consumer", e);
-        }
+
+        boolean acceptModeNone = getAcknowledgeMode() == NO_ACKNOWLEDGE;
+
+        getQpidSession().messageSubscribe
+            (queueName.toString(), String.valueOf(tag),
+             acceptModeNone ? MessageAcceptMode.NONE : MessageAcceptMode.EXPLICIT,
+             preAcquire ? MessageAcquireMode.PRE_ACQUIRED : MessageAcquireMode.NOT_ACQUIRED, null, 0, arguments,
+             consumer.isExclusive() ? Option.EXCLUSIVE : Option.NONE);
 
         String consumerTag = ((BasicMessageConsumer_0_10)consumer).getConsumerTagString();
 
@@ -655,21 +630,6 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
         {
             sync();
         }
-    }
-
-    private long getCapacity(AMQDestination destination)
-    {
-        long capacity = 0;
-        if (destination.getDestSyntax() == DestSyntax.ADDR && 
-                destination.getLink().getConsumerCapacity() > 0)
-        {
-            capacity = destination.getLink().getConsumerCapacity();
-        }
-        else if (prefetch())
-        {
-            capacity = getAMQConnection().getMaxPrefetch();
-        }
-        return capacity;
     }
 
     /**
@@ -836,7 +796,7 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
                 //only set if msg list is null
                 try
                 {
-                    long capacity = getCapacity(consumer.getDestination());
+                    long capacity = consumer.getCapacity();
                     
                     if (capacity == 0)
                     {

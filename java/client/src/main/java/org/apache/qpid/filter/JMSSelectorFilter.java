@@ -26,16 +26,17 @@ import org.slf4j.LoggerFactory;
 
 public class JMSSelectorFilter implements MessageFilter
 {
-    /**
-     * this JMSSelectorFilter's logger
-     */
     private static final Logger _logger = LoggerFactory.getLogger(JMSSelectorFilter.class);
 
-    private String _selector;
-    private BooleanExpression _matcher;
+    private final String _selector;
+    private final BooleanExpression _matcher;
 
     public JMSSelectorFilter(String selector) throws AMQInternalException
     {
+        if (selector == null || "".equals(selector))
+        {
+            throw new IllegalArgumentException("Cannot create a JMSSelectorFilter with a null or empty selector string");
+        }
         _selector = selector;
         if (_logger.isDebugEnabled())
         {
@@ -51,8 +52,7 @@ public class JMSSelectorFilter implements MessageFilter
             boolean match = _matcher.matches(message);
             if (_logger.isDebugEnabled())
             {
-                _logger.debug(message + " match(" + match + ") selector(" + System
-                        .identityHashCode(_selector) + "):" + _selector);
+                _logger.debug(message + " match(" + match + ") selector(" + _selector + "): " + _selector);
             }
             return match;
         }
