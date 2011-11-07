@@ -288,6 +288,7 @@ EXTRA_DIST +=\
   ssl.cmake \
   managementgen.cmake \
   rubygen.cmake \
+  versions.cmake \
   $(rgen_amqp_0_10_srcs) \
   qpid/amqp_0_10/apply.h \
   qpid/amqp_0_10/built_in_types.h \
