@@ -148,8 +148,10 @@ $global:txtWH   = 'Write-Host'
 #############################
 # Visual Studio version selection dialog items and choice
 #
-[array]$global:VsVersionCmakeChoiceList = "Visual Studio 10", "Visual Studio 9 2008"
+[array]$global:VsVersionCmakeChoiceList = "Visual Studio 2010", "Visual Studio 2008"
+$global:vsVersion = ''
 $global:cmakeGenerator = ''
+$global:vsSubdir = ''
 
 #############################
 # Select-Folder
@@ -257,16 +259,18 @@ function WriteDotnetBindingSlnLauncherPs1
         [string] $cppDir,
         [string] $vsPlatform,
         [string] $nBits,
-        [string] $outfileName
+        [string] $outfileName,
+        [string] $studioVersion,
+        [string] $studioSubdir
     )
 
     $out = @("#
-# Launch $slnName in Visual Studio $vsPlatform ($nBits-bit) environment
+# Launch $slnName in $studioVersion $vsPlatform ($nBits-bit) environment
 #
 $global:txtPath  = ""$boostRoot\lib;$global:txtPath""
 $global:txtQR    = ""$buildRoot""
-$global:txtWH      ""Launch $slnName in Visual Studio $vsPlatform ($nBits-bit) environment.""
-$cppDir\bindings\qpid\dotnet\$slnName
+$global:txtWH      ""Launch $slnName in $studioVersion $vsPlatform ($nBits-bit) environment.""
+$cppDir\bindings\qpid\dotnet\$vsSubdir\$slnName
 ")
     Write-Host "        $buildRoot\$outfileName"
     $out | Out-File "$buildRoot\$outfileName" -encoding ASCII
@@ -287,14 +291,16 @@ function WriteDotnetBindingSlnLauncherBat
         [string] $vsPlatform,
         [string] $nBits,
         [string] $psScriptName,
-        [string] $outfileName
+        [string] $outfileName,
+        [string] $studioVersion,
+        [string] $studioSubdir
     )
 
     $out = @("@ECHO OFF
 REM
-REM Launch $slnName in Visual Studio $vsPlatform ($nBits-bit) environment
+REM Launch $slnName in $studioVersion $vsPlatform ($nBits-bit) environment
 REM
-ECHO Launch $slnName in Visual Studio $vsPlatform ($nBits-bit) environment
+ECHO Launch $slnName in $studioVersion $vsPlatform ($nBits-bit) environment
 powershell $buildRoot\$psScriptName
 ")
     Write-Host "        $buildRoot\$outfileName"
@@ -316,12 +322,15 @@ function WriteDotnetBindingEnvSetupBat
         [string] $buildRoot,
         [string] $vsPlatform,
         [string] $nBits,
-        [string] $outfileName
+        [string] $outfileName,
+        [string] $studioVersion,
+        [string] $studioSubdir
     )
 
     $out = @("@ECHO OFF
 REM
-REM Call this command procedure from a command prompt to set up a $vsPlatform ($nBits-bit)
+REM Call this command procedure from a command prompt to set up a
+REM $studioVersion $vsPlatform ($nBits-bit)
 REM $slnName environment
 REM
 REM     > call $outfileName
@@ -331,7 +340,7 @@ ECHO %PATH% | FINDSTR /I boost > NUL
 IF %ERRORLEVEL% EQU 0 ECHO WARNING: Boost is defined in your path multiple times!
 SET PATH=$boostRoot\lib;%PATH%
 SET QPID_BUILD_ROOT=$buildRoot
-ECHO Environment set for $slnName $vsPlatform $nBits-bit development.
+ECHO Environment set for $slnName $studioVersion $vsPlatform $nBits-bit development.
 ")
     Write-Host "        $buildRoot\$outfileName"
     $out | Out-File "$buildRoot\$outfileName" -encoding ASCII
@@ -342,44 +351,55 @@ ECHO Environment set for $slnName $vsPlatform $nBits-bit development.
 #
 function Return-DropDown {
     if ($DropDown.SelectedItem -ne $null) {
-        $global:cmakeGenerator = $DropDown.SelectedItem.ToString()
-    	$Form.Close()
+        $global:vsVersion = $DropDown.SelectedItem.ToString()
+        if ($global:vsVersion -eq 'Visual Studio 2010') {
+            $global:cmakeGenerator = "Visual Studio 10"
+            $global:vsSubdir = "msvc10"
+        } else {
+            if ($global:vsVersion -eq 'Visual Studio 2008') {
+                $global:cmakeGenerator = "Visual Studio 9 2008"
+                $global:vsSubdir = "msvc9"
+            } else {
+                Write-Host "Visual Studio must be 2008 or 2010"
+                exit
+            }
+        }
+        $Form.Close()
         Write-Host "Selected generator: $global:cmakeGenerator"
     }
 }
 
 #############################
-# Create the CMake generator form and launch it
+# Create the Visual Studio version form and launch it
 #
-function SelectCMakeGenerator {
+function SelectVisualStudioVersion {
 
     $Form = New-Object System.Windows.Forms.Form
 
     $Form.width = 350
     $Form.height = 150
-    $Form.Text = ”Select CMake Generator”
+    $Form.Text = ”Select Visual Studio Version”
 
     $DropDown          = new-object System.Windows.Forms.ComboBox
     $DropDown.Location = new-object System.Drawing.Size(120,10)
     $DropDown.Size     = new-object System.Drawing.Size(150,30)
 
     ForEach ($Item in $global:VsVersionCmakeChoiceList) {
-    	$DropDown.Items.Add($Item)
+        $DropDown.Items.Add($Item)
     }
     $DropDown.SelectedIndex = 0
 
     $Form.Controls.Add($DropDown)
 
-    $DropDownLabel          = new-object System.Windows.Forms.Label
-    $DropDownLabel.Location = new-object System.Drawing.Size(10,10)
-    $DropDownLabel.size     = new-object System.Drawing.Size(100,20)
-    $DropDownLabel.Text     = "CMake generators"
-    $Form.Controls.Add($DropDownLabel)
+#    $DropDownLabel.Location = new-object System.Drawing.Size(10,10)
+#    $DropDownLabel.size     = new-object System.Drawing.Size(100,20)
+#    $DropDownLabel.Text     = ""
+#    $Form.Controls.Add($DropDownLabel)
 
     $Button          = new-object System.Windows.Forms.Button
     $Button.Location = new-object System.Drawing.Size(120,50)
     $Button.Size     = new-object System.Drawing.Size(120,20)
-    $Button.Text     = "Select a generator"
+    $Button.Text     = "Select"
     $Button.Add_Click({Return-DropDown})
     $form.Controls.Add($Button)
 
@@ -404,12 +424,12 @@ function SelectCMakeGenerator {
 #############################
 # User dialog to select a version of Visual Studio as CMake generator
 #
-SelectCMakeGenerator
+SelectVisualStudioVersion
 
 #############################
 # User dialog to get optional 32-bit boost and build paths
 #
-$boost32 = Select-Folder -message 'Select 32-bit BOOST_ROOT folder. Press CANCEL to skip 32-bit processing.'
+$boost32 = Select-Folder -message "Select 32-bit BOOST_ROOT folder for $global:vsVersion build. Press CANCEL to skip 32-bit processing."
 
 $defined32 = ($boost32 -ne $null) -and ($boost32 -ne '')
 if ($defined32) {
@@ -422,7 +442,7 @@ if ($defined32) {
 $make32 = $false
 if ($defined32) {
 
-    $build32 = Select-Folder -message 'Select 32-bit QPID_BUILD_ROOT folder.' -path $projRoot
+    $build32 = Select-Folder -message "Select 32-bit QPID_BUILD_ROOT folder for $global:vsVersion build." -path $projRoot
 
     $found = ($build32 -ne $null) -and ($build32 -ne '')
     if (! $found) {
@@ -440,7 +460,7 @@ if ($defined32) {
 #############################
 # User dialog to get optional 64-bit boost and build paths
 #
-$boost64 = Select-Folder -message 'Select 64-bit BOOST_ROOT folder. Press CANCEL to skip 64-bit processing.'
+$boost64 = Select-Folder -message "Select 64-bit BOOST_ROOT folder for $global:vsVersion build. Press CANCEL to skip 64-bit processing."
 
 $defined64 = ($boost64 -ne $null) -and ($boost64 -ne '')
 if ($defined64) {
@@ -452,7 +472,7 @@ if ($defined64) {
 
 $make64 = $false
 if ($defined64) {
-    $build64 = Select-Folder -message 'Select 64-bit QPID_BUILD_ROOT folder.' -path $projRoot
+    $build64 = Select-Folder -message "Select 64-bit QPID_BUILD_ROOT folder for $global:vsVersion build." -path $projRoot
 
     $found = ($build64 -ne $null) -and ($build64 -ne '')
     if (! $found) {
@@ -511,7 +531,9 @@ if ($defined32) {
                                           -cppDir "$cppDir" `
                                       -vsPlatform "x86" `
                                            -nBits "32" `
-                                     -outfileName "start-devenv-messaging-x86-32bit.ps1"
+                                     -outfileName "start-devenv-messaging-$global:vsSubdir-x86-32bit.ps1" `
+                                   -studioVersion "$global:vsVersion" `
+                                    -studioSubdir "$global:vsSubdir"
 
 
     ###########
@@ -522,8 +544,10 @@ if ($defined32) {
                                         -buildRoot "$build32" `
                                        -vsPlatform "x86" `
                                             -nBits "32" `
-                                     -psScriptName "start-devenv-messaging-x86-32bit.ps1" `
-                                      -outfileName "start-devenv-messaging-x86-32bit.bat"
+                                     -psScriptName "start-devenv-messaging-$global:vsSubdir-x86-32bit.ps1" `
+                                      -outfileName "start-devenv-messaging-$global:vsSubdir-x86-32bit.bat" `
+                                    -studioVersion "$global:vsVersion" `
+                                     -studioSubdir "$global:vsSubdir"
 
     ###########
     # Batch script (that you CALL from a command prompt)
@@ -534,7 +558,9 @@ if ($defined32) {
                                     -buildRoot "$build32" `
                                    -vsPlatform "x86" `
                                         -nBits "32" `
-                                  -outfileName "setenv-messaging-x86-32bit.bat"
+                                  -outfileName "setenv-messaging-$global:vsSubdir-x86-32bit.bat" `
+                                -studioVersion "$global:vsVersion" `
+                                 -studioSubdir "$global:vsSubdir"
 
 } else {
     Write-Host "Skipped writing 32-bit scripts."
@@ -556,7 +582,9 @@ if ($defined64) {
                                           -cppDir "$cppDir" `
                                       -vsPlatform "x64" `
                                            -nBits "64" `
-                                     -outfileName "start-devenv-messaging-x64-64bit.ps1"
+                                     -outfileName "start-devenv-messaging-$global:vsSubdir-x64-64bit.ps1" `
+                                   -studioVersion "$global:vsVersion" `
+                                    -studioSubdir "$global:vsSubdir"
 
 
     ###########
@@ -567,8 +595,10 @@ if ($defined64) {
                                         -buildRoot "$build64" `
                                        -vsPlatform "x64" `
                                             -nBits "64" `
-                                     -psScriptName "start-devenv-messaging-x64-64bit.ps1" `
-                                      -outfileName "start-devenv-messaging-x64-64bit.bat"
+                                     -psScriptName "start-devenv-messaging-$global:vsSubdir-x64-64bit.ps1" `
+                                      -outfileName "start-devenv-messaging-$global:vsSubdir-x64-64bit.bat" `
+                                    -studioVersion "$global:vsVersion" `
+                                     -studioSubdir "$global:vsSubdir"
 
     ###########
     # Batch script (that you CALL from a command prompt)
@@ -579,8 +609,18 @@ if ($defined64) {
                                     -buildRoot "$build64" `
                                    -vsPlatform "x64" `
                                         -nBits "64" `
-                                  -outfileName "setenv-messaging-x64-64bit.bat"
+                                  -outfileName "setenv-messaging-$global:vsSubdir-x64-64bit.bat" `
+                                -studioVersion "$global:vsVersion" `
+                                 -studioSubdir "$global:vsSubdir"
 
 } else {
     Write-Host "Skipped writing 64-bit scripts."
 }
+
+#############################
+# Pause on exit. If user ran this script through a graphical launch and there's
+# an error then the window closes and the user never sees the error. This pause
+# gives him a chance to figure it out.
+#
+Write-Host "Press any key to continue ..."
+$x = $host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
