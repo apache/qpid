@@ -51,9 +51,9 @@ CLEAN_LOCAL=
 qpidexecdir = $(libexecdir)/qpid
 qpidexec_PROGRAMS =
 qpidexec_SCRIPTS =
-qpidtestdir = $(qpidexecdir)/tests
-qpidtest_PROGRAMS =
-qpidtest_SCRIPTS =
+qpidexectestdir = $(qpidexecdir)/tests
+qpidexectest_PROGRAMS =
+qpidexectest_SCRIPTS =
 tmoduledir = $(libdir)/qpid/tests
 tmodule_LTLIBRARIES=
 
@@ -150,17 +150,17 @@ endif
 
 # Test programs that are installed and therefore built as part of make, not make check
 
-qpidtest_SCRIPTS += qpid-cpp-benchmark install_env.sh
+qpidexectest_SCRIPTS += qpid-cpp-benchmark install_env.sh
 EXTRA_DIST += qpid-cpp-benchmark install_env.sh
 
-qpidtest_PROGRAMS += receiver
+qpidexectest_PROGRAMS += receiver
 receiver_SOURCES = \
   receiver.cpp \
   TestOptions.h \
   ConnectionOptions.h
 receiver_LDADD = $(lib_client)
 
-qpidtest_PROGRAMS += sender
+qpidexectest_PROGRAMS += sender
 sender_SOURCES = \
   sender.cpp \
   TestOptions.h \
@@ -168,7 +168,7 @@ sender_SOURCES = \
   Statistics.cpp
 sender_LDADD = $(lib_messaging)
 
-qpidtest_PROGRAMS += qpid-receive
+qpidexectest_PROGRAMS += qpid-receive
 qpid_receive_SOURCES = \
   qpid-receive.cpp \
   TestOptions.h \
@@ -177,7 +177,7 @@ qpid_receive_SOURCES = \
   Statistics.cpp
 qpid_receive_LDADD = $(lib_messaging)
 
-qpidtest_PROGRAMS += qpid-send
+qpidexectest_PROGRAMS += qpid-send
 qpid_send_SOURCES = \
   qpid-send.cpp \
   TestOptions.h \
@@ -186,37 +186,37 @@ qpid_send_SOURCES = \
   Statistics.cpp
 qpid_send_LDADD = $(lib_messaging)
 
-qpidtest_PROGRAMS+=qpid-perftest
+qpidexectest_PROGRAMS+=qpid-perftest
 qpid_perftest_SOURCES=qpid-perftest.cpp test_tools.h TestOptions.h ConnectionOptions.h
 qpid_perftest_INCLUDES=$(PUBLIC_INCLUDES)
 qpid_perftest_LDADD=$(lib_client) 
 
-qpidtest_PROGRAMS+=qpid-txtest
+qpidexectest_PROGRAMS+=qpid-txtest
 qpid_txtest_INCLUDES=$(PUBLIC_INCLUDES)
 qpid_txtest_SOURCES=qpid-txtest.cpp  TestOptions.h ConnectionOptions.h
 qpid_txtest_LDADD=$(lib_client) 
 
-qpidtest_PROGRAMS+=qpid-latency-test
+qpidexectest_PROGRAMS+=qpid-latency-test
 qpid_latency_test_INCLUDES=$(PUBLIC_INCLUDES)
 qpid_latency_test_SOURCES=qpid-latency-test.cpp TestOptions.h ConnectionOptions.h
 qpid_latency_test_LDADD=$(lib_client) 
 
-qpidtest_PROGRAMS+=qpid-client-test
+qpidexectest_PROGRAMS+=qpid-client-test
 qpid_client_test_INCLUDES=$(PUBLIC_INCLUDES)
 qpid_client_test_SOURCES=qpid-client-test.cpp TestOptions.h ConnectionOptions.h
 qpid_client_test_LDADD=$(lib_client) 
 
-qpidtest_PROGRAMS+=qpid-topic-listener
+qpidexectest_PROGRAMS+=qpid-topic-listener
 qpid_topic_listener_INCLUDES=$(PUBLIC_INCLUDES)
 qpid_topic_listener_SOURCES=qpid-topic-listener.cpp TestOptions.h ConnectionOptions.h
 qpid_topic_listener_LDADD=$(lib_client) 
 
-qpidtest_PROGRAMS+=qpid-topic-publisher
+qpidexectest_PROGRAMS+=qpid-topic-publisher
 qpid_topic_publisher_INCLUDES=$(PUBLIC_INCLUDES)
 qpid_topic_publisher_SOURCES=qpid-topic-publisher.cpp TestOptions.h ConnectionOptions.h
 qpid_topic_publisher_LDADD=$(lib_client) 
 
-qpidtest_PROGRAMS+=qpid-ping
+qpidexectest_PROGRAMS+=qpid-ping
 qpid_ping_INCLUDES=$(PUBLIC_INCLUDES)
 qpid_ping_SOURCES=qpid-ping.cpp test_tools.h TestOptions.h ConnectionOptions.h
 qpid_ping_LDADD=$(lib_client)
