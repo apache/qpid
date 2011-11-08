@@ -30,7 +30,7 @@ RECEIVERS="-r 3"
 BROKERS=			# Local broker
 CLIENT_HOSTS=			# No ssh, all clients are local
 
-while getopts "m:f:n:b:q:s:r:c:x:t" opt; do
+while getopts "m:f:n:b:q:s:r:c:txy" opt; do
     case $opt in
 	m) MESSAGES="-m $OPTARG";;
 	f) FLOW="--flow-control $OPTARG";;
@@ -40,15 +40,16 @@ while getopts "m:f:n:b:q:s:r:c:x:t" opt; do
 	s) SENDERS="-s $OPTARG";;
 	r) RECEIVERS="-r $OPTARG";;
 	c) CLIENT_HOSTS="-c $OPTARG";;
-	x) SAVE_RECEIVED="--save-received";;
 	t) TCP_NODELAY="--connection-options {tcp-nodelay:true}";;
+	x) SAVE_RECEIVED="--save-received";;
+	y) NO_DELETE="--no-delete";;
 	*) echo "Unknown option"; exit 1;;
     esac
 done
 BROKER=$(echo $BROKERS | sed s/,.*//)
 run_test() { echo $*; shift; "$@"; echo; echo; echo; }
 
-OPTS="$REPEAT $BROKERS --summarize $QUEUES $SENDERS $RECEIVERS $MESSAGES $CLIENT_HOSTS $SAVE_RECEIVED $TCP_NODELAY"
+OPTS="$REPEAT $BROKERS --summarize $QUEUES $SENDERS $RECEIVERS $MESSAGES $CLIENT_HOSTS $SAVE_RECEIVED $TCP_NODELAY $NO_DELETE"
 run_test "Queue contention:" qpid-cpp-benchmark $OPTS
 run_test "No queue contention: :" qpid-cpp-benchmark $OPTS --group-receivers
 

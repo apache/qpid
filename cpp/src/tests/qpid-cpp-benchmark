@@ -73,6 +73,8 @@ op.add_option("--group-receivers", default=False, action="store_true",
               help="Run receivers for the same queue on the same host.")
 op.add_option("--verbose", default=False, action="store_true",
               help="Show commands executed")
+op.add_option("--no-delete", default=False, action="store_true",
+              help="Don't delete the test queues.")
 single_quote_re = re.compile("'")
 def posix_quote(string):
     """ Quote a string for use as an argument in a posix shell"""
@@ -174,16 +176,17 @@ def queue_exists(queue,broker):
             return False
     finally: c.close()
 
-def recreate_queues(queues, brokers):
+def recreate_queues(queues, brokers, no_delete):
     c = qpid.messaging.Connection(brokers[0])
     c.open()
     s = c.session()
     for q in queues:
-        try: s.sender("%s;{delete:always}"%(q)).close()
-        except qpid.messaging.exceptions.NotFound: pass
-        # FIXME aconway 2011-05-04: new cluster async wiring, wait for changes to propagate
-        for b in brokers:
-            while queue_exists(q,b): time.sleep(0.1);
+        if not no_delete:
+            try: s.sender("%s;{delete:always}"%(q)).close()
+            except qpid.messaging.exceptions.NotFound: pass
+            # FIXME aconway 2011-05-04: new cluster async wiring, wait for changes to propagate
+            for b in brokers:
+                while queue_exists(q,b): time.sleep(0.1);
         s.sender("%s;{create:always}"%q)
         # FIXME aconway 2011-05-04: new cluster async wiring, wait for changes to propagate
         for b in brokers:
@@ -282,7 +285,7 @@ def main():
     queues = ["%s-%s"%(opts.queue_name, i) for i in xrange(opts.queues)]
     try:
         for i in xrange(opts.repeat):
-            recreate_queues(queues, opts.broker)
+            recreate_queues(queues, opts.broker, opts.no_delete)
             ready_receiver = ReadyReceiver(ready_queue, opts.broker[0])
 
             if opts.group_receivers: # Run receivers for same queue against same broker.
