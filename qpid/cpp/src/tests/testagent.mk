@@ -43,7 +43,7 @@ testagent_gen.timestamp: testagent.xml ${TESTAGENT_DEPS}
 CLEANFILES+=$(TESTAGENT_GEN_SRC) testagent_gen.timestamp
 
 testagent-testagent.$(OBJEXT): $(TESTAGENT_GEN_SRC)
-qpidtest_PROGRAMS+=testagent
+qpidexectest_PROGRAMS+=testagent
 testagent_CXXFLAGS=$(CXXFLAGS) -Itestagent_gen
 testagent_SOURCES=testagent.cpp $(TESTAGENT_GEN_SRC)
 testagent_LDADD=$(top_builddir)/src/libqmf.la
