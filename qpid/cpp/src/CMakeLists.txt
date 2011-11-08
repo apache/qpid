@@ -46,7 +46,8 @@ MACRO (install_pdb theLibrary theComponent)
     if (MSVC)
         get_target_property(library_dll ${theLibrary} LOCATION)
         string(REPLACE .dll .pdb library_pdb ${library_dll})
-        string(REPLACE $(OutDir) \${CMAKE_INSTALL_CONFIG_NAME} library_pdb ${library_pdb})
+        string(REPLACE $(OutDir)        \${CMAKE_INSTALL_CONFIG_NAME} library_pdb ${library_pdb})
+        string(REPLACE $(Configuration) \${CMAKE_INSTALL_CONFIG_NAME} library_pdb ${library_pdb})
         string(REPLACE .pdb d.pdb libraryd_pdb ${library_pdb})
         #message(STATUS "_pdb: ${library_pdb}, ${libraryd_pdb}")
         install (PROGRAMS
@@ -289,6 +290,14 @@ if (CMAKE_SYSTEM_NAME STREQUAL Windows)
 else (CMAKE_SYSTEM_NAME STREQUAL Windows)
   set (Boost_components filesystem program_options unit_test_framework)
 endif (CMAKE_SYSTEM_NAME STREQUAL Windows)
+
+# Visual Studio 2010 requires boost 1.45 or better.
+# The choice here is to fail demanding the user to update CMake to version N
+# where Boost 1.45 is supported, or we can just accept some versions using
+# the Additional_versions variable.
+if (NOT DEFINED Boost_ADDITIONAL_VERSIONS)
+  set (Boost_ADDITIONAL_VERSIONS "1.45" "1.45.0" "1.46" "1.46.0" "1.47" "1.47.0")
+endif (NOT DEFINED Boost_ADDITIONAL_VERSIONS)
 
 find_package(Boost 1.33 REQUIRED COMPONENTS ${Boost_components})
 if(NOT Boost_FOUND)
