@@ -91,8 +91,11 @@ cluster_test_SOURCES =				\
     ForkedBroker.cpp			\
     PartialFailure.cpp			\
     ClusterFailover.cpp         \
-    InitialStatusMap.cpp        \
-    StoreStatus.cpp
+    InitialStatusMap.cpp
+
+# Moved this file here from cluster_test_SOURCES as it breaks the autotools build, but not the cmake
+# build and so we need to make sure it is present in the tarball
+EXTRA_DIST += StoreStatus.cpp
 
 cluster_test_LDADD=$(lib_client) $(lib_broker) ../cluster.la -lboost_unit_test_framework
 
