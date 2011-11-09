@@ -32,7 +32,7 @@ void LegacyLVQ::setNoBrowse(bool b)
     noBrowse = b;
 }
 
-bool LegacyLVQ::remove(const framing::SequenceNumber& position, QueuedMessage& message)
+bool LegacyLVQ::acquire(const framing::SequenceNumber& position, QueuedMessage& message)
 {
     Ordering::iterator i = messages.find(position);
     if (i != messages.end() && i->second.payload == message.payload) {
@@ -44,9 +44,9 @@ bool LegacyLVQ::remove(const framing::SequenceNumber& position, QueuedMessage& m
     }
 }
 
-bool LegacyLVQ::next(const framing::SequenceNumber& position, QueuedMessage& message)
+bool LegacyLVQ::browse(const framing::SequenceNumber& position, QueuedMessage& message, bool unacquired)
 {
-    if (MessageMap::next(position, message)) {
+    if (MessageMap::browse(position, message, unacquired)) {
         if (!noBrowse) index.erase(getKey(message));
         return true;
     } else {

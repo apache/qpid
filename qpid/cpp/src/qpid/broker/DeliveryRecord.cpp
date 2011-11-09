@@ -37,7 +37,7 @@ DeliveryRecord::DeliveryRecord(const QueuedMessage& _msg,
                                bool _acquired,
                                bool accepted, 
                                bool _windowing,
-                               uint32_t _credit) : msg(_msg), 
+                               uint32_t _credit, bool _delayedCompletion) : msg(_msg),
                                                   queue(_queue), 
                                                   tag(_tag),
                                                   acquired(_acquired),
@@ -46,7 +46,8 @@ DeliveryRecord::DeliveryRecord(const QueuedMessage& _msg,
                                                   completed(false),
                                                   ended(accepted && acquired),
                                                   windowing(_windowing),
-                                                  credit(msg.payload ? msg.payload->getRequiredCredit() : _credit)
+                                                  credit(msg.payload ? msg.payload->getRequiredCredit() : _credit),
+                                                  delayedCompletion(_delayedCompletion)
 {}
 
 bool DeliveryRecord::setEnded()
@@ -111,8 +112,14 @@ void DeliveryRecord::complete()  {
 }
 
 bool DeliveryRecord::accept(TransactionContext* ctxt) {
-    if (acquired && !ended) {
-        queue->dequeue(ctxt, msg);
+    if (!ended) {
+        if (acquired) {
+            queue->dequeue(ctxt, msg);
+        } else if (delayedCompletion) {
+            //TODO: this is a nasty way to do this; change it
+            msg.payload->getIngressCompletion().finishCompleter();
+            QPID_LOG(debug, "Completed " << msg.payload.get());
+        }
         setEnded();
         QPID_LOG(debug, "Accepted " << id);
     }

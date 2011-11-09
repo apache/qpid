@@ -955,8 +955,7 @@ class MessageTests(TestBase010):
                 #release all even messages
                 session.message_release(RangedSet(msg.id))
 
-        #browse:
-        session.message_subscribe(queue="q", destination="b", acquire_mode=1)
+        session.message_subscribe(queue="q", destination="b", acquire_mode=0)
         b = session.incoming("b")
         b.start()
         for i in [2, 4, 6, 8, 10]:

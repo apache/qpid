@@ -34,17 +34,14 @@ namespace broker {
 class MessageDeque : public Messages
 {
   public:
+    MessageDeque();
     size_t size();
-    bool empty();
-
-    void reinsert(const QueuedMessage&);
-    bool remove(const framing::SequenceNumber&, QueuedMessage&);
+    bool deleted(const QueuedMessage&);
+    void release(const QueuedMessage&);
+    bool acquire(const framing::SequenceNumber&, QueuedMessage&);
     bool find(const framing::SequenceNumber&, QueuedMessage&);
-    bool next(const framing::SequenceNumber&, QueuedMessage&);
-
-    QueuedMessage& front();
-    void pop();
-    bool pop(QueuedMessage&);
+    bool browse(const framing::SequenceNumber&, QueuedMessage&, bool);
+    bool consume(QueuedMessage&);
     bool push(const QueuedMessage& added, QueuedMessage& removed);
 
     void foreach(Functor);
@@ -53,9 +50,11 @@ class MessageDeque : public Messages
   private:
     typedef std::deque<QueuedMessage> Deque;
     Deque messages;
+    size_t available;
+    size_t head;
 
-    Deque::iterator seek(const framing::SequenceNumber&);
-    bool find(const framing::SequenceNumber&, QueuedMessage&, bool remove);
+    size_t index(const framing::SequenceNumber&);
+    void clean();
 };
 }} // namespace qpid::broker
 

@@ -24,6 +24,7 @@
 #include "qpid/broker/Connection.h"
 #include "qpid/broker/Link.h"
 #include "qpid/broker/LinkRegistry.h"
+#include "qpid/broker/QueueReplicator.h"
 #include "qpid/broker/SessionState.h"
 
 #include "qpid/management/ManagementAgent.h"
@@ -96,8 +97,11 @@ void Bridge::create(Connection& c)
     }
 
     if (args.i_srcIsLocal) sessionHandler.getSession()->disableReceiverTracking();
-    if (args.i_srcIsQueue) {        
-        peer->getMessage().subscribe(args.i_src, args.i_dest, args.i_sync ? 0 : 1, 0, false, "", 0, options);
+    if (args.i_srcIsQueue) {
+        //TODO: something other than this which is nasty...
+        bool isReplicatingLink = QueueReplicator::initReplicationSettings(args.i_dest, link->getBroker()->getQueues(), options);
+
+        peer->getMessage().subscribe(args.i_src, args.i_dest, args.i_sync ? 0 : 1, isReplicatingLink ? 1 : 0, false, "", 0, options);
         peer->getMessage().flow(args.i_dest, 0, 0xFFFFFFFF);
         peer->getMessage().flow(args.i_dest, 1, 0xFFFFFFFF);
         QPID_LOG(debug, "Activated route from queue " << args.i_src << " to " << args.i_dest);

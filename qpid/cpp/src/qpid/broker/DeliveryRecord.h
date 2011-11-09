@@ -63,6 +63,7 @@ class DeliveryRecord
      * after that).
      */
     uint32_t credit;
+    bool delayedCompletion;
 
   public:
     QPID_BROKER_EXTERN DeliveryRecord(const QueuedMessage& msg,
@@ -71,7 +72,8 @@ class DeliveryRecord
                                       bool acquired,
                                       bool accepted,
                                       bool windowing,
-                                      uint32_t credit=0       // Only used if msg is empty.
+                                      uint32_t credit=0,       // Only used if msg is empty.
+                                      bool delayedCompletion=false
     );
     
     bool coveredBy(const framing::SequenceSet* const range) const { return range->contains(id); }

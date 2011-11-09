@@ -30,11 +30,7 @@ FifoDistributor::FifoDistributor(Messages& container)
 
 bool FifoDistributor::nextConsumableMessage( Consumer::shared_ptr&, QueuedMessage& next )
 {
-    if (!messages.empty()) {
-        next = messages.front();    // by default, consume oldest msg
-        return true;
-    }
-    return false;
+    return messages.consume(next);
 }
 
 bool FifoDistributor::allocate(const std::string&, const QueuedMessage& )
@@ -46,9 +42,7 @@ bool FifoDistributor::allocate(const std::string&, const QueuedMessage& )
 
 bool FifoDistributor::nextBrowsableMessage( Consumer::shared_ptr& c, QueuedMessage& next )
 {
-    if (!messages.empty() && messages.next(c->position, next))
-        return true;
-    return false;
+    return messages.browse(c->position, next, false);
 }
 
 void FifoDistributor::query(qpid::types::Variant::Map&) const
