@@ -75,6 +75,7 @@ import org.apache.qpid.transport.SessionException;
 import org.apache.qpid.transport.SessionListener;
 import org.apache.qpid.transport.TransportException;
 import org.apache.qpid.util.Serial;
+import org.apache.qpid.util.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -376,7 +377,7 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
                 _logger.debug("Binding queue : " + queue + 
                               " exchange: " + exchange + 
                               " using binding key " + binding.getBindingKey() + 
-                              " with args " + printMap(binding.getArgs()));
+                              " with args " + Strings.printMap(binding.getArgs()));
                 getQpidSession().exchangeBind(queue, 
                                               exchange,
                                               binding.getBindingKey(),
@@ -1313,22 +1314,6 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
         dest.setRoutingKey(new AMQShortString(dest.getSubject()));
     }
     
-    /** This should be moved to a suitable utility class */
-    private String printMap(Map<String,Object> map)
-    {
-        StringBuilder sb = new StringBuilder();
-        sb.append("<");
-        if (map != null)
-        {
-            for(String key : map.keySet())
-            {
-                sb.append(key).append(" = ").append(map.get(key)).append(" ");
-            }
-        }
-        sb.append(">");
-        return sb.toString();
-    }
-
     protected void acknowledgeImpl()
     {
         RangeSet range = gatherUnackedRangeSet();

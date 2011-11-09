@@ -1,4 +1,3 @@
-package org.apache.qpid.client;
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -20,6 +19,7 @@ package org.apache.qpid.client;
  *
  */
 
+package org.apache.qpid.client;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -36,6 +36,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.client.failover.FailoverException;
 import org.apache.qpid.client.failover.FailoverProtectedOperation;
 import org.apache.qpid.client.transport.ClientConnectionDelegate;
+import org.apache.qpid.common.ServerPropertyNames;
 import org.apache.qpid.configuration.ClientProperties;
 import org.apache.qpid.framing.ProtocolVersion;
 import org.apache.qpid.jms.BrokerDetails;
@@ -63,16 +64,12 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
     private static final Logger _logger = LoggerFactory.getLogger(AMQConnectionDelegate_0_10.class);
 
     /**
-     * The name of the UUID property
-     */
-    private static final String UUID_NAME = "qpid.federation_tag";
-    /**
      * The AMQ Connection.
      */
-    private AMQConnection _conn;
+    private final AMQConnection _conn;
 
     /**
-     * The QpidConeection instance that is mapped with thie JMS connection.
+     * The QpidConeection instance that is mapped with this JMS connection.
      */
     org.apache.qpid.transport.Connection _qpidConnection;
     private ConnectionException exception = null;
@@ -369,7 +366,32 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
 
     public String getUUID()
     {
-        return (String)_qpidConnection.getServerProperties().get(UUID_NAME);
+        return (String)_qpidConnection.getServerProperties().get(ServerPropertyNames.FEDERATION_TAG);
+    }
+
+    /*
+     * @see org.apache.qpid.client.AMQConnectionDelegate#isSupportedServerFeature(java.lang.String)
+     */
+    public boolean isSupportedServerFeature(final String featureName)
+    {
+        if (featureName == null)
+        {
+            throw new IllegalArgumentException("featureName cannot be null");
+        }
+        final Map<String, Object> serverProperties = _qpidConnection.getServerProperties();
+        boolean featureSupported = false;
+        if (serverProperties != null && serverProperties.containsKey(ServerPropertyNames.QPID_FEATURES))
+        {
+            final Object supportServerFeatures = serverProperties.get(ServerPropertyNames.QPID_FEATURES);
+            featureSupported = supportServerFeatures instanceof List && ((List<String>)supportServerFeatures).contains(featureName);
+        }
+
+        if (_logger.isDebugEnabled())
+        {
+            _logger.debug("Server support for feature '" + featureName + "' : " + featureSupported);
+        }
+
+        return featureSupported;
     }
 
     private ConnectionSettings retriveConnectionSettings(BrokerDetails brokerDetail)

@@ -793,4 +793,16 @@ public class ServerConfiguration extends ConfigurationPlugin
     {
         return getIntValue("maximumChannelCount", 256);
     }
+
+    /**
+     * List of Broker features that have been disabled within configuration.  Disabled
+     * features won't be advertised to the clients on connection.
+     *
+     * @return list of disabled features, or empty list if no features are disabled.
+     */
+    public List<String> getDisabledFeatures()
+    {
+        final List<String> disabledFeatures = getListValue("disabledFeatures", Collections.emptyList());
+        return disabledFeatures;
+    }
 }

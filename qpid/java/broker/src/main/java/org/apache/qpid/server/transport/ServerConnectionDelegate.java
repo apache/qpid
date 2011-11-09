@@ -32,7 +32,9 @@ import java.util.StringTokenizer;
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
 
+import org.apache.qpid.common.ServerPropertyNames;
 import org.apache.qpid.protocol.ProtocolEngine;
+import org.apache.qpid.server.configuration.BrokerConfig;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
@@ -58,14 +60,13 @@ import org.apache.qpid.transport.SessionDetached;
 
 public class ServerConnectionDelegate extends ServerDelegate
 {
-    private String _localFQDN;
+    private final String _localFQDN;
     private final IApplicationRegistry _appRegistry;
 
     public ServerConnectionDelegate(IApplicationRegistry appRegistry, String localFQDN)
     {
-        this(new HashMap<String,Object>(Collections.singletonMap("qpid.federation_tag",appRegistry.getBroker().getFederationTag())), Collections.singletonList((Object)"en_US"), appRegistry, localFQDN);
+        this(createConnectionProperties(appRegistry.getBroker()), Collections.singletonList((Object)"en_US"), appRegistry, localFQDN);
     }
-
 
     public ServerConnectionDelegate(Map<String, Object> properties,
                                     List<Object> locales,
@@ -76,6 +77,18 @@ public class ServerConnectionDelegate extends ServerDelegate
         
         _appRegistry = appRegistry;
         _localFQDN = localFQDN;
+    }
+
+    private static Map<String, Object> createConnectionProperties(final BrokerConfig brokerConfig)
+    {
+        final Map<String,Object> map = new HashMap<String,Object>(2);
+        map.put(ServerPropertyNames.FEDERATION_TAG, brokerConfig.getFederationTag());
+        final List<String> features = brokerConfig.getFeatures();
+        if (features != null && features.size() > 0)
+        {
+            map.put(ServerPropertyNames.QPID_FEATURES, features);
+        }
+        return map;
     }
 
     private static List<Object> parseToList(String mechanisms)

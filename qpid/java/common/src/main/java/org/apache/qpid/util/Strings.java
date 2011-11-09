@@ -257,4 +257,19 @@ public final class Strings
         return join(sep, Arrays.asList(items));
     }
 
+    public static String printMap(Map<String,Object> map)
+    {
+        StringBuilder sb = new StringBuilder();
+        sb.append("<");
+        if (map != null)
+        {
+            for(String key : map.keySet())
+            {
+                sb.append(key).append(" = ").append(map.get(key)).append(" ");
+            }
+        }
+        sb.append(">");
+        return sb.toString();
+    }
+
 }

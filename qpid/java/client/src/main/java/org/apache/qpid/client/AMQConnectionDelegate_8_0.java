@@ -24,7 +24,6 @@ import java.io.IOException;
 import java.net.ConnectException;
 import java.nio.channels.UnresolvedAddressException;
 import java.security.GeneralSecurityException;
-import java.security.Security;
 import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -44,6 +43,7 @@ import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.apache.qpid.client.state.AMQState;
 import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.client.state.StateWaiter;
+import org.apache.qpid.common.ServerPropertyNames;
 import org.apache.qpid.framing.BasicQosBody;
 import org.apache.qpid.framing.BasicQosOkBody;
 import org.apache.qpid.framing.ChannelOpenBody;
@@ -66,7 +66,7 @@ import org.slf4j.LoggerFactory;
 public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
 {
     private static final Logger _logger = LoggerFactory.getLogger(AMQConnectionDelegate_8_0.class);
-    private AMQConnection _conn;
+    private final AMQConnection _conn;
 
 
     public void closeConnection(long timeout) throws JMSException, AMQException
@@ -378,5 +378,15 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
     public boolean verifyClientID() throws JMSException
     {
         return true;
+    }
+
+    /*
+     * @see org.apache.qpid.client.AMQConnectionDelegate#isSupportedServerFeature(java.lang.String)
+     */
+    public boolean isSupportedServerFeature(String featureName)
+    {
+        // The Qpid Java Broker 0-8..0-9-1 does not advertise features by the qpid.features property, so for now
+        // we just hardcode JMS selectors as supported.
+        return ServerPropertyNames.FEATURE_QPID_JMS_SELECTOR.equals(featureName);
     }
 }
