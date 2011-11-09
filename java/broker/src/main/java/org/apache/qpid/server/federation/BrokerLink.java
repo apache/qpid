@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.federation;
 
+import org.apache.qpid.common.ServerPropertyNames;
 import org.apache.qpid.server.configuration.ConfigStore;
 import org.apache.qpid.server.configuration.ConfiguredObject;
 import org.apache.qpid.server.configuration.ConnectionConfig;
@@ -252,7 +253,7 @@ public class BrokerLink implements LinkConfig, ConnectionListener
                 _qpidConnection.connect(_host, _port, _remoteVhost, _username, _password, "ssl".equals(_transport), _authMechanism);
 
                 final Map<String,Object> serverProps = _qpidConnection.getServerProperties();
-                _remoteFederationTag = (String) serverProps.get("qpid.federation_tag");
+                _remoteFederationTag = (String) serverProps.get(ServerPropertyNames.FEDERATION_TAG);
                 if(_remoteFederationTag == null)
                 {
                     _remoteFederationTag = UUID.fromString(_transport+":"+_host+":"+_port).toString();

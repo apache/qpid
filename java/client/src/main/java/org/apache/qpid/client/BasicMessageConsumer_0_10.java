@@ -20,10 +20,10 @@ package org.apache.qpid.client;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.apache.qpid.client.AMQDestination.AddressOption;
-import org.apache.qpid.client.AMQDestination.DestSyntax;
 import org.apache.qpid.client.failover.FailoverException;
 import org.apache.qpid.client.message.*;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
+import org.apache.qpid.common.ServerPropertyNames;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.protocol.AMQConstant;
@@ -66,6 +66,9 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
     
     private final long _capacity;
 
+    /** Flag indicating if the server supports message selectors */
+    protected final boolean _serverJmsSelectorSupport;
+
     protected BasicMessageConsumer_0_10(int channelId, AMQConnection connection, AMQDestination destination,
                                         String messageSelector, boolean noLocal, MessageFactoryRegistry messageFactory,
                                         AMQSession<?,?> session, AMQProtocolHandler protocolHandler,
@@ -80,6 +83,8 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
         _preAcquire = evaluatePreAcquire(browseOnly, destination);
 
         _capacity = evaluateCapacity(destination);
+        _serverJmsSelectorSupport = connection.isSupportedServerFeature(ServerPropertyNames.FEATURE_QPID_JMS_SELECTOR);
+
 
         if (destination.isAddressResolved() && AMQDestination.TOPIC_TYPE == destination.getAddressType()) 
         {            
@@ -204,10 +209,9 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
     private boolean checkPreConditions(AbstractJMSMessage message) throws AMQException
     {
         boolean messageOk = true;
-        // TODO Use a tag for finding out if message filtering is done here or by the broker.
         try
         {
-            if (_messageSelectorFilter != null)
+            if (_messageSelectorFilter != null && !_serverJmsSelectorSupport)
             {
                 messageOk = _messageSelectorFilter.matches(message);
             }

@@ -21,6 +21,8 @@
 
 package org.apache.qpid.server.configuration;
 
+import java.util.List;
+
 
 public interface BrokerConfig  extends ConfiguredObject<BrokerConfigType,BrokerConfig>
 {
@@ -44,6 +46,19 @@ public interface BrokerConfig  extends ConfiguredObject<BrokerConfigType,BrokerC
 
     String getDataDirectory();
 
+    String getFederationTag();
+
+    /**
+     * List of feature(s) to be advertised to clients on connection.
+     * Feature names are strings, beginning with qpid. followed by more or more
+     * words separated by minus signs e.g. qpid.jms-selector.
+     *
+     * If there are no features, this method must return an empty array.
+     *
+     * @return list of feature names
+     */
+    List<String> getFeatures();
+
     void addVirtualHost(VirtualHostConfig virtualHost);
 
     void createBrokerConnection(String transport,
@@ -53,5 +68,4 @@ public interface BrokerConfig  extends ConfiguredObject<BrokerConfigType,BrokerC
                                 String authMechanism,
                                 String username, String password);
 
-    String getFederationTag();
 }

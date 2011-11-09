@@ -1402,6 +1402,19 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
             return null;
         }
     }
+
+    /**
+     * Tests whether the Broker has advertised support for the named feature.
+     *
+     * @param featureName
+     *
+     * @return true if the feature is supported, or false otherwise.
+     */
+    boolean isSupportedServerFeature(final String featureName)
+    {
+        return _delegate.isSupportedServerFeature(featureName);
+    }
+
     public boolean isFailingOver()
     {
         return (_protocolHandler.getFailoverLatch() != null);

@@ -22,7 +22,6 @@
 package org.apache.qpid.server.configuration;
 
 import java.util.*;
-import java.io.File;
 
 public final class BrokerConfigType extends ConfigObjectType<BrokerConfigType, BrokerConfig>
 {
