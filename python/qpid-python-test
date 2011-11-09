@@ -64,6 +64,8 @@ parser.add_option("-t", "--time", action="store_true", default=False,
                   help="report timing information on test run")
 parser.add_option("-D", "--define", metavar="DEFINE", dest="defines",
                   action="append", default=[], help="define test parameters")
+parser.add_option("-x", "--xml", metavar="XML", dest="xml",
+                  help="write test results in Junit style xml suitable for use by CI tools etc")
 
 class Config:
 
@@ -187,6 +189,33 @@ def colorize(text, *attrs):
 def indent(text):
   lines = text.split("\n")
   return "  %s" % "\n  ".join(lines)
+
+# Write a 'minimal' Junit xml style report file suitable for use by CI tools such as Jenkins.
+class JunitXmlStyleReporter:
+
+  def __init__(self, file):
+    self.f = open(file, "w");
+
+  def begin(self):
+    self.f.write('<?xml version="1.0" encoding="UTF-8" ?>\n')
+    self.f.write('<testsuite>\n')
+
+  def report(self, name, result):
+    parts = name.split(".")
+    method = parts[-1]
+    module = '.'.join(parts[0:-1])
+    self.f.write('<testcase classname="%s" name="%s" time="%f">\n' % (module, method, result.time))
+    if result.failed:
+      self.f.write('<failure>\n')
+      self.f.write('<![CDATA[\n')
+      self.f.write(result.exceptions)
+      self.f.write(']]>\n')
+      self.f.write('</failure>\n')
+    self.f.write('</testcase>\n')
+
+  def end(self):
+      self.f.write('</testsuite>\n')
+      self.f.close()
 
 class Interceptor:
 
@@ -327,13 +356,14 @@ class Runner:
     else:
       return None
 
-  def print_exceptions(self):
+  def get_formatted_exceptions(self):
     for name, info in self.exceptions:
       if issubclass(info[0], Skipped):
-        print indent("".join(traceback.format_exception_only(*info[:2]))).rstrip()
+        output = indent("".join(traceback.format_exception_only(*info[:2]))).rstrip()
       else:
-        print "Error during %s:" % name
-        print indent("".join(traceback.format_exception(*info))).rstrip()
+        output = "Error during %s:" % name
+        output += indent("".join(traceback.format_exception(*info))).rstrip()
+      return output
 
 ST_WIDTH = 8
 
@@ -361,20 +391,31 @@ def run_test(name, test, config):
   sys.stdout.write(output)
   sys.stdout.flush()
   interceptor.begin()
+  start = time.time()
   try:
     runner = test()
   finally:
     interceptor.reset()
+  end = time.time()
   if interceptor.dirty:
     if interceptor.last != "\n":
       sys.stdout.write("\n")
     sys.stdout.write(output)
   print " %s" % colorize_word(runner.status())
   if runner.failed() or runner.skipped():
-    runner.print_exceptions()
+    print runner.get_formatted_exceptions()
   root.setLevel(level)
   filter.patterns = patterns
-  return runner.status()
+  return TestResult(end - start, runner.passed(), runner.skipped(), runner.failed(), runner.get_formatted_exceptions())
+
+class TestResult:
+
+  def __init__(self, time, passed, skipped, failed, exceptions):
+    self.time = time
+    self.passed = passed
+    self.skipped = skipped
+    self.failed = failed
+    self.exceptions = exceptions
 
 class FunctionTest:
 
@@ -526,6 +567,10 @@ filtered = [t for t in h.tests if is_included(t.name())]
 ignored = [t for t in h.tests if is_ignored(t.name())]
 total = len(filtered) + len(ignored)
 
+if opts.xml and not list_only:
+   xmlr = JunitXmlStyleReporter(opts.xml);
+   xmlr.begin();
+
 passed = 0
 failed = 0
 skipped = 0
@@ -535,11 +580,13 @@ for t in filtered:
     print t.name()
   else:
     st = t.run()
-    if st == PASS:
+    if xmlr:
+      xmlr.report(t.name(), st)
+    if st.passed:
       passed += 1
-    elif st == SKIP:
+    elif st.skipped:
       skipped += 1
-    elif st == FAIL:
+    elif st.failed:
       failed += 1
       if opts.hoe:
         break
@@ -580,6 +627,9 @@ if not list_only:
     timing = [colorize_word("elapsed", "%.2fs elapsed" % (end - start)),
               colorize_word("average", "%.2fs average" % ((end - start)/run))]
     print ", ".join(timing)
+
+if xmlr:
+   xmlr.end()
 
 if failed or skipped:
   sys.exit(1)

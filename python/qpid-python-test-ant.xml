@@ -1,0 +1,164 @@
+<!--
+ -
+ - Licensed to the Apache Software Foundation (ASF) under one
+ - or more contributor license agreements.  See the NOTICE file
+ - distributed with this work for additional information
+ - regarding copyright ownership.  The ASF licenses this file
+ - to you under the Apache License, Version 2.0 (the
+ - "License"); you may not use this file except in compliance
+ - with the License.  You may obtain a copy of the License at
+ -
+ -   http://www.apache.org/licenses/LICENSE-2.0
+ -
+ - Unless required by applicable law or agreed to in writing,
+ - software distributed under the License is distributed on an
+ - "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ - KIND, either express or implied.  See the License for the
+ - specific language governing permissions and limitations
+ - under the License.
+ -
+ -->
+
+<project name="qpid-python-test-ant" default="test" >
+
+    <!-- Ant wrapper around qpid-python-test.  Starts Qpid broker; runs
+         qpid-python-test, and formats the test output. -->
+
+    <!-- Directories etc -->
+    <property name="python.dir" value="${basedir}"/>
+    <property name="qpid.root.dir" value="${basedir}/.."/>
+    <property name="java.dir" value="${basedir}/../java"/>
+    <property name="cpp.dir" value="${basedir}/../cpp"/>
+    <property name="build.dir" value="${python.dir}/build"/>
+    <property name="test.results.dir" value="${build.dir}/results"/>
+    <property name="test.work.dir" value="${build.dir}/work"/>
+
+    <!-- Qpid Broker Executable/Url/Port -->
+    <property name="qpid.port" value="15672"/>
+    <property name="qpid.python.broker.url" value="amqp://guest/guest@localhost:${qpid.port}"/>
+    <property name="qpid.executable" value="${java.dir}/build/bin/qpid-server"/>
+    <property name="qpid.executable.args" value="-p ${qpid.port}"/>
+
+    <!-- Additional modules to be added to command.  Property must include -M -->
+    <property name="python.test.modules" value=""/>
+    <!-- Ignore file.  Property must include -I -->
+    <property name="python.test.ignore" value=""/>
+
+    <!-- Time to wait for socket to be bound -->
+    <property name="ensurefree.maxwait" value="1000"/>
+    <property name="start.maxwait" value="10000"/>
+    <property name="stop.maxwait" value="10000"/>
+    <property name="socket.checkevery" value="1000"/>
+
+    <!-- Success message -->
+    <property name="passed.message" value=" 0 failed"/>
+
+
+    <target name="test" depends="clean, init, ensure-port-free, start-broker, run-tests, stop-broker, kill-broker, report"/>
+
+    <target name="init">
+        <mkdir dir="${test.results.dir}"/>
+        <mkdir dir="${test.work.dir}"/>
+    </target>
+
+    <target name="clean">
+        <delete dir="${test.results.dir}"/>
+        <delete dir="${test.work.dir}"/>
+    </target>
+
+    <target name="ensure-port-free" depends="init" unless="skip.ensure-port-free">
+        <await-port-free port="${qpid.port}" maxwait="${ensurefree.maxwait}" checkevery="${socket.checkevery}" timeoutproperty="ensurefree.timeout"/>
+        <fail message="Broker port ${qpid.port} is not free" if="ensurefree.timeout"/>
+    </target>
+
+    <target name="start-broker" depends="init">
+        <echo>Starting Qpid with ${qpid.executable} ${qpid.executable.args}</echo>
+        <exec executable="${qpid.executable}" spawn="true">
+            <env key="QPID_WORK" value="${test.work.dir}"/>
+            <arg line="${qpid.executable.args}"/>
+        </exec>
+
+        <await-port-bound port="${qpid.port}" maxwait="${start.maxwait}" checkevery="${socket.checkevery}" timeoutproperty="start.timeout"/>
+    </target>
+
+    <target name="stop-broker" depends="init">
+        <get-pid port="${qpid.port}" targetProperty="pid"/>
+        <echo>Stopping Qpid ${pid}</echo>
+        <kill-pid pid="${pid}" signo="-15"/>
+
+        <await-port-free port="${qpid.port}" maxwait="${stop.maxwait}" checkevery="${socket.checkevery}" timeoutproperty="stop.timeout"/>
+    </target>
+
+    <target name="kill-broker" depends="init" if="stop.timeout">
+        <get-pid port="${qpid.port}" targetProperty="pid"/>
+        <echo>Killing Qpid ${pid}</echo>
+        <kill-pid pid="${pid}" signo="-9"/>
+    </target>
+
+    <target name="run-tests" depends="init" unless="start.timeout">
+        <echo>Running test-suite</echo>
+        <exec executable="${python.dir}/qpid-python-test" output="${test.results.dir}/results.out" error="${test.results.dir}/results.err">
+            <env key="PYTHONPATH" value="${qpid.root.dir}/tests/src/py:${qpid.root.dir}/extras/qmf/src/py"/>
+            <arg line="-b ${qpid.python.broker.url} -x ${test.results.dir}/TEST-python.xml ${python.test.modules} ${python.test.ignore}"/>
+       </exec>
+
+       <condition property="tests.passed">
+          <isfileselected file="${test.results.dir}/results.out">
+             <contains text="${passed.message}"/>
+          </isfileselected>
+       </condition>
+    </target>
+
+    <target name="report" depends="init" unless="tests.passed">
+        <fail message="Test(s) failed" unless="tests.passed"/>
+        <echo message="Test(s) passed" if="tests.passed"/>
+    </target>
+
+    <macrodef name="get-pid">
+        <attribute name="targetProperty"/>
+        <attribute name="port"/>
+        <sequential>
+            <exec executable="lsof" outputproperty="@{targetProperty}">
+               <arg value="-t"/> <!-- Terse output -->
+               <arg value="-i"/> <arg value=":@{port}"/>
+            </exec>
+        </sequential>
+    </macrodef>
+
+    <macrodef name="kill-pid">
+        <attribute name="pid"/>
+        <attribute name="signo"/>
+        <sequential>
+            <exec executable="kill">
+                <arg value="@{signo}"/>
+                <arg value="@{pid}"/>
+            </exec>
+        </sequential>
+    </macrodef>
+
+    <macrodef name="await-port-free">
+        <attribute name="maxwait"/>
+        <attribute name="checkevery"/>
+        <attribute name="timeoutproperty"/>
+        <attribute name="port"/>
+        <sequential>
+            <waitfor maxwait="@{maxwait}" maxwaitunit="millisecond" checkevery="@{checkevery}" checkeveryunit="millisecond" timeoutproperty="@timeoutproperty">
+                <not>
+                    <socket server="localhost" port="@{port}"/>
+                </not>
+            </waitfor>
+        </sequential>
+    </macrodef>
+
+    <macrodef name="await-port-bound">
+        <attribute name="maxwait"/>
+        <attribute name="checkevery"/>
+        <attribute name="timeoutproperty"/>
+        <attribute name="port"/>
+        <sequential>
+            <waitfor maxwait="@{maxwait}" maxwaitunit="millisecond" checkevery="@{checkevery}" checkeveryunit="millisecond" timeoutproperty="@timeoutproperty">
+                <socket server="localhost" port="@{port}"/>
+            </waitfor>
+        </sequential>
+    </macrodef>
+</project>
