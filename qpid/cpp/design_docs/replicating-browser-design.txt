@@ -1,0 +1,152 @@
+-*-org-*-
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+
+* FIXME - rewrite all old stuff from hot-standby.txt.
+
+* Another new design for Qpid clustering.
+
+For some background see [[./new-cluster-design.txt]] which describes the
+issues with the old design and a new active-active design that could
+replace it.
+
+This document describes an alternative active-passive approach.
+
+** Active-active vs. active-passive (hot-standby)
+
+An active-active cluster allows clients to connect to any broker in
+the cluster. If a broker fails, clients can fail-over to any other
+live broker.
+
+A hot-standby cluster has only one active broker at a time (the
+"primary") and one or more brokers on standby (the "backups"). Clients
+are only served by the primary, clients that connect to a backup are
+redirected to the primary. The backups are kept up-to-date in real
+time by the primary, if the primary fails a backup is elected to be
+the new primary.
+
+The main problem with active-active is co-ordinating consumers of the
+same queue on multiple brokers such that there are no duplicates in
+normal operation. There are 2 approaches:
+
+Predictive: each broker predicts which messages others will take. This
+the main weakness of the old design so not appealing.
+
+Locking: brokers "lock" a queue in order to take messages. This is
+complex to implement and it is not straighforward to determine the
+best strategy for passing the lock. In tests to date it results in
+very high latencies (10x standalone broker).
+
+Hot-standby removes this problem. Only the primary can modify queues
+so it just has to tell the backups what it is doing, there's no
+locking.
+
+The primary can enqueue messages and replicate asynchronously -
+exactly like the store does, but it "writes" to the replicas over the
+network rather than writing to disk.
+
+** Failover in a hot-standby cluster.
+
+We want to delegate the failover management to an existing cluster
+resource manager. Initially this is rgmanager from Cluster Suite, but
+other managers (e.g. PaceMaker) could be supported in future.
+
+Rgmanager takes care of starting and stopping brokers and informing
+brokers of their roles as primary or backup. It ensures there's
+exactly one broker running at any time. It also tracks quorum and
+protects against split-brain.
+
+Rgmanger can also manage a virtual IP address so clients can just
+retry on a single address to fail over. Alternatively we will support
+configuring a fixed list of broker addresses when qpid is run outside
+of a resource manager.
+
+Aside: Cold-standby is also possible using rgmanager with shared
+storage for the message store (e.g. GFS). If the broker fails, another
+broker is started on a different node and and recovers from the
+store. This bears investigation but the store recovery times are
+likely too long for failover.
+
+** Replicating browsers
+
+The unit of replication is a replicating browser. This is an AMQP
+consumer that browses a remote queue via a federation link and
+maintains a local replica of the queue. As well as browsing the remote
+messages as they are added the browser receives dequeue notifications
+when they are dequeued remotely.
+
+On the primary broker incoming mesage transfers are completed only when
+all of the replicating browsers have signaled completion. Thus a completed
+message is guarated to be on the backups.
+
+** Replicating wiring
+
+New queues and exchanges and their bindings also need to be replicated.
+This is done by a QMF client that registers for wiring changes
+on the remote broker and mirrors them in the local broker.
+
+** Use of CPG
+
+CPG is not required in this model, an external cluster resource
+manager takes care of membership and quorum.
+
+** Selective replication
+In this model it's easy to support selective replication of individual queues via
+configuration. 
+- Explicit exchange/queue declare argument and message boolean: x-qpid-replicate. 
+  Treated analogously to persistent/durable properties for the store.
+- if not explicitly marked, provide a choice of default
+  - default is replicate (replicated message on replicated queue)
+  - default is don't replicate
+  - default is replicate persistent/durable messages.
+
+** Inconsistent errors
+
+The new design eliminates most sources of inconsistent errors in the
+old design (connections, sessions, security, management etc.) and
+eliminates the need to stall the whole cluster till an error is
+resolved. We still have to handle inconsistent store errors when store
+and cluster are used together.
+
+We also have to include error handling in the async completion loop to
+guarantee N-way at least once: we should only report success to the
+client when we know the message was replicated and stored on all N-1
+backups.
+
+TODO: We have a lot more options than the old cluster, need to figure
+out the best approach, or possibly allow mutliple approaches. Need to
+go thru the various failure cases. We may be able to do recovery on a
+per-queue basis rather than restarting an entire node.
+
+** New members joining
+
+We should be able to catch up much faster than the the old design. A
+new backup can catch up ("recover") the current cluster state on a
+per-queue basis.
+- queues can be updated in parallel
+- "live" updates avoid the the "endless chase"
+
+During a "live" update several things are happening on a queue:
+- clients are publishing messages to the back of the queue, replicated to the backup
+- clients are consuming messages from the front of the queue, replicated to the backup.
+- the primary is sending pre-existing messages to the new backup.
+
+The primary sends pre-existing messages in LIFO order - starting from
+the back of the queue, at the same time clients are consuming from the front.
+The active consumers actually reduce the amount of work to be done, as there's
+no need to replicate messages that are no longer on the queue.
+
