@@ -223,7 +223,8 @@ if test -n "$PERL"; then
     PERL_ARCHLIB=`perl -MConfig -e 'print "$Config{archlib}";'`
     AC_CHECK_FILE( ["$PERL_ARCHLIB/CORE/perl.h"],
             [AC_SUBST([PERL_INC], ["$PERL_ARCHLIB/CORE"])] )
-fi 
+    AC_SUBST(PERL_ARCHLIB)
+fi
 AM_CONDITIONAL([HAVE_PERL_DEVEL], [test -n "$PERL" && test -n "$SWIG" && test -n "$PERL_INC"])
 
 specdir=`pwd`/$srcdir/../specs
@@ -525,7 +526,7 @@ AC_CONFIG_FILES([
   bindings/qpid/Makefile
   bindings/qpid/ruby/Makefile
   bindings/qpid/python/Makefile
-  bindings/qpid/perl/Makefile
+  bindings/qpid/perl/Makefile.PL
   bindings/qpid/dotnet/Makefile
   bindings/qmf/Makefile
   bindings/qmf/ruby/Makefile

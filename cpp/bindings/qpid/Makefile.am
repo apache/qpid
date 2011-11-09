@@ -32,7 +32,49 @@ SUBDIRS += python
 endif
 
 if HAVE_PERL_DEVEL
-SUBDIRS += perl
+
+INCLUDES = -I$(top_srcdir)/include -I$(top_builddir)/include -I$(top_srcdir)/src -I$(top_builddir)/src -I$(PERL_INC)
+
+EXTRA_DIST += perl/perl.i
+BUILT_SOURCES = perl/cqpid_perl.cpp
+SWIG_FLAGS = -w362,401
+
+perl/cqpid_perl.cpp: $(srcdir)/perl/perl.i $(srcdir)/qpid.i $(srcdir)/../swig_perl_typemaps.i
+	$(SWIG) -perl -c++ $(SWIG_FLAGS) $(INCLUDES) $(QPID_CXXFLAGS) -I/usr/include -o perl/cqpid_perl.cpp $(srcdir)/perl/perl.i
+
+perl/Makefile: perl/cqpid_perl.cpp
+	cd perl; \
+		$(PERL) Makefile.PL PREFIX=$(prefix) LIB=$(PERL_ARCHLIB) ; \
+	cd ..
+
+all-local: perl/Makefile
+	cd perl; \
+		$(MAKE) OPTIMIZE="$(CXXFLAGS)" ; \
+	cd ..
+
+install-exec-local:
+	cd perl ; \
+		$(MAKE) pure_install DESTDIR=$(prefix) ; \
+	cd ..
+
+clean-local:
+	cd perl ; \
+		$(MAKE) clean ; \
+	cd ..
+
+distclean-local:
+	cd perl ; \
+		$(MAKE) distclean ; \
+	cd ..
+
+maintainer-clean-local:
+	cd perl ; \
+		$(PERL) maintainer-clean ; \
+	cd ..
+
+DISTCLEANFILES = perl/Makefile.PL
+CLEANFILES = perl/cqpid_perl.cpp perl/Makefile.old perl/cqpid_perl.pm
+
 endif
 
 endif
