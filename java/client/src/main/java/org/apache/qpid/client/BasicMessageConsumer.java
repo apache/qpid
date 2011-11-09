@@ -27,6 +27,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.client.failover.FailoverException;
 import org.apache.qpid.client.message.*;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
+import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.framing.*;
 import org.apache.qpid.jms.MessageConsumer;
 import org.apache.qpid.jms.Session;
@@ -150,7 +151,7 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
     protected BasicMessageConsumer(int channelId, AMQConnection connection, AMQDestination destination,
                                    String messageSelector, boolean noLocal, MessageFactoryRegistry messageFactory,
                                    AMQSession session, AMQProtocolHandler protocolHandler,
-                                   FieldTable arguments, int prefetchHigh, int prefetchLow,
+                                   FieldTable rawSelector, int prefetchHigh, int prefetchLow,
                                    boolean exclusive, int acknowledgeMode, boolean browseOnly, boolean autoClose) throws JMSException
     {
         _channelId = channelId;
@@ -160,7 +161,6 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
         _messageFactory = messageFactory;
         _session = session;
         _protocolHandler = protocolHandler;
-        _arguments = arguments;
         _prefetchHigh = prefetchHigh;
         _prefetchLow = prefetchLow;
         _exclusive = exclusive;
@@ -196,6 +196,21 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
         {
             _acknowledgeMode = acknowledgeMode;
         }
+
+        final FieldTable ft = FieldTableFactory.newFieldTable();
+        // rawSelector is used by HeadersExchange and is not a JMS Selector
+        if (rawSelector != null)
+        {
+            ft.addAll(rawSelector);
+        }
+
+        // We must always send the selector argument even if empty, so that we can tell when a selector is removed from a
+        // durable topic subscription that the broker arguments don't match any more. This is because it is not otherwise
+        // possible to determine  when querying the broker whether there are no arguments or just a non-matching selector
+        // argument, as specifying null for the arguments when querying means they should not be checked at all
+        ft.put(AMQPFilterTypes.JMS_SELECTOR.getValue(), messageSelector == null ? "" : messageSelector);
+
+        _arguments = ft;
     }
 
     public AMQDestination getDestination()
