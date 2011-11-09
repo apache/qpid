@@ -535,7 +535,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         {
             _queue = new FlowControllingBlockingQueue(_prefetchHighMark, null);
         }
-        
+
         // Add creation logging to tie in with the existing close logging
         if (_logger.isInfoEnabled())
         {
@@ -1097,7 +1097,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                     // possible to determine  when querying the broker whether there are no arguments or just a non-matching selector
                     // argument, as specifying null for the arguments when querying means they should not be checked at all
                     args.put(AMQPFilterTypes.JMS_SELECTOR.getValue().toString(), messageSelector == null ? "" : messageSelector);
-                    
+
                     // if the queue is bound to the exchange but NOT for this topic and selector, then the JMS spec
                     // says we must trash the subscription.
                     boolean isQueueBound = isQueueBound(dest.getExchangeName(), dest.getAMQQueueName());

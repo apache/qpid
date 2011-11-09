@@ -1298,7 +1298,7 @@ public class ServerConfigurationTest extends QpidTestCase
     }
 
     /**
-     * Test that a non-existant virtualhost file throws a {@link ConfigurationException}.
+     * Test that a non-existent virtualhost file throws a {@link ConfigurationException}.
      * <p>
      * Test for QPID-2624
      */
@@ -1326,7 +1326,27 @@ public class ServerConfigurationTest extends QpidTestCase
         }
     }
     
-    /*
+    /**
+     * Tests that element disabledFeatures allows features that would
+     * otherwise be advertised by the broker to be turned off.
+     */
+    public void testDisabledFeatures() throws ConfigurationException
+    {
+        // Check default
+        _serverConfig.initialise();
+        _serverConfig = new ServerConfiguration(_config);
+        assertEquals("Unexpected size", 0, _serverConfig.getDisabledFeatures().size());
+
+        // Check value we set
+        _config.addProperty("disabledFeatures", "qpid.feature1");
+        _config.addProperty("disabledFeatures", "qpid.feature2");
+        _serverConfig = new ServerConfiguration(_config);
+
+        assertEquals("Unexpected size",2, _serverConfig.getDisabledFeatures().size());
+        assertTrue("Unexpected contents", _serverConfig.getDisabledFeatures().contains("qpid.feature1"));
+    }
+
+    /**
      * Tests that the old element security.jmx.access (that used to be used
      * to define JMX access rights) is rejected.
      */
@@ -1352,7 +1372,7 @@ public class ServerConfigurationTest extends QpidTestCase
         }
     }
 
-    /*
+    /**
      * Tests that the old element security.jmx.principal-database (that used to define the
      * principal database used for JMX authentication) is rejected.
      */
@@ -1378,7 +1398,7 @@ public class ServerConfigurationTest extends QpidTestCase
         }
     }
 
-    /*
+    /**
      * Tests that the old element security.principal-databases. ... (that used to define 
      * principal databases) is rejected.
      */
@@ -1403,7 +1423,7 @@ public class ServerConfigurationTest extends QpidTestCase
         }
     }
 
-    /*
+    /**
      * Tests that the old element housekeeping.expiredMessageCheckPeriod. ... (that was
      * replaced by housekeeping.checkPeriod) is rejected.
      */
