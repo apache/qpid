@@ -281,7 +281,16 @@ void MessageGroupManager::query(qpid::types::Variant::Map& status) const
         qpid::types::Variant::Map info;
         info[GROUP_ID_KEY] = g->first;
         info[GROUP_MSG_COUNT] = g->second.members.size();
-        info[GROUP_TIMESTAMP] = 0;   /** @todo KAG - NEED HEAD MSG TIMESTAMP */
+        // set the timestamp to the arrival timestamp of the oldest (HEAD) message, if present
+        info[GROUP_TIMESTAMP] = 0;
+        if (g->second.members.size() != 0) {
+            QueuedMessage qm;
+            if (messages.find(g->second.members.front(), qm) &&
+                qm.payload &&
+                qm.payload->hasProperties<framing::DeliveryProperties>()) {
+                info[GROUP_TIMESTAMP] = qm.payload->getProperties<framing::DeliveryProperties>()->getTimestamp();
+            }
+        }
         info[GROUP_CONSUMER] = g->second.owner;
         groups.push_back(info);
     }
