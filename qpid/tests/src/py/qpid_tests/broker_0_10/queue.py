@@ -19,7 +19,7 @@
 from qpid.client import Client, Closed
 from qpid.queue import Empty
 from qpid.testlib import TestBase010
-from qpid.datatypes import Message
+from qpid.datatypes import Message, RangedSet
 from qpid.session import SessionException
 
 class QueueTests(TestBase010):
@@ -287,6 +287,7 @@ class QueueTests(TestBase010):
         queue = session.incoming("consumer_tag")
         msg = queue.get(timeout=1)
         self.assertEqual("message", msg.body)
+        session.message_accept(RangedSet(msg.id))
         session.message_cancel(destination="consumer_tag")
 
         #retry deletion on empty queue:

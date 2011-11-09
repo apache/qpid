@@ -1,22 +1,114 @@
-//
-// Licensed to the Apache Software Foundation (ASF) under one
-// or more contributor license agreements.  See the NOTICE file
-// distributed with this work for additional information
-// regarding copyright ownership.  The ASF licenses this file
-// to you under the Apache License, Version 2.0 (the
-// "License"); you may not use this file except in compliance
-// with the License.  You may obtain a copy of the License at
-//
-//   http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing,
-// software distributed under the License is distributed on an
-// "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-// KIND, either express or implied.  See the License for the
-// specific language governing permissions and limitations
-// under the License.
-//
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
 
-// QPID-3477: Java broker does not handle rejection code specified in test 
+###### Feature not supported in Java Broker ######
+
+#The broker does not support DTX
+qpid_tests.broker_0_10.dtx.*
+
+#The broker does not support message groups
+qpid_tests.broker_0_10.msg_groups.*
+
+#The broker does not have the appropriate QMF support
+qpid_tests.broker_0_10.management.*
+
+#The broker does not use the same threshold alerting system (or the QMF support needed for the tests)
+qpid_tests.broker_0_10.threshold.*
+
+#The broker does not support the policy extension
+qpid_tests.broker_0_10.extensions.ExtensionTests.test_policy_*
+
+#The broker does not support the timed-autodelete extension
+qpid_tests.broker_0_10.extensions.ExtensionTests.test_timed_autodelete
+
+#The broker does not support ring queues, fairshare, or the priority alias
+qpid_tests.broker_0_10.priority.PriorityTests.test_ring_queue*
+qpid_tests.broker_0_10.priority.PriorityTests.test_fairshare*
+qpid_tests.broker_0_10.priority.PriorityTests.test_prioritised_delivery_with_alias
+
+
+###### Behavioural differences between Java & CPP Broker ######
+
+#QPID-3587 Java broker does not alter queue counts until msgs are accepted.
+qpid_tests.broker_0_10.message.MessageTests.test_ack
+qpid_tests.broker_0_10.message.MessageTests.test_acquire
+qpid_tests.broker_0_10.message.MessageTests.test_acquire_with_no_accept_and_credit_flow
+
+#QPID-3588 Java broker sets expiration and doesnt pass TTL on to consumer
+qpid.tests.messaging.message.MessageEchoTests.testProperties
+
+#QPID-3589 Difference in exception text message causes test to fail
+qpid.tests.messaging.endpoints.AddressTests.testDeleteSpecialqpid.tests.messaging.endpoints.AddressTests.testDeleteSpecial
+
+#QPID-3590 Java broker does not support null value for routing key
+qpid.tests.messaging.endpoints.SessionTests.testDoubleCommit
+
+
+###### Java Broker defects ######
+
+#QPID-3591 Fails due to bytes credit issue
+qpid_tests.broker_0_10.message.MessageTests.test_credit_flow_bytes
+qpid_tests.broker_0_10.message.MessageTests.test_window_flow_bytes
+
+#QPID-3592 Fails to receive more messages after restart
+qpid_tests.broker_0_10.message.MessageTests.test_window_stop
+
+#QPID-3539 Tests fail because is incorrectly being done per session and not connection
+qpid_tests.broker_0_10.message.MessageTests.test_no_local
+qpid_tests.broker_0_10.message.MessageTests.test_no_local_awkward
+qpid_tests.broker_0_10.message.MessageTests.test_no_local_exclusive_subscribe
+
+#QPID-3593 Priority Queue test failures
+qpid_tests.broker_0_10.priority.PriorityTests.test_browsing
+qpid_tests.broker_0_10.priority.PriorityTests.test_prioritised_delivery_1
+qpid_tests.broker_0_10.priority.PriorityTests.test_prioritised_delivery_2
+qpid_tests.broker_0_10.priority.PriorityTests.test_requeue
+
+#QPID-3594 exclusive queues problem
+qpid_tests.broker_0_10.queue.QueueTests.test_declare_exclusive
+
+#QPID-3477: Java broker does not handle rejection code specified in test
 qpid.tests.messaging.endpoints.SessionTests.testReject
 
+#QPID-3595 Alternate Exchanges support requires work to be spec compliant.
+qpid_tests.broker_0_10.alternate_exchange.AlternateExchangeTests.test_delete_while_used_by_queue
+qpid_tests.broker_0_10.alternate_exchange.AlternateExchangeTests.test_modify_existing_exchange_alternate
+qpid_tests.broker_0_10.alternate_exchange.AlternateExchangeTests.test_queue_autodelete
+qpid_tests.broker_0_10.alternate_exchange.AlternateExchangeTests.test_queue_delete
+qpid_tests.broker_0_10.alternate_exchange.AlternateExchangeTests.test_queue_delete_loop
+qpid_tests.broker_0_10.alternate_exchange.AlternateExchangeTests.test_queue_delete_no_match
+qpid_tests.broker_0_10.alternate_exchange.AlternateExchangeTests.test_reject_no_match
+
+#QPID-3596 Broker does not validate for reserved exchange names on create/bind.
+qpid_tests.broker_0_10.exchange.DeclareMethodExchangeFieldReservedRuleTests.*
+
+#QPID-3597 Headers exchange issues
+qpid_tests.broker_0_10.exchange.HeadersExchangeTests.*
+qpid_tests.broker_0_10.queue.QueueTests.test_unbind_headers
+qpid_tests.broker_0_10.exchange.RecommendedTypesRuleTests.testHeaders
+qpid_tests.broker_0_10.exchange.RequiredInstancesRuleTests.testAmqMatch
+qpid_tests.broker_0_10.query.QueryTests.test_exchange_bound_header
+
+#QPID-3598 Fanout exchange issues
+qpid_tests.broker_0_10.query.QueryTests.test_exchange_bound_fanout
+
+#QPID-3599 Tests fail due to differences in expected message Redelivered status
+qpid.tests.messaging.endpoints.SessionTests.testCommitAck
+qpid.tests.messaging.endpoints.SessionTests.testRelease
+qpid.tests.messaging.endpoints.SessionTests.testRollback
