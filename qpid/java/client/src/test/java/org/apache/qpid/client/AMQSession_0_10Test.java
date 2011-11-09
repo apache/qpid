@@ -29,7 +29,6 @@ import javax.jms.MessageProducer;
 import junit.framework.TestCase;
 
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.transport.Binary;
 import org.apache.qpid.transport.Connection;
 import org.apache.qpid.transport.Connection.SessionFactory;
@@ -334,7 +333,7 @@ public class AMQSession_0_10Test extends TestCase
         try
         {
             BasicMessageConsumer_0_10 consumer = session.createMessageConsumer(createDestination(), 1, 1, true, false,
-                    null, new FieldTable(), false, true);
+                    null, null, false, true);
             session.sendConsume(consumer, new AMQShortString("test"), null, true, null, 1);
         }
         catch (Exception e)
@@ -383,7 +382,7 @@ public class AMQSession_0_10Test extends TestCase
         try
         {
             BasicMessageConsumer_0_10 consumer = session.createMessageConsumer(createDestination(), 1, 1, true, false,
-                    null, new FieldTable(), false, true);
+                    null, null, false, true);
             session.start();
             consumer.receive(1);
             fail("JMSException should be thrown");
@@ -401,7 +400,7 @@ public class AMQSession_0_10Test extends TestCase
         try
         {
             BasicMessageConsumer_0_10 consumer = session.createMessageConsumer(createDestination(), 1, 1, true, false,
-                    null, new FieldTable(), false, true);
+                    null, null, false, true);
             session.start();
             consumer.receive(1);
         }
@@ -419,7 +418,7 @@ public class AMQSession_0_10Test extends TestCase
         try
         {
             BasicMessageConsumer_0_10 consumer = session.createMessageConsumer(createDestination(), 1, 1, true, false,
-                    null, new FieldTable(), false, true);
+                    null, null, false, true);
             session.start();
             consumer.receiveNoWait();
             fail("JMSException should be thrown");
@@ -437,7 +436,7 @@ public class AMQSession_0_10Test extends TestCase
         try
         {
             BasicMessageConsumer_0_10 consumer = session.createMessageConsumer(createDestination(), 1, 1, true, false,
-                    null, new FieldTable(), false, true);
+                    null, null, false, true);
             consumer.setMessageListener(new MockMessageListener());
             fail("JMSException should be thrown");
         }
@@ -454,7 +453,7 @@ public class AMQSession_0_10Test extends TestCase
         try
         {
             BasicMessageConsumer_0_10 consumer = session.createMessageConsumer(createDestination(), 1, 1, true, false,
-                    null, new FieldTable(), false, true);
+                    null, null, false, true);
             consumer.setMessageListener(new MockMessageListener());
         }
         catch (Exception e)
@@ -471,7 +470,7 @@ public class AMQSession_0_10Test extends TestCase
         try
         {
             BasicMessageConsumer_0_10 consumer = session.createMessageConsumer(createDestination(), 1, 1, true, false,
-                    null, new FieldTable(), false, true);
+                    null, null, false, true);
             consumer.close();
         }
         catch (Exception e)
@@ -488,7 +487,7 @@ public class AMQSession_0_10Test extends TestCase
         try
         {
             BasicMessageConsumer_0_10 consumer = session.createMessageConsumer(createDestination(), 1, 1, true, false,
-                    null, new FieldTable(), false, true);
+                    null, null, false, true);
             consumer.close();
             fail("JMSException should be thrown");
         }

@@ -509,13 +509,13 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
     public BasicMessageConsumer_0_10 createMessageConsumer(final AMQDestination destination, final int prefetchHigh,
                                                       final int prefetchLow, final boolean noLocal,
                                                       final boolean exclusive, String messageSelector,
-                                                      final FieldTable ft, final boolean noConsume,
+                                                      final FieldTable rawSelector, final boolean noConsume,
                                                       final boolean autoClose) throws JMSException
     {
 
         final AMQProtocolHandler protocolHandler = getProtocolHandler();
         return new BasicMessageConsumer_0_10(_channelId, _connection, destination, messageSelector, noLocal,
-                                             _messageFactoryRegistry, this, protocolHandler, ft, prefetchHigh,
+                                             _messageFactoryRegistry, this, protocolHandler, rawSelector, prefetchHigh,
                                              prefetchLow, exclusive, _acknowledgeMode, noConsume, autoClose);
     }
 

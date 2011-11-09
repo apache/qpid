@@ -27,6 +27,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.client.failover.FailoverException;
 import org.apache.qpid.client.message.*;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
+import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.framing.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,12 +38,23 @@ public class BasicMessageConsumer_0_8 extends BasicMessageConsumer<UnprocessedMe
 
     protected BasicMessageConsumer_0_8(int channelId, AMQConnection connection, AMQDestination destination,
                                        String messageSelector, boolean noLocal, MessageFactoryRegistry messageFactory, AMQSession session,
-                                       AMQProtocolHandler protocolHandler, FieldTable arguments, int prefetchHigh, int prefetchLow,
+                                       AMQProtocolHandler protocolHandler, FieldTable rawSelector, int prefetchHigh, int prefetchLow,
                                        boolean exclusive, int acknowledgeMode, boolean browseOnly, boolean autoClose) throws JMSException
     {
         super(channelId, connection, destination,messageSelector,noLocal,messageFactory,session,
-              protocolHandler, arguments, prefetchHigh, prefetchLow, exclusive,
+              protocolHandler, rawSelector, prefetchHigh, prefetchLow, exclusive,
               acknowledgeMode, browseOnly, autoClose);
+        final FieldTable consumerArguments = getArguments();
+        if (isAutoClose())
+        {
+            consumerArguments.put(AMQPFilterTypes.AUTO_CLOSE.getValue(), Boolean.TRUE);
+        }
+
+        if (isBrowseOnly())
+        {
+            consumerArguments.put(AMQPFilterTypes.NO_CONSUME.getValue(), Boolean.TRUE);
+        }
+
     }
 
     void sendCancel() throws AMQException, FailoverException

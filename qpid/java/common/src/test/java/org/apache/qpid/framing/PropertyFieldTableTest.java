@@ -20,16 +20,18 @@
  */
 package org.apache.qpid.framing;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
+
 import junit.framework.Assert;
 import junit.framework.TestCase;
 
-import org.apache.qpid.AMQInvalidArgumentException;
 import org.apache.qpid.AMQPInvalidClassException;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.*;
 
 public class PropertyFieldTableTest extends TestCase
 {
@@ -106,7 +108,7 @@ public class PropertyFieldTableTest extends TestCase
         table1.setByte("value", Byte.MAX_VALUE);
         Assert.assertTrue(table1.propertyExists("value"));
 
-        // Tets lookups we shouldn't get anything back for other gets
+        // Tests lookups we shouldn't get anything back for other gets
         // we should get right value back for this type ....
         Assert.assertEquals(null, table1.getBoolean("value"));
         Assert.assertEquals(Byte.MAX_VALUE, (byte) table1.getByte("value"));
@@ -139,7 +141,7 @@ public class PropertyFieldTableTest extends TestCase
         table1.setShort("value", Short.MAX_VALUE);
         Assert.assertTrue(table1.propertyExists("value"));
 
-        // Tets lookups we shouldn't get anything back for other gets
+        // Tests lookups we shouldn't get anything back for other gets
         // we should get right value back for this type ....
         Assert.assertEquals(null, table1.getBoolean("value"));
         Assert.assertEquals(null, table1.getByte("value"));
@@ -172,7 +174,7 @@ public class PropertyFieldTableTest extends TestCase
         table1.setChar("value", 'c');
         Assert.assertTrue(table1.propertyExists("value"));
 
-        // Tets lookups we shouldn't get anything back for other gets
+        // Tests lookups we shouldn't get anything back for other gets
         // we should get right value back for this type ....
         Assert.assertEquals(null, table1.getBoolean("value"));
         Assert.assertEquals(null, table1.getByte("value"));
@@ -206,7 +208,7 @@ public class PropertyFieldTableTest extends TestCase
         table1.setDouble("value", Double.MAX_VALUE);
         Assert.assertTrue(table1.propertyExists("value"));
 
-        // Tets lookups we shouldn't get anything back for other gets
+        // Tests lookups we shouldn't get anything back for other gets
         // we should get right value back for this type ....
         Assert.assertEquals(null, table1.getBoolean("value"));
         Assert.assertEquals(null, table1.getByte("value"));
@@ -241,7 +243,7 @@ public class PropertyFieldTableTest extends TestCase
         table1.setFloat("value", Float.MAX_VALUE);
         Assert.assertTrue(table1.propertyExists("value"));
 
-        // Tets lookups we shouldn't get anything back for other gets
+        // Tests lookups we shouldn't get anything back for other gets
         // we should get right value back for this type ....
         Assert.assertEquals(null, table1.getBoolean("value"));
         Assert.assertEquals(null, table1.getByte("value"));
@@ -404,7 +406,7 @@ public class PropertyFieldTableTest extends TestCase
         table1.setString("value", "Hello");
         Assert.assertTrue(table1.propertyExists("value"));
 
-        // Tets lookups we shouldn't get anything back for other gets
+        // Test lookups we shouldn't get anything back for other gets
         // we should get right value back for this type ....
         Assert.assertEquals(null, table1.getBoolean("value"));
         Assert.assertEquals(null, table1.getByte("value"));
@@ -569,7 +571,7 @@ public class PropertyFieldTableTest extends TestCase
         Assert.assertEquals("Hello", table.getObject("object-string"));
     }
 
-    public void testwriteBuffer() throws IOException
+    public void testWriteBuffer() throws IOException
     {
         byte[] bytes = { 99, 98, 97, 96, 95 };
 
@@ -948,6 +950,36 @@ public class PropertyFieldTableTest extends TestCase
         Assert.assertEquals("2", table.getObject("n2"));
         Assert.assertEquals("3", table.getObject("n3"));
 
+    }
+
+    public void testAddAll()
+    {
+        final FieldTable table1 = new FieldTable();
+        table1.setInteger("int1", 1);
+        table1.setInteger("int2", 2);
+        assertEquals("Unexpected number of entries in table1", 2, table1.size());
+
+        final FieldTable table2 = new FieldTable();
+        table2.setInteger("int3", 3);
+        table2.setInteger("int4", 4);
+        assertEquals("Unexpected number of entries in table2", 2, table2.size());
+
+        table1.addAll(table2);
+        assertEquals("Unexpected number of entries in table1 after addAll", 4, table1.size());
+        assertEquals(Integer.valueOf(3), table1.getInteger("int3"));
+    }
+
+    public void testAddAllWithEmptyFieldTable()
+    {
+        final FieldTable table1 = new FieldTable();
+        table1.setInteger("int1", 1);
+        table1.setInteger("int2", 2);
+        assertEquals("Unexpected number of entries in table1", 2, table1.size());
+
+        final FieldTable emptyFieldTable = new FieldTable();
+
+        table1.addAll(emptyFieldTable);
+        assertEquals("Unexpected number of entries in table1 after addAll", 2, table1.size());
     }
 
     private void assertBytesEqual(byte[] expected, byte[] actual)

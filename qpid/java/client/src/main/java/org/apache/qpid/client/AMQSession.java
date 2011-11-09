@@ -92,7 +92,6 @@ import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.filter.MessageFilter;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.framing.FieldTableFactory;
 import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.jms.Session;
 import org.apache.qpid.protocol.AMQConstant;
@@ -2011,28 +2010,11 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
                         AMQDestination amqd = (AMQDestination) destination;
 
-                        // TODO: Define selectors in AMQP
-                        // TODO: construct the rawSelector from the selector string if rawSelector == null
-                        final FieldTable ft = FieldTableFactory.newFieldTable();
-                        // if (rawSelector != null)
-                        // ft.put("headers", rawSelector.getDataAsBytes());
-                        // rawSelector is used by HeadersExchange and is not a JMS Selector
-                        if (rawSelector != null)
-                        {
-                            ft.addAll(rawSelector);
-                        }
-
-                        // We must always send the selector argument even if empty, so that we can tell when a selector is removed from a 
-                        // durable topic subscription that the broker arguments don't match any more. This is because it is not otherwise
-                        // possible to determine  when querying the broker whether there are no arguments or just a non-matching selector
-                        // argument, as specifying null for the arguments when querying means they should not be checked at all
-                        ft.put(AMQPFilterTypes.JMS_SELECTOR.getValue(), messageSelector == null ? "" : messageSelector);
-
                         C consumer;
                         try
                         {
                             consumer = createMessageConsumer(amqd, prefetchHigh, prefetchLow,
-                                                             noLocal, exclusive, messageSelector, ft, noConsume, autoClose);
+                                                             noLocal, exclusive, messageSelector, rawSelector, noConsume, autoClose);
                         }
                         catch(TransportException e)
                         {

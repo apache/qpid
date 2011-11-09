@@ -72,12 +72,12 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
     protected BasicMessageConsumer_0_10(int channelId, AMQConnection connection, AMQDestination destination,
                                         String messageSelector, boolean noLocal, MessageFactoryRegistry messageFactory,
                                         AMQSession<?,?> session, AMQProtocolHandler protocolHandler,
-                                        FieldTable arguments, int prefetchHigh, int prefetchLow,
+                                        FieldTable rawSelector, int prefetchHigh, int prefetchLow,
                                         boolean exclusive, int acknowledgeMode, boolean browseOnly, boolean autoClose)
             throws JMSException
     {
         super(channelId, connection, destination, messageSelector, noLocal, messageFactory, session, protocolHandler,
-                arguments, prefetchHigh, prefetchLow, exclusive, acknowledgeMode, browseOnly, autoClose);
+                rawSelector, prefetchHigh, prefetchLow, exclusive, acknowledgeMode, browseOnly, autoClose);
         _0_10session = (AMQSession_0_10) session;
 
         _preAcquire = evaluatePreAcquire(browseOnly, destination);

@@ -337,21 +337,6 @@ public final class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, B
                                       MessageFilter messageSelector,
                                       int tag) throws AMQException, FailoverException
     {
-        FieldTable arguments = FieldTableFactory.newFieldTable();
-        if (messageSelector != null)
-        {
-            arguments.put(AMQPFilterTypes.JMS_SELECTOR.getValue(), messageSelector.getSelector());
-        }
-
-        if (consumer.isAutoClose())
-        {
-            arguments.put(AMQPFilterTypes.AUTO_CLOSE.getValue(), Boolean.TRUE);
-        }
-
-        if (consumer.isBrowseOnly())
-        {
-            arguments.put(AMQPFilterTypes.NO_CONSUME.getValue(), Boolean.TRUE);
-        }
 
         BasicConsumeBody body = getMethodRegistry().createBasicConsumeBody(getTicket(),
                                                                            queueName,
@@ -360,7 +345,7 @@ public final class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, B
                                                                            consumer.getAcknowledgeMode() == Session.NO_ACKNOWLEDGE,
                                                                            consumer.isExclusive(),
                                                                            nowait,
-                                                                           arguments);
+                                                                           consumer.getArguments());
 
 
         AMQFrame jmsConsume = body.generateFrame(_channelId);

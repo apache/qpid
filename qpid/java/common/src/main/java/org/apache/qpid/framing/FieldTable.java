@@ -832,9 +832,12 @@ public class FieldTable
     public void addAll(FieldTable fieldTable)
     {
         initMapIfNecessary();
-        _encodedForm = null;
-        _properties.putAll(fieldTable._properties);
-        recalculateEncodedSize();
+        if (fieldTable._properties != null)
+        {
+            _encodedForm = null;
+            _properties.putAll(fieldTable._properties);
+            recalculateEncodedSize();
+        }
     }
 
     public static Map<String, Object> convertToMap(final FieldTable fieldTable)
