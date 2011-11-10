@@ -321,8 +321,8 @@ void SessionAdapter::QueueHandlerImpl::declare(const string& name, const string&
             ManagementAgent* agent = getBroker().getManagementAgent();
             if (agent)
                 agent->raiseEvent(_qmf::EventQueueDeclare(getConnection().getUrl(), getConnection().getUserId(),
-                                                      name, durable, exclusive, autoDelete, ManagementAgent::toMap(arguments),
-                                                      "existing"));
+                                                          name, durable, exclusive, autoDelete, alternateExchange, ManagementAgent::toMap(arguments),
+                                                          "existing"));
         }
 
     }
