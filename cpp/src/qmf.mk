@@ -172,3 +172,5 @@ QMFENGINE_VERSION_INFO  = 1:1:0
 libqmf_la_LDFLAGS = -version-info $(QMF_VERSION_INFO)
 libqmf2_la_LDFLAGS = -version-info $(QMF2_VERSION_INFO)
 libqmfengine_la_LDFLAGS = -version-info $(QMFENGINE_VERSION_INFO)
+
+pkgconfig_DATA += qmf2.pc
