@@ -543,6 +543,7 @@ AC_CONFIG_FILES([
   src/tests/test_env.sh
   src/tests/install_env.sh
   src/qpid.pc
+  src/qmf2.pc
   docs/man/Makefile
   docs/api/Makefile
   docs/api/user.doxygen

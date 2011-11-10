@@ -1364,5 +1364,12 @@ if (UNIX)
   install (FILES ${CMAKE_CURRENT_BINARY_DIR}/qpid.pc
            DESTINATION ${QPID_INSTALL_LIBDIR}/pkgconfig
            COMPONENT ${QPID_COMPONENT_COMMON})
+
+  add_dependencies(pkgconfig ${CMAKE_CURRENT_BINARY_DIR}/qmf2.pc)
+  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/qmf2.pc.in
+                 ${CMAKE_CURRENT_BINARY_DIR}/qmf2.pc)
+  install (FILES ${CMAKE_CURRENT_BINARY_DIR}/qmf2.pc
+           DESTINATION ${QPID_INSTALL_LIBDIR}/pkgconfig
+           COMPONENT ${QPID_COMPONENT_COMMON})
 endif (UNIX)
 
