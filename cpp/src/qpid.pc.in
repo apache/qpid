@@ -7,5 +7,5 @@ Name: qpid
 Version: @VERSION@
 Description: Qpid C++ client library
 Requires:
-Libs: -L${libdir} -lqpidmessaging @LIBS@
+Libs: -L${libdir} -lqpidmessaging -lqpidtypes @LIBS@
 Cflags: -I${includedir}
