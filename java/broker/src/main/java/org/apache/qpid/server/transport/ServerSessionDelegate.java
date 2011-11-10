@@ -100,6 +100,11 @@ public class ServerSessionDelegate extends SessionDelegate
 {
     private static final Logger LOGGER = Logger.getLogger(ServerSessionDelegate.class);
 
+    /**
+     * No-local queue argument is used to support the no-local feature of Durable Subscribers.
+     */
+    private static final String QUEUE_ARGUMENT_NO_LOCAL = "no-local";
+
     public ServerSessionDelegate()
     {
 
@@ -963,13 +968,10 @@ public class ServerSessionDelegate extends SessionDelegate
 
                         if(method.hasArguments()  && method.getArguments() != null)
                         {
-                            if(method.getArguments().containsKey("no-local"))
+                            if(method.getArguments().containsKey(QUEUE_ARGUMENT_NO_LOCAL))
                             {
-                                Object no_local = method.getArguments().get("no-local");
-                                if(no_local instanceof Boolean && ((Boolean)no_local))
-                                {
-                                    queue.setNoLocal(true);
-                                }
+                                Object noLocal = method.getArguments().get(QUEUE_ARGUMENT_NO_LOCAL);
+                                queue.setNoLocal(convertBooleanValue(noLocal));
                             }
                         }
 
@@ -1077,6 +1079,30 @@ public class ServerSessionDelegate extends SessionDelegate
                     return;
             }
         }
+    }
+
+    /**
+     * Converts a queue argument into a boolean value.  For compatibility with the C++
+     * and the clients, accepts with Boolean, String, or Number types.
+     * @param argValue  argument value.
+     *
+     * @return true if set
+     */
+    private boolean convertBooleanValue(Object argValue)
+    {
+        if(argValue instanceof Boolean && ((Boolean)argValue))
+        {
+            return true;
+        }
+        else if (argValue instanceof String && Boolean.parseBoolean((String)argValue))
+        {
+            return true;
+        }
+        else if (argValue instanceof Number && ((Number)argValue).intValue() != 0)
+        {
+            return true;
+        }
+        return false;
     }
 
     protected AMQQueue createQueue(final String queueName,

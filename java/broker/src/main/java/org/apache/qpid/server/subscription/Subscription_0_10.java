@@ -56,6 +56,7 @@ import org.apache.qpid.transport.MessageFlowMode;
 import org.apache.qpid.transport.MessageProperties;
 import org.apache.qpid.transport.MessageTransfer;
 import org.apache.qpid.transport.Method;
+import org.apache.qpid.transport.Session;
 import org.apache.qpid.transport.Struct;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
@@ -209,13 +210,13 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
             return false;
         }
 
-
-
-        if (_noLocal
-            && (entry.getMessage() instanceof MessageTransferMessage)
-            && ((MessageTransferMessage)entry.getMessage()).getSession() == _session)
+        if (_noLocal && entry.getMessage() instanceof MessageTransferMessage)
         {
-            return false;
+            Session messageSession= ((MessageTransferMessage)entry.getMessage()).getSession();
+            if (messageSession != null && messageSession.getConnection() == _session.getConnection())
+            {
+                return false;
+            }
         }
 
 
