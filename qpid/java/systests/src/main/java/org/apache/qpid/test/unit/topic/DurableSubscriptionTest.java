@@ -841,4 +841,147 @@ public class DurableSubscriptionTest extends QpidBrokerTestCase
             e.printStackTrace();
         }
     }
+
+    /**
+     * Tests that a subscriber created on a same <i>session</i> as producer with
+     * no local true does not receive messages.
+     */
+    public void testNoLocalOnSameSession() throws Exception
+    {
+        Connection connection = getConnection();
+        Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        Topic topic = session.createTopic(getTestQueueName());
+        MessageProducer producer = session.createProducer(topic);
+        TopicSubscriber subscriber =  null;
+        try
+        {
+            subscriber = session.createDurableSubscriber(topic, getTestName(), null, true);
+            connection.start();
+
+            producer.send(createNextMessage(session, 1));
+
+            Message m = subscriber.receive(NEGATIVE_RECEIVE_TIMEOUT);
+            assertNull("Unexpected message received", m);
+        }
+        finally
+        {
+            session.unsubscribe(getTestName());
+        }
+    }
+
+
+    /**
+     * Tests that a subscriber created on a same <i>connection</i> but separate
+     * <i>sessionM</i> as producer with no local true does not receive messages.
+     */
+    public void testNoLocalOnSameConnection() throws Exception
+    {
+        Connection connection = getConnection();
+
+        Session consumerSession = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        Session producerSession = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        Topic topic = consumerSession.createTopic(getTestQueueName());
+        MessageProducer producer = producerSession.createProducer(topic);
+
+        TopicSubscriber subscriber =  null;
+        try
+        {
+            subscriber = consumerSession.createDurableSubscriber(topic, getTestName(), null, true);
+            connection.start();
+
+            producer.send(createNextMessage(producerSession, 1));
+
+            Message m = subscriber.receive(NEGATIVE_RECEIVE_TIMEOUT);
+            assertNull("Unexpected message received", m);
+        }
+        finally
+        {
+            consumerSession.unsubscribe(getTestName());
+        }
+    }
+
+    /**
+     * Tests that if no-local is in use, that the messages are delivered when
+     * the client reconnects.
+     *
+     * Currently fails on the Java Broker due to QPID-3605.
+     */
+    public void testNoLocalMessagesNotDeliveredAfterReconnection() throws Exception
+    {
+        Connection connection = getConnection();
+
+        Session consumerSession = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        Session producerSession = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        Topic topic = consumerSession.createTopic(getTestQueueName());
+        MessageProducer producer = producerSession.createProducer(topic);
+
+        TopicSubscriber subscriber =  null;
+        try
+        {
+            subscriber = consumerSession.createDurableSubscriber(topic, getTestName(), null, true);
+            connection.start();
+
+            producer.send(createNextMessage(producerSession, 1));
+
+            Message m = subscriber.receive(NEGATIVE_RECEIVE_TIMEOUT);
+            assertNull("Unexpected message received", m);
+
+            connection.close();
+
+            connection = getConnection();
+
+            consumerSession = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            subscriber = consumerSession.createDurableSubscriber(topic, getTestName(), null, true);
+            connection.start();
+            m = subscriber.receive(NEGATIVE_RECEIVE_TIMEOUT);
+            assertNull("Message should not be received on a new connection", m);
+        }
+        finally
+        {
+            consumerSession.unsubscribe(getTestName());
+        }
+    }
+
+    /**
+     * Tests that messages are delivered normally to a subscriber on a separate connection despite
+     * the use of durable subscriber with no-local on the first connection.
+     */
+    public void testNoLocalSubscriberAndSubscriberOnSeparateConnection() throws Exception
+    {
+        Connection noLocalConnection = getConnection();
+        Connection connection = getConnection();
+
+        String noLocalSubId1 = getTestName() + "subId1";
+        String subId = getTestName() + "subId2";
+
+        Session noLocalSession = noLocalConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        Topic noLocalTopic = noLocalSession.createTopic(getTestQueueName());
+
+        Session consumerSession = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        Topic topic = consumerSession.createTopic(getTestQueueName());
+
+        TopicSubscriber noLocalSubscriber =  null;
+        TopicSubscriber subscriber =  null;
+        try
+        {
+            MessageProducer producer = noLocalSession.createProducer(noLocalTopic);
+            noLocalSubscriber = noLocalSession.createDurableSubscriber(noLocalTopic, noLocalSubId1, null, true);
+            subscriber = consumerSession.createDurableSubscriber(topic, subId, null, true);
+            noLocalConnection.start();
+            connection.start();
+
+            producer.send(createNextMessage(noLocalSession, 1));
+
+            Message m1 = noLocalSubscriber.receive(NEGATIVE_RECEIVE_TIMEOUT);
+            assertNull("Subscriber on nolocal connection should not receive message", m1);
+
+            Message m2 = subscriber.receive(NEGATIVE_RECEIVE_TIMEOUT);
+            assertNotNull("Subscriber on non-nolocal connection should receive message", m2);
+        }
+        finally
+        {
+            noLocalSession.unsubscribe(noLocalSubId1);
+            consumerSession.unsubscribe(subId);
+        }
+    }
 }

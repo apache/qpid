@@ -47,6 +47,7 @@ import org.apache.qpid.client.message.AMQMessageDelegateFactory;
 import org.apache.qpid.client.message.FieldTableSupport;
 import org.apache.qpid.client.message.MessageFactoryRegistry;
 import org.apache.qpid.client.message.UnprocessedMessage_0_10;
+import org.apache.qpid.client.messaging.address.AddressHelper;
 import org.apache.qpid.client.messaging.address.Link;
 import org.apache.qpid.client.messaging.address.Link.Reliability;
 import org.apache.qpid.client.messaging.address.Node.ExchangeNode;
@@ -737,7 +738,7 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
             Map<String,Object> arguments = new HashMap<String,Object>();
             if (noLocal)
             {            
-                arguments.put("no-local", true);
+                arguments.put(AddressHelper.NO_LOCAL, true);
             } 
 
             getQpidSession().queueDeclare(queueName.toString(), "" , arguments,
