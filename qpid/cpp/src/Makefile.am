@@ -69,6 +69,7 @@ EXTRA_DIST= $(platform_dist) $(rgen_srcs) $(windows_dist)
 # Define variables that are be appended to by this file and included .mk files.
 nobase_include_HEADERS =
 libqpidcommon_la_SOURCES =
+pkgconfig_DATA =
 
 ## Generated code
 
@@ -900,4 +901,4 @@ install-data-local:
 
 # Support for pkg-config
 pkgconfigdir = $(libdir)/pkgconfig
-pkgconfig_DATA = qpid.pc
+pkgconfig_DATA += qpid.pc
