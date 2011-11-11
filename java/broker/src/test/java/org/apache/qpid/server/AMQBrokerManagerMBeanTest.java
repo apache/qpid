@@ -20,9 +20,9 @@
  */
 package org.apache.qpid.server;
 
-import junit.framework.TestCase;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.management.common.mbeans.ManagedBroker;
+import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
@@ -79,6 +79,20 @@ public class AMQBrokerManagerMBeanTest extends InternalBrokerBaseCase
 
         mbean.deleteQueue(queueName);
         assertTrue(_queueRegistry.getQueue(new AMQShortString(queueName)) == null);
+    }
+
+    public void testCreateNewQueueBindsToDefaultExchange() throws Exception
+    {
+        String queueName = "testQueue_" + System.currentTimeMillis();
+
+        ManagedBroker mbean = new AMQBrokerManagerMBean((VirtualHostImpl.VirtualHostMBean) _vHost.getManagedObject());
+        ExchangeRegistry exReg = _vHost.getExchangeRegistry();
+        Exchange defaultExchange =  exReg.getDefaultExchange();
+
+        mbean.createNewQueue(queueName, "test", false);
+        assertTrue(_queueRegistry.getQueue(new AMQShortString(queueName)) != null);
+
+        assertTrue("New queue should be bound to default exchange", defaultExchange.isBound(new AMQShortString(queueName)));
     }
 
     @Override

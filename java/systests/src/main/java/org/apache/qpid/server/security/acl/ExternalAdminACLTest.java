@@ -63,7 +63,7 @@ public class ExternalAdminACLTest extends AbstractACLTestCase
     {
 		_testConfigFile = createTempTestLog4JConfig();
 		
-        _jmx = new JMXTestUtils(this, "admin", "admin");
+        _jmx = new JMXTestUtils(this);
         _jmx.setUp();
         super.setUp();
         _jmx.open();
