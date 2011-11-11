@@ -33,6 +33,8 @@ import java.net.SocketException;
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import javax.net.ssl.SSLSocket;
+
 /**
  * IoReceiver
  *
@@ -94,7 +96,7 @@ final class IoReceiver implements Runnable, Closeable
             {
                 try
                 {
-                    if (shutdownBroken)
+                    if (shutdownBroken || socket instanceof SSLSocket)
                     {
                        socket.close();
                     }
