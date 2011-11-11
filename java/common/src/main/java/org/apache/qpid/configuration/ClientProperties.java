@@ -102,6 +102,12 @@ public class ClientProperties
      */
     public static final int DEFAULT_SYNC_OPERATION_TIMEOUT = 60000;
 
+    /**
+     * System properties to change the default value used for TCP_NODELAY
+     */
+    public static final String QPID_TCP_NODELAY_PROP_NAME = "qpid.tcp_nodelay";
+    public static final String AMQJ_TCP_NODELAY_PROP_NAME = "amqj.tcp_nodelay";
+
     /*
     public static final QpidProperty<Boolean>  IGNORE_SET_CLIENTID_PROP_NAME =
         QpidProperty.booleanProperty(false,"qpid.ignore_set_client_id","ignore_setclientID");

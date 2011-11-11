@@ -20,19 +20,35 @@
  */
 package org.apache.qpid.test.unit.client.BrokerDetails;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import junit.framework.TestCase;
 
 import org.apache.qpid.client.AMQBrokerDetails;
-import org.apache.qpid.client.AMQConnectionURL;
-import org.apache.qpid.jms.ConnectionURL;
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.url.URLSyntaxException;
 
 public class BrokerDetailsTest extends TestCase
 {
+    public void testDefaultTCP_NODELAY() throws URLSyntaxException
+    {
+        String brokerURL = "tcp://localhost:5672";
+        AMQBrokerDetails broker = new AMQBrokerDetails(brokerURL);
+
+        assertNull("default value should be null", broker.getProperty(BrokerDetails.OPTIONS_TCP_NO_DELAY));
+    }
+
+    public void testOverridingTCP_NODELAY() throws URLSyntaxException
+    {
+        String brokerURL = "tcp://localhost:5672?tcp_nodelay='true'";
+        AMQBrokerDetails broker = new AMQBrokerDetails(brokerURL);
+
+        assertTrue("value should be true", Boolean.valueOf(broker.getProperty(BrokerDetails.OPTIONS_TCP_NO_DELAY)));
+
+        brokerURL = "tcp://localhost:5672?tcp_nodelay='false''&maxprefetch='1'";
+        broker = new AMQBrokerDetails(brokerURL);
+
+        assertFalse("value should be false", Boolean.valueOf(broker.getProperty(BrokerDetails.OPTIONS_TCP_NO_DELAY)));
+    }
+
     public void testMultiParameters() throws URLSyntaxException
     {
         String url = "tcp://localhost:5672?timeout='200',immediatedelivery='true'";
@@ -81,10 +97,5 @@ public class BrokerDetailsTest extends TestCase
             assertTrue(urise.getReason().equals("Illegal character in port number"));
         }
 
-    }
-
-    public static junit.framework.Test suite()
-    {
-        return new junit.framework.TestSuite(BrokerDetailsTest.class);
     }
 }
