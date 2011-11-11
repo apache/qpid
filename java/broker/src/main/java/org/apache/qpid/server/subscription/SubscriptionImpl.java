@@ -234,7 +234,7 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
 
         public boolean wouldSuspend(QueueEntry msg)
         {
-            return !getCreditManager().useCreditForMessage(msg.getMessage());
+            return !getCreditManager().useCreditForMessage(msg.getMessage().getSize());
         }
 
     }
@@ -575,7 +575,7 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
 
     public boolean wouldSuspend(QueueEntry msg)
     {
-        return !_creditManager.useCreditForMessage(msg.getMessage());//_channel.wouldSuspend(msg.getMessage());
+        return !_creditManager.useCreditForMessage(msg.getMessage().getSize());//_channel.wouldSuspend(msg.getMessage());
     }
 
     public void getSendLock()

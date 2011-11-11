@@ -66,9 +66,6 @@ qpid.tests.messaging.endpoints.SessionTests.testDoubleCommit
 qpid_tests.broker_0_10.message.MessageTests.test_credit_flow_bytes
 qpid_tests.broker_0_10.message.MessageTests.test_window_flow_bytes
 
-#QPID-3592 Fails to receive more messages after restart
-qpid_tests.broker_0_10.message.MessageTests.test_window_stop
-
 #QPID-3605 Durable subscriber with no-local true receives messages on re-connection
 qpid_tests.broker_0_10.message.MessageTests.test_no_local_awkward
 
