@@ -45,12 +45,11 @@ public class ManagementActorLoggingTest extends AbstractTestLogging
 {
     private JMXTestUtils _jmxUtils;
     private boolean _closed = false;
-    private static final String USER = "admin";
 
     @Override
     public void setUp() throws Exception
     {
-        _jmxUtils = new JMXTestUtils(this, USER, USER);
+        _jmxUtils = new JMXTestUtils(this);
         _jmxUtils.setUp();
         super.setUp();
         _jmxUtils.open();
@@ -364,7 +363,7 @@ public class ManagementActorLoggingTest extends AbstractTestLogging
 
         List<String> results = waitAndFindMatches("BND-1001");
 
-        assertEquals("More than one bind creation found", 1, results.size());
+        assertEquals("Unexpected number of bindings logged", 2, results.size());
 
         String log = getLogMessage(results, 0);
 
@@ -391,7 +390,7 @@ public class ManagementActorLoggingTest extends AbstractTestLogging
 
         List<String> results = waitAndFindMatches("BND-1001");
 
-        assertEquals("More than one bind creation found", 1, results.size());
+        assertEquals("Unexpected number of bindings logged", 2, results.size());
 
         String log = getLogMessage(results, 0);
 
@@ -418,7 +417,7 @@ public class ManagementActorLoggingTest extends AbstractTestLogging
 
         List<String> results = waitAndFindMatches("BND-1001");
 
-        assertEquals("More than one bind creation found", 1, results.size());
+        assertEquals("Unexpected number of bindings logged", 2, results.size());
 
         String log = getLogMessage(results, 0);
 

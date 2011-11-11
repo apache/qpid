@@ -27,7 +27,9 @@ import java.util.concurrent.ConcurrentMap;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQSecurityException;
+import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.queue.IncomingMessage;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.virtualhost.VirtualHost;
@@ -87,12 +89,22 @@ public class DefaultExchangeRegistry implements ExchangeRegistry
 
     public void unregisterExchange(AMQShortString name, boolean inUse) throws AMQException
     {
-        // Check access
-        if (!_host.getSecurityManager().authoriseDelete(_exchangeMap.get(name)))
+        final Exchange exchange = _exchangeMap.get(name);
+        if (exchange == null)
+        {
+            throw new AMQException(AMQConstant.NOT_FOUND, "Unknown exchange " + name, null);
+        }
+
+        if (ExchangeDefaults.DEFAULT_EXCHANGE_NAME.equals(name))
+        {
+            throw new AMQException(AMQConstant.NOT_ALLOWED, "Cannot unregister the default exchange", null);
+        }
+
+        if (!_host.getSecurityManager().authoriseDelete(exchange))
         {
             throw new AMQSecurityException();
         }
-        
+
         // TODO: check inUse argument
 
         Exchange e = _exchangeMap.remove(name);

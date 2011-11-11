@@ -1326,7 +1326,7 @@ public class QpidBrokerTestCase extends QpidTestCase
      */
     public void reloadBrokerSecurityConfig() throws Exception
     {
-        JMXTestUtils jmxu = new JMXTestUtils(this, "admin" , "admin");
+        JMXTestUtils jmxu = new JMXTestUtils(this);
         jmxu.open();
         
         try

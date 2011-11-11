@@ -60,6 +60,7 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
     private final QueueRegistry _queueRegistry;
     private final ExchangeRegistry _exchangeRegistry;
     private final ExchangeFactory _exchangeFactory;
+    private final Exchange _defaultExchange;
     private final DurableConfigurationStore _durableConfig;
 
     private final VirtualHostImpl.VirtualHostMBean _virtualHostMBean;
@@ -74,6 +75,7 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
 
         _queueRegistry = virtualHost.getQueueRegistry();
         _exchangeRegistry = virtualHost.getExchangeRegistry();
+        _defaultExchange = _exchangeRegistry.getDefaultExchange();
         _durableConfig = virtualHost.getDurableConfigurationStore();
         _exchangeFactory = virtualHost.getExchangeFactory();
     }
@@ -256,13 +258,14 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
                 ownerShortString = new AMQShortString(owner);
             }
 
-            queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString(queueName), durable, ownerShortString, false, false, getVirtualHost(), null);
+            final VirtualHost virtualHost = getVirtualHost();
+            queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString(queueName), durable, ownerShortString, false, false, virtualHost, null);
             if (queue.isDurable() && !queue.isAutoDelete())
             {
                 _durableConfig.createQueue(queue);
             }
 
-            _queueRegistry.registerQueue(queue);
+            virtualHost.getBindingFactory().addBinding(queueName, queue, _defaultExchange, null);
         }
         catch (AMQException ex)
         {

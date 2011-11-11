@@ -60,7 +60,6 @@ import java.lang.reflect.UndeclaredThrowableException;
 public class ModelTest extends QpidBrokerTestCase
 {
 
-    private static final String USER = "admin";
     private JMXTestUtils _jmxUtils;
     private static final String VIRTUALHOST_NAME = "test";
 
@@ -68,7 +67,7 @@ public class ModelTest extends QpidBrokerTestCase
     public void setUp() throws Exception
     {
         // Create a JMX Helper
-        _jmxUtils = new JMXTestUtils(this, USER, USER);
+        _jmxUtils = new JMXTestUtils(this);
         _jmxUtils.setUp();
         super.setUp();
 
