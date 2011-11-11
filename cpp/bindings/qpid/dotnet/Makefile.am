@@ -130,19 +130,32 @@ EXTRA_DIST = configure-windows.ps1 \
    test/messaging.test/msvc10/messaging.test.csproj \
    test/messaging.test/msvc9/messaging.test.csproj \
    test/messaging.test/Properties/AssemblyInfo.cs \
-   winsdk_sources/examples/csharp.direct.receiver/csharp.direct.receiver.csproj \
-   winsdk_sources/examples/csharp.direct.sender/csharp.direct.sender.csproj \
-   winsdk_sources/examples/csharp.example.client/csharp.example.client.csproj \
-   winsdk_sources/examples/csharp.example.declare_queues/csharp.example.declare_queues.csproj \
-   winsdk_sources/examples/csharp.example.drain/csharp.example.drain.csproj \
-   winsdk_sources/examples/csharp.example.helloworld/csharp.example.helloworld.csproj \
-   winsdk_sources/examples/csharp.example.server/csharp.example.server.csproj \
-   winsdk_sources/examples/csharp.example.spout/csharp.example.spout.csproj \
-   winsdk_sources/examples/csharp.map.callback.receiver/csharp.map.callback.receiver.csproj \
-   winsdk_sources/examples/csharp.map.callback.sender/csharp.map.callback.sender.csproj \
-   winsdk_sources/examples/csharp.map.receiver/csharp.map.receiver.csproj \
-   winsdk_sources/examples/csharp.map.sender/csharp.map.sender.csproj \
-   winsdk_sources/winsdk_dotnet_examples.sln \
+   winsdk_sources/msvc10/examples/csharp.direct.receiver/csharp.direct.receiver.csproj \
+   winsdk_sources/msvc10/examples/csharp.direct.sender/csharp.direct.sender.csproj \
+   winsdk_sources/msvc10/examples/csharp.example.client/csharp.example.client.csproj \
+   winsdk_sources/msvc10/examples/csharp.example.declare_queues/csharp.example.declare_queues.csproj \
+   winsdk_sources/msvc10/examples/csharp.example.drain/csharp.example.drain.csproj \
+   winsdk_sources/msvc10/examples/csharp.example.helloworld/csharp.example.helloworld.csproj \
+   winsdk_sources/msvc10/examples/csharp.example.server/csharp.example.server.csproj \
+   winsdk_sources/msvc10/examples/csharp.example.spout/csharp.example.spout.csproj \
+   winsdk_sources/msvc10/examples/csharp.map.callback.receiver/csharp.map.callback.receiver.csproj \
+   winsdk_sources/msvc10/examples/csharp.map.callback.sender/csharp.map.callback.sender.csproj \
+   winsdk_sources/msvc10/examples/csharp.map.receiver/csharp.map.receiver.csproj \
+   winsdk_sources/msvc10/examples/csharp.map.sender/csharp.map.sender.csproj \
+   winsdk_sources/msvc10/winsdk_dotnet_examples.sln \
+   winsdk_sources/msvc9/examples/csharp.direct.receiver/csharp.direct.receiver.csproj \
+   winsdk_sources/msvc9/examples/csharp.direct.sender/csharp.direct.sender.csproj \
+   winsdk_sources/msvc9/examples/csharp.example.client/csharp.example.client.csproj \
+   winsdk_sources/msvc9/examples/csharp.example.declare_queues/csharp.example.declare_queues.csproj \
+   winsdk_sources/msvc9/examples/csharp.example.drain/csharp.example.drain.csproj \
+   winsdk_sources/msvc9/examples/csharp.example.helloworld/csharp.example.helloworld.csproj \
+   winsdk_sources/msvc9/examples/csharp.example.server/csharp.example.server.csproj \
+   winsdk_sources/msvc9/examples/csharp.example.spout/csharp.example.spout.csproj \
+   winsdk_sources/msvc9/examples/csharp.map.callback.receiver/csharp.map.callback.receiver.csproj \
+   winsdk_sources/msvc9/examples/csharp.map.callback.sender/csharp.map.callback.sender.csproj \
+   winsdk_sources/msvc9/examples/csharp.map.receiver/csharp.map.receiver.csproj \
+   winsdk_sources/msvc9/examples/csharp.map.sender/csharp.map.sender.csproj \
+   winsdk_sources/msvc9/winsdk_dotnet_examples.sln \
   ../../../src/windows/resources/qpid-icon.ico \
   ../../../src/windows/resources/template-resource.rc \
   ../../../src/windows/resources/version-resource.h 
