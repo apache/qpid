@@ -20,10 +20,12 @@
  */
 package org.apache.qpid.server.flow;
 
-import org.apache.qpid.server.message.ServerMessage;
+import org.apache.log4j.Logger;
 
 public class WindowCreditManager extends AbstractFlowCreditManager implements FlowCreditManager_0_10
 {
+    private static final Logger LOGGER = Logger.getLogger(WindowCreditManager.class);
+
     private volatile long _bytesCreditLimit;
     private volatile long _messageCreditLimit;
 
@@ -70,31 +72,30 @@ public class WindowCreditManager extends AbstractFlowCreditManager implements Fl
 
     public synchronized void restoreCredit(final long messageCredit, final long bytesCredit)
     {
+        _messageUsed -= messageCredit;
+        if(_messageUsed < 0L)
+        {
+            LOGGER.error("Message credit used value was negative: "+ _messageUsed);
+            _messageUsed = 0;
+        }
+
         boolean notifyIncrease = true;
+
         if(_messageCreditLimit > 0L)
         {
             notifyIncrease = (_messageUsed != _messageCreditLimit);
-            _messageUsed -= messageCredit;
-
-            //TODO log warning
-            if(_messageUsed < 0L)
-            {
-                _messageUsed = 0;
-            }
         }
 
-
+        _bytesUsed -= bytesCredit;
+        if(_bytesUsed < 0L)
+        {
+            LOGGER.error("Bytes credit used value was negative: "+ _messageUsed);
+            _bytesUsed = 0;
+        }
 
         if(_bytesCreditLimit > 0L)
         {
             notifyIncrease = notifyIncrease && bytesCredit>0;
-            _bytesUsed -= bytesCredit;
-
-            //TODO log warning
-            if(_bytesUsed < 0L)
-            {
-                _bytesUsed = 0;
-            }
 
             if(notifyIncrease)
             {
@@ -102,10 +103,7 @@ public class WindowCreditManager extends AbstractFlowCreditManager implements Fl
             }
         }
 
-
-
         setSuspended(!hasCredit());
-
     }
 
 
@@ -116,7 +114,7 @@ public class WindowCreditManager extends AbstractFlowCreditManager implements Fl
                 && (_messageCreditLimit < 0L || _messageCreditLimit > _messageUsed);
     }
 
-    public synchronized boolean useCreditForMessage(final ServerMessage msg)
+    public synchronized boolean useCreditForMessage(final long msgSize)
     {
         if(_messageCreditLimit >= 0L)
         {
@@ -128,10 +126,10 @@ public class WindowCreditManager extends AbstractFlowCreditManager implements Fl
 
                     return true;
                 }
-                else if(_bytesUsed + msg.getSize() <= _bytesCreditLimit)
+                else if(_bytesUsed + msgSize <= _bytesCreditLimit)
                 {
                     _messageUsed++;
-                    _bytesUsed += msg.getSize();
+                    _bytesUsed += msgSize;
 
                     return true;
                 }
@@ -149,9 +147,9 @@ public class WindowCreditManager extends AbstractFlowCreditManager implements Fl
         }
         else if(_bytesCreditLimit >= 0L)
         {
-            if(_bytesUsed + msg.getSize() <= _bytesCreditLimit)
+            if(_bytesUsed + msgSize <= _bytesCreditLimit)
             {
-                 _bytesUsed += msg.getSize();
+                 _bytesUsed += msgSize;
 
                 return true;
             }

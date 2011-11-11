@@ -1,6 +1,5 @@
 package org.apache.qpid.server.flow;
 
-import org.apache.qpid.server.message.ServerMessage;
 
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -59,9 +58,8 @@ public class BytesOnlyCreditManager extends AbstractFlowCreditManager
         return _bytesCredit.get() > 0L;
     }
 
-    public boolean useCreditForMessage(ServerMessage msg)
+    public boolean useCreditForMessage(long msgSize)
     {
-        final long msgSize = msg.getSize();
         if(hasCredit())
         {
             if(_bytesCredit.addAndGet(-msgSize) >= 0)
