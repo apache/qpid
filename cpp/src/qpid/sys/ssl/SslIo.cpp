@@ -57,11 +57,10 @@ void ignoreSigpipe() {
  * case we could rebalance the info occasionally.  
  */
 __thread int threadReadTotal = 0;
-__thread int threadMaxRead = 0;
 __thread int threadReadCount = 0;
 __thread int threadWriteTotal = 0;
 __thread int threadWriteCount = 0;
-__thread int64_t threadMaxReadTimeNs = 2 * 1000000; // start at 2ms
+__thread int64_t threadMaxIoTimeNs = 2 * 1000000; // start at 2ms
 }
 
 /*
@@ -277,7 +276,6 @@ SslIO::BufferBase* SslIO::getQueuedBuffer() {
  * it in
  */
 void SslIO::readable(DispatchHandle& h) {
-    int readTotal = 0;
     AbsTime readStartTime = AbsTime::now();
     do {
         // (Try to) get a buffer
@@ -292,24 +290,23 @@ void SslIO::readable(DispatchHandle& h) {
             if (rc > 0) {
                 buff->dataCount += rc;
                 threadReadTotal += rc;
-                readTotal += rc;
 
                 readCallback(*this, buff);
                 if (rc != readCount) {
                     // If we didn't fill the read buffer then time to stop reading
                     break;
                 }
-                
+
                 // Stop reading if we've overrun our timeslot
-                if (Duration(readStartTime, AbsTime::now()) > threadMaxReadTimeNs) {
+                if (Duration(readStartTime, AbsTime::now()) > threadMaxIoTimeNs) {
                     break;
                 }
-                
+
             } else {
                 // Put buffer back (at front so it doesn't interfere with unread buffers)
                 bufferQueue.push_front(buff);
                 assert(buff);
-                
+
                 // Eof or other side has gone away
                 if (rc == 0 || errno == ECONNRESET) {
                     eofCallback(*this);
@@ -337,12 +334,11 @@ void SslIO::readable(DispatchHandle& h) {
                 h.unwatchRead();
                 break;
             }
-            
+
         }
     } while (true);
 
     ++threadReadCount;
-    threadMaxRead = std::max(threadMaxRead, readTotal);
     return;
 }
 
@@ -350,7 +346,7 @@ void SslIO::readable(DispatchHandle& h) {
  * We carry on writing whilst we have data to write and we can write
  */
 void SslIO::writeable(DispatchHandle& h) {
-    int writeTotal = 0;
+    AbsTime writeStartTime = AbsTime::now();
     do {
         // See if we've got something to write
         if (!writeQueue.empty()) {
@@ -362,7 +358,6 @@ void SslIO::writeable(DispatchHandle& h) {
             int rc = socket.write(buff->bytes+buff->dataStart, buff->dataCount);
             if (rc >= 0) {
                 threadWriteTotal += rc;
-                writeTotal += rc;
 
                 // If we didn't write full buffer put rest back
                 if (rc != buff->dataCount) {
@@ -371,14 +366,14 @@ void SslIO::writeable(DispatchHandle& h) {
                     writeQueue.push_back(buff);
                     break;
                 }
-                
+
                 // Recycle the buffer
                 queueReadBuffer(buff);
-                
-                // If we've already written more than the max for reading then stop
-                // (this is to stop writes dominating reads) 
-                if (writeTotal > threadMaxRead)
+
+                // Stop writing if we've overrun our timeslot
+                if (Duration(writeStartTime, AbsTime::now()) > threadMaxIoTimeNs) {
                     break;
+                }
             } else {
                 // Put buffer back
                 writeQueue.push_back(buff);
@@ -425,7 +420,7 @@ void SslIO::writeable(DispatchHandle& h) {
     ++threadWriteCount;
     return;
 }
-        
+
 void SslIO::disconnected(DispatchHandle& h) {
     // If we've already queued close do it instead of disconnected callback
     if (queuedClose) {
