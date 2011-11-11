@@ -654,9 +654,9 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
         _deleted.set(true);
     }
 
-    public boolean wouldSuspend(QueueEntry msg)
+    public boolean wouldSuspend(QueueEntry entry)
     {
-        return !_creditManager.useCreditForMessage(msg.getMessage());
+        return !_creditManager.useCreditForMessage(entry.getMessage().getSize());
     }
 
     public void getSendLock()

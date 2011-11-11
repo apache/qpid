@@ -1,6 +1,5 @@
 package org.apache.qpid.server.flow;
 
-import org.apache.qpid.server.message.ServerMessage;
 
 /*
 *
@@ -41,6 +40,6 @@ public interface FlowCreditManager
 
     public boolean hasCredit();
 
-    public boolean useCreditForMessage(ServerMessage msg);
+    public boolean useCreditForMessage(long msgSize);
 
 }
