@@ -415,19 +415,18 @@ public class ServerSession extends Session implements AuthorizationHolder, Sessi
             {
                 queue.unregisterSubscription(sub);
             }
-
         }
         catch (AMQException e)
         {
             // TODO
-            _logger.error("Failed to unregister subscription", e);
+            _logger.error("Failed to unregister subscription :" + e.getMessage(), e);
         }
         finally
         {
             sub.releaseSendLock();
         }
     }
-    
+
     public boolean isTransactional()
     {
         // this does not look great but there should only be one "non-transactional"
@@ -686,12 +685,17 @@ public class ServerSession extends Session implements AuthorizationHolder, Sessi
     {
         // unregister subscriptions in order to prevent sending of new messages
         // to subscriptions with closing session
+        unregisterSubscriptions();
+
+        super.close();
+    }
+
+    void unregisterSubscriptions()
+    {
         final Collection<Subscription_0_10> subscriptions = getSubscriptions();
         for (Subscription_0_10 subscription_0_10 : subscriptions)
         {
             unregister(subscription_0_10);
         }
-
-        super.close();
     }
 }
