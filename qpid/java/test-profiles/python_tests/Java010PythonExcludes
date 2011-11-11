@@ -69,12 +69,6 @@ qpid_tests.broker_0_10.message.MessageTests.test_window_flow_bytes
 #QPID-3605 Durable subscriber with no-local true receives messages on re-connection
 qpid_tests.broker_0_10.message.MessageTests.test_no_local_awkward
 
-#QPID-3593 Priority Queue test failures
-qpid_tests.broker_0_10.priority.PriorityTests.test_browsing
-qpid_tests.broker_0_10.priority.PriorityTests.test_prioritised_delivery_1
-qpid_tests.broker_0_10.priority.PriorityTests.test_prioritised_delivery_2
-qpid_tests.broker_0_10.priority.PriorityTests.test_requeue
-
 #QPID-3594 exclusive queues problem
 qpid_tests.broker_0_10.queue.QueueTests.test_declare_exclusive
 
