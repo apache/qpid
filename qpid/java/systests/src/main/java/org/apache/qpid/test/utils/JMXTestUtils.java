@@ -51,18 +51,26 @@ import org.apache.qpid.management.common.mbeans.UserManagement;
  */
 public class JMXTestUtils
 {
-    QpidBrokerTestCase _test;
-    MBeanServerConnection _mbsc;
-    JMXConnector _jmxc;
+    private static final String DEFAULT_PASSWORD = "admin";
+    private static final String DEFAULT_USERID = "admin";
 
-    private String USER;
-    private String PASSWORD;
+    private MBeanServerConnection _mbsc;
+    private JMXConnector _jmxc;
+
+    private final String _user;
+    private final String _password;
+    private final QpidBrokerTestCase _test;
 
     public JMXTestUtils(QpidBrokerTestCase test, String user, String password)
     {
         _test = test;
-        USER = user;
-        PASSWORD = password;
+        _user = user;
+        _password = password;
+    }
+
+    public JMXTestUtils(QpidBrokerTestCase test)
+    {
+        this(test, DEFAULT_USERID, DEFAULT_PASSWORD);
     }
 
     public void setUp() throws IOException, ConfigurationException, Exception
@@ -73,7 +81,7 @@ public class JMXTestUtils
     public void open() throws Exception
     {
         _jmxc = JMXConnnectionFactory.getJMXConnection(5000, "127.0.0.1",
-                    _test.getManagementPort(_test.getPort()), USER, PASSWORD);
+                    _test.getManagementPort(_test.getPort()), _user, _password);
 
         _mbsc = _jmxc.getMBeanServerConnection();
     }
@@ -319,6 +327,12 @@ public class JMXTestUtils
         return getManagedObject(managedClass, objectName);
     }
 
+    public boolean isManagedObjectExist(String query)
+    {
+        return !queryObjects(query).isEmpty();
+
+    }
+
     public <T> T getManagedObject(Class<T> managedClass, ObjectName objectName)
     {
         return MBeanServerInvocationHandler.newProxyInstance(_mbsc, objectName, managedClass, false);
@@ -370,7 +384,7 @@ public class JMXTestUtils
     }
 
     /**
-     * Retrive {@link ServerInformation} JMX MBean.
+     * Retrieve {@link ServerInformation} JMX MBean.
      */
     public ServerInformation getServerInformation()
     {
@@ -387,7 +401,7 @@ public class JMXTestUtils
     }
 
     /**
-     * Retrive all {@link ManagedConnection} objects.
+     * Retrieve all {@link ManagedConnection} objects.
      */
     public List<ManagedConnection> getAllManagedConnections()
     {
@@ -402,7 +416,7 @@ public class JMXTestUtils
     }
 
     /**
-     * Retrive all {@link ManagedConnection} objects for a particular virtual host.
+     * Retrieve all {@link ManagedConnection} objects for a particular virtual host.
      */
     public List<ManagedConnection> getManagedConnections(String vhost)
     {

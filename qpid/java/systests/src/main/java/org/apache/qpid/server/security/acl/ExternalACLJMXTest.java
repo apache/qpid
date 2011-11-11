@@ -52,7 +52,7 @@ public class ExternalACLJMXTest extends AbstractACLTestCase
     @Override
     public void setUp() throws Exception
     {
-        _jmx = new JMXTestUtils(this, "admin", "admin");
+        _jmx = new JMXTestUtils(this);
         _jmx.setUp();
         super.setUp();
         _jmx.open();
