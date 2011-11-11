@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.flow;
 
-import org.apache.qpid.server.message.ServerMessage;
 
 public class CreditCreditManager extends AbstractFlowCreditManager implements FlowCreditManager_0_10
 {
@@ -118,7 +117,7 @@ public class CreditCreditManager extends AbstractFlowCreditManager implements Fl
         return (_bytesCredit != 0L  && _messageCredit != 0L);
     }
 
-    public synchronized boolean useCreditForMessage(final ServerMessage msg)
+    public synchronized boolean useCreditForMessage(long msgSize)
     {
         if(_messageCredit >= 0L)
         {
@@ -130,10 +129,10 @@ public class CreditCreditManager extends AbstractFlowCreditManager implements Fl
 
                     return true;
                 }
-                else if(msg.getSize() <= _bytesCredit)
+                else if(msgSize <= _bytesCredit)
                 {
                     _messageCredit--;
-                    _bytesCredit -= msg.getSize();
+                    _bytesCredit -= msgSize;
 
                     return true;
                 }
@@ -151,9 +150,9 @@ public class CreditCreditManager extends AbstractFlowCreditManager implements Fl
         }
         else if(_bytesCredit >= 0L)
         {
-            if(msg.getSize() <= _bytesCredit)
+            if(msgSize <= _bytesCredit)
             {
-                 _bytesCredit -= msg.getSize();
+                 _bytesCredit -= msgSize;
 
                 return true;
             }
