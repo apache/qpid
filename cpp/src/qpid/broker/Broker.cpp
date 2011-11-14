@@ -338,6 +338,13 @@ Broker::Broker(const Broker::Options& conf) :
     } else if (conf.knownHosts != knownHostsNone) {
         knownBrokers.push_back(Url(conf.knownHosts));
     }
+
+    // check for and warn if deprecated features have been configured
+    if (conf.maxSessionRate) {
+        QPID_LOG(warning, "The 'max-session-rate' feature will be removed in a future release of QPID."
+                 "  Queue-based flow control should be used instead.");
+    }
+
     } catch (const std::exception& /*e*/) {
         finalize();
         throw;
