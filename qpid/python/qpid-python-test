@@ -570,6 +570,8 @@ total = len(filtered) + len(ignored)
 if opts.xml and not list_only:
    xmlr = JunitXmlStyleReporter(opts.xml);
    xmlr.begin();
+else:
+   xmlr = None
 
 passed = 0
 failed = 0
