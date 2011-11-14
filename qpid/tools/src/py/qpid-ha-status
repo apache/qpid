@@ -1,0 +1,80 @@
+#!/usr/bin/env python
+
+#
+# Licensed to the Apache Software Foundation (ASF) under one
+# or more contributor license agreements.  See the NOTICE file
+# distributed with this work for additional information
+# regarding copyright ownership.  The ASF licenses this file
+# to you under the Apache License, Version 2.0 (the
+# "License"); you may not use this file except in compliance
+# with the License.  You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing,
+# software distributed under the License is distributed on an
+# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+# KIND, either express or implied.  See the License for the
+# specific language governing permissions and limitations
+# under the License.
+#
+
+import qmf.console, optparse, sys
+from qpid.management import managementChannel, managementClient
+
+usage="""
+Usage: qpid-ha-status [broker-address] [status]
+If status is specified, sets the HA status of the broker. Otherwise prints the current HA status. Status must be one of: primary, backup, solo.
+"""
+
+STATUS_VALUES=["primary", "backup", "solo"]
+
+def is_valid_status(value): return value in STATUS_VALUES
+
+def validate_status(value):
+        if not is_valid_status(value):
+            raise Exception("Invalid HA status value: %s"%(value))
+
+class HaBroker:
+    def __init__(self, broker, session):
+        self.session = session
+        try:
+            self.qmf_broker = self.session.addBroker(broker)
+        except Exception, e:
+            raise Exception("Can't connect to %s: %s"%(broker,e))
+        ha_brokers=self.session.getObjects(_class="habroker", _package="org.apache.qpid.ha")
+        if (not ha_brokers): raise Exception("Broker does not have HA enabled.")
+        self.ha_broker = ha_brokers[0];
+
+    def get_status(self):
+        return self.ha_broker.status
+
+    def set_status(self, value):
+        validate_status(value)
+        self.ha_broker.setStatus(value)
+
+def parse_args(args):
+    broker, status = "localhost:5672", None
+    if args and is_valid_status(args[-1]):
+        status = args[-1]
+        args.pop()
+    if args: broker = args[0]
+    return broker, status
+
+def main():
+    try:
+        session = qmf.console.Session()
+        try:
+            broker, status = parse_args(sys.argv[1:])
+            hb = HaBroker(broker, session)
+            if status: hb.set_status(status)
+            else: print hb.get_status()
+        finally:
+            session.close()
+        return 0
+    except Exception, e:
+        print e
+        return -1
+
+if __name__ == "__main__":
+    sys.exit(main())
