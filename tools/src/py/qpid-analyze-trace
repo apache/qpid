@@ -20,11 +20,20 @@
 #
 
 import sys
-from argparse import ArgumentParser
+#from argparse import ArgumentParser
 from datetime import datetime
+from optparse import OptionParser
 
 # Version of this tool software
-VERSION = "1.0"
+MAJOR_VERSION = 1
+MINOR_VERSION = 1
+# === Version history ===
+# 2011-11-16 1.1: Bugfixs:
+#                 QPID-3623 - Incorrect handling of transactions
+#                 QPID-3624 - Replace argparse lib with optparse so tool can be used on Python 2.6.
+# 2011-11-07 1.0: Initial checkin
+#                 QPID-3579: Initial version checked in
+
 
 # AMQP 0-10 commands - these increment the command counter
 EXEC_COMMANDS = ["ExecutionSync", "ExecutionResult", "ExecutionException", "MessageTransfer", "MessageAccept",
@@ -37,8 +46,9 @@ EXEC_COMMANDS = ["ExecutionSync", "ExecutionResult", "ExecutionException", "Mess
                  "FileOpen", "FileOpenOk", "FileStage", "FilePublish", "FileReturn", "FileDeliver", "FileAck",
                  "FileReject", "StreamQos", "StreamQosOk", "StreamConsume", "StreamConsumeOk", "StreamCancel",
                  "StreamPublish", "StreamReturn", "StreamDeliver"]
+HEADER_STR = "   -line  ----------timestamp  -----------connection ssn recv send- txn--  operation---------->"
 
-LINES_PER_DOT = 100000
+PROGRESS_LINES_PER_DOT = 100000
 
 class LogLevel:
     CRITICAL = (1, "critical")
@@ -96,6 +106,9 @@ class LogLine:
         return self.get_identifier().partition("-")[2]
     def get_named_value(self, name):
         return self.line.partition("%s=" % name)[2].partition(";")[0]
+    def get_msg_accept_range(self):
+        str_nums = self.get_named_value("transfers").strip(" {[]}").split(",")
+        return range(int(str_nums[0]), int(str_nums[1]) + 1)
     def is_log_level(self, level):
         if self.level is None: return None
         return level[0] == self.level[0]
@@ -113,15 +126,15 @@ class ConnectionProperty:
 class Connection(ConnectionProperty):
     def __init__(self, line):
         ConnectionProperty.__init__(self, line)
-        self.sessionList = [] # Keeps session creation order
-        self.sessionDict = {} # For looking up by channel no.
+        self.session_list = [] # Keeps session creation order
+        self.session_dict = {} # For looking up by channel no.
     def __str__(self):
-        return "Connection %s (ops=%d; sessions=%d):" % (self.addr, len(self.ops), len(self.sessionDict))
+        return "Connection %s (ops=%d; sessions=%d):" % (self.addr, len(self.ops), len(self.session_dict))
     def add_session(self, session):
-        self.sessionList.append(session)
-        self.sessionDict[session.channel] = session
+        self.session_list.append(session)
+        self.session_dict[session.channel] = session
     def get_session(self, channel):
-        return self.sessionDict[channel]
+        return self.session_dict[channel]
 
 class Session(ConnectionProperty):
     def __init__(self, line):
@@ -131,6 +144,8 @@ class Session(ConnectionProperty):
         self.recv_cnt = 0
         self.txn_flag = False
         self.txn_cnt = 0
+        self.recv_cmds = {} # For looking up by cmd no
+        self.send_cmds = {} # For looking up by cmd no
     def __str__(self):
         if self.txn_flag:
             return " + Session %d (name=%s send-cmds=%d recv-cmds=%d txns=%d):" % (self.channel, self.name,
@@ -138,27 +153,34 @@ class Session(ConnectionProperty):
                                                                                    self.txn_cnt)
         return " + Session %d (name=%s send-cmds=%d recv-cmds=%d non-txn):" % (self.channel, self.name, self.send_cnt,
                                                                                self.recv_cnt)
+    def incr_recv_cnt(self, line):
+        self.recv_cmds[self.recv_cnt] = line
+        self.recv_cnt += 1
+    def incr_send_cnt(self, line):
+        self.send_cmds[self.send_cnt] = line
+        self.send_cnt += 1
+    def set_send_txn_cnt(self, cmd):
+        self.send_cmds[cmd].txn_cnt = self.txn_cnt
 
 class TraceAnalysis:
     def __init__(self):
-        self.connectionList = [] # Keeps connection creation order
-        self.connectionDict = {} # For looking up by connection address
-        parser = ArgumentParser(description="Analyze trace level logs from a Qpid broker log file.")
-        parser.add_argument("--connection-summary", action="store_true", default=False,
-                            help="Hide connection details, provide one-line summary")
-        parser.add_argument("--session-summary", action="store_true", default=False,
-                            help="Hide session details, provide one-line summary")
-        parser.add_argument("-s", "--summary", action="store_true", default=False,
-                            help="Hide both connection and session details. Equivalent to --connection-summary and "
-                            "--session-summary")
-        parser.add_argument("log_file", action="store",
-                            help="Log file")
-        parser.add_argument("-v", "--version", action='version', version="%%(prog)s %s" % VERSION)
-        self.args = parser.parse_args()
+        self.connection_list = [] # Keeps connection creation order
+        self.connection_dict = {} # For looking up by connection address
+        parser = OptionParser(usage="%prog [options] trace-file", version="%%prog %d.%d" % (MAJOR_VERSION, MINOR_VERSION),
+                              description="A tool to structure and display Qpid broker trace logs.")
+        parser.add_option("--connection-summary", action="store_true", default=False, dest="connection_summary",
+                          help="Hide connection details, provide one-line summary")
+        parser.add_option("--session-summary", action="store_true", default=False, dest="session_summary",
+                          help="Hide session details, provide one-line summary")
+        parser.add_option("--summary", "-s", action="store_true", default=False, dest="summary",
+                          help="Hide both connection and session details. Equivalent to --connection-summary and"
+                          "--session-summary")
+        self.opts, self.args = parser.parse_args()
+        if len(self.args) == 0: raise Exception("Missing trace-file argument")
     def analyze_trace(self):
         lcnt = 0
-        print "Reading trace file %s:" % self.args.log_file
-        log_file = open(self.args.log_file, "r")
+        print "Reading trace file %s:" % self.args[0]
+        log_file = open(self.args[0], "r")
         try:
             for fline in log_file:
                 lcnt += 1
@@ -167,25 +189,30 @@ class TraceAnalysis:
                     if lline.is_log_level(LogLevel.TRACE) and lline.is_frame():
                         if lline.contains("{ConnectionStartBody"):
                             conn = Connection(lline)
-                            self.connectionList.append(conn)
-                            self.connectionDict[conn.addr] = conn
+                            self.connection_list.append(conn)
+                            self.connection_dict[conn.addr] = conn
                         elif lline.contains("{Connection"):
-                            self.connectionDict[lline.get_identifier_remote_addr()].add_op(lline)
+                            self.connection_dict[lline.get_identifier_remote_addr()].add_op(lline)
                         elif lline.contains("{SessionAttachBody"):
                             ssn = Session(lline)
-                            self.connectionDict[ssn.addr].add_session(ssn)
+                            self.connection_dict[ssn.addr].add_session(ssn)
                         else:
-                            ssn = self.connectionDict[lline.get_identifier_remote_addr()].get_session(lline.get_channel())
+                            ssn = self.connection_dict[lline.get_identifier_remote_addr()].get_session(lline.get_channel())
                             ssn.add_op(lline)
                             if lline.line[lline.find("{") + 1 : lline.find("Body")] in EXEC_COMMANDS:
                                 if lline.contains("RECV"):
                                     lline.cmd_cnt = ssn.recv_cnt
-                                    if ssn.txn_flag and lline.contains("MessageTransferBody"): lline.txn_cnt = ssn.txn_cnt
-                                    ssn.recv_cnt += 1
+                                    if ssn.txn_flag:
+                                        if lline.contains("MessageAcceptBody"): 
+                                            lline.txn_cnt = ssn.txn_cnt
+                                            for cmd in lline.get_msg_accept_range():
+                                                ssn.set_send_txn_cnt(cmd)
+                                        if lline.contains("MessageTransferBody"): lline.txn_cnt = ssn.txn_cnt
+                                    ssn.incr_recv_cnt(lline)
                                 elif lline.contains("SEND") or lline.contains("SENT"):
                                     lline.cmd_cnt = ssn.send_cnt
-                                    if ssn.txn_flag and lline.contains("MessageTransferBody"): lline.txn_cnt = ssn.txn_cnt
-                                    ssn.send_cnt += 1
+                                    ssn.incr_send_cnt(lline)
+                                # TODO: This treatment will probably break down for DTX
                                 if lline.contains("xSelectBody"):
                                     ssn.txn_flag = True
                                 elif lline.contains("xCommitBody") or lline.contains("xRollbackBody"):
@@ -193,26 +220,29 @@ class TraceAnalysis:
                                     ssn.txn_cnt += 1
                 except KeyboardInterrupt as e: raise e
                 except: pass
-                if (lcnt + 1) % LINES_PER_DOT == 0:
+                if (lcnt + 1) % PROGRESS_LINES_PER_DOT == 0:
                     sys.stdout.write(".")
                     sys.stdout.flush()
         finally: log_file.close()
-        if lcnt > LINES_PER_DOT: print
+        if lcnt > PROGRESS_LINES_PER_DOT: print
         print "Read and analyzed", lcnt, "lines."
     def print_analysis(self):
-        for c in self.connectionList:
-            print
-            if not self.args.connection_summary and not self.args.session_summary and not self.args.summary:
-                print " ---line  ----------timestamp  -----------connection ssn recv send- txn--  operation---------->"
-            print c
-            if not self.args.connection_summary and not self.args.summary:
-                for o in c.ops:
-                    print o
-            for s in c.sessionList:
-                print s
-                if not self.args.session_summary and not self.args.summary:
-                    for o in s.ops:
+        if len(self.connection_list) > 0:
+            for c in self.connection_list:
+                print
+                print c
+                if not self.opts.connection_summary and not self.opts.summary:
+                    print HEADER_STR
+                    for o in c.ops:
                         print o
+                for s in c.session_list:
+                    print s
+                    if not self.opts.session_summary and not self.opts.summary:
+                        print HEADER_STR
+                        for o in s.ops:
+                            print o
+        else:
+            print "No trace-level entries found in log."
 
 def check_python_version(major, minor, micro):
     if sys.version_info < (major, minor, micro):
@@ -222,7 +252,7 @@ def check_python_version(major, minor, micro):
 # === Main program ===
 
 if __name__ == '__main__':
-    check_python_version(2, 7, 0) # need at least v2.7
+    check_python_version(2, 4, 0)
     t = TraceAnalysis()
     t.analyze_trace()
     t.print_analysis()
