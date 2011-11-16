@@ -424,9 +424,9 @@ struct Controller : public Client {
 
                 AbsTime end=now();
                 double time=secs(start, end);
-		if (time <= 0.0) {
-		  throw Exception("ERROR: Test completed in zero seconds. Try again with a larger message count.");
-		}
+                if (time <= 0.0) {
+                    throw Exception("ERROR: Test completed in zero seconds. Try again with a larger message count.");
+                }
                 double txrate=opts.transfers/time;
                 double mbytes=(txrate*opts.size)/(1024*1024);
 
@@ -472,10 +472,11 @@ struct Controller : public Client {
 struct PublishThread : public Client {
     string destination;
     string routingKey;
+    size_t pubNum;
 
-    PublishThread() {};
+    PublishThread() : pubNum(0) {};
 
-    PublishThread(string key, string dest=string()) {
+    PublishThread(size_t pubNum, string key, string dest=string()) : pubNum(pubNum) {
         destination=dest;
         routingKey=key;
     }
@@ -533,6 +534,7 @@ struct PublishThread : public Client {
                             arg::content=msg,
                             arg::acceptMode=1);
                     }
+if ((i+1)%100==0) std::cout << pubNum << std::flush;
                     if (opts.txPub && ((i+1) % opts.txPub == 0)){
                         if (opts.commitAsync){
                             session.txCommit();
@@ -630,6 +632,7 @@ struct SubscribeThread : public Client {
                 size_t expect=0;
                 for (size_t i = 0; i < opts.subQuota; ++i) {
                     msg=lq.pop();
+if ((i+1)%100==0) std::cout << "s" << std::flush;
                     if (opts.txSub && ((i+1) % opts.txSub == 0)) {
                         if (opts.commitAsync) session.txCommit();
                         else sync(session).txCommit();
@@ -708,7 +711,7 @@ int main(int argc, char** argv) {
             if (opts.publish) {
                 size_t n = singleProcess ? opts.pubs : 1;
                 for (size_t j = 0; j < n; ++j)  {
-                    pubs.push_back(new PublishThread(key.str(), exchange));
+                    pubs.push_back(new PublishThread(j, key.str(), exchange));
                     pubs.back().thread=Thread(pubs.back());
                 }
             }
