@@ -233,8 +233,13 @@ public class QueueEntryImpl implements QueueEntry
             if(state instanceof SubscriptionAcquiredState)
             {
                 getQueue().decrementUnackedMsgCount();
+                Subscription subscription = ((SubscriptionAcquiredState)state).getSubscription();
+                if (subscription != null)
+                {
+                    subscription.releaseQueueEntry(this);
+                }
             }
-            
+
             if(!getQueue().isDeleted())
             {
                 getQueue().requeue(this);

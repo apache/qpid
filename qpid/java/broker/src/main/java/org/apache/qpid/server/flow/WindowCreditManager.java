@@ -167,18 +167,6 @@ public class WindowCreditManager extends AbstractFlowCreditManager implements Fl
 
     }
 
-    public void stop()
-    {
-        if(_bytesCreditLimit > 0)
-        {
-            _bytesCreditLimit = 0;
-        }
-        if(_messageCreditLimit > 0)
-        {
-            _messageCreditLimit = 0;
-        }
-
-    }
 
     public synchronized void addCredit(long count, long bytes)
     {

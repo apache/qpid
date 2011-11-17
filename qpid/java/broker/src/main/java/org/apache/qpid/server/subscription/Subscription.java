@@ -84,6 +84,8 @@ public interface Subscription
 
     void releaseSendLock();
 
+    void releaseQueueEntry(final QueueEntry queueEntryImpl);
+
     void onDequeue(final QueueEntry queueEntry);
 
     void restoreCredit(final QueueEntry queueEntry);

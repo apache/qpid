@@ -212,6 +212,10 @@ public class MockSubscription implements Subscription
     {
     }
 
+    public void releaseQueueEntry(QueueEntry queueEntry)
+    {
+    }
+
     public void send(QueueEntry entry) throws AMQException
     {
         if (messages.contains(entry))
