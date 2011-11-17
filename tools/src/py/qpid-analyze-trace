@@ -20,7 +20,6 @@
 #
 
 import sys
-#from argparse import ArgumentParser
 from datetime import datetime
 from optparse import OptionParser
 
