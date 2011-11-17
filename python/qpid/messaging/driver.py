@@ -1325,6 +1325,8 @@ class Engine:
       msg.properties["x-amqp-0-10.content-encoding"] = mp.content_encoding
     if dp.routing_key is not None:
       msg.properties["x-amqp-0-10.routing-key"] = dp.routing_key
+    if dp.timestamp is not None:
+      msg.properties["x-amqp-0-10.timestamp"] = dp.timestamp
     msg.content_type = mp.content_type
     msg._transfer_id = xfr.id
     return msg
