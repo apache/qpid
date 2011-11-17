@@ -675,7 +675,12 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
 
     public void onDequeue(QueueEntry queueEntry)
     {
+        // no-op for 0-10, credit restored by completing command.
+    }
 
+    public void releaseQueueEntry(QueueEntry queueEntry)
+    {
+        // no-op for 0-10, credit restored by completing command.
     }
 
     public void setStateListener(StateListener listener)
