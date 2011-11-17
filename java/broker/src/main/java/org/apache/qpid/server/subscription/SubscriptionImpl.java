@@ -623,12 +623,15 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
         restoreCredit(queueEntry);
     }
 
+    public void releaseQueueEntry(final QueueEntry queueEntry)
+    {
+        restoreCredit(queueEntry);
+    }
+
     public void restoreCredit(final QueueEntry queueEntry)
     {
         _creditManager.restoreCredit(1, queueEntry.getSize());
     }
-
-
 
     public void creditStateChanged(boolean hasCredit)
     {

@@ -681,7 +681,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
                     {
                         // restore credit here that would have been taken away by wouldSuspend since we didn't manage
                         // to acquire the entry for this subscription
-                        sub.onDequeue(entry);
+                        sub.restoreCredit(entry);
                     }
                     else
                     {
@@ -1659,7 +1659,9 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
                     {
                         if (sub.acquires() && !node.acquire(sub))
                         {
-                            sub.onDequeue(node);
+                            // restore credit here that would have been taken away by wouldSuspend since we didn't manage
+                            // to acquire the entry for this subscription
+                            sub.restoreCredit(node);
                         }
                         else
                         {
