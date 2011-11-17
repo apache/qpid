@@ -49,7 +49,6 @@ import org.apache.qpid.client.message.MessageFactoryRegistry;
 import org.apache.qpid.client.message.UnprocessedMessage_0_10;
 import org.apache.qpid.client.messaging.address.AddressHelper;
 import org.apache.qpid.client.messaging.address.Link;
-import org.apache.qpid.client.messaging.address.Link.Reliability;
 import org.apache.qpid.client.messaging.address.Node.ExchangeNode;
 import org.apache.qpid.client.messaging.address.Node.QueueNode;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
@@ -143,9 +142,9 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
     private int unackedCount = 0;    
 
     /**
-     * USed to store the range of in tx messages
+     * Used to store the range of in tx messages
      */
-    private RangeSet _txRangeSet = new RangeSet();
+    private final RangeSet _txRangeSet = new RangeSet();
     private int _txSize = 0;    
     //--- constructors
 
@@ -459,6 +458,7 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
     {
         // release all unacked messages
         RangeSet ranges = gatherUnackedRangeSet();
+        flushProcessed(ranges, false);
         getQpidSession().messageRelease(ranges, Option.SET_REDELIVERED);
         // We need to sync so that we get notify of an error.
         sync();
@@ -481,12 +481,15 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
         return ranges;
     }
 
-
     public void releaseForRollback()
     {
-        getQpidSession().messageRelease(_txRangeSet, Option.SET_REDELIVERED);
-        _txRangeSet.clear();
-        _txSize = 0;
+        if (_txSize > 0)
+        {
+            flushProcessed(_txRangeSet, false);
+            getQpidSession().messageRelease(_txRangeSet, Option.SET_REDELIVERED);
+            _txRangeSet.clear();
+            _txSize = 0;
+        }
     }
 
     /**
@@ -500,6 +503,7 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
         // The value of requeue is always true
         RangeSet ranges = new RangeSet();
         ranges.add((int) deliveryTag);
+        flushProcessed(ranges, false);
         getQpidSession().messageRelease(ranges, Option.SET_REDELIVERED);
         //I don't think we need to sync
     }
@@ -1334,6 +1338,11 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
         // messages sent by the brokers following the first rollback
         // after failover
         _highestDeliveryTag.set(-1);
+        // Clear txRangeSet/unacknowledgedMessageTags so we don't complete commands corresponding to
+        //messages that came from the old broker.
+        _txRangeSet.clear();
+        _txSize = 0;
+        _unacknowledgedMessageTags.clear();
         super.resubscribe();
     }
 }

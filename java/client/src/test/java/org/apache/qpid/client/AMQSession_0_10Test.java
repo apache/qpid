@@ -287,29 +287,6 @@ public class AMQSession_0_10Test extends TestCase
         assertNotNull("ExecutionSync was not sent", event);
     }
 
-    public void testRejectMessage()
-    {
-        AMQSession_0_10 session = createAMQSession_0_10();
-        session.rejectMessage(1l, true);
-        ProtocolEvent event = findSentProtocolEventOfClass(session, MessageRelease.class, false);
-        assertNotNull("MessageRelease event was not sent", event);
-    }
-
-    public void testReleaseForRollback()
-    {
-        AMQSession_0_10 session = createAMQSession_0_10();
-        try
-        {
-            session.releaseForRollback();
-        }
-        catch (Exception e)
-        {
-            fail("Unexpected exception is cought:" + e.getMessage());
-        }
-        ProtocolEvent event = findSentProtocolEventOfClass(session, MessageRelease.class, false);
-        assertNotNull("MessageRelease event was not sent", event);
-    }
-
     public void testSendQueueDelete()
     {
         AMQSession_0_10 session = createAMQSession_0_10();
