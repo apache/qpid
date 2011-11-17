@@ -470,6 +470,7 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
                 }
             }
 
+            _0_10session.flushProcessed(ranges, false);
             _0_10session.getQpidSession().messageRelease(ranges, Option.SET_REDELIVERED);
             clearReceiveQueue();
         }
