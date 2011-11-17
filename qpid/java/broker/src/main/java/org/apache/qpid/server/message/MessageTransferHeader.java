@@ -79,7 +79,7 @@ class MessageTransferHeader implements AMQMessageHeader
 
     public byte getPriority()
     {
-        MessageDeliveryPriority priority = _deliveryProps == null
+        MessageDeliveryPriority priority = _deliveryProps == null || !_deliveryProps.hasPriority()
                                            ? MessageDeliveryPriority.MEDIUM
                                            : _deliveryProps.getPriority();
         return (byte) priority.getValue();
