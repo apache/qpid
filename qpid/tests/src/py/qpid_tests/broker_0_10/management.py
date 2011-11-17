@@ -597,7 +597,6 @@ class ManagementTest (TestBase010):
         rc = broker.getTimestampConfig()
         self.assertEqual(rc.status, 0)
         self.assertEqual(rc.text, "OK")
-        #self.assertEqual(rc.receive, False)
 
         #try to enable it
         rc = broker.setTimestampConfig(True)
@@ -609,20 +608,25 @@ class ManagementTest (TestBase010):
         self.assertEqual(rc.text, "OK")
         self.assertEqual(rc.receive, True)
 
+        # setup a connection & session to the broker
+        url = "%s://%s:%d" % (self.broker.scheme or "amqp", self.broker.host, self.broker.port)
+        conn = qpid.messaging.Connection(url)
+        conn.open()
+        sess = conn.session()
+
         #send a message to a queue
-        session.queue_declare(queue="ts-q", exclusive=True, auto_delete=True)
-        session.message_transfer(message=Message(session.delivery_properties(routing_key="ts-q"), "abc"))
+        sender = sess.sender("ts-q; {create:sender, delete:receiver}")
+        sender.send( qpid.messaging.Message(content="abc") )
 
         #receive message from queue, and verify timestamp is present
-        session.message_subscribe(destination="d", queue="ts-q")
-        session.message_flow(destination="d", unit=session.credit_unit.message, value=0xFFFFFFFFL)
-        session.message_flow(destination="d", unit=session.credit_unit.byte, value=0xFFFFFFFFL)
-        incoming = session.incoming("d")
-        msg = incoming.get(timeout=1)
-        self.assertEqual("abc", msg.body)
-        self.assertEqual(msg.has("delivery_properties"), True)
-        dp = msg.get("delivery_properties")
-        assert(dp.timestamp)
+        receiver = sess.receiver("ts-q")
+        try:
+            msg = receiver.fetch(timeout=1)
+        except Empty:
+            assert(False)
+        self.assertEqual("abc", msg.content)
+        self.assertEqual(True, "x-amqp-0-10.timestamp" in msg.properties)
+        assert(msg.properties["x-amqp-0-10.timestamp"])
 
         #try to disable it
         rc = broker.setTimestampConfig(False)
@@ -635,12 +639,14 @@ class ManagementTest (TestBase010):
         self.assertEqual(rc.receive, False)
 
         #send another message to the queue
-        session.message_transfer(message=Message(session.delivery_properties(routing_key="ts-q"), "def"))
+        sender.send( qpid.messaging.Message(content="def") )
 
         #receive message from queue, and verify timestamp is NOT PRESENT
-        msg = incoming.get(timeout=1)
-        self.assertEqual("def", msg.body)
-        self.assertEqual(msg.has("delivery_properties"), True)
-        dp = msg.get("delivery_properties")
-        self.assertEqual(dp.timestamp, None)
+        receiver = sess.receiver("ts-q")
+        try:
+            msg = receiver.fetch(timeout=1)
+        except Empty:
+            assert(False)
+        self.assertEqual("def", msg.content)
+        self.assertEqual(False, "x-amqp-0-10.timestamp" in msg.properties)
 
