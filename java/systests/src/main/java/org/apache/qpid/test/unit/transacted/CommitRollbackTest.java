@@ -22,10 +22,13 @@ package org.apache.qpid.test.unit.transacted;
 
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.client.AMQConnection;
+import org.apache.qpid.client.AMQSession;
+import org.apache.qpid.configuration.ClientProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.jms.*;
+
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -36,17 +39,16 @@ import java.util.concurrent.TimeUnit;
  */
 public class CommitRollbackTest extends QpidBrokerTestCase
 {
-    protected AMQConnection conn;
-    protected String queue = "direct://amq.direct//Qpid.Client.Transacted.CommitRollback.queue";
-    protected static int testMethod = 0;
-    protected String payload = "xyzzy";
+    private static final Logger _logger = LoggerFactory.getLogger(CommitRollbackTest.class);
+    private static final int POSIITIVE_TIMEOUT = 2000;
+
+    protected AMQConnection _conn;
     private Session _session;
     private MessageProducer _publisher;
     private Session _pubSession;
     private MessageConsumer _consumer;
-    Queue _jmsQueue;
+    private Queue _jmsQueue;
 
-    private static final Logger _logger = LoggerFactory.getLogger(CommitRollbackTest.class);
     private boolean _gotone = false;
     private boolean _gottwo = false;
     private boolean _gottwoRedelivered = false;
@@ -54,31 +56,24 @@ public class CommitRollbackTest extends QpidBrokerTestCase
     protected void setUp() throws Exception
     {
         super.setUp();
-        testMethod++;
-        queue += testMethod;
-       newConnection();
     }
 
     private void newConnection() throws Exception
     {
-        conn = (AMQConnection) getConnection("guest", "guest");
+        _logger.debug("calling newConnection()");
+        _conn = (AMQConnection) getConnection();
 
-        _session = conn.createSession(true, Session.CLIENT_ACKNOWLEDGE);
+        _session = _conn.createSession(true, Session.SESSION_TRANSACTED);
 
-        _jmsQueue = _session.createQueue(queue);
+        final String queueName = getTestQueueName();
+        _jmsQueue = _session.createQueue(queueName);
         _consumer = _session.createConsumer(_jmsQueue);
 
-        _pubSession = conn.createSession(true, Session.CLIENT_ACKNOWLEDGE);
+        _pubSession = _conn.createSession(true, Session.SESSION_TRANSACTED);
 
-        _publisher = _pubSession.createProducer(_pubSession.createQueue(queue));
+        _publisher = _pubSession.createProducer(_pubSession.createQueue(queueName));
 
-        conn.start();
-    }
-
-    protected void tearDown() throws Exception
-    {
-        conn.close();
-        super.tearDown();
+        _conn.start();
     }
 
     /**
@@ -88,6 +83,8 @@ public class CommitRollbackTest extends QpidBrokerTestCase
      */
     public void testPutThenDisconnect() throws Exception
     {
+        newConnection();
+
         assertTrue("session is not transacted", _session.getTransacted());
         assertTrue("session is not transacted", _pubSession.getTransacted());
 
@@ -96,7 +93,7 @@ public class CommitRollbackTest extends QpidBrokerTestCase
         _publisher.send(_pubSession.createTextMessage(MESSAGE_TEXT));
 
         _logger.info("reconnecting without commit");
-        conn.close();
+        _conn.close();
 
         newConnection();
 
@@ -116,6 +113,8 @@ public class CommitRollbackTest extends QpidBrokerTestCase
      */
     public void testPutThenCloseDisconnect() throws Exception
     {
+        newConnection();
+
         assertTrue("session is not transacted", _session.getTransacted());
         assertTrue("session is not transacted", _pubSession.getTransacted());
 
@@ -127,7 +126,7 @@ public class CommitRollbackTest extends QpidBrokerTestCase
         _publisher.close();
 
         _logger.info("reconnecting without commit");
-        conn.close();
+        _conn.close();
 
         newConnection();
 
@@ -148,6 +147,8 @@ public class CommitRollbackTest extends QpidBrokerTestCase
      */
     public void testPutThenRollback() throws Exception
     {
+        newConnection();
+
         assertTrue("session is not transacted", _session.getTransacted());
         assertTrue("session is not transacted", _pubSession.getTransacted());
 
@@ -171,6 +172,8 @@ public class CommitRollbackTest extends QpidBrokerTestCase
      */
     public void testGetThenDisconnect() throws Exception
     {
+        newConnection();
+
         assertTrue("session is not transacted", _session.getTransacted());
         assertTrue("session is not transacted", _pubSession.getTransacted());
 
@@ -186,7 +189,7 @@ public class CommitRollbackTest extends QpidBrokerTestCase
         assertNotNull("retrieved message is null", msg);
 
         _logger.info("closing connection");
-        conn.close();
+        _conn.close();
 
         newConnection();
 
@@ -207,6 +210,8 @@ public class CommitRollbackTest extends QpidBrokerTestCase
      */
     public void testGetThenCloseDisconnect() throws Exception
     {
+        newConnection();
+
         assertTrue("session is not transacted", _session.getTransacted());
         assertTrue("session is not transacted", _pubSession.getTransacted());
 
@@ -224,7 +229,7 @@ public class CommitRollbackTest extends QpidBrokerTestCase
 
         _logger.info("reconnecting without commit");
         _consumer.close();
-        conn.close();
+        _conn.close();
 
         newConnection();
 
@@ -245,6 +250,8 @@ public class CommitRollbackTest extends QpidBrokerTestCase
      */
     public void testGetThenRollback() throws Exception
     {
+        newConnection();
+
         assertTrue("session is not transacted", _session.getTransacted());
         assertTrue("session is not transacted", _pubSession.getTransacted());
 
@@ -283,6 +290,8 @@ public class CommitRollbackTest extends QpidBrokerTestCase
      */
     public void testGetThenCloseRollback() throws Exception
     {
+        newConnection();
+
         assertTrue("session is not transacted", _session.getTransacted());
         assertTrue("session is not transacted", _pubSession.getTransacted());
 
@@ -324,6 +333,8 @@ public class CommitRollbackTest extends QpidBrokerTestCase
      */
     public void testSend2ThenRollback() throws Exception
     {
+        newConnection();
+
         int run = 0;
         while (run < 10)
         {
@@ -424,6 +435,8 @@ public class CommitRollbackTest extends QpidBrokerTestCase
      */
     public void testSend2ThenCloseAfter1andTryAgain() throws Exception
     {
+        newConnection();
+
         assertTrue("session is not transacted", _session.getTransacted());
         assertTrue("session is not transacted", _pubSession.getTransacted());
 
@@ -470,6 +483,8 @@ public class CommitRollbackTest extends QpidBrokerTestCase
 
     public void testPutThenRollbackThenGet() throws Exception
     {
+        newConnection();
+
         assertTrue("session is not transacted", _session.getTransacted());
         assertTrue("session is not transacted", _pubSession.getTransacted());
 
@@ -501,13 +516,15 @@ public class CommitRollbackTest extends QpidBrokerTestCase
 
     /**
      * Qpid-1163
-     * Check that when commt is called inside onMessage then
+     * Check that when commit is called inside onMessage then
      * the last message is nor redelivered. 
      *
      * @throws Exception
      */
-    public void testCommitWhithinOnMessage() throws Exception
+    public void testCommitWithinOnMessage() throws Exception
     {
+        newConnection();
+
         Queue queue = (Queue) getInitialContext().lookup("queue");
         // create a consumer
              MessageConsumer cons = _session.createConsumer(queue);           
@@ -518,8 +535,8 @@ public class CommitRollbackTest extends QpidBrokerTestCase
         _session.commit();
         _logger.info("Sent message to queue");
         CountDownLatch cd = new CountDownLatch(1);
-        cons.setMessageListener(new CommitWhithinOnMessageListener(cd));
-        conn.start();
+        cons.setMessageListener(new CommitWithinOnMessageListener(cd));
+        _conn.start();
         cd.await(30, TimeUnit.SECONDS);
         if( cd.getCount() > 0 )
         {
@@ -527,10 +544,10 @@ public class CommitRollbackTest extends QpidBrokerTestCase
         }
         // Check that the message has been dequeued
         _session.close();
-        conn.close();
-        conn = (AMQConnection) getConnection("guest", "guest");
-        conn.start();
-        Session session = conn.createSession(false, Session.CLIENT_ACKNOWLEDGE);
+        _conn.close();
+        _conn = (AMQConnection) getConnection();
+        _conn.start();
+        Session session = _conn.createSession(false, Session.CLIENT_ACKNOWLEDGE);
         cons = session.createConsumer(queue);        
         message = cons.receiveNoWait();
         if(message != null)
@@ -546,10 +563,55 @@ public class CommitRollbackTest extends QpidBrokerTestCase
         }
     }
 
-    private class CommitWhithinOnMessageListener implements MessageListener
+    /**
+     * This test ensures that after exhausting credit (prefetch), a {@link Session#rollback()} successfully
+     * restores credit and allows the same messages to be re-received.
+     */
+    public void testRollbackSessionAfterCreditExhausted() throws Exception
+    {
+        final int maxPrefetch= 5;
+
+        // We send more messages than prefetch size.  This ensure that if the 0-10 client were to
+        // complete the message commands before the rollback command is sent, the broker would
+        // send additional messages utilising the release credit.  This problem would manifest itself
+        // as an incorrect message (or no message at all) being received at the end of the test.
+
+        final int numMessages = maxPrefetch * 2;
+
+        setTestClientSystemProperty(ClientProperties.MAX_PREFETCH_PROP_NAME, String.valueOf(maxPrefetch));
+
+        newConnection();
+
+        assertEquals("Prefetch not reset", maxPrefetch, ((AMQSession<?, ?>)_session).getDefaultPrefetch());
+
+        assertTrue("session is not transacted", _session.getTransacted());
+        assertTrue("session is not transacted", _pubSession.getTransacted());
+
+        sendMessage(_pubSession, _publisher.getDestination(), numMessages);
+        _pubSession.commit();
+
+        for (int i=0 ;i< maxPrefetch; i++)
+        {
+            final Message message = _consumer.receive(POSIITIVE_TIMEOUT);
+            assertNotNull("Received:" + i, message);
+            assertEquals("Unexpected message received", i, message.getIntProperty(INDEX));
+        }
+
+        _logger.info("Rolling back");
+        _session.rollback();
+
+        _logger.info("Receiving messages");
+
+        Message result = _consumer.receive(POSIITIVE_TIMEOUT);;
+        assertNotNull("Message expected", result);
+        // Expect the first message
+        assertEquals("Unexpected message received", 0, result.getIntProperty(INDEX));
+    }
+
+    private class CommitWithinOnMessageListener implements MessageListener
     {
         private CountDownLatch _cd;
-        private CommitWhithinOnMessageListener(CountDownLatch cd)
+        private CommitWithinOnMessageListener(CountDownLatch cd)
         {
             _cd = cd;
         }
