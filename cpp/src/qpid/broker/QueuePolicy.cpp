@@ -285,7 +285,7 @@ bool RingQueuePolicy::checkLimit(boost::intrusive_ptr<Message> m)
                      << ": oldest message (seq-no=" << oldest.position << ") has been delivered but not yet acknowledged or requeued");
             return false;
         }
-    } while (haveSpace < m->contentSize());
+    } while (getMaxSize() && haveSpace < m->contentSize());
     
     
     return true;
