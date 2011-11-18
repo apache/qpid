@@ -97,7 +97,7 @@ void OutputInterceptor::deliverDoOutput(uint32_t limit) {
 }
 
 void OutputInterceptor::sendDoOutput(size_t newLimit, const sys::Mutex::ScopedLock&) {
-    if (parent.isLocal() && !sentDoOutput && !closing) {
+    if (parent.isLocal() && !sentDoOutput && !closing && parent.isAnnounced()) {
         sentDoOutput = true;
         parent.getCluster().getMulticast().mcastControl(
             ClusterConnectionDeliverDoOutputBody(ProtocolVersion(), newLimit),
