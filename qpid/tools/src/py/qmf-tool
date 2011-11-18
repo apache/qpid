@@ -56,7 +56,7 @@ class OptsAndArgs(object):
 
   def parse(self):
     host = "localhost"
-    conn_options = []
+    conn_options = {}
     qmf_options = []
 
     options, encArgs = self.option_parser.parse_args(args=self.argv)
@@ -70,23 +70,23 @@ class OptsAndArgs(object):
       host = args[1]
 
     if options.user:
-      conn_options.append("username:'%s'" % options.user)
+      conn_options["username"] = options.user
     if options.password:
-      conn_options.append("password:'%s'" % options.password)
+      conn_options["password"] = options.password
     if options.transport:
-      conn_options.append("transport:'%s'" % options.transport)
+      conn_options["transport"] = options.transport
     if options.mechanism:
-      conn_options.append("sasl_mechanisms:'%s'" % options.mechanism)
+      conn_options["sasl_mechanisms"] = options.mechanism
     if options.service:
-      conn_options.append("sasl_service:'%s'" % options.service)
+      conn_options["sasl_service"] = options.service
     if options.min_ssf:
-      conn_options.append("sasl_min_ssf:%d" % options.min_ssf)
+      conn_options["sasl_min_ssf"] = options.min_ssf
     if options.max_ssf:
-      conn_options.append("sasl_max_ssf:%d" % options.max_ssf)
+      conn_options["sasl_max_ssf"] = options.max_ssf
     for x in options.conn_option:
       try:
         key, val = x.split('=')
-        conn_options.append("%s:%s" % (key, val))
+        conn_options[key] = val
       except:
         raise Exception("Improperly formatted text for --conn-option: '%s'" % x)
 
@@ -101,16 +101,6 @@ class OptsAndArgs(object):
       except:
         raise Exception("Improperly formatted text for --qmf-option: '%s'" % x)
 
-    conn_string = '{'
-    first = True
-    for x in conn_options:
-      if first:
-        first = None
-      else:
-        conn_string += ','
-      conn_string += x
-    conn_string += '}'
-
     qmf_string = '{'
     first = True
     for x in qmf_options:
@@ -121,7 +111,7 @@ class OptsAndArgs(object):
       qmf_string += x
     qmf_string += '}'
 
-    return host, conn_string, qmf_string
+    return host, conn_options, qmf_string
 
 
 
@@ -740,15 +730,12 @@ class QmfData:
     return result
 
   def scrubConnOptions(self):
-    pw = self.conn_options.find('password:')
-    if pw < 0:
-      return self.conn_options
-    scrubbed = self.conn_options[:pw + 9] + "***"
-    delim = self.conn_options[pw:].find(',')
-    if delim < 0:
-      delim = self.conn_options[pw:].find('}')
-    scrubbed += self.conn_options[pw + delim:]
-    return scrubbed
+    scrubbed = {}
+    for key, val in self.conn_options.items():
+      if key == "password":
+        val = "***"
+      scrubbed[key] = val
+    return str(scrubbed)
 
 
 #=========================================================
