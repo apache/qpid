@@ -20,11 +20,11 @@
 */
 package org.apache.qpid.server.queue;
 
-public interface QueueEntryIterator
+public interface QueueEntryIterator<QE extends QueueEntry>
 {
     boolean atTail();
 
-    QueueEntry getNode();
+    QE getNode();
 
     boolean advance();
 }

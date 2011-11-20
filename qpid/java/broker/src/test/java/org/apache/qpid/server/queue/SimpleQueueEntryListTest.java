@@ -22,21 +22,28 @@ package org.apache.qpid.server.queue;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.message.AMQMessage;
+import org.apache.qpid.server.message.ServerMessage;
 
-import junit.framework.TestCase;
-
-public class SimpleQueueEntryListTest extends TestCase
+public class SimpleQueueEntryListTest extends QueueEntryListTestBase
 {
+    private SimpleQueueEntryList _sqel;
+
     private static final String SCAVENGE_PROP = "qpid.queue.scavenge_count";
     String oldScavengeValue = null;
-    
+
     @Override
     protected void setUp()
     {
         oldScavengeValue = System.setProperty(SCAVENGE_PROP, "9");
+        _sqel = new SimpleQueueEntryList(_testQueue);
+        for(int i = 1; i <= 100; i++)
+        {
+            final ServerMessage msg = new MockAMQMessage(i);
+            final QueueEntry bleh = _sqel.add(msg);
+            assertNotNull("QE should not have been null", bleh);
+        }
     }
     
     @Override
@@ -52,19 +59,28 @@ public class SimpleQueueEntryListTest extends TestCase
         }
     }
     
-    /**
-     * Tests the behavior of the next(QueuyEntry) method.
-     */
-    public void testNext() throws Exception
+    @Override
+    public QueueEntryList getTestList()
     {
-        SimpleQueueEntryList sqel = new SimpleQueueEntryList(null);
-        int i = 0;
+        return _sqel;
+    }
 
-        QueueEntry queueEntry1 = sqel.add(new MockAMQMessage(i++));
-        QueueEntry queueEntry2 = sqel.add(new MockAMQMessage(i++));
+    @Override
+    public long getExpectedFirstMsgId()
+    {
+        return 1;
+    }
 
-        assertSame(queueEntry2, sqel.next(queueEntry1));
-        assertNull(sqel.next(queueEntry2));
+    @Override
+    public int getExpectedListLength()
+    {
+        return 100;
+    }
+
+    @Override
+    public AMQMessage getTestMessageToAdd() throws AMQException
+    {
+        return new MockAMQMessage(1l);
     }
 
     public void testScavenge() throws Exception
@@ -82,7 +98,7 @@ public class SimpleQueueEntryListTest extends TestCase
             entriesMap.put(i,bleh);
         }
         
-        QueueEntryImpl head = ((QueueEntryImpl) sqel.getHead());
+        SimpleQueueEntryImpl head = sqel.getHead();
         
         //We shall now delete some specific messages mid-queue that will lead to 
         //requiring a scavenge once the requested threshold of 9 deletes is passed
@@ -99,11 +115,10 @@ public class SimpleQueueEntryListTest extends TestCase
         assertTrue("Failed to delete QueueEntry", entriesMap.remove(14).delete());
         verifyDeletedButPresentBeforeScavenge(head, 14);
 
-        
         //Delete message 20 only
         assertTrue("Failed to delete QueueEntry", entriesMap.remove(20).delete());
         verifyDeletedButPresentBeforeScavenge(head, 20);
-        
+
         //Delete messages 81 to 84
         assertTrue("Failed to delete QueueEntry", entriesMap.remove(81).delete());
         verifyDeletedButPresentBeforeScavenge(head, 81);
@@ -113,35 +128,35 @@ public class SimpleQueueEntryListTest extends TestCase
         verifyDeletedButPresentBeforeScavenge(head, 83);
         assertTrue("Failed to delete QueueEntry", entriesMap.remove(84).delete());
         verifyDeletedButPresentBeforeScavenge(head, 84);
-               
+
         //Delete message 99 - this is the 10th message deleted that is after the queue head
         //and so will invoke the scavenge() which is set to go after 9 previous deletions
         assertTrue("Failed to delete QueueEntry", entriesMap.remove(99).delete());
         
         verifyAllDeletedMessagedNotPresent(head, entriesMap);
     }
-    
-    private void verifyDeletedButPresentBeforeScavenge(QueueEntryImpl head, long messageId)
+
+    private void verifyDeletedButPresentBeforeScavenge(SimpleQueueEntryImpl head, long messageId)
     {
         //Use the head to get the initial entry in the queue
-        QueueEntryImpl entry = head._next;
-        
+        SimpleQueueEntryImpl entry = head.getNextNode();
+
         for(long i = 1; i < messageId ; i++)
         {
             assertEquals("Expected QueueEntry was not found in the list", i, (long) entry.getMessage().getMessageNumber());
-            entry = entry._next;
+            entry = entry.getNextNode();
         }
-        
+
         assertTrue("Entry should have been deleted", entry.isDeleted());
     }
-    
-    private void verifyAllDeletedMessagedNotPresent(QueueEntryImpl head, Map<Integer,QueueEntry> remainingMessages)
+
+    private void verifyAllDeletedMessagedNotPresent(SimpleQueueEntryImpl head, Map<Integer,QueueEntry> remainingMessages)
     {
         //Use the head to get the initial entry in the queue
-        QueueEntryImpl entry = head._next;
-        
+        SimpleQueueEntryImpl entry = head.getNextNode();
+
         assertNotNull("Initial entry should not have been null", entry);
-        
+
         int count = 0;
         
         while (entry != null)
@@ -149,62 +164,56 @@ public class SimpleQueueEntryListTest extends TestCase
             assertFalse("Entry " + entry.getMessage().getMessageNumber() + " should not have been deleted", entry.isDeleted());
             assertNotNull("QueueEntry was not found in the list of remaining entries", 
                     remainingMessages.get(entry.getMessage().getMessageNumber().intValue()));
-            
+
             count++;
-            entry = entry._next;
+            entry = entry.getNextNode();
         }
-        
+
         assertEquals("Count should have been equal",count,remainingMessages.size());
     }
 
-    public void testDequedMessagedNotPresentInIterator()
+    public void testGettingNextElement()
     {
-        int numberOfMessages = 10;
-        SimpleQueueEntryList entryList = new SimpleQueueEntryList(new MockAMQQueue("test"));
-        QueueEntry[] entries = new QueueEntry[numberOfMessages];
+        final int numberOfEntries = 5;
+        final SimpleQueueEntryImpl[] entries = new SimpleQueueEntryImpl[numberOfEntries];
+        final SimpleQueueEntryList queueEntryList = new SimpleQueueEntryList(new MockAMQQueue("test"));
 
-        for(int i = 0; i < numberOfMessages ; i++)
+        // create test entries
+        for(int i = 0; i < numberOfEntries; i++)
         {
-            AMQMessage message = null;;
-            try
-            {
-                message = new MockAMQMessage(i);
-            }
-            catch (AMQException e)
-            {
-                fail("Failure to create a mock message:" + e.getMessage());
-            }
-            QueueEntry entry = entryList.add(message);
-            assertNotNull("QE should not be null", entry);
-            entries[i]= entry;
+            AMQMessage message =  new MockAMQMessage(i);
+            entries[i] = queueEntryList.add(message);
         }
 
-        // dequeue all even messages
-        for (QueueEntry queueEntry : entries)
+        // test getNext for not acquired entries
+        for(int i = 0; i < numberOfEntries; i++)
         {
-            long i = ((AMQMessage)queueEntry.getMessage()).getMessageId().longValue();
-            if (i%2 == 0)
+            final SimpleQueueEntryImpl next = entries[i].getNextValidEntry();
+
+            if(i < numberOfEntries - 1)
             {
-                queueEntry.acquire();
-                queueEntry.dequeue();
+                assertEquals("Unexpected entry from QueueEntryImpl#getNext()", entries[i + 1], next);
+            }
+            else
+            {
+                assertNull("The next entry after the last should be null", next);
             }
         }
 
-        // iterate and check that dequeued messages are not returned by iterator
-        QueueEntryIterator it = entryList.iterator();
-        int counter = 0;
-        int i = 1;
-        while (it.advance())
-        {
-            QueueEntry entry = it.getNode();
-            Long id = ((AMQMessage)entry.getMessage()).getMessageId();
-            assertEquals("Expected message with id " + i + " but got message with id "
-                    + id, new Long(i), id);
-            counter++;
-            i += 2;
-        }
-        int expectedNumber = numberOfMessages / 2;
-        assertEquals("Expected  " + expectedNumber + " number of entries in iterator but got " + counter,
-                expectedNumber, counter);
+        // delete second
+        entries[1].acquire();
+        entries[1].delete();
+
+        // dequeue third
+        entries[2].acquire();
+        entries[2].dequeue();
+
+        SimpleQueueEntryImpl next = entries[2].getNextValidEntry();
+        assertEquals("expected forth entry", entries[3], next);
+        next = next.getNextValidEntry();
+        assertEquals("expected fifth entry", entries[4], next);
+        next = next.getNextValidEntry();
+        assertNull("The next entry after the last should be null", next);
     }
+
 }

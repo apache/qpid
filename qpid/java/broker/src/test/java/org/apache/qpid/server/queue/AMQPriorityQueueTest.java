@@ -21,12 +21,12 @@ package org.apache.qpid.server.queue;
  */
 
 import java.util.ArrayList;
-
+import junit.framework.AssertionFailedError;
 import org.apache.qpid.AMQException;
-import org.apache.qpid.server.message.AMQMessage;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.FieldTable;
-import junit.framework.AssertionFailedError;
+import org.apache.qpid.server.message.AMQMessage;
 
 public class AMQPriorityQueueTest extends SimpleAMQQueueTest
 {
@@ -35,7 +35,7 @@ public class AMQPriorityQueueTest extends SimpleAMQQueueTest
     public void setUp() throws Exception
     {
         _arguments = new FieldTable();
-        _arguments.put(AMQQueueFactory.X_QPID_PRIORITIES, 3);
+        _arguments.put(new AMQShortString(AMQQueueFactory.X_QPID_PRIORITIES), 3);
         super.setUp();
     }
 

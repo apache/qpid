@@ -54,7 +54,7 @@ public class ConflationQueueList extends SimpleQueueEntryList
 
 
     @Override
-    public QueueEntry add(final ServerMessage message)
+    public ConflationQueueEntry add(final ServerMessage message)
     {
         ConflationQueueEntry entry = (ConflationQueueEntry) (super.add(message));
         AtomicReference<QueueEntry> latestValueReference = null;
@@ -117,7 +117,7 @@ public class ConflationQueueList extends SimpleQueueEntryList
         }
     }
 
-    private final class ConflationQueueEntry extends QueueEntryImpl
+    private final class ConflationQueueEntry extends SimpleQueueEntryImpl
     {
 
 
@@ -158,7 +158,7 @@ public class ConflationQueueList extends SimpleQueueEntryList
             _conflationKey = conflationKey;
         }
 
-        public QueueEntryList createQueueEntryList(AMQQueue queue)
+        public ConflationQueueList createQueueEntryList(AMQQueue queue)
         {
             return new ConflationQueueList(queue, _conflationKey);
         }

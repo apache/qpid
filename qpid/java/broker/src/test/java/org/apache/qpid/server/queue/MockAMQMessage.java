@@ -20,24 +20,23 @@
  */
 package org.apache.qpid.server.queue;
 
-import org.apache.qpid.AMQException;
 import org.apache.qpid.server.message.AMQMessage;
 
 public class MockAMQMessage extends AMQMessage
 {
     public MockAMQMessage(long messageId)
-            throws AMQException
     {
        super(new MockStoredMessage(messageId));
     }
 
-
-
+    public MockAMQMessage(long messageId, String headerName, Object headerValue)
+    {
+       super(new MockStoredMessage(messageId, headerName, headerValue));
+    }
 
     @Override
     public long getSize()
     {
         return 0l;
     }
-
 }

@@ -129,7 +129,19 @@ public class QueueConfigurationTest extends TestCase
         assertEquals(1, qConf.getMinimumAlertRepeatGap());
     }
 
-    private VirtualHostConfiguration overrideConfiguration(String property, int value)
+    public void testSortQueueConfiguration() throws ConfigurationException
+    {
+        //Check default value
+        QueueConfiguration qConf = new QueueConfiguration("test", _emptyConf);
+        assertNull(qConf.getQueueSortKey());
+
+        // Check explicit value
+        final VirtualHostConfiguration vhostConfig = overrideConfiguration("sortKey", "test-sort-key");
+        qConf = new QueueConfiguration("test", vhostConfig);
+        assertEquals("test-sort-key", qConf.getQueueSortKey());
+    }
+
+    private VirtualHostConfiguration overrideConfiguration(String property, Object value)
             throws ConfigurationException
     {
         PropertiesConfiguration queueConfig = new PropertiesConfiguration();
@@ -141,5 +153,4 @@ public class QueueConfigurationTest extends TestCase
 
         return new VirtualHostConfiguration("test", config);
     }
-
 }

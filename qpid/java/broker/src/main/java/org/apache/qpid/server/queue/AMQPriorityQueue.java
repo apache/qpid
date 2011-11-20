@@ -20,71 +20,25 @@
 */
 package org.apache.qpid.server.queue;
 
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.server.subscription.Subscription;
-import org.apache.qpid.server.subscription.SubscriptionList;
+import java.util.Map;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
-import java.util.Map;
-
-public class AMQPriorityQueue extends SimpleAMQQueue
+public class AMQPriorityQueue extends OutOfOrderQueue
 {
-    protected AMQPriorityQueue(final AMQShortString name,
-                               final boolean durable,
-                               final AMQShortString owner,
-                               final boolean autoDelete,
-                               boolean exclusive,
-                               final VirtualHost virtualHost, 
-                               int priorities, Map<String, Object> arguments)
+    protected AMQPriorityQueue(final String name,
+                                final boolean durable,
+                                final String owner,
+                                final boolean autoDelete,
+                                boolean exclusive,
+                                final VirtualHost virtualHost,
+                                Map<String, Object> arguments,
+                                int priorities)
     {
-        super(name, durable, owner, autoDelete, exclusive, virtualHost,new PriorityQueueList.Factory(priorities), arguments);
-    }
-
-    public AMQPriorityQueue(String queueName,
-                            boolean durable,
-                            String owner,
-                            boolean autoDelete,
-                            boolean exclusive, VirtualHost virtualHost, int priorities, Map<String,Object> arguments)
-    {
-        this(queueName == null ? null : new AMQShortString(queueName), durable, owner == null ? null : new AMQShortString(owner),
-                autoDelete, exclusive,virtualHost, priorities, arguments);
+        super(name, durable, owner, autoDelete, exclusive, virtualHost, new PriorityQueueList.Factory(priorities), arguments);
     }
 
     public int getPriorities()
     {
         return ((PriorityQueueList) _entries).getPriorities();
-    }
-
-    @Override
-    protected void checkSubscriptionsNotAheadOfDelivery(final QueueEntry entry)
-    {
-        // check that all subscriptions are not in advance of the entry
-        SubscriptionList.SubscriptionNodeIterator subIter = _subscriptionList.iterator();
-        while(subIter.advance() && entry.isAvailable())
-        {
-            final Subscription subscription = subIter.getNode().getSubscription();
-            if(!subscription.isClosed())
-            {
-                QueueContext context = (QueueContext) subscription.getQueueContext();
-                if(context != null)
-                {
-                    QueueEntry subnode = context._lastSeenEntry;
-                    QueueEntry released = context._releasedEntry;
-                    while(subnode != null && entry.compareTo(subnode) < 0 && entry.isAvailable() && (released == null || released.compareTo(entry) < 0))
-                    {
-                        if(QueueContext._releasedUpdater.compareAndSet(context,released,entry))
-                        {
-                            break;
-                        }
-                        else
-                        {
-                            subnode = context._lastSeenEntry;
-                            released = context._releasedEntry;
-                        }
-                    }
-                }
-            }
-
-        }
     }
 }

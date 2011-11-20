@@ -20,16 +20,15 @@
  */
 package org.apache.qpid.tools.messagestore.commands;
 
-import org.apache.commons.codec.binary.Hex;
-import org.apache.qpid.server.queue.QueueEntryImpl;
-import org.apache.qpid.server.queue.QueueEntry;
-import org.apache.qpid.server.message.ServerMessage;
-import org.apache.qpid.tools.messagestore.MessageStoreTool;
-import org.apache.qpid.tools.utils.Console;
-
 import java.io.UnsupportedEncodingException;
 import java.util.LinkedList;
 import java.util.List;
+import org.apache.commons.codec.binary.Hex;
+import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.queue.QueueEntry;
+import org.apache.qpid.server.queue.SimpleQueueEntryImpl;
+import org.apache.qpid.tools.messagestore.MessageStoreTool;
+import org.apache.qpid.tools.utils.Console;
 
 public class Dump extends Show
 {
@@ -259,7 +258,7 @@ public class Dump extends Show
                                     String title, boolean routing, boolean headers, boolean messageHeaders)
     {
         List<QueueEntry> single = new LinkedList<QueueEntry>();
-        single.add(new QueueEntryImpl(null,msg, Long.MIN_VALUE));
+        single.add(new SimpleQueueEntryImpl(null,msg, Long.MIN_VALUE));
 
         List<List> routingData = super.createMessageData(null, single, headers, routing, messageHeaders);
 
