@@ -28,7 +28,6 @@ import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.management.common.mbeans.ManagedQueue;
 import org.apache.qpid.management.common.mbeans.annotations.MBeanConstructor;
 import org.apache.qpid.management.common.mbeans.annotations.MBeanDescription;
-import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.management.AMQManagedObject;
 import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.message.ServerMessage;
@@ -63,20 +62,22 @@ import java.util.*;
 /**
  * AMQQueueMBean is the management bean for an {@link AMQQueue}.
  *
- * <p/><tablse id="crc"><caption>CRC Caption</caption>
+ * <p/><table id="crc"><caption>CRC Caption</caption>
  * <tr><th> Responsibilities <th> Collaborations
  * </table>
  */
 @MBeanDescription("Management Interface for AMQQueue")
 public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, QueueNotificationListener
 {
+
     /** Used for debugging purposes. */
     private static final Logger _logger = Logger.getLogger(AMQQueueMBean.class);
 
-    private static final SimpleDateFormat _dateFormat = new SimpleDateFormat("MM-dd-yy HH:mm:ss.SSS z");
+    /** Date/time format used for message expiration and message timestamp formatting */
+    public static final String JMSTIMESTAMP_DATETIME_FORMAT = "MM-dd-yy HH:mm:ss.SSS z";
 
-    private AMQQueue _queue = null;
-    private String _queueName = null;
+    private final AMQQueue _queue;
+    private final String _queueName;
     // OpenMBean data types for viewMessages method
 
     private static OpenType[] _msgAttributeTypes = new OpenType[5]; // AMQ message attribute types.
@@ -523,13 +524,11 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
         list.add("JMSPriority = " + headerProperties.getPriority());
         list.add("JMSType = " + headerProperties.getType());
 
-        long longDate = headerProperties.getExpiration();
-        String strDate = (longDate != 0) ? _dateFormat.format(new Date(longDate)) : null;
-        list.add("JMSExpiration = " + strDate);
+        final long expirationDate = headerProperties.getExpiration();
+        final long timestampDate = headerProperties.getTimestamp();
 
-        longDate = headerProperties.getTimestamp();
-        strDate = (longDate != 0) ? _dateFormat.format(new Date(longDate)) : null;
-        list.add("JMSTimestamp = " + strDate);
+        addStringifiedJMSTimestamoAndJMSExpiration(list, expirationDate,
+                timestampDate);
 
         return list.toArray(new String[list.size()]);
     }
@@ -561,15 +560,30 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
         list.add("JMSPriority = " + header.getPriority());
         list.add("JMSType = " + header.getType());
 
-        long longDate = header.getExpiration();
-        String strDate = (longDate != 0) ? _dateFormat.format(new Date(longDate)) : null;
-        list.add("JMSExpiration = " + strDate);
-
-        longDate = header.getTimestamp();
-        strDate = (longDate != 0) ? _dateFormat.format(new Date(longDate)) : null;
-        list.add("JMSTimestamp = " + strDate);
+        final long expirationDate = header.getExpiration();
+        final long timestampDate = header.getTimestamp();
+        addStringifiedJMSTimestamoAndJMSExpiration(list, expirationDate, timestampDate);
 
         return list.toArray(new String[list.size()]);
+    }
+
+    private void addStringifiedJMSTimestamoAndJMSExpiration(final List<String> list,
+            final long expirationDate, final long timestampDate)
+    {
+        final SimpleDateFormat dateFormat;
+        if (expirationDate != 0 || timestampDate != 0)
+        {
+            dateFormat = new SimpleDateFormat(JMSTIMESTAMP_DATETIME_FORMAT);
+        }
+        else
+        {
+            dateFormat = null;
+        }
+
+        final String formattedExpirationDate = (expirationDate != 0) ? dateFormat.format(new Date(expirationDate)) : null;
+        final String formattedTimestampDate = (timestampDate != 0) ? dateFormat.format(new Date(timestampDate)) : null;
+        list.add("JMSExpiration = " + formattedExpirationDate);
+        list.add("JMSTimestamp = " + formattedTimestampDate);
     }
 
     /**
