@@ -21,8 +21,12 @@
 
 package org.apache.qpid.server.queue;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import org.apache.commons.configuration.PropertiesConfiguration;
-
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQInternalException;
 import org.apache.qpid.AMQSecurityException;
@@ -40,6 +44,7 @@ import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.queue.BaseQueue.PostEnqueueAction;
 import org.apache.qpid.server.queue.SimpleAMQQueue.QueueEntryFilter;
 import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.store.StoreContext;
 import org.apache.qpid.server.store.StoredMessage;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
 import org.apache.qpid.server.subscription.MockSubscription;
@@ -50,12 +55,6 @@ import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.InternalBrokerBaseCase;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 public class SimpleAMQQueueTest extends InternalBrokerBaseCase
 {
@@ -1110,9 +1109,9 @@ public class SimpleAMQQueueTest extends InternalBrokerBaseCase
                              * Entries with even message id are considered
                              * dequeued!
                              */
-                            protected QueueEntryImpl createQueueEntry(final ServerMessage message)
+                            protected SimpleQueueEntryImpl createQueueEntry(final ServerMessage message)
                             {
-                                return new QueueEntryImpl(this, message)
+                                return new SimpleQueueEntryImpl(this, message)
                                 {
                                     public boolean isDequeued()
                                     {

@@ -19,9 +19,7 @@
 package org.apache.qpid.server.queue;
 
 import java.lang.reflect.Field;
-
 import junit.framework.TestCase;
-
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.message.AMQMessage;
 import org.apache.qpid.server.queue.QueueEntry.EntryState;
@@ -30,18 +28,27 @@ import org.apache.qpid.server.subscription.Subscription;
 
 /**
  * Tests for {@link QueueEntryImpl}
- *
  */
-public class QueueEntryImplTest extends TestCase
+public abstract class QueueEntryImplTestBase extends TestCase
 {
     // tested entry
-    private QueueEntryImpl _queueEntry;
+    protected QueueEntryImpl _queueEntry;
+    protected QueueEntryImpl _queueEntry2;
+    protected QueueEntryImpl _queueEntry3;
+
+    public abstract QueueEntryImpl getQueueEntryImpl(int msgid) throws AMQException;
+
+    public abstract void testCompareTo();
+
+    public abstract void testTraverseWithNoDeletedEntries();
+
+    public abstract void testTraverseWithDeletedEntries();
 
     public void setUp() throws Exception
     {
-        AMQMessage message = new MockAMQMessage(1);
-        SimpleQueueEntryList queueEntryList = new SimpleQueueEntryList(new MockAMQQueue("test"));
-        _queueEntry = new QueueEntryImpl(queueEntryList, message, 1);
+        _queueEntry = getQueueEntryImpl(1);
+        _queueEntry2 = getQueueEntryImpl(2);
+        _queueEntry3 = getQueueEntryImpl(3);
     }
 
     public void testAquire()
@@ -104,61 +111,6 @@ public class QueueEntryImplTest extends TestCase
                 _queueEntry.isDeleted());
     }
 
-    /**
-     * Tests if entries in DEQUQUED or DELETED state are not returned by getNext method.
-     */
-    public void testGetNext()
-    {
-        int numberOfEntries = 5;
-        QueueEntryImpl[] entries = new QueueEntryImpl[numberOfEntries];
-        SimpleQueueEntryList queueEntryList = new SimpleQueueEntryList(new MockAMQQueue("test"));
-
-        // create test entries
-        for(int i = 0; i < numberOfEntries ; i++)
-        {
-            AMQMessage message = null;;
-            try
-            {
-                message = new MockAMQMessage(i);
-            }
-            catch (AMQException e)
-            {
-                fail("Failure to create a mock message:" + e.getMessage());
-            }
-            QueueEntryImpl entry = (QueueEntryImpl)queueEntryList.add(message);
-            entries[i] = entry;
-        }
-
-        // test getNext for not acquired entries
-        for(int i = 0; i < numberOfEntries ; i++)
-        {
-            QueueEntryImpl queueEntry = entries[i];
-            QueueEntryImpl next = queueEntry.getNext();
-            if (i < numberOfEntries - 1)
-            {
-                assertEquals("Unexpected entry from QueueEntryImpl#getNext()", entries[i + 1], next);
-            }
-            else
-            {
-                assertNull("The next entry after the last should be null", next);
-            }
-        }
-
-        // delete second
-        entries[1].acquire();
-        entries[1].delete();
-
-        // dequeue third
-        entries[2].acquire();
-        entries[2].dequeue();
-
-        QueueEntryImpl next = entries[0].getNext();
-        assertEquals("expected forth entry",entries[3], next);
-        next = next.getNext();
-        assertEquals("expected fifth entry", entries[4], next);
-        next = next.getNext();
-        assertNull("The next entry after the last should be null", next);
-    }
     /**
      * A helper method to put tested object into deleted state and assert the state
      */
@@ -243,5 +195,53 @@ public class QueueEntryImplTest extends TestCase
         //verify it still records being rejected by both subscriptions
         assertTrue("Queue entry should have been rejected by the subscription", _queueEntry.isRejectedBy(subId));
         assertTrue("Queue entry should have been rejected by the subscription", _queueEntry.isRejectedBy(sub2Id));
+    }
+
+    /**
+     * Tests if entries in DEQUQUED or DELETED state are not returned by getNext method.
+     */
+    public void testGetNext()
+    {
+        int numberOfEntries = 5;
+        QueueEntryImpl[] entries = new QueueEntryImpl[numberOfEntries];
+        SimpleQueueEntryList queueEntryList = new SimpleQueueEntryList(new MockAMQQueue("test"));
+
+        // create test entries
+        for(int i = 0; i < numberOfEntries ; i++)
+        {
+            AMQMessage message = new MockAMQMessage(i);
+            QueueEntryImpl entry = (QueueEntryImpl)queueEntryList.add(message);
+            entries[i] = entry;
+        }
+
+        // test getNext for not acquired entries
+        for(int i = 0; i < numberOfEntries ; i++)
+        {
+            QueueEntryImpl queueEntry = entries[i];
+            QueueEntry next = queueEntry.getNextValidEntry();
+            if (i < numberOfEntries - 1)
+            {
+                assertEquals("Unexpected entry from QueueEntryImpl#getNext()", entries[i + 1], next);
+            }
+            else
+            {
+                assertNull("The next entry after the last should be null", next);
+            }
+        }
+
+        // delete second
+        entries[1].acquire();
+        entries[1].delete();
+
+        // dequeue third
+        entries[2].acquire();
+        entries[2].dequeue();
+
+        QueueEntry next = entries[0].getNextValidEntry();
+        assertEquals("expected forth entry",entries[3], next);
+        next = next.getNextValidEntry();
+        assertEquals("expected fifth entry", entries[4], next);
+        next = next.getNextValidEntry();
+        assertNull("The next entry after the last should be null", next);
     }
 }

@@ -20,22 +20,22 @@
  */
 package org.apache.qpid.server.queue;
 
+import java.util.HashMap;
+import java.util.Map;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQSecurityException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.configuration.QueueConfiguration;
-
-import java.util.Map;
-import java.util.HashMap;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 
 public class AMQQueueFactory
 {
-    public static final AMQShortString X_QPID_PRIORITIES = new AMQShortString("x-qpid-priorities");
+    public static final String X_QPID_PRIORITIES = "x-qpid-priorities";
     public static final String QPID_LVQ_KEY = "qpid.LVQ_key";
     public static final String QPID_LAST_VALUE_QUEUE = "qpid.last_value_queue";
     public static final String QPID_LAST_VALUE_QUEUE_KEY = "qpid.last_value_queue_key";
+    public static final String QPID_QUEUE_SORT_KEY = "qpid.queue_sort_key";
 
     private abstract static class QueueProperty
     {
@@ -157,9 +157,11 @@ public class AMQQueueFactory
             String description = "Permission denied: queue-name '" + queueName + "'";
             throw new AMQSecurityException(description);
         }
-        
+
         int priorities = 1;
         String conflationKey = null;
+        String sortingKey = null;
+
         if(arguments != null)
         {
             if(arguments.containsKey(QPID_LAST_VALUE_QUEUE) || arguments.containsKey(QPID_LAST_VALUE_QUEUE_KEY))
@@ -170,24 +172,32 @@ public class AMQQueueFactory
                     conflationKey = QPID_LVQ_KEY;
                 }
             }
-            else if(arguments.containsKey(X_QPID_PRIORITIES.toString()))
+            else if(arguments.containsKey(X_QPID_PRIORITIES))
             {
-                Object prioritiesObj = arguments.get(X_QPID_PRIORITIES.toString());
+                Object prioritiesObj = arguments.get(X_QPID_PRIORITIES);
                 if(prioritiesObj instanceof Number)
                 {
                     priorities = ((Number)prioritiesObj).intValue();
                 }
             }
+            else if(arguments.containsKey(QPID_QUEUE_SORT_KEY))
+            {
+                sortingKey = (String)arguments.get(QPID_QUEUE_SORT_KEY);
+            }
         }
 
         AMQQueue q;
-        if(conflationKey != null)
+        if(sortingKey != null)
+        {
+            q = new SortedQueue(queueName, durable, owner, autoDelete, exclusive, virtualHost, arguments, sortingKey);
+        }
+        else if(conflationKey != null)
         {
             q = new ConflationQueue(queueName, durable, owner, autoDelete, exclusive, virtualHost, arguments, conflationKey);
         }
         else if(priorities > 1)
         {
-            q = new AMQPriorityQueue(queueName, durable, owner, autoDelete, exclusive, virtualHost, priorities, arguments);
+            q = new AMQPriorityQueue(queueName, durable, owner, autoDelete, exclusive, virtualHost, arguments, priorities);
         }
         else
         {
@@ -223,26 +233,22 @@ public class AMQQueueFactory
         boolean exclusive = config.getExclusive();
         String owner = config.getOwner();
         Map<String,Object> arguments = null;
+
         if(config.isLVQ() || config.getLVQKey() != null)
         {
-
             arguments = new HashMap<String,Object>();
             arguments.put(QPID_LAST_VALUE_QUEUE, 1);
             arguments.put(QPID_LAST_VALUE_QUEUE_KEY, config.getLVQKey() == null ? QPID_LVQ_KEY : config.getLVQKey());
         }
-        else
+        else if (config.getPriority() || config.getPriorities() > 0)
         {
-            boolean priority = config.getPriority();
-            int priorities = config.getPriorities();
-            if(priority || priorities > 0)
-            {
-                arguments = new HashMap<String,Object>();
-                if (priorities < 0)
-                {
-                    priorities = 10;
-                }
-                arguments.put("x-qpid-priorities", priorities);
-            }
+            arguments = new HashMap<String,Object>();
+            arguments.put(X_QPID_PRIORITIES, config.getPriorities() < 0 ? 10 : config.getPriorities());
+        }
+        else if (config.getQueueSortKey() != null && !"".equals(config.getQueueSortKey()))
+        {
+            arguments = new HashMap<String,Object>();
+            arguments.put(QPID_QUEUE_SORT_KEY, config.getQueueSortKey());
         }
 
         AMQQueue q = createAMQQueueImpl(queueName, durable, owner, autodelete, exclusive, host, arguments);

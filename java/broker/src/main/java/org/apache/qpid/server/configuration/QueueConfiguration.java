@@ -62,7 +62,8 @@ public class QueueConfiguration extends ConfigurationPlugin
                             "capacity",
                             "flowResumeCapacity",
                             "lvq",
-                            "lvqKey"
+                            "lvqKey",
+                            "sortKey"
         };
     }
 
@@ -167,6 +168,10 @@ public class QueueConfiguration extends ConfigurationPlugin
         return getStringValue("lvqKey", null);
     }
 
+    public String getQueueSortKey()
+    {
+        return getStringValue("sortKey", null);
+    }
 
     public static class QueueConfig extends ConfigurationPlugin
     {
