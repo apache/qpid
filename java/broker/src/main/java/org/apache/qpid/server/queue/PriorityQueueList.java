@@ -20,21 +20,19 @@
 */
 package org.apache.qpid.server.queue;
 
-import org.apache.qpid.framing.CommonContentHeaderProperties;
-import org.apache.qpid.AMQException;
 import org.apache.qpid.server.message.ServerMessage;
 
-public class PriorityQueueList implements QueueEntryList
+public class PriorityQueueList implements QueueEntryList<SimpleQueueEntryImpl>
 {
     private final AMQQueue _queue;
-    private final QueueEntryList[] _priorityLists;
+    private final SimpleQueueEntryList[] _priorityLists;
     private final int _priorities;
     private final int _priorityOffset;
 
     public PriorityQueueList(AMQQueue queue, int priorities)
     {
         _queue = queue;
-        _priorityLists = new QueueEntryList[priorities];
+        _priorityLists = new SimpleQueueEntryList[priorities];
         _priorities = priorities;
         _priorityOffset = 5-((priorities + 1)/2);
         for(int i = 0; i < priorities; i++)
@@ -53,7 +51,7 @@ public class PriorityQueueList implements QueueEntryList
         return _queue;
     }
 
-    public QueueEntry add(ServerMessage message)
+    public SimpleQueueEntryImpl add(ServerMessage message)
     {
         int index = message.getMessageHeader().getPriority() - _priorityOffset;
         if(index >= _priorities)
@@ -68,31 +66,30 @@ public class PriorityQueueList implements QueueEntryList
 
     }
 
-    public QueueEntry next(QueueEntry node)
+    public SimpleQueueEntryImpl next(SimpleQueueEntryImpl node)
     {
-        QueueEntryImpl nodeImpl = (QueueEntryImpl)node;
-        QueueEntry next = nodeImpl.getNext();
+        SimpleQueueEntryImpl next = node.getNextValidEntry();
 
         if(next == null)
         {
-            QueueEntryList nodeEntryList = nodeImpl.getQueueEntryList();
+            final QueueEntryList<?> nodeEntryList = node.getQueueEntryList();
             int index;
             for(index = _priorityLists.length-1; _priorityLists[index] != nodeEntryList; index--);
 
             while(next == null && index != 0)
             {
                 index--;
-                next = ((QueueEntryImpl)_priorityLists[index].getHead()).getNext();
+                next = _priorityLists[index].getHead().getNextValidEntry();
             }
 
         }
         return next;
     }
 
-    private final class PriorityQueueEntryListIterator implements QueueEntryIterator
+    private final class PriorityQueueEntryListIterator implements QueueEntryIterator<SimpleQueueEntryImpl>
     {
-        private final QueueEntryIterator[] _iterators = new QueueEntryIterator[ _priorityLists.length ];
-        private QueueEntry _lastNode;
+        private final SimpleQueueEntryList.QueueEntryIteratorImpl[] _iterators = new SimpleQueueEntryList.QueueEntryIteratorImpl[ _priorityLists.length ];
+        private SimpleQueueEntryImpl _lastNode;
 
         PriorityQueueEntryListIterator()
         {
@@ -116,7 +113,7 @@ public class PriorityQueueList implements QueueEntryList
             return true;
         }
 
-        public QueueEntry getNode()
+        public SimpleQueueEntryImpl getNode()
         {
             return _lastNode;
         }
@@ -135,14 +132,19 @@ public class PriorityQueueList implements QueueEntryList
         }
     }
 
-    public QueueEntryIterator iterator()
+    public PriorityQueueEntryListIterator iterator()
     {
         return new PriorityQueueEntryListIterator();
     }
 
-    public QueueEntry getHead()
+    public SimpleQueueEntryImpl getHead()
     {
         return _priorityLists[_priorities-1].getHead();
+    }
+
+    public void entryDeleted(final SimpleQueueEntryImpl queueEntry)
+    {
+
     }
 
     static class Factory implements QueueEntryListFactory
@@ -154,7 +156,7 @@ public class PriorityQueueList implements QueueEntryList
             _priorities = priorities;
         }
 
-        public QueueEntryList createQueueEntryList(AMQQueue queue)
+        public PriorityQueueList createQueueEntryList(AMQQueue queue)
         {
             return new PriorityQueueList(queue, _priorities);
         }

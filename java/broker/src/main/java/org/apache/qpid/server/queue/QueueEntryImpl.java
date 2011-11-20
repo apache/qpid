@@ -38,16 +38,11 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
-
-public class QueueEntryImpl implements QueueEntry
+public abstract class QueueEntryImpl implements QueueEntry
 {
-
-    /**
-     * Used for debugging purposes.
-     */
     private static final Logger _log = Logger.getLogger(QueueEntryImpl.class);
 
-    private final SimpleQueueEntryList _queueEntryList;
+    private final QueueEntryList _queueEntryList;
 
     private MessageReference _message;
 
@@ -80,22 +75,20 @@ public class QueueEntryImpl implements QueueEntry
 
     private volatile long _entryId;
 
-    volatile QueueEntryImpl _next;
-
     private static final int DELIVERED_TO_CONSUMER = 1;
     private static final int REDELIVERED = 2;
 
     private volatile int _deliveryState;
 
 
-    QueueEntryImpl(SimpleQueueEntryList queueEntryList)
+    public QueueEntryImpl(QueueEntryList<?> queueEntryList)
     {
         this(queueEntryList,null,Long.MIN_VALUE);
         _state = DELETED_STATE;
     }
 
 
-    public QueueEntryImpl(SimpleQueueEntryList queueEntryList, ServerMessage message, final long entryId)
+    public QueueEntryImpl(QueueEntryList<?> queueEntryList, ServerMessage message, final long entryId)
     {
         _queueEntryList = queueEntryList;
 
@@ -104,7 +97,7 @@ public class QueueEntryImpl implements QueueEntry
         _entryIdUpdater.set(this, entryId);
     }
 
-    public QueueEntryImpl(SimpleQueueEntryList queueEntryList, ServerMessage message)
+    public QueueEntryImpl(QueueEntryList<?> queueEntryList, ServerMessage message)
     {
         _queueEntryList = queueEntryList;
         _message = message == null ? null :  message.newReference();
@@ -316,16 +309,15 @@ public class QueueEntryImpl implements QueueEntry
 
     public Subscription getDeliveredSubscription()
     {
-            EntryState state = _state;
-            if (state instanceof SubscriptionAcquiredState)
-            {
-                return ((SubscriptionAcquiredState) state).getSubscription();
-            }
-            else
-            {
-                return null;
-            }
-
+        EntryState state = _state;
+        if (state instanceof SubscriptionAcquiredState)
+        {
+            return ((SubscriptionAcquiredState) state).getSubscription();
+        }
+        else
+        {
+            return null;
+        }
     }
 
     public void reject()
@@ -497,33 +489,6 @@ public class QueueEntryImpl implements QueueEntry
         return getEntryId() > other.getEntryId() ? 1 : getEntryId() < other.getEntryId() ? -1 : 0;
     }
 
-    public QueueEntryImpl getNext()
-    {
-
-        QueueEntryImpl next = nextNode();
-        while(next != null && next.isDispensed() )
-        {
-
-            final QueueEntryImpl newNext = next.nextNode();
-            if(newNext != null)
-            {
-                SimpleQueueEntryList._nextUpdater.compareAndSet(this,next, newNext);
-                next = nextNode();
-            }
-            else
-            {
-                next = null;
-            }
-
-        }
-        return next;
-    }
-
-    QueueEntryImpl nextNode()
-    {
-        return _next;
-    }
-
     public boolean isDeleted()
     {
         return _state == DELETED_STATE;
@@ -535,7 +500,7 @@ public class QueueEntryImpl implements QueueEntry
 
         if(state != DELETED_STATE && _stateUpdater.compareAndSet(this,state,DELETED_STATE))
         {
-            _queueEntryList.advanceHead();
+            _queueEntryList.entryDeleted(this);
             return true;
         }
         else

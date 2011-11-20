@@ -214,6 +214,10 @@ public interface QueueEntry extends Comparable<QueueEntry>, Filterable
 
     boolean isQueueDeleted();
 
+    QueueEntry getNextNode();
+
+    QueueEntry getNextValidEntry();
+
     void addStateChangeListener(StateChangeListener listener);
     boolean removeStateChangeListener(StateChangeListener listener);
 

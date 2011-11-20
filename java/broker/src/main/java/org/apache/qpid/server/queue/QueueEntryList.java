@@ -22,15 +22,17 @@ package org.apache.qpid.server.queue;
 
 import org.apache.qpid.server.message.ServerMessage;
 
-public interface QueueEntryList
+public interface QueueEntryList<Q extends QueueEntry>
 {
     AMQQueue getQueue();
 
-    QueueEntry add(ServerMessage message);
+    Q add(ServerMessage message);
 
-    QueueEntry next(QueueEntry node);
+    Q next(Q node);
 
-    QueueEntryIterator iterator();
+    QueueEntryIterator<Q> iterator();
 
-    QueueEntry getHead();
+    Q getHead();
+
+    void entryDeleted(Q queueEntry);
 }
