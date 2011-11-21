@@ -257,59 +257,6 @@ public class SortedQueueTest extends QpidBrokerTestCase
         assertEquals("Incorrect number of messages received", 100, messageCount);
     }
 
-    public void testGetNext() throws JMSException, NamingException, AMQException
-    {
-        final Queue queue = createQueue();
-        final MessageProducer producer = _producerSession.createProducer(queue);
-
-        sendAndCommitMessage(producer,"2");
-        sendAndCommitMessage(producer,"3");
-        sendAndCommitMessage(producer,"1");
-
-        final Session consumerSession = _consumerConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        final MessageConsumer consumer = consumerSession.createConsumer(queue);
-        _consumerConnection.start();
-        receiveAndValidateMessage(consumer, "1");
-        receiveAndValidateMessage(consumer, "2");
-        receiveAndValidateMessage(consumer, "3");
-
-        sendAndCommitMessage(producer,"4");
-
-        receiveAndValidateMessage(consumer, "4");
-
-        sendAndCommitMessage(producer,"7");
-        sendAndCommitMessage(producer,"6");
-        sendAndCommitMessage(producer,"5");
-
-        // pre-fetch causes "unexpected" order
-        receiveAndValidateMessage(consumer, "7");
-        receiveAndValidateMessage(consumer, "5");
-        receiveAndValidateMessage(consumer, "6");
-    }
-
-    public void testGetNextPreFetch() throws JMSException, NamingException, AMQException
-    {
-        final Queue queue = createQueue();
-        final MessageProducer producer = _producerSession.createProducer(queue);
-
-        sendAndCommitMessage(producer,"1");
-
-        final Session consumerSession = _consumerConnection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        final MessageConsumer consumer = consumerSession.createConsumer(queue);
-        _consumerConnection.start();
-        receiveAndValidateMessage(consumer, "1");
-
-        producer.send(getSortableTestMesssage("4"));
-        producer.send(getSortableTestMesssage("3"));
-        producer.send(getSortableTestMesssage("2"));
-        _producerSession.commit();
-
-        // pre-fetch causes "unexpected" order
-        receiveAndValidateMessage(consumer, "4");
-        receiveAndValidateMessage(consumer, "2");
-        receiveAndValidateMessage(consumer, "3");
-    }
-
     public void testGetNextWithAck() throws JMSException, NamingException, AMQException
     {
         Queue _queue = createQueue();
