@@ -100,7 +100,7 @@ end
 # now get the non-arg options
 options[:address] = ARGV[0] unless ARGV[0].nil?
 
-connection = Qpid::Messaging::Connection.new options[:broker], options[:connection_options]
+connection = Qpid::Messaging::Connection.new :url => options[:broker], :options => options[:connection_options]
 connection.open
 session = connection.create_session
 sender = session.create_sender options[:address]
