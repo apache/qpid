@@ -34,8 +34,8 @@ module Qpid
 
       # Sends a message.
       def send(message, args = {})
-        block = args[:block] || false
-        @sender_impl.send message.message_impl, block
+        sync = args[:sync] || false
+        @sender_impl.send message.message_impl, sync
       end
 
       # Closes the sender.

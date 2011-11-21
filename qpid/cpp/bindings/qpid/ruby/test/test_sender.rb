@@ -65,7 +65,7 @@ class TestSender < Test::Unit::TestCase
       once.
       with(message_impl, false)
 
-    @sender.send @message, :block => false
+    @sender.send @message, :sync => false
   end
 
   def test_send_and_block
@@ -80,7 +80,7 @@ class TestSender < Test::Unit::TestCase
       once.
       with(message_impl, true)
 
-    @sender.send @message, :block => true
+    @sender.send @message, :sync => true
   end
 
   def test_close
