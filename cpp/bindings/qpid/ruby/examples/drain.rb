@@ -73,7 +73,7 @@ opts.parse!(ARGV)
 
 options[:address] = ARGV[0] || ""
 
-connection = Qpid::Messaging::Connection.new options[:broker], options[:connection_options]
+connection = Qpid::Messaging::Connection.new :url => options[:broker], :options => options[:connection_options]
 connection.open
 
 def render_map map
