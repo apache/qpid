@@ -39,7 +39,7 @@ module Qpid
       # Returns the +Connection+ for the +Session+.
       def connection
         connection_impl = @session_impl.getConnection
-        Qpid::Messaging::Connection.new "", {}, connection_impl
+        Qpid::Messaging::Connection.new :impl => connection_impl
       end
 
       # Creates a new endpoint for sending messages.

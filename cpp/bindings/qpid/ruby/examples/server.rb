@@ -25,7 +25,7 @@ if __FILE__ == $0
   broker  = ARGV[0] || "amqp:tcp:localhost:5672"
   options = ARGV[1] || ""
 
-  connection = Qpid::Messaging::Connection.new broker, options
+  connection = Qpid::Messaging::Connection.new :url => broker, :options =>options
   connection.open
   session = connection.create_session
   receiver = session.create_receiver "service_queue; {create:always}"

@@ -30,7 +30,7 @@ if __FILE__ == $0
   address = ARGV[1] || "amq.topic"
   options = ARGV[2] || ""
 
-  connection = Qpid::Messaging::Connection.new broker
+  connection = Qpid::Messaging::Connection.new :url => broker, :options => options
   connection.open
   session    = connection.create_session
   receiver   = session.create_receiver address

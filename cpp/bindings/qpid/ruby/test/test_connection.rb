@@ -39,10 +39,22 @@ class TestConnection < Test::Unit::TestCase
     @url     = "localhost"
     @options = {}
 
-    @connection = Qpid::Messaging::Connection.new(@url, @options, @connection_impl)
+    @connection = Qpid::Messaging::Connection.new :url => @url, :options => @options, :impl => @connection_impl
   end
 
-  def test_create_with_username_and_password
+  def test_initialize
+    @cqpid_connection.
+      should_receive(:new).
+      once.
+      with("localhost", {}).
+      and_return(@connection_impl)
+
+    result = Qpid::Messaging::Connection.new
+
+    assert_same @connection_impl, result.connection_impl
+  end
+
+  def test_initialize_with_username_and_password
     @cqpid_connection.
       should_receive(:new).
       once.with("localhost",
@@ -53,26 +65,23 @@ class TestConnection < Test::Unit::TestCase
       should_receive(:open).
       once
 
-    result = Qpid::Messaging::Connection.new("localhost",
-                                             :username => "username",
-                                             :password => "password")
+    result = Qpid::Messaging::Connection.new(:name => "localhost",
+                                             :options => {
+                                               :username => "username",
+                                               :password => "password"
+                                             })
     result.open
 
     assert_same @connection_impl, result.connection_impl
   end
 
-  def test_create_with_hostname
+  def test_initialize_with_hostname
     result = Qpid::Messaging::Connection.new("localhost")
 
     assert_not_nil result
   end
 
   def test_open
-    @cqpid_connection.
-      should_receive(:new).
-      once.
-      with(@url, {}).
-      and_return(@connection_impl)
     @connection_impl.
       should_receive(:open).
       once
@@ -106,22 +115,9 @@ class TestConnection < Test::Unit::TestCase
     assert !@connection.open?
   end
 
-  def test_close_an_unopened_session
-    @connection_impl.
-      should_receive(:isOpen).
-      once.
-      and_return(false)
-
-    @connection.close
-  end
-
   def test_close
     @connection_impl.
-      should_receive(:isOpen).
-      once.
-      and_return(true).
-      should_receive(:close).
-      once
+      should_receive(:close)
 
     @connection.close
   end
@@ -238,6 +234,15 @@ class TestConnection < Test::Unit::TestCase
       and_return(false)
 
     assert !@connection.null?
+  end
+
+  def test_session_with_invalid_session
+    @connection_impl.
+      should_receive(:getSession).
+      with("farkle").
+      and_raise(::RuntimeError)
+
+    assert_raise(Qpid::Messaging::SessionNameException) {@connection.session "Farkle"}
   end
 
   def test_swap

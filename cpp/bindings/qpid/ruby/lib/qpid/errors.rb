@@ -21,7 +21,10 @@ module Qpid
 
   module Messaging
 
-    class KeyError < RuntimeError
+    class KeyError < RuntimeError; end
+
+    class SessionNameException < Exception
+      def initialize(msg); super(msg); end
     end
 
   end

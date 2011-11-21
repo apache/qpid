@@ -23,56 +23,88 @@ module Qpid
 
   module Messaging
 
-    # Connection allows for establishing connections to a remote endpoint.
+    # Establishes a connection to a remote endpoint.
     class Connection
 
-      # The following general options are supported (as strings or symbols):
+      # Creates a connection object, but does not actually connect to
+      # the specified location.
       #
-      # username::
-      # password::
-      # heartbeat::
-      # tcp_nodelay::
-      # sasl_mechanism::
-      # sasl_service::
-      # sasl_min_ssf::
-      # sasl_max_ssf::
-      # transport::
+      # ==== Options
       #
-      # The following options specifically control reconnection behavior:
+      #   :url - the URL for the broker (def. +"localhost"+)
+      #   :options - connection options (def. +{}+)
       #
-      # reconnect:: *true* or *false*; indicates whether to attempt reconnections
-      # reconnect_timeout:: the number of seconds to attempt reconnecting
-      # reconnect_limit:: the number of retries before reporting failure
-      # reconnect_interval_min:: initial delay, in seconds, before attempting a reconnecting
-      # reconnect_interval_max:: number of seconds to wait before additional reconnect attempts
-      # reconnect_interval:: shorthand for setting box min and max values
-      # reconnect_urls:: a list of alternate URLs to use for reconnection attempts
-      def initialize(url, options = {}, connection_impl = nil)
-        @url = url
-        @connection_impl = connection_impl
-        @options = options
+      # ==== Controlling Reconnect Behavior
+      #
+      # The following connection options can be used to configure
+      # the reconnection behavior for this connection.
+      #
+      # * :username
+      # * :password
+      # * :heartbeat
+      # * :tcp_nodelay
+      # * :sasl_mechanism
+      # * :sasl_service
+      # * :sasl_min_ssf
+      # * :sasl_max_ssf
+      # * :transport
+      # * :reconnect - +true+ or +false+; indicates wehtehr to attempt reconnections
+      # * :reconnect_timeout - the number of seconds to attempt reconnecting
+      # * :reconnect_limit - the number of retries before reporting failure
+      # * :reconnect_interval_min - initial delay, in seconds, before attempting a reconnection
+      # * :reconnect_interval_max - number of seconds to wait before additional reconnect attempts
+      # * :reconnect_interval - shorthand for setting both min and max values
+      # * :reconnect_urls - a list of alternate URLs to use for reconnection attempts
+      #
+      # ==== Examples
+      #
+      #   conn = Qpid::Messaging::Connnection.new
+      #   conn = Qpid::Messaging::Connection.new :url => "amqp:tcp:broker1.domain.com:5672"
+      #   conn = Qpid::Messaging::Connection.new :options => {:username => "login", :password => "password"}
+      #
+      def initialize(opts = {})
+        @url = opts[:url] || "localhost"
+        @options = opts[:options] || {}
+        @connection_impl = opts[:impl] || Cqpid::Connection.new(@url, convert_options)
       end
 
       def connection_impl # :nodoc:
         @connection_impl
       end
 
-      # Opens the connection.
+      # Establishes the connection.
+      #
+      # ==== Examples
+      #
+      #   conn.open unless conn.open?
+      #
       def open
-        @connection_impl = Cqpid::Connection.new(@url, convert_options)
         @connection_impl.open
       end
 
       # Reports whether the connection is open.
-      def open?; false || (@connection_impl.isOpen if @connection_impl); end
+      #
+      # ==== Examples
+      #
+      #   conn.close if conn.open?
+      #
+      def open?; true && !@connection_impl.nil? && @connection_impl.isOpen; end
 
       # Closes the connection.
-      def close; @connection_impl.close if open?; end
+      def close; @connection_impl.close; end
 
       # Creates a new session.
       #
-      # If :transactional => true then a transactional session is created.
-      # Otherwise a standard session is created.
+      # ==== Arguments
+      #
+      # * :name - specifies the name for this session
+      # * :transactional - if +true+ then a creates a transaction session (def. +false+)
+      #
+      # ==== Examples
+      #
+      #   session = conn.create_session :name => "session1"
+      #   session = conn.create_session :transaction => true
+      #
       def create_session(args = {})
         name = args[:name] || ""
         if open?
@@ -88,9 +120,22 @@ module Qpid
       end
 
       # Returns a session for the specified session name.
+      #
+      # ==== Examples
+      #
+      #   begin
+      #     session = conn.session "mysession"
+      #   rescue SessionNameException => error
+      #      puts "No such session."
+      #   end
+      #
       def session name
-        session_impl = @connection_impl.getSession name
-        Qpid::Messaging::Session.new session_impl if session_impl
+        begin
+          session_impl = @connection_impl.getSession name
+          Qpid::Messaging::Session.new session_impl if session_impl
+        rescue
+          raise Qpid::Messaging::SessionNameException.new "No such session: #{name}"
+        end
       end
 
       # Returns the username used to authenticate with the connection.
@@ -117,8 +162,6 @@ module Qpid
 
       def convert_options
         result = {}
-        # map only those options defined in the C++ layer
-        # TODO when new options are added, this needs to be updated.
         unless @options.nil? || @options.empty?
           @options.each_pair {|key, value| result[key.to_s] = value.to_s}
         end
