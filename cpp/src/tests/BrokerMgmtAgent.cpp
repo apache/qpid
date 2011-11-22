@@ -604,7 +604,7 @@ namespace qpid {
                 std::stringstream key;
                 key << "testobj-" << i;
                 TestManageable *tm = new TestManageable(agent, key.str());
-                (void) tm->GetManagementObject()->writePropertiesSize();
+                if (tm->GetManagementObject()->writePropertiesSize()) {}
                 agent->addObject(tm->GetManagementObject(), key.str());
                 tmv.push_back(tm);
             }
