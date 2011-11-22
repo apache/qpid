@@ -199,7 +199,7 @@
         provided in the arguments map to enable message group support on a queue:
       </para>
       <table>
-        <title>Queue Declare/Addres Syntax Message Group Configuration Arguments</title>
+        <title>Queue Declare/Address Syntax Message Group Configuration Arguments</title>
         <tgroup cols="2">
           <thead>
             <row>

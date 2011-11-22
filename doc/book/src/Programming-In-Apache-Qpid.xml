@@ -2649,6 +2649,9 @@ enable("qpid.messaging.io", DEBUG)
       <literal>x-amqp-0-10.routing-key</literal>.</para>
 
     </section>
+
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Message-Groups-Guide.xml"/>
+
   </chapter>
 
 
