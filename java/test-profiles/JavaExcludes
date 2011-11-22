@@ -28,10 +28,6 @@ org.apache.qpid.test.client.queue.QueuePolicyTest#testRejectPolicy
 //Moved from JavaStandaloneExcludes when it was removed
 ///////////////////////////////////////////////////////
 
-// QPID-3426: The following test is broken.
-// This is a long running test so should exclude from normal runs
-org.apache.qpid.test.client.failover.FailoverTest#test4MinuteFailover
-
 // This test may use QpidTestCase but it is not using the getConnection and is hardwired to InVM
 org.apache.qpid.test.unit.client.connection.CloseAfterConnectionFailureTest#*
 
