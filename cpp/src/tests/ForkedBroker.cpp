@@ -68,7 +68,7 @@ ForkedBroker::~ForkedBroker() {
     }
     if (!dataDir.empty())
     {
-        (void) ::system(("rm -rf "+dataDir).c_str());
+        if(::system(("rm -rf "+dataDir).c_str())) {}
     }
 }
 

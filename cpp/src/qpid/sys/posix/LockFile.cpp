@@ -58,7 +58,7 @@ LockFile::~LockFile() {
     if (impl) {
         int f = impl->fd;
         if (f >= 0) {
-            (void) ::lockf(f, F_ULOCK, 0); // Suppress warnings about ignoring return value.
+            if(::lockf(f, F_ULOCK, 0)) {} // Suppress warnings about ignoring return value.
             ::close(f);
             impl->fd = -1;
         }
