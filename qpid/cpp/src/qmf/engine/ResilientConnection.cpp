@@ -334,7 +334,7 @@ void ResilientConnectionImpl::notify()
 {
     if (notifyFd != -1)
     {
-        (void) ::write(notifyFd, ".", 1);
+        if (::write(notifyFd, ".", 1)) {}
     }
 }
 
@@ -431,7 +431,7 @@ void ResilientConnectionImpl::EnqueueEvent(ResilientConnectionEvent::EventKind k
 
     if (notifyFd != -1)
     {
-        (void) ::write(notifyFd, ".", 1);
+        if (::write(notifyFd, ".", 1)) {}
     }
 }
 

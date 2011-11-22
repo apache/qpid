@@ -93,13 +93,13 @@ void Daemon::fork()
         catch (const exception& e) {
             QPID_LOG(critical, "Unexpected error: " << e.what());
             uint16_t port = 0;
-            (void) write(pipeFds[1], &port, sizeof(uint16_t));
+            if (write(pipeFds[1], &port, sizeof(uint16_t))) {};
 
             std::string pipeFailureMessage = e.what();
-            (void) write ( pipeFds[1], 
-                    pipeFailureMessage.c_str(), 
-                    strlen(pipeFailureMessage.c_str())
-                  );
+            if (write(pipeFds[1], 
+                      pipeFailureMessage.c_str(), 
+                      strlen(pipeFailureMessage.c_str())
+                      )) {};
         }
     }
     else {                      // Parent
