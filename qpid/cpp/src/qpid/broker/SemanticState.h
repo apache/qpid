@@ -23,6 +23,7 @@
  */
 
 #include "qpid/broker/Consumer.h"
+#include "qpid/broker/Credit.h"
 #include "qpid/broker/Deliverable.h"
 #include "qpid/broker/DeliveryAdapter.h"
 #include "qpid/broker/DeliveryRecord.h"
@@ -79,15 +80,12 @@ class SemanticState : private boost::noncopyable {
         const bool ackExpected;
         const bool acquire;
         bool blocked;
-        bool windowing;
-        bool windowActive;
         bool exclusive;
         std::string resumeId;
         const std::string tag;  // <destination> from AMQP 0-10 Message.subscribe command
         uint64_t resumeTtl;
         framing::FieldTable arguments;
-        uint32_t msgCredit;
-        uint32_t byteCredit;
+        Credit credit;
         bool notifyEnabled;
         const int syncFrequency;
         int deliveryCount;
@@ -131,12 +129,11 @@ class SemanticState : private boost::noncopyable {
 
         bool doOutput();
 
+        Credit& getCredit() { return credit; }
+        const Credit& getCredit() const { return credit; }
         bool isAckExpected() const { return ackExpected; }
         bool isAcquire() const { return acquire; }
-        bool isWindowing() const { return windowing; }
         bool isExclusive() const { return exclusive; }
-        uint32_t getMsgCredit() const { return msgCredit; }
-        uint32_t getByteCredit() const { return byteCredit; }
         std::string getResumeId() const { return resumeId; };
         const std::string& getTag() const { return tag; }
         uint64_t getResumeTtl() const { return resumeTtl; }

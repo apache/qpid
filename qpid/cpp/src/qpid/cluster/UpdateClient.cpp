@@ -535,14 +535,16 @@ void UpdateClient::updateConsumer(
         arg::resumeTtl   = ci->getResumeTtl(),
         arg::arguments   = ci->getArguments()
     );
-    shadowSession.messageSetFlowMode(ci->getTag(), ci->isWindowing() ? FLOW_MODE_WINDOW : FLOW_MODE_CREDIT);
-    shadowSession.messageFlow(ci->getTag(), CREDIT_UNIT_MESSAGE, ci->getMsgCredit());
-    shadowSession.messageFlow(ci->getTag(), CREDIT_UNIT_BYTE, ci->getByteCredit());
+    shadowSession.messageSetFlowMode(ci->getTag(), ci->getCredit().isWindowMode() ? FLOW_MODE_WINDOW : FLOW_MODE_CREDIT);
+    shadowSession.messageFlow(ci->getTag(), CREDIT_UNIT_MESSAGE, ci->getCredit().allocated().messages);
+    shadowSession.messageFlow(ci->getTag(), CREDIT_UNIT_BYTE, ci->getCredit().allocated().bytes);
     ClusterConnectionProxy(shadowSession).consumerState(
         ci->getTag(),
         ci->isBlocked(),
         ci->isNotifyEnabled(),
-        ci->position
+        ci->position,
+        ci->getCredit().used().messages,
+        ci->getCredit().used().bytes
     );
     consumerNumbering.add(ci.get());
 
