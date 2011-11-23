@@ -109,7 +109,8 @@ class Connection :
     // Called for data delivered from the cluster.
     void deliveredFrame(const EventFrame&);
 
-    void consumerState(const std::string& name, bool blocked, bool notifyEnabled, const qpid::framing::SequenceNumber& position);
+    void consumerState(const std::string& name, bool blocked, bool notifyEnabled, const qpid::framing::SequenceNumber& position,
+                       uint32_t usedMsgCredit, uint32_t usedByteCredit);
 
     // ==== Used in catch-up mode to build initial state.
     //

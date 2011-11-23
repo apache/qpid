@@ -187,6 +187,7 @@ class TestBase010(unittest.TestCase):
         self.conn = self.connect()
         self.session = self.conn.session("test-session", timeout=10)
         self.qmf = None
+        self.test_queue_name = self.id()
 
     def startQmf(self, handler=None):
         self.qmf = qmf.console.Session(handler)
