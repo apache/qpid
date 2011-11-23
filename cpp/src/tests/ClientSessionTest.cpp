@@ -354,6 +354,8 @@ QPID_AUTO_TEST_CASE(testCompleteOnAccept) {
     BOOST_CHECK(!q.get(m));
 
     s.accept(accepted);
+    //need to reallocate credit as we have flushed it all out
+    s.setFlowControl(FlowControl::messageWindow(chunk));
     fix.session.messageFlush(arg::destination=s.getName());
     accepted.clear();
 
