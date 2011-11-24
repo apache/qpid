@@ -26,6 +26,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.security.AccessControlContext;
 import java.security.AccessController;
+import java.util.Map;
 import java.util.Set;
 
 import javax.management.Attribute;
@@ -33,7 +34,6 @@ import javax.management.JMException;
 import javax.management.MBeanInfo;
 import javax.management.MBeanOperationInfo;
 import javax.management.MBeanServer;
-import javax.management.MalformedObjectNameException;
 import javax.management.Notification;
 import javax.management.NotificationListener;
 import javax.management.ObjectName;
@@ -320,23 +320,52 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler, Notificati
         return (methodName.startsWith("query") || methodName.startsWith("get") || methodName.startsWith("is"));
     }
 
-    public void handleNotification(Notification notification, Object handback)
+    /**
+     * Receives notifications from the MBeanServer.
+     */
+    public void handleNotification(final Notification notification, final Object handback)
     {
         assert notification instanceof JMXConnectionNotification;
 
-        // only RMI Connections are serviced here, Local API atta
-        // rmi://169.24.29.116 guest 3
-        String[] connectionData = ((JMXConnectionNotification) notification).getConnectionId().split(" ");
-        String user = connectionData[1];
+        final String connectionId = ((JMXConnectionNotification) notification).getConnectionId();
+        final String type = notification.getType();
 
-        if (notification.getType().equals(JMXConnectionNotification.OPENED))
+        if (_logger.isDebugEnabled())
+        {
+            _logger.debug("Notification connectionId : " + connectionId + " type : " + type
+                    + " Notification handback : " + handback);
+        }
+
+        // Normally JMXManagedObjectRegistry provides a Map as handback data containing a map
+        // between connection id and username.
+        Map<String, String> connectionIdUsernameMap = null;
+        String user = null;
+        if (handback != null && handback instanceof Map)
+        {
+            connectionIdUsernameMap = (Map<String, String>) handback;
+            user = connectionIdUsernameMap.get(connectionId);
+        }
+
+        // If user is still null, fallback to an unordered list of Principals from the connection id.
+        if (user == null)
+        {
+            final String[] splitConnectionId = connectionId.split(" ");
+            user = splitConnectionId[1];
+        }
+
+        if (JMXConnectionNotification.OPENED.equals(type))
         {
             _logActor.message(ManagementConsoleMessages.OPEN(user));
         }
-        else if (notification.getType().equals(JMXConnectionNotification.CLOSED) ||
-                 notification.getType().equals(JMXConnectionNotification.FAILED))
+        else if (JMXConnectionNotification.CLOSED.equals(type) ||
+                 JMXConnectionNotification.FAILED.equals(type))
         {
             _logActor.message(ManagementConsoleMessages.CLOSE(user));
+            // We are responsible for removing the entry from the map
+            if (connectionIdUsernameMap != null)
+            {
+                connectionIdUsernameMap.remove(connectionId);
+            }
         }
     }
 }
