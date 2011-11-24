@@ -18,9 +18,6 @@
  */
 package org.apache.qpid.server.security.acl;
 
-import java.util.Arrays;
-import java.util.List;
-
 import javax.jms.Connection;
 import javax.jms.Session;
 
@@ -31,7 +28,7 @@ import org.apache.qpid.protocol.AMQConstant;
 
 /**
  * ACL version 2/3 file testing to verify that ACL entries control queue creation with specific properties.
- * 
+ *
  * Tests have their own ACL files that setup specific permissions, and then try to create queues with every possible combination
  * of properties to show that rule matching works correctly. For example, a rule that specified {@code autodelete="true"} for
  * queues with {@link name="temp.true.*"} as well should not affect queues that have names that do not match, or queues that
@@ -39,18 +36,7 @@ import org.apache.qpid.protocol.AMQConstant;
  */
 public class ExhaustiveACLTest extends AbstractACLTestCase
 {
-    @Override
-    public String getConfig()
-    {
-        return "config-systests-aclv2.xml";
-    }
 
-    @Override
-    public List<String> getHostList()
-    {
-        return Arrays.asList("test", "test2");
-    }
-	
     /**
      * Creates a queue.
      * 
@@ -130,11 +116,6 @@ public class ExhaustiveACLTest extends AbstractACLTestCase
 		createQueueFailure("test", "client", "temp.false.07", true, false);
 		createQueueFailure("test", "server", "temp.true.08", true, false); 
 		createQueueFailure("test", "client", "temp.other.09", false, false);
-		createQueueSuccess("test2", "guest", "temp.true.01", false, false); 
-		createQueueSuccess("test2", "guest", "temp.false.02", true, false);
-		createQueueSuccess("test2", "guest", "temp.true.03", true, false); 
-		createQueueSuccess("test2", "guest", "temp.false.04", false, false);
-		createQueueSuccess("test2", "guest", "temp.other.05", false, false);
     }
 	
     public void setUpAuthoriseCreateQueue() throws Exception
@@ -161,10 +142,6 @@ public class ExhaustiveACLTest extends AbstractACLTestCase
         createQueueFailure("test", "server", "create.05", true, false);
         createQueueFailure("test", "server", "create.06", false, true);
         createQueueFailure("test", "server", "create.07", true, false); 
-        createQueueSuccess("test2", "guest", "create.00", true, true);
-        createQueueSuccess("test2", "guest", "create.01", true, false);
-        createQueueSuccess("test2", "guest", "create.02", false, true);
-        createQueueSuccess("test2", "guest", "create.03", true, false); 
     }
 	
     public void setUpAuthoriseCreateQueueBoth() throws Exception
@@ -190,6 +167,5 @@ public class ExhaustiveACLTest extends AbstractACLTestCase
         createQueueSuccess("test", "client", "tmp.00", true, false);
         createQueueSuccess("test", "server", "tmp.01", true, false); 
         createQueueSuccess("test", "guest", "tmp.02", true, false);
-        createQueueSuccess("test2", "guest", "create.02", false, false);
     }
 }

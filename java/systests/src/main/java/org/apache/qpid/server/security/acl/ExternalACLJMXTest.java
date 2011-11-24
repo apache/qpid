@@ -18,36 +18,26 @@
  */
 package org.apache.qpid.server.security.acl;
 
-import java.util.Arrays;
-import java.util.List;
+import java.lang.management.ManagementFactory;
+import java.lang.management.RuntimeMXBean;
 
-import org.apache.qpid.AMQConnectionClosedException;
-import org.apache.qpid.AMQException;
-import org.apache.qpid.AMQSecurityException;
-import org.apache.qpid.protocol.AMQConstant;
+import org.apache.qpid.management.common.mbeans.ServerInformation;
+import org.apache.qpid.server.management.ManagedObject;
+import org.apache.qpid.server.security.access.ObjectType;
 import org.apache.qpid.test.utils.JMXTestUtils;
 
 /**
- * Tests that ACL entries that apply to AMQP objects also apply when those objects are accessed via JMX.
+ * Tests that access to the JMX interface is governed only by {@link ObjectType#METHOD}/{@link ObjectType#ALL}
+ * rules and AMQP rights have no effect.
+ *
+ * Ensures that objects outside the Qpid domain ({@link ManagedObject#DOMAIN}) are not governed by the ACL model.
  */
 public class ExternalACLJMXTest extends AbstractACLTestCase
 {
     private JMXTestUtils _jmx;
-    
-    private static final String QUEUE_NAME = "kipper";
-    private static final String EXCHANGE_NAME = "amq.kipper";
-    
-    @Override
-    public String getConfig()
-    {
-        return "config-systests-aclv2.xml";
-    }
 
-    @Override
-    public List<String> getHostList()
-    {
-        return Arrays.asList("test");
-    }
+    private static final String TEST_QUEUE_OWNER = "admin";
+    private static final String TEST_VHOST = "test";
 
     @Override
     public void setUp() throws Exception
@@ -65,180 +55,264 @@ public class ExternalACLJMXTest extends AbstractACLTestCase
         super.tearDown();
     }
 
-    // test-externalacljmx.txt
-    // create queue owner=client # success
-    public void testCreateClientQueueSuccess() throws Exception
-    {   
-        //Queue Parameters
-        String queueOwner = "client";
-        
-        _jmx.createQueue("test", QUEUE_NAME, queueOwner, true);
-    }
-
-    // test-externalacljmx.txt
-    // create queue owner=client # failure
-    public void testCreateServerQueueFailure() throws Exception
-    {   
-        //Queue Parameters
-        String queueOwner = "server";
-        
-        try
-        {
-            _jmx.createQueue("test", QUEUE_NAME, queueOwner, true);
-            
-            fail("Queue create should fail");
-        }
-        catch (Exception e)
-        {
-            assertNotNull("Cause is not set", e.getCause());
-            assertEquals("Cause message incorrect",
-                    "org.apache.qpid.AMQSecurityException: Permission denied: queue-name 'kipper' [error code 403: access refused]", e.getCause().getMessage());
-        }
-    }
-
-    // no create queue acl in file # failure
-    public void testCreateQueueFailure() throws Exception
-    {   
-        //Queue Parameters
-        String queueOwner = "guest";
-        
-        try
-        {
-            _jmx.createQueue("test", QUEUE_NAME, queueOwner, true);
-            
-            fail("Queue create should fail");
-        }
-        catch (Exception e)
-        {
-            assertNotNull("Cause is not set", e.getCause());
-            assertEquals("Cause message incorrect",
-                    "org.apache.qpid.AMQSecurityException: Permission denied: queue-name 'kipper' [error code 403: access refused]", e.getCause().getMessage());
-        }
-    }
-
-    // test-externalacljmx.txt
-    // allow create exchange name=amq.kipper.success
-    public void testCreateExchangeSuccess() throws Exception
-    {   
-        _jmx.createExchange("test", EXCHANGE_NAME + ".success", "direct", true);
-    }
-
-    // test-externalacljmx.txt
-    // deny create exchange name=amq.kipper.failure
-    public void testCreateExchangeFailure() throws Exception
-    {   
-        try
-        {
-            _jmx.createExchange("test", EXCHANGE_NAME + ".failure", "direct", true);
-            
-            fail("Exchange create should fail");
-        }
-        catch (Exception e)
-        {
-            assertNotNull("Cause is not set", e.getCause());
-            assertEquals("Cause message incorrect",
-                    "org.apache.qpid.AMQSecurityException: Permission denied: exchange-name 'amq.kipper.failure' [error code 403: access refused]", e.getCause().getMessage());
-        }
-    }
-
-    // test-externalacljmx.txt
-    // allow create exchange name=amq.kipper.success
-    // allow delete exchange name=amq.kipper.success
-    public void testDeleteExchangeSuccess() throws Exception
-    {   
-        _jmx.createExchange("test", EXCHANGE_NAME + ".success", "direct", true);
-        _jmx.unregisterExchange("test", EXCHANGE_NAME + ".success");
-    }
-
-    // test-externalacljmx-deleteexchangefailure.txt
-    // allow create exchange name=amq.kipper.delete
-    // deny delete exchange name=amq.kipper.delete
-    public void testDeleteExchangeFailure() throws Exception
-    {   
-        _jmx.createExchange("test", EXCHANGE_NAME + ".delete", "direct", true);
-        try
-        {
-            _jmx.unregisterExchange("test", EXCHANGE_NAME + ".delete");
-            
-            fail("Exchange delete should fail");
-        }
-        catch (Exception e)
-        {
-            assertNotNull("Cause is not set", e.getCause());
-            assertEquals("Cause message incorrect",
-                    "org.apache.qpid.AMQSecurityException: Permission denied [error code 403: access refused]", e.getCause().getMessage());
-        }
-    }
-    
     /**
-     * admin user has JMX right but not AMQP
+     * Ensure an empty ACL defaults to DENY ALL.
      */
-    public void setUpCreateQueueJMXRights() throws Exception
+    public void setUpDenyAllIsDefault() throws Exception
     {
-        writeACLFile("test",
-                "ACL ALLOW admin EXECUTE METHOD component=\"VirtualHost.VirtualHostManager\" name=\"createNewQueue\"",
-			    "ACL DENY admin CREATE QUEUE");
+        writeACLFile(null, "#Empty ACL file");
     }
-    
-    public void testCreateQueueJMXRights() throws Exception
+
+    public void testDenyAllIsDefault() throws Exception
     {
+        //try a broker-level method
+        ServerInformation info = _jmx.getServerInformation();
         try
         {
-            _jmx.createQueue("test", QUEUE_NAME, "admin", true);
-            
-            fail("Queue create should fail");
+            info.resetStatistics();
+            fail("Exception not thrown");
+        }
+        catch (SecurityException e)
+        {
+            assertEquals("Cause message incorrect", "Permission denied: Update resetStatistics", e.getMessage());
+        }
+
+        //try a vhost-level method
+        try
+        {
+            _jmx.createQueue(TEST_VHOST, getTestQueueName(), TEST_QUEUE_OWNER, true);
+            fail("Exception not thrown");
         }
         catch (Exception e)
         {
-            assertNotNull("Cause is not set", e.getCause());
-            assertEquals("Cause message incorrect",
-                    "org.apache.qpid.AMQSecurityException: Permission denied: queue-name 'kipper' [error code 403: access refused]", e.getCause().getMessage());
+            assertEquals("Cause message incorrect", "Permission denied: Update createNewQueue", e.getMessage());
         }
+
+        // Ensure that calls to MBeans outside the Qpid domain are not impeded.
+        final RuntimeMXBean runtimeBean = _jmx.getManagedObject(RuntimeMXBean.class, ManagementFactory.RUNTIME_MXBEAN_NAME);
+        runtimeBean.getName();
+        // PASS
     }
 
     /**
-     * admin user has AMQP right but not JMX
+     * Ensure an ALLOW ALL ALL rule allows access to both getters/setters.
      */
-    public void setUpCreateQueueAMQPRights() throws Exception
+    public void setUpAllowAll() throws Exception
     {
-        writeACLFile("test",
-	    		"ACL DENY admin EXECUTE METHOD component=\"VirtualHost.VirtualHostManager\" name=\"createNewQueue\"",
-	    		"ACL ALLOW admin CREATE QUEUE");
+        writeACLFile(null, "ACL ALLOW ALL ALL");
     }
-    
-    public void testCreateQueueAMQPRights() throws Exception
+
+    public void testAllowAll() throws Exception
     {
-        try
-        {
-            _jmx.createQueue("test", QUEUE_NAME, "admin", true);
-            
-            fail("Queue create should fail");
-        }
-        catch (Exception e)
-        {
-            assertEquals("Cause message incorrect", "Permission denied: Execute createNewQueue", e.getMessage());
-        }
+        ServerInformation info = _jmx.getServerInformation();
+        info.getBuildVersion(); // getter - requires ACCESS
+        info.resetStatistics(); // setter - requires UPDATE
+        // PASS
     }
 
     /**
-     * admin has both JMX and AMQP rights
+     * admin user is denied at broker level but allowed at vhost level.
      */
-    public void setUpCreateQueueJMXAMQPRights() throws Exception
+    public void setUpVhostAllowOverridesGlobalDeny() throws Exception
     {
-        writeACLFile("test",
-                    "ACL ALLOW admin EXECUTE METHOD component=\"VirtualHost.VirtualHostManager\" name=\"createNewQueue\"",
-                    "ACL ALLOW admin CREATE QUEUE");
+        writeACLFile(null,
+                "ACL DENY admin UPDATE METHOD component='VirtualHost.VirtualHostManager' name='createNewQueue'");
+        writeACLFile(TEST_VHOST,
+                "ACL ALLOW admin UPDATE METHOD component='VirtualHost.VirtualHostManager' name='createNewQueue'");
     }
-    
-    public void testCreateQueueJMXAMQPRights() throws Exception
+
+    public void testVhostAllowOverridesGlobalDeny() throws Exception
+    {
+        //try a vhost-level method on the allowed vhost
+        _jmx.createQueue(TEST_VHOST, getTestQueueName(), TEST_QUEUE_OWNER, true);
+
+        //try a vhost-level method on a different vhost
+        try
+        {
+            _jmx.createQueue("development", getTestQueueName(), TEST_QUEUE_OWNER, true);
+            fail("Exception not thrown");
+        }
+        catch (SecurityException e)
+        {
+            assertEquals("Cause message incorrect", "Permission denied: Update createNewQueue", e.getMessage());
+        }
+    }
+
+
+    /**
+     * admin user is allowed all update methods on the component at broker level.
+     */
+    public void setUpUpdateComponentOnlyAllow() throws Exception
+    {
+        writeACLFile(null,
+                "ACL ALLOW admin UPDATE METHOD component='VirtualHost.VirtualHostManager'");
+    }
+
+    public void testUpdateComponentOnlyAllow() throws Exception
+    {
+        _jmx.createQueue(TEST_VHOST, getTestQueueName(), TEST_QUEUE_OWNER, true);
+        // PASS
+        _jmx.deleteQueue(TEST_VHOST, getTestQueueName());
+        // PASS
+    }
+
+
+    /**
+     * admin user is allowed all update methods on all components at broker level.
+     */
+    public void setUpUpdateMethodOnlyAllow() throws Exception
+    {
+        writeACLFile(null,
+                "ACL ALLOW admin UPDATE METHOD");
+    }
+
+    public void testUpdateMethodOnlyAllow() throws Exception
+    {
+        _jmx.createQueue(TEST_VHOST, getTestQueueName(), TEST_QUEUE_OWNER, true);
+        //PASS
+        _jmx.deleteQueue(TEST_VHOST, getTestQueueName());
+        // PASS
+    }
+
+
+    /**
+     * admin user has JMX right, AMPQ right is irrelevant.
+     */
+    public void setUpCreateQueueSuccess() throws Exception
+    {
+        writeACLFile(TEST_VHOST,
+                "ACL ALLOW admin UPDATE METHOD component='VirtualHost.VirtualHostManager' name='createNewQueue'");
+    }
+
+    public void testCreateQueueSuccess() throws Exception
+    {
+        _jmx.createQueue(TEST_VHOST, getTestQueueName(), TEST_QUEUE_OWNER, true);
+    }
+
+
+    /**
+     * admin user has JMX right, verifies lack of AMPQ rights is irrelevant.
+     */
+    public void setUpCreateQueueSuccessNoAMQPRights() throws Exception
+    {
+        writeACLFile(TEST_VHOST,
+                "ACL ALLOW admin UPDATE METHOD component='VirtualHost.VirtualHostManager' name='createNewQueue'",
+                "ACL DENY admin CREATE QUEUE");
+    }
+
+    public void testCreateQueueSuccessNoAMQPRights() throws Exception
+    {
+        _jmx.createQueue(TEST_VHOST, getTestQueueName(), TEST_QUEUE_OWNER, true);
+    }
+
+
+    /**
+     * admin user does not have JMX right, AMPQ right is irrelevant.
+     */
+    public void setUpCreateQueueDenied() throws Exception
+    {
+        writeACLFile(TEST_VHOST,
+                "ACL DENY admin UPDATE METHOD component='VirtualHost.VirtualHostManager' name='createNewQueue'");
+    }
+
+    public void testCreateQueueDenied() throws Exception
     {
         try
         {
-            _jmx.createQueue("test", QUEUE_NAME, "admin", true);
+            _jmx.createQueue(TEST_VHOST, getTestQueueName(), TEST_QUEUE_OWNER, true);
+            fail("Exception not thrown");
         }
-        catch (Exception e)
+        catch (SecurityException e)
         {
-            fail("Queue create should succeed: " + e.getCause().getMessage());
+            assertEquals("Cause message incorrect", "Permission denied: Update createNewQueue", e.getMessage());
         }
     }
+
+
+    /**
+     * admin user does not have JMX right
+     */
+    public void setUpServerInformationUpdateDenied() throws Exception
+    {
+        writeACLFile(null,
+                "ACL DENY admin UPDATE METHOD component='ServerInformation' name='resetStatistics'");
+    }
+
+    public void testServerInformationUpdateDenied() throws Exception
+    {
+        ServerInformation info = _jmx.getServerInformation();
+        try
+        {
+            info.resetStatistics();
+            fail("Exception not thrown");
+        }
+        catch (SecurityException e)
+        {
+            assertEquals("Cause message incorrect", "Permission denied: Update resetStatistics", e.getMessage());
+        }
+    }
+
+
+    /**
+     * admin user has JMX right to check management API major version (but not minor version)
+     */
+    public void setUpServerInformationAccessGranted() throws Exception
+    {
+        writeACLFile(null,
+        "ACL ALLOW-LOG admin ACCESS METHOD component='ServerInformation' name='getManagementApiMajorVersion'");
+    }
+
+    public void testServerInformationAccessGranted() throws Exception
+    {
+        ServerInformation info = _jmx.getServerInformation();
+        info.getManagementApiMajorVersion();
+
+        try
+        {
+            info.getManagementApiMinorVersion();
+            fail("Exception not thrown");
+        }
+        catch (SecurityException e)
+        {
+            assertEquals("Cause message incorrect", "Permission denied: Access getManagementApiMinorVersion", e.getMessage());
+        }
+    }
+
+
+    /**
+     * admin user has JMX right to use the update method
+     */
+    public void setUpServerInformationUpdateMethodPermission() throws Exception
+    {
+        writeACLFile(null,
+                "ACL ALLOW admin UPDATE METHOD component='ServerInformation' name='resetStatistics'");
+    }
+
+    public void testServerInformationUpdateMethodPermission() throws Exception
+    {
+        ServerInformation info = _jmx.getServerInformation();
+        info.resetStatistics();
+        // PASS
+    }
+
+
+    /**
+     * admin user has JMX right to use all types of method on ServerInformation
+     */
+    public void setUpServerInformationAllMethodPermissions() throws Exception
+    {
+        writeACLFile(null, "ACL ALLOW admin ALL METHOD component='ServerInformation'");
+    }
+
+    public void testServerInformationAllMethodPermissions() throws Exception
+    {
+        //try an update method
+        ServerInformation info = _jmx.getServerInformation();
+        info.resetStatistics();
+        // PASS
+        //try an access method
+        info.getManagementApiMinorVersion();
+        // PASS
+    }
+
 }

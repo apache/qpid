@@ -101,6 +101,7 @@ public class AccessControl extends AbstractPlugin
             return Result.ABSTAIN;
         }
  
+        _logger.debug("Checking " + operation + " " + objectType);
         return  _ruleSet.check(subject, operation, objectType, properties);
     }
 
