@@ -170,11 +170,17 @@ public class BindingFactory
         {
             arguments = Collections.emptyMap();
         }
-      
-        //Perform ACLs
-        if (!getVirtualHost().getSecurityManager().authoriseBind(exchange, queue, new AMQShortString(bindingKey)))
+
+        // The default exchange bindings must reflect the existence of queues, allow
+        // all operations on it to succeed. It is up to the broker to prevent illegal
+        // attempts at binding to this exchange, not the ACLs.
+        if(exchange != _defaultExchange)
         {
-            throw new AMQSecurityException("Permission denied: binding " + bindingKey);
+            //Perform ACLs
+            if (!getVirtualHost().getSecurityManager().authoriseBind(exchange, queue, new AMQShortString(bindingKey)))
+            {
+                throw new AMQSecurityException("Permission denied: binding " + bindingKey);
+            }
         }
         
         BindingImpl b = new BindingImpl(bindingKey,queue,exchange,arguments);
@@ -238,10 +244,16 @@ public class BindingFactory
             arguments = Collections.emptyMap();
         }
 
-        // Check access
-        if (!getVirtualHost().getSecurityManager().authoriseUnbind(exchange, new AMQShortString(bindingKey), queue))
+        // The default exchange bindings must reflect the existence of queues, allow
+        // all operations on it to succeed. It is up to the broker to prevent illegal
+        // attempts at binding to this exchange, not the ACLs.
+        if(exchange != _defaultExchange)
         {
-            throw new AMQSecurityException("Permission denied: binding " + bindingKey);
+            // Check access
+            if (!getVirtualHost().getSecurityManager().authoriseUnbind(exchange, new AMQShortString(bindingKey), queue))
+            {
+                throw new AMQSecurityException("Permission denied: unbinding " + bindingKey);
+            }
         }
         
         BindingImpl b = _bindings.remove(new BindingImpl(bindingKey,queue,exchange,arguments));

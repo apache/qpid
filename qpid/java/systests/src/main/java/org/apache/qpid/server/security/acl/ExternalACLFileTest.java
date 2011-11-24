@@ -18,9 +18,6 @@
  */
 package org.apache.qpid.server.security.acl;
 
-import java.util.Arrays;
-import java.util.List;
-
 import javax.jms.Connection;
 import javax.jms.Session;
 
@@ -38,18 +35,6 @@ import org.apache.qpid.framing.AMQShortString;
  */
 public class ExternalACLFileTest extends AbstractACLTestCase
 {
-    @Override
-    public String getConfig()
-    {
-        return "config-systests-aclv2.xml";
-    }
-
-    @Override
-    public List<String> getHostList()
-    {
-        return Arrays.asList("test");
-    }
-
     private void createQueuePrefixList(String prefix, int count)
     {
         try
@@ -99,6 +84,7 @@ public class ExternalACLFileTest extends AbstractACLTestCase
     {
         writeACLFile(
             "test",
+            "ACL ALLOW-LOG client ACCESS VIRTUALHOST",
             "acl allow client create queue name=mixed.000",
             "ACL ALLOW client CREATE QUEUE NAME=mixed.001",
             "Acl Allow client Create Queue Name=mixed.002",
@@ -116,6 +102,7 @@ public class ExternalACLFileTest extends AbstractACLTestCase
     {
         writeACLFile(
             "test",
+            "ACL ALLOW-LOG client ACCESS VIRTUALHOST",
             "acl allow client create queue name=continuation.000",
             "acl allow client create queue \\",
             "   name=continuation.001",
@@ -143,6 +130,7 @@ public class ExternalACLFileTest extends AbstractACLTestCase
     {
         writeACLFile(
             "test",
+            "ACL ALLOW-LOG client ACCESS VIRTUALHOST",
             "acl allow client create queue name=whitespace.000",
             "acl\tallow\tclient\tcreate\tqueue\tname=whitespace.001",
             "acl allow client create queue name = whitespace.002",
@@ -160,6 +148,7 @@ public class ExternalACLFileTest extends AbstractACLTestCase
     {
         writeACLFile(
             "test",
+            "ACL ALLOW-LOG client ACCESS VIRTUALHOST",
             "acl allow client create queue name='quoting.ABC.000'",
             "acl allow client create queue name='quoting.*.000'",
             "acl allow client create queue name='quoting.#.000'",

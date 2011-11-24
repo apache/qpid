@@ -24,8 +24,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.Collections;
-import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -55,29 +53,24 @@ import org.apache.qpid.url.URLSyntaxException;
  * @see ExternalACLTest
  * @see ExternalACLFileTest
  * @see ExternalACLJMXTest
- * @see ExternalAdminACLTest
  * @see ExhaustiveACLTest
  */
 public abstract class AbstractACLTestCase extends QpidBrokerTestCase implements ConnectionListener
 {
     /** Used to synchronise {@link #tearDown()} when exceptions are thrown */
-	protected CountDownLatch _exceptionReceived;
-	
+    protected CountDownLatch _exceptionReceived;
+    
     /** Override this to return the name of the configuration XML file. */
-    public abstract String getConfig();
-    
-    /** Override this to setup external ACL files for virtual hosts. */
-    public List<String> getHostList()
+    public String getConfig()
     {
-        return Collections.emptyList();
+        return "config-systests.xml";
     }
-    
+
     /**
      * This setup method checks {@link #getConfig()} and {@link #getHostList()} to initialise the broker with specific
      * ACL configurations and then runs an optional per-test setup method, which is simply a method with the same name
      * as the test, but starting with {@code setUp} rather than {@code test}.
      * 
-     * @see #setUpACLFile(String)
      * @see org.apache.qpid.test.utils.QpidBrokerTestCase#setUp()
      */
     @Override
@@ -85,12 +78,7 @@ public abstract class AbstractACLTestCase extends QpidBrokerTestCase implements 
     {
         // Initialise ACLs.
         _configFile = new File("build" + File.separator + "etc" + File.separator + getConfig());
-        // Initialise ACL files
-        for (String virtualHost : getHostList())
-        {
-            setUpACLFile(virtualHost);
-        }
-        
+
         // run test specific setup
         String testSetup = StringUtils.replace(getName(), "test", "setUp");
         try
@@ -124,73 +112,27 @@ public abstract class AbstractACLTestCase extends QpidBrokerTestCase implements 
         }
     }
     
-    /**
-     * Configures specific ACL files for a virtual host.
-     * 
-     * This method checks for ACL files that exist on the filesystem. If dynamically generatyed ACL files are required in a test, 
-     * then it is easier to use the {@code setUp} prefix on a method to generate the ACL file. In order, this method looks
-     * for three files:
-     * <ol>
-     * <li><em>virtualhost</em>-<em>class</em>-<em>test</em>.txt
-     * <li><em>virtualhost</em>-<em>class</em>.txt
-     * <li><em>virtualhost</em>-default.txt
-     * </ol>
-     * The <em>class</em> and <em>test</em> parts are the test class and method names respectively, with the word {@code test}
-     * removed and the rest of the text converted to lowercase. For example, the test class and method named
-     * {@code org.apache.qpid.test.AccessExampleTest#testExampleMethod} on the {@code testhost} virtualhost would use
-     * one of the following files:
-     * <ol>
-     * <li>testhost-accessexample-examplemethod.txt
-     * <li>testhost-accessexample.txt
-     * <li>testhost-default.txt
-     * </ol>
-     * These files should be copied to the <em>${QPID_HOME}/etc</em> directory when the test is run.
-     * 
-     * @see #writeACLFile(String, String...)
-     */
-    public void setUpACLFile(String virtualHost) throws IOException, ConfigurationException
+    public void writeACLFile(final String vhost, final String...rules) throws ConfigurationException, IOException
     {
-        String path = "build" + File.separator + "etc";
-        String className = StringUtils.substringBeforeLast(getClass().getSimpleName().toLowerCase(), "test");
-        String testName = StringUtils.substringAfter(getName(), "test").toLowerCase();
-        
-        File aclFile = new File(path, virtualHost + "-" + className + "-" + testName + ".txt");        
-        if (!aclFile.exists())
-        {
-            aclFile = new File(path, virtualHost + "-" + className + ".txt");      
-            if (!aclFile.exists())
-            {
-                aclFile = new File(path, virtualHost + "-" + "default.txt");
-            }
-        }
-        
-        // Set the ACL file configuration property
-		if (virtualHost.equals("global"))
-		{
-			setConfigurationProperty("security.aclv2", aclFile.getAbsolutePath());
-		}
-		else
-		{
-			setConfigurationProperty("virtualhosts.virtualhost." + virtualHost + ".security.aclv2", aclFile.getAbsolutePath());
-		}
+        writeACLFileUtil(this, vhost, rules);
     }
 
-    public void writeACLFile(String vhost, String...rules) throws ConfigurationException, IOException
+    public static void writeACLFileUtil(QpidBrokerTestCase testcase, String vhost, String...rules) throws ConfigurationException, IOException
     {
-        File aclFile = File.createTempFile(getClass().getSimpleName(), getName());
+        File aclFile = File.createTempFile(testcase.getClass().getSimpleName(), testcase.getName());
         aclFile.deleteOnExit();
 
-        if ("global".equals(vhost))
+        if (vhost == null)
         {
-	        setConfigurationProperty("security.aclv2", aclFile.getAbsolutePath());
+            testcase.setConfigurationProperty("security.aclv2", aclFile.getAbsolutePath());
         }
         else
         {
-	        setConfigurationProperty("virtualhosts.virtualhost." + vhost + ".security.aclv2", aclFile.getAbsolutePath());
+            testcase.setConfigurationProperty("virtualhosts.virtualhost." + vhost + ".security.aclv2", aclFile.getAbsolutePath());
         }
 
         PrintWriter out = new PrintWriter(new FileWriter(aclFile));
-        out.println(String.format("# %s", getTestName()));
+        out.println(String.format("# %s", testcase.getName()));
         for (String line : rules)
         {
             out.println(line);
@@ -265,7 +207,7 @@ public abstract class AbstractACLTestCase extends QpidBrokerTestCase implements 
     public void check403Exception(Throwable t) throws Exception
     {
         assertNotNull("There was no linked exception", t);
-        assertTrue("Wrong linked exception type", t instanceof AMQException);
+        assertTrue("Wrong linked exception type : " + t.getClass(), t instanceof AMQException);
         assertEquals("Incorrect error code received", 403, ((AMQException) t).getErrorCode().getCode());
     
         //use the latch to ensure the control thread waits long enough for the exception thread 

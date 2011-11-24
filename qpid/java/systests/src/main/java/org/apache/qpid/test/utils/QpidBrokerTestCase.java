@@ -823,7 +823,7 @@ public class QpidBrokerTestCase extends QpidTestCase
      * @throws ConfigurationException when loading the current config file
      * @throws IOException            when writing the new config file
      */
-    protected void setConfigurationProperty(String property, String value)
+    public void setConfigurationProperty(String property, String value)
             throws ConfigurationException, IOException
     {
         // Choose which file to write the property to based on prefix.

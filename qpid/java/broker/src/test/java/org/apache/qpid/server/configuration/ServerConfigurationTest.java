@@ -303,6 +303,18 @@ public class ServerConfigurationTest extends QpidTestCase
         assertEquals(false, _serverConfig.getManagementEnabled());
     }
 
+    public void testGetManagementRightsInferAllAccess() throws Exception
+    {
+        _serverConfig.initialise();
+
+        //check default
+        assertTrue("default should be true", _serverConfig.getManagementRightsInferAllAccess());
+
+        //update it
+        _config.setProperty("management.managementRightsInferAllAccess", "false");
+        assertFalse("New value should be false", _serverConfig.getManagementRightsInferAllAccess());
+    }
+
     public void testGetHeartBeatDelay() throws ConfigurationException
     {
         // Check default
