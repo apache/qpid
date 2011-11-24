@@ -805,4 +805,9 @@ public class ServerConfiguration extends ConfigurationPlugin
         final List<String> disabledFeatures = getListValue("disabledFeatures", Collections.emptyList());
         return disabledFeatures;
     }
+
+    public boolean getManagementRightsInferAllAccess()
+    {
+        return getBooleanValue("management.managementRightsInferAllAccess", true);
+    }
 }

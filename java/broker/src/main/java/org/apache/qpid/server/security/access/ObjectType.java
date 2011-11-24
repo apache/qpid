@@ -32,14 +32,12 @@ import java.util.Set;
 public enum ObjectType
 {
     ALL(Operation.ALL),
-    VIRTUALHOST(ACCESS),
-    QUEUE(CREATE, DELETE, PURGE, CONSUME),
-    TOPIC(CREATE, DELETE, PURGE, CONSUME),
-    EXCHANGE(ACCESS, CREATE, DELETE, BIND, UNBIND, PUBLISH),
+    VIRTUALHOST(Operation.ALL, ACCESS),
+    QUEUE(Operation.ALL, CREATE, DELETE, PURGE, CONSUME),
+    EXCHANGE(Operation.ALL, ACCESS, CREATE, DELETE, BIND, UNBIND, PUBLISH),
     LINK, // Not allowed in the Java broker
     ROUTE, // Not allowed in the Java broker
-    METHOD(Operation.ALL, ACCESS, UPDATE, EXECUTE),
-    OBJECT(ACCESS);
+    METHOD(Operation.ALL, ACCESS, UPDATE);
     
     private EnumSet<Operation> _actions;
     
