@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-#include "NodeClone.h"
+#include "WiringReplicator.h"
 #include "qpid/broker/Broker.h"
 #include "qpid/broker/Queue.h"
 #include "qpid/log/Statement.h"
@@ -39,9 +39,10 @@ using qmf::org::apache::qpid::broker::EventQueueDelete;
 using qmf::org::apache::qpid::broker::EventSubscribe;
 
 namespace qpid {
-namespace broker {
+namespace ha {
 
 using types::Variant;
+using namespace broker;
 
 namespace{
 
@@ -80,7 +81,7 @@ const std::string QMF_OPCODE("qmf.opcode");
 const std::string QMF_CONTENT("qmf.content");
 const std::string QMF2("qmf2");
 
-const std::string QPID_NODE_CLONER("qpid.node-cloner");
+const std::string QPID_WIRING_REPLICATOR("qpid.wiring-replicator");
 
 
 bool isQMFv2(const Message& message)
@@ -108,11 +109,11 @@ bool isReplicated(const Variant::Map& m) {
 } // namespace
 
 
-NodeClone::NodeClone(const std::string& name, Broker& b) : Exchange(name), broker(b) {}
+WiringReplicator::WiringReplicator(const std::string& name, Broker& b) : Exchange(name), broker(b) {}
 
-NodeClone::~NodeClone() {}
+WiringReplicator::~WiringReplicator() {}
 
-void NodeClone::route(Deliverable& msg, const std::string& /*key*/, const framing::FieldTable* headers) {
+void WiringReplicator::route(Deliverable& msg, const std::string& /*key*/, const framing::FieldTable* headers) {
     try {
         // FIXME aconway 2011-11-21: outer error handling, e.g. for decoding error.
         if (!isQMFv2(msg.getMessage()) || !headers)
@@ -133,7 +134,7 @@ void NodeClone::route(Deliverable& msg, const std::string& /*key*/, const framin
                 else if (match<EventExchangeDelete>(schema)) doEventExchangeDelete(values);
                 else if (match<EventBind>(schema)) doEventBind(values);
                 else if (match<EventSubscribe>(schema)) {} // Deliberately ignored.
-                else throw(Exception(QPID_MSG("Replicator received unexpected event, schema=" << schema)));
+                else throw(Exception(QPID_MSG("WiringReplicator received unexpected event, schema=" << schema)));
             }
         } else if (headers->getAsString(QMF_OPCODE) == QUERY_RESPONSE) {
             //decode as list
@@ -160,7 +161,7 @@ void NodeClone::route(Deliverable& msg, const std::string& /*key*/, const framin
     }
 }
 
-void NodeClone::doEventQueueDeclare(Variant::Map& values) {
+void WiringReplicator::doEventQueueDeclare(Variant::Map& values) {
     std::string name = values[QNAME].asString();
     if (values[DISP] == CREATED && isReplicated(values[ARGS].asMap())) {
         QPID_LOG(debug, "Creating replicated queue " << name);
@@ -180,7 +181,7 @@ void NodeClone::doEventQueueDeclare(Variant::Map& values) {
     }
 }
 
-void NodeClone::doEventQueueDelete(Variant::Map& values) {
+void WiringReplicator::doEventQueueDelete(Variant::Map& values) {
     std::string name = values[QNAME].asString();
     boost::shared_ptr<Queue> queue = broker.getQueues().find(name);
     if (queue && isReplicated(queue->getSettings())) {
@@ -192,7 +193,7 @@ void NodeClone::doEventQueueDelete(Variant::Map& values) {
     }
 }
 
-void NodeClone::doEventExchangeDeclare(Variant::Map& values) {
+void WiringReplicator::doEventExchangeDeclare(Variant::Map& values) {
     if (values[DISP] == CREATED && isReplicated(values[ARGS].asMap())) {
         std::string name = values[EXNAME].asString();
         framing::FieldTable args;
@@ -211,7 +212,7 @@ void NodeClone::doEventExchangeDeclare(Variant::Map& values) {
     }
 }
 
-void NodeClone::doEventExchangeDelete(Variant::Map& values) {
+void WiringReplicator::doEventExchangeDelete(Variant::Map& values) {
     std::string name = values[EXNAME].asString();
     try {
         boost::shared_ptr<Exchange> exchange = broker.getExchanges().get(name);
@@ -221,16 +222,16 @@ void NodeClone::doEventExchangeDelete(Variant::Map& values) {
                 name,
                 values[USER].asString(),
                 values[RHOST].asString());
-        } 
+        }
     } catch (const framing::NotFoundException&) {}
 }
 
-void NodeClone::doEventBind(Variant::Map&) {
-    QPID_LOG(error, "FIXME NodeClone: Not yet implemented - replicate bindings.");
+void WiringReplicator::doEventBind(Variant::Map&) {
+    QPID_LOG(error, "FIXME WiringReplicator: Not yet implemented - replicate bindings.");
     // FIXME aconway 2011-11-18: only replicated binds of replicated q to replicated ex.
 }
 
-void NodeClone::doResponseQueue(Variant::Map& values) {
+void WiringReplicator::doResponseQueue(Variant::Map& values) {
     QPID_LOG(debug, "Creating replicated queue " << values[NAME].asString() << " (in catch-up)");
     if (!broker.createQueue(
             values[NAME].asString(),
@@ -245,7 +246,7 @@ void NodeClone::doResponseQueue(Variant::Map& values) {
     }
 }
 
-void NodeClone::doResponseExchange(Variant::Map& values) {
+void WiringReplicator::doResponseExchange(Variant::Map& values) {
     QPID_LOG(debug, "Creating replicated exchange " << values[NAME].asString() << " (in catch-up)");
     if (!broker.createExchange(
             values[NAME].asString(),
@@ -259,33 +260,32 @@ void NodeClone::doResponseExchange(Variant::Map& values) {
     }
 }
 
-void NodeClone::doResponseBind(Variant::Map& ) {
-    QPID_LOG(error, "FIXME NodeClone: Not yet implemented - catch-up replicate bindings.");
+void WiringReplicator::doResponseBind(Variant::Map& ) {
+    QPID_LOG(error, "FIXME WiringReplicator: Not yet implemented - catch-up replicate bindings.");
 }
 
-boost::shared_ptr<Exchange> NodeClone::create(const std::string& target, Broker& broker)
+boost::shared_ptr<Exchange> WiringReplicator::create(const std::string& target, Broker& broker)
 {
     boost::shared_ptr<Exchange> exchange;
-    if (isNodeCloneDestination(target)) {
+    if (isWiringReplicatorDestination(target)) {
         //TODO: need to cache the exchange
-        QPID_LOG(info, "Creating node cloner");
-        exchange.reset(new NodeClone(target, broker));
+        exchange.reset(new WiringReplicator(target, broker));
     }
     return exchange;
 }
 
-bool NodeClone::isNodeCloneDestination(const std::string& target)
+bool WiringReplicator::isWiringReplicatorDestination(const std::string& target)
 {
-    return target == QPID_NODE_CLONER;
+    return target == QPID_WIRING_REPLICATOR;
 }
 
-bool NodeClone::bind(boost::shared_ptr<Queue>, const std::string&, const framing::FieldTable*) { return false; }
-bool NodeClone::unbind(boost::shared_ptr<Queue>, const std::string&, const framing::FieldTable*) { return false; }
-bool NodeClone::isBound(boost::shared_ptr<Queue>, const std::string* const, const framing::FieldTable* const) { return false; }
+bool WiringReplicator::bind(boost::shared_ptr<Queue>, const std::string&, const framing::FieldTable*) { return false; }
+bool WiringReplicator::unbind(boost::shared_ptr<Queue>, const std::string&, const framing::FieldTable*) { return false; }
+bool WiringReplicator::isBound(boost::shared_ptr<Queue>, const std::string* const, const framing::FieldTable* const) { return false; }
 
-const std::string NodeClone::typeName(QPID_NODE_CLONER); // FIXME aconway 2011-11-21: qpid.replicator
+const std::string WiringReplicator::typeName(QPID_WIRING_REPLICATOR);
 
-std::string NodeClone::getType() const
+std::string WiringReplicator::getType() const
 {
     return typeName;
 }

@@ -595,8 +595,8 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/PriorityQueue.cpp \
   qpid/broker/NameGenerator.cpp \
   qpid/broker/NameGenerator.h \
-  qpid/broker/NodeClone.h \
-  qpid/broker/NodeClone.cpp \
+  qpid/ha/WiringReplicator.h \
+  qpid/ha/WiringReplicator.cpp \
   qpid/broker/NullMessageStore.cpp \
   qpid/broker/NullMessageStore.h \
   qpid/broker/OwnershipToken.h \
