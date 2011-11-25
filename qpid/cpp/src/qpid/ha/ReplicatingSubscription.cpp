@@ -20,18 +20,19 @@
  */
 
 #include "ReplicatingSubscription.h"
-#include "Queue.h"
+#include "qpid/broker/Queue.h"
 #include "qpid/framing/AMQFrame.h"
 #include "qpid/framing/MessageTransferBody.h"
 #include "qpid/log/Statement.h"
 
 namespace qpid {
-namespace broker {
+namespace ha {
 
 using namespace framing;
+using namespace broker;
 
 const std::string DOLLAR("$");
-const std::string INTERNAL("_internall");
+const std::string INTERNAL("_internal");
 
 class ReplicationStateInitialiser
 {

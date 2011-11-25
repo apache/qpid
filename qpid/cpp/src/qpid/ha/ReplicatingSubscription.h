@@ -23,35 +23,48 @@
  */
 
 #include "qpid/broker/SemanticState.h"
+#include "qpid/broker/QueueObserver.h"
 
 namespace qpid {
+
 namespace broker {
+class Message;
+class Queue;
+class QueuedMessage;
+class OwnershipToken;
+}
+
+namespace ha {
 
 /**
  * Subscriber to a remote queue that replicates to a local queue.
  */
-class ReplicatingSubscription : public SemanticState::ConsumerImpl, public QueueObserver
+class ReplicatingSubscription : public broker::SemanticState::ConsumerImpl,
+                                public broker::QueueObserver
 {
   public:
-    ReplicatingSubscription(SemanticState* parent,
-                            const std::string& name, boost::shared_ptr<Queue> queue,
+    ReplicatingSubscription(broker::SemanticState* parent,
+                            const std::string& name, boost::shared_ptr<broker::Queue> ,
                             bool ack, bool acquire, bool exclusive, const std::string& tag,
-                            const std::string& resumeId, uint64_t resumeTtl, const framing::FieldTable& arguments);
+                            const std::string& resumeId, uint64_t resumeTtl,
+                            const framing::FieldTable& arguments);
     ~ReplicatingSubscription();
 
     void init();
     void cancel();
-    bool deliver(QueuedMessage& msg);
-    void enqueued(const QueuedMessage&);
-    void dequeued(const QueuedMessage&);
-    void acquired(const QueuedMessage&) {}
-    void requeued(const QueuedMessage&) {}
+    bool deliver(broker::QueuedMessage& msg);
+    void enqueued(const broker::QueuedMessage&);
+    void dequeued(const broker::QueuedMessage&);
+    void acquired(const broker::QueuedMessage&) {}
+    void requeued(const broker::QueuedMessage&) {}
+
+    bool isDelayedCompletion() const { return true; }
 
   protected:
     bool doDispatch();
   private:
-    boost::shared_ptr<Queue> events;
-    boost::shared_ptr<Consumer> consumer;
+    boost::shared_ptr<broker::Queue> events;
+    boost::shared_ptr<broker::Consumer> consumer;
     qpid::framing::SequenceSet range;
 
     void generateDequeueEvent();
@@ -60,11 +73,11 @@ class ReplicatingSubscription : public SemanticState::ConsumerImpl, public Queue
       public:
         DelegatingConsumer(ReplicatingSubscription&);
         ~DelegatingConsumer();
-        bool deliver(QueuedMessage& msg);
+        bool deliver(broker::QueuedMessage& msg);
         void notify();
-        bool filter(boost::intrusive_ptr<Message>);
-        bool accept(boost::intrusive_ptr<Message>);
-        OwnershipToken* getSession();
+        bool filter(boost::intrusive_ptr<broker::Message>);
+        bool accept(boost::intrusive_ptr<broker::Message>);
+        broker::OwnershipToken* getSession();
       private:
         ReplicatingSubscription& delegate;
     };

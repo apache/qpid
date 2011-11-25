@@ -155,11 +155,10 @@ class SemanticState : private boost::noncopyable {
         management::ManagementObject* GetManagementObject (void) const;
         management::Manageable::status_t ManagementMethod (uint32_t methodId, management::Args& args, std::string& text);
 
-        static shared_ptr create(SemanticState* parent,
-                                 const std::string& name, boost::shared_ptr<Queue> queue,
-                                 bool ack, bool acquire, bool exclusive, const std::string& tag,
-                                 const std::string& resumeId, uint64_t resumeTtl, const framing::FieldTable& arguments);
-
+        /** This consumer wants delayed completion.
+         * Overridden by ConsumerImpl subclasses.
+         */
+        virtual bool isDelayedCompletion() const { return false; }
     };
 
     typedef std::map<std::string, DtxBuffer::shared_ptr> DtxBufferMap;
