@@ -338,11 +338,10 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler, Notificati
 
         // Normally JMXManagedObjectRegistry provides a Map as handback data containing a map
         // between connection id and username.
-        Map<String, String> connectionIdUsernameMap = null;
         String user = null;
         if (handback != null && handback instanceof Map)
         {
-            connectionIdUsernameMap = (Map<String, String>) handback;
+            final Map<String, String> connectionIdUsernameMap = (Map<String, String>) handback;
             user = connectionIdUsernameMap.get(connectionId);
         }
 
@@ -361,11 +360,6 @@ public class MBeanInvocationHandlerImpl implements InvocationHandler, Notificati
                  JMXConnectionNotification.FAILED.equals(type))
         {
             _logActor.message(ManagementConsoleMessages.CLOSE(user));
-            // We are responsible for removing the entry from the map
-            if (connectionIdUsernameMap != null)
-            {
-                connectionIdUsernameMap.remove(connectionId);
-            }
         }
     }
 }
