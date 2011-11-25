@@ -44,6 +44,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.management.JMException;
 import javax.management.MBeanServer;
 import javax.management.MBeanServerFactory;
+import javax.management.Notification;
 import javax.management.NotificationFilterSupport;
 import javax.management.NotificationListener;
 import javax.management.ObjectName;
@@ -235,9 +236,8 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
             /**
              * Override makeClient so we can cache the username of the client in a Map keyed by connectionId.
              * ConnectionId is guaranteed to be unique per client connection, according to the JMS spec.
-             *
-             * MBeanInvocationHandlerImpl#handleNotification is responsible for removing the map entry on receipt
-             * of CLOSE or FAIL notifications.
+             * An instance of NotificationListener (mapCleanupListener) will be responsible for removing these Map
+             * entries.
              *
              * @see javax.management.remote.rmi.RMIJRMPServerImpl#makeClient(java.lang.String, javax.security.auth.Subject)
              */
@@ -250,6 +250,19 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
                 return makeClient;
             }
         };
+
+        // Create a Listener responsible for removing the map entries add by the #makeClient entry above.
+        final NotificationListener mapCleanupListener = new NotificationListener()
+        {
+
+            @Override
+            public void handleNotification(Notification notification, Object handback)
+            {
+                final String connectionId = ((JMXConnectionNotification) notification).getConnectionId();
+                connectionIdUsernameMap.remove(connectionId);
+            }
+        };
+
         String localHost;
         try
         {
@@ -326,13 +339,21 @@ public class JMXManagedObjectRegistry implements ManagedObjectRegistry
         // which is the MBeanInvocationHandlerImpl and so also a NotificationListener.
         final NotificationListener invocationHandler = (NotificationListener) Proxy.getInvocationHandler(mbsf);
 
-        // Install a notification listener on OPENED, CLOSED, and FAIL,
+        // Install a notification listener on OPENED, CLOSED, and FAILED,
         // passing the map of connection-ids to usernames as hand-back data.
-        NotificationFilterSupport filter = new NotificationFilterSupport();
-        filter.enableType(JMXConnectionNotification.OPENED);
-        filter.enableType(JMXConnectionNotification.CLOSED);
-        filter.enableType(JMXConnectionNotification.FAILED);
-        _cs.addNotificationListener(invocationHandler, filter, connectionIdUsernameMap);
+        final NotificationFilterSupport invocationHandlerFilter = new NotificationFilterSupport();
+        invocationHandlerFilter.enableType(JMXConnectionNotification.OPENED);
+        invocationHandlerFilter.enableType(JMXConnectionNotification.CLOSED);
+        invocationHandlerFilter.enableType(JMXConnectionNotification.FAILED);
+        _cs.addNotificationListener(invocationHandler, invocationHandlerFilter, connectionIdUsernameMap);
+
+        // Install a second notification listener on CLOSED AND FAILED only to remove the entry from the
+        // Map.  Here we rely on the fact that JMX will call the listeners in the order in which they are
+        // installed.
+        final NotificationFilterSupport mapCleanupHandlerFilter = new NotificationFilterSupport();
+        mapCleanupHandlerFilter.enableType(JMXConnectionNotification.CLOSED);
+        mapCleanupHandlerFilter.enableType(JMXConnectionNotification.FAILED);
+        _cs.addNotificationListener(mapCleanupListener, mapCleanupHandlerFilter, null);
 
         _cs.start();
 
