@@ -24,10 +24,12 @@
 
 #include "Settings.h"
 #include "qpid/Url.h"
+#include <boost/shared_ptr.hpp>
 
 namespace qpid {
 namespace broker {
 class Broker;
+class Link;
 }
 
 namespace ha {
@@ -44,6 +46,7 @@ class Backup
   private:
     broker::Broker& broker;
     Settings settings;
+    boost::shared_ptr<broker::Link> link;
 };
 }} // namespace qpid::ha
 

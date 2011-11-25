@@ -24,13 +24,15 @@
 
 #include "qpid/broker/Exchange.h"
 #include "qpid/types/Variant.h"
-
-// FIXME aconway 2011-11-17: relocate to ../ha
+#include <boost/shared_ptr.hpp>
 
 namespace qpid {
 
 namespace broker {
 class Broker;
+class Link;
+class Bridge;
+class SessionHandler;
 }
 
 namespace ha {
@@ -42,19 +44,23 @@ namespace ha {
 class WiringReplicator : public broker::Exchange
 {
   public:
-    WiringReplicator(const std::string&, broker::Broker&);
+    WiringReplicator(const boost::shared_ptr<broker::Link>&);
     ~WiringReplicator();
     std::string getType() const;
+
+    // Call this after the WiringReplicator has been registered as an exchange.
+    void initialize();
+
+    // Exchange methods
     bool bind(boost::shared_ptr<broker::Queue>, const std::string&, const framing::FieldTable*);
     bool unbind(boost::shared_ptr<broker::Queue>, const std::string&, const framing::FieldTable*);
     void route(broker::Deliverable&, const std::string&, const framing::FieldTable*);
     bool isBound(boost::shared_ptr<broker::Queue>, const std::string* const, const framing::FieldTable* const);
 
-    static bool isWiringReplicatorDestination(const std::string&);
-    static boost::shared_ptr<broker::Exchange> create(const std::string&, broker::Broker&);
     static const std::string typeName;
-  private:
 
+  private:
+    void initializeBridge(broker::Bridge&, broker::SessionHandler&);
     void doEventQueueDeclare(types::Variant::Map& values);
     void doEventQueueDelete(types::Variant::Map& values);
     void doEventExchangeDeclare(types::Variant::Map& values);
@@ -65,7 +71,10 @@ class WiringReplicator : public broker::Exchange
     void doResponseBind(types::Variant::Map& values);
 
   private:
+    void startQueueReplicator(const std::string& name);
+
     broker::Broker& broker;
+    boost::shared_ptr<broker::Link> link;
 };
 }} // namespace qpid::broker
 
