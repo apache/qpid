@@ -66,6 +66,23 @@ std::string mask(const std::string& in)
     return DOLLAR + in + INTERNAL;
 }
 
+boost::shared_ptr<broker::SemanticState::ConsumerImpl>
+ReplicatingSubscription::Factory::create(
+    SemanticState* _parent,
+    const std::string& _name,
+    Queue::shared_ptr _queue,
+    bool ack,
+    bool _acquire,
+    bool _exclusive,
+    const std::string& _tag,
+    const std::string& _resumeId,
+    uint64_t _resumeTtl,
+    const framing::FieldTable& _arguments
+) {
+    return boost::shared_ptr<broker::SemanticState::ConsumerImpl>(
+        new ReplicatingSubscription(_parent, _name, _queue, ack, _acquire, _exclusive, _tag, _resumeId, _resumeTtl, _arguments));
+}
+
 ReplicatingSubscription::ReplicatingSubscription(
     SemanticState* _parent,
     const std::string& _name,
@@ -81,7 +98,8 @@ ReplicatingSubscription::ReplicatingSubscription(
     events(new Queue(mask(_name))),
     consumer(new DelegatingConsumer(*this))
 {
-
+    // FIXME aconway 2011-11-25: string constants.
+    QPID_LOG(debug, "HA: replicating subscription " << _name << " to " << _queue->getName());
     if (_arguments.isSet("qpid.high_sequence_number")) {
         qpid::framing::SequenceNumber hwm = _arguments.getAsInt("qpid.high_sequence_number");
         qpid::framing::SequenceNumber lwm;

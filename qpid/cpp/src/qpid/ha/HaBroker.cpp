@@ -58,7 +58,7 @@ HaBroker::HaBroker(broker::Broker& b, const Settings& s)
         mgmtObject->set_status("solo");
         ma->addObject(mgmtObject);
     }
-    QPID_LOG(notice, "HA broker initialized, client-url=" << clientUrl
+    QPID_LOG(notice, "HA: broker initialized, client-url=" << clientUrl
              << ", broker-url=" << brokerUrl);
     backup.reset(new Backup(broker, s));
 }
