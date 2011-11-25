@@ -29,6 +29,8 @@ ha_la_SOURCES =					\
   qpid/ha/HaBroker.h				\
   qpid/ha/HaPlugin.cpp				\
   qpid/ha/Settings.h				\
+  qpid/ha/QueueReplicator.h			\
+  qpid/ha/QueueReplicator.cpp			\
   qpid/ha/WiringReplicator.cpp			\
   qpid/ha/WiringReplicator.h
 
