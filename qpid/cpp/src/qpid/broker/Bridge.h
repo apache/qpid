@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -42,15 +42,19 @@ class Connection;
 class ConnectionState;
 class Link;
 class LinkRegistry;
+class SessionHandler;
 
 class Bridge : public PersistableConfig, public management::Manageable, public Exchange::DynamicBridge
 {
 public:
     typedef boost::shared_ptr<Bridge> shared_ptr;
     typedef boost::function<void(Bridge*)> CancellationListener;
+    typedef boost::function<void(Bridge&, SessionHandler&)> InitializeCallback;
 
     Bridge(Link* link, framing::ChannelId id, CancellationListener l,
-           const qmf::org::apache::qpid::broker::ArgsLinkBridge& args);
+           const qmf::org::apache::qpid::broker::ArgsLinkBridge& args,
+           InitializeCallback init
+    );
     ~Bridge();
 
     void create(Connection& c);
@@ -70,8 +74,8 @@ public:
     void     setPersistenceId(uint64_t id) const;
     uint64_t getPersistenceId() const { return persistenceId; }
     uint32_t encodedSize() const;
-    void     encode(framing::Buffer& buffer) const; 
-    const std::string& getName() const;
+    void     encode(framing::Buffer& buffer) const;
+    const std::string& getName() const { return name; }
     static Bridge::shared_ptr decode(LinkRegistry& links, framing::Buffer& buffer);
 
     // Exchange::DynamicBridge methods
@@ -80,6 +84,10 @@ public:
     void ioThreadPropagateBinding(const std::string& queue, const std::string& exchange, const std::string& key, framing::FieldTable args);
     bool containsLocalTag(const std::string& tagList) const;
     const std::string& getLocalTag() const;
+
+    // Methods needed by initialization functions
+    std::string getQueueName() const { return queueName; }
+    const qmf::org::apache::qpid::broker::ArgsLinkBridge& getArgs() { return args; }
 
 private:
     struct PushHandler : framing::FrameHandler {
@@ -103,6 +111,7 @@ private:
     mutable uint64_t  persistenceId;
     ConnectionState* connState;
     Connection* conn;
+    InitializeCallback initialize;
 
     bool resetProxy();
 };
