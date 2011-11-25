@@ -21,11 +21,16 @@
  * under the License.
  *
  */
+
 #include "qpid/broker/Exchange.h"
+#include "qpid/types/Variant.h"
 
 // FIXME aconway 2011-11-17: relocate to ../ha
 
 namespace qpid {
+namespace types {
+class Variant;
+}
 namespace broker {
 
 class Broker;
@@ -49,6 +54,16 @@ class NodeClone : public Exchange
     static boost::shared_ptr<Exchange> create(const std::string&, Broker&);
     static const std::string typeName;
   private:
+
+    void doEventQueueDeclare(types::Variant::Map& values);
+    void doEventQueueDelete(types::Variant::Map& values);
+    void doEventExchangeDeclare(types::Variant::Map& values);
+    void doEventExchangeDelete(types::Variant::Map& values);
+    void doEventBind(types::Variant::Map&);
+    void doResponseQueue(types::Variant::Map& values);
+    void doResponseExchange(types::Variant::Map& values);
+    void doResponseBind(types::Variant::Map& values);
+
     Broker& broker;
 };
 }} // namespace qpid::broker
