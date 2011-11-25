@@ -48,9 +48,6 @@ class WiringReplicator : public broker::Exchange
     ~WiringReplicator();
     std::string getType() const;
 
-    // Call this after the WiringReplicator has been registered as an exchange.
-    void initialize();
-
     // Exchange methods
     bool bind(boost::shared_ptr<broker::Queue>, const std::string&, const framing::FieldTable*);
     bool unbind(boost::shared_ptr<broker::Queue>, const std::string&, const framing::FieldTable*);
