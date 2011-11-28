@@ -38,7 +38,12 @@ class OwnershipToken;
 namespace ha {
 
 /**
- * Subscriber to a remote queue that replicates to a local queue.
+ * A susbcription that represents a backup replicating a queue.
+ *
+ * Runs on the primary. Delays completion of messages till the backup
+ * has acknowledged, informs backup of locally dequeued messages.
+ *
+ * THREAD UNSAFE: used only in broker connection thread.
  */
 class ReplicatingSubscription : public broker::SemanticState::ConsumerImpl,
                                 public broker::QueueObserver
@@ -52,6 +57,11 @@ class ReplicatingSubscription : public broker::SemanticState::ConsumerImpl,
             const std::string& resumeId, uint64_t resumeTtl,
             const framing::FieldTable& arguments);
     };
+
+    // Argument names for consume command.
+    static const std::string QPID_REPLICATING_SUBSCRIPTION;
+    static const std::string QPID_HIGH_SEQUENCE_NUMBER;
+    static const std::string QPID_LOW_SEQUENCE_NUMBER;
 
     ReplicatingSubscription(broker::SemanticState* parent,
                             const std::string& name, boost::shared_ptr<broker::Queue> ,
@@ -70,7 +80,7 @@ class ReplicatingSubscription : public broker::SemanticState::ConsumerImpl,
     void requeued(const broker::QueuedMessage&) {}
 
     bool isDelayedCompletion() const { return true; }
-
+    
   protected:
     bool doDispatch();
   private:

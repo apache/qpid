@@ -446,6 +446,7 @@ void WiringReplicator::doResponseBind(Variant::Map& values) {
 }
 
 void WiringReplicator::startQueueReplicator(const boost::shared_ptr<Queue>& queue) {
+    // FIXME aconway 2011-11-28: also need to remove these when queue is destroyed.
     if (replicateLevel(queue->getSettings()) == RL_ALL) {
         boost::shared_ptr<QueueReplicator> qr(new QueueReplicator(queue, link));
         broker.getExchanges().registerExchange(qr);
@@ -456,11 +457,6 @@ bool WiringReplicator::bind(boost::shared_ptr<Queue>, const string&, const frami
 bool WiringReplicator::unbind(boost::shared_ptr<Queue>, const string&, const framing::FieldTable*) { return false; }
 bool WiringReplicator::isBound(boost::shared_ptr<Queue>, const string* const, const framing::FieldTable* const) { return false; }
 
-const string WiringReplicator::typeName(QPID_WIRING_REPLICATOR);
-
-string WiringReplicator::getType() const
-{
-    return typeName;
-}
+string WiringReplicator::getType() const { return QPID_WIRING_REPLICATOR; }
 
 }} // namespace broker

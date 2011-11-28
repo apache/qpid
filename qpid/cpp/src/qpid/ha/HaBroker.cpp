@@ -21,6 +21,7 @@
 #include "Backup.h"
 #include "HaBroker.h"
 #include "Settings.h"
+#include "ReplicatingSubscription.h"
 #include "qpid/Exception.h"
 #include "qpid/broker/Broker.h"
 #include "qpid/management/ManagementAgent.h"
@@ -61,6 +62,10 @@ HaBroker::HaBroker(broker::Broker& b, const Settings& s)
     QPID_LOG(notice, "HA: broker initialized, client-url=" << clientUrl
              << ", broker-url=" << brokerUrl);
     backup.reset(new Backup(broker, s));
+    // Register a factory for replicating subscriptions.
+    broker.getConsumerFactories().add(
+        boost::shared_ptr<ReplicatingSubscription::Factory>(
+            new ReplicatingSubscription::Factory()));
 }
 
 HaBroker::~HaBroker() {}

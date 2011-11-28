@@ -43,8 +43,8 @@ using types::Variant;
 using std::string;
 
 Backup::Backup(broker::Broker& b, const Settings& s) : broker(b), settings(s) {
-    // FIXME aconway 2011-11-24: identifying the primary. Only has 1 address.
-    if (s.brokerUrl != "dummy") { // FIXME aconway 2011-11-22: temporary hack to identify primary.
+    // FIXME aconway 2011-11-24: identifying the primary.
+    if (s.brokerUrl != "primary") { // FIXME aconway 2011-11-22: temporary hack to identify primary.
         Url url(s.brokerUrl);
         QPID_LOG(info, "HA: Acting as backup to " << url);
         string protocol = url[0].protocol.empty() ? "tcp" : url[0].protocol;
@@ -59,12 +59,6 @@ Backup::Backup(broker::Broker& b, const Settings& s) : broker(b), settings(s) {
         link = result.first;
         boost::shared_ptr<WiringReplicator> wr(new WiringReplicator(link));
         broker.getExchanges().registerExchange(wr);
-
-        // FIXME aconway 2011-11-25: using ReplicatingSubscription hangs the tests
-        // The tests pass with a plain subscription if we dont add the factory.
-//         broker.getConsumerFactories().add(
-//             boost::shared_ptr<ReplicatingSubscription::Factory>(
-//                 new ReplicatingSubscription::Factory()));
     }
 }
 
