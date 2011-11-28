@@ -124,11 +124,11 @@ public abstract class AbstractACLTestCase extends QpidBrokerTestCase implements 
 
         if (vhost == null)
         {
-            testcase.setConfigurationProperty("security.aclv2", aclFile.getAbsolutePath());
+            testcase.setConfigurationProperty("security.acl", aclFile.getAbsolutePath());
         }
         else
         {
-            testcase.setConfigurationProperty("virtualhosts.virtualhost." + vhost + ".security.aclv2", aclFile.getAbsolutePath());
+            testcase.setConfigurationProperty("virtualhosts.virtualhost." + vhost + ".security.acl", aclFile.getAbsolutePath());
         }
 
         PrintWriter out = new PrintWriter(new FileWriter(aclFile));
