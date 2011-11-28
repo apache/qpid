@@ -31,10 +31,13 @@ import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
@@ -79,6 +82,12 @@ public abstract class QueueEntryImpl implements QueueEntry
     private static final int REDELIVERED = 2;
 
     private volatile int _deliveryState;
+
+    /** Number of times this message has been delivered */
+    private volatile int _deliveryCount = 0;
+    private static final AtomicIntegerFieldUpdater<QueueEntryImpl> _deliveryCountUpdater = AtomicIntegerFieldUpdater
+                    .newUpdater(QueueEntryImpl.class, "_deliveryCount");
+
 
 
     public QueueEntryImpl(QueueEntryList<?> queueEntryList)
@@ -406,50 +415,51 @@ public abstract class QueueEntryImpl implements QueueEntry
     public void routeToAlternate()
     {
         final AMQQueue currentQueue = getQueue();
-            Exchange alternateExchange = currentQueue.getAlternateExchange();
+        Exchange alternateExchange = currentQueue.getAlternateExchange();
 
-            if(alternateExchange != null)
+        if (alternateExchange != null)
+        {
+            final List<? extends BaseQueue> rerouteQueues = alternateExchange.route(new InboundMessageAdapter(this));
+            final ServerMessage message = getMessage();
+            if (rerouteQueues != null && rerouteQueues.size() != 0)
             {
-                final List<? extends BaseQueue> rerouteQueues = alternateExchange.route(new InboundMessageAdapter(this));
-                final ServerMessage message = getMessage();
-                if(rerouteQueues != null && rerouteQueues.size() != 0)
+
+                ServerTransaction txn = new AutoCommitTransaction(getQueue().getVirtualHost().getTransactionLog());
+
+                txn.enqueue(rerouteQueues, message, new ServerTransaction.Action()
                 {
-                    ServerTransaction txn = new AutoCommitTransaction(getQueue().getVirtualHost().getTransactionLog());
-
-                    txn.enqueue(rerouteQueues, message, new ServerTransaction.Action() {
-                        public void postCommit()
+                    public void postCommit()
+                    {
+                        try
                         {
-                            try
+                            for (BaseQueue queue : rerouteQueues)
                             {
-                                for(BaseQueue queue : rerouteQueues)
-                                {
-                                    queue.enqueue(message);
-                                }
-                            }
-                            catch (AMQException e)
-                            {
-                                throw new RuntimeException(e);
+                                queue.enqueue(message);
                             }
                         }
-
-                        public void onRollback()
+                        catch (AMQException e)
                         {
-
+                            throw new RuntimeException(e);
                         }
-                    });
-                    txn.dequeue(currentQueue,message,
-                                new ServerTransaction.Action()
-                                {
-                                    public void postCommit()
-                                    {
-                                        discard();
-                                    }
+                    }
 
-                                    public void onRollback()
-                                    {
+                    public void onRollback()
+                    {
 
-                                    }
-                                });
+                    }
+                });
+                txn.dequeue(currentQueue, message, new ServerTransaction.Action()
+                {
+                    public void postCommit()
+                    {
+                        discard();
+                    }
+
+                    public void onRollback()
+                    {
+
+                    }
+                });
                 }
             }
     }
@@ -522,6 +532,21 @@ public abstract class QueueEntryImpl implements QueueEntry
     public boolean isDispensed()
     {
         return _state.isDispensed();
+    }
+
+    public int getDeliveryCount()
+    {
+        return _deliveryCount;
+    }
+
+    public void incrementDeliveryCount()
+    {
+        _deliveryCountUpdater.incrementAndGet(this);
+    }
+
+    public void decrementDeliveryCount()
+    {
+        _deliveryCountUpdater.decrementAndGet(this);
     }
 
 }

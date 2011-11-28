@@ -63,7 +63,9 @@ public class QueueConfiguration extends ConfigurationPlugin
                             "flowResumeCapacity",
                             "lvq",
                             "lvqKey",
-                            "sortKey"
+                            "sortKey",
+                            "maximumDeliveryCount",
+                            "deadLetterQueues"
         };
     }
 
@@ -171,6 +173,19 @@ public class QueueConfiguration extends ConfigurationPlugin
     public String getQueueSortKey()
     {
         return getStringValue("sortKey", null);
+    }
+
+    public int getMaxDeliveryCount()
+    {
+        return getIntValue("maximumDeliveryCount", _vHostConfig.getMaxDeliveryCount());
+    }
+
+    /**
+     * Check if dead letter queue delivery is enabled, deferring to the virtualhost configuration if not set.
+     */
+    public boolean isDeadLetterQueueEnabled()
+    {
+        return getBooleanValue("deadLetterQueues", _vHostConfig.isDeadLetterQueueEnabled());
     }
 
     public static class QueueConfig extends ConfigurationPlugin

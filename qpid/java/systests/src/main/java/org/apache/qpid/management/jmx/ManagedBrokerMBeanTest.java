@@ -18,6 +18,9 @@
  */
 package org.apache.qpid.management.jmx;
 
+import java.util.Collections;
+import java.util.Map;
+
 import javax.management.JMException;
 import javax.management.MBeanException;
 import javax.management.ObjectName;
@@ -25,6 +28,8 @@ import javax.management.ObjectName;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.management.common.mbeans.ManagedBroker;
 import org.apache.qpid.management.common.mbeans.ManagedExchange;
+import org.apache.qpid.management.common.mbeans.ManagedQueue;
+import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.test.utils.JMXTestUtils;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
@@ -136,4 +141,26 @@ public class ManagedBrokerMBeanTest extends QpidBrokerTestCase
         final ManagedExchange defaultExchange = _jmxUtils.getManagedExchange(defaultExchangeName);
         assertNotNull("Exchange should exist", defaultExchange);
     }
+
+    /**
+     * Tests queue creation with {@link AMQQueueFactory#X_QPID_MAXIMUM_DELIVERY_COUNT} argument.  Also tests
+     * that the attribute is exposed correctly through {@link ManagedQueue#getMaximumDeliveryCount()}.
+     */
+    public void testCreateQueueWithMaximumDeliveryCountSet() throws Exception
+    {
+        final String queueName = getName();
+        final ManagedBroker managedBroker = _jmxUtils.getManagedBroker(VIRTUAL_HOST);
+
+        final Integer deliveryCount = 1;
+        final Map<String, Object> args = Collections.singletonMap(AMQQueueFactory.X_QPID_MAXIMUM_DELIVERY_COUNT, (Object)deliveryCount);
+        managedBroker.createNewQueue(queueName, "testowner", true, args);
+
+        // Ensure the queue exists
+        assertNotNull("Queue object name expected to exist", _jmxUtils.getQueueObjectName("test", queueName));
+        assertNotNull("Manager queue expected to be available", _jmxUtils.getManagedQueue(queueName));
+
+        final ManagedQueue managedQueue = _jmxUtils.getManagedQueue(queueName);
+        assertEquals("Unexpected maximum delivery count", deliveryCount, managedQueue.getMaximumDeliveryCount());
+    }
+
 }

@@ -22,8 +22,11 @@ package org.apache.qpid.test.unit.client.destinationurl;
 
 import junit.framework.TestCase;
 
+import org.apache.qpid.client.AMQDestination;
+import org.apache.qpid.client.RejectBehaviour;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.url.AMQBindingURL;
+import org.apache.qpid.url.BindingURL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -188,6 +191,67 @@ public class DestinationURLTest extends TestCase
         assertTrue(dest.getExchangeClass().equals("topic"));
         assertTrue(dest.getExchangeName().equals("amq.topic"));
         assertTrue(dest.getQueueName().equals("test:testQueueD"));
+    }
+
+    public void testRejectBehaviourPresent() throws URISyntaxException
+    {
+        String url = "exchangeClass://exchangeName/Destination/Queue?rejectbehaviour='server'";
+
+        AMQBindingURL burl = new AMQBindingURL(url);
+
+        assertTrue(url.equals(burl.toString()));
+        assertTrue(burl.getExchangeClass().equals("exchangeClass"));
+        assertTrue(burl.getExchangeName().equals("exchangeName"));
+        assertTrue(burl.getDestinationName().equals("Destination"));
+        assertTrue(burl.getQueueName().equals("Queue"));
+
+        //check that the MaxDeliveryCount property has the right value
+        assertEquals("server",burl.getOption(BindingURL.OPTION_REJECT_BEHAVIOUR));
+
+        //check that the MaxDeliveryCount value is correctly returned from an AMQDestination
+        class MyTestAMQDestination extends AMQDestination
+        {
+            public MyTestAMQDestination(BindingURL url)
+            {
+                super(url);
+            }
+            public boolean isNameRequired()
+            {
+                return false;
+            }
+        };
+
+        AMQDestination dest = new MyTestAMQDestination(burl);
+        assertEquals("Reject behaviour is unexpected", RejectBehaviour.SERVER, dest.getRejectBehaviour());
+    }
+
+    public void testRejectBehaviourNotPresent() throws URISyntaxException
+    {
+        String url = "exchangeClass://exchangeName/Destination/Queue";
+
+        AMQBindingURL burl = new AMQBindingURL(url);
+
+        assertTrue(url.equals(burl.toString()));
+
+        assertTrue(burl.getExchangeClass().equals("exchangeClass"));
+        assertTrue(burl.getExchangeName().equals("exchangeName"));
+        assertTrue(burl.getDestinationName().equals("Destination"));
+        assertTrue(burl.getQueueName().equals("Queue"));
+
+        class MyTestAMQDestination extends AMQDestination
+        {
+            public MyTestAMQDestination(BindingURL url)
+            {
+                super(url);
+            }
+            public boolean isNameRequired()
+            {
+                return false;
+            }
+        };
+
+        AMQDestination dest = new MyTestAMQDestination(burl);
+        assertNull("Reject behaviour is unexpected", dest.getRejectBehaviour());
     }
 
     public static junit.framework.Test suite()

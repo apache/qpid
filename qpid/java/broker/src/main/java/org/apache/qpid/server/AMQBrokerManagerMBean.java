@@ -20,8 +20,8 @@ package org.apache.qpid.server;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import javax.management.JMException;
 import javax.management.MBeanException;
@@ -30,6 +30,7 @@ import javax.management.ObjectName;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.management.common.mbeans.ManagedBroker;
 import org.apache.qpid.management.common.mbeans.ManagedQueue;
 import org.apache.qpid.management.common.mbeans.annotations.MBeanConstructor;
@@ -243,7 +244,13 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
      */
     public void createNewQueue(String queueName, String owner, boolean durable) throws JMException, MBeanException
     {
-        AMQQueue queue = _queueRegistry.getQueue(new AMQShortString(queueName));
+        createNewQueue(queueName, owner, durable, null);
+    }
+
+    public void createNewQueue(String queueName, String owner, boolean durable, Map<String,Object> arguments) throws JMException
+    {
+        final AMQShortString queueNameAsAMQShortString = new AMQShortString(queueName);
+        AMQQueue queue = _queueRegistry.getQueue(queueNameAsAMQShortString);
         if (queue != null)
         {
             throw new JMException("The queue \"" + queueName + "\" already exists.");
@@ -258,11 +265,18 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
                 ownerShortString = new AMQShortString(owner);
             }
 
+            FieldTable args = null;
+            if(arguments != null)
+            {
+                args = FieldTable.convertToFieldTable(arguments);
+            }
             final VirtualHost virtualHost = getVirtualHost();
-            queue = AMQQueueFactory.createAMQQueueImpl(new AMQShortString(queueName), durable, ownerShortString, false, false, virtualHost, null);
+
+            queue = AMQQueueFactory.createAMQQueueImpl(queueNameAsAMQShortString, durable, ownerShortString,
+                                                       false, false, getVirtualHost(), args);
             if (queue.isDurable() && !queue.isAutoDelete())
             {
-                _durableConfig.createQueue(queue);
+                _durableConfig.createQueue(queue, args);
             }
 
             virtualHost.getBindingFactory().addBinding(queueName, queue, _defaultExchange, null);

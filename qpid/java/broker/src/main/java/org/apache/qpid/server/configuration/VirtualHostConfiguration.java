@@ -347,4 +347,18 @@ public class VirtualHostConfiguration extends ConfigurationPlugin
     {
         return getLongValue("transactionTimeout.idleClose", 0L);
     }
+
+    public int getMaxDeliveryCount()
+    {
+        return getIntValue("queues.maximumDeliveryCount", ApplicationRegistry.getInstance().getConfiguration().getMaxDeliveryCount());
+    }
+
+    /**
+     * Check if dead letter queue delivery is enabled, deferring to the broker configuration if not set.
+     */
+    public boolean isDeadLetterQueueEnabled()
+    {
+        return getBooleanValue("queues.deadLetterQueues", ApplicationRegistry.getInstance().getConfiguration().isDeadLetterQueueEnabled());
+    }
+
 }
