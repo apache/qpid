@@ -187,7 +187,8 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
     private long _createTime = System.currentTimeMillis();
     private ConfigurationPlugin _queueConfiguration;
 
-
+    /** the maximum delivery count for each message on this queue or 0 if maximum delivery count is not to be enforced. */
+    private int _maximumDeliveryCount = ApplicationRegistry.getInstance().getConfiguration().getMaxDeliveryCount();
 
     protected SimpleAMQQueue(AMQShortString name, boolean durable, AMQShortString owner, boolean autoDelete, boolean exclusive, VirtualHost virtualHost, Map<String,Object> arguments)
     {
@@ -356,6 +357,22 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         _alternateExchange = exchange;
     }
 
+    public void setAlternateExchange(String exchangeName)
+    {
+        if(exchangeName == null || exchangeName.equals(""))
+        {
+            _alternateExchange = null;
+            return;
+        }
+
+        Exchange exchange = getVirtualHost().getExchangeRegistry().getExchange(new AMQShortString(exchangeName));
+        if (exchange == null)
+        {
+            throw new RuntimeException("Exchange '" + exchangeName + "' is not registered with the VirtualHost.");
+        }
+        setAlternateExchange(exchange);
+    }
+
     public Map<String, Object> getArguments()
     {
         return _arguments;
@@ -521,13 +538,12 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         //Reconfigure the queue for to reflect this new binding.
         ConfigurationPlugin config = getVirtualHost().getConfiguration().getQueueConfiguration(this);
 
-        if (_logger.isDebugEnabled())
-        {
-            _logger.debug("Reconfiguring queue(" + this + ") with config:" + config + " was "+ _queueConfiguration);
-        }
-
         if (config != null)
         {
+            if (_logger.isDebugEnabled())
+            {
+                _logger.debug("Reconfiguring queue(" + this + ") with config:" + config + " was "+ _queueConfiguration);
+            }
             // Reconfigure with new config.
             configure(config);
         }
@@ -2108,6 +2124,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
                 setMaximumMessageSize(((QueueConfiguration)config).getMaximumMessageSize());
                 setMaximumMessageCount(((QueueConfiguration)config).getMaximumMessageCount());
                 setMinimumAlertRepeatGap(((QueueConfiguration)config).getMinimumAlertRepeatGap());
+                setMaximumDeliveryCount(((QueueConfiguration)config).getMaxDeliveryCount());
                 _capacity = ((QueueConfiguration)config).getCapacity();
                 _flowResumeCapacity = ((QueueConfiguration)config).getFlowResumeCapacity();
             }
@@ -2229,4 +2246,15 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
     {
         return _logActor;
     }
+
+    public int getMaximumDeliveryCount()
+    {
+        return _maximumDeliveryCount;
+    }
+
+    public void setMaximumDeliveryCount(final int maximumDeliveryCount)
+    {
+        _maximumDeliveryCount = maximumDeliveryCount;
+    }
+
 }

@@ -41,7 +41,16 @@ public interface ConnectionURL
     public static final String OPTIONS_USE_LEGACY_MAP_MESSAGE_FORMAT = "use_legacy_map_msg_format";
     public static final String OPTIONS_BROKERLIST = "brokerlist";
     public static final String OPTIONS_FAILOVER = "failover";
-    public static final String OPTIONS_FAILOVER_CYCLE = "cyclecount";    
+    public static final String OPTIONS_FAILOVER_CYCLE = "cyclecount";
+
+    /**
+     * This option is only applicable for 0-8/0-9/0-9-1 protocols connection
+     * <p>
+     * It tells the client to delegate the requeue/DLQ decision to the
+     * server .If this option is not specified, the messages won't be moved to
+     * the DLQ (or dropped) when delivery count exceeds the maximum.
+     */
+    public static final String OPTIONS_REJECT_BEHAVIOUR = "rejectbehaviour";
     public static final String OPTIONS_DEFAULT_TOPIC_EXCHANGE = "defaultTopicExchange";
     public static final String OPTIONS_DEFAULT_QUEUE_EXCHANGE = "defaultQueueExchange";
     public static final String OPTIONS_TEMPORARY_TOPIC_EXCHANGE = "temporaryTopicExchange";

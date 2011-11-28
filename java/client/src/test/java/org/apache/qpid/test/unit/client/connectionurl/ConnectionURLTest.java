@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -38,7 +38,7 @@ public class ConnectionURLTest extends TestCase
         ConnectionURL connectionurl = new AMQConnectionURL(url);
 
         assertTrue(connectionurl.getFailoverMethod().equals("roundrobin"));
-        assertEquals("100", connectionurl.getFailoverOption(ConnectionURL.OPTIONS_FAILOVER_CYCLE));        
+        assertEquals("100", connectionurl.getFailoverOption(ConnectionURL.OPTIONS_FAILOVER_CYCLE));
         assertTrue(connectionurl.getUsername().equals("ritchiem"));
         assertTrue(connectionurl.getPassword().equals("bob"));
         assertTrue(connectionurl.getVirtualHost().equals("/test"));
@@ -338,7 +338,7 @@ public class ConnectionURLTest extends TestCase
         assertTrue(connectionurl.getPassword().equals("pass"));
         assertTrue(connectionurl.getVirtualHost().equals("/test"));
         assertTrue(connectionurl.getClientName().equals("client_id"));
-        
+
         assertTrue(connectionurl.getBrokerCount() == 1);
     }
 
@@ -457,7 +457,6 @@ public class ConnectionURLTest extends TestCase
 
         assertTrue(service.getTransport().equals("tcp"));
 
-        
         assertTrue(service.getHost().equals("localhost"));
         assertTrue(service.getPort() == 5672);
         assertEquals("jim",service.getProperty("foo"));
@@ -468,7 +467,7 @@ public class ConnectionURLTest extends TestCase
         assertTrue(connectionurl.getOption("timeout").equals("200"));
         assertTrue(connectionurl.getOption("immediatedelivery").equals("true"));
     }
-    
+
     /**
      * Test that options other than failover and brokerlist are returned in the string representation.
      * <p>
@@ -477,7 +476,7 @@ public class ConnectionURLTest extends TestCase
     public void testOptionToString() throws Exception
     {
         ConnectionURL url = new AMQConnectionURL("amqp://user:pass@temp/test?maxprefetch='12345'&brokerlist='tcp://localhost:5672'");
-        
+
         assertTrue("String representation should contain options and values", url.toString().contains("maxprefetch='12345'"));
     }
 
@@ -493,10 +492,10 @@ public class ConnectionURLTest extends TestCase
 
         assertTrue(connectionurl.getBrokerCount() == 1);
         BrokerDetails service = connectionurl.getBrokerDetails(0);
-        assertTrue(service.getTransport().equals("tcp"));        
+        assertTrue(service.getTransport().equals("tcp"));
         assertTrue(service.getHost().equals("under_score"));
         assertTrue(service.getPort() == 6672);
-        
+
         url = "amqp://guest:guest@clientid/test?brokerlist='tcp://under_score'";
 
         connectionurl = new AMQConnectionURL(url);
@@ -507,11 +506,44 @@ public class ConnectionURLTest extends TestCase
 
         assertTrue(connectionurl.getBrokerCount() == 1);
         service = connectionurl.getBrokerDetails(0);
-        assertTrue(service.getTransport().equals("tcp"));        
+        assertTrue(service.getTransport().equals("tcp"));
         assertTrue(service.getHost().equals("under_score"));
         assertTrue(service.getPort() == 5672);
     }
-    
+
+
+    public void testRejectBehaviourPresent() throws Exception
+    {
+        String url = "amqp://guest:guest@/test?brokerlist='tcp://localhost:5672'&rejectbehaviour='server'";
+
+        ConnectionURL connectionURL = new AMQConnectionURL(url);
+
+        assertTrue(connectionURL.getFailoverMethod() == null);
+        assertTrue(connectionURL.getUsername().equals("guest"));
+        assertTrue(connectionURL.getPassword().equals("guest"));
+        assertTrue(connectionURL.getVirtualHost().equals("/test"));
+
+        //check that the reject behaviour option is returned as expected
+        assertEquals("Reject behaviour option was not as expected", "server",
+                connectionURL.getOption(ConnectionURL.OPTIONS_REJECT_BEHAVIOUR));
+    }
+
+    public void testRejectBehaviourNotPresent() throws URLSyntaxException
+    {
+        String url = "amqp://guest:guest@/test?brokerlist='tcp://localhost:5672'&foo='bar'";
+
+        ConnectionURL connectionurl = new AMQConnectionURL(url);
+
+        assertTrue(connectionurl.getFailoverMethod() == null);
+        assertTrue(connectionurl.getUsername().equals("guest"));
+        assertTrue(connectionurl.getPassword().equals("guest"));
+        assertTrue(connectionurl.getVirtualHost().equals("/test"));
+
+        //check that the reject behaviour option is null as expected
+        assertNull("Reject behaviour option was not as expected",
+                connectionurl.getOption(ConnectionURL.OPTIONS_REJECT_BEHAVIOUR));
+    }
+
     public static junit.framework.Test suite()
     {
         return new junit.framework.TestSuite(ConnectionURLTest.class);

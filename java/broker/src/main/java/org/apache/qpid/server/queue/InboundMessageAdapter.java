@@ -24,7 +24,7 @@ package org.apache.qpid.server.queue;
 import org.apache.qpid.server.message.InboundMessage;
 import org.apache.qpid.server.message.AMQMessageHeader;
 
-class InboundMessageAdapter implements InboundMessage
+public class InboundMessageAdapter implements InboundMessage
 {
 
     private QueueEntry _entry;
@@ -33,7 +33,7 @@ class InboundMessageAdapter implements InboundMessage
     {
     }
 
-    InboundMessageAdapter(QueueEntry entry)
+    public InboundMessageAdapter(QueueEntry entry)
     {
         _entry = entry;
     }

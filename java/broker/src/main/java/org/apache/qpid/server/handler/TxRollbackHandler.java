@@ -72,7 +72,12 @@ public class TxRollbackHandler implements StateAwareMethodListener<TxRollbackBod
             };
 
             channel.rollback(task);
-            
+
+            //Now resend all the unacknowledged messages back to the original subscribers.
+            //(Must be done after the TxnRollback-ok response).
+            // Why, are we not allowed to send messages back to client before the ok method?
+            channel.resend(false);
+
         }
         catch (AMQException e)
         {

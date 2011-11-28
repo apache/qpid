@@ -75,6 +75,8 @@ public abstract class AMQDestination implements Destination, Referenceable
 
     private boolean _exchangeExistsChecked;
 
+    private RejectBehaviour _rejectBehaviour;
+
     public static final int QUEUE_TYPE = 1;
     public static final int TOPIC_TYPE = 2;
     public static final int UNKNOWN_TYPE = 3;
@@ -227,6 +229,8 @@ public abstract class AMQDestination implements Destination, Referenceable
         _queueName = binding.getQueueName() == null ? null : binding.getQueueName();
         _routingKey = binding.getRoutingKey() == null ? null : binding.getRoutingKey();
         _bindingKeys = binding.getBindingKeys() == null || binding.getBindingKeys().length == 0 ? new AMQShortString[0] : binding.getBindingKeys();
+        final String rejectBehaviourValue = binding.getOption(BindingURL.OPTION_REJECT_BEHAVIOUR);
+        _rejectBehaviour = rejectBehaviourValue == null ? null : RejectBehaviour.valueOf(rejectBehaviourValue.toUpperCase());
     }
 
     protected AMQDestination(AMQShortString exchangeName, AMQShortString exchangeClass, AMQShortString routingKey, AMQShortString queueName)
@@ -294,7 +298,7 @@ public abstract class AMQDestination implements Destination, Referenceable
         _bindingKeys = bindingKeys == null || bindingKeys.length == 0 ? new AMQShortString[0] : bindingKeys;
         _destSyntax = DestSyntax.BURL;
         _browseOnly = browseOnly;
-        
+        _rejectBehaviour = null;
         if (_logger.isDebugEnabled())
         {
             _logger.debug("Based on " + toString() + " the selected destination syntax is " + _destSyntax);
@@ -496,6 +500,13 @@ public abstract class AMQDestination implements Destination, Referenceable
             {
                 sb.append(BindingURL.OPTION_AUTODELETE);
                 sb.append("='true'");
+                sb.append(URLHelper.DEFAULT_OPTION_SEPERATOR);
+            }
+
+            if (_rejectBehaviour != null)
+            {
+                sb.append(BindingURL.OPTION_REJECT_BEHAVIOUR);
+                sb.append("='" + _rejectBehaviour + "'");
                 sb.append(URLHelper.DEFAULT_OPTION_SEPERATOR);
             }
 
@@ -842,4 +853,19 @@ public abstract class AMQDestination implements Destination, Referenceable
     {
         return _addressResolved.get() > time;
     }
+
+    /**
+     * This option is only applicable for 0-8/0-9/0-9-1 protocols connection
+     * <p>
+     * It tells the client to delegate the requeue/DLQ decision to the
+     * server .If this option is not specified, the messages won't be moved to
+     * the DLQ (or dropped) when delivery count exceeds the maximum.
+     *
+     * @return destination reject behaviour
+     */
+    public RejectBehaviour getRejectBehaviour()
+    {
+        return _rejectBehaviour;
+    }
+
 }

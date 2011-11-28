@@ -21,6 +21,7 @@
 package org.apache.qpid.client;
 
 
+import java.util.ArrayList;
 import java.util.Map;
 
 import javax.jms.Destination;
@@ -40,7 +41,6 @@ import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.client.state.AMQState;
 import org.apache.qpid.client.state.AMQStateManager;
 import org.apache.qpid.client.state.listener.SpecificMethodFrameListener;
-import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.filter.MessageFilter;
 import org.apache.qpid.framing.AMQFrame;
 import org.apache.qpid.framing.AMQMethodBody;
@@ -62,7 +62,6 @@ import org.apache.qpid.framing.ExchangeBoundOkBody;
 import org.apache.qpid.framing.ExchangeDeclareBody;
 import org.apache.qpid.framing.ExchangeDeclareOkBody;
 import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.framing.FieldTableFactory;
 import org.apache.qpid.framing.ProtocolVersion;
 import org.apache.qpid.framing.QueueBindOkBody;
 import org.apache.qpid.framing.QueueDeclareBody;
@@ -223,6 +222,8 @@ public final class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, B
 
     public void sendRecover() throws AMQException, FailoverException
     {
+        enforceRejectBehaviourDuringRecover();
+        _prefetchedMessageTags.clear();
         _unacknowledgedMessageTags.clear();
 
         if (isStrictAMQP())
@@ -259,6 +260,49 @@ public final class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, B
         }
     }
 
+    private void enforceRejectBehaviourDuringRecover()
+    {
+        if (_logger.isDebugEnabled())
+        {
+            _logger.debug("Prefetched message: _unacknowledgedMessageTags :" + _unacknowledgedMessageTags);
+        }
+        ArrayList<BasicMessageConsumer_0_8> consumersToCheck = new ArrayList<BasicMessageConsumer_0_8>(_consumers.values());
+        boolean messageListenerFound = false;
+        boolean serverRejectBehaviourFound = false;
+        for(BasicMessageConsumer_0_8 consumer : consumersToCheck)
+        {
+            if (consumer.isMessageListenerSet())
+            {
+                messageListenerFound = true;
+            }
+            if (RejectBehaviour.SERVER.equals(consumer.getRejectBehaviour()))
+            {
+                serverRejectBehaviourFound = true;
+            }
+        }
+        _logger.debug("about to pre-reject messages for " + consumersToCheck.size() + " consumer(s)");
+
+        if (serverRejectBehaviourFound)
+        {
+            //reject(false) any messages we don't want returned again
+            switch(_acknowledgeMode)
+            {
+                case Session.DUPS_OK_ACKNOWLEDGE:
+                case Session.AUTO_ACKNOWLEDGE:
+                    if (!messageListenerFound)
+                    {
+                        break;
+                    }
+                case Session.CLIENT_ACKNOWLEDGE:
+                    for(Long tag : _unacknowledgedMessageTags)
+                    {
+                        rejectMessage(tag, false);
+                    }
+                    break;
+            }
+        }
+    }
+
     public void releaseForRollback()
     {
         // Reject all the messages that have been received in this session and
@@ -267,6 +311,17 @@ public final class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, B
         // Otherwise messages will be able to arrive out of order to a second
         // consumer on the queue. Whilst this is within the JMS spec it is not
         // user friendly and avoidable.
+        boolean normalRejectBehaviour = true;
+        for (BasicMessageConsumer_0_8 consumer : _consumers.values())
+        {
+            if(RejectBehaviour.SERVER.equals(consumer.getRejectBehaviour()))
+            {
+                normalRejectBehaviour = false;
+                //no need to consult other consumers now, found server behaviour.
+                break;
+            }
+        }
+
         while (true)
         {
             Long tag = _deliveredMessageTags.poll();
@@ -275,13 +330,14 @@ public final class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, B
                 break;
             }
 
-            rejectMessage(tag, true);
+            rejectMessage(tag, normalRejectBehaviour);
         }
     }
 
     public void rejectMessage(long deliveryTag, boolean requeue)
     {
-        if ((_acknowledgeMode == CLIENT_ACKNOWLEDGE) || (_acknowledgeMode == SESSION_TRANSACTED))
+        if ((_acknowledgeMode == CLIENT_ACKNOWLEDGE) || (_acknowledgeMode == SESSION_TRANSACTED)||
+                ((_acknowledgeMode == AUTO_ACKNOWLEDGE || _acknowledgeMode == DUPS_OK_ACKNOWLEDGE ) && hasMessageListeners()))
         {
             if (_logger.isDebugEnabled())
             {

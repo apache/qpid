@@ -108,6 +108,14 @@ public class ClientProperties
     public static final String QPID_TCP_NODELAY_PROP_NAME = "qpid.tcp_nodelay";
     public static final String AMQJ_TCP_NODELAY_PROP_NAME = "amqj.tcp_nodelay";
 
+    /**
+     * System property to set the reject behaviour. default value will be 'normal' but can be
+     * changed to 'server' in which case the server decides whether a message should be requeued
+     * or dead lettered.
+     * This can be overridden by the more specific settings at connection or binding URL level.
+     */
+    public static final String REJECT_BEHAVIOUR_PROP_NAME = "qpid.reject.behaviour";
+
     /*
     public static final QpidProperty<Boolean>  IGNORE_SET_CLIENTID_PROP_NAME =
         QpidProperty.booleanProperty(false,"qpid.ignore_set_client_id","ignore_setclientID");

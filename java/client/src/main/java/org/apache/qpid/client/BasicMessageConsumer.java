@@ -147,7 +147,6 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
     private List<StackTraceElement> _closedStack = null;
 
 
-
     protected BasicMessageConsumer(int channelId, AMQConnection connection, AMQDestination destination,
                                    String messageSelector, boolean noLocal, MessageFactoryRegistry messageFactory,
                                    AMQSession session, AMQProtocolHandler protocolHandler,
@@ -211,6 +210,7 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
         ft.put(AMQPFilterTypes.JMS_SELECTOR.getValue(), messageSelector == null ? "" : messageSelector);
 
         _arguments = ft;
+
     }
 
     public AMQDestination getDestination()
@@ -812,31 +812,6 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
 
                 break;
         }
-    }
-
-
-    /**
-     * Acknowledge up to last message delivered (if any). Used when commiting.
-     *
-     * @return the lastDeliveryTag to acknowledge
-     */
-    Long getLastDelivered()
-    {
-        if (!_receivedDeliveryTags.isEmpty())
-        {
-            Long lastDeliveryTag = _receivedDeliveryTags.poll();
-
-            while (!_receivedDeliveryTags.isEmpty())
-            {
-                lastDeliveryTag = _receivedDeliveryTags.poll();
-            }
-
-            assert _receivedDeliveryTags.isEmpty();
-
-            return lastDeliveryTag;
-        }
-
-        return null;
     }
 
     void notifyError(Throwable cause)
