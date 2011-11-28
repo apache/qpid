@@ -148,7 +148,7 @@ public class ServerSessionDelegate extends SessionDelegate
     @Override
     public void messageRelease(Session session, MessageRelease method)
     {
-        ((ServerSession)session).release(method.getTransfers());
+        ((ServerSession)session).release(method.getTransfers(), method.getSetRedelivered());
     }
 
     @Override
