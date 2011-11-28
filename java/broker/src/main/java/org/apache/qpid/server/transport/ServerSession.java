@@ -93,7 +93,7 @@ public class ServerSession extends Session implements AuthorizationHolder, Sessi
     {
         public void onAccept();
 
-        public void onRelease();
+        public void onRelease(boolean setRedelivered);
 
         public void onReject();
 
@@ -230,13 +230,13 @@ public class ServerSession extends Session implements AuthorizationHolder, Sessi
     }
 
 
-    public void release(RangeSet ranges)
+    public void release(RangeSet ranges, final boolean setRedelivered)
     {
         dispositionChange(ranges, new MessageDispositionAction()
                                       {
                                           public void performAction(MessageDispositionChangeListener listener)
                                           {
-                                              listener.onRelease();
+                                              listener.onRelease(setRedelivered);
                                           }
                                       });
     }
@@ -350,7 +350,7 @@ public class ServerSession extends Session implements AuthorizationHolder, Sessi
         _transaction.rollback();
         for(MessageDispositionChangeListener listener : _messageDispositionListenerMap.values())
         {
-            listener.onRelease();
+            listener.onRelease(false);
         }
         _messageDispositionListenerMap.clear();
 

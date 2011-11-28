@@ -53,12 +53,12 @@ class ExplicitAcceptDispositionChangeListener implements ServerSession.MessageDi
 
     }
 
-    public void onRelease()
+    public void onRelease(boolean setRedelivered)
     {
         final Subscription_0_10 subscription = getSubscription();
         if(subscription != null && _entry.isAcquiredBy(_sub))
         {
-            subscription.release(_entry);
+            subscription.release(_entry, setRedelivered);
         }
         else
         {

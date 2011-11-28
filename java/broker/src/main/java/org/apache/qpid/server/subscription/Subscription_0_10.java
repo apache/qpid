@@ -24,12 +24,15 @@ import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.SUBSCRIPT
 import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.QUEUE_FORMAT;
 
 import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.queue.BaseQueue;
+import org.apache.qpid.server.queue.InboundMessageAdapter;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.configuration.ConfigStore;
 import org.apache.qpid.server.configuration.ConfiguredObject;
 import org.apache.qpid.server.configuration.SessionConfig;
 import org.apache.qpid.server.configuration.SubscriptionConfig;
 import org.apache.qpid.server.configuration.SubscriptionConfigType;
+import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.flow.FlowCreditManager;
 import org.apache.qpid.server.flow.CreditCreditManager;
 import org.apache.qpid.server.flow.WindowCreditManager;
@@ -37,9 +40,11 @@ import org.apache.qpid.server.flow.FlowCreditManager_0_10;
 import org.apache.qpid.server.filter.FilterManager;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.GenericActor;
+import org.apache.qpid.server.logging.messages.ChannelMessages;
 import org.apache.qpid.server.logging.messages.SubscriptionMessages;
 import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.LogSubject;
+import org.apache.qpid.server.message.InboundMessage;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.message.MessageTransferMessage;
 import org.apache.qpid.server.message.AMQMessage;
@@ -80,6 +85,7 @@ import java.nio.ByteBuffer;
 
 public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCreditManagerListener, SubscriptionConfig, LogSubject
 {
+
     private final long _subscriptionID;
 
     private final QueueEntry.SubscriptionAcquiredState _owningState = new QueueEntry.SubscriptionAcquiredState(this);
@@ -601,6 +607,7 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
             }
 
             _session.sendMessage(xfr, _postIdSettingAction);
+            entry.incrementDeliveryCount();
             _deliveredCount.incrementAndGet();
             if(_acceptMode == MessageAcceptMode.NONE && _acquireMode == MessageAcquireMode.PRE_ACQUIRED)
             {
@@ -643,10 +650,68 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
 
     }
 
-    void release(QueueEntry entry)
+    void release(QueueEntry entry, boolean setRedelivered)
     {
-        entry.setRedelivered();
-        entry.release();
+        boolean maxDeliveryLimitExceeded = false;
+        if (setRedelivered)
+        {
+            entry.setRedelivered();
+            maxDeliveryLimitExceeded = isMaxDeliveryLimitExceeded(entry);
+        }
+        else
+        {
+            entry.decrementDeliveryCount();
+        }
+
+        if (maxDeliveryLimitExceeded)
+        {
+            sendToDLQOrDiscard(entry);
+        }
+        else
+        {
+            entry.release();
+        }
+    }
+
+    protected void sendToDLQOrDiscard(QueueEntry entry)
+    {
+        final Exchange alternateExchange = entry.getQueue().getAlternateExchange();
+        final LogActor logActor = CurrentActor.get();
+        final ServerMessage msg = entry.getMessage();
+        if (alternateExchange != null)
+        {
+            final InboundMessage m = new InboundMessageAdapter(entry);
+
+            final ArrayList<? extends BaseQueue> destinationQueues = alternateExchange.route(m);
+
+            if (destinationQueues == null || destinationQueues.isEmpty())
+            {
+                entry.discard();
+
+                logActor.message( ChannelMessages.DISCARDMSG_NOROUTE(msg.getMessageNumber(), alternateExchange.getName()));
+            }
+            else
+            {
+                entry.routeToAlternate();
+
+                //output operational logging for each delivery post commit
+                for (final BaseQueue destinationQueue : destinationQueues)
+                {
+                    logActor.message( ChannelMessages.DEADLETTERMSG(msg.getMessageNumber(), destinationQueue.getNameShortString().asString()));
+                }
+            }
+        }
+        else
+        {
+            entry.discard();
+            logActor.message(ChannelMessages.DISCARDMSG_NOALTEXCH(msg.getMessageNumber(), entry.getQueue().getName(), msg.getRoutingKey()));
+        }
+    }
+
+    private boolean isMaxDeliveryLimitExceeded(QueueEntry entry)
+    {
+        final int maxDeliveryLimit = entry.getQueue().getMaximumDeliveryCount();
+        return (maxDeliveryLimit > 0 && entry.getDeliveryCount() >= maxDeliveryLimit);
     }
 
     public void queueDeleted(AMQQueue queue)
