@@ -25,6 +25,7 @@ import static org.apache.qpid.transport.ConnectionSettings.WILDCARD_ADDRESS;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.Writer;
 import java.util.Locale;
 
 import org.apache.commons.configuration.ConfigurationException;
@@ -1458,5 +1459,118 @@ public class ServerConfigurationTest extends QpidTestCase
                     "Validation error : housekeeping/expiredMessageCheckPeriod must be replaced by housekeeping/checkPeriod.",
                     ce.getMessage());
         }
+    }
+
+    public void testMaxDeliveryCountDefault() throws Exception
+    {
+        final ServerConfiguration serverConfig = new ServerConfiguration(_config);
+        assertEquals(0, serverConfig.getMaxDeliveryCount());
+    }
+
+    public void testMaxDeliveryCount() throws Exception
+    {
+        _config.setProperty("maximumDeliveryCount", 5);
+        final ServerConfiguration serverConfig = new ServerConfiguration(_config);
+        assertEquals(5, serverConfig.getMaxDeliveryCount());
+    }
+
+    /**
+     * Test XML configuration file correctly enables dead letter queues
+     */
+    public void testDeadLetterQueueConfigurationFile() throws Exception
+    {
+        // Write config
+        File xml = File.createTempFile(getClass().getName(), "xml");
+        xml.deleteOnExit();
+        FileWriter config = new FileWriter(xml);
+        config.write("<broker>\n");
+        writeSecurity(config);
+        config.write("<deadLetterQueues>true</deadLetterQueues>\n");
+        config.write("<virtualhosts>\n");
+        config.write("<virtualhost>\n");
+        config.write("<name>test</name>\n");
+        config.write("<test>\n");
+        config.write("<queues>\n");
+        config.write("<deadLetterQueues>false</deadLetterQueues>\n");
+        config.write("<queue>\n");
+        config.write("<name>biggles</name>\n");
+        config.write("<biggles>\n");
+        config.write("<deadLetterQueues>true</deadLetterQueues>\n");
+        config.write("</biggles>\n");
+        config.write("</queue>\n");
+        config.write("<queue>\n");
+        config.write("<name>beetle</name>\n");
+        config.write("<beetle />\n");
+        config.write("</queue>\n");
+        config.write("</queues>\n");
+        config.write("</test>\n");
+        config.write("</virtualhost>\n");
+        config.write("<virtualhost>\n");
+        config.write("<name>extra</name>\n");
+        config.write("<extra>\n");
+        config.write("<queues>\n");
+        config.write("<queue>\n");
+        config.write("<name>r2d2</name>\n");
+        config.write("<r2d2>\n");
+        config.write("<deadLetterQueues>false</deadLetterQueues>\n");
+        config.write("</r2d2>\n");
+        config.write("</queue>\n");
+        config.write("<queue>\n");
+        config.write("<name>c3p0</name>\n");
+        config.write("<c3p0 />\n");
+        config.write("</queue>\n");
+        config.write("</queues>\n");
+        config.write("</extra>\n");
+        config.write("</virtualhost>\n");
+        config.write("</virtualhosts>\n");
+        config.write("</broker>\n");
+        config.close();
+
+        // Load config
+        ApplicationRegistry.remove();
+        ApplicationRegistry registry = new ConfigurationFileApplicationRegistry(xml);
+        ApplicationRegistry.initialise(registry);
+        ServerConfiguration serverConfiguration = ApplicationRegistry.getInstance().getConfiguration();
+
+        VirtualHostConfiguration test = serverConfiguration.getVirtualHostConfig("test");
+        assertNotNull("Host 'test' is not found", test);
+        VirtualHostConfiguration extra = serverConfiguration.getVirtualHostConfig("extra");
+        assertNotNull("Host 'extra' is not found", test);
+
+        QueueConfiguration biggles = test.getQueueConfiguration("biggles");
+        QueueConfiguration beetle = test.getQueueConfiguration("beetle");
+        QueueConfiguration r2d2 = extra.getQueueConfiguration("r2d2");
+        QueueConfiguration c3p0 = extra.getQueueConfiguration("c3p0");
+
+        // Validate config
+        assertTrue("Broker DLQ should be configured as enabled", serverConfiguration.isDeadLetterQueueEnabled());
+        assertFalse("Test vhost DLQ should be configured as disabled", test.isDeadLetterQueueEnabled());
+        assertTrue("Extra vhost DLQ should be enabled, using broker default", extra.isDeadLetterQueueEnabled());
+        assertTrue("Biggles queue DLQ should be configured as enabled", biggles.isDeadLetterQueueEnabled());
+        assertFalse("Beetle queue DLQ should be disabled, using test vhost default", beetle.isDeadLetterQueueEnabled());
+        assertFalse("R2D2 queue DLQ should be configured as disabled", r2d2.isDeadLetterQueueEnabled());
+        assertTrue("C3P0 queue DLQ should be enabled, using broker default", c3p0.isDeadLetterQueueEnabled());
+    }
+
+    /**
+     * Convenience method to output required security preamble for broker config
+     */
+    private void writeSecurity(Writer out) throws Exception
+    {
+        out.write("\t<management><enabled>false</enabled></management>\n");
+        out.write("\t<security>\n");
+        out.write("\t\t<pd-auth-manager>\n");
+        out.write("\t\t\t<principal-database>\n");
+        out.write("\t\t\t\t<class>org.apache.qpid.server.security.auth.database.PlainPasswordFilePrincipalDatabase</class>\n");
+        out.write("\t\t\t\t<attributes>\n");
+        out.write("\t\t\t\t\t<attribute>\n");
+        out.write("\t\t\t\t\t\t<name>passwordFile</name>\n");
+        out.write("\t\t\t\t\t\t<value>/dev/null</value>\n");
+        out.write("\t\t\t\t\t</attribute>\n");
+        out.write("\t\t\t\t</attributes>\n");
+        out.write("\t\t\t</principal-database>\n");
+        out.write("\t\t\t<jmx-access>/dev/null</jmx-access>\n");
+        out.write("\t\t</pd-auth-manager>\n");
+        out.write("\t</security>\n");
     }
 }

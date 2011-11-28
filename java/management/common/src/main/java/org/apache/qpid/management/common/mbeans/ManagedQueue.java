@@ -50,7 +50,8 @@ public interface ManagedQueue
     String MSG_SIZE = "Size(bytes)";
     String MSG_REDELIVERED = "Redelivered";
     String MSG_QUEUE_POS = "Queue Position";
-    List<String> VIEW_MSGS_COMPOSITE_ITEM_NAMES_DESC = Collections.unmodifiableList(Arrays.asList(MSG_AMQ_ID, MSG_HEADER, MSG_SIZE, MSG_REDELIVERED, MSG_QUEUE_POS));
+    String MSG_DELIVERY_COUNT = "Delivery Count";
+    List<String> VIEW_MSGS_COMPOSITE_ITEM_NAMES_DESC = Collections.unmodifiableList(Arrays.asList(MSG_AMQ_ID, MSG_HEADER, MSG_SIZE, MSG_REDELIVERED, MSG_QUEUE_POS, MSG_DELIVERY_COUNT));
     List<String> VIEW_MSGS_TABULAR_UNIQUE_INDEX = Collections.unmodifiableList(Arrays.asList(MSG_QUEUE_POS));
   
     //CompositeType key/description information for message content
@@ -67,6 +68,7 @@ public interface ManagedQueue
     static final String ATTR_MAX_MSG_COUNT = "MaximumMessageCount";
     static final String ATTR_MAX_QUEUE_DEPTH = "MaximumQueueDepth";
     static final String ATTR_MAX_MSG_SIZE = "MaximumMessageSize";
+    static final String ATTR_MAXIMUM_DELIVERY_COUNT = "MaximumDeliveryCount";
     static final String ATTR_DURABLE = "Durable";
     static final String ATTR_AUTODELETE = "AutoDelete";
     static final String ATTR_CONSUMER_COUNT = "ConsumerCount";
@@ -78,7 +80,8 @@ public interface ManagedQueue
     static final String ATTR_FLOW_OVERFULL = "FlowOverfull";
     static final String ATTR_FLOW_RESUME_CAPACITY = "FlowResumeCapacity";
     static final String ATTR_EXCLUSIVE = "Exclusive";
-    
+    static final String ATTR_ALT_EXCHANGE = "AlternateExchange";
+
     //All attribute names constant
     static final List<String> QUEUE_ATTRIBUTES
             = Collections.unmodifiableList(
@@ -91,6 +94,7 @@ public interface ManagedQueue
                                     ATTR_MAX_MSG_COUNT,
                                     ATTR_MAX_QUEUE_DEPTH,
                                     ATTR_MAX_MSG_SIZE,
+                                    ATTR_MAXIMUM_DELIVERY_COUNT,
                                     ATTR_DURABLE,
                                     ATTR_AUTODELETE,
                                     ATTR_CONSUMER_COUNT,
@@ -101,7 +105,9 @@ public interface ManagedQueue
                                     ATTR_CAPACITY,
                                     ATTR_FLOW_OVERFULL,
                                     ATTR_FLOW_RESUME_CAPACITY,
-                                    ATTR_EXCLUSIVE))));
+                                    ATTR_EXCLUSIVE,
+                                    ATTR_ALT_EXCHANGE
+                                    ))));
 
     /**
      * Returns the Name of the ManagedQueue.
@@ -118,6 +124,16 @@ public interface ManagedQueue
      */
     @MBeanAttribute(name="MessageCount", description = "Total number of undelivered messages on the queue")
     Integer getMessageCount() throws IOException;
+
+    /**
+     * Maximum number of times a message is permitted to be delivered or zero if not enforced.
+     *
+     * @since Qpid JMX API 2.4
+     * @return maximum delivery count
+     * @throws IOException
+     */
+    @MBeanAttribute(name="MaximumDeliveryCount", description = "Maximum number of times a message is permitted to be delivered or zero if not enforced")
+    Integer getMaximumDeliveryCount() throws IOException;
 
     /**
      * Tells the total number of messages receieved by the queue since startup.
@@ -309,7 +325,7 @@ public interface ManagedQueue
 
     /**
      * Sets whether the queue is exclusive or not.
-     * 
+     *
      * @since Qpid JMX API 2.0
      * @param exclusive the capacity in bytes
      * @throws IOException
@@ -317,6 +333,25 @@ public interface ManagedQueue
      */
     @MBeanAttribute(name="Exclusive", description="Whether the queue is Exclusive or not")
     void setExclusive(boolean exclusive) throws IOException, JMException;
+
+    /**
+     * Sets the Alternate Exchange for the queue, for use in dead letter queue functionality.
+     *
+     * @since Qpid JMX API 2.4
+     * @param the name of the exchange to use. Specifying null or the empty string will clear the alternate exchange.
+     * @throws IOException
+     */
+    void setAlternateExchange(String exchangeName) throws IOException;
+
+    /**
+     * Returns the name of the Alternate Exchange for the queue, or null if there isn't one.
+     *
+     * @since Qpid JMX API 2.4
+     * @return the name of the Alternate Exchange for the queue, or null if there isn't one
+     * @throws IOException
+     */
+    @MBeanAttribute(name="AlternateExchange", description="Alternate exchange for the queue")
+    String getAlternateExchange() throws IOException;
 
     //********** Operations *****************//
 

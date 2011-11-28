@@ -127,8 +127,6 @@ public class BasicGetMethodHandler implements StateAwareMethodListener<BasicGetB
         final ClientDeliveryMethod getDeliveryMethod = new ClientDeliveryMethod()
         {
 
-            int _msg;
-
             public void deliverToClient(final Subscription sub, final QueueEntry entry, final long deliveryTag)
             throws AMQException
             {
@@ -137,6 +135,7 @@ public class BasicGetMethodHandler implements StateAwareMethodListener<BasicGetB
                 {
                     session.getProtocolOutputConverter().writeGetOk(entry, channel.getChannelId(),
                                                                             deliveryTag, queue.getMessageCount());
+                    entry.incrementDeliveryCount();
                 }
                 else
                 {

@@ -44,6 +44,7 @@ import javax.management.openmbean.CompositeData;
 import javax.management.openmbean.CompositeDataSupport;
 import javax.management.openmbean.TabularData;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -390,6 +391,34 @@ public class AMQQueueMBeanTest extends InternalBrokerBaseCase
         assertFalse(channel.getBlocking());
     }
 
+    public void testMaximumDeliveryCount() throws IOException
+    {
+        assertEquals("Unexpected default maximum delivery count", Integer.valueOf(0), _queueMBean.getMaximumDeliveryCount());
+    }
+
+    public void testViewAllMessages() throws Exception
+    {
+        final int messageCount = 5;
+        sendPersistentMessages(messageCount);
+
+
+        final TabularData messageTable = _queueMBean.viewMessages(1L, 5L);
+        assertNotNull("Message table should not be null", messageTable);
+        assertEquals("Unexpected number of rows", messageCount, messageTable.size());
+
+
+        final Iterator rowIterator = messageTable.values().iterator();
+        // Get its message ID
+        final CompositeDataSupport row1 = (CompositeDataSupport) rowIterator.next();
+        final Long msgId = (Long) row1.get("AMQ MessageId");
+        final Long queuePosition = (Long) row1.get("Queue Position");
+        final Integer deliveryCount = (Integer) row1.get("Delivery Count");
+
+        assertNotNull("Row should have value for queue position", queuePosition);
+        assertNotNull("Row should have value for msgid", msgId);
+        assertNotNull("Row should have value for deliveryCount", deliveryCount);
+    }
+
 
     @Override
     public void setUp() throws Exception
@@ -402,6 +431,13 @@ public class AMQQueueMBeanTest extends InternalBrokerBaseCase
     public void tearDown()
     {
         ApplicationRegistry.remove();
+    }
+
+    private void sendPersistentMessages(int messageCount) throws AMQException
+    {
+        sendMessages(messageCount, true);
+        assertEquals("Expected " + messageCount + " messages in the queue", messageCount, _queueMBean
+                .getMessageCount().intValue());
     }
 
     private List<AMQMessage> sendMessages(int messageCount, boolean persistent) throws AMQException

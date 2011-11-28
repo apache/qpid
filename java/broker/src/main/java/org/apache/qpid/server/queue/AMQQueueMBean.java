@@ -28,6 +28,7 @@ import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.management.common.mbeans.ManagedQueue;
 import org.apache.qpid.management.common.mbeans.annotations.MBeanConstructor;
 import org.apache.qpid.management.common.mbeans.annotations.MBeanDescription;
+import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.management.AMQManagedObject;
 import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.message.ServerMessage;
@@ -80,7 +81,7 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
     private final String _queueName;
     // OpenMBean data types for viewMessages method
 
-    private static OpenType[] _msgAttributeTypes = new OpenType[5]; // AMQ message attribute types.
+    private static OpenType[] _msgAttributeTypes = new OpenType[6]; // AMQ message attribute types.
     private static CompositeType _messageDataType = null; // Composite type for representing AMQ Message data.
     private static TabularType _messagelistDataType = null; // Datatype for representing AMQ messages list.
 
@@ -139,6 +140,7 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
         _msgAttributeTypes[2] = SimpleType.LONG; // For size
         _msgAttributeTypes[3] = SimpleType.BOOLEAN; // For redelivered
         _msgAttributeTypes[4] = SimpleType.LONG; // For queue position
+        _msgAttributeTypes[5] = SimpleType.INTEGER; // For delivery count
 
         _messageDataType = new CompositeType("Message", "AMQ Message", 
                 VIEW_MSGS_COMPOSITE_ITEM_NAMES_DESC.toArray(new String[VIEW_MSGS_COMPOSITE_ITEM_NAMES_DESC.size()]),
@@ -175,6 +177,11 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
     public Integer getMessageCount()
     {
         return _queue.getMessageCount();
+    }
+
+    public Integer getMaximumDeliveryCount()
+    {
+        return _queue.getMaximumDeliveryCount();
     }
 
     public Long getMaximumMessageSize()
@@ -293,6 +300,18 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
         {
             throw new JMException(e.toString());
         }
+    }
+
+    public void setAlternateExchange(String exchangeName)
+    {
+        _queue.setAlternateExchange(exchangeName);
+    }
+
+    public String getAlternateExchange()
+    {
+        Exchange exchange = _queue.getAlternateExchange();
+        String name = exchange == null ? null : exchange.getName();
+        return name == null ? null : name;
     }
 
     /**
@@ -472,7 +491,7 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
                     ContentHeaderBody headerBody = msg.getContentHeaderBody();
                     // Create header attributes list
                     headerAttributes = getMessageHeaderProperties(headerBody);
-                    itemValues = new Object[]{msg.getMessageId(), headerAttributes, headerBody.bodySize, queueEntry.isRedelivered(), position};
+                    itemValues = new Object[]{msg.getMessageId(), headerAttributes, headerBody.bodySize, queueEntry.isRedelivered(), position, queueEntry.getDeliveryCount()};
                 }
                 else if(serverMsg instanceof MessageTransferMessage)
                 {
@@ -481,13 +500,13 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
 
                     // Create header attributes list
                     headerAttributes = getMessageTransferMessageHeaderProps(msg);
-                    itemValues = new Object[]{msg.getMessageNumber(), headerAttributes, msg.getSize(), queueEntry.isRedelivered(), position};
+                    itemValues = new Object[]{msg.getMessageNumber(), headerAttributes, msg.getSize(), queueEntry.isRedelivered(), position, queueEntry.getDeliveryCount()};
                 }
                 else
                 {
                     //unknown message
                     headerAttributes = new String[]{"N/A"};
-                    itemValues = new Object[]{serverMsg.getMessageNumber(), headerAttributes, serverMsg.getSize(), queueEntry.isRedelivered(), position};
+                    itemValues = new Object[]{serverMsg.getMessageNumber(), headerAttributes, serverMsg.getSize(), queueEntry.isRedelivered(), position, queueEntry.getDeliveryCount()};
                 }
                 
                 CompositeData messageData = new CompositeDataSupport(_messageDataType, 

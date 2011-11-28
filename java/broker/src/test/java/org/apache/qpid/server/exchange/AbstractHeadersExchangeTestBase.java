@@ -490,6 +490,22 @@ public class AbstractHeadersExchangeTestBase extends InternalBrokerBaseCase
                 {
                     return null;
                 }
+
+                @Override
+                public int getDeliveryCount()
+                {
+                    return 0;
+                }
+
+                @Override
+                public void incrementDeliveryCount()
+                {
+                }
+
+                @Override
+                public void decrementDeliveryCount()
+                {
+                }
             };
 
             if(action != null)
