@@ -106,8 +106,8 @@ manager takes care of membership and quorum.
 ** Selective replication
 
 In this model it's easy to support selective replication of individual queues via
-configuration. 
-- Explicit exchange/queue declare argument and message boolean: x-qpid-replicate. 
+configuration.
+- Explicit exchange/queue declare argument and message boolean: x-qpid-replicate.
   Treated analogously to persistent/durable properties for the store.
 - if not explicitly marked, provide a choice of default
   - default is replicate (replicated message on replicated queue)
@@ -320,3 +320,34 @@ LC6 - The events and query responses are not fully synchronized.
 
       It is not possible to miss a create event and yet not to have
       the object in question in the query response however.
+
+* User Documentation Notes
+
+Notes to seed initial user documentation. Loosely tracking the implementation,
+some points mentioned in the doc may not be implemented yet.
+
+** High Availability Overview
+Explain basic concepts: hot standby, primary/backup, replicated queue/exchange.
+Network topology: backup links, corosync, separate client/cluster networks.
+Describe failover mechanisms.
+- Client view: URLs, failover, exclusion & discovery.
+- Broker view: similar.
+Role of rmganager & corosync.
+
+** Client view.
+Clients use multi-address URL in base case.
+Clients can't connect to backups, retry till they find primary.
+Only qpid.cluster-admin can connect to backup, must not mess with replicated queues.
+Note connection known-hosts returns client URL, as does amq.failover exchange.
+
+Creating replicated queues & exchanges:
+- qpid.replicate argument,
+- examples using addressing and qpid-config)
+
+** Configuring corosync
+Must be on same network as backup links.
+
+** Configuring rgmanager
+
+** Configuring qpidd
+HA related options.
