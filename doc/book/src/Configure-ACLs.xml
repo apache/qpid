@@ -23,56 +23,419 @@
 
 <section>
   <title>
-      Configure ACLs
-    </title>
-  <section role="h2" id="ConfigureACLs-ConfigureACLs">
-    <title>
-            Configure ACLs
-          </title>
-  <section role="h3" id="ConfigureACLs-Specification">
-    <title>
-            Specification
-          </title>
-  <itemizedlist>
-            <listitem><para>
-              <xref linkend="qpid_Java-XML-ACLs"/>
-            </para></listitem>
-            <listitem><para>
-              <xref linkend="qpid_ACL"/>
-            </para></listitem>
-          </itemizedlist>
-
-    <!--h3-->
-  </section>
-
-  <section role="h3" id="ConfigureACLs-CBroker">
-    <title>
-            C++ Broker
-          </title>
+      Configuring ACLs
+  </title>
   <para>
-            The C++ broker supports <xref linkend="qpid_ACL"/> of the ACLs
-          </para>
+    In Qpid, ACLs specify which actions can be performed by each authenticated user. To enable the ACL &lt;acl/&gt; element is used within the 
+    &lt;security/&gt; element of the configuration XML. In the Java Broker, the ACL may be imposed broker wide or applied to individual virtual
+    hosts.  The  &lt;acl/&gt; references a text file containing the ACL rules.  By convention, this file should have a .acl extension.
+  </para>
 
-    <!--h3-->
-  </section>
 
-  <section role="h3" id="ConfigureACLs-JavaBroker">
+  <section role="h3" id="ConfigureACLs-EnablingACL">
     <title>
-            Java Broker
-          </title>
+       Enabling ACLs
+    </title>
 
-	  <itemizedlist>
-            <listitem><para>
-              <xref linkend="qpid_Java-XML-ACLs"/>
-            </para></listitem>
-            <listitem><para>Support for Version 2 specification is in progress.
-            </para></listitem>
-          </itemizedlist>
+    <para>
+      To apply an ACL broker-wide, add the following to the config.xml (Assuming that <replaceable>conf</replaceable> has been set to a suitable
+      location such as ${QPID_HOME}/etc)
+    </para>
+ 
+    <programlisting>
+      &lt;broker&gt;
+        ...
+        &lt;security&gt;
+          ...
+          &lt;acl&gt;<replaceable>${conf}/broker.acl</replaceable>&lt;/acl&gt;
+        &lt;/security&gt;
+      &lt;/broker&gt;
+    </programlisting>
 
-	  <!--h3-->
+    <para>
+    </para>
+
+    <para>
+      To apply an ACL on a single virtualhost named <replaceable>test</replaceable>, add the following to the config.xml:
+    </para>
+ 
+    <programlisting>
+      &lt;virtualhost&gt;
+        ...
+        &lt;name&gt;test&lt;/name&gt;
+        &lt;test&gt;
+          ...
+          &lt;security&gt;
+            &lt;acl&gt;<replaceable>${conf}/vhost_test.acl</replaceable>&lt;/acl&gt;
+          &lt;/security&gt;
+        &lt;/test&gt;
+      &lt;/virtualhost&gt;
+    </programlisting>
   </section>
 
-  <!--h2-->
+  <section role="h3" id="ConfigureACLs-WriteACL">
+    <title>
+       Writing .acl files
+    </title>
+
+    <para>
+      The ACL file consists of a series of rules and group definitions.  Each rule grants or denies specific rights to a user or group. Group
+      definitions declare groups of users and serve to make the ACL file more concise.
+    </para>
+    <para>
+      Each ACL rule grants (or denies) a particular action on a object to a user.  The rule may be augmented with one or more properties, restricting
+      the rule's applicability.
+    </para>
+    <programlisting>
+      ACL ALLOW alice CREATE QUEUE              # Grants alice permission to create all queues.
+      ACL DENY bob CREATE QUEUE name="myqueue"  # Denies bob permission to create a queue called "myqueue"
+    </programlisting>
+    <para>
+      The ACL is considered in strict line order with the first matching rule taking precedence over all those that follow. In the following
+      example, if the user bob tries to create an exchange "myexch", the operation will be allowed by the first rule.  The second rule will
+      never be considered.
+    </para>
+    <programlisting>
+      ACL ALLOW bob ALL EXCHANGE
+      ACL DENY bob CREATE EXCHANGE name="myexch"  # Dead rule
+    </programlisting>
+    <para>
+      If the desire is to allow bob to create all exchanges except "myexch", order of the rules must be reversed:
+    </para>
+    <programlisting>
+      ACL DENY bob CREATE EXCHANGE name="myexch" 
+      ACL ALLOW bob ALL EXCHANGE
+    </programlisting>
+    <para>
+      All ACL files end with a implict rule denying all operations to all users.  It is as if each file ends with 
+      <programlisting>ACL DENY ALL ALL </programlisting>
+      To allow all operations, other than those controlled by earlier use <programlisting>ACL ALLOW ALL ALL </programlisting> instead.
+    </para>
+    <para>
+      When writing a new ACL, a good approach is to begin with an .acl file containing only <programlisting>ACL DENY-LOG ALL ALL</programlisting>
+      which will cause the Broker to deny all operations with details of the denial logged to the Qpid log file. Build up the ACL rule by rule,
+      gradually working through the use-cases of your system.  Once the ACL is complete, switch the DEBY-LOG to DENY for optimum performamce.
+    </para>
+    <para>
+      ACL rules are very powerful: it is possible to write very expressive rules permissioning every AMQP objects enumerating all object
+      properties.  Most projects probably won't need this degree of flexibility.  A reasonable approach is to choose to apply permissions
+      at a certain level of abstraction (i.e. QUEUE) and apply consistently across the whole system.
+    </para>
   </section>
 
+  <section role="h4" id="ConfigureACLs-Syntax">
+    <title>
+       Syntax
+    </title>
+
+    <para>
+       ACL rules must follow this syntax:
+    </para>
+    <programlisting>
+     ACL {permission} {&lt;group-name&gt;|&lt;user-name>&gt;|ALL} {action|ALL} [object|ALL] [property="&lt;property-value&gt;"]
+    </programlisting>
+
+    <para>
+       GROUP definitions must follow this syntax:
+    </para>
+    <programlisting>
+     GROUP {group name} {username 1}..{username n} # Where username is a username, or a groupname.
+    </programlisting>
+
+    <para>
+       Comments may be introduced with the hash (#) character and are ignored.  Long lines can be broken with the slash (\) character.
+    </para>
+    <programlisting>
+      # A comment
+      ACL ALLOW admin CREATE ALL # Also a comment
+      ACL DENY guest \
+      ALL ALL   # A broken line
+      GROUP securegroup bob \
+      alice # Another broker line
+    </programlisting>
+  </section>
+  <table id="tabl-ConfigureACLs-Syntax_permissions">
+    <title>ACL Rules: permission</title>
+    <tgroup cols="2">
+      <tbody>
+        <row>
+          <entry><command>ALLOW</command></entry>
+          <entry><para>Allow the action</para></entry>
+        </row>
+        <row>
+          <entry><command>ALLOW-LOG</command></entry>
+          <entry><para> Allow the action and log the action in the log </para></entry>
+        </row>
+        <row>
+          <entry><command>DENY</command></entry>
+          <entry><para> Deny the action</para></entry>
+        </row>
+        <row>
+          <entry><command>DENY-LOG</command></entry>
+          <entry><para> Deny the action and log the action in the log</para></entry>
+       </row>
+     </tbody>
+    </tgroup>
+  </table>
+  <table id="tabl-ConfigureACLs-Syntax_actions">
+    <title>ACL Rules:action</title>
+    <tgroup cols="2">
+      <tbody>
+        <row>
+          <entry> <command>CONSUME</command> </entry>
+          <entry> <para> Applied when subscriptions are created </para> </entry>
+        </row>
+        <row>
+          <entry> <command>PUBLISH</command> </entry>
+          <entry> <para> Applied on a per message basis on publish message transfers</para> </entry>
+        </row>
+        <row>
+          <entry> <command>CREATE</command> </entry>
+          <entry> <para> Applied when an object is created, such as bindings, queues, exchanges</para> </entry>
+        </row>
+        <row>
+          <entry> <command>ACCESS</command> </entry>
+          <entry> <para> Applied when an object is read or accessed</para> </entry>
+        </row>
+        <row>
+          <entry> <command>BIND</command> </entry>
+          <entry> <para> Applied when queues are bound to exchanges</para> </entry>
+        </row>
+        <row>
+          <entry> <command>UNBIND</command> </entry>
+          <entry> <para> Applied when queues are unbound from exchanges</para> </entry>
+        </row>
+        <row>
+          <entry> <command>DELETE</command> </entry>
+          <entry> <para> Applied when objects are deleted </para> </entry>
+        </row>
+        <row>
+          <entry> <command>PURGE</command> </entry> <entry>
+          <para>Applied when purge the contents of a queue</para> </entry>
+        </row>
+        <row>
+          <entry> <command>UPDATE</command> </entry>
+          <entry> <para> Applied when an object is updated </para> </entry>
+        </row>
+      </tbody>
+    </tgroup>
+  </table>
+  <table id="tabl-ConfigureACLs-Syntax_objects">
+    <title>ACL Rules:object</title>
+    <tgroup cols="2">
+      <tbody>
+        <row>
+          <entry> <command>QUEUE</command> </entry>
+          <entry> <para> A queue </para> </entry>
+        </row>
+        <row>
+          <entry> <command>EXCHANGE</command> </entry>
+        <entry> <para> An exchange </para> </entry>
+        </row>
+        <row>
+          <entry> <command>VIRTUALHOST</command> </entry>
+          <entry> <para> A virtualhost (Java Broker only)</para> </entry>
+        </row>
+        <row>
+          <entry> <command>METHOD</command> </entry>
+          <entry> <para> Management or agent or broker method (Java Broker only)</para> </entry>
+        </row>
+        <row>
+          <entry> <command>BROKER</command> </entry>
+        <entry> <para> The broker (not currently used in Java Broker)</para> </entry>
+        </row>
+        <row>
+          <entry> <command>LINK</command> </entry>
+          <entry> <para> A federation or inter-broker link (not currently used in Java Broker)</para> </entry>
+        </row>
+      </tbody>
+    </tgroup>
+  </table>
+  <table id="tabl-ConfigureACLs-Syntax_properties">
+    <title>ACL Rules:property</title>
+    <tgroup cols="2">
+      <tbody>
+        <row>
+          <entry><command>name</command> </entry>
+          <entry> <para> String. Object name, such as a queue name, exchange name or JMX method name.  </para> </entry>
+        </row>
+        <row>
+          <entry> <command>durable</command> </entry>
+          <entry> <para> Boolean. Indicates the object is durable </para> </entry>
+        </row>
+        <row>
+          <entry> <command>routingkey</command> </entry>
+          <entry> <para> String. Specifies routing key </para> </entry>
+        </row>
+        <row>
+          <entry> <command>passive</command> </entry>
+          <entry> <para> Boolean. Indicates the presence of a <parameter>passive</parameter> flag </para> </entry>
+        </row>
+        <row>
+          <entry> <command>autodelete</command> </entry>
+          <entry> <para> Boolean. Indicates whether or not the object gets deleted when the connection is closed </para> </entry>
+        </row>
+        <row>
+          <entry> <command>exclusive</command> </entry>
+          <entry> <para> Boolean. Indicates the presence of an <parameter>exclusive</parameter> flag </para> </entry>
+        </row>
+        <row>
+          <entry> <command>temporary</command> </entry>
+          <entry> <para> Boolean. Indicates the presence of an <parameter>temporary</parameter> flag </para> </entry>
+        </row>
+        <row>
+          <entry> <command>type</command> </entry>
+          <entry> <para> String. Type of object, such as topic, fanout, or xml </para> </entry>
+        </row>
+        <row>
+          <entry> <command>alternate</command> </entry>
+          <entry> <para> String. Name of the alternate exchange </para> </entry>
+        </row>
+        <row>
+          <entry> <command>queuename</command> </entry>
+          <entry> <para> String. Name of the queue (used only when the object is something other than <parameter>queue</parameter> </para> </entry>
+        </row>
+        <row>
+          <entry> <command>component</command> </entry>
+          <entry> <para> String. JMX component name (Java Broker only)</para> </entry>
+        </row>
+        <row>
+          <entry> <command>schemapackage</command> </entry>
+          <entry> <para> String. QMF schema package name (Not used in Java Broker)</para> </entry>
+        </row>
+        <row>
+          <entry> <command>schemaclass</command> </entry>
+          <entry> <para> String. QMF schema class name (Not used in Java Broker)</para> </entry>
+        </row>
+      </tbody>
+    </tgroup>
+  </table>
+  <table id="tabl-ConfigureACLs-Syntax_javacomponents">
+    <title>ACL rules:components (Java Broker only)</title>
+    <tgroup cols="3">
+      <tbody>
+        <row>
+          <entry> <command>UserManagement</command> </entry>
+          <entry> <para>User maintainance; create/delete/view users, change passwords etc</para> </entry>
+          <entry> <para>permissionable at broker level only</para> </entry>
+        </row>
+        <row>
+          <entry> <command>ConfigurationManagement</command> </entry>
+          <entry> <para>Dynammically reload configuration from disk.</para> </entry>
+          <entry> <para>permissionable at broker level only</para> </entry>
+        </row>
+        <row>
+          <entry> <command>LoggingManagement</command> </entry>
+          <entry> <para>Dynammically control Qpid logging level</para> </entry>
+          <entry> <para>permissionable at broker level only</para> </entry>
+        </row>
+        <row>
+          <entry> <command>ServerInformation</command> </entry>
+          <entry> <para>Read-only information regarding the Qpid: version number etc</para> </entry>
+          <entry> <para>permissionable at broker level only</para> </entry>
+        </row>
+        <row>
+          <entry> <command>VirtualHost.Queue</command> </entry>
+          <entry> <para>Queue maintainance; copy/move/purge/view etc</para> </entry>
+        </row>
+        <row>
+          <entry> <command>VirtualHost.Exchange</command> </entry>
+          <entry> <para>Exchange maintenance; bind/unbind queues to exchanges</para> </entry>
+        </row>
+        <row>
+          <entry> <command>VirtualHost.VirtualHost</command> </entry>
+          <entry> <para>Virtual host maintainace; create/delete exchanges, queues etc</para> </entry>
+        </row>
+      </tbody>
+    </tgroup>
+  </table>
+  <section role="h4" id="ConfigureACLs-WorkedExamples">
+    <title>
+      Worked Examples
+    </title>
+    <para>
+       Here are three example ACLs illustrating some common use-cases.
+    </para>
+    <section role="h4" id="ConfigureACLs-WorkedExample1">
+      <title>
+        Worked example 1 - Management rights
+      </title>
+      <para>
+         Suppose you wish to permission two users: a user 'operator' must be able to perform all Management operations, and
+         a user 'readonly' must be enable to perform only read-only functions.  Neither 'operator' nor 'readonly'
+         should be allow to connect for messaging.
+      </para>
+      <programlisting>
+        # Give operator permission to execute all JMX Methods
+        ACL ALLOW operator ALL METHOD
+        # Give operator permission to execute only read-only JMX Methods
+        ACL ALLOW readonly ACCESS METHOD
+        # Deny operator/readonly permission to perform messaging.
+        ACL DENY operator ACCESS VIRTUALHOST
+        ACL DENY readonly ACCESS VIRTUALHOST
+        ...
+        ... rules for other users
+        ...
+        # Explicitly deny all (log) to eveyone 
+        ACL DENY-LOG ALL ALL
+      </programlisting>
+    </section>
+    <section role="h4" id="ConfigureACLs-WorkedExample2">
+      <title>
+        Worked example 2 - User maintainer group
+      </title>
+      <para>
+         Suppose you wish to restrict User Management operations to users belonging to a group 'usermaint'.  No other user
+         is allowed to perform user maintainence  This example illustrates the permissioning of a individual component 
+         and a group definition.
+      </para>
+      <programlisting>
+        # Create a group usermaint with members bob and alice
+        GROUP usermaint bob alice
+        # Give operator permission to execute all JMX Methods
+        ACL ALLOW usermaint ALL METHOD component="UserManagement"
+        ACL DENY ALL ALL METHOD component="UserManagement"
+        ...
+        ... rules for other users
+        ...
+        ACL DENY-LOG ALL ALL
+      </programlisting>
+    </section>
+    <section role="h4" id="ConfigureACLs-WorkedExample3">
+      <title>
+        Worked example 3 - Request/Response messaging
+      </title>
+      <para>
+         Suppose you wish to permission a system using a request/response paradigm. Two users: 'client' publishes requests;
+         'server' consumes the requests and generates a response.  This example illustrates the permissioning of AMQP exchanges
+         and queues.
+      </para>
+      <programlisting>
+        # Allow client and server to connect to the virtual host.
+        ACL ALLOW client ACCESS VIRTUALHOST
+        ACL ALLOW server ACCESS VIRTUALHOST
+
+        # Client side
+        # Allow the 'client' user to publish requests to the request queue. As is the norm for the request/response paradigm, the client
+        # is required to create a temporary queue on which the server will response.  Consequently, there are rules to allow the creation
+        # of the temporary queues and consumption of messages from it.
+        ACL ALLOW client CREATE QUEUE temporary="true"
+        ACL ALLOW client CONSUME QUEUE temporary="true"
+        ACL ALLOW client DELETE QUEUE temporary="true"
+        ACL ALLOW client BIND EXCHANGE name="amq.direct" temporary="true"
+        ACL ALLOW client UNBIND EXCHANGE name="amq.direct" temporary="true"
+        ACL ALLOW client PUBLISH EXCHANGE name="amq.direct" routingKey="example.RequestQueue"
+        
+        # Server side
+        # Allow the 'server' user to consume from the request queue and publish a response to the temporary response queue created by
+        # client.  We also allow the server to create the request queue.
+        ACL ALLOW server CREATE QUEUE name="example.RequestQueue"
+        ACL ALLOW server CONSUME QUEUE name="example.RequestQueue"
+        ACL ALLOW server BIND EXCHANGE
+        ACL ALLOW server PUBLISH EXCHANGE name="amq.direct" routingKey="TempQueue*"
+        
+        ACL DENY-LOG all all
+      </programlisting>
+    </section>
+  </section>
 </section>
