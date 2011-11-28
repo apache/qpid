@@ -82,9 +82,9 @@
 
         <!-- By default, all authenticated users have permissions to perform all actions -->
 
-        <!-- ACL V2 Example
+        <!-- ACL Example
              This example illustrates securing the both Management (JMX) and Messaging.
-        <aclv2>${conf}/broker_example.acl</aclv2>
+        <acl>${conf}/broker_example.acl</acl>
         -->
         
         <msg-auth>false</msg-auth>
