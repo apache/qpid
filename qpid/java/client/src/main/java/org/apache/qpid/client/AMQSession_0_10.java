@@ -27,11 +27,14 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 import javax.jms.Destination;
 import javax.jms.JMSException;
@@ -402,6 +405,10 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
      */
     public void sendClose(long timeout) throws AMQException, FailoverException
     {
+        if (getTransacted())
+        {
+            releaseForRollback();
+        }
         if (flushTask != null)
         {
             flushTask.cancel();
@@ -457,19 +464,33 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
     public void sendRecover() throws AMQException, FailoverException
     {
         // release all unacked messages
-        RangeSet ranges = gatherUnackedRangeSet();
-        flushProcessed(ranges, false);
-        getQpidSession().messageRelease(ranges, Option.SET_REDELIVERED);
+        RangeSet all = new RangeSet();
+        RangeSet delivered = gatherRangeSet(_unacknowledgedMessageTags);
+        RangeSet prefetched = gatherRangeSet(_prefetchedMessageTags);
+        for (Iterator<Range> deliveredIter = delivered.iterator(); deliveredIter.hasNext();)
+        {
+            Range range = deliveredIter.next();
+            all.add(range);
+        }
+        for (Iterator<Range> prefetchedIter = prefetched.iterator(); prefetchedIter.hasNext();)
+        {
+            Range range = prefetchedIter.next();
+            all.add(range);
+        }
+        flushProcessed(all, false);
+        getQpidSession().messageRelease(delivered, Option.SET_REDELIVERED);
+        getQpidSession().messageRelease(prefetched);
+
         // We need to sync so that we get notify of an error.
         sync();
     }
 
-    private RangeSet gatherUnackedRangeSet()
+    private RangeSet gatherRangeSet(ConcurrentLinkedQueue<Long> messageTags)
     {
         RangeSet ranges = new RangeSet();
         while (true)
         {
-            Long tag = _unacknowledgedMessageTags.poll();
+            Long tag = messageTags.poll();
             if (tag == null)
             {
                 break;
@@ -504,7 +525,14 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
         RangeSet ranges = new RangeSet();
         ranges.add((int) deliveryTag);
         flushProcessed(ranges, false);
-        getQpidSession().messageRelease(ranges, Option.SET_REDELIVERED);
+        if (requeue)
+        {
+            getQpidSession().messageRelease(ranges);
+        }
+        else
+        {
+            getQpidSession().messageRelease(ranges, Option.SET_REDELIVERED);
+        }
         //I don't think we need to sync
     }
 
@@ -1321,11 +1349,11 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
     
     protected void acknowledgeImpl()
     {
-        RangeSet range = gatherUnackedRangeSet();
+        RangeSet ranges = gatherRangeSet(_unacknowledgedMessageTags);
 
-        if(range.size() > 0 )
+        if(ranges.size() > 0 )
         {
-            messageAcknowledge(range, true);
+            messageAcknowledge(ranges, true);
             getQpidSession().sync();
         }
     }
@@ -1343,6 +1371,7 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
         _txRangeSet.clear();
         _txSize = 0;
         _unacknowledgedMessageTags.clear();
+        _prefetchedMessageTags.clear();
         super.resubscribe();
     }
 }

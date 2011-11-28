@@ -43,11 +43,11 @@ class ImplicitAcceptDispositionChangeListener implements ServerSession.MessageDi
         _logger.warn("MessageAccept received for message which is using NONE as the accept mode (likely client error)");
     }
 
-    public void onRelease()
+    public void onRelease(boolean setRedelivered)
     {
         if(_entry.isAcquiredBy(_sub))
         {
-            getSubscription().release(_entry);
+            getSubscription().release(_entry, setRedelivered);
         }
         else
         {
