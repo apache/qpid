@@ -111,6 +111,8 @@ ManagementAgent::RemoteAgent::~RemoteAgent ()
     if (mgmtObject != 0) {
         mgmtObject->resourceDestroy();
         agent.deleteObjectNowLH(mgmtObject->getObjectId());
+        delete mgmtObject;
+        mgmtObject = 0;
     }
 }
 
@@ -145,6 +147,8 @@ ManagementAgent::~ManagementAgent ()
         mExchange.reset();
         v2Topic.reset();
         v2Direct.reset();
+
+        remoteAgents.clear();
 
         moveNewObjectsLH();
         for (ManagementObjectMap::iterator iter = managementObjects.begin ();
