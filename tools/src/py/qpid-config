@@ -228,7 +228,7 @@ def OptionsAndArguments(argv):
         config._recursive = True
     if opts.broker_addr:
         config._host = opts.broker_addr
-    if opts.timeout:
+    if opts.timeout is not None:
         config._connTimeout = opts.timeout
         if config._connTimeout == 0:
             config._connTimeout = None
@@ -244,13 +244,13 @@ def OptionsAndArguments(argv):
         config._clusterDurable = True
     if opts.file:
         config._file = opts.file
-    if opts.file_count:
+    if opts.file_count is not None:
         config._fileCount = opts.file_count
-    if opts.file_size:
+    if opts.file_size is not None:
         config._fileSize = opts.file_size
-    if opts.max_queue_size != None:
+    if opts.max_queue_size is not None:
         config._maxQueueSize = opts.max_queue_size
-    if opts.max_queue_count:
+    if opts.max_queue_count is not None:
         config._maxQueueCount = opts.max_queue_count
     if opts.limit_policy:
            config._limitPolicy = opts.limit_policy
@@ -271,13 +271,13 @@ def OptionsAndArguments(argv):
         config._if_unused = False
     if opts.sasl_mechanism:
         config._sasl_mechanism = opts.sasl_mechanism
-    if opts.flow_stop_size:
+    if opts.flow_stop_size is not None:
         config._flowStopSize = opts.flow_stop_size
-    if opts.flow_resume_size:
+    if opts.flow_resume_size is not None:
         config._flowResumeSize = opts.flow_resume_size
-    if opts.flow_stop_count:
+    if opts.flow_stop_count is not None:
         config._flowStopCount = opts.flow_stop_count
-    if opts.flow_resume_count:
+    if opts.flow_resume_count is not None:
         config._flowResumeCount = opts.flow_resume_count
     if opts.group_header:
         config._msgGroupHeader = opts.group_header
@@ -522,9 +522,9 @@ class BrokerManager:
             declArgs[FILECOUNT] = config._fileCount
             declArgs[FILESIZE]  = config._fileSize
 
-        if config._maxQueueSize != None:
+        if config._maxQueueSize is not None:
             declArgs[MAX_QUEUE_SIZE]  = config._maxQueueSize
-        if config._maxQueueCount:
+        if config._maxQueueCount is not None:
             declArgs[MAX_QUEUE_COUNT]  = config._maxQueueCount
         if config._limitPolicy:
             if config._limitPolicy == "none":
@@ -550,13 +550,13 @@ class BrokerManager:
         if config._eventGeneration:
             declArgs[QUEUE_EVENT_GENERATION]  = config._eventGeneration
 
-        if config._flowStopSize:
+        if config._flowStopSize is not None:
             declArgs[FLOW_STOP_SIZE]  = config._flowStopSize
-        if config._flowResumeSize:
+        if config._flowResumeSize is not None:
             declArgs[FLOW_RESUME_SIZE]  = config._flowResumeSize
-        if config._flowStopCount:
+        if config._flowStopCount is not None:
             declArgs[FLOW_STOP_COUNT]  = config._flowStopCount
-        if config._flowResumeCount:
+        if config._flowResumeCount is not None:
             declArgs[FLOW_RESUME_COUNT]  = config._flowResumeCount
 
         if config._msgGroupHeader:
