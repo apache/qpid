@@ -32,12 +32,8 @@ if [ -z "$QPID_HOME" ]; then
     export PATH=${PATH}:${QPID_HOME}/bin
 fi
 
-if [ -z "$BDB_HOME" ]; then
-    export BDB_HOME=$(dirname $(dirname $(readlink -f $0)))
-fi
-
 VERSION=0.15
 
-LIBS=$BDB_HOME/lib/je-4.0.103.jar:$BDB_HOME/lib/qpid-bdbstore-$VERSION.jar:$QPID_HOME/lib/qpid-all.jar
+LIBS=$QPID_HOME/lib/opt/je-4.0.117.jar:$QPID_HOME/lib/qpid-bdbstore-$VERSION.jar:$QPID_HOME/lib/qpid-all.jar
 
 java -Xms256m -Dlog4j.configuration=BDBStoreUpgrade.log4j.xml -Xmx256m -Damqj.logging.level=warn ${JAVA_OPTS} -cp $LIBS org.apache.qpid.server.store.berkeleydb.BDBStoreUpgrade  ${ARGS} 
