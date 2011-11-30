@@ -60,9 +60,6 @@ public class Passwd
 
     private static void output(String user, byte[] encoded) throws IOException
     {
-
-//        File passwdFile = new File("qpid.passwd");
-
         PrintStream ps = new PrintStream(System.out);
 
         user += ":";
