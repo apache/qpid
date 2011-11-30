@@ -87,6 +87,19 @@ public class SlowConsumerDetectionQueueConfiguration extends ConfigurationPlugin
     @Override
     public void validateConfiguration() throws ConfigurationException
     {
+        PluginManager pluginManager;
+        try
+        {
+            pluginManager = ApplicationRegistry.getInstance().getPluginManager();
+        }
+        catch (IllegalStateException ise)
+        {
+            // We see this happen during shutdown due to asynchronous reconfig performed IO threads
+            // running at the same time as the shutdown handler.
+            _policyPlugin = null;
+            return;
+        }
+
         if (!containsPositiveLong("messageAge") &&
             !containsPositiveLong("depth") &&
             !containsPositiveLong("messageCount"))
@@ -96,8 +109,6 @@ public class SlowConsumerDetectionQueueConfiguration extends ConfigurationPlugin
         }
 
         SlowConsumerDetectionPolicyConfiguration policyConfig = getConfiguration(SlowConsumerDetectionPolicyConfiguration.class.getName());
-
-        PluginManager pluginManager = ApplicationRegistry.getInstance().getPluginManager();
         Map<String, SlowConsumerPolicyPluginFactory> factories = pluginManager.getSlowConsumerPlugins();
 
         if (policyConfig == null)
