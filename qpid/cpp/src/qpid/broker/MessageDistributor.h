@@ -48,8 +48,7 @@ class MessageDistributor
      * @param next set to the next message that the consumer may consume.
      * @return true if message is available and next is set
      */
-    virtual bool nextConsumableMessage( Consumer::shared_ptr& consumer,
-                                        QueuedMessage& next ) = 0;
+    virtual bool nextMessage( Consumer::shared_ptr& consumer, QueuedMessage& next ) = 0;
 
     /** Allow the comsumer to take ownership of the given message.
      * @param consumer the name of the consumer that is attempting to acquire the message
@@ -58,14 +57,6 @@ class MessageDistributor
      */
     virtual bool allocate( const std::string& consumer,
                            const QueuedMessage& target) = 0;
-
-    /** Determine the next message available for browsing by the consumer
-     * @param consumer the consumer that is browsing the queue
-     * @param next set to the next message that the consumer may browse.
-     * @return true if a message is available and next is returned
-     */
-    virtual bool nextBrowsableMessage( Consumer::shared_ptr& consumer,
-                                       QueuedMessage& next ) = 0;
 
     /** hook to add any interesting management state to the status map */
     virtual void query(qpid::types::Variant::Map&) const = 0;

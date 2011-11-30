@@ -44,9 +44,8 @@ class FifoDistributor : public MessageDistributor
 
     /** MessageDistributor interface */
 
-    bool nextConsumableMessage( Consumer::shared_ptr& consumer, QueuedMessage& next );
+    bool nextMessage( Consumer::shared_ptr& consumer, QueuedMessage& next );
     bool allocate(const std::string& consumer, const QueuedMessage& target);
-    bool nextBrowsableMessage( Consumer::shared_ptr& consumer, QueuedMessage& next );
     void query(qpid::types::Variant::Map&) const;
 
  private:

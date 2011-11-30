@@ -96,7 +96,7 @@ class SemanticState : private boost::noncopyable {
         int deliveryCount;
         qmf::org::apache::qpid::broker::Subscription* mgmtObject;
 
-        bool checkCredit(boost::intrusive_ptr<Message>& msg);
+        bool checkCredit(const boost::intrusive_ptr<Message>& msg);
         void allocateCredit(boost::intrusive_ptr<Message>& msg);
         bool haveCredit();
 
@@ -114,8 +114,10 @@ class SemanticState : private boost::noncopyable {
         virtual ~ConsumerImpl();
         OwnershipToken* getSession();
         virtual bool deliver(QueuedMessage& msg);
-        bool filter(boost::intrusive_ptr<Message> msg);
-        bool accept(boost::intrusive_ptr<Message> msg);
+        //bool filter(boost::intrusive_ptr<Message> msg);
+        //bool accept(boost::intrusive_ptr<Message> msg);
+        virtual Action accept(const QueuedMessage& msg);
+
 
         void disableNotify();
         void enableNotify();

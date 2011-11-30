@@ -28,21 +28,15 @@ using namespace qpid::broker;
 FifoDistributor::FifoDistributor(Messages& container)
     : messages(container) {}
 
-bool FifoDistributor::nextConsumableMessage( Consumer::shared_ptr&, QueuedMessage& next )
+bool FifoDistributor::nextMessage( Consumer::shared_ptr& c, QueuedMessage& next )
 {
-    return messages.consume(next);
+    return messages.browse(c->position, next, !c->allowAcquired());
 }
 
 bool FifoDistributor::allocate(const std::string&, const QueuedMessage& )
 {
-    // by default, all messages present on the queue may be allocated as they have yet to
-    // be acquired.
+    // The Fifo distributor does not enforce or record message allocation
     return true;
-}
-
-bool FifoDistributor::nextBrowsableMessage( Consumer::shared_ptr& c, QueuedMessage& next )
-{
-    return messages.browse(c->position, next, false);
 }
 
 void FifoDistributor::query(qpid::types::Variant::Map&) const

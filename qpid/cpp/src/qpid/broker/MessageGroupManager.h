@@ -103,9 +103,8 @@ class MessageGroupManager : public StatefulQueueObserver, public MessageDistribu
     void setState(const qpid::framing::FieldTable&);
 
     // MessageDistributor iface
-    bool nextConsumableMessage(Consumer::shared_ptr& c, QueuedMessage& next);
+    bool nextMessage(Consumer::shared_ptr& c, QueuedMessage& next);
     bool allocate(const std::string& c, const QueuedMessage& qm);
-    bool nextBrowsableMessage(Consumer::shared_ptr& c, QueuedMessage& next);
     void query(qpid::types::Variant::Map&) const;
 
     bool match(const qpid::types::Variant::Map*, const QueuedMessage&) const;

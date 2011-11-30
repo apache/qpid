@@ -33,6 +33,8 @@ class QueueListeners;
 
 class Consumer {
     const bool acquires;
+    const bool browseAcquired;
+    const bool rewindable;
     // inListeners allows QueueListeners to efficiently track if this instance is registered
     // for notifications without having to search its containers
     bool inListeners;
@@ -44,18 +46,29 @@ class Consumer {
 
     framing::SequenceNumber position;
 
-    Consumer(const std::string& _name, bool preAcquires = true)
-      : acquires(preAcquires), inListeners(false), name(_name), position(0) {}
+    Consumer(const std::string& _name, bool preAcquires = true, bool ba = false)
+      : acquires(preAcquires), browseAcquired(ba), rewindable(false), inListeners(false),
+        name(_name), position(0) {}
     bool preAcquires() const { return acquires; }
     const std::string& getName() const { return name; }
 
     virtual bool deliver(QueuedMessage& msg) = 0;
     virtual void notify() = 0;
-    virtual bool filter(boost::intrusive_ptr<Message>) { return true; }
-    virtual bool accept(boost::intrusive_ptr<Message>) { return true; }
+    // virtual bool filter(boost::intrusive_ptr<Message>) { return true; }
+    // virtual bool accept(boost::intrusive_ptr<Message>) { return true; }
     virtual OwnershipToken* getSession() = 0;
     virtual ~Consumer(){}
     friend class QueueListeners;
+
+    /** true if Consumer is a browsing subscription */
+    bool isBrowsing() const { return !acquires; }
+    /** if true, pass acquired messages to consumer, as well as un-acquired */
+    virtual bool allowAcquired() const { return isBrowsing() && browseAcquired; }
+    /** if true, reset consumer's position to queue HEAD if messages released. */
+    virtual bool rewindOnRelease() const { return rewindable; }
+    /** called by Queue to allow consumer to filter the current message */
+    enum Action {ACCEPT, SKIP, RETRY};
+    virtual Action accept(const QueuedMessage& msg) = 0;
 };
 
 }}

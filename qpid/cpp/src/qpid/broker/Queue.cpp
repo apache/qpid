@@ -276,97 +276,6 @@ void Queue::notifyListener()
     set.notify();
 }
 
-bool Queue::getNextMessage(QueuedMessage& m, Consumer::shared_ptr& c)
-{
-    checkNotDeleted();
-    if (c->preAcquires()) {
-        switch (consumeNextMessage(m, c)) {
-          case CONSUMED:
-            return true;
-          case CANT_CONSUME:
-            notifyListener();//let someone else try
-          case NO_MESSAGES:
-          default:
-            return false;
-        }
-    } else {
-        return browseNextMessage(m, c);
-    }
-}
-
-Queue::ConsumeCode Queue::consumeNextMessage(QueuedMessage& m, Consumer::shared_ptr& c)
-{
-    QueuedMessage msg;
-    while (true) {
-        Mutex::ScopedLock locker(messageLock);
-        if (allocator->nextConsumableMessage(c, msg)) {
-            if (msg.payload->hasExpired()) {
-                QPID_LOG(debug, "Message expired from queue '" << name << "'");
-                c->position = msg.position;
-                dequeue(0, msg);
-                continue;
-            }
-
-            if (c->filter(msg.payload)) {
-                if (c->accept(msg.payload)) {
-                    bool ok = allocator->allocate( c->getName(), msg );  // inform allocator
-                    (void) ok; assert(ok);
-                    observeAcquire(msg, locker);
-                    m = msg;
-                    return CONSUMED;
-                } else {
-                    //message(s) are available but consumer hasn't got enough credit
-                    QPID_LOG(debug, "Consumer can't currently accept message from '" << name << "'");
-                    messages->release(msg);
-                    return CANT_CONSUME;
-                }
-            } else {
-                //consumer will never want this message
-                QPID_LOG(debug, "Consumer doesn't want message from '" << name << "'");
-                messages->release(msg);
-                return CANT_CONSUME;
-            }
-        } else {
-            QPID_LOG(debug, "No messages to dispatch on queue '" << name << "'");
-            listeners.addListener(c);
-            return NO_MESSAGES;
-        }
-    }
-}
-
-bool Queue::browseNextMessage(QueuedMessage& m, Consumer::shared_ptr& c)
-{
-    while (true) {
-        Mutex::ScopedLock locker(messageLock);
-        QueuedMessage msg;
-
-        if (!allocator->nextBrowsableMessage(c, msg)) { // no next available
-            QPID_LOG(debug, "No browsable messages available for consumer " <<
-                     c->getName() << " on queue '" << name << "'");
-            listeners.addListener(c);
-            return false;
-        }
-
-        if (c->filter(msg.payload) && !msg.payload->hasExpired()) {
-            if (c->accept(msg.payload)) {
-                //consumer wants the message
-                c->position = msg.position;
-                m = msg;
-                return true;
-            } else {
-                //browser hasn't got enough credit for the message
-                QPID_LOG(debug, "Browser can't currently accept message from '" << name << "'");
-                return false;
-            }
-        } else {
-            //consumer will never want this message, continue seeking
-            QPID_LOG(debug, "Browser skipping message from '" << name << "'");
-            c->position = msg.position;
-        }
-    }
-    return false;
-}
-
 void Queue::removeListener(Consumer::shared_ptr c)
 {
     QueueListeners::NotificationSet set;
@@ -380,14 +289,49 @@ void Queue::removeListener(Consumer::shared_ptr c)
     set.notify();
 }
 
+// give the consumer a message from the queue
 bool Queue::dispatch(Consumer::shared_ptr c)
 {
     QueuedMessage msg(this);
-    if (getNextMessage(msg, c)) {
-        c->deliver(msg);
-        return true;
-    } else {
-        return false;
+    while (true) {
+        Mutex::ScopedLock locker(messageLock);
+        if (allocator->nextMessage(c, msg)) {
+
+            if (msg.payload->hasExpired()) {
+                QPID_LOG(debug, "Message expired from queue '" << name << "'");
+                acquire(msg.position, msg, locker);
+                dequeue(0, msg);
+                continue;
+            }
+
+            switch (c->accept(msg)) {
+            case Consumer::ACCEPT:
+                if (!c->isBrowsing()) {
+                    // consume this message
+                    bool ok = acquire(msg.position, msg, locker);
+                    (void) ok; assert(ok);
+                    ok = allocator->allocate( c->getName(), msg );
+                    (void) ok; assert(ok);
+                }
+                c->position = msg.position;
+                c->deliver(msg);
+                return true;
+            case Consumer::RETRY:
+                // consumer wants this message, but cannot accept it at this time
+                QPID_LOG(debug, "Consumer can't currently accept message from '" << name << "'");
+                notifyListener();//let someone else try
+                return false;
+            case Consumer::SKIP:
+                // consumer will never want this message, continue looking...
+                QPID_LOG(debug, "Consumer doesn't want message from '" << name << "'");
+                c->position = msg.position;
+                continue;
+            }
+        } else {
+            QPID_LOG(debug, "No messages to dispatch on queue '" << name << "'");
+            listeners.addListener(c);
+            return false;
+        }
     }
 }
 

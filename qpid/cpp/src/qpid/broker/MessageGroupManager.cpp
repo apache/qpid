@@ -202,10 +202,15 @@ MessageGroupManager::~MessageGroupManager()
 {
     QPID_LOG( debug, "group queue " << qName << " cache results: hits=" << hits << " misses=" << misses );
 }
-bool MessageGroupManager::nextConsumableMessage( Consumer::shared_ptr& c, QueuedMessage& next )
+bool MessageGroupManager::nextMessage( Consumer::shared_ptr& c, QueuedMessage& next )
 {
     if (!messages.size())
         return false;
+
+    // Message groups are ignored for browsers
+    if (c->isBrowsing()) {
+        return messages.browse(c->position, next, !c->allowAcquired());
+    }
 
     next.position = c->position;
     if (!freeGroups.empty()) {
@@ -219,13 +224,12 @@ bool MessageGroupManager::nextConsumableMessage( Consumer::shared_ptr& c, Queued
     while (messages.browse( next.position, next, true )) {
         GroupState& group = findGroup(next);
         if (!group.owned()) {
-            //TODO: make acquire more efficient when we already have the message in question
-            if (group.members.front() == next.position && messages.acquire(next.position, next)) {    // only take from head!
+            if (group.members.front() == next.position) {    // only take from head!
                 return true;
             }
             QPID_LOG(debug, "Skipping " << next.position << " since group " << group.group
                      << "'s head message still pending. pos=" << group.members.front());
-        } else if (group.owner == c->getName() && messages.acquire(next.position, next)) {
+        } else if (group.owner == c->getName()) {
             return true;
         }
     }
@@ -245,12 +249,6 @@ bool MessageGroupManager::allocate(const std::string& consumer, const QueuedMess
         return true;
     }
     return state.owner == consumer;
-}
-
-bool MessageGroupManager::nextBrowsableMessage( Consumer::shared_ptr& c, QueuedMessage& next )
-{
-    // browse: allow access to any available msg, regardless of group ownership (?ok?)
-    return messages.browse(c->position, next, false);
 }
 
 void MessageGroupManager::query(qpid::types::Variant::Map& status) const
