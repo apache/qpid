@@ -31,6 +31,9 @@ namespace broker {
 class Queue;
 class QueueListeners;
 
+/**
+ * Base class for consumers which represent a subscription to a queue.
+ */
 class Consumer {
     const bool acquires;
     const bool browseAcquired;

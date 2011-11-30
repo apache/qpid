@@ -124,13 +124,13 @@ bool LinkRegistry::updateAddress(const std::string& oldKey, const qpid::Address&
     }
 }
 
-pair<Link::shared_ptr, bool> LinkRegistry::declare(string&  host,
+pair<Link::shared_ptr, bool> LinkRegistry::declare(const string&  host,
                                                    uint16_t port,
-                                                   string&  transport,
+                                                   const string&  transport,
                                                    bool     durable,
-                                                   string&  authMechanism,
-                                                   string&  username,
-                                                   string&  password)
+                                                   const string&  authMechanism,
+                                                   const string&  username,
+                                                   const string&  password)
 
 {
     Mutex::ScopedLock   locker(lock);
@@ -151,18 +151,20 @@ pair<Link::shared_ptr, bool> LinkRegistry::declare(string&  host,
     return std::pair<Link::shared_ptr, bool>(i->second, false);
 }
 
-pair<Bridge::shared_ptr, bool> LinkRegistry::declare(std::string& host,
+pair<Bridge::shared_ptr, bool> LinkRegistry::declare(const std::string& host,
                                                      uint16_t     port,
                                                      bool         durable,
-                                                     std::string& src,
-                                                     std::string& dest,
-                                                     std::string& key,
+                                                     const std::string& src,
+                                                     const std::string& dest,
+                                                     const std::string& key,
                                                      bool         isQueue,
                                                      bool         isLocal,
-                                                     std::string& tag,
-                                                     std::string& excludes,
+                                                     const std::string& tag,
+                                                     const std::string& excludes,
                                                      bool         dynamic,
-                                                     uint16_t     sync)
+                                                     uint16_t     sync,
+                                                     Bridge::InitializeCallback init
+)
 {
     Mutex::ScopedLock locker(lock);
     QPID_LOG(debug, "Bridge declared " << host << ": " << port << " from " << src << " to " << dest << " (" << key << ")");
@@ -196,7 +198,8 @@ pair<Bridge::shared_ptr, bool> LinkRegistry::declare(std::string& host,
         bridge = Bridge::shared_ptr
             (new Bridge (l->second.get(), l->second->nextChannel(),
                          boost::bind(&LinkRegistry::destroy, this,
-                                     host, port, src, dest, key), args));
+                                     host, port, src, dest, key),
+                         args, init));
         bridges[bridgeKey] = bridge;
         l->second->add(bridge);
         return std::pair<Bridge::shared_ptr, bool>(bridge, true);

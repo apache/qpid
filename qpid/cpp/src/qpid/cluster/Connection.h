@@ -208,6 +208,8 @@ class Connection :
 
     void queueDequeueSincePurgeState(const std::string&, uint32_t);
 
+    bool isAnnounced() const { return announced; }
+
   private:
     struct NullFrameHandler : public framing::FrameHandler {
         void handle(framing::AMQFrame&) {}

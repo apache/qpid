@@ -92,19 +92,21 @@ namespace qpid {
 
             Link(LinkRegistry* links,
                  MessageStore* store,
-                 std::string&       host,
+                 const std::string&       host,
                  uint16_t      port,
-                 std::string&       transport,
+                 const std::string&       transport,
                  bool          durable,
-                 std::string&       authMechanism,
-                 std::string&       username,
-                 std::string&       password,
+                 const std::string&       authMechanism,
+                 const std::string&       username,
+                 const std::string&       password,
                  Broker*       broker,
                  management::Manageable* parent = 0);
             virtual ~Link();
 
             std::string getHost() { return host; }
             uint16_t    getPort() { return port; }
+            std::string getTransport() { return transport; }
+
             bool isDurable() { return durable; }
             void maintenanceVisit ();
             uint nextChannel();

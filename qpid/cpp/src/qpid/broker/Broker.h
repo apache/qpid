@@ -37,6 +37,7 @@
 #include "qpid/broker/Vhost.h"
 #include "qpid/broker/System.h"
 #include "qpid/broker/ExpiryPolicy.h"
+#include "qpid/broker/ConsumerFactory.h"
 #include "qpid/management/Manageable.h"
 #include "qpid/management/ManagementAgent.h"
 #include "qmf/org/apache/qpid/broker/Broker.h"
@@ -199,6 +200,7 @@ public:
     bool inCluster, clusterUpdatee;
     boost::intrusive_ptr<ExpiryPolicy> expiryPolicy;
     ConnectionCounter connectionCounter;
+    ConsumerFactories consumerFactories;
 
   public:
     virtual ~Broker();
@@ -357,6 +359,8 @@ public:
                 const std::string& key,
                 const std::string& userId,
                 const std::string& connectionId);
+
+    ConsumerFactories&  getConsumerFactories() { return consumerFactories; }
 };
 
 }}

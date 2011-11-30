@@ -440,6 +440,7 @@ class BrokerTest(TestCase):
     # Environment settings.
     qpidd_exec = os.path.abspath(checkenv("QPIDD_EXEC"))
     cluster_lib = os.getenv("CLUSTER_LIB")
+    ha_lib = os.getenv("HA_LIB")
     xml_lib = os.getenv("XML_LIB")
     qpid_config_exec = os.getenv("QPID_CONFIG_EXEC")
     qpid_route_exec = os.getenv("QPID_ROUTE_EXEC")
@@ -513,6 +514,12 @@ class BrokerTest(TestCase):
         expect_contents"""
         actual_contents = self.browse(session, queue, timeout)
         self.assertEqual(expect_contents, actual_contents)
+
+    def assert_browse_retry(self, session, queue, expect_contents, timeout=1, delay=.01):
+        """Wait up to timeout for contents of queue to match expect_contents"""
+        def test(): return self.browse(session, queue, 0) == expect_contents
+        retry(test, timeout, delay)
+        self.assertEqual(expect_contents, self.browse(session, queue, 0))
 
 def join(thread, timeout=10):
     thread.join(timeout)

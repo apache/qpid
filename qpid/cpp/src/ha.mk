@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 #
 # Licensed to the Apache Software Foundation (ASF) under one
 # or more contributor license agreements.  See the NOTICE file
@@ -7,9 +6,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -17,22 +16,27 @@
 # specific language governing permissions and limitations
 # under the License.
 #
-from distutils.core import setup
+#
+# HA plugin makefile fragment, to be included in Makefile.am
+#
 
-setup(name="qpid-tools",
-      version="0.15",
-      author="Apache Qpid",
-      author_email="dev@qpid.apache.org",
-      scripts=["src/py/qpid-cluster",
-               "src/py/qpid-cluster-store",
-               "src/py/qpid-config",
-               "src/py/qpid-printevents",
-               "src/py/qpid-queue-stats",
-               "src/py/qpid-route",
-               "src/py/qpid-stat",
-               "src/py/qpid-tool",
-               "src/py/qmf-tool",
-               "src/py/qpid-ha-status"],
-      url="http://qpid.apache.org/",
-      license="Apache Software License",
-      description="Diagnostic and management tools for Apache Qpid brokers.")
+dmoduleexec_LTLIBRARIES += ha.la
+
+ha_la_SOURCES =					\
+  qpid/ha/Backup.cpp				\
+  qpid/ha/Backup.h				\
+  qpid/ha/HaBroker.cpp				\
+  qpid/ha/HaBroker.h				\
+  qpid/ha/HaPlugin.cpp				\
+  qpid/ha/Logging.h				\
+  qpid/ha/Logging.cpp				\
+  qpid/ha/Settings.h				\
+  qpid/ha/QueueReplicator.h			\
+  qpid/ha/QueueReplicator.cpp			\
+  qpid/ha/ReplicatingSubscription.h		\
+  qpid/ha/ReplicatingSubscription.cpp		\
+  qpid/ha/WiringReplicator.cpp			\
+  qpid/ha/WiringReplicator.h
+
+ha_la_LIBADD = libqpidbroker.la
+ha_la_LDFLAGS = $(PLUGINLDFLAGS)

@@ -1378,7 +1378,7 @@ bool Queue::bind(boost::shared_ptr<Exchange> exchange, const std::string& key,
 }
 
 
-const Broker* Queue::getBroker()
+Broker* Queue::getBroker()
 {
     return broker;
 }

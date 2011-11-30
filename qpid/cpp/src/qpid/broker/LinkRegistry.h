@@ -84,28 +84,32 @@ namespace broker {
         ~LinkRegistry();
 
         std::pair<boost::shared_ptr<Link>, bool>
-            declare(std::string& host,
+            declare(const std::string& host,
                     uint16_t     port,
-                    std::string& transport,
+                    const std::string& transport,
                     bool         durable,
-                    std::string& authMechanism,
-                    std::string& username,
-                    std::string& password);
+                    const std::string& authMechanism,
+                    const std::string& username,
+                    const std::string& password);
+
         std::pair<Bridge::shared_ptr, bool>
-            declare(std::string& host,
+            declare(const std::string& host,
                     uint16_t     port,
                     bool         durable,
-                    std::string& src,
-                    std::string& dest,
-                    std::string& key,
+                    const std::string& src,
+                    const std::string& dest,
+                    const std::string& key,
                     bool         isQueue,
                     bool         isLocal,
-                    std::string& id,
-                    std::string& excludes,
+                    const std::string& id,
+                    const std::string& excludes,
                     bool         dynamic,
-                    uint16_t     sync);
+                    uint16_t     sync,
+                    Bridge::InitializeCallback=0
+            );
 
         void destroy(const std::string& host, const uint16_t port);
+
         void destroy(const std::string& host,
                      const uint16_t     port,
                      const std::string& src,

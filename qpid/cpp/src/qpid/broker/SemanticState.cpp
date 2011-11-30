@@ -25,9 +25,7 @@
 #include "qpid/broker/DtxAck.h"
 #include "qpid/broker/DtxTimeout.h"
 #include "qpid/broker/Message.h"
-#include "qpid/broker/NodeClone.h"
 #include "qpid/broker/Queue.h"
-#include "qpid/broker/QueueReplicator.h"
 #include "qpid/broker/SessionContext.h"
 #include "qpid/broker/SessionOutputException.h"
 #include "qpid/broker/TxAccept.h"
@@ -110,15 +108,25 @@ bool SemanticState::exists(const string& consumerTag){
 namespace {
     const std::string SEPARATOR("::");
 }
-    
+
 void SemanticState::consume(const string& tag,
                             Queue::shared_ptr queue, bool ackRequired, bool acquire,
-                            bool exclusive, const string& resumeId, uint64_t resumeTtl, const FieldTable& arguments)
+                            bool exclusive, const string& resumeId, uint64_t resumeTtl,
+                            const FieldTable& arguments)
 {
     // "tag" is only guaranteed to be unique to this session (see AMQP 0-10 Message.subscribe, destination).
     // Create a globally unique name so the broker can identify individual consumers
     std::string name = session.getSessionId().str() + SEPARATOR + tag;
-    ConsumerImpl::shared_ptr c(ConsumerImpl::create(this, name, queue, ackRequired, acquire, exclusive, tag, resumeId, resumeTtl, arguments));
+    const ConsumerFactories::Factories& cf(
+        session.getBroker().getConsumerFactories().get());
+    ConsumerImpl::shared_ptr c;
+    for (ConsumerFactories::Factories::const_iterator i = cf.begin(); i != cf.end() && !c; ++i)
+        c = (*i)->create(this, name, queue, ackRequired, acquire, exclusive, tag,
+                         resumeId, resumeTtl, arguments);
+    if (!c)                     // Create plain consumer
+        c = ConsumerImpl::shared_ptr(
+            new ConsumerImpl(this, name, queue, ackRequired, acquire, exclusive, tag,
+                             resumeId, resumeTtl, arguments));
     queue->consume(c, exclusive);//may throw exception
     consumers[tag] = c;
 }
@@ -268,224 +276,6 @@ void SemanticState::record(const DeliveryRecord& delivery)
 
 const std::string QPID_SYNC_FREQUENCY("qpid.sync_frequency");
 
-class ReplicatingSubscription : public SemanticState::ConsumerImpl, public QueueObserver
-{
-  public:
-    ReplicatingSubscription(SemanticState* parent,
-                            const std::string& name, boost::shared_ptr<Queue> queue,
-                            bool ack, bool acquire, bool exclusive, const std::string& tag,
-                            const std::string& resumeId, uint64_t resumeTtl, const framing::FieldTable& arguments);
-    ~ReplicatingSubscription();
-
-    void init();
-    void cancel();
-    bool deliver(QueuedMessage& msg);
-    void enqueued(const QueuedMessage&);
-    void dequeued(const QueuedMessage&);
-    void acquired(const QueuedMessage&) {}
-    void requeued(const QueuedMessage&) {}
-
-  protected:
-    bool doDispatch();
-  private:
-    boost::shared_ptr<Queue> events;
-    boost::shared_ptr<Consumer> consumer;
-    qpid::framing::SequenceSet range;
-
-    void generateDequeueEvent();
-    class DelegatingConsumer : public Consumer
-    {
-      public:
-        DelegatingConsumer(ReplicatingSubscription&);
-        ~DelegatingConsumer();
-        bool deliver(QueuedMessage& msg);
-        void notify();
-        //bool filter(boost::intrusive_ptr<Message>);
-        //bool accept(boost::intrusive_ptr<Message>);
-        Consumer::Action accept(const QueuedMessage&);
-        OwnershipToken* getSession();
-      private:
-        ReplicatingSubscription& delegate;
-    };
-};
-
-SemanticState::ConsumerImpl::shared_ptr SemanticState::ConsumerImpl::create(SemanticState* parent,
-                                                                            const string& name,
-                                                                            Queue::shared_ptr queue,
-                                                                            bool ack,
-                                                                            bool acquire,
-                                                                            bool exclusive,
-                                                                            const string& tag,
-                                                                            const string& resumeId,
-                                                                            uint64_t resumeTtl,
-                                                                            const framing::FieldTable& arguments)
-{
-    if (arguments.isSet("qpid.replicating-subscription")) {
-        shared_ptr result(new ReplicatingSubscription(parent, name, queue, ack, acquire, exclusive, tag, resumeId, resumeTtl, arguments));
-        boost::dynamic_pointer_cast<ReplicatingSubscription>(result)->init();
-        return result;
-    } else {
-        return shared_ptr(new ConsumerImpl(parent, name, queue, ack, acquire, exclusive, tag, resumeId, resumeTtl, arguments));
-    }
-}
-
-std::string mask(const std::string& in)
-{
-    return std::string("$") + in + std::string("_internal");
-}
-
-class ReplicationStateInitialiser
-{
-  public:
-    ReplicationStateInitialiser(qpid::framing::SequenceSet& results,
-                                const qpid::framing::SequenceNumber& start,
-                                const qpid::framing::SequenceNumber& end);
-    void operator()(const QueuedMessage& m) { process(m); }
-  private:
-    qpid::framing::SequenceSet& results;
-    const qpid::framing::SequenceNumber start;
-    const qpid::framing::SequenceNumber end;
-    void process(const QueuedMessage&);
-};
-
-ReplicatingSubscription::ReplicatingSubscription(SemanticState* _parent,
-                                                                const string& _name,
-                                                                Queue::shared_ptr _queue,
-                                                                bool ack,
-                                                                bool _acquire,
-                                                                bool _exclusive,
-                                                                const string& _tag,
-                                                                const string& _resumeId,
-                                                                uint64_t _resumeTtl,
-                                                                const framing::FieldTable& _arguments
-) : ConsumerImpl(_parent, _name, _queue, ack, _acquire, _exclusive, _tag, _resumeId, _resumeTtl, _arguments),
-    events(new Queue(mask(_name))),
-    consumer(new DelegatingConsumer(*this))
-{
-
-    if (_arguments.isSet("qpid.high_sequence_number")) {
-        qpid::framing::SequenceNumber hwm = _arguments.getAsInt("qpid.high_sequence_number");
-        qpid::framing::SequenceNumber lwm;
-        if (_arguments.isSet("qpid.low_sequence_number")) {
-            lwm = _arguments.getAsInt("qpid.low_sequence_number");
-        } else {
-            lwm = hwm;
-        }
-        qpid::framing::SequenceNumber oldest;
-        if (_queue->getOldest(oldest)) {
-            if (oldest >= hwm) {
-                range.add(lwm, --oldest);
-            } else if (oldest >= lwm) {
-                ReplicationStateInitialiser initialiser(range, lwm, hwm);
-                _queue->eachMessage(initialiser);
-            } else { //i.e. have older message on master than is reported to exist on replica
-                QPID_LOG(warning, "Replica appears to be missing message on master");
-            }
-        } else {
-            //local queue (i.e. master) is empty
-            range.add(lwm, _queue->getPosition());
-        }
-        QPID_LOG(debug, "Initial set of dequeues for " << _queue->getName() << " are " << range
-                 << " (lwm=" << lwm << ", hwm=" << hwm << ", current=" << _queue->getPosition() << ")");
-        //set position of 'cursor'
-        position = hwm;
-    }
-}
-
-bool ReplicatingSubscription::deliver(QueuedMessage& m)
-{
-    return ConsumerImpl::deliver(m);
-}
-
-void ReplicatingSubscription::init()
-{
-    getQueue()->addObserver(boost::dynamic_pointer_cast<QueueObserver>(shared_from_this()));
-}
-
-void ReplicatingSubscription::cancel()
-{
-    getQueue()->removeObserver(boost::dynamic_pointer_cast<QueueObserver>(shared_from_this()));
-}
-
-ReplicatingSubscription::~ReplicatingSubscription() {}
-
-//called before we get notified of the message being available and
-//under the message lock in the queue
-void ReplicatingSubscription::enqueued(const QueuedMessage& m)
-{
-    QPID_LOG(debug, "Enqueued message at " << m.position);
-    //delay completion
-    m.payload->getIngressCompletion().startCompleter();
-    QPID_LOG(debug, "Delayed " << m.payload.get());
-}
-
-class Buffer : public qpid::framing::Buffer
-{
-  public:
-    Buffer(size_t size) : qpid::framing::Buffer(new char[size], size) {}
-    ~Buffer() { delete[] getPointer(); }
-};
-
-void ReplicatingSubscription::generateDequeueEvent()
-{
-    Buffer buffer(range.encodedSize());
-    range.encode(buffer);
-    range.clear();
-    buffer.reset();
-
-    //generate event message
-    boost::intrusive_ptr<Message> event = new Message();
-    AMQFrame method((MessageTransferBody(ProtocolVersion(), std::string(), 0, 0)));
-    AMQFrame header((AMQHeaderBody()));
-    AMQFrame content((AMQContentBody()));
-    content.castBody<AMQContentBody>()->decode(buffer, buffer.getSize());
-    header.setBof(false);
-    header.setEof(false);
-    header.setBos(true);
-    header.setEos(true);
-    content.setBof(false);
-    content.setEof(true);
-    content.setBos(true);
-    content.setEos(true);
-    event->getFrames().append(method);
-    event->getFrames().append(header);
-    event->getFrames().append(content);
-
-    DeliveryProperties* props = event->getFrames().getHeaders()->get<DeliveryProperties>(true);
-    props->setRoutingKey("dequeue-event");
-
-    events->deliver(event);
-}
-
-//called after the message has been removed from the deque and under
-//the message lock in the queue
-void ReplicatingSubscription::dequeued(const QueuedMessage& m)
-{
-    {
-        Mutex::ScopedLock l(lock);
-        range.add(m.position);
-        QPID_LOG(debug, "Updated dequeue event to include message at " << m.position << "; subscription is at " << position);
-    }
-    notify();
-    if (m.position > position) {
-        m.payload->getIngressCompletion().finishCompleter();
-        QPID_LOG(debug, "Completed " << m.payload.get() << " early due to dequeue");
-    }
-}
-
-bool ReplicatingSubscription::doDispatch()
-{
-    {
-        Mutex::ScopedLock l(lock);
-        if (!range.empty()) {
-            generateDequeueEvent();
-        }
-    }
-    bool r1 = events->dispatch(consumer);
-    bool r2 = ConsumerImpl::doDispatch();
-    return r1 || r2;
-}
-
 SemanticState::ConsumerImpl::ConsumerImpl(SemanticState* _parent,
                                           const string& _name,
                                           Queue::shared_ptr _queue,
@@ -496,7 +286,6 @@ SemanticState::ConsumerImpl::ConsumerImpl(SemanticState* _parent,
                                           const string& _resumeId,
                                           uint64_t _resumeTtl,
                                           const framing::FieldTable& _arguments
-
 
 ) :
     Consumer(_name, _acquire, !_acquire),   /** @todo KAG - allow configuration of 'browse acquired' */
@@ -512,7 +301,7 @@ SemanticState::ConsumerImpl::ConsumerImpl(SemanticState* _parent,
     tag(_tag),
     resumeTtl(_resumeTtl),
     arguments(_arguments),
-    msgCredit(0),
+     msgCredit(0),
     byteCredit(0),
     notifyEnabled(true),
     syncFrequency(_arguments.getAsInt(QPID_SYNC_FREQUENCY)),
@@ -558,7 +347,7 @@ bool SemanticState::ConsumerImpl::deliver(QueuedMessage& msg)
 {
     assertClusterSafe();
     allocateCredit(msg.payload);
-    DeliveryRecord record(msg, msg.queue->shared_from_this(), getTag(), acquire, !ackExpected, windowing, 0, dynamic_cast<const ReplicatingSubscription*>(this));
+    DeliveryRecord record(msg, msg.queue->shared_from_this(), getTag(), acquire, !ackExpected, windowing, 0, isDelayedCompletion());
     bool sync = syncFrequency && ++deliveryCount >= syncFrequency;
     if (sync) deliveryCount = 0;//reset
     parent->deliver(record, sync);
@@ -714,10 +503,10 @@ void SemanticState::route(intrusive_ptr<Message> msg, Deliverable& strategy) {
     msg->computeExpiration(getSession().getBroker().getExpiryPolicy());
 
     std::string exchangeName = msg->getExchangeName();
-    if (!cacheExchange || cacheExchange->getName() != exchangeName || cacheExchange->isDestroyed()) {
-        cacheExchange = QueueReplicator::create(exchangeName, getSession().getBroker().getQueues());
-        if (!cacheExchange) cacheExchange = NodeClone::create(exchangeName, getSession().getBroker());
-        if (!cacheExchange) cacheExchange = session.getBroker().getExchanges().get(exchangeName);
+    if (!cacheExchange || cacheExchange->getName() != exchangeName
+        || cacheExchange->isDestroyed())
+    {
+        cacheExchange = session.getBroker().getExchanges().get(exchangeName);
     }
     cacheExchange->setProperties(msg);
 
@@ -1097,38 +886,6 @@ void SemanticState::detached()
         i->second->disableNotify();
         session.getConnection().outputTasks.removeOutputTask(i->second.get());
     }
-}
-
-ReplicatingSubscription::DelegatingConsumer::DelegatingConsumer(ReplicatingSubscription& c) : Consumer(c.getName(), true), delegate(c) {}
-ReplicatingSubscription::DelegatingConsumer::~DelegatingConsumer() {}
-bool ReplicatingSubscription::DelegatingConsumer::deliver(QueuedMessage& m)
-{
-    return delegate.deliver(m);
-}
-void ReplicatingSubscription::DelegatingConsumer::notify() { delegate.notify(); }
-//bool ReplicatingSubscription::DelegatingConsumer::filter(boost::intrusive_ptr<Message> msg) { return delegate.filter(msg); }
-//bool ReplicatingSubscription::DelegatingConsumer::accept(boost::intrusive_ptr<Message> msg) { return delegate.accept(msg); }
-Consumer::Action ReplicatingSubscription::DelegatingConsumer::accept(const QueuedMessage& msg) { return delegate.accept(msg); }
-OwnershipToken* ReplicatingSubscription::DelegatingConsumer::getSession() { return delegate.getSession(); }
-
-ReplicationStateInitialiser::ReplicationStateInitialiser(qpid::framing::SequenceSet& r,
-                                                         const qpid::framing::SequenceNumber& s,
-                                                         const qpid::framing::SequenceNumber& e)
-    : results(r), start(s), end(e)
-{
-    results.add(start, end);
-}
-
-void ReplicationStateInitialiser::process(const QueuedMessage& message)
-{
-    if (message.position < start) {
-        //replica does not have a message that should still be on the queue
-        QPID_LOG(warning, "Replica appears to be missing message at " << message.position);
-    } else if (message.position >= start && message.position <= end) {
-        //i.e. message is within the intial range and has not been dequeued, so remove it from the results
-        results.remove(message.position);
-    } //else message has not been seen by replica yet so can be ignored here
-
 }
 
 }} // namespace qpid::broker

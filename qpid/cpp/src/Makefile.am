@@ -104,7 +104,8 @@ mgen_cmd=$(mgen_dir)/qmf-gen -m $(srcdir)/managementgen.mk \
 	-c $(srcdir)/managementgen.cmake -q -b -o qmf \
 	$(top_srcdir)/../specs/management-schema.xml \
 	$(srcdir)/qpid/acl/management-schema.xml \
-	$(srcdir)/qpid/cluster/management-schema.xml
+	$(srcdir)/qpid/cluster/management-schema.xml \
+	$(srcdir)/qpid/ha/management-schema.xml
 
 $(srcdir)/managementgen.mk $(mgen_broker_cpp) $(dist_qpid_management_HEADERS): mgen.timestamp
 mgen.timestamp: $(mgen_generator)
@@ -209,6 +210,7 @@ dmoduleexec_LTLIBRARIES =
 cmoduleexec_LTLIBRARIES =
 
 include cluster.mk
+include ha.mk
 include acl.mk
 include qmf.mk
 include qmfc.mk
@@ -533,6 +535,7 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/ConnectionState.h \
   qpid/broker/ConnectionToken.h \
   qpid/broker/Consumer.h \
+  qpid/broker/ConsumerFactory.h \
   qpid/broker/Daemon.cpp \
   qpid/broker/Daemon.h \
   qpid/broker/Deliverable.h \
@@ -593,8 +596,6 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/PriorityQueue.cpp \
   qpid/broker/NameGenerator.cpp \
   qpid/broker/NameGenerator.h \
-  qpid/broker/NodeClone.h \
-  qpid/broker/NodeClone.cpp \
   qpid/broker/NullMessageStore.cpp \
   qpid/broker/NullMessageStore.h \
   qpid/broker/OwnershipToken.h \
@@ -622,8 +623,6 @@ libqpidbroker_la_SOURCES = \
   qpid/broker/QueuedMessage.h \
   qpid/broker/QueueFlowLimit.h \
   qpid/broker/QueueFlowLimit.cpp \
-  qpid/broker/QueueReplicator.h \
-  qpid/broker/QueueReplicator.cpp \
   qpid/broker/RateFlowcontrol.h \
   qpid/broker/RecoverableConfig.h \
   qpid/broker/RecoverableExchange.h \

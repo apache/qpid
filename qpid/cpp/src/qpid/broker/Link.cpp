@@ -47,13 +47,13 @@ namespace _qmf = qmf::org::apache::qpid::broker;
 
 Link::Link(LinkRegistry*  _links,
            MessageStore*  _store,
-           string&        _host,
+           const string&        _host,
            uint16_t       _port,
-           string&        _transport,
+           const string&        _transport,
            bool           _durable,
-           string&        _authMechanism,
-           string&        _username,
-           string&        _password,
+           const string&        _authMechanism,
+           const string&        _username,
+           const string&        _password,
            Broker*        _broker,
            Manageable*    parent)
     : links(_links), store(_store), host(_host), port(_port),
@@ -79,6 +79,7 @@ Link::Link(LinkRegistry*  _links,
         }
     }
     setStateLH(STATE_WAITING);
+    startConnectionLH();
 }
 
 Link::~Link ()
@@ -213,28 +214,30 @@ void Link::add(Bridge::shared_ptr bridge)
 {
     Mutex::ScopedLock mutex(lock);
     created.push_back (bridge);
+    if (connection)
+        connection->requestIOProcessing (boost::bind(&Link::ioThreadProcessing, this));
+
 }
 
 void Link::cancel(Bridge::shared_ptr bridge)
 {
-    {
-        Mutex::ScopedLock mutex(lock);
+    Mutex::ScopedLock mutex(lock);
 
-        for (Bridges::iterator i = created.begin(); i != created.end(); i++) {
-            if ((*i).get() == bridge.get()) {
-                created.erase(i);
-                break;
-            }
-        }
-        for (Bridges::iterator i = active.begin(); i != active.end(); i++) {
-            if ((*i).get() == bridge.get()) {
-                cancellations.push_back(bridge);
-                bridge->closed();
-                active.erase(i);
-                break;
-            }
+    for (Bridges::iterator i = created.begin(); i != created.end(); i++) {
+        if ((*i).get() == bridge.get()) {
+            created.erase(i);
+            break;
         }
     }
+    for (Bridges::iterator i = active.begin(); i != active.end(); i++) {
+        if ((*i).get() == bridge.get()) {
+            cancellations.push_back(bridge);
+            bridge->closed();
+            active.erase(i);
+            break;
+        }
+    }
+
     if (!cancellations.empty()) {
         connection->requestIOProcessing (boost::bind(&Link::ioThreadProcessing, this));
     }
@@ -282,6 +285,8 @@ void Link::setConnection(Connection* c)
     Mutex::ScopedLock mutex(lock);
     connection = c;
     updateUrls = true;
+    // Process any IO tasks bridges added before setConnection.
+    connection->requestIOProcessing (boost::bind(&Link::ioThreadProcessing, this));
 }
 
 void Link::maintenanceVisit ()
@@ -311,7 +316,7 @@ void Link::maintenanceVisit ()
     }
     else if (state == STATE_OPERATIONAL && (!active.empty() || !created.empty() || !cancellations.empty()) && connection != 0)
         connection->requestIOProcessing (boost::bind(&Link::ioThreadProcessing, this));
-}
+    }
 
 void Link::reconnect(const qpid::Address& a)
 {
