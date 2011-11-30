@@ -2628,7 +2628,7 @@ enable("qpid.messaging.io", DEBUG)
 	    <row>
 	      <entry>msg.redelivered</entry><entry>msg.{get,set}Redelivered()</entry><entry>dp.redelivered</entry>
 	    </row>
-	    <row><entry>msg.properties</entry><entry>msg.{get,set}Properties()</entry><entry>mp.application_headers</entry>
+	    <row><entry>msg.properties</entry><entry>msg.getProperties()/msg.setProperty()</entry><entry>mp.application_headers</entry>
 	    </row>
 	    <row>
 	      <entry>msg.content_type</entry><entry>msg.{get,set}ContentType()</entry><entry>mp.content_type</entry>
@@ -2637,17 +2637,85 @@ enable("qpid.messaging.io", DEBUG)
         </tgroup>
       </table>
 
-      <para>The 0-10 mapping also recognises certain special property
-      keys. If the properties contain entries for <literal>x-amqp-0-10.app-id</literal>
-      or <literal>x-amqp-0-10.content-encoding</literal>, the values will be used to
-      set <literal>message-properties.app-id</literal> and
-      <literal>message-properties.content-encoding</literal> on the
-      resulting 0-10 message transfer. Likewise if an incoming
-      transfer has those properties set, they will be exposed in the
-      same manner. In addition the routing key on incoming transfers
-      will be exposed directly via the custom property with key
-      <literal>x-amqp-0-10.routing-key</literal>.</para>
-
+      <section role="h3" id="section-amqp0-10-message-props">
+        <title>0-10 Message Property Keys</title>
+        <para>
+          The QPID Messaging API also recognises special message property keys and
+          automatically provides a mapping to their corresponding AMQP 0-10 definitions.
+        </para>
+        <itemizedlist>
+          <listitem>
+            <para>
+              When sending a message, if the properties contain an entry for
+              <literal>x-amqp-0-10.app-id</literal>, its value will be used to set the
+              <literal>message-properties.app-id</literal> property in the outgoing
+              message.  Likewise, if an incoming message has
+              <literal>message-properties.app-id</literal> set, its value can be accessed
+              via the <literal>x-amqp-0-10.app-id</literal> message property key.
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              When sending a message, if the properties contain an entry for
+              <literal>x-amqp-0-10.content-encoding</literal>, its value will be used to
+              set the <literal>message-properties.content-encoding</literal> property in
+              the outgoing message.  Likewise, if an incoming message has
+              <literal>message-properties.content-encoding</literal> set, its value can be
+              accessed via the <literal>x-amqp-0-10.content-encoding</literal> message
+              property key.
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              The routing key (<literal>delivery-properties.routing-key</literal>) in an
+              incoming messages can be accessed via the
+              <literal>x-amqp-0-10.routing-key</literal> message property.
+            </para>
+          </listitem>
+          <listitem>
+            <para>
+              If the timestamp delivery property is set in an incoming message
+              (<literal>delivery-properties.timestamp</literal>), the timestamp value will
+              be made available via the <literal>x-amqp-0-10.timestamp</literal> message
+              property.
+              <footnote>
+                <para>
+                  This special property is currently not supported by the Qpid JMS client.
+                </para>
+              </footnote>
+            </para>
+          </listitem>
+        </itemizedlist>
+        <example>
+          <title>Accessing the AMQP 0-10 Message Timestamp in Python</title>
+          <para>
+            The following code fragment checks for and extracts the message timestamp from
+            a received message.
+          </para>
+          <programlisting lang="python">
+try:
+    msg = receiver.fetch(timeout=1)
+    if "x-amqp-0-10.timestamp" in msg.properties:
+        print("Timestamp=%s" % str(msg.properties["x-amqp-0-10.timestamp"]))
+except Empty:
+    pass
+          </programlisting>
+        </example>
+        <example>
+          <title>Accessing the AMQP 0-10 Message Timestamp in C++</title>
+          <para>
+            The same example, except in C++.
+          </para>
+          <programlisting lang="c++">
+messaging::Message msg;
+if (receiver.fetch(msg, messaging::Duration::SECOND*1)) {
+    if (msg.getProperties().find("x-amqp-0-10.timestamp") != msg.getProperties().end()) {
+        <![CDATA[std::cout << "Timestamp=" << msg.getProperties()["x-amqp-0-10.timestamp"].asString() << std::endl;]]>
+    }
+}
+          </programlisting>
+        </example>
+      </section>
     </section>
 
     <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Message-Groups-Guide.xml"/>
