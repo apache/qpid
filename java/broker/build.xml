@@ -72,14 +72,26 @@
         <fixcrlf srcdir="${module.release}/bin" fixlast="true" eol="dos" includes="*.bat"/>
     </target>
 
-    <target name="release-bin-other" description="copy broker-plugins into module release">
+    <target name="release-bin-other" depends="release-bin-other-bdbstore" description="copy broker-plugins into module release">
         <copy todir="${module.release}/lib/plugins" failonerror="true">
             <fileset dir="${build.lib}/plugins"/>
         </copy>
-        <!--copy optional bdbstore module if it exists -->
-        <copy todir="${module.release}/lib/" failonerror="false">
+    </target>
+
+    <target name="release-bin-other-bdbstore" depends="check-bdbstore-requested" if="bdbstore-requested"
+                                         description="copy bdbstore items into module release">
+        <copy todir="${module.release}/lib/" failonerror="true">
             <fileset file="${build.lib}/${project.name}-bdbstore-${project.version}.jar"/>
         </copy>
+        <copy todir="${module.release}/bin" failonerror="true" flatten="true">
+            <fileset dir="${basedir}/../bdbstore/bin"/>
+        </copy>
+    </target>
+
+    <target name="check-bdbstore-requested">
+         <condition property="bdbstore-requested">
+             <contains string="${modules.opt}" substring="bdbstore"/>
+         </condition>
     </target>
 
     <target name="release-bin" depends="release-bin-tasks"/>
