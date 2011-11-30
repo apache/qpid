@@ -314,4 +314,72 @@ Store Options:
                             pages (1 read page = 64kiB)
 </programlisting>
 <!--h2--></section>
+<section role="h2" id="RASC-message-timestamps">
+  <title>Timestamping Received Messages</title>
+  <para>
+    The AMQP 0-10 specification defines a <emphasis>timestamp</emphasis> message delivery
+    property. The timestamp delivery property is a <emphasis>datetime</emphasis> value
+    that is written to each message that arrives at the broker.  See the description of
+    "message.delivery-properties" in the "Command Classes" section of the AMQP 0-10
+    specification for more detail.
+  </para>
+  <para>
+    See the <emphasis>Programming in Apache Qpid</emphasis> documentation for
+    information regarding how clients may access the timestamp value in received
+    messages.
+  </para>
+  <para>
+    By default, this timestamping feature is disabled.  To enable timestamping, use the
+    <emphasis>enable-timestamp</emphasis> broker configuration option.  Setting the
+    enable-timestamp option to 'yes' will enable message timestamping:
+  </para>
+  <programlisting>
+./qpidd --enable-timestamp yes
+  </programlisting>
+  <para>
+    Message timestamping can also be enabled (and disabled) without restarting the broker.
+    The QMF Broker management object defines two methods for accessing the timestamp
+    configuration:
+  </para>
+  <table>
+    <title>QMF Management - Broker Methods for Managing the Timestamp Configuration</title>
+    <tgroup cols="2">
+      <thead>
+        <row>
+          <entry>Method</entry>
+          <entry>Description</entry>
+        </row>
+      </thead>
+      <tbody>
+        <row>
+          <entry>getTimestampConfig</entry>
+          <entry>Get the message timestamping configuration.  Returns True if received messages are timestamped.</entry>
+        </row>
+        <row>
+          <entry>setTimestampConfig</entry>
+          <entry>Set the message timestamping configuration. Set True to enable timestamping received messages, False to disable timestamping.</entry>
+        </row>
+      </tbody>
+    </tgroup>
+  </table>
+  <example>
+    <title>Enabling Message Timestamping via QMF - Python</title>
+    <para>
+      The following code fragment uses these QMF method calls to enable message timestamping.
+    </para>
+    <programlisting lang="python">
+# get the state of the timestamp configuration
+broker = self.qmf.getObjects(_class="broker")[0]
+rc = broker.getTimestampConfig()
+self.assertEqual(rc.status, 0)
+self.assertEqual(rc.text, "OK")
+print("The timestamp setting is %s" % str(rc.receive))
+
+# try to enable it
+rc = broker.setTimestampConfig(True)
+self.assertEqual(rc.status, 0)
+self.assertEqual(rc.text, "OK")
+    </programlisting>
+  </example>
+<!--h2--></section>
 </section>
