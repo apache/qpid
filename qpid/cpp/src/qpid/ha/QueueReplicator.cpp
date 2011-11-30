@@ -21,6 +21,7 @@
 
 #include "QueueReplicator.h"
 #include "ReplicatingSubscription.h"
+#include "Logging.h"
 #include "qpid/broker/Bridge.h"
 #include "qpid/broker/Broker.h"
 #include "qpid/broker/Link.h"
@@ -82,7 +83,7 @@ void QueueReplicator::initializeBridge(Bridge& bridge, SessionHandler& sessionHa
     peer.getMessage().subscribe(args.i_src, args.i_dest, args.i_sync ? 0 : 1, 0, false, "", 0, settings);
     peer.getMessage().flow(getName(), 0, 0xFFFFFFFF);
     peer.getMessage().flow(getName(), 1, 0xFFFFFFFF);
-    QPID_LOG(debug, "Activated route from queue " << args.i_src << " to " << args.i_dest);
+    QPID_LOG(debug, "HA: Activated route from queue " << args.i_src << " to " << args.i_dest);
 }
 
 
@@ -105,14 +106,17 @@ void QueueReplicator::route(Deliverable& msg, const std::string& key, const qpid
             if (current < *i) {
                 //haven't got that far yet, record the dequeue
                 dequeued.add(*i);
-                QPID_LOG(debug, "Recording dequeue of message at " << *i << " from " << queue->getName());
+                QPID_LOG(trace, "HA: Recording dequeue of message at " <<
+                         QueuePos(queue.get(), *i));
             } else {
                 QueuedMessage message;
                 if (queue->acquireMessageAt(*i, message)) {
                     queue->dequeue(0, message);
-                    QPID_LOG(info, "Dequeued message at " << *i << " from " << queue->getName());
+                    QPID_LOG(info, "HA: Dequeued message "<< QueuePos(message));
                 } else {
-                    QPID_LOG(error, "Unable to dequeue message at " << *i << " from " << queue->getName());
+                    // FIXME aconway 2011-11-29: error handling
+                    QPID_LOG(error, "HA: Unable to dequeue message at "
+                             << QueuePos(queue.get(), *i));
                 }
             }
         }
@@ -121,10 +125,10 @@ void QueueReplicator::route(Deliverable& msg, const std::string& key, const qpid
         //dequeued before our subscription reached them
         while (dequeued.contains(++current)) {
             dequeued.remove(current);
-            QPID_LOG(debug, "Skipping dequeued message at " << current << " from " << queue->getName());
+            QPID_LOG(debug, "HA: Skipping dequeued message at " << current << " from " << queue->getName());
             queue->setPosition(current);
         }
-        QPID_LOG(info, "Enqueued message on " << queue->getName() << "; currently at " << current);
+        QPID_LOG(info, "HA: Enqueued message on " << queue->getName() << "; currently at " << current);
         msg.deliverTo(queue);
     }
 }

@@ -71,7 +71,6 @@ class ReplicatingSubscription : public broker::SemanticState::ConsumerImpl,
 
     ~ReplicatingSubscription();
 
-    void init();
     void cancel();
     bool deliver(broker::QueuedMessage& msg);
     void enqueued(const broker::QueuedMessage&);

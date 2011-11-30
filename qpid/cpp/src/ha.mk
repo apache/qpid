@@ -28,6 +28,8 @@ ha_la_SOURCES =					\
   qpid/ha/HaBroker.cpp				\
   qpid/ha/HaBroker.h				\
   qpid/ha/HaPlugin.cpp				\
+  qpid/ha/Logging.h				\
+  qpid/ha/Logging.cpp				\
   qpid/ha/Settings.h				\
   qpid/ha/QueueReplicator.h			\
   qpid/ha/QueueReplicator.cpp			\

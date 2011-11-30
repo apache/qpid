@@ -20,6 +20,7 @@
  */
 
 #include "ReplicatingSubscription.h"
+#include "Logging.h"
 #include "qpid/broker/Queue.h"
 #include "qpid/framing/AMQFrame.h"
 #include "qpid/framing/MessageTransferBody.h"
@@ -39,7 +40,7 @@ const string ReplicatingSubscription::QPID_HIGH_SEQUENCE_NUMBER("qpid.high_seque
 const string ReplicatingSubscription::QPID_LOW_SEQUENCE_NUMBER("qpid.low_sequence_number");
 
 const string DOLLAR("$");
-const string INTERNAL("_internal");
+const string INTERNAL("-internal");
 
 class ReplicationStateInitialiser
 {
@@ -55,7 +56,7 @@ class ReplicationStateInitialiser
     void operator()(const QueuedMessage& message) {
         if (message.position < start) {
             //replica does not have a message that should still be on the queue
-            QPID_LOG(warning, "Replica appears to be missing message at " << message.position);
+            QPID_LOG(warning, "HA: Replica missing message " << QueuePos(message));
         } else if (message.position >= start && message.position <= end) {
             //i.e. message is within the intial range and has not been dequeued, so remove it from the results
             results.remove(message.position);
@@ -75,63 +76,63 @@ string mask(const string& in)
 
 boost::shared_ptr<broker::SemanticState::ConsumerImpl>
 ReplicatingSubscription::Factory::create(
-    SemanticState* _parent,
-    const string& _name,
-    Queue::shared_ptr _queue,
+    SemanticState* parent,
+    const string& name,
+    Queue::shared_ptr queue,
     bool ack,
-    bool _acquire,
-    bool _exclusive,
-    const string& _tag,
-    const string& _resumeId,
-    uint64_t _resumeTtl,
-    const framing::FieldTable& _arguments
+    bool acquire,
+    bool exclusive,
+    const string& tag,
+    const string& resumeId,
+    uint64_t resumeTtl,
+    const framing::FieldTable& arguments
 ) {
-    
     return boost::shared_ptr<broker::SemanticState::ConsumerImpl>(
-        new ReplicatingSubscription(_parent, _name, _queue, ack, _acquire, _exclusive, _tag, _resumeId, _resumeTtl, _arguments));
+        new ReplicatingSubscription(parent, name, queue, ack, acquire, exclusive, tag, resumeId, resumeTtl, arguments));
 }
 
 ReplicatingSubscription::ReplicatingSubscription(
-    SemanticState* _parent,
-    const string& _name,
-    Queue::shared_ptr _queue,
+    SemanticState* parent,
+    const string& name,
+    Queue::shared_ptr queue,
     bool ack,
-    bool _acquire,
-    bool _exclusive,
-    const string& _tag,
-    const string& _resumeId,
-    uint64_t _resumeTtl,
-    const framing::FieldTable& _arguments
-) : ConsumerImpl(_parent, _name, _queue, ack, _acquire, _exclusive, _tag, _resumeId, _resumeTtl, _arguments),
-    events(new Queue(mask(_name))),
+    bool acquire,
+    bool exclusive,
+    const string& tag,
+    const string& resumeId,
+    uint64_t resumeTtl,
+    const framing::FieldTable& arguments
+) : ConsumerImpl(parent, name, queue, ack, acquire, exclusive, tag,
+                 resumeId, resumeTtl, arguments),
+    events(new Queue(mask(name))),
     consumer(new DelegatingConsumer(*this))
 {
+    QPID_LOG(debug, "HA: Replicating subscription " << name << " to " << queue->getName());
     // FIXME aconway 2011-11-25: string constants.
-    QPID_LOG(debug, "HA: replicating subscription " << _name << " to " << _queue->getName());
-    if (_arguments.isSet("qpid.high_sequence_number")) {
-        qpid::framing::SequenceNumber hwm = _arguments.getAsInt("qpid.high_sequence_number");
+    if (arguments.isSet("qpid.high_sequence_number")) {
+        qpid::framing::SequenceNumber hwm = arguments.getAsInt("qpid.high_sequence_number");
         qpid::framing::SequenceNumber lwm;
-        if (_arguments.isSet("qpid.low_sequence_number")) {
-            lwm = _arguments.getAsInt("qpid.low_sequence_number");
+        if (arguments.isSet("qpid.low_sequence_number")) {
+            lwm = arguments.getAsInt("qpid.low_sequence_number");
         } else {
             lwm = hwm;
         }
         qpid::framing::SequenceNumber oldest;
-        if (_queue->getOldest(oldest)) {
+        if (queue->getOldest(oldest)) {
             if (oldest >= hwm) {
                 range.add(lwm, --oldest);
             } else if (oldest >= lwm) {
                 ReplicationStateInitialiser initialiser(range, lwm, hwm);
-                _queue->eachMessage(initialiser);
+                queue->eachMessage(initialiser);
             } else { //i.e. have older message on master than is reported to exist on replica
-                QPID_LOG(warning, "Replica appears to be missing message on master");
+                QPID_LOG(warning, "HA: Replica  missing message on master");
             }
         } else {
             //local queue (i.e. master) is empty
-            range.add(lwm, _queue->getPosition());
+            range.add(lwm, queue->getPosition());
         }
-        QPID_LOG(debug, "Initial set of dequeues for " << _queue->getName() << " are " << range
-                 << " (lwm=" << lwm << ", hwm=" << hwm << ", current=" << _queue->getPosition() << ")");
+        QPID_LOG(debug, "HA: Initial set of dequeues for " << queue->getName() << " are " << range
+                 << " (lwm=" << lwm << ", hwm=" << hwm << ", current=" << queue->getPosition() << ")");
         //set position of 'cursor'
         position = hwm;
     }
@@ -140,11 +141,6 @@ ReplicatingSubscription::ReplicatingSubscription(
 bool ReplicatingSubscription::deliver(QueuedMessage& m)
 {
     return ConsumerImpl::deliver(m);
-}
-
-void ReplicatingSubscription::init()
-{
-    getQueue()->addObserver(boost::dynamic_pointer_cast<QueueObserver>(shared_from_this()));
 }
 
 void ReplicatingSubscription::cancel()
@@ -158,10 +154,9 @@ ReplicatingSubscription::~ReplicatingSubscription() {}
 //under the message lock in the queue
 void ReplicatingSubscription::enqueued(const QueuedMessage& m)
 {
-    QPID_LOG(debug, "Enqueued message at " << m.position);
+    QPID_LOG(trace, "HA: Enqueued message " << QueuePos(m));
     //delay completion
     m.payload->getIngressCompletion().startCompleter();
-    QPID_LOG(debug, "Delayed " << m.payload.get());
 }
 
 void ReplicatingSubscription::generateDequeueEvent()
@@ -203,12 +198,13 @@ void ReplicatingSubscription::dequeued(const QueuedMessage& m)
     {
         sys::Mutex::ScopedLock l(lock);
         range.add(m.position);
-        QPID_LOG(debug, "Updated dequeue event to include message at " << m.position << "; subscription is at " << position);
+        // FIXME aconway 2011-11-29: q[pos]
+        QPID_LOG(trace, "HA: Updated dequeue event to include " << QueuePos(m) << "; subscription is at " << position);
     }
     notify();
     if (m.position > position) {
         m.payload->getIngressCompletion().finishCompleter();
-        QPID_LOG(debug, "Completed " << m.payload.get() << " early due to dequeue");
+        QPID_LOG(trace, "HA: Completed " << QueuePos(m) << " early due to dequeue");
     }
 }
 
@@ -235,6 +231,5 @@ void ReplicatingSubscription::DelegatingConsumer::notify() { delegate.notify(); 
 bool ReplicatingSubscription::DelegatingConsumer::filter(boost::intrusive_ptr<Message> msg) { return delegate.filter(msg); }
 bool ReplicatingSubscription::DelegatingConsumer::accept(boost::intrusive_ptr<Message> msg) { return delegate.accept(msg); }
 OwnershipToken* ReplicatingSubscription::DelegatingConsumer::getSession() { return delegate.getSession(); }
-
 
 }} // namespace qpid::broker
