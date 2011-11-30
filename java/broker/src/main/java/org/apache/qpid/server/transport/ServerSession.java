@@ -350,7 +350,7 @@ public class ServerSession extends Session implements AuthorizationHolder, Sessi
         _transaction.rollback();
         for(MessageDispositionChangeListener listener : _messageDispositionListenerMap.values())
         {
-            listener.onRelease(false);
+            listener.onRelease(true);
         }
         _messageDispositionListenerMap.clear();
 

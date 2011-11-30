@@ -643,27 +643,26 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
                             });
     }
 
-    void reject(QueueEntry entry)
+    void reject(final QueueEntry entry)
     {
         entry.setRedelivered();
         entry.routeToAlternate();
 
     }
 
-    void release(QueueEntry entry, boolean setRedelivered)
+    void release(final QueueEntry entry, final boolean setRedelivered)
     {
-        boolean maxDeliveryLimitExceeded = false;
         if (setRedelivered)
         {
             entry.setRedelivered();
-            maxDeliveryLimitExceeded = isMaxDeliveryLimitExceeded(entry);
         }
-        else
+
+        if (getSession().isClosing() || !setRedelivered)
         {
             entry.decrementDeliveryCount();
         }
 
-        if (maxDeliveryLimitExceeded)
+        if (isMaxDeliveryLimitReached(entry))
         {
             sendToDLQOrDiscard(entry);
         }
@@ -708,7 +707,7 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
         }
     }
 
-    private boolean isMaxDeliveryLimitExceeded(QueueEntry entry)
+    private boolean isMaxDeliveryLimitReached(QueueEntry entry)
     {
         final int maxDeliveryLimit = entry.getQueue().getMaximumDeliveryCount();
         return (maxDeliveryLimit > 0 && entry.getDeliveryCount() >= maxDeliveryLimit);

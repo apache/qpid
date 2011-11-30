@@ -405,10 +405,6 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
      */
     public void sendClose(long timeout) throws AMQException, FailoverException
     {
-        if (getTransacted())
-        {
-            releaseForRollback();
-        }
         if (flushTask != null)
         {
             flushTask.cancel();
