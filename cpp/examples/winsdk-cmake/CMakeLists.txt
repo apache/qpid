@@ -17,34 +17,39 @@
 # under the License.
 #
 
+# Description
+#   For WinSDK:
+#   Top-level CMake source to build version-independent C++ 
+#   example solution and project files for Visual Studio.
 #
-# For making WinSDK example solution and project files:
-# Top-level CMake source to build version-independent C++ 
-# example solution and project files for Visual Studio.
+# Usage:
+#   mkdir msvc9-win32
+#   cd    msvc9-win32
+#   cmake -G "Visual Studio 9 2008" ..\winsdk-cmake
+#   cd ..
 #
-# mkdir msvc9-win32
-# cd    msvc9-win32
-# cmake -G "Visual Studio 9 2008" ..\cmake
-# cd ..
+#   mkdir msvc9-x64
+#   cd    msvc9-x64
+#   cmake -G "Visual Studio 9 2008 Win64" ..\winsdk-cmake
+#   cd ..
 #
-# mkdir msvc9-x64
-# cd    msvc9-x64
-# cmake -G "Visual Studio 9 2008 x64" ..\cmake
-# cd ..
+#   mkdir msvc10-win32
+#   cd    msvc10-win32
+#   cmake -G "Visual Studio 10" ..\winsdk-cmake
+#   cd ..
+#
+#   mkdir msvc10-x64
+#   cd    msvc10-x64
+#   cmake -G "Visual Studio 10 Win64" ..\winsdk-cmake
+#   cd ..
 #
 
 project(examples)
 
-set (CMAKE_VERBOSE_MAKEFILE ON)  # for debugging
+set (CMAKE_VERBOSE_MAKEFILE ON)
 
-cmake_minimum_required(VERSION 2.4.0 FATAL_ERROR)
-
-#
-# This script supports settings for the WinSDK build and
-# for a normal source build.
-#
-option (BUILD_WINSDK
-        "Generate for the WinSDK packaged environment" ON)
+cmake_minimum_required(VERSION 2.8.6 FATAL_ERROR)
+cmake_policy (SET CMP0015 NEW)
 
 set (CMAKE_SUPPRESS_REGENERATION TRUE)
 
@@ -56,33 +61,16 @@ add_definitions(
 
 set (CMAKE_DEBUG_POSTFIX "d")
 
-set (CMAKE_CONFIGURATION_TYPES Debug Release)
-
-if (BUILD_WINSDK)
-    # Set for WinSDK builds
-    message(STATUS "BUILD_WINSDK is ON")
-    set (includeDirs            "../../include")
-    set (linkDirs               "../../lib")
-else (BUILD_WINSDK)
-    # Set for in-source builds
-    message(STATUS "BUILD_WINSDK is OFF")
-    set (includeDirs            "$(QPID_ROOT)/include;../../include")
-    set (linkDirs               "$(QPID_ROOT)/src/$(Configuration);../../lib")
-endif (BUILD_WINSDK)
-
-
-include_directories      ( ${includeDirs} )
-link_directories         ( ${linkDirs}    )
+include_directories      ( "../../include" )
+link_directories         ( "../../lib"     )
 
 macro(add_example_properties example)
   set_target_properties(${example} PROPERTIES OUTPUT_NAME "${example}" )
-  IF (BUILD_WINSDK)
-    set_target_properties(${example} PROPERTIES PREFIX "../../../bin/")
-  ENDIF (BUILD_WINSDK)
+  set_target_properties(${example} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../../bin/${CMAKE_BUILD_TYPE})
   
-  target_link_libraries(${example} qpidmessaging debug qpidmessagingd)
-  target_link_libraries(${example} qpidcommon    debug qpidcommond)
-  target_link_libraries(${example} qpidtypes     debug qpidtypesd)
+  target_link_libraries(${example} qpidmessaging)
+  target_link_libraries(${example} qpidcommon   )
+  target_link_libraries(${example} qpidtypes    )
 endmacro(add_example_properties)
 
 macro(add_example srcdirectory example)
@@ -102,14 +90,3 @@ add_example(messaging map_receiver)
 add_example(messaging map_sender)
 add_example(messaging client)
 add_example(messaging server)
-
-if (NOT BUILD_WINSDK)
-  add_example(messaging hello_world)
-  add_example(messaging hello_xml)
-  
-  add_example(qmf-console console)
-  add_example(qmf-console ping)
-  add_example(qmf-console printevents)
-  add_example(qmf-console queuestats)
-  
-endif (NOT BUILD_WINSDK)
