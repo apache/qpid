@@ -3009,7 +3009,7 @@ destination.topicExchange = amq.topic
 		  see below
 	        </entry>
 	        <entry>
-		  The broker to use for this connection. In the current release, precisely one broker must be specified.
+		  List of one or more broker addresses.
 	        </entry>
 	      </row>
 	      <row>
@@ -3061,11 +3061,25 @@ destination.topicExchange = amq.topic
 		  failover
 	        </entry>
 	        <entry>
-           {'roundrobin' | 'failover_exchange'}
+           {'singlebroker' | 'roundrobin' | 'failover_exchange' | 'nofailover' | '&lt;class&gt;'}
 	        </entry>
 	        <entry>
-          If roundrobin is selected it will try each broker given in the broker list.
-          If failover_exchange is selected it connects to the initial broker given in the broker URL and will receive membership updates via the failover exchange.
+	            <para>
+          This option controls failover behaviour.  The method <literal>singlebroker</literal> uses only the first broker in the list,
+          <literal>roundrobin</literal> will try each broker given in the broker list until a connection is established,
+          <literal>failover_exchange</literal> connects to the initial broker given in the broker URL and will receive membership updates
+          via the failover exchange. <literal>nofailover</literal> disables all retry and failover logic.  Any other value is interpreted as a
+          classname which must implement the <literal>org.apache.qpid.jms.failover.FailoverMethod</literal> interface.
+	            </para>
+	            <para>
+          The broker list options <literal>retries</literal> and <literal>connectdelay</literal> (described below) determine the number of times a
+          connection to a broker will be retried and the the length of time to wait between successive connection attempts before moving on to
+          the next broker in the list. The failover option <literal>cyclecount</literal> controls the number of times to loop through the list of
+          available brokers before finally giving up.
+	            </para>
+	            <para>
+          Defaults to <literal>roundrobin</literal> if the brokerlist contains multiple brokers, or <literal>singlebroker</literal> otherwise.
+	            </para>
 	        </entry>
 	      </row>
 	    </tbody>
@@ -3075,7 +3089,7 @@ destination.topicExchange = amq.topic
 	  Broker lists are specified using a URL in this format:
         </para>
 
-        <programlisting>brokerlist=&lt;transport&gt;://&lt;host&gt;[:&lt;port&gt;](?&lt;param>=&lt;value>)?(&amp;&lt;param>=&lt;value>)*</programlisting>
+        <programlisting>brokerlist=&lt;transport&gt;://&lt;host&gt;[:&lt;port&gt;](?&lt;param>='&lt;value>')(&amp;&lt;param>='&lt;value>')*</programlisting>
         <para>
 	  For instance, this is a typical broker list:
         </para>
@@ -3092,14 +3106,25 @@ destination.topicExchange = amq.topic
 	<para>A broker list can specify properties to be used when connecting to the broker, such as security options. This broker list specifies options for a Kerberos connection using GSSAPI:</para>
 	<programlisting><![CDATA[
 amqp://guest:guest@test/test?sync_ack='true'
-    &brokerlist='tcp://ip1:5672?sasl_mechs='GSSAPI'
+    &brokerlist='tcp://ip1:5672?sasl_mechs='GSSAPI''
 	]]></programlisting>
 
 	<para>This broker list specifies SSL options:</para>
 
 	<programlisting><![CDATA[
 amqp://guest:guest@test/test?sync_ack='true'
-   &brokerlist='tcp://ip1:5672?ssl='true'&ssl_cert_alias='cert1'
+   &brokerlist='tcp://ip1:5672?ssl='true'&ssl_cert_alias='cert1''
+	]]></programlisting>
+
+	<para>
+          This broker list specifies two brokers using the connectdelay and retries broker options. It also illustrates the failover connection URL
+          property.
+        </para>
+
+	<programlisting><![CDATA[
+
+amqp://guest:guest@/test?failover='roundrobin?cyclecount='2''
+   &brokerlist='tcp://ip1:5672?retries='5'&connectdelay='2000';tcp://ip2:5672?retries='5'&connectdelay='2000''
 	]]></programlisting>
 	</example>
 
@@ -3166,29 +3191,6 @@ amqp://guest:guest@test/test?sync_ack='true'
 	      </row>
 	      <row>
 	        <entry>
-		  ssl
-	        </entry>
-	        <entry>
-		  Boolean
-	        </entry>
-	        <entry>
-		  If <literal>ssl='true'</literal>, the JMS client will encrypt the connection using SSL.
-	        </entry>
-	      </row>
-	      <row>
-	        <entry>
-		  tcp_nodelay
-	        </entry>
-	        <entry>
-		  Boolean
-	        </entry>
-	        <entry>
-		  If <literal>tcp_nodelay='true'</literal>, TCP packet
-		  batching is disabled.
-	        </entry>
-	      </row>
-	      <row>
-	        <entry>
 		  sasl_protocol
 	        </entry>
 	        <entry>
@@ -3222,7 +3224,7 @@ amqp://guest:guest@test/test?sync_ack='true'
 		  --
 	        </entry>
 	        <entry>
-		  path to Keberos trust store
+		  path to trust store
 	        </entry>
 	      </row>
 	      <row>
@@ -3232,7 +3234,7 @@ amqp://guest:guest@test/test?sync_ack='true'
 	        <entry>
 	        </entry>
 	        <entry>
-		  Kerberos trust store password
+		  Trust store password
 	        </entry>
 	      </row>
 	      <row>
@@ -3242,7 +3244,7 @@ amqp://guest:guest@test/test?sync_ack='true'
 	        <entry>
 	        </entry>
 	        <entry>
-		  path to Kerberos key store
+		  path to key store
 	        </entry>
 	      </row>
 	      <row>
@@ -3253,7 +3255,18 @@ amqp://guest:guest@test/test?sync_ack='true'
 		  --
 	        </entry>
 	        <entry>
-		  Kerberos key store password
+		  key store password
+	        </entry>
+	      </row>
+	      <row>
+	        <entry>
+		  ssl
+	        </entry>
+	        <entry>
+		  Boolean
+	        </entry>
+	        <entry>
+		  If <literal>ssl='true'</literal>, the JMS client will encrypt the connection using SSL.
 	        </entry>
 	      </row>
 	      <row>
@@ -3265,7 +3278,7 @@ amqp://guest:guest@test/test?sync_ack='true'
 	        </entry>
 	        <entry>
 		  When using SSL you can enable hostname verification
-		  by using "ssl_verify_hostname=true" in the broker
+		  by using <literal>ssl_verify_hostname='true'</literal> in the broker
 		  URL.
 	        </entry>
 	      </row>
@@ -3278,6 +3291,51 @@ amqp://guest:guest@test/test?sync_ack='true'
 	        </entry>
 	        <entry>
           If multiple certificates are present in the keystore, the alias will be used to extract the correct certificate.
+	        </entry>
+	      </row>
+	      <row>
+	        <entry>
+		  retries
+	        </entry>
+	        <entry>
+		  integer
+	        </entry>
+	        <entry>
+          The number of times to retry connection to each broker in the broker list. Defaults to 1.
+	        </entry>
+	      </row>
+	      <row>
+	        <entry>
+		  connectdelay
+	        </entry>
+	        <entry>
+		  integer
+	        </entry>
+	        <entry>
+		  Length of time to wait before attempting to reconnect (in milliseconds). Defaults to 0.
+	        </entry>
+	      </row>
+	      <row>
+	        <entry>
+		  connecttimeout
+	        </entry>
+	        <entry>
+		  integer
+	        </entry>
+	        <entry>
+		  Length of time to wait for the connection to succeed (in milliseconds).  Defaults to 30000.
+	        </entry>
+	      </row>
+	      <row>
+	        <entry>
+		  tcp_nodelay
+	        </entry>
+	        <entry>
+		  Boolean
+	        </entry>
+	        <entry>
+		  If <literal>tcp_nodelay='true'</literal>, TCP packet
+		  batching is disabled.
 	        </entry>
 	      </row>
 	    </tbody>
@@ -3367,10 +3425,7 @@ import javax.jms.MapMessage;
 import javax.jms.MessageProducer;
 import javax.jms.Session;
 
-import org.apache.qpid.client.AMQAnyDestination;
-import org.apache.qpid.client.AMQConnection;
-
-import edu.emory.mathcs.backport.java.util.Arrays;
+import java.util.Arrays;
 
 // !!! SNIP !!!
 
