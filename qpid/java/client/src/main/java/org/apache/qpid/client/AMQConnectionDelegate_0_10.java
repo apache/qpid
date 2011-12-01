@@ -77,12 +77,6 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
     org.apache.qpid.transport.Connection _qpidConnection;
     private ConnectionException exception = null;
 
-    static
-    {
-        // Register any configured SASL client factories.
-        org.apache.qpid.client.security.DynamicSaslRegistrar.registerSaslProviders();
-    }
-
     //--- constructor
     public AMQConnectionDelegate_0_10(AMQConnection conn)
     {
