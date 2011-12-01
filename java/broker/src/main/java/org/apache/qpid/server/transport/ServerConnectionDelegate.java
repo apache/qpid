@@ -28,10 +28,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
-
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
-
 import org.apache.qpid.common.ServerPropertyNames;
 import org.apache.qpid.protocol.ProtocolEngine;
 import org.apache.qpid.server.configuration.BrokerConfig;
@@ -49,6 +47,7 @@ import org.apache.qpid.transport.ConnectionClose;
 import org.apache.qpid.transport.ConnectionCloseCode;
 import org.apache.qpid.transport.ConnectionOpen;
 import org.apache.qpid.transport.ConnectionOpenOk;
+import org.apache.qpid.transport.ConnectionStartOk;
 import org.apache.qpid.transport.ConnectionTuneOk;
 import org.apache.qpid.transport.ServerDelegate;
 import org.apache.qpid.transport.Session;
@@ -62,6 +61,8 @@ public class ServerConnectionDelegate extends ServerDelegate
 {
     private final String _localFQDN;
     private final IApplicationRegistry _appRegistry;
+    private int _maxNoOfChannels;
+    private Map<String,Object> _clientProperties;
 
     public ServerConnectionDelegate(IApplicationRegistry appRegistry, String localFQDN)
     {
@@ -77,6 +78,7 @@ public class ServerConnectionDelegate extends ServerDelegate
         
         _appRegistry = appRegistry;
         _localFQDN = localFQDN;
+        _maxNoOfChannels = ApplicationRegistry.getInstance().getConfiguration().getMaxChannelCount();
     }
 
     private static Map<String, Object> createConnectionProperties(final BrokerConfig brokerConfig)
@@ -154,7 +156,7 @@ public class ServerConnectionDelegate extends ServerDelegate
     public void connectionOpen(Connection conn, ConnectionOpen open)
     {
         final ServerConnection sconn = (ServerConnection) conn;
-        
+
         VirtualHost vhost;
         String vhostName;
         if(open.hasVirtualHost())
@@ -222,7 +224,12 @@ public class ServerConnectionDelegate extends ServerDelegate
     @Override
     protected int getChannelMax()
     {
-        return ApplicationRegistry.getInstance().getConfiguration().getMaxChannelCount();
+        return _maxNoOfChannels;
+    }
+
+    protected void setChannelMax(int channelMax)
+    {
+        _maxNoOfChannels = channelMax;
     }
 
     @Override public void sessionDetach(Connection conn, SessionDetach dtc)
@@ -253,6 +260,7 @@ public class ServerConnectionDelegate extends ServerDelegate
         {
             ssn = sessionAttachImpl(conn, atc);
             conn.registerSession(ssn);
+            ((ServerConnection)conn).checkForNotification();
         }
         else
         {
@@ -278,5 +286,17 @@ public class ServerConnectionDelegate extends ServerDelegate
             }
         }
         return true;
+    }
+
+    @Override
+    public void connectionStartOk(Connection conn, ConnectionStartOk ok)
+    {
+        _clientProperties = ok.getClientProperties();
+        super.connectionStartOk(conn, ok);
+    }
+
+    public Map<String,Object> getClientProperties()
+    {
+        return _clientProperties;
     }
 }
