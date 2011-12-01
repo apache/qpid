@@ -37,9 +37,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicLong;
-
 import javax.security.auth.Subject;
-
 import org.apache.qpid.AMQException;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.protocol.ProtocolEngine;
@@ -697,5 +695,15 @@ public class ServerSession extends Session implements AuthorizationHolder, Sessi
         {
             unregister(subscription_0_10);
         }
+    }
+
+    public int getUnacknowledgedMessageCount()
+    {
+        return _messageDispositionListenerMap.size();
+    }
+
+    public boolean getBlocking()
+    {
+        return false; //TODO: Blocking not implemented on 0-10 yet.
     }
 }

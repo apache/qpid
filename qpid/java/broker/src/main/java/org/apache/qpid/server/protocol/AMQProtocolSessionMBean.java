@@ -39,89 +39,44 @@ package org.apache.qpid.server.protocol;
 
 import java.util.Date;
 import java.util.List;
-
 import javax.management.JMException;
 import javax.management.MBeanException;
-import javax.management.MBeanNotificationInfo;
 import javax.management.NotCompliantMBeanException;
-import javax.management.Notification;
-import javax.management.ObjectName;
-import javax.management.monitor.MonitorNotification;
 import javax.management.openmbean.CompositeData;
 import javax.management.openmbean.CompositeDataSupport;
-import javax.management.openmbean.CompositeType;
 import javax.management.openmbean.OpenDataException;
-import javax.management.openmbean.OpenType;
-import javax.management.openmbean.SimpleType;
 import javax.management.openmbean.TabularData;
 import javax.management.openmbean.TabularDataSupport;
-import javax.management.openmbean.TabularType;
-
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ConnectionCloseBody;
 import org.apache.qpid.framing.MethodRegistry;
-import org.apache.qpid.management.common.mbeans.ManagedConnection;
 import org.apache.qpid.management.common.mbeans.annotations.MBeanConstructor;
 import org.apache.qpid.management.common.mbeans.annotations.MBeanDescription;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.ManagementActor;
-import org.apache.qpid.server.management.AMQManagedObject;
+import org.apache.qpid.server.management.AbstractAMQManagedConnectionObject;
 import org.apache.qpid.server.management.ManagedObject;
 
 /**
  * This MBean class implements the management interface. In order to make more attributes, operations and notifications
  * available over JMX simply augment the ManagedConnection interface and add the appropriate implementation here.
  */
-@MBeanDescription("Management Bean for an AMQ Broker Connection")
-public class AMQProtocolSessionMBean extends AMQManagedObject implements ManagedConnection
+@MBeanDescription("Management Bean for an AMQ Broker 0-9-1/0-9/0-8 Connections")
+public class AMQProtocolSessionMBean extends AbstractAMQManagedConnectionObject
 {
     private AMQProtocolSession _protocolSession = null;
-    private String _name = null;
 
-    // openmbean data types for representing the channel attributes
-
-    private static final OpenType[] _channelAttributeTypes =
-        { SimpleType.INTEGER, SimpleType.BOOLEAN, SimpleType.STRING, SimpleType.INTEGER, SimpleType.BOOLEAN };
-    private static CompositeType _channelType = null; // represents the data type for channel data
-    private static TabularType _channelsType = null; // Data type for list of channels type
     private static final AMQShortString BROKER_MANAGEMENT_CONSOLE_HAS_CLOSED_THE_CONNECTION =
-        new AMQShortString("Broker Management Console has closed the connection.");
+                                        new AMQShortString(BROKER_MANAGEMENT_CONSOLE_HAS_CLOSED_THE_CONNECTION_STR);
 
-    @MBeanConstructor("Creates an MBean exposing an AMQ Broker Connection")
+    @MBeanConstructor("Creates an MBean exposing an AMQ Broker 0-9-1/0-9/0-8 Connection")
     public AMQProtocolSessionMBean(AMQProtocolSession amqProtocolSession) throws NotCompliantMBeanException, OpenDataException
     {
-        super(ManagedConnection.class, ManagedConnection.TYPE);
+        super(amqProtocolSession.getRemoteAddress().toString());
         _protocolSession = amqProtocolSession;
-        String remote = getRemoteAddress();
-        _name = "anonymous".equals(remote) ? (remote + hashCode()) : remote;
-        init();
-    }
-
-    static
-    {
-        try
-        {
-            init();
-        }
-        catch (JMException ex)
-        {
-            // This is not expected to ever occur.
-            throw new RuntimeException("Got JMException in static initializer.", ex);
-        }
-    }
-
-    /**
-     * initialises the openmbean data types
-     */
-    private static void init() throws OpenDataException
-    {
-        _channelType =
-            new CompositeType("Channel", "Channel Details", COMPOSITE_ITEM_NAMES_DESC.toArray(new String[COMPOSITE_ITEM_NAMES_DESC.size()]),
-                    COMPOSITE_ITEM_NAMES_DESC.toArray(new String[COMPOSITE_ITEM_NAMES_DESC.size()]), _channelAttributeTypes);
-        _channelsType = new TabularType("Channels", "Channels", _channelType, TABULAR_UNIQUE_INDEX.toArray(new String[TABULAR_UNIQUE_INDEX.size()]));
     }
 
     public String getClientId()
@@ -167,16 +122,6 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
     public Long getMaximumNumberOfChannels()
     {
         return _protocolSession.getMaximumNumberOfChannels();
-    }
-
-    public void setMaximumNumberOfChannels(Long value)
-    {
-        _protocolSession.setMaximumNumberOfChannels(value);
-    }
-
-    public String getObjectInstanceName()
-    {
-        return ObjectName.quote(_name);
     }
 
     /**
@@ -319,25 +264,6 @@ public class AMQProtocolSessionMBean extends AMQManagedObject implements Managed
                 CurrentActor.remove();
             }
         }
-    }
-
-    @Override
-    public MBeanNotificationInfo[] getNotificationInfo()
-    {
-        String[] notificationTypes = new String[] { MonitorNotification.THRESHOLD_VALUE_EXCEEDED };
-        String name = MonitorNotification.class.getName();
-        String description = "Channel count has reached threshold value";
-        MBeanNotificationInfo info1 = new MBeanNotificationInfo(notificationTypes, name, description);
-
-        return new MBeanNotificationInfo[] { info1 };
-    }
-
-    public void notifyClients(String notificationMsg)
-    {
-        Notification n =
-            new Notification(MonitorNotification.THRESHOLD_VALUE_EXCEEDED, this, ++_notificationSequenceNumber,
-                System.currentTimeMillis(), notificationMsg);
-        _broadcaster.sendNotification(n);
     }
 
     public void resetStatistics() throws Exception

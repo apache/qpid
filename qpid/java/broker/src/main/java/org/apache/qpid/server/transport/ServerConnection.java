@@ -24,6 +24,14 @@ import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.CONNECTIO
 import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.SOCKET_FORMAT;
 import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.USER_FORMAT;
 
+import java.util.concurrent.atomic.AtomicLong;
+
+import javax.management.JMException;
+
+import org.apache.qpid.server.management.ManagedObject;
+
+import org.apache.qpid.server.management.Managable;
+
 import java.security.Principal;
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -55,7 +63,7 @@ import org.apache.qpid.transport.Method;
 import org.apache.qpid.transport.ProtocolEvent;
 import org.apache.qpid.transport.Session;
 
-public class ServerConnection extends Connection implements AMQConnectionModel, LogSubject, AuthorizationHolder
+public class ServerConnection extends Connection implements Managable, AMQConnectionModel, LogSubject, AuthorizationHolder
 {
     private ConnectionConfig _config;
     private Runnable _onOpenTask;
@@ -67,6 +75,10 @@ public class ServerConnection extends Connection implements AMQConnectionModel, 
     private boolean _statisticsEnabled = false;
     private StatisticsCounter _messagesDelivered, _dataDelivered, _messagesReceived, _dataReceived;
     private final long _connectionId;
+
+    private ServerConnectionMBean _mBean;
+    private VirtualHost _virtualHost;
+    private AtomicLong _lastIoTime = new AtomicLong();
     
     public ServerConnection(final long connectionId)
     {
@@ -133,9 +145,6 @@ public class ServerConnection extends Connection implements AMQConnectionModel, 
         super.setConnectionDelegate(delegate);
     }
 
-    private VirtualHost _virtualHost;
-
-
     public VirtualHost getVirtualHost()
     {
         return _virtualHost;
@@ -144,8 +153,18 @@ public class ServerConnection extends Connection implements AMQConnectionModel, 
     public void setVirtualHost(VirtualHost virtualHost)
     {
         _virtualHost = virtualHost;
-        
+
         initialiseStatistics();
+
+        try
+        {
+            _mBean = new ServerConnectionMBean(this);
+            _mBean.register();
+        }
+        catch (JMException jme)
+        {
+            log.error("Unable to create mBean for ServerConnection",jme);
+        }
     }
 
     public void setConnectionConfig(final ConnectionConfig config)
@@ -190,6 +209,7 @@ public class ServerConnection extends Connection implements AMQConnectionModel, 
     @Override
     public void received(ProtocolEvent event)
     {
+        _lastIoTime.set(System.currentTimeMillis());
         if (event.isConnectionControl())
         {
             CurrentActor.set(_actor);
@@ -260,6 +280,11 @@ public class ServerConnection extends Connection implements AMQConnectionModel, 
     public void close(AMQConstant cause, String message) throws AMQException
     {
         closeSubscriptions();
+        if (_mBean != null)
+        {
+            _mBean.unregister();
+            _mBean = null;
+        }
         ConnectionCloseCode replyCode = ConnectionCloseCode.NORMAL;
         try
         {
@@ -405,6 +430,11 @@ public class ServerConnection extends Connection implements AMQConnectionModel, 
     public void closed()
     {
         closeSubscriptions();
+        if (_mBean != null)
+        {
+            _mBean.unregister();
+            _mBean = null;
+        }
         super.closed();
     }
 
@@ -416,4 +446,30 @@ public class ServerConnection extends Connection implements AMQConnectionModel, 
         }
     }
 
+    @Override
+    public ManagedObject getManagedObject()
+    {
+        return _mBean;
+    }
+
+    @Override
+    public void send(ProtocolEvent event)
+    {
+        _lastIoTime.set(System.currentTimeMillis());
+        super.send(event);
+    }
+
+    public AtomicLong getLastIoTime()
+    {
+        return _lastIoTime;
+    }
+
+    void checkForNotification()
+    {
+        int channelsCount = getSessionModels().size();
+        if (_mBean != null && channelsCount >= getConnectionDelegate().getChannelMax())
+        {
+            _mBean.notifyClients("Channel count (" + channelsCount + ") has reached the threshold value");
+        }
+    }
 }

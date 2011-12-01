@@ -20,23 +20,21 @@
  */
 package org.apache.qpid.server.protocol;
 
-import junit.framework.TestCase;
+import javax.management.JMException;
+import javax.management.openmbean.CompositeData;
+import javax.management.openmbean.TabularData;
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.management.common.mbeans.ManagedConnection;
 import org.apache.qpid.server.AMQChannel;
-import org.apache.qpid.server.util.InternalBrokerBaseCase;
-import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.SkeletonMessageStore;
-
-import javax.management.JMException;
-import javax.management.openmbean.CompositeData;
-import javax.management.openmbean.TabularData;
+import org.apache.qpid.server.util.InternalBrokerBaseCase;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 
 
 /** Test class to test MBean operations for AMQMinaProtocolSession. */
@@ -67,7 +65,7 @@ public class AMQProtocolSessionMBeanTest extends InternalBrokerBaseCase
         assertTrue(channelCount == 2);
 
         // general properties test
-        _mbean.setMaximumNumberOfChannels(1000L);
+        _protocolSession.setMaximumNumberOfChannels(1000L);
         assertTrue(_mbean.getMaximumNumberOfChannels() == 1000L);
 
         // check APIs
