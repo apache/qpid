@@ -23,6 +23,7 @@
 #include "qpid/broker/QueueEvents.h"
 #include "qpid/broker/Exchange.h"
 #include "qpid/log/Statement.h"
+#include "qpid/framing/reply_exceptions.h"
 #include <sstream>
 #include <assert.h>
 
@@ -84,12 +85,17 @@ void QueueRegistry::destroy (const string& name){
 Queue::shared_ptr QueueRegistry::find(const string& name){
     RWlock::ScopedRlock locker(lock);
     QueueMap::iterator i = queues.find(name);
-    
     if (i == queues.end()) {
         return Queue::shared_ptr();
     } else {
         return i->second;
     }
+}
+
+Queue::shared_ptr QueueRegistry::get(const string& name) {
+    Queue::shared_ptr q = find(name);
+    if (!q) throw framing::NotFoundException(QPID_MSG("Queue not found: "<<name));
+    return q;
 }
 
 string QueueRegistry::generateName(){

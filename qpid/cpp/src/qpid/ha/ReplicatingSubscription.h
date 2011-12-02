@@ -22,6 +22,7 @@
  *
  */
 
+#include "QueueReplicator.h"    // For DEQUEUE_EVENT_KEY
 #include "qpid/broker/SemanticState.h"
 #include "qpid/broker/QueueObserver.h"
 #include "qpid/broker/ConsumerFactory.h"

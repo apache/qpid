@@ -35,11 +35,15 @@
 
 namespace {
 const std::string QPID_REPLICATOR_("qpid.replicator-");
+const std::string TYPE_NAME("qpid.queue-replicator");
 }
 
 namespace qpid {
 namespace ha {
 using namespace broker;
+
+// FIXME aconway 2011-12-02: separate file for string constantS?
+const std::string QueueReplicator::DEQUEUE_EVENT_KEY("qpid.dequeue-event");
 
 QueueReplicator::QueueReplicator(boost::shared_ptr<Queue> q, boost::shared_ptr<Link> l)
     : Exchange(QPID_REPLICATOR_+q->getName(), 0, 0), // FIXME aconway 2011-11-24: hidden from management?
@@ -72,9 +76,7 @@ void QueueReplicator::initializeBridge(Bridge& bridge, SessionHandler& sessionHa
     framing::AMQP_ServerProxy peer(sessionHandler.out);
     const qmf::org::apache::qpid::broker::ArgsLinkBridge& args(bridge.getArgs());
     framing::FieldTable settings;
-    // FIXME aconway 2011-11-28: string constants.
     settings.setInt(ReplicatingSubscription::QPID_REPLICATING_SUBSCRIPTION, 1);
-    // FIXME aconway 2011-11-28: inconsistent use of _ vs. -
     settings.setInt(ReplicatingSubscription::QPID_HIGH_SEQUENCE_NUMBER, queue->getPosition());
     qpid::framing::SequenceNumber oldest;
     if (queue->getOldest(oldest))
@@ -86,15 +88,9 @@ void QueueReplicator::initializeBridge(Bridge& bridge, SessionHandler& sessionHa
     QPID_LOG(debug, "HA: Activated route from queue " << args.i_src << " to " << args.i_dest);
 }
 
-
-namespace {
-const std::string DEQUEUE_EVENT("dequeue-event");
-const std::string REPLICATOR("qpid.replicator-");
-}
-
 void QueueReplicator::route(Deliverable& msg, const std::string& key, const qpid::framing::FieldTable* /*args*/)
 {
-    if (key == DEQUEUE_EVENT) {
+    if (key == DEQUEUE_EVENT_KEY) {
         std::string content;
         msg.getMessage().getFrames().getContent(content);
         qpid::framing::Buffer buffer(const_cast<char*>(content.c_str()), content.size());
@@ -115,6 +111,7 @@ void QueueReplicator::route(Deliverable& msg, const std::string& key, const qpid
                     QPID_LOG(info, "HA: Dequeued message "<< QueuePos(message));
                 } else {
                     // FIXME aconway 2011-11-29: error handling
+                    // Is this an error? Will happen if queue has initial dequeues.
                     QPID_LOG(error, "HA: Unable to dequeue message at "
                              << QueuePos(queue.get(), *i));
                 }
@@ -136,10 +133,6 @@ void QueueReplicator::route(Deliverable& msg, const std::string& key, const qpid
 bool QueueReplicator::bind(boost::shared_ptr<Queue>, const std::string&, const qpid::framing::FieldTable*) { return false; }
 bool QueueReplicator::unbind(boost::shared_ptr<Queue>, const std::string&, const qpid::framing::FieldTable*) { return false; }
 bool QueueReplicator::isBound(boost::shared_ptr<Queue>, const std::string* const, const qpid::framing::FieldTable* const) { return false; }
-
-// FIXME aconway 2011-11-28: rationalise string constants.
-static const std::string TYPE_NAME("qpid.queue-replicator");
-
 std::string QueueReplicator::getType() const { return TYPE_NAME; }
 
 }} // namespace qpid::broker

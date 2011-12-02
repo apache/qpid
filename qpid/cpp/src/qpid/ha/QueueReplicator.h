@@ -49,6 +49,8 @@ namespace ha {
 class QueueReplicator : public broker::Exchange
 {
   public:
+    static const std::string DEQUEUE_EVENT_KEY;
+    
     QueueReplicator(boost::shared_ptr<broker::Queue> q, boost::shared_ptr<broker::Link> l);
     ~QueueReplicator();
     std::string getType() const;
