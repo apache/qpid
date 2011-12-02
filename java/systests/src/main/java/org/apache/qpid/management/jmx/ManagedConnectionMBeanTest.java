@@ -32,6 +32,8 @@ import javax.jms.TextMessage;
 import javax.management.JMException;
 import javax.management.openmbean.CompositeDataSupport;
 import javax.management.openmbean.TabularData;
+
+import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.management.common.mbeans.ManagedConnection;
 import org.apache.qpid.test.utils.JMXTestUtils;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
@@ -147,6 +149,10 @@ public class ManagedConnectionMBeanTest extends QpidBrokerTestCase
             producer.send(producerSession.createTextMessage("Test " + i));
         }
 
+        // sync to make sure that messages are received on the broker
+        // before we commit via JMX
+        ((AMQSession<?, ?>) producerSession).sync();
+
         Message m = consumer.receive(500l);
         assertNull("Unexpected message received", m);
 
@@ -203,6 +209,10 @@ public class ManagedConnectionMBeanTest extends QpidBrokerTestCase
         {
             producer.send(producerSession.createTextMessage("Test " + i));
         }
+
+        // sync to make sure that messages are received on the broker
+        // before we rollback via JMX
+        ((AMQSession<?, ?>) producerSession).sync();
 
         Number channelId = getFirstTransactedChannelId(mBean, 2);
         mBean.rollbackTransactions(channelId.intValue());
