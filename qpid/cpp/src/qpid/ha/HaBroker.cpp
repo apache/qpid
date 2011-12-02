@@ -61,7 +61,9 @@ HaBroker::HaBroker(broker::Broker& b, const Settings& s)
     }
     QPID_LOG(notice, "HA: Initialized: client-url=" << clientUrl
              << " broker-url=" << brokerUrl);
-    backup.reset(new Backup(broker, s));
+    // FIXME aconway 2011-11-22: temporary hack to identify primary.
+    if (s.brokerUrl != "primary")
+        backup.reset(new Backup(broker, s));
     // Register a factory for replicating subscriptions.
     broker.getConsumerFactories().add(
         boost::shared_ptr<ReplicatingSubscription::Factory>(
