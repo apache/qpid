@@ -17,31 +17,31 @@
 # under the License.
 #
 
+#
 # Description
 #   For WinSDK:
 #   Top-level CMake source to build version-independent C++ 
 #   example solution and project files for Visual Studio.
 #
 # Usage:
-#   mkdir msvc9-win32
-#   cd    msvc9-win32
-#   cmake -G "Visual Studio 9 2008" ..\winsdk-cmake
-#   cd ..
+#   Target: Visual Studio 2008, 32-bit
+#     cd    <WinSDK>\examples\examples-cmake
+#     cmake -G "Visual Studio 9 2008" .
 #
-#   mkdir msvc9-x64
-#   cd    msvc9-x64
-#   cmake -G "Visual Studio 9 2008 Win64" ..\winsdk-cmake
-#   cd ..
+#   Target: Visual Studio 2008, 64-bit
+#     cd    <WinSDK>\examples\examples-cmake
+#     cmake -G "Visual Studio 9 2008 Win64" .
 #
-#   mkdir msvc10-win32
-#   cd    msvc10-win32
-#   cmake -G "Visual Studio 10" ..\winsdk-cmake
-#   cd ..
+#   Target: Visual Studio 2010, 32-bit
+#     cd    <WinSDK>\examples\examples-cmake
+#     cmake -G "Visual Studio 10" .
 #
-#   mkdir msvc10-x64
-#   cd    msvc10-x64
-#   cmake -G "Visual Studio 10 Win64" ..\winsdk-cmake
-#   cd ..
+#   Target: Visual Studio 2010, 64-bit
+#     cd    <WinSDK>\examples\examples-cmake
+#     cmake -G "Visual Studio 10 Win64" .
+#
+#   Then execute the examples.sln created by cmake to build
+#   the examples in Debug or Release configurations.
 #
 
 project(examples)
@@ -68,9 +68,9 @@ macro(add_example_properties example)
   set_target_properties(${example} PROPERTIES OUTPUT_NAME "${example}" )
   set_target_properties(${example} PROPERTIES RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../../bin/${CMAKE_BUILD_TYPE})
   
-  target_link_libraries(${example} qpidmessaging)
-  target_link_libraries(${example} qpidcommon   )
-  target_link_libraries(${example} qpidtypes    )
+  target_link_libraries(${example} optimized qpidmessaging debug qpidmessagingd)
+  target_link_libraries(${example} optimized qpidcommon    debug qpidcommond   )
+  target_link_libraries(${example} optimized qpidtypes     debug qpidtypesd    )
 endmacro(add_example_properties)
 
 macro(add_example srcdirectory example)

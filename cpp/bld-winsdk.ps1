@@ -253,6 +253,7 @@ function BuildAPlatform
         'examples/tradedemo',
         'examples/*.sln',
         'examples/*.vcproj',
+        'examples/messaging/*.vcproj',
         'include',
         'plugins')
 
@@ -293,8 +294,9 @@ function BuildAPlatform
     Unix2Dos "$install_dir/README-winsdk.txt"
     Unix2Dos "$install_dir/LICENSE"
     Unix2Dos "$install_dir/NOTICE"
+    Unix2Dos "$install_dir/examples/README.txt"
 
-    # Install the .NET binding examples
+    # Install the .NET binding example source code
     New-Item -path $(Join-Path $(Get-Location) $install_dir)                 -name dotnet_examples -type directory
     New-Item -path $(Join-Path $(Get-Location) $install_dir/dotnet_examples) -name        examples -type directory
 
@@ -302,14 +304,19 @@ function BuildAPlatform
     $dst = Resolve-Path "$install_dir/dotnet_examples"
     Copy-Item "$src\" -destination "$dst\" -recurse -force
 
-    $src = Resolve-Path "$qpid_cpp_src/bindings/qpid/dotnet/winsdk_sources/$msvcVer"
-    $dst = Resolve-Path "$install_dir/dotnet_examples"
-    Copy-Item "$src\*" -destination "$dst\" -recurse -force
+    Remove-Item -recurse "$install_dir/dotnet_examples/examples/msvc9"
+    Remove-Item -recurse "$install_dir/dotnet_examples/examples/msvc10"
+    
+    # TODO: Fix up the .NET binding example solution/projects before including them.
+    # $src = Resolve-Path "$qpid_cpp_src/bindings/qpid/dotnet/winsdk_sources/$msvcVer"
+    # $dst = Resolve-Path "$install_dir/dotnet_examples"
+    # Copy-Item "$src\*" -destination "$dst\" -recurse -force
 
-    # Construct the examples' msvc-versioned solution/projects
-    New-Item $(Join-Path $install_dir "examples\msvc") -type Directory | Out-Null
+    # For the C++ examples: install a CMakeLists.txt file so customers can build
+    # their own Visual Studio solutions and projects.
+    New-Item $(Join-Path $install_dir "examples\examples-cmake") -type Directory | Out-Null
     $src = Resolve-Path "$global:sourceDirectory/cpp/examples/winsdk-cmake"
-    $dst = Join-Path $install_dir "examples\msvc"
+    $dst = Join-Path $install_dir "examples\examples-cmake"
     Copy-Item "$src\*" -destination "$dst\"
     
     # Zip the /bin PDB files
@@ -325,6 +332,8 @@ function BuildAPlatform
     Copy-Item -force -path "./src/RelWithDebInfo/org.apache.qpid.messaging*.dll" -destination "$install_dir/bin/Release/"
     Copy-Item -force -path "./src/RelWithDebInfo/org.apache.qpid.messaging*.pdb" -destination "$install_dir/bin/Release/"
 
+    # TODO: What happened to the .NET binding PDB files?
+    
     # Create a new zip for the whole kit.
     # Exclude *.pdb so as not include the debug symbols twice
     if (Test-Path $zipfile) {Remove-Item $zipfile}
