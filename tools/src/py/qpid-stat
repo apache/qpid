@@ -316,8 +316,8 @@ class BrokerManager(Console):
                 row.append(broker.getCurrentTime() - conn.getTimestamps()[1])
                 idle = broker.getCurrentTime() - conn.getTimestamps()[0]
                 row.append(broker.getCurrentTime() - conn.getTimestamps()[0])
-                row.append(conn.framesFromClient)
-                row.append(conn.framesToClient)
+                row.append(conn.msgsFromClient)
+                row.append(conn.msgsToClient)
                 rows.append(row)
         title = "Connections"
         if self.cluster:
