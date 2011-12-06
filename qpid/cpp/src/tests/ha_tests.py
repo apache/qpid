@@ -106,6 +106,18 @@ class ShortTests(BrokerTest):
         verify(b, "1", p)
         verify(b, "2", p)
 
+        # Test a series of messages, enqueue and dequeue.
+        s = p.sender(queue("foo","all"))
+        msgs = [str(i) for i in range(10)]
+        for m in msgs: s.send(Message(m))
+        self.assert_browse_retry(b, "foo", msgs)
+        self.assert_browse_retry(p, "foo", msgs)
+        r = p.receiver("foo")
+        for m in msgs: self.assertEqual(m, r.fetch(timeout=0).content)
+        p.acknowledge()
+        self.assert_browse_retry(p, "foo", [])
+        self.assert_browse_retry(b, "foo", [])
+
 if __name__ == "__main__":
     shutil.rmtree("brokertest.tmp", True)
     os.execvp("qpid-python-test", ["qpid-python-test", "-m", "ha_tests"] + sys.argv[1:])
