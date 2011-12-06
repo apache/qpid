@@ -96,7 +96,7 @@ startBroker ( brokerVector & brokers , int brokerNumber, string const & clusterN
     argv.push_back (clusterArg.str());
     argv.push_back ("--cluster-username=zig");
     argv.push_back ("--cluster-password=zig");
-    argv.push_back ("--cluster-mechanism=ANONYMOUS");
+    argv.push_back ("--cluster-mechanism=PLAIN");
     argv.push_back ("--sasl-config=./sasl_config");
     argv.push_back ("--auth=yes");
     argv.push_back ("--mgmt-enable=yes");

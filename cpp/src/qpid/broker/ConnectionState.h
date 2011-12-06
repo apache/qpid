@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -49,7 +49,8 @@ class ConnectionState : public ConnectionToken, public management::Manageable
         userProxyAuth(false), // Can proxy msgs with non-matching auth ids when true (used by federation links & clustering)
         federationLink(true),
         clientSupportsThrottling(false),
-        clusterOrderOut(0)
+        clusterOrderOut(0),
+        isDefaultRealm(false)
     {}
 
     virtual ~ConnectionState () {}
@@ -62,7 +63,15 @@ class ConnectionState : public ConnectionToken, public management::Manageable
     void setHeartbeat(uint16_t hb) { heartbeat = hb; }
     void setHeartbeatMax(uint16_t hbm) { heartbeatmax = hbm; }
 
-    virtual void setUserId(const std::string& uid) {  userId = uid; }
+    virtual void setUserId(const std::string& uid) {
+        userId = uid;
+        size_t at = userId.find('@');
+        userName = userId.substr(0, at);
+        isDefaultRealm = (
+            at!= std::string::npos &&
+            getBroker().getOptions().realm == userId.substr(at+1,userId.size()));
+    }
+
     const std::string& getUserId() const { return userId; }
 
     void setUrl(const std::string& _url) { url = _url; }
@@ -75,7 +84,14 @@ class ConnectionState : public ConnectionToken, public management::Manageable
     void setFederationPeerTag(const std::string& tag) { federationPeerTag = std::string(tag); }
     const std::string& getFederationPeerTag() const { return federationPeerTag; }
     std::vector<Url>& getKnownHosts() { return knownHosts; }
-    
+
+    /**@return true if user is the authenticated user on this connection.
+     * If id has the default realm will also compare plain username.
+     */
+    bool isAuthenticatedUser(const std::string& id) const {
+        return (id == userId || (isDefaultRealm && id == userName));
+    }
+
     void setClientThrottling(bool set=true) { clientSupportsThrottling = set; }
     bool getClientThrottling() const { return clientSupportsThrottling; }
 
@@ -114,6 +130,8 @@ class ConnectionState : public ConnectionToken, public management::Manageable
     std::vector<Url> knownHosts;
     bool clientSupportsThrottling;
     framing::FrameHandler* clusterOrderOut;
+    std::string userName;
+    bool isDefaultRealm;
 };
 
 }}

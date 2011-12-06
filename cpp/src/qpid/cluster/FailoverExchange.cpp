@@ -28,6 +28,7 @@
 #include "qpid/framing/MessageTransferBody.h"
 #include "qpid/log/Statement.h"
 #include "qpid/framing/Array.h"
+#include "qpid/UrlArray.h"
 #include <boost/bind.hpp>
 #include <algorithm>
 
@@ -86,9 +87,7 @@ void FailoverExchange::route(Deliverable&, const string& , const framing::FieldT
 void FailoverExchange::sendUpdate(const Queue::shared_ptr& queue) {
     // Called with lock held.
     if (urls.empty()) return;
-    framing::Array array(0x95);
-    for (Urls::const_iterator i = urls.begin(); i != urls.end(); ++i)
-        array.add(boost::shared_ptr<Str16Value>(new Str16Value(i->str())));
+    framing::Array array = vectorToUrlArray(urls);
     const ProtocolVersion v;
     boost::intrusive_ptr<Message> msg(new Message);
     AMQFrame command(MessageTransferBody(v, typeName, 1, 0));
