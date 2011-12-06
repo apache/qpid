@@ -36,21 +36,25 @@ QPID_AUTO_TEST_SUITE(InitialStatusMapTestSuite)
 
 typedef InitialStatusMap::Status Status;
 
-Status activeStatus(const Uuid& id=Uuid(), const MemberSet& ms=MemberSet()) {
+Status activeStatus(const Uuid& id=Uuid(), const MemberSet& ms=MemberSet(),
+                    const framing::Array& urls=framing::Array())
+{
     return Status(ProtocolVersion(), 0, true, id, STORE_STATE_NO_STORE, Uuid(),
-                  encodeMemberSet(ms));
+                  encodeMemberSet(ms), urls);
 }
 
-Status newcomerStatus(const Uuid& id=Uuid(), const MemberSet& ms=MemberSet()) {
+Status newcomerStatus(const Uuid& id=Uuid(), const MemberSet& ms=MemberSet(),
+                      const framing::Array& urls=framing::Array())
+{
     return Status(ProtocolVersion(), 0, false, id, STORE_STATE_NO_STORE, Uuid(),
-                  encodeMemberSet(ms));
+                  encodeMemberSet(ms), urls);
 }
 
 Status storeStatus(bool active, StoreState state, Uuid start=Uuid(), Uuid stop=Uuid(),
-                   const MemberSet& ms=MemberSet())
+                   const MemberSet& ms=MemberSet(), const framing::Array& urls=framing::Array())
 {
-    return Status(ProtocolVersion(), 0, active, start, state, stop, 
-                  encodeMemberSet(ms));
+    return Status(ProtocolVersion(), 0, active, start, state, stop,
+                  encodeMemberSet(ms), urls);
 }
 
 QPID_AUTO_TEST_CASE(testFirstInCluster) {

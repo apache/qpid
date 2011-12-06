@@ -114,7 +114,9 @@ class ShortTests(BrokerTest):
         sasl_config=os.path.join(self.rootdir, "sasl_config")
         acl=os.path.join(os.getcwd(), "policy.acl")
         aclf=file(acl,"w")
+        # Must allow cluster-user (zag) access to credentials exchange.
         aclf.write("""
+acl allow zag@QPID publish exchange name=qpid.cluster-credentials
 acl allow zig@QPID all all
 acl deny all all
 """)
@@ -122,7 +124,11 @@ acl deny all all
         cluster = self.cluster(1, args=["--auth", "yes",
                                         "--sasl-config", sasl_config,
                                         "--load-module", os.getenv("ACL_LIB"),
-                                        "--acl-file", acl])
+                                        "--acl-file", acl,
+                                        "--cluster-username=zag",
+                                        "--cluster-password=zag",
+                                        "--cluster-mechanism=PLAIN"
+                                        ])
 
         # Valid user/password, ensure queue is created.
         c = cluster[0].connect(username="zig", password="zig")
@@ -167,39 +173,51 @@ acl deny all all
             self.fail("Expected exception")
         except messaging.exceptions.NotFound: pass
 
-    def test_sasl_join(self):
+    def test_sasl_join_good(self):
         """Verify SASL authentication between brokers when joining a cluster."""
         sasl_config=os.path.join(self.rootdir, "sasl_config")
         # Test with a valid username/password
         cluster = self.cluster(1, args=["--auth", "yes",
                                         "--sasl-config", sasl_config,
-                                        "--load-module", os.getenv("ACL_LIB"),
                                         "--cluster-username=zig",
                                         "--cluster-password=zig",
                                         "--cluster-mechanism=PLAIN"
                                         ])
         cluster.start()
-        cluster.ready()
-        c = cluster[1].connect(username="zag", password="zag")
+        c = cluster[1].connect(username="zag", password="zag", mechanism="PLAIN")
 
-        # Test with an invalid username/password
+    def test_sasl_join_bad_password(self):
+        # Test with an invalid password
         cluster = self.cluster(1, args=["--auth", "yes",
-                                        "--sasl-config", sasl_config,
-                                        "--load-module", os.getenv("ACL_LIB"),
-                                        "--cluster-username=x",
-                                        "--cluster-password=y",
+                                        "--sasl-config", os.path.join(self.rootdir, "sasl_config"),
+                                        "--cluster-username=zig",
+                                        "--cluster-password=bad",
                                         "--cluster-mechanism=PLAIN"
                                         ])
-        try:
-            cluster.start(expect=EXPECT_EXIT_OK)
-            cluster[1].ready()
-            self.fail("Expected exception")
-        except: pass
+        cluster.start(wait=False, expect=EXPECT_EXIT_FAIL)
+        assert cluster[1].log_contains("critical Unexpected error: connection-forced: Authentication failed")
+
+    def test_sasl_join_wrong_user(self):
+        # Test with a valid user that is not the cluster user.
+        cluster = self.cluster(0, args=["--auth", "yes",
+                                        "--sasl-config", os.path.join(self.rootdir, "sasl_config")])
+        cluster.start(args=["--cluster-username=zig",
+                            "--cluster-password=zig",
+                            "--cluster-mechanism=PLAIN"
+                            ])
+
+        cluster.start(wait=False, expect=EXPECT_EXIT_FAIL,
+                      args=["--cluster-username=zag",
+                            "--cluster-password=zag",
+                            "--cluster-mechanism=PLAIN"
+                            ])
+        assert cluster[1].log_contains("critical Unexpected error: unauthorized-access: unauthorized-access: Unauthorized user zag@QPID for qpid.cluster-credentials, should be zig")
 
     def test_user_id_update(self):
         """Ensure that user-id of an open session is updated to new cluster members"""
         sasl_config=os.path.join(self.rootdir, "sasl_config")
-        cluster = self.cluster(1, args=["--auth", "yes", "--sasl-config", sasl_config,])
+        cluster = self.cluster(1, args=["--auth", "yes", "--sasl-config", sasl_config,
+                                        "--cluster-mechanism=ANONYMOUS"])
         c = cluster[0].connect(username="zig", password="zig")
         s = c.session().sender("q;{create:always}")
         s.send(Message("x", user_id="zig")) # Message sent before start new broker

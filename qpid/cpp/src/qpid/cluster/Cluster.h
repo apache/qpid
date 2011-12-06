@@ -77,6 +77,7 @@ class Connection;
 struct EventFrame;
 class ClusterTimer;
 class UpdateDataExchange;
+class CredentialsExchange;
 
 /**
  * Connection to the cluster
@@ -187,6 +188,7 @@ class Cluster : private Cpg::Handler, public management::Manageable {
                        framing::cluster::StoreState,
                        const framing::Uuid& shutdownId,
                        const std::string& firstConfig,
+                       const framing::Array& urls,
                        Lock&);
     void ready(const MemberId&, const std::string&, Lock&);
     void configChange(const MemberId&,
@@ -215,6 +217,7 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     void becomeElder(Lock&);
     void setMgmtStatus(Lock&);
     void updateMgmtMembership(Lock&);
+    void authenticate();
 
     // == Called in CPG dispatch thread
     void deliver( // CPG deliver callback.
@@ -271,6 +274,7 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     PollableFrameQueue deliverFrameQueue;
     boost::shared_ptr<FailoverExchange> failoverExchange;
     boost::shared_ptr<UpdateDataExchange> updateDataExchange;
+    boost::shared_ptr<CredentialsExchange> credentialsExchange;
     Quorum quorum;
     LockedConnectionMap localConnections;
 

@@ -65,6 +65,7 @@
       <field name="store-state" type="store-state"/>
       <field name="shutdown-id" type="uuid"/>
       <field name="first-config" type="str16"/>
+      <field name="urls" type="array"/>	       <!-- Array of str16 -->
     </control>
 
     <!-- New member or updater is ready as an active member. -->
