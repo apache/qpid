@@ -360,6 +360,8 @@ libqpidcommon_la_SOURCES +=			\
   qpid/StringUtils.cpp				\
   qpid/StringUtils.h				\
   qpid/Url.cpp					\
+  qpid/UrlArray.cpp				\
+  qpid/UrlArray.h				\
   qpid/Version.h				\
   qpid/amqp_0_10/Exception.h			\
   qpid/amqp_0_10/SessionHandler.cpp		\

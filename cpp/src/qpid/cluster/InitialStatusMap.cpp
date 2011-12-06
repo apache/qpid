@@ -21,6 +21,7 @@
 #include "InitialStatusMap.h"
 #include "StoreStatus.h"
 #include "qpid/log/Statement.h"
+#include "qpid/UrlArray.h"
 #include <algorithm>
 #include <vector>
 #include <boost/bind.hpp>
@@ -216,6 +217,17 @@ void InitialStatusMap::checkConsistent() {
         if (!active && dirty && !clean)
             throw Exception("Cannot recover, no clean store.");
     }
+}
+
+std::vector<Url> InitialStatusMap::getUrls() const {
+    std::vector<Url> urls;
+    for (Map::const_iterator i = map.begin(); i != map.end(); ++i) {
+        if (i->second) {
+            std::vector<Url> urls = urlArrayToVector(i->second->getUrls());
+            if (!urls.empty()) return urls;
+        }
+    }
+    return std::vector<Url>();
 }
 
 std::string InitialStatusMap::getFirstConfigStr() const {

@@ -23,8 +23,10 @@
  */
 
 #include "MemberSet.h"
+#include "qpid/Url.h"
 #include <qpid/framing/ClusterInitialStatusBody.h>
 #include <boost/optional.hpp>
+#include <vector>
 
 namespace qpid {
 namespace cluster {
@@ -69,6 +71,8 @@ class InitialStatusMap
     framing::Uuid getClusterId();
     /**@pre isComplete(). @throw Exception if there are any inconsistencies. */
     void checkConsistent();
+    /*@return cluster URLs */
+    std::vector<Url> getUrls() const;
 
     /** Get first config-change for this member, encoded as a string.
      *@pre configChange has been called at least once.

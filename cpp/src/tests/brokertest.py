@@ -363,16 +363,20 @@ class Broker(Popen):
 
     def host_port(self): return "%s:%s" % (self.host(), self.port())
 
+    def log_contains(self, str, timeout=1):
+        """Wait for str to appear in the log file up to timeout. Return true if found"""
+        return retry(lambda: find_in_file(str, self.log), timeout)
+
     def log_ready(self):
         """Return true if the log file exists and contains a broker ready message"""
         if not self._log_ready:
             self._log_ready = find_in_file("notice Broker running", self.log)
         return self._log_ready
 
-    def ready(self, **kwargs):
+    def ready(self, timeout=5, **kwargs):
         """Wait till broker is ready to serve clients"""
         # First make sure the broker is listening by checking the log.
-        if not retry(self.log_ready, timeout=60):
+        if not retry(self.log_ready, timeout=timeout):
             raise Exception(
                 "Timed out waiting for broker %s%s"%(self.name, error_line(self.log,5)))
         # Create a connection and a session. For a cluster broker this will

@@ -23,6 +23,7 @@
 #include "qpid/framing/Uuid.h"
 #include "qpid/log/Statement.h"
 #include "qpid/log/Helpers.h"
+#include "qpid/UrlArray.h"
 
 namespace qpid {
 namespace client {
@@ -83,14 +84,9 @@ std::vector<Url> FailoverListener::getKnownBrokers() const {
 }
 
 std::vector<Url> FailoverListener::getKnownBrokers(const Message& msg) {
-    std::vector<Url> knownBrokers;
     framing::Array urlArray;
     msg.getHeaders().getArray("amq.failover", urlArray);
-    for (framing::Array::ValueVector::const_iterator i = urlArray.begin();
-         i != urlArray.end();
-         ++i ) 
-        knownBrokers.push_back(Url((*i)->get<std::string>()));
-    return knownBrokers;
+    return urlArrayToVector(urlArray);
 }
 
 

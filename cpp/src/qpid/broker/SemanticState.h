@@ -164,8 +164,6 @@ class SemanticState : private boost::noncopyable {
     boost::shared_ptr<Exchange> cacheExchange;
     const bool authMsg;
     const std::string userID;
-    const std::string userName;
-    const bool isDefaultRealm;
     bool closeComplete;
 
     void route(boost::intrusive_ptr<Message> msg, Deliverable& strategy);

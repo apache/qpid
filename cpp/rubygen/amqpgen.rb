@@ -191,6 +191,7 @@ class AmqpElement
     "command-fragments" => "session.command-fragment",
     "in-doubt" => "dtx.xid",
     "tx-publish" => "str-8",
+    "urls" => "str-16",
     "queues" => "str-8",
     "prepared" => "str-8"
   }
