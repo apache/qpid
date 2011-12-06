@@ -274,6 +274,34 @@ public class ConnectionURLTest extends TestCase
 //        assertTrue(service.getPort() == 1234);
     }
 
+    /**
+     * Test for QPID-3662 to ensure the {@code toString()} representation is correct.
+     */
+    public void testConnectionURLOptionToString() throws URLSyntaxException
+    {
+        String url = "amqp://guest:guest@client/localhost?maxprefetch='1'&brokerlist='tcp://localhost:1234?tcp_nodelay='true''";
+        ConnectionURL connectionurl = new AMQConnectionURL(url);
+
+        assertNull(connectionurl.getFailoverMethod());
+        assertEquals("guest", connectionurl.getUsername());
+        assertEquals("guest", connectionurl.getPassword());
+        assertEquals("client", connectionurl.getClientName());
+        assertEquals("/localhost", connectionurl.getVirtualHost());
+        assertEquals("1", connectionurl.getOption("maxprefetch"));
+        assertTrue(connectionurl.getBrokerCount() == 1);
+
+        BrokerDetails service = connectionurl.getBrokerDetails(0);
+        assertTrue(service.getTransport().equals("tcp"));
+        assertTrue(service.getHost().equals("localhost"));
+        assertTrue(service.getPort() == 1234);
+        assertTrue(service.getProperties().containsKey("tcp_nodelay"));
+        assertEquals("true", service.getProperties().get("tcp_nodelay"));
+        
+        String nopasswd = "amqp://guest:********@client/localhost?maxprefetch='1'&brokerlist='tcp://localhost:1234?tcp_nodelay='true''";
+        String tostring = connectionurl.toString();
+        assertEquals(tostring.indexOf("maxprefetch"), tostring.lastIndexOf("maxprefetch"));
+        assertEquals(nopasswd, tostring);
+    }
 
     public void testSingleTransportMultiOptionURL() throws URLSyntaxException
     {
