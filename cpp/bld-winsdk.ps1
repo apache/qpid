@@ -33,13 +33,14 @@
 #     The version number embedded in the built executables and libraries
 #     comes from qpid/cpp/src/CMakeWinVersions.cmake.
 #  3. Args[2] holds the Visual Studio version handle     "VS2010"
-#     Defaults to VS2008.
-#  4. Args[3] holds the architecture handle              "x86" or "x64".
-#     Defaults to x86.
+#     Either VS2008 or VS2010. Defaults to VS2008.
+#  4. Args[3] holds the architecture handle              "x86"
+#     Either x86 or x64. Defaults to x86.
 #  5. This file exists in directory kitroot/qpid/cpp.
-#     A new directory (kitroot/x86 or kitroot/x64) will be created.
-#  6. The x86 an x64 dirs are where cmake will run.
-#  7. Boost was built with the same version of Visual Studio 
+#     The kit is built in a directory <kitroot>\<arch>-<VSversion>.
+#	  For example: <kitroot>\x86-VS2008
+#  6. The <arch>-<VSversion> dirs are where cmake will run.
+#  7. Boost must have been built with the same version of Visual Studio 
 #     and the same architecture as this build.
 #  8. Boost directories must not be on the path.
 #  9. cmake, 7z, and devenv are already on the path.
@@ -123,7 +124,7 @@ function BuildAPlatform
     [string] $install_dir   = "install_$randomness"
     [string] $preserve_dir  = "preserve_$randomness"
     [string] $zipfile       = "qpid-cpp-$platform-$vsName-$ver.zip"
-    [string] $platform_dir  = "$global:currentDirectory/$platform"
+    [string] $platform_dir  = "$global:currentDirectory/$platform-$vsName"
     [string] $qpid_cpp_src  = "$global:currentDirectory/$qpid_cpp_dir"
     [string] $msvcVer       = ""
     
@@ -318,6 +319,16 @@ function BuildAPlatform
     $src = Resolve-Path "$global:sourceDirectory/cpp/examples/winsdk-cmake"
     $dst = Join-Path $install_dir "examples\examples-cmake"
     Copy-Item "$src\*" -destination "$dst\"
+	
+	# Create a batch file that will run examples-cmake with the correct generator
+	$dst = Join-Path $install_dir "examples\examples-cmake\run-cmake.bat"
+	"REM"                                                       | Out-File -filepath $dst
+    "REM  run-cmake.bat"                                        | Out-File -filepath $dst -append
+    "REM"                                                       | Out-File -filepath $dst -append
+    "REM  Runs cmake to build native C++ example solution and"  | Out-File -filepath $dst -append
+    "REM  projects for this WinSDK: $platform $vsName"          | Out-File -filepath $dst -append
+    "REM"                                                       | Out-File -filepath $dst -append
+    "cmake -G ""$cmakeGenerator"" ."                            | Out-File -filepath $dst -append
     
     # Zip the /bin PDB files
     &'7z' a -mx9 ".\$install_dir\bin\Debug\symbols-debug.zip"     ".\$install_dir\bin\DebugPDB\*.pdb"
