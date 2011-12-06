@@ -123,7 +123,7 @@ public class DefaultExchangeFactory implements ExchangeFactory
                 if (exchangeType == null)
                 {
                     _logger.error("No such custom exchange class found: \""+String.valueOf(className)+"\"");
-                    return;
+                    continue;
                 }
                 Class<? extends ExchangeType> exchangeTypeClass = exchangeType.getClass();
                 ExchangeType<? extends ExchangeType> type = exchangeTypeClass.newInstance();
