@@ -684,7 +684,7 @@ void ManagementAgent::moveNewObjectsLH()
             ManagementObjectMap::iterator destIter = managementObjects.find(oid);
             if (destIter != managementObjects.end()) {
                 // duplicate found.  It is OK if the old object has been marked
-                // deleted...
+                // deleted, just replace the old with the new.
                 ManagementObject *oldObj = destIter->second;
                 if (oldObj->isDeleted()) {
                     DeletedObject::shared_ptr dptr(new DeletedObject(oldObj, qmf1Support, qmf2Support));
@@ -696,6 +696,10 @@ void ManagementAgent::moveNewObjectsLH()
                     // and complain loudly...
                     QPID_LOG(error, "Detected two management objects with the same identifier: " << oid);
                 }
+                // QPID-3666: be sure to replace the -index- also, as non-key members of
+                // the index object may be different for the new object!  So erase the
+                // entry, rather than []= assign here:
+                managementObjects.erase(destIter);
             }
             managementObjects[oid] = object;
         }
