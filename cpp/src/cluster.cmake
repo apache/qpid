@@ -96,6 +96,8 @@ if (BUILD_CLUSTER)
        qpid/cluster/ConnectionCodec.h
        qpid/cluster/Cpg.cpp
        qpid/cluster/Cpg.h
+       qpid/cluster/CredentialsExchange.cpp
+       qpid/cluster/CredentialsExchange.h
        qpid/cluster/Dispatchable.h
        qpid/cluster/UpdateClient.cpp
        qpid/cluster/UpdateClient.h
