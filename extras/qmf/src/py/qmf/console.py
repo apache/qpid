@@ -2438,7 +2438,7 @@ class Broker(Thread):
       if uid.__class__ == tuple and len(uid) == 2:
         self.saslUser = uid[1]
       else:
-        self.saslUser = self.authUser
+        self.saslUser = None
 
       # prevent topic queues from filling up (and causing the agents to
       # disconnect) by discarding the oldest queued messages when full.
