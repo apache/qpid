@@ -305,13 +305,16 @@ function BuildAPlatform
     $dst = Resolve-Path "$install_dir/dotnet_examples"
     Copy-Item "$src\" -destination "$dst\" -recurse -force
 
-    Remove-Item -recurse "$install_dir/dotnet_examples/examples/msvc9"
-    Remove-Item -recurse "$install_dir/dotnet_examples/examples/msvc10"
+    Get-ChildItem * -include *.csv -recurse | remove-item
+    # Remove-Item -recurse "$install_dir/dotnet_examples/examples/msvc9"
+    # Remove-Item -recurse "$install_dir/dotnet_examples/examples/msvc10"
+    cmd /c "rd /s /q ""$install_dir/dotnet_examples/examples/msvc9"""
+    cmd /c "rd /s /q ""$install_dir/dotnet_examples/examples/msvc10"""
     
     # TODO: Fix up the .NET binding example solution/projects before including them.
-    # $src = Resolve-Path "$qpid_cpp_src/bindings/qpid/dotnet/winsdk_sources/$msvcVer"
-    # $dst = Resolve-Path "$install_dir/dotnet_examples"
-    # Copy-Item "$src\*" -destination "$dst\" -recurse -force
+    $src = Resolve-Path "$qpid_cpp_src/bindings/qpid/dotnet/winsdk_sources/$msvcVer"
+    $dst = Resolve-Path "$install_dir/dotnet_examples"
+    Copy-Item "$src\*" -destination "$dst\" -recurse -force
 
     # For the C++ examples: install a CMakeLists.txt file so customers can build
     # their own Visual Studio solutions and projects.
@@ -322,13 +325,13 @@ function BuildAPlatform
 	
 	# Create a batch file that will run examples-cmake with the correct generator
 	$dst = Join-Path $install_dir "examples\examples-cmake\run-cmake.bat"
-	"REM"                                                       | Out-File -filepath $dst
-    "REM  run-cmake.bat"                                        | Out-File -filepath $dst -append
-    "REM"                                                       | Out-File -filepath $dst -append
-    "REM  Runs cmake to build native C++ example solution and"  | Out-File -filepath $dst -append
-    "REM  projects for this WinSDK: $platform $vsName"          | Out-File -filepath $dst -append
-    "REM"                                                       | Out-File -filepath $dst -append
-    "cmake -G ""$cmakeGenerator"" ."                            | Out-File -filepath $dst -append
+	"REM"                                                       | Out-File -filepath $dst -encoding ASCII
+    "REM  run-cmake.bat"                                        | Out-File -filepath $dst -encoding ASCII -append
+    "REM"                                                       | Out-File -filepath $dst -encoding ASCII -append
+    "REM  Runs cmake to build native C++ example solution and"  | Out-File -filepath $dst -encoding ASCII -append
+    "REM  projects for this WinSDK: $platform $vsName"          | Out-File -filepath $dst -encoding ASCII -append
+    "REM"                                                       | Out-File -filepath $dst -encoding ASCII -append
+    "cmake -G ""$cmakeGenerator"" ."                            | Out-File -filepath $dst -encoding ASCII -append
     
     # Zip the /bin PDB files
     &'7z' a -mx9 ".\$install_dir\bin\Debug\symbols-debug.zip"     ".\$install_dir\bin\DebugPDB\*.pdb"
