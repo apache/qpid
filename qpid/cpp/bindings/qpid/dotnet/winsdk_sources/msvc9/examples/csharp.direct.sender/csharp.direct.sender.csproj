@@ -21,7 +21,7 @@ under the License.
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
-    <ProductVersion>9.0.21022</ProductVersion>
+    <ProductVersion>9.0.30729</ProductVersion>
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{7B71CE78-8E78-4632-ADBE-F4D5DFAE0068}</ProjectGuid>
     <OutputType>Exe</OutputType>
@@ -33,14 +33,14 @@ under the License.
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
     <DebugSymbols>true</DebugSymbols>
-    <OutputPath>$(ProjectDir)..\..\..\bin\</OutputPath>
+    <OutputPath>$(ProjectDir)..\..\..\bin\$(Configuration)</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <DebugType>full</DebugType>
     <PlatformTarget>x86</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
-    <OutputPath>$(ProjectDir)..\..\..\bin\</OutputPath>
+    <OutputPath>$(ProjectDir)..\..\..\bin\$(Configuration)</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <Optimize>true</Optimize>
     <DebugType>pdbonly</DebugType>
@@ -49,24 +49,30 @@ under the License.
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x64' ">
     <DebugSymbols>true</DebugSymbols>
-    <OutputPath>$(ProjectDir)..\..\..\bin\</OutputPath>
+    <OutputPath>$(ProjectDir)..\..\..\bin\$(Configuration)</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <DebugType>full</DebugType>
     <PlatformTarget>x64</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x64' ">
-    <OutputPath>$(ProjectDir)..\..\..\bin\</OutputPath>
+    <OutputPath>$(ProjectDir)..\..\..\bin\$(Configuration)</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <Optimize>true</Optimize>
     <DebugType>pdbonly</DebugType>
     <PlatformTarget>x64</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
   </PropertyGroup>
-  <ItemGroup>
-    <Reference Include="org.apache.qpid.messaging, Version=1.0.3890.18681, Culture=neutral, PublicKeyToken=7e57166074abee8c, processorArchitecture=$(Platform)">
+  <ItemGroup Condition=" '$(Platform)' == 'x86' ">
+    <Reference Include="org.apache.qpid.messaging, Version=1.0.4358.13700, Culture=neutral, PublicKeyToken=7e57166074abee8c, processorArchitecture=x86">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>$(ProjectDir)..\..\..\bin\org.apache.qpid.messaging.dll</HintPath>
+      <HintPath>..\..\..\bin\$(Configuration)\org.apache.qpid.messaging.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup Condition=" '$(Platform)' == 'x64' ">
+    <Reference Include="org.apache.qpid.messaging, Version=1.0.4358.13700, Culture=neutral, PublicKeyToken=7e57166074abee8c, processorArchitecture=AMD64">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\bin\$(Configuration)\org.apache.qpid.messaging.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
