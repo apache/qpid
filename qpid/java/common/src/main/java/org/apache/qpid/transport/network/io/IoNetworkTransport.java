@@ -60,7 +60,8 @@ public class IoNetworkTransport implements OutgoingNetworkTransport, IncomingNet
 
             LOGGER.debug("SO_RCVBUF : %s", _socket.getReceiveBufferSize());
             LOGGER.debug("SO_SNDBUF : %s", _socket.getSendBufferSize());
-
+            LOGGER.debug("TCP_NODELAY : %s", _socket.getTcpNoDelay());
+            
             InetAddress address = InetAddress.getByName(settings.getHost());
 
             _socket.connect(new InetSocketAddress(address, settings.getPort()));
