@@ -264,12 +264,26 @@ public class AMQBrokerDetails implements BrokerDetails
     
     public boolean getBooleanProperty(String propName)
     {
-        if (_options.containsKey(propName))
-        {
-            return Boolean.parseBoolean(_options.get(propName));
-        }
-
-        return false;
+        return getBooleanProperty(propName, false);
+    }
+    
+    public boolean getBooleanProperty(String propName, boolean defaultValue)
+    {
+    	if (_options.containsKey(propName))
+    	{
+    		if (defaultValue)
+    		{
+    			return !_options.get(propName).equalsIgnoreCase("false");
+    		}
+    		else
+    		{
+    			return Boolean.parseBoolean(_options.get(propName));
+    		}
+    	}
+    	else
+    	{
+    		return defaultValue;
+    	}
     }    
 
     public void setTimeout(long timeout)
@@ -439,7 +453,7 @@ public class AMQBrokerDetails implements BrokerDetails
         if (getProperty(BrokerDetails.OPTIONS_TCP_NO_DELAY) != null)
         {
             conSettings.setTcpNodelay(
-                    getBooleanProperty(BrokerDetails.OPTIONS_TCP_NO_DELAY));
+                    getBooleanProperty(BrokerDetails.OPTIONS_TCP_NO_DELAY,true));
         }
 
         return conSettings;
