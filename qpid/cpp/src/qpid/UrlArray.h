@@ -30,8 +30,8 @@
 namespace qpid {
 
 /** @file Functions to encode/decode an array of URLs. */
-std::vector<Url> urlArrayToVector(const framing::Array& array);
-framing::Array vectorToUrlArray(const std::vector<Url>& urls);
+QPID_COMMON_EXTERN std::vector<Url> urlArrayToVector(const framing::Array& array);
+QPID_COMMON_EXTERN framing::Array vectorToUrlArray(const std::vector<Url>& urls);
 } // namespace qpid
 
-#endif  /*!QPID_CLUSTER_URLARRAY_H*/
+#endif  /* !QPID_CLUSTER_URLARRAY_H */
