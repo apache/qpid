@@ -5,9 +5,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -51,7 +51,7 @@ public class XASessionImpl extends AMQSession_0_10 implements XASession, XATopic
                          int defaultPrefetchHigh, int defaultPrefetchLow)
     {
         super(qpidConnection, con, channelId, false,  // this is not a transacted session
-              Session.AUTO_ACKNOWLEDGE, // the ack mode is transacted
+              Session.CLIENT_ACKNOWLEDGE, //QPID-3625 XA should explicitly ack messages
               MessageFactoryRegistry.newDefaultRegistry(), defaultPrefetchHigh, defaultPrefetchLow,null);
         createSession();
         _xaResource = new XAResourceImpl(this);
