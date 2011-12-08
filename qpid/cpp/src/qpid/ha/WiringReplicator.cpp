@@ -229,18 +229,14 @@ void WiringReplicator::route(Deliverable& msg, const string& /*key*/, const fram
                 Variant::Map& map = i->asMap();
                 Variant::Map& schema = map[SCHEMA_ID].asMap();
                 Variant::Map& values = map[VALUES].asMap();
-                QPID_LOG(debug, "HA: Backup received event: schema=" << schema
+                QPID_LOG(trace, "HA: Backup received event: schema=" << schema
                          << " values=" << values);
                 if      (match<EventQueueDeclare>(schema)) doEventQueueDeclare(values);
                 else if (match<EventQueueDelete>(schema)) doEventQueueDelete(values);
                 else if (match<EventExchangeDeclare>(schema)) doEventExchangeDeclare(values);
                 else if (match<EventExchangeDelete>(schema)) doEventExchangeDelete(values);
                 else if (match<EventBind>(schema)) doEventBind(values);
-                // FIXME aconway 2011-11-21: handle unbind & all other events.
-                else if (match<EventSubscribe>(schema)) {} // Deliberately ignored.
-                // FIXME aconway 2011-12-02: error handling
-                else throw(Exception(QPID_MSG("Backup received unexpected event, schema="
-                                              << schema)));
+                // FIXME aconway 2011-11-21: handle unbind & all other relevant events.
             }
         } else if (headers->getAsString(QMF_OPCODE) == QUERY_RESPONSE) {
             for (Variant::List::iterator i = list.begin(); i != list.end(); ++i) {
@@ -253,15 +249,13 @@ void WiringReplicator::route(Deliverable& msg, const string& /*key*/, const fram
                 if      (type == QUEUE) doResponseQueue(values);
                 else if (type == EXCHANGE) doResponseExchange(values);
                 else if (type == BINDING) doResponseBind(values);
-                else throw Exception(QPID_MSG("HA: Unexpected response type: " << type));
+                // FIXME aconway 2011-12-06: handle all relevant response types.
             }
         } else {
-            QPID_LOG(error, QPID_MSG("HA: Backup received unexpected message: "
-                                       << *headers));
+            QPID_LOG(error, "HA: Backup replication got unexpected message: " << *headers);
         }
     } catch (const std::exception& e) {
-        QPID_LOG(error, "HA: Backup replication error: " << e.what());
-        QPID_LOG(error, "HA: Backup replication error while processing: " << list);
+        QPID_LOG(error, "HA: Backup replication error: " << e.what() << ": while handling: " << list);
     }
 }
 
