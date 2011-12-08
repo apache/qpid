@@ -55,8 +55,9 @@ namespace cluster {
 using broker::Broker;
 
 struct Settings {
-    Settings() : interval(0) {}
+    Settings() : interval(0), watchdogExec(QPID_LIBEXEC_DIR "/qpidd_watchdog") {}
     int interval;
+    std::string watchdogExec;
 };
 
 struct WatchDogOptions : public qpid::Options {
@@ -66,7 +67,9 @@ struct WatchDogOptions : public qpid::Options {
         addOptions()
             ("watchdog-interval", optValue(settings.interval, "N"),
              "broker is automatically killed if it is hung for more than \
-	      N seconds. 0 disables watchdog.");
+	      N seconds. 0 disables watchdog.")
+            ("watchdog-exec", optValue(settings.watchdogExec, ""),
+             "Path to the qpidd_watchdog executable.");
     }
 };
 
@@ -114,11 +117,10 @@ struct WatchDogPlugin : public qpid::Plugin, public qpid::sys::Fork {
   protected:
 
     void child() {              // Child of fork
-        const char* watchdog = ::getenv("QPID_WATCHDOG_EXEC"); // For use in tests
-        if (!watchdog) watchdog=QPID_LIBEXEC_DIR "/qpidd_watchdog";
         std::string interval = boost::lexical_cast<std::string>(settings.interval);
-        ::execl(watchdog, watchdog, interval.c_str(), NULL);
-        QPID_LOG(critical, "Failed to exec watchdog program " << watchdog );
+        const char* watchdogExec = settings.watchdogExec.c_str();
+        ::execl(watchdogExec, watchdogExec, interval.c_str(), NULL);
+        QPID_LOG(critical, "Failed to exec watchdog program " << watchdogExec);
         ::kill(::getppid(), SIGKILL);
         exit(1);
     }
