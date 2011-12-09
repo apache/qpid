@@ -6,8 +6,9 @@ Table of Contents
 1. Introduction
 2. Prerequisites
 3. Kit contents
-4. Building dotnet_examples
-5. Notes
+4. Building unmanaged C++ examples
+5. Building dotnet_examples
+6. Notes
 
 
 1. Introduction
@@ -16,11 +17,19 @@ Qpid-Cpp-Win-Sdk is a software development kit for users who wish
 to write code using the Qpid-Cpp program libraries in a Windows
 environment.
 
-This kit is distributed as two zip files:
-    qpid-cpp-x86-<version>.zip - projects and libraries for 32-bit
-                                 x86 and Win32 development.
-    qpid-cpp-x64-<version>.zip - projects and libraries for 64-bit
-                                 x64 development.
+This kit is distributed as four zip files:
+    qpid-cpp-x86-VS2008-<version>.zip - projects and libraries for 32-bit
+                                        x86 and Win32 development using
+                                        Visual Studio 2008.
+    qpid-cpp-x64-VS2008-<version>.zip - projects and libraries for 64-bit
+                                        x64 development using
+                                        Visual Studio 2008.
+    qpid-cpp-x86-VS2010-<version>.zip - projects and libraries for 32-bit
+                                        x86 and Win32 development using
+                                        Visual Studio 2010.
+    qpid-cpp-x64-VS2010-<version>.zip - projects and libraries for 64-bit
+                                        x64 development using
+                                        Visual Studio 2010.
 
 For additional software or information on the Qpid project go to:
 http://cwiki.apache.org/qpid/
@@ -28,16 +37,19 @@ http://cwiki.apache.org/qpid/
 
 2. Prerequisites
 ================
-A. Visual Studio 2008. This kit was produced by Visual Studio 2008
-   and example solutions and projects are in Visual Studio 2008
-   format.
+A. Visual Studio 2008 or Visual Studio 2010. The kits were produced 
+   using Visual Studio 2008 or Visual Studio 2010 and provide a matched
+   set of link libraries for each tool chain.
    
-B. MSVC 9.0 runtime libraries. Copies of the MSVC90 redistributable
-   runtime libraries and manifest are included in the /bin directory.
+B. MSVC runtime libraries. Copies of the MSVC redistributable runtime
+   libraries and manifest are included in the \bin\release directories.
    
-C. Boost version 1_39. The Boost libraries required by this SDK are
-   included in the /bin directory. Both Debug and Release variants
-   are present.
+C. Boost version 1_47. The Boost libraries required by this SDK are
+   included in the \bin\debug and \bin\release directories.
+   
+D. CMake version 2.8.6 or later, available for free from http://cmake.org/ 
+   CMake generates custom Visual Studio solutions and projects for
+   the unmanaged C++ examples.
 
 
 3. Kit contents
@@ -48,7 +60,7 @@ The kit directories hold the content described here.
     The precompiled binary (.dll and .exe) files and
       the associated debug program database (.pdb) files.
     Boost library files.
-    MSVC90 runtime library files.
+    MSVC runtime library files are in \bin\release.
 
   \include
     A directory tree of .h files.
@@ -60,8 +72,7 @@ The kit directories hold the content described here.
     Apache Qpid C++ API Reference
 
   \examples
-    A Visual Studio solution file and associated project files 
-    to demonstrate using this SDK in unmanaged C++.
+    Source files which demonstrate using this SDK in unmanaged C++.
 
   \dotnet_examples
     A Visual Studio solution file and associated project files 
@@ -117,35 +128,45 @@ unmanaged              | org.apache.qpid.messaging.dll |
           +---------------------------------+
 
 
-4. Building dotnet_examples
+4. Building unmanaged C++ examples
+===========================
+
+This version of Qpid-Cpp-Win-Sdk ships with no pre-built Visual Studio
+solution or project files for the C++ examples. Instead this kit has
+support for using CMake to generate the solution and project files.
+
+A. Make sure that the CMake bin directory is defined in your path.
+   You may check this from a command prompt by typing:
+     > cmake --version
+     cmake version 2.8.6
+   
+   If CMake is installed correctly it will respond with a version number.
+   
+B. Change directory to \examples\examples-cmake.
+
+C. Execute run-cmake.bat batch file.
+
+   Run-cmake.bat runs CMake and generates the Visual Studio solution and
+   project files using the version of Visual Studio that matches this 
+   Qpid-Cpp-Win-Sdk kit.
+
+D. Execute the generated examples.sln Visual Studio solution file.
+
+
+5. Building dotnet_examples
 ===========================
 
 From the \dotnet_examples directory launch the winsdk_dotnet_examples.sln
 solution file. In the platform pulldown list select "x86" or "x64" to
 match the development kit you are using. Then build the solution in the
-Debug configuration.
+Debug or Release configuration.
 
-The resulting executable programs may be run from within Visual Studio
-or stand-alone from the \bin directory.
 
-To build the examples in the Release configuration please follow these steps:
-  a. Exit from Visual Studio. Stop all executing example processes.
-  b. Extract two org.apache.qpid.messaging DLL files from 
-     bin/dotnet-binding-release.zip and place the files in the /bin 
-     directory, overwriting the files arleady in /bin.
-  c. Start winsdk_dotnet_examples.sln.
-  d. In the Configuration pulldown, select Release.
-  e. In the Platform pulldown, select x86 or x64 to match the SDK
-     in use.
-  f. For each project remove the Reference to org.apache.qpid.messagingd.dll
-     and add a reference to bin/org.apache.qpid.messaging.dll.
-  g. Build and run the project.
-
-5. Notes
+6. Notes
 ========
 * Only the Release variant of Qpid code uses the redistributable 
-  MSVC90 libraries in the /bin directory. Users who wish to link to 
+  MSVC libraries in the /bin/release directory. Users who wish to link to 
   the Debug variant of Qpid code may do so under their own copy of 
-  Visual Studio 2008 where the debug versions of MSVC90 runtime 
+  Visual Studio where the debug versions of MSVC90 or MSVC100 runtime 
   libraries are available.
   
