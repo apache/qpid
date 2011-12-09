@@ -63,6 +63,11 @@ macro(add_example subdir example)
     target_link_libraries(${subdir}_${example} qpidclient
                           ${_boost_libs_needed})
   endif (${ARGC} GREATER 2)
+endmacro(add_example)
+
+macro(add_installed_example subdir example)
+  add_example(${subdir} ${example} ${ARGN})
+
   # For installs, don't install the built example; that would be pointless.
   # Install the things a user needs to build the example on-site.
   install (FILES ${CMAKE_CURRENT_SOURCE_DIR}/${example}.cpp
@@ -74,7 +79,7 @@ macro(add_example subdir example)
              COMPONENT ${QPID_COMPONENT_EXAMPLES})
   endif (MSVC)
 
-endmacro(add_example)
+endmacro(add_installed_example)
 
 install (FILES ${CMAKE_CURRENT_SOURCE_DIR}/README.txt
          DESTINATION ${QPID_INSTALL_EXAMPLESDIR}
