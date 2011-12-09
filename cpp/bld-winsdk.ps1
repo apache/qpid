@@ -218,7 +218,7 @@ function BuildAPlatform
         ('bin/msvc*.dll',        'bin/Release') ,
         ('bin/*d.dll',           'bin/Debug'),
         ('bin/*.dll',            'bin/Release'),
-        ('bin/*test.exe',        'bin/Debug')
+        ('bin/*test.exe',        'bin/Release')
     )
 
     $preserve=(
