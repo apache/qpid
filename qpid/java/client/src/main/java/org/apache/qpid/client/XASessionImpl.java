@@ -51,7 +51,7 @@ public class XASessionImpl extends AMQSession_0_10 implements XASession, XATopic
                          int defaultPrefetchHigh, int defaultPrefetchLow)
     {
         super(qpidConnection, con, channelId, false,  // this is not a transacted session
-              Session.CLIENT_ACKNOWLEDGE, //QPID-3625 XA should explicitly ack messages
+              Session.AUTO_ACKNOWLEDGE,
               MessageFactoryRegistry.newDefaultRegistry(), defaultPrefetchHigh, defaultPrefetchLow,null);
         createSession();
         _xaResource = new XAResourceImpl(this);
