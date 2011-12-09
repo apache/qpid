@@ -306,8 +306,6 @@ function BuildAPlatform
     Copy-Item "$src\" -destination "$dst\" -recurse -force
 
     Get-ChildItem * -include *.csv -recurse | remove-item
-    # Remove-Item -recurse "$install_dir/dotnet_examples/examples/msvc9"
-    # Remove-Item -recurse "$install_dir/dotnet_examples/examples/msvc10"
     cmd /c "rd /s /q ""$install_dir/dotnet_examples/examples/msvc9"""
     cmd /c "rd /s /q ""$install_dir/dotnet_examples/examples/msvc10"""
     
@@ -346,12 +344,9 @@ function BuildAPlatform
     Copy-Item -force -path "./src/RelWithDebInfo/org.apache.qpid.messaging*.dll" -destination "$install_dir/bin/Release/"
     Copy-Item -force -path "./src/RelWithDebInfo/org.apache.qpid.messaging*.pdb" -destination "$install_dir/bin/Release/"
 
-    # TODO: What happened to the .NET binding PDB files?
-    
     # Create a new zip for the whole kit.
-    # Exclude *.pdb so as not include the debug symbols twice
     if (Test-Path $zipfile) {Remove-Item $zipfile}
-    &'7z' a $zipfile ".\$install_dir\*" -xr!*pdb
+    &'7z' a $zipfile ".\$install_dir\*"
 }
 
 ################################
