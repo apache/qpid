@@ -78,8 +78,8 @@
                      Name="PATH" System="yes" Part="last" Value="[QpidBin]"/>
       </Component>
       <Component Id="QpidRootEnv" Guid="{DC89CA24-E66F-4506-AA1F-153A88979AC7}">
-        <Environment Id="RootPath" Separator=";" Action="set" Permanent="no"
-                     Name="QPID_ROOT" System="yes" Part="last"
+        <Environment Id="RootPath" Action="set" Permanent="no"
+                     Name="QPID_ROOT" System="yes" Part="all"
                      Value="[INSTALLLOCATION]"/>
       </Component>
       <Component Id="WCFXAKey" Guid="{88EDD4D2-59FC-46be-BE18-40A94FB5C9D7}">
