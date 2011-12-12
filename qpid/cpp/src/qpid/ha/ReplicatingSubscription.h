@@ -80,13 +80,13 @@ class ReplicatingSubscription : public broker::SemanticState::ConsumerImpl,
     void requeued(const broker::QueuedMessage&) {}
 
     bool isDelayedCompletion() const { return true; }
-    
+
   protected:
     bool doDispatch();
   private:
     boost::shared_ptr<broker::Queue> events;
     boost::shared_ptr<broker::Consumer> consumer;
-    qpid::framing::SequenceSet range;
+    qpid::framing::SequenceSet dequeues;
 
     void generateDequeueEvent();
     class DelegatingConsumer : public Consumer

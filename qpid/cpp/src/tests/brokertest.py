@@ -496,30 +496,30 @@ class BrokerTest(TestCase):
         cluster = Cluster(self, count, args, expect=expect, wait=wait, show_cmd=show_cmd)
         return cluster
 
-    def browse(self, session, queue, timeout=0):
+    def browse(self, session, queue, timeout=0, transform=lambda m: m.content):
         """Return a list with the contents of each message on queue."""
         r = session.receiver("%s;{mode:browse}"%(queue))
         r.capacity = 100
         try:
             contents = []
             try:
-                while True: contents.append(r.fetch(timeout=timeout).content)
+                while True: contents.append(transform(r.fetch(timeout=timeout)))
             except messaging.Empty: pass
         finally: r.close()
         return contents
 
-    def assert_browse(self, session, queue, expect_contents, timeout=0):
+    def assert_browse(self, session, queue, expect_contents, timeout=0, transform=lambda d:m.content):
         """Assert that the contents of messages on queue (as retrieved
         using session and timeout) exactly match the strings in
         expect_contents"""
-        actual_contents = self.browse(session, queue, timeout)
+        actual_contents = self.browse(session, queue, timeout, transform=transform)
         self.assertEqual(expect_contents, actual_contents)
 
-    def assert_browse_retry(self, session, queue, expect_contents, timeout=1, delay=.01):
+    def assert_browse_retry(self, session, queue, expect_contents, timeout=1, delay=.01, transform=lambda m:m.content):
         """Wait up to timeout for contents of queue to match expect_contents"""
-        def test(): return self.browse(session, queue, 0) == expect_contents
+        test = lambda: self.browse(session, queue, 0, transform=transform) == expect_contents
         retry(test, timeout, delay)
-        self.assertEqual(expect_contents, self.browse(session, queue, 0))
+        self.assertEqual(expect_contents, self.browse(session, queue, 0, transform=transform))
 
 def join(thread, timeout=10):
     thread.join(timeout)

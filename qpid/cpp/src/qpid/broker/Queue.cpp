@@ -1069,6 +1069,10 @@ void Queue::destroyed()
     }
     if (autoDeleteTask) autoDeleteTask = boost::intrusive_ptr<TimerTask>();
     notifyDeleted();
+    {
+        Mutex::ScopedLock locker(messageLock);
+        observers.clear();
+    }
 }
 
 void Queue::notifyDeleted()
