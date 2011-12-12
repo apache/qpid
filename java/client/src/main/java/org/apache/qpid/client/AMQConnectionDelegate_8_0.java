@@ -161,8 +161,8 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
             _conn._failoverPolicy.attainedConnection();
             _conn._connected = true;
             return null;
-        } 
-        else 
+        }
+        else
         {
             return _conn._protocolHandler.getSuggestedProtocolVersion();
         }
@@ -175,11 +175,16 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
         return createSession(transacted, acknowledgeMode, prefetch, prefetch);
     }
 
+
     public XASession createXASession(int prefetchHigh, int prefetchLow) throws JMSException
     {
         throw new UnsupportedOperationException("0_8 version does not provide XA support");
     }
 
+    public XASession createXASession(int ackMode) throws JMSException
+    {
+        throw new UnsupportedOperationException("0_8 version does not provide XA support");
+    }
     public org.apache.qpid.jms.Session createSession(final boolean transacted, final int acknowledgeMode,
                                                      final int prefetchHigh, final int prefetchLow) throws JMSException
     {
