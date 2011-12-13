@@ -375,16 +375,8 @@ public class PlainPasswordFilePrincipalDatabase implements PrincipalDatabase
 
             BufferedReader reader = null;
             PrintStream writer = null;
-            
-            Random r = new Random();
-            File tmp;
-            do
-            {
-                tmp = new File(_passwordFile.getPath() + r.nextInt() + ".tmp");
-            }
-            while(tmp.exists());
-            
-            tmp.deleteOnExit();
+
+            final File tmp = createTempFileOnSameFilesystem(_passwordFile);
 
             try
             {
@@ -449,51 +441,71 @@ public class PlainPasswordFilePrincipalDatabase implements PrincipalDatabase
             }
             finally
             {
-                if (reader != null)
-                {
-                    reader.close();
-                }
-
                 if (writer != null)
                 {
                     writer.close();
                 }
-            }
-            
-            // Swap temp file to main password file.
-            File old = new File(_passwordFile.getAbsoluteFile() + ".old");
-            if (old.exists())
-            {
-                old.delete();
-            }
-            
-            if(!_passwordFile.renameTo(old))
-            {
-                //unable to rename the existing file to the backup name 
-                _logger.error("Could not backup the existing password file");
-                throw new IOException("Could not backup the existing password file");
+                if (reader != null)
+                {
+                    reader.close();
+                }
             }
 
-            if(!tmp.renameTo(_passwordFile))
-            {
-                //failed to rename the new file to the required filename
-                
-                if(!old.renameTo(_passwordFile))
-                {
-                    //unable to return the backup to required filename
-                    _logger.error("Could not rename the new password file into place, and unable to restore original file");
-                    throw new IOException("Could not rename the new password file into place, and unable to restore original file");
-                }
-                
-                _logger.error("Could not rename the new password file into place");
-                throw new IOException("Could not rename the new password file into place");
-            }
-            
+            swapTempFileToLive(_passwordFile, tmp);
+
         }
         finally
         {
             _userUpdate.unlock();
         }
+    }
+
+    private void swapTempFileToLive(final File live, final File temp) throws IOException
+    {
+        // Remove any existing ".old" file
+        final File old = new File(live.getAbsoluteFile() + ".old");
+        if (old.exists())
+        {
+            old.delete();
+        }
+
+        // Create an new ".old" file
+        if(!live.renameTo(old))
+        {
+            //unable to rename the existing file to the backup name
+            _logger.error("Could not backup the existing password file");
+            throw new IOException("Could not backup the existing password file");
+        }
+
+        // Move temp file to be the new "live" file
+        if(!temp.renameTo(live))
+        {
+            //failed to rename the new file to the required filename
+            if(!old.renameTo(live))
+            {
+                //unable to return the backup to required filename
+                _logger.error("Could not rename the new password file into place, and unable to restore original file");
+                throw new IOException("Could not rename the new password file into place, and unable to restore original file");
+            }
+
+            _logger.error("Could not rename the new password file into place");
+            throw new IOException("Could not rename the new password file into place");
+        }
+    }
+
+    private File createTempFileOnSameFilesystem(final File liveFile)
+    {
+        File tmp;
+        final Random r = new Random();
+
+        do
+        {
+            tmp = new File(liveFile.getPath() + r.nextInt() + ".tmp");
+        }
+        while(tmp.exists());
+
+        tmp.deleteOnExit();
+        return tmp;
     }
     
     public void reload() throws IOException
