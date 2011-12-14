@@ -82,9 +82,9 @@ class ShortTests(BrokerTest):
             # FIXME aconway 2011-11-24: assert_browse_retry to deal with async replication.
             self.assert_browse_retry(b, prefix+"q1", ["b", "1", "4"])
 
-            # FIXME aconway 2011-12-02:
             self.assertEqual(p.receiver(prefix+"q1").fetch(timeout=0).content, "b")
             p.acknowledge()
+            self.assert_browse_retry(b, prefix+"q1", ["1", "4"])
 
             self.assert_browse_retry(b, prefix+"q2", []) # wiring only
             self.assert_missing(b, prefix+"q3")
@@ -135,29 +135,31 @@ class ShortTests(BrokerTest):
         backup2 = self.ha_broker(name="backup2", broker_url=primary.host_port())
         for m in [str(i) for i in range(20,30)]: s.send(m)
         s.sync()
-        msgs = [str(i) for i in range(30)]
 
-        self.assert_browse_retry(backup1.connect().session(), "q", msgs)
-        self.assert_browse_retry(backup2.connect().session(), "q", msgs)
+        msgs = [str(i) for i in range(30)]
+        b1 = backup1.connect().session()
+        self.wait(b1, "q");
+        self.assert_browse_retry(b1, "q", msgs)
+        b2 = backup2.connect().session()
+        self.wait(b2, "q");
+        self.assert_browse_retry(b2, "q", msgs)
 
     def test_send_receive(self):
-        # FIXME aconway 2011-12-09: test with concurrent senders/receivers.
-        debug = ["-t"]        # FIXME aconway 2011-12-08:
-        primary = self.ha_broker(name="primary", broker_url="primary", args=debug)
-        backup1 = self.ha_broker(name="backup1", broker_url=primary.host_port(), args=debug)
-        backup2 = self.ha_broker(name="backup2", broker_url=primary.host_port(), args=debug)
+        primary = self.ha_broker(name="primary", broker_url="primary")
+        backup1 = self.ha_broker(name="backup1", broker_url=primary.host_port())
+        backup2 = self.ha_broker(name="backup2", broker_url=primary.host_port())
         sender = self.popen(
             ["qpid-send",
              "--broker", primary.host_port(),
              "--address", "q;{create:always,%s}"%(self.qpid_replicate("all")),
-             "--messages=1000",         # FIXME aconway 2011-12-09: 
+             "--messages=1000",
              "--content-string=x"
              ])
         receiver = self.popen(
             ["qpid-receive",
              "--broker", primary.host_port(),
              "--address", "q;{create:always,%s}"%(self.qpid_replicate("all")),
-             "--messages=990",          # FIXME aconway 2011-12-09: 
+             "--messages=990",
              "--timeout=10"
              ])
         try:
@@ -168,15 +170,8 @@ class ShortTests(BrokerTest):
             self.assert_browse_retry(backup1.connect().session(), "q", expect, transform=sn)
             self.assert_browse_retry(backup2.connect().session(), "q", expect, transform=sn)
         except:
-            # FIXME aconway 2011-12-09: 
             print self.browse(primary.connect().session(), "q", transform=sn)
             print self.browse(backup1.connect().session(), "q", transform=sn)
-            print self.browse(backup2.connect().session(), "q", transform=sn)
-#             os.system("/home/remote/aconway/qpidha/dbg/examples/messaging/drain -b %s 'q;{mode:browse}'"%(primary.host_port()))
-#             print "---- backup1"
-#             os.system("/home/remote/aconway/qpidha/dbg/examples/messaging/drain -b %s 'q;{mode:browse}'"%(backup1.host_port()))
-#             print "---- backup2"
-#             os.system("/home/remote/aconway/qpidha/dbg/examples/messaging/drain -b %s 'q;{mode:browse}'"%(backup2.host_port()))
             raise
 
 if __name__ == "__main__":
