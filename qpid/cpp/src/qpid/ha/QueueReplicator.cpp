@@ -49,7 +49,6 @@ QueueReplicator::QueueReplicator(boost::shared_ptr<Queue> q, boost::shared_ptr<L
     : Exchange(QPID_REPLICATOR_+q->getName(), 0, 0), // FIXME aconway 2011-11-24: hidden from management?
       queue(q), link(l), current(queue->getPosition())
 {
-    // FIXME aconway 2011-11-24: consistent logging.
     QPID_LOG(debug, "HA: Replicating queue " << q->getName() << " " << q->getSettings());
     // Declare the replicator bridge.
     queue->getBroker()->getLinks().declare(
@@ -77,12 +76,20 @@ void QueueReplicator::initializeBridge(Bridge& bridge, SessionHandler& sessionHa
     framing::AMQP_ServerProxy peer(sessionHandler.out);
     const qmf::org::apache::qpid::broker::ArgsLinkBridge& args(bridge.getArgs());
     framing::FieldTable settings;
+
+    // FIXME aconway 2011-12-09: Failover optimization removed.
+    // There was code here to re-use messages already on the backup
+    // during fail-over. This optimization was removed to simplify
+    // the logic till we get the basic replication stable, it
+    // can be re-introduced later. Last revision with the optimization:
+    // r1213258 | QPID-3603: Fix QueueReplicator subscription parameters.
+
+    // Clear out any old messages, reset the queue to start replicating fresh.
+    queue->purge();
+    queue->setPosition(0);
+
     settings.setInt(ReplicatingSubscription::QPID_REPLICATING_SUBSCRIPTION, 1);
-    settings.setInt(ReplicatingSubscription::QPID_HIGH_SEQUENCE_NUMBER, queue->getPosition());
     settings.setInt(QPID_SYNC_FREQUENCY, 1);
-    qpid::framing::SequenceNumber oldest;
-    if (queue->getOldest(oldest))
-        settings.setInt(ReplicatingSubscription::QPID_LOW_SEQUENCE_NUMBER, oldest);
     peer.getMessage().subscribe(args.i_src, args.i_dest, 0/*accept-explicit*/, 1/*not-acquired*/, false, "", 0, settings);
     peer.getMessage().flow(getName(), 0, 0xFFFFFFFF);
     peer.getMessage().flow(getName(), 1, 0xFFFFFFFF);
