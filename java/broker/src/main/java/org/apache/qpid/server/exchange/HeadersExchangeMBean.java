@@ -20,12 +20,21 @@
  */
 package org.apache.qpid.server.exchange;
 
+import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.management.common.mbeans.annotations.MBeanDescription;
 import org.apache.qpid.management.common.mbeans.annotations.MBeanConstructor;
 import org.apache.qpid.server.binding.Binding;
+import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.logging.actors.ManagementActor;
+import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import javax.management.JMException;
+import javax.management.MBeanException;
 import javax.management.openmbean.*;
+
+import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
@@ -94,5 +103,48 @@ final class HeadersExchangeMBean extends AbstractExchangeMBean<HeadersExchange>
         return bindingList;
     }
 
+    @Override
+    public void createNewBinding(String queueName, String binding) throws JMException
+    {
+        VirtualHost vhost = getExchange().getVirtualHost();
+        AMQQueue queue = vhost.getQueueRegistry().getQueue(new AMQShortString(queueName));
+        if (queue == null)
+        {
+            throw new JMException("Queue \"" + queueName + "\" is not registered with the virtualhost.");
+        }
+
+        CurrentActor.set(new ManagementActor(_logActor.getRootMessageLogger()));
+
+        final Map<String,Object> arguments = new HashMap<String, Object>();
+        final String[] bindings = binding.split(",");
+        for (int i = 0; i < bindings.length; i++)
+        {
+            final String[] keyAndValue = bindings[i].split("=");
+            if (keyAndValue == null || keyAndValue.length == 0 || keyAndValue.length > 2 || keyAndValue[0].length() == 0)
+            {
+                throw new JMException("Format for headers binding should be \"<attribute1>=<value1>,<attribute2>=<value2>\" ");
+            }
+
+            if(keyAndValue.length == 1)
+            {
+                //no value was given, only a key. Use an empty value to signal match on key presence alone
+                arguments.put(keyAndValue[0], "");
+            }
+            else
+            {
+                arguments.put(keyAndValue[0], keyAndValue[1]);
+            }
+        }
+        try
+        {
+            vhost.getBindingFactory().addBinding(binding,queue,getExchange(),arguments);
+        }
+        catch (AMQException ex)
+        {
+            JMException jme = new JMException(ex.toString());
+            throw new MBeanException(jme, "Error creating new binding " + binding);
+        }
+        CurrentActor.remove();
+    }
 
 } // End of MBean class
