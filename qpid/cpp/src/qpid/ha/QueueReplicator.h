@@ -44,13 +44,14 @@ namespace ha {
  * Creates a ReplicatingSubscription on the primary by passing special
  * arguments to the consume command.
  *
- * THREAD SAFE.
+ * THREAD SAFE: Called in arbitrary connection threads.
  */
 class QueueReplicator : public broker::Exchange
 {
   public:
     static const std::string DEQUEUE_EVENT_KEY;
-    
+    static const std::string POSITION_EVENT_KEY;
+
     QueueReplicator(boost::shared_ptr<broker::Queue> q, boost::shared_ptr<broker::Link> l);
     ~QueueReplicator();
     std::string getType() const;
@@ -61,12 +62,11 @@ class QueueReplicator : public broker::Exchange
 
   private:
     void initializeBridge(broker::Bridge& bridge, broker::SessionHandler& sessionHandler);
+    void dequeue(framing::SequenceNumber, const sys::Mutex::ScopedLock&);
 
     sys::Mutex lock;
     boost::shared_ptr<broker::Queue> queue;
     boost::shared_ptr<broker::Link> link;
-    framing::SequenceNumber current;
-    framing::SequenceSet dequeued;
 };
 
 }} // namespace qpid::ha
