@@ -407,7 +407,6 @@ class Queue : public boost::enable_shared_from_this<Queue>,
 
     uint32_t getDequeueSincePurge() { return dequeueSincePurge.get(); }
     void setDequeueSincePurge(uint32_t value);
-    bool getOldest(framing::SequenceNumber& result);
 };
 }
 }

@@ -98,24 +98,21 @@ ReplicatingSubscription::ReplicatingSubscription(
     // Note that broker::Queue::getPosition() returns the sequence
     // number that will be assigned to the next message *minus 1*.
 
-    // this->position is inherited from ConsumerImpl. It tracks the
-    // position of the last message browsed on the local (primary)
-    // queue, or more exactly the next sequence number to browse
-    // *minus 1*
-    qpid::framing::SequenceNumber oldest;
-    position = queue->getOldest(oldest) ? --oldest : queue->getPosition();
-
     // this->backupPosition tracks the position of the remote backup
     // queue, i.e. the sequence number for the next delivered message
     // *minus one*
     backupPosition = 0;
+
+    // FIXME aconway 2011-12-15: ConsumerImpl::position is left at 0
+    // so we will start consuming from the lowest numbered message.
+    // This is incorrect if the sequence number wraps around, but
+    // this is what all consumers currently do.
 }
 
 // Message is delivered in the subscription's connection thread.
 bool ReplicatingSubscription::deliver(QueuedMessage& m) {
     // Add position events for the subscribed queue, not for the internal event queue.
-    if (m.queue && m.queue->getName() == getQueue()->getName()) {
-        QPID_LOG(trace, "HA: replicating message to backup: " << QueuePos(m));
+    if (m.queue && m.queue == getQueue().get()) {
         assert(position == m.position);
         {
              sys::Mutex::ScopedLock l(lock);
@@ -130,6 +127,7 @@ bool ReplicatingSubscription::deliver(QueuedMessage& m) {
              }
              backupPosition = position;
         }
+        QPID_LOG(trace, "HA: replicating message to backup: " << QueuePos(m));
     }
     return ConsumerImpl::deliver(m);
 }
@@ -213,7 +211,7 @@ void ReplicatingSubscription::dequeued(const QueuedMessage& m)
     {
         sys::Mutex::ScopedLock l(lock);
         dequeues.add(m.position);
-        QPID_LOG(trace, "HA: Will dequeue " << QueuePos(m) << " on " << getName());
+        QPID_LOG(trace, "HA: Dequeued " << QueuePos(m) << " on " << getName());
     }
     notify();                   // Ensure a call to doDispatch
     if (m.position > position) {
