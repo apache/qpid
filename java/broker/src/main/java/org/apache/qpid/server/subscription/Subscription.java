@@ -73,12 +73,17 @@ public interface Subscription
 
     void close();
 
-    void send(QueueEntry msg) throws AMQException;
+    void send(QueueEntry entry, boolean batch) throws AMQException;
+
+    void flushBatched();
 
     void queueDeleted(AMQQueue queue);
 
 
     boolean wouldSuspend(QueueEntry msg);
+
+    boolean trySendLock();
+
 
     void getSendLock();
 

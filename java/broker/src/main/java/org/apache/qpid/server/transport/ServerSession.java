@@ -697,6 +697,15 @@ public class ServerSession extends Session implements AuthorizationHolder, Sessi
         }
     }
 
+    public void flushCreditState()
+    {
+        final Collection<Subscription_0_10> subscriptions = getSubscriptions();
+        for (Subscription_0_10 subscription_0_10 : subscriptions)
+        {
+            subscription_0_10.flushCreditState(false);
+        }
+    }
+
     public int getUnacknowledgedMessageCount()
     {
         return _messageDispositionListenerMap.size();

@@ -43,6 +43,8 @@ import org.apache.qpid.server.output.ProtocolOutputConverter;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
+import org.apache.qpid.server.subscription.ClientDeliveryMethod;
+import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.transport.TestNetworkConnection;
 
@@ -118,6 +120,11 @@ public class InternalTestProtocolSession extends AMQProtocolEngine implements Pr
     // *** ProtocolOutputConverter Implementation
     public void writeReturn(AMQMessage message, int channelId, int replyCode, AMQShortString replyText) throws AMQException
     {
+    }
+
+    public ClientDeliveryMethod createDeliveryMethod(int channelId)
+    {
+        return new InternalWriteDeliverMethod(channelId);
     }
 
     public void confirmConsumerAutoClose(int channelId, AMQShortString consumerTag)
@@ -212,5 +219,43 @@ public class InternalTestProtocolSession extends AMQProtocolEngine implements Pr
         // changeState(AMQState.CONNECTION_CLOSED);
         ((AMQChannel)session).getProtocolSession().closeSession();
 
+    }
+
+    private class InternalWriteDeliverMethod implements ClientDeliveryMethod
+    {
+        private int _channelId;
+
+        public InternalWriteDeliverMethod(int channelId)
+        {
+            _channelId = channelId;
+        }
+
+
+        @Override
+        public void deliverToClient(Subscription sub, QueueEntry entry, long deliveryTag) throws AMQException
+        {
+            _deliveryCount.incrementAndGet();
+
+            synchronized (_channelDelivers)
+            {
+                Map<AMQShortString, LinkedList<DeliveryPair>> consumers = _channelDelivers.get(_channelId);
+
+                if (consumers == null)
+                {
+                    consumers = new HashMap<AMQShortString, LinkedList<DeliveryPair>>();
+                    _channelDelivers.put(_channelId, consumers);
+                }
+
+                LinkedList<DeliveryPair> consumerDelivers = consumers.get(sub.getConsumerTag());
+
+                if (consumerDelivers == null)
+                {
+                    consumerDelivers = new LinkedList<DeliveryPair>();
+                    consumers.put(sub.getConsumerTag(), consumerDelivers);
+                }
+
+                consumerDelivers.add(new DeliveryPair(deliveryTag, (AMQMessage)entry.getMessage()));
+            }
+        }
     }
 }

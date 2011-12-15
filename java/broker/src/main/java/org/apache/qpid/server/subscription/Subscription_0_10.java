@@ -61,6 +61,7 @@ import org.apache.qpid.transport.MessageFlowMode;
 import org.apache.qpid.transport.MessageProperties;
 import org.apache.qpid.transport.MessageTransfer;
 import org.apache.qpid.transport.Method;
+import org.apache.qpid.transport.Option;
 import org.apache.qpid.transport.Session;
 import org.apache.qpid.transport.Struct;
 import org.apache.qpid.framing.AMQShortString;
@@ -90,6 +91,8 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
 
     private final QueueEntry.SubscriptionAcquiredState _owningState = new QueueEntry.SubscriptionAcquiredState(this);
     private final QueueEntry.SubscriptionAssignedState _assignedState = new QueueEntry.SubscriptionAssignedState(this);
+
+    private static final Option[] BATCHED = new Option[] { Option.BATCH };
 
     private final Lock _stateChangeLock = new ReentrantLock();
 
@@ -127,6 +130,8 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
     private final long _createTime = System.currentTimeMillis();
     private final AtomicLong _deliveredCount = new AtomicLong(0);
     private final Map<String, Object> _arguments;
+    private int _deferredMessageCredit;
+    private long _deferredSizeCredit;
 
 
     public Subscription_0_10(ServerSession session, String destination, MessageAcceptMode acceptMode,
@@ -137,6 +142,7 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
     {
         _subscriptionID = subscriptionId;
         _session = session;
+        _postIdSettingAction = new AddMessageDispositionListenerAction(session);
         _destination = destination;
         _acceptMode = acceptMode;
         _acquireMode = acquireMode;
@@ -325,10 +331,26 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
     }
 
 
-    private class AddMessageDispositionListnerAction implements Runnable
+    public static class AddMessageDispositionListenerAction implements Runnable
     {
-        public MessageTransfer _xfr;
-        public ServerSession.MessageDispositionChangeListener _action;
+        private MessageTransfer _xfr;
+        private ServerSession.MessageDispositionChangeListener _action;
+        private ServerSession _session;
+
+        public AddMessageDispositionListenerAction(ServerSession session)
+        {
+            _session = session;
+        }
+
+        public void setXfr(MessageTransfer xfr)
+        {
+            _xfr = xfr;
+        }
+
+        public void setAction(ServerSession.MessageDispositionChangeListener action)
+        {
+            _action = action;
+        }
 
         public void run()
         {
@@ -339,9 +361,9 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
         }
     }
 
-    private final AddMessageDispositionListnerAction _postIdSettingAction = new AddMessageDispositionListnerAction();
+    private final AddMessageDispositionListenerAction _postIdSettingAction;
 
-    public void send(final QueueEntry entry) throws AMQException
+    public void send(final QueueEntry entry, boolean batch) throws AMQException
     {
         ServerMessage serverMsg = entry.getMessage();
 
@@ -586,25 +608,26 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
                                             {
                                                 public void onComplete(Method method)
                                                 {
-                                                    restoreCredit(entry);
+                                                    deferredAddCredit(1, entry.getSize());
                                                 }
                                             });
             }
 
 
-            _postIdSettingAction._xfr = xfr;
+            _postIdSettingAction.setXfr(xfr);
             if(_acceptMode == MessageAcceptMode.EXPLICIT)
             {
-                _postIdSettingAction._action = new ExplicitAcceptDispositionChangeListener(entry, this);
+                _postIdSettingAction.setAction(new ExplicitAcceptDispositionChangeListener(entry, this));
             }
             else if(_acquireMode != MessageAcquireMode.PRE_ACQUIRED)
             {
-                _postIdSettingAction._action = new ImplicitAcceptDispositionChangeListener(entry, this);
+                _postIdSettingAction.setAction(new ImplicitAcceptDispositionChangeListener(entry, this));
             }
             else
             {
-                _postIdSettingAction._action = null;
+                _postIdSettingAction.setAction(null);
             }
+
 
             _session.sendMessage(xfr, _postIdSettingAction);
             entry.incrementDeliveryCount();
@@ -723,6 +746,11 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
         return !_creditManager.useCreditForMessage(entry.getMessage().getSize());
     }
 
+    public boolean trySendLock()
+    {
+        return _stateChangeLock.tryLock();
+    }
+
     public void getSendLock()
     {
         _stateChangeLock.lock();
@@ -788,6 +816,28 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
         return _properties.get(key);
     }
 
+    private void deferredAddCredit(final int deferredMessageCredit, final long deferredSizeCredit)
+    {
+        _deferredMessageCredit += deferredMessageCredit;
+        _deferredSizeCredit += deferredSizeCredit;
+
+    }
+
+    public void flushCreditState()
+    {
+        flushCreditState(false);
+    }
+    public void flushCreditState(boolean strict)
+    {
+        if(strict || !isSuspended() || _deferredMessageCredit >= 200
+          || !(_creditManager instanceof WindowCreditManager)
+          || ((WindowCreditManager)_creditManager).getMessageCreditLimit() < 400 )
+        {
+            _creditManager.restoreCredit(_deferredMessageCredit, _deferredSizeCredit);
+            _deferredMessageCredit = 0;
+            _deferredSizeCredit = 0l;
+        }
+    }
 
     public FlowCreditManager_0_10 getCreditManager()
     {
@@ -890,6 +940,7 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
 
     public void flush() throws AMQException
     {
+        flushCreditState(true);
         _queue.flushSubscription(this);
         stop();
     }
@@ -1029,4 +1080,9 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
         return (LogSubject) this;
     }
 
+
+    public void flushBatched()
+    {
+        _session.getConnection().flush();
+    }
 }
