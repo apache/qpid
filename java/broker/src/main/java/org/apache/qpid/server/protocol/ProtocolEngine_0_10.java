@@ -100,6 +100,12 @@ public class ProtocolEngine_0_10  extends InputHandler implements ServerProtocol
         return _network.getLocalAddress();
     }
 
+    public void received(final ByteBuffer buf)
+    {
+        super.received(buf);
+        _connection.receivedComplete();
+    }
+
     public long getReadBytes()
     {
         return _readBytes;

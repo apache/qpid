@@ -27,6 +27,10 @@ import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.AMQException;
 import org.apache.log4j.Logger;
 
+import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+
 
 class SubFlushRunner implements ReadWriteRunnable
 {
@@ -34,29 +38,33 @@ class SubFlushRunner implements ReadWriteRunnable
 
 
     private final Subscription _sub;
-    private final String _name;
+
+    private static int IDLE = 0;
+    private static int SCHEDULED = 1;
+    private static int RUNNING = 2;
+
+
+    private final AtomicInteger _scheduled = new AtomicInteger(IDLE);
+
+
     private static final long ITERATIONS = SimpleAMQQueue.MAX_ASYNC_DELIVERIES;
+    private final AtomicBoolean _stateChange = new AtomicBoolean();
 
     public SubFlushRunner(Subscription sub)
     {
         _sub = sub;
-        _name = "SubFlushRunner-"+_sub;
     }
 
     public void run()
     {
-
-        String originalName = Thread.currentThread().getName();
-        try
+        if(_scheduled.compareAndSet(SCHEDULED, RUNNING))
         {
-            Thread.currentThread().setName(_name);
-
             boolean complete = false;
+            _stateChange.set(false);
             try
             {
                 CurrentActor.set(_sub.getLogActor());
                 complete = getQueue().flushSubscription(_sub, ITERATIONS);
-
             }
             catch (AMQException e)
             {
@@ -66,17 +74,15 @@ class SubFlushRunner implements ReadWriteRunnable
             {
                 CurrentActor.remove();
             }
-            if (!complete && !_sub.isSuspended())
+            _scheduled.compareAndSet(RUNNING, IDLE);
+            if ((!complete || _stateChange.compareAndSet(true,false))&& !_sub.isSuspended())
             {
-                getQueue().execute(this);
+                if(_scheduled.compareAndSet(IDLE,SCHEDULED))
+                {
+                    getQueue().execute(this);
+                }
             }
-
         }
-        finally
-        {
-            Thread.currentThread().setName(originalName);
-        }
-
     }
 
     private SimpleAMQQueue getQueue()
@@ -92,5 +98,19 @@ class SubFlushRunner implements ReadWriteRunnable
     public boolean isWrite()
     {
         return true;
+    }
+
+    public String toString()
+    {
+        return "SubFlushRunner-" + _sub.getLogActor();
+    }
+
+    public void execute(Executor executor)
+    {
+        _stateChange.set(true);
+        if(_scheduled.compareAndSet(IDLE,SCHEDULED))
+        {
+            executor.execute(this);
+        }
     }
 }

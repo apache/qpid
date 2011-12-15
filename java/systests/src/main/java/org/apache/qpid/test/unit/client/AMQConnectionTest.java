@@ -54,7 +54,14 @@ public class AMQConnectionTest extends QpidBrokerTestCase
         _topic = new AMQTopic(_connection.getDefaultTopicExchangeName(), new AMQShortString("mytopic"));
         _queue = new AMQQueue(_connection.getDefaultQueueExchangeName(), new AMQShortString("myqueue"));
     }
-    
+
+    @Override
+    protected void tearDown() throws Exception
+    {
+        _connection.close();
+        super.tearDown();    //To change body of overridden methods use File | Settings | File Templates.
+    }
+
     protected void createConnection() throws Exception
     {
         _connection = (AMQConnection) getConnection("guest", "guest");
@@ -67,16 +74,27 @@ public class AMQConnectionTest extends QpidBrokerTestCase
 
     public void testCreateQueueSession() throws JMSException
     {
-        _queueSession = _connection.createQueueSession(false, AMQSession.NO_ACKNOWLEDGE);
+        createQueueSession();
+    }
+
+    private void createQueueSession() throws JMSException
+    {
+        _queueSession =  _connection.createQueueSession(false, AMQSession.NO_ACKNOWLEDGE);
     }
 
     public void testCreateTopicSession() throws JMSException
+    {
+        createTopicSession();
+    }
+
+    private void createTopicSession() throws JMSException
     {
         _topicSession = _connection.createTopicSession(false, AMQSession.NO_ACKNOWLEDGE);
     }
 
     public void testTopicSessionCreateBrowser() throws JMSException
     {
+        createTopicSession();
         try
         {
             _topicSession.createBrowser(_queue);
@@ -94,6 +112,7 @@ public class AMQConnectionTest extends QpidBrokerTestCase
 
     public void testTopicSessionCreateQueue() throws JMSException
     {
+        createTopicSession();
         try
         {
             _topicSession.createQueue("abc");
@@ -111,6 +130,7 @@ public class AMQConnectionTest extends QpidBrokerTestCase
 
     public void testTopicSessionCreateTemporaryQueue() throws JMSException
     {
+        createTopicSession();
         try
         {
             _topicSession.createTemporaryQueue();
@@ -128,6 +148,7 @@ public class AMQConnectionTest extends QpidBrokerTestCase
 
     public void testQueueSessionCreateTemporaryTopic() throws JMSException
     {
+        createQueueSession();
         try
         {
             _queueSession.createTemporaryTopic();
@@ -145,6 +166,7 @@ public class AMQConnectionTest extends QpidBrokerTestCase
 
     public void testQueueSessionCreateTopic() throws JMSException
     {
+        createQueueSession();
         try
         {
             _queueSession.createTopic("abc");
@@ -162,6 +184,7 @@ public class AMQConnectionTest extends QpidBrokerTestCase
 
     public void testQueueSessionDurableSubscriber() throws JMSException
     {
+        createQueueSession();
         try
         {
             _queueSession.createDurableSubscriber(_topic, "abc");
@@ -179,6 +202,7 @@ public class AMQConnectionTest extends QpidBrokerTestCase
 
     public void testQueueSessionUnsubscribe() throws JMSException
     {
+        createQueueSession();
         try
         {
             _queueSession.unsubscribe("abc");
@@ -243,25 +267,6 @@ public class AMQConnectionTest extends QpidBrokerTestCase
         assertNotNull("Consumer B should have received the message",msg);
     }
     
-    public void testGetChannelID() throws Exception
-    {
-        long maxChannelID = _connection.getMaximumChannelCount();
-        if (isBroker010())
-        {
-            //Usable numbers are 0 to N-1 when using 0-10
-            //and 1 to N for 0-8/0-9
-            maxChannelID = maxChannelID-1;
-        }
-        for (int j = 0; j < 3; j++)
-        {
-            int i = isBroker010() ? 0 : 1;
-            for ( ; i <= maxChannelID; i++)
-            {
-                int id = _connection.getNextChannelID();
-                assertEquals("Unexpected number on iteration "+j, i, id);
-                _connection.deregisterSession(id);
-            }
-        }
-    }
+
 
 }
