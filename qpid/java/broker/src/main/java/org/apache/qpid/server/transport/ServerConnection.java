@@ -446,6 +446,14 @@ public class ServerConnection extends Connection implements Managable, AMQConnec
         }
     }
 
+    public void receivedComplete()
+    {
+        for (Session ssn : getChannels())
+        {
+            ((ServerSession)ssn).flushCreditState();
+        }
+    }
+
     @Override
     public ManagedObject getManagedObject()
     {

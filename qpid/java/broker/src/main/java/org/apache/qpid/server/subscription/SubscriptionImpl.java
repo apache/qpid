@@ -119,11 +119,13 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
          * This method can be called by each of the publisher threads. As a result all changes to the channel object must be
          * thread safe.
          *
-         * @param msg   The message to send
+         *
+         * @param entry
+         * @param batch
          * @throws AMQException
          */
         @Override
-        public void send(QueueEntry msg) throws AMQException
+        public void send(QueueEntry entry, boolean batch) throws AMQException
         {
             // We don't decrement the reference here as we don't want to consume the message
             // but we do want to send it to the client.
@@ -131,7 +133,7 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
             synchronized (getChannel())
             {
                 long deliveryTag = getChannel().getNextDeliveryTag();
-                sendToClient(msg, deliveryTag);
+                sendToClient(entry, deliveryTag);
             }
 
         }
@@ -173,11 +175,13 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
          * This method can be called by each of the publisher threads. As a result all changes to the channel object must be
          * thread safe.
          *
+         *
          * @param entry   The message to send
+         * @param batch
          * @throws AMQException
          */
         @Override
-        public void send(QueueEntry entry) throws AMQException
+        public void send(QueueEntry entry, boolean batch) throws AMQException
         {
             // if we do not need to wait for client acknowledgements
             // we can decrement the reference count immediately.
@@ -193,6 +197,7 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
 
             synchronized (getChannel())
             {
+                getChannel().getProtocolSession().setDeferFlush(batch);
                 long deliveryTag = getChannel().getNextDeliveryTag();
 
                 sendToClient(entry, deliveryTag);
@@ -263,11 +268,13 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
          * This method can be called by each of the publisher threads. As a result all changes to the channel object must be
          * thread safe.
          *
+         *
          * @param entry   The message to send
+         * @param batch
          * @throws AMQException
          */
         @Override
-        public void send(QueueEntry entry) throws AMQException
+        public void send(QueueEntry entry, boolean batch) throws AMQException
         {
 
             // if we do not need to wait for client acknowledgements
@@ -282,6 +289,7 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
 
             synchronized (getChannel())
             {
+                getChannel().getProtocolSession().setDeferFlush(batch);
                 long deliveryTag = getChannel().getNextDeliveryTag();
 
 
@@ -441,10 +449,12 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
      * This method can be called by each of the publisher threads. As a result all changes to the channel object must be
      * thread safe.
      *
-     * @param msg   The message to send
+     *
+     * @param entry
+     * @param batch
      * @throws AMQException
      */
-    abstract public void send(QueueEntry msg) throws AMQException;
+    abstract public void send(QueueEntry entry, boolean batch) throws AMQException;
 
 
     public boolean isSuspended()
@@ -576,6 +586,11 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
     public boolean wouldSuspend(QueueEntry msg)
     {
         return !_creditManager.useCreditForMessage(msg.getMessage().getSize());//_channel.wouldSuspend(msg.getMessage());
+    }
+
+    public boolean trySendLock()
+    {
+        return _stateChangeLock.tryLock();
     }
 
     public void getSendLock()
@@ -813,5 +828,12 @@ public abstract class SubscriptionImpl implements Subscription, FlowCreditManage
     public long getCreateTime()
     {
         return _createTime;
+    }
+
+    public void flushBatched()
+    {
+        _channel.getProtocolSession().setDeferFlush(false);
+
+        _channel.getProtocolSession().flushBatched();
     }
 }
