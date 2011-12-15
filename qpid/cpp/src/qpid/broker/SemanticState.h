@@ -76,8 +76,8 @@ class SemanticState : private boost::noncopyable {
     {
       protected:
         mutable qpid::sys::Mutex lock;
-      private:
         SemanticState* const parent;
+      private:
         const boost::shared_ptr<Queue> queue;
         const bool ackExpected;
         const bool acquire;

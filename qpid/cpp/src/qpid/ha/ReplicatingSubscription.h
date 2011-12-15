@@ -26,6 +26,7 @@
 #include "qpid/broker/SemanticState.h"
 #include "qpid/broker/QueueObserver.h"
 #include "qpid/broker/ConsumerFactory.h"
+#include <iosfwd>
 
 namespace qpid {
 
@@ -109,6 +110,9 @@ class ReplicatingSubscription : public broker::SemanticState::ConsumerImpl,
       private:
         ReplicatingSubscription& delegate;
     };
+
+    /** Print a identifier for a ReplicatingSubscription */
+    friend std::ostream& operator<<(std::ostream&, const ReplicatingSubscription&);
 };
 
 
