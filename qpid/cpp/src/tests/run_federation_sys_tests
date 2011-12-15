@@ -25,13 +25,16 @@ source ./test_env.sh
 
 MODULENAME=federation_sys
 
-# Test for clustering
-ps -u root | grep 'aisexec\|corosync' > /dev/null
-if (( $? == 0 )); then
-    CLUSTERING_ENABLED=1
-else
-    echo "WARNING: No clustering detected; tests using it will be ignored."
-fi
+# FIXME aconway 2011-12-15: Disable cluster-related tests on the qpid-3603
+# branch. See comment in cluster.mk for more details.
+# 
+# # Test for clustering
+# ps -u root | grep 'aisexec\|corosync' > /dev/null
+# if (( $? == 0 )); then
+#     CLUSTERING_ENABLED=1
+# else
+#     echo "WARNING: No clustering detected; tests using it will be ignored."
+# fi
 
 # Test for long test
 if [[ "$1" == "LONG_TEST" ]]; then
