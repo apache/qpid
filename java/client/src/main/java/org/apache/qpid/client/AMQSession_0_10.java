@@ -1369,5 +1369,6 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
         _unacknowledgedMessageTags.clear();
         _prefetchedMessageTags.clear();
         super.resubscribe();
+        getQpidSession().sync();
     }
 }
