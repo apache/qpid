@@ -27,20 +27,29 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
+import javax.management.NotCompliantMBeanException;
+
 import org.apache.log4j.Logger;
+import org.apache.qpid.server.management.DefaultManagedObject;
 
 /**
  * Implementation of the JMX broker shutdown plugin.
  */
-public class Shutdown implements ShutdownMBean
+public class Shutdown extends DefaultManagedObject implements ShutdownMBean
 {
+
     private static final Logger _logger = Logger.getLogger(Shutdown.class);
 
-    private static final String FORMAT = "yyyyy/MM/dd hh:mm:ss";
+    private static final String FORMAT = "yyyy/MM/dd HH:mm:ss";
     private static final int THREAD_COUNT = 1;
     private static final ScheduledExecutorService EXECUTOR = new ScheduledThreadPoolExecutor(THREAD_COUNT);
 
     private final Runnable _shutdown = new SystemExiter();
+
+    public Shutdown() throws NotCompliantMBeanException
+    {
+        super(ShutdownMBean.class, ShutdownMBean.TYPE);
+    }
 
     /** @see ShutdownMBean#shutdown() */
     public void shutdown()
@@ -50,14 +59,22 @@ public class Shutdown implements ShutdownMBean
     }
 
     /** @see ShutdownMBean#shutdown(long) */
-    public void shutdown(long delay)
+    public void shutdown(final long delay)
     {
-        _logger.info("Scheduled broker shutdown after " + delay + "ms");
-        shutdownBroker(delay);
+        if (delay < 0)
+        {
+            _logger.info("Shutting down at user's request");
+            shutdownBroker(0);
+        }
+        else
+        {
+            _logger.info("Scheduled broker shutdown after " + delay + "ms");
+            shutdownBroker(delay);
+        }
     }
 
     /** @see ShutdownMBean#shutdownAt(String) */
-    public void shutdownAt(String when)
+    public void shutdownAt(final String when)
     {
         Date date;
         DateFormat df = new SimpleDateFormat(FORMAT);
@@ -100,5 +117,14 @@ public class Shutdown implements ShutdownMBean
         {
             System.exit(0);
         }
+    }
+
+    /**
+     * @see org.apache.qpid.server.management.ManagedObject#getObjectInstanceName()
+     */
+    @Override
+    public String getObjectInstanceName()
+    {
+        return "Shutdown";
     }
 }

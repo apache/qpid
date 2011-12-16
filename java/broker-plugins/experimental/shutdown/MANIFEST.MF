@@ -9,7 +9,8 @@ Bundle-Version: 1.0.0
 Bundle-Activator: org.apache.qpid.shutdown.Activator
 Import-Package: javax.management;resolution:=optional,
  org.apache.log4j,
- org.osgi.framework
+ org.osgi.framework,
+ org.apache.qpid.server.management
 Bundle-RequiredExecutionEnvironment: J2SE-1.5
 Bundle-ActivationPolicy: lazy
 
