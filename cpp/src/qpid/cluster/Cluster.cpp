@@ -383,10 +383,19 @@ void Cluster::erase(const ConnectionId& id) {
     erase(id,l);
 }
 
+void Cluster::eraseLocal(const ConnectionId& id) {
+    Lock l(lock);
+    eraseLocal(id,l);
+}
+
 // Called by Connection::deliverClose() in deliverFrameQueue thread.
 void Cluster::erase(const ConnectionId& id, Lock&) {
     connections.erase(id);
     decoder.erase(id);
+}
+
+void Cluster::eraseLocal(const ConnectionId& id, Lock&) {
+    localConnections.getErase(id);
 }
 
 std::vector<string> Cluster::getIds() const {

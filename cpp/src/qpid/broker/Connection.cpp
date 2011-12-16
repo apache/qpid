@@ -100,7 +100,8 @@ Connection::Connection(ConnectionOutputHandler* out_,
     errorListener(0),
     objectId(objectId_),
     shadow(shadow_),
-    outboundTracker(*this)
+    outboundTracker(*this),
+    securityFailed(false)
 {
     outboundTracker.wrap(out);
     if (isLink)
