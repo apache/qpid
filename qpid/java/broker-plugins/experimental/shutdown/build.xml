@@ -20,7 +20,7 @@
  -->
 <project name="AMQ Broker Shutdown Plugin" default="build">
 
-    <property name="module.depends" value="common broker broker-plugins"/>
+    <property name="module.depends" value="common broker management/common broker-plugins"/>
     <property name="module.test.depends" value="test broker/test management/common client systests"/>
     <property name="module.manifest" value="MANIFEST.MF"/>
     <property name="module.plugin" value="true"/>
