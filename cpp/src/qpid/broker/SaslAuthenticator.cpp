@@ -450,6 +450,7 @@ void CyrusAuthenticator::processAuthenticationStep(int code, const char *challen
 
         client.secure(challenge_str);
     } else {
+        connection.securityFailure ( true );
         std::string uid;
         //save error detail before trying to retrieve username as error in doing so will overwrite it
         std::string errordetail = sasl_errdetail(sasl_conn);

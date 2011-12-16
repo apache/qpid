@@ -205,9 +205,15 @@ class Connection : public sys::ConnectionInputHandler,
     };
     OutboundFrameTracker outboundTracker;
 
-
     void sent(const framing::AMQFrame& f);
+
+    bool securityFailed;
+
   public:
+
+    bool securityFailure ( ) const { return securityFailed; }
+    void securityFailure ( bool failed ) { securityFailed = failed; }
+
     qmf::org::apache::qpid::broker::Connection* getMgmtObject() { return mgmtObject; }
 };
 
