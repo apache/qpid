@@ -101,6 +101,7 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     void addLocalConnection(const ConnectionPtr&);
     void addShadowConnection(const ConnectionPtr&);
     void erase(const ConnectionId&);
+    void eraseLocal(const ConnectionId&);
 
     // URLs of current cluster members.
     std::vector<std::string> getIds() const;
@@ -212,6 +213,7 @@ class Cluster : private Cpg::Handler, public management::Manageable {
     void memberUpdate(Lock&);
     void setClusterId(const framing::Uuid&, Lock&);
     void erase(const ConnectionId&, Lock&);
+    void eraseLocal(const ConnectionId&, Lock&);
     void requestUpdate(Lock& );
     void initMapCompleted(Lock&);
     void becomeElder(Lock&);

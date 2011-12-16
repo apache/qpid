@@ -738,8 +738,13 @@ void Connection::sessionError(uint16_t , const std::string& msg) {
 
 void Connection::connectionError(const std::string& msg) {
     // Ignore errors before isOpen(), we're not multicasting yet.
-    if (connection->isOpen())
+    if (connection->isOpen()) {
         cluster.flagError(*this, ERROR_TYPE_CONNECTION, msg);
+    }
+    else
+    if ( connection->securityFailure() ) {
+      cluster.eraseLocal(self);
+    }
 }
 
 void Connection::addQueueListener(const std::string& q, uint32_t listener) {
