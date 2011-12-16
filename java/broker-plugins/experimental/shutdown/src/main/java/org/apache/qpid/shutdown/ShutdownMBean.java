@@ -19,6 +19,9 @@
  */
 package org.apache.qpid.shutdown;
 
+import org.apache.qpid.management.common.mbeans.annotations.MBeanOperation;
+import org.apache.qpid.management.common.mbeans.annotations.MBeanOperationParameter;
+
 /**
  * Shutdown plugin JMX MBean interface.
  * 
@@ -26,9 +29,12 @@ package org.apache.qpid.shutdown;
  */
 public interface ShutdownMBean
 {
+    static final String TYPE = "Shutdown";
+
     /**
      * Broker will be shut down immediately.
      */
+    @MBeanOperation(name="shutdown", description="Shut down immediately")
     public void shutdown();
 
     /**
@@ -36,12 +42,14 @@ public interface ShutdownMBean
      * 
      * @param delay the number of ms to wait
      */
-    public void shutdown(long delay);
+    @MBeanOperation(name="shutdown", description="Shutdown after the specified delay (ms)")
+    public void shutdown(@MBeanOperationParameter(name="when", description="delay (ms)")long delay);
 
     /**
      * Broker will be shutdown at the specified date and time.
      * 
      * @param when the date and time to shutdown
      */
-    public void shutdownAt(String when);
+    @MBeanOperation(name="shutdownAt", description="Shutdown at the specified date and time (yyyy/MM/dd HH:mm:ss)")
+    public void shutdownAt(@MBeanOperationParameter(name="when", description="shutdown date/time (yyyy/MM/dd HH:mm:ss)")String when);
 }
