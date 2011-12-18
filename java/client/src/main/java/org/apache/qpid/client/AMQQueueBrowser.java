@@ -30,6 +30,7 @@ import javax.jms.Queue;
 import javax.jms.QueueBrowser;
 import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.NoSuchElementException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class AMQQueueBrowser implements QueueBrowser
@@ -112,9 +113,12 @@ public class AMQQueueBrowser implements QueueBrowser
 
         public QueueBrowserEnumeration(BasicMessageConsumer consumer) throws JMSException
         {
-            _nextMessage = consumer == null ? null : consumer.receiveBrowse();
+            if (consumer != null)
+            {
+                _consumer = consumer;
+                prefetchMessage();
+            }
             _logger.info("QB:created with first element:" + _nextMessage);
-            _consumer = consumer;
         }
 
         public boolean hasMoreElements()
@@ -126,18 +130,46 @@ public class AMQQueueBrowser implements QueueBrowser
         public Object nextElement()
         {
             Message msg = _nextMessage;
+            if (msg == null)
+            {
+                throw new NoSuchElementException("No messages") ;
+            }
             try
             {
                 _logger.info("QB:nextElement about to receive");
-                _nextMessage = _consumer.receiveBrowse();
+                prefetchMessage();
                 _logger.info("QB:nextElement received:" + _nextMessage);
             }
             catch (JMSException e)
             {
                 _logger.warn("Exception caught while queue browsing", e);
                 _nextMessage = null;
+                try
+                {
+                    closeConsumer() ;
+                }
+                catch (final JMSException jmse) {} // ignore
             }
             return msg;
         }
-    }    
+
+        private void prefetchMessage() throws JMSException
+        {
+            _nextMessage = _consumer.receiveBrowse();
+            if (_nextMessage == null)
+            {
+                closeConsumer() ;
+            }
+        }
+
+        private void closeConsumer() throws JMSException
+        {
+            if (_consumer != null)
+            {
+                BasicMessageConsumer consumer = _consumer ;
+                _consumer = null ;
+                consumer.close() ;
+            }
+        }
+    }
 }

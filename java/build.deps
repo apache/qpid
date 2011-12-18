@@ -29,6 +29,10 @@ commons-logging=lib/commons-logging-1.0.4.jar
 derby-db=lib/derby-10.6.1.0.jar
 
 geronimo-jms=lib/geronimo-jms_1.1_spec-1.0.jar
+geronimo-j2ee=lib/geronimo-j2ee-connector_1.5_spec-2.0.0.jar
+geronimo-jta=lib/geronimo-jta_1.1_spec-1.1.1.jar
+geronimo-kernel=lib/geronimo-kernel-2.2.1.jar
+geronimo-openejb=lib/geronimo-ejb_3.0_spec-1.0.1.jar
 
 junit=lib/junit-3.8.1.jar
 
@@ -136,7 +140,11 @@ broker-plugins-experimental-info.test.libs=${test.libs} ${servlet-api} ${jetty} 
 management-eclipse-plugin.test.libs=${test.libs}
 management-common.test.libs=${test.libs}
 
+# JCA Resource adapter
+ra.libs=${geronimo-j2ee} ${geronimo-jta} ${geronimo-jms} ${slf4j-api} ${geronimo-kernel} ${geronimo-openejb}
+
 # optional bdbstore module deps
 bdb-je=lib/bdbstore/je-4.0.117.jar
 bdbstore.libs=${bdb-je}
 bdbstore.test.libs=${test.libs}
+

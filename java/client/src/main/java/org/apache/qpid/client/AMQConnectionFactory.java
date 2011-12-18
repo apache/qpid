@@ -46,6 +46,12 @@ public class AMQConnectionFactory implements ConnectionFactory, QueueConnectionF
 {
     private final ConnectionURL _connectionDetails;
 
+    // The default constructor is necessary to allow AMQConnectionFactory to be deserialised from JNDI
+    public AMQConnectionFactory()
+    {
+        _connectionDetails = null;
+    }
+
     public AMQConnectionFactory(final String url) throws URLSyntaxException
     {
         if (url == null)
