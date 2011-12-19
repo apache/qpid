@@ -41,25 +41,34 @@
     <example>
       <title>Message Group Queue Creation - Python</title>
       <programlisting lang="python">
-      sender = connection.session().sender("msg-group-q; {create:always, delete:receiver," +
-                                           " node: {x-declare: {arguments:" +
-                                           " {'qpid.group_header_key':'THE-GROUP'," +
-                                           "'qpid.shared_msg_group':1}}}}")
+sender = connection.session().sender("msg-group-q;" +
+                                     " {create:always, delete:receiver," +
+                                     " node: {x-declare: {arguments:" +
+                                     " {'qpid.group_header_key':'THE-GROUP'," +
+                                     " 'qpid.shared_msg_group':1}}}}")
       </programlisting>
     </example>
     <example>
       <title>Message Group Queue Creation - C++</title>
       <programlisting lang="c++">
-      std::string addr("msg-group-q; {create:always, delete:receiver, node: {x-declare: {arguments: {qpid.group_header_key:'THE-GROUP',qpid.shared_msg_group:1}}}}");
-      Sender sender = session.createSender(addr);
+std::string addr("msg-group-q; "
+                 " {create:always, delete:receiver,"
+                 " node: {x-declare: {arguments:"
+                 " {qpid.group_header_key:'THE-GROUP',"
+                 " qpid.shared_msg_group:1}}}}");
+Sender sender = session.createSender(addr);
       </programlisting>
     </example>
     <example>
       <title>Message Group Queue Creation - Java</title>
       <programlisting lang="java">
-      Session s = c.createSession(false, Session.CLIENT_ACKNOWLEDGE);
-      Destination d = (Destination) new AMQAnyDestination("msg-group-q; {create:always, delete:receiver, node: {x-declare: {arguments: {'qpid.group_header_key':'THE-GROUP','qpid.shared_msg_group':1}}}}");
-      MessageProducer sender = s.createProducer(d);
+Session s = c.createSession(false, Session.CLIENT_ACKNOWLEDGE);
+String addr = "msg-group-q; {create:always, delete:receiver," +
+                             " node: {x-declare: {arguments:" +
+                             " {'qpid.group_header_key':'THE-GROUP'," +
+                             " 'qpid.shared_msg_group':1}}}}";
+Destination d = (Destination) new AMQAnyDestination(addr);
+MessageProducer sender = s.createProducer(d);
       </programlisting>
     </example>
     <para>
@@ -80,57 +89,57 @@
     <example>
       <title>Sending Grouped Messages - Python</title>
       <programlisting lang="python">
-      group = "A"
-      m = Message(content="some data", properties={"THE-GROUP": group})
-      sender.send(m)
+group = "A"
+m = Message(content="some data", properties={"THE-GROUP": group})
+sender.send(m)
 
-      group = "B"
-      m = Message(content="some other group's data", properties={"THE-GROUP": group})
-      sender.send(m)
+group = "B"
+m = Message(content="some other group's data", properties={"THE-GROUP": group})
+sender.send(m)
 
-      group = "A"
-      m = Message(content="more data for group 'A'", properties={"THE-GROUP": group})
-      sender.send(m)
+group = "A"
+m = Message(content="more data for group 'A'", properties={"THE-GROUP": group})
+sender.send(m)
       </programlisting>
     </example>
     <example>
       <title>Sending Grouped Messages - C++</title>
       <programlisting lang="C++">
 
-      const std::string groupKey("THE-GROUP");
-      {
-          Message msg("some data");
-          msg.getProperties()[groupKey] = std::string("A");
-          sender.send(msg);
-      }
-      {
-          Message msg("some other group's data");
-          msg.getProperties()[groupKey] = std::string("B");
-          sender.send(msg);
-      }
-      {
-          Message msg("more data for group 'A'");
-          msg.getProperties()[groupKey] = std::string("A");
-          sender.send(msg);
-      }
+const std::string groupKey("THE-GROUP");
+{
+    Message msg("some data");
+    msg.getProperties()[groupKey] = std::string("A");
+    sender.send(msg);
+}
+{
+    Message msg("some other group's data");
+    msg.getProperties()[groupKey] = std::string("B");
+    sender.send(msg);
+}
+{
+    Message msg("more data for group 'A'");
+    msg.getProperties()[groupKey] = std::string("A");
+    sender.send(msg);
+}
       </programlisting>
     </example>
     <example>
       <title>Sending Grouped Messages - Java</title>
       <programlisting lang="java">
-      String groupKey = "THE-GROUP";
+String groupKey = "THE-GROUP";
 
-      TextMessage tmsg1 = s.createTextMessage("some data");
-      tmsg1.setStringProperty(groupKey, "A");
-      sender.send(tmsg1);
+TextMessage tmsg1 = s.createTextMessage("some data");
+tmsg1.setStringProperty(groupKey, "A");
+sender.send(tmsg1);
 
-      TextMessage tmsg2 = s.createTextMessage("some other group's data");
-      tmsg2.setStringProperty(groupKey, "B");
-      sender.send(tmsg2);
+TextMessage tmsg2 = s.createTextMessage("some other group's data");
+tmsg2.setStringProperty(groupKey, "B");
+sender.send(tmsg2);
 
-      TextMessage tmsg3 = s.createTextMessage("more data for group 'A'");
-      tmsg3.setStringProperty(groupKey, "A");
-      sender.send(tmsg3);
+TextMessage tmsg3 = s.createTextMessage("more data for group 'A'");
+tmsg3.setStringProperty(groupKey, "A");
+sender.send(tmsg3);
       </programlisting>
     </example>
     <para>

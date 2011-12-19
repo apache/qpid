@@ -187,10 +187,28 @@
         Message group support can be enabled on a queue using the
         <command>qpid-config</command> command line tool.  The following options should be
         provided when adding a new queue:
-        <programlisting>
-          --group-header=<replaceable>header-name</replaceable>  Enable message group support for this queue. Specify name of application header that holds the group identifier.
-          --shared-groups  Enforce ordered message group consumption across multiple consumers.
-        </programlisting>
+        <table>
+          <title>qpid-config options for creating message group queues</title>
+          <tgroup cols="2">
+            <thead>
+              <colspec colnum="1" colwidth="1*"/>
+              <colspec colnum="2" colwidth="3*"/>
+              <row>
+                <entry>Option</entry><entry>Description</entry>
+              </row>
+            </thead>
+            <tbody>
+              <row>
+                <entry>--group-header=<replaceable>header-name</replaceable></entry>
+                <entry>Enable message group support for this queue. Specify name of application header that holds the group identifier.</entry>
+              </row>
+              <row>
+                <entry>--shared-groups</entry>
+                <entry>Enforce ordered message group consumption across multiple consumers.</entry>
+              </row>
+            </tbody>
+          </tgroup>
+        </table>
       </para>
       <para>
         Message group support may also be specified in the
@@ -239,7 +257,7 @@
           the key "GROUP_KEY".
         </para>
         <programlisting>
-          qpid-config add queue MyMsgQueue --group-header="GROUP_KEY" --shared-groups"
+qpid-config add queue MyMsgQueue --group-header="GROUP_KEY" --shared-groups
         </programlisting>
       </example>
       <example>
@@ -249,8 +267,11 @@
           with the same configuration as the previous example.
         </para>
         <programlisting>
-          sender = session.createSender("MyMsgQueue; {create:always, delete:receiver, node: {x-declare: {arguments:"
-                                        " {'qpid.group_header_key':'GROUP_KEY', 'qpid.shared_msg_group':1}}}}")
+sender = session.createSender("MyMsgQueue;"
+                              " {create:always, delete:receiver,"
+                              " node: {x-declare: {arguments:"
+                              " {'qpid.group_header_key':'GROUP_KEY',"
+                              " 'qpid.shared_msg_group':1}}}}")
         </programlisting>
       </example>
       <section role="h3" id="usingmessagegroups-DefaultGroup">
@@ -262,7 +283,7 @@
           <example>
             <title>Overriding the default message group identifier for the broker</title>
             <programlisting>
-              qpidd --default-msg-group "EMPTY-GROUP"
+qpidd --default-msg-group "EMPTY-GROUP"
             </programlisting>
           </example>
         </para>
