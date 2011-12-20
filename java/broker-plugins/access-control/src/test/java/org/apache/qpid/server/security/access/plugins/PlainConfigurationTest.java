@@ -22,12 +22,19 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.PrintWriter;
+import java.util.Map;
 
 import junit.framework.TestCase;
 
 import org.apache.commons.configuration.ConfigurationException;
+import org.apache.qpid.server.security.access.ObjectProperties;
+import org.apache.qpid.server.security.access.ObjectProperties.Property;
+import org.apache.qpid.server.security.access.ObjectType;
+import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.security.access.config.ConfigurationFile;
 import org.apache.qpid.server.security.access.config.PlainConfiguration;
+import org.apache.qpid.server.security.access.config.Rule;
+import org.apache.qpid.server.security.access.config.RuleSet;
 
 /**
  * These tests check that the ACL file parsing works correctly.
@@ -37,7 +44,7 @@ import org.apache.qpid.server.security.access.config.PlainConfiguration;
  */
 public class PlainConfigurationTest extends TestCase
 {
-    public void writeACLConfig(String...aclData) throws Exception
+    private PlainConfiguration writeACLConfig(String...aclData) throws Exception
     {
         File acl = File.createTempFile(getClass().getName() + getName(), "acl");
         acl.deleteOnExit();
@@ -51,8 +58,9 @@ public class PlainConfigurationTest extends TestCase
         aclWriter.close();
 
         // Load ruleset
-        ConfigurationFile configFile = new PlainConfiguration(acl);
+        PlainConfiguration configFile = new PlainConfiguration(acl);
         configFile.load();
+        return configFile;
     }
 
     public void testMissingACLConfig() throws Exception
@@ -191,4 +199,197 @@ public class PlainConfigurationTest extends TestCase
             assertEquals(String.format(PlainConfiguration.PROPERTY_NO_VALUE_MSG, 1), ce.getMessage());
         }
     }
+
+    /**
+     * Tests interpretation of an acl rule with no object properties.
+     *
+     */
+    public void testValidRule() throws Exception
+    {
+        final PlainConfiguration config = writeACLConfig("ACL DENY-LOG user1 ACCESS VIRTUALHOST");
+        final RuleSet rs = config.getConfiguration();
+        assertEquals(1, rs.getRuleCount());
+
+        final Map<Integer, Rule> rules = rs.getAllRules();
+        assertEquals(1, rules.size());
+        final Rule rule = rules.get(0);
+        assertEquals("Rule has unexpected identity", "user1", rule.getIdentity());
+        assertEquals("Rule has unexpected operation", Operation.ACCESS, rule.getAction().getOperation());
+        assertEquals("Rule has unexpected operation", ObjectType.VIRTUALHOST, rule.getAction().getObjectType());
+        assertEquals("Rule has unexpected object properties", ObjectProperties.EMPTY, rule.getAction().getProperties());
+    }
+
+    /**
+     * Tests interpretation of an acl rule with object properties quoted in single quotes.
+     */
+    public void testValidRuleWithSingleQuotedProperty() throws Exception
+    {
+        final PlainConfiguration config = writeACLConfig("ACL ALLOW all CREATE EXCHANGE name = \'value\'");
+        final RuleSet rs = config.getConfiguration();
+        assertEquals(1, rs.getRuleCount());
+
+        final Map<Integer, Rule> rules = rs.getAllRules();
+        assertEquals(1, rules.size());
+        final Rule rule = rules.get(0);
+        assertEquals("Rule has unexpected identity", "all", rule.getIdentity());
+        assertEquals("Rule has unexpected operation", Operation.CREATE, rule.getAction().getOperation());
+        assertEquals("Rule has unexpected operation", ObjectType.EXCHANGE, rule.getAction().getObjectType());
+        final ObjectProperties expectedProperties = new ObjectProperties();
+        expectedProperties.setName("value");
+        assertEquals("Rule has unexpected object properties", expectedProperties, rule.getAction().getProperties());
+    }
+
+    /**
+     * Tests interpretation of an acl rule with object properties quoted in double quotes.
+     */
+    public void testValidRuleWithDoubleQuotedProperty() throws Exception
+    {
+        final PlainConfiguration config = writeACLConfig("ACL ALLOW all CREATE EXCHANGE name = \"value\"");
+        final RuleSet rs = config.getConfiguration();
+        assertEquals(1, rs.getRuleCount());
+
+        final Map<Integer, Rule> rules = rs.getAllRules();
+        assertEquals(1, rules.size());
+        final Rule rule = rules.get(0);
+        assertEquals("Rule has unexpected identity", "all", rule.getIdentity());
+        assertEquals("Rule has unexpected operation", Operation.CREATE, rule.getAction().getOperation());
+        assertEquals("Rule has unexpected operation", ObjectType.EXCHANGE, rule.getAction().getObjectType());
+        final ObjectProperties expectedProperties = new ObjectProperties();
+        expectedProperties.setName("value");
+        assertEquals("Rule has unexpected object properties", expectedProperties, rule.getAction().getProperties());
+    }
+
+    /**
+     * Tests interpretation of an acl rule with many object properties.
+     */
+    public void testValidRuleWithManyProperties() throws Exception
+    {
+        final PlainConfiguration config = writeACLConfig("ACL ALLOW admin DELETE QUEUE name=name1 owner = owner1");
+        final RuleSet rs = config.getConfiguration();
+        assertEquals(1, rs.getRuleCount());
+
+        final Map<Integer, Rule> rules = rs.getAllRules();
+        assertEquals(1, rules.size());
+        final Rule rule = rules.get(0);
+        assertEquals("Rule has unexpected identity", "admin", rule.getIdentity());
+        assertEquals("Rule has unexpected operation", Operation.DELETE, rule.getAction().getOperation());
+        assertEquals("Rule has unexpected operation", ObjectType.QUEUE, rule.getAction().getObjectType());
+        final ObjectProperties expectedProperties = new ObjectProperties();
+        expectedProperties.setName("name1");
+        expectedProperties.put(Property.OWNER, "owner1");
+        assertEquals("Rule has unexpected operation", expectedProperties, rule.getAction().getProperties());
+    }
+
+    /**
+     * Tests interpretation of an acl rule with object properties containing wildcards.  Values containing
+     * hashes must be quoted otherwise they are interpreted as comments.
+     */
+    public void testValidRuleWithWildcardProperties() throws Exception
+    {
+        final PlainConfiguration config = writeACLConfig("ACL ALLOW all CREATE EXCHANGE routingKey = \'news.#\'",
+                                                         "ACL ALLOW all CREATE EXCHANGE routingKey = \'news.co.#\'",
+                                                         "ACL ALLOW all CREATE EXCHANGE routingKey = *.co.medellin");
+        final RuleSet rs = config.getConfiguration();
+        assertEquals(3, rs.getRuleCount());
+
+        final Map<Integer, Rule> rules = rs.getAllRules();
+        assertEquals(3, rules.size());
+        final Rule rule1 = rules.get(0);
+        assertEquals("Rule has unexpected identity", "all", rule1.getIdentity());
+        assertEquals("Rule has unexpected operation", Operation.CREATE, rule1.getAction().getOperation());
+        assertEquals("Rule has unexpected operation", ObjectType.EXCHANGE, rule1.getAction().getObjectType());
+        final ObjectProperties expectedProperties1 = new ObjectProperties();
+        expectedProperties1.put(Property.ROUTING_KEY,"news.#");
+        assertEquals("Rule has unexpected object properties", expectedProperties1, rule1.getAction().getProperties());
+
+        final Rule rule2 = rules.get(10);
+        final ObjectProperties expectedProperties2 = new ObjectProperties();
+        expectedProperties2.put(Property.ROUTING_KEY,"news.co.#");
+        assertEquals("Rule has unexpected object properties", expectedProperties2, rule2.getAction().getProperties());
+
+        final Rule rule3 = rules.get(20);
+        final ObjectProperties expectedProperties3 = new ObjectProperties();
+        expectedProperties3.put(Property.ROUTING_KEY,"*.co.medellin");
+        assertEquals("Rule has unexpected object properties", expectedProperties3, rule3.getAction().getProperties());
+    }
+
+    /**
+     * Tests that rules are case insignificant.
+     */
+    public void testMixedCaseRuleInterpretation() throws Exception
+    {
+        final PlainConfiguration config = writeACLConfig("AcL deny-LOG user1 BiND Exchange name=AmQ.dIrect");
+        final RuleSet rs = config.getConfiguration();
+        assertEquals(1, rs.getRuleCount());
+
+        final Map<Integer, Rule> rules = rs.getAllRules();
+        assertEquals(1, rules.size());
+        final Rule rule = rules.get(0);
+        assertEquals("Rule has unexpected identity", "user1", rule.getIdentity());
+        assertEquals("Rule has unexpected operation", Operation.BIND, rule.getAction().getOperation());
+        assertEquals("Rule has unexpected operation", ObjectType.EXCHANGE, rule.getAction().getObjectType());
+        final ObjectProperties expectedProperties = new ObjectProperties("amq.direct");
+        assertEquals("Rule has unexpected object properties", expectedProperties, rule.getAction().getProperties());
+    }
+
+    /**
+     * Tests whitespace is supported. Note that currently the Java implementation permits comments to
+     * be introduced anywhere in the ACL, whereas the C++ supports only whitespace at the beginning of
+     * of line.
+     */
+    public void testCommentsSuppported() throws Exception
+    {
+        final PlainConfiguration config = writeACLConfig("#Comment",
+                                                         "ACL DENY-LOG user1 ACCESS VIRTUALHOST # another comment",
+                                                         "  # final comment with leading whitespace");
+        final RuleSet rs = config.getConfiguration();
+        assertEquals(1, rs.getRuleCount());
+
+        final Map<Integer, Rule> rules = rs.getAllRules();
+        assertEquals(1, rules.size());
+        final Rule rule = rules.get(0);
+        assertEquals("Rule has unexpected identity", "user1", rule.getIdentity());
+        assertEquals("Rule has unexpected operation", Operation.ACCESS, rule.getAction().getOperation());
+        assertEquals("Rule has unexpected operation", ObjectType.VIRTUALHOST, rule.getAction().getObjectType());
+        assertEquals("Rule has unexpected object properties", ObjectProperties.EMPTY, rule.getAction().getProperties());
+    }
+
+    /**
+     * Tests interpretation of an acl rule using mixtures of tabs/spaces as token separators.
+     *
+     */
+    public void testWhitespace() throws Exception
+    {
+        final PlainConfiguration config = writeACLConfig("ACL\tDENY-LOG\t\t user1\t \tACCESS VIRTUALHOST");
+        final RuleSet rs = config.getConfiguration();
+        assertEquals(1, rs.getRuleCount());
+
+        final Map<Integer, Rule> rules = rs.getAllRules();
+        assertEquals(1, rules.size());
+        final Rule rule = rules.get(0);
+        assertEquals("Rule has unexpected identity", "user1", rule.getIdentity());
+        assertEquals("Rule has unexpected operation", Operation.ACCESS, rule.getAction().getOperation());
+        assertEquals("Rule has unexpected operation", ObjectType.VIRTUALHOST, rule.getAction().getObjectType());
+        assertEquals("Rule has unexpected object properties", ObjectProperties.EMPTY, rule.getAction().getProperties());
+    }
+
+    /**
+     * Tests interpretation of an acl utilising line continuation.
+     */
+    public void testLineContination() throws Exception
+    {
+        final PlainConfiguration config = writeACLConfig("ACL DENY-LOG user1 \\",
+                                                         "ACCESS VIRTUALHOST");
+        final RuleSet rs = config.getConfiguration();
+        assertEquals(1, rs.getRuleCount());
+
+        final Map<Integer, Rule> rules = rs.getAllRules();
+        assertEquals(1, rules.size());
+        final Rule rule = rules.get(0);
+        assertEquals("Rule has unexpected identity", "user1", rule.getIdentity());
+        assertEquals("Rule has unexpected operation", Operation.ACCESS, rule.getAction().getOperation());
+        assertEquals("Rule has unexpected operation", ObjectType.VIRTUALHOST, rule.getAction().getObjectType());
+        assertEquals("Rule has unexpected object properties", ObjectProperties.EMPTY, rule.getAction().getProperties());
+    }
+
 }

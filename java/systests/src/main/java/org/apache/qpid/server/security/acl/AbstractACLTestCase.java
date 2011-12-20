@@ -51,7 +51,6 @@ import org.apache.qpid.url.URLSyntaxException;
  * TODO move the pre broker-startup setup method invocation code to {@link QpidBrokerTestCase}
  * 
  * @see ExternalACLTest
- * @see ExternalACLFileTest
  * @see ExternalACLJMXTest
  * @see ExhaustiveACLTest
  */

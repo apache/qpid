@@ -21,6 +21,7 @@ package org.apache.qpid.server.security.access.config;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -148,7 +149,6 @@ public class RuleSet
 
         return rules;
     }
-
 
     public boolean isValidNumber(Integer number)
     {
@@ -424,6 +424,15 @@ public class RuleSet
     {
         _config.put(key, value);
     }
+
+     /**
+      * Returns all rules in the {@link RuleSet}.   Primarily intended to support unit-testing.
+      * @return map of rules
+      */
+     public Map<Integer, Rule> getAllRules()
+     {
+         return Collections.unmodifiableMap(_rules);
+     }
 
     private boolean isRelevant(final Set<Principal> principals, final Rule rule)
     {
