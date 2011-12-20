@@ -27,7 +27,8 @@ require 'qpid/receiver'
 class TestReceiver < Test::Unit::TestCase
 
   def setup
-    @session_impl = flexmock("session")
+    @session      = flexmock("session")
+    @session_impl = flexmock("session_impl")
 
     @Message_class = flexmock(Qpid::Messaging::Message)
     @Messaging_module = flexmock(Qpid::Messaging)
@@ -37,7 +38,7 @@ class TestReceiver < Test::Unit::TestCase
     @receiver_impl       = flexmock("receiver")
     @other_receiver      = flexmock("other_receiver")
     @other_receiver_impl = flexmock("other_receiver_impl")
-    @receiver            = Qpid::Messaging::Receiver.new @receiver_impl
+    @receiver            = Qpid::Messaging::Receiver.new @session, @receiver_impl
   end
 
   def test_receiver_impl
@@ -192,46 +193,10 @@ class TestReceiver < Test::Unit::TestCase
   end
 
   def test_get_session
-    @receiver_impl.
-      should_receive(:getSession).
-      once.
-      and_return(@session_impl)
-
     result = @receiver.session
 
     assert_not_nil result
-    assert_same @session_impl, result.session_impl
-  end
-
-  def test_is_valid
-    @receiver_impl.
-      should_receive(:isValid).
-      once.
-      and_return(false)
-
-    assert !@receiver.valid?
-  end
-
-  def test_is_null
-    @receiver_impl.
-      should_receive(:isNull).
-      once.
-      and_return(true)
-
-    assert @receiver.null?
-  end
-
-  def test_swap
-    @other_receiver.
-      should_receive(:receiver_impl).
-      once.
-      and_return(@other_receiver_impl)
-    @receiver_impl.
-      should_receive(:swap).
-      once.
-      with(@other_receiver_impl)
-
-    @receiver.swap @other_receiver
+    assert_same @session, result
   end
 
 end
