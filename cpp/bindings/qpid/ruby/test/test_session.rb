@@ -55,7 +55,7 @@ class TestSession < Test::Unit::TestCase
     @duration = flexmock("duration")
     @duration_impl = flexmock("duration_impl")
 
-    @session = Qpid::Messaging::Session.new(@session_impl)
+    @session = Qpid::Messaging::Session.new(@connection, @session_impl)
   end
 
   def test_create_sender_with_Address
@@ -71,6 +71,10 @@ class TestSession < Test::Unit::TestCase
       once.
       with(@address_impl).
       and_return(@sender_impl)
+    @sender_impl.
+      should_receive(:getName).
+      once.
+      and_return("foo")
 
     result = @session.create_sender @address
 
@@ -83,10 +87,15 @@ class TestSession < Test::Unit::TestCase
       once.
       with_any_args.
       and_return(@sender_impl)
+    @sender_impl.
+      should_receive(:getName).
+      once.
+      and_return("my-queue")
 
     result = @session.create_sender("my-queue")
 
     assert_not_nil result
+    assert_same result.sender_impl, @sender_impl
   end
 
   def test_create_sender_with_address_string
@@ -95,6 +104,10 @@ class TestSession < Test::Unit::TestCase
       once.
       with("my-queue;{create:always}").
       and_return(@sender_impl)
+    @sender_impl.
+      should_receive(:getName).
+      once.
+      and_return("foo")
 
     result = @session.create_sender "my-queue;{create:always}"
 
@@ -114,6 +127,10 @@ class TestSession < Test::Unit::TestCase
       once.
       with(@address_impl).
       and_return(@receiver_impl)
+    @receiver_impl.
+      should_receive(:getName).
+      once.
+      and_return("my-queue")
 
     result = @session.create_receiver(@address)
 
@@ -126,6 +143,10 @@ class TestSession < Test::Unit::TestCase
       once.
       with("my-queue").
       and_return(@receiver_impl)
+    @receiver_impl.
+      should_receive(:getName).
+      once.
+      and_return("my-queue")
 
     result = @session.create_receiver("my-queue")
 
@@ -320,63 +341,53 @@ class TestSession < Test::Unit::TestCase
     assert_same @receiver_impl, result.receiver_impl
   end
 
-  def test_sender
-    @session_impl.
-      should_receive(:getSender).
-      once.
-      with("farkle").
-      and_return(@sender_impl)
-    @Sender_class.
-      should_receive(:for_impl).
-      once.
-      with(@sender_impl).
-      and_return(@sender)
-
-    result = @session.sender "farkle"
-
-    assert_same @sender, result
-  end
-
   def test_sender_with_invalid_name
-    @session_impl.
-      should_receive(:getSender).
-      once.
-      with("farkle").
-      and_throw(RuntimeError)
-
-    assert_raise(Qpid::Messaging::KeyError) {@session.sender "farkle"}
+    assert_raises(Qpid::Messaging::KeyError) { @session.sender "farkle" }
   end
 
-  def test_receiver
+  def test_get_sender
     @session_impl.
-      should_receive(:getReceiver).
+      should_receive(:createSender).
       once.
-      with("farkle").
+      with("my-queue").
+      and_return(@sender_impl)
+    @sender_impl.
+      should_receive(:getName).
+      once.
+      and_return("my-queue")
+
+    sender = @session.create_sender "my-queue"
+    result = @session.sender "my-queue"
+
+    assert_not_nil sender
+    assert_same sender, result
+  end
+
+  def test_get_receiver
+    @session_impl.
+      should_receive(:createReceiver).
+      once.
+      with("my-queue").
       and_return(@receiver_impl)
-    @Receiver_class.
-      should_receive(:for_impl).
+    @receiver_impl.
+      should_receive(:getName).
       once.
-      with(@receiver_impl).
-      and_return(@receiver)
+      and_return("my-queue")
 
-    result = @session.receiver "farkle"
+    receiver = @session.create_receiver "my-queue"
+    result = @session.receiver "my-queue"
 
-    assert_same @receiver, result
+    assert_not_nil receiver
+    assert_same receiver, result
   end
 
-  def test_receiver_with_invalid_name
-    @session_impl.
-      should_receive(:getReceiver).
-      once.
-      with("farkle").
-      and_throw(RuntimeError)
-
-    assert_raise(Qpid::Messaging::KeyError) {@session.receiver "farkle"}
+  def test_get_receiver_with_invalid_name
+    assert_raise(Qpid::Messaging::KeyError) { @session.receiver "farkle" }
   end
 
   def test_connection
-    @session_impl.
-      should_receive(:getConnection).
+    @connection.
+      should_receive(:connection_impl).
       once.
       and_return(@connection_impl)
 
@@ -391,7 +402,7 @@ class TestSession < Test::Unit::TestCase
       once.
       and_return(false)
 
-    assert !@session.error?
+    assert !@session.errors?
   end
 
   def test_error
@@ -400,46 +411,24 @@ class TestSession < Test::Unit::TestCase
       once.
       and_return(true)
 
-    assert @session.error?
+    assert @session.errors?
   end
 
-  def test_check_error
+  def test_errors
+    @session_impl.
+      should_receive(:checkError).
+      once.
+      and_raise(Exception, "Expected")
+
+    assert_raises(Exception) { @session.errors }
+  end
+
+  def test_errors_without_exceptions
     @session_impl.
       should_receive(:checkError).
       once
 
-    @session.check_error
-  end
-
-  def test_is_valid
-    @session_impl.
-      should_receive(:isValid).
-      once.
-      and_return(false)
-
-    assert !@session.valid?
-  end
-
-  def test_is_null
-    @session_impl.
-      should_receive(:isNull).
-      once.
-      and_return(false)
-
-    assert !@session.null?
-  end
-
-  def test_swap
-    @other_session.
-      should_receive(:session_impl).
-      once.
-      and_return(@other_session_impl)
-    @session_impl.
-      should_receive(:swap).
-      once.
-      with(@other_session_impl)
-
-    @session.swap @other_session
+    assert_nothing_raised { @session.errors }
   end
 
 end
