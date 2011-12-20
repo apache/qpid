@@ -85,16 +85,17 @@ module Qpid
 
       # Creates a new endpoint for receiving messages.
       def create_receiver(address)
-        result = nil
+        result        = nil
+        receiver_impl = nil
 
         if address.class == Qpid::Messaging::Address
           address_impl = address.address_impl
-          result = Qpid::Messaging::Receiver.new(@session_impl.createReceiver(address_impl))
+          receiver_impl = @session_impl.createReceiver(address_impl)
         else
-          result = Qpid::Messaging::Receiver.new(@session_impl.createReceiver(address))
+          receiver_impl = @session_impl.createReceiver(address)
         end
 
-        return result
+        Qpid::Messaging::Receiver.new self, receiver_impl
       end
 
       # Closes the Session and all associated Senders and Receivers.
@@ -160,7 +161,7 @@ module Qpid
       # Fetches the receiver for the next message.
       def next_receiver(timeout = Qpid::Messaging::Duration::FOREVER)
         receiver_impl = @session_impl.nextReceiver(timeout.duration_impl)
-        Qpid::Messaging::Receiver.new receiver_impl
+        Qpid::Messaging::Receiver.new self, receiver_impl
       end
 
       # Returns whether there are errors on this session.
