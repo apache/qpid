@@ -113,7 +113,7 @@ module Qpid
           else
             session = @connection_impl.createSession name
           end
-          return Session.new(session)
+          return Session.new(self, session)
         else
           raise RuntimeError.new "No connection available."
         end
