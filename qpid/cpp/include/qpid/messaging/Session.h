@@ -95,7 +95,7 @@ class QPID_MESSAGING_CLASS_EXTERN Session : public qpid::messaging::Handle<Sessi
     QPID_MESSAGING_EXTERN void reject(Message&);
     /**
      * Releases the specified message. The broker may redeliver the
-     * message. One a message has been acknowledged, it can no longer
+     * message. Once a message has been acknowledged, it can no longer
      * be released.
      */
     QPID_MESSAGING_EXTERN void release(Message&);
