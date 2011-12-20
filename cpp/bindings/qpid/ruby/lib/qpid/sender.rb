@@ -21,10 +21,21 @@ module Qpid
 
   module Messaging
 
-    # Sender defines a type for sending messages.
+    # Sender is the entity through which messages sent.
+    #
+    # An instance of Sender can only be created using an active (not previously
+    # closed) Session.
+    #
+    # ==== Examples
+    #
+    #   conn    = Qpid::Messaging::Connection.new :url => "mybroker:5762"
+    #   conn.open
+    #   session = conn.create_session
+    #   sender  = session.create_session "my-sender-queue;{create:always}"
     class Sender
 
-      def initialize(sender_impl) # :nodoc:
+      def initialize(session, sender_impl) # :nodoc:
+        @session     = session
         @sender_impl = sender_impl
       end
 
@@ -33,46 +44,95 @@ module Qpid
       end
 
       # Sends a message.
-      def send(message, args = {})
+      #
+      # If a block is given, then it will be invoked after the message
+      # is sent.
+      #
+      # ==== Options
+      #
+      # * message - The message to send.
+      # * :sync - See note below on synching.
+      #
+      # ==== Synching
+      #
+      # If :sync => true, then the call will block until the broker confirms
+      # receipt of the message. Otherwise it will only block for available
+      # capacity; i.e., until pending is equal to capacity.
+      #
+      # ==== Examples
+      #
+      #   sender.send message do |message|
+      #     puts "Message sent: #{message.content}"
+      #   end
+      #
+      def send(message, args = {}, &block)
         sync = args[:sync] || false
         @sender_impl.send message.message_impl, sync
+        block.call message unless block.nil?
       end
 
-      # Closes the sender.
+      # Closes this +Sender+.
+      #
+      # This does not affect the +Session+.
       def close; @sender_impl.close; end
 
-      # Returns the name for the sender.
+      # Returns the human-readable name for this +Sender+.
+      #
+      # ==== Examples
+      #
+      # puts "Sender: #{sender.name}"
       def name; @sender_impl.getName; end
 
-      # Sets the capacity for the sender, which is the number of outgoing
-      # messages that can be held pending confirmation or receipt by
-      # the broker.
+      # Sets the capacity for this +Sender+.
+      #
+      # The capacity is the number of outgoing messages that can be held
+      # pending confirmation or receipt by the broker.
+      #
+      # ==== Options
+      #
+      # * capacity - the capacity
+      #
+      # ==== Examples
+      #
+      #   sender.capacity = 50 # sets the outgoing capacity to 50 messages
       def capacity=(capacity); @sender_impl.setCapacity capacity; end
 
       # Returns the capacity.
+      #
+      # The capacity is the total number of outgoing messages that can be
+      # sent before a called to +send+ begins to block by default.
+      #
+      # ==== Examples
+      #
+      #   puts "You can send a maximum of #{sender.capacity} messages."
       def capacity; @sender_impl.getCapacity; end
 
       # Returns the number of messages sent that are pending receipt
       # confirmation by the broker.
+      #
+      # ==== Examples
+      #
+      #   if sender.unsettled > 0
+      #     puts "There are #{sender.unsettled} messages pending."
+      #   end
       def unsettled; @sender_impl.getUnsettled; end
 
-      # Returns the available capacity for sending messages.
+      # Returns the available slots for sending messages.
+      #
+      # This differs from +capacity+ in that it is the available slots in
+      # the senders capacity for holding outgoing messages. The difference
+      # between capacity and available is the number of messages that
+      # have not been delivered yet.
+      #
+      # ==== Examples
+      #
+      #   puts "You can send #{sender.available} messages before blocking."
       def available
         @sender_impl.getAvailable
       end
 
-      # Returns the Session for this sender.
-      def session; Qpid::Messaging::Session.new @sender_impl.getSession; end
-
-      # Returns if the underlying sender is valid.
-      def valid?; @sender_impl.isValid; end
-
-      # Returns if the underlying sender is null.
-      def null?; @sender_impl.isNull; end
-
-      def swap sender
-        @sender_impl.swap sender.sender_impl
-      end
+      # Returns the +Session+ for this sender.
+      def session; @session; end
 
     end
 
