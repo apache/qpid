@@ -30,11 +30,12 @@ class TestSender < Test::Unit::TestCase
     @messaging = flexmock(Qpid::Messaging)
     @message = flexmock("message")
 
+    @session      = flexmock("session")
     @session_impl = flexmock("session_impl")
 
     @sender_impl = flexmock("sender_impl")
     @other_sender_impl = flexmock("other_sender_impl")
-    @sender = Qpid::Messaging::Sender.new @sender_impl
+    @sender = Qpid::Messaging::Sender.new @session, @sender_impl
     @other_sender = flexmock("other_sender")
   end
 
@@ -137,46 +138,10 @@ class TestSender < Test::Unit::TestCase
   end
 
   def test_session
-    @sender_impl.
-      should_receive(:getSession).
-      once.
-      and_return(@session_impl)
-
     result = @sender.session
 
     assert_not_nil result
-    assert_same @session_impl, result.session_impl
-  end
-
-  def test_is_valid
-    @sender_impl.
-      should_receive(:isValid).
-      once.
-      and_return(true)
-
-    assert @sender.valid?
-  end
-
-  def test_is_null
-    @sender_impl.
-      should_receive(:isNull).
-      once.
-      and_return(false)
-
-    assert !@sender.null?
-  end
-
-  def test_swap
-    @other_sender.
-      should_receive(:sender_impl).
-      once.
-      and_return(@other_sender_impl)
-    @sender_impl.
-      should_receive(:swap).
-      once.
-      with(@other_sender_impl)
-
-    @sender.swap @other_sender
+    assert_same @session, result
   end
 
 end

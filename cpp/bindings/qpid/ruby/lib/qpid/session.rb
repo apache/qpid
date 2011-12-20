@@ -50,7 +50,7 @@ module Qpid
           _address = address.address_impl
         end
 
-        Qpid::Messaging::Sender.new(@session_impl.createSender(_address))
+        Qpid::Messaging::Sender.new(self, @session_impl.createSender(_address))
       end
 
       # Retrieves the +Sender+ with the specified name.
