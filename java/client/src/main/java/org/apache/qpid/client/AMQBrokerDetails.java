@@ -271,14 +271,18 @@ public class AMQBrokerDetails implements BrokerDetails
     {
     	if (_options.containsKey(propName))
     	{
-    		if (defaultValue)
-    		{
-    			return !_options.get(propName).equalsIgnoreCase("false");
-    		}
-    		else
-    		{
-    			return Boolean.parseBoolean(_options.get(propName));
-    		}
+            if (_options.get(propName).equalsIgnoreCase("false"))
+            {
+                return false;
+            }
+            else if (_options.get(propName).equalsIgnoreCase("true"))
+            {
+                return true;
+            }
+            else
+            {
+               return defaultValue;
+            }
     	}
     	else
     	{
