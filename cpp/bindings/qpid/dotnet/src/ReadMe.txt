@@ -2,14 +2,14 @@
     DYNAMIC LINK LIBRARY : Org.Apache.Qpid.Messaging Project Overview
 ========================================================================
 
-AppWizard has created this Org.Apache.Qpid.Messaging DLL for you.  
+AppWizard has created this Org.Apache.Qpid.Messaging DLL for you.
 
 This file contains a summary of what you will find in each of the files that
 make up your Org.Apache.Qpid.Messaging application.
 
 Org.Apache.Qpid.Messaging.vcproj
-    This is the main project file for VC++ projects generated using an Application Wizard. 
-    It contains information about the version of Visual C++ that generated the file, and 
+    This is the main project file for VC++ projects generated using an Application Wizard.
+    It contains information about the version of Visual C++ that generated the file, and
     information about the platforms, configurations, and project features selected with the
     Application Wizard.
 
@@ -21,9 +21,9 @@ Sender.[cpp h]
 Session.[cpp h]
     Managed code Interop layer modules to provide access to functions exported by
     qpidcommon.dll.
-    
+
 AssemblyInfo.cpp
-	Contains custom attributes for modifying assembly metadata.
+    Contains custom attributes for modifying assembly metadata.
 
 /////////////////////////////////////////////////////////////////////////////
 Other notes:

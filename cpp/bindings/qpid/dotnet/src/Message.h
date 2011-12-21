@@ -48,7 +48,13 @@ namespace Messaging {
 
     private:
         // The kept object in the Messaging C++ DLL
-        ::qpid::messaging::Message * messagep;
+        ::qpid::messaging::Message * nativeObjPtr;
+
+        // per-instance lock object
+        System::Object ^ privateLock;
+
+        // Disallow use after object is destroyed
+        void ThrowIfDisposed();
 
     public:
         // Create empty message
@@ -61,11 +67,12 @@ namespace Messaging {
         Message(System::Object ^ theValue);
 
         // Create from byte array
-		Message(array<System::Byte> ^ bytes);
+        Message(array<System::Byte> ^ bytes);
 
         // Create from byte array slice
-		Message(array<System::Byte> ^ bytes, int offset, int size);
+        Message(array<System::Byte> ^ bytes, int offset, int size);
 
+        // System destructor/finalizer entry points
         ~Message();
         !Message();
 
@@ -73,48 +80,72 @@ namespace Messaging {
         Message(const Message ^ message);
         Message(const Message % message);
 
-	    // unmanaged clone
+        // unmanaged clone
         Message(const ::qpid::messaging::Message & msgp);
 
         // assignment operator
         Message % operator=(const Message % rhs)
         {
+            msclr::lock lk(privateLock);
+            ThrowIfDisposed();
+
             if (this == %rhs)
             {
                 // Self assignment, do nothing
             }
             else
             {
-                if (NULL != messagep)
-                    delete messagep;
-                messagep = new ::qpid::messaging::Message(
+                if (NULL != nativeObjPtr)
+                    delete nativeObjPtr;
+                nativeObjPtr = new ::qpid::messaging::Message(
                     *(const_cast<Message %>(rhs).NativeMessage) );
             }
             return *this;
         }
 
         //
+        // IsDisposed
+        //
+        property bool IsDisposed
+        {
+            bool get()
+            {
+                return NULL == nativeObjPtr;
+            }
+        }
+
+
+        //
         // NativeMessage
         //
         property ::qpid::messaging::Message * NativeMessage
         {
-            ::qpid::messaging::Message * get () { return messagep; }
+            ::qpid::messaging::Message * get ()
+            {
+                return nativeObjPtr;
+            }
         }
 
         //
         // ReplyTo
         //
-        property Address ^ ReplyTo 
+        property Address ^ ReplyTo
         {
             void set (Address ^ address)
             {
-                 messagep->setReplyTo(*(address->NativeAddress));
+                msclr::lock lk(privateLock);
+                ThrowIfDisposed();
+
+                nativeObjPtr->setReplyTo(*(address->NativeAddress));
             }
 
-            Address ^ get () 
+            Address ^ get ()
             {
+                msclr::lock lk(privateLock);
+                ThrowIfDisposed();
+
                 const ::qpid::messaging::Address & addrp =
-                    messagep->::qpid::messaging::Message::getReplyTo();
+                    nativeObjPtr->::qpid::messaging::Message::getReplyTo();
 
                 return gcnew Address(addrp);
             }
@@ -127,13 +158,18 @@ namespace Messaging {
         {
             void set (System::String ^ subject)
             {
-                messagep->setSubject(QpidMarshal::ToNative(subject));
+                msclr::lock lk(privateLock);
+                ThrowIfDisposed();
+
+                nativeObjPtr->setSubject(QpidMarshal::ToNative(subject));
             }
-            
-            
+
             System::String ^ get ()
             {
-                return gcnew String(messagep->getSubject().c_str());
+                msclr::lock lk(privateLock);
+                ThrowIfDisposed();
+
+                return gcnew String(nativeObjPtr->getSubject().c_str());
             }
         }
 
@@ -145,15 +181,21 @@ namespace Messaging {
         {
             void set (System::String ^ ct)
             {
-                messagep->setContentType(QpidMarshal::ToNative(ct));
+                msclr::lock lk(privateLock);
+                ThrowIfDisposed();
+
+                nativeObjPtr->setContentType(QpidMarshal::ToNative(ct));
             }
-            
-	        System::String ^ get ()
+
+            System::String ^ get ()
             {
-		        return gcnew String(messagep->::qpid::messaging::Message::getContentType().c_str());
+                msclr::lock lk(privateLock);
+                ThrowIfDisposed();
+
+                return gcnew String(nativeObjPtr->::qpid::messaging::Message::getContentType().c_str());
             }
         }
-    
+
 
         //
         // MessageId
@@ -162,16 +204,22 @@ namespace Messaging {
         {
             void set (System::String ^ messageId)
             {
-                messagep->setMessageId(QpidMarshal::ToNative(messageId));
+                msclr::lock lk(privateLock);
+                ThrowIfDisposed();
+
+                nativeObjPtr->setMessageId(QpidMarshal::ToNative(messageId));
             }
 
             System::String ^ get ()
             {
-                return gcnew String(messagep->getMessageId().c_str());
+                msclr::lock lk(privateLock);
+                ThrowIfDisposed();
+
+                return gcnew String(nativeObjPtr->getMessageId().c_str());
             }
         }
 
-        
+
         //
         // UserId
         //
@@ -179,16 +227,22 @@ namespace Messaging {
         {
             void set (System::String ^ uId)
             {
-                messagep->setUserId(QpidMarshal::ToNative(uId));
+                msclr::lock lk(privateLock);
+                ThrowIfDisposed();
+
+                nativeObjPtr->setUserId(QpidMarshal::ToNative(uId));
             }
-            
+
             System::String ^ get ()
             {
-                return gcnew String(messagep->getUserId().c_str());
+                msclr::lock lk(privateLock);
+                ThrowIfDisposed();
+
+                return gcnew String(nativeObjPtr->getUserId().c_str());
             }
         }
 
-            
+
         //
         // CorrelationId
         //
@@ -196,12 +250,18 @@ namespace Messaging {
         {
             void set (System::String ^ correlationId)
             {
-                messagep->setCorrelationId(QpidMarshal::ToNative(correlationId));
+                msclr::lock lk(privateLock);
+                ThrowIfDisposed();
+
+                nativeObjPtr->setCorrelationId(QpidMarshal::ToNative(correlationId));
             }
-            
+
             System::String ^ get ()
             {
-                return gcnew String(messagep->getCorrelationId().c_str());
+                msclr::lock lk(privateLock);
+                ThrowIfDisposed();
+
+                return gcnew String(nativeObjPtr->getCorrelationId().c_str());
             }
         }
 
@@ -213,14 +273,20 @@ namespace Messaging {
         {
             void set (unsigned char priority)
             {
-                messagep->setPriority(priority);
+                msclr::lock lk(privateLock);
+                ThrowIfDisposed();
+
+                nativeObjPtr->setPriority(priority);
             }
-            
+
             unsigned char get ()
             {
-                return messagep->getPriority();
+                msclr::lock lk(privateLock);
+                ThrowIfDisposed();
+
+                return nativeObjPtr->getPriority();
             }
-        }   
+        }
 
 
         //
@@ -230,14 +296,20 @@ namespace Messaging {
         {
             void set (Duration ^ ttl)
             {
+                msclr::lock lk(privateLock);
+                ThrowIfDisposed();
+
                 ::qpid::messaging::Duration dur(ttl->Milliseconds);
 
-                messagep->setTtl(dur);
+                nativeObjPtr->setTtl(dur);
             }
-            
+
             Duration ^ get ()
             {
-                Duration ^ dur = gcnew Duration(messagep->getTtl().getMilliseconds());
+                msclr::lock lk(privateLock);
+                ThrowIfDisposed();
+
+                Duration ^ dur = gcnew Duration(nativeObjPtr->getTtl().getMilliseconds());
 
                 return dur;
             }
@@ -250,12 +322,18 @@ namespace Messaging {
         {
             void set (bool durable)
             {
-                messagep->setDurable(durable);
+                msclr::lock lk(privateLock);
+                ThrowIfDisposed();
+
+                nativeObjPtr->setDurable(durable);
             }
-            
+
             bool get ()
             {
-                return messagep->getDurable();
+                msclr::lock lk(privateLock);
+                ThrowIfDisposed();
+
+                return nativeObjPtr->getDurable();
             }
         }
 
@@ -266,12 +344,18 @@ namespace Messaging {
         {
             bool get ()
             {
-                return messagep->getRedelivered();
+                msclr::lock lk(privateLock);
+                ThrowIfDisposed();
+
+                return nativeObjPtr->getRedelivered();
             }
 
             void set (bool redelivered)
             {
-                messagep->setRedelivered(redelivered);
+                msclr::lock lk(privateLock);
+                ThrowIfDisposed();
+
+                nativeObjPtr->setRedelivered(redelivered);
             }
         }
 
@@ -284,19 +368,22 @@ namespace Messaging {
         // Properties
         //
         property System::Collections::Generic::Dictionary<
-                    System::String^, System::Object^> ^ Properties
+            System::String^, System::Object^> ^ Properties
         {
             System::Collections::Generic::Dictionary<
-                    System::String^, System::Object^> ^ get ()
+                System::String^, System::Object^> ^ get ()
             {
+                msclr::lock lk(privateLock);
+                ThrowIfDisposed();
+
                 ::qpid::types::Variant::Map map;
 
-                map = messagep->getProperties();
+                map = nativeObjPtr->getProperties();
 
                 System::Collections::Generic::Dictionary<
                     System::String^, System::Object^> ^ dict =
                     gcnew System::Collections::Generic::Dictionary<
-                              System::String^, System::Object^> ;
+                    System::String^, System::Object^> ;
 
 
                 TypeTranslator::NativeToManaged(map, dict);
@@ -305,15 +392,18 @@ namespace Messaging {
             }
 
 
-	        void set (System::Collections::Generic::Dictionary<
-                    System::String^, System::Object^> ^ properties)
-	        {
-		        for each (System::Collections::Generic::KeyValuePair
-			             <System::String^, System::Object^> kvp in properties)
+            void set (System::Collections::Generic::Dictionary<
+                System::String^, System::Object^> ^ properties)
+            {
+                msclr::lock lk(privateLock);
+                ThrowIfDisposed();
+
+                for each (System::Collections::Generic::KeyValuePair
+                    <System::String^, System::Object^> kvp in properties)
                 {
-			        SetProperty(kvp.Key, kvp.Value);
-		        }
-	        }
+                    SetProperty(kvp.Key, kvp.Value);
+                }
+            }
         }
 
 
@@ -330,12 +420,12 @@ namespace Messaging {
 
         // get content as dictionary
         void GetContent(System::Collections::Generic::Dictionary<
-                            System::String^, 
-                            System::Object^> ^ dict);
+            System::String^,
+            System::Object^> ^ dict);
 
         // get content as map
         void GetContent(System::Collections::ObjectModel::Collection<
-                            System::Object^> ^);
+            System::Object^> ^);
 
         // get content as bytes
         void GetContent(cli::array<System::Byte> ^ arr);
@@ -347,20 +437,23 @@ namespace Messaging {
         {
             System::UInt64 get ()
             {
-                return messagep->getContentSize();
+                msclr::lock lk(privateLock);
+                ThrowIfDisposed();
+
+                return nativeObjPtr->getContentSize();
             }
         }
 
 
-		// A message has been returned to managed code through GetContent().
-		// Display the content of that System::Object as a string.
-		System::String ^ AsString(System::Object ^ obj);
+        // A message has been returned to managed code through GetContent().
+        // Display the content of that System::Object as a string.
+        System::String ^ AsString(System::Object ^ obj);
 
-		System::String ^ MapAsString(System::Collections::Generic::Dictionary<
-						System::String^, System::Object^> ^ dict);
-		
-		System::String ^ ListAsString(System::Collections::ObjectModel::Collection<
-			            System::Object^> ^ list);
+        System::String ^ MapAsString(System::Collections::Generic::Dictionary<
+            System::String^, System::Object^> ^ dict);
+
+        System::String ^ ListAsString(System::Collections::ObjectModel::Collection<
+            System::Object^> ^ list);
 
         //TODO: EncodingException
 

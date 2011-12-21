@@ -40,7 +40,13 @@ namespace Messaging {
     {
     private:
         // The kept object in the Messaging C++ DLL
-        ::qpid::messaging::FailoverUpdates * failoverupdatesp;
+        ::qpid::messaging::FailoverUpdates * nativeObjPtr;
+
+        // per-instance lock object
+        System::Object ^ privateLock;
+
+        // Disallow use after object is destroyed
+        void ThrowIfDisposed();
 
     public:
         FailoverUpdates(Connection ^ connection);
@@ -48,16 +54,27 @@ namespace Messaging {
         ~FailoverUpdates();
         !FailoverUpdates();
 
+        //
+        // IsDisposed
+        //
+        property bool IsDisposed
+        {
+            bool get()
+            {
+                return NULL == nativeObjPtr;
+            }
+        }
+
     private:
-		// unmanaged clone
-		// not defined
+        // unmanaged clone
+        // not defined
 
         // copy constructor
         FailoverUpdates(const FailoverUpdates ^ failoverUpdates) {}
         FailoverUpdates(const FailoverUpdates % failoverUpdates) {}
 
         // assignment operator
-        FailoverUpdates % operator=(const FailoverUpdates % rhs) 
+        FailoverUpdates % operator=(const FailoverUpdates % rhs)
         {
             return *this;
         }

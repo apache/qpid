@@ -43,14 +43,20 @@ namespace Messaging {
     {
     private:
         // The kept object in the Messaging C++ DLL
-        ::qpid::messaging::Connection * connectionp;
+        ::qpid::messaging::Connection * nativeObjPtr;
+
+        // per-instance lock object
+        System::Object ^ privateLock;
+
+        // Disallow use after object is destroyed
+        void ThrowIfDisposed();
 
     public:
         Connection(System::String ^ url);
 
-        Connection(System::String ^ url, 
-                   System::Collections::Generic::Dictionary<
-                       System::String ^, System::Object ^> ^ options);
+        Connection(System::String ^ url,
+            System::Collections::Generic::Dictionary<
+            System::String ^, System::Object ^> ^ options);
 
         Connection(System::String ^ url, System::String ^ options);
 
@@ -58,8 +64,8 @@ namespace Messaging {
         Connection(const Connection ^ connection);
         Connection(const Connection % connection);
 
-		// unmanaged clone
-		// not defined
+        // unmanaged clone
+        // not defined
 
         ~Connection();
         !Connection();
@@ -67,23 +73,44 @@ namespace Messaging {
         // assignment operator
         Connection % operator=(const Connection % rhs)
         {
+            msclr::lock lk(privateLock);
+            ThrowIfDisposed();
+
             if (this == %rhs)
             {
                 // Self assignment, do nothing
             }
             else
             {
-                if (NULL != connectionp)
-                    delete connectionp;
-                connectionp = new ::qpid::messaging::Connection(
+                if (NULL != nativeObjPtr)
+                    delete nativeObjPtr;
+                nativeObjPtr = new ::qpid::messaging::Connection(
                     *(const_cast<Connection %>(rhs).NativeConnection) );
             }
             return *this;
         }
 
+        //
+        // IsDisposed
+        //
+        property bool IsDisposed
+        {
+            bool get()
+            {
+                return NULL == nativeObjPtr;
+            }
+        }
+
+
+        //
+        // NativeConnection
+        //
         property ::qpid::messaging::Connection * NativeConnection
         {
-            ::qpid::messaging::Connection * get () { return connectionp; }
+            ::qpid::messaging::Connection * get ()
+            {
+                return nativeObjPtr;
+            }
         }
 
         void SetOption(System::String ^ name, System::Object ^ value);
@@ -95,7 +122,10 @@ namespace Messaging {
         {
             System::Boolean get ()
             {
-                return connectionp->isOpen();
+                msclr::lock lk(privateLock);
+                ThrowIfDisposed();
+
+                return nativeObjPtr->isOpen();
             }
         }
 
@@ -113,7 +143,10 @@ namespace Messaging {
         {
             System::String ^ get ()
             {
-                return gcnew System::String(connectionp->getAuthenticatedUsername().c_str());
+                msclr::lock lk(privateLock);
+                ThrowIfDisposed();
+
+                return gcnew System::String(nativeObjPtr->getAuthenticatedUsername().c_str());
             }
         }
     };

@@ -31,11 +31,11 @@ public ref class QpidException : System::Exception
 {
  public:
 
- QpidException() 
-	 : System::Exception() {}
+ QpidException()
+    : System::Exception() {}
 
- QpidException(String^ estring) 
-	 : System::Exception(estring) {}
+ QpidException(String^ estring)
+    : System::Exception(estring) {}
 
 };
 

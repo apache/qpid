@@ -40,25 +40,34 @@ namespace Messaging {
     /// Address is a managed wrapper for a qpid::messaging::Address
     /// </summary>
 
+    // Disallow access if object has been destroyed.
+    void Address::ThrowIfDisposed()
+    {
+        if (IsDisposed)
+            throw gcnew ObjectDisposedException (GetType()->FullName);
+    }
+
+
     // Create empty
     Address::Address()
     {
         System::Exception ^ newException = nullptr;
 
-        try 
-		{
-            addressp = new ::qpid::messaging::Address(QpidMarshal::ToNative(""));
-        } 
-        catch (const ::qpid::types::Exception & error) 
-		{
+        try
+        {
+            privateLock = gcnew System::Object();
+            nativeObjPtr = new ::qpid::messaging::Address(QpidMarshal::ToNative(""));
+        }
+        catch (const ::qpid::types::Exception & error)
+        {
             String ^ errmsg = gcnew String(error.what());
             newException    = gcnew QpidException(errmsg);
         }
 
-		if (newException != nullptr) 
-		{
-	        throw newException;
-		}
+        if (newException != nullptr)
+        {
+            throw newException;
+        }
     }
 
     // Create string address
@@ -66,79 +75,82 @@ namespace Messaging {
     {
         System::Exception ^ newException = nullptr;
 
-        try 
-		{
-            addressp = new ::qpid::messaging::Address(QpidMarshal::ToNative(address));
-        } 
-        catch (const ::qpid::types::Exception & error) 
-		{
+        try
+        {
+            privateLock = gcnew System::Object();
+            nativeObjPtr = new ::qpid::messaging::Address(QpidMarshal::ToNative(address));
+        }
+        catch (const ::qpid::types::Exception & error)
+        {
             String ^ errmsg = gcnew String(error.what());
             newException    = gcnew QpidException(errmsg);
         }
 
-		if (newException != nullptr) 
-		{
-	        throw newException;
-		}
+        if (newException != nullptr)
+        {
+            throw newException;
+        }
     }
 
     // Create with options
-    Address::Address(System::String ^ name, 
-                     System::String ^ subject,
-                     System::Collections::Generic::Dictionary<
-                         System::String ^, System::Object ^> ^ options)
+    Address::Address(System::String ^ name,
+        System::String ^ subject,
+        System::Collections::Generic::Dictionary<
+        System::String ^, System::Object ^> ^ options)
     {
         System::Exception ^ newException = nullptr;
 
-        try 
-		{
-            addressp = new ::qpid::messaging::Address();
+        try
+        {
+            privateLock = gcnew System::Object();
+            nativeObjPtr = new ::qpid::messaging::Address();
 
             Name = name;
             Subject = subject;
             Options = options;
             Type = "";
-        } 
-        catch (const ::qpid::types::Exception & error) 
-		{
+        }
+        catch (const ::qpid::types::Exception & error)
+        {
             String ^ errmsg = gcnew String(error.what());
             newException    = gcnew QpidException(errmsg);
         }
 
-		if (newException != nullptr) 
-		{
-	        throw newException;
-		}
+        if (newException != nullptr)
+        {
+            throw newException;
+        }
     }
 
     // Create with options and type
-    Address::Address(System::String ^ name, 
-                     System::String ^ subject,
-                     System::Collections::Generic::Dictionary<
-                         System::String ^, System::Object ^> ^ options,
-                     System::String ^ type)
+    Address::Address(System::String ^ name,
+        System::String ^ subject,
+        System::Collections::Generic::Dictionary<
+        System::String ^, System::Object ^> ^ options,
+        System::String ^ type)
     {
         System::Exception ^ newException = nullptr;
 
-        try 
-		{
-            addressp = new ::qpid::messaging::Address();
+        try
+        {
+            privateLock = gcnew System::Object();
+            nativeObjPtr = new ::qpid::messaging::Address();
 
             Name = name;
             Subject = subject;
             Options = options;
             Type = type;
-        } 
-        catch (const ::qpid::types::Exception & error) 
-		{
+        }
+        catch (const ::qpid::types::Exception & error)
+        {
             String ^ errmsg = gcnew String(error.what());
             newException    = gcnew QpidException(errmsg);
         }
 
-		if (newException != nullptr) 
-		{
-	        throw newException;
-		}
+        if (newException != nullptr)
+        {
+            throw newException;
+        }
     }
 
     // Copy constructor look-alike (C#)
@@ -146,21 +158,22 @@ namespace Messaging {
     {
         System::Exception ^ newException = nullptr;
 
-        try 
-		{
-            addressp = new ::qpid::messaging::Address(
-                        *(const_cast<Address ^>(address)->NativeAddress));
-        } 
-        catch (const ::qpid::types::Exception & error) 
-		{
+        try
+        {
+            privateLock = gcnew System::Object();
+            nativeObjPtr = new ::qpid::messaging::Address(
+                *(const_cast<Address ^>(address)->NativeAddress));
+        }
+        catch (const ::qpid::types::Exception & error)
+        {
             String ^ errmsg = gcnew String(error.what());
             newException    = gcnew QpidException(errmsg);
         }
 
-		if (newException != nullptr) 
-		{
-	        throw newException;
-		}
+        if (newException != nullptr)
+        {
+            throw newException;
+        }
     }
 
     // Copy constructor implicitly dereferenced (C++)
@@ -168,21 +181,22 @@ namespace Messaging {
     {
         System::Exception ^ newException = nullptr;
 
-        try 
-		{
-            addressp = new ::qpid::messaging::Address(
-                        *(const_cast<Address %>(address).NativeAddress));
-        } 
-        catch (const ::qpid::types::Exception & error) 
-		{
+        try
+        {
+            privateLock = gcnew System::Object();
+            nativeObjPtr = new ::qpid::messaging::Address(
+                *(const_cast<Address %>(address).NativeAddress));
+        }
+        catch (const ::qpid::types::Exception & error)
+        {
             String ^ errmsg = gcnew String(error.what());
             newException    = gcnew QpidException(errmsg);
         }
 
-		if (newException != nullptr) 
-		{
-	        throw newException;
-		}
+        if (newException != nullptr)
+        {
+            throw newException;
+        }
     }
 
     // unmanaged clone
@@ -190,20 +204,21 @@ namespace Messaging {
     {
         System::Exception ^ newException = nullptr;
 
-        try 
-		{
-            addressp = new ::qpid::messaging::Address(addrp);
-        } 
-        catch (const ::qpid::types::Exception & error) 
-		{
+        try
+        {
+            privateLock = gcnew System::Object();
+            nativeObjPtr = new ::qpid::messaging::Address(addrp);
+        }
+        catch (const ::qpid::types::Exception & error)
+        {
             String ^ errmsg = gcnew String(error.what());
             newException    = gcnew QpidException(errmsg);
         }
 
-		if (newException != nullptr) 
-		{
-	        throw newException;
-		}
+        if (newException != nullptr)
+        {
+            throw newException;
+        }
     }
 
     // Destructor
@@ -216,12 +231,15 @@ namespace Messaging {
     // Finalizer
     Address::!Address()
     {
-        msclr::lock lk(this);
-
-        if (NULL != addressp)
+        if (NULL != nativeObjPtr)
         {
-            delete addressp;
-            addressp = NULL;
+            privateLock = gcnew System::Object();
+
+            if (NULL != nativeObjPtr)
+            {
+                delete nativeObjPtr;
+                nativeObjPtr = NULL;
+            }
         }
     }
 
@@ -233,20 +251,23 @@ namespace Messaging {
         System::String ^ result = nullptr;
         System::Exception ^ newException = nullptr;
 
-        try 
-		{
-            result = gcnew System::String(addressp->str().c_str());
-        } 
-        catch (const ::qpid::types::Exception & error) 
-		{
+        try
+        {
+            msclr::lock lk(privateLock);
+            ThrowIfDisposed();
+
+            result = gcnew System::String(nativeObjPtr->str().c_str());
+        }
+        catch (const ::qpid::types::Exception & error)
+        {
             String ^ errmsg = gcnew String(error.what());
             newException    = gcnew QpidException(errmsg);
         }
 
-		if (newException != nullptr) 
-		{
-	        throw newException;
-		}
+        if (newException != nullptr)
+        {
+            throw newException;
+        }
         return result;
     }
 }}}}

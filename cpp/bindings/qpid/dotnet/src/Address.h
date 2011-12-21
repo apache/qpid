@@ -44,23 +44,29 @@ namespace Messaging {
     {
     private:
         // The kept object in the Messaging C++ DLL
-        ::qpid::messaging::Address * addressp;
+        ::qpid::messaging::Address * nativeObjPtr;
+
+        // per-instance lock object
+        System::Object ^ privateLock;
+
+        // Disallow use after object is destroyed
+        void ThrowIfDisposed();
 
     public:
         Address();
-        
+
         Address(System::String ^ address);
 
         Address(System::String ^ name,
-                System::String ^ subject,
-                System::Collections::Generic::Dictionary<
-                    System::String ^, System::Object ^> ^ options);
-                
+            System::String ^ subject,
+            System::Collections::Generic::Dictionary<
+            System::String ^, System::Object ^> ^ options);
+
         Address(System::String ^ name,
-                System::String ^ subject,
-                System::Collections::Generic::Dictionary<
-                    System::String ^, System::Object ^> ^ options,
-                System::String ^ type);
+            System::String ^ subject,
+            System::Collections::Generic::Dictionary<
+            System::String ^, System::Object ^> ^ options,
+            System::String ^ type);
 
         // copy constructor
         Address(const Address ^ address);
@@ -69,29 +75,51 @@ namespace Messaging {
         // unmanaged clone
         Address(const ::qpid::messaging::Address & addrp);
 
+        // System destructor/finalizer entry points
         ~Address();
         !Address();
 
         // assignment operator
         Address % operator=(const Address % rhs)
         {
+            msclr::lock lk(privateLock);
+            ThrowIfDisposed();
+
             if (this == %rhs)
             {
                 // Self assignment, do nothing
             }
             else
             {
-                if (NULL != addressp)
-                    delete addressp;
-                addressp = new ::qpid::messaging::Address(
+                if (NULL != nativeObjPtr)
+                    delete nativeObjPtr;
+                nativeObjPtr = new ::qpid::messaging::Address(
                     *(const_cast<Address %>(rhs).NativeAddress) );
             }
             return *this;
         }
 
+        //
+        // IsDisposed
+        //
+        property bool IsDisposed
+        {
+            bool get()
+            {
+                return NULL == nativeObjPtr;
+            }
+        }
+
+
+        //
+        // NativeAddress
+        //
         property ::qpid::messaging::Address * NativeAddress
         {
-            ::qpid::messaging::Address * get () { return addressp; }
+            ::qpid::messaging::Address * get ()
+            {
+                return nativeObjPtr;
+            }
         }
 
         //
@@ -101,12 +129,18 @@ namespace Messaging {
         {
             System::String ^ get ()
             {
-                return gcnew System::String(addressp->getName().c_str());
+                msclr::lock lk(privateLock);
+                ThrowIfDisposed();
+
+                return gcnew System::String(nativeObjPtr->getName().c_str());
             }
 
             void set (System::String ^ name)
             {
-                addressp->::qpid::messaging::Address::setName(QpidMarshal::ToNative(name));
+                msclr::lock lk(privateLock);
+                ThrowIfDisposed();
+
+                nativeObjPtr->::qpid::messaging::Address::setName(QpidMarshal::ToNative(name));
             }
         }
 
@@ -118,12 +152,18 @@ namespace Messaging {
         {
             System::String ^ get ()
             {
-                return gcnew System::String(addressp->getSubject().c_str());
+                msclr::lock lk(privateLock);
+                ThrowIfDisposed();
+
+                return gcnew System::String(nativeObjPtr->getSubject().c_str());
             }
 
             void set (System::String ^ subject)
             {
-                addressp->setSubject(QpidMarshal::ToNative(subject));
+                msclr::lock lk(privateLock);
+                ThrowIfDisposed();
+
+                nativeObjPtr->setSubject(QpidMarshal::ToNative(subject));
             }
         }
 
@@ -137,23 +177,29 @@ namespace Messaging {
             System::Collections::Generic::Dictionary<
                 System::String ^, System::Object ^> ^ get ()
             {
+                msclr::lock lk(privateLock);
+                ThrowIfDisposed();
+
                 ::qpid::types::Variant::Map map;
                 System::Collections::Generic::Dictionary<
-                    System::String ^, System::Object ^> ^ newMap = 
+                    System::String ^, System::Object ^> ^ newMap =
                     gcnew System::Collections::Generic::Dictionary<
-                          System::String ^, System::Object ^>;
-                map = addressp->getOptions();
+                    System::String ^, System::Object ^>;
+                map = nativeObjPtr->getOptions();
                 TypeTranslator::NativeToManaged(map, newMap);
                 return newMap;
             }
 
 
             void set (System::Collections::Generic::Dictionary<
-                                System::String ^, System::Object ^> ^ options)
+                System::String ^, System::Object ^> ^ options)
             {
+                msclr::lock lk(privateLock);
+                ThrowIfDisposed();
+
                 ::qpid::types::Variant::Map map;
                 TypeTranslator::ManagedToNative(options, map);
-                addressp->setOptions(map);
+                nativeObjPtr->setOptions(map);
             }
         }
 
@@ -165,13 +211,19 @@ namespace Messaging {
         {
             System::String ^ get ()
             {
-                return gcnew System::String(addressp->getType().c_str());
+                msclr::lock lk(privateLock);
+                ThrowIfDisposed();
+
+                return gcnew System::String(nativeObjPtr->getType().c_str());
             }
 
 
             void set (System::String ^ type)
             {
-                addressp->setType(QpidMarshal::ToNative(type));
+                msclr::lock lk(privateLock);
+                ThrowIfDisposed();
+
+                nativeObjPtr->setType(QpidMarshal::ToNative(type));
             }
         }
 
