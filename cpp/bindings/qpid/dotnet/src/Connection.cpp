@@ -42,53 +42,63 @@ namespace Messaging {
     /// Connection is a managed wrapper for a qpid::messaging::Connection
     /// </summary>
 
+    // Disallow access if object has been destroyed.
+    void Connection::ThrowIfDisposed()
+    {
+        if (IsDisposed)
+            throw gcnew ObjectDisposedException (GetType()->FullName);
+    }
+
+
     // constructors
     Connection::Connection(System::String ^ url)
     {
         System::Exception ^ newException = nullptr;
 
-        try 
-		{
-            connectionp = new ::qpid::messaging::Connection(QpidMarshal::ToNative(url));
-        } 
-        catch (const ::qpid::types::Exception & error) 
-		{
+        try
+        {
+            privateLock = gcnew System::Object();
+            nativeObjPtr = new ::qpid::messaging::Connection(QpidMarshal::ToNative(url));
+        }
+        catch (const ::qpid::types::Exception & error)
+        {
             String ^ errmsg = gcnew String(error.what());
             newException    = gcnew QpidException(errmsg);
         }
 
-		if (newException != nullptr) 
-		{
-	        throw newException;
-		}
+        if (newException != nullptr)
+        {
+            throw newException;
+        }
     }
 
 
     Connection::Connection(System::String ^ url,
-                           System::Collections::Generic::Dictionary<
-                               System::String ^, System::Object ^> ^ options)
+        System::Collections::Generic::Dictionary<
+        System::String ^, System::Object ^> ^ options)
     {
         System::Exception ^ newException = nullptr;
 
-        try 
-		{
-            connectionp = new ::qpid::messaging::Connection(QpidMarshal::ToNative(url));
+        try
+        {
+            privateLock = gcnew System::Object();
+            nativeObjPtr = new ::qpid::messaging::Connection(QpidMarshal::ToNative(url));
 
             for each (System::Collections::Generic::KeyValuePair<System::String^, System::Object^> kvp in options)
             {
                 SetOption(kvp.Key, kvp.Value);
             }
-        } 
-        catch (const ::qpid::types::Exception & error) 
-		{
+        }
+        catch (const ::qpid::types::Exception & error)
+        {
             String ^ errmsg = gcnew String(error.what());
             newException    = gcnew QpidException(errmsg);
         }
 
-		if (newException != nullptr) 
-		{
-	        throw newException;
-		}
+        if (newException != nullptr)
+        {
+            throw newException;
+        }
     }
 
 
@@ -96,21 +106,22 @@ namespace Messaging {
     {
         System::Exception ^ newException = nullptr;
 
-        try 
-		{
-            connectionp = new ::qpid::messaging::Connection(QpidMarshal::ToNative(url),
-                    QpidMarshal::ToNative(options));
-        } 
-        catch (const ::qpid::types::Exception & error) 
-		{
+        try
+        {
+            privateLock = gcnew System::Object();
+            nativeObjPtr = new ::qpid::messaging::Connection(QpidMarshal::ToNative(url),
+                QpidMarshal::ToNative(options));
+        }
+        catch (const ::qpid::types::Exception & error)
+        {
             String ^ errmsg = gcnew String(error.what());
             newException    = gcnew QpidException(errmsg);
         }
 
-		if (newException != nullptr) 
-		{
-	        throw newException;
-		}
+        if (newException != nullptr)
+        {
+            throw newException;
+        }
     }
 
 
@@ -119,21 +130,22 @@ namespace Messaging {
     {
         System::Exception ^ newException = nullptr;
 
-        try 
-		{
-            connectionp = new ::qpid::messaging::Connection(
-                        *(const_cast<Connection ^>(connection)->NativeConnection));
-        } 
-        catch (const ::qpid::types::Exception & error) 
-		{
+        try
+        {
+            privateLock = gcnew System::Object();
+            nativeObjPtr = new ::qpid::messaging::Connection(
+                *(const_cast<Connection ^>(connection)->NativeConnection));
+        }
+        catch (const ::qpid::types::Exception & error)
+        {
             String ^ errmsg = gcnew String(error.what());
             newException    = gcnew QpidException(errmsg);
         }
 
-		if (newException != nullptr) 
-		{
-	        throw newException;
-		}
+        if (newException != nullptr)
+        {
+            throw newException;
+        }
     }
 
     // Copy constructor implicitly dereferenced (C++)
@@ -141,21 +153,22 @@ namespace Messaging {
     {
         System::Exception ^ newException = nullptr;
 
-        try 
-		{
-            connectionp = new ::qpid::messaging::Connection(
-                        *(const_cast<Connection %>(connection).NativeConnection));
-        } 
-        catch (const ::qpid::types::Exception & error) 
-		{
+        try
+        {
+            privateLock = gcnew System::Object();
+            nativeObjPtr = new ::qpid::messaging::Connection(
+                *(const_cast<Connection %>(connection).NativeConnection));
+        }
+        catch (const ::qpid::types::Exception & error)
+        {
             String ^ errmsg = gcnew String(error.what());
             newException    = gcnew QpidException(errmsg);
         }
 
-		if (newException != nullptr) 
-		{
-	        throw newException;
-		}
+        if (newException != nullptr)
+        {
+            throw newException;
+        }
     }
 
 
@@ -169,12 +182,15 @@ namespace Messaging {
     // Finalizer
     Connection::!Connection()
     {
-        msclr::lock lk(this);
-
-        if (NULL != connectionp)
+        if (NULL != nativeObjPtr)
         {
-            delete connectionp;
-            connectionp = NULL;
+            privateLock = gcnew System::Object();
+
+            if (NULL != nativeObjPtr)
+            {
+                delete nativeObjPtr;
+                nativeObjPtr = NULL;
+            }
         }
     }
 
@@ -183,63 +199,72 @@ namespace Messaging {
     {
         System::Exception ^ newException = nullptr;
 
-        try 
-		{
+        try
+        {
+            msclr::lock lk(privateLock);
+            ThrowIfDisposed();
+
             ::qpid::types::Variant entryValue;
             TypeTranslator::ManagedToNativeObject(value, entryValue);
             std::string entryName = QpidMarshal::ToNative(name);
-            connectionp->::qpid::messaging::Connection::setOption(entryName, entryValue);
-        } 
-        catch (const ::qpid::types::Exception & error) 
-		{
+            nativeObjPtr->::qpid::messaging::Connection::setOption(entryName, entryValue);
+        }
+        catch (const ::qpid::types::Exception & error)
+        {
             String ^ errmsg = gcnew String(error.what());
             newException    = gcnew QpidException(errmsg);
         }
 
-		if (newException != nullptr) 
-		{
-	        throw newException;
-		}
+        if (newException != nullptr)
+        {
+            throw newException;
+        }
     }
 
     void Connection::Open()
     {
         System::Exception ^ newException = nullptr;
 
-        try 
-		{
-            connectionp->open();
-        } 
-        catch (const ::qpid::types::Exception & error) 
-		{
+        try
+        {
+            msclr::lock lk(privateLock);
+            ThrowIfDisposed();
+
+            nativeObjPtr->open();
+        }
+        catch (const ::qpid::types::Exception & error)
+        {
             String ^ errmsg = gcnew String(error.what());
             newException    = gcnew QpidException(errmsg);
         }
 
-		if (newException != nullptr) 
-		{
-	        throw newException;
-		}
+        if (newException != nullptr)
+        {
+            throw newException;
+        }
     }
 
     void Connection::Close()
     {
         System::Exception ^ newException = nullptr;
 
-        try 
-		{
-            connectionp->close();
-        } 
-        catch (const ::qpid::types::Exception & error) 
-		{
+        try
+        {
+            msclr::lock lk(privateLock);
+            ThrowIfDisposed();
+
+            nativeObjPtr->close();
+        }
+        catch (const ::qpid::types::Exception & error)
+        {
             String ^ errmsg = gcnew String(error.what());
             newException    = gcnew QpidException(errmsg);
         }
 
-		if (newException != nullptr) 
-		{
-	        throw newException;
-		}
+        if (newException != nullptr)
+        {
+            throw newException;
+        }
     }
 
     //
@@ -258,14 +283,17 @@ namespace Messaging {
 
         try
         {
+            msclr::lock lk(privateLock);
+            ThrowIfDisposed();
+
             // create native session
-            ::qpid::messaging::Session sessionp = 
-				connectionp->createTransactionalSession(QpidMarshal::ToNative(name));
+            ::qpid::messaging::Session sessionp =
+                nativeObjPtr->createTransactionalSession(QpidMarshal::ToNative(name));
 
             // create managed session
             newSession = gcnew Session(sessionp, this);
-        } 
-        catch (const ::qpid::types::Exception & error) 
+        }
+        catch (const ::qpid::types::Exception & error)
         {
             String ^ errmsg = gcnew String(error.what());
             newException    = gcnew QpidException(errmsg);
@@ -276,9 +304,9 @@ namespace Messaging {
             if (newException != nullptr)
             {
                 if (newSession != nullptr)
-				{
-					delete newSession;
-				}
+                {
+                    delete newSession;
+                }
             }
         }
 
@@ -287,7 +315,7 @@ namespace Messaging {
             throw newException;
         }
 
-		return newSession;
+        return newSession;
     }
 
 
@@ -307,14 +335,17 @@ namespace Messaging {
 
         try
         {
+            msclr::lock lk(privateLock);
+            ThrowIfDisposed();
+
             // create native session
-            ::qpid::messaging::Session sessionp = 
-				connectionp->createSession(QpidMarshal::ToNative(name));
+            ::qpid::messaging::Session sessionp =
+                nativeObjPtr->createSession(QpidMarshal::ToNative(name));
 
             // create managed session
             newSession = gcnew Session(sessionp, this);
-        } 
-        catch (const ::qpid::types::Exception & error) 
+        }
+        catch (const ::qpid::types::Exception & error)
         {
             String ^ errmsg = gcnew String(error.what());
             newException    = gcnew QpidException(errmsg);
@@ -324,17 +355,17 @@ namespace Messaging {
             // Clean up and throw on caught exceptions
             if (newException != nullptr)
             {
-				if (newSession != nullptr)
-				{
-					delete newSession;
-				}
+                if (newSession != nullptr)
+                {
+                    delete newSession;
+                }
             }
         }
 
-		if (nullptr != newException) 
-		{
-			throw newException;
-		}
+        if (nullptr != newException)
+        {
+            throw newException;
+        }
 
         return newSession;
     }
@@ -344,17 +375,20 @@ namespace Messaging {
     {
         System::Exception          ^ newException = nullptr;
         Session                    ^ newSession   = nullptr;
-      
+
         try
         {
             const std::string n = QpidMarshal::ToNative(name);
 
-            ::qpid::messaging::Session sess = 
-				connectionp->::qpid::messaging::Connection::getSession(n);
-            
+            msclr::lock lk(privateLock);
+            ThrowIfDisposed();
+
+            ::qpid::messaging::Session sess =
+                nativeObjPtr->::qpid::messaging::Connection::getSession(n);
+
             newSession = gcnew Session(sess, this);
         }
-        catch (const ::qpid::types::Exception & error) 
+        catch (const ::qpid::types::Exception & error)
         {
             String ^ errmsg = gcnew String(error.what());
             newException    = gcnew QpidException(errmsg);
@@ -364,17 +398,17 @@ namespace Messaging {
             // Clean up and throw on caught exceptions
             if (newException != nullptr)
             {
-				if (newSession != nullptr)
-				{
-					delete newSession;
-				}
+                if (newSession != nullptr)
+                {
+                    delete newSession;
+                }
             }
         }
 
-		if (nullptr != newException) 
-		{
-			throw newException;
-		}
+        if (nullptr != newException)
+        {
+            throw newException;
+        }
 
         return newSession;
     }

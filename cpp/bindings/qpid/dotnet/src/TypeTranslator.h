@@ -39,19 +39,19 @@ namespace Messaging {
     /// </summary>
     public ref class TypeTranslator sealed
     {
-	private:
-		TypeTranslator::TypeTranslator() {}
+    private:
+        TypeTranslator::TypeTranslator() {}
 
     public:
         // The given object is a managed Dictionary.
         // Add its elements to the qpid map.
         static void ManagedToNative(QpidMap ^ theDictionary,
-									::qpid::types::Variant::Map & qpidMap);
+                                    ::qpid::types::Variant::Map & qpidMap);
 
         // The given object is a managed List.
         // Add its elements to the qpid list.
         static void ManagedToNative(QpidList ^ theList,
-									::qpid::types::Variant::List & qpidList);
+                                    ::qpid::types::Variant::List & qpidList);
 
         // The given object is a simple managed type (not a Dictionary or List)
         // Returns a variant representing simple native type object.
@@ -61,11 +61,11 @@ namespace Messaging {
         // The given object is a qpid map.
         // Add its elements to the managed Dictionary.
         static void NativeToManaged(::qpid::types::Variant::Map & qpidMap,
-									QpidMap ^ dict);
+                                    QpidMap ^ dict);
 
         // The given object is a qpid list.
         // Add its elements to the managed List.
         static void NativeToManaged(::qpid::types::Variant::List & qpidList,
-									QpidList ^ managedList);
+                                    QpidList ^ managedList);
     };
 }}}}

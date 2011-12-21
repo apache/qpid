@@ -43,11 +43,11 @@ namespace Messaging {
     // Add its elements to the qpid map.
     //
     void TypeTranslator::ManagedToNative(QpidMap ^ theDictionary,
-										 ::qpid::types::Variant::Map & qpidMap)
+                                         ::qpid::types::Variant::Map & qpidMap)
     {
         // iterate the items, converting each to a variant and adding to the map
         for each (System::Collections::Generic::KeyValuePair
-			<System::String^, System::Object^> kvp in theDictionary)
+            <System::String^, System::Object^> kvp in theDictionary)
         {
             if (QpidTypeCheck::ObjectIsMap(kvp.Value))
             {
@@ -108,7 +108,7 @@ namespace Messaging {
     // Add its elements to the qpid list.
     //
     void TypeTranslator::ManagedToNative(QpidList ^ theList,
-										 ::qpid::types::Variant::List & qpidList)
+                                         ::qpid::types::Variant::List & qpidList)
     {
         // iterate the items, converting each to a variant and adding to the map
         for each (System::Object ^ listObj in theList)
@@ -162,7 +162,7 @@ namespace Messaging {
     // Returns a variant representing simple native type object.
     // Not to be called for Map/List objects.
     //
-    void TypeTranslator::ManagedToNativeObject(System::Object ^ managedValue, 
+    void TypeTranslator::ManagedToNativeObject(System::Object ^ managedValue,
                                ::qpid::types::Variant & qpidVariant)
     {
         System::Type     ^ typeP    = (*managedValue).GetType();
@@ -171,7 +171,7 @@ namespace Messaging {
         switch (typeCode)
         {
         case System::TypeCode::Boolean :
-			qpidVariant = System::Convert::ToBoolean(managedValue, System::Globalization::CultureInfo::InvariantCulture);
+            qpidVariant = System::Convert::ToBoolean(managedValue, System::Globalization::CultureInfo::InvariantCulture);
             break;
 
         case System::TypeCode::Byte :
@@ -258,9 +258,9 @@ namespace Messaging {
     //   extract the qpid elements and put them into the dictionary.
     //
     void TypeTranslator::NativeToManaged(::qpid::types::Variant::Map & qpidMap,
-										 QpidMap ^ dict)
+                                         QpidMap ^ dict)
     {
-        // For each object in the message map, 
+        // For each object in the message map,
         //  create a .NET object and add it to the dictionary.
         for (::qpid::types::Variant::Map::const_iterator i = qpidMap.begin(); i != qpidMap.end(); ++i) {
             // Get the name
@@ -278,47 +278,47 @@ namespace Messaging {
             case ::qpid::types::VAR_BOOL:
                 dict[elementName] = variant.asBool();
                 break;
-                
+
             case ::qpid::types::VAR_UINT8:
                 dict[elementName] = variant.asUint8();
                 break;
-                
+
             case ::qpid::types::VAR_UINT16:
                 dict[elementName] = variant.asUint16();
                 break;
-                
+
             case ::qpid::types::VAR_UINT32:
                 dict[elementName] = variant.asUint32();
                 break;
-                
+
             case ::qpid::types::VAR_UINT64:
                 dict[elementName] = variant.asUint64();
                 break;
-                
+
             case ::qpid::types::VAR_INT8:
                 dict[elementName] = variant.asInt8();
                 break;
-                
+
             case ::qpid::types::VAR_INT16:
                 dict[elementName] = variant.asInt16();
                 break;
-                
+
             case ::qpid::types::VAR_INT32:
                 dict[elementName] = variant.asInt32();
                 break;
-                
+
             case ::qpid::types::VAR_INT64:
                 dict[elementName] = variant.asInt64();
                 break;
-                
+
             case ::qpid::types::VAR_FLOAT:
                 dict[elementName] = variant.asFloat();
                 break;
-                
+
             case ::qpid::types::VAR_DOUBLE:
                 dict[elementName] = variant.asDouble();
                 break;
-                
+
             case ::qpid::types::VAR_STRING:
                 {
                     System::String ^ elementValue = gcnew System::String(variant.asString().c_str());
@@ -344,7 +344,7 @@ namespace Messaging {
                     dict[elementName] = newList;
                     break;
                 }
-                
+
             case ::qpid::types::VAR_UUID:
                 {
                     System::String ^ elementValue = gcnew System::String(variant.asUuid().str().c_str());
@@ -359,9 +359,9 @@ namespace Messaging {
 
     void TypeTranslator::NativeToManaged(::qpid::types::Variant::List & qpidList, QpidList ^ managedList)
     {
-        // For each object in the qpidList 
+        // For each object in the qpidList
         //  create a .NET object and add it to the managed List.
-        for (::qpid::types::Variant::List::const_iterator i = qpidList.begin(); i != qpidList.end(); ++i) 
+        for (::qpid::types::Variant::List::const_iterator i = qpidList.begin(); i != qpidList.end(); ++i)
         {
             ::qpid::types::Variant     variant = *i;
             ::qpid::types::VariantType vType   = variant.getType();
@@ -375,47 +375,47 @@ namespace Messaging {
             case ::qpid::types::VAR_BOOL:
                 (*managedList).Add(variant.asBool());
                 break;
-                
+
             case ::qpid::types::VAR_UINT8:
                 (*managedList).Add(variant.asUint8());
                 break;
-                
+
             case ::qpid::types::VAR_UINT16:
                 (*managedList).Add(variant.asUint16());
                 break;
-                
+
             case ::qpid::types::VAR_UINT32:
                 (*managedList).Add(variant.asUint32());
                 break;
-                
+
             case ::qpid::types::VAR_UINT64:
                 (*managedList).Add(variant.asUint64());
                 break;
-                
+
             case ::qpid::types::VAR_INT8:
                 (*managedList).Add(variant.asInt8());
                 break;
-                
+
             case ::qpid::types::VAR_INT16:
                 (*managedList).Add(variant.asInt16());
                 break;
-                
+
             case ::qpid::types::VAR_INT32:
                 (*managedList).Add(variant.asInt32());
                 break;
-                
+
             case ::qpid::types::VAR_INT64:
                 (*managedList).Add(variant.asInt64());
                 break;
-                
+
             case ::qpid::types::VAR_FLOAT:
                 (*managedList).Add(variant.asFloat());
                 break;
-                
+
             case ::qpid::types::VAR_DOUBLE:
                 (*managedList).Add(variant.asDouble());
                 break;
-                
+
             case ::qpid::types::VAR_STRING:
                 {
                     System::String ^ elementValue = gcnew System::String(variant.asString().c_str());
@@ -441,7 +441,7 @@ namespace Messaging {
                     (*managedList).Add(newList);
                     break;
                 }
-                
+
             case ::qpid::types::VAR_UUID:
                 {
                     System::String ^ elementValue = gcnew System::String(variant.asUuid().str().c_str());

@@ -38,26 +38,34 @@ namespace Messaging {
     /// FailoverUpdates is a managed wrapper for a qpid::messaging::FailoverUpdates
     /// </summary>
 
+    // Disallow access if object has been destroyed.
+    void FailoverUpdates::ThrowIfDisposed()
+    {
+        if (IsDisposed)
+            throw gcnew ObjectDisposedException (GetType()->FullName);
+    }
+
     // constructors
 
     FailoverUpdates::FailoverUpdates(Connection ^ connection)
     {
         System::Exception ^ newException = nullptr;
 
-        try 
-		{
-            failoverupdatesp = new ::qpid::messaging::FailoverUpdates(*(connection->NativeConnection));
-        } 
-        catch (const ::qpid::types::Exception & error) 
-		{
+        try
+        {
+            privateLock = gcnew System::Object();
+            nativeObjPtr = new ::qpid::messaging::FailoverUpdates(*(connection->NativeConnection));
+        }
+        catch (const ::qpid::types::Exception & error)
+        {
             String ^ errmsg = gcnew String(error.what());
             newException    = gcnew QpidException(errmsg);
         }
 
-		if (newException != nullptr) 
-		{
-	        throw newException;
-		}
+        if (newException != nullptr)
+        {
+            throw newException;
+        }
     }
 
 
@@ -71,12 +79,15 @@ namespace Messaging {
     // Finalizer
     FailoverUpdates::!FailoverUpdates()
     {
-        msclr::lock lk(this);
-
-        if (NULL != failoverupdatesp)
+        if (NULL != nativeObjPtr)
         {
-            delete failoverupdatesp;
-            failoverupdatesp = NULL;
+            privateLock = gcnew System::Object();
+
+            if (NULL != nativeObjPtr)
+            {
+                delete nativeObjPtr;
+                nativeObjPtr = NULL;
+            }
         }
     }
 }}}}

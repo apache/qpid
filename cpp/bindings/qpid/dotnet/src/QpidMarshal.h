@@ -34,24 +34,24 @@ namespace Messaging {
 private ref class QpidMarshal
 {
 private:
-	QpidMarshal::QpidMarshal() {}
+    QpidMarshal::QpidMarshal() {}
 
 public:
 
     /// <summary>
     /// Convert managed String into native UTF8-encoded string
-    /// TODO: figure out some encoding other that UTF-8
+    /// TODO: figure out some encoding other than UTF-8
     /// </summary>
 
-    static std::string ToNative (System::String^ managed) 
+    static std::string ToNative (System::String^ managed)
     {
-        if (managed->Length == 0) 
+        if (managed->Length == 0)
         {
             return std::string();
         }
 
         array<unsigned char>^ mbytes = Encoding::UTF8->GetBytes(managed);
-        if (mbytes->Length == 0) 
+        if (mbytes->Length == 0)
         {
             return std::string();
         }

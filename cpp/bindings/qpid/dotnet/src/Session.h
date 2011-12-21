@@ -45,7 +45,7 @@ namespace Messaging {
     /// Session is a managed wrapper for a ::qpid::messaging::Session
     /// </summary>
 
-	ref class Address;
+    ref class Address;
     ref class Connection;
     ref class Duration;
     ref class Receiver;
@@ -56,15 +56,21 @@ namespace Messaging {
     {
     private:
         // The kept object in the Messaging C++ DLL
-        ::qpid::messaging::Session * sessionp;
+        ::qpid::messaging::Session * nativeObjPtr;
 
         // The connection that created this session
         Connection ^ parentConnectionp;
 
+        // per-instance lock object
+        System::Object ^ privateLock;
+
+        // Disallow use after object is destroyed
+        void ThrowIfDisposed();
+
     public:
 
         // unmanaged clone
-        Session(const ::qpid::messaging::Session & sessionp,
+        Session(const ::qpid::messaging::Session & nativeObjPtr,
             Connection ^ connRef);
 
         // copy constructor
@@ -77,24 +83,45 @@ namespace Messaging {
         // assignment operator
         Session % operator=(const Session % rhs)
         {
+            msclr::lock lk(privateLock);
+            ThrowIfDisposed();
+
             if (this == %rhs)
             {
                 // Self assignment, do nothing
             }
             else
             {
-                if (NULL != sessionp)
-                    delete sessionp;
-                sessionp = new ::qpid::messaging::Session(
+                if (NULL != nativeObjPtr)
+                    delete nativeObjPtr;
+                nativeObjPtr = new ::qpid::messaging::Session(
                     *(const_cast<Session %>(rhs).NativeSession) );
                 parentConnectionp = rhs.parentConnectionp;
             }
             return *this;
         }
 
+        //
+        // IsDisposed
+        //
+        property bool IsDisposed
+        {
+            bool get()
+            {
+                return NULL == nativeObjPtr;
+            }
+        }
+
+
+        //
+        // NativeSession
+        //
         property ::qpid::messaging::Session * NativeSession
         {
-            ::qpid::messaging::Session * get () { return sessionp; }
+            ::qpid::messaging::Session * get ()
+            {
+                return nativeObjPtr;
+            }
         }
 
         void Close();
@@ -113,12 +140,24 @@ namespace Messaging {
 
         property System::UInt32 Receivable
         {
-            System::UInt32 get () { return sessionp->getReceivable(); }
+            System::UInt32 get ()
+            {
+                msclr::lock lk(privateLock);
+                ThrowIfDisposed();
+
+                return nativeObjPtr->getReceivable();
+            }
         }
 
         property System::UInt32 UnsettledAcks
         {
-            System::UInt32 get () { return sessionp->getUnsettledAcks(); }
+            System::UInt32 get ()
+            {
+                msclr::lock lk(privateLock);
+                ThrowIfDisposed();
+
+                return nativeObjPtr->getUnsettledAcks();
+            }
         }
 
         // next(receiver)
@@ -131,10 +170,10 @@ namespace Messaging {
 
 
         Sender   ^ CreateSender(System::String ^ address);
-		Sender   ^ CreateSender(Address ^ address);
+        Sender   ^ CreateSender(Address ^ address);
 
         Receiver ^ CreateReceiver(System::String ^ address);
-		Receiver ^ CreateReceiver(Address ^ address);
+        Receiver ^ CreateReceiver(Address ^ address);
 
         Sender   ^ GetSender(System::String ^ name);
         Receiver ^ GetReceiver(System::String ^ name);
@@ -143,6 +182,9 @@ namespace Messaging {
         {
             Org::Apache::Qpid::Messaging::Connection ^ get ()
             {
+                msclr::lock lk(privateLock);
+                ThrowIfDisposed();
+
                 return parentConnectionp;
             }
         }
@@ -150,7 +192,13 @@ namespace Messaging {
 
         property System::Boolean HasError
         {
-            System::Boolean get () { return sessionp->hasError(); }
+            System::Boolean get ()
+            {
+                msclr::lock lk(privateLock);
+                ThrowIfDisposed();
+
+                return nativeObjPtr->hasError();
+            }
         }
 
         void CheckError();

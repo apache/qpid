@@ -39,18 +39,18 @@ namespace Messaging {
     /// </summary>
 
     typedef System::Collections::Generic::Dictionary<
-                System::String^, 
-                System::Object^> 
+                System::String^,
+                System::Object^>
                     QpidMap;
 
     typedef System::Collections::ObjectModel::Collection<
-                System::Object^> 
+                System::Object^>
                     QpidList;
 
     private ref class QpidTypeCheckConstants sealed
     {
-	private:
-		QpidTypeCheckConstants::QpidTypeCheckConstants() {}
+    private:
+        QpidTypeCheckConstants::QpidTypeCheckConstants() {}
 
     public:
         static System::Type const ^ const mapTypeP = System::Type::GetType(
@@ -62,8 +62,8 @@ namespace Messaging {
 
     public ref class QpidTypeCheck sealed
     {
-	private:
-		QpidTypeCheck::QpidTypeCheck() {}
+    private:
+        QpidTypeCheck::QpidTypeCheck() {}
 
     public:
 
