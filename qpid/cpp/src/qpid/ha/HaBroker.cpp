@@ -46,7 +46,7 @@ Url url(const std::string& s, const std::string& id) {
 } // namespace
 
 HaBroker::HaBroker(broker::Broker& b, const Settings& s)
-    : broker(b), 
+    : broker(b),
       clientUrl(url(s.clientUrl, "ha-client-url")),
       brokerUrl(url(s.brokerUrl, "ha-broker-url")),
       mgmtObject(0)
@@ -59,17 +59,17 @@ HaBroker::HaBroker(broker::Broker& b, const Settings& s)
         mgmtObject->set_status("solo");
         ma->addObject(mgmtObject);
     }
-    QPID_LOG(notice, "HA: Initialized: client-url=" << clientUrl
-             << " broker-url=" << brokerUrl);
     // FIXME aconway 2011-11-22: temporary hack to identify primary.
-    if (s.brokerUrl != "primary")
-        backup.reset(new Backup(broker, s));
+    bool isPrimary = (s.brokerUrl == "primary");
+    QPID_LOG(notice, "HA: " << (isPrimary ? "Primary" : "Backup")
+             << " initialized: client-url=" << clientUrl
+             << " broker-url=" << brokerUrl);
+    if (!isPrimary) backup.reset(new Backup(broker, s));
     // Register a factory for replicating subscriptions.
     broker.getConsumerFactories().add(
         boost::shared_ptr<ReplicatingSubscription::Factory>(
             new ReplicatingSubscription::Factory()));
 }
-
 HaBroker::~HaBroker() {}
 
 Manageable::status_t HaBroker::ManagementMethod (uint32_t methodId, Args& args, string&) {

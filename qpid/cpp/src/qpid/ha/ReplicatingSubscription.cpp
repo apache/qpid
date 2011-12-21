@@ -20,7 +20,6 @@
  */
 
 #include "ReplicatingSubscription.h"
-#include "Logging.h"
 #include "qpid/broker/Queue.h"
 #include "qpid/broker/SessionContext.h"
 #include "qpid/broker/ConnectionState.h"
@@ -42,6 +41,13 @@ namespace {
 const string DOLLAR("$");
 const string INTERNAL("-internal");
 } // namespace
+
+
+ostream& operator<<(ostream& o, const ReplicatingSubscription& rs) {
+    string url = rs.parent->getSession().getConnection().getUrl();
+    string qname= rs.getQueue()->getName();
+    return o << "HA: Primary: " << qname << "(" <<  url << "):";
+}
 
 string mask(const string& in)
 {
@@ -96,7 +102,7 @@ ReplicatingSubscription::ReplicatingSubscription(
     // can be re-introduced later. Last revision with the optimization:
     // r1213258 | QPID-3603: Fix QueueReplicator subscription parameters.
 
-    QPID_LOG(debug, "HA: Started " << *this << " subscription " << name);
+    QPID_LOG(debug, *this << "Created subscription " << name);
 
     // Note that broker::Queue::getPosition() returns the sequence
     // number that will be assigned to the next message *minus 1*.
@@ -125,36 +131,39 @@ bool ReplicatingSubscription::deliver(QueuedMessage& m) {
              if (position - backupPosition > 1) {
                  // Position has advanced because of messages dequeued ahead of us.
                  SequenceNumber send(position);
-                 // Send the position before m was enqueued.
-                 sendPositionEvent(--send, l); 
+                 --send;   // Send the position before m was enqueued.
+                 sendPositionEvent(send, l); 
+                 QPID_LOG(trace, *this << "Sending position " << send
+                          << ", was " << backupPosition);
              }
              backupPosition = position;
         }
-        QPID_LOG(trace, "HA: Replicating " << QueuePos(m) << " to " << *this);
+        QPID_LOG(trace, *this << "Replicating message " << m.position);
     }
     return ConsumerImpl::deliver(m);
 }
 
+ReplicatingSubscription::~ReplicatingSubscription() {}
+
+// Called in the subscription's connection thread.
 void ReplicatingSubscription::cancel()
 {
-    QPID_LOG(debug, "HA: Cancelled " << *this);
+    QPID_LOG(debug, *this <<"Cancelled");
     getQueue()->removeObserver(boost::dynamic_pointer_cast<QueueObserver>(shared_from_this()));
 }
 
-ReplicatingSubscription::~ReplicatingSubscription() {}
-
-//called before we get notified of the message being available and
-//under the message lock in the queue
+// Called before we get notified of the message being available and
+// under the message lock in the queue. Called in arbitrary connection thread.
 void ReplicatingSubscription::enqueued(const QueuedMessage& m)
 {
     //delay completion
     m.payload->getIngressCompletion().startCompleter();
 }
 
-// Called with lock held.
+// Called with lock held. Called in subscription's connection thread.
 void ReplicatingSubscription::sendDequeueEvent(const sys::Mutex::ScopedLock& l)
 {
-    QPID_LOG(trace, "HA: Sending dequeues " << dequeues << " to " << *this);
+    QPID_LOG(trace, *this << "Sending dequeues " << dequeues);
     string buf(dequeues.encodedSize(),'\0');
     framing::Buffer buffer(&buf[0], buf.size());
     dequeues.encode(buffer);
@@ -163,12 +172,10 @@ void ReplicatingSubscription::sendDequeueEvent(const sys::Mutex::ScopedLock& l)
     sendEvent(QueueReplicator::DEQUEUE_EVENT_KEY, buffer, l);
 }
 
-// Called with lock held.
+// Called with lock held. Called in subscription's connection thread.
 void ReplicatingSubscription::sendPositionEvent(
     SequenceNumber position, const sys::Mutex::ScopedLock&l )
 {
-    QPID_LOG(trace, "HA: Sending position " << QueuePos(getQueue().get(), position)
-             << " on " << *this);
     string buf(backupPosition.encodedSize(),'\0');
     framing::Buffer buffer(&buf[0], buf.size());
     position.encode(buffer);
@@ -209,21 +216,24 @@ void ReplicatingSubscription::sendEvent(const std::string& key, framing::Buffer&
 }
 
 // Called after the message has been removed from the deque and under
-// the message lock in the queue.
+// the message lock in the queue. Called in arbitrary connection threads.
 void ReplicatingSubscription::dequeued(const QueuedMessage& m)
 {
+    QPID_LOG(trace, *this << "Dequeued message " << m.position);
     {
         sys::Mutex::ScopedLock l(lock);
         dequeues.add(m.position);
-        QPID_LOG(trace, "HA: Will dequeue " << QueuePos(m) << " on " << *this);
     }
     notify();                   // Ensure a call to doDispatch
+    // FIXME aconway 2011-12-20: not thread safe to access position here,
+    // we're not in the dispatch thread.
     if (m.position > position) {
         m.payload->getIngressCompletion().finishCompleter();
-        QPID_LOG(trace, "HA: Completed " << QueuePos(m) << " early on " << *this);
+        QPID_LOG(trace, *this << "Completed message " << m.position << " early");
     }
 }
 
+// Called in subscription's connection thread.
 bool ReplicatingSubscription::doDispatch()
 {
     {
@@ -235,19 +245,10 @@ bool ReplicatingSubscription::doDispatch()
 
 ReplicatingSubscription::DelegatingConsumer::DelegatingConsumer(ReplicatingSubscription& c) : Consumer(c.getName(), true), delegate(c) {}
 ReplicatingSubscription::DelegatingConsumer::~DelegatingConsumer() {}
-bool ReplicatingSubscription::DelegatingConsumer::deliver(QueuedMessage& m)
-{
-    return delegate.deliver(m);
-}
+bool ReplicatingSubscription::DelegatingConsumer::deliver(QueuedMessage& m) { return delegate.deliver(m); }
 void ReplicatingSubscription::DelegatingConsumer::notify() { delegate.notify(); }
 bool ReplicatingSubscription::DelegatingConsumer::filter(boost::intrusive_ptr<Message> msg) { return delegate.filter(msg); }
 bool ReplicatingSubscription::DelegatingConsumer::accept(boost::intrusive_ptr<Message> msg) { return delegate.accept(msg); }
 OwnershipToken* ReplicatingSubscription::DelegatingConsumer::getSession() { return delegate.getSession(); }
-
-
-ostream& operator<<(ostream& o, const ReplicatingSubscription& rs) {
-    string url = rs.parent->getSession().getConnection().getUrl();
-    return o << rs.getQueue()->getName() << " backup on " << url;
-}
 
 }} // namespace qpid::ha

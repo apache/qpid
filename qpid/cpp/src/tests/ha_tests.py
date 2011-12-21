@@ -108,6 +108,7 @@ class ShortTests(BrokerTest):
 
         # Test a series of messages, enqueue all then dequeue all.
         s = p.sender(queue("foo","all"))
+        self.wait(b, "foo")
         msgs = [str(i) for i in range(10)]
         for m in msgs: s.send(Message(m))
         self.assert_browse_retry(p, "foo", msgs)

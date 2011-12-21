@@ -49,7 +49,7 @@ namespace ha {
  * Runs on the primary. Delays completion of messages till the backup
  * has acknowledged, informs backup of locally dequeued messages.
  *
- * THREAD SAFE: Used as a consume in subscription's connection
+ * THREAD SAFE: Used as a consumer in subscription's connection
  * thread, and as a QueueObserver in arbitrary connection threads.
  */
 class ReplicatingSubscription : public broker::SemanticState::ConsumerImpl,
