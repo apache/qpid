@@ -43,14 +43,12 @@ namespace Messaging {
     public:
 
         Duration(const Duration % rhs) :
-            milliseconds(rhs.milliseconds)
-        {
-        }
+            milliseconds(rhs.milliseconds) {}
 
-        explicit Duration(System::UInt64 mS) : 
+        explicit Duration(System::UInt64 mS) :
             milliseconds(mS) {}
-        
-        Duration()                           : 
+
+        Duration()                           :
             milliseconds(System::UInt64::MaxValue) {}
 
         property System::UInt64 Milliseconds
@@ -91,12 +89,12 @@ namespace Messaging {
         {
             return a->Milliseconds != b->Milliseconds;
         }
-};
+    };
 
     public ref class DurationConstants sealed
     {
-	private:
-		DurationConstants::DurationConstants() {}
+    private:
+        DurationConstants::DurationConstants() {}
 
     public:
         static Duration ^ FORVER;

@@ -40,7 +40,7 @@ namespace Qpid {
 namespace Messaging {
 
     /// <summary>
-    /// Sender is a managed wrapper for a ::qpid::messaging::Sender 
+    /// Sender is a managed wrapper for a ::qpid::messaging::Sender
     /// </summary>
 
     ref class Session;
@@ -50,16 +50,22 @@ namespace Messaging {
     {
     private:
         // The kept object in the Messaging C++ DLL
-        ::qpid::messaging::Sender * senderp;
+        ::qpid::messaging::Sender * nativeObjPtr;
 
         // The session that created this Sender
         Session ^ parentSession;
+
+        // per-instance lock object
+        System::Object ^ privateLock;
+
+        // Disallow use after object is destroyed
+        void ThrowIfDisposed();
 
     public:
         // unmanaged clone
         Sender(const ::qpid::messaging::Sender & s,
             Session ^ sessRef);
-        
+
         // copy constructor
         Sender(const Sender ^ sender);
         Sender(const Sender % sender);
@@ -70,24 +76,45 @@ namespace Messaging {
         // assignment operator
         Sender % operator=(const Sender % rhs)
         {
+            msclr::lock lk(privateLock);
+            ThrowIfDisposed();
+
             if (this == %rhs)
             {
                 // Self assignment, do nothing
             }
             else
             {
-                if (NULL != senderp)
-                    delete senderp;
-                senderp = new ::qpid::messaging::Sender(
+                if (NULL != nativeObjPtr)
+                    delete nativeObjPtr;
+                nativeObjPtr = new ::qpid::messaging::Sender(
                     *(const_cast<Sender %>(rhs).NativeSender));
                 parentSession = rhs.parentSession;
             }
             return *this;
         }
 
+        //
+        // IsDisposed
+        //
+        property bool IsDisposed
+        {
+            bool get()
+            {
+                return NULL == nativeObjPtr;
+            }
+        }
+
+
+        //
+        // NativeSender
+        //
         property ::qpid::messaging::Sender * NativeSender
         {
-            ::qpid::messaging::Sender * get () { return senderp; }
+            ::qpid::messaging::Sender * get ()
+            {
+                return nativeObjPtr;
+            }
         }
 
 
@@ -99,25 +126,52 @@ namespace Messaging {
 
         property System::UInt32 Capacity
         {
-            System::UInt32 get () { return senderp->getCapacity(); }
-            void set (System::UInt32 capacity) { senderp->setCapacity(capacity); }
+            System::UInt32 get ()
+            {
+                msclr::lock lk(privateLock);
+                ThrowIfDisposed();
+
+                return nativeObjPtr->getCapacity();
+            }
+            void set (System::UInt32 capacity)
+            {
+                msclr::lock lk(privateLock);
+                ThrowIfDisposed();
+
+                nativeObjPtr->setCapacity(capacity);
+            }
         }
 
         property System::UInt32 Unsettled
         {
-            System::UInt32 get () { return senderp->getUnsettled(); }
+            System::UInt32 get ()
+            {
+                msclr::lock lk(privateLock);
+                ThrowIfDisposed();
+
+                return nativeObjPtr->getUnsettled();
+            }
         }
 
         property System::UInt32 Available
         {
-            System::UInt32 get () { return senderp->getAvailable(); }
+            System::UInt32 get ()
+            {
+                msclr::lock lk(privateLock);
+                ThrowIfDisposed();
+
+                return nativeObjPtr->getAvailable();
+            }
         }
 
         property System::String ^ Name
         {
             System::String ^ get ()
             {
-                return gcnew System::String(senderp->getName().c_str());
+                msclr::lock lk(privateLock);
+                ThrowIfDisposed();
+
+                return gcnew System::String(nativeObjPtr->getName().c_str());
             }
         }
 
@@ -128,6 +182,9 @@ namespace Messaging {
         {
             Org::Apache::Qpid::Messaging::Session ^ get ()
             {
+                msclr::lock lk(privateLock);
+                ThrowIfDisposed();
+
                 return parentSession;
             }
         }

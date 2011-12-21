@@ -43,27 +43,36 @@ namespace Messaging {
     /// Receiver is a managed wrapper for a ::qpid::messaging::Receiver
     /// </summary>
 
+    // Disallow access if object has been destroyed.
+    void Receiver::ThrowIfDisposed()
+    {
+        if (IsDisposed)
+            throw gcnew ObjectDisposedException (GetType()->FullName);
+    }
+
+
     // unmanaged clone
     Receiver::Receiver(const ::qpid::messaging::Receiver & r,
-                       Org::Apache::Qpid::Messaging::Session ^ sessRef) :
-        parentSession(sessRef)
+        Org::Apache::Qpid::Messaging::Session ^ sessRef) :
+    parentSession(sessRef)
     {
         System::Exception ^ newException = nullptr;
 
-        try 
-		{
-            receiverp = new ::qpid::messaging::Receiver (r);
-        } 
-        catch (const ::qpid::types::Exception & error) 
-		{
+        try
+        {
+            privateLock = gcnew System::Object();
+            nativeObjPtr = new ::qpid::messaging::Receiver (r);
+        }
+        catch (const ::qpid::types::Exception & error)
+        {
             String ^ errmsg = gcnew String(error.what());
             newException    = gcnew QpidException(errmsg);
         }
 
-		if (newException != nullptr) 
-		{
-	        throw newException;
-		}
+        if (newException != nullptr)
+        {
+            throw newException;
+        }
     }
 
     // unmanaged clone
@@ -79,60 +88,65 @@ namespace Messaging {
     // Finalizer
     Receiver::!Receiver()
     {
-        msclr::lock lk(this);
-
-        if (NULL != receiverp)
+        if (NULL != nativeObjPtr)
         {
-            delete receiverp;
-            receiverp = NULL;
+            privateLock = gcnew System::Object();
+
+            if (NULL != nativeObjPtr)
+            {
+                delete nativeObjPtr;
+                nativeObjPtr = NULL;
+            }
         }
     }
 
 
     // Copy constructor look-alike (C#)
     Receiver::Receiver(const Receiver ^ receiver) :
-        parentSession(receiver->parentSession)
+    parentSession(receiver->parentSession)
     {
         System::Exception ^ newException = nullptr;
 
-        try 
-		{
-            receiverp = new ::qpid::messaging::Receiver(
-                        *(const_cast<Receiver ^>(receiver)->NativeReceiver));
-        } 
-        catch (const ::qpid::types::Exception & error) 
-		{
+        try
+        {
+            privateLock = gcnew System::Object();
+            nativeObjPtr = new ::qpid::messaging::Receiver(
+                *(const_cast<Receiver ^>(receiver)->NativeReceiver));
+        }
+        catch (const ::qpid::types::Exception & error)
+        {
             String ^ errmsg = gcnew String(error.what());
             newException    = gcnew QpidException(errmsg);
         }
 
-		if (newException != nullptr) 
-		{
-	        throw newException;
-		}
+        if (newException != nullptr)
+        {
+            throw newException;
+        }
     }
 
     // Copy constructor implicitly dereferenced (C++)
     Receiver::Receiver(const Receiver % receiver) :
-        parentSession(receiver.parentSession)
+    parentSession(receiver.parentSession)
     {
         System::Exception ^ newException = nullptr;
 
-        try 
-		{
-            receiverp = new ::qpid::messaging::Receiver(
-                        *(const_cast<Receiver %>(receiver).NativeReceiver));
-        } 
-        catch (const ::qpid::types::Exception & error) 
-		{
+        try
+        {
+            privateLock = gcnew System::Object();
+            nativeObjPtr = new ::qpid::messaging::Receiver(
+                *(const_cast<Receiver %>(receiver).NativeReceiver));
+        }
+        catch (const ::qpid::types::Exception & error)
+        {
             String ^ errmsg = gcnew String(error.what());
             newException    = gcnew QpidException(errmsg);
         }
 
-		if (newException != nullptr) 
-		{
-	        throw newException;
-		}
+        if (newException != nullptr)
+        {
+            throw newException;
+        }
     }
 
 
@@ -143,36 +157,39 @@ namespace Messaging {
     {
         return Get(mmsgp, DurationConstants::FORVER);
     }
-    
+
     bool Receiver::Get(Message ^% mmsgp, Duration ^ durationp)
     {
         System::Exception           ^ newException = nullptr;
 
-        try 
-		{
+        try
+        {
+            msclr::lock lk(privateLock);
+            ThrowIfDisposed();
+
             ::qpid::messaging::Duration dur((*durationp).Milliseconds);
-        
+
             ::qpid::messaging::Message tmpMsg;
-        
-            bool result = receiverp->Receiver::get(tmpMsg, dur);
-        
+
+            bool result = nativeObjPtr->Receiver::get(tmpMsg, dur);
+
             if (result)
             {
                 mmsgp = gcnew Message(tmpMsg);
             }
-        
+
             return result;
         }
-        catch (const ::qpid::types::Exception & error) 
-		{
+        catch (const ::qpid::types::Exception & error)
+        {
             String ^ errmsg = gcnew String(error.what());
             newException    = gcnew QpidException(errmsg);
         }
 
-		if (newException != nullptr) 
-		{
-	        throw newException;
-		}
+        if (newException != nullptr)
+        {
+            throw newException;
+        }
 
         return false;
     }
@@ -193,17 +210,20 @@ namespace Messaging {
 
         try
         {
+            msclr::lock lk(privateLock);
+            ThrowIfDisposed();
+
             // translate the duration
             ::qpid::messaging::Duration dur((*durationp).Milliseconds);
 
             // get the message
-            ::qpid::messaging::Message msg = 
-                receiverp->::qpid::messaging::Receiver::get(dur);
+            ::qpid::messaging::Message msg =
+                nativeObjPtr->::qpid::messaging::Receiver::get(dur);
 
             // create new managed message with received message embedded in it
             newMessage = gcnew Message(msg);
-        } 
-        catch (const ::qpid::types::Exception & error) 
+        }
+        catch (const ::qpid::types::Exception & error)
         {
             String ^ errmsg = gcnew String(error.what());
             newException    = gcnew QpidException(errmsg);
@@ -212,16 +232,16 @@ namespace Messaging {
         {
             if (newException != nullptr)
             {
-				if (newMessage != nullptr)
-				{
-					delete newMessage;
-				}
+                if (newMessage != nullptr)
+                {
+                    delete newMessage;
+                }
             }
         }
         if (newException != nullptr)
         {
-			throw newException;
-		}
+            throw newException;
+        }
 
         return newMessage;
     }
@@ -233,39 +253,42 @@ namespace Messaging {
     {
         return Fetch(mmsgp, DurationConstants::FORVER);
     }
-    
+
     bool Receiver::Fetch(Message ^% mmsgp, Duration ^ durationp)
     {
         System::Exception         ^ newException = nullptr;
 
         try
         {
+            msclr::lock lk(privateLock);
+            ThrowIfDisposed();
+
             ::qpid::messaging::Duration dur((*durationp).Milliseconds);
-    
+
             ::qpid::messaging::Message tmpMsg;
-        
-            bool result = receiverp->Receiver::fetch(tmpMsg, dur);
-        
+
+            bool result = nativeObjPtr->Receiver::fetch(tmpMsg, dur);
+
             if (result)
             {
                 mmsgp = gcnew Message(tmpMsg);
             }
-        
+
             return result;
-        } 
-        catch (const ::qpid::types::Exception & error) 
+        }
+        catch (const ::qpid::types::Exception & error)
         {
             String ^ errmsg = gcnew String(error.what());
             newException    = gcnew QpidException(errmsg);
         }
         if (newException != nullptr)
         {
-			throw newException;
-		}
+            throw newException;
+        }
 
         return false;
     }
-    
+
 
     //
     // message = Fetch()
@@ -283,17 +306,20 @@ namespace Messaging {
 
         try
         {
+            msclr::lock lk(privateLock);
+            ThrowIfDisposed();
+
             // translate the duration
             ::qpid::messaging::Duration dur((*durationp).Milliseconds);
 
             // get the message
             ::qpid::messaging::Message msg =
-                receiverp->::qpid::messaging::Receiver::fetch(dur);
+                nativeObjPtr->::qpid::messaging::Receiver::fetch(dur);
 
             // create new managed message with received message embedded in it
             newMessage = gcnew Message(msg);
-        } 
-        catch (const ::qpid::types::Exception & error) 
+        }
+        catch (const ::qpid::types::Exception & error)
         {
             String ^ errmsg = gcnew String(error.what());
             newException    = gcnew QpidException(errmsg);
@@ -302,22 +328,25 @@ namespace Messaging {
         {
             if (newException != nullptr)
             {
-				if (newMessage != nullptr)
-				{
-					delete newMessage;
-				}
+                if (newMessage != nullptr)
+                {
+                    delete newMessage;
+                }
             }
         }
         if (newException != nullptr)
         {
-			throw newException;
-		}
+            throw newException;
+        }
 
         return newMessage;
     }
 
     void Receiver::Close()
     {
-        receiverp->close();
+        msclr::lock lk(privateLock);
+        ThrowIfDisposed();
+
+        nativeObjPtr->close();
     }
 }}}}

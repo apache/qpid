@@ -37,30 +37,39 @@ namespace Qpid {
 namespace Messaging {
 
     /// <summary>
-    /// Sender a managed wrapper for a ::qpid::messaging::Sender 
+    /// Sender a managed wrapper for a ::qpid::messaging::Sender
     /// </summary>
+
+    // Disallow access if object has been destroyed.
+    void Sender::ThrowIfDisposed()
+    {
+        if (IsDisposed)
+            throw gcnew ObjectDisposedException (GetType()->FullName);
+    }
+
 
     // unmanaged clone
     Sender::Sender(const ::qpid::messaging::Sender & s,
-                     Org::Apache::Qpid::Messaging::Session ^ sessRef) :
-        parentSession(sessRef)
+        Org::Apache::Qpid::Messaging::Session ^ sessRef) :
+    parentSession(sessRef)
     {
         System::Exception ^ newException = nullptr;
 
-        try 
-		{
-            senderp = new ::qpid::messaging::Sender (s);
-        } 
-        catch (const ::qpid::types::Exception & error) 
-		{
+        try
+        {
+            privateLock = gcnew System::Object();
+            nativeObjPtr = new ::qpid::messaging::Sender (s);
+        }
+        catch (const ::qpid::types::Exception & error)
+        {
             String ^ errmsg = gcnew String(error.what());
             newException    = gcnew QpidException(errmsg);
         }
 
-		if (newException != nullptr) 
-		{
-	        throw newException;
-		}
+        if (newException != nullptr)
+        {
+            throw newException;
+        }
     }
 
 
@@ -74,12 +83,15 @@ namespace Messaging {
     // Finalizer
     Sender::!Sender()
     {
-        msclr::lock lk(this);
-
-        if (NULL != senderp)
+        if (NULL != nativeObjPtr)
         {
-            delete senderp;
-            senderp = NULL;
+            privateLock = gcnew System::Object();
+
+            if (NULL != nativeObjPtr)
+            {
+                delete nativeObjPtr;
+                nativeObjPtr = NULL;
+            }
         }
     }
 
@@ -90,21 +102,22 @@ namespace Messaging {
     {
         System::Exception ^ newException = nullptr;
 
-        try 
-		{
-            senderp = new ::qpid::messaging::Sender(
-                        *(const_cast<Sender ^>(sender)->NativeSender));
-        } 
-        catch (const ::qpid::types::Exception & error) 
-		{
+        try
+        {
+            privateLock = gcnew System::Object();
+            nativeObjPtr = new ::qpid::messaging::Sender(
+                *(const_cast<Sender ^>(sender)->NativeSender));
+        }
+        catch (const ::qpid::types::Exception & error)
+        {
             String ^ errmsg = gcnew String(error.what());
             newException    = gcnew QpidException(errmsg);
         }
 
-		if (newException != nullptr) 
-		{
-	        throw newException;
-		}
+        if (newException != nullptr)
+        {
+            throw newException;
+        }
     }
 
     // Copy constructor implicitly dereferenced (C++)
@@ -113,21 +126,22 @@ namespace Messaging {
     {
         System::Exception ^ newException = nullptr;
 
-        try 
-		{
-            senderp = new ::qpid::messaging::Sender(
-                        *(const_cast<Sender %>(sender).NativeSender));
-        } 
-        catch (const ::qpid::types::Exception & error) 
-		{
+        try
+        {
+            privateLock = gcnew System::Object();
+            nativeObjPtr = new ::qpid::messaging::Sender(
+                *(const_cast<Sender %>(sender).NativeSender));
+        }
+        catch (const ::qpid::types::Exception & error)
+        {
             String ^ errmsg = gcnew String(error.what());
             newException    = gcnew QpidException(errmsg);
         }
 
-		if (newException != nullptr) 
-		{
-	        throw newException;
-		}
+        if (newException != nullptr)
+        {
+            throw newException;
+        }
     }
 
 
@@ -141,42 +155,48 @@ namespace Messaging {
 
     void Sender::Send(Message ^ mmsgp, bool sync)
     {
+        msclr::lock lk(privateLock);
+        ThrowIfDisposed();
+
         System::Exception ^ newException = nullptr;
 
-        try 
-		{
-            senderp->::qpid::messaging::Sender::send(*((*mmsgp).NativeMessage), sync);
-        } 
-        catch (const ::qpid::types::Exception & error) 
-		{
+        try
+        {
+            nativeObjPtr->::qpid::messaging::Sender::send(*((*mmsgp).NativeMessage), sync);
+        }
+        catch (const ::qpid::types::Exception & error)
+        {
             String ^ errmsg = gcnew String(error.what());
             newException    = gcnew QpidException(errmsg);
         }
 
-		if (newException != nullptr) 
-		{
-	        throw newException;
-		}
+        if (newException != nullptr)
+        {
+            throw newException;
+        }
     }
 
 
     void Sender::Close()
     {
+        msclr::lock lk(privateLock);
+        ThrowIfDisposed();
+
         System::Exception ^ newException = nullptr;
 
-        try 
-		{
-            senderp->close();
-        } 
-        catch (const ::qpid::types::Exception & error) 
-		{
+        try
+        {
+            nativeObjPtr->close();
+        }
+        catch (const ::qpid::types::Exception & error)
+        {
             String ^ errmsg = gcnew String(error.what());
             newException    = gcnew QpidException(errmsg);
         }
 
-		if (newException != nullptr) 
-		{
-	        throw newException;
-		}
+        if (newException != nullptr)
+        {
+            throw newException;
+        }
     }
 }}}}
