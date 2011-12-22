@@ -40,13 +40,13 @@ if ($t) {
 }
 
 # Find which subdir the exes are in
-. $srcdir\find_prog.ps1 .\topic_listener.exe
+. $srcdir\find_prog.ps1 .\qpid-topic-listener.exe
 
 function subscribe {
     param ([int]$num, [string]$sub)
     "Start subscriber $num"
     $LOG = "subscriber_$num.log"
-    $cmdline = ".\$sub\topic_listener $transactional > $LOG 2>&1
+    $cmdline = ".\$sub\qpid-topic-listener $transactional > $LOG 2>&1
                 if (`$LastExitCode -ne 0) { Remove-Item $LOG }"
     $cmdblock = $executioncontext.invokecommand.NewScriptBlock($cmdline)
     . $srcdir\background.ps1 $cmdblock
@@ -54,7 +54,7 @@ function subscribe {
 
 function publish {
     param ([string]$sub)
-    Invoke-Expression ".\$sub\topic_publisher --messages $message_count --batches $batches --subscribers $subscribers $host $transactional" 2>&1
+    Invoke-Expression ".\$sub\qpid-topic-publisher --messages $message_count --batches $batches --subscribers $subscribers $host $transactional" 2>&1
 }
 
 if ($broker.length) {
