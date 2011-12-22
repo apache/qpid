@@ -81,7 +81,7 @@ namespace Messaging {
     {
         if (NULL != nativeObjPtr)
         {
-            privateLock = gcnew System::Object();
+            msclr::lock lk(privateLock);
 
             if (NULL != nativeObjPtr)
             {
