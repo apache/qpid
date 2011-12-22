@@ -88,6 +88,7 @@ class ReplicatingSubscription : public broker::SemanticState::ConsumerImpl,
   protected:
     bool doDispatch();
   private:
+    std::string logPrefix;
     boost::shared_ptr<broker::Queue> events;
     boost::shared_ptr<broker::Consumer> consumer;
     qpid::framing::SequenceSet dequeues;
@@ -97,6 +98,7 @@ class ReplicatingSubscription : public broker::SemanticState::ConsumerImpl,
     void sendPositionEvent(framing::SequenceNumber, const sys::Mutex::ScopedLock&);
     void sendEvent(const std::string& key, framing::Buffer&,
                    const sys::Mutex::ScopedLock&);
+
     class DelegatingConsumer : public Consumer
     {
       public:
@@ -111,9 +113,6 @@ class ReplicatingSubscription : public broker::SemanticState::ConsumerImpl,
       private:
         ReplicatingSubscription& delegate;
     };
-
-    /** Print a identifier for a ReplicatingSubscription */
-    friend std::ostream& operator<<(std::ostream&, const ReplicatingSubscription&);
 };
 
 

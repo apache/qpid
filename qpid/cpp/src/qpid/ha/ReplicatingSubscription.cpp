@@ -26,7 +26,7 @@
 #include "qpid/framing/AMQFrame.h"
 #include "qpid/framing/MessageTransferBody.h"
 #include "qpid/log/Statement.h"
-#include "ostream"
+#include <sstream>
 
 namespace qpid {
 namespace ha {
@@ -41,13 +41,6 @@ namespace {
 const string DOLLAR("$");
 const string INTERNAL("-internal");
 } // namespace
-
-
-ostream& operator<<(ostream& o, const ReplicatingSubscription& rs) {
-    string url = rs.parent->getSession().getConnection().getUrl();
-    string qname= rs.getQueue()->getName();
-    return o << "HA: Primary: " << qname << "(" <<  url << "):";
-}
 
 string mask(const string& in)
 {
@@ -95,6 +88,12 @@ ReplicatingSubscription::ReplicatingSubscription(
     events(new Queue(mask(name))),
     consumer(new DelegatingConsumer(*this))
 {
+    stringstream ss;
+    string url = parent->getSession().getConnection().getUrl();
+    string qname = getQueue()->getName();
+    ss << "HA: Primary queue " << qname << ", backup " <<  url << ": ";
+    logPrefix = ss.str();
+    
     // FIXME aconway 2011-12-09: Failover optimization removed.
     // There was code here to re-use messages already on the backup
     // during fail-over. This optimization was removed to simplify
@@ -102,7 +101,7 @@ ReplicatingSubscription::ReplicatingSubscription(
     // can be re-introduced later. Last revision with the optimization:
     // r1213258 | QPID-3603: Fix QueueReplicator subscription parameters.
 
-    QPID_LOG(debug, *this << "Created subscription " << name);
+    QPID_LOG(debug, logPrefix << "Created subscription " << name);
 
     // Note that broker::Queue::getPosition() returns the sequence
     // number that will be assigned to the next message *minus 1*.
@@ -133,12 +132,12 @@ bool ReplicatingSubscription::deliver(QueuedMessage& m) {
                  SequenceNumber send(position);
                  --send;   // Send the position before m was enqueued.
                  sendPositionEvent(send, l); 
-                 QPID_LOG(trace, *this << "Sending position " << send
+                 QPID_LOG(trace, logPrefix << "Sending position " << send
                           << ", was " << backupPosition);
              }
              backupPosition = position;
         }
-        QPID_LOG(trace, *this << "Replicating message " << m.position);
+        QPID_LOG(trace, logPrefix << "Replicating message " << m.position);
     }
     return ConsumerImpl::deliver(m);
 }
@@ -148,7 +147,7 @@ ReplicatingSubscription::~ReplicatingSubscription() {}
 // Called in the subscription's connection thread.
 void ReplicatingSubscription::cancel()
 {
-    QPID_LOG(debug, *this <<"Cancelled");
+    QPID_LOG(debug, logPrefix <<"Cancelled");
     getQueue()->removeObserver(boost::dynamic_pointer_cast<QueueObserver>(shared_from_this()));
 }
 
@@ -163,7 +162,7 @@ void ReplicatingSubscription::enqueued(const QueuedMessage& m)
 // Called with lock held. Called in subscription's connection thread.
 void ReplicatingSubscription::sendDequeueEvent(const sys::Mutex::ScopedLock& l)
 {
-    QPID_LOG(trace, *this << "Sending dequeues " << dequeues);
+    QPID_LOG(trace, logPrefix << "Sending dequeues " << dequeues);
     string buf(dequeues.encodedSize(),'\0');
     framing::Buffer buffer(&buf[0], buf.size());
     dequeues.encode(buffer);
@@ -219,7 +218,7 @@ void ReplicatingSubscription::sendEvent(const std::string& key, framing::Buffer&
 // the message lock in the queue. Called in arbitrary connection threads.
 void ReplicatingSubscription::dequeued(const QueuedMessage& m)
 {
-    QPID_LOG(trace, *this << "Dequeued message " << m.position);
+    QPID_LOG(trace, logPrefix << "Dequeued message " << m.position);
     {
         sys::Mutex::ScopedLock l(lock);
         dequeues.add(m.position);
@@ -229,7 +228,7 @@ void ReplicatingSubscription::dequeued(const QueuedMessage& m)
     // we're not in the dispatch thread.
     if (m.position > position) {
         m.payload->getIngressCompletion().finishCompleter();
-        QPID_LOG(trace, *this << "Completed message " << m.position << " early");
+        QPID_LOG(trace, logPrefix << "Completed message " << m.position << " early");
     }
 }
 
