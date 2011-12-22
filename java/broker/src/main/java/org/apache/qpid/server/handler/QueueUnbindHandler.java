@@ -25,8 +25,10 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.framing.QueueUnbindBody;
 import org.apache.qpid.framing.amqp_0_9.MethodRegistry_0_9;
+import org.apache.qpid.framing.amqp_0_91.MethodRegistry_0_91;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.exchange.Exchange;
@@ -62,7 +64,7 @@ public class QueueUnbindHandler implements StateAwareMethodListener<QueueUnbindB
 
 
         final AMQQueue queue;
-        final AMQShortString routingKey;               
+        final AMQShortString routingKey;
 
         if (body.getQueue() == null)
         {
@@ -114,10 +116,21 @@ public class QueueUnbindHandler implements StateAwareMethodListener<QueueUnbindB
             _log.info("Binding queue " + queue + " to exchange " + exch + " with routing key " + routingKey);
         }
 
-        MethodRegistry_0_9 methodRegistry = (MethodRegistry_0_9) session.getMethodRegistry();
-        AMQMethodBody responseBody = methodRegistry.createQueueUnbindOkBody();
+        final MethodRegistry registry = session.getMethodRegistry();
+        final AMQMethodBody responseBody;
+        if (registry instanceof MethodRegistry_0_9)
+        {
+            responseBody = ((MethodRegistry_0_9)registry).createQueueUnbindOkBody();
+        }
+        else if (registry instanceof MethodRegistry_0_91)
+        {
+            responseBody = ((MethodRegistry_0_91)registry).createQueueUnbindOkBody();
+        }
+        else
+        {
+            // 0-8 does not support QueueUnbind
+            throw new AMQException(AMQConstant.COMMAND_INVALID, "QueueUnbind not present in AMQP version: " + session.getProtocolVersion(), null);
+        }
         session.writeFrame(responseBody.generateFrame(channelId));
-
-
     }
 }
