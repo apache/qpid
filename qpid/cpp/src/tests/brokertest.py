@@ -373,7 +373,7 @@ class Broker(Popen):
             self._log_ready = find_in_file("notice Broker running", self.log)
         return self._log_ready
 
-    def ready(self, timeout=5, **kwargs):
+    def ready(self, timeout=30, **kwargs):
         """Wait till broker is ready to serve clients"""
         # First make sure the broker is listening by checking the log.
         if not retry(self.log_ready, timeout=timeout):
