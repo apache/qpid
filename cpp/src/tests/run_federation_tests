@@ -8,9 +8,9 @@
 # to you under the Apache License, Version 2.0 (the
 # "License"); you may not use this file except in compliance
 # with the License.  You may obtain a copy of the License at
-# 
+#
 #   http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing,
 # software distributed under the License is distributed on an
 # "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -22,15 +22,15 @@
 # Run the federation tests.
 
 source ./test_env.sh
-
+#set -x
 trap stop_brokers INT TERM QUIT
 
 if [ -f ../.libs/xml.so ] ; then
     MODULES="--load-module xml" # Load the XML exchange and run XML exchange federation tests
-    SKIPTESTS=""
+    SKIPTESTS=
 else
-    MODULES="--no-module-dir"  
-    SKIPTESTS="-i *xml"
+    MODULES="--no-module-dir"
+    SKIPTESTS='-i *_xml'    # note: single quotes prevent expansion of *
 fi
 
 start_brokers() {
@@ -55,7 +55,7 @@ stop_brokers() {
 if test -d ${PYTHON_DIR} ;  then
     start_brokers
     echo "Running federation tests using brokers on ports $LOCAL_PORT $REMOTE_PORT $REMOTE_B1 $REMOTE_B2"
-    $QPID_PYTHON_TEST -m federation "$SKIPTESTS" -b localhost:$LOCAL_PORT -Dremote-port=$REMOTE_PORT -Dextra-brokers="$REMOTE_B1 $REMOTE_B2" $@
+    $QPID_PYTHON_TEST -m federation ${SKIPTESTS} -b localhost:$LOCAL_PORT -Dremote-port=$REMOTE_PORT -Dextra-brokers="$REMOTE_B1 $REMOTE_B2" $@
     RETCODE=$?
     stop_brokers
     if test x$RETCODE != x0; then
