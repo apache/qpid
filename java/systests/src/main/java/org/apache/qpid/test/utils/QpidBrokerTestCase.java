@@ -945,7 +945,7 @@ public class QpidBrokerTestCase extends QpidTestCase
 
     protected boolean isJavaBroker()
     {
-        return _brokerLanguage.equals("java") || _brokerType.equals("vm");
+        return _brokerLanguage.equals("java");
     }
 
     protected boolean isCppBroker()
@@ -955,7 +955,7 @@ public class QpidBrokerTestCase extends QpidTestCase
 
     protected boolean isExternalBroker()
     {
-        return !_brokerType.equals("vm"); //TODO
+        return !isInternalBroker();
     }
 
     protected boolean isInternalBroker()
