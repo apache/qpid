@@ -89,9 +89,6 @@ org.apache.qpid.test.client.QueueBrowsingFlowToDiskTest#*
 // This test currently does not pick up the runtime location of the nonVm queueBacking store.
 org.apache.qpid.test.unit.close.FlowToDiskBackingQueueDeleteTest#*
 
-// This test may use QpidTestCase but it is not using the getConnection and is hardwired to InVM
-org.apache.qpid.test.unit.client.connection.CloseAfterConnectionFailureTest#*
-
 //QPID-1818 : 0-10 Client code path does not correctly restore a transacted session after failover.
 org.apache.qpid.server.persistent.NoLocalAfterRecoveryTest#*
 
@@ -140,13 +137,6 @@ org.apache.qpid.test.client.message.SelectorTest#testRuntimeSelectorError
 //QPID-942 : Implemented Channel.Flow based Producer Side flow control to the Java Broker (not in CPP Broker)
 org.apache.qpid.server.queue.ProducerFlowControlTest#*
 
-//QPID-1950 : Commit to test this failure. This is a MINA only failure so it cannot be tested when using 010.
-org.apache.qpid.server.failover.MessageDisappearWithIOExceptionTest#*
-
-// These are recent test additions that are failing with the c++ broker
-// Temporarily disabling until properly investigated.
-org.apache.qpid.test.unit.ack.FailoverBeforeConsumingRecoverTest#*
-
 org.apache.qpid.test.client.RollbackOrderTest#testOrderingAfterRollbackOnMessage#*
 
 //Excluded due to QPID-1447 : CPP broker does not have SlowConsumer Disconnection
@@ -182,14 +172,3 @@ org.apache.qpid.server.management.AMQUserManagementMBeanTest#*
 // QPID-3133: On 0-10, the exception listener is currently not invoked when reconnection fails to occurs.
 org.apache.qpid.server.failover.FailoverMethodTest#*
 
-//QPID-3468: exclude QueueBrowser related failover tests
-org.apache.qpid.test.client.QueueBrowserAutoAckTest#testFailoverWithQueueBrowser
-org.apache.qpid.test.client.QueueBrowserAutoAckTest#testFailoverAsQueueBrowserCreated
-org.apache.qpid.test.client.QueueBrowserClientAckTest#testFailoverWithQueueBrowser
-org.apache.qpid.test.client.QueueBrowserClientAckTest#testFailoverAsQueueBrowserCreated
-org.apache.qpid.test.client.QueueBrowserNoAckTest#testFailoverWithQueueBrowser
-org.apache.qpid.test.client.QueueBrowserNoAckTest#testFailoverAsQueueBrowserCreated
-org.apache.qpid.test.client.QueueBrowserPreAckTest#testFailoverWithQueueBrowser
-org.apache.qpid.test.client.QueueBrowserPreAckTest#testFailoverAsQueueBrowserCreated
-org.apache.qpid.test.client.QueueBrowserDupsOkTest#testFailoverWithQueueBrowser
-org.apache.qpid.test.client.QueueBrowserDupsOkTest#testFailoverAsQueueBrowserCreated

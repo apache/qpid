@@ -25,6 +25,7 @@ import org.apache.qpid.configuration.ClientProperties;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.jms.Session;
 import org.apache.qpid.test.utils.FailoverBaseCase;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,7 +42,7 @@ import javax.jms.TextMessage;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class RecoverTest extends FailoverBaseCase
+public class RecoverTest extends QpidBrokerTestCase
 {
     static final Logger _logger = LoggerFactory.getLogger(RecoverTest.class);
 

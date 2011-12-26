@@ -19,13 +19,6 @@
 
 org.apache.qpid.test.unit.transacted.TransactedTest#testRollback
 
-org.apache.qpid.test.client.QueueBrowserAutoAckTest#testFailoverWithQueueBrowser
-org.apache.qpid.test.client.QueueBrowserClientAckTest#testFailoverWithQueueBrowser
-org.apache.qpid.test.client.QueueBrowserDupsOkTest#testFailoverWithQueueBrowser
-org.apache.qpid.test.client.QueueBrowserNoAckTest#testFailoverWithQueueBrowser
-org.apache.qpid.test.client.QueueBrowserPreAckTest#testFailoverWithQueueBrowser
-org.apache.qpid.test.client.QueueBrowserTransactedTest#testFailoverWithQueueBrowser
-
 org.apache.qpid.test.unit.topic.DurableSubscriptionTest#testDurabilityNOACK
 org.apache.qpid.test.unit.topic.DurableSubscriptionTest#testDurabilityNOACKSessionPerConnection
 org.apache.qpid.test.unit.xa.TopicTest#testMigrateDurableSubscriber
