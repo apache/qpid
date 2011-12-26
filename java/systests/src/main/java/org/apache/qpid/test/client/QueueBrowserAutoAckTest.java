@@ -25,6 +25,7 @@ import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.test.utils.FailoverBaseCase;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 import javax.jms.Connection;
 import javax.jms.JMSException;
@@ -39,13 +40,12 @@ import javax.naming.NamingException;
 import java.util.Enumeration;
 import java.util.Random;
 
-public class QueueBrowserAutoAckTest extends FailoverBaseCase
+public class QueueBrowserAutoAckTest extends QpidBrokerTestCase
 {
     protected Connection _clientConnection;
     protected Session _clientSession;
     protected Queue _queue;
     protected static final String MESSAGE_ID_PROPERTY = "MessageIDProperty";
-    protected boolean CLUSTERED = Boolean.getBoolean("profile.clustered");
 
     public void setUp() throws Exception
     {
@@ -93,22 +93,6 @@ public class QueueBrowserAutoAckTest extends FailoverBaseCase
 
         sendMessages(producerConnection, num);
     }
-
-    protected void sendMessages(String connection, int num) throws JMSException
-    {
-        Connection producerConnection = null;
-        try
-        {
-            producerConnection = getConnectionFactory(connection).createConnection("guest", "guest");
-        }
-        catch (Exception e)
-        {
-            e.printStackTrace();
-            fail("Unable to lookup connection in JNDI.");
-        }
-        sendMessages(producerConnection, num);
-    }
-
 
     protected void sendMessages(Connection producerConnection, int messageSendCount) throws JMSException
     {
@@ -440,88 +424,4 @@ public class QueueBrowserAutoAckTest extends FailoverBaseCase
         validate(messages);
     }
 
-    /**
-     * Testing that a QueueBrowser doesn't actually consume messages from a broker when it fails over.
-     * @throws JMSException
-     */
-    public void testFailoverWithQueueBrowser() throws JMSException
-    {
-        int messages = 5;
-
-        sendMessages("connection1", messages);
-        if (!CLUSTERED)
-        {
-            sendMessages("connection2", messages);
-        }
-
-        checkQueueDepth(messages);
-
-        _logger.info("Creating Queue Browser");
-        QueueBrowser queueBrowser = _clientSession.createBrowser(_queue);
-
-        long queueDepth = 0;
-
-        try
-        {
-            queueDepth = ((AMQSession) _clientSession).getQueueDepth((AMQDestination) _queue);
-        }
-        catch (AMQException e)
-        {
-            fail("Caught exception getting queue depth: " + e.getMessage());
-        }
-
-        assertEquals("Session reports Queue depth not as expected", messages, queueDepth);
-
-        int msgCount = 0;
-        int failPoint = 0;
-
-        failPoint = new Random().nextInt(messages) + 1;
-
-        Enumeration msgs = queueBrowser.getEnumeration();
-        while (msgs.hasMoreElements())
-        {
-            msgs.nextElement();
-            msgCount++;
-
-            if (msgCount == failPoint)
-            {
-                failBroker(getFailingPort());
-            }
-        }
-
-        assertTrue("We should get atleast " + messages + " msgs (found " + msgCount +").", msgCount >= messages);
-
-        if (_logger.isDebugEnabled())
-        {
-            _logger.debug("QBAAT Found " + msgCount + " messages total in browser");
-        }
-
-        //Close browser
-        queueBrowser.close();
-
-        _logger.info("Closed Queue Browser, validating messages on broker.");
-
-        //Validate all messages still on Broker
-        validate(messages);
-    }
-
-    public void testFailoverAsQueueBrowserCreated() throws JMSException
-    {
-        // The IoServiceListenerSupport seems to get stuck in with a managedSession that isn't closing when requested.
-        // So it hangs waiting for the session.
-        int messages = 50;
-
-        sendMessages("connection1", messages);
-        if (!CLUSTERED)
-        {
-            sendMessages("connection2", messages);
-        }
-
-        failBroker(getFailingPort());
-
-        checkQueueDepth(messages);
-
-        //Validate all messages still on Broker 1
-        validate(messages);
-    }
 }

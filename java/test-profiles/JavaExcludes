@@ -28,9 +28,6 @@ org.apache.qpid.test.client.queue.QueuePolicyTest#testRejectPolicy
 //Moved from JavaStandaloneExcludes when it was removed
 ///////////////////////////////////////////////////////
 
-// This test may use QpidTestCase but it is not using the getConnection and is hardwired to InVM
-org.apache.qpid.test.unit.client.connection.CloseAfterConnectionFailureTest#*
-
 //QPID-1818, QPID-1821 : Client code path does not correctly restore a transacted session after failover.
 org.apache.qpid.server.persistent.NoLocalAfterRecoveryTest#*
 
