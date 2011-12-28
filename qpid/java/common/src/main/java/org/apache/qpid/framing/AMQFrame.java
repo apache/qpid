@@ -20,9 +20,10 @@
  */
 package org.apache.qpid.framing;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import org.apache.qpid.codec.MarkableDataInput;
+
+import java.io.*;
+import java.io.DataOutput;
 
 public class AMQFrame extends AMQDataBlock implements EncodableAMQDataBlock
 {
@@ -38,7 +39,7 @@ public class AMQFrame extends AMQDataBlock implements EncodableAMQDataBlock
         _bodyFrame = bodyFrame;
     }
 
-    public AMQFrame(final DataInputStream in, final int channel, final long bodySize, final BodyFactory bodyFactory) throws AMQFrameDecodingException, IOException
+    public AMQFrame(final MarkableDataInput in, final int channel, final long bodySize, final BodyFactory bodyFactory) throws AMQFrameDecodingException, IOException
     {
         this._channel = channel;
         this._bodyFrame = bodyFactory.createBody(in,bodySize);
@@ -55,7 +56,7 @@ public class AMQFrame extends AMQDataBlock implements EncodableAMQDataBlock
     }
 
 
-    public void writePayload(DataOutputStream buffer) throws IOException
+    public void writePayload(DataOutput buffer) throws IOException
     {
         buffer.writeByte(_bodyFrame.getFrameType());
         EncodingUtils.writeUnsignedShort(buffer, _channel);
@@ -79,7 +80,7 @@ public class AMQFrame extends AMQDataBlock implements EncodableAMQDataBlock
         return "Frame channelId: " + _channel + ", bodyFrame: " + String.valueOf(_bodyFrame);
     }
 
-    public static void writeFrame(DataOutputStream buffer, final int channel, AMQBody body) throws IOException
+    public static void writeFrame(DataOutput buffer, final int channel, AMQBody body) throws IOException
     {
         buffer.writeByte(body.getFrameType());
         EncodingUtils.writeUnsignedShort(buffer, channel);
@@ -89,7 +90,7 @@ public class AMQFrame extends AMQDataBlock implements EncodableAMQDataBlock
 
     }
 
-    public static void writeFrames(DataOutputStream buffer, final int channel, AMQBody body1, AMQBody body2) throws IOException
+    public static void writeFrames(DataOutput buffer, final int channel, AMQBody body1, AMQBody body2) throws IOException
     {
         buffer.writeByte(body1.getFrameType());
         EncodingUtils.writeUnsignedShort(buffer, channel);
@@ -104,7 +105,7 @@ public class AMQFrame extends AMQDataBlock implements EncodableAMQDataBlock
 
     }
 
-    public static void writeFrames(DataOutputStream buffer, final int channel, AMQBody body1, AMQBody body2, AMQBody body3) throws IOException
+    public static void writeFrames(DataOutput buffer, final int channel, AMQBody body1, AMQBody body2, AMQBody body3) throws IOException
     {
         buffer.writeByte(body1.getFrameType());
         EncodingUtils.writeUnsignedShort(buffer, channel);

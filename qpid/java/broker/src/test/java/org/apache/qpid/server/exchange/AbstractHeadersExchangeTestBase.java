@@ -72,7 +72,7 @@ public class AbstractHeadersExchangeTestBase extends InternalBrokerBaseCase
     /**
      * Not used in this test, just there to stub out the routing calls
      */
-    private MessageStore _store = new MemoryMessageStore();
+    private MemoryMessageStore _store = new MemoryMessageStore();
 
 
     BindingFactory bindingFactory = new BindingFactory(new DurableConfigurationStore.Source()
@@ -310,7 +310,7 @@ public class AbstractHeadersExchangeTestBase extends InternalBrokerBaseCase
          * @throws AMQException
          */
         @Override
-        public void enqueue(ServerMessage msg, PostEnqueueAction action) throws AMQException
+        public void enqueue(ServerMessage msg, boolean sync, PostEnqueueAction action) throws AMQException
         {
             messages.add( new HeadersExchangeTest.Message((AMQMessage) msg));
             final QueueEntry queueEntry = new QueueEntry()
@@ -318,47 +318,47 @@ public class AbstractHeadersExchangeTestBase extends InternalBrokerBaseCase
 
                 public AMQQueue getQueue()
                 {
-                    return null;  //To change body of implemented methods use File | Settings | File Templates.
+                    return null;
                 }
 
                 public AMQMessage getMessage()
                 {
-                    return null;  //To change body of implemented methods use File | Settings | File Templates.
+                    return null;
                 }
 
                 public long getSize()
                 {
-                    return 0;  //To change body of implemented methods use File | Settings | File Templates.
+                    return 0;
                 }
 
                 public boolean getDeliveredToConsumer()
                 {
-                    return false;  //To change body of implemented methods use File | Settings | File Templates.
+                    return false;
                 }
 
                 public boolean expired() throws AMQException
                 {
-                    return false;  //To change body of implemented methods use File | Settings | File Templates.
+                    return false;
                 }
 
                 public boolean isAvailable()
                 {
-                    return false;  //To change body of implemented methods use File | Settings | File Templates.
+                    return false;
                 }
 
                 public boolean isAcquired()
                 {
-                    return false;  //To change body of implemented methods use File | Settings | File Templates.
+                    return false;
                 }
 
                 public boolean acquire()
                 {
-                    return false;  //To change body of implemented methods use File | Settings | File Templates.
+                    return false;
                 }
 
                 public boolean acquire(Subscription sub)
                 {
-                    return false;  //To change body of implemented methods use File | Settings | File Templates.
+                    return false;
                 }
 
                 public boolean delete()
@@ -373,17 +373,17 @@ public class AbstractHeadersExchangeTestBase extends InternalBrokerBaseCase
 
                 public boolean acquiredBySubscription()
                 {
-                    return false;  //To change body of implemented methods use File | Settings | File Templates.
+                    return false;
                 }
 
                 public boolean isAcquiredBy(Subscription subscription)
                 {
-                    return false;  //To change body of implemented methods use File | Settings | File Templates.
+                    return false;
                 }
 
                 public void release()
                 {
-                    //To change body of implemented methods use File | Settings | File Templates.
+                  
                 }
 
                 public boolean releaseButRetain()
@@ -393,82 +393,82 @@ public class AbstractHeadersExchangeTestBase extends InternalBrokerBaseCase
 
                 public boolean immediateAndNotDelivered()
                 {
-                    return false;  //To change body of implemented methods use File | Settings | File Templates.
+                    return false;
                 }
 
                 public void setRedelivered()
                 {
-                    //To change body of implemented methods use File | Settings | File Templates.
+                  
                 }
 
                 public AMQMessageHeader getMessageHeader()
                 {
-                    return null;  //To change body of implemented methods use File | Settings | File Templates.
+                    return null;
                 }
 
                 public boolean isPersistent()
                 {
-                    return false;  //To change body of implemented methods use File | Settings | File Templates.
+                    return false;
                 }
 
                 public boolean isRedelivered()
                 {
-                    return false;  //To change body of implemented methods use File | Settings | File Templates.
+                    return false;
                 }
 
                 public Subscription getDeliveredSubscription()
                 {
-                    return null;  //To change body of implemented methods use File | Settings | File Templates.
+                    return null;
                 }
 
                 public void reject()
                 {
-                    //To change body of implemented methods use File | Settings | File Templates.
+                  
                 }
 
                 public boolean isRejectedBy(long subscriptionId)
                 {
-                    return false;  //To change body of implemented methods use File | Settings | File Templates.
+                    return false;
                 }
 
                 public void dequeue()
                 {
-                    //To change body of implemented methods use File | Settings | File Templates.
+                  
                 }
 
                 public void dispose()
                 {
-                    //To change body of implemented methods use File | Settings | File Templates.
+                  
                 }
 
                 public void discard()
                 {
-                    //To change body of implemented methods use File | Settings | File Templates.
+                  
                 }
 
                 public void routeToAlternate()
                 {
-                    //To change body of implemented methods use File | Settings | File Templates.
+                  
                 }
 
                 public boolean isQueueDeleted()
                 {
-                    return false;  //To change body of implemented methods use File | Settings | File Templates.
+                    return false;
                 }
 
                 public void addStateChangeListener(StateChangeListener listener)
                 {
-                    //To change body of implemented methods use File | Settings | File Templates.
+                  
                 }
 
                 public boolean removeStateChangeListener(StateChangeListener listener)
                 {
-                    return false;  //To change body of implemented methods use File | Settings | File Templates.
+                    return false;
                 }
 
                 public int compareTo(final QueueEntry o)
                 {
-                    return 0;  //To change body of implemented methods use File | Settings | File Templates.
+                    return 0;
                 }
 
                 public boolean isDequeued()

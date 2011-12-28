@@ -36,6 +36,7 @@ import org.apache.qpid.server.configuration.ExchangeConfig;
 import javax.management.JMException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
 public interface Exchange extends ExchangeReferrer, ExchangeConfig
 {
@@ -70,7 +71,7 @@ public interface Exchange extends ExchangeReferrer, ExchangeConfig
      *
      * @return list of queues to which to route the message.
      */
-    ArrayList<? extends BaseQueue> route(InboundMessage message);
+    List<? extends BaseQueue> route(InboundMessage message);
 
 
     /**

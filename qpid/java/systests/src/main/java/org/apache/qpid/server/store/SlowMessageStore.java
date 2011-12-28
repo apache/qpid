@@ -22,11 +22,11 @@ package org.apache.qpid.server.store;
 
 import org.apache.commons.configuration.Configuration;
 import org.apache.log4j.Logger;
-import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.message.EnqueableMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.logging.LogSubject;
@@ -35,7 +35,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.nio.ByteBuffer;
 
-public class SlowMessageStore implements MessageStore
+public class SlowMessageStore implements MessageStore, DurableConfigurationStore
 {
     private static final Logger _logger = Logger.getLogger(SlowMessageStore.class);
     private static final String DELAYS = "delays";
@@ -43,6 +43,7 @@ public class SlowMessageStore implements MessageStore
     private HashMap<String, Long> _postDelays = new HashMap<String, Long>();
     private long _defaultDelay = 0L;
     private MessageStore _realStore = new MemoryMessageStore();
+    private DurableConfigurationStore _durableConfigurationStore = (MemoryMessageStore) _realStore;
     private static final String PRE = "pre";
     private static final String POST = "post";
     private String DEFAULT_DELAY = "default";
@@ -80,12 +81,13 @@ public class SlowMessageStore implements MessageStore
                                              " does not.");
             }
             _realStore = (MessageStore) o;
-            _realStore.configureConfigStore(name, recoveryHandler, config, logSubject);
+            if(o instanceof DurableConfigurationStore)
+            {
+                _durableConfigurationStore = (DurableConfigurationStore)o;
+            }
         }
-        else
-        {
-            _realStore.configureConfigStore(name, recoveryHandler, config, logSubject);
-        }
+        _durableConfigurationStore.configureConfigStore(name, recoveryHandler, config, logSubject);
+
     }
 
     private void configureDelays(Configuration config)
@@ -178,28 +180,28 @@ public class SlowMessageStore implements MessageStore
     public void createExchange(Exchange exchange) throws AMQStoreException
     {
         doPreDelay("createExchange");
-        _realStore.createExchange(exchange);
+        _durableConfigurationStore.createExchange(exchange);
         doPostDelay("createExchange");
     }
 
     public void removeExchange(Exchange exchange) throws AMQStoreException
     {
         doPreDelay("removeExchange");
-        _realStore.removeExchange(exchange);
+        _durableConfigurationStore.removeExchange(exchange);
         doPostDelay("removeExchange");
     }
 
     public void bindQueue(Exchange exchange, AMQShortString routingKey, AMQQueue queue, FieldTable args) throws AMQStoreException
     {
         doPreDelay("bindQueue");
-        _realStore.bindQueue(exchange, routingKey, queue, args);
+        _durableConfigurationStore.bindQueue(exchange, routingKey, queue, args);
         doPostDelay("bindQueue");
     }
 
     public void unbindQueue(Exchange exchange, AMQShortString routingKey, AMQQueue queue, FieldTable args) throws AMQStoreException
     {
         doPreDelay("unbindQueue");
-        _realStore.unbindQueue(exchange, routingKey, queue, args);
+        _durableConfigurationStore.unbindQueue(exchange, routingKey, queue, args);
         doPostDelay("unbindQueue");
     }
 
@@ -211,14 +213,14 @@ public class SlowMessageStore implements MessageStore
     public void createQueue(AMQQueue queue, FieldTable arguments) throws AMQStoreException
     {
         doPreDelay("createQueue");
-        _realStore.createQueue(queue, arguments);
+        _durableConfigurationStore.createQueue(queue, arguments);
         doPostDelay("createQueue");
     }
 
     public void removeQueue(AMQQueue queue) throws AMQStoreException
     {
         doPreDelay("removeQueue");
-        _realStore.removeQueue(queue);
+        _durableConfigurationStore.removeQueue(queue);
         doPostDelay("removeQueue");
     }
 
@@ -268,19 +270,19 @@ public class SlowMessageStore implements MessageStore
             _underlying = underlying;
         }
 
-        public void enqueueMessage(TransactionLogResource queue, Long messageId)
+        public void enqueueMessage(TransactionLogResource queue, EnqueableMessage message)
                 throws AMQStoreException
         {
             doPreDelay("enqueueMessage");
-            _underlying.enqueueMessage(queue, messageId);
+            _underlying.enqueueMessage(queue, message);
             doPostDelay("enqueueMessage");
         }
 
-        public void dequeueMessage(TransactionLogResource queue, Long messageId)
+        public void dequeueMessage(TransactionLogResource queue, EnqueableMessage message)
                 throws AMQStoreException
         {
             doPreDelay("dequeueMessage");
-            _underlying.dequeueMessage(queue, messageId);
+            _underlying.dequeueMessage(queue, message);
             doPostDelay("dequeueMessage");
         }
 
@@ -313,7 +315,7 @@ public class SlowMessageStore implements MessageStore
     public void updateQueue(AMQQueue queue) throws AMQStoreException
     {
         doPreDelay("updateQueue");
-        _realStore.updateQueue(queue);
+        _durableConfigurationStore.updateQueue(queue);
         doPostDelay("updateQueue");
     }
 

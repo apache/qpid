@@ -29,12 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import org.apache.qpid.transport.Binary;
-import org.apache.qpid.transport.RangeSet;
-import org.apache.qpid.transport.Struct;
-import org.apache.qpid.transport.Type;
-
-import static org.apache.qpid.transport.util.Functions.*;
+import org.apache.qpid.transport.*;
 
 
 /**
@@ -194,18 +189,19 @@ abstract class AbstractDecoder implements Decoder
     public RangeSet readSequenceSet()
     {
         int count = readUint16()/8;
-        if (count == 0)
+        switch(count)
         {
-            return null;
-        }
-        else
-        {
-            RangeSet ranges = new RangeSet();
-            for (int i = 0; i < count; i++)
-            {
-                ranges.add(readSequenceNo(), readSequenceNo());
-            }
-            return ranges;
+            case 0:
+                return null;
+            case 1:
+                return Range.newInstance(readSequenceNo(), readSequenceNo());
+            default:
+                RangeSet ranges = RangeSetFactory.createRangeSet(count);
+                for (int i = 0; i < count; i++)
+                {
+                    ranges.add(readSequenceNo(), readSequenceNo());
+                }
+                return ranges;
         }
     }
 

@@ -558,7 +558,7 @@ public class MessageStoreTest extends InternalBrokerBaseCase
     /**
      * Delete the Store Environment path
      *
-     * @param configuration The configuration that contains the store environment path.
+     * @param environmentPath The configuration that contains the store environment path.
      */
     private void cleanup(File environmentPath)
     {
@@ -636,7 +636,7 @@ public class MessageStoreTest extends InternalBrokerBaseCase
                 {
                     //To change body of implemented methods use File | Settings | File Templates.
                 }
-            });
+            }, 0L);
         }
     }
 
@@ -710,7 +710,7 @@ public class MessageStoreTest extends InternalBrokerBaseCase
 
             if (queue.isDurable() && !queue.isAutoDelete())
             {
-                getVirtualHost().getMessageStore().createQueue(queue, queueArguments);
+                getVirtualHost().getDurableConfigurationStore().createQueue(queue, queueArguments);
             }
         }
         catch (AMQException e)
@@ -754,7 +754,7 @@ public class MessageStoreTest extends InternalBrokerBaseCase
             getVirtualHost().getExchangeRegistry().registerExchange(exchange);
             if (durable)
             {
-                getVirtualHost().getMessageStore().createExchange(exchange);
+                getVirtualHost().getDurableConfigurationStore().createExchange(exchange);
             }
         }
         catch (AMQException e)

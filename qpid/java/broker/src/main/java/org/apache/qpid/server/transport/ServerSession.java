@@ -23,7 +23,6 @@ package org.apache.qpid.server.transport;
 import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.CHANNEL_FORMAT;
 import static org.apache.qpid.util.Serial.gt;
 
-import java.lang.ref.WeakReference;
 import java.security.Principal;
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -71,6 +70,7 @@ import org.apache.qpid.transport.MessageTransfer;
 import org.apache.qpid.transport.Method;
 import org.apache.qpid.transport.Range;
 import org.apache.qpid.transport.RangeSet;
+import org.apache.qpid.transport.RangeSetFactory;
 import org.apache.qpid.transport.Session;
 import org.apache.qpid.transport.SessionDelegate;
 import org.slf4j.Logger;
@@ -86,6 +86,7 @@ public class ServerSession extends Session implements AuthorizationHolder, Sessi
     private ConnectionConfig _connectionConfig;
     private long _createTime = System.currentTimeMillis();
     private LogActor _actor = GenericActor.getInstance(this);
+    private PostEnqueueAction _postEnqueueAction = new PostEnqueueAction();
 
     public static interface MessageDispositionChangeListener
     {
@@ -121,8 +122,6 @@ public class ServerSession extends Session implements AuthorizationHolder, Sessi
 
     private final List<Task> _taskList = new CopyOnWriteArrayList<Task>();
 
-    private final WeakReference<Session> _reference;
-
     ServerSession(Connection connection, SessionDelegate delegate, Binary name, long expiry)
     {
         this(connection, delegate, name, expiry, ((ServerConnection)connection).getConfig());
@@ -134,7 +133,6 @@ public class ServerSession extends Session implements AuthorizationHolder, Sessi
         _connectionConfig = connConfig;        
         _transaction = new AutoCommitTransaction(this.getMessageStore());
 
-        _reference = new WeakReference<Session>(this);
         _id = getConfigStore().createId();
         getConfigStore().addConfiguredObject(this);
     }
@@ -161,40 +159,22 @@ public class ServerSession extends Session implements AuthorizationHolder, Sessi
         return isCommandsFull(id);
     }
 
-    public void enqueue(final ServerMessage message, final ArrayList<? extends BaseQueue> queues)
+    public void enqueue(final ServerMessage message, final List<? extends BaseQueue> queues)
     {
         getConnectionModel().registerMessageReceived(message.getSize(), message.getArrivalTime());
-        _transaction.enqueue(queues,message, new ServerTransaction.Action()
-            {
-
-                BaseQueue[] _queues = queues.toArray(new BaseQueue[queues.size()]);
-
-                public void postCommit()
-                {
-                    MessageReference<?> ref = message.newReference();
-                    for(int i = 0; i < _queues.length; i++)
-                    {
-                        try
-                        {
-                            _queues[i].enqueue(message);
-                        }
-                        catch (AMQException e)
-                        {
-                            // TODO
-                            throw new RuntimeException(e);
-                        }
-                    }
-                    ref.release();
-                }
-
-                public void onRollback()
-                {
-                    // NO-OP
-                }
-            });
-
-            incrementOutstandingTxnsIfNecessary();
-            updateTransactionalActivity();
+        PostEnqueueAction postTransactionAction;
+        if(isTransactional())
+        {
+           postTransactionAction = new PostEnqueueAction(queues, message) ;
+        }
+        else
+        {
+            postTransactionAction = _postEnqueueAction;
+            postTransactionAction.setState(queues, message);
+        }
+        _transaction.enqueue(queues,message, postTransactionAction, 0L);
+        incrementOutstandingTxnsIfNecessary();
+        updateTransactionalActivity();
     }
 
 
@@ -252,7 +232,7 @@ public class ServerSession extends Session implements AuthorizationHolder, Sessi
 
     public RangeSet acquire(RangeSet transfers)
     {
-        RangeSet acquired = new RangeSet();
+        RangeSet acquired = RangeSetFactory.createRangeSet();
 
         if(!_messageDispositionListenerMap.isEmpty())
         {
@@ -300,41 +280,56 @@ public class ServerSession extends Session implements AuthorizationHolder, Sessi
 
     public void dispositionChange(RangeSet ranges, MessageDispositionAction action)
     {
-        if(ranges != null && !_messageDispositionListenerMap.isEmpty())
+        if(ranges != null)
         {
-            Iterator<Integer> unacceptedMessages = _messageDispositionListenerMap.keySet().iterator();
-            Iterator<Range> rangeIter = ranges.iterator();
 
-            if(rangeIter.hasNext())
+            if(ranges.size() == 1)
             {
-                Range range = rangeIter.next();
-
-                while(range != null && unacceptedMessages.hasNext())
+                Range r = ranges.getFirst();
+                for(int i = r.getLower(); i <= r.getUpper(); i++)
                 {
-                    int next = unacceptedMessages.next();
-                    while(gt(next, range.getUpper()))
+                    MessageDispositionChangeListener changeListener = _messageDispositionListenerMap.remove(i);
+                    if(changeListener != null)
                     {
-                        if(rangeIter.hasNext())
-                        {
-                            range = rangeIter.next();
-                        }
-                        else
-                        {
-                            range = null;
-                            break;
-                        }
-                    }
-                    if(range != null && range.includes(next))
-                    {
-                        MessageDispositionChangeListener changeListener = _messageDispositionListenerMap.remove(next);
                         action.performAction(changeListener);
                     }
+                }
+            }
+            else if(!_messageDispositionListenerMap.isEmpty())
+            {
+                Iterator<Integer> unacceptedMessages = _messageDispositionListenerMap.keySet().iterator();
+                Iterator<Range> rangeIter = ranges.iterator();
 
+                if(rangeIter.hasNext())
+                {
+                    Range range = rangeIter.next();
+
+                    while(range != null && unacceptedMessages.hasNext())
+                    {
+                        int next = unacceptedMessages.next();
+                        while(gt(next, range.getUpper()))
+                        {
+                            if(rangeIter.hasNext())
+                            {
+                                range = rangeIter.next();
+                            }
+                            else
+                            {
+                                range = null;
+                                break;
+                            }
+                        }
+                        if(range != null && range.includes(next))
+                        {
+                            MessageDispositionChangeListener changeListener = _messageDispositionListenerMap.remove(next);
+                            action.performAction(changeListener);
+                        }
+
+
+                    }
 
                 }
-
             }
-
         }
     }
 
@@ -534,10 +529,10 @@ public class ServerSession extends Session implements AuthorizationHolder, Sessi
         _taskList.remove(task);
     }
 
-    public WeakReference<Session> getReference()
-     {
-         return _reference;
-     }
+    public Object getReference()
+    {
+        return ((ServerConnection) getConnection()).getReference();
+    }
 
     public MessageStore getMessageStore()
     {
@@ -697,12 +692,60 @@ public class ServerSession extends Session implements AuthorizationHolder, Sessi
         }
     }
 
-    public void flushCreditState()
+    public void receivedComplete()
     {
         final Collection<Subscription_0_10> subscriptions = getSubscriptions();
         for (Subscription_0_10 subscription_0_10 : subscriptions)
         {
             subscription_0_10.flushCreditState(false);
+        }
+    }
+
+    private static class PostEnqueueAction implements ServerTransaction.Action
+    {
+
+        private List<? extends BaseQueue> _queues;
+        private ServerMessage _message;
+        private final boolean _transactional;
+
+        public PostEnqueueAction(List<? extends BaseQueue> queues, ServerMessage message)
+        {
+            _transactional = true;
+            setState(queues, message);
+        }
+
+        public PostEnqueueAction()
+        {
+            _transactional = false;
+        }
+
+        public void setState(List<? extends BaseQueue> queues, ServerMessage message)
+        {
+            _message = message;
+            _queues = queues;
+        }
+
+        public void postCommit()
+        {
+            MessageReference<?> ref = _message.newReference();
+            for(int i = 0; i < _queues.size(); i++)
+            {
+                try
+                {
+                    _queues.get(i).enqueue(_message, _transactional, null);
+                }
+                catch (AMQException e)
+                {
+                    // TODO
+                    throw new RuntimeException(e);
+                }
+            }
+            ref.release();
+        }
+
+        public void onRollback()
+        {
+            // NO-OP
         }
     }
 

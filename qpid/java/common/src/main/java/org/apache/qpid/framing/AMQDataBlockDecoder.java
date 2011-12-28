@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.framing;
 
+import org.apache.qpid.codec.MarkableDataInput;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,7 +44,7 @@ public class AMQDataBlockDecoder
     public AMQDataBlockDecoder()
     { }
 
-    public boolean decodable(DataInputStream in) throws AMQFrameDecodingException, IOException
+    public boolean decodable(MarkableDataInput in) throws AMQFrameDecodingException, IOException
     {
         final int remainingAfterAttributes = in.available() - (1 + 2 + 4 + 1);
         // type, channel, body length and end byte
@@ -65,7 +66,7 @@ public class AMQDataBlockDecoder
 
     }
 
-    public AMQFrame createAndPopulateFrame(AMQMethodBodyFactory methodBodyFactory, DataInputStream in)
+    public AMQFrame createAndPopulateFrame(AMQMethodBodyFactory methodBodyFactory, MarkableDataInput in)
             throws AMQFrameDecodingException, AMQProtocolVersionException, IOException
     {
         final byte type = in.readByte();

@@ -52,6 +52,8 @@ import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.messages.ConfigStoreMessages;
 import org.apache.qpid.server.logging.messages.MessageStoreMessages;
 import org.apache.qpid.server.logging.messages.TransactionLogMessages;
+import org.apache.qpid.server.message.EnqueableMessage;
+import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 
 /**
@@ -60,7 +62,7 @@ import org.apache.qpid.server.queue.AMQQueue;
  * 
  * TODO extract the SQL statements into a generic JDBC store
  */
-public class DerbyMessageStore implements MessageStore
+public class DerbyMessageStore implements MessageStore, DurableConfigurationStore
 {
 
     private static final Logger _logger = Logger.getLogger(DerbyMessageStore.class);
@@ -197,12 +199,16 @@ public class DerbyMessageStore implements MessageStore
                           Configuration storeConfiguration,
                           LogSubject logSubject) throws Exception
     {
-        CurrentActor.get().message(_logSubject, MessageStoreMessages.CREATED(this.getClass().getName()));
-
         if(!_configured)
         {
 
             _logSubject = logSubject;
+        }
+
+        CurrentActor.get().message(_logSubject, MessageStoreMessages.CREATED(this.getClass().getName()));
+
+        if(!_configured)
+        {
 
             commonConfiguration(name, storeConfiguration, logSubject);
             _configured = true;
@@ -219,6 +225,11 @@ public class DerbyMessageStore implements MessageStore
                           Configuration storeConfiguration,
                           LogSubject logSubject) throws Exception
     {
+
+        if(!_configured)
+        {
+            _logSubject = logSubject;
+        }
         CurrentActor.get().message(_logSubject, TransactionLogMessages.CREATED(this.getClass().getName()));
 
         if(!_configured)
@@ -697,7 +708,7 @@ public class DerbyMessageStore implements MessageStore
 
                     if (results == 0)
                     {
-                        throw new RuntimeException("Message metadata not found for message id " + messageId);
+                        _logger.warn("Message metadata not found for message id " + messageId);
                     }
 
                     if (_logger.isDebugEnabled())
@@ -1678,14 +1689,26 @@ public class DerbyMessageStore implements MessageStore
             }
         }
 
-        public void enqueueMessage(TransactionLogResource queue, Long messageId) throws AMQStoreException
+        public void enqueueMessage(TransactionLogResource queue, EnqueableMessage message) throws AMQStoreException
         {
-            DerbyMessageStore.this.enqueueMessage(_connWrapper, queue, messageId);
+            if(message.getStoredMessage() instanceof StoredDerbyMessage)
+            {
+                try
+                {
+                    ((StoredDerbyMessage)message.getStoredMessage()).store(_connWrapper.getConnection());
+                }
+                catch (SQLException e)
+                {
+                    throw new AMQStoreException("Exception on enqueuing message " + _messageId, e);
+                }
+            }
+
+            DerbyMessageStore.this.enqueueMessage(_connWrapper, queue, message.getMessageNumber());
         }
 
-        public void dequeueMessage(TransactionLogResource queue, Long messageId) throws AMQStoreException
+        public void dequeueMessage(TransactionLogResource queue, EnqueableMessage message) throws AMQStoreException
         {
-            DerbyMessageStore.this.dequeueMessage(_connWrapper, queue, messageId);
+            DerbyMessageStore.this.dequeueMessage(_connWrapper, queue, message.getMessageNumber());
 
         }
 
@@ -1709,8 +1732,11 @@ public class DerbyMessageStore implements MessageStore
     {
 
         private final long _messageId;
+        private StorableMessageMetaData _metaData;
         private volatile SoftReference<StorableMessageMetaData> _metaDataRef;
-        private Connection _conn;
+        private byte[] _data;
+        private volatile SoftReference<byte[]> _dataRef;
+        
 
         StoredDerbyMessage(long messageId, StorableMessageMetaData metaData)
         {
@@ -1721,27 +1747,19 @@ public class DerbyMessageStore implements MessageStore
         StoredDerbyMessage(long messageId,
                            StorableMessageMetaData metaData, boolean persist)
         {
-            try
-            {
-                _messageId = messageId;
+            _messageId = messageId;
+            
 
-                _metaDataRef = new SoftReference<StorableMessageMetaData>(metaData);
-                if(persist)
-                {
-                    _conn = newConnection();
-                    storeMetaData(_conn, messageId, metaData);
-                }
-            }
-            catch (SQLException e)
+            _metaDataRef = new SoftReference<StorableMessageMetaData>(metaData);
+            if(persist)
             {
-                throw new RuntimeException(e);
+                _metaData = metaData;    
             }
-
         }
 
         public StorableMessageMetaData getMetaData()
         {
-            StorableMessageMetaData metaData = _metaDataRef.get();
+            StorableMessageMetaData metaData = _metaData == null ? _metaDataRef.get() : _metaData;
             if(metaData == null)
             {
                 try
@@ -1765,27 +1783,62 @@ public class DerbyMessageStore implements MessageStore
 
         public void addContent(int offsetInMessage, java.nio.ByteBuffer src)
         {
-            DerbyMessageStore.this.addContent(_conn, _messageId, offsetInMessage, src);
+            src = src.slice();
+
+            if(_data == null)
+            {
+                _data = new byte[src.remaining()];
+                _dataRef = new SoftReference<byte[]>(_data);
+                src.duplicate().get(_data);
+            }
+            else
+            {
+                byte[] oldData = _data;
+                _data = new byte[oldData.length + src.remaining()];
+                _dataRef = new SoftReference<byte[]>(_data);
+
+                System.arraycopy(oldData,0,_data,0,oldData.length);
+                src.duplicate().get(_data, oldData.length, src.remaining());
+            }
+            
         }
 
         public int getContent(int offsetInMessage, java.nio.ByteBuffer dst)
         {
-            return DerbyMessageStore.this.getContent(_messageId, offsetInMessage, dst);
+            byte[] data = _dataRef == null ? null : _dataRef.get();
+            if(data != null)
+            {
+                int length = Math.min(dst.remaining(), data.length - offsetInMessage);
+                dst.put(data, offsetInMessage, length);
+                return length;
+            }
+            else
+            {
+                return DerbyMessageStore.this.getContent(_messageId, offsetInMessage, dst);
+            }
         }
 
-        public StoreFuture flushToStore()
+
+        public ByteBuffer getContent(int offsetInMessage, int size)
+        {
+            ByteBuffer buf = ByteBuffer.allocate(size);
+            getContent(offsetInMessage, buf);
+            buf.position(0);
+            return  buf;
+        }
+
+        public synchronized StoreFuture flushToStore()
         {
             try
             {
-                if(_conn != null)
+                if(_metaData != null)
                 {
-                    if(_logger.isDebugEnabled())
-                    {
-                        _logger.debug("Flushing message " + _messageId + " to store");
-                    }
+                    Connection conn = newConnection();
+
+                    store(conn);
                     
-                    _conn.commit();
-                    _conn.close();
+                    conn.commit();
+                    conn.close();
                 }
             }
             catch (SQLException e)
@@ -1796,16 +1849,34 @@ public class DerbyMessageStore implements MessageStore
                 }
                 throw new RuntimeException(e);
             }
-            finally
-            {
-                _conn = null;
-            }
             return IMMEDIATE_FUTURE;
+        }
+
+        private synchronized void store(final Connection conn) throws SQLException
+        {
+            if(_metaData != null)
+            {
+                try
+                {
+                    storeMetaData(conn, _messageId, _metaData);
+                    DerbyMessageStore.this.addContent(conn, _messageId, 0,
+                                                      _data == null ? ByteBuffer.allocate(0) : ByteBuffer.wrap(_data));
+                }
+                finally
+                {
+                    _metaData = null;
+                    _data = null;
+                }
+            }
+
+            if(_logger.isDebugEnabled())
+            {
+                _logger.debug("Storing message " + _messageId + " to store");
+            }
         }
 
         public void remove()
         {
-            flushToStore();
             DerbyMessageStore.this.removeMessage(_messageId);
         }
     }
@@ -1839,4 +1910,5 @@ public class DerbyMessageStore implements MessageStore
             }
         }
     }
+
 }

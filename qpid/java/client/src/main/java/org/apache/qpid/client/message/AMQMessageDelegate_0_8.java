@@ -31,12 +31,7 @@ import javax.jms.Destination;
 import javax.jms.JMSException;
 import javax.jms.MessageNotWriteableException;
 
-import org.apache.qpid.client.AMQDestination;
-import org.apache.qpid.client.AMQQueue;
-import org.apache.qpid.client.AMQSession;
-import org.apache.qpid.client.AMQTopic;
-import org.apache.qpid.client.CustomJMSXProperty;
-import org.apache.qpid.client.JMSAMQException;
+import org.apache.qpid.client.*;
 import org.apache.qpid.collections.ReferenceMap;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
@@ -81,7 +76,8 @@ public class AMQMessageDelegate_0_8 extends AbstractAMQMessageDelegate
 
     // Used when generating a received message object
     protected AMQMessageDelegate_0_8(long deliveryTag, BasicContentHeaderProperties contentHeader, AMQShortString exchange,
-                                     AMQShortString routingKey) 
+                                     AMQShortString routingKey, AMQSession_0_8.DestinationCache<AMQQueue> queueDestinationCache,
+                                                         AMQSession_0_8.DestinationCache<AMQTopic> topicDestinationCache)
     {
         this(contentHeader, deliveryTag);
 
@@ -95,10 +91,10 @@ public class AMQMessageDelegate_0_8 extends AbstractAMQMessageDelegate
             switch (type.intValue())
             {
                 case AMQDestination.QUEUE_TYPE:
-                    dest = new AMQQueue(exchange, routingKey, routingKey);
+                    dest = queueDestinationCache.getDestination(exchange, routingKey);
                     break;
                 case AMQDestination.TOPIC_TYPE:
-                    dest = new AMQTopic(exchange, routingKey, null);
+                    dest = topicDestinationCache.getDestination(exchange, routingKey);
                     break;
                 default:
                     // Use the generateDestination method
@@ -133,10 +129,66 @@ public class AMQMessageDelegate_0_8 extends AbstractAMQMessageDelegate
     {
         if (messageId != null)
         {
-            getContentHeaderProperties().setMessageId("ID:" + messageId);
+            getContentHeaderProperties().setMessageId(asShortStringMsgId(messageId));
         }
     }
 
+    private static final byte[] HEX_DIGITS = {0x30,0x31,0x32,0x33,0x34,0x35,0x36,0x37,0x38,0x39,
+                                              0x61,0x62,0x63,0x64,0x65,0x66};
+
+    private static AMQShortString asShortStringMsgId(UUID messageId)
+    {
+        long msb = messageId.getMostSignificantBits();
+        long lsb = messageId.getLeastSignificantBits();
+
+        byte[] messageIdBytes = new byte[39];
+        messageIdBytes[0] = (byte) 'I';
+        messageIdBytes[1] = (byte) 'D';
+        messageIdBytes[2] = (byte) ':';
+
+        messageIdBytes[3] = HEX_DIGITS[(int)((msb >> 60) & 0xFl)];
+        messageIdBytes[4] = HEX_DIGITS[(int)((msb >> 56) & 0xFl)];
+        messageIdBytes[5] = HEX_DIGITS[(int)((msb >> 52) & 0xFl)];
+        messageIdBytes[6] = HEX_DIGITS[(int)((msb >> 48) & 0xFl)];
+        messageIdBytes[7] = HEX_DIGITS[(int)((msb >> 44) & 0xFl)];
+        messageIdBytes[8] = HEX_DIGITS[(int)((msb >> 40) & 0xFl)];
+        messageIdBytes[9] = HEX_DIGITS[(int)((msb >> 36) & 0xFl)];
+        messageIdBytes[10] = HEX_DIGITS[(int)((msb >> 32) & 0xFl)];
+
+        messageIdBytes[11] = (byte) '-';
+        messageIdBytes[12] = HEX_DIGITS[(int)((msb >> 28) & 0xFl)];
+        messageIdBytes[13] = HEX_DIGITS[(int)((msb >> 24) & 0xFl)];
+        messageIdBytes[14] = HEX_DIGITS[(int)((msb >> 20) & 0xFl)];
+        messageIdBytes[15] = HEX_DIGITS[(int)((msb >> 16) & 0xFl)];
+        messageIdBytes[16] = (byte) '-';
+        messageIdBytes[17] = HEX_DIGITS[(int)((msb >> 12) & 0xFl)];
+        messageIdBytes[18] = HEX_DIGITS[(int)((msb >> 8) & 0xFl)];
+        messageIdBytes[19] = HEX_DIGITS[(int)((msb >> 4) & 0xFl)];
+        messageIdBytes[20] = HEX_DIGITS[(int)(msb & 0xFl)];
+        messageIdBytes[21] = (byte) '-';
+
+        messageIdBytes[22] = HEX_DIGITS[(int)((lsb >> 60) & 0xFl)];
+        messageIdBytes[23] = HEX_DIGITS[(int)((lsb >> 56) & 0xFl)];
+        messageIdBytes[24] = HEX_DIGITS[(int)((lsb >> 52) & 0xFl)];
+        messageIdBytes[25] = HEX_DIGITS[(int)((lsb >> 48) & 0xFl)];
+
+        messageIdBytes[26] = (byte) '-';
+
+        messageIdBytes[27] = HEX_DIGITS[(int)((lsb >> 44) & 0xFl)];
+        messageIdBytes[28] = HEX_DIGITS[(int)((lsb >> 40) & 0xFl)];
+        messageIdBytes[29] = HEX_DIGITS[(int)((lsb >> 36) & 0xFl)];
+        messageIdBytes[30] = HEX_DIGITS[(int)((lsb >> 32) & 0xFl)];
+        messageIdBytes[31] = HEX_DIGITS[(int)((lsb >> 28) & 0xFl)];
+        messageIdBytes[32] = HEX_DIGITS[(int)((lsb >> 24) & 0xFl)];
+        messageIdBytes[33] = HEX_DIGITS[(int)((lsb >> 20) & 0xFl)];
+        messageIdBytes[34] = HEX_DIGITS[(int)((lsb >> 16) & 0xFl)];
+        messageIdBytes[35] = HEX_DIGITS[(int)((lsb >> 12) & 0xFl)];
+        messageIdBytes[36] = HEX_DIGITS[(int)((lsb >> 8) & 0xFl)];
+        messageIdBytes[37] = HEX_DIGITS[(int)((lsb >> 4) & 0xFl)];
+        messageIdBytes[38] = HEX_DIGITS[(int)(lsb & 0xFl)];
+
+        return new AMQShortString(messageIdBytes,0,39);
+    }
 
     public long getJMSTimestamp() throws JMSException
     {
@@ -413,7 +465,7 @@ public class AMQMessageDelegate_0_8 extends AbstractAMQMessageDelegate
         }
 
         checkWritableProperties();
-        getJmsHeaders().setByte(propertyName, new Byte(b));
+        getJmsHeaders().setByte(propertyName, b);
     }
 
     public void setShortProperty(String propertyName, short i) throws JMSException
@@ -424,13 +476,13 @@ public class AMQMessageDelegate_0_8 extends AbstractAMQMessageDelegate
         }
 
         checkWritableProperties();
-        getJmsHeaders().setShort(propertyName, new Short(i));
+        getJmsHeaders().setShort(propertyName, i);
     }
 
     public void setIntProperty(String propertyName, int i) throws JMSException
     {
         checkWritableProperties();
-        getJmsHeaders().setInteger(propertyName, new Integer(i));
+        getJmsHeaders().setInteger(propertyName, i);
     }
 
     public void setLongProperty(String propertyName, long l) throws JMSException
@@ -441,7 +493,7 @@ public class AMQMessageDelegate_0_8 extends AbstractAMQMessageDelegate
         }
 
         checkWritableProperties();
-        getJmsHeaders().setLong(propertyName, new Long(l));
+        getJmsHeaders().setLong(propertyName, l);
     }
 
     public void setFloatProperty(String propertyName, float f) throws JMSException
@@ -452,7 +504,7 @@ public class AMQMessageDelegate_0_8 extends AbstractAMQMessageDelegate
         }
 
         checkWritableProperties();
-        getJmsHeaders().setFloat(propertyName, new Float(f));
+        getJmsHeaders().setFloat(propertyName, f);
     }
 
     public void setDoubleProperty(String propertyName, double v) throws JMSException

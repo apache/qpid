@@ -18,10 +18,7 @@
  */
 package org.apache.qpid.server.security.access;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.qpid.framing.AMQShortString;
@@ -35,7 +32,7 @@ import org.apache.qpid.server.queue.AMQQueue;
  * {@link #equals(Object)} and {@link #hashCode()} are intended for use in maps. This is due to the wildcard matching
  * described above.
  */
-public class ObjectProperties extends HashMap<ObjectProperties.Property, String>
+public class ObjectProperties
 {
     /** serialVersionUID */
     private static final long serialVersionUID = -1356019341374170495L;
@@ -93,7 +90,9 @@ public class ObjectProperties extends HashMap<ObjectProperties.Property, String>
 			return properties;
 		}
     }
-	
+
+    private final EnumMap<Property, String> _properties = new EnumMap<Property, String>(Property.class);
+
 	public static List<String> getAllPropertyNames()
     {
 		List<String> properties = new ArrayList<String>();		
@@ -113,7 +112,7 @@ public class ObjectProperties extends HashMap<ObjectProperties.Property, String>
     {
         super();
         
-        putAll(copy);
+        _properties.putAll(copy._properties);
     }
     
     public ObjectProperties(String name)
@@ -231,7 +230,7 @@ public class ObjectProperties extends HashMap<ObjectProperties.Property, String>
 	public List<String> getPropertyNames()
     {
 		List<String> properties = new ArrayList<String>();		
-		for (Property property : keySet())
+		for (Property property : _properties.keySet())
 		{
 			properties.add(property.getName());
 		}
@@ -240,17 +239,22 @@ public class ObjectProperties extends HashMap<ObjectProperties.Property, String>
     
     public Boolean isSet(Property key)
     {
-        return containsKey(key) && Boolean.valueOf(get(key));
+        return _properties.containsKey(key) && Boolean.valueOf(_properties.get(key));
     }
-    
+
+    public String get(Property key)
+    {
+        return _properties.get(key);
+    }
+
     public String getName()
     {
-        return get(Property.NAME);
+        return _properties.get(Property.NAME);
     }
     
     public void setName(String name)
     {
-        put(Property.NAME, name);
+        _properties.put(Property.NAME, name);
     }
     
     public void setName(AMQShortString name)
@@ -262,39 +266,38 @@ public class ObjectProperties extends HashMap<ObjectProperties.Property, String>
     {
         return put(key, value == null ? "" : value.asString());
     }
-    
-    @Override
+
     public String put(Property key, String value)
     {
-        return super.put(key, value == null ? "" : value.trim());
+        return _properties.put(key, value == null ? "" : value.trim());
     }
     
     public void put(Property key, Boolean value)
     {
         if (value != null)
         {
-            super.put(key, Boolean.toString(value));
+            _properties.put(key, Boolean.toString(value));
         }
     }
     
     public boolean matches(ObjectProperties properties)
     {
-        if (properties.keySet().isEmpty())
+        if (properties._properties.keySet().isEmpty())
         {
             return true;
         }
         
-        if (!keySet().containsAll(properties.keySet()))
+        if (!_properties.keySet().containsAll(properties._properties.keySet()))
         {
             return false;
         }
         
-        for (Map.Entry<Property,String> entry : properties.entrySet())
+        for (Map.Entry<Property,String> entry : properties._properties.entrySet())
         {
             Property key = entry.getKey();
             String ruleValue = entry.getValue();
             
-            String thisValue = get(key);
+            String thisValue = _properties.get(key);
 
             if (!valueMatches(thisValue, ruleValue)) 
             {
@@ -314,5 +317,30 @@ public class ObjectProperties extends HashMap<ObjectProperties.Property, String>
                         && thisValue != null
                         && thisValue.length() > ruleValue.length()
                         && thisValue.startsWith(ruleValue.substring(0, ruleValue.length() - 2)));
+    }
+
+    @Override
+    public boolean equals(Object o)
+    {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        ObjectProperties that = (ObjectProperties) o;
+
+        if (_properties != null ? !_properties.equals(that._properties) : that._properties != null) return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return _properties != null ? _properties.hashCode() : 0;
+    }
+
+    @Override
+    public String toString()
+    {
+        return _properties.toString();
     }
 }

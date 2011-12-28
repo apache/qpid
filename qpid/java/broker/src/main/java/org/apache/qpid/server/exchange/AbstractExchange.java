@@ -351,11 +351,11 @@ public abstract class AbstractExchange implements Exchange, Managable
 
 
 
-    public final ArrayList<? extends BaseQueue> route(final InboundMessage message)
+    public final List<? extends BaseQueue> route(final InboundMessage message)
     {
         _receivedMessageCount.incrementAndGet();
         _receivedMessageSize.addAndGet(message.getSize());
-        final ArrayList<? extends BaseQueue> queues = doRoute(message);
+        final List<? extends BaseQueue> queues = doRoute(message);
         if(!queues.isEmpty())
         {
             _routedMessageCount.incrementAndGet();
@@ -364,7 +364,7 @@ public abstract class AbstractExchange implements Exchange, Managable
         return queues;
     }
 
-    protected abstract ArrayList<? extends BaseQueue> doRoute(final InboundMessage message);
+    protected abstract List<? extends BaseQueue> doRoute(final InboundMessage message);
 
     public long getMsgReceives()
     {

@@ -91,21 +91,38 @@ public class SessionDelegate
     {
         RangeSet ranges = cmp.getCommands();
         RangeSet known = null;
-        if (cmp.getTimelyReply())
-        {
-            known = new RangeSet();
-        }
 
         if (ranges != null)
         {
-            for (Range range : ranges)
+            if(ranges.size() == 1)
             {
+                Range range = ranges.getFirst();
                 boolean advanced = ssn.complete(range.getLower(), range.getUpper());
-                if (advanced && known != null)
+
+                if(advanced && cmp.getTimelyReply())
                 {
-                    known.add(range);
+                    known = range;
                 }
             }
+            else
+            {
+                if (cmp.getTimelyReply())
+                {
+                    known = RangeSetFactory.createRangeSet();
+                }
+                for (Range range : ranges)
+                {
+                    boolean advanced = ssn.complete(range.getLower(), range.getUpper());
+                    if (advanced && known != null)
+                    {
+                        known.add(range);
+                    }
+                }
+            }
+        }
+        else if (cmp.getTimelyReply())
+        {
+            known = RangeSetFactory.createRangeSet();
         }
 
         if (known != null)

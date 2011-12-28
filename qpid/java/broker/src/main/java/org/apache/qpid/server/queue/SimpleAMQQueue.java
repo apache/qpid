@@ -584,8 +584,16 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
     public void enqueue(ServerMessage message, PostEnqueueAction action) throws AMQException
     {
+        enqueue(message, false, action);
+    }
 
-        incrementTxnEnqueueStats(message);
+    public void enqueue(ServerMessage message, boolean transactional, PostEnqueueAction action) throws AMQException
+    {
+
+        if(transactional)
+        {
+            incrementTxnEnqueueStats(message);
+        }
         incrementQueueCount();
         incrementQueueSize(message);
 
@@ -733,13 +741,8 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
     
     private void incrementTxnEnqueueStats(final ServerMessage message)
     {
-        SessionConfig session = message.getSessionConfig();
-        
-        if(session !=null && session.isTransactional())
-        {
-            _msgTxnEnqueues.incrementAndGet();
-            _byteTxnEnqueues.addAndGet(message.getSize());
-        }
+        _msgTxnEnqueues.incrementAndGet();
+        _byteTxnEnqueues.addAndGet(message.getSize());
     }
     
     private void incrementTxnDequeueStats(QueueEntry entry)
@@ -1447,7 +1450,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
                                         {
 
                                         }
-                                    });
+                                    }, 0L);
                         txn.dequeue(this, entry.getMessage(),
                                     new ServerTransaction.Action()
                                     {

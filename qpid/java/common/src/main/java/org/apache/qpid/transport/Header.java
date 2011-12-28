@@ -20,13 +20,7 @@
  */
 package org.apache.qpid.transport;
 
-import org.apache.qpid.transport.network.Frame;
-
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.LinkedHashMap;
-import java.nio.ByteBuffer;
+import java.util.*;
 
 
 /**
@@ -35,45 +29,87 @@ import java.nio.ByteBuffer;
  * @author Rafael H. Schloming
  */
 
-public class Header {
+public class Header
+{
 
-    private final Struct[] structs;
+    private final DeliveryProperties _deliveryProps;
+    private final MessageProperties _messageProps;
+    private final List<Struct> _nonStandardProps;
 
-    public Header(List<Struct> structs)
+    public Header(DeliveryProperties deliveryProps, MessageProperties messageProps)
     {
-        this(structs.toArray(new Struct[structs.size()]));
+        this(deliveryProps, messageProps, null);
     }
 
-    public Header(Struct ... structs)
+    public Header(DeliveryProperties deliveryProps, MessageProperties messageProps, List<Struct> nonStandardProps)
     {
-        this.structs = structs;
+        _deliveryProps = deliveryProps;
+        _messageProps = messageProps;
+        _nonStandardProps = nonStandardProps;
     }
 
     public Struct[] getStructs()
     {
-        return structs;
-    }
-
-
-    public <T> T get(Class<T> klass)
-    {
-        for (Struct st : structs)
+        int size = 0;
+        if(_deliveryProps != null)
         {
-            if (klass.isInstance(st))
+            size++;
+        }
+        if(_messageProps != null)
+        {
+            size++;
+        }
+        if(_nonStandardProps != null)
+        {
+            size+=_nonStandardProps.size();
+        }
+        Struct[] structs = new Struct[size];
+        int index = 0;
+        if(_deliveryProps != null)
+        {
+            structs[index++] = _deliveryProps;
+        }
+        if(_messageProps != null)
+        {
+            structs[index++] = _messageProps;
+        }
+        if(_nonStandardProps != null)
+        {
+            for(Struct struct : _nonStandardProps)
             {
-                return (T) st;
+                structs[index++] = struct;
             }
         }
 
-        return null;
+        return structs;
+    }
+
+    public DeliveryProperties getDeliveryProperties()
+    {
+        return _deliveryProps;
+    }
+
+    public MessageProperties getMessageProperties()
+    {
+        return _messageProps;
+    }
+
+    public List<Struct> getNonStandardProperties()
+    {
+        return _nonStandardProps;
     }
 
     public String toString()
     {
-        StringBuffer str = new StringBuffer();
+        StringBuilder str = new StringBuilder();
         str.append(" Header(");
         boolean first = true;
-        for (Struct s : structs)
+        if(_deliveryProps !=null)
+        {
+            first=false;
+            str.append(_deliveryProps);
+        }
+        if(_messageProps != null)
         {
             if (first)
             {
@@ -83,9 +119,24 @@ public class Header {
             {
                 str.append(", ");
             }
-            str.append(s);
+            str.append(_messageProps);
         }
-        str.append(")");
+        if(_nonStandardProps != null)
+        {
+            for (Struct s : _nonStandardProps)
+            {
+                if (first)
+                {
+                    first = false;
+                }
+                else
+                {
+                    str.append(", ");
+                }
+                str.append(s);
+            }
+        }
+        str.append(')');
         return str.toString();
     }
 

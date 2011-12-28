@@ -75,7 +75,6 @@ import org.apache.qpid.server.stats.StatisticsCounter;
 import org.apache.qpid.server.store.ConfigurationRecoveryHandler;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.store.TransactionLog;
 import org.apache.qpid.server.virtualhost.plugins.VirtualHostPlugin;
 import org.apache.qpid.server.virtualhost.plugins.VirtualHostPluginFactory;
 
@@ -228,7 +227,10 @@ public class VirtualHostImpl implements VirtualHost
         if (store != null)
         {
             _messageStore = store;
-            _durableConfigurationStore = store;
+            if(store instanceof DurableConfigurationStore)
+            {
+                _durableConfigurationStore = (DurableConfigurationStore) store;
+            }
         }
         else
         {
@@ -380,6 +382,8 @@ public class VirtualHostImpl implements VirtualHost
         Class clazz = Class.forName(messageStoreClass);
         Object o = clazz.newInstance();
 
+
+
         if (!(o instanceof MessageStore))
         {
             throw new ClassCastException("Message store class must implement " + MessageStore.class + ". Class " + clazz +
@@ -390,10 +394,18 @@ public class VirtualHostImpl implements VirtualHost
 
         MessageStoreLogSubject storeLogSubject = new MessageStoreLogSubject(this, messageStore);
 
-        messageStore.configureConfigStore(this.getName(),
-                                          recoveryHandler,
-                                          hostConfig.getStoreConfiguration(),
-                                          storeLogSubject);
+
+        if(messageStore instanceof DurableConfigurationStore)
+        {
+            DurableConfigurationStore durableConfigurationStore = (DurableConfigurationStore) messageStore;
+
+            durableConfigurationStore.configureConfigStore(this.getName(),
+                                              recoveryHandler,
+                                              hostConfig.getStoreConfiguration(),
+                                              storeLogSubject);
+
+            _durableConfigurationStore = durableConfigurationStore;
+        }
 
         messageStore.configureMessageStore(this.getName(),
                                            recoveryHandler,
@@ -405,7 +417,8 @@ public class VirtualHostImpl implements VirtualHost
                                            storeLogSubject);
 
         _messageStore = messageStore;
-        _durableConfigurationStore = messageStore;
+
+
     }
 
     private void initialiseModel(VirtualHostConfiguration config) throws ConfigurationException, AMQException
@@ -549,11 +562,6 @@ public class VirtualHostImpl implements VirtualHost
     }
 
     public MessageStore getMessageStore()
-    {
-        return _messageStore;
-    }
-
-    public TransactionLog getTransactionLog()
     {
         return _messageStore;
     }

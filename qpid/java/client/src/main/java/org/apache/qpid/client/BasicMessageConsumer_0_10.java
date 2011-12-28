@@ -272,10 +272,8 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
      */
     private void acknowledgeMessage(final AbstractJMSMessage message) throws AMQException
     {
-        final RangeSet ranges = new RangeSet();
-        ranges.add((int) message.getDeliveryTag());
         _0_10session.messageAcknowledge
-            (ranges,
+            (Range.newInstance((int) message.getDeliveryTag()),
              _acknowledgeMode != org.apache.qpid.jms.Session.NO_ACKNOWLEDGE);
 
         final AMQException amqe = _0_10session.getCurrentException();
@@ -294,9 +292,7 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
      */
     private void flushUnwantedMessage(final AbstractJMSMessage message) throws AMQException
     {
-        final RangeSet ranges = new RangeSet();
-        ranges.add((int) message.getDeliveryTag());
-        _0_10session.flushProcessed(ranges,false);
+        _0_10session.flushProcessed(Range.newInstance((int) message.getDeliveryTag()),false);
 
         final AMQException amqe = _0_10session.getCurrentException();
         if (amqe != null)
@@ -315,10 +311,8 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
     private boolean acquireMessage(final AbstractJMSMessage message) throws AMQException
     {
         boolean result = false;
-        final RangeSet ranges = new RangeSet();
-        ranges.add((int) message.getDeliveryTag());
 
-        final Acquired acq = _0_10session.getQpidSession().messageAcquire(ranges).get();
+        final Acquired acq = _0_10session.getQpidSession().messageAcquire(Range.newInstance((int)message.getDeliveryTag())).get();
 
         final RangeSet acquired = acq.getTransfers();
         if (acquired != null && acquired.size() > 0)
@@ -451,7 +445,7 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
     {
         if (_synchronousQueue.size() > 0)
         {
-            RangeSet ranges = new RangeSet();
+            RangeSet ranges = RangeSetFactory.createRangeSet();
             Iterator iterator = _synchronousQueue.iterator();
             while (iterator.hasNext())
             {

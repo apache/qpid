@@ -24,8 +24,9 @@ package org.apache.qpid.framing;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.DataInput;
 import java.io.DataInputStream;
-import java.io.DataOutputStream;
+import java.io.DataOutput;
 import java.io.IOException;
 import java.util.*;
 import java.lang.ref.WeakReference;
@@ -93,21 +94,43 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
 
     private AMQShortString substring(final int from, final int to)
     {
-        return new AMQShortString(_data, from+_offset, to+_offset);
+        return new AMQShortString(_data, from+_offset, to-from);
     }
 
 
-    private static final ThreadLocal<Map<AMQShortString, WeakReference<AMQShortString>>> _localInternMap =
-            new ThreadLocal<Map<AMQShortString, WeakReference<AMQShortString>>>()
+    private static final int LOCAL_INTERN_CACHE_SIZE = 2048;
+
+    private static final ThreadLocal<Map<AMQShortString, AMQShortString>> _localInternMap =
+            new ThreadLocal<Map<AMQShortString, AMQShortString>>()
             {
-                protected Map<AMQShortString, WeakReference<AMQShortString>> initialValue()
+                protected Map<AMQShortString, AMQShortString> initialValue()
                 {
-                    return new WeakHashMap<AMQShortString, WeakReference<AMQShortString>>();
+                    return new LinkedHashMap<AMQShortString, AMQShortString>()
+                    {
+
+                        protected boolean removeEldestEntry(Map.Entry<AMQShortString, AMQShortString> eldest)
+                        {
+                            return size() > LOCAL_INTERN_CACHE_SIZE;
+                        }
+                    };
                 };
             };
 
     private static final Map<AMQShortString, WeakReference<AMQShortString>> _globalInternMap =
             new WeakHashMap<AMQShortString, WeakReference<AMQShortString>>();
+
+
+    private static final ThreadLocal<Map<String, WeakReference<AMQShortString>>> _localStringMap =
+            new ThreadLocal<Map<String, WeakReference<AMQShortString>>>()
+            {
+                protected Map<String, WeakReference<AMQShortString>> initialValue()
+                {
+                    return new WeakHashMap<String, WeakReference<AMQShortString>>();
+                };
+            };
+
+    private static final Map<String, WeakReference<AMQShortString>> _globalStringMap =
+            new WeakHashMap<String, WeakReference<AMQShortString>>();
 
     private static final Logger _logger = LoggerFactory.getLogger(AMQShortString.class);
 
@@ -200,32 +223,32 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
 
     }
 
-    private AMQShortString(DataInputStream data, final int length) throws IOException
+    private AMQShortString(DataInput data, final int length) throws IOException
     {
         if (length > MAX_LENGTH)
         {
             throw new IllegalArgumentException("Cannot create AMQShortString with number of octets over 255!");
         }
         byte[] dataBytes = new byte[length];
-        data.read(dataBytes);
+        data.readFully(dataBytes);
         _data = dataBytes;
         _offset = 0;
         _length = length;
 
     }
 
-    private AMQShortString(final byte[] data, final int from, final int to)
+    public AMQShortString(byte[] data, final int offset, final int length)
     {
-        if (data == null)
-        {
-            throw new NullPointerException("Cannot create AMQShortString with null data[]");
-        }
-        int length = to - from;
         if (length > MAX_LENGTH)
         {
             throw new IllegalArgumentException("Cannot create AMQShortString with number of octets over 255!");
         }
-        _offset = from;
+        if (data == null)
+        {
+            throw new NullPointerException("Cannot create AMQShortString with null data[]");
+        }
+
+        _offset = offset;
         _length = length;
         _data = data;
     }
@@ -234,9 +257,7 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
     {
         if(_data.length != _length)
         {
-            byte[] dataBytes = new byte[_length];
-            System.arraycopy(_data,_offset,dataBytes,0,_length);
-            return new AMQShortString(dataBytes,0,_length);
+            return copy();
         }
         else
         {
@@ -265,7 +286,7 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
         return new CharSubSequence(start, end);
     }
 
-    public static AMQShortString readFromBuffer(DataInputStream buffer) throws IOException
+    public static AMQShortString readFromBuffer(DataInput buffer) throws IOException
     {
         final int length = buffer.readUnsignedByte();
         if (length == 0)
@@ -293,12 +314,12 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
         }
     }
 
-    public void writeToBuffer(DataOutputStream buffer) throws IOException
+    public void writeToBuffer(DataOutput buffer) throws IOException
     {
 
         final int size = length();
         //buffer.setAutoExpand(true);
-        buffer.write((byte) size);
+        buffer.writeByte(size);
         buffer.write(_data, _offset, size);
 
     }
@@ -420,7 +441,17 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
     {
         if (_asString == null)
         {
-            _asString = new String(asChars());
+            AMQShortString intern = intern();
+
+            if(intern == this)
+            {
+                _asString = new String(asChars());
+            }
+            else
+            {
+                _asString = intern.asString();
+            }
+
         }
         return _asString;
     }
@@ -609,40 +640,49 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
 
     public AMQShortString intern()
     {
+        return intern(true);
+    }
+
+    public AMQShortString intern(boolean keep)
+    {
 
         hashCode();
 
-        Map<AMQShortString, WeakReference<AMQShortString>> localMap =
+        Map<AMQShortString, AMQShortString> localMap =
                 _localInternMap.get();
 
-        WeakReference<AMQShortString> ref = localMap.get(this);
-        AMQShortString internString;
+        AMQShortString internString = localMap.get(this);
 
-        if(ref != null)
+
+        if(internString != null)
         {
-            internString = ref.get();
-            if(internString != null)
-            {
-                return internString;
-            }
+            return internString;
         }
 
 
+        WeakReference<AMQShortString> ref;
         synchronized(_globalInternMap)
         {
 
             ref = _globalInternMap.get(this);
             if((ref == null) || ((internString = ref.get()) == null))
             {
-                internString = shrink();
+                internString = keep ? shrink() : copy();
                 ref = new WeakReference(internString);
                 _globalInternMap.put(internString, ref);
             }
 
         }
-        localMap.put(internString, ref);
+        localMap.put(internString, internString);
         return internString;
 
+    }
+
+    private AMQShortString copy()
+    {
+        byte[] dataBytes = new byte[_length];
+        System.arraycopy(_data,_offset,dataBytes,0,_length);
+        return new AMQShortString(dataBytes,0,_length);
     }
 
     private int occurences(final byte delim)
@@ -761,7 +801,46 @@ public final class AMQShortString implements CharSequence, Comparable<AMQShortSt
 
     public static AMQShortString valueOf(Object obj)
     {
-        return obj == null ? null : new AMQShortString(String.valueOf(obj));
+        return obj == null ? null : AMQShortString.valueOf(String.valueOf(obj));
+    }
+
+    public static AMQShortString valueOf(String obj)
+    {
+        if(obj == null)
+        {
+            return null;
+        }
+
+        Map<String, WeakReference<AMQShortString>> localMap =
+                _localStringMap.get();
+
+        WeakReference<AMQShortString> ref = localMap.get(obj);
+        AMQShortString internString;
+
+        if(ref != null)
+        {
+            internString = ref.get();
+            if(internString != null)
+            {
+                return internString;
+            }
+        }
+
+
+        synchronized(_globalStringMap)
+        {
+
+            ref = _globalStringMap.get(obj);
+            if((ref == null) || ((internString = ref.get()) == null))
+            {
+                internString = (new AMQShortString(obj)).intern();
+                ref = new WeakReference<AMQShortString>(internString);
+                _globalStringMap.put(obj, ref);
+            }
+
+        }
+        localMap.put(obj, ref);
+        return internString;
     }
 
 

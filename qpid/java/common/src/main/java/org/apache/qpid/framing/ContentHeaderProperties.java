@@ -20,8 +20,9 @@
  */
 package org.apache.qpid.framing;
 
+import java.io.DataInput;
 import java.io.DataInputStream;
-import java.io.DataOutputStream;
+import java.io.DataOutput;
 import java.io.IOException;
 
 
@@ -35,7 +36,7 @@ public interface ContentHeaderProperties
      * Writes the property list to the buffer, in a suitably encoded form.
      * @param buffer The buffer to write to
      */
-    void writePropertyListPayload(DataOutputStream buffer) throws IOException;
+    void writePropertyListPayload(DataOutput buffer) throws IOException;
 
     /**
      * Populates the properties from buffer.
@@ -43,7 +44,7 @@ public interface ContentHeaderProperties
      * @param propertyFlags he property flags.
      * @throws AMQFrameDecodingException when the buffer does not contain valid data
      */
-    void populatePropertiesFromBuffer(DataInputStream buffer, int propertyFlags, int size)
+    void populatePropertiesFromBuffer(DataInput buffer, int propertyFlags, int size)
         throws AMQFrameDecodingException, IOException;
 
     /**

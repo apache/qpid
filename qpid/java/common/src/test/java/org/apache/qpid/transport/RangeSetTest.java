@@ -60,7 +60,7 @@ public class RangeSetTest extends TestCase
 
     public void test1()
     {
-        RangeSet ranges = new RangeSet();
+        RangeSet ranges = RangeSetFactory.createRangeSet();
         ranges.add(5, 10);
         check(ranges);
         ranges.add(15, 20);
@@ -77,7 +77,7 @@ public class RangeSetTest extends TestCase
 
     public void test2()
     {
-        RangeSet rs = new RangeSet();
+        RangeSet rs = RangeSetFactory.createRangeSet();
         check(rs);
 
         rs.add(1);
@@ -128,7 +128,7 @@ public class RangeSetTest extends TestCase
 
     public void testAddSelf()
     {
-        RangeSet a = new RangeSet();
+        RangeSet a = RangeSetFactory.createRangeSet();
         a.add(0, 8);
         check(a);
         a.add(0, 8);
@@ -141,8 +141,8 @@ public class RangeSetTest extends TestCase
 
     public void testIntersect1()
     {
-        Range a = new Range(0, 10);
-        Range b = new Range(9, 20);
+        Range a = Range.newInstance(0, 10);
+        Range b = Range.newInstance(9, 20);
         Range i1 = a.intersect(b);
         Range i2 = b.intersect(a);
         assertEquals(i1.getUpper(), 10);
@@ -153,16 +153,16 @@ public class RangeSetTest extends TestCase
 
     public void testIntersect2()
     {
-        Range a = new Range(0, 10);
-        Range b = new Range(11, 20);
+        Range a = Range.newInstance(0, 10);
+        Range b = Range.newInstance(11, 20);
         assertNull(a.intersect(b));
         assertNull(b.intersect(a));
     }
 
     public void testIntersect3()
     {
-        Range a = new Range(0, 10);
-        Range b = new Range(3, 5);
+        Range a = Range.newInstance(0, 10);
+        Range b = Range.newInstance(3, 5);
         Range i1 = a.intersect(b);
         Range i2 = b.intersect(a);
         assertEquals(i1.getUpper(), 5);
@@ -173,14 +173,14 @@ public class RangeSetTest extends TestCase
 
     public void testSubtract1()
     {
-        Range a = new Range(0, 10);
+        Range a = Range.newInstance(0, 10);
         assertTrue(a.subtract(a).isEmpty());
     }
 
     public void testSubtract2()
     {
-        Range a = new Range(0, 10);
-        Range b = new Range(20, 30);
+        Range a = Range.newInstance(0, 10);
+        Range b = Range.newInstance(20, 30);
         List<Range> ranges = a.subtract(b);
         assertEquals(ranges.size(), 1);
         Range d = ranges.get(0);
@@ -190,8 +190,8 @@ public class RangeSetTest extends TestCase
 
     public void testSubtract3()
     {
-        Range a = new Range(20, 30);
-        Range b = new Range(0, 10);
+        Range a = Range.newInstance(20, 30);
+        Range b = Range.newInstance(0, 10);
         List<Range> ranges = a.subtract(b);
         assertEquals(ranges.size(), 1);
         Range d = ranges.get(0);
@@ -201,8 +201,8 @@ public class RangeSetTest extends TestCase
 
     public void testSubtract4()
     {
-        Range a = new Range(0, 10);
-        Range b = new Range(3, 5);
+        Range a = Range.newInstance(0, 10);
+        Range b = Range.newInstance(3, 5);
         List<Range> ranges = a.subtract(b);
         assertEquals(ranges.size(), 2);
         Range low = ranges.get(0);
@@ -215,8 +215,8 @@ public class RangeSetTest extends TestCase
 
     public void testSubtract5()
     {
-        Range a = new Range(0, 10);
-        Range b = new Range(3, 20);
+        Range a = Range.newInstance(0, 10);
+        Range b = Range.newInstance(3, 20);
         List<Range> ranges = a.subtract(b);
         assertEquals(ranges.size(), 1);
         Range d = ranges.get(0);
@@ -226,8 +226,8 @@ public class RangeSetTest extends TestCase
 
     public void testSubtract6()
     {
-        Range a = new Range(0, 10);
-        Range b = new Range(-10, 5);
+        Range a = Range.newInstance(0, 10);
+        Range b = Range.newInstance(-10, 5);
         List<Range> ranges = a.subtract(b);
         assertEquals(ranges.size(), 1);
         Range d = ranges.get(0);

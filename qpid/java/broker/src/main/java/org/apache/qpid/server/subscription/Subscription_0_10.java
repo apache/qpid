@@ -62,7 +62,6 @@ import org.apache.qpid.transport.MessageProperties;
 import org.apache.qpid.transport.MessageTransfer;
 import org.apache.qpid.transport.Method;
 import org.apache.qpid.transport.Option;
-import org.apache.qpid.transport.Session;
 import org.apache.qpid.transport.Struct;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
@@ -70,10 +69,10 @@ import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.AMQException;
 
 import java.text.MessageFormat;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.locks.Lock;
@@ -183,6 +182,7 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
             throw new IllegalStateException("Attempt to set queue for subscription " + this + " to " + queue + "when already set to " + getQueue());
         }
         _queue = queue;
+
         Map<String, Object> arguments = queue.getArguments() == null ? Collections.EMPTY_MAP : queue.getArguments();
         _traceExclude = (String) arguments.get("qpid.trace.exclude");
         _trace = (String) arguments.get("qpid.trace.id");
@@ -224,8 +224,8 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
 
         if (_noLocal && entry.getMessage() instanceof MessageTransferMessage)
         {
-            Session messageSession= ((MessageTransferMessage)entry.getMessage()).getSession();
-            if (messageSession != null && messageSession.getConnection() == _session.getConnection())
+            Object connectionRef = ((MessageTransferMessage)entry.getMessage()).getConnectionReference();
+            if (connectionRef != null && connectionRef == _session.getReference())
             {
                 return false;
             }
@@ -377,35 +377,8 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
         {
 
             MessageTransferMessage msg = (MessageTransferMessage) serverMsg;
-
-
-            Struct[] headers;
-            if(msg.getHeader() == null)
-            {
-                headers = EMPTY_STRUCT_ARRAY;
-            }
-            else
-            {
-                headers = msg.getHeader().getStructs();
-            }
-
-            ArrayList<Struct> newHeaders = new ArrayList<Struct>(headers.length);
-            DeliveryProperties origDeliveryProps = null;
-            for(Struct header : headers)
-            {
-                if(header instanceof DeliveryProperties)
-                {
-                    origDeliveryProps = (DeliveryProperties) header;
-                }
-                else
-                {
-                    if(header instanceof MessageProperties)
-                    {
-                        messageProps = (MessageProperties) header;
-                    }
-                    newHeaders.add(header);
-                }
-            }
+            DeliveryProperties origDeliveryProps = msg.getHeader() == null ? null : msg.getHeader().getDeliveryProperties();
+            messageProps = msg.getHeader() == null ? null : msg.getHeader().getMessageProperties();
 
             deliveryProps = new DeliveryProperties();
             if(origDeliveryProps != null)
@@ -440,17 +413,16 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
 
             deliveryProps.setRedelivered(entry.isRedelivered());
 
-            newHeaders.add(deliveryProps);
-
             if(_trace != null && messageProps == null)
             {
                 messageProps = new MessageProperties();
-                newHeaders.add(messageProps);
             }
 
-            Header header = new Header(newHeaders);
+            Header header = new Header(deliveryProps, messageProps, msg.getHeader() == null ? null : msg.getHeader().getNonStandardProperties());
 
-            xfr = new MessageTransfer(_destination,_acceptMode,_acquireMode,header,msg.getBody());
+
+            xfr = batch ? new MessageTransfer(_destination,_acceptMode,_acquireMode,header,msg.getBody(), BATCHED)
+                        : new MessageTransfer(_destination,_acceptMode,_acquireMode,header,msg.getBody());
         }
         else if(serverMsg instanceof AMQMessage)
         {
@@ -462,8 +434,6 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
             ByteBuffer body = ByteBuffer.allocate(size);
             message_0_8.getContent(body, 0);
             body.flip();
-
-            Struct[] headers = new Struct[] { deliveryProps, messageProps };
 
             BasicContentHeaderProperties properties =
                     (BasicContentHeaderProperties) message_0_8.getContentHeaderBody().getProperties();
@@ -505,8 +475,9 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
 
             messageProps.setApplicationHeaders(appHeaders);
 
-            Header header = new Header(headers);
-            xfr = new MessageTransfer(_destination,_acceptMode,_acquireMode,header, body);
+            Header header = new Header(deliveryProps, messageProps, null);
+            xfr = batch ? new MessageTransfer(_destination,_acceptMode,_acquireMode,header, body, BATCHED)
+                        : new MessageTransfer(_destination,_acceptMode,_acquireMode,header, body);
         }
         else
         {
@@ -518,8 +489,6 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
             ByteBuffer body = ByteBuffer.allocate(size);
             serverMsg.getContent(body, 0);
             body.flip();
-
-            Struct[] headers = new Struct[] { deliveryProps, messageProps };
 
 
             deliveryProps.setExpiration(serverMsg.getExpiration());
@@ -567,8 +536,9 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
 
             messageProps.setApplicationHeaders(appHeaders);
 */
-            Header header = new Header(headers);
-            xfr = new MessageTransfer(_destination,_acceptMode,_acquireMode,header, body);
+            Header header = new Header(deliveryProps, messageProps, null);
+            xfr = batch ? new MessageTransfer(_destination,_acceptMode,_acquireMode,header, body, BATCHED)
+                        : new MessageTransfer(_destination,_acceptMode,_acquireMode,header, body);
         }
 
         boolean excludeDueToFederation = false;
@@ -644,27 +614,50 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
         }
     }
 
+    private void deferredAddCredit(final int deferredMessageCredit, final long deferredSizeCredit)
+    {
+        _deferredMessageCredit += deferredMessageCredit;
+        _deferredSizeCredit += deferredSizeCredit;
+
+    }
+
+    public void flushCreditState()
+    {
+        flushCreditState(false);
+    }
+    public void flushCreditState(boolean strict)
+    {
+        if(strict || !isSuspended() || _deferredMessageCredit >= 200
+          || !(_creditManager instanceof WindowCreditManager)
+          || ((WindowCreditManager)_creditManager).getMessageCreditLimit() < 400 )
+        {
+            _creditManager.restoreCredit(_deferredMessageCredit, _deferredSizeCredit);
+            _deferredMessageCredit = 0;
+            _deferredSizeCredit = 0l;
+        }
+    }
+
     private void forceDequeue(final QueueEntry entry, final boolean restoreCredit)
     {
-        ServerTransaction txn = new AutoCommitTransaction(getQueue().getVirtualHost().getTransactionLog());
-        txn.dequeue(entry.getQueue(),entry.getMessage(),
-                                new ServerTransaction.Action()
-                            {
-                                public void postCommit()
-                                {
-                                    if(restoreCredit)
-                                    {
-                                        restoreCredit(entry);
-                                    }
-                                    entry.discard();
-                                }
+        AutoCommitTransaction dequeueTxn = new AutoCommitTransaction(getQueue().getVirtualHost().getMessageStore()); 
+        dequeueTxn.dequeue(entry.getQueue(), entry.getMessage(),
+                           new ServerTransaction.Action()
+                           {
+                               public void postCommit()
+                               {
+                                   if (restoreCredit)
+                                   {
+                                       restoreCredit(entry);
+                                   }
+                                   entry.discard();
+                               }
 
-                                public void onRollback()
-                                {
+                               public void onRollback()
+                               {
 
-                                }
-                            });
-    }
+                               }
+                           });
+   }
 
     void reject(final QueueEntry entry)
     {
@@ -704,7 +697,7 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
         {
             final InboundMessage m = new InboundMessageAdapter(entry);
 
-            final ArrayList<? extends BaseQueue> destinationQueues = alternateExchange.route(m);
+            final List<? extends BaseQueue> destinationQueues = alternateExchange.route(m);
 
             if (destinationQueues == null || destinationQueues.isEmpty())
             {
@@ -750,6 +743,7 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
     {
         return _stateChangeLock.tryLock();
     }
+
 
     public void getSendLock()
     {
@@ -816,28 +810,6 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
         return _properties.get(key);
     }
 
-    private void deferredAddCredit(final int deferredMessageCredit, final long deferredSizeCredit)
-    {
-        _deferredMessageCredit += deferredMessageCredit;
-        _deferredSizeCredit += deferredSizeCredit;
-
-    }
-
-    public void flushCreditState()
-    {
-        flushCreditState(false);
-    }
-    public void flushCreditState(boolean strict)
-    {
-        if(strict || !isSuspended() || _deferredMessageCredit >= 200
-          || !(_creditManager instanceof WindowCreditManager)
-          || ((WindowCreditManager)_creditManager).getMessageCreditLimit() < 400 )
-        {
-            _creditManager.restoreCredit(_deferredMessageCredit, _deferredSizeCredit);
-            _deferredMessageCredit = 0;
-            _deferredSizeCredit = 0l;
-        }
-    }
 
     public FlowCreditManager_0_10 getCreditManager()
     {

@@ -25,6 +25,8 @@ import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.qpid.AMQStoreException;
+import org.apache.qpid.server.message.EnqueableMessage;
+import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 
 /**
@@ -66,14 +68,14 @@ public class TestableMemoryMessageStore extends MemoryMessageStore
 
     private class TestableTransaction implements Transaction
     {
-        public void enqueueMessage(TransactionLogResource queue, Long messageId) throws AMQStoreException
+        public void enqueueMessage(TransactionLogResource queue, EnqueableMessage message) throws AMQStoreException
         {
-            getMessages().put(messageId, (AMQQueue)queue);
+            getMessages().put(message.getMessageNumber(), (AMQQueue)queue);
         }
 
-        public void dequeueMessage(TransactionLogResource queue, Long messageId) throws AMQStoreException
+        public void dequeueMessage(TransactionLogResource queue, EnqueableMessage message) throws AMQStoreException
         {
-            getMessages().remove(messageId);
+            getMessages().remove(message.getMessageNumber());
         }
 
         public void commitTran() throws AMQStoreException
@@ -141,6 +143,12 @@ public class TestableMemoryMessageStore extends MemoryMessageStore
         public int getContent(int offsetInMessage, ByteBuffer dst)
         {
             return _storedMessage.getContent(offsetInMessage, dst);
+        }
+
+
+        public ByteBuffer getContent(int offsetInMessage, int size)
+        {
+            return _storedMessage.getContent(offsetInMessage, size);
         }
 
         public StoreFuture flushToStore()

@@ -163,7 +163,7 @@ public class QMFGetQueryCommand extends QMFCommand
 
             Exchange exchange = virtualHost.getExchangeRegistry().getExchange(exchangeName);
 
-            ArrayList<? extends BaseQueue> queues = exchange.route(responseMessage);
+            List<? extends BaseQueue> queues = exchange.route(responseMessage);
 
             for(BaseQueue q : queues)
             {

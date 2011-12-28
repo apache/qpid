@@ -115,4 +115,9 @@ public class Binding
         return result;
     }
 
+    public String toString()
+    {
+        return "Binding{bindingKey="+_bindingKey+", exchange="+_exchange+", queue="+_queue+"}";
+    }
+
 }

@@ -38,11 +38,13 @@ import org.slf4j.LoggerFactory;
 public class BasicMessageConsumer_0_8 extends BasicMessageConsumer<UnprocessedMessage_0_8>
 {
     protected final Logger _logger = LoggerFactory.getLogger(getClass());
+    private AMQSession_0_8.DestinationCache<AMQTopic> _topicDestinationCache;
+    private AMQSession_0_8.DestinationCache<AMQQueue> _queueDestinationCache;
 
     private final RejectBehaviour _rejectBehaviour;
 
     protected BasicMessageConsumer_0_8(int channelId, AMQConnection connection, AMQDestination destination,
-                                       String messageSelector, boolean noLocal, MessageFactoryRegistry messageFactory, AMQSession session,
+                                       String messageSelector, boolean noLocal, MessageFactoryRegistry messageFactory, AMQSession_0_8 session,
                                        AMQProtocolHandler protocolHandler, FieldTable rawSelector, int prefetchHigh, int prefetchLow,
                                        boolean exclusive, int acknowledgeMode, boolean browseOnly, boolean autoClose) throws JMSException
     {
@@ -59,6 +61,9 @@ public class BasicMessageConsumer_0_8 extends BasicMessageConsumer<UnprocessedMe
         {
             consumerArguments.put(AMQPFilterTypes.NO_CONSUME.getValue(), Boolean.TRUE);
         }
+
+        _topicDestinationCache = session.getTopicDestinationCache();
+        _queueDestinationCache = session.getQueueDestinationCache();
 
         if (destination.getRejectBehaviour() != null)
         {
@@ -100,7 +105,8 @@ public class BasicMessageConsumer_0_8 extends BasicMessageConsumer<UnprocessedMe
 
         return _messageFactory.createMessage(messageFrame.getDeliveryTag(),
                                              messageFrame.isRedelivered(), messageFrame.getExchange(),
-                                             messageFrame.getRoutingKey(), messageFrame.getContentHeader(), messageFrame.getBodies());
+                                             messageFrame.getRoutingKey(), messageFrame.getContentHeader(), messageFrame.getBodies(),
+                _queueDestinationCache, _topicDestinationCache);
 
     }
 

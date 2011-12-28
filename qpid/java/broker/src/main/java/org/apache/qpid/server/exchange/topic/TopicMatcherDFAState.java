@@ -77,7 +77,7 @@ public class TopicMatcherDFAState
         }
         if(nextState == null)
         {
-            return Collections.EMPTY_SET;
+            return Collections.EMPTY_LIST;
         }
         // Shortcut if we are at a looping terminal state
         if((nextState == this) && (_nextStateMap.size() == 1) && _nextStateMap.containsKey(TopicWord.ANY_WORD))
