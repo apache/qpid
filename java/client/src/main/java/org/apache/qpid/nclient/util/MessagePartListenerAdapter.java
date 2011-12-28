@@ -49,19 +49,9 @@ public class MessagePartListenerAdapter implements MessagePartListener
     {
         _currentMsg = new ByteBufferMessage(xfr.getId());
 
-        for (Struct st : xfr.getHeader().getStructs())
-        {
-            if(st instanceof DeliveryProperties)
-            {
-                _currentMsg.setDeliveryProperties((DeliveryProperties)st);
-
-            }
-            else if(st instanceof MessageProperties)
-            {
-                _currentMsg.setMessageProperties((MessageProperties)st);
-            }
-
-        }
+        Header header = xfr.getHeader();
+        _currentMsg.setDeliveryProperties(header.getDeliveryProperties());
+        _currentMsg.setMessageProperties(header.getMessageProperties());
 
 
         ByteBuffer body = xfr.getBody();

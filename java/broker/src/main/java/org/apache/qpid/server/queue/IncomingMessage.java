@@ -63,7 +63,7 @@ public class IncomingMessage implements Filterable, InboundMessage, EnqueableMes
      * delivered. It is <b>cleared after delivery has been attempted</b>. Any persistent record of destinations is done
      * by the message handle.
      */
-    private ArrayList<? extends BaseQueue> _destinationQueues;
+    private List<? extends BaseQueue> _destinationQueues;
 
     private long _expiration;
 
@@ -126,12 +126,18 @@ public class IncomingMessage implements Filterable, InboundMessage, EnqueableMes
 
     public MessageMetaData headersReceived()
     {
-        _messageMetaData = new MessageMetaData(_messagePublishInfo, _contentHeaderBody, 0);
+
+        return headersReceived(System.currentTimeMillis());
+    }
+
+    public MessageMetaData headersReceived(long currentTime)
+    {
+        _messageMetaData = new MessageMetaData(_messagePublishInfo, _contentHeaderBody, 0, currentTime);
         return _messageMetaData;
     }
 
 
-    public ArrayList<? extends BaseQueue> getDestinationQueues()
+    public List<? extends BaseQueue> getDestinationQueues()
     {
         return _destinationQueues;
     }
@@ -156,6 +162,11 @@ public class IncomingMessage implements Filterable, InboundMessage, EnqueableMes
     public AMQShortString getExchange()
     {
         return _messagePublishInfo.getExchange();
+    }
+
+    public AMQShortString getRoutingKeyShortString()
+    {
+        return _messagePublishInfo.getRoutingKey();
     }
 
     public String getRoutingKey()
@@ -209,7 +220,7 @@ public class IncomingMessage implements Filterable, InboundMessage, EnqueableMes
         return getContentHeader().bodySize;
     }
 
-    public Long getMessageNumber()
+    public long getMessageNumber()
     {
         return _storedMessageHandle.getMessageNumber();
     }
@@ -225,7 +236,7 @@ public class IncomingMessage implements Filterable, InboundMessage, EnqueableMes
 
     }
 
-    public void enqueue(final ArrayList<? extends BaseQueue> queues)
+    public void enqueue(final List<? extends BaseQueue> queues)
     {
         _destinationQueues = queues;
     }
@@ -286,6 +297,15 @@ public class IncomingMessage implements Filterable, InboundMessage, EnqueableMes
         }
         return written;
 
+    }
+
+
+    public ByteBuffer getContent(int offset, int size)
+    {
+        ByteBuffer buf = ByteBuffer.allocate(size);
+        getContent(buf,offset);
+        buf.flip();
+        return buf;
     }
 
     public void setStoredMessage(StoredMessage<MessageMetaData> storedMessageHandle)

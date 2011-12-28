@@ -20,8 +20,11 @@
 */
 package org.apache.qpid.server.message;
 
+import org.apache.qpid.server.store.StoredMessage;
+
 public interface EnqueableMessage
 {
-    Long getMessageNumber();
+    long getMessageNumber();
     boolean isPersistent();
+    StoredMessage getStoredMessage();
 }

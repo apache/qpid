@@ -557,7 +557,7 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
         List<String> list = new ArrayList<String>();
 
         AMQMessageHeader header = msg.getMessageHeader();
-        MessageProperties msgProps = msg.getHeader().get(MessageProperties.class);
+        MessageProperties msgProps = msg.getHeader().getMessageProperties();
 
         String appID = null;
         String userID = null;
@@ -619,7 +619,7 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
             throw new OperationsException("\"From MessageId\" should be greater than 0 and less than \"To MessageId\"");
         }
 
-        ServerTransaction txn = new LocalTransaction(_queue.getVirtualHost().getTransactionLog());
+        ServerTransaction txn = new LocalTransaction(_queue.getVirtualHost().getMessageStore());
         _queue.moveMessagesToAnotherQueue(fromMessageId, toMessageId, toQueueName, txn);
         txn.commit();
     }
@@ -654,7 +654,7 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
             throw new OperationsException("\"From MessageId\" should be greater than 0 and less than \"To MessageId\"");
         }
 
-        ServerTransaction txn = new LocalTransaction(_queue.getVirtualHost().getTransactionLog());
+        ServerTransaction txn = new LocalTransaction(_queue.getVirtualHost().getMessageStore());
 
         _queue.copyMessagesToAnotherQueue(fromMessageId, toMessageId, toQueueName, txn);
 

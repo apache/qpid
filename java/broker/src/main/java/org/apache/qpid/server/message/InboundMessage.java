@@ -22,10 +22,12 @@ package org.apache.qpid.server.message;
 
 
 import org.apache.qpid.server.queue.Filterable;
+import org.apache.qpid.framing.AMQShortString;
 
 public interface InboundMessage extends Filterable
 {
     String getRoutingKey();
+    AMQShortString getRoutingKeyShortString();
 
     AMQMessageHeader getMessageHeader();
 

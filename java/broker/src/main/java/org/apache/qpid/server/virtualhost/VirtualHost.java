@@ -39,7 +39,6 @@ import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.store.TransactionLog;
 
 public interface VirtualHost extends DurableConfigurationStore.Source, VirtualHostConfig, Closeable, StatisticsGatherer
 {
@@ -56,8 +55,6 @@ public interface VirtualHost extends DurableConfigurationStore.Source, VirtualHo
     ExchangeFactory getExchangeFactory();
 
     MessageStore getMessageStore();
-
-    TransactionLog getTransactionLog();
 
     DurableConfigurationStore getDurableConfigurationStore();
 

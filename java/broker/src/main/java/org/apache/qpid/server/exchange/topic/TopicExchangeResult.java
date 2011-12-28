@@ -39,6 +39,7 @@ public final class TopicExchangeResult implements TopicMatcherResult
     private final List<Binding> _bindings = new CopyOnWriteArrayList<Binding>();
     private final Map<AMQQueue, Integer> _unfilteredQueues = new ConcurrentHashMap<AMQQueue, Integer>();
     private final ConcurrentHashMap<AMQQueue, Map<MessageFilter,Integer>> _filteredQueues = new ConcurrentHashMap<AMQQueue, Map<MessageFilter, Integer>>();
+    private volatile ArrayList<AMQQueue> _unfilteredQueueList = new ArrayList<AMQQueue>(0);
 
     public void addUnfilteredQueue(AMQQueue queue)
     {
@@ -46,6 +47,9 @@ public final class TopicExchangeResult implements TopicMatcherResult
         if(instances == null)
         {
             _unfilteredQueues.put(queue, 1);
+            ArrayList<AMQQueue> newList = new ArrayList<AMQQueue>(_unfilteredQueueList);
+            newList.add(queue);
+            _unfilteredQueueList = newList;
         }
         else
         {
@@ -59,6 +63,10 @@ public final class TopicExchangeResult implements TopicMatcherResult
         if(instances == 1)
         {
             _unfilteredQueues.remove(queue);
+            ArrayList<AMQQueue> newList = new ArrayList<AMQQueue>(_unfilteredQueueList);
+            newList.remove(queue);
+            _unfilteredQueueList = newList;
+
         }
         else
         {
@@ -166,7 +174,7 @@ public final class TopicExchangeResult implements TopicMatcherResult
         {
             if(_filteredQueues.isEmpty())
             {
-                return new ArrayList<AMQQueue>(_unfilteredQueues.keySet());
+                return _unfilteredQueueList;
             }
             else
             {

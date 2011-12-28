@@ -39,7 +39,7 @@ import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.transport.DeliveryProperties;
 
-import java.io.DataOutputStream;
+import java.io.DataOutput;
 import java.io.IOException;
 
 public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
@@ -169,7 +169,7 @@ public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
             return _length;
         }
 
-        public void writePayload(DataOutputStream buffer) throws IOException
+        public void writePayload(DataOutput buffer) throws IOException
         {
             byte[] data = new byte[_length];
 
@@ -219,7 +219,7 @@ public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
         else
         {
             MessageTransferMessage message = (MessageTransferMessage) entry.getMessage();
-            DeliveryProperties delvProps = message.getHeader().get(DeliveryProperties.class);
+            DeliveryProperties delvProps = message.getHeader().getDeliveryProperties();
             exchangeName = (delvProps == null || delvProps.getExchange() == null) ? null : new AMQShortString(delvProps.getExchange());
             routingKey = (delvProps == null || delvProps.getRoutingKey() == null) ? null : new AMQShortString(delvProps.getRoutingKey());
         }
@@ -259,7 +259,7 @@ public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
                 return _underlyingBody.getSize();
             }
 
-            public void writePayload(DataOutputStream buffer) throws IOException
+            public void writePayload(DataOutput buffer) throws IOException
             {
                 if(_underlyingBody == null)
                 {
@@ -293,7 +293,7 @@ public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
         else
         {
             MessageTransferMessage message = (MessageTransferMessage) entry.getMessage();
-            DeliveryProperties delvProps = message.getHeader().get(DeliveryProperties.class);
+            DeliveryProperties delvProps = message.getHeader().getDeliveryProperties();
             exchangeName = (delvProps == null || delvProps.getExchange() == null) ? null : new AMQShortString(delvProps.getExchange());
             routingKey = (delvProps == null || delvProps.getRoutingKey() == null) ? null : new AMQShortString(delvProps.getRoutingKey());
         }
@@ -384,7 +384,7 @@ public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
             return OVERHEAD + _methodBody.getSize() + _headerBody.getSize() + _contentBody.getSize();
         }
 
-        public void writePayload(DataOutputStream buffer) throws IOException
+        public void writePayload(DataOutput buffer) throws IOException
         {
             AMQFrame.writeFrames(buffer, _channel, _methodBody, _headerBody, _contentBody);
         }
@@ -412,7 +412,7 @@ public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
             return OVERHEAD + _methodBody.getSize() + _headerBody.getSize() ;
         }
 
-        public void writePayload(DataOutputStream buffer) throws IOException
+        public void writePayload(DataOutput buffer) throws IOException
         {
             AMQFrame.writeFrames(buffer, _channel, _methodBody, _headerBody);
         }

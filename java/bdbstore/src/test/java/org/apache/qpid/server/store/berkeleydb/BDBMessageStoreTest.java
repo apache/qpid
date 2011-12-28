@@ -32,13 +32,11 @@ import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.framing.ProtocolVersion;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
-import org.apache.qpid.server.message.MessageMetaData;
-import org.apache.qpid.server.message.MessageMetaData_0_10;
+import org.apache.qpid.server.message.*;
 import org.apache.qpid.server.store.MessageMetaDataType;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StorableMessageMetaData;
 import org.apache.qpid.server.store.StoredMessage;
-import org.apache.qpid.server.store.TransactionLog;
 import org.apache.qpid.server.store.TransactionLogResource;
 import org.apache.qpid.transport.DeliveryProperties;
 import org.apache.qpid.transport.Header;
@@ -100,7 +98,7 @@ public class BDBMessageStoreTest extends org.apache.qpid.server.store.MessageSto
          */        
         MessageProperties msgProps_0_10 = createMessageProperties_0_10(bodySize);
         DeliveryProperties delProps_0_10 = createDeliveryProperties_0_10();
-        Header header_0_10 = new Header(msgProps_0_10, delProps_0_10);
+        Header header_0_10 = new Header(delProps_0_10, msgProps_0_10);
 
         MessageTransfer xfr_0_10 = new MessageTransfer("destination", MessageAcceptMode.EXPLICIT, 
                 MessageAcquireMode.PRE_ACQUIRED, header_0_10, completeContentBody_0_10);
@@ -162,7 +160,7 @@ public class BDBMessageStoreTest extends org.apache.qpid.server.store.MessageSto
 
         assertEquals("Message arrival time has changed", origArrivalTime_0_10, returnedMMD_0_10.getArrivalTime());
 
-        DeliveryProperties returnedDelProps_0_10 = returnedMMD_0_10.getHeader().get(DeliveryProperties.class);
+        DeliveryProperties returnedDelProps_0_10 = returnedMMD_0_10.getHeader().getDeliveryProperties();
         assertNotNull("DeliveryProperties were not returned", returnedDelProps_0_10);
         assertEquals("Immediate flag has changed", delProps_0_10.getImmediate(), returnedDelProps_0_10.getImmediate());
         assertEquals("Routing key has changed", delProps_0_10.getRoutingKey(), returnedDelProps_0_10.getRoutingKey());
@@ -170,7 +168,7 @@ public class BDBMessageStoreTest extends org.apache.qpid.server.store.MessageSto
         assertEquals("Message expiration has changed", delProps_0_10.getExpiration(), returnedDelProps_0_10.getExpiration());
         assertEquals("Message delivery priority has changed", delProps_0_10.getPriority(), returnedDelProps_0_10.getPriority());
 
-        MessageProperties returnedMsgProps = returnedMMD_0_10.getHeader().get(MessageProperties.class);
+        MessageProperties returnedMsgProps = returnedMMD_0_10.getHeader().getMessageProperties();
         assertNotNull("MessageProperties were not returned", returnedMsgProps);
         assertTrue("Message correlationID has changed", Arrays.equals(msgProps_0_10.getCorrelationId(), returnedMsgProps.getCorrelationId()));
         assertEquals("Message content length has changed", msgProps_0_10.getContentLength(), returnedMsgProps.getContentLength());
@@ -352,7 +350,7 @@ public class BDBMessageStoreTest extends org.apache.qpid.server.store.MessageSto
      */
     public void testTranCommit() throws Exception
     {
-        TransactionLog log = getVirtualHost().getTransactionLog();
+        MessageStore log = getVirtualHost().getMessageStore();
 
         BDBMessageStore bdbStore = assertBDBStore(log);
 
@@ -366,10 +364,10 @@ public class BDBMessageStoreTest extends org.apache.qpid.server.store.MessageSto
             }
         };
         
-        TransactionLog.Transaction txn = log.newTransaction();
+        MessageStore.Transaction txn = log.newTransaction();
         
-        txn.enqueueMessage(mockQueue, 1L);
-        txn.enqueueMessage(mockQueue, 5L);
+        txn.enqueueMessage(mockQueue, new MockMessage(1L));
+        txn.enqueueMessage(mockQueue, new MockMessage(5L));
         txn.commitTran();
 
         List<Long> enqueuedIds = bdbStore.getEnqueuedMessages(mockQueueName);
@@ -390,7 +388,7 @@ public class BDBMessageStoreTest extends org.apache.qpid.server.store.MessageSto
      */
     public void testTranRollbackBeforeCommit() throws Exception
     {
-        TransactionLog log = getVirtualHost().getTransactionLog();
+        MessageStore log = getVirtualHost().getMessageStore();
 
         BDBMessageStore bdbStore = assertBDBStore(log);
 
@@ -404,14 +402,14 @@ public class BDBMessageStoreTest extends org.apache.qpid.server.store.MessageSto
             }
         };
         
-        TransactionLog.Transaction txn = log.newTransaction();
+        MessageStore.Transaction txn = log.newTransaction();
         
-        txn.enqueueMessage(mockQueue, 21L);
+        txn.enqueueMessage(mockQueue, new MockMessage(21L));
         txn.abortTran();
         
         txn = log.newTransaction();
-        txn.enqueueMessage(mockQueue, 22L);
-        txn.enqueueMessage(mockQueue, 23L);
+        txn.enqueueMessage(mockQueue, new MockMessage(22L));
+        txn.enqueueMessage(mockQueue, new MockMessage(23L));
         txn.commitTran();
 
         List<Long> enqueuedIds = bdbStore.getEnqueuedMessages(mockQueueName);
@@ -431,7 +429,7 @@ public class BDBMessageStoreTest extends org.apache.qpid.server.store.MessageSto
      */
     public void testTranRollbackAfterCommit() throws Exception
     {
-        TransactionLog log = getVirtualHost().getTransactionLog();
+        MessageStore log = getVirtualHost().getMessageStore();
 
         BDBMessageStore bdbStore = assertBDBStore(log);
 
@@ -445,17 +443,17 @@ public class BDBMessageStoreTest extends org.apache.qpid.server.store.MessageSto
             }
         };
         
-        TransactionLog.Transaction txn = log.newTransaction();
+        MessageStore.Transaction txn = log.newTransaction();
         
-        txn.enqueueMessage(mockQueue, 30L);
+        txn.enqueueMessage(mockQueue, new MockMessage(30L));
         txn.commitTran();
 
         txn = log.newTransaction();
-        txn.enqueueMessage(mockQueue, 31L);
+        txn.enqueueMessage(mockQueue, new MockMessage(31L));
         txn.abortTran();
         
         txn = log.newTransaction();
-        txn.enqueueMessage(mockQueue, 32L);
+        txn.enqueueMessage(mockQueue, new MockMessage(32L));
         txn.commitTran();
         
         List<Long> enqueuedIds = bdbStore.getEnqueuedMessages(mockQueueName);
@@ -467,4 +465,73 @@ public class BDBMessageStoreTest extends org.apache.qpid.server.store.MessageSto
         assertEquals("Second Message is incorrect", 32L, val.longValue());
     }
 
+    private static class MockMessage implements ServerMessage, EnqueableMessage
+    {
+        private long _messageId;
+
+        public MockMessage(long messageId)
+        {
+            _messageId = messageId;
+        }
+
+        public String getRoutingKey()
+        {
+            return null;
+        }
+
+        public AMQMessageHeader getMessageHeader()
+        {
+            return null;
+        }
+
+        public StoredMessage getStoredMessage()
+        {
+            return null;
+        }
+
+        public boolean isPersistent()
+        {
+            return true;
+        }
+
+        public long getSize()
+        {
+            return 0;
+        }
+
+        public boolean isImmediate()
+        {
+            return false;
+        }
+
+        public long getExpiration()
+        {
+            return 0;
+        }
+
+        public MessageReference newReference()
+        {
+            return null;
+        }
+
+        public long getMessageNumber()
+        {
+            return _messageId;
+        }
+
+        public long getArrivalTime()
+        {
+            return 0;
+        }
+
+        public int getContent(ByteBuffer buf, int offset)
+        {
+            return 0;
+        }
+
+        public ByteBuffer getContent(int offset, int length)
+        {
+            return null;
+        }
+    }
 }

@@ -20,12 +20,13 @@
  */
 package org.apache.qpid.framing;
 
-import java.io.DataInputStream;
+import org.apache.qpid.codec.MarkableDataInput;
 
 public class HeartbeatBodyFactory implements BodyFactory
 {
-    public AMQBody createBody(DataInputStream in, long bodySize) throws AMQFrameDecodingException
+    public AMQBody createBody(MarkableDataInput in, long bodySize) throws AMQFrameDecodingException
     {
         return new HeartbeatBody();
     }
+
 }

@@ -37,8 +37,11 @@ import org.apache.qpid.server.filter.JMSSelectorFilter;
 import org.apache.qpid.server.message.InboundMessage;
 
 import javax.management.JMException;
+import java.sql.Array;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicLong;
+
 import java.lang.ref.WeakReference;
 
 public class TopicExchange extends AbstractExchange
@@ -76,8 +79,6 @@ public class TopicExchange extends AbstractExchange
 
 
     private static final Logger _logger = Logger.getLogger(TopicExchange.class);
-
-
 
     private final TopicParser _parser = new TopicParser();
 
@@ -175,7 +176,6 @@ public class TopicExchange extends AbstractExchange
             _bindings.put(binding, args);
         }
 
-
     }
 
     private JMSSelectorFilter createSelectorFilter(final FieldTable args) throws AMQInvalidArgumentException
@@ -201,14 +201,23 @@ public class TopicExchange extends AbstractExchange
     public ArrayList<BaseQueue> doRoute(InboundMessage payload)
     {
 
-        final AMQShortString routingKey = payload.getRoutingKey() == null
+        final AMQShortString routingKey = payload.getRoutingKeyShortString() == null
                                           ? AMQShortString.EMPTY_STRING
-                                          : new AMQShortString(payload.getRoutingKey());
+                                          : payload.getRoutingKeyShortString();
 
-        // The copy here is unfortunate, but not too bad relevant to the amount of
-        // things created and copied in getMatchedQueues
-        ArrayList<BaseQueue> queues = new ArrayList<BaseQueue>();
-        queues.addAll(getMatchedQueues(payload, routingKey));
+        final Collection<AMQQueue> matchedQueues = getMatchedQueues(payload, routingKey);
+
+        ArrayList<BaseQueue> queues;
+
+        if(matchedQueues.getClass() == ArrayList.class)
+        {
+            queues = (ArrayList) matchedQueues;
+        }
+        else
+        {
+            queues = new ArrayList<BaseQueue>();
+            queues.addAll(matchedQueues);
+        }
 
         if(queues == null || queues.isEmpty())
         {
@@ -325,25 +334,28 @@ public class TopicExchange extends AbstractExchange
     {
 
         Collection<TopicMatcherResult> results = _parser.parse(routingKey);
-        if(results.isEmpty())
+        switch(results.size())
         {
-            return Collections.EMPTY_SET;
-        }
-        else
-        {
-            Collection<AMQQueue> queues = results.size() == 1 ? null : new HashSet<AMQQueue>();
-            for(TopicMatcherResult result : results)
-            {
-                TopicExchangeResult res = (TopicExchangeResult)result;
-
-                for(Binding b : res.getBindings())
+            case 0:
+                return Collections.EMPTY_SET;
+            case 1:
+                TopicMatcherResult[] resultQueues = new TopicMatcherResult[1];
+                results.toArray(resultQueues);
+                return ((TopicExchangeResult)resultQueues[0]).processMessage(message, null);
+            default:
+                Collection<AMQQueue> queues = new HashSet<AMQQueue>();
+                for(TopicMatcherResult result : results)
                 {
-                    b.incrementMatches();
+                    TopicExchangeResult res = (TopicExchangeResult)result;
+
+                    for(Binding b : res.getBindings())
+                    {
+                        b.incrementMatches();
+                    }
+
+                    queues = res.processMessage(message, queues);
                 }
-                
-                queues = res.processMessage(message, queues);
-            }
-            return queues;
+                return queues;
         }
 
 

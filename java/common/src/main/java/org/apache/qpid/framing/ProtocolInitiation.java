@@ -21,13 +21,10 @@
 package org.apache.qpid.framing;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.codec.MarkableDataInput;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import java.io.*;
 
-import java.io.UnsupportedEncodingException;
-import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 public class ProtocolInitiation extends AMQDataBlock implements EncodableAMQDataBlock
@@ -66,7 +63,7 @@ public class ProtocolInitiation extends AMQDataBlock implements EncodableAMQData
              pv.equals(ProtocolVersion.v0_91) ? 1 : pv.getMinorVersion());
     }
 
-    public ProtocolInitiation(DataInputStream in) throws IOException
+    public ProtocolInitiation(MarkableDataInput in) throws IOException
     {
         _protocolHeader = new byte[4];
         in.read(_protocolHeader);
@@ -82,7 +79,7 @@ public class ProtocolInitiation extends AMQDataBlock implements EncodableAMQData
         return 4 + 1 + 1 + 1 + 1;
     }
 
-    public void writePayload(DataOutputStream buffer) throws IOException
+    public void writePayload(DataOutput buffer) throws IOException
     {
 
         buffer.write(_protocolHeader);
@@ -143,7 +140,7 @@ public class ProtocolInitiation extends AMQDataBlock implements EncodableAMQData
          * @return true if we have enough data to decode the PI frame fully, false if more
          * data is required
          */
-        public boolean decodable(DataInputStream in) throws IOException
+        public boolean decodable(MarkableDataInput in) throws IOException
         {
             return (in.available() >= 8);
         }

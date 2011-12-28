@@ -52,7 +52,9 @@ import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.framing.abstraction.MessagePublishInfoImpl;
 import org.apache.qpid.management.common.mbeans.ManagedQueue;
 import org.apache.qpid.server.message.MessageMetaData;
-import org.apache.qpid.server.store.TransactionLog;
+import org.apache.qpid.server.message.EnqueableMessage;
+import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.store.StoredMessage;
 import org.apache.qpid.server.store.TransactionLogResource;
 import org.apache.qpid.server.store.berkeleydb.keys.MessageContentKey_4;
 import org.apache.qpid.server.store.berkeleydb.tuples.MessageContentKeyTupleBindingFactory;
@@ -415,7 +417,7 @@ public class BDBUpgradeTest extends QpidBrokerTestCase
             ContentHeaderBody contentHeaderBody = new ContentHeaderBody(classForBasic, 1, props, bodySize);
 
             // add content entry to database
-            long messageId = store.getNewMessageId();
+            final long messageId = store.getNewMessageId();
             TupleBinding<MessageContentKey> contentKeyTB = new MessageContentKeyTupleBindingFactory(storeVersion).getInstance();
             MessageContentKey contentKey = null;
             if (storeVersion == VERSION_4)
@@ -451,9 +453,29 @@ public class BDBUpgradeTest extends QpidBrokerTestCase
                     return queueName.asString();
                 }
             };
-            TransactionLog log = (TransactionLog) store;
-            TransactionLog.Transaction txn = log.newTransaction();
-            txn.enqueueMessage(mockQueue, messageId);
+
+            EnqueableMessage mockMessage = new EnqueableMessage()
+            {
+    
+                public long getMessageNumber()
+                {
+                    return messageId;
+                }
+
+                public boolean isPersistent()
+                {
+                    return true;
+                }
+
+                public StoredMessage getStoredMessage()
+                {
+                    return null;
+                }
+            };
+
+            MessageStore log = (MessageStore) store;
+            MessageStore.Transaction txn = log.newTransaction();
+            txn.enqueueMessage(mockQueue, mockMessage);
             txn.commitTran();
         }
         finally

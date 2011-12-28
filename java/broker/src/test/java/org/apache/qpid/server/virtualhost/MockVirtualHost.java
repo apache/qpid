@@ -41,7 +41,6 @@ import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 import org.apache.qpid.server.stats.StatisticsCounter;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.MessageStore;
-import org.apache.qpid.server.store.TransactionLog;
 
 public class MockVirtualHost implements VirtualHost
 {
@@ -159,10 +158,6 @@ public class MockVirtualHost implements VirtualHost
         return null;
     }
 
-    public TransactionLog getTransactionLog()
-    {
-        return null;
-    }
 
     public void removeBrokerConnection(BrokerLink brokerLink)
     {

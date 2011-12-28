@@ -51,7 +51,6 @@ public class QueueRunner implements ReadWriteRunnable
 
     private final AtomicInteger _scheduled = new AtomicInteger(IDLE);
 
-    private static final long ITERATIONS = SimpleAMQQueue.MAX_ASYNC_DELIVERIES;
     private final AtomicBoolean _stateChange = new AtomicBoolean();
 
     private final AtomicLong _lastRunAgain = new AtomicLong();
@@ -64,8 +63,6 @@ public class QueueRunner implements ReadWriteRunnable
     {
         _queue = queue;
     }
-
-    private int trouble = 0;
 
     public void run()
     {

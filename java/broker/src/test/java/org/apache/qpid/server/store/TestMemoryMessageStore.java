@@ -82,6 +82,12 @@ public class TestMemoryMessageStore extends MemoryMessageStore
             return _storedMessage.getContent(offsetInMessage, dst);
         }
 
+
+        public ByteBuffer getContent(int offsetInMessage, int size)
+        {
+            return _storedMessage.getContent(offsetInMessage, size);
+        }
+
         public StoreFuture flushToStore()
         {
             return _storedMessage.flushToStore();

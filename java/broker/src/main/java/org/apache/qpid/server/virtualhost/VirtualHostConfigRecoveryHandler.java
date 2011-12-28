@@ -20,12 +20,12 @@
 */
 package org.apache.qpid.server.virtualhost;
 
+import org.apache.qpid.server.message.EnqueableMessage;
 import org.apache.qpid.server.store.ConfigurationRecoveryHandler;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.MessageStoreRecoveryHandler;
 import org.apache.qpid.server.store.StoredMessage;
 import org.apache.qpid.server.store.TransactionLogRecoveryHandler;
-import org.apache.qpid.server.store.TransactionLog;
 import org.apache.qpid.server.store.TransactionLogResource;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
@@ -73,7 +73,6 @@ public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHa
     private List<ProcessAction> _actions;
 
     private MessageStore _store;
-    private TransactionLog _transactionLog;
 
     private final Map<String, Integer> _queueRecoveries = new TreeMap<String, Integer>();
     private Map<Long, ServerMessage> _recoveredMessages = new HashMap<Long, ServerMessage>();
@@ -86,7 +85,7 @@ public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHa
         _virtualHost = virtualHost;
     }
 
-    public QueueRecoveryHandler begin(MessageStore store)
+    public VirtualHostConfigRecoveryHandler begin(MessageStore store)
     {
         _logSubject = new MessageStoreLogSubject(_virtualHost,store);
         _store = store;
@@ -99,14 +98,12 @@ public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHa
     {
         try
         {
-            AMQShortString queueNameShortString = new AMQShortString(queueName);
-    
-            AMQQueue q = _virtualHost.getQueueRegistry().getQueue(queueNameShortString);
+            AMQQueue q = _virtualHost.getQueueRegistry().getQueue(queueName);
     
             if (q == null)
             {
-                q = AMQQueueFactory.createAMQQueueImpl(queueNameShortString, true, owner == null ? null : new AMQShortString(owner), false, exclusive, _virtualHost,
-                                                       arguments);
+                q = AMQQueueFactory.createAMQQueueImpl(queueName, true, owner, false, exclusive, _virtualHost,
+                                                       FieldTable.convertToMap(arguments));
                 _virtualHost.getQueueRegistry().registerQueue(q);
             }
     
@@ -184,12 +181,6 @@ public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHa
     {
         //TODO - log end
         //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    public TransactionLogRecoveryHandler.QueueEntryRecoveryHandler begin(TransactionLog log)
-    {
-        _transactionLog = log;
-        return this;
     }
 
     private static final class ProcessAction
@@ -316,15 +307,15 @@ public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHa
                 else
                 {
                     _logger.warn("Message id " + messageId + " referenced in log as enqueued in queue " + queue.getNameShortString() + " is unknown, entry will be discarded");
-                    TransactionLog.Transaction txn = _transactionLog.newTransaction();
-                    txn.dequeueMessage(queue, messageId);
+                    MessageStore.Transaction txn = _store.newTransaction();
+                    txn.dequeueMessage(queue, new DummyMessage(messageId));
                     txn.commitTranAsync();
                 }
             }
             else
             {
                 _logger.warn("Message id " + messageId + " in log references queue " + queueName + " which is not in the configuration, entry will be discarded");
-                TransactionLog.Transaction txn = _transactionLog.newTransaction();
+                MessageStore.Transaction txn = _store.newTransaction();
                 TransactionLogResource mockQueue =
                         new TransactionLogResource()
                         {
@@ -334,7 +325,7 @@ public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHa
                                 return queueName;
                             }
                         };
-                txn.dequeueMessage(mockQueue, messageId);
+                txn.dequeueMessage(mockQueue, new DummyMessage(messageId));
                 txn.commitTranAsync();
             }
 
@@ -367,4 +358,32 @@ public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHa
         CurrentActor.get().message(_logSubject, TransactionLogMessages.RECOVERY_COMPLETE(null, false));
     }
 
+    private static class DummyMessage implements EnqueableMessage
+    {
+
+
+        private final long _messageId;
+
+        public DummyMessage(long messageId)
+        {
+            _messageId = messageId;
+        }
+
+        public long getMessageNumber()
+        {
+            return _messageId;
+        }
+
+
+        public boolean isPersistent()
+        {
+            return true;
+        }
+
+
+        public StoredMessage getStoredMessage()
+        {
+            return null;
+        }
+    }
 }

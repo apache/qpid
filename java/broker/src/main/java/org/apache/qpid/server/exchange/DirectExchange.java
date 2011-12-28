@@ -34,6 +34,8 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import javax.management.JMException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 
@@ -41,8 +43,52 @@ public class DirectExchange extends AbstractExchange
 {
     private static final Logger _logger = Logger.getLogger(DirectExchange.class);
 
-    private final ConcurrentHashMap<String, CopyOnWriteArraySet<Binding>> _bindingsByKey =
-            new ConcurrentHashMap<String, CopyOnWriteArraySet<Binding>>();
+    private static final class BindingSet
+    {
+        private CopyOnWriteArraySet<Binding> _bindings = new CopyOnWriteArraySet<Binding>();
+        private List<BaseQueue> _queues = new ArrayList<BaseQueue>();
+
+        public synchronized void addBinding(Binding binding)
+        {
+            _bindings.add(binding);
+            recalculateQueues();
+        }
+
+
+        public synchronized void removeBinding(Binding binding)
+        {
+            _bindings.remove(binding);
+            recalculateQueues();
+        }
+
+        private void recalculateQueues()
+        {
+            List<BaseQueue> queues = new ArrayList<BaseQueue>(_bindings.size());
+
+            for(Binding b : _bindings)
+            {
+                if(!queues.contains(b.getQueue()))
+                {
+                    queues.add(b.getQueue());
+                }
+            }
+            _queues = queues;
+        }
+
+
+        public List<BaseQueue> getQueues()
+        {
+            return _queues;
+        }
+
+        public CopyOnWriteArraySet<Binding> getBindings()
+        {
+            return _bindings;
+        }
+    }
+
+    private final ConcurrentHashMap<String, BindingSet> _bindingsByKey =
+            new ConcurrentHashMap<String, BindingSet>();
 
     public static final ExchangeType<DirectExchange> TYPE = new ExchangeType<DirectExchange>()
     {
@@ -91,33 +137,20 @@ public class DirectExchange extends AbstractExchange
     }
 
 
-    public ArrayList<? extends BaseQueue> doRoute(InboundMessage payload)
+    public List<? extends BaseQueue> doRoute(InboundMessage payload)
     {
 
         final String routingKey = payload.getRoutingKey();
 
-        CopyOnWriteArraySet<Binding> bindings = _bindingsByKey.get(routingKey == null ? "" : routingKey);
+        BindingSet bindings = _bindingsByKey.get(routingKey == null ? "" : routingKey);
 
         if(bindings != null)
         {
-            final ArrayList<BaseQueue> queues = new ArrayList<BaseQueue>(bindings.size());
-
-            for(Binding binding : bindings)
-            {
-                queues.add(binding.getQueue());
-                binding.incrementMatches();
-            }
-
-            if (_logger.isDebugEnabled())
-            {
-                _logger.debug("Publishing message to queue " + queues);
-            }
-
-            return queues;
+            return bindings.getQueues();
         }
         else
         {
-            return new ArrayList<BaseQueue>(0); 
+            return Collections.emptyList();
         }
 
 
@@ -132,16 +165,10 @@ public class DirectExchange extends AbstractExchange
     public boolean isBound(AMQShortString routingKey, AMQQueue queue)
     {
         String bindingKey = (routingKey == null) ? "" : routingKey.toString();
-        CopyOnWriteArraySet<Binding> bindings = _bindingsByKey.get(bindingKey);
+        BindingSet bindings = _bindingsByKey.get(bindingKey);
         if(bindings != null)
         {
-            for(Binding binding : bindings)
-            {
-                if(binding.getQueue().equals(queue))
-                {
-                    return true;
-                }
-            }
+            return bindings.getQueues().contains(queue);
         }
         return false;
 
@@ -150,22 +177,20 @@ public class DirectExchange extends AbstractExchange
     public boolean isBound(AMQShortString routingKey)
     {
         String bindingKey = (routingKey == null) ? "" : routingKey.toString();
-        CopyOnWriteArraySet<Binding> bindings = _bindingsByKey.get(bindingKey);
-        return bindings != null && !bindings.isEmpty();
+        BindingSet bindings = _bindingsByKey.get(bindingKey);
+        return bindings != null && !bindings.getQueues().isEmpty();
     }
 
     public boolean isBound(AMQQueue queue)
     {
 
-        for (CopyOnWriteArraySet<Binding> bindings : _bindingsByKey.values())
+        for (BindingSet bindings : _bindingsByKey.values())
         {
-            for(Binding binding : bindings)
+            if(bindings.getQueues().contains(queue))
             {
-                if(binding.getQueue().equals(queue))
-                {
-                    return true;
-                }
+                return true;
             }
+
         }
         return false;
     }
@@ -184,19 +209,19 @@ public class DirectExchange extends AbstractExchange
         assert queue != null;
         assert routingKey != null;
 
-        CopyOnWriteArraySet<Binding> bindings = _bindingsByKey.get(bindingKey);
+        BindingSet bindings = _bindingsByKey.get(bindingKey);
 
         if(bindings == null)
         {
-            bindings = new CopyOnWriteArraySet<Binding>();
-            CopyOnWriteArraySet<Binding> newBindings;
+            bindings = new BindingSet();
+            BindingSet newBindings;
             if((newBindings = _bindingsByKey.putIfAbsent(bindingKey, bindings)) != null)
             {
                 bindings = newBindings;
             }
         }
 
-        bindings.add(binding);
+        bindings.addBinding(binding);
 
     }
 
@@ -204,10 +229,10 @@ public class DirectExchange extends AbstractExchange
     {
         assert binding != null;
 
-        CopyOnWriteArraySet<Binding> bindings = _bindingsByKey.get(binding.getBindingKey());
+        BindingSet bindings = _bindingsByKey.get(binding.getBindingKey());
         if(bindings != null)
         {
-            bindings.remove(binding);
+            bindings.removeBinding(binding);
         }
 
     }

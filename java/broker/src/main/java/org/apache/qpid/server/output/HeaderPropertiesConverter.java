@@ -40,8 +40,8 @@ public class HeaderPropertiesConverter
         BasicContentHeaderProperties props = new BasicContentHeaderProperties();
 
         Header header = messageTransferMessage.getHeader();
-        DeliveryProperties deliveryProps = header.get(DeliveryProperties.class);
-        MessageProperties messageProps = header.get(MessageProperties.class);
+        DeliveryProperties deliveryProps = header.getDeliveryProperties();
+        MessageProperties messageProps = header.getMessageProperties();
 
         if(deliveryProps != null)
         {

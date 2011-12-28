@@ -85,6 +85,13 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
         
         //TODO: do we need to check that the queue already exists with exactly the same "configuration"?
 
+        AMQChannel channel = protocolConnection.getChannel(channelId);
+
+        if (channel == null)
+        {
+            throw body.getChannelNotFoundException(channelId);
+        }
+
         synchronized (queueRegistry)
         {
             queue = queueRegistry.getQueue(queueName);
@@ -183,12 +190,6 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
             }
 
 
-            AMQChannel channel = protocolConnection.getChannel(channelId);
-
-            if (channel == null)
-            {
-                throw body.getChannelNotFoundException(channelId);
-            }
 
             //set this as the default queue on the channel:
             channel.setDefaultQueue(queue);

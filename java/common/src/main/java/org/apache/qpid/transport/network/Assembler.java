@@ -26,13 +26,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.qpid.transport.Header;
-import org.apache.qpid.transport.Method;
-import org.apache.qpid.transport.ProtocolError;
-import org.apache.qpid.transport.ProtocolEvent;
-import org.apache.qpid.transport.ProtocolHeader;
-import org.apache.qpid.transport.Receiver;
-import org.apache.qpid.transport.Struct;
+import org.apache.qpid.transport.*;
 import org.apache.qpid.transport.codec.BBDecoder;
 
 /**
@@ -198,12 +192,33 @@ public class Assembler implements Receiver<NetworkEvent>, NetworkDelegate
             break;
         case HEADER:
             command = getIncompleteCommand(channel);
-            List<Struct> structs = new ArrayList<Struct>(2);
+            List<Struct> structs = null;
+            DeliveryProperties deliveryProps = null;
+            MessageProperties messageProps = null;
+
             while (dec.hasRemaining())
             {
-                structs.add(dec.readStruct32());
+                Struct struct = dec.readStruct32();
+                if(struct instanceof  DeliveryProperties && deliveryProps == null)
+                {
+                    deliveryProps = (DeliveryProperties) struct;
+                }
+                else if(struct instanceof MessageProperties && messageProps == null)
+                {
+                    messageProps = (MessageProperties) struct;
+                }
+                else
+                {
+                    if(structs == null)
+                    {
+                        structs = new ArrayList<Struct>(2);
+                    }
+                    structs.add(struct);
+                }
+
             }
-            command.setHeader(new Header(structs));
+            command.setHeader(new Header(deliveryProps,messageProps,structs));
+
             if (frame.isLastSegment())
             {
                 setIncompleteCommand(channel, null);

@@ -21,7 +21,7 @@
 package org.apache.qpid.framing;
 
 import java.io.DataInputStream;
-import java.io.DataOutputStream;
+import java.io.DataOutput;
 import java.io.IOException;
 
 import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
@@ -56,7 +56,7 @@ public class HeartbeatBody implements AMQBody
         return 0;//heartbeats we generate have no payload
     }
 
-    public void writePayload(DataOutputStream buffer)
+    public void writePayload(DataOutput buffer)
     {
     }
 

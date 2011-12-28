@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.framing;
 
+import java.io.DataInput;
 import java.io.DataInputStream;
 import java.io.IOException;
 
@@ -39,7 +40,7 @@ public class ContentHeaderPropertiesFactory
     }
 
     public ContentHeaderProperties createContentHeaderProperties(int classId, int propertyFlags,
-                                                                 DataInputStream buffer, int size)
+                                                                 DataInput buffer, int size)
              throws AMQFrameDecodingException, IOException
     {
         ContentHeaderProperties properties;

@@ -20,8 +20,9 @@
  */
 package org.apache.qpid.framing;
 
+import java.io.DataInput;
 import java.io.DataInputStream;
-import java.io.DataOutputStream;
+import java.io.DataOutput;
 import java.io.IOException;
 
 import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
@@ -45,7 +46,7 @@ public class ContentHeaderBody implements AMQBody
     {
     }
 
-    public ContentHeaderBody(DataInputStream buffer, long size) throws AMQFrameDecodingException, IOException
+    public ContentHeaderBody(DataInput buffer, long size) throws AMQFrameDecodingException, IOException
     {
         classId = buffer.readUnsignedShort();
         weight = buffer.readUnsignedShort();
@@ -106,7 +107,7 @@ public class ContentHeaderBody implements AMQBody
         return 2 + 2 + 8 + 2 + properties.getPropertyListSize();
     }
 
-    public void writePayload(DataOutputStream buffer) throws IOException
+    public void writePayload(DataOutput buffer) throws IOException
     {
         EncodingUtils.writeUnsignedShort(buffer, classId);
         EncodingUtils.writeUnsignedShort(buffer, weight);

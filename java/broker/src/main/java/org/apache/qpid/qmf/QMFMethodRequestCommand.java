@@ -27,6 +27,7 @@ import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.AMQException;
 
+import java.util.List;
 import java.util.UUID;
 import java.util.ArrayList;
 
@@ -68,7 +69,7 @@ public class QMFMethodRequestCommand extends QMFCommand
             QMFMessage responseMessage = new QMFMessage(queueName, cmd);
 
 
-            ArrayList<? extends BaseQueue> queues = exchange.route(responseMessage);
+            List<? extends BaseQueue> queues = exchange.route(responseMessage);
 
 
             for(BaseQueue q : queues)

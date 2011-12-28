@@ -63,16 +63,13 @@ public class QueuePurgeHandler implements StateAwareMethodListener<QueuePurgeBod
         QueueRegistry queueRegistry = virtualHost.getQueueRegistry();
 
         AMQChannel channel = protocolConnection.getChannel(channelId);
-
-
+        if (channel == null)
+        {
+            throw body.getChannelNotFoundException(channelId);
+        }
         AMQQueue queue;
         if(body.getQueue() == null)
         {
-
-           if (channel == null)
-           {
-               throw body.getChannelNotFoundException(channelId);
-           }
 
            //get the default queue on the channel:
            queue = channel.getDefaultQueue();

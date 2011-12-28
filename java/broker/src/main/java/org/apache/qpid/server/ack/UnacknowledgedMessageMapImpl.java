@@ -157,6 +157,14 @@ public class UnacknowledgedMessageMapImpl implements UnacknowledgedMessageMap
         }
     }
 
+    public Collection<QueueEntry> acknowledge(long deliveryTag, boolean multiple)
+    {
+        Map<Long, QueueEntry> ackedMessageMap = new LinkedHashMap<Long,QueueEntry>();
+        collect(deliveryTag, multiple, ackedMessageMap);
+        remove(ackedMessageMap);
+        return ackedMessageMap.values();
+    }
+
     private void collect(long key, Map<Long, QueueEntry> msgs)
     {
         synchronized (_lock)

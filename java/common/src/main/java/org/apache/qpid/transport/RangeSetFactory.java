@@ -18,26 +18,17 @@
  * under the License.
  *
  */
+package org.apache.qpid.transport;
 
-package org.apache.qpid.server.queue;
-
-import org.apache.qpid.server.message.ServerMessage;
-import org.apache.qpid.server.store.TransactionLogResource;
-import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.AMQShortString;
-
-public interface BaseQueue extends TransactionLogResource
+public class RangeSetFactory
 {
-    public static interface PostEnqueueAction
+    public static RangeSet createRangeSet()
     {
-        public void onEnqueue(QueueEntry entry);
+        return new RangeSetImpl();
     }
 
-    void enqueue(ServerMessage message) throws AMQException;
-    void enqueue(ServerMessage message, PostEnqueueAction action) throws AMQException;
-    void enqueue(ServerMessage message, boolean transactional, PostEnqueueAction action) throws AMQException;
-
-    boolean isDurable();
-
-    AMQShortString getNameShortString();
+    public static RangeSet createRangeSet(int size)
+    {
+        return new RangeSetImpl(size);
+    }
 }

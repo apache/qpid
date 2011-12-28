@@ -95,7 +95,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 public class AMQChannel implements SessionConfig, AMQSessionModel
 {
-    public static final int DEFAULT_PREFETCH = 5000;
+    public static final int DEFAULT_PREFETCH = 4096;
 
     private static final Logger _logger = Logger.getLogger(AMQChannel.class);
 
@@ -166,6 +166,8 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
     private final UUID _id;
     private long _createTime = System.currentTimeMillis();
 
+    private final ClientDeliveryMethod _clientDeliveryMethod;
+
     public AMQChannel(AMQProtocolSession session, int channelId, MessageStore messageStore)
             throws AMQException
     {
@@ -183,6 +185,8 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
 
         // by default the session is non-transactional
         _transaction = new AutoCommitTransaction(_messageStore);
+
+         _clientDeliveryMethod = session.createDeliveryMethod(_channelId);
     }
 
     public ConfigStore getConfigStore()
@@ -204,6 +208,11 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
         // theory
         return !(_transaction instanceof AutoCommitTransaction);
     }
+
+    public void receivedComplete()
+    {
+    }
+
 
     public boolean inTransaction()
     {
@@ -284,7 +293,7 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
             _currentMessage.setExpiration();
 
 
-            MessageMetaData mmd = _currentMessage.headersReceived();
+            MessageMetaData mmd = _currentMessage.headersReceived(getProtocolSession().getLastReceivedTime());
             final StoredMessage<MessageMetaData> handle = _messageStore.addMessage(mmd);
             _currentMessage.setStoredMessage(handle);
 
@@ -316,8 +325,7 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
         {
             try
             {
-                _currentMessage.getStoredMessage().flushToStore();
-                final ArrayList<? extends BaseQueue> destinationQueues = _currentMessage.getDestinationQueues();
+                final List<? extends BaseQueue> destinationQueues = _currentMessage.getDestinationQueues();
 
                 if(!checkMessageUserId(_currentMessage.getContentHeader()))
                 {
@@ -339,11 +347,13 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
                     }
                     else
                     {
-                        _transaction.enqueue(destinationQueues, _currentMessage, new MessageDeliveryAction(_currentMessage, destinationQueues, isTransactional()));
+                        _transaction.enqueue(destinationQueues, _currentMessage, new MessageDeliveryAction(_currentMessage, destinationQueues), getProtocolSession().getLastReceivedTime());
                         incrementOutstandingTxnsIfNecessary();
 			            updateTransactionalActivity();
                     }
                 }
+                _currentMessage.getStoredMessage().flushToStore();
+
             }
             finally
             {
@@ -857,10 +867,8 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
     private Collection<QueueEntry> getAckedMessages(long deliveryTag, boolean multiple)
     {
 
-        Map<Long, QueueEntry> ackedMessageMap = new LinkedHashMap<Long,QueueEntry>();
-        _unacknowledgedMessageMap.collect(deliveryTag, multiple, ackedMessageMap);
-        _unacknowledgedMessageMap.remove(ackedMessageMap);
-        return ackedMessageMap.values();
+        return _unacknowledgedMessageMap.acknowledge(deliveryTag, multiple);
+
     }
 
     /**
@@ -949,12 +957,17 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
 
     public void commit() throws AMQException
     {
+        commit(null);
+    }
+    public void commit(Runnable immediateAction) throws AMQException
+    {
+
         if (!isTransactional())
         {
             throw new AMQException("Fatal error: commit called on non-transactional channel");
         }
 
-        _transaction.commit();
+        _transaction.commit(immediateAction);
 
         _txnCommits.incrementAndGet();
         _txnStarts.incrementAndGet();
@@ -1033,7 +1046,7 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
     {
         if (isTransactional())
         {
-            _txnUpdateTime.set(System.currentTimeMillis());
+            _txnUpdateTime.set(getProtocolSession().getLastReceivedTime());
         }
     }
 
@@ -1078,20 +1091,6 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
     {
         return _messageStore;
     }
-
-    private final ClientDeliveryMethod _clientDeliveryMethod = new ClientDeliveryMethod()
-        {
-
-            public void deliverToClient(final Subscription sub, final QueueEntry entry, final long deliveryTag)
-                    throws AMQException
-            {
-                _session.registerMessageDelivered(entry.getMessage().getSize());
-                getProtocolSession().getProtocolOutputConverter().writeDeliver(entry, getChannelId(),
-                                                                               deliveryTag, sub.getConsumerTag());
-                entry.incrementDeliveryCount();
-            }
-
-        };
 
     public ClientDeliveryMethod getClientDeliveryMethod()
     {
@@ -1158,11 +1157,10 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
     private class MessageDeliveryAction implements ServerTransaction.Action
     {
         private IncomingMessage _incommingMessage;
-        private ArrayList<? extends BaseQueue> _destinationQueues;
+        private List<? extends BaseQueue> _destinationQueues;
 
         public MessageDeliveryAction(IncomingMessage currentMessage,
-                                     ArrayList<? extends BaseQueue> destinationQueues,
-                                     boolean transactional)
+                                     List<? extends BaseQueue> destinationQueues)
         {
             _incommingMessage = currentMessage;
             _destinationQueues = destinationQueues;
@@ -1177,8 +1175,10 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
                 final AMQMessage amqMessage = createAMQMessage(_incommingMessage);
                 MessageReference ref = amqMessage.newReference();
 
-                for(final BaseQueue queue : _destinationQueues)
+                for(int i = 0; i < _destinationQueues.size(); i++)
                 {
+                    BaseQueue queue = _destinationQueues.get(i);
+
                     BaseQueue.PostEnqueueAction action;
 
                     if(immediate)
@@ -1190,7 +1190,7 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
                         action = null;
                     }
 
-                    queue.enqueue(amqMessage, action);
+                    queue.enqueue(amqMessage, isTransactional(), action);
 
                     if(queue instanceof AMQQueue)
                     {
@@ -1198,6 +1198,8 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
                     }
 
                 }
+
+                _incommingMessage.getStoredMessage().flushToStore();
                 ref.release();
             }
             catch (AMQException e)
@@ -1539,7 +1541,7 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
 
             final InboundMessage m = new InboundMessageAdapter(rejectedQueueEntry);
 
-            final ArrayList<? extends BaseQueue> destinationQueues = altExchange.route(m);
+            final List<? extends BaseQueue> destinationQueues = altExchange.route(m);
 
             if (destinationQueues == null || destinationQueues.isEmpty())
             {

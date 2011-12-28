@@ -31,6 +31,7 @@ import org.apache.qpid.AMQException;
 
 import java.util.Collection;
 import java.util.ArrayList;
+import java.util.List;
 
 public class QMFSchemaRequestCommand extends QMFCommand
 {
@@ -70,7 +71,7 @@ public class QMFSchemaRequestCommand extends QMFCommand
             QMFMessage responseMessage = new QMFMessage(routingKey, cmd);
 
 
-            ArrayList<? extends BaseQueue> queues = exchange.route(responseMessage);
+            List<? extends BaseQueue> queues = exchange.route(responseMessage);
 
             for(BaseQueue q : queues)
             {

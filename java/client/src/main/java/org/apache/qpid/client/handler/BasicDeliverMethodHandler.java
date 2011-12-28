@@ -48,7 +48,10 @@ public class BasicDeliverMethodHandler implements StateAwareMethodListener<Basic
                 body.getExchange(),
                 body.getRoutingKey(),
                 body.getRedelivered());
-        _logger.debug("New JmsDeliver method received:" + session);
+        if(_logger.isDebugEnabled())
+        {
+            _logger.debug("New JmsDeliver method received:" + session);
+        }
         session.unprocessedMessageReceived(channelId, msg);
     }
 }
