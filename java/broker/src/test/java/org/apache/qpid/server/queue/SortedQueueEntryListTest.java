@@ -317,7 +317,7 @@ public class SortedQueueEntryListTest extends QueueEntryListTestBase
         assertEquals("Sorted queue entry value is not as expected",
                         expectedSortKey, entry.getMessage().getMessageHeader().getHeader("KEY"));
         assertEquals("Sorted queue entry id is not as expected",
-                        Long.valueOf(expectedMessageId), entry.getMessage().getMessageNumber());
+                        expectedMessageId, entry.getMessage().getMessageNumber());
     }
 
 }

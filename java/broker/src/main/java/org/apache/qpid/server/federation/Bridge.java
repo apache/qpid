@@ -44,27 +44,9 @@ import org.apache.qpid.server.transport.ServerSession;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.transport.DeliveryProperties;
-import org.apache.qpid.transport.MessageAcceptMode;
-import org.apache.qpid.transport.MessageAcquireMode;
-import org.apache.qpid.transport.MessageCreditUnit;
-import org.apache.qpid.transport.MessageFlowMode;
-import org.apache.qpid.transport.MessageReject;
-import org.apache.qpid.transport.MessageRejectCode;
-import org.apache.qpid.transport.MessageTransfer;
-import org.apache.qpid.transport.Option;
-import org.apache.qpid.transport.RangeSet;
-import org.apache.qpid.transport.Session;
-import org.apache.qpid.transport.SessionException;
-import org.apache.qpid.transport.SessionListener;
+import org.apache.qpid.transport.*;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -365,7 +347,8 @@ public class Bridge implements BridgeConfig
             // TODO - deal with exchange not existing
 
             DeliveryProperties delvProps = null;
-            if(xfr.getHeader() != null && (delvProps = xfr.getHeader().get(DeliveryProperties.class)) != null && delvProps.hasTtl() && !delvProps.hasExpiration())
+            if(xfr.getHeader() != null && (delvProps = xfr.getHeader().getDeliveryProperties()) != null && delvProps.hasTtl() &&
+               !delvProps.hasExpiration())
             {
                 delvProps.setExpiration(System.currentTimeMillis() + delvProps.getTtl());
             }
@@ -377,7 +360,7 @@ public class Bridge implements BridgeConfig
             storeMessage.flushToStore();
             MessageTransferMessage message = new MessageTransferMessage(storeMessage, ((ServerSession)_session).getReference());
 
-            ArrayList<? extends BaseQueue> queues = exchange.route(message);
+            List<? extends BaseQueue> queues = exchange.route(message);
 
 
 
@@ -391,7 +374,7 @@ public class Bridge implements BridgeConfig
                 {
                     if(xfr.getAcceptMode() == MessageAcceptMode.EXPLICIT)
                     {
-                        RangeSet rejects = new RangeSet();
+                        RangeSet rejects = RangeSetFactory.createRangeSet();
                         rejects.add(xfr.getId());
                         MessageReject reject = new MessageReject(rejects, MessageRejectCode.UNROUTABLE, "Unroutable");
                         ssn.invoke(reject);
@@ -428,7 +411,7 @@ public class Bridge implements BridgeConfig
         }
 
 
-        private void enqueue(final ServerMessage message, final ArrayList<? extends BaseQueue> queues)
+        private void enqueue(final ServerMessage message, final List<? extends BaseQueue> queues)
         {
             _transaction.enqueue(queues,message, new ServerTransaction.Action()
                         {
@@ -456,8 +439,7 @@ public class Bridge implements BridgeConfig
                             {
                                 // NO-OP
                             }
-                        });
-
+                        }, 0L);
         }
 
         public void exception(final Session session, final SessionException exception)

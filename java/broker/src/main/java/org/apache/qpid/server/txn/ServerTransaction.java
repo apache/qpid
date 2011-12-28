@@ -21,6 +21,7 @@
 package org.apache.qpid.server.txn;
 
 import org.apache.qpid.server.message.EnqueableMessage;
+import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.queue.QueueEntry;
 
@@ -42,7 +43,7 @@ import java.util.List;
  */
 public interface ServerTransaction
 {
-    /** 
+    /**
      * Represents an action to be performed on transaction commit or rollback
      */
     public static interface Action
@@ -91,7 +92,7 @@ public interface ServerTransaction
      * 
      * Store operations will result only for a persistent messages on durable queues.
      */
-    void enqueue(List<? extends BaseQueue> queues, EnqueableMessage message, Action postTransactionAction);
+    void enqueue(List<? extends BaseQueue> queues, EnqueableMessage message, Action postTransactionAction, long currentTime);
 
     /** 
      * Commit the transaction represented by this object.
@@ -100,6 +101,8 @@ public interface ServerTransaction
      * be executed immediately after the underlying transaction has committed. 
      */
     void commit();
+
+    void commit(Runnable immediatePostTransactionAction);
 
     /** Rollback the transaction represented by this object.
      * 

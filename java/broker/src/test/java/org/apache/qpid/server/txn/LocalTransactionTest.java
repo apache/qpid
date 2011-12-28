@@ -29,7 +29,7 @@ import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.MockAMQQueue;
 import org.apache.qpid.server.queue.MockQueueEntry;
 import org.apache.qpid.server.queue.QueueEntry;
-import org.apache.qpid.server.store.TransactionLog;
+import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.txn.MockStoreTransaction.TransactionState;
 import org.apache.qpid.test.utils.QpidTestCase;
 
@@ -51,7 +51,7 @@ public class LocalTransactionTest extends QpidTestCase
     private MockAction _action1;
     private MockAction _action2;
     private MockStoreTransaction _storeTransaction;
-    private TransactionLog _transactionLog;
+    private MessageStore _transactionLog;
 
 
     @Override
@@ -140,7 +140,7 @@ public class LocalTransactionTest extends QpidTestCase
         _message = createTestMessage(false);
         _queues = createTestBaseQueues(new boolean[] {false, false, false});
         
-        _transaction.enqueue(_queues, _message, _action1);
+        _transaction.enqueue(_queues, _message, _action1, 0L);
 
         assertEquals("Enqueue of non-persistent message must not cause message to be enqueued", 0, _storeTransaction.getNumberOfEnqueuedMessages());
         assertEquals("Unexpected transaction state", TransactionState.NOT_STARTED, _storeTransaction.getState());
@@ -156,7 +156,7 @@ public class LocalTransactionTest extends QpidTestCase
         _message = createTestMessage(true);
         _queues = createTestBaseQueues(new boolean[] {false, false, false});
         
-        _transaction.enqueue(_queues, _message, _action1);
+        _transaction.enqueue(_queues, _message, _action1, 0L);
   
         assertEquals("Enqueue of persistent message to non-durable queues must not cause message to be enqueued", 0, _storeTransaction.getNumberOfEnqueuedMessages());
         assertEquals("Unexpected transaction state", TransactionState.NOT_STARTED, _storeTransaction.getState());
@@ -173,7 +173,7 @@ public class LocalTransactionTest extends QpidTestCase
         _message = createTestMessage(true);
         _queues = createTestBaseQueues(new boolean[] {false, true, false, true});
         
-        _transaction.enqueue(_queues, _message, _action1);
+        _transaction.enqueue(_queues, _message, _action1, 0L);
 
         assertEquals("Enqueue of persistent message to durable/non-durable queues must cause messages to be enqueued", 2, _storeTransaction.getNumberOfEnqueuedMessages());
         assertEquals("Unexpected transaction state", TransactionState.STARTED, _storeTransaction.getState());
@@ -196,7 +196,7 @@ public class LocalTransactionTest extends QpidTestCase
         
         try
         {
-            _transaction.enqueue(_queues, _message, _action1);
+            _transaction.enqueue(_queues, _message, _action1, 0L);
             fail("Exception not thrown");
         }
         catch (RuntimeException re)

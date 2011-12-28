@@ -100,7 +100,7 @@ public class ConflationQueueList extends SimpleQueueEntryList
     {
         if(entry.acquire())
         {
-            ServerTransaction txn = new AutoCommitTransaction(getQueue().getVirtualHost().getTransactionLog());
+            ServerTransaction txn = new AutoCommitTransaction(getQueue().getVirtualHost().getMessageStore());
             txn.dequeue(entry.getQueue(),entry.getMessage(),
                                     new ServerTransaction.Action()
                                 {

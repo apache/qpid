@@ -23,6 +23,7 @@ package org.apache.qpid.server.transport;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
@@ -55,46 +56,7 @@ import org.apache.qpid.server.store.StoredMessage;
 import org.apache.qpid.server.subscription.SubscriptionFactoryImpl;
 import org.apache.qpid.server.subscription.Subscription_0_10;
 import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.transport.Acquired;
-import org.apache.qpid.transport.DeliveryProperties;
-import org.apache.qpid.transport.ExchangeBind;
-import org.apache.qpid.transport.ExchangeBound;
-import org.apache.qpid.transport.ExchangeBoundResult;
-import org.apache.qpid.transport.ExchangeDeclare;
-import org.apache.qpid.transport.ExchangeDelete;
-import org.apache.qpid.transport.ExchangeQuery;
-import org.apache.qpid.transport.ExchangeQueryResult;
-import org.apache.qpid.transport.ExchangeUnbind;
-import org.apache.qpid.transport.ExecutionErrorCode;
-import org.apache.qpid.transport.ExecutionException;
-import org.apache.qpid.transport.MessageAccept;
-import org.apache.qpid.transport.MessageAcceptMode;
-import org.apache.qpid.transport.MessageAcquire;
-import org.apache.qpid.transport.MessageAcquireMode;
-import org.apache.qpid.transport.MessageCancel;
-import org.apache.qpid.transport.MessageFlow;
-import org.apache.qpid.transport.MessageFlowMode;
-import org.apache.qpid.transport.MessageFlush;
-import org.apache.qpid.transport.MessageReject;
-import org.apache.qpid.transport.MessageRejectCode;
-import org.apache.qpid.transport.MessageRelease;
-import org.apache.qpid.transport.MessageResume;
-import org.apache.qpid.transport.MessageSetFlowMode;
-import org.apache.qpid.transport.MessageStop;
-import org.apache.qpid.transport.MessageSubscribe;
-import org.apache.qpid.transport.MessageTransfer;
-import org.apache.qpid.transport.Method;
-import org.apache.qpid.transport.QueueDeclare;
-import org.apache.qpid.transport.QueueDelete;
-import org.apache.qpid.transport.QueuePurge;
-import org.apache.qpid.transport.QueueQuery;
-import org.apache.qpid.transport.QueueQueryResult;
-import org.apache.qpid.transport.RangeSet;
-import org.apache.qpid.transport.Session;
-import org.apache.qpid.transport.SessionDelegate;
-import org.apache.qpid.transport.TxCommit;
-import org.apache.qpid.transport.TxRollback;
-import org.apache.qpid.transport.TxSelect;
+import org.apache.qpid.transport.*;
 
 public class ServerSessionDelegate extends SessionDelegate
 {
@@ -295,7 +257,8 @@ public class ServerSessionDelegate extends SessionDelegate
         final Exchange exchange = getExchangeForMessage(ssn, xfr);
 
         DeliveryProperties delvProps = null;
-        if(xfr.getHeader() != null && (delvProps = xfr.getHeader().get(DeliveryProperties.class)) != null && delvProps.hasTtl() && !delvProps.hasExpiration())
+        if(xfr.getHeader() != null && (delvProps = xfr.getHeader().getDeliveryProperties()) != null && delvProps.hasTtl() && !delvProps
+                .hasExpiration())
         {
             delvProps.setExpiration(System.currentTimeMillis() + delvProps.getTtl());
         }
@@ -312,7 +275,7 @@ public class ServerSessionDelegate extends SessionDelegate
         }
 
         final Exchange exchangeInUse;
-        ArrayList<? extends BaseQueue> queues = exchange.route(messageMetaData);
+        List<? extends BaseQueue> queues = exchange.route(messageMetaData);
         if(queues.isEmpty() && exchange.getAlternateExchange() != null)
         {
             final Exchange alternateExchange = exchange.getAlternateExchange();
@@ -334,15 +297,16 @@ public class ServerSessionDelegate extends SessionDelegate
         if(!queues.isEmpty())
         {
             final MessageStore store = getVirtualHost(ssn).getMessageStore();
-            final StoredMessage<MessageMetaData_0_10> storeMessage = createAndFlushStoreMessage(xfr, messageMetaData, store);
+            final StoredMessage<MessageMetaData_0_10> storeMessage = createStoreMessage(xfr, messageMetaData, store);
             MessageTransferMessage message = new MessageTransferMessage(storeMessage, ((ServerSession)ssn).getReference());
             ((ServerSession) ssn).enqueue(message, queues);
+            storeMessage.flushToStore();
         }
         else
         {
             if((delvProps == null || !delvProps.getDiscardUnroutable()) && xfr.getAcceptMode() == MessageAcceptMode.EXPLICIT)
             {
-                RangeSet rejects = new RangeSet();
+                RangeSet rejects = RangeSetFactory.createRangeSet();
                 rejects.add(xfr.getId());
                 MessageReject reject = new MessageReject(rejects, MessageRejectCode.UNROUTABLE, "Unroutable");
                 ssn.invoke(reject);
@@ -353,11 +317,13 @@ public class ServerSessionDelegate extends SessionDelegate
             }
         }
 
+
+
         ssn.processed(xfr);
     }
 
-    private StoredMessage<MessageMetaData_0_10> createAndFlushStoreMessage(final MessageTransfer xfr,
-            final MessageMetaData_0_10 messageMetaData, final MessageStore store)
+    private StoredMessage<MessageMetaData_0_10> createStoreMessage(final MessageTransfer xfr,
+                                                                   final MessageMetaData_0_10 messageMetaData, final MessageStore store)
     {
         final StoredMessage<MessageMetaData_0_10> storeMessage = store.addMessage(messageMetaData);
         ByteBuffer body = xfr.getBody();
@@ -365,7 +331,6 @@ public class ServerSessionDelegate extends SessionDelegate
         {
             storeMessage.addContent(0, body);
         }
-        storeMessage.flushToStore();
         return storeMessage;
     }
 

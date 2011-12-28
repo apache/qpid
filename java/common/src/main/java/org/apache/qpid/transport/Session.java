@@ -247,7 +247,7 @@ public class Session extends SessionInvoker
         synchronized (processedLock)
         {
             incomingInit = false;
-            processed = new RangeSet();
+            processed = RangeSetFactory.createRangeSet();
         }
     }
 
@@ -276,22 +276,22 @@ public class Session extends SessionInvoker
                 else if (m instanceof MessageTransfer)
                 {
                 	MessageTransfer xfr = (MessageTransfer)m;
-                	
-                	if (xfr.getHeader() != null)
+
+                    Header header = xfr.getHeader();
+
+                    if (header != null)
                 	{
-                		if (xfr.getHeader().get(DeliveryProperties.class) != null)
+                		if (header.getDeliveryProperties() != null)
                 		{
-                		   xfr.getHeader().get(DeliveryProperties.class).setRedelivered(true);
+                		   header.getDeliveryProperties().setRedelivered(true);
                 		}
                 		else
                 		{
-                			Struct[] structs = xfr.getHeader().getStructs();
                 			DeliveryProperties deliveryProps = new DeliveryProperties();
                     		deliveryProps.setRedelivered(true);
-                    		
-                    		List<Struct> list = Arrays.asList(structs);
-                    		list.add(deliveryProps);
-                    		xfr.setHeader(new Header(list));
+
+                    		xfr.setHeader(new Header(deliveryProps, header.getMessageProperties(),
+                                                     header.getNonStandardProperties()));
                 		}
                 		
                 	}
@@ -299,7 +299,7 @@ public class Session extends SessionInvoker
                 	{
                 		DeliveryProperties deliveryProps = new DeliveryProperties();
                 		deliveryProps.setRedelivered(true);
-                		xfr.setHeader(new Header(deliveryProps));
+                		xfr.setHeader(new Header(deliveryProps, null, null));
                 	}
                 }
                 sessionCommandPoint(m.getId(), 0);
@@ -394,38 +394,46 @@ public class Session extends SessionInvoker
 
     public void processed(int command)
     {
-        processed(new Range(command, command));
-    }
-
-    public void processed(int lower, int upper)
-    {
-
-        processed(new Range(lower, upper));
+        processed(command, command);
     }
 
     public void processed(Range range)
     {
-        log.debug("%s processed(%s) %s %s", this, range, syncPoint, maxProcessed);
+
+        processed(range.getLower(), range.getUpper());
+    }
+
+    public void processed(int lower, int upper)
+    {
+        if(log.isDebugEnabled())
+        {
+            log.debug("%s processed([%d,%d]) %s %s", this, lower, upper, syncPoint, maxProcessed);
+        }
 
         boolean flush;
         synchronized (processedLock)
         {
-            log.debug("%s", processed);
-
-            if (ge(range.getUpper(), commandsIn))
+            if(log.isDebugEnabled())
             {
-                throw new IllegalArgumentException
-                    ("range exceeds max received command-id: " + range);
+                log.debug("%s", processed);
             }
 
-            processed.add(range);
-            Range first = processed.getFirst();
-            int lower = first.getLower();
-            int upper = first.getUpper();
-            int old = maxProcessed;
-            if (le(lower, maxProcessed + 1))
+            if (ge(upper, commandsIn))
             {
-                maxProcessed = max(maxProcessed, upper);
+                throw new IllegalArgumentException
+                    ("range exceeds max received command-id: " + Range.newInstance(lower, upper));
+            }
+
+            processed.add(lower, upper);
+
+            Range first = processed.getFirst();
+
+            int flower = first.getLower();
+            int fupper = first.getUpper();
+            int old = maxProcessed;
+            if (le(flower, maxProcessed + 1))
+            {
+                maxProcessed = max(maxProcessed, fupper);
             }
             boolean synced = ge(maxProcessed, syncPoint);
             flush = lt(old, syncPoint) && synced;
@@ -442,7 +450,7 @@ public class Session extends SessionInvoker
 
     void flushExpected()
     {
-        RangeSet rs = new RangeSet();
+        RangeSet rs = RangeSetFactory.createRangeSet();
         synchronized (processedLock)
         {
             if (incomingInit)
@@ -478,7 +486,7 @@ public class Session extends SessionInvoker
     {
         synchronized (processedLock)
         {
-            RangeSet newProcessed = new RangeSet();
+            RangeSet newProcessed = RangeSetFactory.createRangeSet();
             for (Range pr : processed)
             {
                 for (Range kr : kc)
@@ -534,7 +542,12 @@ public class Session extends SessionInvoker
             {
                 maxComplete = max(maxComplete, upper);
             }
-            log.debug("%s   commands remaining: %s", this, commandsOut - maxComplete);
+
+            if(log.isDebugEnabled())
+            {
+                log.debug("%s   commands remaining: %s", this, commandsOut - maxComplete);
+            }
+
             commands.notifyAll();
             return gt(maxComplete, old);
         }

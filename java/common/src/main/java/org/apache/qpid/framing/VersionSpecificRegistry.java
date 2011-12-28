@@ -23,6 +23,7 @@ package org.apache.qpid.framing;
 import java.io.DataInputStream;
 import java.io.IOException;
 
+import org.apache.qpid.codec.MarkableDataInput;
 import org.apache.qpid.framing.abstraction.ProtocolVersionMethodConverter;
 
 import org.slf4j.Logger;
@@ -145,7 +146,7 @@ public class VersionSpecificRegistry
 
     }
 
-    public AMQMethodBody get(short classID, short methodID, DataInputStream in, long size) throws AMQFrameDecodingException, IOException
+    public AMQMethodBody get(short classID, short methodID, MarkableDataInput in, long size) throws AMQFrameDecodingException, IOException
     {
         AMQMethodBodyInstanceFactory bodyFactory;
         try

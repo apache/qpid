@@ -29,7 +29,7 @@ import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.MockAMQQueue;
 import org.apache.qpid.server.queue.MockQueueEntry;
 import org.apache.qpid.server.queue.QueueEntry;
-import org.apache.qpid.server.store.TransactionLog;
+import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.txn.MockStoreTransaction.TransactionState;
 import org.apache.qpid.test.utils.QpidTestCase;
 
@@ -44,7 +44,7 @@ public class AutoCommitTransactionTest extends QpidTestCase
 {
     private ServerTransaction _transaction = null;  // Class under test
     
-    private TransactionLog _transactionLog;
+    private MessageStore _transactionLog;
     private AMQQueue _queue;
     private List<AMQQueue> _queues;
     private Collection<QueueEntry> _queueEntries;
@@ -137,7 +137,7 @@ public class AutoCommitTransactionTest extends QpidTestCase
         _message = createTestMessage(false);
         _queues = createTestBaseQueues(new boolean[] {false, false, false});
         
-        _transaction.enqueue(_queues, _message, _action);
+        _transaction.enqueue(_queues, _message, _action, 0L);
 
         assertEquals("Enqueue of non-persistent message must not cause message to be enqueued", 0, _storeTransaction.getNumberOfEnqueuedMessages());
         assertEquals("Unexpected transaction state", TransactionState.NOT_STARTED, _storeTransaction.getState());
@@ -157,7 +157,7 @@ public class AutoCommitTransactionTest extends QpidTestCase
         _message = createTestMessage(true);
         _queues = createTestBaseQueues(new boolean[] {false, false, false});
         
-        _transaction.enqueue(_queues, _message, _action);
+        _transaction.enqueue(_queues, _message, _action, 0L);
 
         assertEquals("Enqueue of persistent message to non-durable queues must not cause message to be enqueued", 0, _storeTransaction.getNumberOfEnqueuedMessages());
         assertEquals("Unexpected transaction state", TransactionState.NOT_STARTED, _storeTransaction.getState());
@@ -175,7 +175,7 @@ public class AutoCommitTransactionTest extends QpidTestCase
         _message = createTestMessage(true);
         _queues = createTestBaseQueues(new boolean[] {false, true, false, true});
         
-        _transaction.enqueue(_queues, _message, _action);
+        _transaction.enqueue(_queues, _message, _action, 0L);
 
         assertEquals("Enqueue of persistent message to durable/non-durable queues must cause messages to be enqueued", 2, _storeTransaction.getNumberOfEnqueuedMessages());
         assertEquals("Unexpected transaction state", TransactionState.COMMITTED, _storeTransaction.getState());
@@ -198,7 +198,7 @@ public class AutoCommitTransactionTest extends QpidTestCase
         
         try
         {
-            _transaction.enqueue(_queues, _message, _action);
+            _transaction.enqueue(_queues, _message, _action, 0L);
             fail("Exception not thrown");
         }
         catch (RuntimeException re)

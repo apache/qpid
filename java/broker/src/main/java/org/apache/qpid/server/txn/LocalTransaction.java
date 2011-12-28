@@ -29,11 +29,7 @@ import org.apache.qpid.server.message.EnqueableMessage;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.queue.QueueEntry;
-import org.apache.qpid.server.store.TransactionLog;
-import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.BaseQueue;
-import org.apache.qpid.server.queue.QueueEntry;
-import org.apache.qpid.server.store.TransactionLog;
+import org.apache.qpid.server.store.MessageStore;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,11 +46,11 @@ public class LocalTransaction implements ServerTransaction
 
     private final List<Action> _postTransactionActions = new ArrayList<Action>();
 
-    private volatile TransactionLog.Transaction _transaction;
-    private TransactionLog _transactionLog;
+    private volatile MessageStore.Transaction _transaction;
+    private MessageStore _transactionLog;
     private long _txnStartTime = 0L;
 
-    public LocalTransaction(TransactionLog transactionLog)
+    public LocalTransaction(MessageStore transactionLog)
     {
         _transactionLog = transactionLog;
     }
@@ -63,7 +59,7 @@ public class LocalTransaction implements ServerTransaction
     {
         return _transaction != null;
     }
-    
+
     public long getTransactionStartTime()
     {
         return _txnStartTime;
@@ -88,7 +84,7 @@ public class LocalTransaction implements ServerTransaction
                 }
 
                 beginTranIfNecessary();
-                _transaction.dequeueMessage(queue, message.getMessageNumber());
+                _transaction.dequeueMessage(queue, message);
 
             }
             catch(AMQException e)
@@ -118,7 +114,7 @@ public class LocalTransaction implements ServerTransaction
                     }
 
                     beginTranIfNecessary();
-                    _transaction.dequeueMessage(queue, message.getMessageNumber());
+                    _transaction.dequeueMessage(queue, message);
                 }
 
             }
@@ -191,7 +187,7 @@ public class LocalTransaction implements ServerTransaction
                 }
                 
                 beginTranIfNecessary();
-                _transaction.enqueueMessage(queue, message.getMessageNumber());
+                _transaction.enqueueMessage(queue, message);
             }
             catch (Exception e)
             {
@@ -202,13 +198,13 @@ public class LocalTransaction implements ServerTransaction
         }
     }
 
-    public void enqueue(List<? extends BaseQueue> queues, EnqueableMessage message, Action postTransactionAction)
+    public void enqueue(List<? extends BaseQueue> queues, EnqueableMessage message, Action postTransactionAction, long currentTime)
     {
         _postTransactionActions.add(postTransactionAction);
 
         if (_txnStartTime == 0L)
         {
-            _txnStartTime = System.currentTimeMillis();
+            _txnStartTime = currentTime == 0L ? System.currentTimeMillis() : currentTime;
         }
 
         if(message.isPersistent())
@@ -226,7 +222,7 @@ public class LocalTransaction implements ServerTransaction
                         
                         
                         beginTranIfNecessary();
-                        _transaction.enqueueMessage(queue, message.getMessageNumber());
+                        _transaction.enqueueMessage(queue, message);
                     }
                 }
 
@@ -242,6 +238,11 @@ public class LocalTransaction implements ServerTransaction
 
     public void commit()
     {
+        commit(null);
+    }
+
+    public void commit(Runnable immediateAction)
+    {
         try
         {
             if(_transaction != null)
@@ -249,9 +250,14 @@ public class LocalTransaction implements ServerTransaction
                 _transaction.commitTran();
             }
 
-            for(Action action : _postTransactionActions)
+            if(immediateAction != null)
             {
-                action.postCommit();
+                immediateAction.run();
+            }
+
+            for(int i = 0; i < _postTransactionActions.size(); i++)
+            {
+                _postTransactionActions.get(i).postCommit();
             }
         }
         catch (Exception e)

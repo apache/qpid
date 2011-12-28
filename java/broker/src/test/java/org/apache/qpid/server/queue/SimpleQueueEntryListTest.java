@@ -162,8 +162,8 @@ public class SimpleQueueEntryListTest extends QueueEntryListTestBase
         while (entry != null)
         {           
             assertFalse("Entry " + entry.getMessage().getMessageNumber() + " should not have been deleted", entry.isDeleted());
-            assertNotNull("QueueEntry was not found in the list of remaining entries", 
-                    remainingMessages.get(entry.getMessage().getMessageNumber().intValue()));
+            assertNotNull("QueueEntry "+entry.getMessage().getMessageNumber()+" was not found in the list of remaining entries " + remainingMessages,
+                    remainingMessages.get((int)(entry.getMessage().getMessageNumber())));
 
             count++;
             entry = entry.getNextNode();

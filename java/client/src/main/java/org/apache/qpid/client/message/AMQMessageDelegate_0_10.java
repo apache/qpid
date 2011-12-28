@@ -124,7 +124,7 @@ public class AMQMessageDelegate_0_10 extends AbstractAMQMessageDelegate
      */
     public static void updateExchangeTypeMapping(Header header, org.apache.qpid.transport.Session session)
     {
-        DeliveryProperties deliveryProps = header.get(DeliveryProperties.class);
+        DeliveryProperties deliveryProps = header.getDeliveryProperties();
         if (deliveryProps != null)
         {
             String exchange = deliveryProps.getExchange();
@@ -132,7 +132,7 @@ public class AMQMessageDelegate_0_10 extends AbstractAMQMessageDelegate
                     
         }
         
-        MessageProperties msgProps = header.get(MessageProperties.class);
+        MessageProperties msgProps = header.getMessageProperties();
         if (msgProps != null && msgProps.getReplyTo() != null)
         {
             String exchange = msgProps.getReplyTo().getExchange();

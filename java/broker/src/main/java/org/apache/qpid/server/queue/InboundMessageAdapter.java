@@ -23,6 +23,7 @@ package org.apache.qpid.server.queue;
 
 import org.apache.qpid.server.message.InboundMessage;
 import org.apache.qpid.server.message.AMQMessageHeader;
+import org.apache.qpid.framing.AMQShortString;
 
 public class InboundMessageAdapter implements InboundMessage
 {
@@ -43,6 +44,11 @@ public class InboundMessageAdapter implements InboundMessage
         _entry = entry;
     }
 
+
+    public AMQShortString getRoutingKeyShortString()
+    {
+        return AMQShortString.valueOf(_entry.getMessage());
+    }
 
     public String getRoutingKey()
     {

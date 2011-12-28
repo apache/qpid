@@ -37,7 +37,7 @@ import java.nio.ByteBuffer;
 /**
  * A deliverable message.
  */
-public class AMQMessage extends AbstractServerMessageImpl
+public class AMQMessage extends AbstractServerMessageImpl<MessageMetaData>
 {
     /** Used for debugging purposes. */
     private static final Logger _log = Logger.getLogger(AMQMessage.class);
@@ -62,10 +62,6 @@ public class AMQMessage extends AbstractServerMessageImpl
     private Object _sessionIdentifier;
     private static final byte IMMEDIATE_AND_DELIVERED = (byte) (IMMEDIATE | DELIVERED_TO_CONSUMER);
 
-    private final StoredMessage<MessageMetaData> _handle;
-
-    WeakReference<AMQChannel> _channelRef;
-
     public AMQMessage(StoredMessage<MessageMetaData> handle)
     {
         this(handle, null);
@@ -75,7 +71,7 @@ public class AMQMessage extends AbstractServerMessageImpl
     {
         super(handle);
 
-        _handle = handle;
+
         final MessageMetaData metaData = handle.getMetaData();
         _size = metaData.getContentSize();
         final MessagePublishInfo messagePublishInfo = metaData.getMessagePublishInfo();
@@ -84,8 +80,6 @@ public class AMQMessage extends AbstractServerMessageImpl
         {
             _flags |= IMMEDIATE;
         }
-        
-        _channelRef = channelRef;
     }
 
     public void setExpiration(final long expiration)
@@ -97,7 +91,7 @@ public class AMQMessage extends AbstractServerMessageImpl
 
     public MessageMetaData getMessageMetaData()
     {
-        return _handle.getMetaData();
+        return getStoredMessage().getMetaData();
     }
 
     public ContentHeaderBody getContentHeaderBody() throws AMQException
@@ -107,7 +101,7 @@ public class AMQMessage extends AbstractServerMessageImpl
 
     public Long getMessageId()
     {
-        return _handle.getMessageNumber();
+        return getStoredMessage().getMessageNumber();
     }
 
     /**
@@ -219,9 +213,9 @@ public class AMQMessage extends AbstractServerMessageImpl
         return new AMQMessageReference(this);
     }
 
-    public Long getMessageNumber()
+    public long getMessageNumber()
     {
-        return getMessageId();
+        return getStoredMessage().getMessageNumber();
     }
 
 
@@ -248,16 +242,13 @@ public class AMQMessage extends AbstractServerMessageImpl
 
     public int getContent(ByteBuffer buf, int offset)
     {
-        return _handle.getContent(offset, buf);
+        return getStoredMessage().getContent(offset, buf);
     }
 
-    public StoredMessage<MessageMetaData> getStoredMessage()
+
+    public ByteBuffer getContent(int offset, int size)
     {
-        return _handle;
+        return getStoredMessage().getContent(offset, size);
     }
 
-    public SessionConfig getSessionConfig()
-    {
-        return _channelRef == null ? null : ((SessionConfig) _channelRef.get());
-   }
 }

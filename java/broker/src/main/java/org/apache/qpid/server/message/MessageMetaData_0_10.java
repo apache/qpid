@@ -30,9 +30,12 @@ import org.apache.qpid.transport.MessageDeliveryMode;
 import org.apache.qpid.transport.Struct;
 import org.apache.qpid.transport.codec.BBEncoder;
 import org.apache.qpid.transport.codec.BBDecoder;
+import org.apache.qpid.framing.AMQShortString;
 
 import java.nio.ByteBuffer;
 import java.lang.ref.SoftReference;
+import java.util.ArrayList;
+import java.util.List;
 
 public class MessageMetaData_0_10 implements StorableMessageMetaData, InboundMessage
 {
@@ -42,7 +45,6 @@ public class MessageMetaData_0_10 implements StorableMessageMetaData, InboundMes
     private MessageTransferHeader _messageHeader;
     private long _arrivalTime;
     private int _bodySize;
-    private volatile SoftReference<ByteBuffer> _body;
 
     private static final int ENCODER_SIZE = 1 << 10;
 
@@ -53,21 +55,16 @@ public class MessageMetaData_0_10 implements StorableMessageMetaData, InboundMes
 
     public MessageMetaData_0_10(MessageTransfer xfr)
     {
-        this(xfr.getHeader(), xfr.getBodySize(), xfr.getBody(), System.currentTimeMillis());
+        this(xfr.getHeader(), xfr.getBodySize(), System.currentTimeMillis());
     }
 
     private MessageMetaData_0_10(Header header, int bodySize, long arrivalTime)
     {
-        this(header, bodySize, null, arrivalTime);
-    }
-
-    private MessageMetaData_0_10(Header header, int bodySize, ByteBuffer xfrBody, long arrivalTime)
-    {
         _header = header;
         if(_header != null)
         {
-            _deliveryProps = _header.get(DeliveryProperties.class);
-            _messageProps = _header.get(MessageProperties.class);
+            _deliveryProps = _header.getDeliveryProperties();
+            _messageProps = _header.getMessageProperties();
         }
         else
         {
@@ -77,21 +74,6 @@ public class MessageMetaData_0_10 implements StorableMessageMetaData, InboundMes
         _messageHeader = new MessageTransferHeader(_deliveryProps, _messageProps);
         _arrivalTime = arrivalTime;
         _bodySize = bodySize;
-
-
-
-        if(xfrBody == null)
-        {
-            _body = null;
-        }
-        else
-        {
-            ByteBuffer body = ByteBuffer.allocate(_bodySize);
-            body.put(xfrBody);
-            body.flip();
-            _body = new SoftReference<ByteBuffer>(body);
-        }
-
 
     }
 
@@ -122,16 +104,39 @@ public class MessageMetaData_0_10 implements StorableMessageMetaData, InboundMes
 
         encoder.writeInt64(_arrivalTime);
         encoder.writeInt32(_bodySize);
-        Struct[] headers = _header == null ? new Struct[0] : _header.getStructs();
-        encoder.writeInt32(headers.length);
-
-
-        for(Struct header : headers)
+        int headersLength = 0;
+        if(_header.getDeliveryProperties() != null)
         {
-            encoder.writeStruct32(header);
-
+            headersLength++;
+        }
+        if(_header.getMessageProperties() != null)
+        {
+            headersLength++;
+        }
+        if(_header.getNonStandardProperties() != null)
+        {
+            headersLength += _header.getNonStandardProperties().size();
         }
 
+        encoder.writeInt32(headersLength);
+
+        if(_header.getDeliveryProperties() != null)
+        {
+            encoder.writeStruct32(_header.getDeliveryProperties());
+        }
+        if(_header.getMessageProperties() != null)
+        {
+            encoder.writeStruct32(_header.getMessageProperties());
+        }
+        if(_header.getNonStandardProperties() != null)
+        {
+
+            for(Struct header : _header.getNonStandardProperties())
+            {
+                encoder.writeStruct32(header);
+            }
+
+        }
         ByteBuffer buf = encoder.buffer();
         return buf;
     }
@@ -173,6 +178,11 @@ public class MessageMetaData_0_10 implements StorableMessageMetaData, InboundMes
         return _deliveryProps == null ? null : _deliveryProps.getRoutingKey();
     }
 
+    public AMQShortString getRoutingKeyShortString()
+    {
+        return AMQShortString.valueOf(getRoutingKey());
+    }
+
     public AMQMessageHeader getMessageHeader()
     {
         return _messageHeader;
@@ -210,17 +220,6 @@ public class MessageMetaData_0_10 implements StorableMessageMetaData, InboundMes
         return _header;
     }
 
-    public ByteBuffer getBody()
-    {
-        ByteBuffer body = _body == null ? null : _body.get();
-        return body;
-    }
-
-    public void setBody(ByteBuffer body)
-    {
-        _body = new SoftReference<ByteBuffer>(body);
-    }
-
     private static class MetaDataFactory implements MessageMetaDataType.Factory<MessageMetaData_0_10>
     {
         public MessageMetaData_0_10 createMetaData(ByteBuffer buf)
@@ -232,14 +231,32 @@ public class MessageMetaData_0_10 implements StorableMessageMetaData, InboundMes
             int bodySize = decoder.readInt32();
             int headerCount = decoder.readInt32();
 
-            Struct[] headers = new Struct[headerCount];
+            DeliveryProperties deliveryProperties = null;
+            MessageProperties messageProperties = null;
+            List<Struct> otherProps = null;
 
             for(int i = 0 ; i < headerCount; i++)
             {
-                headers[i] = decoder.readStruct32();
-            }
+                Struct struct = decoder.readStruct32();
+                if(struct instanceof DeliveryProperties && deliveryProperties == null)
+                {
+                    deliveryProperties = (DeliveryProperties) struct;
+                }
+                else if(struct instanceof MessageProperties && messageProperties == null)
+                {
+                    messageProperties = (MessageProperties) struct;
+                }
+                else
+                {
+                    if(otherProps == null)
+                    {
+                        otherProps = new ArrayList<Struct>();
 
-            Header header = new Header(headers);
+                    }
+                    otherProps.add(struct);
+                }
+            }
+            Header header = new Header(deliveryProperties,messageProperties,otherProps);
 
             return new MessageMetaData_0_10(header, bodySize, arrivalTime);
 

@@ -111,6 +111,11 @@ public class ManagementExchange implements Exchange, QMFService.Listener
 
         }
 
+        public void enqueue(ServerMessage message, boolean sync, PostEnqueueAction action) throws AMQException
+        {
+            enqueue(message);
+        }
+
         public void enqueue(ServerMessage message, PostEnqueueAction action) throws AMQException
         {
             enqueue(message);

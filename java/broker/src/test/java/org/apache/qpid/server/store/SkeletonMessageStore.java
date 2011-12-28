@@ -26,6 +26,7 @@ import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.abstraction.ContentChunk;
+import org.apache.qpid.server.message.EnqueableMessage;
 import org.apache.qpid.server.message.MessageMetaData;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.exchange.Exchange;
@@ -42,18 +43,11 @@ import java.nio.ByteBuffer;
  */
 public class SkeletonMessageStore implements MessageStore
 {
-    private final AtomicLong _messageId = new AtomicLong(1);
-
-    public void configure(String base, Configuration config) throws Exception
-    {
-    }
-
     public void configureConfigStore(String name,
                           ConfigurationRecoveryHandler recoveryHandler,
                           Configuration config,
                           LogSubject logSubject) throws Exception
     {
-        //To change body of implemented methods use File | Settings | File Templates.
     }
 
     public void configureMessageStore(String name,
@@ -61,7 +55,6 @@ public class SkeletonMessageStore implements MessageStore
                                       Configuration config,
                                       LogSubject logSubject) throws Exception
     {
-        //To change body of implemented methods use File | Settings | File Templates.
     }
 
     public void close() throws Exception
@@ -70,31 +63,28 @@ public class SkeletonMessageStore implements MessageStore
 
     public <M extends StorableMessageMetaData> StoredMessage<M> addMessage(M metaData)
     {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return null;
     }
 
-    public void removeMessage(Long messageId)
-    {
-    }
 
     public void createExchange(Exchange exchange) throws AMQStoreException
     {
-        //To change body of implemented methods use File | Settings | File Templates.
+
     }
 
     public void removeExchange(Exchange exchange) throws AMQStoreException
     {
-        //To change body of implemented methods use File | Settings | File Templates.
+
     }
 
     public void bindQueue(Exchange exchange, AMQShortString routingKey, AMQQueue queue, FieldTable args) throws AMQStoreException
     {
-        //To change body of implemented methods use File | Settings | File Templates.
+
     }
 
     public void unbindQueue(Exchange exchange, AMQShortString routingKey, AMQQueue queue, FieldTable args) throws AMQStoreException
     {
-        //To change body of implemented methods use File | Settings | File Templates.
+
     }
 
     public void createQueue(AMQQueue queue) throws AMQStoreException
@@ -105,61 +95,9 @@ public class SkeletonMessageStore implements MessageStore
     {
     }
 
-
-
-
-    public List<AMQQueue> createQueues() throws AMQException
-    {
-        return null;
-    }
-
-    public Long getNewMessageId()
-    {
-        return _messageId.getAndIncrement();
-    }
-
-    public void storeContentBodyChunk(
-            Long messageId,
-            int index,
-            ContentChunk contentBody,
-            boolean lastContentBody) throws AMQException
-    {
-
-    }
-
-    public void storeMessageMetaData(Long messageId, MessageMetaData messageMetaData) throws AMQException
-    {
-
-    }
-
-    public MessageMetaData getMessageMetaData(Long messageId) throws AMQException
-    {
-        return null;
-    }
-
-    public ContentChunk getContentBodyChunk(Long messageId, int index) throws AMQException
-    {
-        return null;
-    }
-
     public boolean isPersistent()
     {
         return false;
-    }
-
-    public void storeMessageHeader(Long messageNumber, ServerMessage message)
-    {
-        //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    public void storeContent(Long messageNumber, long offset, ByteBuffer body)
-    {
-        //To change body of implemented methods use File | Settings | File Templates.
-    }
-
-    public ServerMessage getMessage(Long messageNumber)
-    {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
     public void removeQueue(final AMQQueue queue) throws AMQStoreException
@@ -172,7 +110,7 @@ public class SkeletonMessageStore implements MessageStore
                                         Configuration storeConfiguration,
                                         LogSubject logSubject) throws Exception
     {
-        //To change body of implemented methods use File | Settings | File Templates.
+
     }
 
     public Transaction newTransaction()
@@ -180,19 +118,19 @@ public class SkeletonMessageStore implements MessageStore
         return new Transaction()
         {
 
-            public void enqueueMessage(TransactionLogResource  queue, Long messageId) throws AMQStoreException
+            public void enqueueMessage(TransactionLogResource queue, EnqueableMessage message) throws AMQStoreException
             {
-                //To change body of implemented methods use File | Settings | File Templates.
+
             }
 
-            public void dequeueMessage(TransactionLogResource  queue, Long messageId) throws AMQStoreException
+            public void dequeueMessage(TransactionLogResource  queue, EnqueableMessage message) throws AMQStoreException
             {
-                //To change body of implemented methods use File | Settings | File Templates.
+
             }
 
             public void commitTran() throws AMQStoreException
             {
-                //To change body of implemented methods use File | Settings | File Templates.
+
             }
 
             public StoreFuture commitTranAsync() throws AMQStoreException
@@ -213,7 +151,7 @@ public class SkeletonMessageStore implements MessageStore
 
             public void abortTran() throws AMQStoreException
             {
-                //To change body of implemented methods use File | Settings | File Templates.
+
             }
         };
     }

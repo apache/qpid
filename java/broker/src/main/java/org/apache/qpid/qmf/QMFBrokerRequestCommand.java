@@ -32,6 +32,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.management.common.mbeans.ManagedConnection;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class QMFBrokerRequestCommand extends QMFCommand
 {
@@ -57,7 +58,7 @@ public class QMFBrokerRequestCommand extends QMFCommand
             QMFMessage responseMessage = new QMFMessage(queueName, cmd);
 
 
-            ArrayList<? extends BaseQueue> queues = exchange.route(responseMessage);
+            List<? extends BaseQueue> queues = exchange.route(responseMessage);
 
 
             for(BaseQueue q : queues)

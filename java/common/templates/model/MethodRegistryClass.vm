@@ -30,10 +30,10 @@
  
 package org.apache.qpid.framing;
 
-import java.io.DataInputStream;
 import java.io.IOException;
 
 import org.apache.qpid.framing.abstraction.ProtocolVersionMethodConverter;
+import org.apache.qpid.codec.MarkableDataInput;
 
 import java.util.Map;
 import java.util.HashMap;
@@ -54,7 +54,7 @@ public abstract class MethodRegistry
 #end
  			
 			
-    public abstract AMQMethodBody convertToBody(DataInputStream in, long size)
+    public abstract AMQMethodBody convertToBody(MarkableDataInput in, long size)
         throws AMQFrameDecodingException, IOException;
 
     public abstract int getMaxClassId();

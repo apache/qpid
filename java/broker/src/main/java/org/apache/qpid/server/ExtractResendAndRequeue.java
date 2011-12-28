@@ -22,8 +22,8 @@ package org.apache.qpid.server;
 
 import org.apache.qpid.server.ack.UnacknowledgedMessageMap;
 import org.apache.qpid.server.queue.QueueEntry;
+import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.subscription.Subscription;
-import org.apache.qpid.server.store.TransactionLog;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.AMQException;
@@ -39,13 +39,13 @@ public class ExtractResendAndRequeue implements UnacknowledgedMessageMap.Visitor
     private final Map<Long, QueueEntry> _msgToResend;
     private final boolean _requeueIfUnabletoResend;
     private final UnacknowledgedMessageMap _unacknowledgedMessageMap;
-    private final TransactionLog _transactionLog;
+    private final MessageStore _transactionLog;
 
     public ExtractResendAndRequeue(UnacknowledgedMessageMap unacknowledgedMessageMap,
                                    Map<Long, QueueEntry> msgToRequeue,
                                    Map<Long, QueueEntry> msgToResend,
                                    boolean requeueIfUnabletoResend,
-                                   TransactionLog txnLog)
+                                   MessageStore txnLog)
     {
         _unacknowledgedMessageMap = unacknowledgedMessageMap;
         _msgToRequeue = msgToRequeue;

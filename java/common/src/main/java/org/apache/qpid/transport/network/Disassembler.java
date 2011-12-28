@@ -87,27 +87,35 @@ public final class Disassembler implements Sender<ProtocolEvent>, ProtocolDelega
         }
     }
 
+    private final ByteBuffer _frameHeader = ByteBuffer.allocate(HEADER_SIZE);
+
+    {
+        _frameHeader.order(ByteOrder.BIG_ENDIAN);
+    }
+
     private void frame(byte flags, byte type, byte track, int channel, int size, ByteBuffer buf)
     {
         synchronized (sendlock)
         {
-            ByteBuffer data = ByteBuffer.allocate(size + HEADER_SIZE);
-            data.order(ByteOrder.BIG_ENDIAN);
+            ByteBuffer data = _frameHeader;
+            _frameHeader.rewind();
+
             
             data.put(0, flags);
             data.put(1, type);
             data.putShort(2, (short) (size + HEADER_SIZE));
             data.put(5, track);
             data.putShort(6, (short) channel);
-            data.position(HEADER_SIZE);
+
 
             int limit = buf.limit();
             buf.limit(buf.position() + size);
-            data.put(buf);
-            buf.limit(limit);
- 
+
             data.rewind();
             sender.send(data);
+            sender.send(buf);
+            buf.limit(limit);
+
         }
     }
 
@@ -179,7 +187,7 @@ public final class Disassembler implements Sender<ProtocolEvent>, ProtocolDelega
             }
         }
         method.write(enc);
-        ByteBuffer methodSeg = enc.segment();
+        int methodLimit = enc.position();
 
         byte flags = FIRST_SEG;
 
@@ -189,29 +197,44 @@ public final class Disassembler implements Sender<ProtocolEvent>, ProtocolDelega
             flags |= LAST_SEG;
         }
 
-        ByteBuffer headerSeg = null;
+        int headerLimit = -1;
         if (payload)
         {
             final Header hdr = method.getHeader();
             if (hdr != null)
             {
-                final Struct[] structs = hdr.getStructs();
-
-                for (Struct st : structs)
+                if(hdr.getDeliveryProperties() != null)
                 {
-                    enc.writeStruct32(st);
+                    enc.writeStruct32(hdr.getDeliveryProperties());
+                }
+                if(hdr.getMessageProperties() != null)
+                {
+                    enc.writeStruct32(hdr.getMessageProperties());
+                }
+                if(hdr.getNonStandardProperties() != null)
+                {
+                    for (Struct st : hdr.getNonStandardProperties())
+                    {
+                        enc.writeStruct32(st);
+                    }
                 }
             }
-            headerSeg = enc.segment();
+            headerLimit = enc.position();
         }
 
         synchronized (sendlock)
         {
-            fragment(flags, type, method, methodSeg);
+            ByteBuffer buf = enc.underlyingBuffer();
+            buf.position(0);
+            buf.limit(methodLimit);
+
+            fragment(flags, type, method, buf);
             if (payload)
             {
                 ByteBuffer body = method.getBody();
-                fragment(body == null ? LAST_SEG : 0x0, SegmentType.HEADER, method, headerSeg);
+                buf.limit(headerLimit);
+                buf.position(methodLimit);
+                fragment(body == null ? LAST_SEG : 0x0, SegmentType.HEADER, method, buf);
                 if (body != null)
                 {
                     fragment(LAST_SEG, SegmentType.BODY, method, body);

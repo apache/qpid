@@ -32,7 +32,9 @@ public interface StoredMessage<M extends StorableMessageMetaData>
 
     int getContent(int offsetInMessage, ByteBuffer dst);
 
-    TransactionLog.StoreFuture flushToStore();
+    ByteBuffer getContent(int offsetInMessage, int size);
+
+    MessageStore.StoreFuture flushToStore();
 
     void remove();
 }

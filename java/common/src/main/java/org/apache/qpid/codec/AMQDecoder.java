@@ -24,12 +24,7 @@ import java.io.*;
 import java.nio.ByteBuffer;
 import java.util.*;
 
-import org.apache.qpid.framing.AMQDataBlock;
-import org.apache.qpid.framing.AMQDataBlockDecoder;
-import org.apache.qpid.framing.AMQFrameDecodingException;
-import org.apache.qpid.framing.AMQMethodBodyFactory;
-import org.apache.qpid.framing.AMQProtocolVersionException;
-import org.apache.qpid.framing.ProtocolInitiation;
+import org.apache.qpid.framing.*;
 import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
 
 /**
@@ -193,24 +188,41 @@ public class AMQDecoder
         }
     }
 
+    private static class SimpleDataInputStream extends DataInputStream implements MarkableDataInput
+    {
+        public SimpleDataInputStream(InputStream in)
+        {
+            super(in);
+        }
+
+        public AMQShortString readAMQShortString() throws IOException
+        {
+            return EncodingUtils.readAMQShortString(this);
+        }
+
+    }
+
 
     public ArrayList<AMQDataBlock> decodeBuffer(ByteBuffer buf) throws AMQFrameDecodingException, AMQProtocolVersionException, IOException
     {
 
         // get prior remaining data from accumulator
         ArrayList<AMQDataBlock> dataBlocks = new ArrayList<AMQDataBlock>();
-        DataInputStream msg;
+        MarkableDataInput msg;
 
 
-        ByteArrayInputStream bais = new ByteArrayInputStream(buf.array(),buf.arrayOffset()+buf.position(), buf.remaining());
+        ByteArrayInputStream bais;
+        DataInput di;
         if(!_remainingBufs.isEmpty())
         {
+             bais = new ByteArrayInputStream(buf.array(),buf.arrayOffset()+buf.position(), buf.remaining());
             _remainingBufs.add(bais);
-            msg = new DataInputStream(new RemainingByteArrayInputStream());
+            msg = new SimpleDataInputStream(new RemainingByteArrayInputStream());
         }
         else
         {
-            msg = new DataInputStream(bais);
+            bais = null;
+            msg = new ByteArrayDataInput(buf.array(),buf.arrayOffset()+buf.position(), buf.remaining());
         }
 
         boolean enoughData = true;
@@ -245,11 +257,24 @@ public class AMQDecoder
                         iterator.remove();
                     }
                 }
-                if(bais.available()!=0)
+
+                if(bais == null)
                 {
-                    byte[] remaining = new byte[bais.available()];
-                    bais.read(remaining);
-                    _remainingBufs.add(new ByteArrayInputStream(remaining));
+                    if(msg.available()!=0)
+                    {
+                        byte[] remaining = new byte[msg.available()];
+                        msg.read(remaining);
+                        _remainingBufs.add(new ByteArrayInputStream(remaining));
+                    }
+                }
+                else
+                {
+                    if(bais.available()!=0)
+                    {
+                        byte[] remaining = new byte[bais.available()];
+                        bais.read(remaining);
+                        _remainingBufs.add(new ByteArrayInputStream(remaining));
+                    }
                 }
             }
         }

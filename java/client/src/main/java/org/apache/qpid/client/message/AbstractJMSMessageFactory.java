@@ -21,6 +21,9 @@
 package org.apache.qpid.client.message;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.client.AMQQueue;
+import org.apache.qpid.client.AMQSession_0_8;
+import org.apache.qpid.client.AMQTopic;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ContentBody;
 import org.apache.qpid.framing.ContentHeaderBody;
@@ -44,7 +47,9 @@ public abstract class AbstractJMSMessageFactory implements MessageFactory
 
     protected AbstractJMSMessage create08MessageWithBody(long messageNbr, ContentHeaderBody contentHeader,
                                                          AMQShortString exchange, AMQShortString routingKey,
-                                                         List bodies) throws AMQException
+                                                         List bodies,
+                                                         AMQSession_0_8.DestinationCache<AMQQueue> queueDestinationCache,
+                                                         AMQSession_0_8.DestinationCache<AMQTopic> topicDestinationCache) throws AMQException
     {
         ByteBuffer data;
         final boolean debug = _logger.isDebugEnabled();
@@ -99,7 +104,7 @@ public abstract class AbstractJMSMessageFactory implements MessageFactory
 
         AMQMessageDelegate delegate = new AMQMessageDelegate_0_8(messageNbr,
                                                                  (BasicContentHeaderProperties) contentHeader.getProperties(),
-                                                                 exchange, routingKey);
+                                                                 exchange, routingKey, queueDestinationCache, topicDestinationCache);
 
         return createMessage(delegate, data);
     }
@@ -149,10 +154,12 @@ public abstract class AbstractJMSMessageFactory implements MessageFactory
 
 
     public AbstractJMSMessage createMessage(long messageNbr, boolean redelivered, ContentHeaderBody contentHeader,
-                                            AMQShortString exchange, AMQShortString routingKey, List bodies)
+                                            AMQShortString exchange, AMQShortString routingKey, List bodies,
+                                                         AMQSession_0_8.DestinationCache<AMQQueue> queueDestinationCache,
+                                                         AMQSession_0_8.DestinationCache<AMQTopic> topicDestinationCache)
             throws JMSException, AMQException
     {
-        final AbstractJMSMessage msg = create08MessageWithBody(messageNbr, contentHeader, exchange, routingKey, bodies);
+        final AbstractJMSMessage msg = create08MessageWithBody(messageNbr, contentHeader, exchange, routingKey, bodies, queueDestinationCache, topicDestinationCache);
         msg.setJMSRedelivered(redelivered);
         msg.setReceivedFromServer();
         return msg;
