@@ -230,9 +230,72 @@ public class Main
             {
                 parsePortArray(options, commandLine.getOptionValues(pe.getExcludeName()), pe);
             }
-        }
+        }                
+        
+        setExceptionHandler();
         
         startBroker(options);
+    }
+
+    protected void setExceptionHandler()
+    {
+        Thread.UncaughtExceptionHandler handler = null;
+        String handlerClass = System.getProperty("qpid.broker.exceptionHandler");
+        if(handlerClass != null)
+        {
+            try
+            {
+                handler = (Thread.UncaughtExceptionHandler) Class.forName(handlerClass).newInstance();
+            }
+            catch (ClassNotFoundException e)
+            {
+                
+            }
+            catch (InstantiationException e)
+            {
+                
+            }
+            catch (IllegalAccessException e)
+            {
+                
+            }
+            catch (ClassCastException e)
+            {
+
+            }
+        }
+        
+        if(handler == null)
+        {
+            handler =
+                new Thread.UncaughtExceptionHandler()
+                {
+                    public void uncaughtException(final Thread t, final Throwable e)
+                    {
+                        try
+                        {
+                            System.err.println("########################################################################");
+                            System.err.println("#");
+                            System.err.print("# Unhandled Exception ");
+                            System.err.print(e.toString());
+                            System.err.print(" in Thread ");
+                            System.err.println(t.getName());
+                            System.err.println("#");
+                            System.err.println("# Exiting");
+                            System.err.println("#");
+                            System.err.println("########################################################################");
+                            e.printStackTrace(System.err);
+                        }
+                        finally
+                        {
+                            Runtime.getRuntime().halt(1);
+                        }
+
+                    }
+                };
+
+            Thread.setDefaultUncaughtExceptionHandler(handler);
+        } 
     }
 
     protected void startBroker(final BrokerOptions options) throws Exception
