@@ -30,7 +30,6 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.security.AuthorizationHolder;
-import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.protocol.AMQSessionModel;
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.txn.ServerTransaction;
@@ -477,7 +476,7 @@ public class MockAMQQueue implements AMQQueue
         return null;
     }
 
-    public void checkCapacity(AMQChannel channel)
+    public void checkCapacity(AMQSessionModel channel)
     {
     }
 

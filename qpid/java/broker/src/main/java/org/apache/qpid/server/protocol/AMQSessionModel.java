@@ -22,6 +22,8 @@ package org.apache.qpid.server.protocol;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.logging.LogSubject;
+import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.queue.SimpleAMQQueue;
 
 public interface AMQSessionModel
 {
@@ -51,4 +53,8 @@ public interface AMQSessionModel
      * @param idleClose time in milliseconds before closing connection with idle transaction
      */
     public void checkTransactionStatus(long openWarn, long openClose, long idleWarn, long idleClose) throws AMQException;
+
+    void block(AMQQueue queue);
+
+    void unblock(AMQQueue queue);
 }
