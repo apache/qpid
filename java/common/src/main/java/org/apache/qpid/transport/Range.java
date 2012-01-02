@@ -185,6 +185,12 @@ public abstract class Range implements RangeSet
             }
         }
 
+        public String toString()
+        {
+            return "[" + point + ", " + point + "]";
+        }
+
+
     }
 
     private static class RangeImpl extends Range
@@ -283,7 +289,7 @@ public abstract class Range implements RangeSet
             return range;
         }
 
-        @Override
+
         public void remove()
         {
             throw new UnsupportedOperationException();

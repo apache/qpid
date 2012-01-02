@@ -25,7 +25,6 @@ import static org.apache.qpid.util.Serial.gt;
 
 import java.security.Principal;
 import java.text.MessageFormat;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
@@ -33,8 +32,11 @@ import java.util.Map;
 import java.util.SortedMap;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.security.auth.Subject;
 import org.apache.qpid.AMQException;
@@ -45,11 +47,13 @@ import org.apache.qpid.server.configuration.ConfiguredObject;
 import org.apache.qpid.server.configuration.ConnectionConfig;
 import org.apache.qpid.server.configuration.SessionConfig;
 import org.apache.qpid.server.configuration.SessionConfigType;
+import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.GenericActor;
 import org.apache.qpid.server.logging.messages.ChannelMessages;
+import org.apache.qpid.server.logging.subjects.ChannelLogSubject;
 import org.apache.qpid.server.message.MessageReference;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
@@ -66,6 +70,11 @@ import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.transport.Binary;
 import org.apache.qpid.transport.Connection;
+import org.apache.qpid.transport.MessageCreditUnit;
+import org.apache.qpid.transport.MessageFlow;
+import org.apache.qpid.transport.MessageFlowMode;
+import org.apache.qpid.transport.MessageSetFlowMode;
+import org.apache.qpid.transport.MessageStop;
 import org.apache.qpid.transport.MessageTransfer;
 import org.apache.qpid.transport.Method;
 import org.apache.qpid.transport.Range;
@@ -81,12 +90,23 @@ public class ServerSession extends Session implements AuthorizationHolder, Sessi
     private static final Logger _logger = LoggerFactory.getLogger(ServerSession.class);
     
     private static final String NULL_DESTINTATION = UUID.randomUUID().toString();
+    private static final int HALF_INCOMING_CREDIT_THRESHOLD = 1 << 30;
 
     private final UUID _id;
     private ConnectionConfig _connectionConfig;
     private long _createTime = System.currentTimeMillis();
     private LogActor _actor = GenericActor.getInstance(this);
     private PostEnqueueAction _postEnqueueAction = new PostEnqueueAction();
+
+    private final ConcurrentMap<AMQQueue, Boolean> _blockingQueues = new ConcurrentHashMap<AMQQueue, Boolean>();
+
+    private final ConcurrentMap<Exchange, Boolean> _blockingExchanges = new ConcurrentHashMap<Exchange, Boolean>();
+
+
+    private final AtomicBoolean _blocking = new AtomicBoolean(false);
+    private ChannelLogSubject _logSubject;
+    private final AtomicInteger _oustandingCredit = new AtomicInteger(Integer.MAX_VALUE);
+
 
     public static interface MessageDispositionChangeListener
     {
@@ -132,7 +152,7 @@ public class ServerSession extends Session implements AuthorizationHolder, Sessi
         super(connection, delegate, name, expiry);
         _connectionConfig = connConfig;        
         _transaction = new AutoCommitTransaction(this.getMessageStore());
-
+        _logSubject = new ChannelLogSubject(this);
         _id = getConfigStore().createId();
         getConfigStore().addConfiguredObject(this);
     }
@@ -161,6 +181,10 @@ public class ServerSession extends Session implements AuthorizationHolder, Sessi
 
     public void enqueue(final ServerMessage message, final List<? extends BaseQueue> queues)
     {
+        if(_oustandingCredit.decrementAndGet() < HALF_INCOMING_CREDIT_THRESHOLD)
+        {
+            invoke(new MessageFlow("",MessageCreditUnit.MESSAGE,HALF_INCOMING_CREDIT_THRESHOLD));
+        }
         getConnectionModel().registerMessageReceived(message.getSize(), message.getArrivalTime());
         PostEnqueueAction postTransactionAction;
         if(isTransactional())
@@ -661,6 +685,43 @@ public class ServerSession extends Session implements AuthorizationHolder, Sessi
         }
     }
 
+    public void block(AMQQueue queue)
+    {
+        if(_blockingQueues.putIfAbsent(queue, Boolean.TRUE) == null)
+        {
+
+            if(_blocking.compareAndSet(false,true))
+            {
+                invoke(new MessageSetFlowMode("", MessageFlowMode.CREDIT));
+                invoke(new MessageStop(""));
+                _actor.message(_logSubject, ChannelMessages.FLOW_ENFORCED(queue.getNameShortString().toString()));
+            }
+
+
+        }
+    }
+
+    public void unblock(AMQQueue queue)
+    {
+        if(_blockingQueues.remove(queue) && _blockingQueues.isEmpty())
+        {
+            if(_blocking.compareAndSet(true,false))
+            {
+
+                _actor.message(_logSubject, ChannelMessages.FLOW_REMOVED());
+                MessageFlow mf = new MessageFlow();
+                mf.setUnit(MessageCreditUnit.MESSAGE);
+                mf.setDestination("");
+                _oustandingCredit.set(Integer.MAX_VALUE);
+                mf.setValue(Integer.MAX_VALUE);
+                invoke(mf);
+
+
+            }
+        }
+    }
+
+
     public String toLogString()
     {
        return "[" +
@@ -701,7 +762,7 @@ public class ServerSession extends Session implements AuthorizationHolder, Sessi
         }
     }
 
-    private static class PostEnqueueAction implements ServerTransaction.Action
+    private class PostEnqueueAction implements ServerTransaction.Action
     {
 
         private List<? extends BaseQueue> _queues;
@@ -732,7 +793,13 @@ public class ServerSession extends Session implements AuthorizationHolder, Sessi
             {
                 try
                 {
-                    _queues.get(i).enqueue(_message, _transactional, null);
+                    BaseQueue queue = _queues.get(i);
+                    queue.enqueue(_message, _transactional, null);
+                    if(queue instanceof AMQQueue)
+                    {
+                        ((AMQQueue)queue).checkCapacity(ServerSession.this);
+                    }
+
                 }
                 catch (AMQException e)
                 {
@@ -756,6 +823,6 @@ public class ServerSession extends Session implements AuthorizationHolder, Sessi
 
     public boolean getBlocking()
     {
-        return false; //TODO: Blocking not implemented on 0-10 yet.
+        return _blocking.get();
     }
 }
