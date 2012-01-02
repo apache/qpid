@@ -217,7 +217,7 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>, ExchangeRefer
 
     Map<String, Object> getArguments();
 
-    void checkCapacity(AMQChannel channel);
+    void checkCapacity(AMQSessionModel channel);
 
     /**
      * ExistingExclusiveSubscription signals a failure to create a subscription, because an exclusive subscription

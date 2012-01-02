@@ -22,6 +22,9 @@ package org.apache.qpid.server.logging.subjects;
 
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
+import org.apache.qpid.server.transport.ServerConnection;
+import org.apache.qpid.server.transport.ServerSession;
+
 import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.CHANNEL_FORMAT;
 
 public class ChannelLogSubject extends AbstractLogSubject
@@ -52,5 +55,30 @@ public class ChannelLogSubject extends AbstractLogSubject
                                session.getVirtualHost().getName(),
                                channel.getChannelId());
     }
-    
+
+    public ChannelLogSubject(ServerSession session)
+    {
+        /**
+         * LOG FORMAT used by the AMQPConnectorActor follows
+         * ChannelLogSubject.CHANNEL_FORMAT :
+         * con:{0}({1}@{2}/{3})/ch:{4}
+         *
+         * Uses a MessageFormat call to insert the required values according to
+         * these indices:
+         *
+         * 0 - Connection ID
+         * 1 - User ID
+         * 2 - IP
+         * 3 - Virtualhost
+         * 4 - Channel ID
+         */
+        ServerConnection connection = (ServerConnection) session.getConnection();
+        setLogStringWithFormat(CHANNEL_FORMAT,
+                               connection == null ? -1L : connection.getConnectionId(),
+                               session.getAuthorizedPrincipal() == null ? "?" : session.getAuthorizedPrincipal().getName(),
+                               (connection == null || connection.getConfig() == null) ? "?" : connection.getConfig().getAddress(),
+                               session.getVirtualHost().getName(),
+                               session.getChannel());
+    }
+
 }

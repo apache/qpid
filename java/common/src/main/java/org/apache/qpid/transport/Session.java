@@ -61,7 +61,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class Session extends SessionInvoker
 {
     private static final Logger log = Logger.get(Session.class);
-
+    
     public enum State { NEW, DETACHED, RESUMING, OPEN, CLOSING, CLOSED }
 
     static class DefaultSessionListener implements SessionListener
@@ -96,6 +96,9 @@ public class Session extends SessionInvoker
     private final long timeout = Long.getLong(ClientProperties.QPID_SYNC_OP_TIMEOUT,
                                         Long.getLong(ClientProperties.AMQJ_DEFAULT_SYNCWRITE_TIMEOUT,
                                                      ClientProperties.DEFAULT_SYNC_OPERATION_TIMEOUT));
+    private final long blockedSendTimeout = Long.getLong("qpid.flow_control_wait_failure", timeout);
+    private long blockedSendReportingPeriod = Long.getLong("qpid.flow_control_wait_notify_period",5000L);
+
     private boolean autoSync = false;
 
     private boolean incomingInit;
@@ -228,10 +231,21 @@ public class Session extends SessionInvoker
         {
             try
             {
-                if (!credit.tryAcquire(timeout, TimeUnit.MILLISECONDS))
+                long wait = blockedSendTimeout > blockedSendReportingPeriod ? blockedSendReportingPeriod :
+                           blockedSendTimeout;
+                long totalWait = 1L;
+                while(totalWait <= blockedSendTimeout && !credit.tryAcquire(wait, TimeUnit.MILLISECONDS))
                 {
+                    totalWait+=wait;
+                    log.warn("Message send delayed by " + (totalWait)/1000 + "s due to broker enforced flow control");
+
+
+                }
+                if(totalWait > blockedSendTimeout)
+                {
+                    log.error("Message send failed due to timeout waiting on broker enforced flow control");
                     throw new SessionException
-                        ("timed out waiting for message credit");
+                            ("timed out waiting for message credit");
                 }
             }
             catch (InterruptedException e)
@@ -815,7 +829,7 @@ public class Session extends SessionInvoker
             while (w.hasTime() && state != CLOSED && lt(maxComplete, point))
             {
                 checkFailoverRequired("Session sync was interrupted by failover.");
-                log.debug("%s   waiting for[%d]: %d, %s", this, point, maxComplete, commands);
+                log.debug("%s   waiting for[%d]: %d, %s", this, point, maxComplete, Arrays.asList(commands));
                 w.await();
             }
 

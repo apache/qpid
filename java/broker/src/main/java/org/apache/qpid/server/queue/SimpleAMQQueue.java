@@ -164,7 +164,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
     private AtomicInteger _deliveredMessages = new AtomicInteger();
     private AtomicBoolean _stopped = new AtomicBoolean(false);
 
-    private final ConcurrentMap<AMQChannel, Boolean> _blockedChannels = new ConcurrentHashMap<AMQChannel, Boolean>();
+    private final ConcurrentMap<AMQSessionModel, Boolean> _blockedChannels = new ConcurrentHashMap<AMQSessionModel, Boolean>();
 
     private final AtomicBoolean _deleted = new AtomicBoolean(false);
     private final List<Task> _deleteTaskList = new CopyOnWriteArrayList<Task>();
@@ -1528,7 +1528,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         }
     }
 
-    public void checkCapacity(AMQChannel channel)
+    public void checkCapacity(AMQSessionModel channel)
     {
         if(_capacity != 0l)
         {
@@ -1538,10 +1538,9 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
                 //Overfull log message
                 _logActor.message(_logSubject, QueueMessages.OVERFULL(_atomicQueueSize.get(), _capacity));
 
-                if(_blockedChannels.putIfAbsent(channel, Boolean.TRUE)==null)
-                {
-                    channel.block(this);
-                }
+                _blockedChannels.putIfAbsent(channel, Boolean.TRUE);
+
+                channel.block(this);
 
                 if(_atomicQueueSize.get() <= _flowResumeCapacity)
                 {
@@ -1573,7 +1572,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
                 }
 
 
-                for(AMQChannel c : _blockedChannels.keySet())
+                for(AMQSessionModel c : _blockedChannels.keySet())
                 {
                     c.unblock(this);
                     _blockedChannels.remove(c);
