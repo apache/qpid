@@ -165,6 +165,11 @@ public class MainTest extends QpidTestCase
             _options = options;
         }
 
+        @Override
+        protected void setExceptionHandler()
+        {
+        }
+
         public BrokerOptions getOptions()
         {
             return _options;
