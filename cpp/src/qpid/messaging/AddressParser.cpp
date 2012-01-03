@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -191,13 +191,14 @@ bool AddressParser::readQuotedValue(Variant& value)
     std::string s;
     if (readQuotedString(s)) {
         value = s;
+        value.setEncoding("utf8");
         return true;
     } else {
         return false;
     }
 }
-    
-bool AddressParser::readSimpleValue(Variant& value)   
+
+bool AddressParser::readSimpleValue(Variant& value)
 {
     std::string s;
     if (readWord(s)) {
@@ -217,7 +218,7 @@ bool AddressParser::readWord(std::string& value, const std::string& delims)
     //read any number of non-whitespace, non-reserved chars into value
     std::string::size_type start = current;
     while (!eos() && !iswhitespace() && !in(delims)) ++current;
-    
+
     if (current > start) {
         value = input.substr(start, current - start);
         return true;
@@ -229,8 +230,8 @@ bool AddressParser::readWord(std::string& value, const std::string& delims)
 bool AddressParser::readChar(char c)
 {
     while (!eos()) {
-        if (iswhitespace()) { 
-            ++current; 
+        if (iswhitespace()) {
+            ++current;
         } else if (input.at(current) == c) {
             ++current;
             return true;

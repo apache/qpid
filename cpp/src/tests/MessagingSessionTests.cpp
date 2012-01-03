@@ -1118,6 +1118,27 @@ QPID_AUTO_TEST_CASE(testUnsubscribeOnClose)
     fix.session.acknowledge();
 }
 
+QPID_AUTO_TEST_CASE(testHeadersExchange)
+{
+    MessagingFixture fix;
+    //use both quoted and unquoted values
+    Receiver receiver = fix.session.createReceiver("amq.match; {link:{x-bindings:[{arguments:{x-match:all,qpid.subject:'abc',my-property:abc}}]}}");
+    Sender sender = fix.session.createSender("amq.match");
+    Message out("test-message");
+    out.setSubject("abc");
+    Variant& property = out.getProperties()["my-property"];
+    property = "abc";
+    property.setEncoding("utf8");
+    sender.send(out, true);
+    Message in;
+    if (receiver.fetch(in, Duration::SECOND)) {
+        fix.session.acknowledge();
+        BOOST_CHECK_EQUAL(in.getContent(), out.getContent());
+    } else {
+        BOOST_FAIL("Message did not match as expected!");
+    }
+}
+
 QPID_AUTO_TEST_SUITE_END()
 
 }} // namespace qpid::tests
