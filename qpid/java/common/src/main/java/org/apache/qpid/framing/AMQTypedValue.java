@@ -166,6 +166,11 @@ public abstract class AMQTypedValue
 
     private static final class IntTypedValue extends AMQTypedValue
     {
+        @Override
+        public String toString()
+        {
+            return "[INT: " + String.valueOf(_value) + "]";
+        }
 
         private final int _value;
 

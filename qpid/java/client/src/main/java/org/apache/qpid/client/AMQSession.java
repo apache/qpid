@@ -1583,6 +1583,11 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         return _prefetchLowMark;
     }
 
+    public int getPrefetch()
+    {
+        return _prefetchHighMark;
+    }
+
     public AMQShortString getDefaultQueueExchangeName()
     {
         return _connection.getDefaultQueueExchangeName();
@@ -3047,7 +3052,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
      */
     public boolean prefetch()
     {
-        return getAMQConnection().getMaxPrefetch() > 0;
+        return _prefetchHighMark > 0;
     }
 
     /** Signifies that the session has pending sends to commit. */

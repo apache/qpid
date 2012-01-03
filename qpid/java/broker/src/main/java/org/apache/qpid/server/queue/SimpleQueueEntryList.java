@@ -185,6 +185,11 @@ public class SimpleQueueEntryList implements QueueEntryList<SimpleQueueEntryImpl
         advanceHead();
     }
 
+    public int getPriorities()
+    {
+        return 0;
+    }
+
     static class Factory implements QueueEntryListFactory
     {
 
