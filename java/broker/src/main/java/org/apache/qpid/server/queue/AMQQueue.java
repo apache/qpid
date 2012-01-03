@@ -149,7 +149,13 @@ public interface AMQQueue extends Managable, Comparable<AMQQueue>, ExchangeRefer
 
     void removeMessagesFromQueue(long fromMessageId, long toMessageId);
 
-
+    static interface Visitor
+    {
+        boolean visit(QueueEntry entry);
+    }
+    
+    void visit(Visitor visitor);
+    
 
     long getMaximumMessageSize();
 
