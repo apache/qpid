@@ -51,13 +51,11 @@ public class SortedQueueEntryList implements QueueEntryList<SortedQueueEntryImpl
         _propertyName = propertyName;
     }
 
-    @Override
     public AMQQueue getQueue()
     {
         return _queue;
     }
 
-    @Override
     public SortedQueueEntryImpl add(final ServerMessage message)
     {
         synchronized(_lock)
@@ -286,7 +284,6 @@ public class SortedQueueEntryList implements QueueEntryList<SortedQueueEntryImpl
         return (node == null ? Colour.BLACK : node.getColour()) == colour;
     }
 
-    @Override
     public SortedQueueEntryImpl next(final SortedQueueEntryImpl node)
     {
         synchronized(_lock)
@@ -316,13 +313,11 @@ public class SortedQueueEntryList implements QueueEntryList<SortedQueueEntryImpl
         }
     }
 
-    @Override
     public QueueEntryIterator<SortedQueueEntryImpl> iterator()
     {
         return new QueueEntryIteratorImpl(_head);
     }
 
-    @Override
     public SortedQueueEntryImpl getHead()
     {
         return _head;
@@ -333,7 +328,6 @@ public class SortedQueueEntryList implements QueueEntryList<SortedQueueEntryImpl
         return _root;
     }
 
-    @Override
     public void entryDeleted(final SortedQueueEntryImpl entry)
     {
         synchronized(_lock)
@@ -429,6 +423,11 @@ public class SortedQueueEntryList implements QueueEntryList<SortedQueueEntryImpl
             }
 
         }
+    }
+
+    public int getPriorities()
+    {
+        return 0;
     }
 
     /**

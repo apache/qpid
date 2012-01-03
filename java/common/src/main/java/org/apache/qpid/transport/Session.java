@@ -44,6 +44,7 @@ import static org.apache.qpid.util.Serial.max;
 import static org.apache.qpid.util.Strings.toUTF8;
 
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -828,8 +829,17 @@ public class Session extends SessionInvoker
             Waiter w = new Waiter(commands, timeout);
             while (w.hasTime() && state != CLOSED && lt(maxComplete, point))
             {
-                checkFailoverRequired("Session sync was interrupted by failover.");
-                log.debug("%s   waiting for[%d]: %d, %s", this, point, maxComplete, Arrays.asList(commands));
+                checkFailoverRequired("Session sync was interrupted by failover.");                               
+                if(log.isDebugEnabled())
+                {
+                    List<Method> waitingFor =
+                            Arrays.asList(commands)
+                                  .subList(mod(maxComplete,commands.length),
+                                           mod(commandsOut-1, commands.length) < mod(maxComplete, commands.length)
+                                             ? commands.length-1
+                                             : mod(commandsOut-1, commands.length));
+                    log.debug("%s   waiting for[%d]: %d, %s", this, point, maxComplete, waitingFor);
+                }
                 w.await();
             }
 

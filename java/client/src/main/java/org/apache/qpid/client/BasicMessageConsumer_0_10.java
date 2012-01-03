@@ -545,7 +545,7 @@ public class BasicMessageConsumer_0_10 extends BasicMessageConsumer<UnprocessedM
         }
         else if (getSession().prefetch())
         {
-            capacity = _0_10session.getAMQConnection().getMaxPrefetch();
+            capacity = getSession().getPrefetch();
         }
         return capacity;
     }
