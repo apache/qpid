@@ -389,8 +389,16 @@ public class SecurityManager
     private ConcurrentHashMap<String, ConcurrentHashMap<String, PublishAccessCheck>> _publishPropsCache
             = new ConcurrentHashMap<String, ConcurrentHashMap<String, PublishAccessCheck>>();
 
-    public boolean authorisePublish(final boolean immediate, final String routingKey, final String exchangeName)
+    public boolean authorisePublish(final boolean immediate, String routingKey, String exchangeName)
     {
+        if(routingKey == null)
+        {
+            routingKey = "";
+        }
+        if(exchangeName == null)
+        {
+            exchangeName = "";
+        }
         PublishAccessCheck check;
         ConcurrentHashMap<String, ConcurrentHashMap<String, PublishAccessCheck>> cache =
                 immediate ? _immediatePublishPropsCache : _publishPropsCache;
