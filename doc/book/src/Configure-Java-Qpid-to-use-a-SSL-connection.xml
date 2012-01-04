@@ -21,7 +21,7 @@
  
 -->
 
-<section><title>
+<section id="Qpid-Java-SSL"><title>
       Configure Java Qpid to use a SSL connection.
     </title>
 

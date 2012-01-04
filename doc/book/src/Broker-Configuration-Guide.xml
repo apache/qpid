@@ -20,7 +20,7 @@
     
 -->
 
-<section>
+<section id="Java-Broker-Configuration-Guide">
     <title>Broker Configuration Guide </title>
 
     <xi:include xmlns:xi="http://www.w3.org/2001/XInclude"
