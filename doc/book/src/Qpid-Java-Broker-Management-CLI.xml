@@ -20,7 +20,7 @@
  
 -->
 
-<section><title>
+<section id="Qpid-Java-Broker-Management-CLI"><title>
       Qpid Java Broker Management CLI
     </title>
 	  <section role="h2" id="QpidJavaBrokerManagementCLI-HowtobuildApacheQpidCLI"><title>

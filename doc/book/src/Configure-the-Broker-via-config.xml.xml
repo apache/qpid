@@ -21,7 +21,7 @@
  
 -->
 
-<section>
+<section id="Qpid-Java-Broker-Config-File">
   <title>
       Configure the Broker via config.xml
     </title>

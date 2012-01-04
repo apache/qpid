@@ -21,7 +21,7 @@
  
 -->
 
-<section><title>
+<section id="Java-Broker-Debug-Logging"><title>
       Debug using log4j
     </title>
 

@@ -1,0 +1,129 @@
+/*
+ *
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ * 
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing,
+ * software distributed under the License is distributed on an
+ * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ * KIND, either express or implied.  See the License for the
+ * specific language governing permissions and limitations
+ * under the License.
+ *
+ */
+ul {
+    list-style-type:square;
+}
+
+th { 
+    font-weight: bold;
+}
+
+.navfooter td { 
+    font-size:10pt;
+}
+
+.navheader td { 
+    font-size:10pt;
+}
+
+body {
+    width:950px;
+    margin-left:100px;
+    margin-top:40px;
+
+    background:#FFFFFF;
+    font-family:"Verdana", sans-serif;
+    font-size:10pt;
+}
+
+body a {
+    color:#000000;
+}
+
+
+div.book {
+    margin-left:10pt;
+    margin-right:10pt;
+}
+
+div.preface {
+    margin-left:10pt;
+    margin-right:10pt;
+}
+
+div.chapter {
+    margin-left:10pt;
+    margin-right:10pt;
+}
+
+div.section {
+    margin-left:10pt;
+    margin-right:10pt;
+}
+
+div.titlepage {
+    margin-left:-10pt;
+    margin-right:-10pt;
+}
+
+.calloutlist td {
+    font-size:10pt;
+}
+
+.table-contents table {
+    border-spacing: 0px;
+}
+
+.table-contents td {
+    font-size:10pt;
+    padding-left:6px;
+    padding-right:6px;
+}
+
+.chapter h2.title {
+    font-size:20pt;
+    color:#0c3b82;
+}
+
+.chapter .section h2.title {
+    font-size:18pt;
+    color:#0c3b82;
+}
+
+.section h2.title {
+    font-size:16pt;
+    color:#0c3b82;
+}
+
+.section h3.title {
+    font-size:14pt;
+    color:#0c3b82;
+}
+
+.section h4.title {
+    font-size:12pt;
+    color:#0c3b82;
+}
+
+.section h5.title {
+    font-size:12pt;
+    color:#0c3b82;
+}
+
+.section h6.title {
+    font-size:12pt;
+    color:#0c3b82;
+}
+
+.toc a {
+    font-size:9pt;
+}
+

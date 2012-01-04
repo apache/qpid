@@ -20,7 +20,7 @@
  
 -->
 
-<part>
+<part id="Java-Broker">
   <title>AMQP Messaging Broker (Implemented in Java)</title>
   <partintro>
     <para>Qpid provides two AMQP messaging brokers:</para>
@@ -35,7 +35,7 @@
     <para>This section contains information specific to the broker that is implemented in Java.</para>
   </partintro>
 
-<chapter>
+<chapter id="Java-General-User-Guides">
   <title>General User Guides</title>
 
         <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="Java-Broker-Feature-Guide.xml"/>
