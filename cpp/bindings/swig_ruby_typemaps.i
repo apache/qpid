@@ -168,6 +168,26 @@
     $result = (VALUE) $1;
 }
 
+%typemap (in) uint8_t
+{
+  $1 = NUM2UINT ($input);
+}
+
+%typemap (out) uint8_t
+{
+  $result = UINT2NUM((uint8_t) $1);
+}
+
+%typemap (in) int8_t
+{
+  $1 = NUM2INT ($input);
+}
+
+%typemap (out) int8_t
+{
+  $result = INT2NUM((int8_t) $1);
+}
+
 %typemap (in) uint16_t
 {
     $1 = NUM2UINT ($input);
