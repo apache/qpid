@@ -84,6 +84,10 @@ public class StoredMemoryMessage implements StoredMessage
 
     public int getContent(int offset, ByteBuffer dst)
     {
+        if(_content == null)
+        {
+            return 0;
+        }
         ByteBuffer src = _content.duplicate();
 
         int oldPosition = src.position();
@@ -102,6 +106,10 @@ public class StoredMemoryMessage implements StoredMessage
 
     public ByteBuffer getContent(int offsetInMessage, int size)
     {
+        if(_content == null)
+        {
+            return null;
+        }
         ByteBuffer buf = _content.duplicate();
 
         if(offsetInMessage != 0)
