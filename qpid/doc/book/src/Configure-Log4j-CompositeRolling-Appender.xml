@@ -21,7 +21,7 @@
  
 -->
 
-<section><title>
+<section id="Qpid-Java-Log4j"><title>
       Configure Log4j CompositeRolling Appender
     </title>
     <section role="h2" id="ConfigureLog4jCompositeRollingAppender-HowtoconfiguretheCompositeRollinglog4jAppender"><title>

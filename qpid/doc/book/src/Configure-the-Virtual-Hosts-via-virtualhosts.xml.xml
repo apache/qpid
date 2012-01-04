@@ -21,7 +21,7 @@
  
 -->
 
-<section><title>
+<section id="Qpid-Java-Broker-Virtualhosts-Config"><title>
       Configure the Virtual Hosts via virtualhosts.xml
     </title><section role="h2" id="ConfiguretheVirtualHostsviavirtualhosts.xml-virtualhosts.xmlOverview"><title>
             virtualhosts.xml Overview
