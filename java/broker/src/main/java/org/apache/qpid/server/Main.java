@@ -27,6 +27,7 @@ import org.apache.commons.cli.OptionBuilder;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.cli.PosixParser;
+import org.apache.log4j.Logger;
 import org.apache.qpid.server.Broker.InitException;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 
@@ -285,6 +286,9 @@ public class Main
                             System.err.println("#");
                             System.err.println("########################################################################");
                             e.printStackTrace(System.err);
+
+                            Logger logger = Logger.getLogger("org.apache.qpid.server.Main");
+                            logger.error("Uncaught exception, shutting down.", e);
                         }
                         finally
                         {
