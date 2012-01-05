@@ -26,6 +26,8 @@ module Qpid
     # Establishes a connection to a remote endpoint.
     class Connection
 
+      attr_reader :options # :nodoc:
+
       # Creates a connection object, but does not actually connect to
       # the specified location.
       #
@@ -64,8 +66,8 @@ module Qpid
       #
       def initialize(opts = {})
         @url = opts[:url] || "localhost"
-        @options = opts[:options] || {}
-        @connection_impl = opts[:impl] || Cqpid::Connection.new(@url, convert_options)
+        @options = convert_options(opts[:options] || {})
+        @connection_impl = opts[:impl] || Cqpid::Connection.new(@url, @options)
       end
 
       def connection_impl # :nodoc:
@@ -132,7 +134,7 @@ module Qpid
       def session name
         begin
           session_impl = @connection_impl.getSession name
-          Qpid::Messaging::Session.new session_impl if session_impl
+          Qpid::Messaging::Session.new self, session_impl if session_impl
         rescue
           raise Qpid::Messaging::SessionNameException.new "No such session: #{name}"
         end
@@ -141,29 +143,12 @@ module Qpid
       # Returns the username used to authenticate with the connection.
       def authenticated_username; @connection_impl.getAuthenticatedUsername if open?; end
 
-      # inherited from Handle
-
-      # Returns whether the underlying handle is valid; i.e., not null.
-      def valid?
-        @connection_impl.isValid
-      end
-
-      # Returns whether the underlying handle is null.
-      def null?
-        @connection_impl.isNull
-      end
-
-      # Swaps the underlying connection handle.
-      def swap connection
-        @connection_impl.swap connection.connection_impl
-      end
-
       private
 
-      def convert_options
+      def convert_options(options)
         result = {}
-        unless @options.nil? || @options.empty?
-          @options.each_pair {|key, value| result[key.to_s] = value.to_s}
+        unless options.nil? || options.empty?
+          options.each_pair {|key, value| result[key.to_s] = value.to_s}
         end
 
         return result

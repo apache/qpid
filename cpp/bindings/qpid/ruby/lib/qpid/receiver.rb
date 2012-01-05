@@ -166,7 +166,7 @@ module Qpid
       private
 
       def create_message_wrapper message_impl # :nodoc:
-        Qpid::Messaging::Message.new({}, message_impl)
+        Qpid::Messaging::Message.new(:impl => message_impl)
       end
 
     end

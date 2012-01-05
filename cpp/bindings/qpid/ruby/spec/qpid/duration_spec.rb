@@ -17,14 +17,40 @@
 # under the License.
 #
 
-$:.unshift File.join(File.dirname(__FILE__), "..", "lib")
+require 'spec_helper'
 
-require 'test/unit'
-require 'test_encoding'
-require 'test_address'
-require 'test_message'
-require 'test_sender'
-require 'test_receiver'
-require 'test_session'
-require 'test_connection'
+module Qpid
 
+  module Messaging
+
+    describe Duration do
+
+      before(:each) do
+        @duration = Qpid::Messaging::Duration::SECOND
+      end
+
+      it "returns the underlying implementation" do
+        impl = @duration.duration_impl
+
+        impl.should_not be_nil
+      end
+
+      it "can create a duration with a millisecond value" do
+        duration = Qpid::Messaging::Duration.new 500
+
+        milliseconds = duration.milliseconds
+
+        milliseconds.should == 500
+      end
+
+      it "returns the time in milliseconds" do
+        milliseconds = @duration.milliseconds
+
+        milliseconds.should == 1000
+      end
+
+    end
+
+  end
+
+end
