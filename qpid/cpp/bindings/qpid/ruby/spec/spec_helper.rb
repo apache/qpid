@@ -17,13 +17,5 @@
 # under the License.
 #
 
-$:.unshift File.join(File.dirname(__FILE__), "..", "lib")
-
 require 'qpid'
-
-def create_session url, session_name
-  conn = Qpid::Messaging::Connection.new url
-  conn.open
-  conn.create_session session_name
-end
-
+require 'cqpid'

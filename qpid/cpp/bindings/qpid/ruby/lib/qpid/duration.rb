@@ -33,12 +33,25 @@ module Qpid
     # :MINUTE :: 60,000ms
     class Duration
 
-      def initialize duration # :nodoc:
-        @duration_impl = Cqpid::Duration.new duration
+      # Creates a Duration with the specified length, in milliseconds.
+      def initialize length
+        @duration_impl = Cqpid::Duration.new length
       end
 
       def duration_impl # :nodoc:
         @duration_impl
+      end
+
+      # Returns the period of time in milliseconds
+      #
+      # ==== Examples
+      #
+      #   duration = Qpid::Messaging::Duration.new :length => 5000
+      #   puts "Waiting #{duration.milliseconds} ms for a message."
+      #   msg = receiver.fetch duration
+      #
+      def milliseconds
+        @duration_impl.getMilliseconds
       end
 
       def self.add_item(key, value) # :nodoc:
