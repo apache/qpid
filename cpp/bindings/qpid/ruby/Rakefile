@@ -32,6 +32,8 @@ require "rake/extensiontask"
 require "rake/rdoctask"
 require "rake/testtask"
 
+require "spec/rake/spectask"
+
 CLOBBER.include("pkg")
 
 load "./lib/qpid/version.rb"
@@ -58,6 +60,17 @@ desc "Run all tests (alias for test:all)."
 task :test => :"test:all"
 
 namespace :test do
+
+  desc "Run RSpec tests."
+  Spec::Rake::SpecTask.new do |t|
+    t.ruby_opts = ['-rtest/unit']
+    t.spec_files = FileList["spec/**/*_spec.rb"]
+    t.rcov       = true
+    t.rcov_opts  = [
+                    '--exclude', 'lib\/qpid.rb,spec\/,lib\/ruby',
+                   ]
+  end
+
   desc "Run all tests (default)."
   task :all => [:units, :integrations]
 
