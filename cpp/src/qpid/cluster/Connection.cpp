@@ -742,9 +742,7 @@ void Connection::connectionError(const std::string& msg) {
         cluster.flagError(*this, ERROR_TYPE_CONNECTION, msg);
     }
     else
-    if ( connection->securityFailure() ) {
       cluster.eraseLocal(self);
-    }
 }
 
 void Connection::addQueueListener(const std::string& q, uint32_t listener) {
