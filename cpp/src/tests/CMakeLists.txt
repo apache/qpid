@@ -281,6 +281,15 @@ remember_location(msg_group_test)
 install (TARGETS qpid-perftest qpid-latency-test RUNTIME
          DESTINATION ${QPID_INSTALL_BINDIR})
 
+# This should ideally be done as part of the test run, but I don't know a way
+# to get these arguments and the working directory set like Makefile.am does,
+# and have that run during the test pass.
+if (PYTHON_EXECUTABLE)
+  set (python_bld ${CMAKE_CURRENT_BINARY_DIR}/python)
+  execute_process(COMMAND ${PYTHON_EXECUTABLE} setup.py install --prefix=${pythoon_bld} --install-lib=${python_bld} --install-scripts=${python_bld}/commands
+                  WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/../python)
+endif (PYTHON_EXECUTABLE)
+
 if (CMAKE_SYSTEM_NAME STREQUAL Windows)
   set (ENV{OUTDIR} ${EXECUTABLE_OUTPUT_PATH})
   set (test_script_suffix ".ps1")
@@ -319,48 +328,11 @@ add_library(test_store MODULE test_store.cpp)
 target_link_libraries (test_store qpidbroker qpidcommon)
 set_target_properties (test_store PROPERTIES PREFIX "")
 
-#EXTRA_DIST +=								\
-#  run_test vg_check							\
-#  run-unit-tests start_broker python_tests stop_broker 			\
-#  quick_topictest							\
-#  quick_perftest							\
-#  quick_txtest								\
-#  topictest								\
-#  run_header_test							\
-#  header_test.py							\
-#  ssl_test								\
-#  config.null								\
-#  ais_check								\
-#  run_federation_tests							\
-#  run_acl_tests								\
-#  .valgrind.supp							\
-#  MessageUtils.h							\
-#  TestMessageStore.h							\
-#  TxMocks.h								\
-#  start_cluster stop_cluster restart_cluster
 
 add_library (dlclose_noop MODULE dlclose_noop.c)
 #libdlclose_noop_la_LDFLAGS = -module -rpath $(abs_builddir)
 
 #CLEANFILES+=valgrind.out *.log *.vglog* dummy_test $(unit_wrappers)
-#
-## FIXME aconway 2008-05-23: Disabled interop_runner because it uses
-## the obsolete Channel class.  Convert to Session and re-enable.
-## 
-## check_PROGRAMS += interop_runner
-#
-## interop_runner_SOURCES = 	\
-##   interop_runner.cpp	 	\
-##   SimpleTestCaseBase.cpp	\
-##   BasicP2PTest.cpp		\
-##   BasicPubSubTest.cpp		\
-##   SimpleTestCaseBase.h		\
-##   BasicP2PTest.h		\
-##   BasicPubSubTest.h		\
-##   TestCase.h			\
-##   TestOptions.h ConnectionOptions.h
-## interop_runner_LDADD = $(lib_client) $(lib_common) $(extra_libs)
-#
 #
 ## Longer running stability tests, not run by default check: target.
 ## Not run under valgrind, too slow
