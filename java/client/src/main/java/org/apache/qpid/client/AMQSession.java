@@ -256,7 +256,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     protected AMQConnection _connection;
 
     /** Used to indicate whether or not this is a transactional session. */
-    protected boolean _transacted;
+    protected final boolean _transacted;
 
     /** Holds the sessions acknowledgement mode. */
     protected final int _acknowledgeMode;
@@ -1619,7 +1619,24 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         return _ticket;
     }
 
-    public boolean getTransacted()
+    /**
+     * Indicates whether the session is in transacted mode.
+     *
+     * @return true if the session is in transacted mode
+     * @throws IllegalStateException - if session is closed.
+     */
+    public boolean getTransacted() throws JMSException
+    {
+        // Sun TCK checks that javax.jms.IllegalStateException is thrown for closed session
+        // nowhere else this behavior is documented
+        checkNotClosed();
+        return _transacted;
+    }
+
+    /**
+     * Indicates whether the session is in transacted mode.
+     */
+    public boolean isTransacted()
     {
         return _transacted;
     }
