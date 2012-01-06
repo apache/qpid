@@ -134,8 +134,6 @@ typedef int Py_ssize_t;
             result = 0;
         }
 
-        if (result)
-            Py_INCREF(result);
         return result;
     }
 
@@ -323,32 +321,22 @@ typedef int Py_ssize_t;
  */
 %typemap(out) qpid::types::Variant::Map {
     $result = MapToPy(&$1);
-    if ($result)
-        Py_INCREF($result);
 }
 
 %typemap(out) qpid::types::Variant::Map& {
     $result = MapToPy($1);
-    if ($result)
-        Py_INCREF($result);
 }
 
 %typemap(out) qpid::types::Variant::List {
     $result = ListToPy(&$1);
-    if ($result)
-        Py_INCREF($result);
 }
 
 %typemap(out) qpid::types::Variant::List& {
     $result = ListToPy($1);
-    if ($result)
-        Py_INCREF($result);
 }
 
 %typemap(out) qpid::types::Variant& {
     $result = VariantToPy($1);
-    if ($result)
-        Py_INCREF($result);
 }
 
 /*
@@ -356,8 +344,6 @@ typedef int Py_ssize_t;
  */
 %typemap(out) qpid::types::UUID & {
     $result = UuidToPy($1);
-    if ($result)
-        Py_INCREF($result);
 }
 
 
