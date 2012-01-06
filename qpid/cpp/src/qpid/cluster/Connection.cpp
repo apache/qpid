@@ -407,7 +407,7 @@ void Connection::shadowSetUser(const std::string& userId) {
 void Connection::consumerState(const string& name, bool blocked, bool notifyEnabled, const SequenceNumber& position)
 {
     broker::SemanticState::ConsumerImpl::shared_ptr c = semanticState().find(name);
-    c->position = position;
+    c->setPosition(position);
     c->setBlocked(blocked);
     if (notifyEnabled) c->enableNotify(); else c->disableNotify();
     updateIn.consumerNumbering.add(c);

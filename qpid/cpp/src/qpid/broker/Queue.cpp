@@ -302,7 +302,7 @@ Queue::ConsumeCode Queue::consumeNextMessage(QueuedMessage& m, Consumer::shared_
         if (allocator->nextConsumableMessage(c, msg)) {
             if (msg.payload->hasExpired()) {
                 QPID_LOG(debug, "Message expired from queue '" << name << "'");
-                c->position = msg.position;
+                c->setPosition(msg.position);
                 dequeue(0, msg);
                 continue;
             }
@@ -350,7 +350,7 @@ bool Queue::browseNextMessage(QueuedMessage& m, Consumer::shared_ptr& c)
         if (c->filter(msg.payload) && !msg.payload->hasExpired()) {
             if (c->accept(msg.payload)) {
                 //consumer wants the message
-                c->position = msg.position;
+                c->setPosition(msg.position);
                 m = msg;
                 return true;
             } else {
@@ -361,7 +361,7 @@ bool Queue::browseNextMessage(QueuedMessage& m, Consumer::shared_ptr& c)
         } else {
             //consumer will never want this message, continue seeking
             QPID_LOG(debug, "Browser skipping message from '" << name << "'");
-            c->position = msg.position;
+            c->setPosition(msg.position);
         }
     }
     return false;

@@ -207,7 +207,7 @@ bool MessageGroupManager::nextConsumableMessage( Consumer::shared_ptr& c, Queued
     if (!messages.size())
         return false;
 
-    next.position = c->position;
+    next.position = c->getPosition();
     if (!freeGroups.empty()) {
         const framing::SequenceNumber& nextFree = freeGroups.begin()->first;
         if (nextFree < next.position) {     // a free message is older than current
@@ -250,7 +250,7 @@ bool MessageGroupManager::allocate(const std::string& consumer, const QueuedMess
 bool MessageGroupManager::nextBrowsableMessage( Consumer::shared_ptr& c, QueuedMessage& next )
 {
     // browse: allow access to any available msg, regardless of group ownership (?ok?)
-    return messages.browse(c->position, next, false);
+    return messages.browse(c->getPosition(), next, false);
 }
 
 void MessageGroupManager::query(qpid::types::Variant::Map& status) const

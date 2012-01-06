@@ -42,7 +42,7 @@ bool FifoDistributor::allocate(const std::string&, const QueuedMessage& )
 
 bool FifoDistributor::nextBrowsableMessage( Consumer::shared_ptr& c, QueuedMessage& next )
 {
-    return messages.browse(c->position, next, false);
+    return messages.browse(c->getPosition(), next, false);
 }
 
 void FifoDistributor::query(qpid::types::Variant::Map&) const
