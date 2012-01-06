@@ -152,7 +152,7 @@ public class AMQSession_0_8 extends AMQSession<BasicMessageConsumer_0_8, BasicMe
             _logger.debug("Sending ack for delivery tag " + deliveryTag + " on channel " + _channelId);
         }
 
-        getProtocolHandler().writeFrame(ackFrame, !getTransacted());
+        getProtocolHandler().writeFrame(ackFrame, !isTransacted());
         _unacknowledgedMessageTags.remove(deliveryTag);
     }
 
