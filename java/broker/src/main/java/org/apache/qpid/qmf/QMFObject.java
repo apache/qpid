@@ -73,4 +73,9 @@ public abstract class QMFObject<C extends QMFClass, D extends QMFObject.Delegate
     abstract public QMFCommand asInstrumentInfoCmd(long sampleTime);
     abstract public QMFCommand asGetQueryResponseCmd(final QMFGetQueryCommand queryCommand, long sampleTime);
 
+    @Override
+    public String toString()
+    {
+        return _delegate.toString();
+    }
 }

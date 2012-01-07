@@ -148,7 +148,7 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
 
         BrokerConfig broker = new BrokerConfigAdapter(instance);
 
-        SystemConfig system = (SystemConfig) store.getRoot();
+        SystemConfig system = store.getRoot();
         system.addBroker(broker);
         instance.setBroker(broker);
 

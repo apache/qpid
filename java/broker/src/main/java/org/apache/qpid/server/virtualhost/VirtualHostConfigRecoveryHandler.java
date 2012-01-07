@@ -20,6 +20,7 @@
 */
 package org.apache.qpid.server.virtualhost;
 
+import org.apache.qpid.server.federation.BrokerLink;
 import org.apache.qpid.server.message.EnqueableMessage;
 import org.apache.qpid.server.store.ConfigurationRecoveryHandler;
 import org.apache.qpid.server.store.MessageStore;
@@ -54,11 +55,13 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.TreeMap;
+import java.util.UUID;
 
 public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHandler,
                                                         ConfigurationRecoveryHandler.QueueRecoveryHandler,
                                                         ConfigurationRecoveryHandler.ExchangeRecoveryHandler,
                                                         ConfigurationRecoveryHandler.BindingRecoveryHandler,
+                                                        ConfigurationRecoveryHandler.BrokerLinkRecoveryHandler,
                                                         MessageStoreRecoveryHandler,
                                                         MessageStoreRecoveryHandler.StoredMessageRecoveryHandler,
                                                         TransactionLogRecoveryHandler,
@@ -180,7 +183,19 @@ public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHa
     public void completeMessageRecovery()
     {
         //TODO - log end
-        //To change body of implemented methods use File | Settings | File Templates.
+    }
+
+    public BridgeRecoveryHandler brokerLink(final UUID id,
+                                            final long createTime,
+                                            final Map<String, String> arguments)
+    {
+        BrokerLink blink = _virtualHost.createBrokerConnection(id, createTime, arguments);
+        return new BridgeRecoveryHandlerImpl(blink);
+        
+    }
+
+    public void completeBrokerLinkRecovery()
+    {
     }
 
     private static final class ProcessAction
@@ -261,9 +276,9 @@ public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHa
 
     }
 
-    public void completeBindingRecovery()
+    public BrokerLinkRecoveryHandler completeBindingRecovery()
     {
-        //return this;
+        return this;
     }
 
     public void complete()
@@ -384,6 +399,25 @@ public class VirtualHostConfigRecoveryHandler implements ConfigurationRecoveryHa
         public StoredMessage getStoredMessage()
         {
             return null;
+        }
+    }
+
+    private class BridgeRecoveryHandlerImpl implements BridgeRecoveryHandler
+    {
+        private final BrokerLink _blink;
+
+        public BridgeRecoveryHandlerImpl(final BrokerLink blink)
+        {
+            _blink = blink;
+        }
+
+        public void bridge(final UUID id, final long createTime, final Map<String, String> arguments)
+        {
+            _blink.createBridge(id, createTime, arguments);
+        }
+
+        public void completeBridgeRecoveryForLink()
+        {
         }
     }
 }

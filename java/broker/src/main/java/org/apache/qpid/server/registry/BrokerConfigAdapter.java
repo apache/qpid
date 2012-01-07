@@ -165,7 +165,6 @@ public class BrokerConfigAdapter implements BrokerConfig
     /**
      * @see org.apache.qpid.server.configuration.BrokerConfig#getFeatures()
      */
-    @Override
     public List<String> getFeatures()
     {
         final List<String> features = new ArrayList<String>();
@@ -175,5 +174,17 @@ public class BrokerConfigAdapter implements BrokerConfig
         }
 
         return Collections.unmodifiableList(features);
+    }
+
+    @Override
+    public String toString()
+    {
+        return "BrokerConfigAdapter{" +
+               "_id=" + _id +
+               ", _system=" + _system +
+               ", _vhosts=" + _vhosts +
+               ", _createTime=" + _createTime +
+               ", _federationTag='" + _federationTag + '\'' +
+               '}';
     }
 }

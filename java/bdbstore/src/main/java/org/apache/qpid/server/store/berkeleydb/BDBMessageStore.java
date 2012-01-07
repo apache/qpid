@@ -27,13 +27,16 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Queue;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 import com.sleepycat.bind.tuple.LongBinding;
+import com.sleepycat.bind.tuple.StringBinding;
 import com.sleepycat.je.*;
 import org.apache.commons.configuration.Configuration;
 import org.apache.log4j.Logger;
@@ -41,6 +44,8 @@ import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.federation.Bridge;
+import org.apache.qpid.server.federation.BrokerLink;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.messages.ConfigStoreMessages;
@@ -100,12 +105,17 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
     private String DELIVERYDB_NAME = "deliveryDb";
     private String EXCHANGEDB_NAME = "exchangeDb";
     private String QUEUEDB_NAME = "queueDb";
+    private String BRIDGEDB_NAME = "bridges";
+    private String LINKDB_NAME = "links";
+
     private Database _messageMetaDataDb;
     private Database _messageContentDb;
     private Database _queueBindingsDb;
     private Database _deliveryDb;
     private Database _exchangeDb;
     private Database _queueDb;
+    private Database _bridgeDb;
+    private Database _linkDb;
 
     /* =======
      * Schema:
@@ -190,6 +200,10 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
             EXCHANGEDB_NAME += "_v" + version;
 
             QUEUEBINDINGSDB_NAME += "_v" + version;
+
+            LINKDB_NAME += "_v" + version;
+
+            BRIDGEDB_NAME += "_v" + version;
         }
     }
  
@@ -461,6 +475,9 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
         _queueBindingsDb = _environment.openDatabase(null, QUEUEBINDINGSDB_NAME, dbConfig);
         _messageContentDb = _environment.openDatabase(null, MESSAGECONTENTDB_NAME, dbConfig);
         _deliveryDb = _environment.openDatabase(null, DELIVERYDB_NAME, dbConfig);
+        _linkDb = _environment.openDatabase(null, LINKDB_NAME, dbConfig);
+        _bridgeDb = _environment.openDatabase(null, BRIDGEDB_NAME, dbConfig);
+
 
     }
 
@@ -517,6 +534,18 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
             _deliveryDb.close();
         }
 
+        if (_bridgeDb != null)
+        {
+            _log.info("Close bridge database");
+            _bridgeDb.close();
+        }
+
+        if (_linkDb != null)
+        {
+            _log.info("Close link database");
+            _linkDb.close();
+        }
+
         closeEnvironment();
 
         _state = State.CLOSED;
@@ -556,8 +585,9 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
             
             BindingRecoveryHandler brh = erh.completeExchangeRecovery();
             recoverBindings(brh);
-            
-            brh.completeBindingRecovery();
+
+            ConfigurationRecoveryHandler.BrokerLinkRecoveryHandler lrh = brh.completeBindingRecovery();
+            recoverBrokerLinks(lrh);
         }
         catch (DatabaseException e)
         {
@@ -673,6 +703,74 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
         }
 
     }
+
+
+    private void recoverBrokerLinks(final ConfigurationRecoveryHandler.BrokerLinkRecoveryHandler lrh)
+    {
+        Cursor cursor = null;
+
+        try
+        {
+            cursor = _linkDb.openCursor(null, null);
+            DatabaseEntry key = new DatabaseEntry();
+            DatabaseEntry value = new DatabaseEntry();
+            
+            while (cursor.getNext(key, value, LockMode.RMW) == OperationStatus.SUCCESS)
+            {
+                UUID id = UUIDTupleBinding.getInstance().entryToObject(key);
+                long createTime = LongBinding.entryToLong(value);
+                Map<String,String> arguments = StringMapBinding.getInstance().entryToObject(value);
+
+                ConfigurationRecoveryHandler.BridgeRecoveryHandler brh = lrh.brokerLink(id, createTime, arguments);
+
+                recoverBridges(brh, id);
+            }
+        }
+        finally
+        {
+            if (cursor != null)
+            {
+                cursor.close();
+            }
+        }
+
+    }
+
+    private void recoverBridges(final ConfigurationRecoveryHandler.BridgeRecoveryHandler brh, final UUID linkId)
+    {
+        Cursor cursor = null;
+
+        try
+        {
+            cursor = _bridgeDb.openCursor(null, null);
+            DatabaseEntry key = new DatabaseEntry();
+            DatabaseEntry value = new DatabaseEntry();
+
+            while (cursor.getNext(key, value, LockMode.RMW) == OperationStatus.SUCCESS)
+            {
+                UUID id = UUIDTupleBinding.getInstance().entryToObject(key);
+
+                UUID parentId = UUIDTupleBinding.getInstance().entryToObject(value);
+                if(parentId.equals(linkId))
+                {
+
+                    long createTime = LongBinding.entryToLong(value);
+                    Map<String,String> arguments = StringMapBinding.getInstance().entryToObject(value);
+                    brh.bridge(id,createTime,arguments);
+                }
+            }
+            brh.completeBridgeRecoveryForLink();
+        }
+        finally
+        {
+            if (cursor != null)
+            {
+                cursor.close();
+            }
+        }
+
+    }
+
 
     private void recoverMessages(MessageStoreRecoveryHandler msrh) throws DatabaseException
     {
@@ -1160,6 +1258,90 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
         catch (DatabaseException e)
         {
             throw new AMQStoreException("Error writing deleting with name " + name + " from database: " + e.getMessage(), e);
+        }
+    }
+
+    public void createBrokerLink(final BrokerLink link) throws AMQStoreException
+    {
+        if (_state != State.RECOVERING)
+        {
+            DatabaseEntry key = new DatabaseEntry();
+            UUIDTupleBinding.getInstance().objectToEntry(link.getId(), key);
+
+            DatabaseEntry value = new DatabaseEntry();
+            LongBinding.longToEntry(link.getCreateTime(),value);
+            StringMapBinding.getInstance().objectToEntry(link.getArguments(), value);
+
+            try
+            {
+                _linkDb.put(null, key, value);
+            }
+            catch (DatabaseException e)
+            {
+                throw new AMQStoreException("Error writing Link  " + link
+                                            + " to database: " + e.getMessage(), e);
+            }
+        }
+    }
+
+    public void deleteBrokerLink(final BrokerLink link) throws AMQStoreException
+    {
+        DatabaseEntry key = new DatabaseEntry();
+        UUIDTupleBinding.getInstance().objectToEntry(link.getId(), key);
+        try
+        {
+            OperationStatus status = _linkDb.delete(null, key);
+            if (status == OperationStatus.NOTFOUND)
+            {
+                throw new AMQStoreException("Link " + link + " not found");
+            }
+        }
+        catch (DatabaseException e)
+        {
+            throw new AMQStoreException("Error deleting the Link " + link + " from database: " + e.getMessage(), e);
+        }
+    }
+
+    public void createBridge(final Bridge bridge) throws AMQStoreException
+    {
+        if (_state != State.RECOVERING)
+        {
+            DatabaseEntry key = new DatabaseEntry();
+            UUIDTupleBinding.getInstance().objectToEntry(bridge.getId(), key);
+
+            DatabaseEntry value = new DatabaseEntry();
+            UUIDTupleBinding.getInstance().objectToEntry(bridge.getLink().getId(),value);
+            LongBinding.longToEntry(bridge.getCreateTime(),value);
+            StringMapBinding.getInstance().objectToEntry(bridge.getArguments(), value);
+
+            try
+            {
+                _bridgeDb.put(null, key, value);
+            }
+            catch (DatabaseException e)
+            {
+                throw new AMQStoreException("Error writing Bridge  " + bridge
+                                            + " to database: " + e.getMessage(), e);
+            }
+
+        }
+    }
+
+    public void deleteBridge(final Bridge bridge) throws AMQStoreException
+    {
+        DatabaseEntry key = new DatabaseEntry();
+        UUIDTupleBinding.getInstance().objectToEntry(bridge.getId(), key);
+        try
+        {
+            OperationStatus status = _bridgeDb.delete(null, key);
+            if (status == OperationStatus.NOTFOUND)
+            {
+                throw new AMQStoreException("Bridge " + bridge + " not found");
+            }
+        }
+        catch (DatabaseException e)
+        {
+            throw new AMQStoreException("Error deleting the Bridge " + bridge + " from database: " + e.getMessage(), e);
         }
     }
 

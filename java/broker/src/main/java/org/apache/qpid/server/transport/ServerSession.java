@@ -724,11 +724,18 @@ public class ServerSession extends Session implements AuthorizationHolder, Sessi
 
     public String toLogString()
     {
-       return "[" +
+        long connectionId = getConnection() instanceof ServerConnection
+                            ? ((ServerConnection) getConnection()).getConnectionId()
+                            : -1;
+
+        String remoteAddress = _connectionConfig instanceof ProtocolEngine
+                                ? ((ProtocolEngine) _connectionConfig).getRemoteAddress().toString()
+                                : "";
+        return "[" +
                MessageFormat.format(CHANNEL_FORMAT,
-                                   ((ServerConnection) getConnection()).getConnectionId(),
+                                    connectionId,
                                    getClientID(),
-                                   ((ProtocolEngine) _connectionConfig).getRemoteAddress().toString(),
+                                   remoteAddress,
                                    getVirtualHost().getName(),
                                    getChannel())
             + "] ";
