@@ -138,4 +138,21 @@ public class ObjectMessageTest extends QpidBrokerTestCase
         
         assertEquals("Second read: UUIDs were not equal", sent, result);
     }
+
+
+    public void testSendEmptyObjectMessage() throws JMSException
+    {
+        ObjectMessage testMessage = _session.createObjectMessage();
+        testMessage.setStringProperty("test-property", "test-value");
+        assertNotNull("Object was null", testMessage.toString());
+
+        _producer.send(testMessage);
+
+        ObjectMessage receivedMessage = (ObjectMessage) _consumer.receive(1000);
+
+        assertNotNull("Message was not received.", receivedMessage);
+        assertNull("No object was sent", receivedMessage.getObject());
+        assertEquals("Unexpected property received", "test-value", receivedMessage.getStringProperty("test-property"));
+    }
+
 }

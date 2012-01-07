@@ -29,6 +29,7 @@ import javax.jms.ObjectMessage;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.util.ClassLoadingAwareObjectInputStream;
+import org.apache.qpid.util.ByteBufferInputStream;
 
 public class JMSObjectMessage extends AbstractJMSMessage implements ObjectMessage
 {
@@ -62,26 +63,7 @@ public class JMSObjectMessage extends AbstractJMSMessage implements ObjectMessag
 
           try
           {
-              ClassLoadingAwareObjectInputStream in = new ClassLoadingAwareObjectInputStream(new InputStream()
-              {
-
-
-                  @Override
-                  public int read() throws IOException
-                  {
-                      return data.get();
-                  }
-
-                  @Override
-                  public int read(byte[] b, int off, int len) throws IOException
-                  {
-                      len = data.remaining() < len ? data.remaining() : len;
-                      data.get(b, off, len);
-                      return len;
-                  }
-              });
-
-              _readData = (Serializable) in.readObject();
+              _readData = read(data);
           }
           catch (IOException e)
           {
@@ -92,7 +74,6 @@ public class JMSObjectMessage extends AbstractJMSMessage implements ObjectMessag
               _exception = e;
           }
       }
-
 
     public void clearBody() throws JMSException
     {
@@ -189,24 +170,7 @@ public class JMSObjectMessage extends AbstractJMSMessage implements ObjectMessag
             final ByteBuffer data = _data.duplicate();
             try
             {
-                ClassLoadingAwareObjectInputStream in = new ClassLoadingAwareObjectInputStream(new InputStream()
-                {
-                    @Override
-                    public int read() throws IOException
-                    {
-                        return data.get();
-                    }
-
-                    @Override
-                    public int read(byte[] b, int off, int len) throws IOException
-                    {
-                        len = data.remaining() < len ? data.remaining() : len;
-                        data.get(b, off, len);
-                        return len;
-                    }
-                });
-
-                return (Serializable) in.readObject();
+                return read(data);
             }
             catch (ClassNotFoundException e)
             {
@@ -224,4 +188,14 @@ public class JMSObjectMessage extends AbstractJMSMessage implements ObjectMessag
 
     }
 
+    private Serializable read(final ByteBuffer data) throws IOException, ClassNotFoundException
+    {
+        Serializable result = null;
+        if (data != null && data.hasRemaining())
+        {
+            ClassLoadingAwareObjectInputStream in = new ClassLoadingAwareObjectInputStream(new ByteBufferInputStream(data));
+            result = (Serializable) in.readObject();
+        }
+        return result;
+    }
 }
