@@ -18,44 +18,33 @@
  * under the License.
  *
  */
+package org.apache.qpid.server.store.berkeleydb;
 
-package org.apache.qpid.server.configuration;
+import com.sleepycat.bind.tuple.TupleBinding;
+import com.sleepycat.bind.tuple.TupleInput;
+import com.sleepycat.bind.tuple.TupleOutput;
 
-import org.apache.qpid.server.exchange.ExchangeType;
+import java.util.UUID;
 
-import java.util.Map;
-
-
-public interface LinkConfig extends ConfiguredObject<LinkConfigType, LinkConfig>
+public class UUIDTupleBinding extends TupleBinding<UUID>
 {
-    VirtualHostConfig getVirtualHost();
+    private static final UUIDTupleBinding INSTANCE = new UUIDTupleBinding();
+    
+    public UUID entryToObject(final TupleInput tupleInput)
+    {
+        return new UUID(tupleInput.readLong(), tupleInput.readLong());
+    }
+
+    public void objectToEntry(final UUID uuid, final TupleOutput tupleOutput)
+    {
+        tupleOutput.writeLong(uuid.getMostSignificantBits());
+        tupleOutput.writeLong(uuid.getLeastSignificantBits());        
+    }
+
+    public static UUIDTupleBinding getInstance()
+    {
+        return INSTANCE;
+    }
 
 
-    String getTransport();
-
-    String getHost();
-
-    int getPort();
-
-    String getRemoteVhost();
-
-    String getAuthMechanism();
-
-    String getUsername();
-
-    String getPassword();
-
-    void close();
-
-    void createBridge(boolean durable,
-                      boolean dynamic,
-                      boolean srcIsQueue,
-                      boolean srcIsLocal,
-                      String src,
-                      String dest,
-                      String key, String tag, String excludes);
-
-    String getState();
-
-    String getLastError();
 }

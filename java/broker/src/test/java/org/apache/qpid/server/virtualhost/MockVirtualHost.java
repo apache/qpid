@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.server.virtualhost;
 
+import java.util.Map;
 import java.util.UUID;
 
 import org.apache.qpid.server.binding.BindingFactory;
@@ -61,6 +62,11 @@ public class MockVirtualHost implements VirtualHost
             String username, String password)
     {
 
+    }
+
+    public BrokerLink createBrokerConnection(final UUID id, final long createTime, final Map<String, String> arguments)
+    {
+        return null;
     }
 
     public IApplicationRegistry getApplicationRegistry()

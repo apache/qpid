@@ -288,6 +288,17 @@ public class <xsl:value-of select="$ClassName"/> extends QMFPackage
             <xsl:apply-templates select="node()[name()='property' or name()='statistic']" mode="optionalPropertyPresence"/>
             <xsl:apply-templates select="node()[name()='property' or name()='statistic']" mode="encodeProperty"/>
         }
+
+        public String toString()
+        {
+            return "QMF<xsl:value-of select="@name"/>GetQueryResponseCommand{id=" + getObject().getId()   
+<xsl:for-each select="node()[name()='property' or name()='statistic']">
+<xsl:if test="@type!='hilo32' and @type!='mmaTime' ">
+                + ", <xsl:value-of select="@name"/>=" + getObject().get<xsl:call-template name="initCap"><xsl:with-param name="input"><xsl:value-of select="@name"/></xsl:with-param></xsl:call-template>()
+</xsl:if>
+</xsl:for-each>
+                   + "}";
+        }
     }
     
     
@@ -529,6 +540,11 @@ public class <xsl:value-of select="$ClassName"/> extends QMFPackage
             public QMFMethodResponseCommand execute(<xsl:value-of select="$qmfClass"/>Object obj, QMFMethodRequestCommand cmd)
             {
                 return obj.<xsl:value-of select="@name"/>( new <xsl:value-of select="$ClassName"/>ResponseCommandFactory(cmd)<xsl:if test="node()[name()='arg' and ( @dir='I' or @dir='IO' ) ]">, </xsl:if><xsl:apply-templates select="node()[name()='arg' and ( @dir='I' or @dir='IO' ) ]" mode="methodArgList"><xsl:with-param name="prefix">_</xsl:with-param></xsl:apply-templates> );
+            }
+
+            public String toString()
+            {
+                return "<xsl:value-of select="$ClassName"/>["<xsl:for-each select="node()[name()='arg' and ( @dir='I' or @dir='IO' ) ]"><xsl:if test="preceding-sibling::node()[name()='arg' and ( @dir='I' or @dir='IO' ) ]">+ ", "</xsl:if>+ "<xsl:value-of select="@name"/> = " + _<xsl:value-of select="@name"/> </xsl:for-each>+"]";
             }
         }
         

@@ -21,6 +21,9 @@
 package org.apache.qpid.server.store;
 
 import java.nio.ByteBuffer;
+import java.util.Map;
+import java.util.UUID;
+
 import org.apache.qpid.framing.FieldTable;
 
 public interface ConfigurationRecoveryHandler
@@ -42,7 +45,19 @@ public interface ConfigurationRecoveryHandler
     public static interface BindingRecoveryHandler
     {
         void binding(String exchangeName, String queueName, String bindingKey, ByteBuffer buf);
-        void completeBindingRecovery();
+        BrokerLinkRecoveryHandler completeBindingRecovery();
+    }
+    
+    public static interface BrokerLinkRecoveryHandler
+    {
+        BridgeRecoveryHandler brokerLink(UUID id, long createTime, Map<String,String> arguments);
+        void completeBrokerLinkRecovery();
+    }
+    
+    public static interface BridgeRecoveryHandler
+    {
+        void bridge(UUID id, long createTime, Map<String,String> arguments);
+        void completeBridgeRecoveryForLink();
     }
 
     public static interface QueueEntryRecoveryHandler

@@ -26,6 +26,8 @@ import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.federation.Bridge;
+import org.apache.qpid.server.federation.BrokerLink;
 import org.apache.qpid.server.message.EnqueableMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.message.ServerMessage;
@@ -320,4 +322,31 @@ public class SlowMessageStore implements MessageStore, DurableConfigurationStore
     }
 
 
+    public void createBrokerLink(final BrokerLink link) throws AMQStoreException
+    {
+        doPreDelay("createBrokerLink");
+        _durableConfigurationStore.createBrokerLink(link);
+        doPostDelay("createBrokerLink");
+    }
+
+    public void deleteBrokerLink(final BrokerLink link) throws AMQStoreException
+    {
+        doPreDelay("deleteBrokerLink");
+        _durableConfigurationStore.deleteBrokerLink(link);
+        doPostDelay("deleteBrokerLink");
+    }
+
+    public void createBridge(final Bridge bridge) throws AMQStoreException
+    {
+        doPreDelay("createBridge");
+        _durableConfigurationStore.createBridge(bridge);
+        doPostDelay("createBridge");
+    }
+
+    public void deleteBridge(final Bridge bridge) throws AMQStoreException
+    {
+        doPreDelay("deleteBridge");
+        _durableConfigurationStore.deleteBridge(bridge);
+        doPostDelay("deleteBridge");
+    }
 }

@@ -21,7 +21,9 @@
 package org.apache.qpid.server.store;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.lang.ref.SoftReference;
@@ -36,7 +38,10 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -47,13 +52,14 @@ import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.federation.Bridge;
+import org.apache.qpid.server.federation.BrokerLink;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.messages.ConfigStoreMessages;
 import org.apache.qpid.server.logging.messages.MessageStoreMessages;
 import org.apache.qpid.server.logging.messages.TransactionLogMessages;
 import org.apache.qpid.server.message.EnqueableMessage;
-import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 
 /**
@@ -81,6 +87,10 @@ public class DerbyMessageStore implements MessageStore, DurableConfigurationStor
 
     private static final String META_DATA_TABLE_NAME = "QPID_META_DATA";
     private static final String MESSAGE_CONTENT_TABLE_NAME = "QPID_MESSAGE_CONTENT";
+
+    private static final String LINKS_TABLE_NAME = "QPID_LINKS";
+    private static final String BRIDGES_TABLE_NAME = "QPID_BRIDGES";
+
 
     private static final int DB_VERSION = 3;
 
@@ -136,6 +146,49 @@ public class DerbyMessageStore implements MessageStore, DurableConfigurationStor
             "SELECT meta_data FROM " + META_DATA_TABLE_NAME + " WHERE message_id = ?";
     private static final String DELETE_FROM_META_DATA = "DELETE FROM " + META_DATA_TABLE_NAME + " WHERE message_id = ?";
     private static final String SELECT_ALL_FROM_META_DATA = "SELECT message_id, meta_data FROM " + META_DATA_TABLE_NAME;
+
+    private static final String CREATE_LINKS_TABLE =
+            "CREATE TABLE "+LINKS_TABLE_NAME+" ( id_lsb bigint not null,"
+                                            + " id_msb bigint not null,"
+                                             + " create_time bigint not null,"
+                                             + " arguments blob,  PRIMARY KEY ( id_lsb, id_msb ))";
+    private static final String SELECT_FROM_LINKS =
+            "SELECT create_time, arguments FROM " + LINKS_TABLE_NAME + " WHERE id_lsb = ? and id_msb";
+    private static final String DELETE_FROM_LINKS = "DELETE FROM " + LINKS_TABLE_NAME 
+                                                    + " WHERE id_lsb = ? and id_msb = ?";
+    private static final String SELECT_ALL_FROM_LINKS = "SELECT id_lsb, id_msb, create_time, "
+                                                        + "arguments FROM " + LINKS_TABLE_NAME;
+    private static final String FIND_LINK = "SELECT id_lsb, id_msb FROM " + LINKS_TABLE_NAME + " WHERE id_lsb = ? and"
+                                            + " id_msb = ?";
+    private static final String INSERT_INTO_LINKS = "INSERT INTO " + LINKS_TABLE_NAME + "( id_lsb, "
+                                                  + "id_msb, create_time, arguments ) values (?, ?, ?, ?)";
+
+
+    private static final String CREATE_BRIDGES_TABLE =
+            "CREATE TABLE "+BRIDGES_TABLE_NAME+" ( id_lsb bigint not null,"
+            + " id_msb bigint not null,"
+            + " create_time bigint not null,"
+            + " link_id_lsb bigint not null,"
+            + " link_id_msb bigint not null,"
+            + " arguments blob,  PRIMARY KEY ( id_lsb, id_msb ))";
+    private static final String SELECT_FROM_BRIDGES =
+            "SELECT create_time, link_id_lsb, link_id_msb, arguments FROM " 
+            + BRIDGES_TABLE_NAME + " WHERE id_lsb = ? and id_msb = ?";
+    private static final String DELETE_FROM_BRIDGES = "DELETE FROM " + BRIDGES_TABLE_NAME 
+                                                      + " WHERE id_lsb = ? and id_msb = ?";
+    private static final String SELECT_ALL_FROM_BRIDGES = "SELECT id_lsb, id_msb, " 
+                                                          + " create_time," 
+                                                          + " link_id_lsb, link_id_msb, "
+                                                        + "arguments FROM " + BRIDGES_TABLE_NAME
+                                                        + " WHERE link_id_lsb = ? and link_id_msb = ?";
+    private static final String FIND_BRIDGE = "SELECT id_lsb, id_msb FROM " + BRIDGES_TABLE_NAME +
+                                              " WHERE id_lsb = ? and id_msb = ?";
+    private static final String INSERT_INTO_BRIDGES = "INSERT INTO " + BRIDGES_TABLE_NAME + "( id_lsb, id_msb, "
+                                                    + "create_time, "
+                                                    + "link_id_lsb, link_id_msb, "
+                                                    + "arguments )"
+                                                    + " values (?, ?, ?, ?, ?, ?)";
+
 
     private static final String DERBY_SINGLE_DB_SHUTDOWN_CODE = "08006";
 
@@ -294,6 +347,8 @@ public class DerbyMessageStore implements MessageStore, DurableConfigurationStor
         createQueueEntryTable(conn);
         createMetaDataTable(conn);
         createMessageContentTable(conn);
+        createLinkTable(conn);
+        createBridgeTable(conn);
 
         conn.close();
     }
@@ -430,6 +485,40 @@ public class DerbyMessageStore implements MessageStore, DurableConfigurationStor
 
     }
 
+    private void createLinkTable(final Connection conn) throws SQLException
+    {
+        if(!tableExists(LINKS_TABLE_NAME, conn))
+        {
+            Statement stmt = conn.createStatement();
+            try
+            {
+                stmt.execute(CREATE_LINKS_TABLE);
+            }
+            finally
+            {
+                stmt.close();
+            }
+        }
+    }
+
+
+    private void createBridgeTable(final Connection conn) throws SQLException
+    {
+        if(!tableExists(BRIDGES_TABLE_NAME, conn))
+        {
+            Statement stmt = conn.createStatement();
+            try
+            {
+                stmt.execute(CREATE_BRIDGES_TABLE);
+            }
+            finally
+            {
+                stmt.close();
+            }
+        }
+    }
+
+
 
 
     private boolean tableExists(final String tableName, final Connection conn) throws SQLException
@@ -470,7 +559,8 @@ public class DerbyMessageStore implements MessageStore, DurableConfigurationStor
             List<String> exchanges = loadExchanges(erh);
             ConfigurationRecoveryHandler.BindingRecoveryHandler brh = erh.completeExchangeRecovery();
             recoverBindings(brh, exchanges);
-            brh.completeBindingRecovery();
+            ConfigurationRecoveryHandler.BrokerLinkRecoveryHandler lrh = brh.completeBindingRecovery();
+            recoverBrokerLinks(lrh);
         }
         catch (SQLException e)
         {
@@ -478,6 +568,144 @@ public class DerbyMessageStore implements MessageStore, DurableConfigurationStor
             throw new AMQStoreException("Error recovering persistent state: " + e.getMessage(), e);
         }
 
+
+    }
+
+    private void recoverBrokerLinks(final ConfigurationRecoveryHandler.BrokerLinkRecoveryHandler lrh)
+            throws SQLException
+    {
+        _logger.info("Recovering broker links...");
+
+        Connection conn = null;
+        try
+        {
+            conn = newAutoCommitConnection();
+
+            PreparedStatement stmt = conn.prepareStatement(SELECT_ALL_FROM_LINKS);
+
+            try
+            {
+                ResultSet rs = stmt.executeQuery();
+
+                try
+                {
+
+                    while(rs.next())
+                    {
+                        UUID id  = new UUID(rs.getLong(2), rs.getLong(1));
+                        long createTime = rs.getLong(3);
+                        Blob argumentsAsBlob = rs.getBlob(4);
+
+                        byte[] dataAsBytes = argumentsAsBlob.getBytes(1,(int) argumentsAsBlob.length());
+                        
+                        DataInputStream dis = new DataInputStream(new ByteArrayInputStream(dataAsBytes));
+                        int size = dis.readInt();
+                        
+                        Map<String,String> arguments = new HashMap<String, String>();
+                        
+                        for(int i = 0; i < size; i++)
+                        {
+                            arguments.put(dis.readUTF(), dis.readUTF());
+                        }
+
+                        ConfigurationRecoveryHandler.BridgeRecoveryHandler brh = lrh.brokerLink(id, createTime, arguments);
+
+                        recoverBridges(brh, id);
+
+                    }
+                }
+                catch (IOException e)
+                {
+                    throw new SQLException(e.getMessage(), e);
+                }
+                finally
+                {
+                    rs.close();
+                }
+            }
+            finally
+            {
+                stmt.close();
+            }
+
+        }
+        finally
+        {
+            if(conn != null)
+            {
+                conn.close();
+            }
+        }
+
+    }
+
+    private void recoverBridges(final ConfigurationRecoveryHandler.BridgeRecoveryHandler brh, final UUID linkId)
+            throws SQLException
+    {
+        _logger.info("Recovering bridges for link " + linkId + "...");
+
+        Connection conn = null;
+        try
+        {
+            conn = newAutoCommitConnection();
+
+            PreparedStatement stmt = conn.prepareStatement(SELECT_ALL_FROM_BRIDGES);
+            stmt.setLong(1, linkId.getLeastSignificantBits());
+            stmt.setLong(2, linkId.getMostSignificantBits());
+
+
+            try
+            {
+                ResultSet rs = stmt.executeQuery();
+
+                try
+                {
+
+                    while(rs.next())
+                    {
+                        UUID id  = new UUID(rs.getLong(2), rs.getLong(1));
+                        long createTime = rs.getLong(3);
+                        Blob argumentsAsBlob = rs.getBlob(6);
+
+                        byte[] dataAsBytes = argumentsAsBlob.getBytes(1,(int) argumentsAsBlob.length());
+
+                        DataInputStream dis = new DataInputStream(new ByteArrayInputStream(dataAsBytes));
+                        int size = dis.readInt();
+
+                        Map<String,String> arguments = new HashMap<String, String>();
+
+                        for(int i = 0; i < size; i++)
+                        {
+                            arguments.put(dis.readUTF(), dis.readUTF());
+                        }
+
+                        brh.bridge(id, createTime, arguments);
+
+                    }
+                    brh.completeBridgeRecoveryForLink();
+                }
+                catch (IOException e)
+                {
+                    throw new SQLException(e.getMessage(), e);
+                }
+                finally
+                {
+                    rs.close();
+                }
+            }
+            finally
+            {
+                stmt.close();
+            }
+
+        }
+        finally
+        {
+            if(conn != null)
+            {
+                conn.close();
+            }
+        }
 
     }
 
@@ -1188,6 +1416,233 @@ public class DerbyMessageStore implements MessageStore, DurableConfigurationStor
             closeConnection(conn);
         }
 
+
+    }
+
+    public void createBrokerLink(final BrokerLink link) throws AMQStoreException
+    {
+        _logger.debug("public void createBrokerLink(BrokerLink = " + link + "): called");
+
+        if (_state != State.RECOVERING)
+        {
+            try
+            {
+                Connection conn = newAutoCommitConnection();
+
+                PreparedStatement stmt = conn.prepareStatement(FIND_LINK);
+                try
+                {
+                    
+                    stmt.setLong(1, link.getId().getLeastSignificantBits());
+                    stmt.setLong(2, link.getId().getMostSignificantBits());
+                    ResultSet rs = stmt.executeQuery();
+                    try
+                    {
+
+                        // If we don't have any data in the result set then we can add this queue
+                        if (!rs.next())
+                        {
+                            PreparedStatement insertStmt = conn.prepareStatement(INSERT_INTO_LINKS);
+
+                            try
+                            {
+                                
+                                insertStmt.setLong(1, link.getId().getLeastSignificantBits());
+                                insertStmt.setLong(2, link.getId().getMostSignificantBits());
+                                insertStmt.setLong(3, link.getCreateTime());
+
+                                byte[] argumentBytes = convertStringMapToBytes(link.getArguments());
+                                ByteArrayInputStream bis = new ByteArrayInputStream(argumentBytes);
+
+                                insertStmt.setBinaryStream(4,bis,argumentBytes.length);
+
+                                insertStmt.execute();
+                            }
+                            finally
+                            {
+                                insertStmt.close();
+                            }
+                        }
+                    }
+                    finally
+                    {
+                        rs.close();
+                    }
+                }
+                finally
+                {
+                    stmt.close();
+                }
+                conn.close();
+
+            }
+            catch (SQLException e)
+            {
+                throw new AMQStoreException("Error writing " + link + " to database: " + e.getMessage(), e);
+            }
+        }
+    }
+
+    private byte[] convertStringMapToBytes(final Map<String, String> arguments) throws AMQStoreException
+    {
+        byte[] argumentBytes;
+        if(arguments == null)
+        {
+            argumentBytes = new byte[0];
+        }
+        else
+        {
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            DataOutputStream dos = new DataOutputStream(bos);
+
+
+            try
+            {
+                dos.writeInt(arguments.size());
+                for(Map.Entry<String,String> arg : arguments.entrySet())
+                {
+                    dos.writeUTF(arg.getKey());
+                    dos.writeUTF(arg.getValue());
+                }
+            }
+            catch (IOException e)
+            {
+                // This should never happen
+                throw new AMQStoreException(e.getMessage(), e);
+            }
+            argumentBytes = bos.toByteArray();
+        }
+        return argumentBytes;
+    }
+
+    public void deleteBrokerLink(final BrokerLink link) throws AMQStoreException
+    {
+        _logger.debug("public void deleteBrokerLink( " + link + "): called");
+        Connection conn = null;
+        PreparedStatement stmt = null;
+        try
+        {
+            conn = newAutoCommitConnection();
+            stmt = conn.prepareStatement(DELETE_FROM_LINKS);
+            stmt.setLong(1, link.getId().getLeastSignificantBits());
+            stmt.setLong(2, link.getId().getMostSignificantBits());
+            int results = stmt.executeUpdate();
+
+            if (results == 0)
+            {
+                throw new AMQStoreException("Link " + link + " not found");
+            }
+        }
+        catch (SQLException e)
+        {
+            throw new AMQStoreException("Error deleting Link " + link + " from database: " + e.getMessage(), e);
+        }
+        finally
+        {
+            closePreparedStatement(stmt);
+            closeConnection(conn);
+        }
+
+
+    }
+
+    public void createBridge(final Bridge bridge) throws AMQStoreException
+    {
+        _logger.debug("public void createBridge(BrokerLink = " + bridge + "): called");
+
+        if (_state != State.RECOVERING)
+        {
+            try
+            {
+                Connection conn = newAutoCommitConnection();
+
+                PreparedStatement stmt = conn.prepareStatement(FIND_BRIDGE);
+                try
+                {
+
+                    UUID id = bridge.getId();
+                    stmt.setLong(1, id.getLeastSignificantBits());
+                    stmt.setLong(2, id.getMostSignificantBits());
+                    ResultSet rs = stmt.executeQuery();
+                    try
+                    {
+
+                        // If we don't have any data in the result set then we can add this queue
+                        if (!rs.next())
+                        {
+                            PreparedStatement insertStmt = conn.prepareStatement(INSERT_INTO_BRIDGES);
+
+                            try
+                            {
+
+                                insertStmt.setLong(1, id.getLeastSignificantBits());
+                                insertStmt.setLong(2, id.getMostSignificantBits());
+
+                                insertStmt.setLong(3, bridge.getCreateTime());
+
+                                UUID linkId = bridge.getLink().getId();
+                                insertStmt.setLong(4, linkId.getLeastSignificantBits());
+                                insertStmt.setLong(5, linkId.getMostSignificantBits());
+
+                                byte[] argumentBytes = convertStringMapToBytes(bridge.getArguments());
+                                ByteArrayInputStream bis = new ByteArrayInputStream(argumentBytes);
+
+                                insertStmt.setBinaryStream(6,bis,argumentBytes.length);
+
+                                insertStmt.execute();
+                            }
+                            finally
+                            {
+                                insertStmt.close();
+                            }
+                        }
+                    }
+                    finally
+                    {
+                        rs.close();
+                    }
+                }
+                finally
+                {
+                    stmt.close();
+                }
+                conn.close();
+
+            }
+            catch (SQLException e)
+            {
+                throw new AMQStoreException("Error writing " + bridge + " to database: " + e.getMessage(), e);
+            }
+        }
+    }
+
+    public void deleteBridge(final Bridge bridge) throws AMQStoreException
+    {
+        _logger.debug("public void deleteBridge( " + bridge + "): called");
+        Connection conn = null;
+        PreparedStatement stmt = null;
+        try
+        {
+            conn = newAutoCommitConnection();
+            stmt = conn.prepareStatement(DELETE_FROM_BRIDGES);
+            stmt.setLong(1, bridge.getId().getLeastSignificantBits());
+            stmt.setLong(2, bridge.getId().getMostSignificantBits());
+            int results = stmt.executeUpdate();
+
+            if (results == 0)
+            {
+                throw new AMQStoreException("Bridge " + bridge + " not found");
+            }
+        }
+        catch (SQLException e)
+        {
+            throw new AMQStoreException("Error deleting bridge " + bridge + " from database: " + e.getMessage(), e);
+        }
+        finally
+        {
+            closePreparedStatement(stmt);
+            closeConnection(conn);
+        }
 
     }
 

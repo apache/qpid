@@ -25,6 +25,8 @@ import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.federation.Bridge;
+import org.apache.qpid.server.federation.BrokerLink;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.queue.AMQQueue;
 
@@ -128,4 +130,12 @@ public interface DurableConfigurationStore
      * @throws AMQStoreException If the operation fails for any reason.
      */
     void updateQueue(AMQQueue queue) throws AMQStoreException;
+    
+    void createBrokerLink(BrokerLink link) throws AMQStoreException;
+    
+    void deleteBrokerLink(BrokerLink link) throws AMQStoreException;
+    
+    void createBridge(Bridge bridge) throws AMQStoreException;
+    
+    void deleteBridge(Bridge bridge) throws AMQStoreException;
 }

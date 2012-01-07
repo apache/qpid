@@ -21,6 +21,7 @@
 package org.apache.qpid.server.federation;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.configuration.BridgeConfig;
 import org.apache.qpid.server.configuration.BridgeConfigType;
@@ -52,6 +53,15 @@ import java.util.concurrent.ConcurrentMap;
 
 public class Bridge implements BridgeConfig
 {
+    private static final String DURABLE = "durable";
+    private static final String DYNAMIC = "dynamic";
+    private static final String SRC_IS_QUEUE = "srcIsQueue";
+    private static final String SRC_IS_LOCAL = "srcIsLocal";
+    private static final String SOURCE = "source";
+    private static final String DESTINATION = "destination";
+    private static final String KEY = "key";
+    private static final String TAG = "tag";
+    private static final String EXCLUDES = "excludes";
     private final boolean _durable;
     private final boolean _dynamic;
     private final boolean _queueBridge;
@@ -95,19 +105,36 @@ public class Bridge implements BridgeConfig
         _key = key;
         _tag = tag;
         _excludes = excludes;
-        _id = brokerLink.getConfigStore().createId();
+        _id = durable ? brokerLink.getConfigStore().createPersistentId() : brokerLink.getConfigStore().createId();
 
         _transaction = new AutoCommitTransaction(getVirtualHost().getMessageStore());
 
-        if(dynamic)
+        if(durable)
         {
-            if(srcIsLocal)
+            try
+            {
+                brokerLink.getVirtualHost().getDurableConfigurationStore().createBridge(this);
+            }
+            catch (AMQStoreException e)
+            {
+                throw new RuntimeException(e);
+            }
+        }
+
+        createDelegate();
+    }
+
+    private void createDelegate()
+    {
+        if(_dynamic)
+        {
+            if(_localSource)
             {
                 // TODO
             }
             else
             {
-                if(srcIsQueue)
+                if(_queueBridge)
                 {
                     // TODO
                 }
@@ -119,9 +146,9 @@ public class Bridge implements BridgeConfig
         }
         else
         {
-            if(srcIsLocal)
+            if(_localSource)
             {
-                if(srcIsQueue)
+                if(_queueBridge)
                 {
                     _delegate = new StaticQueuePushBridge();
                 }
@@ -132,7 +159,7 @@ public class Bridge implements BridgeConfig
             }
             else
             {
-                if(srcIsQueue)
+                if(_queueBridge)
                 {
                     _delegate = new StaticQueuePullBridge();
                 }
@@ -142,6 +169,65 @@ public class Bridge implements BridgeConfig
                 }
             }
         }
+    }
+
+    public Bridge(final BrokerLink brokerLink,
+                  final int bridgeNo,
+                  final UUID id,
+                  final long createTime,
+                  final Map<String, String> arguments)
+    {
+        _link = brokerLink;
+        _bridgeNo = bridgeNo;
+        _id = id;
+        brokerLink.getConfigStore().persistentIdInUse(id);
+        _createTime = createTime;
+
+        _durable = Boolean.valueOf(arguments.get(DURABLE));
+        _dynamic = Boolean.valueOf(arguments.get(DYNAMIC));
+        _queueBridge = Boolean.valueOf(arguments.get(SRC_IS_QUEUE));
+        _localSource = Boolean.valueOf(arguments.get(SRC_IS_LOCAL));
+        _source = arguments.get(SOURCE);
+        _destination = arguments.get(DESTINATION);
+        _key = arguments.get(KEY);
+        _tag = arguments.get(TAG);
+        _excludes = arguments.get(EXCLUDES);
+
+        //TODO.
+        _transaction = new AutoCommitTransaction(getVirtualHost().getMessageStore());
+
+
+        if(_durable)
+        {
+            try
+            {
+                brokerLink.getVirtualHost().getDurableConfigurationStore().createBridge(this);
+            }
+            catch (AMQStoreException e)
+            {
+                throw new RuntimeException(e);
+            }
+        }
+
+        createDelegate();
+    }
+
+
+    public Map<String,String> getArguments()
+    {
+        Map<String,String> arguments = new HashMap<String, String>();
+
+        arguments.put(DURABLE, String.valueOf(_durable));
+        arguments.put(DYNAMIC, String.valueOf(_dynamic));
+        arguments.put(SRC_IS_QUEUE, String.valueOf(_queueBridge));
+        arguments.put(SRC_IS_LOCAL, String.valueOf(_localSource));
+        arguments.put(SOURCE, _source);
+        arguments.put(DESTINATION, _destination);
+        arguments.put(KEY, _key);
+        arguments.put(TAG, _tag);
+        arguments.put(EXCLUDES, _excludes);
+
+        return Collections.unmodifiableMap(arguments);
     }
 
     public UUID getId()
@@ -316,6 +402,7 @@ public class Bridge implements BridgeConfig
         _delegate.close();
         _session = null;
     }
+
 
 
     private interface BridgeImpl

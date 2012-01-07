@@ -53,4 +53,13 @@ public class QMFCommandCompletionCommand extends QMFCommand
         encoder.writeInt32(_status.ordinal());
         encoder.writeStr8(_text);
     }
+
+    @Override
+    public String toString()
+    {
+        return "QMFCommandCompletionCommand{" +
+               "status=" + _status +
+               ",text='" + _text + '\'' +
+               '}';
+    }
 }

@@ -21,6 +21,7 @@
 
 package org.apache.qpid.qmf;
 
+import org.apache.log4j.Logger;
 import org.apache.qpid.transport.codec.BBDecoder;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.message.ServerMessage;
@@ -35,6 +36,8 @@ import java.util.List;
 
 public class QMFSchemaRequestCommand extends QMFCommand
 {
+    private static final Logger _qmfLogger = Logger.getLogger("qpid.qmf");
+
     private final String _packageName;
     private final String _className;
     private final byte[] _hash;
@@ -49,6 +52,8 @@ public class QMFSchemaRequestCommand extends QMFCommand
 
     public void process(VirtualHost virtualHost, ServerMessage message)
     {
+        _qmfLogger.debug("Execute: " + this);
+
         String exchangeName = message.getMessageHeader().getReplyToExchange();
         String routingKey = message.getMessageHeader().getReplyToRoutingKey();
 
@@ -85,5 +90,14 @@ public class QMFSchemaRequestCommand extends QMFCommand
                 }
             }
         }
+    }
+
+    @Override
+    public String toString()
+    {
+        return "QMFSchemaRequestCommand{" +
+               " packageName='" + _packageName + '\'' +
+               ", className='" + _className + '\'' +
+               '}';
     }
 }
