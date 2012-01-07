@@ -18,12 +18,15 @@
  * under the License.
  *
  */
-package org.apache.qpid.server.util;
+package org.apache.qpid.util;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 
+/**
+ * Wraps @link {@link ByteBuffer} into {@link InputStream}
+ */
 public class ByteBufferInputStream extends InputStream
 {
     private final ByteBuffer _buffer;
@@ -36,13 +39,20 @@ public class ByteBufferInputStream extends InputStream
     @Override
     public int read() throws IOException
     {
-        return _buffer.get() & 0xFF;
+        if (_buffer.hasRemaining())
+        {
+            return _buffer.get() & 0xFF;
+        }
+        return -1;
     }
-
 
     @Override
     public int read(byte[] b, int off, int len) throws IOException
     {
+        if (!_buffer.hasRemaining())
+        {
+            return -1;
+        }
         if(_buffer.remaining() < len)
         {
             len = _buffer.remaining();
@@ -73,9 +83,7 @@ public class ByteBufferInputStream extends InputStream
     @Override
     public long skip(long n) throws IOException
     {
-
         _buffer.position(_buffer.position()+(int)n);
-
         return n;
     }
 

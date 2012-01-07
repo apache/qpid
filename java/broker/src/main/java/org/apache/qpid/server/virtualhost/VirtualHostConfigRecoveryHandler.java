@@ -43,7 +43,7 @@ import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.AMQException;
 
 import org.apache.log4j.Logger;
-import org.apache.qpid.server.util.ByteBufferInputStream;
+import org.apache.qpid.util.ByteBufferInputStream;
 
 import java.io.DataInputStream;
 import java.io.IOException;
