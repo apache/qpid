@@ -54,6 +54,7 @@ import org.apache.qpid.server.exchange.DefaultExchangeRegistry;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.exchange.ExchangeFactory;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
+import org.apache.qpid.server.federation.Bridge;
 import org.apache.qpid.server.federation.BrokerLink;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.actors.CurrentActor;
@@ -730,6 +731,16 @@ public class VirtualHostImpl implements VirtualHost
         _statisticsEnabled = enabled;
     }
 
+    public BrokerLink createBrokerConnection(UUID id, long createTime, Map<String,String> arguments)
+    {
+        BrokerLink blink = new BrokerLink(this, id, createTime, arguments);
+        // TODO - cope with duplicate broker link creation requests
+        _links.putIfAbsent(blink,blink);
+        getConfigStore().addConfiguredObject(blink);
+        return blink;
+    }
+
+    
     public void createBrokerConnection(final String transport,
                                        final String host,
                                        final int port,
@@ -740,10 +751,11 @@ public class VirtualHostImpl implements VirtualHost
                                        final String password)
     {
         BrokerLink blink = new BrokerLink(this, transport, host, port, vhost, durable, authMechanism, username, password);
-        if(_links.putIfAbsent(blink,blink) != null)
-        {
-            getConfigStore().addConfiguredObject(blink);
-        }
+
+        // TODO - cope with duplicate broker link creation requests
+        _links.putIfAbsent(blink,blink);
+        getConfigStore().addConfiguredObject(blink);
+
     }
 
     public void removeBrokerConnection(final String transport,
@@ -782,7 +794,9 @@ public class VirtualHostImpl implements VirtualHost
         public List<Exchange> exchange = new LinkedList<Exchange>();
         public List<CreateQueueTuple> queue = new LinkedList<CreateQueueTuple>();
         public List<CreateBindingTuple> bindings = new LinkedList<CreateBindingTuple>();
-
+        public List<BrokerLink> links = new LinkedList<BrokerLink>();
+        public List<Bridge> bridges = new LinkedList<Bridge>();
+        
         public void configure(VirtualHost virtualHost, String base, VirtualHostConfiguration config) throws Exception
         {
         }
@@ -875,6 +889,30 @@ public class VirtualHostImpl implements VirtualHost
         }
 
         public void updateQueue(AMQQueue queue) throws AMQStoreException
+        {
+        }
+
+        public void createBrokerLink(final BrokerLink link) throws AMQStoreException
+        {
+            if(link.isDurable())
+            {
+                links.add(link);
+            }
+        }
+
+        public void deleteBrokerLink(final BrokerLink link) throws AMQStoreException
+        {
+        }
+
+        public void createBridge(final Bridge bridge) throws AMQStoreException
+        {
+            if(bridge.isDurable())
+            {
+                bridges.add(bridge);
+            }
+        }
+
+        public void deleteBridge(final Bridge bridge) throws AMQStoreException
         {
         }
     }

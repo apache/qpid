@@ -31,6 +31,8 @@ import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.federation.Bridge;
+import org.apache.qpid.server.federation.BrokerLink;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.messages.ConfigStoreMessages;
@@ -155,6 +157,26 @@ public class MemoryMessageStore implements MessageStore, DurableConfigurationSto
     public void updateQueue(final AMQQueue queue) throws AMQStoreException
     {
         // Not required to do anything
+    }
+
+    public void createBrokerLink(final BrokerLink link) throws AMQStoreException
+    {
+
+    }
+
+    public void deleteBrokerLink(final BrokerLink link) throws AMQStoreException
+    {
+
+    }
+
+    public void createBridge(final Bridge bridge) throws AMQStoreException
+    {
+
+    }
+
+    public void deleteBridge(final Bridge bridge) throws AMQStoreException
+    {
+
     }
 
     public void configureTransactionLog(String name,

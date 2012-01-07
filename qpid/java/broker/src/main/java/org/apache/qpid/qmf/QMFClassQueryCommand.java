@@ -21,6 +21,7 @@
 
 package org.apache.qpid.qmf;
 
+import org.apache.log4j.Logger;
 import org.apache.qpid.transport.codec.BBDecoder;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.message.ServerMessage;
@@ -35,6 +36,9 @@ import java.util.List;
 
 public class QMFClassQueryCommand extends QMFCommand
 {
+    private static final Logger _qmfLogger = Logger.getLogger("qpid.qmf");
+
+
     private final String _package;
 
     public QMFClassQueryCommand(QMFCommandHeader header, BBDecoder decoder)
@@ -47,6 +51,8 @@ public class QMFClassQueryCommand extends QMFCommand
     {
         String exchangeName = message.getMessageHeader().getReplyToExchange();
         String routingKey = message.getMessageHeader().getReplyToRoutingKey();
+
+        _qmfLogger.debug("Execute: " + this);
 
         IApplicationRegistry appRegistry = virtualHost.getApplicationRegistry();
         QMFService service = appRegistry.getQMFService();
@@ -88,4 +94,12 @@ public class QMFClassQueryCommand extends QMFCommand
         }
     }
 
+
+    @Override
+    public String toString()
+    {
+        return "QMFClassQueryCommand{" +
+               "package='" + _package + '\'' +
+               '}';
+    }
 }

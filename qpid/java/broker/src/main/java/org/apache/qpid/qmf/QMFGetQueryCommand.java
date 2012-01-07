@@ -21,6 +21,7 @@
 
 package org.apache.qpid.qmf;
 
+import org.apache.log4j.Logger;
 import org.apache.qpid.transport.codec.BBDecoder;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.message.ServerMessage;
@@ -33,28 +34,22 @@ import java.util.*;
 
 public class QMFGetQueryCommand extends QMFCommand
 {
-    private Map<String, Object> _map;
 
+    private static final Logger _qmfLogger = Logger.getLogger("qpid.qmf");
+
+    private String _className;
+    private String _packageName;
+    private UUID _objectId;
 
     public QMFGetQueryCommand(QMFCommandHeader header, BBDecoder decoder)
     {
         super(header);
 
-        _map = decoder.readMap();
-    }
-
-    public void process(VirtualHost virtualHost, ServerMessage message)
-    {
-        String exchangeName = message.getMessageHeader().getReplyToExchange();
-        String routingKey = message.getMessageHeader().getReplyToRoutingKey();
-
-        IApplicationRegistry appRegistry = virtualHost.getApplicationRegistry();
-        QMFService service = appRegistry.getQMFService();
-
-        String className = (String) _map.get("_class");
-        String packageName = (String) _map.get("_package");
+        Map<String, Object> _map = decoder.readMap();
+        _className = (String) _map.get("_class");
+        _packageName = (String) _map.get("_package");
         byte[] objectIdBytes = (byte[]) _map.get("_objectId");
-        UUID objectId;
+
         if(objectIdBytes != null)
         {
             long msb = 0;
@@ -68,21 +63,34 @@ public class QMFGetQueryCommand extends QMFCommand
             {
                 lsb = (lsb << 8) | (objectIdBytes[i] & 0xff);
             }
-            objectId = new UUID(msb, lsb);
+            _objectId = new UUID(msb, lsb);
         }
         else
         {
-            objectId = null;
+            _objectId = null;
         }
+
+
+    }
+
+    public void process(VirtualHost virtualHost, ServerMessage message)
+    {
+        String exchangeName = message.getMessageHeader().getReplyToExchange();
+        String routingKey = message.getMessageHeader().getReplyToRoutingKey();
+
+        IApplicationRegistry appRegistry = virtualHost.getApplicationRegistry();
+        QMFService service = appRegistry.getQMFService();
+
+        _qmfLogger.debug("Execute: " + this);
 
         List<QMFCommand> commands = new ArrayList<QMFCommand>();
         final long sampleTime = System.currentTimeMillis() * 1000000l;
 
         Collection<QMFPackage> packages;
 
-        if(packageName != null && packageName.length() != 0)
+        if(_packageName != null && _packageName.length() != 0)
         {
-            QMFPackage qmfPackage = service.getPackage(packageName);
+            QMFPackage qmfPackage = service.getPackage(_packageName);
             if(qmfPackage == null)
             {
                 packages = Collections.EMPTY_LIST;
@@ -102,9 +110,9 @@ public class QMFGetQueryCommand extends QMFCommand
 
             Collection<QMFClass> qmfClasses;
 
-            if(className != null && className.length() != 0)
+            if(_className != null && _className.length() != 0)
             {
-                QMFClass qmfClass = qmfPackage.getQMFClass(className);
+                QMFClass qmfClass = qmfPackage.getQMFClass(_className);
                 if(qmfClass == null)
                 {
                     qmfClasses = Collections.EMPTY_LIST;
@@ -124,9 +132,9 @@ public class QMFGetQueryCommand extends QMFCommand
             {
                 Collection<QMFObject> objects;
 
-                if(objectId != null)
+                if(_objectId != null)
                 {
-                    QMFObject obj = service.getObjectById(qmfClass, objectId);
+                    QMFObject obj = service.getObjectById(qmfClass, _objectId);
                     if(obj == null)
                     {
                         objects = Collections.EMPTY_LIST;
@@ -158,7 +166,7 @@ public class QMFGetQueryCommand extends QMFCommand
         for(QMFCommand cmd : commands)
         {
 
-
+            _qmfLogger.debug("Respond: " + cmd);
             QMFMessage responseMessage = new QMFMessage(routingKey, cmd);
 
             Exchange exchange = virtualHost.getExchangeRegistry().getExchange(exchangeName);
@@ -179,4 +187,13 @@ public class QMFGetQueryCommand extends QMFCommand
         }
     }
 
+    @Override
+    public String toString()
+    {
+        return "QMFGetQueryCommand{" +
+               "packageName='" + _packageName + '\'' +
+               ", className='" + _className + '\'' +
+               ", objectId=" + _objectId +
+               '}';
+    }
 }

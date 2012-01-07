@@ -20,6 +20,7 @@
 */
 package org.apache.qpid.server.virtualhost;
 
+import java.util.Map;
 import java.util.UUID;
 
 import org.apache.qpid.common.Closeable;
@@ -90,6 +91,8 @@ public interface VirtualHost extends DurableConfigurationStore.Source, VirtualHo
                                 String vhost,
                                 boolean durable,
                                 String authMechanism, String username, String password);
+
+    public BrokerLink createBrokerConnection(UUID id, long createTime, Map<String,String> arguments);
 
     ConfigStore getConfigStore();
 

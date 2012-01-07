@@ -21,6 +21,7 @@
 
 package org.apache.qpid.qmf;
 
+import org.apache.log4j.Logger;
 import org.apache.qpid.transport.codec.BBDecoder;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.message.ServerMessage;
@@ -35,6 +36,9 @@ import java.util.List;
 
 public class QMFPackageQueryCommand extends QMFCommand
 {
+
+    private static final Logger _qmfLogger = Logger.getLogger("qpid.qmf");
+
     public QMFPackageQueryCommand(QMFCommandHeader header, BBDecoder decoder)
     {
         super(header);
@@ -53,6 +57,8 @@ public class QMFPackageQueryCommand extends QMFCommand
         
         QMFCommand[] commands = new QMFCommand[ supportedSchemas.size() + 1 ];
 
+        _qmfLogger.debug("Exectuting " + this);
+        
         int i = 0;
         for(QMFPackage p : supportedSchemas)
         {
@@ -83,5 +89,10 @@ public class QMFPackageQueryCommand extends QMFCommand
                 }
             }
         }
+    }
+    
+    public String toString()
+    {
+        return "QMFPackageQueryCommand";
     }
 }

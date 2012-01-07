@@ -20,6 +20,7 @@
  */
 package org.apache.qpid.qmf;
 
+import org.apache.log4j.Logger;
 import org.apache.qpid.transport.codec.BBDecoder;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.message.ServerMessage;
@@ -33,6 +34,8 @@ import java.util.ArrayList;
 
 public class QMFMethodRequestCommand extends QMFCommand
 {
+    private static final Logger _qmfLogger = Logger.getLogger("qpid.qmf");
+
     private QMFMethodInvocation _methodInstance;
     private QMFObject _object;
 
@@ -59,6 +62,9 @@ public class QMFMethodRequestCommand extends QMFCommand
         String queueName = message.getMessageHeader().getReplyToRoutingKey();
 
         QMFCommand[] commands = new QMFCommand[2];
+
+        _qmfLogger.debug("Execute: " + _methodInstance + " on " + _object);
+
         commands[0] = _methodInstance.execute(_object, this);
         commands[1] = new QMFCommandCompletionCommand(this);
 

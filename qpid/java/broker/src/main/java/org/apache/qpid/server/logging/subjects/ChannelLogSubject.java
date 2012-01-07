@@ -72,13 +72,16 @@ public class ChannelLogSubject extends AbstractLogSubject
          * 3 - Virtualhost
          * 4 - Channel ID
          */
-        ServerConnection connection = (ServerConnection) session.getConnection();
-        setLogStringWithFormat(CHANNEL_FORMAT,
-                               connection == null ? -1L : connection.getConnectionId(),
-                               session.getAuthorizedPrincipal() == null ? "?" : session.getAuthorizedPrincipal().getName(),
-                               (connection == null || connection.getConfig() == null) ? "?" : connection.getConfig().getAddress(),
-                               session.getVirtualHost().getName(),
-                               session.getChannel());
+        if(session.getConnection() instanceof ServerConnection)
+        {
+            ServerConnection connection = (ServerConnection) session.getConnection();
+            setLogStringWithFormat(CHANNEL_FORMAT,
+                                   connection == null ? -1L : connection.getConnectionId(),
+                                   session.getAuthorizedPrincipal() == null ? "?" : session.getAuthorizedPrincipal().getName(),
+                                   (connection == null || connection.getConfig() == null) ? "?" : connection.getConfig().getAddress(),
+                                   session.getVirtualHost().getName(),
+                                   session.getChannel());
+        }
     }
 
 }
