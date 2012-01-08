@@ -40,6 +40,7 @@ import org.apache.qpid.framing.CompositeAMQDataBlock;
 import org.apache.qpid.framing.ContentBody;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.ExchangeDeclareBody;
+import org.apache.qpid.framing.MethodRegistry;
 
 public class BasicMessageProducer_0_8 extends BasicMessageProducer
 {
@@ -53,15 +54,17 @@ public class BasicMessageProducer_0_8 extends BasicMessageProducer
     void declareDestination(AMQDestination destination)
     {
 
-        ExchangeDeclareBody body = getSession().getMethodRegistry().createExchangeDeclareBody(_session.getTicket(),
-                                                                                              destination.getExchangeName(),
-                                                                                              destination.getExchangeClass(),
-                                                                                              false,
-                                                                                              false,
-                                                                                              false,
-                                                                                              false,
-                                                                                              true,
-                                                                                              null);
+        final MethodRegistry methodRegistry = getSession().getMethodRegistry();
+        ExchangeDeclareBody body =
+                methodRegistry.createExchangeDeclareBody(_session.getTicket(),
+                                                         destination.getExchangeName(),
+                                                         destination.getExchangeClass(),
+                                                         destination.getExchangeName().toString().startsWith("amq."),
+                                                         false,
+                                                         false,
+                                                         false,
+                                                         true,
+                                                         null);
         // Declare the exchange
         // Note that the durable and internal arguments are ignored since passive is set to false
 
