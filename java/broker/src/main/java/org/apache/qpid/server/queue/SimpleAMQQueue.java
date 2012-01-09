@@ -23,7 +23,6 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQSecurityException;
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.pool.ReadWriteRunnable;
 import org.apache.qpid.pool.ReferenceCountingExecutorService;
 import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
 import org.apache.qpid.server.protocol.AMQSessionModel;
@@ -288,7 +287,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
     // ------ Getters and Setters
 
-    public void execute(ReadWriteRunnable runnable)
+    public void execute(Runnable runnable)
     {
         _asyncDelivery.execute(runnable);
     }

@@ -21,18 +21,17 @@ package org.apache.qpid.server.queue;
  */
 
 
-import org.apache.qpid.pool.ReadWriteRunnable;
-import org.apache.qpid.server.subscription.Subscription;
-import org.apache.qpid.server.logging.actors.CurrentActor;
-import org.apache.qpid.AMQException;
-import org.apache.log4j.Logger;
-
 import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.apache.log4j.Logger;
+import org.apache.qpid.AMQException;
+import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.subscription.Subscription;
 
-class SubFlushRunner implements ReadWriteRunnable
+
+class SubFlushRunner implements Runnable
 {
     private static final Logger _logger = Logger.getLogger(SubFlushRunner.class);
 
@@ -88,16 +87,6 @@ class SubFlushRunner implements ReadWriteRunnable
     private SimpleAMQQueue getQueue()
     {
         return (SimpleAMQQueue) _sub.getQueue();
-    }
-
-    public boolean isRead()
-    {
-        return false;
-    }
-
-    public boolean isWrite()
-    {
-        return true;
     }
 
     public String toString()
