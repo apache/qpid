@@ -185,8 +185,10 @@ void SessionHandler::detach(const std::string& name) {
     handleDetach();
 }
 
-void SessionHandler::detached(const std::string& name, uint8_t code) {
-    CHECK_NAME(name, "session.detached");
+void SessionHandler::detached(const std::string& /*name*/, uint8_t code) {
+    // Special case for detached: Don't check if we are
+    // attached. Checking can lead to an endless game of "detached
+    // tennis" on federated brokers.
     awaitingDetached = false;
     if (code != session::DETACH_CODE_NORMAL) {
         sendReady = receiveReady = false;
