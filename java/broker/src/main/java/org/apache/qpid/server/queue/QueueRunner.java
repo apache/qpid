@@ -56,7 +56,6 @@ public class QueueRunner implements ReadWriteRunnable
     private final AtomicLong _lastRunAgain = new AtomicLong();
     private final AtomicLong _lastRunTime = new AtomicLong();
 
-    private long _runs;
     private long _continues;
 
     public QueueRunner(SimpleAMQQueue queue)
