@@ -76,13 +76,15 @@ class ReplicatingSubscription : public broker::SemanticState::ConsumerImpl,
 
     ~ReplicatingSubscription();
 
-    void cancel();
+    // QueueObserver overrides.
     bool deliver(broker::QueuedMessage& msg);
     void enqueued(const broker::QueuedMessage&);
     void dequeued(const broker::QueuedMessage&);
     void acquired(const broker::QueuedMessage&) {}
     void requeued(const broker::QueuedMessage&) {}
 
+    // Consumer overrides.
+    void cancel();
     bool isDelayedCompletion() const { return true; }
 
   protected:
