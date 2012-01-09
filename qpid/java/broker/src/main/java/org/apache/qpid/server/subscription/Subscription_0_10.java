@@ -621,10 +621,6 @@ public class Subscription_0_10 implements Subscription, FlowCreditManager.FlowCr
 
     }
 
-    public void flushCreditState()
-    {
-        flushCreditState(false);
-    }
     public void flushCreditState(boolean strict)
     {
         if(strict || !isSuspended() || _deferredMessageCredit >= 200
