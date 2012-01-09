@@ -89,7 +89,6 @@ public class ServerConfiguration extends ConfigurationPlugin
         envVarMap.put("QPID_PORT", "connector.port");
         envVarMap.put("QPID_ENABLEDIRECTBUFFERS", "advanced.enableDirectBuffers");
         envVarMap.put("QPID_SSLPORT", "connector.ssl.port");
-        envVarMap.put("QPID_WRITEBIASED", "advanced.useWriteBiasedPool");
         envVarMap.put("QPID_JMXPORT_REGISTRYSERVER", MGMT_JMXPORT_REGISTRYSERVER);
         envVarMap.put("QPID_JMXPORT_CONNECTORSERVER", MGMT_JMXPORT_CONNECTORSERVER);
         envVarMap.put("QPID_FRAMESIZE", "advanced.framesize");
@@ -734,11 +733,6 @@ public class ServerConfiguration extends ConfigurationPlugin
     public String getConnectorCertType()
     {
         return getStringValue("connector.ssl.certType", "SunX509");
-    }
-
-    public boolean getUseBiasedWrites()
-    {
-        return getBooleanValue("advanced.useWriteBiasedPool");
     }
 
     public String getDefaultVirtualHost()
