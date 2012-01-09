@@ -600,19 +600,6 @@ public class ServerConfigurationTest extends QpidTestCase
         assertEquals("a", _serverConfig.getConnectorCertType());
     }
 
-    public void testGetUseBiasedWrites() throws ConfigurationException
-    {
-        // Check default
-        _serverConfig.initialise();
-        assertEquals(false, _serverConfig.getUseBiasedWrites());
-
-        // Check value we set
-        _config.setProperty("advanced.useWriteBiasedPool", true);
-        _serverConfig = new ServerConfiguration(_config);
-        _serverConfig.initialise();
-        assertEquals(true, _serverConfig.getUseBiasedWrites());
-    }
-
     public void testGetHousekeepingCheckPeriod() throws ConfigurationException
     {
         // Check default

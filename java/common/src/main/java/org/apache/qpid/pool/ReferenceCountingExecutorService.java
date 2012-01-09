@@ -96,8 +96,6 @@ public class ReferenceCountingExecutorService
      */
     private ThreadFactory _threadFactory = Executors.defaultThreadFactory();
 
-    private final boolean _useBiasedPool = Boolean.getBoolean("org.apache.qpid.use_write_biased_pool");
-
     /**
      * Retrieves the singleton instance of this reference counter.
      *
@@ -125,25 +123,11 @@ public class ReferenceCountingExecutorService
         {
             if (_refCount++ == 0)
             {
-                // Use a job queue that biases to writes
-                if(_useBiasedPool)
-                {
-                    _pool =  new ThreadPoolExecutor(_poolSize, _poolSize,
-                                          0L, TimeUnit.MILLISECONDS,
-                                          new ReadWriteJobQueue(),
-                                          _threadFactory);
-
-                }
-                else
-                {
-                    _pool = new ThreadPoolExecutor(_poolSize, _poolSize,
-                            0L, TimeUnit.MILLISECONDS,
-                            new LinkedBlockingQueue<Runnable>(),
-                            _threadFactory);
-                }
-
+                _pool = new ThreadPoolExecutor(_poolSize, _poolSize,
+                        0L, TimeUnit.MILLISECONDS,
+                        new LinkedBlockingQueue<Runnable>(),
+                        _threadFactory);
             }
-
 
             return _pool;
         }
