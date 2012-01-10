@@ -57,6 +57,8 @@ import javax.transaction.Transaction;
 import javax.transaction.TransactionManager;
 import javax.transaction.xa.XAResource;
 
+import org.apache.qpid.client.Closeable;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -877,4 +879,9 @@ public class QpidRAManagedConnection implements ManagedConnection, ExceptionList
       this._inManagedTx = inManagedTx;
    }
 
+   public boolean isConnectionClosed()
+   {
+       Closeable c = (Closeable)_connection;
+       return (c == null || c.isClosed() || c.isClosing());
+   }
 }
