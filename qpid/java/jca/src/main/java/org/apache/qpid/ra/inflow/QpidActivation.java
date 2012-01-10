@@ -113,6 +113,9 @@ public class QpidActivation implements ExceptionListener
    // Whether we are in the failure recovery loop
    private AtomicBoolean _inFailure = new AtomicBoolean(false);
 
+   //Whether or not we have completed activating
+   private AtomicBoolean _activated = new AtomicBoolean(false);
+
    static
    {
       try
@@ -323,8 +326,10 @@ public class QpidActivation implements ExceptionListener
             throw e;
          }
       }
+
       amqConnection.start() ;
       this._connection = amqConnection ;
+      _activated.set(true);
 
       _log.debug("Setup complete " + this);
    }
@@ -422,7 +427,6 @@ public class QpidActivation implements ExceptionListener
                                         " of type " +
                                         destinationType.getName());
             _destination = Util.lookup(ctx, destinationName, destinationType);
-            //_destination = (Destination)ctx.lookup(destinationName);
 
          }
          else
@@ -490,7 +494,14 @@ public class QpidActivation implements ExceptionListener
 
    public void onException(final JMSException jmse)
    {
-      handleFailure(jmse) ;
+       if(_activated.get())
+       {
+           handleFailure(jmse) ;
+       }
+       else
+       {
+           _log.warn("Received JMSException: " + jmse + " while endpoint was not activated.");
+       }
    }
 
    /**
