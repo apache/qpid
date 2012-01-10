@@ -245,7 +245,7 @@ public class QpidActivation implements ExceptionListener
          _log.trace("start()");
       }
       _deliveryActive.set(true);
-      _ra.getWorkManager().scheduleWork(new SetupActivation());
+      new Thread(new SetupActivation()).start();
    }
 
    /**
