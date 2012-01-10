@@ -70,7 +70,7 @@ def OptionsAndArguments(argv):
                   help="Sort by column name")
     group2.add_option("-I", "--increasing", action="store_true", default=False,
                   help="Sort by increasing value (default = decreasing)")
-    group2.add_option("-L", "--limit", default=50, metavar="<n>",
+    group2.add_option("-L", "--limit", type="int", default=50, metavar="<n>",
                   help="Limit output to n rows")
     group2.add_option("-C", "--cluster", action="store_true", default=False,
                   help="Display per-broker cluster detail.")
