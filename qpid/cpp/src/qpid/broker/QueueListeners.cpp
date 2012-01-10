@@ -54,13 +54,12 @@ void QueueListeners::populate(NotificationSet& set)
         set.consumer = consumers.front();
         consumers.pop_front();
         set.consumer->inListeners = false;
-    } else {
-        // Don't swap the deques, hang on to the memory allocated.
-        set.browsers = browsers;
-        browsers.clear();
-        for (Listeners::iterator i = set.browsers.begin(); i != set.browsers.end(); i++)
-            (*i)->inListeners = false;
     }
+    // Don't swap the deques, hang on to the memory allocated.
+    set.browsers = browsers;
+    browsers.clear();
+    for (Listeners::iterator i = set.browsers.begin(); i != set.browsers.end(); i++)
+        (*i)->inListeners = false;
 }
 
 void QueueListeners::add(Listeners& listeners, Consumer::shared_ptr c)
@@ -77,7 +76,7 @@ void QueueListeners::remove(Listeners& listeners, Consumer::shared_ptr c)
 void QueueListeners::NotificationSet::notify()
 {
     if (consumer) consumer->notify();
-    else std::for_each(browsers.begin(), browsers.end(), boost::mem_fn(&Consumer::notify));
+    std::for_each(browsers.begin(), browsers.end(), boost::mem_fn(&Consumer::notify));
 }
 
 bool QueueListeners::contains(Consumer::shared_ptr c) const {
