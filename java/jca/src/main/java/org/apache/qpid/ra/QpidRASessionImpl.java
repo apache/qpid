@@ -410,11 +410,15 @@ public class QpidRASessionImpl implements Session, QueueSession, TopicSession, X
       lock();
       try
       {
-         Session session = getSessionInternal();
 
          if (_cri.isTransacted() == false)
          {
             throw new IllegalStateException("Session is not transacted");
+         }
+
+         if(_lockedMC.isConnectionClosed())
+         {
+             throw new IllegalStateException("Attempting to call commit when the underlying connection has been closed.");
          }
 
          if (_log.isTraceEnabled())
@@ -422,7 +426,8 @@ public class QpidRASessionImpl implements Session, QueueSession, TopicSession, X
             _log.trace("Commit session " + this);
          }
 
-         session.commit();
+         getSessionInternal().commit();
+
       }
       finally
       {
