@@ -829,7 +829,7 @@ public abstract class AMQDestination implements Destination, Referenceable
         dest.setSubject(_subject);
         dest.setCreate(_create); 
         dest.setAssert(_assert); 
-        dest.setDelete(_create); 
+        dest.setDelete(_delete); 
         dest.setBrowseOnly(_browseOnly);
         dest.setAddressType(_addressType);
         dest.setTargetNode(_targetNode);
