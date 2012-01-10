@@ -71,7 +71,7 @@ public class QpidRAMessage implements Message
          _log.trace("acknowledge()");
       }
 
-      _session.getSession(); // Check for closed
+      _session.getSessionInternal(); // Check for closed
       _message.acknowledge();
    }
 
