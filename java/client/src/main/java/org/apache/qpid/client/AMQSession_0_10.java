@@ -795,11 +795,43 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
     {
         if (suspend)
         {
-            for (BasicMessageConsumer consumer : _consumers.values())
-            {
-                getQpidSession().messageStop(String.valueOf(consumer.getConsumerTag()),
-                                             Option.UNRELIABLE);
-            }
+                synchronized (getMessageDeliveryLock())
+                {
+                    for (BasicMessageConsumer consumer : _consumers.values())
+	            {
+	                getQpidSession().messageStop(String.valueOf(consumer.getConsumerTag()),
+	                                             Option.UNRELIABLE);
+	                sync();
+	                List<Long> tags = consumer.drainReceiverQueueAndRetrieveDeliveryTags();
+	                _prefetchedMessageTags.addAll(tags);
+	            }
+                }
+
+                _usingDispatcherForCleanup = true;
+                syncDispatchQueue();
+                _usingDispatcherForCleanup = false;
+
+                RangeSet delivered = gatherRangeSet(_unacknowledgedMessageTags);
+		RangeSet prefetched = gatherRangeSet(_prefetchedMessageTags);
+		RangeSet all = RangeSetFactory.createRangeSet(delivered.size()
+					+ prefetched.size());
+
+		for (Iterator<Range> deliveredIter = delivered.iterator(); deliveredIter.hasNext();)
+		{
+			Range range = deliveredIter.next();
+			all.add(range);
+		}
+
+		for (Iterator<Range> prefetchedIter = prefetched.iterator(); prefetchedIter.hasNext();)
+		{
+			Range range = prefetchedIter.next();
+			all.add(range);
+		}
+
+		flushProcessed(all, false);
+		getQpidSession().messageRelease(delivered,Option.SET_REDELIVERED);
+		getQpidSession().messageRelease(prefetched);
+		sync();
         }
         else
         {
