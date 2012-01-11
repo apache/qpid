@@ -2210,9 +2210,9 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
 
         public boolean equals(Object o)
         {
-            assert o != null;
-            assert o instanceof QueueEntryListener;
-            return _sub == ((QueueEntryListener) o)._sub;
+            return o != null
+                    && o instanceof SimpleAMQQueue.QueueEntryListener
+                    && _sub == ((QueueEntryListener) o)._sub;
         }
 
         public int hashCode()
