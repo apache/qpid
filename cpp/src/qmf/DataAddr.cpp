@@ -66,7 +66,7 @@ bool DataAddrImpl::operator<(const DataAddrImpl& other) const
 }
 
 
-DataAddrImpl::DataAddrImpl(const Variant::Map& map)
+DataAddrImpl::DataAddrImpl(const Variant::Map& map) : agentEpoch(0)
 {
     Variant::Map::const_iterator iter;
 
