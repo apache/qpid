@@ -53,6 +53,10 @@ public class QueuePolicyTest extends QpidBrokerTestCase
         super.tearDown();
     }
     
+    /**
+     * Test Goal : To create a ring queue programitcally with max queue count using the
+     *             address string and observe that it works as expected.
+     */
     public void testRejectPolicy() throws Exception
     {
         String addr = "ADDR:queue; {create: always, " +
@@ -82,6 +86,10 @@ public class QueuePolicyTest extends QpidBrokerTestCase
         }
     }
     
+    /**
+     * Test Goal : To create a ring queue programitcally using the address string and observe
+     *             that it works as expected.
+     */
     public void testRingPolicy() throws Exception
     {
         Session ssn = _connection.createSession(false,Session.AUTO_ACKNOWLEDGE);
@@ -94,17 +102,18 @@ public class QueuePolicyTest extends QpidBrokerTestCase
         MessageConsumer consumer = ssn.createConsumer(dest);
         MessageProducer prod = ssn.createProducer(ssn.createQueue("ADDR:amq.direct/test"));
         
+        _connection.stop();
+
         prod.send(ssn.createTextMessage("Test1"));
         prod.send(ssn.createTextMessage("Test2"));
         prod.send(ssn.createTextMessage("Test3"));
+
+        _connection.start();
         
         TextMessage msg = (TextMessage)consumer.receive(1000);
-        assertEquals("The consumer should receive the msg with body='Test2'",msg.getText(),"Test2");
+        assertEquals("The consumer should receive the msg with body='Test2'","Test2",msg.getText());
         
         msg = (TextMessage)consumer.receive(1000);
-        assertEquals("The consumer should receive the msg with body='Test3'",msg.getText(),"Test3");
-     
-        prod.send(ssn.createTextMessage("Test4"));
-        assertEquals("The consumer should receive the msg with body='Test4'",msg.getText(),"Test3");
+        assertEquals("The consumer should receive the msg with body='Test3'","Test3",msg.getText());
     }
 }
