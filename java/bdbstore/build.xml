@@ -24,7 +24,7 @@
     <import file="../module.xml" />
 
     <property name="bdb.lib.dir" value="${project.root}/lib/bdbstore" />
-    <property name="bdb.version" value="4.0.117" />
+    <property name="bdb.version" value="5.0.34" />
     <property name="bdb.download.url" value="http://download.oracle.com/maven/com/sleepycat/je/${bdb.version}/je-${bdb.version}.jar" />
     <property name="bdb.jar.file" value="${bdb.lib.dir}/je-${bdb.version}.jar" />
 
