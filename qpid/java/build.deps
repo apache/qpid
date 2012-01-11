@@ -144,7 +144,7 @@ management-common.test.libs=${test.libs}
 ra.libs=${geronimo-j2ee} ${geronimo-jta} ${geronimo-jms} ${slf4j-api} ${geronimo-kernel} ${geronimo-openejb}
 
 # optional bdbstore module deps
-bdb-je=lib/bdbstore/je-4.0.117.jar
+bdb-je=lib/bdbstore/je-5.0.34.jar
 bdbstore.libs=${bdb-je}
 bdbstore.test.libs=${test.libs}
 
