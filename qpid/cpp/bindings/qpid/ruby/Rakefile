@@ -72,7 +72,7 @@ namespace :test do
   end
 
   desc "Run all tests (default)."
-  task :all => [:units, :integrations]
+  task :all => [:spec, :integrations]
 
   desc "Run unit tests."
   Rake::TestTask.new(:units) do |t|
