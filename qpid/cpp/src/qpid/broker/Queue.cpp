@@ -1336,12 +1336,11 @@ void Queue::recoveryComplete(ExchangeRegistry& exchanges)
 {
     // set the alternate exchange
     if (!alternateExchangeName.empty()) {
-        try {
-            Exchange::shared_ptr ae = exchanges.get(alternateExchangeName);
-            setAlternateExchange(ae);
-        } catch (const NotFoundException&) {
-            QPID_LOG(warning, "Could not set alternate exchange \"" << alternateExchangeName << "\" on queue \"" << name << "\": exchange does not exist.");
-        }
+        Exchange::shared_ptr ae = exchanges.find(alternateExchangeName);
+        if (ae) setAlternateExchange(ae);
+        else QPID_LOG(warning, "Could not set alternate exchange \""
+                      << alternateExchangeName << "\" on queue \"" << name
+                      << "\": exchange does not exist.");
     }
     //process any pending dequeues
     for_each(pendingDequeues.begin(), pendingDequeues.end(), boost::bind(&Queue::dequeue, this, (TransactionContext*) 0, _1));

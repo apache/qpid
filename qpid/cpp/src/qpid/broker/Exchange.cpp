@@ -279,12 +279,10 @@ uint32_t Exchange::encodedSize() const
 void Exchange::recoveryComplete(ExchangeRegistry& exchanges)
 {
     if (!alternateName.empty()) {
-        try {
-            Exchange::shared_ptr ae = exchanges.get(alternateName);
-            setAlternate(ae);
-        } catch (const NotFoundException&) {
-            QPID_LOG(warning, "Could not set alternate exchange \"" << alternateName << "\": does not exist.");
-        }
+        Exchange::shared_ptr ae = exchanges.find(alternateName);
+        if (ae) setAlternate(ae);
+        else QPID_LOG(warning, "Could not set alternate exchange \""
+                      << alternateName << "\": does not exist.");
     }
 }
 

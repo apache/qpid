@@ -36,9 +36,8 @@ void QueueBindings::add(const string& exchange, const string& key, const FieldTa
 void QueueBindings::unbind(ExchangeRegistry& exchanges, Queue::shared_ptr queue)
 {
     for (Bindings::iterator i = bindings.begin(); i != bindings.end(); i++) {
-        try {
-            exchanges.get(i->exchange)->unbind(queue, i->key, &(i->args));
-        } catch (const NotFoundException&) {}
+        Exchange::shared_ptr ex = exchanges.find(i->exchange);
+        if (ex) ex->unbind(queue, i->key, &(i->args));
     }
 }
 
