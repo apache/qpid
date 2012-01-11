@@ -620,23 +620,25 @@ void AgentSessionImpl::handleMethodRequest(const Variant::Map& content, const Me
     if (iter != content.end()) {
         DataAddr addr(new DataAddrImpl(iter->second.asMap()));
         eventImpl->setDataAddr(addr);
-        DataIndex::const_iterator iter(globalIndex.find(addr));
-        if (iter == globalIndex.end()) {
-            AgentEvent event(eventImpl.release());
-            raiseException(event, "No data object found with the specified address");
-            return;
-        }
+        if (!externalStorage) {
+            DataIndex::const_iterator iter(globalIndex.find(addr));
+            if (iter == globalIndex.end()) {
+                AgentEvent event(eventImpl.release());
+                raiseException(event, "No data object found with the specified address");
+                return;
+            }
 
-        const Schema& schema(DataImplAccess::get(iter->second).getSchema());
-        if (schema.isValid()) {
-            eventImpl->setSchema(schema);
-            for (Variant::Map::const_iterator aIter = eventImpl->getArguments().begin();
-                 aIter != eventImpl->getArguments().end(); aIter++) {
-                const Schema& schema(DataImplAccess::get(iter->second).getSchema());
-                if (!SchemaImplAccess::get(schema).isValidMethodInArg(eventImpl->getMethodName(), aIter->first, aIter->second)) {
-                    AgentEvent event(eventImpl.release());
-                    raiseException(event, "Invalid argument: " + aIter->first);
-                    return;
+            const Schema& schema(DataImplAccess::get(iter->second).getSchema());
+            if (schema.isValid()) {
+                eventImpl->setSchema(schema);
+                for (Variant::Map::const_iterator aIter = eventImpl->getArguments().begin();
+                     aIter != eventImpl->getArguments().end(); aIter++) {
+                    const Schema& schema(DataImplAccess::get(iter->second).getSchema());
+                    if (!SchemaImplAccess::get(schema).isValidMethodInArg(eventImpl->getMethodName(), aIter->first, aIter->second)) {
+                        AgentEvent event(eventImpl.release());
+                        raiseException(event, "Invalid argument: " + aIter->first);
+                        return;
+                    }
                 }
             }
         }
