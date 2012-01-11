@@ -20,131 +20,22 @@
  */
 package org.apache.qpid.server.subscription;
 
-import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.QueueEntry;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.util.Iterator;
-import java.util.concurrent.ConcurrentHashMap;
-
-
-public class MessageGroupManager
+public interface MessageGroupManager
 {
-    private static final Logger _logger = LoggerFactory.getLogger(MessageGroupManager.class);
-
-
-    private final String _groupId;
-    private final ConcurrentHashMap<Integer, Subscription> _groupMap = new ConcurrentHashMap<Integer, Subscription>();
-    private final int _groupMask;
-
-    public MessageGroupManager(final String groupId, final int maxGroups)
+    public interface SubscriptionResetHelper
     {
-        _groupId = groupId;
-        _groupMask = pow2(maxGroups)-1;
+        public void resetSubPointersForGroups(Subscription subscription, boolean clearAssignments);
+
+        boolean isEntryAheadOfSubscription(QueueEntry entry, Subscription sub);
     }
 
-    private static int pow2(final int i)
-    {
-        int val = 1;
-        while(val < i) val<<=1;
-        return val;
-    }
+    Subscription getAssignedSubscription(QueueEntry entry);
 
-    public Subscription getAssignedSubscription(final QueueEntry entry)
-    {
-        Object groupVal = entry.getMessage().getMessageHeader().getHeader(_groupId);
-        return groupVal == null ? null : _groupMap.get(groupVal.hashCode() & _groupMask);
-    }
+    boolean acceptMessage(Subscription sub, QueueEntry entry);
 
-    public boolean acceptMessage(Subscription sub, QueueEntry entry)
-    {
-        Object groupVal = entry.getMessage().getMessageHeader().getHeader(_groupId);
-        if(groupVal == null)
-        {
-            return true;
-        }
-        else
-        {
-            Integer group = groupVal.hashCode() & _groupMask;
-            Subscription assignedSub = _groupMap.get(group);
-            if(assignedSub == sub)
-            {
-                return true;
-            }
-            else
-            {
-                if(assignedSub == null)
-                {
-                    if(_logger.isDebugEnabled())
-                    {
-                        _logger.debug("Assigning group " + groupVal + " to sub " + sub);
-                    }
-                    assignedSub = _groupMap.putIfAbsent(group, sub);
-                    return assignedSub == null || assignedSub == sub;
-                }
-                else
-                {
-                    return false;
-                }
-            }
-        }
-    }
-    
-    public QueueEntry findEarliestAssignedAvailableEntry(Subscription sub)
-    {
-        EntryFinder visitor = new EntryFinder(sub);
-        sub.getQueue().visit(visitor);
-        return visitor.getEntry();
-    }
+    QueueEntry findEarliestAssignedAvailableEntry(Subscription sub);
 
-    private class EntryFinder implements AMQQueue.Visitor
-    {
-        private QueueEntry _entry;
-        private Subscription _sub;
-
-        public EntryFinder(final Subscription sub)
-        {
-            _sub = sub;
-        }
-
-        public boolean visit(final QueueEntry entry)
-        {
-            if(!entry.isAvailable())
-                return false;
-
-            Object groupId = entry.getMessage().getMessageHeader().getHeader(_groupId);
-            if(groupId == null)
-                return false;
-
-            Integer group = groupId.hashCode() & _groupMask;
-            Subscription assignedSub = _groupMap.get(group);
-            if(assignedSub == _sub)
-            {
-                _entry = entry;
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
-
-        public QueueEntry getEntry()
-        {
-            return _entry;
-        }
-    }
-
-    public void clearAssignments(Subscription sub)
-    {
-        Iterator<Subscription> subIter = _groupMap.values().iterator();
-        while(subIter.hasNext())
-        {
-            if(subIter.next() == sub)
-            {
-                subIter.remove();
-            }
-        }
-    }
+    void clearAssignments(Subscription sub);
 }
