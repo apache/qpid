@@ -172,7 +172,6 @@ public class DefinedGroupMessageGroupManager implements MessageGroupManager
     {
         EntryFinder visitor = new EntryFinder(sub);
         sub.getQueue().visit(visitor);
-        _logger.debug("Earliest available entry for " + sub + " is " + visitor.getEntry() + (visitor.getEntry() == null ? "" : " : " + getKey(visitor.getEntry())));
         return visitor.getEntry();
     }
 
@@ -250,12 +249,10 @@ public class DefinedGroupMessageGroupManager implements MessageGroupManager
                     {
                         if(newState == QueueEntry.State.ACQUIRED)
                         {
-                            _logger.debug("Adding to " + _group);
                             _group.add();
                         }
                         else if(oldState == QueueEntry.State.ACQUIRED)
                         {
-                            _logger.debug("Subtracting from " + _group);
                             _group.subtract();
                         }
                     }
