@@ -42,7 +42,7 @@ void SessionHandler::checkAttached() {
 SessionHandler::SessionHandler(FrameHandler* out, ChannelId ch)
     : channel(ch, out), peer(channel),
       awaitingDetached(false),
-      sendReady(), receiveReady() {}
+      sendReady(), receiveReady(), hasFailed(false) {}
 
 SessionHandler::~SessionHandler() {}
 
@@ -192,6 +192,7 @@ void SessionHandler::detached(const std::string& /*name*/, uint8_t code) {
     awaitingDetached = false;
     if (code != session::DETACH_CODE_NORMAL) {
         sendReady = receiveReady = false;
+        hasFailed = true;
         channelException(convert(code), "session.detached from peer.");
     } else {
         handleDetach();
@@ -329,6 +330,9 @@ void SessionHandler::sendFlush() {
 
 bool SessionHandler::ready() const {
     return  sendReady && receiveReady;
+}
+bool SessionHandler::failed() const {
+    return hasFailed;
 }
 
 

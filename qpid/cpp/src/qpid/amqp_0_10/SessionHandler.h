@@ -67,6 +67,8 @@ class QPID_COMMON_CLASS_EXTERN SessionHandler : public framing::AMQP_AllOperatio
 
     /** True if the handler is ready to send and receive */
     QPID_COMMON_EXTERN bool ready() const;
+    /** True if the session has failed with an execution exception */
+    QPID_COMMON_EXTERN bool failed() const;
 
     // Protocol methods
     QPID_COMMON_EXTERN void attach(const std::string& name, bool force);
@@ -111,7 +113,7 @@ class QPID_COMMON_CLASS_EXTERN SessionHandler : public framing::AMQP_AllOperatio
     framing::AMQP_AllProxy::Session  peer;
     std::string name;
     bool awaitingDetached;
-    bool sendReady, receiveReady;
+    bool sendReady, receiveReady, hasFailed;
 };
 }} // namespace qpid::amqp_0_10
 
