@@ -172,3 +172,9 @@ org.apache.qpid.server.management.AMQUserManagementMBeanTest#*
 // QPID-3133: On 0-10, the exception listener is currently not invoked when reconnection fails to occurs.
 org.apache.qpid.server.failover.FailoverMethodTest#*
 
+// CPP Broker does not implement non-"shared group" message groups
+org.apache.qpid.server.queue.MessageGroupQueueTest#testSimpleGroupAssignment
+org.apache.qpid.server.queue.MessageGroupQueueTest#testConsumerCloseGroupAssignment
+org.apache.qpid.server.queue.MessageGroupQueueTest#testConsumerCloseWithRelease
+org.apache.qpid.server.queue.MessageGroupQueueTest#testGroupAssignmentSurvivesEmpty
+

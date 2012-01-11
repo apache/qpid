@@ -42,9 +42,7 @@ import org.apache.qpid.server.management.ManagedObject;
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.security.AuthorizationHolder;
-import org.apache.qpid.server.subscription.MessageGroupManager;
-import org.apache.qpid.server.subscription.Subscription;
-import org.apache.qpid.server.subscription.SubscriptionList;
+import org.apache.qpid.server.subscription.*;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.txn.LocalTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
@@ -67,10 +65,15 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
-public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
+public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, MessageGroupManager.SubscriptionResetHelper
 {
     private static final Logger _logger = Logger.getLogger(SimpleAMQQueue.class);
     private static final String QPID_GROUP_HEADER_KEY = "qpid.group_header_key";
+    private static final String QPID_SHARED_MSG_GROUP = "qpid.shared_msg_group";
+    private static final String QPID_DEFAULT_MESSAGE_GROUP = "qpid.default-message-group";
+    private static final String QPID_NO_GROUP = "qpid.no-group";
+    // TODO - should make this configurable at the vhost / broker level
+    private static final int DEFAULT_MAX_GROUPS = 255;
 
 
     private final VirtualHost _virtualHost;
@@ -265,7 +268,18 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
         if(arguments != null && arguments.containsKey(QPID_GROUP_HEADER_KEY))
         {
-            _messageGroupManager = new MessageGroupManager(String.valueOf(arguments.get(QPID_GROUP_HEADER_KEY)), 255);
+            if(arguments.containsKey(QPID_SHARED_MSG_GROUP) && String.valueOf(arguments.get(QPID_SHARED_MSG_GROUP)).equals("1"))
+            {
+                String defaultGroup = String.valueOf(arguments.get(QPID_DEFAULT_MESSAGE_GROUP));
+                _messageGroupManager =
+                        new DefinedGroupMessageGroupManager(String.valueOf(arguments.get(QPID_GROUP_HEADER_KEY)),
+                                defaultGroup == null ? QPID_NO_GROUP : defaultGroup,
+                                this);
+            }
+            else
+            {
+                _messageGroupManager = new AssignedSubscriptionMessageGroupManager(String.valueOf(arguments.get(QPID_GROUP_HEADER_KEY)), DEFAULT_MAX_GROUPS);
+            }
         }
         else
         {
@@ -488,28 +502,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
 
             if(_messageGroupManager != null)
             {
-                QueueEntry entry = _messageGroupManager.findEarliestAssignedAvailableEntry(subscription);
-                _messageGroupManager.clearAssignments(subscription);
-                
-                if(entry != null)
-                {
-                    SubscriptionList.SubscriptionNodeIterator subscriberIter = _subscriptionList.iterator();
-                    // iterate over all the subscribers, and if they are in advance of this queue entry then move them backwards
-                    while (subscriberIter.advance())
-                    {
-                        Subscription sub = subscriberIter.getNode().getSubscription();
-
-                        // we don't make browsers send the same stuff twice
-                        if (sub.seesRequeues())
-                        {
-                            updateSubRequeueEntry(sub, entry);
-                        }
-                    }
-
-                    deliverAsync();
-
-                }
-                
+                resetSubPointersForGroups(subscription, true);
             }
 
             // auto-delete queues must be deleted if there are no remaining subscribers
@@ -529,6 +522,34 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
             }
         }
 
+    }
+
+    public void resetSubPointersForGroups(Subscription subscription, boolean clearAssignments)
+    {
+        QueueEntry entry = _messageGroupManager.findEarliestAssignedAvailableEntry(subscription);
+        if(clearAssignments)
+        {
+            _messageGroupManager.clearAssignments(subscription);
+        }
+
+        if(entry != null)
+        {
+            SubscriptionList.SubscriptionNodeIterator subscriberIter = _subscriptionList.iterator();
+            // iterate over all the subscribers, and if they are in advance of this queue entry then move them backwards
+            while (subscriberIter.advance())
+            {
+                Subscription sub = subscriberIter.getNode().getSubscription();
+
+                // we don't make browsers send the same stuff twice
+                if (sub.seesRequeues())
+                {
+                    updateSubRequeueEntry(sub, entry);
+                }
+            }
+
+            deliverAsync();
+
+        }
     }
 
     public boolean getDeleteOnNoConsumers()
@@ -1855,6 +1876,19 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener
         }
     }
 
+    public boolean isEntryAheadOfSubscription(QueueEntry entry, Subscription sub)
+    {
+        QueueContext context = (QueueContext) sub.getQueueContext();
+        if(context != null)
+        {
+            QueueEntry releasedNode = context._releasedEntry;
+            return releasedNode == null || releasedNode.compareTo(entry) < 0;
+        }
+        else
+        {
+            return false;
+        }
+    }
 
     /**
      * Used by queue Runners to asynchronously deliver messages to consumers.
