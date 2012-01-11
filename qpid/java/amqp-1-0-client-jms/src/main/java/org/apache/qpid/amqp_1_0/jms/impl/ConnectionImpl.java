@@ -54,6 +54,10 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
 
     public ConnectionImpl(String host, int port, String username, String password, String clientId) throws JMSException
     {
+          this(host,port,username,password,clientId,false);
+    }
+    public ConnectionImpl(String host, int port, String username, String password, String clientId, boolean ssl) throws JMSException
+    {
         Container container = clientId == null ? new Container() : new Container(clientId);
         // TODO - authentication, containerId, clientId, ssl?, etc
         try

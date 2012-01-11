@@ -38,6 +38,8 @@ public class ConnectionFactoryImpl implements ConnectionFactory, TopicConnection
     private String _username;
     private String _password;
     private String _clientId;
+    private boolean _ssl;
+
 
     public ConnectionFactoryImpl(final String host,
                                  final int port,
@@ -45,21 +47,32 @@ public class ConnectionFactoryImpl implements ConnectionFactory, TopicConnection
                                  final String password,
                                  final String clientId)
     {
+        this(host,port,username,password,clientId,false);
+    }
+
+    public ConnectionFactoryImpl(final String host,
+                                 final int port,
+                                 final String username,
+                                 final String password,
+                                 final String clientId,
+                                 final boolean ssl)
+    {
         _host = host;
         _port = port;
         _username = username;
         _password = password;
         _clientId = clientId;
+        _ssl = ssl;
     }
 
     public ConnectionImpl createConnection() throws JMSException
     {
-        return new ConnectionImpl(_host, _port, _username, _password, _clientId);
+        return new ConnectionImpl(_host, _port, _username, _password, _clientId, _ssl);
     }
 
     public ConnectionImpl createConnection(final String username, final String password) throws JMSException
     {
-        return new ConnectionImpl(_host, _port, username, password, _clientId);
+        return new ConnectionImpl(_host, _port, username, password, _clientId, _ssl);
     }
 
     public static ConnectionFactoryImpl createFromURL(final String urlString) throws MalformedURLException
@@ -75,6 +88,7 @@ public class ConnectionFactoryImpl implements ConnectionFactory, TopicConnection
         String username = null;
         String password = null;
         String clientId = null;
+        boolean ssl = false;
         if(userInfo != null)
         {
             String[] components = userInfo.split(":",2);
@@ -93,12 +107,15 @@ public class ConnectionFactoryImpl implements ConnectionFactory, TopicConnection
                if(keyValuePair[0].equalsIgnoreCase("clientid"))
                {
                    clientId = keyValuePair[1];
-                   break;
+               }
+               else if(keyValuePair[0].equalsIgnoreCase("ssl"))
+               {
+                   ssl = Boolean.valueOf(keyValuePair[1]);
                }
            }
         }
 
-        return new ConnectionFactoryImpl(host, port, username, password, clientId);
+        return new ConnectionFactoryImpl(host, port, username, password, clientId, ssl);
 
     }
 
