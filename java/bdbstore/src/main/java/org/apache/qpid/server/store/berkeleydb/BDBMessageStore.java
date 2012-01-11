@@ -2093,8 +2093,7 @@ public class BDBMessageStore implements MessageStore, DurableConfigurationStore
 
             try
             {
-                //TODO - upgrade to BDB 5.0, then use: _environment.flushLog(true);
-                _environment.sync();
+                _environment.flushLog(true);
 
                 for(int i = 0; i < size; i++)
                 {

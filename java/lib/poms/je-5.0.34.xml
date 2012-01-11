@@ -18,5 +18,5 @@
 <dep>
   <groupId>com.sleepycat</groupId>
   <artifactId>je</artifactId>
-  <version>4.0.117</version>
+  <version>5.0.34</version>
 </dep>
