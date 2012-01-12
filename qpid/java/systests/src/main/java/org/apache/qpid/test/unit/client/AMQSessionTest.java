@@ -101,10 +101,4 @@ public class AMQSessionTest extends QpidBrokerTestCase
         assertEquals("Queue names should match from QueueReceiver with selector", _queue.getQueueName(), receiver.getQueue().getQueueName());
     }
 
-    public static void stopVmBrokers()
-    {
-        _queue = null;
-        _topic = null;
-        _session = null;
-    }
 }
