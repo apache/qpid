@@ -265,19 +265,21 @@ void Link::ioThreadProcessing()
         active.erase(removed, active.end());
     }
 
-    //process any pending creates and/or cancellations
+    //process any pending creates and/or cancellations (do
+    //cancellations first in case any of the creates represent
+    //recreation of cancelled subscriptions
+    if (!cancellations.empty()) {
+        for (Bridges::iterator i = cancellations.begin(); i != cancellations.end(); ++i) {
+            (*i)->cancel(*connection);
+        }
+        cancellations.clear();
+    }
     if (!created.empty()) {
         for (Bridges::iterator i = created.begin(); i != created.end(); ++i) {
             active.push_back(*i);
             (*i)->create(*connection);
         }
         created.clear();
-    }
-    if (!cancellations.empty()) {
-        for (Bridges::iterator i = cancellations.begin(); i != cancellations.end(); ++i) {
-            (*i)->cancel(*connection);
-        }
-        cancellations.clear();
     }
 }
 
