@@ -174,3 +174,5 @@ org.apache.qpid.server.queue.MessageGroupQueueTest#testConsumerCloseGroupAssignm
 org.apache.qpid.server.queue.MessageGroupQueueTest#testConsumerCloseWithRelease
 org.apache.qpid.server.queue.MessageGroupQueueTest#testGroupAssignmentSurvivesEmpty
 
+// CPP Broker does not implement message conversion from 0-9-1
+org.apache.qpid.server.message.MessageProtocolConversionTest#*
