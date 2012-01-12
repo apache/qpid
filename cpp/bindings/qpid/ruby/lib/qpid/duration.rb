@@ -27,13 +27,32 @@ module Qpid
     #
     # It defines the following named values as symbols:
     #
-    # :FOREVER :: the maximum integer value for the platform
-    # :IMMEDIATE :: an alias for 0
-    # :SECOND :: 1,000ms
-    # :MINUTE :: 60,000ms
+    # [:FOREVER]
+    #   The maximum integer value for the platform. Effectively this will wait
+    #   forever.
+    #
+    # [:IMMEDIATE]
+    #   An alias for 0 milliseconds.
+    #
+    # [:SECOND]
+    #   An alias for 1,000 milliseconds.
+    #
+    # [:MINUTE]
+    #   And alias for 60,000 millisecons.
+    #
     class Duration
 
       # Creates a Duration with the specified length, in milliseconds.
+      #
+      # ==== Options
+      #
+      # * length - The duration in milliseconds.
+      #
+      # ==== Examples
+      #
+      #   # Wait up to 10 seconds for an incoming message
+      #   receiver.get Qpid::Messaging::Duration.new 10000
+      #
       def initialize length
         @duration_impl = Cqpid::Duration.new length
       end

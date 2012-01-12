@@ -80,7 +80,8 @@ module Qpid
       #
       # ==== Examples
       #
-      # puts "Sender: #{sender.name}"
+      #   puts "Sender: #{sender.name}"
+      #
       def name; @sender_impl.getName; end
 
       # Sets the capacity for this +Sender+.
@@ -95,6 +96,7 @@ module Qpid
       # ==== Examples
       #
       #   sender.capacity = 50 # sets the outgoing capacity to 50 messages
+      #
       def capacity=(capacity); @sender_impl.setCapacity capacity; end
 
       # Returns the capacity.
@@ -105,6 +107,7 @@ module Qpid
       # ==== Examples
       #
       #   puts "You can send a maximum of #{sender.capacity} messages."
+      #
       def capacity; @sender_impl.getCapacity; end
 
       # Returns the number of messages sent that are pending receipt
@@ -115,6 +118,7 @@ module Qpid
       #   if sender.unsettled > 0
       #     puts "There are #{sender.unsettled} messages pending."
       #   end
+      #
       def unsettled; @sender_impl.getUnsettled; end
 
       # Returns the available slots for sending messages.
@@ -127,11 +131,17 @@ module Qpid
       # ==== Examples
       #
       #   puts "You can send #{sender.available} messages before blocking."
+      #
       def available
         @sender_impl.getAvailable
       end
 
       # Returns the +Session+ for this sender.
+      #
+      # ==== Examples
+      #
+      #   recv.session.close if done
+      #
       def session; @session; end
 
     end
