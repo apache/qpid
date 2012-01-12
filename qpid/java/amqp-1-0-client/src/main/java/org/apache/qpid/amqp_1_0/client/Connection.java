@@ -108,6 +108,13 @@ public class Connection
     public Connection(final String address,
                   final int port,
                   final String username,
+                  final String password, Container container,boolean ssl) throws ConnectionException
+    {
+        this(address, port, username, password, MAX_FRAME_SIZE,container,null,ssl);
+    }
+    public Connection(final String address,
+                  final int port,
+                  final String username,
                   final String password,
                   final int maxFrameSize,
                   final Container container,

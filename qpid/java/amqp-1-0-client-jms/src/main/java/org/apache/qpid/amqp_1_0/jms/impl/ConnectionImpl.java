@@ -62,7 +62,7 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
         // TODO - authentication, containerId, clientId, ssl?, etc
         try
         {
-            _conn = new org.apache.qpid.amqp_1_0.client.Connection(host, port, username, password, container);
+            _conn = new org.apache.qpid.amqp_1_0.client.Connection(host, port, username, password, container, ssl);
             // TODO - retrieve negotiated AMQP version
             _connectionMetaData = new ConnectionMetaDataImpl(1,0,0);
         }
