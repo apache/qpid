@@ -114,6 +114,7 @@ module Qpid
       # ==== Examples
       #
       #   receiver.capacity = 50 # sets the incoming capacity to 50 messages
+      #
       def capacity=(capacity); @receiver_impl.setCapacity capacity; end
 
       # Returns the capacity.
@@ -124,7 +125,8 @@ module Qpid
       #
       # ==== Examples
       #
-      # puts "The receiver can hold #{rcv.capacity} messages."
+      #   puts "The receiver can hold #{rcv.capacity} messages."
+      #
       def capacity; @receiver_impl.getCapacity; end
 
       # Returns the number of slots for receiving messages.
@@ -135,13 +137,19 @@ module Qpid
       # ==== Examples
       #
       #   puts "You can receive #{rcv.available} messages before blocking."
+      #
       def available; @receiver_impl.getAvailable; end
 
       # Returns the number of messages that have been received and acknowledged
       # but whose acknowledgements have not been confirmed by the sender.
+      #
+      # ==== Examples
+      #
+      #   puts "You have #{rcv.unsettled} messages to be confirmed."
+      #
       def unsettled; @receiver_impl.getUnsettled; end
 
-      # Closes this +Reciever+.
+      # Closes this +Receiver+.
       #
       # This does not affect the +Session+.
       def close; @receiver_impl.close; end
@@ -150,14 +158,15 @@ module Qpid
       #
       # ==== Examples
       #
-      # recv.close unless recv.closed?
+      #   recv.close unless recv.closed?
+      #
       def closed?; @receiver_impl.isClosed; end
 
       # Returns the name of this +Receiver+.
       #
       # ==== Examples
       #
-      # puts "Receiver: #{recv.name}"
+      #   puts "Receiver: #{recv.name}"
       def name; @receiver_impl.getName; end
 
       # Returns the Session for this +Receiver+.
