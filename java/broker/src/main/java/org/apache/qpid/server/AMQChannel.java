@@ -266,7 +266,8 @@ public class AMQChannel implements SessionConfig, AMQSessionModel
 
     public void setPublishFrame(MessagePublishInfo info, final Exchange e) throws AMQSecurityException
     {
-        if (!getVirtualHost().getSecurityManager().authorisePublish(info.isImmediate(), info.getRoutingKey().asString(), e.getName()))
+        String routingKey = info.getRoutingKey() == null ? null : info.getRoutingKey().asString();
+        if (!getVirtualHost().getSecurityManager().authorisePublish(info.isImmediate(), routingKey, e.getName()))
         {
             throw new AMQSecurityException("Permission denied: " + e.getName());
         }
