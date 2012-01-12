@@ -1,22 +1,3 @@
-package org.apache.qpid.client.prefetch;
-
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import javax.jms.Connection;
-import javax.jms.Message;
-import javax.jms.MessageConsumer;
-import javax.jms.MessageListener;
-import javax.jms.MessageProducer;
-import javax.jms.Queue;
-import javax.jms.Session;
-
-import org.apache.qpid.configuration.ClientProperties;
-import org.apache.qpid.test.utils.QpidBrokerTestCase;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 /*
 *
 * Licensed to the Apache Software Foundation (ASF) under one
@@ -37,6 +18,26 @@ import org.slf4j.LoggerFactory;
 * under the License.
 *
 */
+package org.apache.qpid.client.prefetch;
+
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+
+import javax.jms.Connection;
+import javax.jms.Message;
+import javax.jms.MessageConsumer;
+import javax.jms.MessageListener;
+import javax.jms.MessageProducer;
+import javax.jms.Queue;
+import javax.jms.Session;
+
+import org.apache.qpid.configuration.ClientProperties;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+
 public class PrefetchBehaviourTest extends QpidBrokerTestCase
 {
     protected static final Logger _logger = LoggerFactory.getLogger(PrefetchBehaviourTest.class);
@@ -130,7 +131,59 @@ public class PrefetchBehaviourTest extends QpidBrokerTestCase
         //wait for the other consumer to finish to ensure it completes ok
         _logger.debug("waiting for async consumer to complete");
         assertTrue("Async processing failed to complete in allowed timeframe", _processingStarted.await(processingTime + 2000, TimeUnit.MILLISECONDS));
-        assertFalse("Unexpecte exception during async message processing",_exceptionCaught.get());
+        assertFalse("Unexpected exception during async message processing",_exceptionCaught.get());
+    }
+
+    /**
+     * This test was originally known as AMQConnectionTest#testPrefetchSystemProperty.
+     *
+     */
+    public void testLowPrefetchCausesMessagesToBeDistributedBetweenConsumers() throws Exception
+    {
+        Queue queue = getTestQueue();
+
+        setTestClientSystemProperty(ClientProperties.MAX_PREFETCH_PROP_NAME, new Integer(2).toString());
+
+        Connection connection = getConnection();
+        connection.start();
+        // Create two consumers on different sessions
+        Session consSessA = connection.createSession(true, Session.SESSION_TRANSACTED);
+        MessageConsumer consumerA = consSessA.createConsumer(queue);
+        _logger.debug("Consumer A " + consumerA);
+
+        Session producerSession = connection.createSession(true, Session.SESSION_TRANSACTED);
+        sendMessage(producerSession, queue, 3);
+
+        MessageConsumer consumerB = null;
+
+        if (isBroker010())
+        {
+            consumerB = consSessA.createConsumer(queue);
+        }
+        else
+        {
+         // 0-8, 0-9, 0-9-1 prefetch is per session, not consumer.
+            Session consSessB = connection.createSession(true, Session.SESSION_TRANSACTED);
+            consumerB = consSessB.createConsumer(queue);
+        }
+        _logger.debug("Consumer B " + consumerB);
+
+        Message msg;
+        // Check that consumer A has 2 messages
+        for (int i = 0; i < 2; i++)
+        {
+            msg = consumerA.receive(1500);
+            assertNotNull("Consumer A should receive 2 messages", msg);
+        }
+
+        _logger.debug("Checking that Consumer A does not have 3rd message");
+        msg = consumerA.receive(1500);
+        assertNull("Consumer A should not have received a 3rd message",msg);
+
+        // Check that consumer B has the last message
+        _logger.debug("Checking that Consumer B does have 3rd message");
+        msg = consumerB.receive(1500);
+        assertNotNull("Consumer B should have received the message",msg);
     }
 
 }

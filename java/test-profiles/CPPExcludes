@@ -23,10 +23,6 @@ org.apache.qpid.test.client.destination.AddressBasedDestinationTest#testCreateEx
 // QPID-3576: Java client issue. MessageConsumer#close() time-out.
 org.apache.qpid.test.client.destination.AddressBasedDestinationTest#testDeleteOptions
 
-//This test requires SSL, but SSL is only enabled for the C++ broker in the cpp.ssl test profile
-//which runs *all* the tests with SSL, so this one can be excluded safely enough
-org.apache.qpid.test.unit.client.AMQSSLConnectionTest#*
-
 org.apache.qpid.test.unit.client.channelclose.ChannelCloseTest#*
 org.apache.qpid.client.ResetMessageListenerTest#*
 

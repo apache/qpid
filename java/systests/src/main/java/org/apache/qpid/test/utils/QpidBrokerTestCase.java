@@ -46,6 +46,7 @@ import javax.jms.Queue;
 import javax.jms.Session;
 import javax.jms.StreamMessage;
 import javax.jms.TextMessage;
+import javax.jms.Topic;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 
@@ -56,6 +57,7 @@ import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQConnectionFactory;
 import org.apache.qpid.client.AMQQueue;
+import org.apache.qpid.client.AMQTopic;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.jms.ConnectionURL;
@@ -1101,6 +1103,15 @@ public class QpidBrokerTestCase extends QpidTestCase
         return new AMQQueue(ExchangeDefaults.DIRECT_EXCHANGE_NAME, getTestQueueName());
     }
 
+    /**
+     * Return a Topic specific for this test.
+     * Uses getTestQueueName() as the name of the topic
+     * @return
+     */
+    public Topic getTestTopic()
+    {
+        return new AMQTopic(ExchangeDefaults.TOPIC_EXCHANGE_NAME, getTestQueueName());
+    }
 
     protected void tearDown() throws java.lang.Exception
     {
