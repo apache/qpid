@@ -138,8 +138,6 @@ void Connection::init() {
     else {                      // Shadow or catch-up connection
         // Passive, discard cluster-order frames
         connection->setClusterOrderOutput(nullFrameHandler);
-        // Disable client throttling, done by active node.
-        connection->setClientThrottling(false);
     }
     if (!isCatchUp())
         connection->setErrorListener(this);

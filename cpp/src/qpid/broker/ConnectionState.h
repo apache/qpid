@@ -48,7 +48,6 @@ class ConnectionState : public ConnectionToken, public management::Manageable
         heartbeatmax(120),
         userProxyAuth(false), // Can proxy msgs with non-matching auth ids when true (used by federation links & clustering)
         federationLink(true),
-        clientSupportsThrottling(false),
         clusterOrderOut(0),
         isDefaultRealm(false)
     {}
@@ -92,9 +91,6 @@ class ConnectionState : public ConnectionToken, public management::Manageable
         return (id == userId || (isDefaultRealm && id == userName));
     }
 
-    void setClientThrottling(bool set=true) { clientSupportsThrottling = set; }
-    bool getClientThrottling() const { return clientSupportsThrottling; }
-
     Broker& getBroker() { return broker; }
 
     Broker& broker;
@@ -128,7 +124,6 @@ class ConnectionState : public ConnectionToken, public management::Manageable
     bool federationLink;
     std::string federationPeerTag;
     std::vector<Url> knownHosts;
-    bool clientSupportsThrottling;
     framing::FrameHandler* clusterOrderOut;
     std::string userName;
     bool isDefaultRealm;

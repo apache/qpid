@@ -61,7 +61,6 @@ class ConnectionState;
 class Message;
 class SessionHandler;
 class SessionManager;
-class RateFlowcontrol;
 
 /**
  * Broker-side session state includes session's handler chains, which
@@ -121,8 +120,6 @@ class SessionState : public qpid::SessionState,
     boost::intrusive_ptr<Message> getMessageInProgress() { return msgBuilder.getMessage(); }
     SessionAdapter& getSessionAdapter() { return adapter; }
 
-    bool processSendCredit(uint32_t msgs);
-
     const SessionId& getSessionId() const { return getId(); }
 
     // Used by ExecutionHandler sync command processing.  Notifies
@@ -167,11 +164,6 @@ class SessionState : public qpid::SessionState,
     MessageBuilder msgBuilder;
     qmf::org::apache::qpid::broker::Session* mgmtObject;
     qpid::framing::SequenceSet accepted;
-
-    // State used for producer flow control (rate limited)
-    qpid::sys::Mutex rateLock;
-    boost::scoped_ptr<RateFlowcontrol> rateFlowcontrol;
-    boost::intrusive_ptr<sys::TimerTask> flowControlTimer;
 
     // sequence numbers for pending received Execution.Sync commands
     std::queue<SequenceNumber> pendingExecutionSyncs;
