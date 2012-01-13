@@ -30,16 +30,22 @@ using namespace qpid::broker;
 
 void QueueBindings::add(const string& exchange, const string& key, const FieldTable& args)
 {
+    sys::Mutex::ScopedLock l(lock);
     bindings.push_back(QueueBinding(exchange, key, args));
 }
 
 void QueueBindings::unbind(ExchangeRegistry& exchanges, Queue::shared_ptr queue)
 {
-    for (Bindings::iterator i = bindings.begin(); i != bindings.end(); i++) {
+    Bindings local;
+    {
+        sys::Mutex::ScopedLock l(lock);
+        local = bindings;
+    }
+
+    for (Bindings::iterator i = local.begin(); i != local.end(); i++)
         try {
             exchanges.get(i->exchange)->unbind(queue, i->key, &(i->args));
         } catch (const NotFoundException&) {}
-    }
 }
 
 QueueBinding::QueueBinding(const string& _exchange, const string& _key, const FieldTable& _args)
