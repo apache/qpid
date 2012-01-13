@@ -56,13 +56,19 @@ public class ConnectionImpl implements Connection, QueueConnection, TopicConnect
     {
           this(host,port,username,password,clientId,false);
     }
+
     public ConnectionImpl(String host, int port, String username, String password, String clientId, boolean ssl) throws JMSException
+    {
+          this(host,port,username,password,clientId,null,ssl);
+    }
+
+    public ConnectionImpl(String host, int port, String username, String password, String clientId, String remoteHost, boolean ssl) throws JMSException
     {
         Container container = clientId == null ? new Container() : new Container(clientId);
         // TODO - authentication, containerId, clientId, ssl?, etc
         try
         {
-            _conn = new org.apache.qpid.amqp_1_0.client.Connection(host, port, username, password, container, ssl);
+            _conn = new org.apache.qpid.amqp_1_0.client.Connection(host, port, username, password, container, remoteHost, ssl);
             // TODO - retrieve negotiated AMQP version
             _connectionMetaData = new ConnectionMetaDataImpl(1,0,0);
         }

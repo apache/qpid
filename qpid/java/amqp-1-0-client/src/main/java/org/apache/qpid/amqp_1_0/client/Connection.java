@@ -105,13 +105,38 @@ public class Connection
     {
         this(address,port,username,password,maxFrameSize,container,remoteHostname,false);
     }
+
     public Connection(final String address,
                   final int port,
                   final String username,
-                  final String password, Container container,boolean ssl) throws ConnectionException
+                  final String password,
+                  final Container container,
+                  final boolean ssl) throws ConnectionException
     {
         this(address, port, username, password, MAX_FRAME_SIZE,container,null,ssl);
     }
+
+    public Connection(final String address,
+                  final int port,
+                  final String username,
+                  final String password,
+                  final String remoteHost,
+                  final boolean ssl) throws ConnectionException
+    {
+        this(address, port, username, password, MAX_FRAME_SIZE,new Container(),remoteHost,ssl);
+    }
+
+    public Connection(final String address,
+                  final int port,
+                  final String username,
+                  final String password,
+                  final Container container,
+                  final String remoteHost,
+                  final boolean ssl) throws ConnectionException
+    {
+        this(address, port, username, password, MAX_FRAME_SIZE,container,remoteHost,ssl);
+    }
+
     public Connection(final String address,
                   final int port,
                   final String username,

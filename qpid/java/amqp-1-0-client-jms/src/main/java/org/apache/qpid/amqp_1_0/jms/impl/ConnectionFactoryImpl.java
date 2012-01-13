@@ -38,6 +38,7 @@ public class ConnectionFactoryImpl implements ConnectionFactory, TopicConnection
     private String _username;
     private String _password;
     private String _clientId;
+    private String _remoteHost;
     private boolean _ssl;
 
 
@@ -57,22 +58,34 @@ public class ConnectionFactoryImpl implements ConnectionFactory, TopicConnection
                                  final String clientId,
                                  final boolean ssl)
     {
+        this(host,port,username,password,clientId,null,ssl);
+    }
+
+    public ConnectionFactoryImpl(final String host,
+                                 final int port,
+                                 final String username,
+                                 final String password,
+                                 final String clientId,
+                                 final String remoteHost,
+                                 final boolean ssl)
+    {
         _host = host;
         _port = port;
         _username = username;
         _password = password;
         _clientId = clientId;
+        _remoteHost = remoteHost;
         _ssl = ssl;
     }
 
     public ConnectionImpl createConnection() throws JMSException
     {
-        return new ConnectionImpl(_host, _port, _username, _password, _clientId, _ssl);
+        return new ConnectionImpl(_host, _port, _username, _password, _clientId, _remoteHost, _ssl);
     }
 
     public ConnectionImpl createConnection(final String username, final String password) throws JMSException
     {
-        return new ConnectionImpl(_host, _port, username, password, _clientId, _ssl);
+        return new ConnectionImpl(_host, _port, username, password, _clientId, _remoteHost, _ssl);
     }
 
     public static ConnectionFactoryImpl createFromURL(final String urlString) throws MalformedURLException
@@ -88,6 +101,7 @@ public class ConnectionFactoryImpl implements ConnectionFactory, TopicConnection
         String username = null;
         String password = null;
         String clientId = null;
+        String remoteHost = null;
         boolean ssl = false;
         if(userInfo != null)
         {
@@ -112,10 +126,14 @@ public class ConnectionFactoryImpl implements ConnectionFactory, TopicConnection
                {
                    ssl = Boolean.valueOf(keyValuePair[1]);
                }
+               else if(keyValuePair[0].equalsIgnoreCase("remote-host"))
+               {
+                   remoteHost = keyValuePair[1];
+               }
            }
         }
 
-        return new ConnectionFactoryImpl(host, port, username, password, clientId, ssl);
+        return new ConnectionFactoryImpl(host, port, username, password, clientId, remoteHost, ssl);
 
     }
 
