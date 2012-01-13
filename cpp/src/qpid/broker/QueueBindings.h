@@ -22,6 +22,7 @@
 #define _QueueBindings_
 
 #include "qpid/framing/FieldTable.h"
+#include "qpid/sys/Mutex.h"
 #include <boost/ptr_container/ptr_list.hpp>
 #include <boost/shared_ptr.hpp>
 #include <algorithm>
@@ -44,12 +45,20 @@ class QueueBindings
   public:
     
     /** Apply f to each QueueBinding. */
-    template <class F> void eachBinding(F f) const { std::for_each(bindings.begin(), bindings.end(), f); }
+    template <class F> void eachBinding(F f) const {
+        Bindings local;
+        {
+            sys::Mutex::ScopedLock l(lock);
+            local = bindings;
+        }
+        std::for_each(local.begin(), local.end(), f);
+    }
 
     void add(const std::string& exchange, const std::string& key, const qpid::framing::FieldTable& args);
     void unbind(ExchangeRegistry& exchanges, boost::shared_ptr<Queue> queue);
 
   private:
+    mutable sys::Mutex lock;
     typedef std::vector<QueueBinding> Bindings;
     Bindings bindings;
 };
