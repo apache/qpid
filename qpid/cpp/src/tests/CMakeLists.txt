@@ -133,7 +133,6 @@ set(unit_tests_to_build
     QueueEvents
     ProxyTest
     RetryList
-    RateFlowcontrolTest
     FrameDecoder
     ReplicationTest
     ClientMessageTest

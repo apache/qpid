@@ -116,7 +116,6 @@ unit_test_SOURCES= unit_test.cpp unit_test.h \
 	QueueEvents.cpp \
 	ProxyTest.cpp \
 	RetryList.cpp \
-	RateFlowcontrolTest.cpp \
 	FrameDecoder.cpp \
 	ReplicationTest.cpp \
 	ClientMessageTest.cpp \
