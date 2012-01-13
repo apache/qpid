@@ -120,7 +120,6 @@ Broker::Options::Options(const std::string& name) :
     queueLimit(100*1048576/*100M default limit*/),
     tcpNoDelay(false),
     requireEncrypted(false),
-    maxSessionRate(0),
     asyncQueueEvents(false),     // Must be false in a cluster.
     qmf2Support(true),
     qmf1Support(true),
@@ -160,7 +159,6 @@ Broker::Options::Options(const std::string& name) :
         ("require-encryption", optValue(requireEncrypted), "Only accept connections that are encrypted")
         ("known-hosts-url", optValue(knownHosts, "URL or 'none'"), "URL to send as 'known-hosts' to clients ('none' implies empty list)")
         ("sasl-config", optValue(saslConfigPath, "DIR"), "gets sasl config info from nonstandard location")
-        ("max-session-rate", optValue(maxSessionRate, "MESSAGES/S"), "Sets the maximum message rate per session (0=unlimited)")
         ("async-queue-events", optValue(asyncQueueEvents, "yes|no"), "Set Queue Events async, used for services like replication")
         ("default-flow-stop-threshold", optValue(queueFlowStopRatio, "PERCENT"), "Percent of queue's maximum capacity at which flow control is activated.")
         ("default-flow-resume-threshold", optValue(queueFlowResumeRatio, "PERCENT"), "Percent of queue's maximum capacity at which flow control is de-activated.")
@@ -337,12 +335,6 @@ Broker::Broker(const Broker::Options& conf) :
         }
     } else if (conf.knownHosts != knownHostsNone) {
         knownBrokers.push_back(Url(conf.knownHosts));
-    }
-
-    // check for and warn if deprecated features have been configured
-    if (conf.maxSessionRate) {
-        QPID_LOG(warning, "The 'max-session-rate' feature will be removed in a future release of QPID."
-                 "  Queue-based flow control should be used instead.");
     }
 
     } catch (const std::exception& /*e*/) {
