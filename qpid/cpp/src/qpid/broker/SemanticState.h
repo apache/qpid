@@ -190,7 +190,6 @@ class SemanticState : private boost::noncopyable {
     AckRange findRange(DeliveryId first, DeliveryId last);
     void requestDispatch();
     void cancel(ConsumerImpl::shared_ptr);
-    void unsubscribe(ConsumerImpl::shared_ptr);
     void disable(ConsumerImpl::shared_ptr);
 
   public:
