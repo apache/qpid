@@ -25,7 +25,6 @@
 #include "qpid/broker/SessionManager.h"
 #include "qpid/broker/SessionHandler.h"
 #include "qpid/sys/ClusterSafe.h"
-#include "qpid/sys/Timer.h"
 #include "qpid/framing/AMQContentBody.h"
 #include "qpid/framing/AMQHeaderBody.h"
 #include "qpid/framing/AMQMethodBody.h"
@@ -33,7 +32,6 @@
 #include "qpid/framing/ServerInvoker.h"
 #include "qpid/log/Statement.h"
 #include "qpid/management/ManagementAgent.h"
-#include "qpid/framing/AMQP_ClientProxy.h"
 
 #include <boost/bind.hpp>
 #include <boost/lexical_cast.hpp>
