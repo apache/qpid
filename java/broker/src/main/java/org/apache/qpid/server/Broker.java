@@ -409,12 +409,12 @@ public class Broker
         else
         {
             System.err.println("Logging configuration error: unable to read file " + logConfigFile.getAbsolutePath());
-            System.err.println("Using the fallback internal log4j.properties configuration");
+            System.err.println("Using the fallback internal fallback-log4j.properties configuration");
 
-            InputStream propsFile = this.getClass().getResourceAsStream("/log4j.properties");
+            InputStream propsFile = this.getClass().getResourceAsStream("/fallback-log4j.properties");
             if(propsFile == null)
             {
-                throw new IOException("Unable to load the fallback internal log4j.properties configuration file");
+                throw new IOException("Unable to load the fallback internal fallback-log4j.properties configuration file");
             }
             else
             {
