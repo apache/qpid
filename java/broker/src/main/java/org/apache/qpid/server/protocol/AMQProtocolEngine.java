@@ -1087,7 +1087,14 @@ public class AMQProtocolEngine implements ServerProtocolEngine, Managable, AMQPr
     {
         try
         {
-            closeSession();
+            try
+            {
+                closeSession();
+            }
+            finally
+            {
+                closeProtocolSession();
+            }
         }
         catch (AMQException e)
         {
