@@ -79,7 +79,6 @@ class QueueReplicator : public broker::Exchange,
     sys::Mutex lock;
     boost::shared_ptr<broker::Queue> queue;
     boost::shared_ptr<broker::Link> link;
-    boost::shared_ptr<QueueReplicator> self;
 };
 
 }} // namespace qpid::ha

@@ -62,9 +62,6 @@ QueueReplicator::QueueReplicator(boost::shared_ptr<Queue> q, boost::shared_ptr<L
 
 // This must be separate from the constructor so we can call shared_from_this.
 void QueueReplicator::activate() {
-    // Take a reference to myself to ensure not deleted before initializeBridge
-    // is called.
-    self = shared_from_this();
     // Note this may create a new bridge or use an existing one.
     queue->getBroker()->getLinks().declare(
         link->getHost(), link->getPort(),
@@ -80,7 +77,7 @@ void QueueReplicator::activate() {
         0,                  // sync?
         // Include shared_ptr to self to ensure we are not deleted
         // before initializeBridge is called.
-        boost::bind(&QueueReplicator::initializeBridge, this, _1, _2, self)
+        boost::bind(&QueueReplicator::initializeBridge, this, _1, _2, shared_from_this())
     );
 }
 
