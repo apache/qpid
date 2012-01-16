@@ -54,7 +54,7 @@ ReplicatingSubscription::Factory::create(
     const string& name,
     Queue::shared_ptr queue,
     bool ack,
-    bool /*acquire*/,
+    bool acquire,
     bool exclusive,
     const string& tag,
     const string& resumeId,
@@ -63,10 +63,8 @@ ReplicatingSubscription::Factory::create(
 ) {
     boost::shared_ptr<ReplicatingSubscription> rs;
     if (arguments.isSet(QPID_REPLICATING_SUBSCRIPTION)) {
-        // FIXME aconway 2011-12-01: ignoring acquire param and setting acquire
-        // false. Should this be done in the caller? Remove from ctor parameters.
         rs.reset(new ReplicatingSubscription(
-                     parent, name, queue, ack, false, exclusive, tag,
+                     parent, name, queue, ack, acquire, exclusive, tag,
                      resumeId, resumeTtl, arguments));
         queue->addObserver(rs);
     }

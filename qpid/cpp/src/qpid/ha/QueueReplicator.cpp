@@ -114,7 +114,7 @@ void QueueReplicator::initializeBridge(Bridge& bridge, SessionHandler& sessionHa
     settings.setInt(ReplicatingSubscription::QPID_REPLICATING_SUBSCRIPTION, 1);
     // TODO aconway 2011-12-19: optimize.
     settings.setInt(QPID_SYNC_FREQUENCY, 1);
-    peer.getMessage().subscribe(args.i_src, args.i_dest, 0/*accept-explicit*/, 1/*not-acquired*/, false, "", 0, settings);
+    peer.getMessage().subscribe(args.i_src, args.i_dest, 0/*accept-explicit*/, 1/*not-acquired*/, false/*exclusive*/, "", 0, settings);
     peer.getMessage().flow(getName(), 0, 0xFFFFFFFF);
     peer.getMessage().flow(getName(), 1, 0xFFFFFFFF);
     QPID_LOG(debug, logPrefix << "Activated bridge " << bridgeName);
