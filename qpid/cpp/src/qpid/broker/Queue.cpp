@@ -278,7 +278,7 @@ void Queue::notifyListener()
 
 bool Queue::getNextMessage(QueuedMessage& m, Consumer::shared_ptr& c)
 {
-    checkNotDeleted();
+    checkNotDeleted(c);
     if (c->preAcquires()) {
         switch (consumeNextMessage(m, c)) {
           case CONSUMED:
@@ -1396,9 +1396,9 @@ QueueListeners& Queue::getListeners() { return listeners; }
 Messages& Queue::getMessages() { return *messages; }
 const Messages& Queue::getMessages() const { return *messages; }
 
-void Queue::checkNotDeleted()
+void Queue::checkNotDeleted(const Consumer::shared_ptr& c)
 {
-    if (deleted) {
+    if (deleted && !c->hideDeletedError()) {
         throw ResourceDeletedException(QPID_MSG("Queue " << getName() << " has been deleted."));
     }
 }

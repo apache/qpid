@@ -196,6 +196,10 @@ void ReplicatingSubscription::acknowledged(const QueuedMessage& msg) {
     complete(msg, l);
 }
 
+// Hide the "queue deleted" error for a ReplicatingSubscription when a
+// queue is deleted, this is normal and not an error.
+bool ReplicatingSubscription::hideDeletedError() { return true; }
+
 // Called with lock held. Called in subscription's connection thread.
 void ReplicatingSubscription::sendDequeueEvent(const sys::Mutex::ScopedLock& l)
 {

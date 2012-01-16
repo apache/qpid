@@ -70,6 +70,11 @@ class Consumer
      */
     virtual void acknowledged(const QueuedMessage&) = 0;
 
+    /** Called if queue has been deleted, if true suppress the error message.
+     * Used by HA ReplicatingSubscriptions where such errors are normal.
+     */
+    virtual bool hideDeletedError() { return false; }
+    
   protected:
     framing::SequenceNumber position;
 
