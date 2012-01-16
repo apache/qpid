@@ -264,7 +264,7 @@
       <classpath refid="module.class.path"/>
     </javac>
 
-    <!-- copy any non java src files into the build tree, e.g. log4j.properties -->
+    <!-- copy any non java src files into the build tree, e.g. properties files -->
     <copy todir="${module.classes}" verbose="true">
       <fileset dir="${module.src}">
         <exclude name="**/*.java"/>
@@ -285,7 +285,7 @@
       <classpath refid="module.test.path"/>
     </javac>
 
-    <!-- copy any non java src files into the build tree, e.g. log4j.properties -->
+    <!-- copy any non java src files into the build tree, e.g. properties files -->
     <copy todir="${module.test.classes}" verbose="true">
       <fileset dir="${module.test.src}">
         <exclude name="**/*.java"/>
