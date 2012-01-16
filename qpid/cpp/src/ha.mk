@@ -33,8 +33,8 @@ ha_la_SOURCES =					\
   qpid/ha/QueueReplicator.cpp			\
   qpid/ha/ReplicatingSubscription.h		\
   qpid/ha/ReplicatingSubscription.cpp		\
-  qpid/ha/WiringReplicator.cpp			\
-  qpid/ha/WiringReplicator.h
+  qpid/ha/BrokerReplicator.cpp			\
+  qpid/ha/BrokerReplicator.h
 
 ha_la_LIBADD = libqpidbroker.la
 ha_la_LDFLAGS = $(PLUGINLDFLAGS)

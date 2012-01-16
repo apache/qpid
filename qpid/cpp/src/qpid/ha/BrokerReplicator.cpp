@@ -18,7 +18,7 @@
  * under the License.
  *
  */
-#include "WiringReplicator.h"
+#include "BrokerReplicator.h"
 #include "QueueReplicator.h"
 #include "qpid/broker/Broker.h"
 #include "qpid/broker/Queue.h"
@@ -170,9 +170,9 @@ void sendQuery(const string className, const string& queueName, SessionHandler& 
 }
 } // namespace
 
-WiringReplicator::~WiringReplicator() {}
+BrokerReplicator::~BrokerReplicator() {}
 
-WiringReplicator::WiringReplicator(const boost::shared_ptr<Link>& l)
+BrokerReplicator::BrokerReplicator(const boost::shared_ptr<Link>& l)
     : Exchange(QPID_WIRING_REPLICATOR), broker(*l->getBroker()), link(l)
 {
     QPID_LOG(info, "HA: Backup replicating from " <<
@@ -189,12 +189,12 @@ WiringReplicator::WiringReplicator(const boost::shared_ptr<Link>& l)
         "",                 // excludes
         false,              // dynamic
         0,                  // sync?
-        boost::bind(&WiringReplicator::initializeBridge, this, _1, _2)
+        boost::bind(&BrokerReplicator::initializeBridge, this, _1, _2)
     );
 }
 
 // This is called in the connection IO thread when the bridge is started.
-void WiringReplicator::initializeBridge(Bridge& bridge, SessionHandler& sessionHandler) {
+void BrokerReplicator::initializeBridge(Bridge& bridge, SessionHandler& sessionHandler) {
     framing::AMQP_ServerProxy peer(sessionHandler.out);
     string queueName = bridge.getQueueName();
     const qmf::org::apache::qpid::broker::ArgsLinkBridge& args(bridge.getArgs());
@@ -215,7 +215,7 @@ void WiringReplicator::initializeBridge(Bridge& bridge, SessionHandler& sessionH
 }
 
 // FIXME aconway 2011-12-02: error handling in route.
-void WiringReplicator::route(Deliverable& msg, const string& /*key*/, const framing::FieldTable* headers) {
+void BrokerReplicator::route(Deliverable& msg, const string& /*key*/, const framing::FieldTable* headers) {
     Variant::List list;
     try {
         if (!isQMFv2(msg.getMessage()) || !headers)
@@ -256,7 +256,7 @@ void WiringReplicator::route(Deliverable& msg, const string& /*key*/, const fram
     }
 }
 
-void WiringReplicator::doEventQueueDeclare(Variant::Map& values) {
+void BrokerReplicator::doEventQueueDeclare(Variant::Map& values) {
     string name = values[QNAME].asString();
     Variant::Map argsMap = values[ARGS].asMap();
     if (values[DISP] == CREATED && replicateLevel(argsMap)) {
@@ -286,7 +286,7 @@ void WiringReplicator::doEventQueueDeclare(Variant::Map& values) {
     }
 }
 
-void WiringReplicator::doEventQueueDelete(Variant::Map& values) {
+void BrokerReplicator::doEventQueueDelete(Variant::Map& values) {
     // The remote queue has already been deleted so replicator
     // sessions may be closed by a "queue deleted" exception.
     string name = values[QNAME].asString();
@@ -304,7 +304,7 @@ void WiringReplicator::doEventQueueDelete(Variant::Map& values) {
     }
 }
 
-void WiringReplicator::doEventExchangeDeclare(Variant::Map& values) {
+void BrokerReplicator::doEventExchangeDeclare(Variant::Map& values) {
     Variant::Map argsMap(values[ARGS].asMap());
     if (values[DISP] == CREATED && replicateLevel(argsMap)) {
         string name = values[EXNAME].asString();
@@ -328,7 +328,7 @@ void WiringReplicator::doEventExchangeDeclare(Variant::Map& values) {
     }
 }
 
-void WiringReplicator::doEventExchangeDelete(Variant::Map& values) {
+void BrokerReplicator::doEventExchangeDelete(Variant::Map& values) {
     string name = values[EXNAME].asString();
     try {
         boost::shared_ptr<Exchange> exchange = broker.getExchanges().find(name);
@@ -342,7 +342,7 @@ void WiringReplicator::doEventExchangeDelete(Variant::Map& values) {
     } catch (const framing::NotFoundException&) {}
 }
 
-void WiringReplicator::doEventBind(Variant::Map& values) {
+void BrokerReplicator::doEventBind(Variant::Map& values) {
     boost::shared_ptr<Exchange> exchange =
         broker.getExchanges().find(values[EXNAME].asString());
     boost::shared_ptr<Queue> queue =
@@ -362,7 +362,7 @@ void WiringReplicator::doEventBind(Variant::Map& values) {
     }
 }
 
-void WiringReplicator::doResponseQueue(Variant::Map& values) {
+void BrokerReplicator::doResponseQueue(Variant::Map& values) {
     // FIXME aconway 2011-11-22: more flexible ways & defaults to indicate replication
     Variant::Map argsMap(values[ARGUMENTS].asMap());
     if (!replicateLevel(argsMap)) return;
@@ -389,7 +389,7 @@ void WiringReplicator::doResponseQueue(Variant::Map& values) {
     }
 }
 
-void WiringReplicator::doResponseExchange(Variant::Map& values) {
+void BrokerReplicator::doResponseExchange(Variant::Map& values) {
     Variant::Map argsMap(values[ARGUMENTS].asMap());
     if (!replicateLevel(argsMap)) return;
     framing::FieldTable args;
@@ -430,7 +430,7 @@ const std::string QUEUE_REF("queueRef");
 
 } // namespace
 
-void WiringReplicator::doResponseBind(Variant::Map& values) {
+void BrokerReplicator::doResponseBind(Variant::Map& values) {
     std::string exName = getRefName(EXCHANGE_REF_PREFIX, values[EXCHANGE_REF]);
     std::string qName = getRefName(QUEUE_REF_PREFIX, values[QUEUE_REF]);
     boost::shared_ptr<Exchange> exchange = broker.getExchanges().find(exName);
@@ -451,7 +451,7 @@ void WiringReplicator::doResponseBind(Variant::Map& values) {
     }
 }
 
-void WiringReplicator::startQueueReplicator(const boost::shared_ptr<Queue>& queue) {
+void BrokerReplicator::startQueueReplicator(const boost::shared_ptr<Queue>& queue) {
     if (replicateLevel(queue->getSettings()) == RL_ALL) {
         boost::shared_ptr<QueueReplicator> qr(new QueueReplicator(queue, link));
         broker.getExchanges().registerExchange(qr);
@@ -459,10 +459,10 @@ void WiringReplicator::startQueueReplicator(const boost::shared_ptr<Queue>& queu
     }
 }
 
-bool WiringReplicator::bind(boost::shared_ptr<Queue>, const string&, const framing::FieldTable*) { return false; }
-bool WiringReplicator::unbind(boost::shared_ptr<Queue>, const string&, const framing::FieldTable*) { return false; }
-bool WiringReplicator::isBound(boost::shared_ptr<Queue>, const string* const, const framing::FieldTable* const) { return false; }
+bool BrokerReplicator::bind(boost::shared_ptr<Queue>, const string&, const framing::FieldTable*) { return false; }
+bool BrokerReplicator::unbind(boost::shared_ptr<Queue>, const string&, const framing::FieldTable*) { return false; }
+bool BrokerReplicator::isBound(boost::shared_ptr<Queue>, const string* const, const framing::FieldTable* const) { return false; }
 
-string WiringReplicator::getType() const { return QPID_WIRING_REPLICATOR; }
+string BrokerReplicator::getType() const { return QPID_WIRING_REPLICATOR; }
 
 }} // namespace broker
