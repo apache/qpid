@@ -7,9 +7,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * 
+ *
  *   http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing,
  * software distributed under the License is distributed on an
  * "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
@@ -21,6 +21,7 @@
 #include "qpid/broker/DeliveryRecord.h"
 #include "qpid/broker/DeliverableMessage.h"
 #include "qpid/broker/SemanticState.h"
+#include "qpid/broker/Consumer.h"
 #include "qpid/broker/Exchange.h"
 #include "qpid/broker/Queue.h"
 #include "qpid/log/Statement.h"
@@ -31,23 +32,25 @@ using namespace qpid;
 using namespace qpid::broker;
 using std::string;
 
-DeliveryRecord::DeliveryRecord(const QueuedMessage& _msg, 
-                               const Queue::shared_ptr& _queue, 
+DeliveryRecord::DeliveryRecord(const QueuedMessage& _msg,
+                               const Queue::shared_ptr& _queue,
                                const std::string& _tag,
+                               const boost::shared_ptr<Consumer>& _consumer,
                                bool _acquired,
-                               bool accepted, 
+                               bool accepted,
                                bool _windowing,
-                               uint32_t _credit, bool _isDelayedCompletion) : msg(_msg),
-                                                  queue(_queue), 
-                                                  tag(_tag),
-                                                  acquired(_acquired),
-                                                  acceptExpected(!accepted),
-                                                  cancelled(false),
-                                                  completed(false),
-                                                  ended(accepted && acquired),
-                                                  windowing(_windowing),
-                                                  credit(msg.payload ? msg.payload->getRequiredCredit() : _credit),
-                                                  isDelayedCompletion(_isDelayedCompletion)
+                               uint32_t _credit):
+    msg(_msg),
+    queue(_queue),
+    tag(_tag),
+    consumer(_consumer),
+    acquired(_acquired),
+    acceptExpected(!accepted),
+    cancelled(false),
+    completed(false),
+    ended(accepted && acquired),
+    windowing(_windowing),
+    credit(msg.payload ? msg.payload->getRequiredCredit() : _credit)
 {}
 
 bool DeliveryRecord::setEnded()
@@ -95,7 +98,7 @@ void DeliveryRecord::requeue() const
     }
 }
 
-void DeliveryRecord::release(bool setRedelivered) 
+void DeliveryRecord::release(bool setRedelivered)
 {
     if (acquired && !ended) {
         if (setRedelivered) msg.payload->redeliver();
@@ -108,19 +111,13 @@ void DeliveryRecord::release(bool setRedelivered)
 }
 
 void DeliveryRecord::complete()  {
-    completed = true; 
+    completed = true;
 }
 
 bool DeliveryRecord::accept(TransactionContext* ctxt) {
     if (!ended) {
-        if (acquired) {
-            queue->dequeue(ctxt, msg);
-        } else if (isDelayedCompletion) {
-            // FIXME aconway 2011-12-05: This should be done in HA code.
-            msg.payload->getIngressCompletion().finishCompleter();
-            QPID_LOG(debug, "Completed " << msg.queue->getName()
-                     << "[" << msg.position << "]");
-        }
+        consumer->acknowledged(getMessage());
+        if (acquired) queue->dequeue(ctxt, msg);
         setEnded();
         QPID_LOG(debug, "Accepted " << id);
     }
@@ -137,8 +134,8 @@ void DeliveryRecord::committed() const{
     queue->dequeueCommitted(msg);
 }
 
-void DeliveryRecord::reject() 
-{    
+void DeliveryRecord::reject()
+{
     if (acquired && !ended) {
         Exchange::shared_ptr alternate = queue->getAlternateExchange();
         if (alternate) {
@@ -173,7 +170,7 @@ void DeliveryRecord::acquire(DeliveryIds& results) {
     }
 }
 
-void DeliveryRecord::cancel(const std::string& cancelledTag) 
+void DeliveryRecord::cancel(const std::string& cancelledTag)
 {
     if (tag == cancelledTag)
         cancelled = true;
@@ -192,7 +189,7 @@ AckRange DeliveryRecord::findRange(DeliveryRecords& records, DeliveryId first, D
 namespace qpid {
 namespace broker {
 
-std::ostream& operator<<(std::ostream& out, const DeliveryRecord& r) 
+std::ostream& operator<<(std::ostream& out, const DeliveryRecord& r)
 {
     out << "{" << "id=" << r.id.getValue();
     out << ", tag=" << r.tag << "}";
