@@ -211,7 +211,7 @@ public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, Connec
                         + " port: " + brokerDetail.getPort() + " vhost: "
                         + _conn.getVirtualHost() + " username: "
                         + _conn.getUsername() + " password: "
-                        + _conn.getPassword());
+                        + "********");
             }
 
             ConnectionSettings conSettings = retriveConnectionSettings(brokerDetail);
