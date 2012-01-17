@@ -71,6 +71,15 @@ module Qpid
         create.should == "always"
       end
 
+      it "can return a string representation" do
+        address = Qpid::Messaging::Address.new "foo", "bar", :create => :always, :link => :durable
+        result = address.to_s
+
+        result.should =~ /foo\/bar/
+        result.should =~ /create:always/
+        result.should =~ /link:durable/
+      end
+
     end
 
   end
