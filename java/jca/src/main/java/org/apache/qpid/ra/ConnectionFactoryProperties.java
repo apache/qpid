@@ -87,8 +87,9 @@ public class ConnectionFactoryProperties
    {
       if (_log.isTraceEnabled())
       {
-         _log.trace("setConnectionURL(" + connectionURL + ")");
+         _log.trace("setConnectionURL(" + Util.maskUrlForLog(connectionURL) + ")");
       }
+
       _hasBeenUpdated = true;
       this._connectionURL = connectionURL;
    }
