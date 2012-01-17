@@ -17,42 +17,47 @@
 # under the License.
 #
 
-require 'cqpid'
+require 'spec_helper'
 
 module Qpid
 
   module Messaging
 
-    # Encodes the supplied content into the given message.
-    def self.encode content, message, encoding = nil
-      prepared = content
-      case content
-      when Hash
-        prepared = {}
-        content.each_pair do |key,value|
-          prepared[key.to_s] = value.to_s
-        end
-        Cqpid::encode prepared, message.message_impl
-      when Array
-        prepared = []
-        content.each {|value| prepared << value.to_s}
-        Cqpid::encode prepared, message.message_impl
-      end
+    describe "encoding" do
     end
 
-    # Decodes and returns the message's content.
-    def self.decode(message, content_type = nil)
-      content_type = message.content_type unless content_type
+    describe "decoding" do
 
-      case content_type
-        when "amqp/map":  Cqpid.decodeMap message.message_impl
-        when "amqp/list": Cqpid.decodeList message.message_impl
+      before(:each) do
+        @message = Qpid::Messaging::Message.new
       end
 
-      message.content
+      it "can decode a message's text content" do
+        @message.content = "This is an unencoded message."
+
+        content = Qpid::Messaging.decode @message
+
+        content.should == "This is an unencoded message."
+      end
+
+      it "can decode a message's list content" do
+        @message.content = ["this", "that"]
+
+        content = Qpid::Messaging.decode @message
+
+        content.should == ["this", "that"]
+      end
+
+      it "can decode a message's map content" do
+        @message.content = {"this" => "that"}
+
+        content = Qpid::Messaging.decode @message
+
+        content.should == {"this" => "that"}
+      end
+
     end
 
   end
 
 end
-
