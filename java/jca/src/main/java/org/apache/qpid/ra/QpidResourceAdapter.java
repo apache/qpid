@@ -425,11 +425,6 @@ public class QpidResourceAdapter implements ResourceAdapter, Serializable
     */
    public void setConnectionURL(final String connectionURL)
    {
-      if (_log.isTraceEnabled())
-      {
-         _log.trace("setConnectionURL(" + connectionURL + ")");
-      }
-
       _raProperties.setConnectionURL(connectionURL);
    }
 
