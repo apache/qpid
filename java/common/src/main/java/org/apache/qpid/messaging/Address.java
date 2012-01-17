@@ -35,41 +35,42 @@ import static org.apache.qpid.messaging.util.PyPrint.pprint;
 public class Address
 {
 
+    private String _name;
+    private String _subject;
+    private Map _options;
+    private final String _myToString;
+
     public static Address parse(String address)
     {
         return new AddressParser(address).parse();
     }
 
-    private String name;
-    private String subject;
-    private Map options;
-
     public Address(String name, String subject, Map options)
     {
-        this.name = name;
-        this.subject = subject;
-        this.options = options;
+        this._name = name;
+        this._subject = subject;
+        this._options = options;
+        this._myToString = String.format("%s/%s; %s", pprint(_name), pprint(_subject), pprint(_options));
     }
 
     public String getName()
     {
-        return name;
+        return _name;
     }
 
     public String getSubject()
     {
-        return subject;
+        return _subject;
     }
 
     public Map getOptions()
     {
-        return options;
+        return _options;
     }
 
     public String toString()
     {
-        return String.format("%s/%s; %s", pprint(name), pprint(subject),
-                             pprint(options));
+        return _myToString;
     }
 
 }
