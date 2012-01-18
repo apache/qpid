@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
+
 import javax.jms.Connection;
 import javax.jms.Destination;
 import javax.jms.Message;
@@ -37,9 +38,13 @@ import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.management.common.mbeans.ManagedConnection;
 import org.apache.qpid.test.utils.JMXTestUtils;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ManagedConnectionMBeanTest extends QpidBrokerTestCase
 {
+    private static final Logger LOGGER = LoggerFactory.getLogger(ManagedConnectionMBeanTest.class);
+
     /**
      * JMX helper.
      */
@@ -120,9 +125,10 @@ public class ManagedConnectionMBeanTest extends QpidBrokerTestCase
 
         _connection.close();
 
+        LOGGER.debug("Querying JMX for number of open connections");
         connections = _jmxUtils.getManagedConnections("test");
         assertNotNull("Connection MBean is not found", connections);
-        assertEquals("Unexpected number of connection mbeans", 0, connections.size());
+        assertEquals("Unexpected number of connection mbeans after connection closed", 0, connections.size());
     }
 
     public void testCommit() throws Exception
