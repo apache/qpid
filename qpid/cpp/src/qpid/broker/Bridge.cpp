@@ -164,10 +164,9 @@ void Bridge::destroy()
     listener(this);
 }
 
-bool Bridge::isSessionReady() const
+bool Bridge::hasSessionFailed() const
 {
-    SessionHandler& sessionHandler = conn->getChannel(id);
-    return sessionHandler.ready();
+    return conn->getChannel(id).failed();
 }
 
 void Bridge::setPersistenceId(uint64_t pId) const
