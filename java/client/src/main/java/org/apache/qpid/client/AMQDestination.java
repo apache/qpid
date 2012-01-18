@@ -151,6 +151,10 @@ public abstract class AMQDestination implements Destination, Referenceable
         return defaultDestSyntax;
     }
 
+    protected AMQDestination()
+    {  
+    }
+
     protected AMQDestination(Address address) throws Exception
     {
         this._address = address;
@@ -185,6 +189,11 @@ public abstract class AMQDestination implements Destination, Referenceable
     }
     
     protected AMQDestination(String str) throws URISyntaxException
+    {
+        parseDestinationString(str);
+    }
+
+    protected void parseDestinationString(String str) throws URISyntaxException
     {
         _destSyntax = getDestType(str);
         str = stripSyntaxPrefix(str);
@@ -303,6 +312,16 @@ public abstract class AMQDestination implements Destination, Referenceable
         {
             _logger.debug("Based on " + toString() + " the selected destination syntax is " + _destSyntax);
         }
+    }
+
+    public void setDestinationString(String str) throws Exception
+    {
+        parseDestinationString(str);
+    }
+
+    public String getDestinationString()
+    {
+        return toString();
     }
 
     public DestSyntax getDestSyntax() 

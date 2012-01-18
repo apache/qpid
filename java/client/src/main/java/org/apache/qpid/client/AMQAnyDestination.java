@@ -40,7 +40,12 @@ import org.apache.qpid.url.BindingURL;
  * to support any destination defined in AMQP 0-10 spec.
  */
 public class AMQAnyDestination extends AMQDestination implements Queue, Topic
-{    
+{
+    protected AMQAnyDestination()
+    {
+        super();
+    }
+
     public AMQAnyDestination(BindingURL binding)
     {
         super(binding);
