@@ -30,6 +30,10 @@ import org.apache.qpid.url.BindingURL;
 
 public class AMQQueue extends AMQDestination implements Queue
 {
+    protected AMQQueue()
+    {
+        super();
+    }
 
     public AMQQueue(String address) throws URISyntaxException
     {

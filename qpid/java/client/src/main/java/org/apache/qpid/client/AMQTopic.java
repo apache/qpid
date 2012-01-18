@@ -43,6 +43,11 @@ public class AMQTopic extends AMQDestination implements Topic
         super(address);
     }
     
+    protected AMQTopic()
+    {
+        super();
+    }
+
     /**
      * Constructor for use in creating a topic using a BindingURL.
      *
