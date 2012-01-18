@@ -309,7 +309,7 @@ Queue::ConsumeCode Queue::consumeNextMessage(QueuedMessage& m, Consumer::shared_
 
         if (msg.payload->hasExpired()) {
             QPID_LOG(debug, "Message expired from queue '" << name << "'");
-            c->position = msg.position;
+            c->getPosition() = msg.position;
             acquire( msg.position, msg, locker);
             dequeue( 0, msg );
             continue;
@@ -324,7 +324,7 @@ Queue::ConsumeCode Queue::consumeNextMessage(QueuedMessage& m, Consumer::shared_
                 ok = acquire( msg.position, msg, locker);
                 (void) ok; assert(ok);
                 m = msg;
-                c->position = m.position;
+                c->getPosition() = m.position;
                 return CONSUMED;
             } else {
                 //message(s) are available but consumer hasn't got enough credit
@@ -334,7 +334,7 @@ Queue::ConsumeCode Queue::consumeNextMessage(QueuedMessage& m, Consumer::shared_
         } else {
             //consumer will never want this message
             QPID_LOG(debug, "Consumer doesn't want message from '" << name << "'");
-            c->position = msg.position;
+            c->getPosition() = msg.position;
             return CANT_CONSUME;
         }
     }
@@ -356,7 +356,7 @@ bool Queue::browseNextMessage(QueuedMessage& m, Consumer::shared_ptr& c)
         if (c->filter(msg.payload) && !msg.payload->hasExpired()) {
             if (c->accept(msg.payload)) {
                 //consumer wants the message
-                c->position = msg.position;
+                c->setPosition(msg.position);
                 m = msg;
                 return true;
             } else {
@@ -367,7 +367,7 @@ bool Queue::browseNextMessage(QueuedMessage& m, Consumer::shared_ptr& c)
         } else {
             //consumer will never want this message, continue seeking
             QPID_LOG(debug, "Browser skipping message from '" << name << "'");
-            c->position = msg.position;
+            c->setPosition(msg.position);
         }
     }
     return false;

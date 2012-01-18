@@ -300,7 +300,7 @@ QPID_AUTO_TEST_CASE(testSeek){
 
     TestConsumer::shared_ptr consumer(new TestConsumer("test", false));
     SequenceNumber seq(2);
-    consumer->position = seq;
+    consumer->setPosition(seq);
 
     QueuedMessage qm;
     queue->dispatch(consumer);

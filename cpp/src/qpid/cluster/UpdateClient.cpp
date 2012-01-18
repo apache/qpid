@@ -542,7 +542,7 @@ void UpdateClient::updateConsumer(
         ci->getTag(),
         ci->isBlocked(),
         ci->isNotifyEnabled(),
-        ci->position,
+        ci->getPosition(),
         ci->getCredit().used().messages,
         ci->getCredit().used().bytes
     );

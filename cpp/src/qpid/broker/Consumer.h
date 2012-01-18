@@ -42,19 +42,26 @@ class Consumer {
  public:
     typedef boost::shared_ptr<Consumer> shared_ptr;
 
-    framing::SequenceNumber position;
-
     Consumer(const std::string& _name, bool preAcquires = true)
       : acquires(preAcquires), inListeners(false), name(_name), position(0) {}
+    virtual ~Consumer(){}
+
     bool preAcquires() const { return acquires; }
     const std::string& getName() const { return name; }
+
+    virtual framing::SequenceNumber getPosition() const  { return position; }
+    virtual void setPosition(framing::SequenceNumber pos) { position = pos; }
 
     virtual bool deliver(QueuedMessage& msg) = 0;
     virtual void notify() = 0;
     virtual bool filter(boost::intrusive_ptr<Message>) { return true; }
     virtual bool accept(boost::intrusive_ptr<Message>) { return true; }
     virtual OwnershipToken* getSession() = 0;
-    virtual ~Consumer(){}
+
+  protected:
+    framing::SequenceNumber position;
+
+  private:
     friend class QueueListeners;
 };
 

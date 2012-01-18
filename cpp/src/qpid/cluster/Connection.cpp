@@ -406,7 +406,7 @@ void Connection::consumerState(const string& name, bool blocked, bool notifyEnab
                                uint32_t usedMsgCredit, uint32_t usedByteCredit)
 {
     broker::SemanticState::ConsumerImpl::shared_ptr c = semanticState().find(name);
-    c->position = position;
+    c->setPosition(position);
     c->setBlocked(blocked);
     if (c->getCredit().isWindowMode()) c->getCredit().consume(usedMsgCredit, usedByteCredit);
     if (notifyEnabled) c->enableNotify(); else c->disableNotify();
