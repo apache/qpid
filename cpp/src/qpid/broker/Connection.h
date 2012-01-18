@@ -160,6 +160,8 @@ class Connection : public sys::ConnectionInputHandler,
     /** @return true if the initial connection negotiation is complete. */
     bool isOpen();
 
+    bool isLink() { return link; }
+
     // Used by cluster during catch-up, see cluster::OutputInterceptor
     void doIoCallbacks();
 
@@ -170,7 +172,7 @@ class Connection : public sys::ConnectionInputHandler,
     ChannelMap channels;
     qpid::sys::SecuritySettings securitySettings;
     ConnectionHandler adapter;
-    const bool isLink;
+    const bool link;
     bool mgmtClosing;
     const std::string mgmtId;
     sys::Mutex ioCallbackLock;
