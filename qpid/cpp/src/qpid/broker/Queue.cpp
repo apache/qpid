@@ -309,7 +309,7 @@ Queue::ConsumeCode Queue::consumeNextMessage(QueuedMessage& m, Consumer::shared_
 
         if (msg.payload->hasExpired()) {
             QPID_LOG(debug, "Message expired from queue '" << name << "'");
-            c->getPosition() = msg.position;
+            c->setPosition(msg.position);
             acquire( msg.position, msg, locker);
             dequeue( 0, msg );
             continue;
@@ -324,7 +324,7 @@ Queue::ConsumeCode Queue::consumeNextMessage(QueuedMessage& m, Consumer::shared_
                 ok = acquire( msg.position, msg, locker);
                 (void) ok; assert(ok);
                 m = msg;
-                c->getPosition() = m.position;
+                c->setPosition(m.position);
                 return CONSUMED;
             } else {
                 //message(s) are available but consumer hasn't got enough credit
@@ -334,7 +334,7 @@ Queue::ConsumeCode Queue::consumeNextMessage(QueuedMessage& m, Consumer::shared_
         } else {
             //consumer will never want this message
             QPID_LOG(debug, "Consumer doesn't want message from '" << name << "'");
-            c->getPosition() = msg.position;
+            c->setPosition(msg.position);
             return CANT_CONSUME;
         }
     }
