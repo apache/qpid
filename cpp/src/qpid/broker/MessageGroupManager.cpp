@@ -207,7 +207,7 @@ bool MessageGroupManager::nextConsumableMessage( Consumer::shared_ptr& c, Queued
     if (messages.empty())
         return false;
 
-    next.position = c->position;
+    next.position = c->getPosition();
     if (!freeGroups.empty()) {
         const framing::SequenceNumber& nextFree = freeGroups.begin()->first;
         if (nextFree < next.position) {     // a free message is older than current
@@ -249,7 +249,7 @@ bool MessageGroupManager::allocate(const std::string& consumer, const QueuedMess
 bool MessageGroupManager::nextBrowsableMessage( Consumer::shared_ptr& c, QueuedMessage& next )
 {
     // browse: allow access to any available msg, regardless of group ownership (?ok?)
-    if (!messages.empty() && messages.next(c->position, next))
+    if (!messages.empty() && messages.next(c->getPosition(), next))
         return true;
     return false;
 }

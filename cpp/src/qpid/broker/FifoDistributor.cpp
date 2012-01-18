@@ -46,7 +46,7 @@ bool FifoDistributor::allocate(const std::string&, const QueuedMessage& )
 
 bool FifoDistributor::nextBrowsableMessage( Consumer::shared_ptr& c, QueuedMessage& next )
 {
-    if (!messages.empty() && messages.next(c->position, next))
+    if (!messages.empty() && messages.next(c->getPosition(), next))
         return true;
     return false;
 }
