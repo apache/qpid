@@ -97,6 +97,11 @@ class QueueRegistry {
     QPID_BROKER_EXTERN boost::shared_ptr<Queue> find(const std::string& name);
 
     /**
+     * Get the named queue. Throw exception if not found.
+     */
+    QPID_BROKER_EXTERN boost::shared_ptr<Queue> get(const std::string& name);
+
+    /**
      * Generate unique queue name.
      */
     std::string generateName();

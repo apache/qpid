@@ -87,12 +87,19 @@ void ExchangeRegistry::destroy(const string& name){
     }
 }
 
-Exchange::shared_ptr ExchangeRegistry::get(const string& name){
+Exchange::shared_ptr ExchangeRegistry::find(const string& name){
     RWlock::ScopedRlock locker(lock);
     ExchangeMap::iterator i =  exchanges.find(name);
     if (i == exchanges.end())
-        throw framing::NotFoundException(QPID_MSG("Exchange not found: " << name));
-    return i->second;
+        return Exchange::shared_ptr();
+    else
+        return i->second;
+}
+
+Exchange::shared_ptr ExchangeRegistry::get(const string& name) {
+    Exchange::shared_ptr ex = find(name);
+    if (!ex) throw framing::NotFoundException(QPID_MSG("Exchange not found: "<<name));
+    return ex;
 }
 
 bool ExchangeRegistry::registerExchange(const Exchange::shared_ptr& ex) {
