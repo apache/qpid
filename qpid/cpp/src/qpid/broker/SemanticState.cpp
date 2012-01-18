@@ -93,7 +93,7 @@ void SemanticState::closed() {
         //now unsubscribe, which may trigger queue deletion and thus
         //needs to occur after the requeueing of unacked messages
         for (ConsumerImplMap::iterator i = consumers.begin(); i != consumers.end(); i++) {
-            unsubscribe(i->second);
+            cancel(i->second);
         }
         closeComplete = true;
     }
@@ -408,8 +408,10 @@ void SemanticState::disable(ConsumerImpl::shared_ptr c)
         session.getConnection().outputTasks.removeOutputTask(c.get());
 }
 
-void SemanticState::unsubscribe(ConsumerImpl::shared_ptr c)
+
+void SemanticState::cancel(ConsumerImpl::shared_ptr c)
 {
+    disable(c);
     Queue::shared_ptr queue = c->getQueue();
     if(queue) {
         queue->cancel(c);
@@ -417,12 +419,7 @@ void SemanticState::unsubscribe(ConsumerImpl::shared_ptr c)
             Queue::tryAutoDelete(session.getBroker(), queue);
         }
     }
-}
-
-void SemanticState::cancel(ConsumerImpl::shared_ptr c)
-{
-    disable(c);
-    unsubscribe(c);
+    c->cancel();
 }
 
 void SemanticState::handle(intrusive_ptr<Message> msg) {
