@@ -54,8 +54,18 @@ class ExchangeRegistry{
        bool durable,
        const qpid::framing::FieldTable& args = framing::FieldTable());
     QPID_BROKER_EXTERN void destroy(const std::string& name);
-    QPID_BROKER_EXTERN Exchange::shared_ptr get(const std::string& name);
     Exchange::shared_ptr getDefault();
+
+    /**
+     * Find the named exchange. Return 0 if not found.
+     */
+    QPID_BROKER_EXTERN boost::shared_ptr<Exchange> find(const std::string& name);
+
+    /**
+     * Get the named exchange. Throw exception if not found.
+     */
+    QPID_BROKER_EXTERN boost::shared_ptr<Exchange> get(const std::string& name);
+
 
     /**
      * Register the manageable parent for declared exchanges
