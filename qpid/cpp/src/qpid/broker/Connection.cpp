@@ -83,14 +83,14 @@ Connection::Connection(ConnectionOutputHandler* out_,
                        Broker& broker_, const
                        std::string& mgmtId_,
                        const qpid::sys::SecuritySettings& external,
-                       bool isLink_,
+                       bool link_,
                        uint64_t objectId_,
                        bool shadow_,
                        bool delayManagement) :
     ConnectionState(out_, broker_),
     securitySettings(external),
-    adapter(*this, isLink_, shadow_),
-    isLink(isLink_),
+    adapter(*this, link_, shadow_),
+    link(link_),
     mgmtClosing(false),
     mgmtId(mgmtId_),
     mgmtObject(0),
@@ -103,7 +103,7 @@ Connection::Connection(ConnectionOutputHandler* out_,
     outboundTracker(*this)
 {
     outboundTracker.wrap(out);
-    if (isLink)
+    if (link)
         links.notifyConnection(mgmtId, this);
     // In a cluster, allow adding the management object to be delayed.
     if (!delayManagement) addManagementObject();
@@ -118,7 +118,7 @@ void Connection::addManagementObject() {
         agent = broker.getManagementAgent();
         if (agent != 0) {
             // TODO set last bool true if system connection
-            mgmtObject = new _qmf::Connection(agent, this, parent, mgmtId, !isLink, false);
+            mgmtObject = new _qmf::Connection(agent, this, parent, mgmtId, !link, false);
             mgmtObject->set_shadow(shadow);
             agent->addObject(mgmtObject, objectId);
         }
@@ -139,10 +139,10 @@ Connection::~Connection()
         mgmtObject->resourceDestroy();
         // In a cluster, Connections destroyed during shutdown are in
         // a cluster-unsafe context. Don't raise an event in that case.
-        if (!isLink && isClusterSafe())
+        if (!link && isClusterSafe())
             agent->raiseEvent(_qmf::EventClientDisconnect(mgmtId, ConnectionState::getUserId()));
     }
-    if (isLink)
+    if (link)
         links.notifyClosed(mgmtId);
 
     if (heartbeatTimer)
@@ -158,7 +158,7 @@ void Connection::received(framing::AMQFrame& frame) {
     restartTimeout();
     bool wasOpen = isOpen();
     adapter.handle(frame);
-    if (isLink) //i.e. we are acting as the client to another broker
+    if (link) //i.e. we are acting as the client to another broker
         recordFromServer(frame);
     else
         recordFromClient(frame);
@@ -168,7 +168,7 @@ void Connection::received(framing::AMQFrame& frame) {
 
 void Connection::sent(const framing::AMQFrame& frame)
 {
-    if (isLink) //i.e. we are acting as the client to another broker
+    if (link) //i.e. we are acting as the client to another broker
         recordFromClient(frame);
     else
         recordFromServer(frame);
@@ -207,7 +207,7 @@ void Connection::recordFromClient(const framing::AMQFrame& frame)
 
 string Connection::getAuthMechanism()
 {
-    if (!isLink)
+    if (!link)
         return string("ANONYMOUS");
 
     return links.getAuthMechanism(mgmtId);
@@ -215,7 +215,7 @@ string Connection::getAuthMechanism()
 
 string Connection::getUsername ( )
 {
-    if (!isLink)
+    if (!link)
         return string("anonymous");
 
     return links.getUsername(mgmtId);
@@ -223,7 +223,7 @@ string Connection::getUsername ( )
 
 string Connection::getPassword ( )
 {
-    if (!isLink)
+    if (!link)
         return string("");
 
     return links.getPassword(mgmtId);
@@ -231,7 +231,7 @@ string Connection::getPassword ( )
 
 string Connection::getHost ( )
 {
-    if (!isLink)
+    if (!link)
         return string("");
 
     return links.getHost(mgmtId);
@@ -239,7 +239,7 @@ string Connection::getHost ( )
 
 uint16_t Connection::getPort ( )
 {
-    if (!isLink)
+    if (!link)
         return 0;
 
     return links.getPort(mgmtId);
@@ -247,7 +247,7 @@ uint16_t Connection::getPort ( )
 
 string Connection::getAuthCredentials()
 {
-    if (!isLink)
+    if (!link)
         return string();
 
     if (mgmtObject != 0)
@@ -263,7 +263,7 @@ string Connection::getAuthCredentials()
 
 void Connection::notifyConnectionForced(const string& text)
 {
-    if (isLink)
+    if (link)
         links.notifyConnectionForced(mgmtId, text);
 }
 
