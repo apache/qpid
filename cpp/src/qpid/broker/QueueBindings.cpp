@@ -42,10 +42,10 @@ void QueueBindings::unbind(ExchangeRegistry& exchanges, Queue::shared_ptr queue)
         local = bindings;
     }
 
-    for (Bindings::iterator i = local.begin(); i != local.end(); i++)
-        try {
-            exchanges.get(i->exchange)->unbind(queue, i->key, &(i->args));
-        } catch (const NotFoundException&) {}
+    for (Bindings::iterator i = local.begin(); i != local.end(); i++) {
+        Exchange::shared_ptr ex = exchanges.find(i->exchange);
+        if (ex) ex->unbind(queue, i->key, &(i->args));
+    }
 }
 
 QueueBinding::QueueBinding(const string& _exchange, const string& _key, const FieldTable& _args)
