@@ -57,6 +57,7 @@ class Consumer {
     virtual bool filter(boost::intrusive_ptr<Message>) { return true; }
     virtual bool accept(boost::intrusive_ptr<Message>) { return true; }
     virtual OwnershipToken* getSession() = 0;
+    virtual void cancel() = 0;
 
   protected:
     framing::SequenceNumber position;
