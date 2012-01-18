@@ -66,6 +66,7 @@ public:
         return true;
     };
     void notify() {}
+    void cancel() {}
     OwnershipToken* getSession() { return 0; }
 };
 

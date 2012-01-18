@@ -108,6 +108,7 @@ class SemanticState : private boost::noncopyable {
         bool deliver(QueuedMessage& msg);
         bool filter(boost::intrusive_ptr<Message> msg);
         bool accept(boost::intrusive_ptr<Message> msg);
+        void cancel() {}
 
         void disableNotify();
         void enableNotify();
@@ -173,7 +174,6 @@ class SemanticState : private boost::noncopyable {
     AckRange findRange(DeliveryId first, DeliveryId last);
     void requestDispatch();
     void cancel(ConsumerImpl::shared_ptr);
-    void unsubscribe(ConsumerImpl::shared_ptr);
     void disable(ConsumerImpl::shared_ptr);
 
   public:
