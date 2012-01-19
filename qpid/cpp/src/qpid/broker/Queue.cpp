@@ -1471,15 +1471,6 @@ class FindLowest
 };
 }
 
-bool Queue::getOldest(qpid::framing::SequenceNumber& oldest)
-{
-    //Horribly inefficient, but saves modifying Messages interface and
-    //all its implementations at present:
-    FindLowest f;
-    eachMessage(boost::bind(&FindLowest::process, &f, _1));
-    return f.getLowest(oldest);
-}
-
 Queue::UsageBarrier::UsageBarrier(Queue& q) : parent(q), count(0) {}
 
 bool Queue::UsageBarrier::acquire()
