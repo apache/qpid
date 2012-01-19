@@ -1498,6 +1498,10 @@ class SchemaClass:
   def genNamePackageLower (self, stream, variables):
     stream.write (self.packageName.lower ())
 
+  def genPackageNameUpper (self, stream, variables):
+    up = "_".join(self.packageName.split("."))
+    stream.write (up.upper())
+
   def genNameUpper (self, stream, variables):
     stream.write (self.name.upper ())
 
@@ -1641,6 +1645,7 @@ class SchemaPackage:
 
   def genNamespace (self, stream, variables):
     stream.write("::".join(self.packageName.split(".")))
+
 
   def genOpenNamespaces (self, stream, variables):
     for item in self.packageName.split("."):
