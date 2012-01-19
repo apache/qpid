@@ -16,8 +16,6 @@
 # specific language governing permissions and limitations
 # under the License.
 
-* FIXME - rewrite all old stuff from hot-standby.txt.
-
 * Another new design for Qpid clustering.
 
 For some background see [[./new-cluster-design.txt]] which describes the
@@ -67,13 +65,13 @@ other managers (e.g. PaceMaker) could be supported in future.
 
 Rgmanager takes care of starting and stopping brokers and informing
 brokers of their roles as primary or backup. It ensures there's
-exactly one broker running at any time. It also tracks quorum and
-protects against split-brain.
+exactly one primary broker running at any time. It also tracks quorum
+and protects against split-brain.
 
 Rgmanger can also manage a virtual IP address so clients can just
-retry on a single address to fail over. Alternatively we will support
-configuring a fixed list of broker addresses when qpid is run outside
-of a resource manager.
+retry on a single address to fail over. Alternatively we will also
+support configuring a fixed list of broker addresses when qpid is run
+outside of a resource manager.
 
 Aside: Cold-standby is also possible using rgmanager with shared
 storage for the message store (e.g. GFS). If the broker fails, another
