@@ -118,7 +118,8 @@ bool DeliveryRecord::accept(TransactionContext* ctxt) {
         } else if (isDelayedCompletion) {
             // FIXME aconway 2011-12-05: This should be done in HA code.
             msg.payload->getIngressCompletion().finishCompleter();
-            QPID_LOG(debug, "Completed " << msg.payload.get());
+            QPID_LOG(debug, "Completed " << msg.queue->getName()
+                     << "[" << msg.position << "]");
         }
         setEnded();
         QPID_LOG(debug, "Accepted " << id);
