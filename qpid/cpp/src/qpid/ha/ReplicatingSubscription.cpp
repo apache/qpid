@@ -33,8 +33,6 @@ using namespace framing;
 using namespace broker;
 using namespace std;
 
-// FIXME aconway 2011-11-28: review all arugment names, prefixes etc.
-// Do we want a common HA prefix?
 const string ReplicatingSubscription::QPID_REPLICATING_SUBSCRIPTION("qpid.replicating-subscription");
 const string ReplicatingSubscription::QPID_HIGH_SEQUENCE_NUMBER("qpid.high-sequence-number");
 const string ReplicatingSubscription::QPID_LOW_SEQUENCE_NUMBER("qpid.low-sequence-number");
@@ -211,7 +209,7 @@ void ReplicatingSubscription::dequeued(const QueuedMessage& m)
     {
         sys::Mutex::ScopedLock l(lock);
         range.add(m.position);
-        // FIXME aconway 2011-11-29: q[pos]
+        // FIXME aconway 2011-11-29: q[pos] logging
         QPID_LOG(trace, "HA: Updated dequeue event to include " << QueuePos(m) << "; subscription is at " << position);
     }
     notify();

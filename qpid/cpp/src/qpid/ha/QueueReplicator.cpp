@@ -42,7 +42,6 @@ namespace qpid {
 namespace ha {
 using namespace broker;
 
-// FIXME aconway 2011-12-02: separate file for string constantS?
 const std::string QueueReplicator::DEQUEUE_EVENT_KEY("qpid.dequeue-event");
 
 QueueReplicator::QueueReplicator(boost::shared_ptr<Queue> q, boost::shared_ptr<Link> l)
@@ -85,7 +84,7 @@ void QueueReplicator::initializeBridge(Bridge& bridge, SessionHandler& sessionHa
     peer.getMessage().subscribe(args.i_src, args.i_dest, args.i_sync ? 0 : 1, 0, false, "", 0, settings);
     peer.getMessage().flow(getName(), 0, 0xFFFFFFFF);
     peer.getMessage().flow(getName(), 1, 0xFFFFFFFF);
-    QPID_LOG(debug, "HA: Activated route from queue " << args.i_src << " to " << args.i_dest);
+    QPID_LOG(debug, "HA: Backup activated bridge from queue " << args.i_src << " to " << args.i_dest);
 }
 
 void QueueReplicator::route(Deliverable& msg, const std::string& key, const qpid::framing::FieldTable* /*args*/)
@@ -102,18 +101,15 @@ void QueueReplicator::route(Deliverable& msg, const std::string& key, const qpid
             if (current < *i) {
                 //haven't got that far yet, record the dequeue
                 dequeued.add(*i);
-                QPID_LOG(trace, "HA: Recording dequeue of message at " <<
-                         QueuePos(queue.get(), *i));
+                QPID_LOG(trace, "HA: Recording dequeue of " << QueuePos(queue.get(), *i));
             } else {
                 QueuedMessage message;
                 if (queue->acquireMessageAt(*i, message)) {
                     queue->dequeue(0, message);
-                    QPID_LOG(info, "HA: Dequeued message "<< QueuePos(message));
+                    QPID_LOG(trace, "HA: Backup dequeued: "<< QueuePos(message));
                 } else {
-                    // FIXME aconway 2011-11-29: error handling
-                    // Is this an error? Will happen if queue has initial dequeues.
-                    QPID_LOG(error, "HA: Unable to dequeue message at "
-                             << QueuePos(queue.get(), *i));
+                    // This can happen if we're replicating a queue that has initial dequeues.
+                    QPID_LOG(trace, "HA: Backup message already dequeued: "<< QueuePos(queue.get(), *i));
                 }
             }
         }
@@ -122,10 +118,10 @@ void QueueReplicator::route(Deliverable& msg, const std::string& key, const qpid
         //dequeued before our subscription reached them
         while (dequeued.contains(++current)) {
             dequeued.remove(current);
-            QPID_LOG(debug, "HA: Skipping dequeued message at " << current << " from " << queue->getName());
+            QPID_LOG(trace, "HA: Backup skipping dequeued message: " << QueuePos(queue.get(), current));
             queue->setPosition(current);
         }
-        QPID_LOG(info, "HA: Enqueued message on " << queue->getName() << "; currently at " << current);
+        QPID_LOG(trace, "HA: Backup enqueued message: " << QueuePos(queue.get(), current));
         msg.deliverTo(queue);
     }
 }
