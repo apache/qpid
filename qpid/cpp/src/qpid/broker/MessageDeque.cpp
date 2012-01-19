@@ -70,6 +70,7 @@ void MessageDeque::release(const QueuedMessage& message)
 
 bool MessageDeque::acquire(const framing::SequenceNumber& position, QueuedMessage& message)
 {
+    if (position < messages.front().position) return false;
     size_t i = index(position);
     if (i < messages.size()) {
         QueuedMessage& temp = messages[i];
