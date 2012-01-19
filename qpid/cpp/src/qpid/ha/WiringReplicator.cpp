@@ -295,9 +295,8 @@ void WiringReplicator::doEventQueueDelete(Variant::Map& values) {
             name,
             values[USER].asString(),
             values[RHOST].asString());
-        // FIXME aconway 2011-12-21: casuses race conditions? Restore.
-//         // Also delete the QueueReplicator exchange for this queue.
-//         broker.getExchanges().destroy(QueueReplicator::replicatorName(name));
+        // Delete the QueueReplicator exchange for this queue.
+        broker.getExchanges().destroy(QueueReplicator::replicatorName(name));
     }
 }
 
@@ -449,9 +448,9 @@ void WiringReplicator::doResponseBind(Variant::Map& values) {
 }
 
 void WiringReplicator::startQueueReplicator(const boost::shared_ptr<Queue>& queue) {
-    // FIXME aconway 2011-11-28: also need to remove these when queue is destroyed.
     if (replicateLevel(queue->getSettings()) == RL_ALL) {
         boost::shared_ptr<QueueReplicator> qr(new QueueReplicator(queue, link));
+        qr->activate();
         broker.getExchanges().registerExchange(qr);
     }
 }

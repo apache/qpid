@@ -23,6 +23,7 @@
  */
 #include "qpid/broker/Exchange.h"
 #include "qpid/framing/SequenceSet.h"
+#include <boost/enable_shared_from_this.hpp>
 #include <iosfwd>
 
 namespace qpid {
@@ -47,7 +48,8 @@ namespace ha {
  *
  * THREAD UNSAFE: Only called in the connection thread of the source queue.
  */
-class QueueReplicator : public broker::Exchange
+class QueueReplicator : public broker::Exchange,
+                        public boost::enable_shared_from_this<QueueReplicator>
 {
   public:
     static const std::string DEQUEUE_EVENT_KEY;
@@ -56,6 +58,8 @@ class QueueReplicator : public broker::Exchange
 
     QueueReplicator(boost::shared_ptr<broker::Queue> q, boost::shared_ptr<broker::Link> l);
     ~QueueReplicator();
+
+    void activate();
 
     std::string getType() const;
     bool bind(boost::shared_ptr<broker::Queue>, const std::string&, const framing::FieldTable*);
@@ -70,7 +74,7 @@ class QueueReplicator : public broker::Exchange
     sys::Mutex lock;
     boost::shared_ptr<broker::Queue> queue;
     boost::shared_ptr<broker::Link> link;
-
+    boost::shared_ptr<QueueReplicator> self;
   friend std::ostream& operator<<(std::ostream&, const QueueReplicator&);
 };
 
