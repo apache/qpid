@@ -1324,7 +1324,7 @@ void Queue::query(qpid::types::Variant::Map& results) const
 void Queue::setPosition(SequenceNumber n) {
     Mutex::ScopedLock locker(messageLock);
     sequence = n;
-    QPID_LOG(info, "Set position to " << sequence << " on " << getName());
+    QPID_LOG(trace, "Set position to " << sequence << " on " << getName());
 }
 
 SequenceNumber Queue::getPosition() {

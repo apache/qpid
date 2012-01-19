@@ -229,8 +229,6 @@ void WiringReplicator::route(Deliverable& msg, const string& /*key*/, const fram
                 Variant::Map& map = i->asMap();
                 Variant::Map& schema = map[SCHEMA_ID].asMap();
                 Variant::Map& values = map[VALUES].asMap();
-                QPID_LOG(trace, "HA: Backup received event: schema=" << schema
-                         << " values=" << values);
                 if      (match<EventQueueDeclare>(schema)) doEventQueueDeclare(values);
                 else if (match<EventQueueDelete>(schema)) doEventQueueDelete(values);
                 else if (match<EventExchangeDeclare>(schema)) doEventExchangeDeclare(values);
@@ -244,16 +242,15 @@ void WiringReplicator::route(Deliverable& msg, const string& /*key*/, const fram
                 Variant::Map& values = i->asMap()[VALUES].asMap();
                 framing::FieldTable args;
                 amqp_0_10::translate(values[ARGUMENTS].asMap(), args);
-                QPID_LOG(trace, "HA: Backup received response type=" << type
-                         << " values=" << values);
                 if      (type == QUEUE) doResponseQueue(values);
                 else if (type == EXCHANGE) doResponseExchange(values);
                 else if (type == BINDING) doResponseBind(values);
+                else QPID_LOG(error, "HA: Backup received unknown response: type=" << type
+                              << " values=" << values);
+
                 // FIXME aconway 2011-12-06: handle all relevant response types.
             }
-        } else {
-            QPID_LOG(error, "HA: Backup replication got unexpected message: " << *headers);
-        }
+        } else QPID_LOG(error, "HA: Backup received unexpected message: " << *headers);
     } catch (const std::exception& e) {
         QPID_LOG(error, "HA: Backup replication error: " << e.what() << ": while handling: " << list);
     }
@@ -280,11 +277,11 @@ void WiringReplicator::doEventQueueDeclare(Variant::Map& values) {
             // re-create from event.
             // Events are always up to date, whereas responses may be
             // out of date.
-            QPID_LOG(debug, "HA: Created backup queue from event: " << name);
+            QPID_LOG(debug, "HA: Backup created queue: " << name);
             startQueueReplicator(result.first);
         } else {
             // FIXME aconway 2011-12-02: what's the right way to handle this?
-            QPID_LOG(warning, "HA: Queue already exists on backup: " << name);
+            QPID_LOG(warning, "HA: Backup queue already exists: " << name);
         }
     }
 }
@@ -293,11 +290,14 @@ void WiringReplicator::doEventQueueDelete(Variant::Map& values) {
     string name = values[QNAME].asString();
     boost::shared_ptr<Queue> queue = broker.getQueues().find(name);
     if (queue && replicateLevel(queue->getSettings())) {
-        QPID_LOG(debug, "HA: Deleting backup queue from event: " << name);
+        QPID_LOG(debug, "HA: Backup deleting queue: " << name);
         broker.deleteQueue(
             name,
             values[USER].asString(),
             values[RHOST].asString());
+        // FIXME aconway 2011-12-21: casuses race conditions? Restore.
+//         // Also delete the QueueReplicator exchange for this queue.
+//         broker.getExchanges().destroy(QueueReplicator::replicatorName(name));
     }
 }
 
@@ -316,11 +316,11 @@ void WiringReplicator::doEventExchangeDeclare(Variant::Map& values) {
                 values[USER].asString(),
                 values[RHOST].asString()).second)
         {
-                    QPID_LOG(debug, "HA: created backup exchange from event: " << name);
+                    QPID_LOG(debug, "HA: Backup created exchange: " << name);
         } else {
             // FIXME aconway 2011-11-22: should delete pre-exisitng exchange
             // and re-create from event. See comment in doEventQueueDeclare.
-            QPID_LOG(warning, "HA: Exchange already exists on backup: " << name);
+            QPID_LOG(warning, "HA: Backup exchange already exists: " << name);
         }
     }
 }
@@ -330,7 +330,7 @@ void WiringReplicator::doEventExchangeDelete(Variant::Map& values) {
     try {
         boost::shared_ptr<Exchange> exchange = broker.getExchanges().find(name);
         if (exchange && replicateLevel(exchange->getArgs())) {
-            QPID_LOG(debug, "HA: Deleting backup exchange:" << name);
+            QPID_LOG(debug, "HA: Backup deleting exchange:" << name);
             broker.deleteExchange(
                 name,
                 values[USER].asString(),
@@ -352,7 +352,7 @@ void WiringReplicator::doEventBind(Variant::Map& values) {
         framing::FieldTable args;
         amqp_0_10::translate(values[ARGS].asMap(), args);
         string key = values[KEY].asString();
-        QPID_LOG(debug, "HA: Replicated binding exchange=" << exchange->getName()
+        QPID_LOG(debug, "HA: Backup replicated binding exchange=" << exchange->getName()
                  << " queue=" << queue->getName()
                  << " key=" << key);
         exchange->bind(queue, key, &args);
@@ -377,12 +377,12 @@ void WiringReplicator::doResponseQueue(Variant::Map& values) {
             ""/*TODO: who is the user?*/,
             ""/*TODO: what should we use as connection id?*/);
     if (result.second) {
-        QPID_LOG(debug, "HA: Created backup queue from response: " << values[NAME]);
+        QPID_LOG(debug, "HA: Backup created catch-up queue: " << values[NAME]);
         startQueueReplicator(result.first);
     } else {
         // FIXME aconway 2011-11-22: Normal to find queue already
         // exists if we're failing over.
-        QPID_LOG(warning, "HA: Queue already exists on backup: " << name);
+        QPID_LOG(warning, "HA: Backup catch-up queue already exists: " << name);
     }
 }
 
@@ -400,9 +400,9 @@ void WiringReplicator::doResponseExchange(Variant::Map& values) {
             ""/*TODO: who is the user?*/,
             ""/*TODO: what should we use as connection id?*/).second)
     {
-        QPID_LOG(debug, "HA: Created backup exchange from response: " << values[NAME]);
+        QPID_LOG(debug, "HA: Backup catch-up exchange: " << values[NAME]);
     } else {
-        QPID_LOG(warning, "HA: Exchange already exists on backup:  " << values[QNAME]);
+        QPID_LOG(warning, "HA: Backup catch-up exchange already exists:  " << values[QNAME]);
     }
 }
 
@@ -442,7 +442,7 @@ void WiringReplicator::doResponseBind(Variant::Map& values) {
         amqp_0_10::translate(values[ARGUMENTS].asMap(), args);
         string key = values[KEY].asString();
         exchange->bind(queue, key, &args);
-        QPID_LOG(debug, "HA: Created backup binding from response: exchange=" << exchange->getName()
+        QPID_LOG(debug, "HA: Backup catch-up binding: exchange=" << exchange->getName()
                  << " queue=" << queue->getName()
                  << " key=" << key);
     }
