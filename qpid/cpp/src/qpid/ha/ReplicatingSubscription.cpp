@@ -89,9 +89,8 @@ ReplicatingSubscription::ReplicatingSubscription(
     consumer(new DelegatingConsumer(*this))
 {
     stringstream ss;
-    string url = parent->getSession().getConnection().getUrl();
-    string qname = getQueue()->getName();
-    ss << "HA: Primary queue " << qname << ", backup " <<  url << ": ";
+    ss << "HA: Primary: " << getQueue()->getName() << " at "
+       << parent->getSession().getConnection().getUrl() << ": ";
     logPrefix = ss.str();
 
     // FIXME aconway 2011-12-09: Failover optimization removed.
@@ -101,7 +100,7 @@ ReplicatingSubscription::ReplicatingSubscription(
     // can be re-introduced later. Last revision with the optimization:
     // r1213258 | QPID-3603: Fix QueueReplicator subscription parameters.
 
-    QPID_LOG(debug, logPrefix << "Created subscription " << name);
+    QPID_LOG(debug, logPrefix << "Created backup subscription " << getName());
 
     // FIXME aconway 2011-12-15: ConsumerImpl::position is left at 0
     // so we will start consuming from the lowest numbered message.
@@ -137,7 +136,7 @@ ReplicatingSubscription::~ReplicatingSubscription() {}
 // Called in the subscription's connection thread.
 void ReplicatingSubscription::cancel()
 {
-    QPID_LOG(debug, logPrefix <<"Cancelled");
+    QPID_LOG(debug, logPrefix <<"Cancelled backup subscription " << getName());
     getQueue()->removeObserver(boost::dynamic_pointer_cast<QueueObserver>(shared_from_this()));
 }
 
