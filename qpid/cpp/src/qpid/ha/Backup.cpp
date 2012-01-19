@@ -46,7 +46,7 @@ Backup::Backup(broker::Broker& b, const Settings& s) : broker(b), settings(s) {
     // FIXME aconway 2011-11-24: identifying the primary.
     if (s.brokerUrl != "primary") { // FIXME aconway 2011-11-22: temporary hack to identify primary.
         Url url(s.brokerUrl);
-        QPID_LOG(info, "HA: Acting as backup to " << url);
+        QPID_LOG(info, "HA: Acting as backup");
         string protocol = url[0].protocol.empty() ? "tcp" : url[0].protocol;
 
         // FIXME aconway 2011-11-17: TBD: link management, discovery, fail-over.

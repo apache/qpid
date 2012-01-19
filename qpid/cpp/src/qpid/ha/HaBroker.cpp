@@ -59,8 +59,8 @@ HaBroker::HaBroker(broker::Broker& b, const Settings& s)
         mgmtObject->set_status("solo");
         ma->addObject(mgmtObject);
     }
-    QPID_LOG(notice, "HA: broker initialized, client-url=" << clientUrl
-             << ", broker-url=" << brokerUrl);
+    QPID_LOG(notice, "HA: Initialized: client-url=" << clientUrl
+             << " broker-url=" << brokerUrl);
     backup.reset(new Backup(broker, s));
     // Register a factory for replicating subscriptions.
     broker.getConsumerFactories().add(
