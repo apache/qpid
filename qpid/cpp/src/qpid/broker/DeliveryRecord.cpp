@@ -116,7 +116,7 @@ bool DeliveryRecord::accept(TransactionContext* ctxt) {
         if (acquired) {
             queue->dequeue(ctxt, msg);
         } else if (isDelayedCompletion) {
-            //TODO: this is a nasty way to do this; change it
+            // FIXME aconway 2011-12-05: This should be done in HA code.
             msg.payload->getIngressCompletion().finishCompleter();
             QPID_LOG(debug, "Completed " << msg.payload.get());
         }
