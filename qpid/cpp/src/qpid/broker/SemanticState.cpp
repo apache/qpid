@@ -480,7 +480,6 @@ void SemanticState::route(intrusive_ptr<Message> msg, Deliverable& strategy) {
     std::string exchangeName = msg->getExchangeName();
     if (!cacheExchange || cacheExchange->getName() != exchangeName || cacheExchange->isDestroyed()) {
         cacheExchange = QueueReplicator::create(exchangeName, getSession().getBroker().getQueues());
-        if (!cacheExchange) cacheExchange = ha::WiringReplicator::create(exchangeName, getSession().getBroker());
         if (!cacheExchange) cacheExchange = session.getBroker().getExchanges().get(exchangeName);
     }
     cacheExchange->setProperties(msg);

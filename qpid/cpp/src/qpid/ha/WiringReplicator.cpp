@@ -21,9 +21,13 @@
 #include "WiringReplicator.h"
 #include "qpid/broker/Broker.h"
 #include "qpid/broker/Queue.h"
+#include "qpid/broker/Link.h"
+#include "qpid/framing/FieldTable.h"
 #include "qpid/log/Statement.h"
 #include "qpid/amqp_0_10/Codecs.h"
+#include "qpid/broker/SessionHandler.h"
 #include "qpid/framing/reply_exceptions.h"
+#include "qpid/framing/MessageTransferBody.h"
 #include "qmf/org/apache/qpid/broker/EventBind.h"
 #include "qmf/org/apache/qpid/broker/EventExchangeDeclare.h"
 #include "qmf/org/apache/qpid/broker/EventExchangeDelete.h"
@@ -40,62 +44,69 @@ using qmf::org::apache::qpid::broker::EventExchangeDelete;
 using qmf::org::apache::qpid::broker::EventQueueDeclare;
 using qmf::org::apache::qpid::broker::EventQueueDelete;
 using qmf::org::apache::qpid::broker::EventSubscribe;
-
+using namespace framing;
 using std::string;
 using types::Variant;
 using namespace broker;
 
-namespace{
-
-const string QPID_REPLICATE("qpid.replicate");
-const string ALL("all");
-const string WIRING("wiring");
-
-const string CLASS_NAME("_class_name");
-const string OBJECT_NAME("_object_name");
-const string PACKAGE_NAME("_package_name");
-const string VALUES("_values");
-const string EVENT("_event");
-const string SCHEMA_ID("_schema_id");
-const string QUERY_RESPONSE("_query_response");
-
-const string ARGUMENTS("arguments");
-const string ARGS("args");
-const string QUEUE("queue");
-const string EXCHANGE("exchange");
-const string BIND("bind");
-const string BINDING("binding");
-const string DURABLE("durable");
-const string QNAME("qName");
-const string AUTODEL("autoDel");
-const string ALTEX("altEx");
-const string USER("user");
-const string RHOST("rhost");
-const string EXTYPE("exType");
-const string EXNAME("exName");
-const string AUTODELETE("autoDelete");
-const string NAME("name");
-const string TYPE("type");
-const string DISP("disp");
-const string CREATED("created");
-const string KEY("key");
-
-
-const string QMF_OPCODE("qmf.opcode");
-const string QMF_CONTENT("qmf.content");
-const string QMF2("qmf2");
+namespace {
 
 const string QPID_WIRING_REPLICATOR("qpid.wiring-replicator");
+const string QPID_REPLICATE("qpid.replicate");
 
+const string CLASS_NAME("_class_name");
+const string EVENT("_event");
+const string OBJECT_NAME("_object_name");
+const string PACKAGE_NAME("_package_name");
+const string QUERY_RESPONSE("_query_response");
+const string SCHEMA_ID("_schema_id");
+const string VALUES("_values");
 
-bool isQMFv2(const Message& message)
-{
+const string ALL("all");
+const string ALTEX("altEx");
+const string ARGS("args");
+const string ARGUMENTS("arguments");
+const string AUTODEL("autoDel");
+const string AUTODELETE("autoDelete");
+const string BIND("bind");
+const string BINDING("binding");
+const string CREATED("created");
+const string DISP("disp");
+const string DURABLE("durable");
+const string EXCHANGE("exchange");
+const string EXNAME("exName");
+const string EXTYPE("exType");
+const string KEY("key");
+const string NAME("name");
+const string QNAME("qName");
+const string QUEUE("queue");
+const string RHOST("rhost");
+const string TYPE("type");
+const string USER("user");
+const string WIRING("wiring");
+
+const string AGENT_IND_EVENT_ORG_APACHE_QPID_BROKER("agent.ind.event.org_apache_qpid_broker.#");
+const string QMF2("qmf2");
+const string QMF_CONTENT("qmf.content");
+const string QMF_DEFAULT_TOPIC("qmf.default.topic");
+const string QMF_OPCODE("qmf.opcode");
+
+const string _WHAT("_what");
+const string _CLASS_NAME("_class_name");
+const string _PACKAGE_NAME("_package_name");
+const string _SCHEMA_ID("_schema_id");
+const string OBJECT("OBJECT");
+const string ORG_APACHE_QPID_BROKER("org.apache.qpid.broker");
+const string QMF_DEFAULT_DIRECT("qmf.default.direct");
+const string _QUERY_REQUEST("_query_request");
+const string BROKER("broker");
+
+bool isQMFv2(const Message& message) {
     const framing::MessageProperties* props = message.getProperties<framing::MessageProperties>();
     return props && props->getAppId() == QMF2;
 }
 
-template <class T> bool match(Variant::Map& schema)
-{
+template <class T> bool match(Variant::Map& schema) {
     return T::match(schema[CLASS_NAME], schema[PACKAGE_NAME]);
 }
 
@@ -110,12 +121,89 @@ bool isReplicated(const Variant::Map& m) {
     return i != m.end() && isReplicated(i->second.asString());
 }
 
+void sendQuery(const string className, const string& queueName, SessionHandler& sessionHandler) {
+    framing::AMQP_ServerProxy peer(sessionHandler.out);
+    Variant::Map request;
+    request[_WHAT] = OBJECT;
+    Variant::Map schema;
+    schema[_CLASS_NAME] = className;
+    schema[_PACKAGE_NAME] = ORG_APACHE_QPID_BROKER;
+    request[_SCHEMA_ID] = schema;
+
+    AMQFrame method((MessageTransferBody(ProtocolVersion(), QMF_DEFAULT_DIRECT, 0, 0)));
+    method.setBof(true);
+    method.setEof(false);
+    method.setBos(true);
+    method.setEos(true);
+    AMQHeaderBody headerBody;
+    MessageProperties* props = headerBody.get<MessageProperties>(true);
+    props->setReplyTo(qpid::framing::ReplyTo("", queueName));
+    props->setAppId(QMF2);
+    props->getApplicationHeaders().setString(QMF_OPCODE, _QUERY_REQUEST);
+    headerBody.get<qpid::framing::DeliveryProperties>(true)->setRoutingKey(BROKER);
+    AMQFrame header(headerBody);
+    header.setBof(false);
+    header.setEof(false);
+    header.setBos(true);
+    header.setEos(true);
+    AMQContentBody data;
+    qpid::amqp_0_10::MapCodec::encode(request, data.getData());
+    AMQFrame content(data);
+    content.setBof(false);
+    content.setEof(true);
+    content.setBos(true);
+    content.setEos(true);
+    sessionHandler.out->handle(method);
+    sessionHandler.out->handle(header);
+    sessionHandler.out->handle(content);
+}
 } // namespace
 
-
-WiringReplicator::WiringReplicator(const string& name, Broker& b) : Exchange(name), broker(b) {}
-
 WiringReplicator::~WiringReplicator() {}
+
+WiringReplicator::WiringReplicator(const boost::shared_ptr<Link>& l)
+    : Exchange(QPID_WIRING_REPLICATOR), broker(*l->getBroker()), link(l)
+{}
+
+// We need to split out the initialization so that the WiringReplicator
+// can be registered as an exchange before starting the bridge.
+void WiringReplicator::initialize() {
+    assert(link->getBroker());
+    broker.getLinks().declare(
+        link->getHost(), link->getPort(),
+        false,              // durable
+        QPID_WIRING_REPLICATOR, // src
+        QPID_WIRING_REPLICATOR, // dest
+        "",                 // key
+        false,              // isQueue
+        false,              // isLocal
+        "",                 // id/tag
+        "",                 // excludes
+        false,              // dynamic
+        0,                  // sync?
+        boost::bind(&WiringReplicator::initializeBridge, this, _1, _2)
+    );
+}
+
+// This is called in the connection IO thread when the bridge is started.
+void WiringReplicator::initializeBridge(Bridge& bridge, SessionHandler& sessionHandler) {
+    framing::AMQP_ServerProxy peer(sessionHandler.out);
+    string queueName = bridge.getQueueName();
+    const qmf::org::apache::qpid::broker::ArgsLinkBridge& args(bridge.getArgs());
+
+    //declare and bind an event queue
+    peer.getQueue().declare(queueName, "", false, false, true, true, FieldTable());
+    peer.getExchange().bind(queueName, QMF_DEFAULT_TOPIC, AGENT_IND_EVENT_ORG_APACHE_QPID_BROKER, FieldTable());
+    //subscribe to the queue
+    peer.getMessage().subscribe(queueName, args.i_dest, 1, 0, false, "", 0, FieldTable());
+    peer.getMessage().flow(args.i_dest, 0, 0xFFFFFFFF);
+    peer.getMessage().flow(args.i_dest, 1, 0xFFFFFFFF);
+
+    //issue a query request for queues and another for exchanges using event queue as the reply-to address
+    sendQuery(QUEUE, queueName, sessionHandler);
+    sendQuery(EXCHANGE, queueName, sessionHandler);
+    sendQuery(BINDING, queueName, sessionHandler);
+}
 
 void WiringReplicator::route(Deliverable& msg, const string& /*key*/, const framing::FieldTable* headers) {
     Variant::List list;
@@ -176,7 +264,10 @@ void WiringReplicator::doEventQueueDeclare(Variant::Map& values) {
                 args,
                 values[USER].asString(),
                 values[RHOST].asString()).second) {
-            // FIXME aconway 2011-11-22: should delete old queue and re-create from exchanges.
+            // FIXME aconway 2011-11-22: should delete old queue and
+            // re-create from event.
+            // Events are always up to date, whereas responses may be
+            // out of date.
             QPID_LOG(warning, "Replicated queue " << name << " already exists");
         }
     }
@@ -209,7 +300,7 @@ void WiringReplicator::doEventExchangeDeclare(Variant::Map& values) {
                 values[USER].asString(),
                 values[RHOST].asString()).second) {
             // FIXME aconway 2011-11-22: should delete pre-exisitng exchange
-            // and re-create from event. Likewise for queues.
+            // and re-create from event. See comment in doEventQueueDeclare.
             QPID_LOG(warning, "Replicated exchange " << name << " already exists");
         }
     }
@@ -286,8 +377,6 @@ void WiringReplicator::doResponseExchange(Variant::Map& values) {
     }
 }
 
-// FIXME aconway 2011-11-21: refactor to remove redundancy between do* functions.
-
 namespace {
 const std::string QUEUE_REF_PREFIX("org.apache.qpid.broker:queue:");
 const std::string EXCHANGE_REF_PREFIX("org.apache.qpid.broker:exchange:");
@@ -299,7 +388,7 @@ std::string getRefName(const std::string& prefix, const Variant& ref) {
         throw Exception(QPID_MSG("Replicator: invalid object reference: " << ref));
     const std::string name = i->second.asString();
     if (name.compare(0, prefix.size(), prefix) != 0)
-        throw Exception(QPID_MSG("Replicator unexpected reference prefix: " << name));
+        throw Exception(QPID_MSG("Replicator: unexpected reference prefix: " << name));
     std::string ret = name.substr(prefix.size());
     return ret;
 }
@@ -334,21 +423,6 @@ void WiringReplicator::doResponseBind(Variant::Map& values) {
             exchange->bind(queue, key, &args);
         }
     } catch (const framing::NotFoundException& e) {} // Ignore unreplicated queue or exchange.
-}
-
-boost::shared_ptr<Exchange> WiringReplicator::create(const string& target, Broker& broker)
-{
-    boost::shared_ptr<Exchange> exchange;
-    if (isWiringReplicatorDestination(target)) {
-        //TODO: need to cache the exchange
-        exchange.reset(new WiringReplicator(target, broker));
-    }
-    return exchange;
-}
-
-bool WiringReplicator::isWiringReplicatorDestination(const string& target)
-{
-    return target == QPID_WIRING_REPLICATOR;
 }
 
 bool WiringReplicator::bind(boost::shared_ptr<Queue>, const string&, const framing::FieldTable*) { return false; }
