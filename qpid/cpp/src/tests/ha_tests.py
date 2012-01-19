@@ -106,17 +106,27 @@ class ShortTests(BrokerTest):
         verify(b, "1", p)
         verify(b, "2", p)
 
-        # Test a series of messages, enqueue and dequeue.
+        # Test a series of messages, enqueue all then dequeue all.
         s = p.sender(queue("foo","all"))
         msgs = [str(i) for i in range(10)]
         for m in msgs: s.send(Message(m))
-        self.assert_browse_retry(b, "foo", msgs)
         self.assert_browse_retry(p, "foo", msgs)
+        self.assert_browse_retry(b, "foo", msgs)
         r = p.receiver("foo")
         for m in msgs: self.assertEqual(m, r.fetch(timeout=0).content)
         p.acknowledge()
         self.assert_browse_retry(p, "foo", [])
         self.assert_browse_retry(b, "foo", [])
+
+        # Another series, this time verify each dequeue individually.
+        for m in msgs: s.send(Message(m))
+        self.assert_browse_retry(p, "foo", msgs)
+        self.assert_browse_retry(b, "foo", msgs)
+        for i in range(len(msgs)):
+            self.assertEqual(msgs[i], r.fetch(timeout=0).content)
+            p.acknowledge()
+            self.assert_browse_retry(p, "foo", msgs[i+1:])
+            self.assert_browse_retry(b, "foo", msgs[i+1:])
 
     def qpid_replicate(self, value="all"):
         return "node:{x-declare:{arguments:{'qpid.replicate':%s}}}" % value
@@ -172,6 +182,7 @@ class ShortTests(BrokerTest):
         except:
             print self.browse(primary.connect().session(), "q", transform=sn)
             print self.browse(backup1.connect().session(), "q", transform=sn)
+            print self.browse(backup2.connect().session(), "q", transform=sn)
             raise
 
 if __name__ == "__main__":
