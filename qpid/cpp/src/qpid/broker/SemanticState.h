@@ -149,14 +149,11 @@ class SemanticState : private boost::noncopyable {
         SemanticState& getParent() { return *parent; }
         const SemanticState& getParent() const { return *parent; }
 
-        // Manageable entry points
+        void acknowledged(const broker::QueuedMessage&) {}
+
+        // manageable entry points
         management::ManagementObject* GetManagementObject (void) const;
         management::Manageable::status_t ManagementMethod (uint32_t methodId, management::Args& args, std::string& text);
-
-        /** This consumer wants delayed completion.
-         * Overridden by ConsumerImpl subclasses.
-         */
-        virtual bool isDelayedCompletion() const { return false; }
     };
 
     typedef std::map<std::string, DtxBuffer::shared_ptr> DtxBufferMap;
