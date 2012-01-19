@@ -48,11 +48,11 @@ namespace ha {
  * THREAD SAFE: Has no mutable state.
  *
  */
-class WiringReplicator : public broker::Exchange
+class BrokerReplicator : public broker::Exchange
 {
   public:
-    WiringReplicator(const boost::shared_ptr<broker::Link>&);
-    ~WiringReplicator();
+    BrokerReplicator(const boost::shared_ptr<broker::Link>&);
+    ~BrokerReplicator();
     std::string getType() const;
 
     // Exchange methods
