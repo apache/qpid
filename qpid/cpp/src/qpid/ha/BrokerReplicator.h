@@ -63,14 +63,18 @@ class BrokerReplicator : public broker::Exchange
 
   private:
     void initializeBridge(broker::Bridge&, broker::SessionHandler&);
+
     void doEventQueueDeclare(types::Variant::Map& values);
     void doEventQueueDelete(types::Variant::Map& values);
     void doEventExchangeDeclare(types::Variant::Map& values);
     void doEventExchangeDelete(types::Variant::Map& values);
     void doEventBind(types::Variant::Map&);
+    void doEventUnbind(types::Variant::Map&);
+
     void doResponseQueue(types::Variant::Map& values);
     void doResponseExchange(types::Variant::Map& values);
     void doResponseBind(types::Variant::Map& values);
+
     void startQueueReplicator(const boost::shared_ptr<broker::Queue>&);
 
     broker::Broker& broker;
