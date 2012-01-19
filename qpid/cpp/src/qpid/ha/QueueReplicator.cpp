@@ -31,7 +31,7 @@
 #include "qpid/framing/FieldTable.h"
 #include "qpid/log/Statement.h"
 #include <boost/shared_ptr.hpp>
-#include <ostream>
+#include <sstream>
 
 namespace {
 const std::string QPID_REPLICATOR_("qpid.replicator-");
@@ -51,14 +51,13 @@ std::string QueueReplicator::replicatorName(const std::string& queueName) {
     return QPID_REPLICATOR_ + queueName;
 }
 
-std::ostream& operator<<(std::ostream& o, const QueueReplicator& qr) {
-    return o << "HA: Backup queue " << qr.queue->getName() << ": ";
-}
-
 QueueReplicator::QueueReplicator(boost::shared_ptr<Queue> q, boost::shared_ptr<Link> l)
     : Exchange(replicatorName(q->getName()), 0, q->getBroker()), queue(q), link(l)
 {
-    QPID_LOG(info, *this << "Created, settings: " << q->getSettings());
+    std::stringstream ss;
+    ss << "HA: Backup queue " << queue->getName() << ": ";
+    logPrefix = ss.str();
+    QPID_LOG(info, logPrefix << "Created, settings: " << q->getSettings());
 }
 
 // This must be separate from the constructor so we can call shared_from_this.
@@ -112,7 +111,7 @@ void QueueReplicator::initializeBridge(Bridge& bridge, SessionHandler& sessionHa
     peer.getMessage().subscribe(args.i_src, args.i_dest, 0/*accept-explicit*/, 1/*not-acquired*/, false, "", 0, settings);
     peer.getMessage().flow(getName(), 0, 0xFFFFFFFF);
     peer.getMessage().flow(getName(), 1, 0xFFFFFFFF);
-    QPID_LOG(debug, *this << "Activated bridge from " << args.i_src << " to " << args.i_dest);
+    QPID_LOG(debug, logPrefix << "Activated bridge from " << args.i_src << " to " << args.i_dest);
     // Reset self reference so this will be deleted when all external refs are gone.
     self.reset();
 }
@@ -134,7 +133,7 @@ void QueueReplicator::dequeue(SequenceNumber n,  const sys::Mutex::ScopedLock&) 
         QueuedMessage message;
         if (queue->acquireMessageAt(n, message)) {
             queue->dequeue(0, message);
-            QPID_LOG(trace, *this << "Dequeued message "<< message.position);
+            QPID_LOG(trace, logPrefix << "Dequeued message "<< message.position);
         }
     }
 }
@@ -145,13 +144,13 @@ void QueueReplicator::route(Deliverable& msg, const std::string& key, const Fiel
     sys::Mutex::ScopedLock l(lock);
     if (key == DEQUEUE_EVENT_KEY) {
         SequenceSet dequeues = decodeContent<SequenceSet>(msg.getMessage());
-        QPID_LOG(trace, *this << "Received dequeues: " << dequeues);
+        QPID_LOG(trace, logPrefix << "Received dequeues: " << dequeues);
         //TODO: should be able to optimise the following
         for (SequenceSet::iterator i = dequeues.begin(); i != dequeues.end(); i++)
             dequeue(*i, l);
     } else if (key == POSITION_EVENT_KEY) {
         SequenceNumber position = decodeContent<SequenceNumber>(msg.getMessage());
-        QPID_LOG(trace, *this << "Advance position: from " << queue->getPosition()
+        QPID_LOG(trace, logPrefix << "Advance position: from " << queue->getPosition()
                  << " to " << position);
         assert(queue->getPosition() <= position);
          //TODO aconway 2011-12-14: Optimize this?
@@ -160,7 +159,7 @@ void QueueReplicator::route(Deliverable& msg, const std::string& key, const Fiel
         queue->setPosition(position);
     } else {
         msg.deliverTo(queue);
-        QPID_LOG(trace, *this << "Enqueued message " << queue->getPosition());
+        QPID_LOG(trace, logPrefix << "Enqueued message " << queue->getPosition());
     }
 }
 
