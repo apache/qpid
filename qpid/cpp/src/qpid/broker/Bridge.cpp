@@ -24,17 +24,28 @@
 #include "qpid/broker/Connection.h"
 #include "qpid/broker/Link.h"
 #include "qpid/broker/LinkRegistry.h"
+#include "qpid/broker/NodeClone.h"
 #include "qpid/broker/QueueReplicator.h"
 #include "qpid/broker/SessionState.h"
 
 #include "qpid/management/ManagementAgent.h"
+#include "qpid/types/Variant.h"
+#include "qpid/amqp_0_10/Codecs.h"
 #include "qpid/framing/Uuid.h"
+#include "qpid/framing/MessageProperties.h"
+#include "qpid/framing/MessageTransferBody.h"
 #include "qpid/log/Statement.h"
 #include <iostream>
 
 using qpid::framing::FieldTable;
 using qpid::framing::Uuid;
 using qpid::framing::Buffer;
+using qpid::framing::AMQFrame;
+using qpid::framing::AMQContentBody;
+using qpid::framing::AMQHeaderBody;
+using qpid::framing::MessageProperties;
+using qpid::framing::MessageTransferBody;
+using qpid::types::Variant;
 using qpid::management::ManagementAgent;
 using std::string;
 namespace _qmf = qmf::org::apache::qpid::broker;
@@ -105,6 +116,52 @@ void Bridge::create(Connection& c)
         peer->getMessage().flow(args.i_dest, 0, 0xFFFFFFFF);
         peer->getMessage().flow(args.i_dest, 1, 0xFFFFFFFF);
         QPID_LOG(debug, "Activated route from queue " << args.i_src << " to " << args.i_dest);
+    } else if (NodeClone::isNodeCloneDestination(args.i_dest)) {
+        //declare and bind an event queue
+        peer->getQueue().declare(queueName, "", false, false, true, true, FieldTable());
+        peer->getExchange().bind(queueName, "qmf.default.topic", "agent.ind.event.org_apache_qpid_broker.#", FieldTable());
+        //subscribe to the queue
+        peer->getMessage().subscribe(queueName, args.i_dest, 1, 0, false, "", 0, FieldTable());
+        peer->getMessage().flow(args.i_dest, 0, 0xFFFFFFFF);
+        peer->getMessage().flow(args.i_dest, 1, 0xFFFFFFFF);
+
+        //issue a query request for queues and another for exchanges using event queue as the reply-to address
+        for (int i = 0; i < 2; ++i) {//TODO: cleanup this code into reusable utility functions
+            Variant::Map request;
+            request["_what"] = "OBJECT";
+            Variant::Map schema;
+            schema["_class_name"] = (i == 0 ? "queue" : "exchange");
+            schema["_package_name"] = "org.apache.qpid.broker";
+            request["_schema_id"] = schema;
+
+            AMQFrame method((MessageTransferBody(qpid::framing::ProtocolVersion(), "qmf.default.direct", 0, 0)));
+            method.setBof(true);
+            method.setEof(false);
+            method.setBos(true);
+            method.setEos(true);
+            AMQHeaderBody headerBody;
+            MessageProperties* props = headerBody.get<MessageProperties>(true);
+            props->setReplyTo(qpid::framing::ReplyTo("", queueName));
+            props->setAppId("qmf2");
+            props->getApplicationHeaders().setString("qmf.opcode", "_query_request");
+            headerBody.get<qpid::framing::DeliveryProperties>(true)->setRoutingKey("broker");
+            AMQFrame header(headerBody);
+            header.setBof(false);
+            header.setEof(false);
+            header.setBos(true);
+            header.setEos(true);
+            AMQContentBody data;
+            qpid::amqp_0_10::MapCodec::encode(request, data.getData());
+            AMQFrame content(data);
+            content.setBof(false);
+            content.setEof(true);
+            content.setBos(true);
+            content.setEos(true);
+            sessionHandler.out->handle(method);
+            sessionHandler.out->handle(header);
+            sessionHandler.out->handle(content);
+        }
+
     } else {
         FieldTable queueSettings;
 

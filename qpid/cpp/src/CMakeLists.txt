@@ -1001,6 +1001,7 @@ set (qpidbroker_SOURCES
      qpid/broker/LegacyLVQ.cpp
      qpid/broker/MessageDeque.cpp
      qpid/broker/MessageMap.cpp
+     qpid/broker/NodeClone.cpp
      qpid/broker/PriorityQueue.cpp
      qpid/broker/Queue.cpp
      qpid/broker/QueueCleaner.cpp

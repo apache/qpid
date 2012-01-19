@@ -425,7 +425,7 @@
   <event name="clientDisconnect"  sev="inform" args="rhost, user"/>
   <event name="brokerLinkUp"      sev="inform" args="rhost"/>
   <event name="brokerLinkDown"    sev="warn"   args="rhost"/>
-  <event name="queueDeclare"      sev="inform" args="rhost, user, qName, durable, excl, autoDel, args, disp"/>
+  <event name="queueDeclare"      sev="inform" args="rhost, user, qName, durable, excl, autoDel, altEx, args, disp"/>
   <event name="queueDelete"       sev="inform" args="rhost, user, qName"/>
   <event name="exchangeDeclare"   sev="inform" args="rhost, user, exName, exType, altEx, durable, autoDel, args, disp"/>
   <event name="exchangeDelete"    sev="inform" args="rhost, user, exName"/>
