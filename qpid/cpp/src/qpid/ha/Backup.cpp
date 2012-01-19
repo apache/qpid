@@ -21,6 +21,7 @@
 #include "Backup.h"
 #include "Settings.h"
 #include "WiringReplicator.h"
+#include "ReplicatingSubscription.h"
 #include "qpid/Url.h"
 #include "qpid/amqp_0_10/Codecs.h"
 #include "qpid/broker/Bridge.h"
@@ -58,6 +59,12 @@ Backup::Backup(broker::Broker& b, const Settings& s) : broker(b), settings(s) {
         link = result.first;
         boost::shared_ptr<WiringReplicator> wr(new WiringReplicator(link));
         broker.getExchanges().registerExchange(wr);
+
+        // FIXME aconway 2011-11-25: using ReplicatingSubscription hangs the tests
+        // The tests pass with a plain subscription if we dont add the factory.
+//         broker.getConsumerFactories().add(
+//             boost::shared_ptr<ReplicatingSubscription::Factory>(
+//                 new ReplicatingSubscription::Factory()));
     }
 }
 
