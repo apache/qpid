@@ -82,14 +82,18 @@ void QueueReplicator::activate() {
     );
 }
 
-QueueReplicator::~QueueReplicator() {
+QueueReplicator::~QueueReplicator() {}
+
+void QueueReplicator::deactivate() {
+    sys::Mutex::ScopedLock l(lock);
     queue->getBroker()->getLinks().destroy(
         link->getHost(), link->getPort(), queue->getName(), getName(), string());
 }
 
 // Called in a broker connection thread when the bridge is created.
-// shared_ptr to self is just to ensure we are still in memory.
 void QueueReplicator::initializeBridge(Bridge& bridge, SessionHandler& sessionHandler) {
+    sys::Mutex::ScopedLock l(lock);
+
     framing::AMQP_ServerProxy peer(sessionHandler.out);
     const qmf::org::apache::qpid::broker::ArgsLinkBridge& args(bridge.getArgs());
     framing::FieldTable settings;
