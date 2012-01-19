@@ -41,8 +41,8 @@ Backup::Backup(broker::Broker& b, const Settings& s) : broker(b), settings(s) {
         broker.getLinks().declare( // Declare the bridge
             url[0].host, url[0].port,
             false,              // durable
-            "qpid.node-cloner", // src
-            "qpid.node-cloner", // dest
+            "qpid.wiring-replicator", // src
+            "qpid.wiring-replicator", // dest
             "x",                // key
             false,              // isQueue
             false,              // isLocal
