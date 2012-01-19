@@ -519,6 +519,12 @@ class BrokerTest(TestCase):
         actual_contents = self.browse(session, queue, timeout)
         self.assertEqual(expect_contents, actual_contents)
 
+    def assert_browse_retry(self, session, queue, expect_contents, timeout=1, delay=.01):
+        """Wait up to timeout for contents of queue to match expect_contents"""
+        def test(): return self.browse(session, queue, 0) == expect_contents
+        retry(test, timeout, delay)
+        self.assertEqual(expect_contents, self.browse(session, queue, 0))
+
 def join(thread, timeout=10):
     thread.join(timeout)
     if thread.isAlive(): raise Exception("Timed out joining thread %s"%thread)

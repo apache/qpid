@@ -1,5 +1,5 @@
-#ifndef QPID_BROKER_QUEUEREPLICATOR_H
-#define QPID_BROKER_QUEUEREPLICATOR_H
+#ifndef QPID_HA_QUEUEREPLICATOR_H
+#define QPID_HA_QUEUEREPLICATOR_H
 
 /*
  *
@@ -25,33 +25,43 @@
 #include "qpid/framing/SequenceSet.h"
 
 namespace qpid {
-namespace broker {
 
+namespace broker {
+class Bridge;
+class Link;
+class Queue;
 class QueueRegistry;
+class SessionHandler;
+class Deliverable;
+}
+
+namespace ha {
 
 /**
  * Dummy exchange for processing replication messages
  */
-class QueueReplicator : public Exchange
+class QueueReplicator : public broker::Exchange
 {
   public:
-    QueueReplicator(const std::string& name, boost::shared_ptr<Queue>);
+    QueueReplicator(boost::shared_ptr<broker::Queue> q, boost::shared_ptr<broker::Link> l);
     ~QueueReplicator();
     std::string getType() const;
-    bool bind(boost::shared_ptr<Queue>, const std::string&, const qpid::framing::FieldTable*);
-    bool unbind(boost::shared_ptr<Queue>, const std::string&, const qpid::framing::FieldTable*);
-    void route(Deliverable&, const std::string&, const qpid::framing::FieldTable*);
-    bool isBound(boost::shared_ptr<Queue>, const std::string* const, const qpid::framing::FieldTable* const);
+    bool bind(boost::shared_ptr<broker::Queue>, const std::string&, const framing::FieldTable*);
+    bool unbind(boost::shared_ptr<broker::Queue>, const std::string&, const framing::FieldTable*);
+    void route(broker::Deliverable&, const std::string&, const framing::FieldTable*);
+    bool isBound(boost::shared_ptr<broker::Queue>, const std::string* const, const framing::FieldTable* const);
     static bool isReplicatingLink(const std::string&);
-    static boost::shared_ptr<Exchange> create(const std::string&, QueueRegistry&);
-    static bool initReplicationSettings(const std::string&, QueueRegistry&, qpid::framing::FieldTable&);
+    static bool initReplicationSettings(const std::string&, broker::QueueRegistry&, framing::FieldTable&);
     static const std::string typeName;
   private:
-    boost::shared_ptr<Queue> queue;
-    qpid::framing::SequenceNumber current;
-    qpid::framing::SequenceSet dequeued;
+    void initializeBridge(broker::Bridge& bridge, broker::SessionHandler& sessionHandler);
+
+    boost::shared_ptr<broker::Queue> queue;
+    boost::shared_ptr<broker::Link> link;
+    framing::SequenceNumber current;
+    framing::SequenceSet dequeued;
 };
 
-}} // namespace qpid::broker
+}} // namespace qpid::ha
 
-#endif  /*!QPID_BROKER_QUEUEREPLICATOR_H*/
+#endif  /*!QPID_HA_QUEUEREPLICATOR_H*/

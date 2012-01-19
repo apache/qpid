@@ -68,7 +68,7 @@ class WiringReplicator : public broker::Exchange
     void doResponseBind(types::Variant::Map& values);
 
   private:
-    void startQueueReplicator(const std::string& name);
+    void startQueueReplicator(const boost::shared_ptr<broker::Queue>&);
 
     broker::Broker& broker;
     boost::shared_ptr<broker::Link> link;
