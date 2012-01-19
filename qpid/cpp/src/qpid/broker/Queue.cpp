@@ -302,8 +302,7 @@ Queue::ConsumeCode Queue::consumeNextMessage(QueuedMessage& m, Consumer::shared_
         if (allocator->nextConsumableMessage(c, msg)) {
             if (msg.payload->hasExpired()) {
                 QPID_LOG(debug, "Message expired from queue '" << name << "'");
-                c->setPosition(msg.position)
-                ;
+                c->setPosition(msg.position);
                 dequeue(0, msg);
                 continue;
             }
