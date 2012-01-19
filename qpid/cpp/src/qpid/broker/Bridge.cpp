@@ -75,7 +75,7 @@ Bridge::Bridge(Link* _link, framing::ChannelId _id, CancellationListener l,
              args.i_tag, args.i_excludes, args.i_dynamic, args.i_sync);
         agent->addObject(mgmtObject);
     }
-    QPID_LOG(debug, "Bridge created from " << args.i_src << " to " << args.i_dest);
+    QPID_LOG(debug, "Bridge " << name << " created from " << args.i_src << " to " << args.i_dest);
 }
 
 Bridge::~Bridge()
@@ -114,7 +114,7 @@ void Bridge::create(Connection& c)
         peer->getMessage().subscribe(args.i_src, args.i_dest, args.i_sync ? 0 : 1, 0, false, "", 0, options);
         peer->getMessage().flow(args.i_dest, 0, 0xFFFFFFFF);
         peer->getMessage().flow(args.i_dest, 1, 0xFFFFFFFF);
-        QPID_LOG(debug, "Activated route from queue " << args.i_src << " to " << args.i_dest);
+        QPID_LOG(debug, "Activated bridge " << name << " for route from queue " << args.i_src << " to " << args.i_dest);
     } else {
         FieldTable queueSettings;
 
@@ -148,9 +148,9 @@ void Bridge::create(Connection& c)
             if (exchange.get() == 0)
                 throw Exception("Exchange not found for dynamic route");
             exchange->registerDynamicBridge(this);
-            QPID_LOG(debug, "Activated dynamic route for exchange " << args.i_src);
+            QPID_LOG(debug, "Activated bridge " << name << " for dynamic route for exchange " << args.i_src);
         } else {
-            QPID_LOG(debug, "Activated static route from exchange " << args.i_src << " to " << args.i_dest);
+            QPID_LOG(debug, "Activated bridge " << name << " for static route from exchange " << args.i_src << " to " << args.i_dest);
         }
     }
     if (args.i_srcIsLocal) sessionHandler.getSession()->enableReceiverTracking();
@@ -162,15 +162,16 @@ void Bridge::cancel(Connection&)
         peer->getMessage().cancel(args.i_dest);
         peer->getSession().detach(name);
     }
+    QPID_LOG(debug, "Cancelled bridge " << name);
 }
 
 void Bridge::closed()
 {
     if (args.i_dynamic) {
-        Exchange::shared_ptr exchange = link->getBroker()->getExchanges().get(args.i_src);
-        if (exchange.get() != 0)
-            exchange->removeDynamicBridge(this);
+        Exchange::shared_ptr exchange = link->getBroker()->getExchanges().find(args.i_src);
+        if (exchange.get()) exchange->removeDynamicBridge(this);
     }
+    QPID_LOG(debug, "Closed bridge " << name);
 }
 
 void Bridge::destroy()
