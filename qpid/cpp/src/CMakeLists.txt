@@ -1007,6 +1007,7 @@ set (qpidbroker_SOURCES
      qpid/broker/QueueListeners.cpp
      qpid/broker/FifoDistributor.cpp
      qpid/broker/MessageGroupManager.cpp
+     qpid/broker/QueueReplicator.cpp
      qpid/broker/PersistableMessage.cpp
      qpid/broker/Bridge.cpp
      qpid/broker/Connection.cpp
