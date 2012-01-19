@@ -118,7 +118,7 @@ void SemanticState::consume(const string& tag,
     const ConsumerFactories::Factories& cf(
         session.getBroker().getConsumerFactories().get());
     ConsumerImpl::shared_ptr c;
-    for (ConsumerFactories::Factories::const_iterator i = cf.begin(); i != cf.end(); !c)
+    for (ConsumerFactories::Factories::const_iterator i = cf.begin(); i != cf.end() && !c; ++i)
         c = (*i)->create(this, name, queue, ackRequired, acquire, exclusive, tag,
                          resumeId, resumeTtl, arguments);
     if (!c)                     // Create plain consumer

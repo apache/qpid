@@ -38,8 +38,15 @@ class SessionHandler;
 namespace ha {
 
 /**
- * Pseudo-exchange for recreating local queues and/or exchanges on
- * receipt of QMF events indicating their creation on another node
+ * Replicate wiring on a backup broker.
+ *
+ * Implemented as an exchange that subscribes to receive QMF
+ * configuration events from the primary. It configures local queues
+ * exchanges and bindings to replicate the primary.
+ * It also creates QueueReplicators for newly replicated queues.
+ *
+ * THREAD SAFE: Has no mutable state.
+ *
  */
 class WiringReplicator : public broker::Exchange
 {
@@ -54,8 +61,6 @@ class WiringReplicator : public broker::Exchange
     void route(broker::Deliverable&, const std::string&, const framing::FieldTable*);
     bool isBound(boost::shared_ptr<broker::Queue>, const std::string* const, const framing::FieldTable* const);
 
-    static const std::string typeName;
-
   private:
     void initializeBridge(broker::Bridge&, broker::SessionHandler&);
     void doEventQueueDeclare(types::Variant::Map& values);
@@ -66,8 +71,6 @@ class WiringReplicator : public broker::Exchange
     void doResponseQueue(types::Variant::Map& values);
     void doResponseExchange(types::Variant::Map& values);
     void doResponseBind(types::Variant::Map& values);
-
-  private:
     void startQueueReplicator(const boost::shared_ptr<broker::Queue>&);
 
     broker::Broker& broker;

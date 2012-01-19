@@ -37,6 +37,9 @@ class Settings;
 
 /**
  * State associated with a backup broker. Manages connections to primary.
+ *
+ * THREAD SAFE: trivially because currently it only has a constructor.
+ * May need locking as the functionality grows.
  */
 class Backup
 {

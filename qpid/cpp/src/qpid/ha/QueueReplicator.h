@@ -38,7 +38,13 @@ class Deliverable;
 namespace ha {
 
 /**
- * Dummy exchange for processing replication messages
+ * Exchange created on a backup broker to replicate a queue on the primary.
+ *
+ * Puts replicated messages on the local queue, handles dequeue events.
+ * Creates a ReplicatingSubscription on the primary by passing special
+ * arguments to the consume command.
+ *
+ * THREAD SAFE.
  */
 class QueueReplicator : public broker::Exchange
 {
@@ -50,12 +56,11 @@ class QueueReplicator : public broker::Exchange
     bool unbind(boost::shared_ptr<broker::Queue>, const std::string&, const framing::FieldTable*);
     void route(broker::Deliverable&, const std::string&, const framing::FieldTable*);
     bool isBound(boost::shared_ptr<broker::Queue>, const std::string* const, const framing::FieldTable* const);
-    static bool isReplicatingLink(const std::string&);
-    static bool initReplicationSettings(const std::string&, broker::QueueRegistry&, framing::FieldTable&);
-    static const std::string typeName;
+
   private:
     void initializeBridge(broker::Bridge& bridge, broker::SessionHandler& sessionHandler);
 
+    sys::Mutex lock;
     boost::shared_ptr<broker::Queue> queue;
     boost::shared_ptr<broker::Link> link;
     framing::SequenceNumber current;

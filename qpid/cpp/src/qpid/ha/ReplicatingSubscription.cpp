@@ -30,9 +30,16 @@ namespace ha {
 
 using namespace framing;
 using namespace broker;
+using namespace std;
 
-const std::string DOLLAR("$");
-const std::string INTERNAL("_internal");
+// FIXME aconway 2011-11-28: review all arugment names, prefixes etc.
+// Do we want a common HA prefix?
+const string ReplicatingSubscription::QPID_REPLICATING_SUBSCRIPTION("qpid.replicating-subscription");
+const string ReplicatingSubscription::QPID_HIGH_SEQUENCE_NUMBER("qpid.high_sequence_number");
+const string ReplicatingSubscription::QPID_LOW_SEQUENCE_NUMBER("qpid.low_sequence_number");
+
+const string DOLLAR("$");
+const string INTERNAL("_internal");
 
 class ReplicationStateInitialiser
 {
@@ -61,7 +68,7 @@ class ReplicationStateInitialiser
     const qpid::framing::SequenceNumber end;
 };
 
-std::string mask(const std::string& in)
+string mask(const string& in)
 {
     return DOLLAR + in + INTERNAL;
 }
@@ -69,29 +76,30 @@ std::string mask(const std::string& in)
 boost::shared_ptr<broker::SemanticState::ConsumerImpl>
 ReplicatingSubscription::Factory::create(
     SemanticState* _parent,
-    const std::string& _name,
+    const string& _name,
     Queue::shared_ptr _queue,
     bool ack,
     bool _acquire,
     bool _exclusive,
-    const std::string& _tag,
-    const std::string& _resumeId,
+    const string& _tag,
+    const string& _resumeId,
     uint64_t _resumeTtl,
     const framing::FieldTable& _arguments
 ) {
+
     return boost::shared_ptr<broker::SemanticState::ConsumerImpl>(
         new ReplicatingSubscription(_parent, _name, _queue, ack, _acquire, _exclusive, _tag, _resumeId, _resumeTtl, _arguments));
 }
 
 ReplicatingSubscription::ReplicatingSubscription(
     SemanticState* _parent,
-    const std::string& _name,
+    const string& _name,
     Queue::shared_ptr _queue,
     bool ack,
     bool _acquire,
     bool _exclusive,
-    const std::string& _tag,
-    const std::string& _resumeId,
+    const string& _tag,
+    const string& _resumeId,
     uint64_t _resumeTtl,
     const framing::FieldTable& _arguments
 ) : ConsumerImpl(_parent, _name, _queue, ack, _acquire, _exclusive, _tag, _resumeId, _resumeTtl, _arguments),
@@ -158,7 +166,7 @@ void ReplicatingSubscription::enqueued(const QueuedMessage& m)
 
 void ReplicatingSubscription::generateDequeueEvent()
 {
-    std::string buf(range.encodedSize(),'\0');
+    string buf(range.encodedSize(),'\0');
     framing::Buffer buffer(&buf[0], buf.size());
     range.encode(buffer);
     range.clear();
@@ -166,7 +174,7 @@ void ReplicatingSubscription::generateDequeueEvent()
 
     //generate event message
     boost::intrusive_ptr<Message> event = new Message();
-    AMQFrame method((MessageTransferBody(ProtocolVersion(), std::string(), 0, 0)));
+    AMQFrame method((MessageTransferBody(ProtocolVersion(), string(), 0, 0)));
     AMQFrame header((AMQHeaderBody()));
     AMQFrame content((AMQContentBody()));
     content.castBody<AMQContentBody>()->decode(buffer, buffer.getSize());

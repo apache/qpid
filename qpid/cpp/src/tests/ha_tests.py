@@ -89,7 +89,7 @@ class ShortTests(BrokerTest):
             self.assert_browse_retry(b, prefix+"q2", [prefix+"e2"])
 
         # Create config, send messages before starting the backup, to test catch-up replication.
-        primary = self.ha_broker(name="primary")
+        primary = self.ha_broker(name="primary", broker_url="primary") # Temp hack to identify primary
         p = primary.connect().session()
         setup(p, "1")
         # Start the backup
