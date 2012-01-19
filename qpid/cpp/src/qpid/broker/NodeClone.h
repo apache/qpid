@@ -23,6 +23,8 @@
  */
 #include "qpid/broker/Exchange.h"
 
+// FIXME aconway 2011-11-17: relocate to ../ha
+
 namespace qpid {
 namespace broker {
 

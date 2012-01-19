@@ -18,10 +18,14 @@
  * under the License.
  *
  */
+#include "Backup.h"
 #include "HaBroker.h"
+#include "Settings.h"
+#include "qpid/Exception.h"
 #include "qpid/broker/Broker.h"
 #include "qpid/management/ManagementAgent.h"
 #include "qmf/org/apache/qpid/ha/Package.h"
+#include "qpid/log/Statement.h"
 
 namespace qpid {
 namespace ha {
@@ -30,7 +34,22 @@ namespace _qmf = ::qmf::org::apache::qpid::ha;
 using namespace management;
 using namespace std;
 
-HaBroker::HaBroker(broker::Broker& b) : broker(b), mgmtObject(0) {
+namespace {
+Url url(const std::string& s, const std::string& id) {
+    try {
+        return Url(s);
+    } catch (const std::exception& e) {
+        throw Exception(Msg() << "Invalid URL for " << id << ": '" << s << "'");
+    }
+}
+} // namespace
+
+HaBroker::HaBroker(broker::Broker& b, const Settings& s)
+    : broker(b),
+      clientUrl(url(s.clientUrl, "ha-client-url")),
+      brokerUrl(url(s.brokerUrl, "ha-broker-url")),
+      mgmtObject(0)
+{
     ManagementAgent* ma = broker.getManagementAgent();
     if (ma) {
         _qmf::Package  packageInit(ma);
@@ -39,7 +58,12 @@ HaBroker::HaBroker(broker::Broker& b) : broker(b), mgmtObject(0) {
         mgmtObject->set_status("solo");
         ma->addObject(mgmtObject);
     }
+    QPID_LOG(notice, "HA broker initialized, client-url=" << clientUrl
+             << ", broker-url=" << brokerUrl);
+    backup.reset(new Backup(broker, s));
 }
+
+HaBroker::~HaBroker() {}
 
 Manageable::status_t HaBroker::ManagementMethod (uint32_t methodId, Args& args, string&) {
     switch (methodId) {
