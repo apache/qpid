@@ -55,7 +55,7 @@ QueueReplicator::QueueReplicator(boost::shared_ptr<Queue> q, boost::shared_ptr<L
     : Exchange(replicatorName(q->getName()), 0, q->getBroker()), queue(q), link(l)
 {
     std::stringstream ss;
-    ss << "HA: Backup queue " << queue->getName() << ": ";
+    ss << "HA: Backup " << queue->getName() << ": ";
     logPrefix = ss.str();
     QPID_LOG(info, logPrefix << "Created, settings: " << q->getSettings());
 }
@@ -133,12 +133,10 @@ template <class T> T decodeContent(Message& m) {
 
 void QueueReplicator::dequeue(SequenceNumber n,  const sys::Mutex::ScopedLock&) {
     // Thread safe: only calls thread safe Queue functions.
-    if (queue->getPosition() >= n) { // Ignore dequeus we  haven't reached yet
+    if (queue->getPosition() >= n) { // Ignore messages we  haven't reached yet
         QueuedMessage message;
-        if (queue->acquireMessageAt(n, message)) {
+        if (queue->acquireMessageAt(n, message))
             queue->dequeue(0, message);
-            QPID_LOG(trace, logPrefix << "Dequeued message "<< message.position);
-        }
     }
 }
 
@@ -148,13 +146,13 @@ void QueueReplicator::route(Deliverable& msg, const std::string& key, const Fiel
     sys::Mutex::ScopedLock l(lock);
     if (key == DEQUEUE_EVENT_KEY) {
         SequenceSet dequeues = decodeContent<SequenceSet>(msg.getMessage());
-        QPID_LOG(trace, logPrefix << "Dequeue update: " << dequeues);
+        QPID_LOG(trace, logPrefix << "Dequeue: " << dequeues);
         //TODO: should be able to optimise the following
         for (SequenceSet::iterator i = dequeues.begin(); i != dequeues.end(); i++)
             dequeue(*i, l);
     } else if (key == POSITION_EVENT_KEY) {
         SequenceNumber position = decodeContent<SequenceNumber>(msg.getMessage());
-        QPID_LOG(trace, logPrefix << "Position update: from " << queue->getPosition()
+        QPID_LOG(trace, logPrefix << "Position moved from " << queue->getPosition()
                  << " to " << position);
         assert(queue->getPosition() <= position);
          //TODO aconway 2011-12-14: Optimize this?
