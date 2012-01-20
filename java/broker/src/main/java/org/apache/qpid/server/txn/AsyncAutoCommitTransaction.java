@@ -20,10 +20,6 @@
  */
 package org.apache.qpid.server.txn;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-
 import org.apache.log4j.Logger;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQStoreException;
@@ -32,6 +28,10 @@ import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.store.MessageStore.StoreFuture;
+
+import java.util.Collection;
+import java.util.List;
 
 /**
  * An implementation of ServerTransaction where each enqueue/dequeue
@@ -40,15 +40,23 @@ import org.apache.qpid.server.store.MessageStore;
  * Since there is no long-lived transaction, the commit and rollback methods of
  * this implementation are empty.
  */
-public class AutoCommitTransaction implements ServerTransaction
+public class AsyncAutoCommitTransaction implements ServerTransaction
 {
-    protected static final Logger _logger = Logger.getLogger(AutoCommitTransaction.class);
+    protected static final Logger _logger = Logger.getLogger(AsyncAutoCommitTransaction.class);
 
     private final MessageStore _messageStore;
+    private final FutureRecorder _futureRecorder;
 
-    public AutoCommitTransaction(MessageStore transactionLog)
+    public static interface FutureRecorder
+    {
+        public void recordFuture(StoreFuture future, Action action);
+
+    }
+
+    public AsyncAutoCommitTransaction(MessageStore transactionLog, FutureRecorder recorder)
     {
         _messageStore = transactionLog;
+        _futureRecorder = recorder;
     }
 
     public long getTransactionStartTime()
@@ -62,7 +70,8 @@ public class AutoCommitTransaction implements ServerTransaction
      */
     public void addPostTransactionAction(final Action immediateAction)
     {
-        immediateAction.postCommit();
+        addFuture(MessageStore.IMMEDIATE_FUTURE, immediateAction);
+
     }
 
     public void dequeue(BaseQueue queue, EnqueableMessage message, Action postTransactionAction)
@@ -70,6 +79,7 @@ public class AutoCommitTransaction implements ServerTransaction
         MessageStore.Transaction txn = null;
         try
         {
+            MessageStore.StoreFuture future;
             if(message.isPersistent() && queue.isDurable())
             {
                 if (_logger.isDebugEnabled())
@@ -79,10 +89,15 @@ public class AutoCommitTransaction implements ServerTransaction
 
                 txn = _messageStore.newTransaction();
                 txn.dequeueMessage(queue, message);
-                txn.commitTran();
+                future = txn.commitTranAsync();
+                
                 txn = null;
             }
-            postTransactionAction.postCommit();
+            else
+            {
+                future = MessageStore.IMMEDIATE_FUTURE;
+            }
+            addFuture(future, postTransactionAction);
             postTransactionAction = null;
         }
         catch (AMQException e)
@@ -95,6 +110,11 @@ public class AutoCommitTransaction implements ServerTransaction
             rollbackIfNecessary(postTransactionAction, txn);
         }
 
+    }
+
+    private void addFuture(final MessageStore.StoreFuture future, final Action action)
+    {
+        _futureRecorder.recordFuture(future, action);
     }
 
     public void dequeue(Collection<QueueEntry> queueEntries, Action postTransactionAction)
@@ -123,12 +143,17 @@ public class AutoCommitTransaction implements ServerTransaction
                 }
 
             }
+            MessageStore.StoreFuture future;
             if(txn != null)
             {
-                txn.commitTran();
+                future = txn.commitTranAsync();
                 txn = null;
             }
-            postTransactionAction.postCommit();
+            else
+            {
+                future = MessageStore.IMMEDIATE_FUTURE;    
+            }
+            addFuture(future, postTransactionAction);
             postTransactionAction = null;
         }
         catch (AMQException e)
@@ -149,6 +174,7 @@ public class AutoCommitTransaction implements ServerTransaction
         MessageStore.Transaction txn = null;
         try
         {
+            MessageStore.StoreFuture future;
             if(message.isPersistent() && queue.isDurable())
             {
                 if (_logger.isDebugEnabled())
@@ -158,10 +184,14 @@ public class AutoCommitTransaction implements ServerTransaction
 
                 txn = _messageStore.newTransaction();
                 txn.enqueueMessage(queue, message);
-                txn.commitTran();
+                future = txn.commitTranAsync();
                 txn = null;
             }
-            postTransactionAction.postCommit();
+            else
+            {
+                future = MessageStore.IMMEDIATE_FUTURE;
+            }
+            addFuture(future, postTransactionAction);
             postTransactionAction = null;
         }
         catch (AMQException e)
@@ -205,13 +235,17 @@ public class AutoCommitTransaction implements ServerTransaction
                 }
                 
             }
+            MessageStore.StoreFuture future;
             if (txn != null)
             {
-                txn.commitTran();
+                future = txn.commitTranAsync();
                 txn = null;
             }
-
-            postTransactionAction.postCommit();
+            else
+            {
+                future = MessageStore.IMMEDIATE_FUTURE;
+            }
+            addFuture(future, postTransactionAction);
             postTransactionAction = null;
 
 
@@ -231,7 +265,17 @@ public class AutoCommitTransaction implements ServerTransaction
 
     public void commit(final Runnable immediatePostTransactionAction)
     {
-        immediatePostTransactionAction.run();
+        addFuture(MessageStore.IMMEDIATE_FUTURE, new Action()
+        {
+            public void postCommit()
+            {
+                immediatePostTransactionAction.run();
+            }
+
+            public void onRollback()
+            {
+            }
+        });
     }    
     
     public void commit()

@@ -43,6 +43,8 @@ import java.util.List;
  */
 public interface ServerTransaction
 {
+
+
     /**
      * Represents an action to be performed on transaction commit or rollback
      */
@@ -110,4 +112,6 @@ public interface ServerTransaction
      * be executed immediately after the underlying transaction has rolled-back. 
      */
     void rollback();
+
+    boolean isTransactional();
 }
