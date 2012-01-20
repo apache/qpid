@@ -45,10 +45,15 @@ public class SessionDelegate
         method.dispatch(ssn, this);
     }
 
-    public void command(Session ssn, Method method) {
+    public void command(Session ssn, Method method)
+    {
+        command(ssn, method, !method.hasPayload());
+    }
+    public void command(Session ssn, Method method, boolean processed) 
+    {
         ssn.identify(method);
         method.dispatch(ssn, this);
-        if (!method.hasPayload())
+        if (processed)
         {
             ssn.processed(method);
         }

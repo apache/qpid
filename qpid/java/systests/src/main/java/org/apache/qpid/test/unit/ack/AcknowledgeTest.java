@@ -70,6 +70,11 @@ public class AcknowledgeTest extends QpidBrokerTestCase
         // These should all end up being prefetched by session
         sendMessage(_consumerSession, _queue, 1);
 
+        if(!transacted)
+        {
+            ((AMQSession)_consumerSession).sync();
+        }
+
         assertEquals("Wrong number of messages on queue", 1,
                      ((AMQSession) _consumerSession).getQueueDepth((AMQDestination) _queue));
     }

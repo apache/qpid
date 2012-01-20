@@ -27,6 +27,7 @@ import java.security.Principal;
 import java.text.MessageFormat;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
@@ -63,7 +64,7 @@ import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.security.AuthorizationHolder;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.subscription.Subscription_0_10;
-import org.apache.qpid.server.txn.AutoCommitTransaction;
+import org.apache.qpid.server.txn.AsyncAutoCommitTransaction;
 import org.apache.qpid.server.txn.LocalTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.virtualhost.VirtualHost;
@@ -84,18 +85,20 @@ import org.apache.qpid.transport.SessionDelegate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ServerSession extends Session implements AuthorizationHolder, SessionConfig, AMQSessionModel, LogSubject
+public class ServerSession extends Session 
+        implements AuthorizationHolder, SessionConfig, 
+                   AMQSessionModel, LogSubject, AsyncAutoCommitTransaction.FutureRecorder
 {
     private static final Logger _logger = LoggerFactory.getLogger(ServerSession.class);
     
     private static final String NULL_DESTINTATION = UUID.randomUUID().toString();
     private static final int PRODUCER_CREDIT_TOPUP_THRESHOLD = 1 << 30;
+    private static final int UNFINISHED_COMMAND_QUEUE_THRESHOLD = 500;
 
     private final UUID _id;
     private ConnectionConfig _connectionConfig;
     private long _createTime = System.currentTimeMillis();
     private LogActor _actor = GenericActor.getInstance(this);
-    private PostEnqueueAction _postEnqueueAction = new PostEnqueueAction();
 
     private final ConcurrentMap<AMQQueue, Boolean> _blockingQueues = new ConcurrentHashMap<AMQQueue, Boolean>();
 
@@ -147,7 +150,7 @@ public class ServerSession extends Session implements AuthorizationHolder, Sessi
     {
         super(connection, delegate, name, expiry);
         _connectionConfig = connConfig;        
-        _transaction = new AutoCommitTransaction(this.getMessageStore());
+        _transaction = new AsyncAutoCommitTransaction(this.getMessageStore(),this);
         _logSubject = new ChannelLogSubject(this);
         _id = getConfigStore().createId();
         getConfigStore().addConfiguredObject(this);
@@ -184,16 +187,7 @@ public class ServerSession extends Session implements AuthorizationHolder, Sessi
             invoke(new MessageFlow("",MessageCreditUnit.MESSAGE, PRODUCER_CREDIT_TOPUP_THRESHOLD));
         }
         getConnectionModel().registerMessageReceived(message.getSize(), message.getArrivalTime());
-        PostEnqueueAction postTransactionAction;
-        if(isTransactional())
-        {
-           postTransactionAction = new PostEnqueueAction(queues, message) ;
-        }
-        else
-        {
-            postTransactionAction = _postEnqueueAction;
-            postTransactionAction.setState(queues, message);
-        }
+        PostEnqueueAction postTransactionAction = new PostEnqueueAction(queues, message, isTransactional()) ;
         _transaction.enqueue(queues,message, postTransactionAction, 0L);
         incrementOutstandingTxnsIfNecessary();
         updateTransactionalActivity();
@@ -221,12 +215,12 @@ public class ServerSession extends Session implements AuthorizationHolder, Sessi
     public void accept(RangeSet ranges)
     {
         dispositionChange(ranges, new MessageDispositionAction()
-                                      {
-                                          public void performAction(MessageDispositionChangeListener listener)
-                                          {
-                                              listener.onAccept();
-                                          }
-                                      });
+        {
+            public void performAction(MessageDispositionChangeListener listener)
+            {
+                listener.onAccept();
+            }
+        });
     }
 
 
@@ -444,10 +438,7 @@ public class ServerSession extends Session implements AuthorizationHolder, Sessi
 
     public boolean isTransactional()
     {
-        // this does not look great but there should only be one "non-transactional"
-        // transactional context, while there could be several transactional ones in
-        // theory
-        return !(_transaction instanceof AutoCommitTransaction);
+        return _transaction.isTransactional();
     }
     
     public boolean inTransaction()
@@ -765,6 +756,7 @@ public class ServerSession extends Session implements AuthorizationHolder, Sessi
         {
             subscription_0_10.flushCreditState(false);
         }
+        awaitCommandCompletion();
     }
 
     private class PostEnqueueAction implements ServerTransaction.Action
@@ -774,15 +766,10 @@ public class ServerSession extends Session implements AuthorizationHolder, Sessi
         private ServerMessage _message;
         private final boolean _transactional;
 
-        public PostEnqueueAction(List<? extends BaseQueue> queues, ServerMessage message)
+        public PostEnqueueAction(List<? extends BaseQueue> queues, ServerMessage message, final boolean transactional)
         {
-            _transactional = true;
+            _transactional = transactional;
             setState(queues, message);
-        }
-
-        public PostEnqueueAction()
-        {
-            _transactional = false;
         }
 
         public void setState(List<? extends BaseQueue> queues, ServerMessage message)
@@ -829,5 +816,77 @@ public class ServerSession extends Session implements AuthorizationHolder, Sessi
     public boolean getBlocking()
     {
         return _blocking.get();
+    }
+
+    private final LinkedList<AsyncCommand> _unfinishedCommandsQueue = new LinkedList<AsyncCommand>();
+
+    public void completeAsyncCommands()
+    {
+        AsyncCommand cmd;
+        while((cmd = _unfinishedCommandsQueue.peek()) != null && cmd.isReadyForCompletion())
+        {
+            cmd.complete();
+            _unfinishedCommandsQueue.poll();
+        }
+        while(_unfinishedCommandsQueue.size() > UNFINISHED_COMMAND_QUEUE_THRESHOLD)
+        {
+            cmd = _unfinishedCommandsQueue.poll();
+            cmd.awaitReadyForCompletion();
+            cmd.complete();
+        }
+    }
+
+
+    public void awaitCommandCompletion()
+    {
+        AsyncCommand cmd;
+        while((cmd = _unfinishedCommandsQueue.poll()) != null)
+        {
+            cmd.awaitReadyForCompletion();
+            cmd.complete();
+        }
+    }
+
+
+    public Object getAsyncCommandMark()
+    {
+        return _unfinishedCommandsQueue.isEmpty() ? null : _unfinishedCommandsQueue.getLast();
+    }
+
+    public void recordFuture(final MessageStore.StoreFuture future, final ServerTransaction.Action action)
+    {
+        _unfinishedCommandsQueue.add(new AsyncCommand(future, action));
+    }
+
+    private static class AsyncCommand
+    {
+        private final MessageStore.StoreFuture _future;
+        private ServerTransaction.Action _action;
+
+        public AsyncCommand(final MessageStore.StoreFuture future, final ServerTransaction.Action action)
+        {
+            _future = future;
+            _action = action;
+        }
+
+        void awaitReadyForCompletion()
+        {
+            _future.waitForCompletion();
+        }
+
+        void complete()
+        {
+            if(!_future.isComplete())
+            {
+                _future.waitForCompletion();
+            }
+            _action.postCommit();
+            _action = null;
+        }
+
+        boolean isReadyForCompletion()
+        {
+            return _future.isComplete();
+        }
     }
 }

@@ -21,7 +21,6 @@
 package org.apache.qpid.server.transport;
 
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -55,6 +54,7 @@ import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StoredMessage;
 import org.apache.qpid.server.subscription.SubscriptionFactoryImpl;
 import org.apache.qpid.server.subscription.Subscription_0_10;
+import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.transport.*;
 
@@ -81,9 +81,22 @@ public class ServerSessionDelegate extends SessionDelegate
 
             if(!session.isClosing())
             {
-                super.command(session, method);
+                Object asyncCommandMark = ((ServerSession)session).getAsyncCommandMark();
+                super.command(session, method, false);
+                Object newOutstanding = ((ServerSession)session).getAsyncCommandMark();
+                if(newOutstanding == null || newOutstanding == asyncCommandMark)
+                {
+                    session.processed(method);    
+                }
+                
+                if(newOutstanding != null)
+                {
+                    ((ServerSession)session).completeAsyncCommands();
+                }
+
                 if (method.isSync())
                 {
+                    ((ServerSession)session).awaitCommandCompletion();
                     session.flushProcessed();
                 }
             }
@@ -98,7 +111,13 @@ public class ServerSessionDelegate extends SessionDelegate
     @Override
     public void messageAccept(Session session, MessageAccept method)
     {
-        ((ServerSession)session).accept(method.getTransfers());
+        final ServerSession serverSession = (ServerSession) session;
+        serverSession.accept(method.getTransfers());
+        if(!serverSession.isTransactional())
+        {
+            serverSession.recordFuture(MessageStore.IMMEDIATE_FUTURE,
+                                       new CommandProcessedAction(serverSession, method));
+        }
     }
 
     @Override
@@ -252,7 +271,7 @@ public class ServerSessionDelegate extends SessionDelegate
     }
 
     @Override
-    public void messageTransfer(Session ssn, MessageTransfer xfr)
+    public void messageTransfer(Session ssn, final MessageTransfer xfr)
     {
         final Exchange exchange = getExchangeForMessage(ssn, xfr);
 
@@ -294,12 +313,13 @@ public class ServerSessionDelegate extends SessionDelegate
             exchangeInUse = exchange;
         }
 
+        final ServerSession serverSession = (ServerSession) ssn;
         if(!queues.isEmpty())
         {
             final MessageStore store = getVirtualHost(ssn).getMessageStore();
             final StoredMessage<MessageMetaData_0_10> storeMessage = createStoreMessage(xfr, messageMetaData, store);
-            MessageTransferMessage message = new MessageTransferMessage(storeMessage, ((ServerSession)ssn).getReference());
-            ((ServerSession) ssn).enqueue(message, queues);
+            MessageTransferMessage message = new MessageTransferMessage(storeMessage, serverSession.getReference());
+            serverSession.enqueue(message, queues);
             storeMessage.flushToStore();
         }
         else
@@ -313,13 +333,19 @@ public class ServerSessionDelegate extends SessionDelegate
             }
             else
             {
-                ((ServerSession) ssn).getLogActor().message(ExchangeMessages.DISCARDMSG(exchangeInUse.getName(), messageMetaData.getRoutingKey()));
+                serverSession.getLogActor().message(ExchangeMessages.DISCARDMSG(exchangeInUse.getName(), messageMetaData.getRoutingKey()));
             }
         }
 
 
-
-        ssn.processed(xfr);
+        if(serverSession.isTransactional())
+        {
+            serverSession.processed(xfr);
+        }
+        else
+        {
+            serverSession.recordFuture(MessageStore.IMMEDIATE_FUTURE, new CommandProcessedAction(serverSession, xfr));
+        }
     }
 
     private StoredMessage<MessageMetaData_0_10> createStoreMessage(final MessageTransfer xfr,
@@ -402,6 +428,13 @@ public class ServerSessionDelegate extends SessionDelegate
         ((ServerSession)session).rollback();
     }
 
+
+    @Override
+    public void executionSync(final Session ssn, final ExecutionSync sync)
+    {
+        ((ServerSession)ssn).awaitCommandCompletion();
+        super.executionSync(ssn, sync);
+    }
 
     @Override
     public void exchangeDeclare(Session session, ExchangeDeclare method)
@@ -1268,5 +1301,26 @@ public class ServerSessionDelegate extends SessionDelegate
     {
         final ServerConnection scon = (ServerConnection) session.getConnection();
         SecurityManager.setThreadSubject(scon.getAuthorizedSubject());
+    }
+
+    private static class CommandProcessedAction implements ServerTransaction.Action
+    {
+        private final ServerSession _serverSession;
+        private final Method _method;
+
+        public CommandProcessedAction(final ServerSession serverSession, final Method xfr)
+        {
+            _serverSession = serverSession;
+            _method = xfr;
+        }
+
+        public void postCommit()
+        {
+            _serverSession.processed(_method);
+        }
+
+        public void onRollback()
+        {
+        }
     }
 }
