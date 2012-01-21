@@ -197,6 +197,7 @@ public class QueueDeclareHandler implements StateAwareMethodListener<QueueDeclar
 
         if (!body.getNowait())
         {
+            channel.sync();
             MethodRegistry methodRegistry = protocolConnection.getMethodRegistry();
             QueueDeclareOkBody responseBody =
                     methodRegistry.createQueueDeclareOkBody(queueName,

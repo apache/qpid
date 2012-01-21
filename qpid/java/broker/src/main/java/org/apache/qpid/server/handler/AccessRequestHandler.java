@@ -24,6 +24,7 @@ package org.apache.qpid.server.handler;
 import org.apache.qpid.framing.*;
 import org.apache.qpid.framing.amqp_8_0.MethodRegistry_8_0;
 import org.apache.qpid.framing.amqp_0_9.MethodRegistry_0_9;
+import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.state.StateAwareMethodListener;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
@@ -52,6 +53,11 @@ public class AccessRequestHandler implements StateAwareMethodListener<AccessRequ
     public void methodReceived(AMQStateManager stateManager, AccessRequestBody body, int channelId) throws AMQException
     {
         AMQProtocolSession session = stateManager.getProtocolSession();
+        final AMQChannel channel = session.getChannel(channelId);
+        if (channel == null)
+        {
+            throw body.getChannelNotFoundException(channelId);
+        }
 
         MethodRegistry methodRegistry = session.getMethodRegistry();
 
@@ -71,7 +77,7 @@ public class AccessRequestHandler implements StateAwareMethodListener<AccessRequ
             throw new AMQException(AMQConstant.COMMAND_INVALID, "AccessRequest not present in AMQP versions other than 0-8, 0-9");
         }
 
-
+        channel.sync();
         session.writeFrame(response.generateFrame(channelId));
     }
 }

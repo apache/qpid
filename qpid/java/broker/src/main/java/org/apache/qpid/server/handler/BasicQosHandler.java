@@ -46,7 +46,7 @@ public class BasicQosHandler implements StateAwareMethodListener<BasicQosBody>
         {
             throw body.getChannelNotFoundException(channelId);
         }
-
+        channel.sync();
         channel.setCredit(body.getPrefetchSize(), body.getPrefetchCount());
 
 

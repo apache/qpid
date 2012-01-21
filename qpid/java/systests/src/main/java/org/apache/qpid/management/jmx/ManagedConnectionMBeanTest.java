@@ -224,13 +224,13 @@ public class ManagedConnectionMBeanTest extends QpidBrokerTestCase
         mBean.rollbackTransactions(channelId.intValue());
 
         Message m = consumer.receive(1000l);
-        assertNull("Unexpected message received", m);
+        assertNull("Unexpected message received: " + String.valueOf(m), m);
 
         producerSession.commit();
 
         _connection.start();
         m = consumer.receive(1000l);
-        assertNull("Unexpected message received", m);
+        assertNull("Unexpected message received after commit " + String.valueOf(m), m);
     }
 
     public void testAuthorisedId() throws Exception

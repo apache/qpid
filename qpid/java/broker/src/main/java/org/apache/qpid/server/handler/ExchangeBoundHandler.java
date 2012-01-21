@@ -22,6 +22,7 @@ package org.apache.qpid.server.handler;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.*;
+import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.queue.QueueRegistry;
@@ -69,7 +70,12 @@ public class ExchangeBoundHandler implements StateAwareMethodListener<ExchangeBo
         QueueRegistry queueRegistry = virtualHost.getQueueRegistry();
         MethodRegistry methodRegistry = session.getMethodRegistry();
 
-        
+        final AMQChannel channel = session.getChannel(channelId);
+        if (channel == null)
+        {
+            throw body.getChannelNotFoundException(channelId);
+        }
+        channel.sync();
 
 
         AMQShortString exchangeName = body.getExchange();

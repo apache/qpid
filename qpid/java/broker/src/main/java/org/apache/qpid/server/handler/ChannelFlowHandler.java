@@ -55,6 +55,7 @@ public class ChannelFlowHandler implements StateAwareMethodListener<ChannelFlowB
         {
             throw body.getChannelNotFoundException(channelId);
         }
+        channel.sync();
         channel.setSuspended(!body.getActive());
         _logger.debug("Channel.Flow for channel " + channelId + ", active=" + body.getActive());
 
