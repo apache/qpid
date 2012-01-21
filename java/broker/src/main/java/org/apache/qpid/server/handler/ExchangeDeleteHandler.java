@@ -24,6 +24,7 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.ExchangeDeleteBody;
 import org.apache.qpid.framing.ExchangeDeleteOkBody;
 import org.apache.qpid.protocol.AMQConstant;
+import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.exchange.ExchangeInUseException;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
@@ -49,7 +50,12 @@ public class ExchangeDeleteHandler implements StateAwareMethodListener<ExchangeD
         AMQProtocolSession session = stateManager.getProtocolSession();
         VirtualHost virtualHost = session.getVirtualHost();
         ExchangeRegistry exchangeRegistry = virtualHost.getExchangeRegistry();
-
+        final AMQChannel channel = session.getChannel(channelId);
+        if (channel == null)
+        {
+            throw body.getChannelNotFoundException(channelId);
+        }
+        channel.sync();
         try
         {
             if(exchangeRegistry.getExchange(body.getExchange()) == null)

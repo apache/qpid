@@ -65,6 +65,7 @@ public class ChannelCloseHandler implements StateAwareMethodListener<ChannelClos
         {
             throw body.getConnectionException(AMQConstant.CHANNEL_ERROR, "Trying to close unknown channel");
         }
+        channel.sync();
         session.closeChannel(channelId);
         // Client requested closure so we don't wait for ok we send it
         stateManager.getProtocolSession().closeChannelOk(channelId);

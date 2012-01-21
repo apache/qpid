@@ -60,6 +60,7 @@ public class BasicConsumeMethodHandler implements StateAwareMethodListener<Basic
         }
         else
         {
+            channel.sync();
             if (_logger.isDebugEnabled())
             {
                 _logger.debug("BasicConsume: from '" + body.getQueue() +
