@@ -114,7 +114,17 @@ public class AsyncAutoCommitTransaction implements ServerTransaction
 
     private void addFuture(final MessageStore.StoreFuture future, final Action action)
     {
-        _futureRecorder.recordFuture(future, action);
+        if(action != null)
+        {
+            if(future.isComplete())
+            {
+                action.postCommit();
+            }
+            else
+            {
+                _futureRecorder.recordFuture(future, action);
+            }
+        }
     }
 
     public void dequeue(Collection<QueueEntry> queueEntries, Action postTransactionAction)
@@ -265,17 +275,20 @@ public class AsyncAutoCommitTransaction implements ServerTransaction
 
     public void commit(final Runnable immediatePostTransactionAction)
     {
-        addFuture(MessageStore.IMMEDIATE_FUTURE, new Action()
+        if(immediatePostTransactionAction != null)
         {
-            public void postCommit()
+            addFuture(MessageStore.IMMEDIATE_FUTURE, new Action()
             {
-                immediatePostTransactionAction.run();
-            }
+                public void postCommit()
+                {
+                    immediatePostTransactionAction.run();
+                }
 
-            public void onRollback()
-            {
-            }
-        });
+                public void onRollback()
+                {
+                }
+            });
+        }
     }    
     
     public void commit()

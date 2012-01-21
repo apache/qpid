@@ -132,6 +132,7 @@ public class QueueUnbindHandler implements StateAwareMethodListener<QueueUnbindB
             // 0-8 does not support QueueUnbind
             throw new AMQException(AMQConstant.COMMAND_INVALID, "QueueUnbind not present in AMQP version: " + session.getProtocolVersion(), null);
         }
+        channel.sync();
         session.writeFrame(responseBody.generateFrame(channelId));
     }
 }

@@ -71,7 +71,7 @@ public class QueueDeleteHandler implements StateAwareMethodListener<QueueDeleteB
         {
             throw body.getChannelNotFoundException(channelId);
         }
-
+        channel.sync();
         AMQQueue queue;
         if (body.getQueue() == null)
         {

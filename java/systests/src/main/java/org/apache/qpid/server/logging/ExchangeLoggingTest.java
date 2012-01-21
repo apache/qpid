@@ -31,6 +31,7 @@ import javax.jms.Session;
 import javax.jms.TextMessage;
 
 import org.apache.qpid.client.AMQConnection;
+import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.AMQSession_0_10;
 import org.apache.qpid.framing.AMQFrame;
 import org.apache.qpid.framing.AMQShortString;
@@ -195,7 +196,7 @@ public class ExchangeLoggingTest extends AbstractTestLogging
 
             ExchangeDeleteBody body = registry.createExchangeDeleteBody(0, new AMQShortString(_name), false, true);
 
-            AMQFrame exchangeDeclare = body.generateFrame(0);
+            AMQFrame exchangeDeclare = body.generateFrame(((AMQSession)_session).getChannelId());
 
             ((AMQConnection) _connection).getProtocolHandler().syncWrite(exchangeDeclare, ExchangeDeleteOkBody.class);
         }

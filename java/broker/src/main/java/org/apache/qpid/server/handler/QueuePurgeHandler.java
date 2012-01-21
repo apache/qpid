@@ -109,7 +109,7 @@ public class QueuePurgeHandler implements StateAwareMethodListener<QueuePurgeBod
 
                 if(!body.getNowait())
                 {
-
+                    channel.sync();
                     MethodRegistry methodRegistry = protocolConnection.getMethodRegistry();
                     AMQMethodBody responseBody = methodRegistry.createQueuePurgeOkBody(purged);
                     protocolConnection.writeFrame(responseBody.generateFrame(channelId));
