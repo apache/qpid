@@ -371,7 +371,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
      * Set when the dispatcher should direct incoming messages straight into the UnackedMessage list instead of
      * to the syncRecieveQueue or MessageListener. Used during cleanup, e.g. in Session.recover().
      */
-    private volatile boolean _usingDispatcherForCleanup;
+    protected volatile boolean _usingDispatcherForCleanup;
 
     /** Used to indicates that the connection to which this session belongs, has been stopped. */
     private boolean _connectionStopped;
@@ -2225,6 +2225,58 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         else
         {
             startDispatcherIfNecessary();
+
+            final CountDownLatch signal = new CountDownLatch(1);
+
+            _queue.add(new Dispatchable()
+            {
+                public void dispatch(AMQSession ssn)
+                {
+                    signal.countDown();
+                }
+            });
+
+            try
+            {
+                signal.await();
+            }
+            catch (InterruptedException e)
+            {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    void drainDispatchQueue()
+    {
+        if (Thread.currentThread() == _dispatcherThread)
+        {
+            while (!_closed.get() && !_queue.isEmpty())
+            {
+                Dispatchable disp;
+                try
+                {
+                    disp = (Dispatchable) _queue.take();
+                }
+                catch (InterruptedException e)
+                {
+                    throw new RuntimeException(e);
+                }
+
+                // Check just in case _queue becomes empty, it shouldn't but
+                // better than an NPE.
+                if (disp == null)
+                {
+                    _logger.debug("_queue became empty during sync.");
+                    break;
+                }
+
+                disp.dispatch(AMQSession.this);
+            }
+        }
+        else
+        {
+            startDispatcherIfNecessary(false);
 
             final CountDownLatch signal = new CountDownLatch(1);
 
