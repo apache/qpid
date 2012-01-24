@@ -800,6 +800,7 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
                 getQpidSession().messageStop(String.valueOf(consumer.getConsumerTag()),
                                              Option.UNRELIABLE);
             }
+            sync();
         }
         else
         {
