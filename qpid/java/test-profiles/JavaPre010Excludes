@@ -58,4 +58,5 @@ org.apache.qpid.test.unit.client.connection.ConnectionTest#testClientIDVerificat
 // and for this reason this test would fail.
 org.apache.qpid.test.unit.client.temporaryqueue.TemporaryQueueTest#testTemporaryQueueReused
 
+// QPID-3604 This fix is applied only to the 0-10 code, hence this test does not work for pre 0-10.
 org.apache.qpid.client.prefetch.PrefetchBehaviourTest#testConnectionStop
