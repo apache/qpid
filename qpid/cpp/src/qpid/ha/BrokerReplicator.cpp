@@ -55,7 +55,7 @@ using namespace broker;
 
 namespace {
 
-const string QPID_WIRING_REPLICATOR("qpid.wiring-replicator");
+const string QPID_CONFIGURATION_REPLICATOR("qpid.configuration-replicator");
 const string QPID_REPLICATE("qpid.replicate");
 
 const string CLASS_NAME("_class_name");
@@ -113,16 +113,16 @@ template <class T> bool match(Variant::Map& schema) {
     return T::match(schema[CLASS_NAME], schema[PACKAGE_NAME]);
 }
 
-enum ReplicateLevel { RL_NONE=0, RL_WIRING, RL_ALL };
+enum ReplicateLevel { RL_NONE=0, RL_CONFIGURATION, RL_MESSAGES };
 const string S_NONE="none";
-const string S_WIRING="wiring";
-const string S_ALL="all";
+const string S_CONFIGURATION="configuration";
+const string S_MESSAGES="messages";
 
 ReplicateLevel replicateLevel(const string& level) {
-    ReplicateLevel rl = RL_NONE;
-    if (level == S_WIRING) rl = RL_WIRING;
-    else if (level == S_ALL) rl = RL_ALL;
-    return rl;
+    if (level == S_NONE) return RL_NONE;
+    if (level == S_CONFIGURATION) return RL_CONFIGURATION;
+    if (level == S_MESSAGES) return RL_MESSAGES;
+    throw Exception("Invalid value for "+QPID_REPLICATE+": "+level);
 }
 
 ReplicateLevel replicateLevel(const framing::FieldTable& f) {
@@ -184,15 +184,15 @@ Variant::Map asMapVoid(const Variant& value) {
 BrokerReplicator::~BrokerReplicator() {}
 
 BrokerReplicator::BrokerReplicator(const boost::shared_ptr<Link>& l)
-    : Exchange(QPID_WIRING_REPLICATOR), broker(*l->getBroker()), link(l)
+    : Exchange(QPID_CONFIGURATION_REPLICATOR), broker(*l->getBroker()), link(l)
 {
     QPID_LOG(info, "HA: Backup replicating from " <<
              link->getTransport() << ":" << link->getHost() << ":" << link->getPort());
     broker.getLinks().declare(
         link->getHost(), link->getPort(),
         false,              // durable
-        QPID_WIRING_REPLICATOR, // src
-        QPID_WIRING_REPLICATOR, // dest
+        QPID_CONFIGURATION_REPLICATOR, // src
+        QPID_CONFIGURATION_REPLICATOR, // dest
         "",                 // key
         false,              // isQueue
         false,              // isLocal
@@ -222,7 +222,7 @@ void BrokerReplicator::initializeBridge(Bridge& bridge, SessionHandler& sessionH
     sendQuery(QUEUE, queueName, sessionHandler);
     sendQuery(EXCHANGE, queueName, sessionHandler);
     sendQuery(BINDING, queueName, sessionHandler);
-    QPID_LOG(debug, "HA: Backup activated wiring bridge: " << queueName);
+    QPID_LOG(debug, "HA: Backup activated configuration bridge: " << queueName);
 }
 
 // FIXME aconway 2011-12-02: error handling in route.
@@ -481,7 +481,7 @@ void BrokerReplicator::doResponseBind(Variant::Map& values) {
 }
 
 void BrokerReplicator::startQueueReplicator(const boost::shared_ptr<Queue>& queue) {
-    if (replicateLevel(queue->getSettings()) == RL_ALL) {
+    if (replicateLevel(queue->getSettings()) == RL_MESSAGES) {
         boost::shared_ptr<QueueReplicator> qr(new QueueReplicator(queue, link));
         broker.getExchanges().registerExchange(qr);
         qr->activate();
@@ -492,6 +492,6 @@ bool BrokerReplicator::bind(boost::shared_ptr<Queue>, const string&, const frami
 bool BrokerReplicator::unbind(boost::shared_ptr<Queue>, const string&, const framing::FieldTable*) { return false; }
 bool BrokerReplicator::isBound(boost::shared_ptr<Queue>, const string* const, const framing::FieldTable* const) { return false; }
 
-string BrokerReplicator::getType() const { return QPID_WIRING_REPLICATOR; }
+string BrokerReplicator::getType() const { return QPID_CONFIGURATION_REPLICATOR; }
 
 }} // namespace broker
