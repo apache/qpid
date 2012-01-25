@@ -640,7 +640,7 @@ class Session:
     return "QMF Console Session Manager (brokers: %d)" % len(self.brokers)
 
 
-  def addBroker(self, target="localhost", timeout=None, mechanisms=None):
+  def addBroker(self, target="localhost", timeout=None, mechanisms=None, **connectArgs):
     """ Connect to a Qpid broker.  Returns an object of type Broker.
     Will raise an exception if the session is not managing the connection and
     the connection setup to the broker fails.
@@ -650,7 +650,7 @@ class Session:
     else:
       url = BrokerURL(target)
     broker = Broker(self, url.host, url.port, mechanisms, url.authName, url.authPass,
-                    ssl = url.scheme == URL.AMQPS, connTimeout=timeout)
+                    ssl = url.scheme == URL.AMQPS, connTimeout=timeout, **connectArgs)
 
     self.brokers.append(broker)
     return broker
@@ -2240,7 +2240,8 @@ class Broker(Thread):
       self.typecode = typecode
       self.data = data
 
-  def __init__(self, session, host, port, authMechs, authUser, authPass, ssl=False, connTimeout=None):
+  def __init__(self, session, host, port, authMechs, authUser, authPass,
+               ssl=False, connTimeout=None, **connectArgs):
     """ Create a broker proxy and setup a connection to the broker.  Will raise
     an exception if the connection fails and the session is not configured to
     retry connection setup (manageConnections = False).
@@ -2274,7 +2275,7 @@ class Broker(Thread):
     self.amqpSessionId = "%s.%d.%d" % (platform.uname()[1], os.getpid(), Broker.nextSeq)
     Broker.nextSeq += 1
     self.last_age_check = time()
-
+    self.connectArgs = connectArgs
     # thread control
     self.setDaemon(True)
     self.setName("Thread for broker: %s:%d" % (host, port))
@@ -2426,7 +2427,8 @@ class Broker(Thread):
       else:
         connSock = sock
       self.conn = Connection(connSock, username=self.authUser, password=self.authPass,
-                             mechanism = self.mechanisms, host=self.host, service="qpidd")
+                             mechanism = self.mechanisms, host=self.host, service="qpidd",
+                             **self.connectArgs)
       def aborted():
         raise Timeout("Waiting for connection to be established with broker")
       oldAborted = self.conn.aborted

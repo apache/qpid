@@ -159,7 +159,8 @@ class Client(Delegate):
   def __init__(self, connection, username=None, password=None,
                mechanism=None, heartbeat=None, **kwargs):
     Delegate.__init__(self, connection)
-
+    self.client_properties=Client.PROPERTIES.copy()
+    self.client_properties.update(kwargs.get("client_properties",{}))
     ##
     ## self.acceptableMechanisms is the list of SASL mechanisms that the client is willing to
     ## use.  If it's None, then any mechanism is acceptable.
@@ -215,7 +216,8 @@ class Client(Delegate):
         mech = "ANONYMOUS"
         if not mech in mech_list:
           raise Closed("No acceptable SASL authentication mechanism available")
-    ch.connection_start_ok(client_properties=Client.PROPERTIES, mechanism=mech, response=initial)
+    ch.connection_start_ok(client_properties=self.client_properties,
+                           mechanism=mech, response=initial)
 
   def connection_secure(self, ch, secure):
     resp = None

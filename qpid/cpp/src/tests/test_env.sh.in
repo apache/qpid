@@ -55,7 +55,7 @@ export RECEIVER_EXEC=$QPID_TEST_EXEC_DIR/receiver
 export SENDER_EXEC=$QPID_TEST_EXEC_DIR/sender
 
 # Path
-export PATH=$top_builddir/src:$builddir:$srcdir:$PYTHON_COMMANDS:$QPID_TEST_EXEC_DIR:$PATH
+export PATH=$top_builddir/src:$builddir:$srcdir:$PYTHON_COMMANDS:$QPID_TEST_EXEC_DIR:$PYTHON_DIR/commands:$PATH
 
 # Modules
 export TEST_STORE_LIB=$testmoduledir/test_store.so

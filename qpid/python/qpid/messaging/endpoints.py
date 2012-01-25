@@ -160,6 +160,7 @@ class Connection(Endpoint):
     self.address_ttl = options.get("address_ttl", 60)
     self.tcp_nodelay = options.get("tcp_nodelay", False)
 
+    self.client_properties = options.get("client_properties", {})
     self.options = options
 
 

@@ -706,7 +706,10 @@ class Engine:
       mech, initial = self._sasl.start(" ".join(mechs))
     except sasl.SASLError, e:
       raise AuthenticationFailure(text=str(e))
-    self.write_op(ConnectionStartOk(client_properties=CLIENT_PROPERTIES,
+
+    client_properties = CLIENT_PROPERTIES.copy()
+    client_properties.update(self.connection.client_properties)
+    self.write_op(ConnectionStartOk(client_properties=client_properties,
                                     mechanism=mech, response=initial))
 
   def do_connection_secure(self, secure):
