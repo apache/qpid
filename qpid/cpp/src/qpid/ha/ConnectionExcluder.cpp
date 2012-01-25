@@ -34,8 +34,6 @@ void ConnectionExcluder::opened(broker::Connection& connection) {
         && !connection.getClientProperties().isSet(ADMIN_TAG))
         throw Exception(
             QPID_MSG("HA: Backup broker rejected connection " << connection.getMgmtId()));
-    else 
-        QPID_LOG(debug, "HA: Backup broker accepted connection" << connection.getMgmtId());
 }
 
 const std::string ConnectionExcluder::ADMIN_TAG="qpid.ha-admin";
