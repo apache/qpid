@@ -118,12 +118,10 @@ const string S_NONE="none";
 const string S_WIRING="wiring";
 const string S_ALL="all";
 
-ReplicateLevel replicateLevel(const string& str) {
-    string value(str.size(), '\0');
-    transform(str.begin(), str.end(), value.begin(), &tolower);
+ReplicateLevel replicateLevel(const string& level) {
     ReplicateLevel rl = RL_NONE;
-    if (value == S_WIRING) rl = RL_WIRING;
-    else if (value == S_ALL) rl = RL_ALL;
+    if (level == S_WIRING) rl = RL_WIRING;
+    else if (level == S_ALL) rl = RL_ALL;
     return rl;
 }
 

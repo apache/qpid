@@ -1,6 +1,3 @@
-#ifndef QPID_HA_SETTINGS_H
-#define QPID_HA_SETTINGS_H
-
 /*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
@@ -22,26 +19,26 @@
  *
  */
 
-#include <string>
+#include "ConnectionExcluder.h"
+#include "qpid/broker/Connection.h"
+#include <boost/function.hpp>
+#include <sstream>
 
 namespace qpid {
 namespace ha {
 
-using std::string;
+ConnectionExcluder::ConnectionExcluder(PrimaryTest isPrimary_) : isPrimary(isPrimary_) {}
 
-/**
- * Configurable settings for HA.
- */
-class Settings
-{
-  public:
-    Settings() : enabled(false) {}
-    bool enabled;
-    string clientUrl;
-    string brokerUrl;
-    string username, password, mechanism;
-  private:
-};
+void ConnectionExcluder::opened(broker::Connection& connection) {
+    if (!isPrimary() && !connection.isLink()
+        && !connection.getClientProperties().isSet(ADMIN_TAG))
+        throw Exception(
+            QPID_MSG("HA: Backup broker rejected connection " << connection.getMgmtId()));
+    else 
+        QPID_LOG(debug, "HA: Backup broker accepted connection" << connection.getMgmtId());
+}
+
+const std::string ConnectionExcluder::ADMIN_TAG="qpid.ha-admin";
+
 }} // namespace qpid::ha
 
-#endif  /*!QPID_HA_SETTINGS_H*/

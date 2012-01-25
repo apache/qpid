@@ -37,7 +37,6 @@ struct Options : public qpid::Options {
             ("ha-username", optValue(settings.username, "USER"), "Username for connections between brokers")
             ("ha-password", optValue(settings.password, "PASS"), "Password for connections between brokers")
             ("ha-mechanism", optValue(settings.mechanism, "MECH"), "Authentication mechanism for connections between brokers")
-            ("ha-admin-user", optValue(settings.adminUser, "USER"), "User allowed to perform HA administration tasks")
             ;
     }
 };

@@ -22,6 +22,8 @@
  *
  */
 
+#include <string>
+
 namespace qpid {
 namespace broker {
 

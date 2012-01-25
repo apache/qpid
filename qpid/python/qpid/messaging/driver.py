@@ -533,7 +533,8 @@ class Driver:
         log.warn("reconnect succeeded: %s:%s", host, port)
       self._next_retry = None
       self._attempts = 0
-      self._host = 0
+      # FIXME aconway 2012-01-23: is this correct
+#      self._host = 0
       self._delay = self.connection.reconnect_interval_min
       self._retrying = False
       self.schedule()
