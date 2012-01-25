@@ -73,6 +73,8 @@ HaBroker::HaBroker(broker::Broker& b, const Settings& s)
             new ConnectionExcluder(boost::bind(&HaBroker::isPrimary, this))));
 
     ManagementAgent* ma = broker.getManagementAgent();
+    if (!ma)
+        throw Exception("Cannot start HA: management is disabled");
     if (ma) {
         _qmf::Package  packageInit(ma);
         mgmtObject = new _qmf::HaBroker(ma, this);
