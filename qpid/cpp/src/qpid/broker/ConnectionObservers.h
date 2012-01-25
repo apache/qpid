@@ -38,17 +38,29 @@ class ConnectionObservers : public ConnectionObserver {
         observers.push_back(observer);
     }
 
-    // implementation of ConnectionObserver interface
-    void connect(Connection& c) {
-        std::for_each(observers.begin(), observers.end(), boost::bind(&ConnectionObserver::connect, _1, boost::ref(c)));
+    void connection(Connection& c) {
+        each(boost::bind(&ConnectionObserver::connection, _1, boost::ref(c)));
     }
-    void disconnect(Connection& c) {
-        std::for_each(observers.begin(), observers.end(), boost::bind(&ConnectionObserver::disconnect, _1, boost::ref(c)));
+
+    void opened(Connection& c) {
+        each(boost::bind(&ConnectionObserver::opened, _1, boost::ref(c)));
+    }
+
+    void closed(Connection& c) {
+        each(boost::bind(&ConnectionObserver::closed, _1, boost::ref(c)));
+    }
+
+    void forced(Connection& c, const std::string& text) {
+        each(boost::bind(&ConnectionObserver::forced, _1, boost::ref(c), text));
     }
 
   private:
     typedef std::vector<boost::shared_ptr<ConnectionObserver> > Observers;
     Observers observers;
+
+    template <class F> void each(F f) {
+        std::for_each(observers.begin(), observers.end(), f);
+    }
 };
 
 }} // namespace qpid::broker

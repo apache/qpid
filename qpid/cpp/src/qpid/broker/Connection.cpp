@@ -104,8 +104,7 @@ Connection::Connection(ConnectionOutputHandler* out_,
     outboundTracker(*this)
 {
     outboundTracker.wrap(out);
-    if (link)
-        links.notifyConnection(mgmtId, this);
+    broker.getConnectionObservers().connection(*this);
     // In a cluster, allow adding the management object to be delayed.
     if (!delayManagement) addManagementObject();
     if (!isShadow()) broker.getConnectionCounter().inc_connectionCount();
@@ -143,8 +142,7 @@ Connection::~Connection()
         if (!link && isClusterSafe())
             agent->raiseEvent(_qmf::EventClientDisconnect(mgmtId, ConnectionState::getUserId()));
     }
-    if (link)
-        links.notifyClosed(mgmtId);
+    broker.getConnectionObservers().closed(*this);
 
     if (heartbeatTimer)
         heartbeatTimer->cancel();
@@ -165,8 +163,7 @@ void Connection::received(framing::AMQFrame& frame) {
         recordFromClient(frame);
     if (!wasOpen && isOpen()) {
         doIoCallbacks(); // Do any callbacks registered before we opened.
-        // FIXME aconway 2012-01-18: generic observer points.
-        broker.getConnectionObservers().connect(*this);
+        broker.getConnectionObservers().opened(*this);
     }
 }
 
@@ -267,8 +264,7 @@ string Connection::getAuthCredentials()
 
 void Connection::notifyConnectionForced(const string& text)
 {
-    if (link)
-        links.notifyConnectionForced(mgmtId, text);
+    broker.getConnectionObservers().forced(*this, text);
 }
 
 void Connection::setUserId(const string& userId)

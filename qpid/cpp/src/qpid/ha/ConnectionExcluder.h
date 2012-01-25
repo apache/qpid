@@ -42,7 +42,7 @@ class ConnectionExcluder : public broker::ConnectionObserver
     ConnectionExcluder(string adminUser_, PrimaryTest isPrimary_)
         : adminUser(adminUser_), isPrimary(isPrimary_) {}
 
-    void connect(broker::Connection& connection) {
+    void opened(broker::Connection& connection) {
         if (!isPrimary() && !connection.isLink()
             && !connection.isAuthenticatedUser(adminUser))
         {
@@ -58,8 +58,6 @@ class ConnectionExcluder : public broker::ConnectionObserver
                      << connection.getUserId());
         }
     }
-
-    void disconnect(broker::Connection&) {}
 
   private:
     string adminUser;
