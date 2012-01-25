@@ -21,6 +21,7 @@
 package org.apache.qpid.server.queue;
 
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import org.apache.qpid.server.message.ServerMessage;
 
@@ -46,6 +47,7 @@ public class SimpleQueueEntryList implements QueueEntryList<SimpleQueueEntryImpl
 
     private AtomicLong _scavenges = new AtomicLong(0L);
     private final long _scavengeCount = Integer.getInteger("qpid.queue.scavenge_count", 50);
+    private final AtomicReference<SimpleQueueEntryImpl> _unscavengedHWM = new AtomicReference<SimpleQueueEntryImpl>();
 
 
     public SimpleQueueEntryList(AMQQueue queue)
@@ -55,28 +57,17 @@ public class SimpleQueueEntryList implements QueueEntryList<SimpleQueueEntryImpl
         _tail = _head;
     }
 
-    void advanceHead()
-    {
-        SimpleQueueEntryImpl next = _head.getNextNode();
-        SimpleQueueEntryImpl newNext = _head.getNextValidEntry();
-
-        if (next == newNext)
-        {
-            if (_scavenges.incrementAndGet() > _scavengeCount)
-            {
-                _scavenges.set(0L);
-                scavenge();
-            }
-        }
-    }
-
     void scavenge()
     {
+        SimpleQueueEntryImpl hwm = _unscavengedHWM.getAndSet(null);
         SimpleQueueEntryImpl next = _head.getNextValidEntry();
 
-        while (next != null)
+        if(hwm != null)
         {
-            next = next.getNextValidEntry();
+            while (next != null && hwm.compareTo(next)>0)
+            {
+                next = next.getNextValidEntry();
+            }
         }
     }
 
@@ -182,7 +173,24 @@ public class SimpleQueueEntryList implements QueueEntryList<SimpleQueueEntryImpl
 
     public void entryDeleted(SimpleQueueEntryImpl queueEntry)
     {
-        advanceHead();
+        SimpleQueueEntryImpl next = _head.getNextNode();
+        SimpleQueueEntryImpl newNext = _head.getNextValidEntry();
+
+        // the head of the queue has not been deleted, hence the deletion must have been mid queue.
+        if (next == newNext)
+        {
+            SimpleQueueEntryImpl unscavengedHWM = _unscavengedHWM.get();
+            while(unscavengedHWM == null || unscavengedHWM.compareTo(queueEntry)<0)
+            {
+                _unscavengedHWM.compareAndSet(unscavengedHWM, queueEntry);
+                unscavengedHWM = _unscavengedHWM.get();
+            }
+            if (_scavenges.incrementAndGet() > _scavengeCount)
+            {
+                _scavenges.set(0L);
+                scavenge();
+            }
+        }
     }
 
     public int getPriorities()
