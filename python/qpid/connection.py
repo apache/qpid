@@ -161,12 +161,9 @@ class Connection(Framer):
         data = self.sock.recv(64*1024)
         if self.security_layer_rx and data:
           status, data = self.security_layer_rx.decode(data)
-          # zero-length data is OK, as long as return code is good.
-          # when that happens, just keep trying.  the sasl library 
-          # will send us data eventually.  ( or an error code. )
-          if not status:
-            self.detach_all()
-            break
+        if not data:
+          self.detach_all()
+          break
       except socket.timeout:
         if self.aborted():
           self.close_code = (None, "connection timed out")
