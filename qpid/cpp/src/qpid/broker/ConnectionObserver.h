@@ -1,5 +1,5 @@
-#ifndef QPID_HA_SETTINGS_H
-#define QPID_HA_SETTINGS_H
+#ifndef QPID_BROKER_CONNECTIONOBSERVER_H
+#define QPID_BROKER_CONNECTIONOBSERVER_H
 
 /*
  *
@@ -22,27 +22,31 @@
  *
  */
 
-#include <string>
-
 namespace qpid {
-namespace ha {
+namespace broker {
 
-using std::string;
+class Connection;
 
 /**
- * Configurable settings for HA.
+ * Observer that is informed of connection events.  For use by
+ * plug-ins that want to be notified of, or influence, connection
+ * events.
  */
-class Settings
+class ConnectionObserver
 {
   public:
-    Settings() : enabled(false), adminUser("qpid-ha-admin") {}
-    bool enabled;
-    string clientUrl;
-    string brokerUrl;
-    string username, password, mechanism;
-    string adminUser;
-  private:
-};
-}} // namespace qpid::ha
+    virtual ~ConnectionObserver() {}
 
-#endif  /*!QPID_HA_SETTINGS_H*/
+    /** Called when a connection is opened and authentication has been
+     * performed.
+     * @exception Throwing an exception will abort the connection.
+     */
+    virtual void connect(Connection& connection) = 0;
+
+    /** Called when a connection is torn down. */
+    virtual void disconnect(Connection& connection) = 0;
+};
+
+}} // namespace qpid::broker
+
+#endif  /*!QPID_BROKER_CONNECTIONOBSERVER_H*/

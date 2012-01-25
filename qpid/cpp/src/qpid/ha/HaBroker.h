@@ -52,6 +52,7 @@ class HaBroker : public management::Manageable
     management::Manageable::status_t ManagementMethod (
         uint32_t methodId, management::Args& args, std::string& text);
 
+    bool isPrimary() const;
   private:
     broker::Broker& broker;
     Url clientUrl, brokerUrl;

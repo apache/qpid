@@ -19,6 +19,7 @@
  *
  */
 #include "Backup.h"
+#include "ConnectionExcluder.h"
 #include "HaBroker.h"
 #include "Settings.h"
 #include "ReplicatingSubscription.h"
@@ -60,15 +61,20 @@ HaBroker::HaBroker(broker::Broker& b, const Settings& s)
         ma->addObject(mgmtObject);
     }
     // FIXME aconway 2011-11-22: temporary hack to identify primary.
-    bool isPrimary = (s.brokerUrl == "primary");
-    QPID_LOG(notice, "HA: " << (isPrimary ? "Primary" : "Backup")
+    bool primary = (s.brokerUrl == "primary");
+    QPID_LOG(notice, "HA: " << (primary ? "Primary" : "Backup")
              << " initialized: client-url=" << clientUrl
              << " broker-url=" << brokerUrl);
-    if (!isPrimary) backup.reset(new Backup(broker, s));
+    if (!primary) backup.reset(new Backup(broker, s));
     // Register a factory for replicating subscriptions.
     broker.getConsumerFactories().add(
         boost::shared_ptr<ReplicatingSubscription::Factory>(
             new ReplicatingSubscription::Factory()));
+    // Register a connection excluder
+    broker.getConnectionObservers().add(
+        boost::shared_ptr<broker::ConnectionObserver>(
+            new ConnectionExcluder(
+                s.adminUser, boost::bind(&HaBroker::isPrimary, this))));
 }
 
 HaBroker::~HaBroker() {}
@@ -85,6 +91,10 @@ Manageable::status_t HaBroker::ManagementMethod (uint32_t methodId, Args& args, 
         return Manageable::STATUS_UNKNOWN_METHOD;
     }
     return Manageable::STATUS_OK;
+}
+
+bool HaBroker::isPrimary() const {
+    return !backup.get();       // TODO aconway 2012-01-18: temporary test.
 }
 
 }} // namespace qpid::ha
