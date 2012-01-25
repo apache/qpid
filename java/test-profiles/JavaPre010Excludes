@@ -58,3 +58,4 @@ org.apache.qpid.test.unit.client.connection.ConnectionTest#testClientIDVerificat
 // and for this reason this test would fail.
 org.apache.qpid.test.unit.client.temporaryqueue.TemporaryQueueTest#testTemporaryQueueReused
 
+org.apache.qpid.client.prefetch.PrefetchBehaviourTest#testConnectionStop
