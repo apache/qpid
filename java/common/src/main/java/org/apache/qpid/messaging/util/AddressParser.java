@@ -257,6 +257,10 @@ public class AddressParser extends Parser
         {
             eat(SLASH);
             subject = toks2str(eat_until(SEMI, EOF));
+            if ("None".equals(subject))
+            {
+            	subject = null;
+            }
         }
         else
         {
