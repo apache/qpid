@@ -271,6 +271,7 @@ public class AMQMessageDelegate_0_10 extends AbstractAMQMessageDelegate
     private Destination convertToAddressBasedDestination(String exchange, String routingKey, String subject)
     {
         String addr;
+        boolean isQueue = true;
         if ("".equals(exchange)) // type Queue
         {
             subject = (subject == null) ? "" : "/" + subject;
@@ -279,11 +280,24 @@ public class AMQMessageDelegate_0_10 extends AbstractAMQMessageDelegate
         else
         {
             addr = exchange + "/" + routingKey;
+            isQueue = false;
         }
         
         try
         {
-            return AMQDestination.createDestination("ADDR:" + addr);
+            AMQDestination dest = (AMQDestination)AMQDestination.createDestination("ADDR:" + addr);
+            if (isQueue)
+            {
+                dest.setQueueName(new AMQShortString(routingKey));
+                dest.setRoutingKey(new AMQShortString(routingKey));
+                dest.setExchangeName(new AMQShortString(""));
+            }
+            else
+            {
+                dest.setRoutingKey(new AMQShortString(routingKey));
+                dest.setExchangeName(new AMQShortString(exchange));
+            }
+            return dest;
         }
         catch(Exception e)
         {
