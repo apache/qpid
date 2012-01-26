@@ -1299,10 +1299,10 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
         node.setExclusive(true);
         node.setAutoDelete(!node.isDurable());
         send0_10QueueDeclare(dest,null,false,true);
-        node.addBinding(new Binding(dest.getAddressName(),
-                                    dest.getQueueName(),// should have one by now
-                                    dest.getSubject(),
-                                    Collections.<String,Object>emptyMap()));
+        getQpidSession().exchangeBind(dest.getQueueName(), 
+        		              dest.getAddressName(), 
+        		              dest.getSubject(), 
+        		              Collections.<String,Object>emptyMap());
         sendQueueBind(dest.getAMQQueueName(), dest.getRoutingKey(),
                 null,dest.getExchangeName(),dest, false);
     }
