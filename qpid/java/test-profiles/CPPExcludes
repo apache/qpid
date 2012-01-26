@@ -27,18 +27,7 @@ org.apache.qpid.test.unit.client.channelclose.ChannelCloseTest#*
 org.apache.qpid.client.ResetMessageListenerTest#*
 
 // Those tests are testing 0.8 specific semantics
-org.apache.qpid.test.testcases.ImmediateMessageTest#test_QPID_517_ImmediateFailsConsumerDisconnectedNoTxP2P
-org.apache.qpid.test.testcases.ImmediateMessageTest#test_QPID_517_ImmediateFailsConsumerDisconnectedTxP2P
-org.apache.qpid.test.testcases.ImmediateMessageTest#test_QPID_517_ImmediateFailsNoRouteNoTxP2P
-org.apache.qpid.test.testcases.ImmediateMessageTest#test_QPID_517_ImmediateFailsNoRouteTxP2P
-org.apache.qpid.test.testcases.ImmediateMessageTest#test_QPID_517_ImmediateFailsConsumerDisconnectedNoTxPubSub
-org.apache.qpid.test.testcases.ImmediateMessageTest#test_QPID_517_ImmediateFailsConsumerDisconnectedTxPubSub
-org.apache.qpid.test.testcases.ImmediateMessageTest#test_QPID_517_ImmediateFailsNoRouteNoTxPubSub
-org.apache.qpid.test.testcases.ImmediateMessageTest#test_QPID_517_ImmediateFailsNoRouteTxPubSub
-org.apache.qpid.test.testcases.MandatoryMessageTest#test_QPID_508_MandatoryFailsNoRouteNoTxP2P
-org.apache.qpid.test.testcases.MandatoryMessageTest#test_QPID_508_MandatoryFailsNoRouteTxP2P
-org.apache.qpid.test.testcases.MandatoryMessageTest#test_QPID_508_MandatoryFailsNoRouteNoTxPubSub
-org.apache.qpid.test.testcases.MandatoryMessageTest#test_QPID_508_MandatoryFailsNoRouteTxPubSub
+org.apache.qpid.test.client.ImmediateAndMandatoryPublishingTest#*
 
 // the 0.10 c++ broker does not implement forget
 org.apache.qpid.test.unit.xa.FaultTest#testForget
