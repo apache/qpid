@@ -650,12 +650,12 @@ public class DerbyMessageStore implements MessageStore, DurableConfigurationStor
             conn = newAutoCommitConnection();
 
             PreparedStatement stmt = conn.prepareStatement(SELECT_ALL_FROM_BRIDGES);
-            stmt.setLong(1, linkId.getLeastSignificantBits());
-            stmt.setLong(2, linkId.getMostSignificantBits());
-
 
             try
             {
+                stmt.setLong(1, linkId.getLeastSignificantBits());
+                stmt.setLong(2, linkId.getMostSignificantBits());
+
                 ResultSet rs = stmt.executeQuery();
 
                 try
