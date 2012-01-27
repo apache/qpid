@@ -96,7 +96,7 @@ start_ssl_broker() {
 }
 
 start_ssl_mux_broker() {
-    ../qpidd $COMMON_OPTS --port $1 --ssl-port $1
+    ../qpidd $COMMON_OPTS --port $1 --ssl-port $1 --auth no
     PORTS=( ${PORTS[@]} $1 )
 }
 
@@ -167,7 +167,7 @@ start_ssl_mux_broker $PORT || error "Could not start broker"
 echo "Running SSL/TCP mux test on fixed port $PORT"
 
 ## Test connection via connection settings
-./qpid-perftest --count ${COUNT} --port ${PORT} -P ssl -b $TEST_HOSTNAME --summary || error "SSL cnnection failed!"
+./qpid-perftest --count ${COUNT} --port ${PORT} -P ssl -b $TEST_HOSTNAME --summary || error "SSL connection failed!"
 ./qpid-perftest --count ${COUNT} --port ${PORT} -P tcp -b $TEST_HOSTNAME --summary || error "TCP connection failed!"
 
 # Test a broker chosen port - since ssl chooses port need to use --transport ssl here
@@ -176,7 +176,7 @@ PORT=${PORTS[0]}
 echo "Running SSL/TCP mux test on random port $PORT"
 
 ## Test connection via connection settings
-./qpid-perftest --count ${COUNT} --port ${PORT} -P ssl -b $TEST_HOSTNAME --summary || error "SSL cnnection failed!"
+./qpid-perftest --count ${COUNT} --port ${PORT} -P ssl -b $TEST_HOSTNAME --summary || error "SSL connection failed!"
 ./qpid-perftest --count ${COUNT} --port ${PORT} -P tcp -b $TEST_HOSTNAME --summary || error "TCP connection failed!"
 
 stop_brokers
