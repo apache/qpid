@@ -241,7 +241,9 @@ public class ViewUtility
             public void widgetSelected(SelectionEvent e)
             {
                 if (!(e.widget instanceof Button))
+                {
                     return;
+                }
 
                 Button traverseButton =(Button)e.widget; 
                 // Get the CompositeData respective to the button selected
@@ -895,7 +897,9 @@ public class ViewUtility
     public static void disposeChildren(Composite parent)
     {
         if (parent == null || parent.isDisposed())
+        {
             return;
+        }
         
         Control[] oldControls = parent.getChildren();        
         for (int i = 0; i < oldControls.length; i++)

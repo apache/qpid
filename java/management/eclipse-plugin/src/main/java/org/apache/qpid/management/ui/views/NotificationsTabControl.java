@@ -300,7 +300,9 @@ public class NotificationsTabControl extends VHNotificationsTabControl
         public void widgetSelected(SelectionEvent e)
         {
             if (_mbean == null)
+            {
                 return;
+            }
             
             Button source = (Button)e.getSource();
             String type = _typesCombo.getItem(_typesCombo.getSelectionIndex());
@@ -340,7 +342,9 @@ public class NotificationsTabControl extends VHNotificationsTabControl
         public void widgetSelected(SelectionEvent e)
         {
             if (_mbean == null)
+            {
                 return;
+            }
             
             Combo combo = (Combo)e.getSource();
             if (combo == _notificationNameCombo)

@@ -109,11 +109,26 @@ public abstract class AMQDestination implements Destination, Referenceable
         
       public static AddressOption getOption(String str)
       {
-          if ("always".equals(str)) return ALWAYS;
-          else if ("never".equals(str)) return NEVER;
-          else if ("sender".equals(str)) return SENDER;
-          else if ("receiver".equals(str)) return RECEIVER;
-          else throw new IllegalArgumentException(str + " is not an allowed value");
+          if ("always".equals(str))
+          {
+              return ALWAYS;
+          }
+          else if ("never".equals(str))
+          {
+              return NEVER;
+          }
+          else if ("sender".equals(str))
+          {
+              return SENDER;
+          }
+          else if ("receiver".equals(str))
+          {
+              return RECEIVER;
+          }
+          else
+          {
+              throw new IllegalArgumentException(str + " is not an allowed value");
+          }
       }
     }
     

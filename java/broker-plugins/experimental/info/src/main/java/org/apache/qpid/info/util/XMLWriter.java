@@ -88,7 +88,9 @@ public class XMLWriter
     private String escapeXML(String xmlStr)
     {
         if (null == xmlStr)
+        {
             return null;
+        }
         xmlStr = xmlStr.replaceAll("&", "&amp;");
         xmlStr = xmlStr.replace("<", "&lt;");
         xmlStr = xmlStr.replace(">", "&gt;");

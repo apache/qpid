@@ -154,7 +154,9 @@ public abstract class DefaultManagedObject extends StandardMBean implements Mana
             return parentType + "." + obj.getType();
         }
         else
+        {
             return obj.getType();
+        }
     }
 
     protected String getHierarchicalName(ManagedObject obj)
@@ -168,7 +170,9 @@ public abstract class DefaultManagedObject extends StandardMBean implements Mana
             return parentName;
         }
         else
+        {
             return "";
+        }
     }
 
     private MBeanInfo buildMBeanInfo() throws NotCompliantMBeanException

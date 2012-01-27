@@ -347,7 +347,9 @@ public class OperationTabControl extends TabControl
                 String str = param.getType();
                 
                 if (param.getType().lastIndexOf(".") != -1)
+                {
                     str = param.getType().substring(1 + param.getType().lastIndexOf("."));
+                }
                 
                 label = _toolkit.createLabel(_paramsComposite, "(" + str + ")");
             }
@@ -554,24 +556,38 @@ public class OperationTabControl extends TabControl
     private void clearParameterValues(Composite control)
     {
         if (control == null || (control.isDisposed()))
+        {
             return;
+        }
         
         Control[] controls = control.getChildren();
         if (controls == null || controls.length == 0)
+        {
             return;
+        }
         
         for (int i = 0; i < controls.length; i++)
         {
             if (controls[i] instanceof Combo)
+            {
                 ((Combo)controls[i]).select(0);
+            }
             if (controls[i] instanceof org.eclipse.swt.widgets.List)
+            {
                 ((org.eclipse.swt.widgets.List)controls[i]).deselectAll();
+            }
             else if (controls[i] instanceof Text)
+            {
                 ((Text)controls[i]).setText("");
+            }
             else if (controls[i] instanceof Button)
+            {
                 ((Button)controls[i]).setSelection(false);
+            }
             else if (controls[i] instanceof Composite)
+            {
                 clearParameterValues((Composite)controls[i]);
+            }
         }
     }
     
@@ -840,7 +856,9 @@ public class OperationTabControl extends TabControl
         public void keyReleased(KeyEvent e) 
         {
             if (!(e.widget instanceof Text))
+            {
                 return;
+            }
             
             Text text = (Text)e.widget;
             // Get the parameters widget and assign the text to the parameter

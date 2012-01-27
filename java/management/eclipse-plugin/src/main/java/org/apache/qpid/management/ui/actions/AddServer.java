@@ -62,7 +62,9 @@ public class AddServer extends AbstractAction implements IWorkbenchWindowActionD
     public void run(IAction action)
     {
         if(_window == null)
+        {
             return;
+        }
         
         reset();
         createAddServerPopup();

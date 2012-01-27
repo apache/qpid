@@ -772,7 +772,9 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
     private boolean mightAssign(final Subscription sub, final QueueEntry entry)
     {
         if(_messageGroupManager == null || !sub.acquires())
+        {
             return true;
+        }
         Subscription assigned = _messageGroupManager.getAssignedSubscription(entry);
         return (assigned == null) || (assigned == sub);
     }

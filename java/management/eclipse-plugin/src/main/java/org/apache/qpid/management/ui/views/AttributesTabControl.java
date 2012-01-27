@@ -297,7 +297,10 @@ public class AttributesTabControl extends TabControl
             if (item != null)
             {
                 AttributeData data = (AttributeData)item.getData();
-                if (tooltipShell != null  && !tooltipShell.isDisposed ()) tooltipShell.dispose ();
+                if (tooltipShell != null  && !tooltipShell.isDisposed ())
+                {
+                    tooltipShell.dispose ();
+                }
                 tooltipShell = new Shell(_table.getShell(), SWT.ON_TOP | SWT.NO_FOCUS | SWT.TOOL);
                 tooltipShell.setBackground(event.display.getSystemColor(SWT.COLOR_INFO_BACKGROUND));
                 FillLayout layout = new FillLayout();
@@ -328,7 +331,9 @@ public class AttributesTabControl extends TabControl
         public void mouseMove(MouseEvent event)
         {
             if (tooltipShell == null)
+            {
                 return;
+            }
             
             tooltipShell.dispose();
             tooltipShell = null;
@@ -339,7 +344,9 @@ public class AttributesTabControl extends TabControl
         public void keyPressed(KeyEvent e)
         {
             if (tooltipShell == null)
+            {
                 return;
+            }
             
             tooltipShell.dispose();
             tooltipShell = null;
@@ -757,7 +764,9 @@ public class AttributesTabControl extends TabControl
     {
         int index = _table.getSelectionIndex();
         if (index == -1)
+        {
             return null;
+        }
         
         return (AttributeData)_table.getItem(index).getData();
     }
@@ -854,6 +863,7 @@ public class AttributesTabControl extends TabControl
                     break;
                 case 1 : // attribute value column 
                     if (attribute.getValue() != null)
+                    {
                         if (attribute.getValue() instanceof String[])
                         {
                             for(String val : (String[]) attribute.getValue()){
@@ -864,6 +874,7 @@ public class AttributesTabControl extends TabControl
                         {
                             result = String.valueOf(attribute.getValue());
                         }
+                    }
                     break;
                 default :
                     result = "";
@@ -886,9 +897,13 @@ public class AttributesTabControl extends TabControl
         {
             attribute = (AttributeData) element;
             if (attribute.isWritable())
+            {
                 return Display.getCurrent().getSystemColor(SWT.COLOR_BLUE);
+            }
             else
+            {
                 return Display.getCurrent().getSystemColor(SWT.COLOR_BLACK);
+            }
         }
         public Color getBackground(Object element)
         {

@@ -211,9 +211,13 @@ ${
 if pack > 0:
   if f.empty:
     out("        if (value)\\n")
+    out("        {\\n")
     out("            packing_flags |= $(f.flag_mask(pack));\\n")
+    out("        }\\n")
     out("        else\\n")
-    out("            packing_flags &= ~$(f.flag_mask(pack));")
+    out("        {\\n")
+    out("            packing_flags &= ~$(f.flag_mask(pack));\\n")
+    out("        }\\n")
   else:
     out("        packing_flags |= $(f.flag_mask(pack));")
 }
@@ -301,6 +305,7 @@ for f in fields:
     continue
   if pack > 0:
     out("        if ((packing_flags & $(f.flag_mask(pack))) != 0)\n    ")
+    out("    {\n    ")
   pre = ""
   post = ""
   if f.type_node.name == "struct":
@@ -308,6 +313,8 @@ for f in fields:
   elif f.type_node.name == "domain":
     post = ".getValue()"
   out("        enc.write$(f.coder)($(pre)this.$(f.name)$(post));\n")
+  if pack > 0:
+    out("        }\n")
 }
     }
 
@@ -322,6 +329,7 @@ for f in fields:
     continue
   if pack > 0:
     out("        if ((packing_flags & $(f.flag_mask(pack))) != 0)\n    ")
+    out("    {\n    ")
   pre = ""
   post = ""
   arg = ""
@@ -332,6 +340,8 @@ for f in fields:
     pre = "%s.get(" % cname(f.type_node)
     post = ")"
   out("        this.$(f.name) = $(pre)dec.read$(f.coder)($(arg))$(post);\n")
+  if pack > 0:
+    out("        }\n")
 }
     }
 
@@ -343,7 +353,10 @@ ${
 for f in fields:
   if pack > 0:
     out("        if ((packing_flags & $(f.flag_mask(pack))) != 0)\n    ")
+    out("    {\n    ")
   out('        result.put("$(f.name)", $(f.get)());\n')
+  if pack > 0:
+    out("        }\n")
 }
 
         return result;
