@@ -33,9 +33,9 @@ public class HashedUser implements Principal
 {
     private static final Logger _logger = Logger.getLogger(HashedUser.class);
 
-    String _name;
-    char[] _password;
-    byte[] _encodedPassword = null;
+    private String _name;
+    private char[] _password;
+    private byte[] _encodedPassword = null;
     private boolean _modified = false;
     private boolean _deleted = false;
 

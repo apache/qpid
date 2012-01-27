@@ -98,7 +98,7 @@ public class ProtocolOutputConverterImpl implements ProtocolOutputConverter
             final MessageTransferMessage message = (MessageTransferMessage) entry.getMessage();
             BasicContentHeaderProperties props = HeaderPropertiesConverter.convert(message, entry.getQueue().getVirtualHost());
             ContentHeaderBody chb = new ContentHeaderBody(props, BasicGetBodyImpl.CLASS_ID);
-            chb.bodySize = message.getSize();
+            chb.setBodySize(message.getSize());
             return chb;
         }
     }

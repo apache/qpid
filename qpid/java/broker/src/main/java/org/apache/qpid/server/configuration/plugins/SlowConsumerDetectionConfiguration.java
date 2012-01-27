@@ -45,7 +45,7 @@ public class SlowConsumerDetectionConfiguration extends ConfigurationPlugin
     }
 
     //Set Default time unit to seconds
-    TimeUnit _timeUnit = TimeUnit.SECONDS;
+    private TimeUnit _timeUnit = TimeUnit.SECONDS;
 
     public String[] getElementsProcessed()
     {

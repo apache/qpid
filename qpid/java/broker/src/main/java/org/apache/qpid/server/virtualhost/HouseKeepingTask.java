@@ -28,7 +28,7 @@ import org.apache.qpid.server.logging.actors.CurrentActor;
 
 public abstract class HouseKeepingTask implements Runnable
 {
-    Logger _logger = Logger.getLogger(this.getClass());
+    private Logger _logger = Logger.getLogger(this.getClass());
 
     private VirtualHost _virtualHost;
 

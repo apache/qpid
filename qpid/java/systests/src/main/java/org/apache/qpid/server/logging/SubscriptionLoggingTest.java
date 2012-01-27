@@ -49,10 +49,10 @@ public class SubscriptionLoggingTest extends AbstractTestLogging
 {
     static final String SUB_PREFIX = "SUB-";
 
-    Connection _connection;
-    Session _session;
-    Queue _queue;
-    Topic _topic;
+    private Connection _connection;
+    private Session _session;
+    private Queue _queue;
+    private Topic _topic;
 
     @Override
     public void setUp() throws Exception

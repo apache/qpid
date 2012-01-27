@@ -37,7 +37,7 @@ import org.apache.qpid.slowconsumerdetection.policies.SlowConsumerPolicyPluginFa
 
 public class TopicDeletePolicy implements SlowConsumerPolicyPlugin
 {
-    Logger _logger = Logger.getLogger(TopicDeletePolicy.class);
+    private Logger _logger = Logger.getLogger(TopicDeletePolicy.class);
     private TopicDeletePolicyConfiguration _configuration;
 
     public static class TopicDeletePolicyFactory implements SlowConsumerPolicyPluginFactory

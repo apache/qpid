@@ -36,7 +36,7 @@ import javax.jms.Session;
  */
 public class Publisher extends Client
 {
-    int _msgCount;
+    private int _msgCount;
 
     public Publisher(String destination, int msgCount)
     {
@@ -48,18 +48,18 @@ public class Publisher extends Client
     {
         try
         {
-            _session = _connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            setSession(getConnection().createSession(false, Session.AUTO_ACKNOWLEDGE));
 
-            MessageProducer _producer = _session.createProducer(_destination);
+            MessageProducer _producer = getSession().createProducer(getDestination());
 
             for (int msgCount = 0; msgCount < _msgCount; msgCount++)
             {
-                _producer.send(_session.createTextMessage("msg:" + msgCount));
+                _producer.send(getSession().createTextMessage("msg:" + msgCount));
                 System.out.println("Sent:" + msgCount);
             }
 
             System.out.println("Done.");
-            _connection.close();
+            getConnection().close();
         }
         catch (JMSException e)
         {

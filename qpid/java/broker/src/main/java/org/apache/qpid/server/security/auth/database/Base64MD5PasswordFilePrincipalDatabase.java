@@ -62,7 +62,7 @@ public class Base64MD5PasswordFilePrincipalDatabase implements PrincipalDatabase
 
     private Map<String, AuthenticationProviderInitialiser> _saslServers;
 
-    AMQUserManagementMBean _mbean;
+    private AMQUserManagementMBean _mbean;
     public static final String DEFAULT_ENCODING = "utf-8";
     private Map<String, HashedUser> _users = new HashMap<String, HashedUser>();
     private ReentrantLock _userUpdate = new ReentrantLock();

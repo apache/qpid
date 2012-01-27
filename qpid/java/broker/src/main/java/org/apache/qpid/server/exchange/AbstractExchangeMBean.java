@@ -55,9 +55,9 @@ import java.util.Map;
 public abstract class AbstractExchangeMBean<T extends AbstractExchange> extends AMQManagedObject implements ManagedExchange
 {
     // open mbean data types for representing exchange bindings
-    protected OpenType[] _bindingItemTypes;
-    protected CompositeType _bindingDataType;
-    protected TabularType _bindinglistDataType;
+    private OpenType[] _bindingItemTypes;
+    private CompositeType _bindingDataType;
+    private TabularType _bindinglistDataType;
 
 
     private T _exchange;
@@ -108,17 +108,17 @@ public abstract class AbstractExchangeMBean<T extends AbstractExchange> extends 
 
     public Integer getTicketNo()
     {
-        return _exchange._ticket;
+        return _exchange.getTicket();
     }
 
     public boolean isDurable()
     {
-        return _exchange._durable;
+        return _exchange.isDurable();
     }
 
     public boolean isAutoDelete()
     {
-        return _exchange._autoDelete;
+        return _exchange.isAutoDelete();
     }
 
     // Added exchangetype in the object name lets maangement apps to do any customization required
@@ -143,7 +143,7 @@ public abstract class AbstractExchangeMBean<T extends AbstractExchange> extends 
             throw new JMException("Queue \"" + queueName + "\" is not registered with the virtualhost.");
         }
 
-        CurrentActor.set(new ManagementActor(_logActor.getRootMessageLogger()));
+        CurrentActor.set(new ManagementActor(getLogActor().getRootMessageLogger()));
         try
         {
             vhost.getBindingFactory().addBinding(binding,queue,getExchange(),null);
@@ -170,7 +170,7 @@ public abstract class AbstractExchangeMBean<T extends AbstractExchange> extends 
             throw new JMException("Queue \"" + queueName + "\" is not registered with the virtualhost.");
         }
 
-        CurrentActor.set(new ManagementActor(_logActor.getRootMessageLogger()));
+        CurrentActor.set(new ManagementActor(getLogActor().getRootMessageLogger()));
         try
         {
             vhost.getBindingFactory().removeBinding(binding, queue, _exchange, Collections.<String, Object>emptyMap());
@@ -181,5 +181,36 @@ public abstract class AbstractExchangeMBean<T extends AbstractExchange> extends 
             throw new MBeanException(jme, "Error removing binding " + binding);
         }
         CurrentActor.remove();
+    }
+
+
+    protected OpenType[] getBindingItemTypes()
+    {
+        return _bindingItemTypes;
+    }
+
+    protected void setBindingItemTypes(OpenType[] bindingItemTypes)
+    {
+        _bindingItemTypes = bindingItemTypes;
+    }
+
+    protected CompositeType getBindingDataType()
+    {
+        return _bindingDataType;
+    }
+
+    protected void setBindingDataType(CompositeType bindingDataType)
+    {
+        _bindingDataType = bindingDataType;
+    }
+
+    protected TabularType getBindinglistDataType()
+    {
+        return _bindinglistDataType;
+    }
+
+    protected void setBindinglistDataType(TabularType bindinglistDataType)
+    {
+        _bindinglistDataType = bindinglistDataType;
     }
 }

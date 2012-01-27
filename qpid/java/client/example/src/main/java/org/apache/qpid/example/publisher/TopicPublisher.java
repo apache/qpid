@@ -18,7 +18,6 @@
  */
 package org.apache.qpid.example.publisher;
 
-import org.apache.qpid.client.BasicMessageProducer;
 import org.apache.qpid.example.shared.InitialContextHelper;
 import org.slf4j.LoggerFactory;
 import org.slf4j.Logger;
@@ -44,10 +43,10 @@ public class TopicPublisher extends Publisher
             InitialContext ctx = _contextHelper.getInitialContext();
 
            //lookup the example topic and use it
-           _destination = (Topic) ctx.lookup("MyTopic");
+           setDestination((Topic) ctx.lookup("MyTopic"));
 
            //create a message producer
-           _producer = _session.createProducer(_destination);
+           setProducer(getSession().createProducer(getDestination()));
         }
         catch (Exception e)
         {

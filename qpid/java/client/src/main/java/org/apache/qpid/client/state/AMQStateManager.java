@@ -63,7 +63,7 @@ public class AMQStateManager implements AMQMethodListener
 
     private static final long MAXIMUM_STATE_WAIT_TIME = Long.parseLong(System.getProperty("amqj.MaximumStateWait", "30000"));
 
-    protected final List<StateWaiter> _waiters = new CopyOnWriteArrayList<StateWaiter>();
+    private final List<StateWaiter> _waiters = new CopyOnWriteArrayList<StateWaiter>();
     private Exception _lastException;
 
     public AMQStateManager()

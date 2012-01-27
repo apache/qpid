@@ -57,7 +57,7 @@ public class FanOutTestDecorator extends DistributedTestDecorator implements Mes
     private static final Logger log = Logger.getLogger(FanOutTestDecorator.class);
 
     /** Holds the currently running test case. */
-    FrameworkBaseCase currentTest = null;
+    private FrameworkBaseCase currentTest = null;
 
     /**
      * Creates a wrapped suite test decorator from another one.

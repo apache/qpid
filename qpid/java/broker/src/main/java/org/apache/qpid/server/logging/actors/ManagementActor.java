@@ -51,7 +51,7 @@ public class ManagementActor extends AbstractActor
      */
     private static final String UNKNOWN_PRINCIPAL = "N/A";
 
-    String _lastThreadName = null;
+    private String _lastThreadName = null;
 
     /**
      * LOG FORMAT for the ManagementActor,

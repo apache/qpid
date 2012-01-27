@@ -65,7 +65,7 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
     {
         super(connection, destination, transacted, channelId, session, protocolHandler, producerId, immediate, mandatory);
         
-        userIDBytes = Strings.toUTF8(_userID);
+        userIDBytes = Strings.toUTF8(getUserID());
     }
 
     void declareDestination(AMQDestination destination) throws AMQException
@@ -125,7 +125,7 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
         }
 
         long currentTime = 0;
-        if (timeToLive > 0 || !_disableTimestamps)
+        if (timeToLive > 0 || !isDisableTimestamps())
         {
             currentTime = System.currentTimeMillis();
         }        
@@ -136,7 +136,7 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
             message.setJMSExpiration(currentTime + timeToLive);
         }
         
-        if (!_disableTimestamps)
+        if (!isDisableTimestamps())
         {
             
             deliveryProp.setTimestamp(currentTime);            
@@ -213,8 +213,8 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
             // if true, we need to sync the delivery of this message
             boolean sync = false;
 
-            sync = ( (publishMode == PublishMode.SYNC_PUBLISH_ALL) ||
-                     (publishMode == PublishMode.SYNC_PUBLISH_PERSISTENT && 
+            sync = ( (getPublishMode() == PublishMode.SYNC_PUBLISH_ALL) ||
+                     (getPublishMode() == PublishMode.SYNC_PUBLISH_PERSISTENT &&
                          deliveryMode == DeliveryMode.PERSISTENT)
                    );  
             
@@ -248,14 +248,14 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
     @Override
     public boolean isBound(AMQDestination destination) throws JMSException
     {
-        return _session.isQueueBound(destination);
+        return getSession().isQueueBound(destination);
     }
     
     @Override
     public void close() throws JMSException
     {
         super.close();
-        AMQDestination dest = _destination;
+        AMQDestination dest = getAMQDestination();
         if (dest != null && dest.getDestSyntax() == AMQDestination.DestSyntax.ADDR)
         {
             if (dest.getDelete() == AddressOption.ALWAYS ||
@@ -264,7 +264,7 @@ public class BasicMessageProducer_0_10 extends BasicMessageProducer
                 try
                 {
                     ((AMQSession_0_10) getSession()).getQpidSession().queueDelete(
-                        _destination.getQueueName());
+                        getAMQDestination().getQueueName());
                 }
                 catch(TransportException e)
                 {

@@ -96,7 +96,7 @@ public class DupsOkTest extends QpidBrokerTestCase
 
         consumer.setMessageListener(new MessageListener()
         {
-            int _msgCount = 0;
+            private int _msgCount = 0;
 
             public void onMessage(Message message)
             {

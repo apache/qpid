@@ -80,21 +80,21 @@ public class BDBStoreUpgrade
 {
     private static final Logger _logger = LoggerFactory.getLogger(BDBStoreUpgrade.class);
     /** The Store Directory that needs upgrading */
-    File _fromDir;
+    private File _fromDir;
     /** The Directory that will be made to contain the upgraded store */
-    File _toDir;
+    private File _toDir;
     /** The Directory that will be made to backup the original store if required */
-    File _backupDir;
+    private File _backupDir;
 
     /** The Old Store */
-    BDBMessageStore _oldMessageStore;
+    private BDBMessageStore _oldMessageStore;
     /** The New Store */
-    BDBMessageStore _newMessageStore;
+    private BDBMessageStore _newMessageStore;
     /** The file ending that is used by BDB Store Files */
     private static final String BDB_FILE_ENDING = ".jdb";
 
     static final Options _options = new Options();
-    static CommandLine _commandLine;
+    private static CommandLine _commandLine;
     private boolean _interactive;
     private boolean _force;
 
@@ -615,8 +615,8 @@ public class BDBStoreUpgrade
         
         DatabaseVisitor contentVisitor = new DatabaseVisitor()
         {
-            long _prevMsgId = -1; //Initialise to invalid value
-            int _bytesSeenSoFar = 0;
+            private long _prevMsgId = -1; //Initialise to invalid value
+            private int _bytesSeenSoFar = 0;
             
             public void visit(DatabaseEntry key, DatabaseEntry value) throws DatabaseException
             {

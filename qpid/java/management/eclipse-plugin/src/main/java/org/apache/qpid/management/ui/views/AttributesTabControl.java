@@ -94,7 +94,7 @@ public class AttributesTabControl extends TabControl
     private Composite _buttonsComposite = null;
     
     private DisposeListener tableDisposeListener = new DisposeListenerImpl();
-    final Image image;
+    private final Image image;
     private Button _detailsButton  = null;
     private Button _editButton  = null;
     private Button _graphButton = null;
@@ -288,8 +288,8 @@ public class AttributesTabControl extends TabControl
      */
     private class MouseListenerImpl implements MouseTrackListener, MouseMoveListener, KeyListener, MouseListener                                              
     {
-        Shell tooltipShell = null;
-        Label tooltipLabel = null;
+        private Shell tooltipShell = null;
+        private Label tooltipLabel = null;
         public void mouseHover(MouseEvent event)
         {
             TableItem item = _table.getItem (new Point (event.x, event.y));
@@ -418,7 +418,7 @@ public class AttributesTabControl extends TabControl
     /**
      * Listener class for table tooltip label
      */
-    final Listener tooltipLabelListener = new Listener ()
+    private final Listener tooltipLabelListener = new Listener ()
     {
         public void handleEvent (Event event)
         {
@@ -850,7 +850,7 @@ public class AttributesTabControl extends TabControl
                                                                      IFontProvider,
                                                                      IColorProvider
     {
-        AttributeData attribute = null;
+        private AttributeData attribute = null;
         public String getColumnText(Object element, int columnIndex)
         {
             String result = "";

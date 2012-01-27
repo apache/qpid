@@ -60,14 +60,13 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
 {
     private static final Logger _logger = LoggerFactory.getLogger(BasicMessageConsumer.class);
 
-    /** The connection being used by this consumer */
-    protected final AMQConnection _connection;
+    private final AMQConnection _connection;
 
-    protected final MessageFilter _messageSelectorFilter;
+    private final MessageFilter _messageSelectorFilter;
 
     private final boolean _noLocal;
 
-    protected AMQDestination _destination;
+    private AMQDestination _destination;
 
     /**
      * When true indicates that a blocking receive call is in progress
@@ -78,23 +77,17 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
      */
     private final AtomicReference<MessageListener> _messageListener = new AtomicReference<MessageListener>();
 
-    /** The consumer tag allows us to close the consumer by sending a jmsCancel method to the broker */
-    protected int _consumerTag;
+    private int _consumerTag;
 
-    /** We need to know the channel id when constructing frames */
-    protected final int _channelId;
+    private final int _channelId;
 
-    /**
-     * Used in the blocking receive methods to receive a message from the Session thread. <p/> Or to notify of errors
-     * <p/> Argument true indicates we want strict FIFO semantics
-     */
-    protected final BlockingQueue _synchronousQueue;
+    private final BlockingQueue _synchronousQueue;
 
-    protected final MessageFactoryRegistry _messageFactory;
+    private final MessageFactoryRegistry _messageFactory;
 
-    protected final AMQSession _session;
+    private final AMQSession _session;
 
-    protected final AMQProtocolHandler _protocolHandler;
+    private final AMQProtocolHandler _protocolHandler;
 
     /**
      * We need to store the "raw" field table so that we can resubscribe in the event of failover being required
@@ -113,17 +106,9 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
      */
     private final int _prefetchLow;
 
-    /**
-     * We store the exclusive field in order to be able to reuse it when resubscribing in the event of failover
-     */
-    protected boolean _exclusive;
+    private boolean _exclusive;
 
-    /**
-     * The acknowledge mode in force for this consumer. Note that the AMQP protocol allows different ack modes per
-     * consumer whereas JMS defines this at the session level, hence why we associate it with the consumer in our
-     * implementation.
-     */
-    protected final int _acknowledgeMode;
+    private final int _acknowledgeMode;
 
     /**
      * List of tags delievered, The last of which which should be acknowledged on commit in transaction mode.
@@ -238,6 +223,11 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
         return _messageListener.get();
     }
 
+    /**
+     * The acknowledge mode in force for this consumer. Note that the AMQP protocol allows different ack modes per
+     * consumer whereas JMS defines this at the session level, hence why we associate it with the consumer in our
+     * implementation.
+     */
     public int getAcknowledgeMode()
     {
         return _acknowledgeMode;
@@ -377,6 +367,9 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
         return _noLocal;
     }
 
+    /**
+     * We store the exclusive field in order to be able to reuse it when resubscribing in the event of failover
+     */
     public boolean isExclusive()
     {
         return _exclusive;
@@ -865,6 +858,7 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
         _session.deregisterConsumer(this);
     }
 
+    /** The consumer tag allows us to close the consumer by sending a jmsCancel method to the broker */
     public int getConsumerTag()
     {
         return _consumerTag;
@@ -1013,5 +1007,41 @@ public abstract class BasicMessageConsumer<U> extends Closeable implements Messa
     }
 
     public void failedOverPost() {}
+
+    /** The connection being used by this consumer */
+    protected AMQConnection getConnection()
+    {
+        return _connection;
+    }
+
+    protected void setDestination(AMQDestination destination)
+    {
+        _destination = destination;
+    }
+
+    /** We need to know the channel id when constructing frames */
+    protected int getChannelId()
+    {
+        return _channelId;
+    }
+
+    /**
+     * Used in the blocking receive methods to receive a message from the Session thread. <p/> Or to notify of errors
+     * <p/> Argument true indicates we want strict FIFO semantics
+     */
+    protected BlockingQueue getSynchronousQueue()
+    {
+        return _synchronousQueue;
+    }
+
+    protected MessageFactoryRegistry getMessageFactory()
+    {
+        return _messageFactory;
+    }
+
+    protected AMQProtocolHandler getProtocolHandler()
+    {
+        return _protocolHandler;
+    }
 
 }

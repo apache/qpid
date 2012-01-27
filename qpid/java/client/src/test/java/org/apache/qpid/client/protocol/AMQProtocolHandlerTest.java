@@ -59,15 +59,15 @@ public class AMQProtocolHandlerTest extends TestCase
     private static final Logger _logger = LoggerFactory.getLogger(AMQProtocolHandlerTest.class);
 
     // The handler to test
-    AMQProtocolHandler _handler;
+    private AMQProtocolHandler _handler;
 
     // A frame to block upon whilst waiting the exception
-    AMQFrame _blockFrame;
+    private AMQFrame _blockFrame;
 
     // Latch to know when the listener receives an exception
     private CountDownLatch _handleCountDown;
     // The listener that will receive an exception
-    BlockToAccessFrameListener _listener;
+    private BlockToAccessFrameListener _listener;
 
     @Override
     public void setUp() throws Exception

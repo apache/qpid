@@ -36,7 +36,7 @@ import java.util.List;
 public class ApplicationRegistryShutdownTest extends InternalBrokerBaseCase
 {
 
-    Provider[] _defaultProviders;
+    private Provider[] _defaultProviders;
     @Override
     public void setUp() throws Exception
     {

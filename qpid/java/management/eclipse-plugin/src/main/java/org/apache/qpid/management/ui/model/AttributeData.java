@@ -22,12 +22,12 @@ package org.apache.qpid.management.ui.model;
 
 public class AttributeData
 {
-    String name = "";
-    String description = "";
-    String dataType = "";
-    Object value = "";
-    boolean readable = true;
-    boolean writable = false;
+    private String name = "";
+    private String description = "";
+    private String dataType = "";
+    private Object value = "";
+    private boolean readable = true;
+    private boolean writable = false;
     
     
     public String getDataType()

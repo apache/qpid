@@ -61,9 +61,9 @@ public class InfoPluginTest extends QpidBrokerTestCase
 
     private CountDownLatch _latch = new CountDownLatch(2);
 
-    final List<List<String>> _recv = new ArrayList<List<String>>();
+    private final List<List<String>> _recv = new ArrayList<List<String>>();
 
-    Thread _socketAcceptor;
+    private Thread _socketAcceptor;
 
     public void setUp() throws Exception
     {

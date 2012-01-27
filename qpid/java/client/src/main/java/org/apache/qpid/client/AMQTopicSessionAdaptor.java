@@ -26,7 +26,7 @@ import java.io.Serializable;
 
 public class AMQTopicSessionAdaptor implements TopicSession, AMQSessionAdapter
 {
-    protected final AMQSession _session;
+    private final AMQSession _session;
 
     public AMQTopicSessionAdaptor(Session session)
     {

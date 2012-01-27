@@ -65,7 +65,7 @@ import java.util.Properties;
 public class FanOutCircuitFactory extends BaseCircuitFactory
 {
     /** Used for debugging. */
-    Logger log = Logger.getLogger(FanOutCircuitFactory.class);
+    private Logger log = Logger.getLogger(FanOutCircuitFactory.class);
 
     /**
      * Creates a test circuit for the test, configered by the test parameters specified.

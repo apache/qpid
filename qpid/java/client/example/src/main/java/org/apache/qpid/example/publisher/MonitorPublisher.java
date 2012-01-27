@@ -36,7 +36,7 @@ public class MonitorPublisher extends Publisher
 
     private static final Logger _log = LoggerFactory.getLogger(Publisher.class);
 
-    BasicMessageProducer _producer;
+    private BasicMessageProducer _producer;
 
     public MonitorPublisher()
     {
@@ -51,14 +51,14 @@ public class MonitorPublisher extends Publisher
     {
         try
         {
-            _producer = (BasicMessageProducer) session.createProducer(_destination);
+            _producer = (BasicMessageProducer) session.createProducer(getDestination());
 
             _producer.send(message, deliveryMode, immediate);
 
             if (commit)
             {
                 //commit the message send and close the transaction
-                _session.commit();
+                getSession().commit();
             }
 
         }
@@ -70,7 +70,7 @@ public class MonitorPublisher extends Publisher
             throw new UndeliveredMessageException("Cannot deliver immediate message", e);
         }
 
-        _log.info(_name + " finished sending message: " + message);
+        _log.info(getName() + " finished sending message: " + message);
         return true;
     }
 
@@ -81,14 +81,14 @@ public class MonitorPublisher extends Publisher
     {
         try
         {
-            _producer = (BasicMessageProducer) _session.createProducer(_destination);
+            _producer = (BasicMessageProducer) getSession().createProducer(getDestination());
 
             //Send message via our producer which is not persistent and is immediate
             //NB: not available via jms interface MessageProducer
             _producer.send(message, DeliveryMode.NON_PERSISTENT, true);
 
             //commit the message send and close the transaction
-            _session.commit();
+            getSession().commit();
 
         }
         catch (JMSException e)
@@ -99,7 +99,7 @@ public class MonitorPublisher extends Publisher
             throw new UndeliveredMessageException("Cannot deliver immediate message", e);
         }
 
-        _log.info(_name + " finished sending message: " + message);
+        _log.info(getName() + " finished sending message: " + message);
         return true;
     }
 }

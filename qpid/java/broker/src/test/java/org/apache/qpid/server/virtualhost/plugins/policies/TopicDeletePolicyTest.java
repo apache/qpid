@@ -39,10 +39,10 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
 public class TopicDeletePolicyTest extends InternalBrokerBaseCase
 {
 
-    TopicDeletePolicyConfiguration _config;
+    private TopicDeletePolicyConfiguration _config;
 
-    VirtualHost _defaultVhost;
-    InternalTestProtocolSession _connection;
+    private VirtualHost _defaultVhost;
+    private InternalTestProtocolSession _connection;
 
     public void setUp() throws Exception
     {

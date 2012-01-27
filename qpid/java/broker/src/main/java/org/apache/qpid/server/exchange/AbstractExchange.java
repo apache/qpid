@@ -61,20 +61,20 @@ public abstract class AbstractExchange implements Exchange, Managable
 
     private Exchange _alternateExchange;
 
-    protected boolean _durable;
-    protected int _ticket;
+    private boolean _durable;
+    private int _ticket;
 
     private VirtualHost _virtualHost;
 
     private final List<Exchange.Task> _closeTaskList = new CopyOnWriteArrayList<Exchange.Task>();
 
 
-    protected AbstractExchangeMBean _exchangeMbean;
+    private AbstractExchangeMBean _exchangeMbean;
 
     /**
      * Whether the exchange is automatically deleted once all queues have detached from it
      */
-    protected boolean _autoDelete;
+    private boolean _autoDelete;
 
     //The logSubject for ths exchange
     private LogSubject _logSubject;

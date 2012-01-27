@@ -42,14 +42,14 @@ public class SubscriptionLogSubject extends AbstractLogSubject
 
         String queueString = new QueueLogSubject(subscription.getQueue()).toLogString();
 
-        _logString = "[" + MessageFormat.format(SUBSCRIPTION_FORMAT,
+        setLogString("[" + MessageFormat.format(SUBSCRIPTION_FORMAT,
                                                 subscription.getSubscriptionID())
                      + "("
                      // queueString is [vh(/{0})/qu({1}) ] so need to trim
                      //                ^                ^^
                      + queueString.substring(1,queueString.length() - 3)
                      + ")"
-                     + "] ";
+                     + "] ");
 
     }
 }

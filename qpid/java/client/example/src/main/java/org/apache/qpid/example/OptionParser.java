@@ -147,8 +147,8 @@ public class OptionParser
                 for (Option option: optDefs)
                 {
                     
-                    if ((op.startsWith("-") && option.shortForm != null && option.shortForm.equals(key)) ||
-                        (op.startsWith("--") && option.longForm != null && option.longForm.equals(key)) )
+                    if ((op.startsWith("-") && option.getShortForm() != null && option.getShortForm().equals(key)) ||
+                        (op.startsWith("--") && option.getLongForm() != null && option.getLongForm().equals(key)) )
                     {
                         match = true;
                         break;
@@ -219,18 +219,18 @@ public class OptionParser
     
     protected boolean containsOp(Option op)
     {
-        return optMap.containsKey(op.shortForm) || optMap.containsKey(op.longForm);
+        return optMap.containsKey(op.getShortForm()) || optMap.containsKey(op.getLongForm());
     }
     
     protected String getOp(Option op)
     {
-        if (optMap.containsKey(op.shortForm))
+        if (optMap.containsKey(op.getShortForm()))
         {
-            return (String)optMap.get(op.shortForm);
+            return (String)optMap.get(op.getShortForm());
         }
-        else if (optMap.containsKey(op.longForm))
+        else if (optMap.containsKey(op.getLongForm()))
         {
-            return (String)optMap.get(op.longForm);
+            return (String)optMap.get(op.getLongForm());
         }
         else
         {
@@ -286,12 +286,12 @@ public class OptionParser
     
     static class Option
     {
-        private String shortForm;
-        private String longForm;
-        private String desc;
-        private String valueLabel;
-        private String defaultValue;
-        private Class type;
+        private final String shortForm;
+        private final String longForm;
+        private final String desc;
+        private final String valueLabel;
+        private final String defaultValue;
+        private final Class type;
         
         public Option(String shortForm, String longForm, String desc,
                       String valueLabel, String defaultValue, Class type)

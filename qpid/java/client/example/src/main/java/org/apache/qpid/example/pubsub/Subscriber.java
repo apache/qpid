@@ -41,7 +41,7 @@ import java.util.concurrent.CountDownLatch;
 public class Subscriber extends Client implements MessageListener
 {
 
-    CountDownLatch _count;
+    private CountDownLatch _count;
 
     public Subscriber(String destination, int msgCount)
     {
@@ -54,16 +54,16 @@ public class Subscriber extends Client implements MessageListener
     {
         try
         {
-            _session = _connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            setSession(getConnection().createSession(false, Session.AUTO_ACKNOWLEDGE));
 
-            _session.createDurableSubscriber((Topic) _setup.getDestination(ConnectionSetup.TOPIC_JNDI_NAME),
-                                             "exampleClient").setMessageListener(this);
-            _connection.start();
+            getSession().createDurableSubscriber((Topic) getSetup().getDestination(ConnectionSetup.TOPIC_JNDI_NAME),
+                    "exampleClient").setMessageListener(this);
+            getConnection().start();
             _count.await();
 
             System.out.println("Done");
 
-            _connection.close();
+            getConnection().close();
         }
         catch (JMSException e)
         {

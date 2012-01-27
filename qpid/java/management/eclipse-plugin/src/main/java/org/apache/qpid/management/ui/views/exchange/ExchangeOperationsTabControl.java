@@ -397,7 +397,7 @@ public class ExchangeOperationsTabControl extends TabControl
      */
     private static class ContentProviderImpl implements IStructuredContentProvider
     {
-    	String type;
+    	private String type;
     	
     	public ContentProviderImpl(String type)
     	{
@@ -435,7 +435,7 @@ public class ExchangeOperationsTabControl extends TabControl
      */
     private static class LabelProviderImpl extends LabelProvider implements ITableLabelProvider
     {
-    	String type;
+    	private String type;
     	
     	public LabelProviderImpl(String type)
     	{

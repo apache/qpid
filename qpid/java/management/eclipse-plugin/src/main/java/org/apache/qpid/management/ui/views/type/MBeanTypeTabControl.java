@@ -65,20 +65,20 @@ import java.util.List;
 
 public abstract class MBeanTypeTabControl extends TabControl
 {
-    protected FormToolkit _toolkit;
-    protected Form        _form;
-    protected Table _table = null;
-    protected TableViewer _tableViewer = null;
+    private FormToolkit _toolkit;
+    private Form        _form;
+    private Table _table = null;
+    private TableViewer _tableViewer = null;
 
-    protected List<ManagedBean> _mbeans = null;
-    protected String _type;
-    protected ApiVersion _ApiVersion;
-    protected JMXManagedObject _vhostMbean;
-    protected String _virtualHost;
-    protected JMXServerRegistry _serverRegistry;
-    protected Composite _tableComposite;
-    protected Button _favouritesButton;
-    protected Button _openButton;
+    private List<ManagedBean> _mbeanList = null;
+    private String _type;
+    private ApiVersion _ApiVersion;
+    private JMXManagedObject _vhostMbean;
+    private String _virtualHost;
+    private JMXServerRegistry _serverRegistry;
+    private Composite _tableComposite;
+    private Button _favouritesButton;
+    private Button _openButton;
     
     public MBeanTypeTabControl(TabFolder tabFolder, ManagedServer server, String virtualHost, String type)
     {
@@ -125,9 +125,9 @@ public abstract class MBeanTypeTabControl extends TabControl
     @Override
     public void refresh(ManagedBean mbean)
     {
-        _mbeans = getMbeans();
+        _mbeanList = getMbeans();
         
-        _tableViewer.setInput(_mbeans);
+        _tableViewer.setInput(_mbeanList);
 
         layout();
     }
@@ -291,7 +291,72 @@ public abstract class MBeanTypeTabControl extends TabControl
     {
 
     }
-    
+
+    protected FormToolkit getToolkit()
+    {
+        return _toolkit;
+    }
+
+    protected Table getTable()
+    {
+        return _table;
+    }
+
+    protected void setTable(Table table)
+    {
+        _table = table;
+    }
+
+    protected TableViewer getTableViewer()
+    {
+        return _tableViewer;
+    }
+
+    protected void setTableViewer(TableViewer tableViewer)
+    {
+        _tableViewer = tableViewer;
+    }
+
+    protected List<ManagedBean> getMbeanList()
+    {
+        return _mbeanList;
+    }
+
+    protected void setMbeanList(List<ManagedBean> mbeanList)
+    {
+        _mbeanList = mbeanList;
+    }
+
+    protected String getType()
+    {
+        return _type;
+    }
+
+    protected ApiVersion getApiVersion()
+    {
+        return _ApiVersion;
+    }
+
+    protected JMXManagedObject getVhostMbean()
+    {
+        return _vhostMbean;
+    }
+
+    protected String getVirtualHost()
+    {
+        return _virtualHost;
+    }
+
+    protected JMXServerRegistry getServerRegistry()
+    {
+        return _serverRegistry;
+    }
+
+    protected Composite getTableComposite()
+    {
+        return _tableComposite;
+    }
+
     /**
      * Content Provider class for the table viewer
      */

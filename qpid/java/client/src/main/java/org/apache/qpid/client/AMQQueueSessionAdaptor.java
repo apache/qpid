@@ -31,7 +31,7 @@ import java.io.Serializable;
 public class AMQQueueSessionAdaptor implements QueueSession, AMQSessionAdapter
 {
     //holds a session for delegation
-    protected final AMQSession _session;
+    private final AMQSession _session;
 
     /**
      * Construct an adaptor with a session to wrap

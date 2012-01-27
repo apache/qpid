@@ -51,13 +51,13 @@ public class MockAMQConnection extends AMQConnection
     @Override
     public ProtocolVersion makeBrokerConnection(BrokerDetails brokerDetail) throws IOException
     {
-        _connected = true;
-        _protocolHandler.getStateManager().changeState(AMQState.CONNECTION_OPEN);
+        setConnected(true);
+        getProtocolHandler().getStateManager().changeState(AMQState.CONNECTION_OPEN);
         return null;
     }
 
     public AMQConnectionDelegate getDelegate()
     {
-        return _delegate;
+        return super.getDelegate();
     }
 }

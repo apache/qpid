@@ -28,7 +28,7 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
 
 public class HeadersExchangeTest extends AbstractHeadersExchangeTestBase
 {
-    AMQProtocolSession _protocolSession;
+    private AMQProtocolSession _protocolSession;
 
     @Override
     public void setUp() throws Exception

@@ -99,59 +99,38 @@ public class QpidCompositeRollingAppender extends FileAppender
     private long nextCheck = System.currentTimeMillis() - 1;
 
     /** Holds date of last roll over */
-    Date now = new Date();
+    private Date now = new Date();
 
-    SimpleDateFormat sdf;
+    private SimpleDateFormat sdf;
 
     /** Helper class to determine next rollover time */
-    RollingCalendar rc = new RollingCalendar();
+    private RollingCalendar rc = new RollingCalendar();
 
-    /** The default maximum file size is 10MB. */
-    protected long maxFileSize = 10 * 1024 * 1024;
+    private long maxFileSize = 10 * 1024 * 1024;
 
-    /** There is zero backup files by default. */
-    protected int maxSizeRollBackups = 0;
-    /** How many sized based backups have been made so far */
-    protected int curSizeRollBackups = 0;
+    private int maxSizeRollBackups = 0;
+    private int curSizeRollBackups = 0;
 
-    /** not yet implemented */
-    protected int maxTimeRollBackups = -1;
-    protected int curTimeRollBackups = 0;
+    private int maxTimeRollBackups = -1;
+    private int curTimeRollBackups = 0;
 
-    /**
-     * By default newer files have lower numbers. (countDirection < 0) ie. log.1 is most recent, log.5 is the 5th
-     * backup, etc... countDirection > 0 does the opposite ie. log.1 is the first backup made, log.5 is the 5th backup
-     * made, etc. For infinite backups use countDirection > 0 to reduce rollOver costs.
-     */
-    protected int countDirection = -1;
+    private int countDirection = -1;
 
-    /** Style of rolling to Use.  BY_SIZE (1), BY_DATE(2), BY COMPOSITE(3) */
-    protected int rollingStyle = BY_COMPOSITE;
-    protected boolean rollDate = true;
-    protected boolean rollSize = true;
+    private int rollingStyle = BY_COMPOSITE;
+    private boolean rollDate = true;
+    private boolean rollSize = true;
 
-    /**
-     * By default file.log is always the current file.  Optionally file.log.yyyy-mm-dd for current formated datePattern
-     * can by the currently logging file (or file.log.curSizeRollBackup or even file.log.yyyy-mm-dd.curSizeRollBackup)
-     * This will make time based roll overs with a large number of backups much faster -- it won't have to rename all
-     * the backups!
-     */
-    protected boolean staticLogFileName = true;
+    private boolean staticLogFileName = true;
 
-    /** FileName provided in configuration.  Used for rolling properly */
-    protected String baseFileName;
+    private String baseFileName;
 
-    /** Do we want to .gz our backup files. */
-    protected boolean compress = false;
+    private boolean compress = false;
 
-    /** Do we want to use a second thread when compressing our backup files. */
-    protected boolean compressAsync = false;
+    private boolean compressAsync = false;
 
-    /** Do we want to start numbering files at zero. */
-    protected boolean zeroBased = false;
+    private boolean zeroBased = false;
 
-    /** Path provided in configuration.  Used for moving backup files to */
-    protected String backupFilesToPath = null;
+    private String backupFilesToPath = null;
     private final ConcurrentLinkedQueue<CompressJob> _compress = new ConcurrentLinkedQueue<CompressJob>();
     private AtomicBoolean _compressing = new AtomicBoolean(false);
     private static final String COMPRESS_EXTENSION = ".gz";
@@ -219,7 +198,7 @@ public class QpidCompositeRollingAppender extends FileAppender
         return datePattern;
     }
 
-    /** Returns the value of the <b>maxSizeRollBackups</b> option. */
+    /** There is zero backup files by default. */ /** Returns the value of the <b>maxSizeRollBackups</b> option. */
     public int getMaxSizeRollBackups()
     {
         return maxSizeRollBackups;
@@ -379,6 +358,11 @@ public class QpidCompositeRollingAppender extends FileAppender
         }
     }
 
+    /**
+     * By default newer files have lower numbers. (countDirection < 0) ie. log.1 is most recent, log.5 is the 5th
+     * backup, etc... countDirection > 0 does the opposite ie. log.1 is the first backup made, log.5 is the 5th backup
+     * made, etc. For infinite backups use countDirection > 0 to reduce rollOver costs.
+     */
     public int getCountDirection()
     {
         return countDirection;
@@ -389,6 +373,7 @@ public class QpidCompositeRollingAppender extends FileAppender
         countDirection = direction;
     }
 
+    /** Style of rolling to Use.  BY_SIZE (1), BY_DATE(2), BY COMPOSITE(3) */
     public int getRollingStyle()
     {
         return rollingStyle;
@@ -484,6 +469,7 @@ public class QpidCompositeRollingAppender extends FileAppender
         zeroBased = z;
     }
 
+    /** Path provided in configuration.  Used for moving backup files to */
     public String getBackupFilesToPath()
     {
         return backupFilesToPath;
@@ -1074,9 +1060,117 @@ public class QpidCompositeRollingAppender extends FileAppender
         }
     }
 
+    /** The default maximum file size is 10MB. */
+    protected long getMaxFileSize()
+    {
+        return maxFileSize;
+    }
+
+    /** How many sized based backups have been made so far */
+    protected int getCurSizeRollBackups()
+    {
+        return curSizeRollBackups;
+    }
+
+    protected void setCurSizeRollBackups(int curSizeRollBackups)
+    {
+        this.curSizeRollBackups = curSizeRollBackups;
+    }
+
+    /** not yet implemented */
+    protected int getMaxTimeRollBackups()
+    {
+        return maxTimeRollBackups;
+    }
+
+    protected void setMaxTimeRollBackups(int maxTimeRollBackups)
+    {
+        this.maxTimeRollBackups = maxTimeRollBackups;
+    }
+
+    protected int getCurTimeRollBackups()
+    {
+        return curTimeRollBackups;
+    }
+
+    protected void setCurTimeRollBackups(int curTimeRollBackups)
+    {
+        this.curTimeRollBackups = curTimeRollBackups;
+    }
+
+    protected boolean isRollDate()
+    {
+        return rollDate;
+    }
+
+    protected void setRollDate(boolean rollDate)
+    {
+        this.rollDate = rollDate;
+    }
+
+    protected boolean isRollSize()
+    {
+        return rollSize;
+    }
+
+    protected void setRollSize(boolean rollSize)
+    {
+        this.rollSize = rollSize;
+    }
+
+    /**
+     * By default file.log is always the current file.  Optionally file.log.yyyy-mm-dd for current formated datePattern
+     * can by the currently logging file (or file.log.curSizeRollBackup or even file.log.yyyy-mm-dd.curSizeRollBackup)
+     * This will make time based roll overs with a large number of backups much faster -- it won't have to rename all
+     * the backups!
+     */
+    protected boolean isStaticLogFileName()
+    {
+        return staticLogFileName;
+    }
+
+    /** FileName provided in configuration.  Used for rolling properly */
+    protected String getBaseFileName()
+    {
+        return baseFileName;
+    }
+
+    protected void setBaseFileName(String baseFileName)
+    {
+        this.baseFileName = baseFileName;
+    }
+
+    /** Do we want to .gz our backup files. */
+    protected boolean isCompress()
+    {
+        return compress;
+    }
+
+    protected void setCompress(boolean compress)
+    {
+        this.compress = compress;
+    }
+
+    /** Do we want to use a second thread when compressing our backup files. */
+    protected boolean isCompressAsync()
+    {
+        return compressAsync;
+    }
+
+    /** Do we want to start numbering files at zero. */
+    protected boolean isZeroBased()
+    {
+        return zeroBased;
+    }
+
+    protected void setBackupFilesToPath(String backupFilesToPath)
+    {
+        this.backupFilesToPath = backupFilesToPath;
+    }
+
     private static class CompressJob
     {
-        File _from, _to;
+        private File _from, _to;
 
         CompressJob(File from, File to)
         {
@@ -1095,9 +1189,9 @@ public class QpidCompositeRollingAppender extends FileAppender
         }
     }
 
-    Compressor compressor = null;
+    private Compressor compressor = null;
 
-    Executor executor;
+    private Executor executor;
 
     private class Compressor implements Runnable
     {

@@ -71,26 +71,26 @@ public class MessageStoreTest extends InternalBrokerBaseCase
     public static final String SELECTOR_VALUE = "Test = 'MST'";
     public static final String LVQ_KEY = "MST-LVQ-KEY";
 
-    AMQShortString nonDurableExchangeName = new AMQShortString("MST-NonDurableDirectExchange");
-    AMQShortString directExchangeName = new AMQShortString("MST-DirectExchange");
-    AMQShortString topicExchangeName = new AMQShortString("MST-TopicExchange");
+    private AMQShortString nonDurableExchangeName = new AMQShortString("MST-NonDurableDirectExchange");
+    private AMQShortString directExchangeName = new AMQShortString("MST-DirectExchange");
+    private AMQShortString topicExchangeName = new AMQShortString("MST-TopicExchange");
 
-    AMQShortString durablePriorityTopicQueueName = new AMQShortString("MST-PriorityTopicQueue-Durable");
-    AMQShortString durableTopicQueueName = new AMQShortString("MST-TopicQueue-Durable");
-    AMQShortString priorityTopicQueueName = new AMQShortString("MST-PriorityTopicQueue");
-    AMQShortString topicQueueName = new AMQShortString("MST-TopicQueue");
+    private AMQShortString durablePriorityTopicQueueName = new AMQShortString("MST-PriorityTopicQueue-Durable");
+    private AMQShortString durableTopicQueueName = new AMQShortString("MST-TopicQueue-Durable");
+    private AMQShortString priorityTopicQueueName = new AMQShortString("MST-PriorityTopicQueue");
+    private AMQShortString topicQueueName = new AMQShortString("MST-TopicQueue");
 
-    AMQShortString durableExclusiveQueueName = new AMQShortString("MST-Queue-Durable-Exclusive");
-    AMQShortString durablePriorityQueueName = new AMQShortString("MST-PriorityQueue-Durable");
-    AMQShortString durableLastValueQueueName = new AMQShortString("MST-LastValueQueue-Durable");
-    AMQShortString durableQueueName = new AMQShortString("MST-Queue-Durable");
-    AMQShortString priorityQueueName = new AMQShortString("MST-PriorityQueue");
-    AMQShortString queueName = new AMQShortString("MST-Queue");
+    private AMQShortString durableExclusiveQueueName = new AMQShortString("MST-Queue-Durable-Exclusive");
+    private AMQShortString durablePriorityQueueName = new AMQShortString("MST-PriorityQueue-Durable");
+    private AMQShortString durableLastValueQueueName = new AMQShortString("MST-LastValueQueue-Durable");
+    private AMQShortString durableQueueName = new AMQShortString("MST-Queue-Durable");
+    private AMQShortString priorityQueueName = new AMQShortString("MST-PriorityQueue");
+    private AMQShortString queueName = new AMQShortString("MST-Queue");
 
-    AMQShortString directRouting = new AMQShortString("MST-direct");
-    AMQShortString topicRouting = new AMQShortString("MST-topic");
+    private AMQShortString directRouting = new AMQShortString("MST-direct");
+    private AMQShortString topicRouting = new AMQShortString("MST-topic");
 
-    AMQShortString queueOwner = new AMQShortString("MST");
+    private AMQShortString queueOwner = new AMQShortString("MST");
 
     protected PropertiesConfiguration _config;
 
@@ -587,11 +587,7 @@ public class MessageStoreTest extends InternalBrokerBaseCase
 
         currentMessage.setExchange(exchange);
 
-        ContentHeaderBody headerBody = new ContentHeaderBody();
-        headerBody.classId = BasicConsumeBodyImpl.CLASS_ID;
-        headerBody.bodySize = 0;
-
-        headerBody.setProperties(properties);
+        ContentHeaderBody headerBody = new ContentHeaderBody(BasicConsumeBodyImpl.CLASS_ID,0,properties,0l);
 
         try
         {

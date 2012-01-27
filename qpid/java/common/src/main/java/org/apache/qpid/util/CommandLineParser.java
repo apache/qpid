@@ -655,22 +655,22 @@ public class CommandLineParser
     protected static class CommandLineOption
     {
         /** Holds the text for the flag to match this argument with. */
-        public String option = null;
+        private String option = null;
 
         /** Holds a string describing how to use this command line argument. */
-        public String argument = null;
+        private String argument = null;
 
         /** Flag that determines whether or not this command line argument can take arguments. */
-        public boolean expectsArgs = false;
+        private boolean expectsArgs = false;
 
         /** Holds a short comment describing what this command line argument is for. */
-        public String comment = null;
+        private String comment = null;
 
         /** Flag that determines whether or not this is an mandatory command line argument. */
-        public boolean mandatory = false;
+        private boolean mandatory = false;
 
         /** A regular expression describing what format the argument to this option muist have. */
-        public String argumentFormatRegexp = null;
+        private String argumentFormatRegexp = null;
 
         /**
          * Create a command line option object that holds specific information about a command line option.

@@ -110,11 +110,11 @@ public class QueueTypeTabControl extends MBeanTypeTabControl
     public QueueTypeTabControl(TabFolder tabFolder, ManagedServer server, String virtualHost)
     {
         super(tabFolder,server,virtualHost,QUEUE);
-        _mbsc = (MBeanServerConnection) _serverRegistry.getServerConnection();
+        _mbsc = (MBeanServerConnection) getServerRegistry().getServerConnection();
         
         //create a proxy for the VirtualHostManager mbean to use in retrieving the attribute names/values
         _vhmb = MBeanServerInvocationHandler.newProxyInstance(_mbsc, 
-                                _vhostMbean.getObjectName(), ManagedBroker.class, false);
+                                getVhostMbean().getObjectName(), ManagedBroker.class, false);
         
     }
     
@@ -235,7 +235,7 @@ public class QueueTypeTabControl extends MBeanTypeTabControl
             {
                 List<List<Object>> values = null;
 
-                if(_ApiVersion.greaterThanOrEqualTo(1, 3))
+                if(getApiVersion().greaterThanOrEqualTo(1, 3))
                 {
                     //Qpid JMX API 1.3+, use this virtualhosts VirtualHostManager MBean
                     //to retrieve the attributes values requested for all queues at once
@@ -245,18 +245,18 @@ public class QueueTypeTabControl extends MBeanTypeTabControl
                     }
                     catch(Exception e)
                     {
-                        MBeanUtility.handleException(_vhostMbean, e);
+                        MBeanUtility.handleException(getVhostMbean(), e);
                     }
                 }
                 else
                 {
                     //Qpid JMX API 1.2 or below, use the local ManagedBeans and look
                     //up the attribute values for each queue individually
-                    _mbeans = getMbeans();
-                    values = MBeanUtility.getQueueAttributes(_mbeans, _selectedAttributes.toArray(new String[0]));
+                    setMbeanList(getMbeans());
+                    values = MBeanUtility.getQueueAttributes(getMbeanList(), _selectedAttributes.toArray(new String[0]));
                 }
 
-                _tableViewer.setInput(values);
+                getTableViewer().setInput(values);
                 layout();
             }
             finally
@@ -270,31 +270,31 @@ public class QueueTypeTabControl extends MBeanTypeTabControl
     @Override
     protected List<ManagedBean> getMbeans()
     {
-        return _serverRegistry.getQueues(_virtualHost);
+        return getServerRegistry().getQueues(getVirtualHost());
     }
     
     private void clearTableComposite()
     {
-        ViewUtility.disposeChildren(_tableComposite);
+        ViewUtility.disposeChildren(getTableComposite());
     }
 
     @Override
     protected void createTable()
     {
-        _table = new Table (_tableComposite, SWT.MULTI | SWT.SCROLL_LINE | SWT.BORDER | SWT.FULL_SELECTION);
-        _table.setLinesVisible (true);
-        _table.setHeaderVisible (true);
+        setTable(new Table (getTableComposite(), SWT.MULTI | SWT.SCROLL_LINE | SWT.BORDER | SWT.FULL_SELECTION));
+        getTable().setLinesVisible(true);
+        getTable().setHeaderVisible(true);
         GridData data = new GridData(SWT.FILL, SWT.FILL, true, true);
-        _table.setLayoutData(data);
+        getTable().setLayoutData(data);
         
-        _tableViewer = new TableViewer(_table);
+        setTableViewer(new TableViewer(getTable()));
 
         final QueueTableSorter tableSorter = new QueueTableSorter();
                 
         for (int i = 0; i < _selectedAttributes.size(); i++) 
         {
             final int index = i;
-            final TableViewerColumn viewerColumn = new TableViewerColumn(_tableViewer, SWT.NONE);
+            final TableViewerColumn viewerColumn = new TableViewerColumn(getTableViewer(), SWT.NONE);
             final TableColumn column = viewerColumn.getColumn();
 
             String attrName = _selectedAttributes.get(i);
@@ -320,7 +320,7 @@ public class QueueTypeTabControl extends MBeanTypeTabControl
                 public void widgetSelected(SelectionEvent e) 
                 {
                     tableSorter.setColumn(index);
-                    final TableViewer viewer = _tableViewer;
+                    final TableViewer viewer = getTableViewer();
                     int dir = viewer .getTable().getSortDirection();
                     if (viewer.getTable().getSortColumn() == column) 
                     {
@@ -338,25 +338,25 @@ public class QueueTypeTabControl extends MBeanTypeTabControl
 
         }
 
-        _tableViewer.setContentProvider(new QueueContentProviderImpl());
-        _tableViewer.setLabelProvider(new QueueLabelProviderImpl());
+        getTableViewer().setContentProvider(new QueueContentProviderImpl());
+        getTableViewer().setLabelProvider(new QueueLabelProviderImpl());
 
-        _tableViewer.setUseHashlookup(true);
-        _tableViewer.setSorter(tableSorter);
-        _table.setSortColumn(_table.getColumn(0));
-        _table.setSortDirection(SWT.UP);
+        getTableViewer().setUseHashlookup(true);
+        getTableViewer().setSorter(tableSorter);
+        getTable().setSortColumn(getTable().getColumn(0));
+        getTable().setSortDirection(SWT.UP);
         
         addTableListeners();
     }
     
     protected void createLowerAreaButton(Composite parent)
     {
-        Composite lowerButtonComposite = _toolkit.createComposite(parent, SWT.NONE);
+        Composite lowerButtonComposite = getToolkit().createComposite(parent, SWT.NONE);
         GridData gridData = new GridData(SWT.FILL, SWT.FILL, true, false);
         lowerButtonComposite.setLayoutData(gridData);
         lowerButtonComposite.setLayout(new GridLayout());
         
-        final Button attributesButton = _toolkit.createButton(lowerButtonComposite, "Select Attributes ...", SWT.PUSH);
+        final Button attributesButton = getToolkit().createButton(lowerButtonComposite, "Select Attributes ...", SWT.PUSH);
         gridData = new GridData(SWT.RIGHT, SWT.CENTER, true, false);
         attributesButton.setLayoutData(gridData);
         attributesButton.addSelectionListener(new SelectionAdapter()
@@ -372,7 +372,7 @@ public class QueueTypeTabControl extends MBeanTypeTabControl
     {
 
         List<String> availableAttributes;
-        if(_ApiVersion.greaterThanOrEqualTo(1, 3))
+        if(getApiVersion().greaterThanOrEqualTo(1, 3))
         {
             //Qpid JMX API 1.3+, request the current queue attributes names from the broker
             try
@@ -395,7 +395,7 @@ public class QueueTypeTabControl extends MBeanTypeTabControl
         
         final Shell shell = ViewUtility.createModalDialogShell(parent, "Select Attributes");
 
-        Composite attributesComposite = _toolkit.createComposite(shell, SWT.NONE);
+        Composite attributesComposite = getToolkit().createComposite(shell, SWT.NONE);
         attributesComposite.setBackground(shell.getBackground());
         attributesComposite.setLayoutData(new GridData(SWT.FILL, SWT.TOP, true, false));
         attributesComposite.setLayout(new GridLayout(2,false));
@@ -441,14 +441,14 @@ public class QueueTypeTabControl extends MBeanTypeTabControl
             });
         }
         
-        Composite okCancelButtonsComp = _toolkit.createComposite(shell);
+        Composite okCancelButtonsComp = getToolkit().createComposite(shell);
         okCancelButtonsComp.setBackground(shell.getBackground());
         okCancelButtonsComp.setLayoutData(new GridData(SWT.RIGHT, SWT.FILL, true, true));
         okCancelButtonsComp.setLayout(new GridLayout(2,false));
 
-        Button okButton = _toolkit.createButton(okCancelButtonsComp, "OK", SWT.PUSH);
+        Button okButton = getToolkit().createButton(okCancelButtonsComp, "OK", SWT.PUSH);
         okButton.setLayoutData(new GridData(SWT.RIGHT, SWT.TOP, false, false));
-        Button cancelButton = _toolkit.createButton(okCancelButtonsComp, "Cancel", SWT.PUSH);
+        Button cancelButton = getToolkit().createButton(okCancelButtonsComp, "Cancel", SWT.PUSH);
         cancelButton.setLayoutData(new GridData(SWT.RIGHT, SWT.TOP, false, false));
 
         okButton.addSelectionListener(new SelectionAdapter()
@@ -506,7 +506,7 @@ public class QueueTypeTabControl extends MBeanTypeTabControl
             return "-";
         }
 
-        if (_ApiVersion.greaterThanOrEqualTo(1,2))
+        if (getApiVersion().greaterThanOrEqualTo(1, 2))
         {
             //Qpid JMX API 1.2 or above, returns Bytes
             return convertLongBytesToText(value);
@@ -675,14 +675,14 @@ public class QueueTypeTabControl extends MBeanTypeTabControl
     @Override
     protected void addMBeanToFavourites()
     {
-        int selectionIndex = _table.getSelectionIndex();
+        int selectionIndex = getTable().getSelectionIndex();
 
         if (selectionIndex == -1)
         {
             return;
         }
 
-        int[] selectedIndices = _table.getSelectionIndices();
+        int[] selectedIndices = getTable().getSelectionIndices();
         
         ArrayList<ManagedBean> selectedMBeans = new ArrayList<ManagedBean>();
 
@@ -690,10 +690,10 @@ public class QueueTypeTabControl extends MBeanTypeTabControl
         //the entries are created from an List<Object> with the attribute values (name first)
         for(int index = 0; index < selectedIndices.length ; index++)
         {
-            List<Object> queueEntry = (List<Object>) _table.getItem(selectedIndices[index]).getData();
+            List<Object> queueEntry = (List<Object>) getTable().getItem(selectedIndices[index]).getData();
             String queueName = (String) queueEntry.get(0);
             
-            ManagedBean queueMBean = _serverRegistry.getQueue(queueName, _virtualHost);
+            ManagedBean queueMBean = getServerRegistry().getQueue(queueName, getVirtualHost());
             
             //check queue had not already been unregistered before trying to add it
             if(queueMBean != null)
@@ -740,7 +740,7 @@ public class QueueTypeTabControl extends MBeanTypeTabControl
     @Override
     protected void openMBean()
     {
-        int selectionIndex = _table.getSelectionIndex();
+        int selectionIndex = getTable().getSelectionIndex();
 
         if (selectionIndex == -1)
         {
@@ -750,9 +750,9 @@ public class QueueTypeTabControl extends MBeanTypeTabControl
         ManagedBean selectedMBean;
 
         //the entries are created from an List<Object> with the attribute values (name first)
-        List<Object> queueEntry = (List<Object>) _table.getItem(selectionIndex).getData();
+        List<Object> queueEntry = (List<Object>) getTable().getItem(selectionIndex).getData();
         String queueName = (String) queueEntry.get(0);
-        selectedMBean = _serverRegistry.getQueue(queueName, _virtualHost);
+        selectedMBean = getServerRegistry().getQueue(queueName, getVirtualHost());
 
         if(selectedMBean == null)
         {

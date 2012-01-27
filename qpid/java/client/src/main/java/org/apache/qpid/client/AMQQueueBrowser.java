@@ -108,7 +108,7 @@ public class AMQQueueBrowser implements QueueBrowser
 
     private class QueueBrowserEnumeration implements Enumeration
     {
-        Message _nextMessage;
+        private Message _nextMessage;
         private BasicMessageConsumer _consumer;
 
         public QueueBrowserEnumeration(BasicMessageConsumer consumer) throws JMSException

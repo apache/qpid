@@ -28,7 +28,7 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
  */
 public class MessageStoreLogSubjectTest extends AbstractTestLogSubject
 {
-    VirtualHost _testVhost;
+    private VirtualHost _testVhost;
 
     public void setUp() throws Exception
     {

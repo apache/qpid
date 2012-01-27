@@ -45,15 +45,15 @@ import java.io.IOException;
 
 public class Server implements MessageListener
 {
-    final String BROKER = "localhost";
+    private final String BROKER = "localhost";
 
-    final String INITIAL_CONTEXT_FACTORY = "org.apache.qpid.jndi.PropertiesFileInitialContextFactory";
+    private final String INITIAL_CONTEXT_FACTORY = "org.apache.qpid.jndi.PropertiesFileInitialContextFactory";
 
-    final String CONNECTION_JNDI_NAME = "local";
-    final String CONNECTION_NAME = "amqp://guest:guest@clientid/test?brokerlist='" + BROKER + "'";
+    private final String CONNECTION_JNDI_NAME = "local";
+    private final String CONNECTION_NAME = "amqp://guest:guest@clientid/test?brokerlist='" + BROKER + "'";
 
-    final String QUEUE_JNDI_NAME = "queue";
-    final String QUEUE_NAME = "example.RequestQueue";
+    private final String QUEUE_JNDI_NAME = "queue";
+    private final String QUEUE_NAME = "example.RequestQueue";
 
 
     private InitialContext _ctx;

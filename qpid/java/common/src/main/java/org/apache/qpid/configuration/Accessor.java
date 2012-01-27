@@ -61,13 +61,18 @@ public interface Accessor
     
     static class MapAccessor implements Accessor
     {
-        protected Map<Object,Object> source;
+        private Map<Object,Object> source;
         
         public MapAccessor(Map<Object,Object> map)
         {
             source = map;
         }
-        
+
+        protected void setSource(Map<Object, Object> source)
+        {
+            this.source = source;
+        }
+
         public Boolean getBoolean(String name)
         {
             if (source != null && source.containsKey(name))
@@ -160,8 +165,10 @@ public interface Accessor
             {
                 inStream.close();
             }
-            source = props;
+            setSource(props);
         }
+
+
     }
     
     static class CombinedAccessor implements Accessor

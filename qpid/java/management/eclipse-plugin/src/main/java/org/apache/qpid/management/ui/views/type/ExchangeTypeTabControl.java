@@ -40,7 +40,7 @@ public class ExchangeTypeTabControl extends MBeanTypeTabControl
     @Override
     protected List<ManagedBean> getMbeans()
     {
-        return _serverRegistry.getExchanges(_virtualHost);
+        return getServerRegistry().getExchanges(getVirtualHost());
     }
 
 }

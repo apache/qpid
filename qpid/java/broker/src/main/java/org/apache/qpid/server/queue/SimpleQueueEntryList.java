@@ -42,9 +42,7 @@ public class SimpleQueueEntryList implements QueueEntryList<SimpleQueueEntryImpl
     private final AMQQueue _queue;
 
     static final AtomicReferenceFieldUpdater<SimpleQueueEntryImpl, SimpleQueueEntryImpl>
-                _nextUpdater =
-            AtomicReferenceFieldUpdater.newUpdater
-            (SimpleQueueEntryImpl.class, SimpleQueueEntryImpl.class, "_next");
+                _nextUpdater = SimpleQueueEntryImpl._nextUpdater;
 
     private AtomicLong _scavenges = new AtomicLong(0L);
     private final long _scavengeCount = Integer.getInteger("qpid.queue.scavenge_count", 50);

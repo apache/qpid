@@ -78,6 +78,7 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
     private static final Logger _logger = LoggerFactory.getLogger(AMQSession_0_10.class);
 
     private static Timer timer = new Timer("ack-flusher", true);
+
     private static class Flusher extends TimerTask
     {
 
@@ -120,7 +121,7 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
     private AMQException _currentException;
 
     // a ref on the qpid connection
-    protected org.apache.qpid.transport.Connection _qpidConnection;
+    private org.apache.qpid.transport.Connection _qpidConnection;
 
     private long maxAckDelay = Long.getLong("qpid.session.max_ack_delay", 1000);
     private TimerTask flushTask = null;
@@ -163,7 +164,7 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
             _qpidSession = _qpidConnection.createSession(name,1);
         }
         _qpidSession.setSessionListener(this);
-        if (_transacted)
+        if (isTransacted())
         {
             _qpidSession.txSelect();
             _qpidSession.setTransacted(true);
@@ -214,6 +215,11 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
         }
     }
 
+    protected Connection getQpidConnection()
+    {
+        return _qpidConnection;
+    }
+
     //------- overwritten methods of class AMQSession
 
     void failoverPrep()
@@ -234,17 +240,17 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
     {
         if (_logger.isDebugEnabled())
         {
-            _logger.debug("Sending ack for delivery tag " + deliveryTag + " on session " + _channelId);
+            _logger.debug("Sending ack for delivery tag " + deliveryTag + " on session " + getChannelId());
         }
         // acknowledge this message
         if (multiple)
         {
-            for (Long messageTag : _unacknowledgedMessageTags)
+            for (Long messageTag : getUnacknowledgedMessageTags())
             {
                 if( messageTag <= deliveryTag )
                 {
                     addUnacked(messageTag.intValue());
-                    _unacknowledgedMessageTags.remove(messageTag);
+                    getUnacknowledgedMessageTags().remove(messageTag);
                 }
             }
             //empty the list of unack messages
@@ -253,12 +259,12 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
         else
         {
             addUnacked((int) deliveryTag);
-            _unacknowledgedMessageTags.remove(deliveryTag);
+            getUnacknowledgedMessageTags().remove(deliveryTag);
         }
 
         long prefetch = getAMQConnection().getMaxPrefetch();
 
-        if (unackedCount >= prefetch/2 || maxAckDelay <= 0 || _acknowledgeMode == javax.jms.Session.AUTO_ACKNOWLEDGE)
+        if (unackedCount >= prefetch/2 || maxAckDelay <= 0 || getAcknowledgeMode() == javax.jms.Session.AUTO_ACKNOWLEDGE)
         {
             flushAcknowledgments();
         }
@@ -276,7 +282,7 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
             if (unackedCount > 0)
             {
                 messageAcknowledge
-                    (unacked, _acknowledgeMode != org.apache.qpid.jms.Session.NO_ACKNOWLEDGE,setSyncBit);
+                    (unacked, getAcknowledgeMode() != org.apache.qpid.jms.Session.NO_ACKNOWLEDGE,setSyncBit);
                 clearUnacked();
             }
         }
@@ -444,8 +450,8 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
     {
         // release all unacked messages
         RangeSet all = RangeSetFactory.createRangeSet();
-        RangeSet delivered = gatherRangeSet(_unacknowledgedMessageTags);
-        RangeSet prefetched = gatherRangeSet(_prefetchedMessageTags);
+        RangeSet delivered = gatherRangeSet(getUnacknowledgedMessageTags());
+        RangeSet prefetched = gatherRangeSet(getPrefetchedMessageTags());
         for (Iterator<Range> deliveredIter = delivered.iterator(); deliveredIter.hasNext();)
         {
             Range range = deliveredIter.next();
@@ -526,9 +532,9 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
     {
 
         final AMQProtocolHandler protocolHandler = getProtocolHandler();
-        return new BasicMessageConsumer_0_10(_channelId, _connection, destination, messageSelector, noLocal,
-                                             _messageFactoryRegistry, this, protocolHandler, rawSelector, prefetchHigh,
-                                             prefetchLow, exclusive, _acknowledgeMode, noConsume, autoClose);
+        return new BasicMessageConsumer_0_10(getChannelId(), getAMQConnection(), destination, messageSelector, noLocal,
+                getMessageFactoryRegistry(), this, protocolHandler, rawSelector, prefetchHigh,
+                                             prefetchLow, exclusive, getAcknowledgeMode(), noConsume, autoClose);
     }
 
     /**
@@ -630,7 +636,7 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
         getQpidSession().messageFlow(consumerTag, MessageCreditUnit.BYTE, 0xFFFFFFFF,
                                      Option.UNRELIABLE);
 
-        if(capacity > 0 && _dispatcher != null && (isStarted() || _immediatePrefetch))
+        if(capacity > 0 && getDispatcher() != null && (isStarted() || isImmediatePrefetch()))
         {
             // set the flow
             getQpidSession().messageFlow(consumerTag,
@@ -653,7 +659,7 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
     {
         try
         {
-            return new BasicMessageProducer_0_10(_connection, (AMQDestination) destination, _transacted, _channelId, this,
+            return new BasicMessageProducer_0_10(getAMQConnection(), (AMQDestination) destination, isTransacted(), getChannelId(), this,
                                              getProtocolHandler(), producerId, immediate, mandatory);
         }
         catch (AMQException e)
@@ -795,7 +801,7 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
     {
         if (suspend)
         {
-            for (BasicMessageConsumer consumer : _consumers.values())
+            for (BasicMessageConsumer consumer : getConsumers().values())
             {
                 getQpidSession().messageStop(String.valueOf(consumer.getConsumerTag()),
                                              Option.UNRELIABLE);
@@ -804,7 +810,7 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
         }
         else
         {
-            for (BasicMessageConsumer_0_10 consumer : _consumers.values())
+            for (BasicMessageConsumer_0_10 consumer : getConsumers().values())
             {
                 String consumerTag = String.valueOf(consumer.getConsumerTag());
                 //only set if msg list is null
@@ -942,7 +948,7 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
                         }
                         return send0_10QueueDeclare(amqd, protocolHandler, noLocal, nowait);
                     }
-                }, _connection).execute();
+                }, getAMQConnection()).execute();
     }
 
     protected Long requestQueueDepth(AMQDestination amqd)
@@ -969,8 +975,8 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
     protected void sendTxCompletionsIfNecessary()
     {
         // this is a heuristic, we may want to have that configurable
-        if (_txSize > 0 && (_connection.getMaxPrefetch() == 1 ||
-                _connection.getMaxPrefetch() != 0 && _txSize % (_connection.getMaxPrefetch() / 2) == 0))
+        if (_txSize > 0 && (getAMQConnection().getMaxPrefetch() == 1 ||
+                getAMQConnection().getMaxPrefetch() != 0 && _txSize % (getAMQConnection().getMaxPrefetch() / 2) == 0))
         {
             // send completed so consumer credits don't dry up
             messageAcknowledge(_txRangeSet, false);
@@ -1040,7 +1046,7 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
             AMQException amqe = new AMQException(AMQConstant.getConstant(code), se.getMessage(), se.getCause());
             _currentException = amqe;
         }
-        _connection.exceptionReceived(_currentException);
+        getAMQConnection().exceptionReceived(_currentException);
     }
 
     public AMQMessageDelegateFactory getMessageDelegateFactory()
@@ -1159,7 +1165,7 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
                                               boolean isConsumer,
                                               boolean noWait) throws AMQException
     {
-        if (dest.isAddressResolved() && dest.isResolvedAfter(_connection.getLastFailoverTime()))
+        if (dest.isAddressResolved() && dest.isResolvedAfter(getAMQConnection().getLastFailoverTime()))
         {
             if (isConsumer && AMQDestination.TOPIC_TYPE == dest.getAddressType()) 
             {
@@ -1329,7 +1335,7 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
     
     protected void acknowledgeImpl()
     {
-        RangeSet ranges = gatherRangeSet(_unacknowledgedMessageTags);
+        RangeSet ranges = gatherRangeSet(getUnacknowledgedMessageTags());
 
         if(ranges.size() > 0 )
         {
@@ -1345,13 +1351,13 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
         // return the first <total number of msgs received on session>
         // messages sent by the brokers following the first rollback
         // after failover
-        _highestDeliveryTag.set(-1);
+        getHighestDeliveryTag().set(-1);
         // Clear txRangeSet/unacknowledgedMessageTags so we don't complete commands corresponding to
         //messages that came from the old broker.
         _txRangeSet.clear();
         _txSize = 0;
-        _unacknowledgedMessageTags.clear();
-        _prefetchedMessageTags.clear();
+        getUnacknowledgedMessageTags().clear();
+        getPrefetchedMessageTags().clear();
         super.resubscribe();
         getQpidSession().sync();
     }
@@ -1362,18 +1368,18 @@ public class AMQSession_0_10 extends AMQSession<BasicMessageConsumer_0_10, Basic
         super.stop();
         synchronized (getMessageDeliveryLock())
         {
-	        for (BasicMessageConsumer consumer : _consumers.values())
+	        for (BasicMessageConsumer consumer : getConsumers().values())
 	        {
 	            List<Long> tags = consumer.drainReceiverQueueAndRetrieveDeliveryTags();
-	            _prefetchedMessageTags.addAll(tags);
+	            getPrefetchedMessageTags().addAll(tags);
 	        }
         }
-        _usingDispatcherForCleanup = true;
+        setUsingDispatcherForCleanup(true);
         drainDispatchQueue();
-        _usingDispatcherForCleanup = false;
+        setUsingDispatcherForCleanup(false);
 
-        RangeSet delivered = gatherRangeSet(_unacknowledgedMessageTags);
-		RangeSet prefetched = gatherRangeSet(_prefetchedMessageTags);
+        RangeSet delivered = gatherRangeSet(getUnacknowledgedMessageTags());
+		RangeSet prefetched = gatherRangeSet(getPrefetchedMessageTags());
 		RangeSet all = RangeSetFactory.createRangeSet(delivered.size()
 					+ prefetched.size());
 

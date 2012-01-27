@@ -52,7 +52,7 @@ public class MessageListenerTest extends QpidBrokerTestCase implements MessageLi
 {
     private static final Logger _logger = LoggerFactory.getLogger(MessageListenerTest.class);
 
-    Context _context;
+    private Context _context;
 
     private static final int MSG_COUNT = 5;
     private int _receivedCount = 0;
@@ -245,7 +245,6 @@ public class MessageListenerTest extends QpidBrokerTestCase implements MessageLi
         _awaitMessages.countDown();
     }
 
-    @Override
     public void onException(JMSException e)
     {
         _logger.info("Exception received", e);

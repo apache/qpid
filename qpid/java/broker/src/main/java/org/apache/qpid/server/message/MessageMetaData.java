@@ -161,7 +161,7 @@ public class MessageMetaData implements StorableMessageMetaData
 
     public int getContentSize()
     {
-        return (int) _contentHeaderBody.bodySize;
+        return (int) _contentHeaderBody.getBodySize();
     }
 
     public boolean isPersistent()

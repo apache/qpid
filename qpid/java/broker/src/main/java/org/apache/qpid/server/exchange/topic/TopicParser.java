@@ -60,14 +60,43 @@ public class TopicParser
         }
 
 
+        public TopicWord getWord()
+        {
+            return _word;
+        }
+
+        public boolean isSelfTransition()
+        {
+            return _selfTransition;
+        }
+
+        public int getPosition()
+        {
+            return _position;
+        }
+
+        public boolean isEndState()
+        {
+            return _endState;
+        }
+
+        public boolean isFollowedByAnyLoop()
+        {
+            return _followedByAnyLoop;
+        }
+
+        public void setFollowedByAnyLoop(boolean followedByAnyLoop)
+        {
+            _followedByAnyLoop = followedByAnyLoop;
+        }
     }
 
     private static final Position ERROR_POSITION = new Position(Integer.MAX_VALUE,null, true, false);
 
     private static class SimpleState
     {
-        Set<Position> _positions;
-        Map<TopicWord, SimpleState> _nextState;
+        private Set<Position> _positions;
+        private Map<TopicWord, SimpleState> _nextState;
     }
 
 
@@ -188,11 +217,11 @@ public class TopicParser
             while(followedByWildcards && n<(positionCount+1))
             {
 
-                if(positions[n]._selfTransition)
+                if(positions[n].isSelfTransition())
                 {
                     break;
                 }
-                else if(positions[n]._word!=TopicWord.ANY_WORD)
+                else if(positions[n].getWord() !=TopicWord.ANY_WORD)
                 {
                     followedByWildcards = false;
                 }
@@ -200,7 +229,7 @@ public class TopicParser
             }
 
 
-            positions[p]._followedByAnyLoop = followedByWildcards && (n!= positionCount+1);
+            positions[p].setFollowedByAnyLoop(followedByWildcards && (n!= positionCount+1));
         }
 
 
@@ -229,7 +258,7 @@ public class TopicParser
 
             for(Position p : simpleStates[i]._positions)
             {
-                if(p._endState)
+                if(p.isEndState())
                 {
                     endState = true;
                     break;
@@ -275,7 +304,7 @@ public class TopicParser
 
         for(Position pos : state._positions)
         {
-            if(pos._selfTransition)
+            if(pos.isSelfTransition())
             {
                 Set<Position> dest = transitions.get(TopicWord.ANY_WORD);
                 if(dest == null)
@@ -286,14 +315,14 @@ public class TopicParser
                 dest.add(pos);
             }
 
-            final int nextPos = pos._position + 1;
+            final int nextPos = pos.getPosition() + 1;
             Position nextPosition = nextPos == positions.length ? ERROR_POSITION : positions[nextPos];
 
-            Set<Position> dest = transitions.get(pos._word);
+            Set<Position> dest = transitions.get(pos.getWord());
             if(dest == null)
             {
                 dest = new HashSet<Position>();
-                transitions.put(pos._word,dest);
+                transitions.put(pos.getWord(),dest);
             }
             dest.add(nextPosition);
 
@@ -320,7 +349,7 @@ public class TopicParser
             Position loopingTerminal = null;
             for(Position destPos : dest.getValue())
             {
-                if(destPos._selfTransition && destPos._endState)
+                if(destPos.isSelfTransition() && destPos.isEndState())
                 {
                     loopingTerminal = destPos;
                     break;
@@ -336,9 +365,9 @@ public class TopicParser
                 Position anyLoop = null;
                 for(Position destPos : dest.getValue())
                 {
-                    if(destPos._followedByAnyLoop)
+                    if(destPos.isFollowedByAnyLoop())
                     {
-                        if(anyLoop == null || anyLoop._position<destPos._position)
+                        if(anyLoop == null || anyLoop.getPosition() < destPos.getPosition())
                         {
                             anyLoop = destPos;
                         }
@@ -349,7 +378,7 @@ public class TopicParser
                     Collection<Position> removals = new ArrayList<Position>();
                     for(Position destPos : dest.getValue())
                     {
-                        if(destPos._position < anyLoop._position)
+                        if(destPos.getPosition() < anyLoop.getPosition())
                         {
                             removals.add(destPos);
                         }

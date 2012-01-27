@@ -60,7 +60,7 @@ import java.util.Map;
 public class ExtractResendAndRequeueTest extends TestCase
 {
 
-    UnacknowledgedMessageMapImpl _unacknowledgedMessageMap;
+    private UnacknowledgedMessageMapImpl _unacknowledgedMessageMap;
     private static final int INITIAL_MSG_COUNT = 10;
     private AMQQueue _queue = new MockAMQQueue(getName());
     private MessageStore _messageStore = new MemoryMessageStore();

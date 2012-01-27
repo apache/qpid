@@ -31,11 +31,11 @@ import javax.naming.NamingException;
  */
 public abstract class Client
 {
-    protected ConnectionSetup _setup;
+    private ConnectionSetup _setup;
 
-    protected Connection _connection;
-    protected Destination _destination;
-    protected Session _session;
+    private Connection _connection;
+    private Destination _destination;
+    private Session _session;
 
     public Client(String destination)
     {
@@ -69,4 +69,28 @@ public abstract class Client
 
     public abstract void start();
 
+    public ConnectionSetup getSetup()
+    {
+        return _setup;
+    }
+
+    public Connection getConnection()
+    {
+        return _connection;
+    }
+
+    public Destination getDestination()
+    {
+        return _destination;
+    }
+
+    public Session getSession()
+    {
+        return _session;
+    }
+
+    public void setSession(Session session)
+    {
+        _session = session;
+    }
 }

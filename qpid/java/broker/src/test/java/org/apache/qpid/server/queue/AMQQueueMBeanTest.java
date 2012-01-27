@@ -510,7 +510,7 @@ public class AMQQueueMBeanTest extends InternalBrokerBaseCase
         };
 
         ContentHeaderBody contentHeaderBody = new ContentHeaderBody();
-        contentHeaderBody.bodySize = MESSAGE_SIZE;   // in bytes
+        contentHeaderBody.setBodySize(MESSAGE_SIZE);   // in bytes
         final BasicContentHeaderProperties props = new BasicContentHeaderProperties();
         contentHeaderBody.setProperties(props);
         props.setDeliveryMode((byte) (persistent ? 2 : 1));

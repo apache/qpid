@@ -35,7 +35,7 @@ package org.apache.qpid;
  */
 public class AMQUnresolvedAddressException extends AMQException
 {
-    String _broker;
+    private String _broker;
 
     public AMQUnresolvedAddressException(String message, String broker, Throwable cause)
     {

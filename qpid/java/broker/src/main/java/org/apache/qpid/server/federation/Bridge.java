@@ -522,7 +522,7 @@ public class Bridge implements BridgeConfig
             _transaction.enqueue(queues,message, new ServerTransaction.Action()
                         {
 
-                            BaseQueue[] _queues = queues.toArray(new BaseQueue[queues.size()]);
+                            private BaseQueue[] _queues = queues.toArray(new BaseQueue[queues.size()]);
 
                             public void postCommit()
                             {

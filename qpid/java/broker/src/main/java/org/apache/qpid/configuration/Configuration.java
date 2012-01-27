@@ -33,16 +33,16 @@ public class Configuration
 {
     public static final String QPID_HOME = "QPID_HOME";
 
-    final String QPIDHOME = System.getProperty(QPID_HOME);
+    private final String QPIDHOME = System.getProperty(QPID_HOME);
 
     private static Logger _devlog = LoggerFactory.getLogger(Configuration.class);
 
     public static final String DEFAULT_LOG_CONFIG_FILENAME = "log4j.xml";
     public static final String DEFAULT_CONFIG_FILE = "etc/config.xml";
 
-    protected final Options _options = new Options();
-    protected CommandLine _commandLine;
-    protected File _configFile;
+    private final Options _options = new Options();
+    private CommandLine _commandLine;
+    private File _configFile;
 
 
     public Configuration()

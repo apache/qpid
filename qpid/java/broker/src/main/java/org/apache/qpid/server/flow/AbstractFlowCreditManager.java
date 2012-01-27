@@ -25,7 +25,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 public abstract class AbstractFlowCreditManager implements FlowCreditManager
 {
-    protected final AtomicBoolean _suspended = new AtomicBoolean(false);
+    private final AtomicBoolean _suspended = new AtomicBoolean(false);
     private final ArrayList<FlowCreditManagerListener> _listeners = new ArrayList<FlowCreditManagerListener>();
 
     public final void addStateListener(FlowCreditManagerListener listener)
