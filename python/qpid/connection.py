@@ -27,6 +27,7 @@ from generator import control_invoker
 from exceptions import *
 from logging import getLogger
 import delegates, socket
+import sys
 
 class ChannelBusy(Exception): pass
 
@@ -159,11 +160,16 @@ class Connection(Framer):
     while not self.closed:
       try:
         data = self.sock.recv(64*1024)
-        if self.security_layer_rx and data:
-          status, data = self.security_layer_rx.decode(data)
         if not data:
           self.detach_all()
           break
+        # If we have a security layer and it sends us no decoded data,
+        # that's OK as long as its return code is happy.
+        if self.security_layer_rx:
+          status, data = self.security_layer_rx.decode(data)
+          if not status:
+            self.detach_all()
+            break
       except socket.timeout:
         if self.aborted():
           self.close_code = (None, "connection timed out")
