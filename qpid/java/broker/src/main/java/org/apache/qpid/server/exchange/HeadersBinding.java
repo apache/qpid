@@ -207,8 +207,14 @@ class HeadersBinding
     {
         if(value instanceof String)
         {
-            if("any".equalsIgnoreCase((String) value)) return true;
-            if("all".equalsIgnoreCase((String) value)) return false;
+            if("any".equalsIgnoreCase((String) value))
+            {
+                return true;
+            }
+            if("all".equalsIgnoreCase((String) value))
+            {
+                return false;
+            }
         }
         _logger.warn("Ignoring unrecognised match type: " + value);
         return false;//default to all

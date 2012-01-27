@@ -455,7 +455,7 @@ class TypedBytesContentReader implements TypedBytesCodes
             ByteBuffer dup = _data.duplicate();
             int pos = _data.position();
             byte b;
-            while((b = _data.get()) != 0);
+            while((b = _data.get()) != 0) {};
             dup.limit(_data.position()-1);
             return _charsetDecoder.decode(dup).toString();
 

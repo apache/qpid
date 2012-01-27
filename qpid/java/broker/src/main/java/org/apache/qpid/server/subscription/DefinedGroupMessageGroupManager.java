@@ -189,7 +189,9 @@ public class DefinedGroupMessageGroupManager implements MessageGroupManager
         public boolean visit(final QueueEntry entry)
         {
             if(!entry.isAvailable())
+            {
                 return false;
+            }
 
             Object groupId = getKey(entry);
 

@@ -48,7 +48,10 @@ public class AssignedSubscriptionMessageGroupManager implements MessageGroupMana
     private static int pow2(final int i)
     {
         int val = 1;
-        while(val < i) val<<=1;
+        while(val < i)
+        {
+            val<<=1;
+        }
         return val;
     }
 
@@ -112,11 +115,15 @@ public class AssignedSubscriptionMessageGroupManager implements MessageGroupMana
         public boolean visit(final QueueEntry entry)
         {
             if(!entry.isAvailable())
+            {
                 return false;
+            }
 
             Object groupId = entry.getMessage().getMessageHeader().getHeader(_groupId);
             if(groupId == null)
+            {
                 return false;
+            }
 
             Integer group = groupId.hashCode() & _groupMask;
             Subscription assignedSub = _groupMap.get(group);

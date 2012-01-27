@@ -61,7 +61,9 @@ public class ReconnectServer extends AbstractAction implements IWorkbenchWindowA
     public void run(IAction action)
     {
         if(_window == null)
+        {
             return;
+        }
   
         try
         {

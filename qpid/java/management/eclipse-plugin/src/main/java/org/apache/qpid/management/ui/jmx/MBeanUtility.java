@@ -153,7 +153,9 @@ public class MBeanUtility
         {
             String cause = ((MBeanException)ex).getTargetException().getMessage();
             if (cause == null)
+            {
                 cause = ex.toString();
+            }
             ViewUtility.popupInfoMessage(mbean.getInstanceName(), cause);
         }
         else if (ex instanceof JMException)
@@ -465,14 +467,20 @@ public class MBeanUtility
         
         // Check if this mbean sends any notification
         if (info == null || info.length == 0)
+        {
             return null;
+        }
         
         // Create notification model if not already set in the server registry for this mbean
         List<NotificationInfoModel> list = serverRegistry.getNotificationInfo(mbean);
         if (list != null) 
+        {
             return list.toArray(new NotificationInfoModel[0]);
+        }
         else
+        {
             list = new ArrayList<NotificationInfoModel>();
+        }
         
         for (int i = 0; i < info.length; i++)
         {

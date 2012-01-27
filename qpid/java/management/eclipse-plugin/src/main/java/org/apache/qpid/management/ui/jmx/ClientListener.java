@@ -73,7 +73,9 @@ public class ClientListener implements NotificationListener
     protected JMXServerRegistry getServerRegistry()
     {
         if (serverRegistry == null)
+        {
             serverRegistry = (JMXServerRegistry)ApplicationRegistry.getServerRegistry(server);
+        }
         
         return serverRegistry;
     }

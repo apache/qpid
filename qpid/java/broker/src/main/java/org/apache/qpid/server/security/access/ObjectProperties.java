@@ -326,12 +326,21 @@ public class ObjectProperties
     @Override
     public boolean equals(Object o)
     {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o)
+        {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass())
+        {
+            return false;
+        }
 
         ObjectProperties that = (ObjectProperties) o;
 
-        if (_properties != null ? !_properties.equals(that._properties) : that._properties != null) return false;
+        if (_properties != null ? !_properties.equals(that._properties) : that._properties != null)
+        {
+            return false;
+        }
 
         return true;
     }

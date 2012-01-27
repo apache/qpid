@@ -64,7 +64,9 @@ public class AttributeData
     public void setValue(Object value)
     {
         if (value != null)
+        {
             this.value = value;
+        }
     }
     public boolean isReadable()
     {
@@ -91,6 +93,8 @@ public class AttributeData
             return true;
         }
         else
+        {
             return false;
+        }
     }
 }

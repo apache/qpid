@@ -33,7 +33,10 @@ public class Connector
     ConnectionFactory getConnectionFactory(ConnectorConfig config) throws Exception
     {
         String factory = config.getFactory();
-        if(factory == null) factory = AMQConnectionFactoryInitialiser.class.getName();
+        if(factory == null)
+        {
+            factory = AMQConnectionFactoryInitialiser.class.getName();
+        }
         System.out.println("Using " + factory);
         return ((ConnectionFactoryInitialiser) Class.forName(factory).newInstance()).getFactory(config);
     }

@@ -86,7 +86,9 @@ public class MBeanView extends ViewPart
         public void selectionChanged(IWorkbenchPart part, ISelection sel)
         {
             if (!(sel instanceof IStructuredSelection))
+            {
                 return;
+            }
 
             IStructuredSelection ss = (IStructuredSelection) sel;
             _selectedNode = (TreeObject)ss.getFirstElement();
@@ -286,7 +288,9 @@ public class MBeanView extends ViewPart
             }
             
             if (parent != null && parent.getType().equals(NODE_TYPE_SERVER))
+            {
                 _server = (ManagedServer)parent.getManagedObject();
+            }
             
             _virtualHostName = _selectedNode.getVirtualHost();
         }

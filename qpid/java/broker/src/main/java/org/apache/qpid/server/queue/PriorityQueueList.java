@@ -74,7 +74,7 @@ public class PriorityQueueList implements QueueEntryList<SimpleQueueEntryImpl>
         {
             final QueueEntryList<?> nodeEntryList = node.getQueueEntryList();
             int index;
-            for(index = _priorityLists.length-1; _priorityLists[index] != nodeEntryList; index--);
+            for(index = _priorityLists.length-1; _priorityLists[index] != nodeEntryList; index--) {};
 
             while(next == null && index != 0)
             {

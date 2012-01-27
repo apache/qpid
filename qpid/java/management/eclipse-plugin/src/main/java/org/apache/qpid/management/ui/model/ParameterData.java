@@ -62,13 +62,21 @@ public class ParameterData
     public void setValueFromString(String strValue)
     {
         if ("int".equals(_type))
+        {
             _value = Integer.parseInt(strValue);
+        }
         else if (isBoolean())
+        {
             _value = Boolean.valueOf(strValue);
+        }
         else if ("long".equals(_type))
+        {
             _value = Long.parseLong(strValue);
+        }
         else
-            _value = strValue; 
+        {
+            _value = strValue;
+        }
     }
     
     public void setValue(Object value)

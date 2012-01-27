@@ -29,14 +29,20 @@ public class NetMatcher
     public void initInetNetworks(final Collection nets)
     {
         networks = new ArrayList();
-        for (Iterator iter = nets.iterator(); iter.hasNext(); ) try
+        for (Iterator iter = nets.iterator(); iter.hasNext(); )
         {
-            InetNetwork net = InetNetwork.getFromString((String) iter.next());
-            if (!networks.contains(net)) networks.add(net);
-        }
-        catch (java.net.UnknownHostException uhe)
-        {
-            log("Cannot resolve address: " + uhe.getMessage());
+            try
+            {
+                InetNetwork net = InetNetwork.getFromString((String) iter.next());
+                if (!networks.contains(net))
+                {
+                    networks.add(net);
+                }
+            }
+            catch (java.net.UnknownHostException uhe)
+            {
+                log("Cannot resolve address: " + uhe.getMessage());
+            }
         }
         networks.trimToSize();
     }
@@ -44,14 +50,20 @@ public class NetMatcher
     public void initInetNetworks(final String[] nets)
     {
         networks = new ArrayList();
-        for (int i = 0; i < nets.length; i++) try
+        for (int i = 0; i < nets.length; i++)
         {
-            InetNetwork net = InetNetwork.getFromString(nets[i]);
-            if (!networks.contains(net)) networks.add(net);
-        }
-        catch (java.net.UnknownHostException uhe)
-        {
-            log("Cannot resolve address: " + uhe.getMessage());
+            try
+            {
+                InetNetwork net = InetNetwork.getFromString(nets[i]);
+                if (!networks.contains(net))
+                {
+                    networks.add(net);
+                }
+            }
+            catch (java.net.UnknownHostException uhe)
+            {
+                log("Cannot resolve address: " + uhe.getMessage());
+            }
         }
         networks.trimToSize();
     }
@@ -71,10 +83,13 @@ public class NetMatcher
 
         boolean sameNet = false;
 
-        if (ip != null) for (Iterator iter = networks.iterator(); (!sameNet) && iter.hasNext(); )
+        if (ip != null)
         {
-            InetNetwork network = (InetNetwork) iter.next();
-            sameNet = network.contains(ip);
+            for (Iterator iter = networks.iterator(); (!sameNet) && iter.hasNext(); )
+            {
+                InetNetwork network = (InetNetwork) iter.next();
+                sameNet = network.contains(ip);
+            }
         }
         return sameNet;
     }
@@ -156,12 +171,21 @@ class InetNetwork
 
     public static InetNetwork getFromString(String netspec) throws java.net.UnknownHostException
     {
-        if (netspec.endsWith("*")) netspec = normalizeFromAsterisk(netspec);
+        if (netspec.endsWith("*"))
+        {
+            netspec = normalizeFromAsterisk(netspec);
+        }
         else
         {
             int iSlash = netspec.indexOf('/');
-            if (iSlash == -1) netspec += "/255.255.255.255";
-            else if (netspec.indexOf('.', iSlash) == -1) netspec = normalizeFromCIDR(netspec);
+            if (iSlash == -1)
+            {
+                netspec += "/255.255.255.255";
+            }
+            else if (netspec.indexOf('.', iSlash) == -1)
+            {
+                netspec = normalizeFromCIDR(netspec);
+            }
         }
 
         return new InetNetwork(InetAddress.getByName(netspec.substring(0, netspec.indexOf('/'))),
@@ -205,8 +229,12 @@ class InetNetwork
         String[] masks = {  "0.0.0.0/0.0.0.0", "0.0.0/255.0.0.0", "0.0/255.255.0.0", "0/255.255.255.0" };
         char[] srcb = netspec.toCharArray();                
         int octets = 0;
-        for (int i = 1; i < netspec.length(); i++) {
-            if (srcb[i] == '.') octets++;
+        for (int i = 1; i < netspec.length(); i++)
+        {
+            if (srcb[i] == '.')
+            {
+                octets++;
+            }
         }
         return (octets == 0) ? masks[0] : netspec.substring(0, netspec.length() -1 ).concat(masks[octets]);
     }
@@ -244,10 +272,18 @@ class InetNetwork
     private static InetAddress getByAddress(byte[] ip) throws java.net.UnknownHostException
     {
         InetAddress addr = null;
-        if (getByAddress != null) try {
-            addr = (InetAddress) getByAddress.invoke(null, new Object[] { ip });
-        } catch (IllegalAccessException e) {
-        } catch (java.lang.reflect.InvocationTargetException e) {
+        if (getByAddress != null)
+        {
+            try
+            {
+                addr = (InetAddress) getByAddress.invoke(null, new Object[] { ip });
+            }
+            catch (IllegalAccessException e)
+            {
+            }
+            catch (java.lang.reflect.InvocationTargetException e)
+            {
+            }
         }
 
         if (addr == null) {
