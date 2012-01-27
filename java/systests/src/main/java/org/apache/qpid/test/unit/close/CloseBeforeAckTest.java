@@ -45,8 +45,8 @@ public class CloseBeforeAckTest extends QpidBrokerTestCase
 {
     private static final Logger log = LoggerFactory.getLogger(CloseBeforeAckTest.class);
 
-    Connection connection;
-    Session session;
+    private Connection connection;
+    private Session session;
     public static final String TEST_QUEUE_NAME = "TestQueue";
     private int TEST_COUNT = 25;
 
@@ -68,9 +68,9 @@ public class CloseBeforeAckTest extends QpidBrokerTestCase
         }
     }
 
-    TestThread1 testThread1 = new TestThread1();
+    private TestThread1 testThread1 = new TestThread1();
 
-    TestRunnable testThread2 =
+    private TestRunnable testThread2 =
         new TestRunnable()
         {
             public void runWithExceptions() throws Exception

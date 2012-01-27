@@ -44,12 +44,12 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
 public class TopicExchangeTest extends InternalBrokerBaseCase
 {
 
-    TopicExchange _exchange;
+    private TopicExchange _exchange;
 
-    VirtualHost _vhost;
-    MessageStore _store;
+    private VirtualHost _vhost;
+    private MessageStore _store;
 
-    InternalTestProtocolSession _protocolSession;
+    private InternalTestProtocolSession _protocolSession;
 
 
     @Override
@@ -409,7 +409,7 @@ public class TopicExchangeTest extends InternalBrokerBaseCase
 
     class PublishInfo implements MessagePublishInfo
     {
-        AMQShortString _routingkey;
+        private AMQShortString _routingkey;
 
         PublishInfo(AMQShortString routingkey)
         {

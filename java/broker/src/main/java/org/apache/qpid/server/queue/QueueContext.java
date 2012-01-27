@@ -25,8 +25,8 @@ import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 final class QueueContext implements AMQQueue.Context
 {
-    volatile QueueEntry _lastSeenEntry;
-    volatile QueueEntry _releasedEntry;
+    private volatile QueueEntry _lastSeenEntry;
+    private volatile QueueEntry _releasedEntry;
 
     static final AtomicReferenceFieldUpdater<QueueContext, QueueEntry>
             _lastSeenUpdater =
@@ -45,5 +45,11 @@ final class QueueContext implements AMQQueue.Context
     public QueueEntry getLastSeenEntry()
     {
         return _lastSeenEntry;
+    }
+
+
+    QueueEntry getReleasedEntry()
+    {
+        return _releasedEntry;
     }
 }

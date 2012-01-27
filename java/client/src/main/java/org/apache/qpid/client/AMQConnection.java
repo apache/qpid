@@ -106,7 +106,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
      * the handler deals with this. It also deals with the initial dispatch of any protocol frames to their appropriate
      * handler.
      */
-    protected AMQProtocolHandler _protocolHandler;
+    private AMQProtocolHandler _protocolHandler;
 
     /** Maps from session id (Integer) to AMQSession instance */
     private final ChannelToSessionMap _sessions = new ChannelToSessionMap();
@@ -122,7 +122,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     /** The virtual path to connect to on the AMQ server */
     private String _virtualHost;
 
-    protected ExceptionListener _exceptionListener;
+    private ExceptionListener _exceptionListener;
 
     private ConnectionListener _connectionListener;
 
@@ -132,15 +132,15 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
      * Whether this connection is started, i.e. whether messages are flowing to consumers. It has no meaning for message
      * publication.
      */
-    protected volatile boolean _started;
+    private volatile boolean _started;
 
     /** Policy dictating how to failover */
-    protected FailoverPolicy _failoverPolicy;
+    private FailoverPolicy _failoverPolicy;
 
     /*
      * _Connected should be refactored with a suitable wait object.
      */
-    protected boolean _connected;
+    private boolean _connected;
 
     /*
      * The connection meta data
@@ -156,7 +156,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
     private final ExecutorService _taskPool = Executors.newCachedThreadPool();
     private static final long DEFAULT_TIMEOUT = 1000 * 30;
 
-    protected AMQConnectionDelegate _delegate;
+    private AMQConnectionDelegate _delegate;
 
     // this connection maximum number of prefetched messages
     private int _maxPrefetch;
@@ -346,11 +346,11 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         _logger.info("Connecting with ProtocolHandler Version:"+_protocolHandler.getProtocolVersion());
 
         // We are not currently connected
-        _connected = false;
+        setConnected(false);
 
         boolean retryAllowed = true;
         Exception connectionException = null;
-        while (!_connected && retryAllowed && brokerDetails != null)
+        while (!isConnected() && retryAllowed && brokerDetails != null)
         {
             ProtocolVersion pe = null;
             try
@@ -374,7 +374,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
                 // broker
                 initDelegate(pe);
             }
-            else if (!_connected)
+            else if (!isConnected())
             {
                 retryAllowed = _failoverPolicy.failoverAllowed();
                 brokerDetails = _failoverPolicy.getNextBrokerDetails();
@@ -384,10 +384,10 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
 
         if (_logger.isDebugEnabled())
         {
-            _logger.debug("Are we connected:" + _connected);
+            _logger.debug("Are we connected:" + isConnected());
         }
 
-        if (!_connected)
+        if (!isConnected())
         {
             if (_logger.isDebugEnabled())
             {
@@ -590,7 +590,7 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
 
     public boolean failoverAllowed()
     {
-        if (!_connected)
+        if (!isConnected())
         {
             return false;
         }
@@ -727,6 +727,11 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
 
         return _connectionMetaData;
 
+    }
+
+    protected final ExceptionListener getExceptionListenerNoCheck()
+    {
+        return _exceptionListener;
     }
 
     public ExceptionListener getExceptionListener() throws JMSException
@@ -1048,14 +1053,24 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
         return _virtualHost;
     }
 
-    public AMQProtocolHandler getProtocolHandler()
+    public final AMQProtocolHandler getProtocolHandler()
     {
         return _protocolHandler;
     }
 
-    public boolean started()
+    public final boolean started()
     {
         return _started;
+    }
+
+    protected final boolean isConnected()
+    {
+        return _connected;
+    }
+
+    protected final void setConnected(boolean connected)
+    {
+        _connected = connected;
     }
 
     public void bytesSent(long writtenBytes)
@@ -1489,4 +1504,8 @@ public class AMQConnection extends Closeable implements Connection, QueueConnect
          return _lastFailoverTime;
     }
 
+    protected AMQConnectionDelegate getDelegate()
+    {
+        return _delegate;
+    }
 }

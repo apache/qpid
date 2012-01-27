@@ -37,7 +37,7 @@ import java.util.Properties;
 public class InfoServiceImplTest extends TestCase
 {
 
-    InfoServiceImpl _isi = null;
+    private InfoServiceImpl _isi = null;
 
     @SuppressWarnings("unchecked")
     public void testInvoke()

@@ -28,7 +28,7 @@ import java.util.List;
 
 public class OperationDataModel
 {
-    HashMap<String, OperationData> _operationMap = new HashMap<String, OperationData>();
+    private HashMap<String, OperationData> _operationMap = new HashMap<String, OperationData>();
     
     public void addOperation(MBeanOperationInfo opInfo)
     {

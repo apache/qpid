@@ -43,20 +43,7 @@ public abstract class AbstractMapEntry extends AbstractKeyValue implements Map.E
 
     // Map.Entry interface
     //-------------------------------------------------------------------------
-    /** 
-     * Sets the value stored in this <code>Map.Entry</code>.
-     * <p>
-     * This <code>Map.Entry</code> is not connected to a Map, so only the
-     * local data is changed.
-     *
-     * @param value  the new value
-     * @return the previous value
-     */
-    public Object setValue(Object value) {
-        Object answer = this.value;
-        this.value = value;
-        return answer;
-    }
+
 
     /**
      * Compares this <code>Map.Entry</code> with another <code>Map.Entry</code>.

@@ -120,7 +120,7 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
                 EnumSet.of(AMQState.CONNECTION_OPEN, AMQState.CONNECTION_CLOSED);
 
 
-        StateWaiter waiter = _conn._protocolHandler.createWaiter(openOrClosedStates);
+        StateWaiter waiter = _conn.getProtocolHandler().createWaiter(openOrClosedStates);
 
         ConnectionSettings settings = brokerDetail.buildConnectionSettings();
         settings.setProtocol(brokerDetail.getTransport());
@@ -148,9 +148,9 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
         SecurityLayer securityLayer = SecurityLayerFactory.newInstance(settings);
 
         OutgoingNetworkTransport transport = Transport.getOutgoingTransportInstance(getProtocolVersion());
-        NetworkConnection network = transport.connect(settings, securityLayer.receiver(_conn._protocolHandler), sslContext);
-        _conn._protocolHandler.setNetworkConnection(network, securityLayer.sender(network.getSender()));
-        _conn._protocolHandler.getProtocolSession().init();
+        NetworkConnection network = transport.connect(settings, securityLayer.receiver(_conn.getProtocolHandler()), sslContext);
+        _conn.getProtocolHandler().setNetworkConnection(network, securityLayer.sender(network.getSender()));
+        _conn.getProtocolHandler().getProtocolSession().init();
         // this blocks until the connection has been set up or when an error
         // has prevented the connection being set up
 
@@ -158,13 +158,13 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
 
         if(state == AMQState.CONNECTION_OPEN)
         {
-            _conn._failoverPolicy.attainedConnection();
-            _conn._connected = true;
+            _conn.getFailoverPolicy().attainedConnection();
+            _conn.setConnected(true);
             return null;
         }
         else
         {
-            return _conn._protocolHandler.getSuggestedProtocolVersion();
+            return _conn.getProtocolHandler().getSuggestedProtocolVersion();
         }
 
     }
@@ -237,7 +237,7 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
                             }
                         }
 
-                        if (_conn._started)
+                        if (_conn.started())
                         {
                             try
                             {
@@ -271,12 +271,12 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
     {
         ChannelOpenBody channelOpenBody = _conn.getProtocolHandler().getMethodRegistry().createChannelOpenBody(null);
         // TODO: Be aware of possible changes to parameter order as versions change.
-        _conn._protocolHandler.syncWrite(channelOpenBody.generateFrame(channelId),  ChannelOpenOkBody.class);
+        _conn.getProtocolHandler().syncWrite(channelOpenBody.generateFrame(channelId),  ChannelOpenOkBody.class);
 
         // todo send low water mark when protocol allows.
         // todo Be aware of possible changes to parameter order as versions change.
         BasicQosBody basicQosBody = _conn.getProtocolHandler().getMethodRegistry().createBasicQosBody(0,prefetchHigh,false);
-        _conn._protocolHandler.syncWrite(basicQosBody.generateFrame(channelId),BasicQosOkBody.class);
+        _conn.getProtocolHandler().syncWrite(basicQosBody.generateFrame(channelId),BasicQosOkBody.class);
 
         if (transacted)
         {
@@ -287,7 +287,7 @@ public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
             TxSelectBody body = _conn.getProtocolHandler().getMethodRegistry().createTxSelectBody();
 
             // TODO: Be aware of possible changes to parameter order as versions change.
-            _conn._protocolHandler.syncWrite(body.generateFrame(channelId), TxSelectOkBody.class);
+            _conn.getProtocolHandler().syncWrite(body.generateFrame(channelId), TxSelectOkBody.class);
         }
     }
 

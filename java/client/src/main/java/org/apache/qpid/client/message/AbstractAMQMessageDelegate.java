@@ -121,18 +121,18 @@ public abstract class AbstractAMQMessageDelegate implements AMQMessageDelegate
             exchangeInfo = new ExchangeInfo(exchange.asString(),"",AMQDestination.UNKNOWN_TYPE);
         }
         
-        if ("topic".equals(exchangeInfo.exchangeType))
+        if ("topic".equals(exchangeInfo.getExchangeType()))
         {
             dest = new AMQTopic(exchange, routingKey, null);
         }
-        else if ("direct".equals(exchangeInfo.exchangeType))
+        else if ("direct".equals(exchangeInfo.getExchangeType()))
         {
             dest = new AMQQueue(exchange, routingKey, routingKey); 
         }
         else
         {
             dest = new AMQAnyDestination(exchange,
-                                         new AMQShortString(exchangeInfo.exchangeType),
+                                         new AMQShortString(exchangeInfo.getExchangeType()),
                                          routingKey,
                                          false,
                                          false,
@@ -223,9 +223,9 @@ public abstract class AbstractAMQMessageDelegate implements AMQMessageDelegate
 
 class ExchangeInfo
 {
-    String exchangeName;
-    String exchangeType;
-    int destType = AMQDestination.QUEUE_TYPE;
+    private String exchangeName;
+    private String exchangeType;
+    private int destType = AMQDestination.QUEUE_TYPE;
     
     public ExchangeInfo(String exchangeName, String exchangeType,
                         int destType)

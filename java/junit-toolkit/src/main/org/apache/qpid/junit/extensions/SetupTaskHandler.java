@@ -43,10 +43,10 @@ import java.util.Queue;
 public class SetupTaskHandler implements SetupTaskAware
 {
     /** Holds the set up tasks. */
-    Queue<Runnable> setups = new LinkedList<Runnable>();
+    private Queue<Runnable> setups = new LinkedList<Runnable>();
 
     /** Holds the tear down tasks. */
-    Queue<Runnable> teardowns = new StackQueue<Runnable>();
+    private Queue<Runnable> teardowns = new StackQueue<Runnable>();
 
     /**
      * Adds the specified task to the tests setup.

@@ -29,6 +29,6 @@ public class AMQTestConnection_0_10 extends AMQConnection
     
     public Connection getConnection()
     {
-        return((AMQConnectionDelegate_0_10)_delegate).getQpidConnection();
+        return((AMQConnectionDelegate_0_10)getDelegate()).getQpidConnection();
     }    
 }

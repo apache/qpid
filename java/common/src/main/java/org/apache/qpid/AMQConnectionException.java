@@ -47,7 +47,7 @@ public class AMQConnectionException extends AMQException
     /** AMQP version for which exception ocurred, minor code. */
     private final byte minor;
 
-    boolean _closeConnetion;
+    private boolean _closeConnetion;
 
     public AMQConnectionException(AMQConstant errorCode, String msg, int classId, int methodId, byte major, byte minor,
         Throwable cause)

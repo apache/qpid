@@ -38,7 +38,7 @@ import java.util.TreeMap;
 public class InfoServiceImpl implements InfoService
 {
 
-    SortedMap<String, String> infoMap = new TreeMap<String, String>();
+    private SortedMap<String, String> infoMap = new TreeMap<String, String>();
 
     /**
      * invoke method collects all the information from System and Application

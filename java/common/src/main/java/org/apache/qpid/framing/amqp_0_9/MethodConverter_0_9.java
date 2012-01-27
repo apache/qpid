@@ -119,7 +119,7 @@ public class MethodConverter_0_9 extends AbstractMethodConverter implements Prot
 
         public byte[] getData()
         {
-            return _contentBodyChunk._payload;
+            return _contentBodyChunk.getPayload();
         }
 
         public void reduceToFit()

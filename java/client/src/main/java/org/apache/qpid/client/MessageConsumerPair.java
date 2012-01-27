@@ -22,8 +22,8 @@ package org.apache.qpid.client;
 
 public class MessageConsumerPair
 {
-    BasicMessageConsumer _consumer;
-    Object _item;
+    private BasicMessageConsumer _consumer;
+    private Object _item;
 
     public MessageConsumerPair(BasicMessageConsumer consumer, Object item)
     {

@@ -40,17 +40,11 @@ import javax.management.NotificationListener;
 public abstract class AMQManagedObject extends DefaultManagedObject
                                        implements NotificationBroadcaster
 {
-    /**
-     * broadcaster support class
-     */
-    protected NotificationBroadcasterSupport _broadcaster = new NotificationBroadcasterSupport();
+    private NotificationBroadcasterSupport _broadcaster = new NotificationBroadcasterSupport();
 
-    /**
-     * sequence number for notifications
-     */
-    protected long _notificationSequenceNumber = 0;
+    private long _notificationSequenceNumber = 0;
 
-    protected LogActor _logActor;
+    private LogActor _logActor;
 
     protected AMQManagedObject(Class<?> managementInterface, String typeName)
         throws NotCompliantMBeanException
@@ -76,5 +70,36 @@ public abstract class AMQManagedObject extends DefaultManagedObject
         _broadcaster.removeNotificationListener(listener);
     }
 
+
+    /**
+     * broadcaster support class
+     */
+    protected NotificationBroadcasterSupport getBroadcaster()
+    {
+        return _broadcaster;
+    }
+
+    /**
+     * sequence number for notifications
+     */
+    protected long getNotificationSequenceNumber()
+    {
+        return _notificationSequenceNumber;
+    }
+
+    protected void setNotificationSequenceNumber(long notificationSequenceNumber)
+    {
+        _notificationSequenceNumber = notificationSequenceNumber;
+    }
+
+    protected long incrementAndGetSequenceNumber()
+    {
+        return ++_notificationSequenceNumber;
+    }
+
+    protected LogActor getLogActor()
+    {
+        return _logActor;
+    }
 
 }

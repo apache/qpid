@@ -32,7 +32,7 @@ public class SimpleQueueEntryListTest extends QueueEntryListTestBase
     private SimpleQueueEntryList _sqel;
 
     private static final String SCAVENGE_PROP = "qpid.queue.scavenge_count";
-    String oldScavengeValue = null;
+    private String oldScavengeValue = null;
 
     @Override
     protected void setUp()

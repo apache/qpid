@@ -31,8 +31,8 @@ import java.util.List;
 
 public class ClassLoadingAwareObjectInputStreamTest extends QpidTestCase
 {
-    InputStream _in;
-    ClassLoadingAwareObjectInputStream _claOIS;
+    private InputStream _in;
+    private ClassLoadingAwareObjectInputStream _claOIS;
 
     protected void setUp() throws Exception
     {

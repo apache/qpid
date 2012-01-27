@@ -31,7 +31,7 @@ import org.eclipse.ui.PlatformUI;
  */
 public class Application implements IPlatformRunnable
 {
-    static Shell shell = null;
+    private static Shell shell = null;
 
     /*
      * The call to createAndRunWorkbench will not return until the workbench is closed.

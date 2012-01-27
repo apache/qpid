@@ -76,7 +76,7 @@ public class AbstractHeadersExchangeTestBase extends InternalBrokerBaseCase
     private MemoryMessageStore _store = new MemoryMessageStore();
 
 
-    BindingFactory bindingFactory = new BindingFactory(new DurableConfigurationStore.Source()
+    private BindingFactory bindingFactory = new BindingFactory(new DurableConfigurationStore.Source()
                                                         {
 
                                                             public DurableConfigurationStore getDurableConfigurationStore()
@@ -288,7 +288,7 @@ public class AbstractHeadersExchangeTestBase extends InternalBrokerBaseCase
 
     static class TestQueue extends SimpleAMQQueue
     {
-        final List<HeadersExchangeTest.Message> messages = new ArrayList<HeadersExchangeTest.Message>();
+        private final List<HeadersExchangeTest.Message> messages = new ArrayList<HeadersExchangeTest.Message>();
 
         public String toString()
         {
@@ -492,18 +492,15 @@ public class AbstractHeadersExchangeTestBase extends InternalBrokerBaseCase
                     return null;
                 }
 
-                @Override
                 public int getDeliveryCount()
                 {
                     return 0;
                 }
 
-                @Override
                 public void incrementDeliveryCount()
                 {
                 }
 
-                @Override
                 public void decrementDeliveryCount()
                 {
                 }
@@ -590,8 +587,8 @@ public class AbstractHeadersExchangeTestBase extends InternalBrokerBaseCase
             int pos = 0;
             for(ContentBody body : bodies)
             {
-                storedMessage.addContent(pos, ByteBuffer.wrap(body._payload));
-                pos += body._payload.length;
+                storedMessage.addContent(pos, ByteBuffer.wrap(body.getPayload()));
+                pos += body.getPayload().length;
             }
 
             _incoming = new TestIncomingMessage(getMessageId(),publish, protocolsession);

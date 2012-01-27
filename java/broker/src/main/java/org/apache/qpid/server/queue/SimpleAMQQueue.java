@@ -834,7 +834,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
     private void setLastSeenEntry(final Subscription sub, final QueueEntry entry)
     {
         QueueContext subContext = (QueueContext) sub.getQueueContext();
-        QueueEntry releasedEntry = subContext._releasedEntry;
+        QueueEntry releasedEntry = subContext.getReleasedEntry();
 
         QueueContext._lastSeenUpdater.set(subContext, entry);
         if(releasedEntry == entry)
@@ -851,7 +851,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
         {
             QueueEntry oldEntry;
 
-            while((oldEntry  = subContext._releasedEntry) == null || oldEntry.compareTo(entry) > 0)
+            while((oldEntry  = subContext.getReleasedEntry()) == null || oldEntry.compareTo(entry) > 0)
             {
                 if(QueueContext._releasedUpdater.compareAndSet(subContext, oldEntry, entry))
                 {
@@ -1846,8 +1846,8 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
         QueueContext context = (QueueContext) sub.getQueueContext();
         if(context != null)
         {
-            QueueEntry lastSeen = context._lastSeenEntry;
-            QueueEntry releasedNode = context._releasedEntry;
+            QueueEntry lastSeen = context.getLastSeenEntry();
+            QueueEntry releasedNode = context.getReleasedEntry();
 
             QueueEntry node = (releasedNode != null && lastSeen.compareTo(releasedNode)>=0) ? releasedNode : _entries.next(lastSeen);
 
@@ -1869,8 +1869,8 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
                     QueueContext._releasedUpdater.compareAndSet(context, releasedNode, null);
                 }
 
-                lastSeen = context._lastSeenEntry;
-                releasedNode = context._releasedEntry;
+                lastSeen = context.getLastSeenEntry();
+                releasedNode = context.getReleasedEntry();
                 node = (releasedNode != null && lastSeen.compareTo(releasedNode)>0) ? releasedNode : _entries.next(lastSeen);
             }
             return node;
@@ -1886,7 +1886,7 @@ public class SimpleAMQQueue implements AMQQueue, Subscription.StateListener, Mes
         QueueContext context = (QueueContext) sub.getQueueContext();
         if(context != null)
         {
-            QueueEntry releasedNode = context._releasedEntry;
+            QueueEntry releasedNode = context.getReleasedEntry();
             return releasedNode == null || releasedNode.compareTo(entry) < 0;
         }
         else

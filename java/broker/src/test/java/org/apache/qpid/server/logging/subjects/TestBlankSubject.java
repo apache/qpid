@@ -27,7 +27,7 @@ public class TestBlankSubject extends AbstractLogSubject
 {
     public TestBlankSubject()
     {
-       _logString = "[TestBlankSubject]";
+       setLogString("[TestBlankSubject]");
     }
         
 }

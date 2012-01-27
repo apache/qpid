@@ -58,7 +58,7 @@ import java.util.Properties;
 public class InteropCircuitFactory extends BaseCircuitFactory
 {
     /** Used for debugging. */
-    Logger log = Logger.getLogger(InteropCircuitFactory.class);
+    private Logger log = Logger.getLogger(InteropCircuitFactory.class);
 
     /**
      * Creates a test circuit for the test, configered by the test parameters specified.

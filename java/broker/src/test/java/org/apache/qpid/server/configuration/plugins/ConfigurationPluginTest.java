@@ -68,7 +68,7 @@ public class ConfigurationPluginTest extends InternalBrokerBaseCase
 
     }
 
-    ConfigPlugin _plugin;
+    private ConfigPlugin _plugin;
 
     @Override
     public void setUp() throws Exception

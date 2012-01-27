@@ -32,12 +32,11 @@ public class ContentHeaderBody implements AMQBody
 {
     public static final byte TYPE = 2;
 
-    public int classId;
+    private int classId;
 
-    public int weight;
+    private int weight;
 
-    /** unsigned long but java can't handle that anyway when allocating byte array */
-    public long bodySize;
+    private long bodySize;
 
     /** must never be null */
     private ContentHeaderProperties properties;
@@ -152,5 +151,26 @@ public class ContentHeaderBody implements AMQBody
                 ", bodySize=" + bodySize +
                 ", properties=" + properties +
                 '}';
+    }
+
+    public int getClassId()
+    {
+        return classId;
+    }
+
+    public int getWeight()
+    {
+        return weight;
+    }
+
+    /** unsigned long but java can't handle that anyway when allocating byte array */
+    public long getBodySize()
+    {
+        return bodySize;
+    }
+
+    public void setBodySize(long bodySize)
+    {
+        this.bodySize = bodySize;
     }
 }

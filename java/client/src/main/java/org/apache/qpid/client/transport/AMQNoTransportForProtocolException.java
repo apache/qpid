@@ -36,7 +36,7 @@ import org.apache.qpid.jms.BrokerDetails;
  */
 public class AMQNoTransportForProtocolException extends AMQTransportConnectionException
 {
-    BrokerDetails _details;
+    private BrokerDetails _details;
 
     public AMQNoTransportForProtocolException(BrokerDetails details, String message, Throwable cause)
     {

@@ -25,12 +25,19 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class ConcurrentLinkedQueueAtomicSize<E> extends ConcurrentLinkedQueue<E>
 {
-    AtomicInteger _size = new AtomicInteger(0);
+    private AtomicInteger _size = new AtomicInteger(0);
 
     public int size()
     {
         return _size.get();
     }
+
+    protected final void decrementSize()
+    {
+        _size.decrementAndGet();
+    }
+
+
 
     public boolean offer(E o)
     {

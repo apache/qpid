@@ -54,7 +54,7 @@ public class MessageRequeueTest extends QpidBrokerTestCase
 
     private long[] receieved = new long[numTestMessages + 1];
     private boolean passed = false;
-    QpidClientConnection conn;
+    private QpidClientConnection conn;
 
 
     protected void setUp() throws Exception

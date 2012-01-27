@@ -24,8 +24,8 @@ import org.apache.qpid.transport.network.NetworkTransport;
 
 public class QpidAcceptor
 {
-    NetworkTransport _transport;
-    String _protocol;
+    private NetworkTransport _transport;
+    private String _protocol;
     public QpidAcceptor(NetworkTransport transport, String protocol)
     {
         _transport = transport;

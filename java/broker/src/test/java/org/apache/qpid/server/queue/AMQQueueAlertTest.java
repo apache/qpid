@@ -277,7 +277,7 @@ public class AMQQueueAlertTest extends InternalBrokerBaseCase
         ContentHeaderBody contentHeaderBody = new ContentHeaderBody();
         BasicContentHeaderProperties props = new BasicContentHeaderProperties();
         contentHeaderBody.setProperties(props);
-        contentHeaderBody.bodySize = size;   // in bytes
+        contentHeaderBody.setBodySize(size);   // in bytes
         IncomingMessage message = new IncomingMessage(publish);
         message.setContentHeaderBody(contentHeaderBody);
 
@@ -309,25 +309,27 @@ public class AMQQueueAlertTest extends InternalBrokerBaseCase
 
         for (int i = 0; i < messageCount; i++)
         {
-            messages[i].addContentBodyFrame(new ContentChunk(){
+            messages[i].addContentBodyFrame(
+                    new ContentChunk()
+                    {
 
-                byte[] _data = new byte[(int)size];
+                        private byte[] _data = new byte[(int)size];
 
-                public int getSize()
-                {
-                    return (int) size;
-                }
+                        public int getSize()
+                        {
+                            return (int) size;
+                        }
 
-                public byte[] getData()
-                {
-                    return _data;
-                }
+                        public byte[] getData()
+                        {
+                            return _data;
+                        }
 
-                public void reduceToFit()
-                {
+                        public void reduceToFit()
+                        {
 
-                }
-            });
+                        }
+                    });
 
             getQueue().enqueue(new AMQMessage(messages[i].getStoredMessage()));
 

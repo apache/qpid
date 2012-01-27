@@ -38,9 +38,9 @@ import java.util.concurrent.TimeUnit;
 public class ConnectionStartTest extends QpidBrokerTestCase
 {
 
-    String _broker = "vm://:1";
+    private String _broker = "vm://:1";
 
-    AMQConnection _connection;
+    private AMQConnection _connection;
     private Session _consumerSess;
     private MessageConsumer _consumer;
 

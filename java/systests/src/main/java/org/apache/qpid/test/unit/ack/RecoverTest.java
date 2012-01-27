@@ -382,8 +382,8 @@ public class RecoverTest extends QpidBrokerTestCase
 
         cons.setMessageListener(new MessageListener()
         {               
-            int messageSeen = 0;
-            int expectedIndex = 0;
+            private int messageSeen = 0;
+            private int expectedIndex = 0;
 
             public void onMessage(Message message)
             {

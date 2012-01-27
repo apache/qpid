@@ -38,8 +38,8 @@ import java.nio.ByteBuffer;
  */
 public class MessagePartListenerAdapter implements MessagePartListener
 {
-	MessageListener _adaptee;
-    ByteBufferMessage _currentMsg;
+	private MessageListener _adaptee;
+    private ByteBufferMessage _currentMsg;
 
 	public MessagePartListenerAdapter(MessageListener listener)
 	{

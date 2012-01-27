@@ -34,7 +34,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class TestableMemoryMessageStore extends MemoryMessageStore
 {
 
-    MemoryMessageStore _mms = null;
+    private MemoryMessageStore _mms = null;
     private HashMap<Long, AMQQueue> _messages = new HashMap<Long, AMQQueue>();
     private AtomicInteger _messageCount = new AtomicInteger(0);
 

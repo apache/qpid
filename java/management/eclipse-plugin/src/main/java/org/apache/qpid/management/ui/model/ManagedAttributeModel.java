@@ -26,7 +26,7 @@ import java.util.List;
 
 public class ManagedAttributeModel
 {
-    HashMap<String, AttributeData> _attributeMap = new HashMap<String, AttributeData>();
+    private HashMap<String, AttributeData> _attributeMap = new HashMap<String, AttributeData>();
     
     public void setAttributeValue(String name, Object value)
     {

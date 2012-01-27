@@ -174,7 +174,7 @@ public class AMQTopic extends AMQDestination implements Topic
         }
         else
         {
-            return _exchangeName;
+            return super.getExchangeName();
         }
     }
 

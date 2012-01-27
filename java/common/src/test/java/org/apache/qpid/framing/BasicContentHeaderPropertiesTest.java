@@ -32,10 +32,10 @@ import java.io.IOException;
 public class BasicContentHeaderPropertiesTest extends TestCase
 {
 
-    BasicContentHeaderProperties _testProperties;
-    FieldTable _testTable;
-    String _testString = "This is a test string";
-    int _testint = 666;
+    private BasicContentHeaderProperties _testProperties;
+    private FieldTable _testTable;
+    private String _testString = "This is a test string";
+    private int _testint = 666;
 
     /**
      * Currently only test setting/getting String, int and boolean props

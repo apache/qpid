@@ -109,7 +109,7 @@ public class AccessControl extends AbstractPlugin
     {
         super.configure(config);
 
-        AccessControlConfiguration accessConfig = (AccessControlConfiguration) _config;
+        AccessControlConfiguration accessConfig = (AccessControlConfiguration) getConfig();
 
         _ruleSet = accessConfig.getRuleSet();
     }

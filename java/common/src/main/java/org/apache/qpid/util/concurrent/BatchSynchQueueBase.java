@@ -70,7 +70,7 @@ public abstract class BatchSynchQueueBase<E> extends AbstractQueue<E> implements
     private static final Logger log = LoggerFactory.getLogger(BatchSynchQueueBase.class);
 
     /** Holds a reference to the queue implementation that holds the buffer. */
-    Queue<SynchRecordImpl<E>> buffer;
+    private Queue<SynchRecordImpl<E>> buffer;
 
     /** Holds the number of items in the queue */
     private int count;
@@ -705,10 +705,10 @@ public abstract class BatchSynchQueueBase<E> extends AbstractQueue<E> implements
     public class SynchRefImpl implements SynchRef
     {
         /** Holds the number of synch records associated with this reference. */
-        int numRecords;
+        private int numRecords;
 
         /** Holds a reference to the collection of synch records managed by this. */
-        Collection<SynchRecord<E>> records;
+        private Collection<SynchRecord<E>> records;
 
         public SynchRefImpl(int n, Collection<SynchRecord<E>> records)
         {
@@ -753,10 +753,10 @@ public abstract class BatchSynchQueueBase<E> extends AbstractQueue<E> implements
     public class SynchRecordImpl<E> implements SynchRecord<E>
     {
         /** A boolean latch that determines when the producer for this data item will be allowed to continue. */
-        BooleanLatch latch = new BooleanLatch();
+        private BooleanLatch latch = new BooleanLatch();
 
         /** The data element associated with this item. */
-        E element;
+        private E element;
 
         /**
          * Create a new synch record.

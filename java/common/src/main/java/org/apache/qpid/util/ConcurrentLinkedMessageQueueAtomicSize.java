@@ -186,10 +186,10 @@ public class ConcurrentLinkedMessageQueueAtomicSize<E> extends ConcurrentLinkedQ
 
         return new Iterator<E>()
             {
-                final Iterator<E> _headIterator = _messageHead.iterator();
-                final Iterator<E> _mainIterator = mainMessageIterator;
+                private final Iterator<E> _headIterator = _messageHead.iterator();
+                private final Iterator<E> _mainIterator = mainMessageIterator;
 
-                Iterator<E> last;
+                private Iterator<E> last;
 
                 public boolean hasNext()
                 {
@@ -217,7 +217,7 @@ public class ConcurrentLinkedMessageQueueAtomicSize<E> extends ConcurrentLinkedQ
                     last.remove();
                     if(last == _mainIterator)
                     {
-                        _size.decrementAndGet();
+                        decrementSize();
                     }
                     else
                     {

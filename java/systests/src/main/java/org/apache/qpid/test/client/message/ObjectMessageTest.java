@@ -37,8 +37,8 @@ public class ObjectMessageTest extends QpidBrokerTestCase
 {
     private Connection _connection;
     private Session _session;
-    MessageConsumer _consumer;
-    MessageProducer _producer;
+    private MessageConsumer _consumer;
+    private MessageProducer _producer;
 
     public void setUp() throws Exception
     {

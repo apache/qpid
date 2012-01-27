@@ -104,7 +104,7 @@ public class ClientMethodDispatcherImpl implements MethodDispatcher
         return factory.createMethodDispatcher(session);
     }
 
-    AMQProtocolSession _session;
+    private AMQProtocolSession _session;
 
     public ClientMethodDispatcherImpl(AMQProtocolSession session)
     {

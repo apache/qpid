@@ -36,7 +36,7 @@ import java.util.Collection;
  */
 public class AMQConnectionFailureException extends AMQException
 {
-    Collection<Exception> _exceptions;
+    private Collection<Exception> _exceptions;
     
 	public AMQConnectionFailureException(String message, Throwable cause)
 	{

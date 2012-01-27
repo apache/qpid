@@ -52,7 +52,7 @@ public class JMSBytesMessage extends AbstractBytesTypedMessage implements BytesM
 
     public void reset()
     {
-        _readableMessage = true;
+        setReadable(true);
 
         if(_typedBytesContentReader != null)
         {

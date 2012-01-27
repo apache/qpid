@@ -115,7 +115,7 @@ public class Firewall extends AbstractPlugin
     public void configure(ConfigurationPlugin config)
     {
         super.configure(config);
-        FirewallConfiguration firewallConfiguration = (FirewallConfiguration) _config;
+        FirewallConfiguration firewallConfiguration = (FirewallConfiguration) getConfig();
 
         // Get default action
         _default = firewallConfiguration.getDefaultAction();

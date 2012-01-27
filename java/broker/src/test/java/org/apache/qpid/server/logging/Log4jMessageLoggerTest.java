@@ -35,8 +35,8 @@ import java.util.List;
 /** Test that the Log4jMessageLogger defaults behave as expected */
 public class Log4jMessageLoggerTest extends TestCase
 {
-    Level _rootLevel;
-    Log4jTestAppender _appender;
+    private Level _rootLevel;
+    private Log4jTestAppender _appender;
 
     @Override
     public void setUp() throws IOException
@@ -242,7 +242,7 @@ public class Log4jMessageLoggerTest extends TestCase
      */
     private class Log4jTestAppender extends AppenderSkeleton
     {
-        List<LoggingEvent> _log = new LinkedList<LoggingEvent>();
+        private List<LoggingEvent> _log = new LinkedList<LoggingEvent>();
 
         protected void append(LoggingEvent loggingEvent)
         {

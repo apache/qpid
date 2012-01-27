@@ -81,25 +81,25 @@ public class XMLTestListener implements TKTestListener, ShutdownHookable
      * explicit thread id must be used, where notifications come from different threads than the ones that called
      * the test method.
      */
-    Map<Long, Result> threadLocalResults = Collections.synchronizedMap(new LinkedHashMap<Long, Result>());
+    private Map<Long, Result> threadLocalResults = Collections.synchronizedMap(new LinkedHashMap<Long, Result>());
 
     /**
      * Holds results for tests that have ended. Transferring these results here from the per-thread results map, means
      * that the thread id is freed for the thread to generate more results.
      */
-    List<Result> results = new ArrayList<Result>();
+    private List<Result> results = new ArrayList<Result>();
 
     /** Holds the overall error count. */
-    protected int errors = 0;
+    private int errors = 0;
 
     /** Holds the overall failure count. */
-    protected int failures = 0;
+    private int failures = 0;
 
     /** Holds the overall tests run count. */
-    protected int runs = 0;
+    private int runs = 0;
 
     /** Holds the name of the class that tests are being run for. */
-    String testClassName;
+    private String testClassName;
 
     /**
      * Creates a new XML results output listener that writes to the specified location.

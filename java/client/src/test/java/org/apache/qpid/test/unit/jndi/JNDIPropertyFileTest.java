@@ -34,7 +34,7 @@ import java.util.Properties;
 
 public class JNDIPropertyFileTest extends TestCase
 {
-    Context ctx;
+    private Context ctx;
     
     public JNDIPropertyFileTest() throws Exception
     {

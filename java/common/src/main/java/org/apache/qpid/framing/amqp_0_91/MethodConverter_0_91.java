@@ -118,7 +118,7 @@ public class MethodConverter_0_91 extends AbstractMethodConverter implements Pro
 
         public byte[] getData()
         {
-            return _contentBodyChunk._payload;
+            return _contentBodyChunk.getPayload();
         }
 
         public void reduceToFit()

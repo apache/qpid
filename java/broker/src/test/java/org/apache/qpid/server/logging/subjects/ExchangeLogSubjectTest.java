@@ -30,8 +30,8 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
  */
 public class ExchangeLogSubjectTest extends AbstractTestLogSubject
 {
-    Exchange _exchange;
-    VirtualHost _testVhost;
+    private Exchange _exchange;
+    private VirtualHost _testVhost;
 
     public void setUp() throws Exception
     {

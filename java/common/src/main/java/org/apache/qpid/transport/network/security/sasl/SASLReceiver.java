@@ -30,7 +30,7 @@ import java.nio.ByteBuffer;
 
 public class SASLReceiver extends SASLEncryptor implements Receiver<ByteBuffer> {
 
-    Receiver<ByteBuffer> delegate;
+    private Receiver<ByteBuffer> delegate;
     private byte[] netData;
     private static final Logger log = Logger.get(SASLReceiver.class);
     

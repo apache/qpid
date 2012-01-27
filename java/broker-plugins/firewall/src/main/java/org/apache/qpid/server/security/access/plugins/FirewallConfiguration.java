@@ -35,7 +35,7 @@ import java.util.List;
 
 public class FirewallConfiguration extends ConfigurationPlugin
 {
-    CompositeConfiguration _finalConfig;
+    private CompositeConfiguration _finalConfig;
 
     public static final ConfigurationPluginFactory FACTORY = new ConfigurationPluginFactory()
     {

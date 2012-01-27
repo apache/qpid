@@ -132,7 +132,7 @@ public class ServerConnectionMBean extends AbstractAMQManagedConnectionObject
         }
         else if (session.isTransactional())
         {
-            CurrentActor.set(new ManagementActor(_logActor.getRootMessageLogger()));
+            CurrentActor.set(new ManagementActor(getLogActor().getRootMessageLogger()));
             try
             {
                 session.commit();
@@ -154,7 +154,7 @@ public class ServerConnectionMBean extends AbstractAMQManagedConnectionObject
         }
         else if (session.isTransactional())
         {
-            CurrentActor.set(new ManagementActor(_logActor.getRootMessageLogger()));
+            CurrentActor.set(new ManagementActor(getLogActor().getRootMessageLogger()));
             try
             {
                 session.rollback();

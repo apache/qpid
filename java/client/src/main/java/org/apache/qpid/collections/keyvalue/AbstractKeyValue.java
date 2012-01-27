@@ -33,9 +33,9 @@ import org.apache.qpid.collections.KeyValue;
 public abstract class AbstractKeyValue implements KeyValue {
 
     /** The key */
-    protected Object key;
+    private Object key;
     /** The value */
-    protected Object value;
+    private Object value;
 
     /**
      * Constructs a new pair with the specified key and given value.
@@ -65,6 +65,21 @@ public abstract class AbstractKeyValue implements KeyValue {
      */
     public Object getValue() {
         return value;
+    }
+
+    /**
+     * Sets the value stored in this <code>Map.Entry</code>.
+     * <p>
+     * This <code>Map.Entry</code> is not connected to a Map, so only the
+     * local data is changed.
+     *
+     * @param value  the new value
+     * @return the previous value
+     */
+    public Object setValue(Object value) {
+        Object answer = this.value;
+        this.value = value;
+        return answer;
     }
 
     /**

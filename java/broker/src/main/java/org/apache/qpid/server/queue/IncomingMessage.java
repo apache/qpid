@@ -157,7 +157,7 @@ public class IncomingMessage implements Filterable, InboundMessage, EnqueableMes
 
     public boolean allContentReceived()
     {
-        return (_bodyLengthReceived == getContentHeader().bodySize);
+        return (_bodyLengthReceived == getContentHeader().getBodySize());
     }
 
     public AMQShortString getExchange()
@@ -218,7 +218,7 @@ public class IncomingMessage implements Filterable, InboundMessage, EnqueableMes
 
     public long getSize()
     {
-        return getContentHeader().bodySize;
+        return getContentHeader().getBodySize();
     }
 
     public long getMessageNumber()

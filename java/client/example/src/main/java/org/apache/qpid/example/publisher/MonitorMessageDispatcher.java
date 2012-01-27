@@ -103,7 +103,7 @@ public class MonitorMessageDispatcher
 //          (FileMessageFactory.createSimpleEventMessage(getMonitorPublisher().getSession(),"monitor:" +System.currentTimeMillis()));
 
         getMonitorPublisher().sendMessage
-                (getMonitorPublisher()._session,
+                (getMonitorPublisher().getSession(),
                  FileMessageFactory.createSimpleEventMessage(getMonitorPublisher().getSession(), "monitor:" + System.currentTimeMillis()),
                  DeliveryMode.PERSISTENT, false, true);
 

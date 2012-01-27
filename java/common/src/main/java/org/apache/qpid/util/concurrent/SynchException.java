@@ -34,7 +34,7 @@ package org.apache.qpid.util.concurrent;
 public class SynchException extends Exception
 {
     /** Holds the data element that is in error. */
-    Object element;
+    private Object element;
 
     /**
      * Creates a new BaseApplicationException object.

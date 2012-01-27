@@ -39,7 +39,7 @@ public class AMQDataBlockDecoder
         _bodiesSupported[HeartbeatBody.TYPE] = new HeartbeatBodyFactory();
     }
 
-    Logger _logger = LoggerFactory.getLogger(AMQDataBlockDecoder.class);
+    private Logger _logger = LoggerFactory.getLogger(AMQDataBlockDecoder.class);
 
     public AMQDataBlockDecoder()
     { }

@@ -52,7 +52,7 @@ public class ChannelCloseTest extends QpidBrokerTestCase implements ExceptionLis
 {
     private static final Logger _logger = LoggerFactory.getLogger(ChannelCloseTest.class);
 
-    Connection _connection;
+    private Connection _connection;
     private Session _session;
     private static final long SYNC_TIMEOUT = 500;
     private int TEST = 0;

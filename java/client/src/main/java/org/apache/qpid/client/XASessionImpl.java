@@ -86,7 +86,7 @@ public class XASessionImpl extends AMQSession_0_10 implements XASession, XATopic
      */
     public void createSession()
     {
-        _qpidDtxSession = _qpidConnection.createSession(0);
+        _qpidDtxSession = getQpidConnection().createSession(0);
         _qpidDtxSession.setSessionListener(this);
         _qpidDtxSession.dtxSelect();
     }

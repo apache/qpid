@@ -33,12 +33,12 @@ public class AMQBindingURL implements BindingURL
 {
     private static final Logger _logger = LoggerFactory.getLogger(AMQBindingURL.class);
 
-    String _url;
-    AMQShortString _exchangeClass = ExchangeDefaults.DIRECT_EXCHANGE_CLASS;
-    AMQShortString _exchangeName = new AMQShortString("");
-    AMQShortString _destinationName = new AMQShortString("");;
-    AMQShortString _queueName = new AMQShortString("");
-    AMQShortString[] _bindingKeys = new AMQShortString[0];
+    private String _url;
+    private AMQShortString _exchangeClass = ExchangeDefaults.DIRECT_EXCHANGE_CLASS;
+    private AMQShortString _exchangeName = new AMQShortString("");
+    private AMQShortString _destinationName = new AMQShortString("");;
+    private AMQShortString _queueName = new AMQShortString("");
+    private AMQShortString[] _bindingKeys = new AMQShortString[0];
     private HashMap<String, String> _options;
 
     public AMQBindingURL(String url) throws URISyntaxException

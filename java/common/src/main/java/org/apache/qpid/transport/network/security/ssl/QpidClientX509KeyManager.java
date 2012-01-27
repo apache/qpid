@@ -37,8 +37,8 @@ public class QpidClientX509KeyManager extends X509ExtendedKeyManager
 {
     private static final Logger log = Logger.get(QpidClientX509KeyManager.class);
     
-    X509ExtendedKeyManager delegate;
-    String alias;
+    private X509ExtendedKeyManager delegate;
+    private String alias;
     
     public QpidClientX509KeyManager(String alias, String keyStorePath,
                            String keyStorePassword,String keyStoreCertType) throws GeneralSecurityException, IOException

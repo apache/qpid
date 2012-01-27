@@ -99,8 +99,8 @@ public class ViewUtility
     }
     
     private static final int DEFAULT_CONTENT_SIZE = 198;
-    static Button _firstButton, _nextButton, _previousButton, _lastButton;
-    static Text _hexNumTextToEnd, _hexNumTextToStart;
+    private static Button _firstButton, _nextButton, _previousButton, _lastButton;
+    private static Text _hexNumTextToEnd, _hexNumTextToStart;
     
     /**
      * Populates the composite with given openmbean data type (TabularType or CompositeType)

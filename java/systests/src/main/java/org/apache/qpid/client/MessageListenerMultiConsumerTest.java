@@ -50,7 +50,7 @@ public class MessageListenerMultiConsumerTest extends QpidBrokerTestCase
 {
     private static final Logger _logger = LoggerFactory.getLogger(MessageListenerMultiConsumerTest.class);
 
-    Context _context;
+    private Context _context;
 
     private static final int MSG_COUNT = 6;
     private int receivedCount1 = 0;

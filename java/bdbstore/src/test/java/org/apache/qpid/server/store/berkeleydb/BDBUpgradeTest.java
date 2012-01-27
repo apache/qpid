@@ -359,7 +359,7 @@ public class BDBUpgradeTest extends QpidBrokerTestCase
         System.setIn(new InputStream()
         {
 
-            int counter = 0;
+            private int counter = 0;
 
             public synchronized int read(byte b[], int off, int len)
             {

@@ -96,6 +96,166 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public abstract class AMQSession<C extends BasicMessageConsumer, P extends BasicMessageProducer> extends Closeable implements Session, QueueSession, TopicSession
 {
+    /**
+     * Used to reference durable subscribers so that requests for unsubscribe can be handled correctly.  Note this only
+     * keeps a record of subscriptions which have been created in the current instance. It does not remember
+     * subscriptions between executions of the client.
+     */
+    protected ConcurrentHashMap<String, TopicSubscriberAdaptor<C>> getSubscriptions()
+    {
+        return _subscriptions;
+    }
+
+    /**
+     * Holds a mapping from message consumers to their identifying names, so that their subscriptions may be looked
+     * up in the {@link #_subscriptions} map.
+     */
+    protected ConcurrentHashMap<C, String> getReverseSubscriptionMap()
+    {
+        return _reverseSubscriptionMap;
+    }
+
+    /**
+     * Locks to keep access to subscriber details atomic.
+     * <p>
+     * Added for QPID2418
+     */
+    protected Lock getSubscriberDetails()
+    {
+        return _subscriberDetails;
+    }
+
+    protected Lock getSubscriberAccess()
+    {
+        return _subscriberAccess;
+    }
+
+    /**
+     * Used to hold incoming messages.
+     *
+     * @todo Weaken the type once {@link org.apache.qpid.client.util.FlowControllingBlockingQueue} implements Queue.
+     */
+    protected FlowControllingBlockingQueue getQueue()
+    {
+        return _queue;
+    }
+
+    /** Holds the highest received delivery tag. */
+    protected AtomicLong getHighestDeliveryTag()
+    {
+        return _highestDeliveryTag;
+    }
+
+    /** Pre-fetched message tags */
+    protected ConcurrentLinkedQueue<Long> getPrefetchedMessageTags()
+    {
+        return _prefetchedMessageTags;
+    }
+
+    protected void setPrefetchedMessageTags(ConcurrentLinkedQueue<Long> prefetchedMessageTags)
+    {
+        _prefetchedMessageTags = prefetchedMessageTags;
+    }
+
+    /** All the not yet acknowledged message tags */
+    protected ConcurrentLinkedQueue<Long> getUnacknowledgedMessageTags()
+    {
+        return _unacknowledgedMessageTags;
+    }
+
+    protected void setUnacknowledgedMessageTags(ConcurrentLinkedQueue<Long> unacknowledgedMessageTags)
+    {
+        _unacknowledgedMessageTags = unacknowledgedMessageTags;
+    }
+
+    /** All the delivered message tags */
+    protected ConcurrentLinkedQueue<Long> getDeliveredMessageTags()
+    {
+        return _deliveredMessageTags;
+    }
+
+    protected void setDeliveredMessageTags(ConcurrentLinkedQueue<Long> deliveredMessageTags)
+    {
+        _deliveredMessageTags = deliveredMessageTags;
+    }
+
+    /** Holds the dispatcher thread for this session. */
+    protected Dispatcher getDispatcher()
+    {
+        return _dispatcher;
+    }
+
+    protected void setDispatcher(Dispatcher dispatcher)
+    {
+        _dispatcher = dispatcher;
+    }
+
+    protected Thread getDispatcherThread()
+    {
+        return _dispatcherThread;
+    }
+
+    protected void setDispatcherThread(Thread dispatcherThread)
+    {
+        _dispatcherThread = dispatcherThread;
+    }
+
+    /** Holds the message factory factory for this session. */
+    protected MessageFactoryRegistry getMessageFactoryRegistry()
+    {
+        return _messageFactoryRegistry;
+    }
+
+    protected void setMessageFactoryRegistry(MessageFactoryRegistry messageFactoryRegistry)
+    {
+        _messageFactoryRegistry = messageFactoryRegistry;
+    }
+
+    /**
+     * Maps from identifying tags to message consumers, in order to pass dispatch incoming messages to the right
+     * consumer.
+     */
+    protected IdToConsumerMap<C> getConsumers()
+    {
+        return _consumers;
+    }
+
+    /**
+     * Set when the dispatcher should direct incoming messages straight into the UnackedMessage list instead of
+     * to the syncRecieveQueue or MessageListener. Used during cleanup, e.g. in Session.recover().
+     */
+    protected boolean isUsingDispatcherForCleanup()
+    {
+        return _usingDispatcherForCleanup;
+    }
+
+    protected void setUsingDispatcherForCleanup(boolean usingDispatcherForCleanup)
+    {
+        _usingDispatcherForCleanup = usingDispatcherForCleanup;
+    }
+
+    /**
+     * Used to ensure that only the first call to start the dispatcher can unsuspend the channel.
+     *
+     * @todo This is accessed only within a synchronized method, so does not need to be atomic.
+     */
+    protected AtomicBoolean getFirstDispatcher()
+    {
+        return _firstDispatcher;
+    }
+
+    /** Used to indicate that the session should start pre-fetching messages as soon as it is started. */
+    protected boolean isImmediatePrefetch()
+    {
+        return _immediatePrefetch;
+    }
+
+    /** Indicates that runtime exceptions should be generated on vilations of the strict AMQP. */
+    protected boolean isStrictAMQPFATAL()
+    {
+        return _strictAMQPFATAL;
+    }
+
     public static final class IdToConsumerMap<C extends BasicMessageConsumer>
     {
         private final BasicMessageConsumer[] _fastAccessConsumers = new BasicMessageConsumer[16];
@@ -173,8 +333,6 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         }
     }
 
-    final AMQSession<C, P> _thisSession = this;
-    
     /** Used for debugging. */
     private static final Logger _logger = LoggerFactory.getLogger(AMQSession.class);
 
@@ -182,34 +340,34 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
      * The default value for immediate flag used by producers created by this session is false. That is, a consumer does
      * not need to be attached to a queue.
      */
-    protected final boolean DEFAULT_IMMEDIATE = Boolean.parseBoolean(System.getProperty("qpid.default_immediate", "false"));
+    private final boolean _defaultImmediateValue = Boolean.parseBoolean(System.getProperty("qpid.default_immediate", "false"));
 
     /**
      * The default value for mandatory flag used by producers created by this session is true. That is, server will not
      * silently drop messages where no queue is connected to the exchange for the message.
      */
-    protected final boolean DEFAULT_MANDATORY = Boolean.parseBoolean(System.getProperty("qpid.default_mandatory", "true"));
+    private final boolean _defaultMandatoryValue = Boolean.parseBoolean(System.getProperty("qpid.default_mandatory", "true"));
 
     /**
      * The period to wait while flow controlled before sending a log message confirming that the session is still
      * waiting on flow control being revoked
      */
-    protected final long FLOW_CONTROL_WAIT_PERIOD = Long.getLong("qpid.flow_control_wait_notify_period",5000L);
+    private final long _flowControlWaitPeriod = Long.getLong("qpid.flow_control_wait_notify_period",5000L);
 
     /**
      * The period to wait while flow controlled before declaring a failure
      */
     public static final long DEFAULT_FLOW_CONTROL_WAIT_FAILURE = 120000L;
-    protected final long FLOW_CONTROL_WAIT_FAILURE = Long.getLong("qpid.flow_control_wait_failure",
+    private final long _flowControlWaitFailure = Long.getLong("qpid.flow_control_wait_failure",
                                                                   DEFAULT_FLOW_CONTROL_WAIT_FAILURE);
 
-    protected final boolean DECLARE_QUEUES =
+    private final boolean _delareQueues =
         Boolean.parseBoolean(System.getProperty("qpid.declare_queues", "true"));
 
-    protected final boolean DECLARE_EXCHANGES =
+    private final boolean _declareExchanges =
         Boolean.parseBoolean(System.getProperty("qpid.declare_exchanges", "true"));
     
-    protected final boolean USE_AMQP_ENCODED_MAP_MESSAGE;
+    private final boolean _useAMQPEncodedMapMessage;
 
     /** System property to enable strict AMQP compliance. */
     public static final String STRICT_AMQP = "STRICT_AMQP";
@@ -230,16 +388,16 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     public static final String IMMEDIATE_PREFETCH_DEFAULT = "false";
 
     /** The connection to which this session belongs. */
-    protected AMQConnection _connection;
+    private AMQConnection _connection;
 
     /** Used to indicate whether or not this is a transactional session. */
-    protected final boolean _transacted;
+    private final boolean _transacted;
 
     /** Holds the sessions acknowledgement mode. */
-    protected final int _acknowledgeMode;
+    private final int _acknowledgeMode;
 
     /** Holds this session unique identifier, used to distinguish it from other sessions. */
-    protected int _channelId;
+    private int _channelId;
 
     private int _ticket;
 
@@ -255,55 +413,30 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     /** Used to indicate that this session has been started at least once. */
     private AtomicBoolean _startedAtLeastOnce = new AtomicBoolean(false);
 
-    /**
-     * Used to reference durable subscribers so that requests for unsubscribe can be handled correctly.  Note this only
-     * keeps a record of subscriptions which have been created in the current instance. It does not remember
-     * subscriptions between executions of the client.
-     */
-    protected final ConcurrentHashMap<String, TopicSubscriberAdaptor<C>> _subscriptions =
+    private final ConcurrentHashMap<String, TopicSubscriberAdaptor<C>> _subscriptions =
             new ConcurrentHashMap<String, TopicSubscriberAdaptor<C>>();
 
-    /**
-     * Holds a mapping from message consumers to their identifying names, so that their subscriptions may be looked
-     * up in the {@link #_subscriptions} map.
-     */
-    protected final ConcurrentHashMap<C, String> _reverseSubscriptionMap = new ConcurrentHashMap<C, String>();
+    private final ConcurrentHashMap<C, String> _reverseSubscriptionMap = new ConcurrentHashMap<C, String>();
 
-    /**
-     * Locks to keep access to subscriber details atomic.
-     * <p>
-     * Added for QPID2418
-     */
-    protected final Lock _subscriberDetails = new ReentrantLock(true);
-    protected final Lock _subscriberAccess = new ReentrantLock(true);
+    private final Lock _subscriberDetails = new ReentrantLock(true);
+    private final Lock _subscriberAccess = new ReentrantLock(true);
 
-    /**
-     * Used to hold incoming messages.
-     *
-     * @todo Weaken the type once {@link FlowControllingBlockingQueue} implements Queue.
-     */
-    protected final FlowControllingBlockingQueue _queue;
+    private final FlowControllingBlockingQueue _queue;
 
-    /** Holds the highest received delivery tag. */
-    protected final AtomicLong _highestDeliveryTag = new AtomicLong(-1);
+    private final AtomicLong _highestDeliveryTag = new AtomicLong(-1);
     private final AtomicLong _rollbackMark = new AtomicLong(-1);
 
-    /** Pre-fetched message tags */
-    protected ConcurrentLinkedQueue<Long> _prefetchedMessageTags = new ConcurrentLinkedQueue<Long>();
+    private ConcurrentLinkedQueue<Long> _prefetchedMessageTags = new ConcurrentLinkedQueue<Long>();
 
-    /** All the not yet acknowledged message tags */
-    protected ConcurrentLinkedQueue<Long> _unacknowledgedMessageTags = new ConcurrentLinkedQueue<Long>();
+    private ConcurrentLinkedQueue<Long> _unacknowledgedMessageTags = new ConcurrentLinkedQueue<Long>();
 
-    /** All the delivered message tags */
-    protected ConcurrentLinkedQueue<Long> _deliveredMessageTags = new ConcurrentLinkedQueue<Long>();
+    private ConcurrentLinkedQueue<Long> _deliveredMessageTags = new ConcurrentLinkedQueue<Long>();
 
-    /** Holds the dispatcher thread for this session. */
-    protected Dispatcher _dispatcher;
+    private Dispatcher _dispatcher;
 
-    protected Thread _dispatcherThread;
+    private Thread _dispatcherThread;
 
-    /** Holds the message factory factory for this session. */
-    protected MessageFactoryRegistry _messageFactoryRegistry;
+    private MessageFactoryRegistry _messageFactoryRegistry;
 
     /** Holds all of the producers created by this session, keyed by their unique identifiers. */
     private Map<Long, MessageProducer> _producers = new ConcurrentHashMap<Long, MessageProducer>();
@@ -314,11 +447,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
      */
     private int _nextTag = 1;
 
-    /**
-     * Maps from identifying tags to message consumers, in order to pass dispatch incoming messages to the right
-     * consumer.
-     */
-    protected final IdToConsumerMap<C> _consumers = new IdToConsumerMap<C>();
+    private final IdToConsumerMap<C> _consumers = new IdToConsumerMap<C>();
 
     /**
      * Contains a list of consumers which have been removed but which might still have
@@ -344,11 +473,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
      */
     private volatile boolean _sessionInRecovery;
 
-    /**
-     * Set when the dispatcher should direct incoming messages straight into the UnackedMessage list instead of
-     * to the syncRecieveQueue or MessageListener. Used during cleanup, e.g. in Session.recover().
-     */
-    protected volatile boolean _usingDispatcherForCleanup;
+    private volatile boolean _usingDispatcherForCleanup;
 
     /** Used to indicates that the connection to which this session belongs, has been stopped. */
     private boolean _connectionStopped;
@@ -365,21 +490,13 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
      */
     private final Object _suspensionLock = new Object();
 
-    /**
-     * Used to ensure that only the first call to start the dispatcher can unsuspend the channel.
-     *
-     * @todo This is accessed only within a synchronized method, so does not need to be atomic.
-     */
-    protected final AtomicBoolean _firstDispatcher = new AtomicBoolean(true);
+    private final AtomicBoolean _firstDispatcher = new AtomicBoolean(true);
 
-    /** Used to indicate that the session should start pre-fetching messages as soon as it is started. */
-    protected final boolean _immediatePrefetch;
+    private final boolean _immediatePrefetch;
 
-    /** Indicates that warnings should be generated on violations of the strict AMQP. */
-    protected final boolean _strictAMQP;
+    private final boolean _strictAMQP;
 
-    /** Indicates that runtime exceptions should be generated on vilations of the strict AMQP. */
-    protected final boolean _strictAMQPFATAL;
+    private final boolean _strictAMQPFATAL;
     private final Object _messageDeliveryLock = new Object();
 
     /** Session state : used to detect if commit is a) required b) allowed , i.e. does the tx span failover. */
@@ -420,7 +537,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     protected AMQSession(AMQConnection con, int channelId, boolean transacted, int acknowledgeMode,
                MessageFactoryRegistry messageFactoryRegistry, int defaultPrefetchHighMark, int defaultPrefetchLowMark)
     {
-        USE_AMQP_ENCODED_MAP_MESSAGE = con == null ? true : !con.isUseLegacyMapMessageFormat();
+        _useAMQPEncodedMapMessage = con == null ? true : !con.isUseLegacyMapMessageFormat();
         _strictAMQP = Boolean.parseBoolean(System.getProperties().getProperty(STRICT_AMQP, STRICT_AMQP_DEFAULT));
         _strictAMQPFATAL =
                 Boolean.parseBoolean(System.getProperties().getProperty(STRICT_AMQP_FATAL, STRICT_AMQP_FATAL_DEFAULT));
@@ -456,7 +573,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                                                          {
                                                              // If the session has been closed don't waste time creating a thread to do
                                                              // flow control
-                                                             if (!(_thisSession.isClosed() || _thisSession.isClosing()))
+                                                             if (!(AMQSession.this.isClosed() || AMQSession.this.isClosing()))
                                                              {   
                                                                  // Only execute change if previous state
                                                                  // was False
@@ -484,7 +601,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                                                          {
                                                              // If the session has been closed don't waste time creating a thread to do
                                                              // flow control
-                                                             if (!(_thisSession.isClosed() || _thisSession.isClosing()))
+                                                             if (!(AMQSession.this.isClosed() || AMQSession.this.isClosing()))
                                                              {
                                                                  // Only execute change if previous state
                                                                  // was true
@@ -1136,7 +1253,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     public MapMessage createMapMessage() throws JMSException
     {
         checkNotClosed();
-        if (USE_AMQP_ENCODED_MAP_MESSAGE)
+        if (_useAMQPEncodedMapMessage)
         {
             AMQPEncodedMapMessage msg = new AMQPEncodedMapMessage(getMessageDelegateFactory());
             msg.setAMQSession(this);
@@ -1173,12 +1290,12 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
     public P createProducer(Destination destination) throws JMSException
     {
-        return createProducerImpl(destination, DEFAULT_MANDATORY, DEFAULT_IMMEDIATE);
+        return createProducerImpl(destination, _defaultMandatoryValue, _defaultImmediateValue);
     }
 
     public P createProducer(Destination destination, boolean immediate) throws JMSException
     {
-        return createProducerImpl(destination, DEFAULT_MANDATORY, immediate);
+        return createProducerImpl(destination, _defaultMandatoryValue, immediate);
     }
 
     public P createProducer(Destination destination, boolean mandatory, boolean immediate)
@@ -1625,6 +1742,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         return (counter != null) && (counter.get() != 0);
     }
 
+    /** Indicates that warnings should be generated on violations of the strict AMQP. */
     public boolean isStrictAMQP()
     {
         return _strictAMQP;
@@ -2915,12 +3033,12 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         }
         else
         {
-            if (DECLARE_EXCHANGES)
+            if (_declareExchanges)
             {
                 declareExchange(amqd, protocolHandler, nowait);
             }
     
-            if (DECLARE_QUEUES || amqd.isNameRequired())
+            if (_delareQueues || amqd.isNameRequired())
             {
                 declareQueue(amqd, protocolHandler, consumer.isNoLocal(), nowait);
             }
@@ -3141,17 +3259,17 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
         synchronized (_flowControl)
         {
             while (!_flowControl.getFlowControl() &&
-                   (expiryTime == 0L ? (expiryTime = System.currentTimeMillis() + FLOW_CONTROL_WAIT_FAILURE)
+                   (expiryTime == 0L ? (expiryTime = System.currentTimeMillis() + _flowControlWaitFailure)
                                      : expiryTime) >= System.currentTimeMillis() )
             {
 
-                _flowControl.wait(FLOW_CONTROL_WAIT_PERIOD);
-                _logger.warn("Message send delayed by " + (System.currentTimeMillis() + FLOW_CONTROL_WAIT_FAILURE - expiryTime)/1000 + "s due to broker enforced flow control");
+                _flowControl.wait(_flowControlWaitPeriod);
+                _logger.warn("Message send delayed by " + (System.currentTimeMillis() + _flowControlWaitFailure - expiryTime)/1000 + "s due to broker enforced flow control");
             }
             if(!_flowControl.getFlowControl())
             {
                 _logger.error("Message send failed due to timeout waiting on broker enforced flow control");
-                throw new JMSException("Unable to send message for " + FLOW_CONTROL_WAIT_FAILURE/1000 + " seconds due to broker enforced flow control");
+                throw new JMSException("Unable to send message for " + _flowControlWaitFailure /1000 + " seconds due to broker enforced flow control");
             }
         }
 
@@ -3196,6 +3314,11 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
             // fixme awaitTermination
 
+        }
+
+        private AtomicBoolean getClosed()
+        {
+            return _closed;
         }
 
         public void rejectPending(C consumer)
@@ -3333,7 +3456,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
 
             if (_dispatcherLogger.isInfoEnabled())
             {
-                _dispatcherLogger.info(_dispatcherThread.getName() + " thread terminating for channel " + _channelId + ":" + _thisSession);
+                _dispatcherLogger.info(_dispatcherThread.getName() + " thread terminating for channel " + _channelId + ":" + AMQSession.this);
             }
 
         }
@@ -3454,7 +3577,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                     if (_logger.isDebugEnabled())
                     {
                         _logger.debug("Rejecting message with delivery tag " + message.getDeliveryTag()
-                                + " for closing consumer " + String.valueOf(consumer == null? null: consumer._consumerTag));
+                                + " for closing consumer " + String.valueOf(consumer == null? null: consumer.getConsumerTag()));
                     }
                     rejectMessage(message, true);
                 }
@@ -3513,7 +3636,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
                 {
                     // If the session has closed by the time we get here
                     // then we should not attempt to write to the sesion/channel.
-                    if (!(_thisSession.isClosed() || _thisSession.isClosing()))
+                    if (!(AMQSession.this.isClosed() || AMQSession.this.isClosing()))
                     {
                         suspendChannel(_suspend.get());
                     }
@@ -3521,11 +3644,11 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
             }
             catch (AMQException e)
             {
-                _logger.warn("Unable to " + (_suspend.get() ? "suspend" : "unsuspend") + " session " + _thisSession + " due to: " + e);
+                _logger.warn("Unable to " + (_suspend.get() ? "suspend" : "unsuspend") + " session " + AMQSession.this + " due to: " + e);
                 if (_logger.isDebugEnabled())
                 {
                     _logger.debug("Is the _queue empty?" + _queue.isEmpty());
-                    _logger.debug("Is the dispatcher closed?" + (_dispatcher == null ? "it's Null" : _dispatcher._closed));
+                    _logger.debug("Is the dispatcher closed?" + (_dispatcher == null ? "it's Null" : _dispatcher.getClosed()));
                 }
             }
         }
@@ -3556,7 +3679,7 @@ public abstract class AMQSession<C extends BasicMessageConsumer, P extends Basic
     
     public boolean isDeclareExchanges()
     {
-    	return DECLARE_EXCHANGES;
+    	return _declareExchanges;
     }
 
     JMSException toJMSException(String message, TransportException e)

@@ -34,7 +34,7 @@ import java.nio.ByteBuffer;
  */
 public abstract class AbstractBytesTypedMessage extends AbstractJMSMessage
 {
-    protected boolean _readableMessage = false;
+    private boolean _readableMessage = false;
 
     AbstractBytesTypedMessage(AMQMessageDelegateFactory delegateFactory, boolean fromReceivedMessage)
     {
@@ -73,6 +73,11 @@ public abstract class AbstractBytesTypedMessage extends AbstractJMSMessage
     {
         super.clearBody();
         _readableMessage = false;
+    }
+
+    protected void setReadable(boolean readable)
+    {
+        _readableMessage = readable;
     }
 
 

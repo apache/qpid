@@ -50,7 +50,7 @@ final class FanoutExchangeMBean extends AbstractExchangeMBean<FanoutExchange>
     public TabularData bindings() throws OpenDataException
     {
 
-        TabularDataSupport bindingList = new TabularDataSupport(_bindinglistDataType);
+        TabularDataSupport bindingList = new TabularDataSupport(getBindinglistDataType());
 
 
         ArrayList<String> queueNames = new ArrayList<String>();
@@ -62,7 +62,7 @@ final class FanoutExchangeMBean extends AbstractExchangeMBean<FanoutExchange>
         }
 
         Object[] bindingItemValues = {BINDING_KEY_SUBSTITUTE, queueNames.toArray(new String[0])};
-        CompositeData bindingData = new CompositeDataSupport(_bindingDataType,
+        CompositeData bindingData = new CompositeDataSupport(getBindingDataType(),
                 COMPOSITE_ITEM_NAMES.toArray(new String[COMPOSITE_ITEM_NAMES.size()]), 
                 bindingItemValues);
         bindingList.put(bindingData);

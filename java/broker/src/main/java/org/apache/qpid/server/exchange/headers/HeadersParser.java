@@ -286,8 +286,8 @@ public class HeadersParser
 
     public final static class KeyValuePair
     {
-        public final HeaderKey _key;
-        public final AMQTypedValue _value;
+        private final HeaderKey _key;
+        private final AMQTypedValue _value;
         private final int _hashCode;
 
         public KeyValuePair(final HeaderKey key, final AMQTypedValue value)

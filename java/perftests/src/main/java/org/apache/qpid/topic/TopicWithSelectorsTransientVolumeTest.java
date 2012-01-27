@@ -51,8 +51,8 @@ public class TopicWithSelectorsTransientVolumeTest extends QpidBrokerTestCase
     private static final int MSG_SIZE = 1024;
     private static final byte[] BYTE_ARRAY = new byte[MSG_SIZE];
     
-    ArrayList<MyMessageSubscriber> _subscribers = new ArrayList<MyMessageSubscriber>();
-    HashMap<String,Long> _queueMsgCounts = new HashMap<String,Long>();
+    private ArrayList<MyMessageSubscriber> _subscribers = new ArrayList<MyMessageSubscriber>();
+    private HashMap<String,Long> _queueMsgCounts = new HashMap<String,Long>();
     
     private final static Object _lock=new Object();
     private boolean _producerFailed;
