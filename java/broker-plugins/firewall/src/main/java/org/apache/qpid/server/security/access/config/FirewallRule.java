@@ -20,6 +20,9 @@
  */
 package org.apache.qpid.server.security.access.config;
 
+import org.apache.qpid.server.security.Result;
+import org.apache.qpid.util.NetMatcher;
+
 import java.net.InetAddress;
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -27,11 +30,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.regex.Pattern;
-
-import org.apache.qpid.server.security.Result;
-import org.apache.qpid.util.NetMatcher;
 
 public class FirewallRule 
 {

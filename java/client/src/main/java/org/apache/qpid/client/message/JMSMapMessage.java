@@ -20,17 +20,14 @@
  */
 package org.apache.qpid.client.message;
 
-import org.apache.qpid.AMQException;
-
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.qpid.AMQException;
+
 import javax.jms.JMSException;
 import javax.jms.MessageFormatException;
-
 import java.nio.ByteBuffer;
-import java.nio.charset.CharacterCodingException;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;

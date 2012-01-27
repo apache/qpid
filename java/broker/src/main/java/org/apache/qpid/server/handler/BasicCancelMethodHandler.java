@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.server.handler;
 
+import org.apache.log4j.Logger;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.BasicCancelBody;
 import org.apache.qpid.framing.BasicCancelOkBody;
@@ -28,7 +30,6 @@ import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.state.AMQStateManager;
 import org.apache.qpid.server.state.StateAwareMethodListener;
-import org.apache.log4j.Logger;
 
 public class BasicCancelMethodHandler implements StateAwareMethodListener<BasicCancelBody>
 {

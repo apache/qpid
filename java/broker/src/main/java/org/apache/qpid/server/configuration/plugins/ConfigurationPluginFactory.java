@@ -20,10 +20,10 @@
  */
 package org.apache.qpid.server.configuration.plugins;
 
-import java.util.List;
-
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
+
+import java.util.List;
 
 public interface ConfigurationPluginFactory
 {

@@ -20,23 +20,20 @@
  */
 package org.apache.qpid.transport.codec;
 
-import java.io.UnsupportedEncodingException;
-
-import java.nio.ByteBuffer;
-
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-
 import org.apache.qpid.transport.Range;
 import org.apache.qpid.transport.RangeSet;
 import org.apache.qpid.transport.Struct;
 import org.apache.qpid.transport.Type;
 
-import static org.apache.qpid.transport.util.Functions.*;
+import static org.apache.qpid.transport.util.Functions.lsb;
+
+import java.io.UnsupportedEncodingException;
+import java.nio.ByteBuffer;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 
 /**

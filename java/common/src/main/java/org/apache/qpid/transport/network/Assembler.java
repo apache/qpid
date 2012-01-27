@@ -20,14 +20,22 @@
  */
 package org.apache.qpid.transport.network;
 
+import org.apache.qpid.transport.DeliveryProperties;
+import org.apache.qpid.transport.Header;
+import org.apache.qpid.transport.MessageProperties;
+import org.apache.qpid.transport.Method;
+import org.apache.qpid.transport.ProtocolError;
+import org.apache.qpid.transport.ProtocolEvent;
+import org.apache.qpid.transport.ProtocolHeader;
+import org.apache.qpid.transport.Receiver;
+import org.apache.qpid.transport.Struct;
+import org.apache.qpid.transport.codec.BBDecoder;
+
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import org.apache.qpid.transport.*;
-import org.apache.qpid.transport.codec.BBDecoder;
 
 /**
  * Assembler

@@ -20,13 +20,12 @@
  */
 package org.apache.qpid.client.message;
 
-import java.io.Serializable;
-import java.util.Enumeration;
-
 import javax.jms.Destination;
 import javax.jms.JMSException;
 import javax.jms.ObjectMessage;
 import javax.jms.Session;
+import java.io.Serializable;
+import java.util.Enumeration;
 
 public class NonQpidObjectMessage implements ObjectMessage {
 

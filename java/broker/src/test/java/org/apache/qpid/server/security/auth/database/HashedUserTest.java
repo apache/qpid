@@ -21,8 +21,6 @@
 package org.apache.qpid.server.security.auth.database;
 
 import junit.framework.TestCase;
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
 
 import java.io.UnsupportedEncodingException;
 

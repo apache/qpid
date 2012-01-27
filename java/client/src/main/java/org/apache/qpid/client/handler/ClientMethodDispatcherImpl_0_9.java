@@ -20,13 +20,11 @@
  */
 package org.apache.qpid.client.handler;
 
+import org.apache.qpid.AMQException;
+import org.apache.qpid.client.protocol.AMQProtocolSession;
+import org.apache.qpid.client.state.AMQMethodNotImplementedException;
 import org.apache.qpid.framing.*;
 import org.apache.qpid.framing.amqp_0_9.MethodDispatcher_0_9;
-
-import org.apache.qpid.AMQException;
-import org.apache.qpid.client.state.AMQStateManager;
-import org.apache.qpid.client.state.AMQMethodNotImplementedException;
-import org.apache.qpid.client.protocol.AMQProtocolSession;
 
 public class ClientMethodDispatcherImpl_0_9 extends ClientMethodDispatcherImpl implements MethodDispatcher_0_9
 {

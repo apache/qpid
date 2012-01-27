@@ -41,7 +41,6 @@ import org.apache.qpid.server.queue.QueueRegistry;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import javax.management.JMException;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;

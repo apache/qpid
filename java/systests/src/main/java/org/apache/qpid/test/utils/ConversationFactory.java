@@ -21,11 +21,19 @@
 package org.apache.qpid.test.utils;
 
 import org.apache.log4j.Logger;
-import org.apache.qpid.test.utils.ReflectionUtils;
 
-import javax.jms.*;
-
-import java.util.*;
+import javax.jms.Connection;
+import javax.jms.Destination;
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.MessageConsumer;
+import javax.jms.MessageListener;
+import javax.jms.MessageProducer;
+import javax.jms.Session;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;

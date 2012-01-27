@@ -15,6 +15,8 @@
  */
 package org.apache.qpid.collections;
 
+import org.apache.qpid.collections.keyvalue.DefaultMapEntry;
+
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -33,8 +35,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
-
-import org.apache.qpid.collections.keyvalue.DefaultMapEntry;
 
 /**
  *  Hash-based {@link Map} implementation that allows

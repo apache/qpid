@@ -20,13 +20,13 @@
  */
 package org.apache.qpid.server;
 
+import org.osgi.framework.BundleContext;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-
-import org.osgi.framework.BundleContext;
 
 public class BrokerOptions
 {

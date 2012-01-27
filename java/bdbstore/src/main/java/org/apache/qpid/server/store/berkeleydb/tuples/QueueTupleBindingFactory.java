@@ -20,9 +20,9 @@
  */
 package org.apache.qpid.server.store.berkeleydb.tuples;
 
-import org.apache.qpid.server.store.berkeleydb.records.QueueRecord;
-
 import com.sleepycat.bind.tuple.TupleBinding;
+
+import org.apache.qpid.server.store.berkeleydb.records.QueueRecord;
 
 public class QueueTupleBindingFactory extends TupleBindingFactory<QueueRecord>
 {

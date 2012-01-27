@@ -20,11 +20,10 @@
  */
 package org.apache.qpid.framing;
 
-import java.io.DataInput;
-import java.io.DataInputStream;
-import java.io.IOException;
-
 import org.apache.qpid.framing.amqp_8_0.BasicConsumeBodyImpl;
+
+import java.io.DataInput;
+import java.io.IOException;
 
 public class ContentHeaderPropertiesFactory
 {

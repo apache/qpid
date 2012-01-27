@@ -22,16 +22,20 @@ package org.apache.qpid.test.framework;
 
 import org.apache.log4j.Logger;
 
+import org.apache.qpid.junit.extensions.util.ParsedProperties;
 import org.apache.qpid.test.framework.localcircuit.LocalCircuitImpl;
 import org.apache.qpid.test.framework.localcircuit.LocalPublisherImpl;
 import org.apache.qpid.test.framework.localcircuit.LocalReceiverImpl;
 import org.apache.qpid.test.framework.sequencers.CircuitFactory;
 import org.apache.qpid.test.utils.ConversationFactory;
 
-import org.apache.qpid.junit.extensions.util.ParsedProperties;
-
-import javax.jms.*;
-
+import javax.jms.Connection;
+import javax.jms.Destination;
+import javax.jms.JMSException;
+import javax.jms.MessageConsumer;
+import javax.jms.MessageProducer;
+import javax.jms.Session;
+import javax.jms.Topic;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.atomic.AtomicLong;

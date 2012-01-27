@@ -20,11 +20,11 @@
  */
 package org.apache.qpid.server.management;
 
+import org.apache.qpid.AMQException;
+
+import javax.management.JMException;
 import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
-import javax.management.JMException;
-
-import org.apache.qpid.AMQException;
 
 /**
  * This should be implemented by all Managable objects.

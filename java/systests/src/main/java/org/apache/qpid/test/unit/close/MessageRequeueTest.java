@@ -20,14 +20,14 @@
  */
 package org.apache.qpid.test.unit.close;
 
-import org.apache.qpid.AMQException;
-import org.apache.qpid.test.utils.QpidBrokerTestCase;
-import org.apache.qpid.test.utils.QpidClientConnection;
-import org.apache.qpid.client.message.AbstractJMSMessage;
-import org.apache.qpid.url.URLSyntaxException;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import org.apache.qpid.AMQException;
+import org.apache.qpid.client.message.AbstractJMSMessage;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
+import org.apache.qpid.test.utils.QpidClientConnection;
+import org.apache.qpid.url.URLSyntaxException;
 
 import javax.jms.Connection;
 import javax.jms.JMSException;
@@ -35,7 +35,6 @@ import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.Queue;
 import javax.jms.Session;
-
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class MessageRequeueTest extends QpidBrokerTestCase

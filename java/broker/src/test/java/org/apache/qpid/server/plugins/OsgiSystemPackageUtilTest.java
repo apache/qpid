@@ -20,11 +20,12 @@
  */
 package org.apache.qpid.server.plugins;
 
-import java.util.Map;
-import java.util.TreeMap;
+import org.osgi.framework.Version;
 
 import org.apache.qpid.test.utils.QpidTestCase;
-import org.osgi.framework.Version;
+
+import java.util.Map;
+import java.util.TreeMap;
 
 /**
  *

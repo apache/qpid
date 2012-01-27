@@ -22,7 +22,6 @@ package org.apache.qpid.server.state;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQMethodBody;
-import org.apache.qpid.protocol.AMQMethodEvent;
 
 /**
  * A frame listener that is informed of the protocol state when invoked and has

@@ -20,9 +20,8 @@
  */
 package org.apache.qpid.server.security.auth.sasl.plain;
 
-import java.util.Arrays;
-
 import javax.security.auth.callback.PasswordCallback;
+import java.util.Arrays;
 
 /**
  * Custom PasswordCallback for use during the PLAIN authentication process.

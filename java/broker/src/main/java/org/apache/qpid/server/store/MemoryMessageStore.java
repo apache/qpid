@@ -20,12 +20,9 @@
  */
 package org.apache.qpid.server.store;
 
-import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
-
 import org.apache.commons.configuration.Configuration;
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.framing.AMQShortString;
@@ -38,8 +35,11 @@ import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.messages.ConfigStoreMessages;
 import org.apache.qpid.server.logging.messages.MessageStoreMessages;
 import org.apache.qpid.server.message.EnqueableMessage;
-import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.queue.AMQQueue;
+
+import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 
 /** A simple message store that stores the messages in a threadsafe structure in memory. */
 public class MemoryMessageStore implements MessageStore, DurableConfigurationStore

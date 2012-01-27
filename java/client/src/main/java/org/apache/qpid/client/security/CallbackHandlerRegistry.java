@@ -20,6 +20,11 @@
  */
 package org.apache.qpid.client.security;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import org.apache.qpid.util.FileUtils;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collection;
@@ -32,10 +37,6 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.TreeMap;
-
-import org.apache.qpid.util.FileUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * CallbackHandlerRegistry is a registry for call back handlers for user authentication and interaction during user

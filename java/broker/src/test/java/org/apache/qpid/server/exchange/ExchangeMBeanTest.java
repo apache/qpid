@@ -21,17 +21,18 @@
 package org.apache.qpid.server.exchange;
 
 import org.apache.commons.lang.ArrayUtils;
-import org.apache.qpid.management.common.mbeans.ManagedExchange;
-import org.apache.qpid.server.queue.QueueRegistry;
-import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.AMQQueueFactory;
-import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.registry.IApplicationRegistry;
-import org.apache.qpid.server.management.ManagedObject;
-import org.apache.qpid.server.util.InternalBrokerBaseCase;
-import org.apache.qpid.server.virtualhost.VirtualHost;
+
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.management.common.mbeans.ManagedExchange;
+import org.apache.qpid.server.management.ManagedObject;
+import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.queue.AMQQueueFactory;
+import org.apache.qpid.server.queue.QueueRegistry;
+import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.registry.IApplicationRegistry;
+import org.apache.qpid.server.util.InternalBrokerBaseCase;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import javax.management.JMException;
 import javax.management.openmbean.CompositeDataSupport;

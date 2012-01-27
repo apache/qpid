@@ -21,12 +21,11 @@
 package org.apache.qpid.server.logging.actors;
 
 import org.apache.qpid.server.configuration.ServerConfiguration;
+import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.LogMessage;
 import org.apache.qpid.server.logging.LogSubject;
 import org.apache.qpid.server.logging.RootMessageLogger;
-import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.UnitTestMessageLogger;
-
 import org.apache.qpid.server.util.InternalBrokerBaseCase;
 
 public class BaseActorTestCase extends InternalBrokerBaseCase

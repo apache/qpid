@@ -21,16 +21,6 @@
 
 package org.apache.qpid.management.ui.views;
 
-import static org.apache.qpid.management.ui.Constants.BUTTON_CLEAR;
-import static org.apache.qpid.management.ui.Constants.CONSOLE_IMAGE;
-import static org.apache.qpid.management.ui.Constants.FONT_BUTTON;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import org.apache.qpid.management.ui.ApplicationRegistry;
-import org.apache.qpid.management.ui.ServerRegistry;
-import org.apache.qpid.management.ui.model.NotificationObject;
 import org.eclipse.jface.viewers.DoubleClickEvent;
 import org.eclipse.jface.viewers.IDoubleClickListener;
 import org.eclipse.jface.viewers.ILabelProviderListener;
@@ -58,6 +48,17 @@ import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.forms.widgets.Form;
 import org.eclipse.ui.forms.widgets.FormToolkit;
+
+import org.apache.qpid.management.ui.ApplicationRegistry;
+import org.apache.qpid.management.ui.ServerRegistry;
+import org.apache.qpid.management.ui.model.NotificationObject;
+
+import static org.apache.qpid.management.ui.Constants.BUTTON_CLEAR;
+import static org.apache.qpid.management.ui.Constants.CONSOLE_IMAGE;
+import static org.apache.qpid.management.ui.Constants.FONT_BUTTON;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class VHNotificationsTabControl extends TabControl
 {

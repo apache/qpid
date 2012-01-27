@@ -1,17 +1,17 @@
 package org.apache.qpid.server.management;
 
-import javax.management.Notification;
+import org.apache.qpid.management.common.mbeans.ManagedConnection;
 
 import javax.management.JMException;
 import javax.management.MBeanNotificationInfo;
 import javax.management.NotCompliantMBeanException;
+import javax.management.Notification;
 import javax.management.ObjectName;
 import javax.management.monitor.MonitorNotification;
 import javax.management.openmbean.CompositeType;
 import javax.management.openmbean.OpenType;
 import javax.management.openmbean.SimpleType;
 import javax.management.openmbean.TabularType;
-import org.apache.qpid.management.common.mbeans.ManagedConnection;
 
 public abstract class AbstractAMQManagedConnectionObject extends AMQManagedObject implements ManagedConnection
 {

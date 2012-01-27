@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.management.ui;
 
-import org.apache.qpid.management.ui.actions.VersionAction;
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.GroupMarker;
 import org.eclipse.jface.action.ICoolBarManager;
@@ -33,6 +32,8 @@ import org.eclipse.ui.actions.ActionFactory;
 import org.eclipse.ui.actions.ActionFactory.IWorkbenchAction;
 import org.eclipse.ui.application.ActionBarAdvisor;
 import org.eclipse.ui.application.IActionBarConfigurer;
+
+import org.apache.qpid.management.ui.actions.VersionAction;
 
 /**
  * An action bar advisor is responsible for creating, adding, and disposing of the

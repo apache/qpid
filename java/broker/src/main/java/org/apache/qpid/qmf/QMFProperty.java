@@ -23,9 +23,8 @@ package org.apache.qpid.qmf;
 
 import org.apache.qpid.transport.codec.Encoder;
 
-import java.util.Map;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.Map;
 
 public class QMFProperty
 {

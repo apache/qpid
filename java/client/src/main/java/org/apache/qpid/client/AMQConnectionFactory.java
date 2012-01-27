@@ -20,12 +20,24 @@
  */
 package org.apache.qpid.client;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.util.Hashtable;
-import java.util.UUID;
+import org.apache.qpid.jms.ConnectionURL;
+import org.apache.qpid.url.AMQBindingURL;
+import org.apache.qpid.url.URLSyntaxException;
 
-import javax.jms.*;
+import javax.jms.Connection;
+import javax.jms.ConnectionFactory;
+import javax.jms.JMSException;
+import javax.jms.JMSSecurityException;
+import javax.jms.QueueConnection;
+import javax.jms.QueueConnectionFactory;
+import javax.jms.TopicConnection;
+import javax.jms.TopicConnectionFactory;
+import javax.jms.XAConnection;
+import javax.jms.XAConnectionFactory;
+import javax.jms.XAQueueConnection;
+import javax.jms.XAQueueConnectionFactory;
+import javax.jms.XATopicConnection;
+import javax.jms.XATopicConnectionFactory;
 import javax.naming.Context;
 import javax.naming.Name;
 import javax.naming.NamingException;
@@ -34,10 +46,10 @@ import javax.naming.Reference;
 import javax.naming.Referenceable;
 import javax.naming.StringRefAddr;
 import javax.naming.spi.ObjectFactory;
-
-import org.apache.qpid.jms.ConnectionURL;
-import org.apache.qpid.url.AMQBindingURL;
-import org.apache.qpid.url.URLSyntaxException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.Hashtable;
+import java.util.UUID;
 
 
 public class AMQConnectionFactory implements ConnectionFactory, QueueConnectionFactory, TopicConnectionFactory,

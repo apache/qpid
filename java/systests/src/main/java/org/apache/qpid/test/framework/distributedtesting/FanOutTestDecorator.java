@@ -22,9 +22,9 @@ package org.apache.qpid.test.framework.distributedtesting;
 
 import junit.framework.Test;
 import junit.framework.TestResult;
-
 import org.apache.log4j.Logger;
 
+import org.apache.qpid.junit.extensions.WrappedSuiteTestDecorator;
 import org.apache.qpid.test.framework.DropInTest;
 import org.apache.qpid.test.framework.FrameworkBaseCase;
 import org.apache.qpid.test.framework.TestClientDetails;
@@ -32,13 +32,10 @@ import org.apache.qpid.test.framework.sequencers.CircuitFactory;
 import org.apache.qpid.test.framework.sequencers.FanOutCircuitFactory;
 import org.apache.qpid.test.utils.ConversationFactory;
 
-import org.apache.qpid.junit.extensions.WrappedSuiteTestDecorator;
-
 import javax.jms.Connection;
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageListener;
-
 import java.util.Iterator;
 import java.util.Set;
 

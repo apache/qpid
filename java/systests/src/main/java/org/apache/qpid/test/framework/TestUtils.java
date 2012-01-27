@@ -22,15 +22,23 @@ package org.apache.qpid.test.framework;
 
 import org.apache.log4j.Logger;
 
-import static org.apache.qpid.test.framework.MessagingTestConfigProperties.*;
-
 import org.apache.qpid.junit.extensions.util.ParsedProperties;
 
-import javax.jms.*;
+import static org.apache.qpid.test.framework.MessagingTestConfigProperties.BROKER_PROPNAME;
+import static org.apache.qpid.test.framework.MessagingTestConfigProperties.CONNECTION_NAME;
+import static org.apache.qpid.test.framework.MessagingTestConfigProperties.PASSWORD_PROPNAME;
+import static org.apache.qpid.test.framework.MessagingTestConfigProperties.USERNAME_PROPNAME;
+import static org.apache.qpid.test.framework.MessagingTestConfigProperties.VIRTUAL_HOST_PROPNAME;
+
+import javax.jms.BytesMessage;
+import javax.jms.Connection;
+import javax.jms.ConnectionFactory;
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.Session;
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
-
 import java.util.Map;
 
 /**

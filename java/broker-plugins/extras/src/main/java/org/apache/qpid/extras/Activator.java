@@ -20,11 +20,12 @@
  */
 package org.apache.qpid.extras;
 
+import org.osgi.framework.BundleActivator;
+import org.osgi.framework.BundleContext;
+
 import org.apache.qpid.extras.exchanges.diagnostic.DiagnosticExchangeType;
 import org.apache.qpid.extras.exchanges.example.TestExchangeType;
 import org.apache.qpid.server.exchange.ExchangeType;
-import org.osgi.framework.BundleActivator;
-import org.osgi.framework.BundleContext;
 
 /**
  * 

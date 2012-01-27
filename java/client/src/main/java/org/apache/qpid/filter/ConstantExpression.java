@@ -17,10 +17,10 @@
  */
 package org.apache.qpid.filter;
 
-import java.math.BigDecimal;
-
 import org.apache.qpid.AMQInternalException;
 import org.apache.qpid.client.message.AbstractJMSMessage;
+
+import java.math.BigDecimal;
 
 /**
  * Represents a constant expression

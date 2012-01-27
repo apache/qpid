@@ -17,10 +17,16 @@
  */
 package org.apache.qpid.client;
 
-import org.apache.qpid.jms.ConnectionURL;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.jms.ConnectionURL;
 
-import javax.jms.*;
+import javax.jms.JMSException;
+import javax.jms.XAConnection;
+import javax.jms.XAQueueConnection;
+import javax.jms.XAQueueSession;
+import javax.jms.XASession;
+import javax.jms.XATopicConnection;
+import javax.jms.XATopicSession;
 
 /**
  * This class implements the javax.njms.XAConnection interface

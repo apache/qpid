@@ -20,8 +20,8 @@
  */
 package org.apache.qpid.client.state;
 
-import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.AMQMethodBody;
 
 public class AMQMethodNotImplementedException extends AMQException
 {

@@ -20,12 +20,8 @@
  */
 package org.apache.qpid.server.transport;
 
-import java.nio.ByteBuffer;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQUnknownExchangeType;
 import org.apache.qpid.framing.AMQShortString;
@@ -57,6 +53,11 @@ import org.apache.qpid.server.subscription.Subscription_0_10;
 import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.transport.*;
+
+import java.nio.ByteBuffer;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 
 public class ServerSessionDelegate extends SessionDelegate
 {

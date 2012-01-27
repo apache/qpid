@@ -20,12 +20,11 @@
  */
 package org.apache.qpid.framing;
 
-import java.io.DataOutput;
-import java.io.DataOutputStream;
-import java.io.IOException;
-
-import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
+
+import java.io.DataOutput;
+import java.io.IOException;
 
 public interface AMQBody
 {

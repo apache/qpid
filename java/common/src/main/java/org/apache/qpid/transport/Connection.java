@@ -20,25 +20,6 @@
  */
 package org.apache.qpid.transport;
 
-import static org.apache.qpid.transport.Connection.State.CLOSED;
-import static org.apache.qpid.transport.Connection.State.CLOSING;
-import static org.apache.qpid.transport.Connection.State.NEW;
-import static org.apache.qpid.transport.Connection.State.OPEN;
-import static org.apache.qpid.transport.Connection.State.OPENING;
-
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import javax.security.sasl.SaslClient;
-import javax.security.sasl.SaslServer;
-
 import org.apache.qpid.framing.ProtocolVersion;
 import org.apache.qpid.transport.network.Assembler;
 import org.apache.qpid.transport.network.Disassembler;
@@ -51,6 +32,24 @@ import org.apache.qpid.transport.network.security.SecurityLayerFactory;
 import org.apache.qpid.transport.util.Logger;
 import org.apache.qpid.transport.util.Waiter;
 import org.apache.qpid.util.Strings;
+
+import static org.apache.qpid.transport.Connection.State.CLOSED;
+import static org.apache.qpid.transport.Connection.State.CLOSING;
+import static org.apache.qpid.transport.Connection.State.NEW;
+import static org.apache.qpid.transport.Connection.State.OPEN;
+import static org.apache.qpid.transport.Connection.State.OPENING;
+
+import javax.security.sasl.SaslClient;
+import javax.security.sasl.SaslServer;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 
 /**

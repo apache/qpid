@@ -22,6 +22,7 @@
 package org.apache.qpid.info.test;
 
 import junit.framework.TestCase;
+
 import org.apache.qpid.info.util.IniFileReader;
 
 import java.io.BufferedWriter;

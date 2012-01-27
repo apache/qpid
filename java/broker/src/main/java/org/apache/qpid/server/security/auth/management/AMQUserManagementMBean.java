@@ -20,9 +20,14 @@
  */
 package org.apache.qpid.server.security.auth.management;
 
-import java.io.IOException;
-import java.security.Principal;
-import java.util.List;
+import org.apache.log4j.Logger;
+
+import org.apache.qpid.management.common.mbeans.UserManagement;
+import org.apache.qpid.management.common.mbeans.annotations.MBeanDescription;
+import org.apache.qpid.management.common.mbeans.annotations.MBeanOperation;
+import org.apache.qpid.server.management.AMQManagedObject;
+import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
+import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
 
 import javax.management.JMException;
 import javax.management.openmbean.CompositeData;
@@ -35,14 +40,9 @@ import javax.management.openmbean.TabularData;
 import javax.management.openmbean.TabularDataSupport;
 import javax.management.openmbean.TabularType;
 import javax.security.auth.login.AccountNotFoundException;
-
-import org.apache.log4j.Logger;
-import org.apache.qpid.management.common.mbeans.UserManagement;
-import org.apache.qpid.management.common.mbeans.annotations.MBeanDescription;
-import org.apache.qpid.management.common.mbeans.annotations.MBeanOperation;
-import org.apache.qpid.server.management.AMQManagedObject;
-import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
-import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
+import java.io.IOException;
+import java.security.Principal;
+import java.util.List;
 
 /** MBean class for AMQUserManagementMBean. It implements all the management features exposed for managing users. */
 @MBeanDescription("User Management Interface")

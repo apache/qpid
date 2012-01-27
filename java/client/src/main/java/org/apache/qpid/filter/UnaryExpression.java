@@ -17,14 +17,14 @@
  */
 package org.apache.qpid.filter;
 
+import org.apache.qpid.AMQInternalException;
+import org.apache.qpid.client.message.AbstractJMSMessage;
+
 import java.math.BigDecimal;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-
-import org.apache.qpid.AMQInternalException;
-import org.apache.qpid.client.message.AbstractJMSMessage;
 
 /**
  * An expression which performs an operation on two expression values

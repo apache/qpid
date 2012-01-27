@@ -21,15 +21,13 @@ package org.apache.qpid.transport.network.security.sasl;
  */
 
 
-import java.nio.ByteBuffer;
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import javax.security.sasl.SaslClient;
-import javax.security.sasl.SaslException;
-
 import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.SenderException;
 import org.apache.qpid.transport.util.Logger;
+
+import javax.security.sasl.SaslException;
+import java.nio.ByteBuffer;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class SASLSender extends SASLEncryptor implements Sender<ByteBuffer> {
 

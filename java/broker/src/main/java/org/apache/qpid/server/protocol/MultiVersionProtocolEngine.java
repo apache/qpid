@@ -22,6 +22,7 @@ package org.apache.qpid.server.protocol;
 
 
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.protocol.ServerProtocolEngine;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.transport.ServerConnection;

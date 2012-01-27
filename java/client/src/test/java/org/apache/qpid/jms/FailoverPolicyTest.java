@@ -20,13 +20,7 @@
  */
 package org.apache.qpid.jms;
 
-import javax.jms.ConnectionConsumer;
-import javax.jms.ConnectionMetaData;
-import javax.jms.Destination;
-import javax.jms.ExceptionListener;
-import javax.jms.JMSException;
-import javax.jms.ServerSessionPool;
-import javax.jms.Topic;
+import junit.framework.TestCase;
 
 import org.apache.qpid.client.AMQConnectionURL;
 import org.apache.qpid.jms.failover.FailoverExchangeMethod;
@@ -35,7 +29,13 @@ import org.apache.qpid.jms.failover.FailoverRoundRobinServers;
 import org.apache.qpid.jms.failover.FailoverSingleServer;
 import org.apache.qpid.jms.failover.NoFailover;
 
-import junit.framework.TestCase;
+import javax.jms.ConnectionConsumer;
+import javax.jms.ConnectionMetaData;
+import javax.jms.Destination;
+import javax.jms.ExceptionListener;
+import javax.jms.JMSException;
+import javax.jms.ServerSessionPool;
+import javax.jms.Topic;
 
 /**
  * Tests the ability of FailoverPolicy to instantiate the correct FailoverMethod.

@@ -38,7 +38,6 @@ import org.apache.log4j.Logger;
 
 import javax.jms.ExceptionListener;
 import javax.jms.JMSException;
-
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.ArrayList;

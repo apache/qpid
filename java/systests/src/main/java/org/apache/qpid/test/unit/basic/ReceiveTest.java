@@ -20,14 +20,14 @@
  */
 package org.apache.qpid.test.unit.basic;
 
-import javax.jms.MessageConsumer;
-import javax.jms.Message;
-
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
+
+import javax.jms.Message;
+import javax.jms.MessageConsumer;
 
 public class ReceiveTest extends QpidBrokerTestCase
 {

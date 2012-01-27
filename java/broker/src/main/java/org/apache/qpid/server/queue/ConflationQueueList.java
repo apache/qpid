@@ -21,12 +21,12 @@
 
 package org.apache.qpid.server.queue;
 
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicReference;
-
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.txn.AutoCommitTransaction;
 import org.apache.qpid.server.txn.ServerTransaction;
+
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class ConflationQueueList extends SimpleQueueEntryList
 {

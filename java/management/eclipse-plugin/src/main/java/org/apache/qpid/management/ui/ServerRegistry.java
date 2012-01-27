@@ -21,18 +21,17 @@
 package org.apache.qpid.management.ui;
 
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicBoolean;
-
 import org.apache.qpid.management.ui.jmx.ClientListener;
 import org.apache.qpid.management.ui.model.ManagedAttributeModel;
 import org.apache.qpid.management.ui.model.NotificationObject;
 import org.apache.qpid.management.ui.model.OperationDataModel;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public abstract class ServerRegistry
 {

@@ -20,26 +20,24 @@
  */
 package org.apache.qpid.client.message;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession_0_8;
 import org.apache.qpid.client.AMQTopic;
 import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.ContentBody;
 import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpid.framing.BasicContentHeaderProperties;
-import org.apache.qpid.transport.MessageProperties;
 import org.apache.qpid.transport.DeliveryProperties;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.qpid.transport.MessageProperties;
 
 import javax.jms.JMSException;
-
+import java.nio.ByteBuffer;
 import java.util.Iterator;
 import java.util.List;
-
-import java.nio.ByteBuffer;
 
 public abstract class AbstractJMSMessageFactory implements MessageFactory
 {

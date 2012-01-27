@@ -22,11 +22,11 @@ package org.apache.qpid.test.unit.client.connection;
 
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import javax.jms.Connection;
 import javax.jms.ExceptionListener;
 import javax.jms.JMSException;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 /**
  * ExceptionListenerTest

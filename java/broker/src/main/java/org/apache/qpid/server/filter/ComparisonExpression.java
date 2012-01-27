@@ -23,11 +23,11 @@ package org.apache.qpid.server.filter;
 // Based on like named file from r450141 of the Apache ActiveMQ project <http://www.activemq.org/site/home.html>
 //
 
+import org.apache.qpid.server.queue.Filterable;
+
 import java.util.HashSet;
 import java.util.List;
 import java.util.regex.Pattern;
-
-import org.apache.qpid.server.queue.Filterable;
 
 /**
  * A filter performing a comparison of two objects

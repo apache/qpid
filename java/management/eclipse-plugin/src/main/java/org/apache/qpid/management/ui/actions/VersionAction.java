@@ -20,14 +20,15 @@
  */
 package org.apache.qpid.management.ui.actions;
 
-import java.io.InputStream;
-import java.util.Properties;
-
-import org.apache.qpid.management.ui.Constants;
-import org.apache.qpid.management.ui.jmx.MBeanUtility;
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.ui.IWorkbenchWindow;
+
+import org.apache.qpid.management.ui.Constants;
+import org.apache.qpid.management.ui.jmx.MBeanUtility;
+
+import java.io.InputStream;
+import java.util.Properties;
 
 public class VersionAction extends Action
 {        

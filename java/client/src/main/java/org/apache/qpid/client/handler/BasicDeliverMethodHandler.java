@@ -20,13 +20,14 @@
  */
 package org.apache.qpid.client.handler;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.message.UnprocessedMessage_0_8;
 import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.apache.qpid.client.state.StateAwareMethodListener;
 import org.apache.qpid.framing.BasicDeliverBody;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class BasicDeliverMethodHandler implements StateAwareMethodListener<BasicDeliverBody>
 {

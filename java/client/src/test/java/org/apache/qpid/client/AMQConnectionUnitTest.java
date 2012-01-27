@@ -20,14 +20,13 @@
  */
 package org.apache.qpid.client;
 
-import java.util.concurrent.atomic.AtomicReference;
-
-import javax.jms.ExceptionListener;
-import javax.jms.JMSException;
-
 import junit.framework.TestCase;
 
 import org.apache.qpid.AMQInvalidArgumentException;
+
+import javax.jms.ExceptionListener;
+import javax.jms.JMSException;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class AMQConnectionUnitTest extends TestCase
 {

@@ -20,19 +20,19 @@
  */
 package org.apache.qpid.server.logging;
 
+import org.apache.qpid.AMQException;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.failover.FailoverException;
-import org.apache.qpid.server.logging.subjects.AbstractTestLogSubject;
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.AMQException;
+import org.apache.qpid.server.logging.subjects.AbstractTestLogSubject;
 
 import javax.jms.Connection;
-import javax.jms.Session;
-import javax.jms.Queue;
 import javax.jms.JMSException;
+import javax.jms.Queue;
+import javax.jms.Session;
 import javax.naming.NamingException;
-import java.util.List;
 import java.io.IOException;
+import java.util.List;
 
 /**
  * The Queue test suite validates that the follow log messages as specified in

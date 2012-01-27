@@ -21,20 +21,6 @@
 package org.apache.qpid.management.ui.views.type;
 
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.apache.qpid.management.ui.ApiVersion;
-import org.apache.qpid.management.ui.ApplicationRegistry;
-import org.apache.qpid.management.ui.ManagedBean;
-import org.apache.qpid.management.ui.ManagedServer;
-import org.apache.qpid.management.ui.jmx.JMXManagedObject;
-import org.apache.qpid.management.ui.jmx.JMXServerRegistry;
-import org.apache.qpid.management.ui.jmx.MBeanUtility;
-import org.apache.qpid.management.ui.views.MBeanView;
-import org.apache.qpid.management.ui.views.NavigationView;
-import org.apache.qpid.management.ui.views.TabControl;
-
 import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.IStructuredContentProvider;
 import org.eclipse.jface.viewers.ITableLabelProvider;
@@ -62,6 +48,20 @@ import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.forms.widgets.Form;
 import org.eclipse.ui.forms.widgets.FormToolkit;
+
+import org.apache.qpid.management.ui.ApiVersion;
+import org.apache.qpid.management.ui.ApplicationRegistry;
+import org.apache.qpid.management.ui.ManagedBean;
+import org.apache.qpid.management.ui.ManagedServer;
+import org.apache.qpid.management.ui.jmx.JMXManagedObject;
+import org.apache.qpid.management.ui.jmx.JMXServerRegistry;
+import org.apache.qpid.management.ui.jmx.MBeanUtility;
+import org.apache.qpid.management.ui.views.MBeanView;
+import org.apache.qpid.management.ui.views.NavigationView;
+import org.apache.qpid.management.ui.views.TabControl;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public abstract class MBeanTypeTabControl extends TabControl
 {

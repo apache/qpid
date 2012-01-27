@@ -22,7 +22,7 @@ package org.apache.qpid.transport.util;
 
 import java.nio.ByteBuffer;
 
-import static java.lang.Math.*;
+import static java.lang.Math.min;
 
 
 /**

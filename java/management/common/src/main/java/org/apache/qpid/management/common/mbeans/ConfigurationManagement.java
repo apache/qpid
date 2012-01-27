@@ -20,9 +20,9 @@
  */
 package org.apache.qpid.management.common.mbeans;
 
-import javax.management.MBeanOperationInfo;
-
 import org.apache.qpid.management.common.mbeans.annotations.MBeanOperation;
+
+import javax.management.MBeanOperationInfo;
 
 public interface ConfigurationManagement
 {

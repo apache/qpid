@@ -21,7 +21,6 @@ package org.apache.qpid.server.plugins;
 import org.apache.qpid.server.exchange.ExchangeType;
 import org.apache.qpid.server.util.InternalBrokerBaseCase;
 
-
 import java.util.Map;
 
 public class PluginTest extends InternalBrokerBaseCase

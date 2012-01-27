@@ -21,8 +21,8 @@
 package org.apache.qpid.server.logging;
 
 import javax.jms.Connection;
-import java.util.List;
 import java.util.HashMap;
+import java.util.List;
 import java.util.TreeSet;
 
 public class ConnectionLoggingTest extends AbstractTestLogging

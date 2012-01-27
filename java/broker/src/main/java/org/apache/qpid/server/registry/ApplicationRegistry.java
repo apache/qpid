@@ -20,18 +20,10 @@
  */
 package org.apache.qpid.server.registry;
 
-import java.net.InetSocketAddress;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.UUID;
-import java.util.concurrent.atomic.AtomicReference;
-
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.log4j.Logger;
+import org.osgi.framework.BundleContext;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.common.Closeable;
 import org.apache.qpid.common.QpidProperties;
@@ -65,7 +57,16 @@ import org.apache.qpid.server.transport.QpidAcceptor;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
-import org.osgi.framework.BundleContext;
+
+import java.net.InetSocketAddress;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
 
 
 /**

@@ -37,16 +37,6 @@
  */
 package org.apache.qpid.server.protocol;
 
-import java.util.Date;
-import java.util.List;
-import javax.management.JMException;
-import javax.management.MBeanException;
-import javax.management.NotCompliantMBeanException;
-import javax.management.openmbean.CompositeData;
-import javax.management.openmbean.CompositeDataSupport;
-import javax.management.openmbean.OpenDataException;
-import javax.management.openmbean.TabularData;
-import javax.management.openmbean.TabularDataSupport;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ConnectionCloseBody;
@@ -59,6 +49,17 @@ import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.ManagementActor;
 import org.apache.qpid.server.management.AbstractAMQManagedConnectionObject;
 import org.apache.qpid.server.management.ManagedObject;
+
+import javax.management.JMException;
+import javax.management.MBeanException;
+import javax.management.NotCompliantMBeanException;
+import javax.management.openmbean.CompositeData;
+import javax.management.openmbean.CompositeDataSupport;
+import javax.management.openmbean.OpenDataException;
+import javax.management.openmbean.TabularData;
+import javax.management.openmbean.TabularDataSupport;
+import java.util.Date;
+import java.util.List;
 
 /**
  * This MBean class implements the management interface. In order to make more attributes, operations and notifications

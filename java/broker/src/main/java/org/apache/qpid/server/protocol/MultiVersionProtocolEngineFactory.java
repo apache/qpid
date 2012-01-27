@@ -20,14 +20,14 @@
 */
 package org.apache.qpid.server.protocol;
 
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicLong;
-
 import org.apache.qpid.protocol.ProtocolEngineFactory;
 import org.apache.qpid.protocol.ServerProtocolEngine;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.transport.network.NetworkConnection;
+
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class MultiVersionProtocolEngineFactory implements ProtocolEngineFactory
 {

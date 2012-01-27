@@ -21,17 +21,17 @@ package org.apache.qpid.server.filter;
 // Based on like named file from r450141 of the Apache ActiveMQ project <http://www.activemq.org/site/home.html>
 //
 
-import java.io.ByteArrayInputStream;
-import java.io.StringReader;
-
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-
-import org.apache.qpid.server.queue.Filterable;
 import org.apache.xpath.CachedXPathAPI;
 import org.w3c.dom.Document;
 import org.w3c.dom.traversal.NodeIterator;
 import org.xml.sax.InputSource;
+
+import org.apache.qpid.server.queue.Filterable;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import java.io.ByteArrayInputStream;
+import java.io.StringReader;
 
 public class XalanXPathEvaluator implements XPathExpression.XPathEvaluator {
 

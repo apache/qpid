@@ -20,11 +20,9 @@
  */
 package org.apache.qpid.server.message;
 
-import org.apache.qpid.transport.*;
-import org.apache.qpid.server.configuration.SessionConfig;
-import org.apache.qpid.server.store.StoredMessage;
-import org.apache.qpid.server.transport.ServerSession;
 import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.server.store.StoredMessage;
+import org.apache.qpid.transport.Header;
 
 import java.nio.ByteBuffer;
 

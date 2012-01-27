@@ -21,11 +21,6 @@
 
 package org.apache.qpid.server.configuration;
 
-import org.apache.qpid.server.exchange.ExchangeType;
-
-import java.util.Map;
-
-
 public interface LinkConfig extends ConfiguredObject<LinkConfigType, LinkConfig>
 {
     VirtualHostConfig getVirtualHost();

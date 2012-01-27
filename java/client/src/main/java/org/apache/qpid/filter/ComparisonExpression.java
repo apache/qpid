@@ -17,12 +17,12 @@
  */
 package org.apache.qpid.filter;
 
+import org.apache.qpid.AMQInternalException;
+import org.apache.qpid.client.message.AbstractJMSMessage;
+
 import java.util.HashSet;
 import java.util.List;
 import java.util.regex.Pattern;
-
-import org.apache.qpid.AMQInternalException;
-import org.apache.qpid.client.message.AbstractJMSMessage;
 
 /**
  * A filter performing a comparison of two objects

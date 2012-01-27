@@ -20,15 +20,15 @@
  */
 package org.apache.qpid.test.unit.topic;
 
-import javax.jms.MessageConsumer;
-import javax.jms.TextMessage;
-import javax.jms.TopicPublisher;
-import javax.jms.TopicSession;
-
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.AMQTopic;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
+
+import javax.jms.MessageConsumer;
+import javax.jms.TextMessage;
+import javax.jms.TopicPublisher;
+import javax.jms.TopicSession;
 
 /**
  * @author Apache Software Foundation

@@ -22,12 +22,19 @@ package org.apache.qpid.test.framework.localcircuit;
 
 import org.apache.log4j.Logger;
 
-import org.apache.qpid.test.framework.*;
-
 import org.apache.qpid.junit.extensions.util.ParsedProperties;
+import org.apache.qpid.test.framework.Assertion;
+import org.apache.qpid.test.framework.Circuit;
+import org.apache.qpid.test.framework.CircuitEnd;
+import org.apache.qpid.test.framework.ExceptionMonitor;
+import org.apache.qpid.test.framework.MessagingTestConfigProperties;
+import org.apache.qpid.test.framework.Publisher;
+import org.apache.qpid.test.framework.Receiver;
+import org.apache.qpid.test.framework.TestUtils;
 
-import javax.jms.*;
-
+import javax.jms.Connection;
+import javax.jms.JMSException;
+import javax.jms.Message;
 import java.util.LinkedList;
 import java.util.List;
 

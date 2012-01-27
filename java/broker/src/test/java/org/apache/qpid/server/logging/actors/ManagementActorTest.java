@@ -20,12 +20,11 @@
  */
 package org.apache.qpid.server.logging.actors;
 
+import javax.management.remote.JMXPrincipal;
+import javax.security.auth.Subject;
 import java.security.PrivilegedAction;
 import java.util.Collections;
 import java.util.List;
-
-import javax.management.remote.JMXPrincipal;
-import javax.security.auth.Subject;
 
 /**
  * Test : AMQPManagementActorTest

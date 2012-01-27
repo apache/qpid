@@ -17,9 +17,8 @@
  */
 package org.apache.qpid.client;
 
-import javax.transaction.xa.XAException;
-import javax.transaction.xa.XAResource;
-import javax.transaction.xa.Xid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.dtx.XidImpl;
 import org.apache.qpid.transport.DtxXaStatus;
@@ -29,8 +28,10 @@ import org.apache.qpid.transport.Option;
 import org.apache.qpid.transport.RecoverResult;
 import org.apache.qpid.transport.SessionException;
 import org.apache.qpid.transport.XaResult;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import javax.transaction.xa.XAException;
+import javax.transaction.xa.XAResource;
+import javax.transaction.xa.Xid;
 
 /**
  * This is an implementation of javax.njms.XAResource.

@@ -20,12 +20,11 @@
  */
 package org.apache.qpid.client;
 
-import org.apache.qpid.server.configuration.ServerConfiguration;
-import org.apache.qpid.test.utils.QpidBrokerTestCase;
-import org.apache.qpid.util.LogMonitor;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
+import org.apache.qpid.util.LogMonitor;
 
 import javax.jms.Connection;
 import javax.jms.ExceptionListener;
@@ -37,7 +36,6 @@ import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.Session;
 import javax.naming.Context;
-
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 

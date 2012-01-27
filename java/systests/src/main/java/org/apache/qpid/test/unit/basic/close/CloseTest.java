@@ -19,11 +19,12 @@
  *
  */
 package org.apache.qpid.test.unit.basic.close;
-import org.apache.qpid.test.utils.QpidBrokerTestCase;
-import org.apache.qpid.client.AMQConnection;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import org.apache.qpid.client.AMQConnection;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;

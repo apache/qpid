@@ -18,10 +18,13 @@
  */
 package org.apache.qpid.management.jmx;
 
-import java.io.IOException;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import org.apache.qpid.client.AMQSession;
+import org.apache.qpid.management.common.mbeans.ManagedConnection;
+import org.apache.qpid.test.utils.JMXTestUtils;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 import javax.jms.Connection;
 import javax.jms.Destination;
@@ -33,13 +36,10 @@ import javax.jms.TextMessage;
 import javax.management.JMException;
 import javax.management.openmbean.CompositeDataSupport;
 import javax.management.openmbean.TabularData;
-
-import org.apache.qpid.client.AMQSession;
-import org.apache.qpid.management.common.mbeans.ManagedConnection;
-import org.apache.qpid.test.utils.JMXTestUtils;
-import org.apache.qpid.test.utils.QpidBrokerTestCase;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.io.IOException;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
 
 public class ManagedConnectionMBeanTest extends QpidBrokerTestCase
 {

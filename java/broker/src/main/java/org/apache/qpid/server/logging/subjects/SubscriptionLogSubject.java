@@ -22,9 +22,9 @@ package org.apache.qpid.server.logging.subjects;
 
 import org.apache.qpid.server.subscription.Subscription;
 
-import java.text.MessageFormat;
-
 import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.SUBSCRIPTION_FORMAT;
+
+import java.text.MessageFormat;
 
 public class SubscriptionLogSubject extends AbstractLogSubject
 {

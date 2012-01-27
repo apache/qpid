@@ -20,9 +20,9 @@
  */
 package org.apache.qpid.client;
 
-import org.apache.qpid.framing.AMQShortString;
-
 import junit.framework.TestCase;
+
+import org.apache.qpid.framing.AMQShortString;
 
 public class AMQQueueTest extends TestCase
 {

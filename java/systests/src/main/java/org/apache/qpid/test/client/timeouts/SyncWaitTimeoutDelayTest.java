@@ -20,8 +20,8 @@
  */
 package org.apache.qpid.test.client.timeouts;
 
-import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.AMQTimeoutException;
 
 import javax.jms.JMSException;

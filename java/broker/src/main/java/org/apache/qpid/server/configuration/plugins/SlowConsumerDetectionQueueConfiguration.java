@@ -22,8 +22,7 @@ package org.apache.qpid.server.configuration.plugins;
 
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
-import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
-import org.apache.qpid.server.configuration.plugins.ConfigurationPluginFactory;
+
 import org.apache.qpid.server.plugins.PluginManager;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.slowconsumerdetection.policies.SlowConsumerPolicyPlugin;

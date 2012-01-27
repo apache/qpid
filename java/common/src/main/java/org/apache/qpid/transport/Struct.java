@@ -20,12 +20,11 @@
  */
 package org.apache.qpid.transport;
 
-import java.util.List;
-import java.util.Map;
-
 import org.apache.qpid.transport.codec.Decoder;
 import org.apache.qpid.transport.codec.Encodable;
 import org.apache.qpid.transport.codec.Encoder;
+
+import java.util.Map;
 
 
 /**

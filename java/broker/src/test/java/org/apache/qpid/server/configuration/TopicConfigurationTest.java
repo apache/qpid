@@ -21,6 +21,7 @@
 package org.apache.qpid.server.configuration;
 
 import org.apache.commons.configuration.ConfigurationException;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQInternalException;
 import org.apache.qpid.AMQSecurityException;

@@ -20,8 +20,6 @@
  */
 package org.apache.qpid.test.framework;
 
-import org.apache.qpid.test.framework.CauseFailure;
-
 import java.io.IOException;
 
 /**

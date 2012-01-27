@@ -21,13 +21,12 @@
 package org.apache.qpid.server.security.auth.database;
 
 import junit.framework.TestCase;
+import org.apache.commons.codec.binary.Base64;
+
+import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
 
 import javax.security.auth.callback.PasswordCallback;
 import javax.security.auth.login.AccountNotFoundException;
-
-import org.apache.commons.codec.binary.Base64;
-import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
-
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;

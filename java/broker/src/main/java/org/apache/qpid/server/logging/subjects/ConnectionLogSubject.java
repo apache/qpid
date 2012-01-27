@@ -22,11 +22,11 @@ package org.apache.qpid.server.logging.subjects;
 
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 
-import java.text.MessageFormat;
-
+import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.CONNECTION_FORMAT;
 import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.SOCKET_FORMAT;
 import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.USER_FORMAT;
-import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.CONNECTION_FORMAT;
+
+import java.text.MessageFormat;
 
 /** The Connection LogSubject */
 public class ConnectionLogSubject extends AbstractLogSubject

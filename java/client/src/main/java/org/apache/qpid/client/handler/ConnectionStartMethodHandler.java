@@ -20,12 +20,8 @@
  */
 package org.apache.qpid.client.handler;
 
-import java.io.UnsupportedEncodingException;
-import java.util.StringTokenizer;
-
-import javax.security.sasl.Sasl;
-import javax.security.sasl.SaslClient;
-import javax.security.sasl.SaslException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.protocol.AMQProtocolSession;
@@ -41,8 +37,12 @@ import org.apache.qpid.framing.ConnectionStartOkBody;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.framing.FieldTableFactory;
 import org.apache.qpid.framing.ProtocolVersion;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import javax.security.sasl.Sasl;
+import javax.security.sasl.SaslClient;
+import javax.security.sasl.SaslException;
+import java.io.UnsupportedEncodingException;
+import java.util.StringTokenizer;
 
 public class ConnectionStartMethodHandler implements StateAwareMethodListener<ConnectionStartBody>
 {

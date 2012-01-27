@@ -25,12 +25,12 @@ import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
-import javax.jms.Session;
-import javax.jms.QueueSession;
+import javax.jms.InvalidDestinationException;
 import javax.jms.Queue;
 import javax.jms.QueueSender;
+import javax.jms.QueueSession;
+import javax.jms.Session;
 import javax.jms.TextMessage;
-import javax.jms.InvalidDestinationException;
 
 public class InvalidDestinationTest extends QpidBrokerTestCase
 {

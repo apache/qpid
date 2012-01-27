@@ -20,12 +20,15 @@
  */
 package org.apache.qpid.transport;
 
+import static org.apache.qpid.util.Serial.gt;
+import static org.apache.qpid.util.Serial.le;
+import static org.apache.qpid.util.Serial.max;
+import static org.apache.qpid.util.Serial.min;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-
-import static org.apache.qpid.util.Serial.*;
 
 
 /**

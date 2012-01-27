@@ -20,36 +20,6 @@
  */
 package org.apache.qpid.management.ui.views.queue;
 
-import static org.apache.qpid.management.common.mbeans.ManagedQueue.MSG_AMQ_ID;
-import static org.apache.qpid.management.common.mbeans.ManagedQueue.MSG_HEADER;
-import static org.apache.qpid.management.common.mbeans.ManagedQueue.MSG_QUEUE_POS;
-import static org.apache.qpid.management.common.mbeans.ManagedQueue.MSG_REDELIVERED;
-import static org.apache.qpid.management.common.mbeans.ManagedQueue.MSG_SIZE;
-import static org.apache.qpid.management.ui.Constants.CONSOLE_IMAGE;
-import static org.apache.qpid.management.ui.Constants.RESULT;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.SortedSet;
-import java.util.TreeSet;
-
-import javax.management.MBeanServerConnection;
-import javax.management.MBeanServerInvocationHandler;
-import javax.management.openmbean.CompositeData;
-import javax.management.openmbean.CompositeDataSupport;
-import javax.management.openmbean.TabularDataSupport;
-
-import org.apache.qpid.management.ui.ApiVersion;
-import org.apache.qpid.management.ui.ApplicationRegistry;
-import org.apache.qpid.management.ui.ManagedBean;
-import org.apache.qpid.management.common.mbeans.ManagedQueue;
-import org.apache.qpid.management.ui.jmx.JMXManagedObject;
-import org.apache.qpid.management.ui.jmx.MBeanUtility;
-import org.apache.qpid.management.ui.views.NumberVerifyListener;
-import org.apache.qpid.management.ui.views.TabControl;
-import org.apache.qpid.management.ui.views.ViewUtility;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.IStructuredContentProvider;
 import org.eclipse.jface.viewers.ITableLabelProvider;
@@ -81,6 +51,36 @@ import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 import org.eclipse.ui.forms.widgets.ScrolledForm;
+
+import org.apache.qpid.management.common.mbeans.ManagedQueue;
+import org.apache.qpid.management.ui.ApiVersion;
+import org.apache.qpid.management.ui.ApplicationRegistry;
+import org.apache.qpid.management.ui.ManagedBean;
+import org.apache.qpid.management.ui.jmx.JMXManagedObject;
+import org.apache.qpid.management.ui.jmx.MBeanUtility;
+import org.apache.qpid.management.ui.views.NumberVerifyListener;
+import org.apache.qpid.management.ui.views.TabControl;
+import org.apache.qpid.management.ui.views.ViewUtility;
+
+import static org.apache.qpid.management.common.mbeans.ManagedQueue.MSG_AMQ_ID;
+import static org.apache.qpid.management.common.mbeans.ManagedQueue.MSG_HEADER;
+import static org.apache.qpid.management.common.mbeans.ManagedQueue.MSG_QUEUE_POS;
+import static org.apache.qpid.management.common.mbeans.ManagedQueue.MSG_REDELIVERED;
+import static org.apache.qpid.management.common.mbeans.ManagedQueue.MSG_SIZE;
+import static org.apache.qpid.management.ui.Constants.CONSOLE_IMAGE;
+import static org.apache.qpid.management.ui.Constants.RESULT;
+
+import javax.management.MBeanServerConnection;
+import javax.management.MBeanServerInvocationHandler;
+import javax.management.openmbean.CompositeData;
+import javax.management.openmbean.CompositeDataSupport;
+import javax.management.openmbean.TabularDataSupport;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 
 /**

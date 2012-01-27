@@ -20,10 +20,10 @@
  */
 package org.apache.qpid.server.configuration.plugins;
 
-import junit.framework.TestCase;
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.XMLConfiguration;
+
 import org.apache.qpid.server.util.InternalBrokerBaseCase;
 
 import java.util.List;

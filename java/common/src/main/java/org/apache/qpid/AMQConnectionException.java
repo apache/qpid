@@ -21,7 +21,9 @@
 
 package org.apache.qpid;
 
-import org.apache.qpid.framing.*;
+import org.apache.qpid.framing.AMQFrame;
+import org.apache.qpid.framing.MethodRegistry;
+import org.apache.qpid.framing.ProtocolVersion;
 import org.apache.qpid.protocol.AMQConstant;
 
 /**

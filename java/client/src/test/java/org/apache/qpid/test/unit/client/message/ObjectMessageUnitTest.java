@@ -20,12 +20,12 @@
  */
 package org.apache.qpid.test.unit.client.message;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-
 import org.apache.qpid.client.message.JMSObjectMessage;
 import org.apache.qpid.client.message.TestMessageHelper;
 import org.apache.qpid.test.utils.QpidTestCase;
+
+import java.util.ArrayList;
+import java.util.Arrays;
 
 public class ObjectMessageUnitTest extends QpidTestCase
 {

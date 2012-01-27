@@ -20,11 +20,11 @@
  */
 package org.apache.qpid.server.store.berkeleydb;
 
-import java.nio.ByteBuffer;
-
 import com.sleepycat.bind.tuple.TupleBinding;
 import com.sleepycat.bind.tuple.TupleInput;
 import com.sleepycat.bind.tuple.TupleOutput;
+
+import java.nio.ByteBuffer;
 
 public class ContentTB extends TupleBinding
 {

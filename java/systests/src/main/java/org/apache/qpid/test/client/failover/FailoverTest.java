@@ -21,9 +21,11 @@
 
 package org.apache.qpid.test.client.failover;
 
-import java.util.Random;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
+import org.apache.log4j.Logger;
+
+import org.apache.qpid.client.AMQConnection;
+import org.apache.qpid.jms.ConnectionListener;
+import org.apache.qpid.test.utils.FailoverBaseCase;
 
 import javax.jms.Connection;
 import javax.jms.JMSException;
@@ -34,11 +36,9 @@ import javax.jms.Queue;
 import javax.jms.Session;
 import javax.jms.TextMessage;
 import javax.naming.NamingException;
-
-import org.apache.log4j.Logger;
-import org.apache.qpid.client.AMQConnection;
-import org.apache.qpid.jms.ConnectionListener;
-import org.apache.qpid.test.utils.FailoverBaseCase;
+import java.util.Random;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 public class FailoverTest extends FailoverBaseCase implements ConnectionListener
 {

@@ -20,22 +20,10 @@
  */
 package org.apache.qpid.transport.network.security;
 
-import java.nio.ByteBuffer;
-
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLEngine;
-
-import org.apache.qpid.ssl.SSLContextFactory;
-import org.apache.qpid.transport.Connection;
-import org.apache.qpid.transport.ConnectionSettings;
 import org.apache.qpid.transport.Receiver;
 import org.apache.qpid.transport.Sender;
-import org.apache.qpid.transport.TransportException;
-import org.apache.qpid.transport.network.security.sasl.SASLReceiver;
-import org.apache.qpid.transport.network.security.sasl.SASLSender;
-import org.apache.qpid.transport.network.security.ssl.SSLReceiver;
-import org.apache.qpid.transport.network.security.ssl.SSLSender;
-import org.apache.qpid.transport.network.security.ssl.SSLUtil;
+
+import java.nio.ByteBuffer;
 
 public interface SecurityLayer
 {

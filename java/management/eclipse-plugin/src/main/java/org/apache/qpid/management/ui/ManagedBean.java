@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.management.ui;
 
+import org.apache.qpid.management.common.mbeans.ManagedBroker;
+
 import static org.apache.qpid.management.ui.Constants.ADMIN_MBEAN_TYPE;
 import static org.apache.qpid.management.ui.Constants.CONNECTION;
 import static org.apache.qpid.management.ui.Constants.DEFAULT_VH;
@@ -28,8 +30,6 @@ import static org.apache.qpid.management.ui.Constants.QUEUE;
 import static org.apache.qpid.management.ui.Constants.VIRTUAL_HOST;
 
 import java.util.HashMap;
-
-import org.apache.qpid.management.common.mbeans.ManagedBroker;
 
 /**
  * Class representing a managed bean on the managed server

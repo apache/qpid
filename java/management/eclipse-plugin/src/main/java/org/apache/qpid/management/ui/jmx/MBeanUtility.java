@@ -20,30 +20,6 @@
  */
 package org.apache.qpid.management.ui.jmx;
 
-import java.io.IOException;
-import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
-
-import javax.management.Attribute;
-import javax.management.AttributeList;
-import javax.management.InstanceNotFoundException;
-import javax.management.JMException;
-import javax.management.MBeanAttributeInfo;
-import javax.management.MBeanException;
-import javax.management.MBeanInfo;
-import javax.management.MBeanNotificationInfo;
-import javax.management.MBeanOperationInfo;
-import javax.management.MBeanServerConnection;
-import javax.management.MBeanServerInvocationHandler;
-import javax.management.MalformedObjectNameException;
-import javax.management.ObjectInstance;
-import javax.management.ObjectName;
-import javax.management.ReflectionException;
-
 import org.apache.qpid.management.common.mbeans.ServerInformation;
 import org.apache.qpid.management.ui.ApiVersion;
 import org.apache.qpid.management.ui.ApplicationRegistry;
@@ -58,6 +34,15 @@ import org.apache.qpid.management.ui.model.OperationData;
 import org.apache.qpid.management.ui.model.OperationDataModel;
 import org.apache.qpid.management.ui.model.ParameterData;
 import org.apache.qpid.management.ui.views.ViewUtility;
+
+import javax.management.*;
+import java.io.IOException;
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Utility class for all mbeanserver related operations. Keeps all JMX code out from view and model classes

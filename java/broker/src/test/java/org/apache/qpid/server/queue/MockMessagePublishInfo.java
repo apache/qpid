@@ -20,8 +20,8 @@
  */
 package org.apache.qpid.server.queue;
 
-import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 
 public class MockMessagePublishInfo implements MessagePublishInfo
 {

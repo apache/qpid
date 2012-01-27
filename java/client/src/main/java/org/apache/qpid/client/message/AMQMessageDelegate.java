@@ -25,7 +25,6 @@ import org.apache.qpid.client.AMQSession;
 
 import javax.jms.Destination;
 import javax.jms.JMSException;
-
 import java.util.Enumeration;
 import java.util.UUID;
 

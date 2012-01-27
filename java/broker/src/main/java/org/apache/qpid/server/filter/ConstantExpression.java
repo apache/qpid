@@ -23,9 +23,9 @@ package org.apache.qpid.server.filter;
 // Based on like named file from r450141 of the Apache ActiveMQ project <http://www.activemq.org/site/home.html>
 //
 
-import java.math.BigDecimal;
-
 import org.apache.qpid.server.queue.Filterable;
+
+import java.math.BigDecimal;
 
 /**
  * Represents a constant expression

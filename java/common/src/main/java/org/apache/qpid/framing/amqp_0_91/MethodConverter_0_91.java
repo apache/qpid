@@ -21,12 +21,16 @@
 
 package org.apache.qpid.framing.amqp_0_91;
 
+import org.apache.qpid.framing.AMQBody;
+import org.apache.qpid.framing.AMQMethodBody;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.BasicPublishBody;
+import org.apache.qpid.framing.ContentBody;
 import org.apache.qpid.framing.abstraction.AbstractMethodConverter;
-import org.apache.qpid.framing.abstraction.ProtocolVersionMethodConverter;
 import org.apache.qpid.framing.abstraction.ContentChunk;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.framing.abstraction.MessagePublishInfoImpl;
-import org.apache.qpid.framing.*;
+import org.apache.qpid.framing.abstraction.ProtocolVersionMethodConverter;
 
 public class MethodConverter_0_91 extends AbstractMethodConverter implements ProtocolVersionMethodConverter
 {

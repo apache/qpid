@@ -21,17 +21,16 @@ package org.apache.qpid.client.message;
  */
 
 
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.nio.ByteBuffer;
-
-import javax.jms.JMSException;
-import javax.jms.MessageFormatException;
-
 import org.apache.qpid.AMQException;
 import org.apache.qpid.transport.codec.BBDecoder;
 import org.apache.qpid.transport.codec.BBEncoder;
+
+import javax.jms.JMSException;
+import javax.jms.MessageFormatException;
+import java.nio.ByteBuffer;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 public class AMQPEncodedMapMessage extends JMSMapMessage
 {

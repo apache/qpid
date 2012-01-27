@@ -22,13 +22,22 @@ package org.apache.qpid.test.framework.distributedcircuit;
 
 import org.apache.log4j.Logger;
 
-import org.apache.qpid.test.framework.*;
-import org.apache.qpid.test.framework.distributedtesting.TestClientControlledTest;
-
 import org.apache.qpid.junit.extensions.util.ParsedProperties;
 import org.apache.qpid.junit.extensions.util.TestContextProperties;
+import org.apache.qpid.test.framework.CircuitEnd;
+import org.apache.qpid.test.framework.ExceptionMonitor;
+import org.apache.qpid.test.framework.LocalCircuitFactory;
+import org.apache.qpid.test.framework.MessageMonitor;
+import org.apache.qpid.test.framework.MessagingTestConfigProperties;
+import org.apache.qpid.test.framework.TestUtils;
+import org.apache.qpid.test.framework.distributedtesting.TestClientControlledTest;
 
-import javax.jms.*;
+import javax.jms.Connection;
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.MessageConsumer;
+import javax.jms.MessageProducer;
+import javax.jms.Session;
 
 /**
  * A TestClientCircuitEnd is a {@link CircuitEnd} that may be controlled from a

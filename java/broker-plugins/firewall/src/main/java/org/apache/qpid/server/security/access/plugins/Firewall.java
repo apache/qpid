@@ -20,11 +20,9 @@
  */
 package org.apache.qpid.server.security.access.plugins;
 
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
+
 import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
 import org.apache.qpid.server.security.AbstractPlugin;
 import org.apache.qpid.server.security.Result;
@@ -34,6 +32,9 @@ import org.apache.qpid.server.security.access.ObjectType;
 import org.apache.qpid.server.security.access.Operation;
 import org.apache.qpid.server.security.access.config.FirewallException;
 import org.apache.qpid.server.security.access.config.FirewallRule;
+
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
 
 public class Firewall extends AbstractPlugin
 {

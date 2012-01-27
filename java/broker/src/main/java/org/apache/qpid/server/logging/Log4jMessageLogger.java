@@ -22,6 +22,7 @@ package org.apache.qpid.server.logging;
 
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.server.configuration.ServerConfiguration;
 
 public class Log4jMessageLogger extends AbstractRootMessageLogger

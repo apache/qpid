@@ -20,10 +20,10 @@
  */
 package org.apache.qpid.server.subscription;
 
-import org.apache.qpid.server.util.InternalBrokerBaseCase;
-import org.apache.qpid.server.protocol.InternalTestProtocolSession;
-import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.server.protocol.InternalTestProtocolSession;
+import org.apache.qpid.server.util.InternalBrokerBaseCase;
 
 import java.util.List;
 

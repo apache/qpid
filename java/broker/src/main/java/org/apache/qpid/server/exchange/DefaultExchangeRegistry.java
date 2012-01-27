@@ -20,11 +20,8 @@
  */
 package org.apache.qpid.server.exchange;
 
-import java.util.Collection;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQSecurityException;
 import org.apache.qpid.exchange.ExchangeDefaults;
@@ -33,6 +30,10 @@ import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.queue.IncomingMessage;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+
+import java.util.Collection;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 public class DefaultExchangeRegistry implements ExchangeRegistry
 {

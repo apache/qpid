@@ -17,17 +17,15 @@
  */
 package org.apache.qpid.test.unit.xa;
 
-import javax.jms.*;
-import javax.transaction.xa.XAResource;
-import javax.transaction.xa.Xid;
-import javax.transaction.xa.XAException;
-
 import junit.framework.TestSuite;
-
-import java.util.concurrent.atomic.AtomicBoolean;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.jms.*;
+import javax.transaction.xa.XAException;
+import javax.transaction.xa.XAResource;
+import javax.transaction.xa.Xid;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  *

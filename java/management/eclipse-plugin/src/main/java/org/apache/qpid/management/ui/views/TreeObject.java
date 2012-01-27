@@ -20,12 +20,12 @@
  */
 package org.apache.qpid.management.ui.views;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import org.apache.qpid.management.ui.Constants;
 import org.apache.qpid.management.ui.ManagedBean;
 import org.apache.qpid.management.ui.ManagedObject;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class TreeObject
 {

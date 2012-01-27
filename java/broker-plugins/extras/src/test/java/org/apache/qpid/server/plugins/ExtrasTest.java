@@ -20,6 +20,7 @@ package org.apache.qpid.server.plugins;
 
 import junit.framework.TestCase;
 import org.apache.commons.configuration.PropertiesConfiguration;
+
 import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.exchange.ExchangeType;
 import org.apache.qpid.server.registry.ApplicationRegistry;

@@ -21,24 +21,23 @@
 
 package org.apache.qpid.server.security.auth.sasl;
 
-import java.io.File;
-import java.io.IOException;
-import java.security.MessageDigest;
-import java.security.Principal;
+import junit.framework.TestCase;
+import org.apache.commons.codec.binary.Hex;
+
+import org.apache.qpid.server.security.auth.database.Base64MD5PasswordFilePrincipalDatabase;
+import org.apache.qpid.server.security.auth.sasl.crammd5.CRAMMD5HexInitialiser;
+import org.apache.qpid.server.security.auth.sasl.crammd5.CRAMMD5HexSaslServer;
+import org.apache.qpid.server.security.auth.sasl.crammd5.CRAMMD5HexServerFactory;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import javax.security.auth.login.AccountNotFoundException;
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
-
-import junit.framework.TestCase;
-
-import org.apache.commons.codec.binary.Hex;
-import org.apache.qpid.server.security.auth.database.Base64MD5PasswordFilePrincipalDatabase;
-import org.apache.qpid.server.security.auth.sasl.crammd5.CRAMMD5HexInitialiser;
-import org.apache.qpid.server.security.auth.sasl.crammd5.CRAMMD5HexSaslServer;
-import org.apache.qpid.server.security.auth.sasl.crammd5.CRAMMD5HexServerFactory;
+import java.io.File;
+import java.io.IOException;
+import java.security.MessageDigest;
+import java.security.Principal;
 
 /**
  * Test for the CRAM-MD5-HEX SASL mechanism.

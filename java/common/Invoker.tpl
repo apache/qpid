@@ -21,10 +21,7 @@ package org.apache.qpid.transport;
  */
 
 
-import java.nio.ByteBuffer;
-import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 public abstract class $(invoker) {
 ${

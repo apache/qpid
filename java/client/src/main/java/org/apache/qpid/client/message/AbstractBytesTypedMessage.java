@@ -21,19 +21,13 @@
 
 package org.apache.qpid.client.message;
 
-import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.nio.charset.CharacterCodingException;
-import java.nio.charset.Charset;
-import java.nio.ByteBuffer;
+import org.apache.qpid.AMQException;
+import org.apache.qpid.transport.util.Functions;
 
 import javax.jms.JMSException;
 import javax.jms.MessageNotReadableException;
 import javax.jms.MessageNotWriteableException;
-
-import org.apache.qpid.AMQException;
-import org.apache.qpid.transport.util.Functions;
+import java.nio.ByteBuffer;
 
 /**
  * @author Apache Software Foundation

@@ -20,13 +20,13 @@
  */
 package org.apache.qpid.server.store.berkeleydb.tuples;
 
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.server.store.berkeleydb.AMQShortStringEncoding;
-import org.apache.qpid.server.store.berkeleydb.QueueEntryKey;
-
 import com.sleepycat.bind.tuple.TupleBinding;
 import com.sleepycat.bind.tuple.TupleInput;
 import com.sleepycat.bind.tuple.TupleOutput;
+
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.server.store.berkeleydb.AMQShortStringEncoding;
+import org.apache.qpid.server.store.berkeleydb.QueueEntryKey;
 
 public class QueueEntryTB extends TupleBinding<QueueEntryKey>
 {

@@ -20,16 +20,18 @@
  */
 package org.apache.qpid.client.message;
 
-import java.io.*;
-import java.nio.ByteBuffer;
+import org.apache.qpid.AMQException;
+import org.apache.qpid.client.util.ClassLoadingAwareObjectInputStream;
+import org.apache.qpid.util.ByteBufferInputStream;
 
 import javax.jms.JMSException;
 import javax.jms.MessageFormatException;
 import javax.jms.ObjectMessage;
-
-import org.apache.qpid.AMQException;
-import org.apache.qpid.client.util.ClassLoadingAwareObjectInputStream;
-import org.apache.qpid.util.ByteBufferInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
+import java.nio.ByteBuffer;
 
 public class JMSObjectMessage extends AbstractJMSMessage implements ObjectMessage
 {

@@ -20,11 +20,12 @@
  */
 package org.apache.qpid.management.ui.actions;
 
+import org.eclipse.jface.action.IAction;
+import org.eclipse.ui.IWorkbenchWindowActionDelegate;
+
 import org.apache.qpid.management.ui.jmx.MBeanUtility;
 import org.apache.qpid.management.ui.views.MBeanView;
 import org.apache.qpid.management.ui.views.NavigationView;
-import org.eclipse.jface.action.IAction;
-import org.eclipse.ui.IWorkbenchWindowActionDelegate;
 
 /**
  * This action refreshes both the views -Navigation and MBeanView

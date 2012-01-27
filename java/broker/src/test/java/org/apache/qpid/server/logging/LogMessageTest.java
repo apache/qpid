@@ -21,6 +21,7 @@
 package org.apache.qpid.server.logging;
 
 import junit.framework.TestCase;
+
 import org.apache.qpid.server.logging.messages.BrokerMessages;
 
 import java.util.Locale;

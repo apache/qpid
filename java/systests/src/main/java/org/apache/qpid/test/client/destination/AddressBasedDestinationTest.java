@@ -20,31 +20,8 @@
  */
 package org.apache.qpid.test.client.destination;
 
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.Hashtable;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-
-import javax.jms.Connection;
-import javax.jms.Destination;
-import javax.jms.JMSException;
-import javax.jms.Message;
-import javax.jms.MessageConsumer;
-import javax.jms.MessageProducer;
-import javax.jms.Queue;
-import javax.jms.QueueBrowser;
-import javax.jms.QueueReceiver;
-import javax.jms.QueueSession;
-import javax.jms.Session;
-import javax.jms.TextMessage;
-import javax.jms.Topic;
-import javax.jms.TopicSession;
-import javax.jms.TopicSubscriber;
-import javax.naming.Context;
-import javax.naming.InitialContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.client.AMQAnyDestination;
 import org.apache.qpid.client.AMQConnection;
@@ -58,8 +35,17 @@ import org.apache.qpid.jndi.PropertiesFileInitialContextFactory;
 import org.apache.qpid.messaging.Address;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.transport.ExecutionErrorCode;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import javax.jms.*;
+import javax.naming.Context;
+import javax.naming.InitialContext;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Hashtable;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 
 public class AddressBasedDestinationTest extends QpidBrokerTestCase
 {

@@ -21,29 +21,29 @@
 package org.apache.qpid.server.queue;
 
 import org.apache.commons.lang.time.FastDateFormat;
+
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.ContentBody;
+import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.management.common.mbeans.ManagedQueue;
 import org.apache.qpid.server.AMQChannel;
-import org.apache.qpid.server.util.InternalBrokerBaseCase;
 import org.apache.qpid.server.message.AMQMessage;
 import org.apache.qpid.server.message.MessageMetaData;
-import org.apache.qpid.server.subscription.Subscription;
-import org.apache.qpid.server.subscription.SubscriptionFactory;
-import org.apache.qpid.server.subscription.SubscriptionFactoryImpl;
 import org.apache.qpid.server.protocol.InternalTestProtocolSession;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
+import org.apache.qpid.server.subscription.Subscription;
+import org.apache.qpid.server.subscription.SubscriptionFactory;
+import org.apache.qpid.server.subscription.SubscriptionFactoryImpl;
+import org.apache.qpid.server.util.InternalBrokerBaseCase;
 
 import javax.management.JMException;
 import javax.management.openmbean.CompositeData;
 import javax.management.openmbean.CompositeDataSupport;
 import javax.management.openmbean.TabularData;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;

@@ -20,6 +20,8 @@
 package org.apache.qpid.test.unit.basic;
 
 import junit.framework.Assert;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQDestination;
@@ -28,15 +30,11 @@ import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.message.JMSObjectMessage;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageListener;
 import javax.jms.MessageNotWriteableException;
 import javax.jms.MessageProducer;
-
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Iterator;

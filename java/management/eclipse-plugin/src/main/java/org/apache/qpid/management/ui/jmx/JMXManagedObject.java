@@ -20,12 +20,11 @@
  */
 package org.apache.qpid.management.ui.jmx;
 
-import java.util.HashMap;
-import java.util.Map;
+import org.apache.qpid.management.ui.ManagedBean;
 
 import javax.management.ObjectName;
-
-import org.apache.qpid.management.ui.ManagedBean;
+import java.util.HashMap;
+import java.util.Map;
 
 
 public class JMXManagedObject extends ManagedBean

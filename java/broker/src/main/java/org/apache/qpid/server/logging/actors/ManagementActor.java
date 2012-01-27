@@ -22,13 +22,12 @@ package org.apache.qpid.server.logging.actors;
 
 import org.apache.qpid.server.logging.RootMessageLogger;
 
+import javax.management.remote.JMXPrincipal;
+import javax.security.auth.Subject;
 import java.security.AccessController;
 import java.security.Principal;
 import java.text.MessageFormat;
 import java.util.Set;
-
-import javax.management.remote.JMXPrincipal;
-import javax.security.auth.Subject;
 
 /**
  * NOTE: This actor is not thread safe.

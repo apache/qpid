@@ -20,12 +20,16 @@
  */
 package org.apache.qpid.server.exchange;
 
-import org.apache.qpid.management.common.mbeans.annotations.MBeanDescription;
 import org.apache.qpid.management.common.mbeans.annotations.MBeanConstructor;
+import org.apache.qpid.management.common.mbeans.annotations.MBeanDescription;
 import org.apache.qpid.server.binding.Binding;
 
 import javax.management.JMException;
-import javax.management.openmbean.*;
+import javax.management.openmbean.CompositeData;
+import javax.management.openmbean.CompositeDataSupport;
+import javax.management.openmbean.OpenDataException;
+import javax.management.openmbean.TabularData;
+import javax.management.openmbean.TabularDataSupport;
 import java.util.ArrayList;
 
 /**

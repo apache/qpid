@@ -21,12 +21,8 @@
 
 package org.apache.qpid.server.queue;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 import org.apache.commons.configuration.PropertiesConfiguration;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQInternalException;
 import org.apache.qpid.AMQSecurityException;
@@ -54,6 +50,12 @@ import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.InternalBrokerBaseCase;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostImpl;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 public class SimpleAMQQueueTest extends InternalBrokerBaseCase
 {

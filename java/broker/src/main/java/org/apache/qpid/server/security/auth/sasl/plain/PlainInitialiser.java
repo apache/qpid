@@ -20,9 +20,9 @@
  */
 package org.apache.qpid.server.security.auth.sasl.plain;
 
-import javax.security.sasl.SaslServerFactory;
-
 import org.apache.qpid.server.security.auth.sasl.UsernamePasswordInitialiser;
+
+import javax.security.sasl.SaslServerFactory;
 
 public class PlainInitialiser extends UsernamePasswordInitialiser
 {

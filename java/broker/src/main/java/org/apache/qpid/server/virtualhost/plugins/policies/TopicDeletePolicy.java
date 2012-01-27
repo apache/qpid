@@ -22,10 +22,10 @@ package org.apache.qpid.server.virtualhost.plugins.policies;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.binding.Binding;
-import org.apache.qpid.server.configuration.plugins.SlowConsumerDetectionPolicyConfiguration;
 import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
 import org.apache.qpid.server.exchange.TopicExchange;
 import org.apache.qpid.server.logging.actors.CurrentActor;

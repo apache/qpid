@@ -20,11 +20,12 @@
  */
 package org.apache.qpid.client.state;
 
-import org.apache.qpid.client.util.BlockingWaiter;
-import org.apache.qpid.client.failover.FailoverException;
-import org.apache.qpid.AMQException;
-import org.slf4j.LoggerFactory;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import org.apache.qpid.AMQException;
+import org.apache.qpid.client.failover.FailoverException;
+import org.apache.qpid.client.util.BlockingWaiter;
 
 import java.util.Set;
 

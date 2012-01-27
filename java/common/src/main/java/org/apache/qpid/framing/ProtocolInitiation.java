@@ -23,8 +23,9 @@ package org.apache.qpid.framing;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.codec.MarkableDataInput;
 
-import java.io.*;
-
+import java.io.DataOutput;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 
 public class ProtocolInitiation extends AMQDataBlock implements EncodableAMQDataBlock

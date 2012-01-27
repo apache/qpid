@@ -20,13 +20,12 @@
  */
 package org.apache.qpid.server.protocol;
 
-import junit.framework.TestCase;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.AMQChannel;
+import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.util.InternalBrokerBaseCase;
 import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.registry.ApplicationRegistry;
 
 /** Test class to test MBean operations for AMQMinaProtocolSession. */
 public class MaxChannelsTest extends InternalBrokerBaseCase

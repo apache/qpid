@@ -20,26 +20,12 @@
  */
 package org.apache.qpid.server.store.berkeleydb;
 
-import javax.jms.Connection;
-import javax.jms.DeliveryMode;
-import javax.jms.Destination;
-import javax.jms.ExceptionListener;
-import javax.jms.JMSException;
-import javax.jms.Message;
-import javax.jms.MessageConsumer;
-import javax.jms.MessageProducer;
-import javax.jms.Queue;
-import javax.jms.Session;
-import javax.jms.Topic;
-import javax.jms.TopicConnection;
-import javax.jms.TopicPublisher;
-import javax.jms.TopicSession;
-import javax.jms.TopicSubscriber;
-
 import junit.framework.TestCase;
 
 import org.apache.qpid.client.AMQConnectionFactory;
 import org.apache.qpid.url.URLSyntaxException;
+
+import javax.jms.*;
 
 /**
  * Prepares an older version brokers BDB store with the required 

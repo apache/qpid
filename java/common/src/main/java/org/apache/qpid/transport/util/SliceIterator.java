@@ -21,7 +21,6 @@
 package org.apache.qpid.transport.util;
 
 import java.nio.ByteBuffer;
-
 import java.util.Iterator;
 
 

@@ -20,9 +20,9 @@
  */
 package org.apache.qpid.management.ui.views;
 
-import java.util.List;
-
 import org.apache.qpid.management.ui.model.NotificationObject;
+
+import java.util.List;
 
 public interface INotificationViewer
 {

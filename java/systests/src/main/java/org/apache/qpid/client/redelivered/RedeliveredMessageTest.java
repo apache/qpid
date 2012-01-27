@@ -1,11 +1,12 @@
 package org.apache.qpid.client.redelivered;
 
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
+
 import javax.jms.Connection;
 import javax.jms.Destination;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.Session;
-import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 public class RedeliveredMessageTest extends QpidBrokerTestCase
 {

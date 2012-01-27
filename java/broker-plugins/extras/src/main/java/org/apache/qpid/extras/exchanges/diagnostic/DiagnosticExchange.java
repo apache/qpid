@@ -20,14 +20,8 @@
  */
 package org.apache.qpid.extras.exchanges.diagnostic;
 
-import java.util.ArrayList;
-import java.util.Map;
-
-import javax.management.JMException;
-import javax.management.openmbean.OpenDataException;
-import javax.management.openmbean.TabularData;
-
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
@@ -40,6 +34,12 @@ import org.apache.qpid.server.exchange.ExchangeType;
 import org.apache.qpid.server.message.InboundMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+
+import javax.management.JMException;
+import javax.management.openmbean.OpenDataException;
+import javax.management.openmbean.TabularData;
+import java.util.ArrayList;
+import java.util.Map;
 
 /**
  * This is a special diagnostic exchange type which doesn't actually do anything

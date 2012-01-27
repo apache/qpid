@@ -20,14 +20,6 @@
  */
 package org.apache.qpid.management.ui.views;
 
-import static org.apache.qpid.management.ui.Constants.*;
-
-import org.apache.qpid.management.ui.ApplicationRegistry;
-import org.apache.qpid.management.ui.ManagedBean;
-import org.apache.qpid.management.ui.jmx.JMXServerRegistry;
-import org.apache.qpid.management.ui.jmx.MBeanUtility;
-import org.apache.qpid.management.ui.model.AttributeData;
-import org.apache.qpid.management.ui.model.ManagedAttributeModel;
 import org.eclipse.jface.viewers.IColorProvider;
 import org.eclipse.jface.viewers.IFontProvider;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
@@ -76,6 +68,14 @@ import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 import org.eclipse.ui.forms.widgets.ScrolledForm;
+
+import org.apache.qpid.management.ui.ApplicationRegistry;
+import org.apache.qpid.management.ui.ManagedBean;
+import org.apache.qpid.management.ui.jmx.MBeanUtility;
+import org.apache.qpid.management.ui.model.AttributeData;
+import org.apache.qpid.management.ui.model.ManagedAttributeModel;
+
+import static org.apache.qpid.management.ui.Constants.*;
 
 
 /**

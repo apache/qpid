@@ -24,8 +24,6 @@ import org.apache.qpid.server.logging.RootMessageLogger;
 import org.apache.qpid.server.logging.subjects.QueueLogSubject;
 import org.apache.qpid.server.queue.AMQQueue;
 
-import java.text.MessageFormat;
-
 /**
  * This Actor is used when while the queue is performing an asynchronous process
  * of its queue.

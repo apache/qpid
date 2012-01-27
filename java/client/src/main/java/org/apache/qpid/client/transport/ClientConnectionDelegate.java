@@ -20,13 +20,11 @@
  */
 package org.apache.qpid.client.transport;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import javax.security.sasl.Sasl;
-import javax.security.sasl.SaslClient;
-import javax.security.sasl.SaslException;
+import org.ietf.jgss.GSSContext;
+import org.ietf.jgss.GSSException;
+import org.ietf.jgss.GSSManager;
+import org.ietf.jgss.GSSName;
+import org.ietf.jgss.Oid;
 
 import org.apache.qpid.client.security.AMQCallbackHandler;
 import org.apache.qpid.client.security.CallbackHandlerRegistry;
@@ -38,11 +36,13 @@ import org.apache.qpid.transport.ConnectionOpenOk;
 import org.apache.qpid.transport.ConnectionSettings;
 import org.apache.qpid.transport.util.Logger;
 import org.apache.qpid.util.Strings;
-import org.ietf.jgss.GSSContext;
-import org.ietf.jgss.GSSException;
-import org.ietf.jgss.GSSManager;
-import org.ietf.jgss.GSSName;
-import org.ietf.jgss.Oid;
+
+import javax.security.sasl.Sasl;
+import javax.security.sasl.SaslClient;
+import javax.security.sasl.SaslException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  *

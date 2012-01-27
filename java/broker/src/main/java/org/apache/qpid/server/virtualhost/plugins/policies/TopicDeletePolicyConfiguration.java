@@ -20,13 +20,14 @@
  */
 package org.apache.qpid.server.virtualhost.plugins.policies;
 
-import java.util.Arrays;
-import java.util.List;
-
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
+
 import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
 import org.apache.qpid.server.configuration.plugins.ConfigurationPluginFactory;
+
+import java.util.Arrays;
+import java.util.List;
 
 public class TopicDeletePolicyConfiguration extends ConfigurationPlugin
 {

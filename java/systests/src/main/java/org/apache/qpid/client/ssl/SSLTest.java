@@ -20,15 +20,14 @@
  */
 package org.apache.qpid.client.ssl;
 
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
-
-import javax.jms.Session;
-
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQTestConnection_0_10;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.transport.Connection;
+
+import javax.jms.Session;
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
 
 public class SSLTest extends QpidBrokerTestCase
 {

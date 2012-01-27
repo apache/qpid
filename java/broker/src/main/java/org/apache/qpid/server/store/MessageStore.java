@@ -20,9 +20,10 @@
  */
 package org.apache.qpid.server.store;
 
+import org.apache.commons.configuration.Configuration;
+
 import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.server.logging.LogSubject;
-import org.apache.commons.configuration.Configuration;
 import org.apache.qpid.server.message.EnqueableMessage;
 
 /**

@@ -21,14 +21,13 @@
 package org.apache.log4j.xml;
 
 
+import junit.framework.TestCase;
+import org.apache.log4j.xml.QpidLog4JConfigurator.IllegalLoggerLevelException;
+
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-
-import org.apache.log4j.xml.QpidLog4JConfigurator.IllegalLoggerLevelException;
-
-import junit.framework.TestCase;
 
 public class QpidLog4JConfiguratorTest extends TestCase
 {

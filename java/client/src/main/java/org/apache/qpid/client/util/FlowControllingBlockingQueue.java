@@ -20,12 +20,12 @@
  */
 package org.apache.qpid.client.util;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.Iterator;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * A blocking queue that emits events above a user specified threshold allowing the caller to take action (e.g. flow

@@ -20,7 +20,10 @@
  */
 package org.apache.qpid.test.client.timeouts;
 
-import java.io.File;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 import javax.jms.Connection;
 import javax.jms.JMSException;
@@ -29,13 +32,6 @@ import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.Session;
-
-import org.apache.commons.configuration.XMLConfiguration;
-import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.registry.ConfigurationFileApplicationRegistry;
-import org.apache.qpid.test.utils.QpidBrokerTestCase;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * This tests that when the commit takes a long time(due to POST_COMMIT_DELAY) that the commit does not timeout

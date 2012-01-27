@@ -21,14 +21,15 @@ package org.apache.qpid.server.queue;
  */
 
 
-import java.util.concurrent.Executor;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.subscription.Subscription;
+
+import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 
 class SubFlushRunner implements Runnable

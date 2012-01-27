@@ -20,11 +20,6 @@
  */
 package org.apache.qpid.management.ui;
 
-import java.io.File;
-import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.CopyOnWriteArrayList;
-
 import org.eclipse.jface.resource.FontRegistry;
 import org.eclipse.jface.resource.ImageRegistry;
 import org.eclipse.swt.SWT;
@@ -33,6 +28,11 @@ import org.eclipse.swt.graphics.FontData;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.ui.ISharedImages;
 import org.eclipse.ui.PlatformUI;
+
+import java.io.File;
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Main Application Registry, which contains shared resources and map to all connected servers.

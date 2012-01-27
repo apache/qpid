@@ -20,10 +20,10 @@
  */
 package org.apache.qpid.server.exchange.topic;
 
-import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.filter.MessageFilter;
 import org.apache.qpid.server.message.InboundMessage;
+import org.apache.qpid.server.queue.AMQQueue;
 
 import java.util.ArrayList;
 import java.util.Collection;

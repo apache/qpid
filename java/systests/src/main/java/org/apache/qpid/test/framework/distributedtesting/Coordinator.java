@@ -20,24 +20,11 @@
  */
 package org.apache.qpid.test.framework.distributedtesting;
 
-import java.net.InetAddress;
-import java.util.*;
-import java.util.concurrent.LinkedBlockingQueue;
-
-import javax.jms.*;
-
 import junit.framework.Test;
 import junit.framework.TestResult;
 import junit.framework.TestSuite;
-
 import org.apache.log4j.Logger;
 import org.apache.log4j.NDC;
-import org.apache.qpid.test.framework.FrameworkBaseCase;
-import org.apache.qpid.test.framework.MessagingTestConfigProperties;
-import org.apache.qpid.test.framework.TestClientDetails;
-import org.apache.qpid.test.framework.TestUtils;
-import org.apache.qpid.test.framework.clocksynch.UDPClockReference;
-import org.apache.qpid.test.utils.ConversationFactory;
 
 import org.apache.qpid.junit.extensions.TKTestRunner;
 import org.apache.qpid.junit.extensions.WrappedSuiteTestDecorator;
@@ -45,6 +32,26 @@ import org.apache.qpid.junit.extensions.util.CommandLineParser;
 import org.apache.qpid.junit.extensions.util.MathUtils;
 import org.apache.qpid.junit.extensions.util.ParsedProperties;
 import org.apache.qpid.junit.extensions.util.TestContextProperties;
+import org.apache.qpid.test.framework.FrameworkBaseCase;
+import org.apache.qpid.test.framework.MessagingTestConfigProperties;
+import org.apache.qpid.test.framework.TestClientDetails;
+import org.apache.qpid.test.framework.TestUtils;
+import org.apache.qpid.test.framework.clocksynch.UDPClockReference;
+import org.apache.qpid.test.utils.ConversationFactory;
+
+import javax.jms.Connection;
+import javax.jms.Destination;
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.Session;
+import java.net.InetAddress;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * <p/>Implements the coordinator client described in the interop testing specification

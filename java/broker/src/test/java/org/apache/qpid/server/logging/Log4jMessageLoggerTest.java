@@ -20,17 +20,17 @@
  */
 package org.apache.qpid.server.logging;
 
-import java.io.IOException;
-import java.util.LinkedList;
-import java.util.List;
-
 import junit.framework.TestCase;
-
 import org.apache.log4j.AppenderSkeleton;
 import org.apache.log4j.Level;
 import org.apache.log4j.Logger;
 import org.apache.log4j.spi.LoggingEvent;
+
 import org.apache.qpid.server.logging.actors.BrokerActor;
+
+import java.io.IOException;
+import java.util.LinkedList;
+import java.util.List;
 
 /** Test that the Log4jMessageLogger defaults behave as expected */
 public class Log4jMessageLoggerTest extends TestCase

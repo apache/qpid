@@ -20,11 +20,12 @@
  */
 package org.apache.qpid.management.ui.actions;
 
-import org.apache.qpid.management.ui.jmx.MBeanUtility;
-import org.apache.qpid.management.ui.views.MBeanView;
 import org.eclipse.jface.action.Action;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.actions.ActionFactory.IWorkbenchAction;
+
+import org.apache.qpid.management.ui.jmx.MBeanUtility;
+import org.apache.qpid.management.ui.views.MBeanView;
 
 
 public class BackAction extends Action implements IWorkbenchAction

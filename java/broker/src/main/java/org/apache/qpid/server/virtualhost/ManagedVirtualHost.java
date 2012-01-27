@@ -20,9 +20,9 @@
  */
 package org.apache.qpid.server.virtualhost;
 
-import java.io.IOException;
-
 import org.apache.qpid.management.common.mbeans.annotations.MBeanAttribute;
+
+import java.io.IOException;
 
 /**
  * The management interface exposed to allow management of a virtualHost

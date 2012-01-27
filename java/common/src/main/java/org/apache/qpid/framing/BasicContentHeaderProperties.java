@@ -20,13 +20,12 @@
  */
 package org.apache.qpid.framing;
 
-import java.io.DataInput;
-import java.io.DataInputStream;
-import java.io.DataOutput;
-import java.io.IOException;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 
 public class BasicContentHeaderProperties implements CommonContentHeaderProperties
 {

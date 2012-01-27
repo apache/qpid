@@ -20,10 +20,9 @@
  */
 package org.apache.qpid.server.security.auth.sasl.anonymous;
 
-import javax.security.sasl.SaslServerFactory;
-
 import org.apache.qpid.server.security.auth.sasl.UsernamePasswordInitialiser;
-import org.apache.qpid.server.security.auth.sasl.amqplain.AmqPlainSaslServerFactory;
+
+import javax.security.sasl.SaslServerFactory;
 
 public class AnonymousInitialiser extends UsernamePasswordInitialiser
 {

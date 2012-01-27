@@ -20,27 +20,6 @@
  */
 package org.apache.qpid.management.ui.views.users;
 
-import static org.apache.qpid.management.common.mbeans.UserManagement.RIGHTS_ADMIN;
-import static org.apache.qpid.management.common.mbeans.UserManagement.RIGHTS_READ_ONLY;
-import static org.apache.qpid.management.common.mbeans.UserManagement.RIGHTS_READ_WRITE;
-import static org.apache.qpid.management.common.mbeans.UserManagement.USERNAME;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-
-import javax.management.MBeanServerConnection;
-import javax.management.MBeanServerInvocationHandler;
-import javax.management.openmbean.CompositeData;
-import javax.management.openmbean.TabularDataSupport;
-
-import org.apache.qpid.management.ui.ApiVersion;
-import org.apache.qpid.management.ui.ApplicationRegistry;
-import org.apache.qpid.management.ui.ManagedBean;
-import org.apache.qpid.management.ui.jmx.JMXManagedObject;
-import org.apache.qpid.management.ui.jmx.MBeanUtility;
-import org.apache.qpid.management.ui.views.TabControl;
-import org.apache.qpid.management.ui.views.ViewUtility;
 import org.eclipse.jface.dialogs.InputDialog;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.IStructuredContentProvider;
@@ -69,6 +48,27 @@ import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 import org.eclipse.ui.forms.widgets.ScrolledForm;
+
+import org.apache.qpid.management.ui.ApiVersion;
+import org.apache.qpid.management.ui.ApplicationRegistry;
+import org.apache.qpid.management.ui.ManagedBean;
+import org.apache.qpid.management.ui.jmx.JMXManagedObject;
+import org.apache.qpid.management.ui.jmx.MBeanUtility;
+import org.apache.qpid.management.ui.views.TabControl;
+import org.apache.qpid.management.ui.views.ViewUtility;
+
+import static org.apache.qpid.management.common.mbeans.UserManagement.RIGHTS_ADMIN;
+import static org.apache.qpid.management.common.mbeans.UserManagement.RIGHTS_READ_ONLY;
+import static org.apache.qpid.management.common.mbeans.UserManagement.RIGHTS_READ_WRITE;
+import static org.apache.qpid.management.common.mbeans.UserManagement.USERNAME;
+
+import javax.management.MBeanServerConnection;
+import javax.management.MBeanServerInvocationHandler;
+import javax.management.openmbean.CompositeData;
+import javax.management.openmbean.TabularDataSupport;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
 
 
 /**

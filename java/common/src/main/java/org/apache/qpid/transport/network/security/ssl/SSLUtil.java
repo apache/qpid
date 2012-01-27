@@ -20,6 +20,11 @@
  */
 package org.apache.qpid.transport.network.security.ssl;
 
+import org.apache.qpid.transport.TransportException;
+import org.apache.qpid.transport.util.Logger;
+
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.SSLPeerUnverifiedException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -29,15 +34,6 @@ import java.security.KeyStore;
 import java.security.Principal;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
-
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLEngine;
-import javax.net.ssl.SSLPeerUnverifiedException;
-
-import org.apache.qpid.ssl.SSLContextFactory;
-import org.apache.qpid.transport.ConnectionSettings;
-import org.apache.qpid.transport.TransportException;
-import org.apache.qpid.transport.util.Logger;
 
 public class SSLUtil
 {
