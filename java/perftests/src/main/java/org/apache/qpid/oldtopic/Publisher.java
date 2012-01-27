@@ -61,7 +61,10 @@ public class Publisher implements MessageListener
         long[] times = new long[batches];
         for(int i = 0; i < batches; i++)
         {
-            if(i > 0) Thread.sleep(delay*1000);
+            if(i > 0)
+            {
+                Thread.sleep(delay*1000);
+            }
             times[i] = batch(msgCount, consumerCount);
             System.out.println("Batch " + (i+1) + " of " + batches + " completed in " + times[i] + " ms.");
         }

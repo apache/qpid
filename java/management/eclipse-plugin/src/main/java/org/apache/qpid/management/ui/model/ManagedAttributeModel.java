@@ -31,7 +31,9 @@ public class ManagedAttributeModel
     public void setAttributeValue(String name, Object value)
     {
         if (value == null)
+        {
             return;
+        }
         
         AttributeData data = null;
         String dataType = value.getClass().getName();

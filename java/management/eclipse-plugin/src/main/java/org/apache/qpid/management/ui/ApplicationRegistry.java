@@ -179,7 +179,9 @@ public abstract class ApplicationRegistry
     public static List<ManagedServer> getClosedServers()
     {
         if (_closedServerList.isEmpty())
+        {
             return null;
+        }
         
         List<ManagedServer> list = new CopyOnWriteArrayList<ManagedServer>(_closedServerList);
         _closedServerList.clear();

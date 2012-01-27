@@ -515,7 +515,9 @@ public class JMXServerRegistry extends ServerRegistry
     public List<ManagedBean> getObjectsToBeRemoved()
     {
         if (_mbeansToBeRemoved.isEmpty())
+        {
             return null;
+        }
         else
         {
             List<ManagedBean> list = new CopyOnWriteArrayList<ManagedBean>(_mbeansToBeRemoved);
@@ -548,7 +550,9 @@ public class JMXServerRegistry extends ServerRegistry
     {
         List<ManagedBean> list = getQueues(virtualHostName);
         if (list == null)
+        {
             return null;
+        }
         
         List<String> queueNames = new ArrayList<String>();
         for (ManagedBean mbean : list)
@@ -562,7 +566,9 @@ public class JMXServerRegistry extends ServerRegistry
     {
         List<ManagedBean> list = getExchanges(virtualHostName);
         if (list == null)
+        {
             return null;
+        }
         
         String[] exchanges = new String[list.size()];
         int i = 0;
@@ -577,7 +583,9 @@ public class JMXServerRegistry extends ServerRegistry
     {
         List<ManagedBean> list = getExchanges(virtualHostName);
         if (list == null)
+        {
             return null;
+        }
         
         String[] connections = new String[list.size()];
         int i = 0;

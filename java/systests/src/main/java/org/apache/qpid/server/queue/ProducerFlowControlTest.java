@@ -170,7 +170,7 @@ public class ProducerFlowControlTest extends AbstractTestLogging
         consumerConnection.start();
 
 
-        while(consumer.receive(1000) != null);
+        while(consumer.receive(1000) != null) {};
 
         results = waitAndFindMatches("QUE-1004");
 

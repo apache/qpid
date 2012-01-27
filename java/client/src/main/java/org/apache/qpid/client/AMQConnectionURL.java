@@ -50,7 +50,10 @@ public class AMQConnectionURL implements ConnectionURL
 
     public AMQConnectionURL(String fullURL) throws URLSyntaxException
     {
-        if (fullURL == null) throw new IllegalArgumentException("URL cannot be null");
+        if (fullURL == null)
+        {
+            throw new IllegalArgumentException("URL cannot be null");
+        }
         _url = fullURL;
         _options = new HashMap<String, String>();
         _brokers = new LinkedList<BrokerDetails>();

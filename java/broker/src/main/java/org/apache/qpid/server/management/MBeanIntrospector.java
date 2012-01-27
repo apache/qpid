@@ -327,7 +327,9 @@ class MBeanIntrospector {
                 paramInfo = new MBeanParameterInfo("p " + (i + 1), type, "parameter " + (i + 1));
             }
             if (paramInfo != null)
+            {
                 paramsInfo[i] = paramInfo;
+            }
         }
 
         return paramsInfo;
@@ -347,7 +349,9 @@ class MBeanIntrospector {
             MBeanConstructorInfo constructorInfo = getMBeanConstructorInfo(cons);
             //MBeanConstructorInfo constructorInfo = new MBeanConstructorInfo("desc", cons);
             if (constructorInfo != null)
+            {
                 constructors.add(constructorInfo);
+            }
         }
 
         return constructors.toArray(new MBeanConstructorInfo[0]);

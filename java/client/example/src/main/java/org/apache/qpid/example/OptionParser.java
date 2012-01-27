@@ -205,7 +205,9 @@ public class OptionParser
         if (op.startsWith("'"))
         {
             if (!op.endsWith("'")) 
+            {
                 throw new IllegalArgumentException(" The option " + op + " needs to be inside quotes");
+            }
             
             return op.substring(1,op.length() -1);
         }
