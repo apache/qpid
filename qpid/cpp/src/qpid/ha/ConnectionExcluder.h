@@ -41,15 +41,12 @@ namespace ha {
 class ConnectionExcluder : public broker::ConnectionObserver
 {
   public:
-    typedef boost::function<bool()> PrimaryTest;
-
-    ConnectionExcluder(PrimaryTest isPrimary_);
+    ConnectionExcluder();
 
     void opened(broker::Connection& connection);
 
   private:
     static const std::string ADMIN_TAG;
-    PrimaryTest isPrimary;
 };
 
 }} // namespace qpid::ha

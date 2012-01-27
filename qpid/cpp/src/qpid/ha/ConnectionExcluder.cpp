@@ -27,11 +27,10 @@
 namespace qpid {
 namespace ha {
 
-ConnectionExcluder::ConnectionExcluder(PrimaryTest isPrimary_) : isPrimary(isPrimary_) {}
+ConnectionExcluder::ConnectionExcluder() {}
 
 void ConnectionExcluder::opened(broker::Connection& connection) {
-    if (!isPrimary() && !connection.isLink()
-        && !connection.getClientProperties().isSet(ADMIN_TAG))
+    if (!connection.isLink() && !connection.getClientProperties().isSet(ADMIN_TAG))
         throw Exception(
             QPID_MSG("HA: Backup broker rejected connection " << connection.getMgmtId()));
 }

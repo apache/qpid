@@ -24,6 +24,7 @@
 
 #include "Settings.h"
 #include "qpid/Url.h"
+#include "qpid/sys/Mutex.h"
 #include "qmf/org/apache/qpid/ha/HaBroker.h"
 #include "qmf/org/apache/qpid/ha/ArgsHaBrokerSetStatus.h"
 #include "qpid/management/Manageable.h"
@@ -52,8 +53,8 @@ class HaBroker : public management::Manageable
     management::Manageable::status_t ManagementMethod (
         uint32_t methodId, management::Args& args, std::string& text);
 
-    bool isPrimary() const;
   private:
+    sys::Mutex lock;
     broker::Broker& broker;
     Settings settings;
     Url clientUrl, brokerUrl;
