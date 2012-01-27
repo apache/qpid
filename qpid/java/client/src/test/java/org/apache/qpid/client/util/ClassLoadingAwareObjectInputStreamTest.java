@@ -20,14 +20,14 @@
  */
 package org.apache.qpid.client.util;
 
+import org.apache.qpid.test.utils.QpidTestCase;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.ObjectOutputStream;
 import java.util.Arrays;
 import java.util.List;
-
-import org.apache.qpid.test.utils.QpidTestCase;
 
 public class ClassLoadingAwareObjectInputStreamTest extends QpidTestCase
 {

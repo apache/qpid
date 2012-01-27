@@ -21,15 +21,15 @@
 
 package org.apache.qpid.info.test;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
+import junit.framework.TestCase;
 
 import org.apache.qpid.info.Info;
 import org.apache.qpid.info.InfoServiceImpl;
 
-import junit.framework.TestCase;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 
 /*
  * This test verifies the invoke() method for the info service making sure that the parameters are returned

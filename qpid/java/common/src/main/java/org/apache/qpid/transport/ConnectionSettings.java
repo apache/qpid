@@ -20,9 +20,9 @@
  */
 package org.apache.qpid.transport;
 
-import java.util.Map;
-
 import org.apache.qpid.configuration.ClientProperties;
+
+import java.util.Map;
 
 /**
  * A ConnectionSettings object can only be associated with

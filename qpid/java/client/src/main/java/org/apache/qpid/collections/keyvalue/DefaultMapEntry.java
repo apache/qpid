@@ -15,10 +15,9 @@
  */
 package org.apache.qpid.collections.keyvalue;
 
-import java.util.Map;
-
 import org.apache.qpid.collections.KeyValue;
-import org.apache.qpid.collections.keyvalue.AbstractMapEntry;
+
+import java.util.Map;
 
 /**
  * A restricted implementation of {@link java.util.Map.Entry} that prevents

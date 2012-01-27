@@ -20,14 +20,13 @@
  */
 package org.apache.qpid.server.store;
 
+import org.apache.qpid.AMQStoreException;
+import org.apache.qpid.server.message.EnqueableMessage;
+import org.apache.qpid.server.queue.AMQQueue;
+
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import org.apache.qpid.AMQStoreException;
-import org.apache.qpid.server.message.EnqueableMessage;
-import org.apache.qpid.server.message.ServerMessage;
-import org.apache.qpid.server.queue.AMQQueue;
 
 /**
  * Adds some extra methods to the memory message store for testing purposes.

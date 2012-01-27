@@ -20,16 +20,17 @@
  */
 package org.apache.qpid.client.state;
 
-import org.apache.qpid.AMQException;
-import org.apache.qpid.client.protocol.AMQProtocolSession;
-import org.apache.qpid.framing.*;
-import org.apache.qpid.protocol.AMQMethodEvent;
-import org.apache.qpid.protocol.AMQMethodListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Set;
+import org.apache.qpid.AMQException;
+import org.apache.qpid.client.protocol.AMQProtocolSession;
+import org.apache.qpid.framing.AMQMethodBody;
+import org.apache.qpid.protocol.AMQMethodEvent;
+import org.apache.qpid.protocol.AMQMethodListener;
+
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**

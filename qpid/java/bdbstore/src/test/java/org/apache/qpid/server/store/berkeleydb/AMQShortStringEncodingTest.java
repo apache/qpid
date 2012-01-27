@@ -18,12 +18,11 @@
  */
 package org.apache.qpid.server.store.berkeleydb;
 
-import org.apache.qpid.framing.AMQShortString;
-
 import com.sleepycat.bind.tuple.TupleInput;
 import com.sleepycat.bind.tuple.TupleOutput;
-
 import junit.framework.TestCase;
+
+import org.apache.qpid.framing.AMQShortString;
 
 /**
  * Tests for {@code AMQShortStringEncoding} including corner cases when string

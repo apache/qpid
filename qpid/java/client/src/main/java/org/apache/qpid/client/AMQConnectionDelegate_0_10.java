@@ -21,16 +21,8 @@
 
 package org.apache.qpid.client;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CountDownLatch;
-
-import javax.jms.ExceptionListener;
-import javax.jms.JMSException;
-import javax.jms.XASession;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.client.failover.FailoverException;
@@ -53,8 +45,16 @@ import org.apache.qpid.transport.ProtocolVersionException;
 import org.apache.qpid.transport.SessionDetachCode;
 import org.apache.qpid.transport.SessionException;
 import org.apache.qpid.transport.TransportException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import javax.jms.ExceptionListener;
+import javax.jms.JMSException;
+import javax.jms.XASession;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 
 public class AMQConnectionDelegate_0_10 implements AMQConnectionDelegate, ConnectionListener
 {

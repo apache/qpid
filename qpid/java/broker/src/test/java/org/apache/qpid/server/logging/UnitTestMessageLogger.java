@@ -20,11 +20,10 @@
  */
 package org.apache.qpid.server.logging;
 
+import org.apache.qpid.server.configuration.ServerConfiguration;
+
 import java.util.LinkedList;
 import java.util.List;
-
-import org.apache.qpid.server.configuration.ServerConfiguration;
-import org.apache.qpid.server.logging.AbstractRootMessageLogger;
 
 public class UnitTestMessageLogger extends AbstractRootMessageLogger
 {

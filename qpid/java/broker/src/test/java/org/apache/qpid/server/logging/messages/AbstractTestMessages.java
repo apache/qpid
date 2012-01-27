@@ -20,10 +20,9 @@
  */
 package org.apache.qpid.server.logging.messages;
 
-import java.util.List;
-
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.PropertiesConfiguration;
+
 import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.logging.LogMessage;
 import org.apache.qpid.server.logging.LogSubject;
@@ -31,6 +30,8 @@ import org.apache.qpid.server.logging.UnitTestMessageLogger;
 import org.apache.qpid.server.logging.actors.TestLogActor;
 import org.apache.qpid.server.logging.subjects.TestBlankSubject;
 import org.apache.qpid.server.util.InternalBrokerBaseCase;
+
+import java.util.List;
 
 public abstract class AbstractTestMessages extends InternalBrokerBaseCase
 {

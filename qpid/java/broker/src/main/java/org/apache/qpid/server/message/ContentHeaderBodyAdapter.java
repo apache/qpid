@@ -20,8 +20,8 @@
  */
 package org.apache.qpid.server.message;
 
-import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
+import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.FieldTable;
 
 import java.util.Set;

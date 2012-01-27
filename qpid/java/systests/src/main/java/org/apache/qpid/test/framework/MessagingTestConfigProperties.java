@@ -23,7 +23,6 @@ package org.apache.qpid.test.framework;
 import org.apache.qpid.junit.extensions.util.ParsedProperties;
 
 import javax.jms.Session;
-
 import java.util.Properties;
 
 /**

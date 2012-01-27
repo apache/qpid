@@ -20,8 +20,8 @@
  */
 package org.apache.qpid.protocol;
 
-import org.apache.qpid.framing.AMQMethodBody;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.AMQMethodBody;
 
 /**
  * AMQMethodListener is a listener that receives notifications of AMQP methods. The methods are packaged as events in

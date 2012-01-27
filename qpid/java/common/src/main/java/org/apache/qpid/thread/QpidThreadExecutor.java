@@ -21,8 +21,6 @@
 
 package org.apache.qpid.thread;
 
-import org.apache.qpid.thread.Threading;
-
 import java.util.concurrent.Executor;
 
 public class QpidThreadExecutor implements Executor

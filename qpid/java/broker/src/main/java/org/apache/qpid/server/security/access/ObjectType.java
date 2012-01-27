@@ -18,7 +18,15 @@
  */
 package org.apache.qpid.server.security.access;
 
-import static org.apache.qpid.server.security.access.Operation.*;
+import static org.apache.qpid.server.security.access.Operation.ACCESS;
+import static org.apache.qpid.server.security.access.Operation.BIND;
+import static org.apache.qpid.server.security.access.Operation.CONSUME;
+import static org.apache.qpid.server.security.access.Operation.CREATE;
+import static org.apache.qpid.server.security.access.Operation.DELETE;
+import static org.apache.qpid.server.security.access.Operation.PUBLISH;
+import static org.apache.qpid.server.security.access.Operation.PURGE;
+import static org.apache.qpid.server.security.access.Operation.UNBIND;
+import static org.apache.qpid.server.security.access.Operation.UPDATE;
 
 import java.util.EnumSet;
 import java.util.Set;

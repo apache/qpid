@@ -20,14 +20,11 @@
  */
 package org.apache.qpid.client.message;
 
+import org.apache.qpid.AMQException;
+
 import javax.jms.JMSException;
 import javax.jms.StreamMessage;
-
 import java.nio.ByteBuffer;
-
-import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.BasicContentHeaderProperties;
 
 /**
  * @author Apache Software Foundation

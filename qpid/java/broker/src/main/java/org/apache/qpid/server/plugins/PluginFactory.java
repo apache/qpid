@@ -19,6 +19,7 @@
 package org.apache.qpid.server.plugins;
 
 import org.apache.commons.configuration.ConfigurationException;
+
 import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
 
 public interface PluginFactory<P extends Plugin>

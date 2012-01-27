@@ -17,11 +17,12 @@
  */
 package org.apache.qpid.filter;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.qpid.AMQInternalException;
 import org.apache.qpid.client.message.AbstractJMSMessage;
 import org.apache.qpid.filter.selector.SelectorParser;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 
 public class JMSSelectorFilter implements MessageFilter

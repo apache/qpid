@@ -21,13 +21,12 @@
 package org.apache.qpid.server.handler;
 
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.BasicRecoverBody;
-import org.apache.qpid.framing.BasicRecoverOkBody;
-import org.apache.qpid.framing.ProtocolVersion;
 import org.apache.qpid.framing.AMQMethodBody;
+import org.apache.qpid.framing.BasicRecoverBody;
+import org.apache.qpid.framing.ProtocolVersion;
 import org.apache.qpid.framing.amqp_8_0.MethodRegistry_8_0;
-import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.state.AMQStateManager;

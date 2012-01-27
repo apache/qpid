@@ -20,11 +20,11 @@
  */
 package org.apache.qpid.test.unit.client.connection;
 
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
+
 import javax.jms.Connection;
 import javax.jms.JMSException;
 import javax.jms.Session;
-
-import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 /**
  * ConnectionCloseTest

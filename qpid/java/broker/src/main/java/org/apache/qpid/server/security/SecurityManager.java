@@ -18,6 +18,19 @@
  */
 package org.apache.qpid.server.security;
 
+import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.ConfigurationException;
+import org.apache.log4j.Logger;
+
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
+import org.apache.qpid.server.configuration.plugins.ConfigurationPluginFactory;
+import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.plugins.PluginManager;
+import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.security.access.ObjectProperties;
+import org.apache.qpid.server.security.access.Operation;
+
 import static org.apache.qpid.server.security.access.ObjectType.EXCHANGE;
 import static org.apache.qpid.server.security.access.ObjectType.METHOD;
 import static org.apache.qpid.server.security.access.ObjectType.QUEUE;
@@ -30,25 +43,17 @@ import static org.apache.qpid.server.security.access.Operation.PUBLISH;
 import static org.apache.qpid.server.security.access.Operation.PURGE;
 import static org.apache.qpid.server.security.access.Operation.UNBIND;
 
+import javax.security.auth.Subject;
 import java.net.SocketAddress;
 import java.security.Principal;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
-
-import javax.security.auth.Subject;
-
-import org.apache.commons.configuration.Configuration;
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.log4j.Logger;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
-import org.apache.qpid.server.configuration.plugins.ConfigurationPluginFactory;
-import org.apache.qpid.server.exchange.Exchange;
-import org.apache.qpid.server.plugins.PluginManager;
-import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.security.access.ObjectProperties;
-import org.apache.qpid.server.security.access.Operation;
 
 /**
  * The security manager contains references to all loaded {@link SecurityPlugin}s and delegates security decisions to them based

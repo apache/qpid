@@ -20,11 +20,12 @@
 */
 package org.apache.qpid.server.queue;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.message.AMQMessage;
 import org.apache.qpid.server.message.ServerMessage;
+
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class SimpleQueueEntryListTest extends QueueEntryListTestBase
 {

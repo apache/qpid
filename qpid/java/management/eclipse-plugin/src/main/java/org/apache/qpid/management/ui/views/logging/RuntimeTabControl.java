@@ -20,27 +20,6 @@
  */
 package org.apache.qpid.management.ui.views.logging;
 
-import static org.apache.qpid.management.common.mbeans.LoggingManagement.LOGGER_LEVEL;
-import static org.apache.qpid.management.common.mbeans.LoggingManagement.LOGGER_NAME;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-
-import javax.management.MBeanServerConnection;
-import javax.management.MBeanServerInvocationHandler;
-import javax.management.openmbean.CompositeData;
-import javax.management.openmbean.CompositeDataSupport;
-import javax.management.openmbean.TabularDataSupport;
-
-import static org.apache.qpid.management.ui.Constants.FONT_BOLD;
-
-import org.apache.qpid.management.common.mbeans.LoggingManagement;
-import org.apache.qpid.management.ui.ApplicationRegistry;
-import org.apache.qpid.management.ui.ManagedBean;
-import org.apache.qpid.management.ui.jmx.JMXManagedObject;
-import org.apache.qpid.management.ui.jmx.MBeanUtility;
-import org.apache.qpid.management.ui.views.TabControl;
-import org.apache.qpid.management.ui.views.ViewUtility;
 import org.eclipse.jface.viewers.IColorProvider;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.ITableLabelProvider;
@@ -71,6 +50,26 @@ import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 import org.eclipse.ui.forms.widgets.ScrolledForm;
+
+import org.apache.qpid.management.common.mbeans.LoggingManagement;
+import org.apache.qpid.management.ui.ApplicationRegistry;
+import org.apache.qpid.management.ui.ManagedBean;
+import org.apache.qpid.management.ui.jmx.JMXManagedObject;
+import org.apache.qpid.management.ui.jmx.MBeanUtility;
+import org.apache.qpid.management.ui.views.TabControl;
+import org.apache.qpid.management.ui.views.ViewUtility;
+
+import static org.apache.qpid.management.common.mbeans.LoggingManagement.LOGGER_LEVEL;
+import static org.apache.qpid.management.common.mbeans.LoggingManagement.LOGGER_NAME;
+import static org.apache.qpid.management.ui.Constants.FONT_BOLD;
+
+import javax.management.MBeanServerConnection;
+import javax.management.MBeanServerInvocationHandler;
+import javax.management.openmbean.CompositeData;
+import javax.management.openmbean.CompositeDataSupport;
+import javax.management.openmbean.TabularDataSupport;
+import java.util.ArrayList;
+import java.util.HashMap;
 
 
 /**

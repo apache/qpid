@@ -20,18 +20,18 @@
  */
 package org.apache.qpid.framing;
 
+import junit.framework.Assert;
+import junit.framework.TestCase;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import org.apache.qpid.AMQPInvalidClassException;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-
-import junit.framework.Assert;
-import junit.framework.TestCase;
-
-import org.apache.qpid.AMQPInvalidClassException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class PropertyFieldTableTest extends TestCase
 {

@@ -20,10 +20,11 @@
  */
 package org.apache.qpid.server.logging.actors;
 
-import java.util.List;
-
 import org.apache.commons.configuration.ConfigurationException;
+
 import org.apache.qpid.AMQException;
+
+import java.util.List;
 
 /**
  * Test : AMQPChannelActorTest

@@ -21,21 +21,17 @@
 
 package org.apache.qpid.server.management;
 
+import org.apache.qpid.management.common.mbeans.UserManagement;
+import org.apache.qpid.server.security.auth.database.PlainPasswordFilePrincipalDatabase;
+import org.apache.qpid.server.security.auth.management.AMQUserManagementMBean;
+import org.apache.qpid.server.util.InternalBrokerBaseCase;
+
+import javax.management.openmbean.CompositeData;
+import javax.management.openmbean.TabularData;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-
-import javax.management.openmbean.CompositeData;
-import javax.management.openmbean.TabularData;
-
-
-import org.apache.commons.lang.NotImplementedException;
-import org.apache.qpid.management.common.mbeans.UserManagement;
-import org.apache.qpid.server.security.auth.database.PlainPasswordFilePrincipalDatabase;
-import org.apache.qpid.server.security.auth.management.AMQUserManagementMBean;
-
-import org.apache.qpid.server.util.InternalBrokerBaseCase;
 
 /** 
  * 

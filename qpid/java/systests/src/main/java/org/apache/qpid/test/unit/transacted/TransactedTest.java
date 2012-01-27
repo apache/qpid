@@ -21,15 +21,15 @@
 package org.apache.qpid.test.unit.transacted;
 
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.jms.Session;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.jms.Connection;
 import javax.jms.IllegalStateException;

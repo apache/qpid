@@ -22,6 +22,7 @@ package org.apache.qpid.server.configuration;
 
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
+
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
 import org.apache.qpid.server.configuration.plugins.ConfigurationPluginFactory;

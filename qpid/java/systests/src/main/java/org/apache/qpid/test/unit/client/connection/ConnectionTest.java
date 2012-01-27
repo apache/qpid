@@ -20,10 +20,6 @@
  */
 package org.apache.qpid.test.unit.client.connection;
 
-import javax.jms.Connection;
-import javax.jms.QueueSession;
-import javax.jms.TopicSession;
-
 import org.apache.qpid.AMQConnectionFailureException;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQUnresolvedAddressException;
@@ -39,6 +35,10 @@ import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.jms.ConnectionURL;
 import org.apache.qpid.jms.Session;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
+
+import javax.jms.Connection;
+import javax.jms.QueueSession;
+import javax.jms.TopicSession;
 
 public class ConnectionTest extends QpidBrokerTestCase
 {

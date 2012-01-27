@@ -20,22 +20,6 @@
  */
 package org.apache.qpid.management.ui.views;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map.Entry;
-
-import javax.management.openmbean.CompositeData;
-import javax.management.openmbean.TabularDataSupport;
-
-import static org.apache.qpid.management.ui.Constants.*;
-
-import org.apache.qpid.management.ui.ApplicationRegistry;
-import org.apache.qpid.management.ui.ManagedBean;
-import org.apache.qpid.management.ui.jmx.MBeanUtility;
-import org.apache.qpid.management.ui.model.OperationData;
-import org.apache.qpid.management.ui.model.ParameterData;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.ScrolledComposite;
 import org.eclipse.swt.events.KeyAdapter;
@@ -62,6 +46,22 @@ import org.eclipse.swt.widgets.TabFolder;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.forms.widgets.Form;
 import org.eclipse.ui.forms.widgets.FormToolkit;
+
+import org.apache.qpid.management.ui.ApplicationRegistry;
+import org.apache.qpid.management.ui.ManagedBean;
+import org.apache.qpid.management.ui.jmx.MBeanUtility;
+import org.apache.qpid.management.ui.model.OperationData;
+import org.apache.qpid.management.ui.model.ParameterData;
+
+import static org.apache.qpid.management.ui.Constants.*;
+
+import javax.management.openmbean.CompositeData;
+import javax.management.openmbean.TabularDataSupport;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map.Entry;
 
 
 /**

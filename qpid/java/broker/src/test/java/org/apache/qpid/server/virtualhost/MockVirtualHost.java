@@ -20,9 +20,6 @@
  */
 package org.apache.qpid.server.virtualhost;
 
-import java.util.Map;
-import java.util.UUID;
-
 import org.apache.qpid.server.binding.BindingFactory;
 import org.apache.qpid.server.configuration.BrokerConfig;
 import org.apache.qpid.server.configuration.ConfigStore;
@@ -42,6 +39,9 @@ import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 import org.apache.qpid.server.stats.StatisticsCounter;
 import org.apache.qpid.server.store.DurableConfigurationStore;
 import org.apache.qpid.server.store.MessageStore;
+
+import java.util.Map;
+import java.util.UUID;
 
 public class MockVirtualHost implements VirtualHost
 {

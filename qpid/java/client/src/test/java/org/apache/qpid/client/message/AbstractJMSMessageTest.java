@@ -21,9 +21,9 @@ package org.apache.qpid.client.message;
  */
 
 
-import javax.jms.JMSException;
-
 import junit.framework.TestCase;
+
+import javax.jms.JMSException;
 
 public class AbstractJMSMessageTest extends TestCase
 {

@@ -22,18 +22,21 @@ package org.apache.qpid.test.framework.distributedcircuit;
 
 import org.apache.log4j.Logger;
 
-import org.apache.qpid.test.framework.*;
-import org.apache.qpid.test.utils.ConversationFactory;
-
 import org.apache.qpid.junit.extensions.TimingController;
 import org.apache.qpid.junit.extensions.TimingControllerAware;
 import org.apache.qpid.junit.extensions.util.ParsedProperties;
+import org.apache.qpid.test.framework.Assertion;
+import org.apache.qpid.test.framework.Circuit;
+import org.apache.qpid.test.framework.Publisher;
+import org.apache.qpid.test.framework.Receiver;
+import org.apache.qpid.test.framework.TestClientDetails;
+import org.apache.qpid.test.framework.TestUtils;
+import org.apache.qpid.test.utils.ConversationFactory;
 
 import javax.jms.Destination;
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.Session;
-
 import java.util.LinkedList;
 import java.util.List;
 

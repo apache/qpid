@@ -20,9 +20,6 @@
  */
 package org.apache.qpid.management.ui;
 
-import org.apache.qpid.management.ui.jmx.MBeanUtility;
-import org.apache.qpid.management.ui.views.MBeanView;
-import org.apache.qpid.management.ui.views.NavigationView;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
@@ -36,6 +33,10 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.menus.WorkbenchWindowControlContribution;
+
+import org.apache.qpid.management.ui.jmx.MBeanUtility;
+import org.apache.qpid.management.ui.views.MBeanView;
+import org.apache.qpid.management.ui.views.NavigationView;
 
 public class RefreshIntervalComboPanel extends WorkbenchWindowControlContribution
 {

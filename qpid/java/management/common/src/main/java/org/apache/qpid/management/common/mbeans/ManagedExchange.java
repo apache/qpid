@@ -20,18 +20,17 @@
  */
 package org.apache.qpid.management.common.mbeans;
 
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import org.apache.qpid.management.common.mbeans.annotations.MBeanAttribute;
+import org.apache.qpid.management.common.mbeans.annotations.MBeanOperation;
+import org.apache.qpid.management.common.mbeans.annotations.MBeanOperationParameter;
 
 import javax.management.JMException;
 import javax.management.MBeanOperationInfo;
 import javax.management.openmbean.TabularData;
-
-import org.apache.qpid.management.common.mbeans.annotations.MBeanAttribute;
-import org.apache.qpid.management.common.mbeans.annotations.MBeanOperation;
-import org.apache.qpid.management.common.mbeans.annotations.MBeanOperationParameter;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * The management interface exposed to allow management of an Exchange.

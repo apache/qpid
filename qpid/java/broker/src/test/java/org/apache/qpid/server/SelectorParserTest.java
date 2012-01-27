@@ -1,8 +1,4 @@
-package org.apache.qpid.server;
-
-import junit.framework.TestCase;
-import org.apache.qpid.server.filter.JMSSelectorFilter;
-import org.apache.qpid.AMQException;/*
+/*
  *
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -22,6 +18,13 @@ import org.apache.qpid.AMQException;/*
  * under the License.
  *
  */
+
+package org.apache.qpid.server;
+
+import junit.framework.TestCase;
+
+import org.apache.qpid.AMQException;
+import org.apache.qpid.server.filter.JMSSelectorFilter;
 
 public class SelectorParserTest extends TestCase
 {

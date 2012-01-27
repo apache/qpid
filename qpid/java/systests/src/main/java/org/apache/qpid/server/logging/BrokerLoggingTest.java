@@ -23,11 +23,9 @@ package org.apache.qpid.server.logging;
 import junit.framework.AssertionFailedError;
 
 import org.apache.qpid.server.BrokerOptions;
-import org.apache.qpid.server.Main;
 import org.apache.qpid.transport.ConnectionException;
 import org.apache.qpid.util.LogMonitor;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.Socket;
 import java.util.List;

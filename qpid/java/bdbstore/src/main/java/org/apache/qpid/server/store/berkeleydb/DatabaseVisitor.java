@@ -20,10 +20,10 @@
  */
 package org.apache.qpid.server.store.berkeleydb;
 
-import org.apache.qpid.AMQStoreException;
-
 import com.sleepycat.je.DatabaseEntry;
 import com.sleepycat.je.DatabaseException;
+
+import org.apache.qpid.AMQStoreException;
 
 /** Visitor Interface so that each DatabaseEntry for a database can easily be processed. */
 public abstract class DatabaseVisitor

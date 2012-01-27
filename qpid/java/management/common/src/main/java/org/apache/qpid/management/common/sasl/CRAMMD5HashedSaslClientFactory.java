@@ -20,13 +20,12 @@
  */
 package org.apache.qpid.management.common.sasl;
 
-import java.util.Map;
-
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.sasl.Sasl;
 import javax.security.sasl.SaslClient;
 import javax.security.sasl.SaslClientFactory;
 import javax.security.sasl.SaslException;
+import java.util.Map;
 
 public class CRAMMD5HashedSaslClientFactory implements SaslClientFactory
 {

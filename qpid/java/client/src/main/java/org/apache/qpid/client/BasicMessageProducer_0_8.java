@@ -20,18 +20,9 @@
  */
 package org.apache.qpid.client;
 
-import java.util.UUID;
-
-import javax.jms.JMSException;
-import javax.jms.Message;
-import javax.jms.Topic;
-import javax.jms.Queue;
-
-import java.nio.ByteBuffer;
-
 import org.apache.qpid.AMQException;
-import org.apache.qpid.client.message.AbstractJMSMessage;
 import org.apache.qpid.client.message.AMQMessageDelegate_0_8;
+import org.apache.qpid.client.message.AbstractJMSMessage;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.framing.AMQFrame;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
@@ -41,6 +32,13 @@ import org.apache.qpid.framing.ContentBody;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.ExchangeDeclareBody;
 import org.apache.qpid.framing.MethodRegistry;
+
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.Queue;
+import javax.jms.Topic;
+import java.nio.ByteBuffer;
+import java.util.UUID;
 
 public class BasicMessageProducer_0_8 extends BasicMessageProducer
 {

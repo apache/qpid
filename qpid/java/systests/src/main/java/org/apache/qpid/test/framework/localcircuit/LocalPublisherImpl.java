@@ -20,9 +20,15 @@
  */
 package org.apache.qpid.test.framework.localcircuit;
 
-import org.apache.qpid.test.framework.*;
-
 import org.apache.qpid.junit.extensions.util.ParsedProperties;
+import org.apache.qpid.test.framework.Assertion;
+import org.apache.qpid.test.framework.AssertionBase;
+import org.apache.qpid.test.framework.CircuitEnd;
+import org.apache.qpid.test.framework.CircuitEndBase;
+import org.apache.qpid.test.framework.ExceptionMonitor;
+import org.apache.qpid.test.framework.MessageMonitor;
+import org.apache.qpid.test.framework.NotApplicableAssertion;
+import org.apache.qpid.test.framework.Publisher;
 
 import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;

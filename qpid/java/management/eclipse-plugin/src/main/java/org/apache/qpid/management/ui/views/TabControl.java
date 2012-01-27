@@ -20,12 +20,13 @@
  */
 package org.apache.qpid.management.ui.views;
 
-import java.util.ArrayList;
+import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.TabFolder;
 
 import org.apache.qpid.management.ui.ManagedBean;
 import org.apache.qpid.management.ui.model.OperationData;
-import org.eclipse.swt.widgets.Control;
-import org.eclipse.swt.widgets.TabFolder;
+
+import java.util.ArrayList;
 
 /**
  * Abstract class for all the control classes of tabs.

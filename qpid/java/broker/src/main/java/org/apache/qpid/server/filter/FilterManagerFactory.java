@@ -20,12 +20,13 @@
  */
 package org.apache.qpid.server.filter;
 
-import java.util.Map;
+import org.apache.log4j.Logger;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.framing.FieldTable;
-import org.apache.log4j.Logger;
+
+import java.util.Map;
 
 
 public class FilterManagerFactory

@@ -20,11 +20,11 @@
  */
 package org.apache.qpid.management.ui.views.users;
 
-import javax.management.MBeanOperationInfo;
-
 import org.apache.qpid.management.common.mbeans.UserManagement;
 import org.apache.qpid.management.common.mbeans.annotations.MBeanOperation;
 import org.apache.qpid.management.common.mbeans.annotations.MBeanOperationParameter;
+
+import javax.management.MBeanOperationInfo;
 
 /**
  * UserManagement interface extension to provide the method signatures

@@ -20,8 +20,8 @@
  */
 package org.apache.qpid.server.security.auth.sasl.crammd5;
 
-import org.apache.qpid.server.security.auth.sasl.UsernamePasswordInitialiser;
 import org.apache.qpid.server.security.auth.database.PrincipalDatabase;
+import org.apache.qpid.server.security.auth.sasl.UsernamePasswordInitialiser;
 
 import javax.security.sasl.SaslServerFactory;
 import java.util.Map;

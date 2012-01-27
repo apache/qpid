@@ -20,7 +20,7 @@
  */
 package org.apache.qpid.transport;
 
-import java.util.*;
+import java.util.List;
 
 
 /**

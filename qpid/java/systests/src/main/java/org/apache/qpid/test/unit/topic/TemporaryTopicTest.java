@@ -20,6 +20,8 @@
  */
 package org.apache.qpid.test.unit.topic;
 
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
+
 import javax.jms.Connection;
 import javax.jms.JMSException;
 import javax.jms.MessageConsumer;
@@ -27,8 +29,6 @@ import javax.jms.MessageProducer;
 import javax.jms.Session;
 import javax.jms.TemporaryTopic;
 import javax.jms.TextMessage;
-
-import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 
 /**

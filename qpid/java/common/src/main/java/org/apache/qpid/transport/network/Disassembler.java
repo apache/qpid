@@ -30,15 +30,17 @@ import org.apache.qpid.transport.SegmentType;
 import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.Struct;
 import org.apache.qpid.transport.codec.BBEncoder;
+
 import static org.apache.qpid.transport.network.Frame.FIRST_FRAME;
 import static org.apache.qpid.transport.network.Frame.FIRST_SEG;
 import static org.apache.qpid.transport.network.Frame.HEADER_SIZE;
 import static org.apache.qpid.transport.network.Frame.LAST_FRAME;
 import static org.apache.qpid.transport.network.Frame.LAST_SEG;
 
-import static java.lang.Math.min;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+
+import static java.lang.Math.min;
 
 /**
  * Disassembler

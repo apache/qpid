@@ -18,15 +18,16 @@
  */
 package org.apache.qpid.server.security.access.plugins;
 
-import java.util.Arrays;
-import java.util.List;
-
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
+
 import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
 import org.apache.qpid.server.configuration.plugins.ConfigurationPluginFactory;
 import org.apache.qpid.server.security.Result;
 import org.apache.qpid.server.security.SecurityPluginFactory;
+
+import java.util.Arrays;
+import java.util.List;
 
 /** Always Deny. */
 public class DenyAll extends BasicPlugin

@@ -20,11 +20,11 @@
  */
 package org.apache.qpid.server.connection;
 
-import java.util.List;
-
 import org.apache.qpid.AMQException;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.server.protocol.AMQConnectionModel;
+
+import java.util.List;
 
 public interface IConnectionRegistry
 {

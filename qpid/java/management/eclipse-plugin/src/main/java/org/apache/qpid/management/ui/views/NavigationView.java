@@ -20,31 +20,6 @@
  */
 package org.apache.qpid.management.ui.views;
 
-import static org.apache.qpid.management.ui.Constants.*;
-import static org.apache.qpid.management.ui.ApplicationRegistry.DATA_DIR;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-
-import org.apache.qpid.management.common.mbeans.ConfigurationManagement;
-import org.apache.qpid.management.common.mbeans.LoggingManagement;
-import org.apache.qpid.management.common.mbeans.ServerInformation;
-import org.apache.qpid.management.common.mbeans.UserManagement;
-import org.apache.qpid.management.ui.ApiVersion;
-import org.apache.qpid.management.ui.ApplicationRegistry;
-import org.apache.qpid.management.ui.ManagedBean;
-import org.apache.qpid.management.ui.ManagedObject;
-import org.apache.qpid.management.ui.ManagedServer;
-import org.apache.qpid.management.ui.ServerRegistry;
-import org.apache.qpid.management.ui.exceptions.InfoRequiredException;
-import org.apache.qpid.management.ui.exceptions.ManagementConsoleException;
-import org.apache.qpid.management.ui.jmx.JMXServerRegistry;
-import org.apache.qpid.management.ui.jmx.MBeanUtility;
 import org.eclipse.jface.preference.PreferenceStore;
 import org.eclipse.jface.viewers.DoubleClickEvent;
 import org.eclipse.jface.viewers.IDoubleClickListener;
@@ -75,6 +50,31 @@ import org.eclipse.swt.widgets.TreeItem;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.part.ViewPart;
+
+import org.apache.qpid.management.common.mbeans.ConfigurationManagement;
+import org.apache.qpid.management.common.mbeans.LoggingManagement;
+import org.apache.qpid.management.common.mbeans.ServerInformation;
+import org.apache.qpid.management.common.mbeans.UserManagement;
+import org.apache.qpid.management.ui.ApiVersion;
+import org.apache.qpid.management.ui.ApplicationRegistry;
+import org.apache.qpid.management.ui.ManagedBean;
+import org.apache.qpid.management.ui.ManagedObject;
+import org.apache.qpid.management.ui.ManagedServer;
+import org.apache.qpid.management.ui.ServerRegistry;
+import org.apache.qpid.management.ui.exceptions.InfoRequiredException;
+import org.apache.qpid.management.ui.exceptions.ManagementConsoleException;
+import org.apache.qpid.management.ui.jmx.JMXServerRegistry;
+import org.apache.qpid.management.ui.jmx.MBeanUtility;
+
+import static org.apache.qpid.management.ui.ApplicationRegistry.DATA_DIR;
+import static org.apache.qpid.management.ui.Constants.*;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Navigation View for navigating the managed servers and managed beans on

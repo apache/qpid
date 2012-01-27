@@ -20,18 +20,14 @@
  */
 package org.apache.qpid.management.ui.views;
 
-import static org.apache.qpid.management.ui.Constants.ATTRIBUTES;
-import static org.apache.qpid.management.ui.Constants.CONNECTION;
-import static org.apache.qpid.management.ui.Constants.EXCHANGE;
-import static org.apache.qpid.management.ui.Constants.EXCHANGE_TYPE;
-import static org.apache.qpid.management.ui.Constants.NOTIFICATIONS;
-import static org.apache.qpid.management.ui.Constants.QUEUE;
-
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.Map;
-
-import javax.management.MBeanServerConnection;
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.layout.FormAttachment;
+import org.eclipse.swt.layout.FormData;
+import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Event;
+import org.eclipse.swt.widgets.Listener;
+import org.eclipse.swt.widgets.TabFolder;
+import org.eclipse.swt.widgets.TabItem;
 
 import org.apache.qpid.management.ui.ApplicationRegistry;
 import org.apache.qpid.management.ui.ManagedServer;
@@ -41,25 +37,29 @@ import org.apache.qpid.management.ui.jmx.MBeanUtility;
 import org.apache.qpid.management.ui.model.NotificationInfoModel;
 import org.apache.qpid.management.ui.model.OperationData;
 import org.apache.qpid.management.ui.model.OperationDataModel;
+import org.apache.qpid.management.ui.views.connection.ConnectionOperationsTabControl;
+import org.apache.qpid.management.ui.views.exchange.ExchangeOperationsTabControl;
+import org.apache.qpid.management.ui.views.exchange.HeadersExchangeOperationsTabControl;
+import org.apache.qpid.management.ui.views.logging.ConfigurationFileTabControl;
+import org.apache.qpid.management.ui.views.logging.RuntimeTabControl;
 import org.apache.qpid.management.ui.views.queue.QueueOperationsTabControl;
 import org.apache.qpid.management.ui.views.type.ConnectionTypeTabControl;
 import org.apache.qpid.management.ui.views.type.ExchangeTypeTabControl;
 import org.apache.qpid.management.ui.views.type.QueueTypeTabControl;
 import org.apache.qpid.management.ui.views.users.UserManagementTabControl;
 import org.apache.qpid.management.ui.views.vhost.VHostTabControl;
-import org.apache.qpid.management.ui.views.connection.ConnectionOperationsTabControl;
-import org.apache.qpid.management.ui.views.exchange.ExchangeOperationsTabControl;
-import org.apache.qpid.management.ui.views.exchange.HeadersExchangeOperationsTabControl;
-import org.apache.qpid.management.ui.views.logging.ConfigurationFileTabControl;
-import org.apache.qpid.management.ui.views.logging.RuntimeTabControl;
-import org.eclipse.swt.SWT;
-import org.eclipse.swt.layout.FormAttachment;
-import org.eclipse.swt.layout.FormData;
-import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Event;
-import org.eclipse.swt.widgets.Listener;
-import org.eclipse.swt.widgets.TabFolder;
-import org.eclipse.swt.widgets.TabItem;
+
+import static org.apache.qpid.management.ui.Constants.ATTRIBUTES;
+import static org.apache.qpid.management.ui.Constants.CONNECTION;
+import static org.apache.qpid.management.ui.Constants.EXCHANGE;
+import static org.apache.qpid.management.ui.Constants.EXCHANGE_TYPE;
+import static org.apache.qpid.management.ui.Constants.NOTIFICATIONS;
+import static org.apache.qpid.management.ui.Constants.QUEUE;
+
+import javax.management.MBeanServerConnection;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.Map;
 
 public class MBeanTabFolderFactory
 {

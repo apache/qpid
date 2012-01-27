@@ -20,11 +20,11 @@
  */
 package org.apache.qpid.server.util;
 
+import junit.framework.TestCase;
+
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-
-import junit.framework.TestCase;
 
 public class LoggingProxyTest extends TestCase
 {

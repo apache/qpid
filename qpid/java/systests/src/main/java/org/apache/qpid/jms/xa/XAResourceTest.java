@@ -20,15 +20,15 @@
  */
 package org.apache.qpid.jms.xa;
 
-import javax.jms.XAConnection;
-import javax.jms.XAConnectionFactory;
-import javax.jms.XASession;
-import javax.transaction.xa.XAResource;
-
 import org.apache.qpid.client.AMQConnectionFactory;
 import org.apache.qpid.jms.ConnectionURL;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.apache.qpid.util.FileUtils;
+
+import javax.jms.XAConnection;
+import javax.jms.XAConnectionFactory;
+import javax.jms.XASession;
+import javax.transaction.xa.XAResource;
 
 public class XAResourceTest extends QpidBrokerTestCase
 {

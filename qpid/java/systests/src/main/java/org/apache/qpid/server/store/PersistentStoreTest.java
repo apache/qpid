@@ -32,7 +32,6 @@ import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.Session;
-
 import java.util.ArrayList;
 import java.util.List;
 

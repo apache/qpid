@@ -26,12 +26,12 @@
  */
 package org.apache.qpid.server.output;
 
+import org.apache.qpid.framing.ProtocolVersion;
 import org.apache.qpid.server.output.ProtocolOutputConverter.Factory;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
-import org.apache.qpid.framing.ProtocolVersion;
 
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Map;
 
 public class ProtocolOutputConverterRegistry
 {

@@ -1,8 +1,18 @@
 package org.apache.qpid.server.exchange.headers;
 
-import org.apache.qpid.framing.*;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.AMQType;
+import org.apache.qpid.framing.AMQTypedValue;
+import org.apache.qpid.framing.FieldTable;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /*
 *

@@ -20,18 +20,17 @@
  */
 package org.apache.qpid.test.unit.jndi;
 
-import java.util.Properties;
+import junit.framework.TestCase;
+
+import org.apache.qpid.client.AMQDestination;
+import org.apache.qpid.framing.AMQShortString;
 
 import javax.jms.Queue;
 import javax.jms.Topic;
 import javax.naming.ConfigurationException;
 import javax.naming.Context;
 import javax.naming.InitialContext;
-
-import org.apache.qpid.client.AMQDestination;
-import org.apache.qpid.framing.AMQShortString;
-
-import junit.framework.TestCase;
+import java.util.Properties;
 
 public class JNDIPropertyFileTest extends TestCase
 {

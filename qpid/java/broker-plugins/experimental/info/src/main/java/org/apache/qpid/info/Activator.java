@@ -21,11 +21,12 @@
 
 package org.apache.qpid.info;
 
+import org.osgi.framework.BundleActivator;
+import org.osgi.framework.BundleContext;
+
 import org.apache.qpid.info.util.HttpPoster;
 import org.apache.qpid.info.util.IniFileReader;
 import org.apache.qpid.info.util.SoapClient;
-import org.osgi.framework.BundleActivator;
-import org.osgi.framework.BundleContext;
 
 import java.io.File;
 import java.util.Arrays;

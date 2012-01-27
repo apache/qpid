@@ -21,14 +21,12 @@
 package org.apache.qpid.test.unit.close;
 
 import junit.framework.Assert;
-
-import org.apache.qpid.test.utils.QpidBrokerTestCase;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.junit.concurrency.TestRunnable;
 import org.apache.qpid.junit.concurrency.ThreadTestCoordinator;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 import javax.jms.Connection;
 import javax.jms.Message;

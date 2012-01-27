@@ -22,6 +22,7 @@
 package org.apache.qpid.test.client;
 
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 import javax.jms.Connection;

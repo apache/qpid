@@ -20,9 +20,9 @@
  */
 package org.apache.qpid.jms;
 
-import java.util.Map;
-
 import org.apache.qpid.transport.ConnectionSettings;
+
+import java.util.Map;
 
 public interface BrokerDetails
 {

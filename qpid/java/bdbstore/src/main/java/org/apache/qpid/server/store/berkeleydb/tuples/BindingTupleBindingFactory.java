@@ -20,9 +20,9 @@
  */
 package org.apache.qpid.server.store.berkeleydb.tuples;
 
-import org.apache.qpid.server.store.berkeleydb.BindingKey;
-
 import com.sleepycat.bind.tuple.TupleBinding;
+
+import org.apache.qpid.server.store.berkeleydb.BindingKey;
 
 public class BindingTupleBindingFactory extends TupleBindingFactory<BindingKey>
 {

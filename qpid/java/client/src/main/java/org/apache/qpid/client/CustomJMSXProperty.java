@@ -20,12 +20,12 @@
  */
 package org.apache.qpid.client;
 
+import org.apache.qpid.framing.AMQShortString;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
-
-import org.apache.qpid.framing.AMQShortString;
 
 public enum CustomJMSXProperty
 {

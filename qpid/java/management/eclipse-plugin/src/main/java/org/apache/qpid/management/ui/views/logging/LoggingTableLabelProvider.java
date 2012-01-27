@@ -20,15 +20,14 @@
  */
 package org.apache.qpid.management.ui.views.logging;
 
-import static org.apache.qpid.management.common.mbeans.LoggingManagement.LOGGER_LEVEL;
-import static org.apache.qpid.management.common.mbeans.LoggingManagement.LOGGER_NAME;
-
-
-import javax.management.openmbean.CompositeDataSupport;
-
 import org.eclipse.jface.viewers.ITableLabelProvider;
 import org.eclipse.jface.viewers.LabelProvider;
 import org.eclipse.swt.graphics.Image;
+
+import static org.apache.qpid.management.common.mbeans.LoggingManagement.LOGGER_LEVEL;
+import static org.apache.qpid.management.common.mbeans.LoggingManagement.LOGGER_NAME;
+
+import javax.management.openmbean.CompositeDataSupport;
 
 /**
  * Label Provider class for the LoggingManagement table viewers

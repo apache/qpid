@@ -20,21 +20,23 @@
  */
 package org.apache.qpid.server.protocol;
 
-import javax.security.auth.Subject;
-import javax.security.sasl.SaslServer;
-
+import org.apache.qpid.AMQConnectionException;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.common.ClientProperties;
-import org.apache.qpid.framing.*;
-import org.apache.qpid.AMQConnectionException;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.framing.MethodDispatcher;
+import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
 import org.apache.qpid.server.AMQChannel;
-import org.apache.qpid.server.security.AuthorizationHolder;
 import org.apache.qpid.server.logging.LogActor;
 import org.apache.qpid.server.output.ProtocolOutputConverter;
+import org.apache.qpid.server.security.AuthorizationHolder;
 import org.apache.qpid.server.subscription.ClientDeliveryMethod;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 
+import javax.security.auth.Subject;
+import javax.security.sasl.SaslServer;
 import java.util.List;
 
 

@@ -20,15 +20,14 @@
  */
 package org.apache.qpid.client.security;
 
-import java.io.IOException;
-import java.util.Properties;
+import org.apache.qpid.jms.ConnectionURL;
+import org.apache.qpid.test.utils.QpidTestCase;
 
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.callback.UnsupportedCallbackException;
-
-import org.apache.qpid.jms.ConnectionURL;
-import org.apache.qpid.test.utils.QpidTestCase;
+import java.io.IOException;
+import java.util.Properties;
 
 
 /**

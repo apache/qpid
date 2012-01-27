@@ -30,9 +30,6 @@
  
 package org.apache.qpid.framing;
 
-import org.apache.qpid.AMQException;
-
-
 public interface MethodDispatcher extends
                      ClientMethodDispatcher, ServerMethodDispatcher
 {

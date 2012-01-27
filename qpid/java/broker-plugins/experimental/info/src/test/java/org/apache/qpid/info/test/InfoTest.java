@@ -21,10 +21,12 @@
 
 package org.apache.qpid.info.test;
 
+import junit.framework.TestCase;
+
+import org.apache.qpid.info.Info;
+
 import java.util.HashMap;
 import java.util.Properties;
-import junit.framework.TestCase;
-import org.apache.qpid.info.Info;
 
 /*
  * This test verifies the toString(), toProps(), toXML() and toStringBuffer() methods of the Info object

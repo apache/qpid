@@ -21,11 +21,11 @@
 package org.apache.qpid.server.message;
 
 import org.apache.qpid.transport.DeliveryProperties;
-import org.apache.qpid.transport.MessageProperties;
 import org.apache.qpid.transport.MessageDeliveryPriority;
+import org.apache.qpid.transport.MessageProperties;
 
-import java.util.Set;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 class MessageTransferHeader implements AMQMessageHeader

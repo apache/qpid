@@ -1,10 +1,10 @@
 package org.apache.qpid.server.queue;
 
-import java.util.Map;
-
 import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.subscription.SubscriptionList;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+
+import java.util.Map;
 
 public abstract class OutOfOrderQueue extends SimpleAMQQueue
 {

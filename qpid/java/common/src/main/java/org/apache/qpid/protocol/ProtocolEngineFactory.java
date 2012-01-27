@@ -20,9 +20,7 @@
  */
 package org.apache.qpid.protocol;
 
-import org.apache.qpid.transport.network.NetworkConnection;
-
-public interface ProtocolEngineFactory  
+public interface ProtocolEngineFactory
 { 
  
   // Returns a new instance of a ProtocolEngine 

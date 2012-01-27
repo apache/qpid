@@ -21,6 +21,7 @@
 package org.apache.qpid.test.utils;
 
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.server.Broker;
 
 public class InternalBrokerHolder implements BrokerHolder

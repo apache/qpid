@@ -20,15 +20,14 @@
  */
 package org.apache.qpid.management.common.mbeans;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-
 import org.apache.qpid.management.common.mbeans.annotations.MBeanOperation;
 import org.apache.qpid.management.common.mbeans.annotations.MBeanOperationParameter;
 
-import javax.management.openmbean.TabularData;
 import javax.management.MBeanOperationInfo;
+import javax.management.openmbean.TabularData;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 public interface UserManagement
 {

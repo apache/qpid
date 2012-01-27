@@ -20,14 +20,13 @@
  */
 package org.apache.qpid.management.jmx;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import javax.jms.Connection;
-
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.management.common.mbeans.ManagedBroker;
 import org.apache.qpid.management.common.mbeans.ManagedConnection;
+
+import javax.jms.Connection;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Test enabling generation of message statistics on a per-connection basis.

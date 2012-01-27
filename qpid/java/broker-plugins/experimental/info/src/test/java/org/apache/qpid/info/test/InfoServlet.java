@@ -21,13 +21,13 @@
 
 package org.apache.qpid.info.test;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.PrintWriter;
 import javax.servlet.GenericServlet;
 import javax.servlet.ServletException;
 import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.PrintWriter;
 
 /*
  * This is a servlet used by the embedded Jetty to be able to receive http post

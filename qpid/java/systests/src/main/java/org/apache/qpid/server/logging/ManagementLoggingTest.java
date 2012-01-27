@@ -25,8 +25,8 @@ import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.test.utils.JMXTestUtils;
 import org.apache.qpid.util.LogMonitor;
 
-import java.util.List;
 import java.io.File;
+import java.util.List;
 
 /**
  * Management Console Test Suite

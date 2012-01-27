@@ -20,12 +20,12 @@
  */
 package org.apache.qpid.server.handler;
 
-import java.util.Map;
-import java.util.HashMap;
-
-import org.apache.qpid.server.state.AMQStateManager;
-import org.apache.qpid.framing.*;
 import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.*;
+import org.apache.qpid.server.state.AMQStateManager;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class ServerMethodDispatcherImpl implements MethodDispatcher
 {

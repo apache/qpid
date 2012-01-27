@@ -20,11 +20,11 @@
  */
 package org.apache.qpid.messaging;
 
-import java.util.Map;
-
 import org.apache.qpid.messaging.util.AddressParser;
 
 import static org.apache.qpid.messaging.util.PyPrint.pprint;
+
+import java.util.Map;
 
 
 /**

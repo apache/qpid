@@ -21,10 +21,12 @@
 
 package org.apache.qpid.management.common;
 
-import java.io.IOException;
-import java.security.Security;
-import java.util.HashMap;
-import java.util.Map;
+import org.apache.qpid.management.common.sasl.CRAMMD5HashedSaslClientFactory;
+import org.apache.qpid.management.common.sasl.Constants;
+import org.apache.qpid.management.common.sasl.JCAProvider;
+import org.apache.qpid.management.common.sasl.SaslProvider;
+import org.apache.qpid.management.common.sasl.UserPasswordCallbackHandler;
+import org.apache.qpid.management.common.sasl.UsernameHashedPasswordCallbackHandler;
 
 import javax.management.remote.JMXConnector;
 import javax.management.remote.JMXConnectorFactory;
@@ -32,13 +34,10 @@ import javax.management.remote.JMXServiceURL;
 import javax.net.ssl.SSLException;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.sasl.SaslClientFactory;
-
-import org.apache.qpid.management.common.sasl.CRAMMD5HashedSaslClientFactory;
-import org.apache.qpid.management.common.sasl.Constants;
-import org.apache.qpid.management.common.sasl.JCAProvider;
-import org.apache.qpid.management.common.sasl.SaslProvider;
-import org.apache.qpid.management.common.sasl.UserPasswordCallbackHandler;
-import org.apache.qpid.management.common.sasl.UsernameHashedPasswordCallbackHandler;
+import java.io.IOException;
+import java.security.Security;
+import java.util.HashMap;
+import java.util.Map;
 
 public class JMXConnnectionFactory {
 	

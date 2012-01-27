@@ -20,12 +20,11 @@
  */
 package org.apache.qpid.server.ack;
 
-import java.util.Collection;
-import java.util.Set;
-import java.util.Map;
-
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.queue.QueueEntry;
+
+import java.util.Collection;
+import java.util.Set;
 
 
 public interface UnacknowledgedMessageMap

@@ -20,16 +20,15 @@
  */
 package org.apache.qpid.management.common.mbeans;
 
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
-import java.util.List;
+import junit.framework.TestCase;
 
 import javax.management.MBeanAttributeInfo;
 import javax.management.NotCompliantMBeanException;
 import javax.management.StandardMBean;
-
-import junit.framework.TestCase;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
+import java.util.List;
 
 public class ManagedQueueTest extends TestCase
 {

@@ -20,12 +20,11 @@
  */
 package org.apache.qpid.management.ui.views.logging;
 
-import java.util.Collection;
-
-import javax.management.openmbean.TabularDataSupport;
-
 import org.eclipse.jface.viewers.IStructuredContentProvider;
 import org.eclipse.jface.viewers.Viewer;
+
+import javax.management.openmbean.TabularDataSupport;
+import java.util.Collection;
 
 /**
  * Content Provider class for theLogging Management table viewers

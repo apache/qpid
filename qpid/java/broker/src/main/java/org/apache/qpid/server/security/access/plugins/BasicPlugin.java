@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.server.security.access.plugins;
 
-import org.apache.commons.configuration.ConfigurationException;
 import org.apache.qpid.server.security.AbstractPlugin;
 import org.apache.qpid.server.security.Result;
 import org.apache.qpid.server.security.SecurityPlugin;

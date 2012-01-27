@@ -20,9 +20,10 @@
  */
 package org.apache.qpid.test.unit.client.forwardall;
 
-import org.apache.qpid.test.utils.QpidBrokerTestCase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 /**
  * Runs the Service's and Client parts of the test in the same process

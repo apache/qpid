@@ -21,6 +21,7 @@ package org.apache.qpid.server.virtualhost.plugins;
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.XMLConfiguration;
+
 import org.apache.qpid.server.configuration.plugins.SlowConsumerDetectionQueueConfiguration;
 import org.apache.qpid.server.util.InternalBrokerBaseCase;
 

@@ -20,10 +20,10 @@
  */
 package org.apache.qpid.transport.network;
 
-import javax.net.ssl.SSLContext;
-
 import org.apache.qpid.protocol.ProtocolEngineFactory;
 import org.apache.qpid.transport.NetworkTransportConfiguration;
+
+import javax.net.ssl.SSLContext;
 
 public interface IncomingNetworkTransport extends NetworkTransport
 {

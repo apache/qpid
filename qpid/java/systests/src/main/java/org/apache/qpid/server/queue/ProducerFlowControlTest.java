@@ -21,21 +21,29 @@
 package org.apache.qpid.server.queue;
 
 import org.apache.log4j.Logger;
-import org.apache.qpid.client.AMQSession;
-import org.apache.qpid.client.AMQDestination;
+
 import org.apache.qpid.AMQException;
+import org.apache.qpid.client.AMQDestination;
+import org.apache.qpid.client.AMQSession;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.management.common.mbeans.ManagedQueue;
 import org.apache.qpid.server.logging.AbstractTestLogging;
 import org.apache.qpid.test.utils.JMXTestUtils;
-import org.apache.qpid.framing.AMQShortString;
 
-import javax.jms.*;
+import javax.jms.BytesMessage;
+import javax.jms.Connection;
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.MessageConsumer;
+import javax.jms.MessageProducer;
+import javax.jms.Queue;
+import javax.jms.Session;
 import javax.naming.NamingException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class ProducerFlowControlTest extends AbstractTestLogging
 {

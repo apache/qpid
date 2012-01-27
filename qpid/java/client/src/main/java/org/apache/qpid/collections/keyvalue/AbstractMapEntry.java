@@ -17,8 +17,6 @@ package org.apache.qpid.collections.keyvalue;
 
 import java.util.Map;
 
-import org.apache.qpid.collections.keyvalue.AbstractKeyValue;
-
 /**
  * Abstract Pair class to assist with creating correct
  * {@link java.util.Map.Entry Map.Entry} implementations.

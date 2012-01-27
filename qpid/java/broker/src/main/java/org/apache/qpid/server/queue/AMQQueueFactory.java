@@ -20,8 +20,6 @@
  */
 package org.apache.qpid.server.queue;
 
-import java.util.HashMap;
-import java.util.Map;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQSecurityException;
 import org.apache.qpid.exchange.ExchangeDefaults;
@@ -34,6 +32,9 @@ import org.apache.qpid.server.exchange.ExchangeFactory;
 import org.apache.qpid.server.exchange.ExchangeRegistry;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class AMQQueueFactory
 {

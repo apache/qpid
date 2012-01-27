@@ -21,6 +21,7 @@
 package org.apache.qpid.server.virtualhost;
 
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.server.logging.RootMessageLogger;
 import org.apache.qpid.server.logging.actors.AbstractActor;
 import org.apache.qpid.server.logging.actors.CurrentActor;

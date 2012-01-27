@@ -22,17 +22,14 @@
 package org.apache.qpid.qmf;
 
 import org.apache.log4j.Logger;
-import org.apache.qpid.transport.codec.BBDecoder;
-import org.apache.qpid.transport.codec.BBEncoder;
-import org.apache.qpid.server.message.ServerMessage;
-import org.apache.qpid.server.message.MessageTransferMessage;
-import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.exchange.Exchange;
-import org.apache.qpid.server.queue.BaseQueue;
-import org.apache.qpid.AMQException;
-import org.apache.qpid.management.common.mbeans.ManagedConnection;
 
-import java.util.ArrayList;
+import org.apache.qpid.AMQException;
+import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.queue.BaseQueue;
+import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.transport.codec.BBDecoder;
+
 import java.util.List;
 
 public class QMFBrokerRequestCommand extends QMFCommand

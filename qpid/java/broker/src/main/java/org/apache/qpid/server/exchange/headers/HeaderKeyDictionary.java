@@ -2,8 +2,8 @@ package org.apache.qpid.server.exchange.headers;
 
 import org.apache.qpid.framing.AMQShortString;
 
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Map;
 
 /*
 *

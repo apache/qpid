@@ -22,8 +22,8 @@
 package org.apache.qpid.qmf;
 
 import java.util.Collection;
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Map;
 
 public class QMFPackage
 {

@@ -20,10 +20,10 @@
  */
 package org.apache.qpid.management.ui.jmx;
 
+import org.apache.qpid.management.ui.ManagedServer;
+
 import javax.management.Notification;
 import javax.management.ObjectName;
-
-import org.apache.qpid.management.ui.ManagedServer;
 
 public class ClientNotificationListener extends ClientListener
 {   

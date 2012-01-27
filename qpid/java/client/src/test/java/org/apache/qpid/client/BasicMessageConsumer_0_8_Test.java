@@ -20,12 +20,12 @@
  */
 package org.apache.qpid.client;
 
-import javax.jms.Session;
+import junit.framework.TestCase;
 
 import org.apache.qpid.test.unit.message.TestAMQSession;
 import org.apache.qpid.url.AMQBindingURL;
 
-import junit.framework.TestCase;
+import javax.jms.Session;
 
 public class BasicMessageConsumer_0_8_Test extends TestCase
 {

@@ -20,19 +20,22 @@
  */
 package org.apache.qpid.test.utils;
 
+import junit.framework.TestCase;
+import junit.framework.TestResult;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.net.DatagramSocket;
 import java.net.ServerSocket;
-import java.util.*;
-
-import junit.framework.TestCase;
-import junit.framework.TestResult;
-
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
 
 
 public class QpidTestCase extends TestCase

@@ -23,12 +23,17 @@ package org.apache.qpid.test.framework;
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.client.AMQSession;
+import org.apache.qpid.junit.extensions.util.ParsedProperties;
 import org.apache.qpid.test.framework.localcircuit.LocalAMQPPublisherImpl;
 import org.apache.qpid.test.framework.localcircuit.LocalPublisherImpl;
 
-import org.apache.qpid.junit.extensions.util.ParsedProperties;
-
-import javax.jms.*;
+import javax.jms.Connection;
+import javax.jms.Destination;
+import javax.jms.JMSException;
+import javax.jms.MessageConsumer;
+import javax.jms.MessageProducer;
+import javax.jms.Session;
+import javax.jms.Topic;
 
 /**
  * LocalAMQPCircuitFactory is a test sequencer that creates test circuits with publishing and receiving ends rooted

@@ -23,6 +23,9 @@ package org.apache.qpid.test.framework.distributedtesting;
 import org.apache.log4j.Logger;
 import org.apache.log4j.NDC;
 
+import org.apache.qpid.junit.extensions.SleepThrottle;
+import org.apache.qpid.junit.extensions.util.ParsedProperties;
+import org.apache.qpid.junit.extensions.util.TestContextProperties;
 import org.apache.qpid.test.framework.MessagingTestConfigProperties;
 import org.apache.qpid.test.framework.TestUtils;
 import org.apache.qpid.test.framework.clocksynch.ClockSynchThread;
@@ -30,13 +33,21 @@ import org.apache.qpid.test.framework.clocksynch.UDPClockSynchronizer;
 import org.apache.qpid.test.utils.ReflectionUtils;
 import org.apache.qpid.test.utils.ReflectionUtilsException;
 
-import org.apache.qpid.junit.extensions.SleepThrottle;
-import org.apache.qpid.junit.extensions.util.ParsedProperties;
-import org.apache.qpid.junit.extensions.util.TestContextProperties;
-
-import javax.jms.*;
-
-import java.util.*;
+import javax.jms.Connection;
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.MessageConsumer;
+import javax.jms.MessageListener;
+import javax.jms.MessageProducer;
+import javax.jms.Session;
+import javax.jms.Topic;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Implements a test client as described in the interop testing spec

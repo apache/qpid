@@ -20,12 +20,12 @@
  */
 package org.apache.qpid.server.store.berkeleydb.tuples;
 
-import org.apache.qpid.server.store.berkeleydb.MessageContentKey;
-import org.apache.qpid.server.store.berkeleydb.keys.MessageContentKey_5;
-
 import com.sleepycat.bind.tuple.TupleBinding;
 import com.sleepycat.bind.tuple.TupleInput;
 import com.sleepycat.bind.tuple.TupleOutput;
+
+import org.apache.qpid.server.store.berkeleydb.MessageContentKey;
+import org.apache.qpid.server.store.berkeleydb.keys.MessageContentKey_5;
 
 public class MessageContentKeyTB_5 extends TupleBinding<MessageContentKey>
 {

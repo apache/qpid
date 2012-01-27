@@ -20,12 +20,11 @@
  */
 package org.apache.qpid.server.security;
 
-import java.security.Principal;
-
-import javax.security.auth.Subject;
-
 import org.apache.qpid.server.security.auth.sasl.GroupPrincipal;
 import org.apache.qpid.server.security.auth.sasl.UsernamePrincipal;
+
+import javax.security.auth.Subject;
+import java.security.Principal;
 
 /**
  * Represents the authorization of the logged on user. 

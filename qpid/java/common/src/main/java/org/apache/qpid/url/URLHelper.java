@@ -20,7 +20,6 @@
  */
 package org.apache.qpid.url;
 
-import java.util.HashMap;
 import java.util.Map;
 
 public class URLHelper

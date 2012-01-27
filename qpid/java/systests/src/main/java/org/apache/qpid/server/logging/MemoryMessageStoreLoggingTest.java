@@ -20,12 +20,12 @@
 */
 package org.apache.qpid.server.logging;
 
-import java.util.Arrays;
-import java.util.List;
-
 import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.logging.subjects.AbstractTestLogSubject;
 import org.apache.qpid.util.LogMonitor;
+
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * The MessageStore test suite validates that the follow log messages as

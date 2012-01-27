@@ -20,9 +20,9 @@
  */
 package org.apache.qpid.management.ui;
 
-import org.apache.qpid.management.common.mbeans.ServerInformation;
-
 import junit.framework.TestCase;
+
+import org.apache.qpid.management.common.mbeans.ServerInformation;
 
 public class ApplicationRegistryTest extends TestCase
 {

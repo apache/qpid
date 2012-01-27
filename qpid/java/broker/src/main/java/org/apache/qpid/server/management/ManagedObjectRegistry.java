@@ -20,12 +20,11 @@
  */
 package org.apache.qpid.server.management;
 
-import javax.management.JMException;
-
 import org.apache.commons.configuration.ConfigurationException;
+
 import org.apache.qpid.common.Closeable;
 
-import java.rmi.RemoteException;
+import javax.management.JMException;
 import java.io.IOException;
 
 /**

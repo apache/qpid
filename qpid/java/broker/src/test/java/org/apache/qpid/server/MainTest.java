@@ -20,9 +20,9 @@
  */
 package org.apache.qpid.server;
 
-import java.util.EnumSet;
-
 import org.apache.qpid.test.utils.QpidTestCase;
+
+import java.util.EnumSet;
 
 /**
  * Test to verify the command line parsing within the Main class, by

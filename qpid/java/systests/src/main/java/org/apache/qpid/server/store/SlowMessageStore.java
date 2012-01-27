@@ -22,20 +22,21 @@ package org.apache.qpid.server.store;
 
 import org.apache.commons.configuration.Configuration;
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.federation.Bridge;
 import org.apache.qpid.server.federation.BrokerLink;
-import org.apache.qpid.server.message.EnqueableMessage;
-import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.logging.LogSubject;
+import org.apache.qpid.server.message.EnqueableMessage;
+import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.queue.AMQQueue;
 
+import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.nio.ByteBuffer;
 
 public class SlowMessageStore implements MessageStore, DurableConfigurationStore
 {

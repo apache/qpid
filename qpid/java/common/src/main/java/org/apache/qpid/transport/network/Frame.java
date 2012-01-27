@@ -21,15 +21,10 @@
 package org.apache.qpid.transport.network;
 
 import org.apache.qpid.transport.SegmentType;
-import org.apache.qpid.transport.util.SliceIterator;
+
+import static org.apache.qpid.transport.util.Functions.str;
 
 import java.nio.ByteBuffer;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Iterator;
-
-import static org.apache.qpid.transport.util.Functions.*;
 
 
 /**

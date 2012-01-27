@@ -21,21 +21,11 @@ package org.apache.qpid.transport;
  */
 
 
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 import org.apache.qpid.transport.codec.Decoder;
-import org.apache.qpid.transport.codec.Encodable;
 import org.apache.qpid.transport.codec.Encoder;
-
-import org.apache.qpid.transport.network.Frame;
-
-import org.apache.qpid.util.Strings;
-
 
 ${
 from genutil import *
@@ -77,6 +67,13 @@ PACK_TYPES = {
 }
 
 typecode = code(type)
+
+if segments:
+  out("import java.nio.ByteBuffer;\n")
+  out("import org.apache.qpid.util.Strings;\n")
+
+if track != "-1":
+  out("import org.apache.qpid.transport.network.Frame;\n")
 }
 
 public final class $name extends $base {

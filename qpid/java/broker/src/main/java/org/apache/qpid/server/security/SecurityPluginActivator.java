@@ -21,9 +21,10 @@
 package org.apache.qpid.server.security;
 
 import org.apache.log4j.Logger;
-import org.apache.qpid.server.configuration.plugins.ConfigurationPluginFactory;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
+
+import org.apache.qpid.server.configuration.plugins.ConfigurationPluginFactory;
 
 /**
  * An OSGi {@link BundleActivator} that loads a {@link SecurityPluginFactory}.

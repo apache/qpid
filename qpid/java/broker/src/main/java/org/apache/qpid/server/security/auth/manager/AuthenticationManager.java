@@ -20,13 +20,13 @@
  */
 package org.apache.qpid.server.security.auth.manager;
 
-import javax.security.auth.Subject;
-import javax.security.sasl.SaslException;
-import javax.security.sasl.SaslServer;
-
 import org.apache.qpid.common.Closeable;
 import org.apache.qpid.server.plugins.Plugin;
 import org.apache.qpid.server.security.auth.AuthenticationResult;
+
+import javax.security.auth.Subject;
+import javax.security.sasl.SaslException;
+import javax.security.sasl.SaslServer;
 
 /**
  * Implementations of the AuthenticationManager are responsible for determining

@@ -21,8 +21,8 @@
 package org.apache.qpid.framing.abstraction;
 
 import junit.framework.TestCase;
+
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.abstraction.MessagePublishInfoImpl;
 
 public class MessagePublishInfoImplTest extends TestCase
 {

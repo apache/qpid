@@ -21,6 +21,7 @@
 package org.apache.qpid.server.logging.actors;
 
 import org.apache.commons.configuration.ConfigurationException;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.logging.LogActor;

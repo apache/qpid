@@ -21,15 +21,14 @@
 package org.apache.qpid.server.message;
 
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
 import org.apache.qpid.server.AMQChannel;
-import org.apache.qpid.server.store.StoredMessage;
-import org.apache.qpid.server.configuration.SessionConfig;
 import org.apache.qpid.server.queue.AMQQueue;
-
+import org.apache.qpid.server.store.StoredMessage;
 
 import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;

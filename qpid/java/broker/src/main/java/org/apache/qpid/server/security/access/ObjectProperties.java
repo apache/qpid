@@ -18,12 +18,16 @@
  */
 package org.apache.qpid.server.security.access;
 
-import java.util.*;
-
 import org.apache.commons.lang.StringUtils;
+
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.queue.AMQQueue;
+
+import java.util.ArrayList;
+import java.util.EnumMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * An set of properties for an access control v2 rule {@link ObjectType}.

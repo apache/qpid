@@ -20,33 +20,6 @@
  */
 package org.apache.qpid.management.ui.views.exchange;
 
-import static org.apache.qpid.management.common.mbeans.ManagedExchange.BINDING_KEY;
-import static org.apache.qpid.management.common.mbeans.ManagedExchange.QUEUE_NAMES;
-import static org.apache.qpid.management.ui.Constants.EXCHANGE_TYPE;
-import static org.apache.qpid.management.ui.Constants.DIRECT_EXCHANGE;
-import static org.apache.qpid.management.ui.Constants.FANOUT_EXCHANGE;
-import static org.apache.qpid.management.ui.Constants.TOPIC_EXCHANGE;
-
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-
-import javax.management.MBeanServerConnection;
-import javax.management.MBeanServerInvocationHandler;
-import javax.management.openmbean.CompositeData;
-import javax.management.openmbean.CompositeDataSupport;
-import javax.management.openmbean.TabularDataSupport;
-
-import org.apache.qpid.management.ui.ApiVersion;
-import org.apache.qpid.management.ui.ApplicationRegistry;
-import org.apache.qpid.management.ui.ManagedBean;
-import org.apache.qpid.management.ui.ServerRegistry;
-import org.apache.qpid.management.common.mbeans.ManagedExchange;
-import org.apache.qpid.management.ui.jmx.JMXManagedObject;
-import org.apache.qpid.management.ui.jmx.MBeanUtility;
-import org.apache.qpid.management.ui.views.MBeanView;
-import org.apache.qpid.management.ui.views.TabControl;
-import org.apache.qpid.management.ui.views.ViewUtility;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.IStructuredContentProvider;
 import org.eclipse.jface.viewers.ITableLabelProvider;
@@ -77,6 +50,33 @@ import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 import org.eclipse.ui.forms.widgets.ScrolledForm;
+
+import org.apache.qpid.management.common.mbeans.ManagedExchange;
+import org.apache.qpid.management.ui.ApiVersion;
+import org.apache.qpid.management.ui.ApplicationRegistry;
+import org.apache.qpid.management.ui.ManagedBean;
+import org.apache.qpid.management.ui.ServerRegistry;
+import org.apache.qpid.management.ui.jmx.JMXManagedObject;
+import org.apache.qpid.management.ui.jmx.MBeanUtility;
+import org.apache.qpid.management.ui.views.MBeanView;
+import org.apache.qpid.management.ui.views.TabControl;
+import org.apache.qpid.management.ui.views.ViewUtility;
+
+import static org.apache.qpid.management.common.mbeans.ManagedExchange.BINDING_KEY;
+import static org.apache.qpid.management.common.mbeans.ManagedExchange.QUEUE_NAMES;
+import static org.apache.qpid.management.ui.Constants.DIRECT_EXCHANGE;
+import static org.apache.qpid.management.ui.Constants.EXCHANGE_TYPE;
+import static org.apache.qpid.management.ui.Constants.FANOUT_EXCHANGE;
+import static org.apache.qpid.management.ui.Constants.TOPIC_EXCHANGE;
+
+import javax.management.MBeanServerConnection;
+import javax.management.MBeanServerInvocationHandler;
+import javax.management.openmbean.CompositeData;
+import javax.management.openmbean.CompositeDataSupport;
+import javax.management.openmbean.TabularDataSupport;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 
 
 /**

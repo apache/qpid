@@ -22,8 +22,6 @@ package org.apache.qpid.server.flow;
 
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.Set;
-import java.util.HashSet;
 
 public abstract class AbstractFlowCreditManager implements FlowCreditManager
 {

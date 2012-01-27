@@ -20,13 +20,13 @@
  */
 package org.apache.qpid.server.security.auth.rmi;
 
-import javax.management.remote.JMXAuthenticator;
-import javax.management.remote.JMXPrincipal;
-import javax.security.auth.Subject;
-
 import org.apache.qpid.server.security.auth.AuthenticationResult;
 import org.apache.qpid.server.security.auth.AuthenticationResult.AuthenticationStatus;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
+
+import javax.management.remote.JMXAuthenticator;
+import javax.management.remote.JMXPrincipal;
+import javax.security.auth.Subject;
 
 public class RMIPasswordAuthenticator implements JMXAuthenticator
 {

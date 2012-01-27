@@ -21,17 +21,16 @@
 
 package org.apache.qpid.management.common.mbeans;
 
-import java.io.IOException;
-import java.util.List;
-import java.util.Map;
+import org.apache.qpid.management.common.mbeans.annotations.MBeanAttribute;
+import org.apache.qpid.management.common.mbeans.annotations.MBeanOperation;
+import org.apache.qpid.management.common.mbeans.annotations.MBeanOperationParameter;
 
 import javax.management.JMException;
 import javax.management.MBeanException;
 import javax.management.MBeanOperationInfo;
-
-import org.apache.qpid.management.common.mbeans.annotations.MBeanAttribute;
-import org.apache.qpid.management.common.mbeans.annotations.MBeanOperation;
-import org.apache.qpid.management.common.mbeans.annotations.MBeanOperationParameter;
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
 
 /**
  * The ManagedBroker is the management interface to expose management

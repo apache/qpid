@@ -20,12 +20,12 @@
  */
 package org.apache.qpid.transport;
 
+import static org.apache.qpid.util.Serial.lt;
+
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
-
-import static org.apache.qpid.util.Serial.lt;
 
 public class RangeSetImpl implements RangeSet
 {

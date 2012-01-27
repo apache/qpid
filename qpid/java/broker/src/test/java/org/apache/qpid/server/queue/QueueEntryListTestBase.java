@@ -20,6 +20,7 @@
 package org.apache.qpid.server.queue;
 
 import junit.framework.TestCase;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.message.ServerMessage;
 

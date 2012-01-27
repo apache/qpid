@@ -21,12 +21,12 @@
 
 package org.apache.qpid.server.logging;
 
-import java.util.Arrays;
-import java.util.List;
-
 import junit.framework.AssertionFailedError;
 
 import org.apache.qpid.server.configuration.ServerConfiguration;
+
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Virtualhost Test Cases

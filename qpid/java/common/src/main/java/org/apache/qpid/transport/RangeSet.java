@@ -20,9 +20,7 @@
  */
 package org.apache.qpid.transport;
 
-import java.util.*;
-
-import static org.apache.qpid.util.Serial.*;
+import java.util.Iterator;
 
 /**
  * RangeSet

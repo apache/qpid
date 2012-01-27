@@ -20,9 +20,17 @@
  */
 package org.apache.qpid.server.logging.management;
 
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+
+import org.apache.qpid.server.util.InternalBrokerBaseCase;
+
 import static org.apache.qpid.management.common.mbeans.LoggingManagement.LOGGER_LEVEL;
 import static org.apache.qpid.management.common.mbeans.LoggingManagement.LOGGER_NAME;
 
+import javax.management.JMException;
+import javax.management.openmbean.CompositeData;
+import javax.management.openmbean.TabularDataSupport;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
@@ -30,17 +38,6 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-
-import javax.management.JMException;
-import javax.management.openmbean.CompositeData;
-import javax.management.openmbean.TabularDataSupport;
-
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
-import org.apache.qpid.management.common.mbeans.LoggingManagement;
-
-import junit.framework.TestCase;
-import org.apache.qpid.server.util.InternalBrokerBaseCase;
 
 public class LoggingManagementMBeanTest extends InternalBrokerBaseCase
 {

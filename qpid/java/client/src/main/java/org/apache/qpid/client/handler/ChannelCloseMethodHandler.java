@@ -20,6 +20,9 @@
  */
 package org.apache.qpid.client.handler;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.qpid.AMQChannelClosedException;
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQInvalidRoutingKeyException;
@@ -32,8 +35,6 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ChannelCloseBody;
 import org.apache.qpid.framing.ChannelCloseOkBody;
 import org.apache.qpid.protocol.AMQConstant;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class ChannelCloseMethodHandler implements StateAwareMethodListener<ChannelCloseBody>
 {

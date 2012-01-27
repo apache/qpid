@@ -20,22 +20,6 @@
  */
 package org.apache.qpid.management.ui.jmx;
 
-import static org.apache.qpid.management.ui.Constants.ALL;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
-
-import javax.management.MBeanInfo;
-import javax.management.MBeanServerConnection;
-import javax.management.Notification;
-import javax.management.ObjectName;
-import javax.management.remote.JMXConnector;
-
 import org.apache.qpid.management.common.JMXConnnectionFactory;
 import org.apache.qpid.management.ui.ApplicationRegistry;
 import org.apache.qpid.management.ui.ManagedBean;
@@ -45,6 +29,21 @@ import org.apache.qpid.management.ui.model.ManagedAttributeModel;
 import org.apache.qpid.management.ui.model.NotificationInfoModel;
 import org.apache.qpid.management.ui.model.NotificationObject;
 import org.apache.qpid.management.ui.model.OperationDataModel;
+
+import static org.apache.qpid.management.ui.Constants.ALL;
+
+import javax.management.MBeanInfo;
+import javax.management.MBeanServerConnection;
+import javax.management.Notification;
+import javax.management.ObjectName;
+import javax.management.remote.JMXConnector;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 
 public class JMXServerRegistry extends ServerRegistry

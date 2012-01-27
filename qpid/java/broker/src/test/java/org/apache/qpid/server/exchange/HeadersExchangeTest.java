@@ -21,10 +21,10 @@
 package org.apache.qpid.server.exchange;
 
 import org.apache.qpid.AMQException;
+import org.apache.qpid.server.protocol.AMQProtocolSession;
+import org.apache.qpid.server.protocol.InternalTestProtocolSession;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.protocol.InternalTestProtocolSession;
-import org.apache.qpid.server.protocol.AMQProtocolSession;
 
 public class HeadersExchangeTest extends AbstractHeadersExchangeTestBase
 {

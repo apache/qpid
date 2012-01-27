@@ -20,8 +20,8 @@
  */
 package org.apache.qpid.server.security;
 
-import org.apache.commons.configuration.ConfigurationException;
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
 import org.apache.qpid.server.security.access.ObjectProperties;
 import org.apache.qpid.server.security.access.ObjectType;

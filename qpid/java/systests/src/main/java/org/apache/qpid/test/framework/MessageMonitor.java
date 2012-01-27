@@ -24,7 +24,6 @@ import org.apache.log4j.Logger;
 
 import javax.jms.Message;
 import javax.jms.MessageListener;
-
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**

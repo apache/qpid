@@ -23,13 +23,13 @@ package org.apache.qpid.server.store.berkeleydb.tuples;
 import com.sleepycat.bind.tuple.TupleInput;
 import com.sleepycat.bind.tuple.TupleOutput;
 import com.sleepycat.je.DatabaseException;
-
 import org.apache.log4j.Logger;
+
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.store.berkeleydb.AMQShortStringEncoding;
 import org.apache.qpid.server.store.berkeleydb.FieldTableEncoding;
 import org.apache.qpid.server.store.berkeleydb.records.QueueRecord;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.FieldTable;
 
 public class QueueTuple_5 extends QueueTuple_4
 {

@@ -20,12 +20,17 @@
  */
 package org.apache.qpid.util;
 
+import org.apache.log4j.Logger;
+
 import java.io.File;
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.StringTokenizer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import org.apache.log4j.Logger;
 
 /**
  * An ClasspathScanner scans the classpath for classes that implement an interface or extend a base class and have names

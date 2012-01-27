@@ -22,7 +22,6 @@ package org.apache.qpid.client;
 
 import javax.jms.IllegalStateException;
 import javax.jms.JMSException;
-
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**

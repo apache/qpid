@@ -20,43 +20,6 @@
  */
 package org.apache.qpid.management.ui.views.type;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.Semaphore;
-
-import javax.management.MBeanServerConnection;
-import javax.management.MBeanServerInvocationHandler;
-
-import static org.apache.qpid.management.ui.ApplicationRegistry.DATA_DIR;
-import static org.apache.qpid.management.ui.Constants.QUEUE;
-import static org.apache.qpid.management.common.mbeans.ManagedQueue.ATTR_NAME;
-import static org.apache.qpid.management.common.mbeans.ManagedQueue.ATTR_ACTIVE_CONSUMER_COUNT;
-import static org.apache.qpid.management.common.mbeans.ManagedQueue.ATTR_AUTODELETE;
-import static org.apache.qpid.management.common.mbeans.ManagedQueue.ATTR_CONSUMER_COUNT;
-import static org.apache.qpid.management.common.mbeans.ManagedQueue.ATTR_DURABLE;
-import static org.apache.qpid.management.common.mbeans.ManagedQueue.ATTR_MAX_MSG_AGE;
-import static org.apache.qpid.management.common.mbeans.ManagedQueue.ATTR_MAX_MSG_COUNT;
-import static org.apache.qpid.management.common.mbeans.ManagedQueue.ATTR_MAX_MSG_SIZE;
-import static org.apache.qpid.management.common.mbeans.ManagedQueue.ATTR_MAX_QUEUE_DEPTH;
-import static org.apache.qpid.management.common.mbeans.ManagedQueue.ATTR_MSG_COUNT;
-import static org.apache.qpid.management.common.mbeans.ManagedQueue.ATTR_OWNER;
-import static org.apache.qpid.management.common.mbeans.ManagedQueue.ATTR_QUEUE_DEPTH;
-import static org.apache.qpid.management.common.mbeans.ManagedQueue.ATTR_RCVD_MSG_COUNT;
-
-import org.apache.qpid.management.common.mbeans.ManagedBroker;
-import org.apache.qpid.management.common.mbeans.ManagedQueue;
-import org.apache.qpid.management.ui.ApplicationRegistry;
-import org.apache.qpid.management.ui.ManagedBean;
-import org.apache.qpid.management.ui.ManagedServer;
-import org.apache.qpid.management.ui.jmx.MBeanUtility;
-import org.apache.qpid.management.ui.views.MBeanView;
-import org.apache.qpid.management.ui.views.NavigationView;
-import org.apache.qpid.management.ui.views.ViewUtility;
 import org.eclipse.jface.preference.PreferenceStore;
 import org.eclipse.jface.viewers.IStructuredContentProvider;
 import org.eclipse.jface.viewers.ITableLabelProvider;
@@ -79,6 +42,31 @@ import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PlatformUI;
+
+import org.apache.qpid.management.common.mbeans.ManagedBroker;
+import org.apache.qpid.management.common.mbeans.ManagedQueue;
+import org.apache.qpid.management.ui.ApplicationRegistry;
+import org.apache.qpid.management.ui.ManagedBean;
+import org.apache.qpid.management.ui.ManagedServer;
+import org.apache.qpid.management.ui.jmx.MBeanUtility;
+import org.apache.qpid.management.ui.views.MBeanView;
+import org.apache.qpid.management.ui.views.NavigationView;
+import org.apache.qpid.management.ui.views.ViewUtility;
+
+import static org.apache.qpid.management.common.mbeans.ManagedQueue.*;
+import static org.apache.qpid.management.ui.ApplicationRegistry.DATA_DIR;
+import static org.apache.qpid.management.ui.Constants.QUEUE;
+
+import javax.management.MBeanServerConnection;
+import javax.management.MBeanServerInvocationHandler;
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Semaphore;
 
 public class QueueTypeTabControl extends MBeanTypeTabControl
 {   

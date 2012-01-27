@@ -20,8 +20,9 @@
  */
 package org.apache.qpid.server.logging.subjects;
 
-import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.store.MessageStore;
+import org.apache.qpid.server.virtualhost.VirtualHost;
+
 import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.STORE_FORMAT;
 
 public class MessageStoreLogSubject extends AbstractLogSubject
