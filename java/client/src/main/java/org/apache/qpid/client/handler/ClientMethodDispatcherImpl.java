@@ -20,16 +20,17 @@
  */
 package org.apache.qpid.client.handler;
 
-import java.util.Map;
-import java.util.HashMap;
-
-import org.apache.qpid.framing.*;
-import org.apache.qpid.AMQException;
-import org.apache.qpid.client.state.AMQStateManager;
-import org.apache.qpid.client.state.AMQMethodNotImplementedException;
-import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import org.apache.qpid.AMQException;
+import org.apache.qpid.client.protocol.AMQProtocolSession;
+import org.apache.qpid.client.state.AMQMethodNotImplementedException;
+import org.apache.qpid.client.state.AMQStateManager;
+import org.apache.qpid.framing.*;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class ClientMethodDispatcherImpl implements MethodDispatcher
 {

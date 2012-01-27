@@ -20,7 +20,11 @@
  */
 package org.apache.qpid.test.framework;
 
-import javax.jms.*;
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.MessageConsumer;
+import javax.jms.MessageProducer;
+import javax.jms.Session;
 
 /**
  * A CircuitEndBase is a pair consisting of one message producer and one message consumer, that represents one end of a

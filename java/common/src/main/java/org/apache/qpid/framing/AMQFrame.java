@@ -22,8 +22,8 @@ package org.apache.qpid.framing;
 
 import org.apache.qpid.codec.MarkableDataInput;
 
-import java.io.*;
 import java.io.DataOutput;
+import java.io.IOException;
 
 public class AMQFrame extends AMQDataBlock implements EncodableAMQDataBlock
 {

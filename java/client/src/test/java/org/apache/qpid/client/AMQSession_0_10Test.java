@@ -18,53 +18,19 @@
  */
 package org.apache.qpid.client;
 
-import java.util.ArrayList;
-import java.util.List;
+import junit.framework.TestCase;
+
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.transport.*;
+import org.apache.qpid.transport.Connection.SessionFactory;
+import org.apache.qpid.transport.Connection.State;
 
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageListener;
 import javax.jms.MessageProducer;
-
-import junit.framework.TestCase;
-
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.transport.Binary;
-import org.apache.qpid.transport.Connection;
-import org.apache.qpid.transport.Connection.SessionFactory;
-import org.apache.qpid.transport.Connection.State;
-import org.apache.qpid.transport.ExchangeBound;
-import org.apache.qpid.transport.ExchangeBoundResult;
-import org.apache.qpid.transport.ExchangeDeclare;
-import org.apache.qpid.transport.ExchangeDelete;
-import org.apache.qpid.transport.ExchangeQuery;
-import org.apache.qpid.transport.ExchangeQueryResult;
-import org.apache.qpid.transport.ExecutionErrorCode;
-import org.apache.qpid.transport.ExecutionException;
-import org.apache.qpid.transport.ExecutionResult;
-import org.apache.qpid.transport.ExecutionSync;
-import org.apache.qpid.transport.Future;
-import org.apache.qpid.transport.MessageCancel;
-import org.apache.qpid.transport.MessageFlow;
-import org.apache.qpid.transport.MessageRelease;
-import org.apache.qpid.transport.MessageSubscribe;
-import org.apache.qpid.transport.MessageTransfer;
-import org.apache.qpid.transport.Method;
-import org.apache.qpid.transport.Option;
-import org.apache.qpid.transport.ProtocolEvent;
-import org.apache.qpid.transport.QueueDelete;
-import org.apache.qpid.transport.QueueQuery;
-import org.apache.qpid.transport.QueueQueryResult;
-import org.apache.qpid.transport.Sender;
-import org.apache.qpid.transport.Session;
-import org.apache.qpid.transport.SessionAttach;
-import org.apache.qpid.transport.SessionDelegate;
-import org.apache.qpid.transport.SessionDetach;
-import org.apache.qpid.transport.SessionException;
-import org.apache.qpid.transport.SessionRequestTimeout;
-import org.apache.qpid.transport.TxCommit;
-import org.apache.qpid.transport.TxRollback;
-import org.apache.qpid.transport.TxSelect;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Tests AMQSession_0_10 methods.

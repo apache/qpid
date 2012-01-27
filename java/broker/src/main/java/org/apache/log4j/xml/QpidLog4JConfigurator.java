@@ -20,21 +20,21 @@
  */
 package org.apache.log4j.xml;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.Map;
-import java.util.concurrent.locks.ReentrantLock;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+import org.xml.sax.ErrorHandler;
+import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
+
+import org.apache.qpid.server.logging.management.LoggingManagementMBean;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-
-import org.apache.log4j.Level;
-import org.apache.log4j.Logger;
-import org.apache.qpid.server.logging.management.LoggingManagementMBean;
-import org.xml.sax.ErrorHandler;
-import org.xml.sax.SAXException;
-import org.xml.sax.SAXParseException;
+import java.io.File;
+import java.io.IOException;
+import java.util.Map;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Substitute for the Log4J XMLWatchdog (as used by DOMConfigurator.configureAndWatch)

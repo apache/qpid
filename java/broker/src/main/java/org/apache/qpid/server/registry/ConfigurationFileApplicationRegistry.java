@@ -20,16 +20,17 @@
  */
 package org.apache.qpid.server.registry;
 
-import java.io.File;
-
 import org.apache.commons.configuration.ConfigurationException;
+import org.osgi.framework.BundleContext;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.logging.actors.BrokerActor;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.management.JMXManagedObjectRegistry;
 import org.apache.qpid.server.management.NoopManagedObjectRegistry;
-import org.osgi.framework.BundleContext;
+
+import java.io.File;
 
 public class ConfigurationFileApplicationRegistry extends ApplicationRegistry
 {

@@ -20,11 +20,6 @@
  */
 package org.apache.qpid.server.store.berkeleydb;
 
-import java.io.File;
-import java.nio.ByteBuffer;
-import java.util.Arrays;
-import java.util.List;
-
 import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
@@ -32,7 +27,12 @@ import org.apache.qpid.framing.ContentHeaderBody;
 import org.apache.qpid.framing.MethodRegistry;
 import org.apache.qpid.framing.ProtocolVersion;
 import org.apache.qpid.framing.abstraction.MessagePublishInfo;
-import org.apache.qpid.server.message.*;
+import org.apache.qpid.server.message.AMQMessageHeader;
+import org.apache.qpid.server.message.EnqueableMessage;
+import org.apache.qpid.server.message.MessageMetaData;
+import org.apache.qpid.server.message.MessageMetaData_0_10;
+import org.apache.qpid.server.message.MessageReference;
+import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.store.MessageMetaDataType;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.store.StorableMessageMetaData;
@@ -46,6 +46,11 @@ import org.apache.qpid.transport.MessageDeliveryMode;
 import org.apache.qpid.transport.MessageDeliveryPriority;
 import org.apache.qpid.transport.MessageProperties;
 import org.apache.qpid.transport.MessageTransfer;
+
+import java.io.File;
+import java.nio.ByteBuffer;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Subclass of MessageStoreTest which runs the standard tests from the superclass against

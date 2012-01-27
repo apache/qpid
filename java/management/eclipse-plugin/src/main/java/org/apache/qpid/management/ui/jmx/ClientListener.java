@@ -20,14 +20,14 @@
  *
  */package org.apache.qpid.management.ui.jmx;
 
+import org.apache.qpid.management.ui.ApplicationRegistry;
+import org.apache.qpid.management.ui.ManagedServer;
+
 import javax.management.MBeanServerNotification;
 import javax.management.Notification;
 import javax.management.NotificationListener;
 import javax.management.ObjectName;
 import javax.management.remote.JMXConnectionNotification;
-
-import org.apache.qpid.management.ui.ApplicationRegistry;
-import org.apache.qpid.management.ui.ManagedServer;
 
 
 public class ClientListener implements NotificationListener

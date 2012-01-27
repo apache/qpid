@@ -21,25 +21,10 @@
 package org.apache.qpid.systest;
 
 import org.apache.commons.configuration.ConfigurationException;
-import org.apache.qpid.AMQChannelClosedException;
-import org.apache.qpid.AMQException;
-import org.apache.qpid.client.AMQSession_0_10;
-import org.apache.qpid.jms.ConnectionListener;
-import org.apache.qpid.protocol.AMQConstant;
-import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
-import javax.jms.Connection;
-import javax.jms.Destination;
-import javax.jms.ExceptionListener;
-import javax.jms.JMSException;
-import javax.jms.MessageConsumer;
-import javax.jms.MessageProducer;
 import javax.jms.Session;
-import javax.jms.Topic;
 import javax.naming.NamingException;
 import java.io.IOException;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 public class MergeConfigurationTest extends TestingBaseCase
 {

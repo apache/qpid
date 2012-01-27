@@ -22,9 +22,9 @@ package org.apache.qpid.transport;
 
 import org.apache.qpid.transport.network.Frame;
 
-import java.nio.ByteBuffer;
+import static org.apache.qpid.transport.util.Functions.str;
 
-import static org.apache.qpid.transport.util.Functions.*;
+import java.nio.ByteBuffer;
 
 /**
  * Method

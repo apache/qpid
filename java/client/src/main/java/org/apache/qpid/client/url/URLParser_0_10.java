@@ -17,12 +17,12 @@
  */
 package org.apache.qpid.client.url;
 
+import org.apache.qpid.client.AMQBrokerDetails;
+import org.apache.qpid.jms.BrokerDetails;
+
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.List;
-
-import org.apache.qpid.client.AMQBrokerDetails;
-import org.apache.qpid.jms.BrokerDetails;
 
 /**
  * The format Qpid URL is based on the AMQP one.

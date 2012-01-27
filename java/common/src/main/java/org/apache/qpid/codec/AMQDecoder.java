@@ -20,12 +20,26 @@
  */
 package org.apache.qpid.codec;
 
-import java.io.*;
-import java.nio.ByteBuffer;
-import java.util.*;
-
-import org.apache.qpid.framing.*;
+import org.apache.qpid.framing.AMQDataBlock;
+import org.apache.qpid.framing.AMQDataBlockDecoder;
+import org.apache.qpid.framing.AMQFrameDecodingException;
+import org.apache.qpid.framing.AMQMethodBodyFactory;
+import org.apache.qpid.framing.AMQProtocolVersionException;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.ByteArrayDataInput;
+import org.apache.qpid.framing.EncodingUtils;
+import org.apache.qpid.framing.ProtocolInitiation;
 import org.apache.qpid.protocol.AMQVersionAwareProtocolSession;
+
+import java.io.ByteArrayInputStream;
+import java.io.DataInput;
+import java.io.DataInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.ListIterator;
 
 /**
  * AMQDecoder delegates the decoding of AMQP either to a data block decoder, or in the case of new connections, to a

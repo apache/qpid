@@ -2,8 +2,6 @@ package org.apache.qpid.framing;
 
 import org.apache.qpid.codec.MarkableDataInput;
 
-import java.io.IOException;
-
 public class ByteArrayDataInput implements ExtendedDataInput, MarkableDataInput
 {
     private byte[] _data;

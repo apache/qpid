@@ -20,13 +20,11 @@
  */
 package org.apache.qpid.server.management;
 
-import org.apache.qpid.server.logging.actors.ManagementActor;
-import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.LogActor;
+import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.logging.actors.ManagementActor;
 
 import javax.management.ListenerNotFoundException;
-import javax.management.MBeanInfo;
-import javax.management.MBeanNotificationInfo;
 import javax.management.NotCompliantMBeanException;
 import javax.management.NotificationBroadcaster;
 import javax.management.NotificationBroadcasterSupport;

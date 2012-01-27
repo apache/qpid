@@ -20,12 +20,7 @@
  */
 package org.apache.qpid.client.protocol;
 
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.ReentrantLock;
-
 import org.apache.qpid.AMQException;
-import org.apache.qpid.AMQTimeoutException;
 import org.apache.qpid.client.failover.FailoverException;
 import org.apache.qpid.client.util.BlockingWaiter;
 import org.apache.qpid.framing.AMQMethodBody;

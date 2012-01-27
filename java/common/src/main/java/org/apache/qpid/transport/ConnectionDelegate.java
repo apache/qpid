@@ -22,7 +22,7 @@ package org.apache.qpid.transport;
 
 import org.apache.qpid.transport.util.Logger;
 
-import static org.apache.qpid.transport.Connection.State.*;
+import static org.apache.qpid.transport.Connection.State.CLOSE_RCVD;
 
 
 /**

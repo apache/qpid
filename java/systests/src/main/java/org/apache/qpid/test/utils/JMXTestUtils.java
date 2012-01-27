@@ -20,31 +20,30 @@
  */
 package org.apache.qpid.test.utils;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
+import junit.framework.TestCase;
+import org.apache.commons.configuration.ConfigurationException;
+
+import org.apache.qpid.management.common.JMXConnnectionFactory;
+import org.apache.qpid.management.common.mbeans.ConfigurationManagement;
+import org.apache.qpid.management.common.mbeans.LoggingManagement;
+import org.apache.qpid.management.common.mbeans.ManagedBroker;
+import org.apache.qpid.management.common.mbeans.ManagedConnection;
+import org.apache.qpid.management.common.mbeans.ManagedExchange;
+import org.apache.qpid.management.common.mbeans.ManagedQueue;
+import org.apache.qpid.management.common.mbeans.ServerInformation;
+import org.apache.qpid.management.common.mbeans.UserManagement;
 
 import javax.management.JMException;
 import javax.management.MBeanException;
 import javax.management.MBeanServerConnection;
 import javax.management.MBeanServerInvocationHandler;
-import javax.management.ObjectName;
 import javax.management.MalformedObjectNameException;
+import javax.management.ObjectName;
 import javax.management.remote.JMXConnector;
-
-import junit.framework.TestCase;
-
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.qpid.management.common.JMXConnnectionFactory;
-import org.apache.qpid.management.common.mbeans.ManagedBroker;
-import org.apache.qpid.management.common.mbeans.ManagedConnection;
-import org.apache.qpid.management.common.mbeans.ManagedExchange;
-import org.apache.qpid.management.common.mbeans.LoggingManagement;
-import org.apache.qpid.management.common.mbeans.ConfigurationManagement;
-import org.apache.qpid.management.common.mbeans.ManagedQueue;
-import org.apache.qpid.management.common.mbeans.ServerInformation;
-import org.apache.qpid.management.common.mbeans.UserManagement;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 
 /**
  * JMX access for tests.

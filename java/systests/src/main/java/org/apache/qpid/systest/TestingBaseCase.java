@@ -21,9 +21,8 @@
 package org.apache.qpid.systest;
 
 import org.apache.commons.configuration.ConfigurationException;
-import org.apache.qpid.AMQChannelClosedException;
+
 import org.apache.qpid.AMQException;
-import org.apache.qpid.client.AMQSession_0_10;
 import org.apache.qpid.jms.ConnectionListener;
 import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;

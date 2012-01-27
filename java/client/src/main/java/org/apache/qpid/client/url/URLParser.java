@@ -21,16 +21,16 @@ package org.apache.qpid.client.url;
  */
 
 
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.StringTokenizer;
-
 import org.apache.qpid.client.AMQBrokerDetails;
 import org.apache.qpid.client.AMQConnectionFactory;
 import org.apache.qpid.client.AMQConnectionURL;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.url.URLHelper;
 import org.apache.qpid.url.URLSyntaxException;
+
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.StringTokenizer;
 
 public class URLParser
 {

@@ -20,17 +20,16 @@
  */
 package org.apache.qpid.client.security;
 
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
+import org.apache.qpid.jms.ConnectionURL;
 
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.NameCallback;
 import javax.security.auth.callback.PasswordCallback;
 import javax.security.auth.callback.UnsupportedCallbackException;
-
-import org.apache.qpid.jms.ConnectionURL;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 public class UsernameHashedPasswordCallbackHandler implements AMQCallbackHandler
 {

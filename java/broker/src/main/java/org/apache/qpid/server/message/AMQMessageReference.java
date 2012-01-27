@@ -20,9 +20,6 @@
  */
 package org.apache.qpid.server.message;
 
-import org.apache.qpid.server.message.AMQMessage;
-import org.apache.qpid.server.queue.MessageCleanupException;
-
 public class AMQMessageReference extends MessageReference<AMQMessage>
 {
 

@@ -20,8 +20,9 @@
 */
 package org.apache.qpid.server.queue;
 
-import java.util.Map;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+
+import java.util.Map;
 
 public class AMQPriorityQueue extends OutOfOrderQueue
 {

@@ -17,14 +17,25 @@
  */
 package org.apache.qpid.test.unit.xa;
 
-import javax.jms.*;
-import javax.transaction.xa.XAResource;
-import javax.transaction.xa.Xid;
-import javax.transaction.xa.XAException;
-
 import junit.framework.TestSuite;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.jms.DeliveryMode;
+import javax.jms.JMSException;
+import javax.jms.MessageConsumer;
+import javax.jms.MessageProducer;
+import javax.jms.Queue;
+import javax.jms.QueueConnection;
+import javax.jms.QueueSession;
+import javax.jms.Session;
+import javax.jms.TextMessage;
+import javax.jms.XAQueueConnection;
+import javax.jms.XAQueueConnectionFactory;
+import javax.jms.XAQueueSession;
+import javax.transaction.xa.XAException;
+import javax.transaction.xa.XAResource;
+import javax.transaction.xa.Xid;
 
 public class QueueTest extends AbstractXATestCase
 {

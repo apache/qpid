@@ -21,7 +21,6 @@
 package org.apache.qpid.jms;
 
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.ProtocolVersion;
 
 import java.util.List;
 

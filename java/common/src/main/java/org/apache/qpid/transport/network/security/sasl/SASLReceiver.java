@@ -21,14 +21,12 @@ package org.apache.qpid.transport.network.security.sasl;
  */
 
 
-import java.nio.ByteBuffer;
-
-import javax.security.sasl.SaslClient;
-import javax.security.sasl.SaslException;
-
 import org.apache.qpid.transport.Receiver;
 import org.apache.qpid.transport.SenderException;
 import org.apache.qpid.transport.util.Logger;
+
+import javax.security.sasl.SaslException;
+import java.nio.ByteBuffer;
 
 public class SASLReceiver extends SASLEncryptor implements Receiver<ByteBuffer> {
 

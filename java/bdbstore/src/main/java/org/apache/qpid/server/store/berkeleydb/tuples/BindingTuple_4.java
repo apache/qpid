@@ -20,17 +20,17 @@
  */
 package org.apache.qpid.server.store.berkeleydb.tuples;
 
-import org.apache.log4j.Logger;
-import org.apache.qpid.server.store.berkeleydb.AMQShortStringEncoding;
-import org.apache.qpid.server.store.berkeleydb.BindingKey;
-import org.apache.qpid.server.store.berkeleydb.FieldTableEncoding;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.FieldTable;
-
 import com.sleepycat.bind.tuple.TupleBinding;
 import com.sleepycat.bind.tuple.TupleInput;
 import com.sleepycat.bind.tuple.TupleOutput;
 import com.sleepycat.je.DatabaseException;
+import org.apache.log4j.Logger;
+
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.server.store.berkeleydb.AMQShortStringEncoding;
+import org.apache.qpid.server.store.berkeleydb.BindingKey;
+import org.apache.qpid.server.store.berkeleydb.FieldTableEncoding;
 
 public class BindingTuple_4 extends TupleBinding<BindingKey> implements BindingTuple
 {

@@ -21,9 +21,10 @@
 
 package org.apache.qpid.server.configuration;
 
-import org.apache.qpid.server.exchange.ExchangeType;
-
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 
 public final class SessionConfigType extends ConfigObjectType<SessionConfigType, SessionConfig>
 {

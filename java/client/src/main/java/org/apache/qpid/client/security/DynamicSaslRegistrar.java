@@ -20,13 +20,12 @@
  */
 package org.apache.qpid.client.security;
 
-import org.apache.qpid.util.FileUtils;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.security.sasl.SaslClientFactory;
+import org.apache.qpid.util.FileUtils;
 
+import javax.security.sasl.SaslClientFactory;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.Security;

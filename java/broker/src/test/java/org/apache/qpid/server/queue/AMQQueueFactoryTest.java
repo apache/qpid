@@ -21,6 +21,7 @@
 package org.apache.qpid.server.queue;
 
 import org.apache.commons.configuration.XMLConfiguration;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;

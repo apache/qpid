@@ -21,14 +21,14 @@
 package org.apache.qpid.test.unit.client.destinationurl;
 
 import junit.framework.TestCase;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.RejectBehaviour;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.url.AMQBindingURL;
 import org.apache.qpid.url.BindingURL;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.net.URISyntaxException;
 

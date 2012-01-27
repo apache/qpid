@@ -20,10 +20,6 @@
  */
 package org.apache.qpid.server.txn;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-
 import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.MockAMQQueue;
@@ -32,6 +28,10 @@ import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.store.MessageStore;
 import org.apache.qpid.server.txn.MockStoreTransaction.TransactionState;
 import org.apache.qpid.test.utils.QpidTestCase;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 
 /**
  * A unit test ensuring that LocalTransactionTest creates a long-lived store transaction

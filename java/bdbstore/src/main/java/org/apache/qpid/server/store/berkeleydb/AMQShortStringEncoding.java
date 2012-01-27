@@ -20,10 +20,10 @@
  */
 package org.apache.qpid.server.store.berkeleydb;
 
-import org.apache.qpid.framing.AMQShortString;
-
 import com.sleepycat.bind.tuple.TupleInput;
 import com.sleepycat.bind.tuple.TupleOutput;
+
+import org.apache.qpid.framing.AMQShortString;
 
 public class AMQShortStringEncoding
 {

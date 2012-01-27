@@ -20,16 +20,21 @@
  */
 package org.apache.qpid.server.registry;
 
-import org.apache.qpid.server.configuration.*;
-import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.common.QpidProperties;
 import org.apache.qpid.common.ServerPropertyNames;
+import org.apache.qpid.server.configuration.BrokerConfig;
+import org.apache.qpid.server.configuration.BrokerConfigType;
+import org.apache.qpid.server.configuration.ConfigStore;
+import org.apache.qpid.server.configuration.ConfiguredObject;
+import org.apache.qpid.server.configuration.SystemConfig;
+import org.apache.qpid.server.configuration.VirtualHostConfig;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.UUID;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class BrokerConfigAdapter implements BrokerConfig

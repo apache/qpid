@@ -20,8 +20,6 @@
  */
 package org.apache.qpid.transport.network;
 
-import java.nio.ByteBuffer;
-
 import org.apache.qpid.transport.Binding;
 import org.apache.qpid.transport.Connection;
 import org.apache.qpid.transport.ConnectionDelegate;
@@ -30,6 +28,8 @@ import org.apache.qpid.transport.Receiver;
 import org.apache.qpid.transport.Sender;
 import org.apache.qpid.transport.network.security.sasl.SASLReceiver;
 import org.apache.qpid.transport.network.security.sasl.SASLSender;
+
+import java.nio.ByteBuffer;
 
 /**
  * ConnectionBinding

@@ -19,7 +19,14 @@ package org.apache.qpid.client;
 
 import org.apache.qpid.client.message.MessageFactoryRegistry;
 
-import javax.jms.*;
+import javax.jms.JMSException;
+import javax.jms.QueueSession;
+import javax.jms.Session;
+import javax.jms.TopicSession;
+import javax.jms.TransactionInProgressException;
+import javax.jms.XAQueueSession;
+import javax.jms.XASession;
+import javax.jms.XATopicSession;
 import javax.transaction.xa.XAResource;
 
 /**

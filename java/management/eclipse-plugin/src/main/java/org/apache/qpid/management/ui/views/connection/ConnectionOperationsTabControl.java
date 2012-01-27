@@ -20,30 +20,6 @@
  */
 package org.apache.qpid.management.ui.views.connection;
 
-import static org.apache.qpid.management.common.mbeans.ManagedConnection.CHAN_ID;
-import static org.apache.qpid.management.common.mbeans.ManagedConnection.DEFAULT_QUEUE;
-import static org.apache.qpid.management.common.mbeans.ManagedConnection.FLOW_BLOCKED;
-import static org.apache.qpid.management.common.mbeans.ManagedConnection.TRANSACTIONAL;
-import static org.apache.qpid.management.common.mbeans.ManagedConnection.UNACKED_COUNT;
-
-import java.util.Collection;
-
-import javax.management.MBeanServerConnection;
-import javax.management.MBeanServerInvocationHandler;
-import javax.management.openmbean.CompositeData;
-import javax.management.openmbean.CompositeDataSupport;
-import javax.management.openmbean.TabularDataSupport;
-
-import org.apache.qpid.management.ui.ApiVersion;
-import org.apache.qpid.management.ui.ApplicationRegistry;
-import org.apache.qpid.management.ui.ManagedBean;
-import org.apache.qpid.management.ui.ServerRegistry;
-import org.apache.qpid.management.common.mbeans.ManagedConnection;
-import org.apache.qpid.management.ui.jmx.JMXManagedObject;
-import org.apache.qpid.management.ui.jmx.MBeanUtility;
-import org.apache.qpid.management.ui.views.MBeanView;
-import org.apache.qpid.management.ui.views.TabControl;
-import org.apache.qpid.management.ui.views.ViewUtility;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.IStructuredContentProvider;
 import org.eclipse.jface.viewers.ITableLabelProvider;
@@ -71,6 +47,30 @@ import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.forms.widgets.Form;
 import org.eclipse.ui.forms.widgets.FormToolkit;
+
+import org.apache.qpid.management.common.mbeans.ManagedConnection;
+import org.apache.qpid.management.ui.ApiVersion;
+import org.apache.qpid.management.ui.ApplicationRegistry;
+import org.apache.qpid.management.ui.ManagedBean;
+import org.apache.qpid.management.ui.ServerRegistry;
+import org.apache.qpid.management.ui.jmx.JMXManagedObject;
+import org.apache.qpid.management.ui.jmx.MBeanUtility;
+import org.apache.qpid.management.ui.views.MBeanView;
+import org.apache.qpid.management.ui.views.TabControl;
+import org.apache.qpid.management.ui.views.ViewUtility;
+
+import static org.apache.qpid.management.common.mbeans.ManagedConnection.CHAN_ID;
+import static org.apache.qpid.management.common.mbeans.ManagedConnection.DEFAULT_QUEUE;
+import static org.apache.qpid.management.common.mbeans.ManagedConnection.FLOW_BLOCKED;
+import static org.apache.qpid.management.common.mbeans.ManagedConnection.TRANSACTIONAL;
+import static org.apache.qpid.management.common.mbeans.ManagedConnection.UNACKED_COUNT;
+
+import javax.management.MBeanServerConnection;
+import javax.management.MBeanServerInvocationHandler;
+import javax.management.openmbean.CompositeData;
+import javax.management.openmbean.CompositeDataSupport;
+import javax.management.openmbean.TabularDataSupport;
+import java.util.Collection;
 
 
 /**

@@ -20,14 +20,14 @@
  */
 package org.apache.qpid.server.management;
 
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
-import java.security.AccessControlContext;
-import java.security.AccessController;
-import java.util.Map;
-import java.util.Set;
+import org.apache.log4j.Logger;
+
+import org.apache.qpid.server.logging.actors.ManagementActor;
+import org.apache.qpid.server.logging.messages.ManagementConsoleMessages;
+import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.registry.IApplicationRegistry;
+import org.apache.qpid.server.security.SecurityManager;
+import org.apache.qpid.server.security.access.Operation;
 
 import javax.management.Attribute;
 import javax.management.JMException;
@@ -41,14 +41,14 @@ import javax.management.remote.JMXConnectionNotification;
 import javax.management.remote.JMXPrincipal;
 import javax.management.remote.MBeanServerForwarder;
 import javax.security.auth.Subject;
-
-import org.apache.log4j.Logger;
-import org.apache.qpid.server.logging.actors.ManagementActor;
-import org.apache.qpid.server.logging.messages.ManagementConsoleMessages;
-import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.registry.IApplicationRegistry;
-import org.apache.qpid.server.security.SecurityManager;
-import org.apache.qpid.server.security.access.Operation;
+import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Proxy;
+import java.security.AccessControlContext;
+import java.security.AccessController;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * This class can be used by the JMXConnectorServer as an InvocationHandler for the mbean operations. It delegates

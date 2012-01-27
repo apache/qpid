@@ -20,11 +20,10 @@
  */
 package org.apache.qpid.client.handler;
 
-import org.apache.qpid.AMQException;
-import org.apache.qpid.framing.ConnectionOpenOkBody;
 import org.apache.qpid.client.protocol.AMQProtocolSession;
 import org.apache.qpid.client.state.AMQState;
 import org.apache.qpid.client.state.StateAwareMethodListener;
+import org.apache.qpid.framing.ConnectionOpenOkBody;
 
 public class ConnectionOpenOkMethodHandler implements StateAwareMethodListener<ConnectionOpenOkBody>
 {

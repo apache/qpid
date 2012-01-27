@@ -21,6 +21,7 @@
 package org.apache.qpid.server.security;
 
 import org.apache.commons.configuration.Configuration;
+
 import org.apache.qpid.server.security.access.ObjectProperties;
 import org.apache.qpid.server.security.access.ObjectType;
 import org.apache.qpid.server.security.access.Operation;

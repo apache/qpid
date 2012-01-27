@@ -21,7 +21,6 @@
 package org.apache.qpid.configuration;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.protocol.AMQConstant;
 
 /**
  * Indicates a failure to parse a property expansion. See {@link PropertyUtils} for the code that does property

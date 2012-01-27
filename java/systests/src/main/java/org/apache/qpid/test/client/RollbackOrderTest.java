@@ -20,13 +20,19 @@
  */
 package org.apache.qpid.test.client;
 
-import org.apache.qpid.test.utils.*;
-import javax.jms.*;
+import junit.framework.AssertionFailedError;
+
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
+
+import javax.jms.Connection;
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.MessageConsumer;
+import javax.jms.MessageListener;
+import javax.jms.Queue;
+import javax.jms.Session;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import junit.framework.ComparisonFailure;
-import junit.framework.AssertionFailedError;
 
 /**
  * RollbackOrderTest, QPID-1864, QPID-1871

@@ -26,7 +26,6 @@ import org.apache.qpid.AMQException;
 import org.apache.qpid.protocol.AMQConstant;
 
 import java.io.DataOutput;
-import java.io.DataOutputStream;
 import java.io.IOException;
 
 public interface AMQMethodBody extends AMQBody

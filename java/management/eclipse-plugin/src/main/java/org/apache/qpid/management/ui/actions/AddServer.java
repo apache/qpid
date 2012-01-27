@@ -20,12 +20,6 @@
  */
 package org.apache.qpid.management.ui.actions;
 
-import static org.apache.qpid.management.ui.Constants.*;
-
-import org.apache.qpid.management.ui.ApplicationRegistry;
-import org.apache.qpid.management.ui.exceptions.InfoRequiredException;
-import org.apache.qpid.management.ui.views.NumberVerifyListener;
-import org.apache.qpid.management.ui.views.ViewUtility;
 import org.eclipse.jface.action.IAction;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.KeyAdapter;
@@ -42,6 +36,13 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.IWorkbenchWindowActionDelegate;
+
+import org.apache.qpid.management.ui.ApplicationRegistry;
+import org.apache.qpid.management.ui.exceptions.InfoRequiredException;
+import org.apache.qpid.management.ui.views.NumberVerifyListener;
+import org.apache.qpid.management.ui.views.ViewUtility;
+
+import static org.apache.qpid.management.ui.Constants.*;
 
 public class AddServer extends AbstractAction implements IWorkbenchWindowActionDelegate 
 {

@@ -20,12 +20,13 @@
  */
 package org.apache.qpid.server.signal;
 
+import org.apache.log4j.Logger;
+
+import org.apache.qpid.test.utils.QpidTestCase;
+
 import java.lang.management.ManagementFactory;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-
-import org.apache.log4j.Logger;
-import org.apache.qpid.test.utils.QpidTestCase;
 
 public class SignalHandlerTaskTest extends QpidTestCase
 {

@@ -20,23 +20,6 @@
  */
 package org.apache.qpid.management.ui.views;
 
-import static org.apache.qpid.management.ui.Constants.BUTTON_CLEAR;
-import static org.apache.qpid.management.ui.Constants.DESCRIPTION;
-import static org.apache.qpid.management.ui.Constants.FONT_BOLD;
-import static org.apache.qpid.management.ui.Constants.FONT_BUTTON;
-import static org.apache.qpid.management.ui.Constants.FONT_ITALIC;
-import static org.apache.qpid.management.ui.Constants.SUBSCRIBE_BUTTON;
-import static org.apache.qpid.management.ui.Constants.UNSUBSCRIBE_BUTTON;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import org.apache.qpid.management.ui.ApplicationRegistry;
-import org.apache.qpid.management.ui.ManagedBean;
-import org.apache.qpid.management.ui.ServerRegistry;
-import org.apache.qpid.management.ui.jmx.MBeanUtility;
-import org.apache.qpid.management.ui.model.NotificationInfoModel;
-import org.apache.qpid.management.ui.model.NotificationObject;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionAdapter;
@@ -52,6 +35,24 @@ import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.TabFolder;
+
+import org.apache.qpid.management.ui.ApplicationRegistry;
+import org.apache.qpid.management.ui.ManagedBean;
+import org.apache.qpid.management.ui.ServerRegistry;
+import org.apache.qpid.management.ui.jmx.MBeanUtility;
+import org.apache.qpid.management.ui.model.NotificationInfoModel;
+import org.apache.qpid.management.ui.model.NotificationObject;
+
+import static org.apache.qpid.management.ui.Constants.BUTTON_CLEAR;
+import static org.apache.qpid.management.ui.Constants.DESCRIPTION;
+import static org.apache.qpid.management.ui.Constants.FONT_BOLD;
+import static org.apache.qpid.management.ui.Constants.FONT_BUTTON;
+import static org.apache.qpid.management.ui.Constants.FONT_ITALIC;
+import static org.apache.qpid.management.ui.Constants.SUBSCRIBE_BUTTON;
+import static org.apache.qpid.management.ui.Constants.UNSUBSCRIBE_BUTTON;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Creates control composite for Notifications tab

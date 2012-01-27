@@ -20,15 +20,15 @@
  */
 package org.apache.qpid.client.security.amqplain;
 
+import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.framing.FieldTableFactory;
+
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.callback.NameCallback;
 import javax.security.auth.callback.PasswordCallback;
 import javax.security.sasl.SaslClient;
 import javax.security.sasl.SaslException;
-
-import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.framing.FieldTableFactory;
 
 /**
  * Implements the "AMQPlain" authentication protocol that uses FieldTables to send username and pwd.

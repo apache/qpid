@@ -20,21 +20,6 @@
  */
 package org.apache.qpid.management.ui.actions;
 
-import static org.apache.qpid.management.ui.Constants.ERROR_SERVER_CONNECTION;
-
-import java.io.IOException;
-
-import javax.net.ssl.SSLException;
-import javax.net.ssl.SSLHandshakeException;
-import javax.net.ssl.SSLKeyException;
-import javax.net.ssl.SSLPeerUnverifiedException;
-
-import org.apache.qpid.management.ui.ApplicationRegistry;
-import org.apache.qpid.management.ui.ApplicationWorkbenchAdvisor;
-import org.apache.qpid.management.ui.Constants;
-import org.apache.qpid.management.ui.exceptions.ManagementConsoleException;
-import org.apache.qpid.management.ui.jmx.MBeanUtility;
-import org.apache.qpid.management.ui.views.NavigationView;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.jface.action.IAction;
@@ -42,6 +27,21 @@ import org.eclipse.jface.dialogs.ErrorDialog;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.IWorkbenchWindowActionDelegate;
+
+import org.apache.qpid.management.ui.ApplicationRegistry;
+import org.apache.qpid.management.ui.ApplicationWorkbenchAdvisor;
+import org.apache.qpid.management.ui.Constants;
+import org.apache.qpid.management.ui.exceptions.ManagementConsoleException;
+import org.apache.qpid.management.ui.jmx.MBeanUtility;
+import org.apache.qpid.management.ui.views.NavigationView;
+
+import static org.apache.qpid.management.ui.Constants.ERROR_SERVER_CONNECTION;
+
+import javax.net.ssl.SSLException;
+import javax.net.ssl.SSLHandshakeException;
+import javax.net.ssl.SSLKeyException;
+import javax.net.ssl.SSLPeerUnverifiedException;
+import java.io.IOException;
 
 public class AbstractAction
 {

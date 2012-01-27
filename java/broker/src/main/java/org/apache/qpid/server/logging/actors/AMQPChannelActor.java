@@ -23,9 +23,6 @@ package org.apache.qpid.server.logging.actors;
 import org.apache.qpid.server.AMQChannel;
 import org.apache.qpid.server.logging.RootMessageLogger;
 import org.apache.qpid.server.logging.subjects.ChannelLogSubject;
-import org.apache.qpid.server.protocol.AMQProtocolSession;
-
-import java.text.MessageFormat;
 
 /**
  * An AMQPChannelActor represtents a connection through the AMQP port with an

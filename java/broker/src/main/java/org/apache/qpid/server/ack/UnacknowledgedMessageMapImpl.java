@@ -20,13 +20,13 @@
  */
 package org.apache.qpid.server.ack;
 
+import org.apache.qpid.AMQException;
+import org.apache.qpid.server.queue.QueueEntry;
+
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
-
-import org.apache.qpid.AMQException;
-import org.apache.qpid.server.queue.QueueEntry;
 
 public class UnacknowledgedMessageMapImpl implements UnacknowledgedMessageMap
 {

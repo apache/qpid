@@ -23,7 +23,6 @@ package org.apache.qpid.test.framework.listeners;
 import junit.framework.AssertionFailedError;
 import junit.framework.Test;
 import junit.framework.TestCase;
-
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.junit.extensions.ShutdownHookable;
@@ -32,7 +31,13 @@ import org.apache.qpid.junit.extensions.listeners.TKTestListener;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Writer;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 
 /**
  * Listens for test results for a named test and outputs these in the standard JUnit XML format to the specified

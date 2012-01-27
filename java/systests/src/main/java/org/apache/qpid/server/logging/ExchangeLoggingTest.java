@@ -20,16 +20,6 @@
  */
 package org.apache.qpid.server.logging;
 
-import java.io.IOException;
-import java.util.List;
-
-import javax.jms.Connection;
-import javax.jms.JMSException;
-import javax.jms.MessageProducer;
-import javax.jms.Queue;
-import javax.jms.Session;
-import javax.jms.TextMessage;
-
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.AMQSession_0_10;
@@ -38,6 +28,15 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.ExchangeDeleteBody;
 import org.apache.qpid.framing.ExchangeDeleteOkBody;
 import org.apache.qpid.framing.amqp_8_0.MethodRegistry_8_0;
+
+import javax.jms.Connection;
+import javax.jms.JMSException;
+import javax.jms.MessageProducer;
+import javax.jms.Queue;
+import javax.jms.Session;
+import javax.jms.TextMessage;
+import java.io.IOException;
+import java.util.List;
 
 /**
  * Exchange

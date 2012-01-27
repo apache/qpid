@@ -17,11 +17,10 @@
  */
 package org.apache.qpid.ssl;
 
-import java.io.IOException;
+import org.apache.qpid.test.utils.QpidTestCase;
 
 import javax.net.ssl.SSLContext;
-
-import org.apache.qpid.test.utils.QpidTestCase;
+import java.io.IOException;
 
 public class SSLContextFactoryTest extends QpidTestCase
 {

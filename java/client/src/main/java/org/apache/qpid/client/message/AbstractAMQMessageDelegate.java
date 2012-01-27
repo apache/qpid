@@ -20,12 +20,6 @@
  */
 package org.apache.qpid.client.message;
 
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
-import javax.jms.JMSException;
-import javax.jms.Session;
-
 import org.apache.qpid.client.AMQAnyDestination;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQQueue;
@@ -33,6 +27,11 @@ import org.apache.qpid.client.AMQSession;
 import org.apache.qpid.client.AMQTopic;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
+
+import javax.jms.JMSException;
+import javax.jms.Session;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * This abstract class provides exchange lookup functionality that is shared

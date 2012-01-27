@@ -20,14 +20,8 @@
  */
 package org.apache.qpid.server.store;
 
-import org.apache.qpid.server.message.MessageMetaData;
-import org.apache.qpid.framing.abstraction.ContentChunk;
-
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.List;
 import java.nio.ByteBuffer;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Adds some extra methods to the memory message store for testing purposes.

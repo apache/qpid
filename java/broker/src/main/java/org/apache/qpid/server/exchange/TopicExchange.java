@@ -28,21 +28,27 @@ import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
+import org.apache.qpid.server.binding.Binding;
+import org.apache.qpid.server.exchange.topic.TopicExchangeResult;
+import org.apache.qpid.server.exchange.topic.TopicMatcherResult;
+import org.apache.qpid.server.exchange.topic.TopicNormalizer;
+import org.apache.qpid.server.exchange.topic.TopicParser;
+import org.apache.qpid.server.filter.JMSSelectorFilter;
+import org.apache.qpid.server.message.InboundMessage;
 import org.apache.qpid.server.queue.AMQQueue;
 import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.binding.Binding;
-import org.apache.qpid.server.exchange.topic.*;
-import org.apache.qpid.server.filter.JMSSelectorFilter;
-import org.apache.qpid.server.message.InboundMessage;
 
 import javax.management.JMException;
-import java.sql.Array;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicLong;
-
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.WeakHashMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class TopicExchange extends AbstractExchange
 {

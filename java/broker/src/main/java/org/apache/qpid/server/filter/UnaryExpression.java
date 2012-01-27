@@ -23,14 +23,13 @@ package org.apache.qpid.server.filter;
 // Based on like named file from r450141 of the Apache ActiveMQ project <http://www.activemq.org/site/home.html>
 //
 
+import org.apache.qpid.server.queue.Filterable;
+
 import java.math.BigDecimal;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-
-import org.apache.qpid.AMQException;
-import org.apache.qpid.server.queue.Filterable;
 
 /**
  * An expression which performs an operation on two expression values

@@ -20,15 +20,8 @@
  */
 package org.apache.qpid.jms.failover;
 
-import java.net.InetAddress;
-import java.util.ArrayList;
-import java.util.List;
-
-import javax.jms.JMSException;
-import javax.jms.Message;
-import javax.jms.MessageConsumer;
-import javax.jms.MessageListener;
-import javax.jms.Session;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.client.AMQAnyDestination;
 import org.apache.qpid.client.AMQBrokerDetails;
@@ -36,8 +29,15 @@ import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.jms.BrokerDetails;
 import org.apache.qpid.jms.Connection;
 import org.apache.qpid.jms.ConnectionURL;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import javax.jms.JMSException;
+import javax.jms.Message;
+import javax.jms.MessageConsumer;
+import javax.jms.MessageListener;
+import javax.jms.Session;
+import java.net.InetAddress;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * When using the Failover exchange a single broker is supplied in the URL.

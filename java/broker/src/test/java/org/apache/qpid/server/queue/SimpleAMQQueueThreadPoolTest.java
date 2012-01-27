@@ -20,14 +20,12 @@
  */
 package org.apache.qpid.server.queue;
 
-import junit.framework.TestCase;
+import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.pool.ReferenceCountingExecutorService;
+import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.util.InternalBrokerBaseCase;
 import org.apache.qpid.server.virtualhost.VirtualHost;
-
-import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.AMQException;
 
 public class SimpleAMQQueueThreadPoolTest extends InternalBrokerBaseCase
 {

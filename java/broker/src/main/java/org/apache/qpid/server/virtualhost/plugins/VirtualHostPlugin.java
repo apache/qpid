@@ -20,10 +20,9 @@
  */
 package org.apache.qpid.server.virtualhost.plugins;
 
-import java.util.concurrent.TimeUnit;
-
 import org.apache.qpid.server.plugins.Plugin;
-import org.apache.qpid.server.virtualhost.VirtualHost;
+
+import java.util.concurrent.TimeUnit;
 
 public interface VirtualHostPlugin extends Runnable, Plugin
 {

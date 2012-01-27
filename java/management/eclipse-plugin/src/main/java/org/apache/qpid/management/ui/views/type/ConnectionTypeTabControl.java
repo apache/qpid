@@ -20,13 +20,14 @@
  */
 package org.apache.qpid.management.ui.views.type;
 
-import java.util.List;
-
-import static org.apache.qpid.management.ui.Constants.CONNECTION;
+import org.eclipse.swt.widgets.TabFolder;
 
 import org.apache.qpid.management.ui.ManagedBean;
 import org.apache.qpid.management.ui.ManagedServer;
-import org.eclipse.swt.widgets.TabFolder;
+
+import static org.apache.qpid.management.ui.Constants.CONNECTION;
+
+import java.util.List;
 
 /**
  * Controller class, which takes care of displaying appropriate information and widgets for Connections.

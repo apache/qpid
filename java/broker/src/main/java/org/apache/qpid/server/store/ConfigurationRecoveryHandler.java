@@ -20,11 +20,11 @@
 */
 package org.apache.qpid.server.store;
 
+import org.apache.qpid.framing.FieldTable;
+
 import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.UUID;
-
-import org.apache.qpid.framing.FieldTable;
 
 public interface ConfigurationRecoveryHandler
 {

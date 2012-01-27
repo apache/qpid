@@ -21,12 +21,12 @@
 
 package org.apache.qpid.qmf;
 
-import org.apache.qpid.transport.codec.Encoder;
 import org.apache.qpid.transport.codec.BBDecoder;
+import org.apache.qpid.transport.codec.Encoder;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.ArrayList;
 
 public abstract class QMFMethod<T extends QMFObject>
 {

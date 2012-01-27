@@ -18,13 +18,6 @@
  */
 package org.apache.qpid.management.jmx;
 
-import java.util.Collections;
-import java.util.Map;
-
-import javax.management.JMException;
-import javax.management.MBeanException;
-import javax.management.ObjectName;
-
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.management.common.mbeans.ManagedBroker;
 import org.apache.qpid.management.common.mbeans.ManagedExchange;
@@ -32,6 +25,11 @@ import org.apache.qpid.management.common.mbeans.ManagedQueue;
 import org.apache.qpid.server.queue.AMQQueueFactory;
 import org.apache.qpid.test.utils.JMXTestUtils;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
+
+import javax.management.MBeanException;
+import javax.management.ObjectName;
+import java.util.Collections;
+import java.util.Map;
 
 /**
  * Tests the JMX API for the Managed Broker.

@@ -21,6 +21,7 @@
 package org.apache.qpid.server.virtualhost.plugins;
 
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.server.virtualhost.HouseKeepingTask;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 

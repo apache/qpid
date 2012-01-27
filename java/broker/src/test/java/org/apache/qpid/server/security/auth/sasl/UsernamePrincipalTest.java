@@ -20,9 +20,10 @@
  */
 package org.apache.qpid.server.security.auth.sasl;
 
-import java.security.Principal;
-import javax.security.auth.Subject;
 import junit.framework.TestCase;
+
+import javax.security.auth.Subject;
+import java.security.Principal;
 
 /**
  * Tests the UsernamePrincipal.

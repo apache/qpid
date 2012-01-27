@@ -20,10 +20,7 @@
  */
 package org.apache.qpid.test.unit.message;
 
-import java.io.BufferedReader;
-import java.io.FileInputStream;
-import java.io.InputStreamReader;
-import java.util.Properties;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 import javax.jms.Connection;
 import javax.jms.Destination;
@@ -32,8 +29,10 @@ import javax.jms.MessageProducer;
 import javax.jms.Session;
 import javax.jms.TextMessage;
 import javax.naming.InitialContext;
-
-import org.apache.qpid.test.utils.QpidBrokerTestCase;
+import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.InputStreamReader;
+import java.util.Properties;
 
 
 /**

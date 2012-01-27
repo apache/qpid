@@ -20,29 +20,32 @@
  */
 package org.apache.qpid.server.exchange;
 
-import java.util.Collections;
-import java.util.Map;
-
 import org.apache.qpid.AMQException;
-import org.apache.qpid.AMQSecurityException;
-import org.apache.qpid.server.management.AMQManagedObject;
-import org.apache.qpid.server.management.ManagedObject;
-import org.apache.qpid.server.management.ManagedObjectRegistry;
-import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.virtualhost.VirtualHost;
-import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.management.common.mbeans.ManagedExchange;
 import org.apache.qpid.server.binding.BindingFactory;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.ManagementActor;
-import org.apache.qpid.management.common.mbeans.ManagedExchange;
-import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.server.management.AMQManagedObject;
+import org.apache.qpid.server.management.ManagedObject;
+import org.apache.qpid.server.management.ManagedObjectRegistry;
+import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.virtualhost.VirtualHost;
 
-import javax.management.openmbean.*;
+import javax.management.JMException;
 import javax.management.MBeanException;
+import javax.management.MalformedObjectNameException;
 import javax.management.NotCompliantMBeanException;
 import javax.management.ObjectName;
-import javax.management.MalformedObjectNameException;
-import javax.management.JMException;
+import javax.management.openmbean.ArrayType;
+import javax.management.openmbean.CompositeType;
+import javax.management.openmbean.OpenDataException;
+import javax.management.openmbean.OpenType;
+import javax.management.openmbean.SimpleType;
+import javax.management.openmbean.TabularType;
+import java.util.Collections;
+import java.util.Map;
 
 /**
      * Abstract MBean class. This has some of the methods implemented from

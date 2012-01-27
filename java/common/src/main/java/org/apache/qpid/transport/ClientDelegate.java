@@ -20,19 +20,18 @@
  */
 package org.apache.qpid.transport;
 
+import org.apache.qpid.transport.util.Logger;
+
 import static org.apache.qpid.transport.Connection.State.OPEN;
 import static org.apache.qpid.transport.Connection.State.RESUMING;
 
+import javax.security.sasl.SaslClient;
+import javax.security.sasl.SaslException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import javax.security.sasl.SaslClient;
-import javax.security.sasl.SaslException;
-
-import org.apache.qpid.transport.util.Logger;
 
 
 /**

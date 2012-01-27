@@ -18,32 +18,17 @@
  */
 package org.apache.qpid.server.plugins;
 
-import static org.apache.felix.framework.util.FelixConstants.SYSTEMBUNDLE_ACTIVATORS_PROP;
-import static org.apache.felix.main.AutoProcessor.AUTO_DEPLOY_ACTION_PROPERY;
-import static org.apache.felix.main.AutoProcessor.AUTO_DEPLOY_DIR_PROPERY;
-import static org.apache.felix.main.AutoProcessor.AUTO_DEPLOY_INSTALL_VALUE;
-import static org.apache.felix.main.AutoProcessor.AUTO_DEPLOY_START_VALUE;
-import static org.apache.felix.main.AutoProcessor.process;
-import static org.osgi.framework.Constants.FRAMEWORK_STORAGE;
-import static org.osgi.framework.Constants.FRAMEWORK_STORAGE_CLEAN;
-import static org.osgi.framework.Constants.FRAMEWORK_STORAGE_CLEAN_ONFIRSTINIT;
-import static org.osgi.framework.Constants.FRAMEWORK_SYSTEMPACKAGES;
-
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.IdentityHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.felix.framework.Felix;
 import org.apache.felix.framework.util.StringMap;
 import org.apache.log4j.Logger;
+import org.osgi.framework.BundleActivator;
+import org.osgi.framework.BundleContext;
+import org.osgi.framework.BundleException;
+import org.osgi.framework.Version;
+import org.osgi.framework.launch.Framework;
+import org.osgi.util.tracker.ServiceTracker;
+
 import org.apache.qpid.common.Closeable;
 import org.apache.qpid.common.QpidProperties;
 import org.apache.qpid.server.configuration.TopicConfiguration;
@@ -64,12 +49,28 @@ import org.apache.qpid.server.virtualhost.plugins.VirtualHostPluginFactory;
 import org.apache.qpid.server.virtualhost.plugins.policies.TopicDeletePolicy;
 import org.apache.qpid.slowconsumerdetection.policies.SlowConsumerPolicyPluginFactory;
 import org.apache.qpid.util.FileUtils;
-import org.osgi.framework.BundleActivator;
-import org.osgi.framework.BundleContext;
-import org.osgi.framework.BundleException;
-import org.osgi.framework.Version;
-import org.osgi.framework.launch.Framework;
-import org.osgi.util.tracker.ServiceTracker;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.IdentityHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+
+import static org.apache.felix.framework.util.FelixConstants.SYSTEMBUNDLE_ACTIVATORS_PROP;
+import static org.apache.felix.main.AutoProcessor.AUTO_DEPLOY_ACTION_PROPERY;
+import static org.apache.felix.main.AutoProcessor.AUTO_DEPLOY_DIR_PROPERY;
+import static org.apache.felix.main.AutoProcessor.AUTO_DEPLOY_INSTALL_VALUE;
+import static org.apache.felix.main.AutoProcessor.AUTO_DEPLOY_START_VALUE;
+import static org.apache.felix.main.AutoProcessor.process;
+import static org.osgi.framework.Constants.FRAMEWORK_STORAGE;
+import static org.osgi.framework.Constants.FRAMEWORK_STORAGE_CLEAN;
+import static org.osgi.framework.Constants.FRAMEWORK_STORAGE_CLEAN_ONFIRSTINIT;
+import static org.osgi.framework.Constants.FRAMEWORK_SYSTEMPACKAGES;
 
 /**
  * Provides access to pluggable elements, such as exchanges

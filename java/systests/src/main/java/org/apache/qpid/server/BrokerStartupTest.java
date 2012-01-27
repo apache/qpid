@@ -20,18 +20,17 @@
  */
 package org.apache.qpid.server;
 
+import junit.framework.AssertionFailedError;
+import org.apache.log4j.Level;
+import org.apache.log4j.Logger;
+
 import org.apache.qpid.server.logging.AbstractTestLogging;
 import org.apache.qpid.util.LogMonitor;
-import org.apache.log4j.Logger;
-import org.apache.log4j.Level;
-
-import java.util.List;
-
-import junit.framework.AssertionFailedError;
 
 import javax.jms.Connection;
-import javax.jms.Session;
 import javax.jms.Queue;
+import javax.jms.Session;
+import java.util.List;
 
 /**
  * Series of tests to validate the external Java broker starts up as expected.

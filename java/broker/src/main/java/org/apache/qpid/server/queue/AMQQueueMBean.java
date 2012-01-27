@@ -20,10 +20,6 @@
  */
 package org.apache.qpid.server.queue;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-
 import org.apache.commons.lang.time.FastDateFormat;
 import org.apache.log4j.Logger;
 
@@ -36,12 +32,12 @@ import org.apache.qpid.management.common.mbeans.annotations.MBeanDescription;
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.management.AMQManagedObject;
 import org.apache.qpid.server.management.ManagedObject;
-import org.apache.qpid.server.message.ServerMessage;
-import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.AMQMessage;
+import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.message.MessageTransferMessage;
-import org.apache.qpid.server.txn.ServerTransaction;
+import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.txn.LocalTransaction;
+import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.transport.MessageProperties;
 
 import javax.management.JMException;
@@ -61,6 +57,9 @@ import javax.management.openmbean.SimpleType;
 import javax.management.openmbean.TabularData;
 import javax.management.openmbean.TabularDataSupport;
 import javax.management.openmbean.TabularType;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 
 
 /**

@@ -20,12 +20,12 @@
  */
 package org.apache.qpid.messaging.util;
 
+import org.apache.qpid.messaging.Address;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import org.apache.qpid.messaging.Address;
 
 
 /**

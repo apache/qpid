@@ -23,13 +23,11 @@ package org.apache.qpid.server.filter;
 // Based on like named file from r450141 of the Apache ActiveMQ project <http://www.activemq.org/site/home.html>
 //
 
-import java.util.HashMap;
-
 import org.apache.log4j.Logger;
 
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.CommonContentHeaderProperties;
 import org.apache.qpid.server.queue.Filterable;
+
+import java.util.HashMap;
 
 /**
  * Represents a property  expression

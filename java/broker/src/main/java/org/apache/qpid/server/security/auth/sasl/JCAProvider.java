@@ -20,10 +20,9 @@
  */
 package org.apache.qpid.server.security.auth.sasl;
 
+import javax.security.sasl.SaslServerFactory;
 import java.security.Provider;
 import java.util.Map;
-
-import javax.security.sasl.SaslServerFactory;
 
 public class JCAProvider extends Provider
 {

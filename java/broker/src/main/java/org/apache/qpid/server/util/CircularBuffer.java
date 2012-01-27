@@ -20,9 +20,9 @@
  */
 package org.apache.qpid.server.util;
 
-import java.util.Iterator;
-
 import org.apache.log4j.Logger;
+
+import java.util.Iterator;
 
 public class CircularBuffer implements Iterable
 {

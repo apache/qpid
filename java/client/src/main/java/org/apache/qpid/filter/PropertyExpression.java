@@ -17,15 +17,15 @@
  */
 package org.apache.qpid.filter;
 
-import java.util.HashMap;
-
-import javax.jms.DeliveryMode;
-import javax.jms.JMSException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.AMQInternalException;
 import org.apache.qpid.client.message.AbstractJMSMessage;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import javax.jms.DeliveryMode;
+import javax.jms.JMSException;
+import java.util.HashMap;
 
 /**
  * Represents a property  expression

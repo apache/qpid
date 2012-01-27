@@ -20,20 +20,26 @@
  */
 package org.apache.qpid.transport.network.io;
 
-import java.io.IOException;
-import java.net.*;
-import java.nio.ByteBuffer;
-
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.SSLServerSocketFactory;
-
 import org.apache.qpid.protocol.ProtocolEngine;
 import org.apache.qpid.protocol.ProtocolEngineFactory;
-import org.apache.qpid.transport.*;
+import org.apache.qpid.transport.ConnectionSettings;
+import org.apache.qpid.transport.NetworkTransportConfiguration;
+import org.apache.qpid.transport.Receiver;
+import org.apache.qpid.transport.TransportException;
 import org.apache.qpid.transport.network.IncomingNetworkTransport;
 import org.apache.qpid.transport.network.NetworkConnection;
 import org.apache.qpid.transport.network.OutgoingNetworkTransport;
 import org.apache.qpid.transport.util.Logger;
+
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLServerSocketFactory;
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.SocketException;
+import java.nio.ByteBuffer;
 
 public class IoNetworkTransport implements OutgoingNetworkTransport, IncomingNetworkTransport
 {

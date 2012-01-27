@@ -21,13 +21,7 @@ package org.apache.qpid.client.message;
  */
 
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 import javax.jms.Connection;
 import javax.jms.JMSException;
@@ -36,14 +30,12 @@ import javax.jms.MessageConsumer;
 import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.Session;
-
-import org.apache.qpid.client.AMQConnection;
-import org.apache.qpid.client.AMQSession;
-import org.apache.qpid.client.message.AMQPEncodedMapMessage;
-import org.apache.qpid.client.message.AbstractJMSMessage;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.ProtocolVersion;
-import org.apache.qpid.test.utils.QpidBrokerTestCase;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 
 public class AMQPEncodedMapMessageTest extends QpidBrokerTestCase

@@ -20,13 +20,12 @@
  */
 package org.apache.qpid.test.unit.message;
 
-import java.util.Enumeration;
-import java.util.Hashtable;
-
 import javax.jms.Destination;
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageFormatException;
+import java.util.Enumeration;
+import java.util.Hashtable;
 
 public class NonQpidMessage implements Message
 {

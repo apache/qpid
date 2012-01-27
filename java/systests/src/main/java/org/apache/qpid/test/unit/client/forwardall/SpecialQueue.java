@@ -20,8 +20,8 @@
  */
 package org.apache.qpid.test.unit.client.forwardall;
 
-import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.client.AMQConnection;
+import org.apache.qpid.client.AMQQueue;
 import org.apache.qpid.framing.AMQShortString;
 
 /**

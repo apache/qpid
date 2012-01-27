@@ -20,10 +20,10 @@
  */
 package org.apache.qpid.transport.network;
 
+import org.apache.qpid.transport.Sender;
+
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
-
-import org.apache.qpid.transport.Sender;
 
 public interface NetworkConnection
 {

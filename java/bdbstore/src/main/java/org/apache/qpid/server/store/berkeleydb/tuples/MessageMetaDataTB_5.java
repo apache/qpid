@@ -23,6 +23,7 @@ package org.apache.qpid.server.store.berkeleydb.tuples;
 import com.sleepycat.bind.tuple.TupleInput;
 import com.sleepycat.bind.tuple.TupleOutput;
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.server.store.MessageMetaDataType;
 import org.apache.qpid.server.store.StorableMessageMetaData;
 

@@ -22,10 +22,10 @@ package org.apache.qpid.server.registry;
 
 import org.apache.qpid.server.util.InternalBrokerBaseCase;
 
-import java.security.Security;
 import java.security.Provider;
-import java.util.List;
+import java.security.Security;
 import java.util.LinkedList;
+import java.util.List;
 
 /**
  * QPID-1390 : Test to validate that the AuthenticationManger can successfully unregister any new SASL providers when

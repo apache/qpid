@@ -18,10 +18,10 @@
  */
 package org.apache.qpid.server.plugins;
 
+import org.osgi.framework.Version;
+
 import java.util.Iterator;
 import java.util.Map;
-
-import org.osgi.framework.Version;
 
 /**
  * Utility class to convert a map of package name to version numbers into the string

@@ -20,15 +20,29 @@
  */
 package org.apache.qpid.server.store.berkeleydb;
 
+import com.sleepycat.bind.tuple.TupleBinding;
+import com.sleepycat.je.Database;
+import com.sleepycat.je.DatabaseEntry;
+import com.sleepycat.je.DatabaseException;
+import com.sleepycat.je.Environment;
+import com.sleepycat.je.EnvironmentConfig;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.OptionBuilder;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
+import org.apache.commons.cli.PosixParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import org.apache.qpid.AMQException;
+import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.exchange.ExchangeDefaults;
 import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.server.store.berkeleydb.BDBMessageStore;
-import org.apache.qpid.server.store.berkeleydb.BindingKey;
-import org.apache.qpid.server.store.berkeleydb.ContentTB;
-import org.apache.qpid.server.store.berkeleydb.DatabaseVisitor;
-import org.apache.qpid.server.store.berkeleydb.ExchangeTB;
+import org.apache.qpid.server.logging.NullRootMessageLogger;
+import org.apache.qpid.server.logging.actors.BrokerActor;
+import org.apache.qpid.server.logging.actors.CurrentActor;
+import org.apache.qpid.server.message.MessageMetaData;
 import org.apache.qpid.server.store.berkeleydb.keys.MessageContentKey_4;
 import org.apache.qpid.server.store.berkeleydb.keys.MessageContentKey_5;
 import org.apache.qpid.server.store.berkeleydb.records.ExchangeRecord;
@@ -36,25 +50,13 @@ import org.apache.qpid.server.store.berkeleydb.records.QueueRecord;
 import org.apache.qpid.server.store.berkeleydb.tuples.MessageContentKeyTB_4;
 import org.apache.qpid.server.store.berkeleydb.tuples.MessageContentKeyTB_5;
 import org.apache.qpid.server.store.berkeleydb.tuples.QueueEntryTB;
-import org.apache.qpid.server.logging.actors.CurrentActor;
-import org.apache.qpid.server.logging.actors.BrokerActor;
-import org.apache.qpid.server.logging.NullRootMessageLogger;
-import org.apache.qpid.server.message.MessageMetaData;
-import org.apache.qpid.AMQException;
-import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.util.FileUtils;
-import org.apache.commons.cli.PosixParser;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.ParseException;
-import org.apache.commons.cli.Option;
-import org.apache.commons.cli.OptionBuilder;
 
-import java.io.File;
 import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.io.IOException;
+import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.nio.ByteBuffer;
 import java.text.MessageFormat;
 import java.util.ArrayList;
@@ -63,13 +65,6 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map.Entry;
-
-import com.sleepycat.je.DatabaseEntry;
-import com.sleepycat.je.DatabaseException;
-import com.sleepycat.je.Database;
-import com.sleepycat.je.Environment;
-import com.sleepycat.je.EnvironmentConfig;
-import com.sleepycat.bind.tuple.TupleBinding;
 
 /**
  * This is a simple BerkeleyDB Store upgrade tool that will upgrade a V4 Store to a V5 Store.

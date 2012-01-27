@@ -22,10 +22,9 @@ package org.apache.qpid.server.exchange.topic;
 
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.AMQShortStringTokenizer;
-import org.apache.qpid.server.exchange.TopicExchange;
 
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 
 public class TopicNormalizer
 {

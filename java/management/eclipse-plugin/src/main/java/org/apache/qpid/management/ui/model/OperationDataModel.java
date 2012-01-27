@@ -20,12 +20,11 @@
  */
 package org.apache.qpid.management.ui.model;
 
+import javax.management.MBeanOperationInfo;
+import javax.management.MBeanParameterInfo;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-
-import javax.management.MBeanOperationInfo;
-import javax.management.MBeanParameterInfo;
 
 public class OperationDataModel
 {

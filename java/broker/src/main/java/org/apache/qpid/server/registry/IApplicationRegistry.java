@@ -20,15 +20,12 @@
  */
 package org.apache.qpid.server.registry;
 
-import java.net.InetSocketAddress;
-import java.util.UUID;
-
 import org.apache.qpid.qmf.QMFService;
 import org.apache.qpid.server.configuration.BrokerConfig;
 import org.apache.qpid.server.configuration.ConfigStore;
+import org.apache.qpid.server.configuration.ConfigurationManager;
 import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.configuration.VirtualHostConfiguration;
-import org.apache.qpid.server.configuration.ConfigurationManager;
 import org.apache.qpid.server.logging.RootMessageLogger;
 import org.apache.qpid.server.management.ManagedObjectRegistry;
 import org.apache.qpid.server.plugins.PluginManager;
@@ -38,6 +35,9 @@ import org.apache.qpid.server.stats.StatisticsGatherer;
 import org.apache.qpid.server.transport.QpidAcceptor;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
+
+import java.net.InetSocketAddress;
+import java.util.UUID;
 
 public interface IApplicationRegistry extends StatisticsGatherer
 {

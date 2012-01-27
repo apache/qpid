@@ -20,14 +20,14 @@
  */
 package org.apache.qpid.jms;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import org.apache.qpid.jms.failover.FailoverExchangeMethod;
 import org.apache.qpid.jms.failover.FailoverMethod;
 import org.apache.qpid.jms.failover.FailoverRoundRobinServers;
 import org.apache.qpid.jms.failover.FailoverSingleServer;
 import org.apache.qpid.jms.failover.NoFailover;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class FailoverPolicy
 {

@@ -20,10 +20,11 @@
  */
 package org.apache.qpid.management.ui;
 
-import org.apache.qpid.management.ui.views.MBeanView;
-import org.apache.qpid.management.ui.views.NavigationView;
 import org.eclipse.ui.IPageLayout;
 import org.eclipse.ui.IPerspectiveFactory;
+
+import org.apache.qpid.management.ui.views.MBeanView;
+import org.apache.qpid.management.ui.views.NavigationView;
 
 /**
  * 

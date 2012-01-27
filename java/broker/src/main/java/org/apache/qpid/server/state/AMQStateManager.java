@@ -20,50 +20,22 @@
  */
 package org.apache.qpid.server.state;
 
-import java.util.EnumMap;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.CopyOnWriteArraySet;
-
 import org.apache.log4j.Logger;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.AMQConnectionException;
-import org.apache.qpid.framing.*;
+import org.apache.qpid.framing.AMQMethodBody;
+import org.apache.qpid.framing.ChannelCloseBody;
+import org.apache.qpid.framing.ChannelCloseOkBody;
+import org.apache.qpid.framing.ChannelOpenBody;
+import org.apache.qpid.framing.MethodDispatcher;
+import org.apache.qpid.protocol.AMQConstant;
 import org.apache.qpid.protocol.AMQMethodEvent;
 import org.apache.qpid.protocol.AMQMethodListener;
-import org.apache.qpid.protocol.AMQConstant;
-import org.apache.qpid.server.handler.BasicAckMethodHandler;
-import org.apache.qpid.server.handler.BasicCancelMethodHandler;
-import org.apache.qpid.server.handler.BasicConsumeMethodHandler;
-import org.apache.qpid.server.handler.BasicGetMethodHandler;
-import org.apache.qpid.server.handler.BasicPublishMethodHandler;
-import org.apache.qpid.server.handler.BasicQosHandler;
-import org.apache.qpid.server.handler.BasicRecoverMethodHandler;
-import org.apache.qpid.server.handler.BasicRejectMethodHandler;
-import org.apache.qpid.server.handler.ChannelCloseHandler;
-import org.apache.qpid.server.handler.ChannelCloseOkHandler;
-import org.apache.qpid.server.handler.ChannelFlowHandler;
-import org.apache.qpid.server.handler.ChannelOpenHandler;
-import org.apache.qpid.server.handler.ConnectionCloseMethodHandler;
-import org.apache.qpid.server.handler.ConnectionCloseOkMethodHandler;
-import org.apache.qpid.server.handler.ConnectionOpenMethodHandler;
-import org.apache.qpid.server.handler.ConnectionSecureOkMethodHandler;
-import org.apache.qpid.server.handler.ConnectionStartOkMethodHandler;
-import org.apache.qpid.server.handler.ConnectionTuneOkMethodHandler;
-import org.apache.qpid.server.handler.ExchangeBoundHandler;
-import org.apache.qpid.server.handler.ExchangeDeclareHandler;
-import org.apache.qpid.server.handler.ExchangeDeleteHandler;
-import org.apache.qpid.server.handler.QueueBindHandler;
-import org.apache.qpid.server.handler.QueueDeclareHandler;
-import org.apache.qpid.server.handler.QueueDeleteHandler;
-import org.apache.qpid.server.handler.QueuePurgeHandler;
-import org.apache.qpid.server.handler.TxCommitHandler;
-import org.apache.qpid.server.handler.TxRollbackHandler;
-import org.apache.qpid.server.handler.TxSelectHandler;
 import org.apache.qpid.server.protocol.AMQProtocolSession;
 import org.apache.qpid.server.security.SecurityManager;
 import org.apache.qpid.server.virtualhost.VirtualHostRegistry;
+
+import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
  * The state manager is responsible for managing the state of the protocol session. <p/> For each AMQProtocolHandler

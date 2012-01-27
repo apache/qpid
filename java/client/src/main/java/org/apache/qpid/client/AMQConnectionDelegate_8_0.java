@@ -20,19 +20,8 @@
  */
 package org.apache.qpid.client;
 
-import java.io.IOException;
-import java.net.ConnectException;
-import java.nio.channels.UnresolvedAddressException;
-import java.security.GeneralSecurityException;
-import java.text.MessageFormat;
-import java.util.ArrayList;
-import java.util.EnumSet;
-import java.util.Iterator;
-import java.util.Set;
-
-import javax.jms.JMSException;
-import javax.jms.XASession;
-import javax.net.ssl.SSLContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQTimeoutException;
@@ -60,8 +49,19 @@ import org.apache.qpid.transport.network.OutgoingNetworkTransport;
 import org.apache.qpid.transport.network.Transport;
 import org.apache.qpid.transport.network.security.SecurityLayer;
 import org.apache.qpid.transport.network.security.SecurityLayerFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import javax.jms.JMSException;
+import javax.jms.XASession;
+import javax.net.ssl.SSLContext;
+import java.io.IOException;
+import java.net.ConnectException;
+import java.nio.channels.UnresolvedAddressException;
+import java.security.GeneralSecurityException;
+import java.text.MessageFormat;
+import java.util.ArrayList;
+import java.util.EnumSet;
+import java.util.Iterator;
+import java.util.Set;
 
 public class AMQConnectionDelegate_8_0 implements AMQConnectionDelegate
 {

@@ -20,11 +20,11 @@
  */
 package org.apache.qpid.management.jmx;
 
-import javax.jms.Connection;
-
 import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.management.common.mbeans.ManagedBroker;
 import org.apache.qpid.management.common.mbeans.ManagedConnection;
+
+import javax.jms.Connection;
 
 /**
  * Test generation of message statistics.

@@ -20,15 +20,12 @@
  */
 package org.apache.qpid.messaging.util;
 
-import java.io.InputStreamReader;
-
-import java.util.List;
-
 import org.apache.qpid.messaging.Address;
-import org.apache.qpid.messaging.util.ParseError;
-import org.apache.qpid.messaging.util.Token;
 
 import static org.apache.qpid.messaging.util.PyPrint.pprint;
+
+import java.io.InputStreamReader;
+import java.util.List;
 
 
 /**

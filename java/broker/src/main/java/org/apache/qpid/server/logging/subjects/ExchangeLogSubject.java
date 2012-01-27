@@ -22,6 +22,7 @@ package org.apache.qpid.server.logging.subjects;
 
 import org.apache.qpid.server.exchange.Exchange;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+
 import static org.apache.qpid.server.logging.subjects.LogSubjectFormat.EXCHANGE_FORMAT;
 
 public class ExchangeLogSubject extends AbstractLogSubject

@@ -20,11 +20,11 @@
  */
 package org.apache.qpid;
 
+import org.apache.qpid.transport.Sender;
+
 import static org.apache.qpid.transport.util.Functions.str;
 
 import java.nio.ByteBuffer;
-
-import org.apache.qpid.transport.Sender;
 
 
 /**

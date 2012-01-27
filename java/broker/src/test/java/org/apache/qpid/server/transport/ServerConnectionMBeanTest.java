@@ -20,15 +20,6 @@
  */
 package org.apache.qpid.server.transport;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Date;
-import java.util.List;
-import java.util.UUID;
-import java.util.concurrent.atomic.AtomicLong;
-import javax.management.JMException;
-import javax.management.openmbean.CompositeData;
-import javax.management.openmbean.TabularData;
 import org.apache.qpid.management.common.mbeans.ManagedConnection;
 import org.apache.qpid.server.configuration.MockConnectionConfig;
 import org.apache.qpid.server.registry.ApplicationRegistry;
@@ -37,6 +28,16 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.transport.Binary;
 import org.apache.qpid.transport.Connection;
 import org.apache.qpid.transport.Session;
+
+import javax.management.JMException;
+import javax.management.openmbean.CompositeData;
+import javax.management.openmbean.TabularData;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Date;
+import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class ServerConnectionMBeanTest extends InternalBrokerBaseCase
 {

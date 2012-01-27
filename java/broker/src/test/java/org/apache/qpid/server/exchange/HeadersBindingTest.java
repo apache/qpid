@@ -20,15 +20,15 @@
  */
 package org.apache.qpid.server.exchange;
 
-import java.util.Map;
-import java.util.HashMap;
-import java.util.Set;
-
 import junit.framework.TestCase;
-import org.apache.qpid.framing.FieldTable;
+
 import org.apache.qpid.server.binding.Binding;
 import org.apache.qpid.server.message.AMQMessageHeader;
 import org.apache.qpid.server.queue.MockAMQQueue;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
 /**
  */

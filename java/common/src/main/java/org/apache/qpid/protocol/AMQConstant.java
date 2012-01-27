@@ -20,10 +20,10 @@
  */
 package org.apache.qpid.protocol;
 
+import org.apache.qpid.framing.AMQShortString;
+
 import java.util.HashMap;
 import java.util.Map;
-
-import org.apache.qpid.framing.AMQShortString;
 
 /**
  * Defines constants for AMQP codes and also acts as a factory for creating such constants from the raw codes. Each

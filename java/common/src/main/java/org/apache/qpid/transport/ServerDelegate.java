@@ -20,18 +20,17 @@
  */
 package org.apache.qpid.transport;
 
-import static org.apache.qpid.transport.Connection.State.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import static org.apache.qpid.transport.Connection.State.OPEN;
 
 import javax.security.sasl.Sasl;
 import javax.security.sasl.SaslException;
 import javax.security.sasl.SaslServer;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 /**
  * ServerDelegate

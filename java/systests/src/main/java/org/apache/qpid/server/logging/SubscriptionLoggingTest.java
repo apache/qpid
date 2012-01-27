@@ -21,15 +21,16 @@
 package org.apache.qpid.server.logging;
 
 import junit.framework.AssertionFailedError;
+
 import org.apache.qpid.client.AMQConnection;
 
 import javax.jms.Connection;
 import javax.jms.JMSException;
+import javax.jms.Message;
 import javax.jms.MessageConsumer;
 import javax.jms.Queue;
 import javax.jms.Session;
 import javax.jms.Topic;
-import javax.jms.Message;
 import java.io.IOException;
 import java.util.List;
 

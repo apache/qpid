@@ -18,24 +18,24 @@
  */
 package org.apache.qpid.management.jmx;
 
+import org.apache.commons.lang.time.FastDateFormat;
+
+import org.apache.qpid.management.common.mbeans.ManagedQueue;
+import org.apache.qpid.server.queue.AMQQueueMBean;
+import org.apache.qpid.test.utils.JMXTestUtils;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
+
+import javax.jms.Connection;
+import javax.jms.Destination;
+import javax.jms.Message;
+import javax.jms.Session;
+import javax.management.openmbean.CompositeDataSupport;
+import javax.management.openmbean.TabularData;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-
-import javax.jms.Destination;
-import javax.jms.Message;
-import javax.jms.Session;
-import javax.jms.Connection;
-import javax.management.openmbean.CompositeDataSupport;
-import javax.management.openmbean.TabularData;
-
-import org.apache.commons.lang.time.FastDateFormat;
-import org.apache.qpid.management.common.mbeans.ManagedQueue;
-import org.apache.qpid.server.queue.AMQQueueMBean;
-import org.apache.qpid.test.utils.JMXTestUtils;
-import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 /**
  * Tests the JMX API for the Managed Queue.

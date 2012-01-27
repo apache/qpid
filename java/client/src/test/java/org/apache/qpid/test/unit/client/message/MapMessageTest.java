@@ -20,14 +20,14 @@
  */
 package org.apache.qpid.test.unit.client.message;
 
-import javax.jms.JMSException;
-import javax.jms.MessageFormatException;
-
 import junit.framework.Assert;
 import junit.framework.TestCase;
 
 import org.apache.qpid.client.message.JMSMapMessage;
 import org.apache.qpid.client.message.TestMessageHelper;
+
+import javax.jms.JMSException;
+import javax.jms.MessageFormatException;
 
 
 public class MapMessageTest extends TestCase

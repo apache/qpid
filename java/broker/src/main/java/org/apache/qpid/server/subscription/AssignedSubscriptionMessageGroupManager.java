@@ -20,10 +20,11 @@
  */
 package org.apache.qpid.server.subscription;
 
-import org.apache.qpid.server.queue.AMQQueue;
-import org.apache.qpid.server.queue.QueueEntry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import org.apache.qpid.server.queue.AMQQueue;
+import org.apache.qpid.server.queue.QueueEntry;
 
 import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;

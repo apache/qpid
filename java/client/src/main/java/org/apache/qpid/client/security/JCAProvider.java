@@ -24,9 +24,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.security.sasl.SaslClientFactory;
-
 import java.security.Provider;
-import java.security.Security;
 import java.util.Map;
 
 /**

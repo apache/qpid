@@ -21,8 +21,8 @@
 package org.apache.qpid.server.virtualhost;
 
 import org.apache.qpid.common.Closeable;
-import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.configuration.ConfigStore;
+import org.apache.qpid.server.registry.ApplicationRegistry;
 
 import java.util.ArrayList;
 import java.util.Collection;

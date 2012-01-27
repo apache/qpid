@@ -21,10 +21,10 @@
 package org.apache.qpid.server.handler;
 
 
+import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.*;
 import org.apache.qpid.framing.amqp_0_91.MethodDispatcher_0_91;
 import org.apache.qpid.server.state.AMQStateManager;
-import org.apache.qpid.AMQException;
 
 
 public class ServerMethodDispatcherImpl_0_91

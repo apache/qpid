@@ -20,6 +20,11 @@
  */
 package org.apache.qpid.transport.network.security.ssl;
 
+import org.apache.qpid.transport.util.Logger;
+
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLEngine;
+import javax.net.ssl.X509ExtendedKeyManager;
 import java.io.IOException;
 import java.net.Socket;
 import java.security.GeneralSecurityException;
@@ -27,12 +32,6 @@ import java.security.KeyStore;
 import java.security.Principal;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
-
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLEngine;
-import javax.net.ssl.X509ExtendedKeyManager;
-
-import org.apache.qpid.transport.util.Logger;
 
 public class QpidClientX509KeyManager extends X509ExtendedKeyManager
 {

@@ -20,15 +20,12 @@
  */
 package org.apache.qpid.client.security.crammd5hashed;
 
-import org.apache.qpid.client.security.amqplain.AmqPlainSaslClient;
-
-import javax.security.sasl.SaslClientFactory;
-import javax.security.sasl.SaslClient;
-import javax.security.sasl.SaslException;
-import javax.security.sasl.Sasl;
 import javax.security.auth.callback.CallbackHandler;
+import javax.security.sasl.Sasl;
+import javax.security.sasl.SaslClient;
+import javax.security.sasl.SaslClientFactory;
+import javax.security.sasl.SaslException;
 import java.util.Map;
-import java.security.Security;
 
 public class CRAMMD5HashedSaslClientFactory implements SaslClientFactory
 {

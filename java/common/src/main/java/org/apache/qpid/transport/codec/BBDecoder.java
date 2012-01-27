@@ -20,10 +20,10 @@
  */
 package org.apache.qpid.transport.codec;
 
+import org.apache.qpid.transport.Binary;
+
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-
-import org.apache.qpid.transport.Binary;
 
 /**
  * Byte Buffer Decoder.

@@ -20,15 +20,13 @@
  */
 package org.apache.qpid.test.utils;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import org.apache.qpid.client.AMQConnectionFactory;
 import org.apache.qpid.util.FileUtils;
 
 import javax.naming.NamingException;
-import javax.jms.JMSException;
-import javax.naming.NamingException;
-
-import org.apache.qpid.client.AMQConnectionFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class FailoverBaseCase extends QpidBrokerTestCase
 {

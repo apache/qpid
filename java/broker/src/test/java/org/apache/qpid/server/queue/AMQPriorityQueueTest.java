@@ -20,13 +20,15 @@ package org.apache.qpid.server.queue;
  *
  */
 
-import java.util.ArrayList;
 import junit.framework.AssertionFailedError;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.BasicContentHeaderProperties;
 import org.apache.qpid.framing.FieldTable;
 import org.apache.qpid.server.message.AMQMessage;
+
+import java.util.ArrayList;
 
 public class AMQPriorityQueueTest extends SimpleAMQQueueTest
 {

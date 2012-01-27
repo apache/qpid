@@ -18,15 +18,14 @@
  */
 package org.apache.qpid.server.security.firewall;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import org.apache.qpid.client.AMQConnectionURL;
+import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 import javax.jms.Connection;
 import javax.jms.JMSException;
-
-import org.apache.qpid.client.AMQConnectionURL;
-import org.apache.qpid.test.utils.QpidBrokerTestCase;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 
 public class FirewallConfigTest extends QpidBrokerTestCase 
 {

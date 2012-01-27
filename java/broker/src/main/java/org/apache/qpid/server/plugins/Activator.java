@@ -19,10 +19,11 @@
 package org.apache.qpid.server.plugins;
 
 import org.apache.log4j.Logger;
-import org.apache.qpid.server.configuration.ServerConfiguration;
-import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
+
+import org.apache.qpid.server.configuration.ServerConfiguration;
+import org.apache.qpid.server.registry.ApplicationRegistry;
 
 public class Activator implements BundleActivator
 {

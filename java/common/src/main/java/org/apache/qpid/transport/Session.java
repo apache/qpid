@@ -21,6 +21,11 @@
 package org.apache.qpid.transport;
 
 
+import org.apache.qpid.configuration.ClientProperties;
+import org.apache.qpid.transport.network.Frame;
+import org.apache.qpid.transport.util.Logger;
+import org.apache.qpid.transport.util.Waiter;
+
 import static org.apache.qpid.transport.Option.COMPLETED;
 import static org.apache.qpid.transport.Option.SYNC;
 import static org.apache.qpid.transport.Option.TIMELY_REPLY;
@@ -30,11 +35,6 @@ import static org.apache.qpid.transport.Session.State.DETACHED;
 import static org.apache.qpid.transport.Session.State.NEW;
 import static org.apache.qpid.transport.Session.State.OPEN;
 import static org.apache.qpid.transport.Session.State.RESUMING;
-
-import org.apache.qpid.configuration.ClientProperties;
-import org.apache.qpid.transport.network.Frame;
-import org.apache.qpid.transport.util.Logger;
-import org.apache.qpid.transport.util.Waiter;
 import static org.apache.qpid.util.Serial.ge;
 import static org.apache.qpid.util.Serial.gt;
 import static org.apache.qpid.util.Serial.le;

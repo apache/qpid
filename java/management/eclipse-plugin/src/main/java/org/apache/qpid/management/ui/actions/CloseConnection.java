@@ -20,12 +20,14 @@
  */
 package org.apache.qpid.management.ui.actions;
 
-import static org.apache.qpid.management.ui.Constants.ACTION_CLOSE;
+import org.eclipse.jface.action.IAction;
+import org.eclipse.ui.IWorkbenchWindowActionDelegate;
+
 import org.apache.qpid.management.ui.exceptions.InfoRequiredException;
 import org.apache.qpid.management.ui.views.NavigationView;
 import org.apache.qpid.management.ui.views.ViewUtility;
-import org.eclipse.jface.action.IAction;
-import org.eclipse.ui.IWorkbenchWindowActionDelegate;
+
+import static org.apache.qpid.management.ui.Constants.ACTION_CLOSE;
 
 public class CloseConnection extends AbstractAction implements IWorkbenchWindowActionDelegate
 {	

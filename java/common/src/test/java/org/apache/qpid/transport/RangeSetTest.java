@@ -20,13 +20,14 @@
  */
 package org.apache.qpid.transport;
 
+import junit.framework.TestCase;
+
+import static org.apache.qpid.util.Serial.COMPARATOR;
+import static org.apache.qpid.util.Serial.eq;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-
-import junit.framework.TestCase;
-
-import static org.apache.qpid.util.Serial.*;
 
 /**
  * RangeSetTest

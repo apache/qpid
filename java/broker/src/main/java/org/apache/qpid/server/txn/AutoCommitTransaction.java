@@ -20,11 +20,8 @@
  */
 package org.apache.qpid.server.txn;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.AMQStoreException;
 import org.apache.qpid.server.message.EnqueableMessage;
@@ -32,6 +29,9 @@ import org.apache.qpid.server.message.ServerMessage;
 import org.apache.qpid.server.queue.BaseQueue;
 import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.qpid.server.store.MessageStore;
+
+import java.util.Collection;
+import java.util.List;
 
 /**
  * An implementation of ServerTransaction where each enqueue/dequeue

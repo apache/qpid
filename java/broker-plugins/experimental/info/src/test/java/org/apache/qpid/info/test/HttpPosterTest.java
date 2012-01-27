@@ -20,13 +20,13 @@
  */
 package org.apache.qpid.info.test;
 
-import java.util.List;
-import java.util.Properties;
-
-import org.apache.qpid.info.util.HttpPoster;
+import junit.framework.TestCase;
 import org.mortbay.jetty.testing.ServletTester;
 
-import junit.framework.TestCase;
+import org.apache.qpid.info.util.HttpPoster;
+
+import java.util.List;
+import java.util.Properties;
 
 /*
  * This test verifies that the plugin posts correctly to a webserver 

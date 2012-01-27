@@ -20,10 +20,8 @@
  */
 package org.apache.qpid.server;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import org.apache.commons.configuration.XMLConfiguration;
+
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.management.common.mbeans.ManagedBroker;
 import org.apache.qpid.server.configuration.ServerConfiguration;
@@ -40,9 +38,12 @@ import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.registry.IApplicationRegistry;
 import org.apache.qpid.server.store.TestableMemoryMessageStore;
 import org.apache.qpid.server.util.TestApplicationRegistry;
-import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 import org.apache.qpid.server.virtualhost.VirtualHost;
+import org.apache.qpid.server.virtualhost.VirtualHostImpl;
 import org.apache.qpid.test.utils.QpidTestCase;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class AMQBrokerManagerMBeanTest extends QpidTestCase
 {

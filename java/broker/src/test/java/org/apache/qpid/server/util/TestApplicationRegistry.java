@@ -20,19 +20,20 @@
  */
 package org.apache.qpid.server.util;
 
-import java.util.Properties;
-
 import org.apache.commons.configuration.ConfigurationException;
+
 import org.apache.qpid.server.configuration.ServerConfiguration;
+import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
 import org.apache.qpid.server.logging.NullRootMessageLogger;
 import org.apache.qpid.server.logging.actors.BrokerActor;
 import org.apache.qpid.server.logging.actors.CurrentActor;
 import org.apache.qpid.server.logging.actors.GenericActor;
-import org.apache.qpid.server.configuration.plugins.ConfigurationPlugin;
 import org.apache.qpid.server.registry.ApplicationRegistry;
 import org.apache.qpid.server.security.auth.database.PropertiesPrincipalDatabase;
 import org.apache.qpid.server.security.auth.manager.AuthenticationManager;
 import org.apache.qpid.server.security.auth.manager.PrincipalDatabaseAuthenticationManager;
+
+import java.util.Properties;
 
 public class TestApplicationRegistry extends ApplicationRegistry
 {

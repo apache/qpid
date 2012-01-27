@@ -20,12 +20,8 @@
  */
 package org.apache.qpid.server.store;
 
-import java.io.File;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.commons.configuration.PropertiesConfiguration;
+
 import org.apache.qpid.AMQException;
 import org.apache.qpid.common.AMQPFilterTypes;
 import org.apache.qpid.framing.AMQShortString;
@@ -57,6 +53,11 @@ import org.apache.qpid.server.txn.ServerTransaction;
 import org.apache.qpid.server.util.InternalBrokerBaseCase;
 import org.apache.qpid.server.virtualhost.VirtualHost;
 import org.apache.qpid.util.FileUtils;
+
+import java.io.File;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * This tests the MessageStores by using the available interfaces.

@@ -20,17 +20,19 @@
  */
 package org.apache.qpid.transport.network;
 
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-
 import org.apache.qpid.transport.ProtocolError;
 import org.apache.qpid.transport.ProtocolHeader;
 import org.apache.qpid.transport.Receiver;
 import org.apache.qpid.transport.SegmentType;
 
-import static org.apache.qpid.transport.util.Functions.*;
+import static org.apache.qpid.transport.network.InputHandler.State.ERROR;
+import static org.apache.qpid.transport.network.InputHandler.State.FRAME_BODY;
+import static org.apache.qpid.transport.network.InputHandler.State.FRAME_HDR;
+import static org.apache.qpid.transport.network.InputHandler.State.PROTO_HDR;
+import static org.apache.qpid.transport.util.Functions.str;
 
-import static org.apache.qpid.transport.network.InputHandler.State.*;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
 
 /**

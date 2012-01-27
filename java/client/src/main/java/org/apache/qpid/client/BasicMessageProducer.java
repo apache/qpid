@@ -20,8 +20,17 @@
  */
 package org.apache.qpid.client;
 
-import java.io.UnsupportedEncodingException;
-import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import org.apache.qpid.AMQException;
+import org.apache.qpid.client.message.AbstractJMSMessage;
+import org.apache.qpid.client.message.MessageConverter;
+import org.apache.qpid.client.protocol.AMQProtocolHandler;
+import org.apache.qpid.framing.ContentBody;
+import org.apache.qpid.transport.TransportException;
+import org.apache.qpid.util.UUIDGen;
+import org.apache.qpid.util.UUIDs;
 
 import javax.jms.BytesMessage;
 import javax.jms.DeliveryMode;
@@ -33,17 +42,8 @@ import javax.jms.Message;
 import javax.jms.ObjectMessage;
 import javax.jms.StreamMessage;
 import javax.jms.TextMessage;
-
-import org.apache.qpid.AMQException;
-import org.apache.qpid.client.message.AbstractJMSMessage;
-import org.apache.qpid.client.message.MessageConverter;
-import org.apache.qpid.client.protocol.AMQProtocolHandler;
-import org.apache.qpid.framing.ContentBody;
-import org.apache.qpid.transport.TransportException;
-import org.apache.qpid.util.UUIDGen;
-import org.apache.qpid.util.UUIDs;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.io.UnsupportedEncodingException;
+import java.util.UUID;
 
 public abstract class BasicMessageProducer extends Closeable implements org.apache.qpid.jms.MessageProducer
 {

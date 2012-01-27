@@ -20,21 +20,20 @@
  */
 package org.apache.qpid.client.messaging.address;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQDestination.Binding;
 import org.apache.qpid.client.messaging.address.Link.Reliability;
 import org.apache.qpid.client.messaging.address.Link.Subscription;
 import org.apache.qpid.client.messaging.address.Node.ExchangeNode;
 import org.apache.qpid.client.messaging.address.Node.QueueNode;
-import org.apache.qpid.client.messaging.address.Node.UnknownNodeType;
 import org.apache.qpid.configuration.Accessor;
 import org.apache.qpid.configuration.Accessor.MapAccessor;
 import org.apache.qpid.messaging.Address;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Utility class for extracting information from the address class

@@ -20,21 +20,6 @@
  */
 package org.apache.qpid.management.ui.views;
 
-import java.util.LinkedList;
-
-import javax.management.MBeanServerConnection;
-
-import static org.apache.qpid.management.ui.Constants.*;
-
-import org.apache.qpid.management.ui.ApiVersion;
-import org.apache.qpid.management.ui.ApplicationRegistry;
-import org.apache.qpid.management.ui.ManagedBean;
-import org.apache.qpid.management.ui.ManagedServer;
-import org.apache.qpid.management.ui.ServerRegistry;
-import org.apache.qpid.management.ui.actions.BackAction;
-import org.apache.qpid.management.ui.jmx.JMXManagedObject;
-import org.apache.qpid.management.ui.jmx.JMXServerRegistry;
-import org.apache.qpid.management.ui.jmx.MBeanUtility;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.swt.SWT;
@@ -51,6 +36,21 @@ import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.forms.widgets.Form;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 import org.eclipse.ui.part.ViewPart;
+
+import org.apache.qpid.management.ui.ApiVersion;
+import org.apache.qpid.management.ui.ApplicationRegistry;
+import org.apache.qpid.management.ui.ManagedBean;
+import org.apache.qpid.management.ui.ManagedServer;
+import org.apache.qpid.management.ui.ServerRegistry;
+import org.apache.qpid.management.ui.actions.BackAction;
+import org.apache.qpid.management.ui.jmx.JMXManagedObject;
+import org.apache.qpid.management.ui.jmx.JMXServerRegistry;
+import org.apache.qpid.management.ui.jmx.MBeanUtility;
+
+import static org.apache.qpid.management.ui.Constants.*;
+
+import javax.management.MBeanServerConnection;
+import java.util.LinkedList;
 
 /**
  * MBean View create appropriate view based on the user selection on the Navigation View.

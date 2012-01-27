@@ -20,22 +20,25 @@
  */
 package org.apache.qpid.test.unit.message;
 
-import java.util.Map;
-
-import javax.jms.Destination;
-import javax.jms.JMSException;
-import javax.jms.TemporaryQueue;
-import javax.jms.Topic;
-import javax.jms.TopicSubscriber;
-
 import org.apache.qpid.AMQException;
-import org.apache.qpid.client.*;
+import org.apache.qpid.client.AMQConnection;
+import org.apache.qpid.client.AMQDestination;
+import org.apache.qpid.client.AMQSession_0_8;
+import org.apache.qpid.client.BasicMessageConsumer_0_8;
+import org.apache.qpid.client.BasicMessageProducer_0_8;
 import org.apache.qpid.client.failover.FailoverException;
 import org.apache.qpid.client.message.AMQMessageDelegateFactory;
 import org.apache.qpid.client.protocol.AMQProtocolHandler;
 import org.apache.qpid.filter.MessageFilter;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
+
+import javax.jms.Destination;
+import javax.jms.JMSException;
+import javax.jms.TemporaryQueue;
+import javax.jms.Topic;
+import javax.jms.TopicSubscriber;
+import java.util.Map;
 
 public class TestAMQSession extends AMQSession_0_8
 {

@@ -20,9 +20,10 @@
  */
 package org.apache.qpid.server.subscription;
 
-import org.apache.qpid.server.transport.ServerSession;
-import org.apache.qpid.server.queue.QueueEntry;
 import org.apache.log4j.Logger;
+
+import org.apache.qpid.server.queue.QueueEntry;
+import org.apache.qpid.server.transport.ServerSession;
 
 
 class ExplicitAcceptDispositionChangeListener implements ServerSession.MessageDispositionChangeListener

@@ -20,15 +20,14 @@
  */
 package org.apache.qpid.server.logging;
 
-import org.apache.commons.configuration.Configuration;
 import org.apache.qpid.server.configuration.ServerConfiguration;
 import org.apache.qpid.server.logging.subjects.AbstractTestLogSubject;
 
 import javax.jms.Connection;
 import javax.jms.Queue;
 import javax.jms.Session;
-import java.util.List;
 import java.io.File;
+import java.util.List;
 
 /**
  * The MessageStore test suite validates that the follow log messages as

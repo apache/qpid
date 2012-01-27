@@ -20,24 +20,17 @@
  */
 package org.apache.qpid.client.message;
 
-import java.io.DataInputStream;
-import java.io.UnsupportedEncodingException;
+import org.apache.qpid.AMQException;
+import org.apache.qpid.client.CustomJMSXProperty;
+
+import javax.jms.JMSException;
+import javax.jms.MessageFormatException;
 import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CharsetEncoder;
-
-import javax.jms.JMSException;
-import javax.jms.MessageFormatException;
-
-import org.apache.qpid.AMQException;
-import org.apache.qpid.client.CustomJMSXProperty;
-import org.apache.qpid.framing.AMQFrameDecodingException;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.BasicContentHeaderProperties;
-import org.apache.qpid.util.Strings;
 
 public class JMSTextMessage extends AbstractJMSMessage implements javax.jms.TextMessage
 {

@@ -20,11 +20,11 @@
  */
 package org.apache.qpid.util;
 
+import junit.framework.TestCase;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
-
-import junit.framework.TestCase;
 
 public class ByteBufferInputStreamTest extends TestCase
 {

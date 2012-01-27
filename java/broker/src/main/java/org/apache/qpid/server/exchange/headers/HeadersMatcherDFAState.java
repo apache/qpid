@@ -1,13 +1,17 @@
 package org.apache.qpid.server.exchange.headers;
 
-import org.apache.qpid.framing.AMQTypedValue;
 import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.AMQTypedValue;
 import org.apache.qpid.framing.FieldTable;
-import org.apache.qpid.server.exchange.topic.TopicMatcherDFAState;
-import org.apache.qpid.server.exchange.topic.TopicWord;
-import org.apache.qpid.server.exchange.topic.TopicMatcherResult;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
 
 /*
 *

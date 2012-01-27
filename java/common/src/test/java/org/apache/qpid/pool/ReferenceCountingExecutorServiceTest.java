@@ -20,13 +20,13 @@
  */
 package org.apache.qpid.pool;
 
+import junit.framework.TestCase;
+
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
-
-import junit.framework.TestCase;
 
 
 public class ReferenceCountingExecutorServiceTest extends TestCase

@@ -24,6 +24,7 @@ import com.sleepycat.bind.tuple.TupleBinding;
 import com.sleepycat.bind.tuple.TupleInput;
 import com.sleepycat.bind.tuple.TupleOutput;
 import org.apache.log4j.Logger;
+
 import org.apache.qpid.framing.AMQShortString;
 
 public class AMQShortStringTB extends TupleBinding

@@ -20,18 +20,17 @@
  */
 package org.apache.qpid.ssl;
 
-import java.io.IOException;
-import java.security.GeneralSecurityException;
-import java.security.KeyStore;
+import org.apache.qpid.transport.network.security.ssl.QpidClientX509KeyManager;
+import org.apache.qpid.transport.network.security.ssl.SSLUtil;
 
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.TrustManager;
 import javax.net.ssl.TrustManagerFactory;
-
-import org.apache.qpid.transport.network.security.ssl.QpidClientX509KeyManager;
-import org.apache.qpid.transport.network.security.ssl.SSLUtil;
+import java.io.IOException;
+import java.security.GeneralSecurityException;
+import java.security.KeyStore;
 
 /**
  * Factory used to create SSLContexts. SSL needs to be configured

@@ -20,11 +20,11 @@
  */
 package org.apache.qpid.server.store.berkeleydb;
 
-import org.apache.qpid.framing.FieldTable;
-
 import com.sleepycat.bind.tuple.TupleInput;
 import com.sleepycat.bind.tuple.TupleOutput;
 import com.sleepycat.je.DatabaseException;
+
+import org.apache.qpid.framing.FieldTable;
 
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;

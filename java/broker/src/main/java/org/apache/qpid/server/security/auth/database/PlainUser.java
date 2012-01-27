@@ -20,8 +20,6 @@
  */
 package org.apache.qpid.server.security.auth.database;
 
-import org.apache.log4j.Logger;
-
 import java.security.Principal;
 
 public class PlainUser implements Principal

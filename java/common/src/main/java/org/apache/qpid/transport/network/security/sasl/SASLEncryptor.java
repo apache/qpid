@@ -21,14 +21,12 @@ package org.apache.qpid.transport.network.security.sasl;
  */
 
 
-import java.util.concurrent.atomic.AtomicBoolean;
-
-import javax.security.sasl.Sasl;
-import javax.security.sasl.SaslClient;
-
 import org.apache.qpid.transport.Connection;
 import org.apache.qpid.transport.ConnectionException;
 import org.apache.qpid.transport.ConnectionListener;
+
+import javax.security.sasl.Sasl;
+import javax.security.sasl.SaslClient;
 
 public abstract class SASLEncryptor implements ConnectionListener
 {

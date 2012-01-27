@@ -20,13 +20,13 @@
  */
 package org.apache.qpid.management.ui.views.logging;
 
+import org.eclipse.jface.viewers.Viewer;
+import org.eclipse.jface.viewers.ViewerSorter;
+
 import static org.apache.qpid.management.common.mbeans.LoggingManagement.LOGGER_LEVEL;
 import static org.apache.qpid.management.common.mbeans.LoggingManagement.LOGGER_NAME;
 
 import javax.management.openmbean.CompositeData;
-
-import org.eclipse.jface.viewers.Viewer;
-import org.eclipse.jface.viewers.ViewerSorter;
 
 /**
  * Sorter class for the Logging Management table viewers.

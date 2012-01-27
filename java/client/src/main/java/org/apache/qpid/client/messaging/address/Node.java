@@ -21,15 +21,13 @@
 
 package org.apache.qpid.client.messaging.address;
 
+import org.apache.qpid.client.AMQDestination;
+import org.apache.qpid.client.AMQDestination.Binding;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-
-import javax.naming.OperationNotSupportedException;
-
-import org.apache.qpid.client.AMQDestination;
-import org.apache.qpid.client.AMQDestination.Binding;
 
 public abstract class Node
 { 

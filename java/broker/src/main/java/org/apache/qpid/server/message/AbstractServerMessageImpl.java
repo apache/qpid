@@ -20,11 +20,10 @@
  */
 package org.apache.qpid.server.message;
 
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
-
 import org.apache.qpid.server.store.StorableMessageMetaData;
 import org.apache.qpid.server.store.StoredMessage;
+
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
 public abstract class AbstractServerMessageImpl<T extends StorableMessageMetaData> implements ServerMessage<T>
 {

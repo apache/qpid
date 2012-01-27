@@ -20,11 +20,11 @@
 
 package org.apache.qpid.framing;
 
+import junit.framework.TestCase;
+
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
-
-import junit.framework.TestCase;
 public class AMQShortStringTest extends TestCase
 {
 

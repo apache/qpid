@@ -1,10 +1,8 @@
 package org.apache.qpid.server.queue;
 
-import java.util.Collection;
-
 import org.apache.qpid.AMQException;
-import org.apache.qpid.server.subscription.Subscription;
 import org.apache.qpid.server.message.ServerMessage;
+import org.apache.qpid.server.subscription.Subscription;
 
 /*
 *

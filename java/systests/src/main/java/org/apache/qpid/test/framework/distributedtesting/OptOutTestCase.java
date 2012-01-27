@@ -20,8 +20,8 @@
  */
 package org.apache.qpid.test.framework.distributedtesting;
 
-import org.apache.qpid.test.framework.sequencers.CircuitFactory;
 import org.apache.qpid.test.framework.FrameworkBaseCase;
+import org.apache.qpid.test.framework.sequencers.CircuitFactory;
 
 /**
  * An OptOutTestCase is a test case that automatically fails. It is used when a list of test clients has been generated

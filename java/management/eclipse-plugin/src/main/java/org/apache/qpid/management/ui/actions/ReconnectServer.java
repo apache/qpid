@@ -20,18 +20,6 @@
  */
 package org.apache.qpid.management.ui.actions;
 
-import static org.apache.qpid.management.ui.Constants.ACTION_LOGIN;
-import static org.apache.qpid.management.ui.Constants.CONSOLE_IMAGE;
-import static org.apache.qpid.management.ui.Constants.INFO_PASSWORD;
-import static org.apache.qpid.management.ui.Constants.INFO_USERNAME;
-import static org.apache.qpid.management.ui.Constants.PASSWORD;
-import static org.apache.qpid.management.ui.Constants.USERNAME;
-
-import org.apache.qpid.management.ui.ApplicationRegistry;
-import org.apache.qpid.management.ui.Constants;
-import org.apache.qpid.management.ui.exceptions.InfoRequiredException;
-import org.apache.qpid.management.ui.views.TreeObject;
-import org.apache.qpid.management.ui.views.ViewUtility;
 import org.eclipse.jface.action.IAction;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.KeyAdapter;
@@ -48,6 +36,19 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.IWorkbenchWindowActionDelegate;
+
+import org.apache.qpid.management.ui.ApplicationRegistry;
+import org.apache.qpid.management.ui.Constants;
+import org.apache.qpid.management.ui.exceptions.InfoRequiredException;
+import org.apache.qpid.management.ui.views.TreeObject;
+import org.apache.qpid.management.ui.views.ViewUtility;
+
+import static org.apache.qpid.management.ui.Constants.ACTION_LOGIN;
+import static org.apache.qpid.management.ui.Constants.CONSOLE_IMAGE;
+import static org.apache.qpid.management.ui.Constants.INFO_PASSWORD;
+import static org.apache.qpid.management.ui.Constants.INFO_USERNAME;
+import static org.apache.qpid.management.ui.Constants.PASSWORD;
+import static org.apache.qpid.management.ui.Constants.USERNAME;
 
 public class ReconnectServer extends AbstractAction implements IWorkbenchWindowActionDelegate
 {

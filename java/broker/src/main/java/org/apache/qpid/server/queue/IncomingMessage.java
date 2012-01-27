@@ -20,25 +20,26 @@
  */
 package org.apache.qpid.server.queue;
 
-import org.apache.qpid.framing.abstraction.MessagePublishInfo;
-import org.apache.qpid.framing.abstraction.ContentChunk;
-import org.apache.qpid.framing.ContentHeaderBody;
-import org.apache.qpid.framing.AMQShortString;
-import org.apache.qpid.framing.BasicContentHeaderProperties;
-import org.apache.qpid.server.store.StoredMessage;
-import org.apache.qpid.server.registry.ApplicationRegistry;
-import org.apache.qpid.server.exchange.Exchange;
-import org.apache.qpid.server.message.InboundMessage;
-import org.apache.qpid.server.message.AMQMessageHeader;
-import org.apache.qpid.server.message.EnqueableMessage;
-import org.apache.qpid.server.message.MessageContentSource;
-import org.apache.qpid.server.message.MessageMetaData;
-import org.apache.qpid.AMQException;
 import org.apache.log4j.Logger;
 
+import org.apache.qpid.AMQException;
+import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.framing.BasicContentHeaderProperties;
+import org.apache.qpid.framing.ContentHeaderBody;
+import org.apache.qpid.framing.abstraction.ContentChunk;
+import org.apache.qpid.framing.abstraction.MessagePublishInfo;
+import org.apache.qpid.server.exchange.Exchange;
+import org.apache.qpid.server.message.AMQMessageHeader;
+import org.apache.qpid.server.message.EnqueableMessage;
+import org.apache.qpid.server.message.InboundMessage;
+import org.apache.qpid.server.message.MessageContentSource;
+import org.apache.qpid.server.message.MessageMetaData;
+import org.apache.qpid.server.registry.ApplicationRegistry;
+import org.apache.qpid.server.store.StoredMessage;
+
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
-import java.nio.ByteBuffer;
 
 public class IncomingMessage implements Filterable, InboundMessage, EnqueableMessage, MessageContentSource
 {

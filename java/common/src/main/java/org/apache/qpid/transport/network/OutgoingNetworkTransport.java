@@ -20,12 +20,11 @@
  */
 package org.apache.qpid.transport.network;
 
-import java.nio.ByteBuffer;
-
-import javax.net.ssl.SSLContext;
-
 import org.apache.qpid.transport.ConnectionSettings;
 import org.apache.qpid.transport.Receiver;
+
+import javax.net.ssl.SSLContext;
+import java.nio.ByteBuffer;
 
 public interface OutgoingNetworkTransport extends NetworkTransport
 {

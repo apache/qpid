@@ -21,15 +21,19 @@
 package org.apache.qpid.server.protocol;
 
 import org.apache.qpid.protocol.ServerProtocolEngine;
-import org.apache.qpid.transport.Sender;
-import org.apache.qpid.transport.network.InputHandler;
-import org.apache.qpid.transport.network.Assembler;
-import org.apache.qpid.transport.network.Disassembler;
-import org.apache.qpid.transport.network.NetworkConnection;
-import org.apache.qpid.server.configuration.*;
-import org.apache.qpid.server.transport.ServerConnection;
+import org.apache.qpid.server.configuration.ConfigStore;
+import org.apache.qpid.server.configuration.ConfiguredObject;
+import org.apache.qpid.server.configuration.ConnectionConfig;
+import org.apache.qpid.server.configuration.ConnectionConfigType;
+import org.apache.qpid.server.configuration.VirtualHostConfig;
 import org.apache.qpid.server.logging.messages.ConnectionMessages;
 import org.apache.qpid.server.registry.IApplicationRegistry;
+import org.apache.qpid.server.transport.ServerConnection;
+import org.apache.qpid.transport.Sender;
+import org.apache.qpid.transport.network.Assembler;
+import org.apache.qpid.transport.network.Disassembler;
+import org.apache.qpid.transport.network.InputHandler;
+import org.apache.qpid.transport.network.NetworkConnection;
 
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;

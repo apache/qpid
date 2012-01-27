@@ -21,10 +21,8 @@
 package org.apache.qpid.test.client;
 
 import org.apache.qpid.AMQException;
-import org.apache.qpid.client.AMQConnection;
 import org.apache.qpid.client.AMQDestination;
 import org.apache.qpid.client.AMQSession;
-import org.apache.qpid.test.utils.FailoverBaseCase;
 import org.apache.qpid.test.utils.QpidBrokerTestCase;
 
 import javax.jms.Connection;
@@ -38,7 +36,6 @@ import javax.jms.Session;
 import javax.jms.TextMessage;
 import javax.naming.NamingException;
 import java.util.Enumeration;
-import java.util.Random;
 
 public class QueueBrowserAutoAckTest extends QpidBrokerTestCase
 {

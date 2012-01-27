@@ -17,9 +17,6 @@
  */
 package org.apache.qpid.nclient;
 
-import java.nio.ByteBuffer;
-
-import org.apache.qpid.transport.Header;
 import org.apache.qpid.transport.MessageTransfer;
 
 /**

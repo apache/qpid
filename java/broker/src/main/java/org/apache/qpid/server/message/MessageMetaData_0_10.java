@@ -20,20 +20,19 @@
 */
 package org.apache.qpid.server.message;
 
-import org.apache.qpid.server.store.StorableMessageMetaData;
+import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.server.store.MessageMetaDataType;
-import org.apache.qpid.transport.MessageTransfer;
+import org.apache.qpid.server.store.StorableMessageMetaData;
 import org.apache.qpid.transport.DeliveryProperties;
-import org.apache.qpid.transport.MessageProperties;
 import org.apache.qpid.transport.Header;
 import org.apache.qpid.transport.MessageDeliveryMode;
+import org.apache.qpid.transport.MessageProperties;
+import org.apache.qpid.transport.MessageTransfer;
 import org.apache.qpid.transport.Struct;
-import org.apache.qpid.transport.codec.BBEncoder;
 import org.apache.qpid.transport.codec.BBDecoder;
-import org.apache.qpid.framing.AMQShortString;
+import org.apache.qpid.transport.codec.BBEncoder;
 
 import java.nio.ByteBuffer;
-import java.lang.ref.SoftReference;
 import java.util.ArrayList;
 import java.util.List;
 

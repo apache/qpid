@@ -20,12 +20,11 @@
  */
 package org.apache.qpid.management.common.mbeans;
 
-import java.io.IOException;
-
-import javax.management.MBeanOperationInfo;
-
 import org.apache.qpid.management.common.mbeans.annotations.MBeanAttribute;
 import org.apache.qpid.management.common.mbeans.annotations.MBeanOperation;
+
+import javax.management.MBeanOperationInfo;
+import java.io.IOException;
 
 /**
  * Interface for the ServerInformation MBean

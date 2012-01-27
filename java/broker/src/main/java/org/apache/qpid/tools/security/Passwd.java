@@ -22,13 +22,11 @@ package org.apache.qpid.tools.security;
 
 import org.apache.commons.codec.binary.Base64;
 
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.security.DigestException;
-import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.security.DigestException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 public class Passwd
 {

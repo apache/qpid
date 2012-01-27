@@ -20,18 +20,17 @@
  */
 package org.apache.qpid.client.message;
 
-import java.io.DataOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.util.Enumeration;
-
-import javax.jms.JMSException;
-import javax.jms.MessageFormatException;
-
-import java.nio.ByteBuffer;
 import org.apache.qpid.AMQPInvalidClassException;
 import org.apache.qpid.framing.AMQShortString;
 import org.apache.qpid.framing.FieldTable;
+
+import javax.jms.JMSException;
+import javax.jms.MessageFormatException;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.ByteBuffer;
+import java.util.Enumeration;
 
 
 public final class JMSHeaderAdapter

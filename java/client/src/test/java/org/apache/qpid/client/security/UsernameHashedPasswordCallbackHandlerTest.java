@@ -20,20 +20,15 @@
  */
 package org.apache.qpid.client.security;
 
-import java.security.MessageDigest;
-import java.util.Arrays;
+import junit.framework.TestCase;
+
+import org.apache.qpid.client.AMQConnectionURL;
 
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.NameCallback;
 import javax.security.auth.callback.PasswordCallback;
-
-import junit.framework.TestCase;
-
-import org.apache.qpid.client.AMQConnection;
-import org.apache.qpid.client.AMQConnectionURL;
-import org.apache.qpid.client.MockAMQConnection;
-import org.apache.qpid.client.protocol.AMQProtocolHandler;
-import org.apache.qpid.client.protocol.AMQProtocolSession;
+import java.security.MessageDigest;
+import java.util.Arrays;
 
 /**
  * Unit tests for the UsernameHashPasswordCallbackHandler.  This callback handler is
