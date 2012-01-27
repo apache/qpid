@@ -53,7 +53,7 @@ public class XAConnectionImpl extends AMQConnection implements XAConnection, XAQ
     public synchronized XASession createXASession() throws JMSException
     {
         checkNotClosed();
-        return _delegate.createXASession();
+        return getDelegate().createXASession();
     }
 
     //-- Interface  XAQueueConnection
@@ -86,6 +86,6 @@ public class XAConnectionImpl extends AMQConnection implements XAConnection, XAQ
     public XASession createXASession(int ackMode) throws JMSException
     {
         checkNotClosed();
-        return _delegate.createXASession(ackMode);
+        return getDelegate().createXASession(ackMode);
     }
 }

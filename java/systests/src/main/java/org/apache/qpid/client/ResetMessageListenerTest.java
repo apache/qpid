@@ -51,13 +51,13 @@ public class ResetMessageListenerTest extends QpidBrokerTestCase
 {
     private static final Logger _logger = LoggerFactory.getLogger(ResetMessageListenerTest.class);
 
-    Context _context;
+    private Context _context;
 
     private static final int MSG_COUNT = 6;
     private Connection _clientConnection, _producerConnection;
     private MessageConsumer _consumer1;
-    MessageProducer _producer;
-    Session _clientSession, _producerSession;
+    private MessageProducer _producer;
+    private Session _clientSession, _producerSession;
 
     private final CountDownLatch _allFirstMessagesSent = new CountDownLatch(MSG_COUNT); // all messages Sent Lock
     private final CountDownLatch _allSecondMessagesSent = new CountDownLatch(MSG_COUNT); // all messages Sent Lock

@@ -82,8 +82,8 @@ public class LoggingManagementMBean extends AMQManagedObject implements LoggingM
                                                         Level.WARN.toString(), Level.ERROR.toString(), 
                                                         Level.FATAL.toString(),Level.OFF.toString(),
                                                         INHERITED};   
-    static TabularType _loggerLevelTabularType;
-    static CompositeType _loggerLevelCompositeType;
+    private static TabularType _loggerLevelTabularType;
+    private static CompositeType _loggerLevelCompositeType;
 
     static
     {

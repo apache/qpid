@@ -48,15 +48,15 @@ public abstract class AMQDestination implements Destination, Referenceable
 {
     private static final Logger _logger = LoggerFactory.getLogger(AMQDestination.class);
     
-    protected AMQShortString _exchangeName;
+    private AMQShortString _exchangeName;
 
-    protected AMQShortString _exchangeClass;
+    private AMQShortString _exchangeClass;
 
-    protected boolean _isDurable;
+    private boolean _isDurable;
 
-    protected boolean _isExclusive;
+    private boolean _isExclusive;
 
-    protected boolean _isAutoDelete;
+    private boolean _isAutoDelete;
 
     private boolean _browseOnly;
     
@@ -80,6 +80,41 @@ public abstract class AMQDestination implements Destination, Referenceable
     public static final int QUEUE_TYPE = 1;
     public static final int TOPIC_TYPE = 2;
     public static final int UNKNOWN_TYPE = 3;
+
+    protected void setExclusive(boolean exclusive)
+    {
+        _isExclusive = exclusive;
+    }
+
+    protected AddressHelper getAddrHelper()
+    {
+        return _addrHelper;
+    }
+
+    protected void setAddrHelper(AddressHelper addrHelper)
+    {
+        _addrHelper = addrHelper;
+    }
+
+    protected String getName()
+    {
+        return _name;
+    }
+
+    protected void setName(String name)
+    {
+        _name = name;
+    }
+
+    protected Link getTargetLink()
+    {
+        return _targetLink;
+    }
+
+    protected void setTargetLink(Link targetLink)
+    {
+        _targetLink = targetLink;
+    }
 
     // ----- Fields required to support new address syntax -------
     
@@ -132,23 +167,23 @@ public abstract class AMQDestination implements Destination, Referenceable
       }
     }
     
-    protected final static DestSyntax defaultDestSyntax;
+    private final static DestSyntax defaultDestSyntax;
     
-    protected DestSyntax _destSyntax = DestSyntax.ADDR;
+    private DestSyntax _destSyntax = DestSyntax.ADDR;
 
-    protected AddressHelper _addrHelper;
-    protected Address _address;
-    protected int _addressType = AMQDestination.UNKNOWN_TYPE;
-    protected String _name;
-    protected String _subject;
-    protected AddressOption _create = AddressOption.NEVER;
-    protected AddressOption _assert = AddressOption.NEVER;
-    protected AddressOption _delete = AddressOption.NEVER; 
+    private AddressHelper _addrHelper;
+    private Address _address;
+    private int _addressType = AMQDestination.UNKNOWN_TYPE;
+    private String _name;
+    private String _subject;
+    private AddressOption _create = AddressOption.NEVER;
+    private AddressOption _assert = AddressOption.NEVER;
+    private AddressOption _delete = AddressOption.NEVER;
 
-    protected Node _targetNode;
-    protected Node _sourceNode;
-    protected Link _targetLink;
-    protected Link _link;    
+    private Node _targetNode;
+    private Node _sourceNode;
+    private Link _targetLink;
+    private Link _link;
         
     // ----- / Fields required to support new address syntax -------
     
@@ -646,10 +681,10 @@ public abstract class AMQDestination implements Destination, Referenceable
     
     public static class Binding
     {
-        String exchange;
-        String bindingKey;
-        String queue;
-        Map<String,Object> args;
+        private String exchange;
+        private String bindingKey;
+        private String queue;
+        private Map<String,Object> args;
         
         public Binding(String exchange,
                        String queue,
@@ -901,5 +936,6 @@ public abstract class AMQDestination implements Destination, Referenceable
     {
         return _rejectBehaviour;
     }
+
 
 }

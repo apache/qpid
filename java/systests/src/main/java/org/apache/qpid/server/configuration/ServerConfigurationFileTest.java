@@ -33,7 +33,7 @@ import org.apache.qpid.test.utils.QpidBrokerTestCase;
  */
 public class ServerConfigurationFileTest extends QpidBrokerTestCase
 {
-    ServerConfiguration _serverConfig;
+    private ServerConfiguration _serverConfig;
 
     public void setUp() throws ConfigurationException
     {

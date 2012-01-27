@@ -70,8 +70,8 @@ public class JNDICheck
 
     private static String JAVA_NAMING = "java.naming.factory.initial";
 
-    Context _context = null;
-    Hashtable _environment = null;
+    private Context _context = null;
+    private Hashtable _environment = null;
 
     public JNDICheck(String propertyFile)
     {

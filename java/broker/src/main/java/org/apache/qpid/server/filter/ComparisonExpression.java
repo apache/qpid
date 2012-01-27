@@ -74,7 +74,7 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
     static class LikeExpression extends UnaryExpression implements BooleanExpression
     {
 
-        Pattern likePattern;
+        private Pattern likePattern;
 
         /**
          * @param right

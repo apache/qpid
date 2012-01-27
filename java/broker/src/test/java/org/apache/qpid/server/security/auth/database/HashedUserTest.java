@@ -30,9 +30,9 @@ import java.io.UnsupportedEncodingException;
 public class HashedUserTest extends TestCase
 {
 
-    String USERNAME = "username";
-    String PASSWORD = "password";
-    String B64_ENCODED_PASSWORD = "cGFzc3dvcmQ=";
+    private String USERNAME = "username";
+    private String PASSWORD = "password";
+    private String B64_ENCODED_PASSWORD = "cGFzc3dvcmQ=";
 
     public void testToLongArrayConstructor()
     {

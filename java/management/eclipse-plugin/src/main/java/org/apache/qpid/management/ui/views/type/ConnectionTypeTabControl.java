@@ -45,7 +45,7 @@ public class ConnectionTypeTabControl extends MBeanTypeTabControl
     @Override
     protected List<ManagedBean> getMbeans()
     {
-        return _serverRegistry.getConnections(_virtualHost);
+        return getServerRegistry().getConnections(getVirtualHost());
     }
 
 }

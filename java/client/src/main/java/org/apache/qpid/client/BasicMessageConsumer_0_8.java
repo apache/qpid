@@ -44,7 +44,7 @@ import javax.jms.Message;
 
 public class BasicMessageConsumer_0_8 extends BasicMessageConsumer<UnprocessedMessage_0_8>
 {
-    protected final Logger _logger = LoggerFactory.getLogger(getClass());
+    private final Logger _logger = LoggerFactory.getLogger(getClass());
     private AMQSession_0_8.DestinationCache<AMQTopic> _topicDestinationCache;
     private AMQSession_0_8.DestinationCache<AMQQueue> _queueDestinationCache;
 
@@ -95,11 +95,11 @@ public class BasicMessageConsumer_0_8 extends BasicMessageConsumer<UnprocessedMe
 
     void sendCancel() throws AMQException, FailoverException
     {
-        BasicCancelBody body = getSession().getMethodRegistry().createBasicCancelBody(new AMQShortString(String.valueOf(_consumerTag)), false);
+        BasicCancelBody body = getSession().getMethodRegistry().createBasicCancelBody(new AMQShortString(String.valueOf(getConsumerTag())), false);
 
-        final AMQFrame cancelFrame = body.generateFrame(_channelId);
+        final AMQFrame cancelFrame = body.generateFrame(getChannelId());
 
-        _protocolHandler.syncWrite(cancelFrame, BasicCancelOkBody.class);
+        getProtocolHandler().syncWrite(cancelFrame, BasicCancelOkBody.class);
 
         if (_logger.isDebugEnabled())
         {
@@ -110,9 +110,9 @@ public class BasicMessageConsumer_0_8 extends BasicMessageConsumer<UnprocessedMe
     public AbstractJMSMessage createJMSMessageFromUnprocessedMessage(AMQMessageDelegateFactory delegateFactory, UnprocessedMessage_0_8 messageFrame)throws Exception
     {
 
-        return _messageFactory.createMessage(messageFrame.getDeliveryTag(),
-                                             messageFrame.isRedelivered(), messageFrame.getExchange(),
-                                             messageFrame.getRoutingKey(), messageFrame.getContentHeader(), messageFrame.getBodies(),
+        return getMessageFactory().createMessage(messageFrame.getDeliveryTag(),
+                messageFrame.isRedelivered(), messageFrame.getExchange(),
+                messageFrame.getRoutingKey(), messageFrame.getContentHeader(), messageFrame.getBodies(),
                 _queueDestinationCache, _topicDestinationCache);
 
     }

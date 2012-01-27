@@ -24,7 +24,7 @@ import java.util.Queue;
 
 public abstract class DispatcherCallback
 {
-    BasicMessageConsumer _consumer;
+    private BasicMessageConsumer _consumer;
 
     public DispatcherCallback(BasicMessageConsumer mc)
     {

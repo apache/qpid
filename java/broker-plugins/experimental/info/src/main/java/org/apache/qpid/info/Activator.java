@@ -44,9 +44,9 @@ public class Activator implements BundleActivator
     private final List<String> _httpPropList = Arrays.asList("http.url",
                                                              "http.envelope");
 
-    InfoServiceImpl _service = null;
+    private InfoServiceImpl _service = null;
 
-    BundleContext _ctx = null;
+    private BundleContext _ctx = null;
 
     /**
      * Start bundle method

@@ -37,7 +37,7 @@ public class SessionCreateTest extends QpidBrokerTestCase
 {
     private static final Logger _logger = LoggerFactory.getLogger(MessageListenerTest.class);
 
-    Context _context;
+    private Context _context;
 
     private Connection _clientConnection;
     protected int maxSessions = 65555;

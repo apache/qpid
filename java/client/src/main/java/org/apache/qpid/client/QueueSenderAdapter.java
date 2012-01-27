@@ -202,7 +202,7 @@ public class QueueSenderAdapter implements QueueSender
        {
            if (_delegate.getSession().isStrictAMQP())
            {
-               _delegate._logger.warn("AMQP does not support destination validation before publish, ");
+               _delegate.getLogger().warn("AMQP does not support destination validation before publish, ");
                destination.setCheckedForQueueBinding(true);
            }
            else

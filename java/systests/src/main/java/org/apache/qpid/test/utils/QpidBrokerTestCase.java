@@ -331,7 +331,7 @@ public class QpidBrokerTestCase extends QpidTestCase
             this.stopped = stopped;
             this.seenReady = false;
 
-            if (this.ready != null && !this.ready.equals(""))
+            if (this.getReady() != null && !this.getReady().equals(""))
             {
                 this.latch = new CountDownLatch(1);
             }
@@ -372,7 +372,7 @@ public class QpidBrokerTestCase extends QpidTestCase
                 	}
                 	out.println(line);
 
-                    if (latch != null && line.contains(ready))
+                    if (latch != null && line.contains(getReady()))
                     {
                         seenReady = true;
                         latch.countDown();
@@ -401,6 +401,11 @@ public class QpidBrokerTestCase extends QpidTestCase
         public String getStopLine()
         {
             return stopLine;
+        }
+
+        public String getReady()
+        {
+            return ready;
         }
     }
 
@@ -574,7 +579,7 @@ public class QpidBrokerTestCase extends QpidTestCase
 
             if (!p.await(30, TimeUnit.SECONDS))
             {
-                _logger.info("broker failed to become ready (" + p.ready + "):" + p.getStopLine());
+                _logger.info("broker failed to become ready (" + p.getReady() + "):" + p.getStopLine());
                 //Ensure broker has stopped
                 process.destroy();
                 cleanBrokerWork(qpidWork);

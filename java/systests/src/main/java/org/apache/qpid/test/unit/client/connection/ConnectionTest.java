@@ -43,9 +43,9 @@ import javax.jms.TopicSession;
 public class ConnectionTest extends QpidBrokerTestCase
 {
 
-    String _broker_NotRunning = "tcp://localhost:" + findFreePort();
+    private String _broker_NotRunning = "tcp://localhost:" + findFreePort();
 
-    String _broker_BadDNS = "tcp://hg3sgaaw4lgihjs";
+    private String _broker_BadDNS = "tcp://hg3sgaaw4lgihjs";
 
     public void testSimpleConnection() throws Exception
     {

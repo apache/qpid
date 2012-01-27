@@ -57,8 +57,8 @@ public class TopicConfiguration extends ConfigurationPlugin implements ExchangeC
         }
     }
 
-    Map<String, TopicConfig> _topics = new HashMap<String, TopicConfig>();
-    Map<String,  Map<String, TopicConfig>> _subscriptions = new HashMap<String,  Map<String, TopicConfig>>();
+    private Map<String, TopicConfig> _topics = new HashMap<String, TopicConfig>();
+    private Map<String,  Map<String, TopicConfig>> _subscriptions = new HashMap<String,  Map<String, TopicConfig>>();
 
     public String[] getElementsProcessed()
     {

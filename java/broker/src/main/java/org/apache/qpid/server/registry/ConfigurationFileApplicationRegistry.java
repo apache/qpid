@@ -48,7 +48,7 @@ public class ConfigurationFileApplicationRegistry extends ApplicationRegistry
     public void close()
     {
         //Set the Actor for Broker Shutdown
-        CurrentActor.set(new BrokerActor(_rootMessageLogger));
+        CurrentActor.set(new BrokerActor(getRootMessageLogger()));
         try
         {
             super.close();
@@ -63,13 +63,13 @@ public class ConfigurationFileApplicationRegistry extends ApplicationRegistry
     @Override
     protected void initialiseManagedObjectRegistry() throws AMQException
     {
-        if (_configuration.getManagementEnabled())
+        if (getConfiguration().getManagementEnabled())
         {
-            _managedObjectRegistry = new JMXManagedObjectRegistry();
+            setManagedObjectRegistry(new JMXManagedObjectRegistry());
         }
         else
         {
-            _managedObjectRegistry = new NoopManagedObjectRegistry();
+            setManagedObjectRegistry(new NoopManagedObjectRegistry());
         }
     }
 

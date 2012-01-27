@@ -795,10 +795,10 @@ public class ReferenceMap extends AbstractMap
     // the mapping is stale and should be removed.
     private class Entry implements Map.Entry, KeyValue {
 
-        Object key;
-        Object value;
-        int hash;
-        Entry next;
+        private Object key;
+        private Object value;
+        private int hash;
+        private Entry next;
 
 
         public Entry(Object key, int hash, Object value, Entry next) {
@@ -887,17 +887,17 @@ public class ReferenceMap extends AbstractMap
 
     private class EntryIterator implements Iterator {
         // These fields keep track of where we are in the table.
-        int index;
-        Entry entry;
-        Entry previous;
+        private int index;
+        private Entry entry;
+        private Entry previous;
 
         // These Object fields provide hard references to the
         // current and next entry; this assures that if hasNext()
         // returns true, next() will actually return a valid element.
-        Object nextKey, nextValue;
-        Object currentKey, currentValue;
+        private Object nextKey, nextValue;
+        private Object currentKey, currentValue;
 
-        int expectedModCount;
+        private int expectedModCount;
 
 
         public EntryIterator() {

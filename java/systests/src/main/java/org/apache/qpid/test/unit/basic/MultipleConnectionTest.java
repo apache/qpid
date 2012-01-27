@@ -72,6 +72,11 @@ public class MultipleConnectionTest extends QpidBrokerTestCase
         {
             _connection.close();
         }
+
+        public MessageCounter[] getCounters()
+        {
+            return _counters;
+        }
     }
 
     private class Publisher
@@ -151,7 +156,7 @@ public class MultipleConnectionTest extends QpidBrokerTestCase
     {
         for (int i = 0; i < receivers.length; i++)
         {
-            waitForCompletion(expected, wait, receivers[i]._counters);
+            waitForCompletion(expected, wait, receivers[i].getCounters());
         }
     }
 

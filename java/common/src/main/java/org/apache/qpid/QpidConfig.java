@@ -67,8 +67,8 @@ public class QpidConfig
    
    public static class SecurityMechanism
    {
-        String type;
-        String handler;
+        private String type;
+        private String handler;
         
         SecurityMechanism(String type,String handler)
         {
@@ -89,8 +89,8 @@ public class QpidConfig
    
    public static class SaslClientFactory
    {
-        String type;
-        String factoryClass;
+        private String type;
+        private String factoryClass;
         
         SaslClientFactory(String type,String factoryClass)
         {

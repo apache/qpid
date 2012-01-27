@@ -355,10 +355,10 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
         notificationMsg = notification.name() + " " + notificationMsg;
 
         _lastNotification =
-            new Notification(MonitorNotification.THRESHOLD_VALUE_EXCEEDED, this, ++_notificationSequenceNumber,
+            new Notification(MonitorNotification.THRESHOLD_VALUE_EXCEEDED, this, incrementAndGetSequenceNumber(),
                 System.currentTimeMillis(), notificationMsg);
 
-        _broadcaster.sendNotification(_lastNotification);
+        getBroadcaster().sendNotification(_lastNotification);
     }
 
     public Notification getLastNotification()
@@ -495,7 +495,7 @@ public class AMQQueueMBean extends AMQManagedObject implements ManagedQueue, Que
                     ContentHeaderBody headerBody = msg.getContentHeaderBody();
                     // Create header attributes list
                     headerAttributes = getMessageHeaderProperties(headerBody);
-                    itemValues = new Object[]{msg.getMessageId(), headerAttributes, headerBody.bodySize, queueEntry.isRedelivered(), position, queueEntry.getDeliveryCount()};
+                    itemValues = new Object[]{msg.getMessageId(), headerAttributes, headerBody.getBodySize(), queueEntry.isRedelivered(), position, queueEntry.getDeliveryCount()};
                 }
                 else if(serverMsg instanceof MessageTransferMessage)
                 {

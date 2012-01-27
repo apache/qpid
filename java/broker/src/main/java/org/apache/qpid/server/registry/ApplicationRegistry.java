@@ -77,33 +77,33 @@ import java.util.concurrent.atomic.AtomicReference;
  */
 public abstract class ApplicationRegistry implements IApplicationRegistry
 {
-    protected static final Logger _logger = Logger.getLogger(ApplicationRegistry.class);
+    private static final Logger _logger = Logger.getLogger(ApplicationRegistry.class);
 
     private static AtomicReference<IApplicationRegistry> _instance = new AtomicReference<IApplicationRegistry>(null);
 
-    protected final ServerConfiguration _configuration;
+    private final ServerConfiguration _configuration;
 
-    protected final Map<InetSocketAddress, QpidAcceptor> _acceptors = new HashMap<InetSocketAddress, QpidAcceptor>();
+    private final Map<InetSocketAddress, QpidAcceptor> _acceptors = new HashMap<InetSocketAddress, QpidAcceptor>();
 
-    protected ManagedObjectRegistry _managedObjectRegistry;
+    private ManagedObjectRegistry _managedObjectRegistry;
 
-    protected AuthenticationManager _authenticationManager;
+    private AuthenticationManager _authenticationManager;
 
-    protected VirtualHostRegistry _virtualHostRegistry;
+    private VirtualHostRegistry _virtualHostRegistry;
 
-    protected SecurityManager _securityManager;
+    private SecurityManager _securityManager;
 
-    protected PluginManager _pluginManager;
+    private PluginManager _pluginManager;
 
-    protected ConfigurationManager _configurationManager;
+    private ConfigurationManager _configurationManager;
 
-    protected RootMessageLogger _rootMessageLogger;
+    private RootMessageLogger _rootMessageLogger;
 
-    protected CompositeStartupMessageLogger _startupMessageLogger;
+    private CompositeStartupMessageLogger _startupMessageLogger;
 
-    protected UUID _brokerId = UUID.randomUUID();
+    private UUID _brokerId = UUID.randomUUID();
 
-    protected QMFService _qmfService;
+    private QMFService _qmfService;
 
     private BrokerConfig _broker;
 
@@ -114,6 +114,76 @@ public abstract class ApplicationRegistry implements IApplicationRegistry
     private StatisticsCounter _messagesDelivered, _dataDelivered, _messagesReceived, _dataReceived;
 
     private BundleContext _bundleContext;
+
+    protected static Logger get_logger()
+    {
+        return _logger;
+    }
+
+    protected Map<InetSocketAddress, QpidAcceptor> getAcceptors()
+    {
+        return _acceptors;
+    }
+
+    protected void setManagedObjectRegistry(ManagedObjectRegistry managedObjectRegistry)
+    {
+        _managedObjectRegistry = managedObjectRegistry;
+    }
+
+    protected void setAuthenticationManager(AuthenticationManager authenticationManager)
+    {
+        _authenticationManager = authenticationManager;
+    }
+
+    protected void setVirtualHostRegistry(VirtualHostRegistry virtualHostRegistry)
+    {
+        _virtualHostRegistry = virtualHostRegistry;
+    }
+
+    protected void setSecurityManager(SecurityManager securityManager)
+    {
+        _securityManager = securityManager;
+    }
+
+    protected void setPluginManager(PluginManager pluginManager)
+    {
+        _pluginManager = pluginManager;
+    }
+
+    protected void setConfigurationManager(ConfigurationManager configurationManager)
+    {
+        _configurationManager = configurationManager;
+    }
+
+    protected void setRootMessageLogger(RootMessageLogger rootMessageLogger)
+    {
+        _rootMessageLogger = rootMessageLogger;
+    }
+
+    protected CompositeStartupMessageLogger getStartupMessageLogger()
+    {
+        return _startupMessageLogger;
+    }
+
+    protected void setStartupMessageLogger(CompositeStartupMessageLogger startupMessageLogger)
+    {
+        _startupMessageLogger = startupMessageLogger;
+    }
+
+    protected void setBrokerId(UUID brokerId)
+    {
+        _brokerId = brokerId;
+    }
+
+    protected QMFService getQmfService()
+    {
+        return _qmfService;
+    }
+
+    protected void setQmfService(QMFService qmfService)
+    {
+        _qmfService = qmfService;
+    }
 
     static
     {

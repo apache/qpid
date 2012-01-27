@@ -28,8 +28,8 @@ import junit.framework.TestCase;
 public class PlainUserTest extends TestCase
 {
 
-    String USERNAME = "username";
-    String PASSWORD = "password";
+    private String USERNAME = "username";
+    private String PASSWORD = "password";
 
     public void testTooLongArrayConstructor()
     {

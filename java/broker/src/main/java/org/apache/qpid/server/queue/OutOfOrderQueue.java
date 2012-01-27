@@ -29,7 +29,7 @@ public abstract class OutOfOrderQueue extends SimpleAMQQueue
                 QueueContext context = (QueueContext) subscription.getQueueContext();
                 if(context != null)
                 {
-                    QueueEntry released = context._releasedEntry;
+                    QueueEntry released = context.getReleasedEntry();
                     while(!entry.isAcquired() && (released == null || released.compareTo(entry) > 0))
                     {
                         if(QueueContext._releasedUpdater.compareAndSet(context,released,entry))
@@ -38,7 +38,7 @@ public abstract class OutOfOrderQueue extends SimpleAMQQueue
                         }
                         else
                         {
-                            released = context._releasedEntry;
+                            released = context.getReleasedEntry();
                         }
                     }
                 }

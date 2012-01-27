@@ -187,7 +187,7 @@ ${
 if not f.empty:
   out("        this.$(f.name) = $(f.default);")
 }
-        this.dirty = true;
+        setDirty(true);
         return this;
     }
 """)
@@ -221,7 +221,7 @@ if pack > 0:
   else:
     out("        packing_flags |= $(f.flag_mask(pack));")
 }
-        this.dirty = true;
+        setDirty(true);
         return this;
     }
 

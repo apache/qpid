@@ -133,7 +133,7 @@ public class AMQProtocolSessionMBean extends AbstractAMQManagedConnectionObject
      */
     public void commitTransactions(int channelId) throws JMException
     {
-        CurrentActor.set(new ManagementActor(_logActor.getRootMessageLogger()));
+        CurrentActor.set(new ManagementActor(getLogActor().getRootMessageLogger()));
         try
         {
             AMQChannel channel = _protocolSession.getChannel(channelId);
@@ -162,7 +162,7 @@ public class AMQProtocolSessionMBean extends AbstractAMQManagedConnectionObject
      */
     public void rollbackTransactions(int channelId) throws JMException
     {
-        CurrentActor.set(new ManagementActor(_logActor.getRootMessageLogger()));
+        CurrentActor.set(new ManagementActor(getLogActor().getRootMessageLogger()));
         try
         {
             AMQChannel channel = _protocolSession.getChannel(channelId);
@@ -241,7 +241,7 @@ public class AMQProtocolSessionMBean extends AbstractAMQManagedConnectionObject
         if (CurrentActor.get() == null)
         {
             removeActor = true;
-            CurrentActor.set(new ManagementActor(_logActor.getRootMessageLogger()));
+            CurrentActor.set(new ManagementActor(getLogActor().getRootMessageLogger()));
         }
 
         try

@@ -45,10 +45,10 @@ public class BindingLoggingTest extends AbstractTestLogging
 
     static final String BND_PREFIX = "BND-";
 
-    Connection _connection;
-    Session _session;
-    Queue _queue;
-    Topic _topic;
+    private Connection _connection;
+    private Session _session;
+    private Queue _queue;
+    private Topic _topic;
 
     @Override
     public void setUp() throws Exception

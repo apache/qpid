@@ -43,7 +43,7 @@ import java.util.concurrent.TimeUnit;
 public class TestingBaseCase extends QpidBrokerTestCase implements ExceptionListener, ConnectionListener
 {
 
-    Topic _destination;
+    private Topic _destination;
     protected CountDownLatch _disconnectionLatch = new CountDownLatch(1);
     protected int MAX_QUEUE_MESSAGE_COUNT;
     protected int MESSAGE_SIZE = DEFAULT_MESSAGE_SIZE;

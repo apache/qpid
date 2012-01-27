@@ -69,7 +69,7 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
     static class LikeExpression extends UnaryExpression implements BooleanExpression
     {
 
-        Pattern likePattern;
+        private Pattern likePattern;
 
         /**
          * @param right
@@ -236,8 +236,8 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
 
                 public Object evaluate(AbstractJMSMessage message) throws AMQInternalException
                 {
-                    Object lv = left.evaluate(message);
-                    Object rv = right.evaluate(message);
+                    Object lv = getLeft().evaluate(message);
+                    Object rv = getRight().evaluate(message);
 
                     // Iff one of the values is null
                     if ((lv == null) ^ (rv == null))
@@ -419,13 +419,13 @@ public abstract class ComparisonExpression extends BinaryExpression implements B
 
     public Object evaluate(AbstractJMSMessage message) throws AMQInternalException
     {
-        Comparable lv = (Comparable) left.evaluate(message);
+        Comparable lv = (Comparable) getLeft().evaluate(message);
         if (lv == null)
         {
             return null;
         }
 
-        Comparable rv = (Comparable) right.evaluate(message);
+        Comparable rv = (Comparable) getRight().evaluate(message);
         if (rv == null)
         {
             return null;

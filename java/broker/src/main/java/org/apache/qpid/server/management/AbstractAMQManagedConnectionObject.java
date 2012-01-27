@@ -15,7 +15,7 @@ import javax.management.openmbean.TabularType;
 
 public abstract class AbstractAMQManagedConnectionObject extends AMQManagedObject implements ManagedConnection
 {
-    protected final String _name;
+    private final String _name;
 
     protected static final OpenType[] _channelAttributeTypes = { SimpleType.INTEGER, SimpleType.BOOLEAN, SimpleType.STRING, SimpleType.INTEGER, SimpleType.BOOLEAN };
     protected static final CompositeType _channelType;
@@ -45,7 +45,6 @@ public abstract class AbstractAMQManagedConnectionObject extends AMQManagedObjec
         _name = "anonymous".equals(remoteAddress) ? (remoteAddress + hashCode()) : remoteAddress;
     }
 
-    @Override
     public String getObjectInstanceName()
     {
         return ObjectName.quote(_name);
@@ -53,9 +52,9 @@ public abstract class AbstractAMQManagedConnectionObject extends AMQManagedObjec
 
     public void notifyClients(String notificationMsg)
     {
-        final Notification n = new Notification(MonitorNotification.THRESHOLD_VALUE_EXCEEDED, this, ++_notificationSequenceNumber,
+        final Notification n = new Notification(MonitorNotification.THRESHOLD_VALUE_EXCEEDED, this, incrementAndGetSequenceNumber(),
                                                 System.currentTimeMillis(), notificationMsg);
-        _broadcaster.sendNotification(n);
+        getBroadcaster().sendNotification(n);
     }
 
     @Override

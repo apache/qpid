@@ -73,16 +73,11 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
 
     protected static final String SASL_CLIENT = "SASLClient";
 
-    /**
-     * The handler from which this session was created and which is used to handle protocol events. We send failover
-     * events to the handler.
-     */
-    protected final AMQProtocolHandler _protocolHandler;
+    private final AMQProtocolHandler _protocolHandler;
 
-    /** Maps from the channel id to the AMQSession that it represents. */
-    protected ConcurrentMap<Integer, AMQSession> _channelId2SessionMap = new ConcurrentHashMap<Integer, AMQSession>();
+    private ConcurrentMap<Integer, AMQSession> _channelId2SessionMap = new ConcurrentHashMap<Integer, AMQSession>();
 
-    protected ConcurrentMap _closingChannels = new ConcurrentHashMap();
+    private ConcurrentMap _closingChannels = new ConcurrentHashMap();
 
     /**
      * Maps from a channel id to an unprocessed message. This is used to tie together the JmsDeliverBody (which arrives
@@ -91,9 +86,8 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
     private final ConcurrentMap<Integer, UnprocessedMessage> _channelId2UnprocessedMsgMap = new ConcurrentHashMap<Integer, UnprocessedMessage>();
     private final UnprocessedMessage[] _channelId2UnprocessedMsgArray = new UnprocessedMessage[16];
 
-    /** Counter to ensure unique queue names */
-    protected int _queueId = 1;
-    protected final Object _queueIdLock = new Object();
+    private int _queueId = 1;
+    private final Object _queueIdLock = new Object();
 
     private ProtocolVersion _protocolVersion;
 //    private VersionSpecificRegistry _registry =
@@ -104,7 +98,7 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
 
     private MethodDispatcher _methodDispatcher;
 
-    protected final AMQConnection _connection;
+    private final AMQConnection _connection;
 
     private ConnectionTuneParameters _connectionTuneParameters;
 
@@ -223,7 +217,7 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
         }
 
         msg.setContentHeader(contentHeader);
-        if (contentHeader.bodySize == 0)
+        if (contentHeader.getBodySize() == 0)
         {
             deliverMessageToAMQSession(channelId, msg);
         }
@@ -469,5 +463,56 @@ public class AMQProtocolSession implements AMQVersionAwareProtocolSession
     public String toString()
     {
         return "AMQProtocolSession[" + _connection + ']';
+    }
+
+    /**
+     * The handler from which this session was created and which is used to handle protocol events. We send failover
+     * events to the handler.
+     */
+    protected AMQProtocolHandler getProtocolHandler()
+    {
+        return _protocolHandler;
+    }
+
+    /** Maps from the channel id to the AMQSession that it represents. */
+    protected ConcurrentMap<Integer, AMQSession> getChannelId2SessionMap()
+    {
+        return _channelId2SessionMap;
+    }
+
+    protected void setChannelId2SessionMap(ConcurrentMap<Integer, AMQSession> channelId2SessionMap)
+    {
+        _channelId2SessionMap = channelId2SessionMap;
+    }
+
+    protected ConcurrentMap getClosingChannels()
+    {
+        return _closingChannels;
+    }
+
+    protected void setClosingChannels(ConcurrentMap closingChannels)
+    {
+        _closingChannels = closingChannels;
+    }
+
+    /** Counter to ensure unique queue names */
+    protected int getQueueId()
+    {
+        return _queueId;
+    }
+
+    protected void setQueueId(int queueId)
+    {
+        _queueId = queueId;
+    }
+
+    protected Object getQueueIdLock()
+    {
+        return _queueIdLock;
+    }
+
+    protected AMQConnection getConnection()
+    {
+        return _connection;
     }
 }

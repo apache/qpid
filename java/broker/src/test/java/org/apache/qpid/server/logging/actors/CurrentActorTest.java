@@ -203,7 +203,7 @@ public class CurrentActorTest extends BaseConnectionActorTestCase
      */
     public class LogMessagesWithAConnectionActor extends Thread
     {
-        Throwable _exception;
+        private Throwable _exception;
 
         public LogMessagesWithAConnectionActor()
         {

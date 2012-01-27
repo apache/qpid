@@ -369,7 +369,7 @@ public class AMQProtocolEngine implements ServerProtocolEngine, Managable, AMQPr
         try
         {
             // Log incomming protocol negotiation request
-            _actor.message(ConnectionMessages.OPEN(null, pi._protocolMajor + "-" + pi._protocolMinor, false, true));
+            _actor.message(ConnectionMessages.OPEN(null, pi.getProtocolMajor() + "-" + pi.getProtocolMinor(), false, true));
 
             ProtocolVersion pv = pi.checkVersion(); // Fails if not correct
 
@@ -1357,6 +1357,11 @@ public class AMQProtocolEngine implements ServerProtocolEngine, Managable, AMQPr
 		                (Throwable) null));
     }
 
+    public boolean isClosed()
+    {
+        return _closed;
+    }
+
     public List<AMQSessionModel> getSessionModels()
     {
 		List<AMQSessionModel> sessions = new ArrayList<AMQSessionModel>();
@@ -1503,8 +1508,8 @@ public class AMQProtocolEngine implements ServerProtocolEngine, Managable, AMQPr
 
     private static class BytesDataOutput implements DataOutput
     {
-        int _pos = 0;
-        byte[] _buf;
+        private int _pos = 0;
+        private byte[] _buf;
 
         public BytesDataOutput(byte[] buf)
         {

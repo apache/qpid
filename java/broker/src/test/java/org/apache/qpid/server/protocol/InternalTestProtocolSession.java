@@ -50,7 +50,7 @@ import java.util.concurrent.atomic.AtomicLong;
 public class InternalTestProtocolSession extends AMQProtocolEngine implements ProtocolOutputConverter
 {
     // ChannelID(LIST)  -> LinkedList<Pair>
-    final Map<Integer, Map<AMQShortString, LinkedList<DeliveryPair>>> _channelDelivers;
+    private final Map<Integer, Map<AMQShortString, LinkedList<DeliveryPair>>> _channelDelivers;
     private AtomicInteger _deliveryCount = new AtomicInteger(0);
     private static final AtomicLong ID_GENERATOR = new AtomicLong(0);
 
@@ -197,11 +197,6 @@ public class InternalTestProtocolSession extends AMQProtocolEngine implements Pr
         }
     }
 
-    public boolean isClosed()
-    {
-        return _closed;
-    }
-
     public void closeProtocolSession()
     {
         // Override as we don't have a real IOSession to close.
@@ -230,7 +225,6 @@ public class InternalTestProtocolSession extends AMQProtocolEngine implements Pr
         }
 
 
-        @Override
         public void deliverToClient(Subscription sub, QueueEntry entry, long deliveryTag) throws AMQException
         {
             _deliveryCount.incrementAndGet();

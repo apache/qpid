@@ -24,7 +24,7 @@ import org.apache.qpid.test.utils.QpidTestCase;
 
 public class WindowCreditManagerTest extends QpidTestCase
 {
-    WindowCreditManager _creditManager;
+    private WindowCreditManager _creditManager;
 
     protected void setUp() throws Exception
     {

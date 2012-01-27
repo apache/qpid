@@ -47,7 +47,7 @@ public class AbstractTestLogging extends QpidBrokerTestCase
     public static final String TEST_LOG_PREFIX = "MESSAGE";
     protected LogMonitor _monitor;
 
-    InternalBrokerBaseCase _configLoader;
+    private InternalBrokerBaseCase _configLoader;
 
     @Override
     public void setUp() throws Exception

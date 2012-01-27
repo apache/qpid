@@ -22,9 +22,9 @@ package org.apache.qpid.management.ui.model;
 
 public class NotificationInfoModel
 {
-    String name;
-    String description;
-    String[] types;
+    private String name;
+    private String description;
+    private String[] types;
     
     public NotificationInfoModel(String name, String desc, String[] types)
     {

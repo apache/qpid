@@ -176,8 +176,8 @@ public class NavigationView extends ViewPart
         // with right click.
         _treeViewer.getTree().addListener(SWT.MenuDetect, new Listener()
             {
-                Display display = getSite().getShell().getDisplay();
-                final Shell shell = new Shell(display);
+                private Display display = getSite().getShell().getDisplay();
+                private final Shell shell = new Shell(display);
 
                 public void handleEvent(Event event)
                 {

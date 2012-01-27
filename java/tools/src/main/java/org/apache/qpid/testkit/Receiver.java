@@ -70,13 +70,13 @@ import org.apache.qpid.client.AMQConnection;
  */
 public class Receiver extends Client implements MessageListener
 {
-	long msg_count = 0;
-	int sequence = 0;
-	boolean syncRcv = Boolean.getBoolean("sync_rcv");
-	boolean jmsDurableSub = Boolean.getBoolean("jms_durable_sub");
-	boolean checkForDups = Boolean.getBoolean("check_for_dups");
-	MessageConsumer consumer;
-    List<Integer> duplicateMessages = new ArrayList<Integer>();
+	private long msg_count = 0;
+	private int sequence = 0;
+	private boolean syncRcv = Boolean.getBoolean("sync_rcv");
+	private boolean jmsDurableSub = Boolean.getBoolean("jms_durable_sub");
+	private boolean checkForDups = Boolean.getBoolean("check_for_dups");
+	private MessageConsumer consumer;
+    private List<Integer> duplicateMessages = new ArrayList<Integer>();
     
     public Receiver(Connection con,String addr) throws Exception
     {

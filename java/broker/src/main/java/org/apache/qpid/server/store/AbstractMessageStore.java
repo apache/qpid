@@ -28,7 +28,7 @@ import org.apache.qpid.server.virtualhost.VirtualHost;
 
 public abstract class AbstractMessageStore implements MessageStore
 {
-    protected LogSubject _logSubject;
+    private LogSubject _logSubject;
 
     public void configure(VirtualHost virtualHost) throws Exception
     {

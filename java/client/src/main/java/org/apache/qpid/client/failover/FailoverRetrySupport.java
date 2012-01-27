@@ -73,10 +73,10 @@ public class FailoverRetrySupport<T, E extends Exception> implements FailoverSup
     private static final Logger _log = LoggerFactory.getLogger(FailoverRetrySupport.class);
 
     /** The protected operation that is to be retried in the event of fail-over. */
-    FailoverProtectedOperation<T, E> operation;
+    private FailoverProtectedOperation<T, E> operation;
 
     /** The connection on which the fail-over protected operation is to be performed. */
-    AMQConnection connection;
+    private AMQConnection connection;
 
     /**
      * Creates an automatic retrying fail-over handler for the specified operation.

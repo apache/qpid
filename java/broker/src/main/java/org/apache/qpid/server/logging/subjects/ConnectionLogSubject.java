@@ -70,31 +70,31 @@ public class ConnectionLogSubject extends AbstractLogSubject
                      * 
                      * 0 - Connection ID 1 - User ID 2 - IP 3 - Virtualhost
                      */
-                    _logString = "[" + MessageFormat.format(CONNECTION_FORMAT, 
-                                                            _session.getSessionID(), 
-                                                            _session.getAuthorizedPrincipal().getName(), 
+                    setLogString("[" + MessageFormat.format(CONNECTION_FORMAT,
+                                                            _session.getSessionID(),
+                                                            _session.getAuthorizedPrincipal().getName(),
                                                             _session.getRemoteAddress(),
-                                                            _session.getVirtualHost().getName()) 
-                                 + "] ";
+                                                            _session.getVirtualHost().getName())
+                                 + "] ");
 
                     _upToDate = true;
                 } 
                 else
                 {
-                    _logString = "[" + MessageFormat.format(USER_FORMAT, 
-                                                            _session.getSessionID(), 
-                                                            _session.getAuthorizedPrincipal().getName(), 
+                    setLogString("[" + MessageFormat.format(USER_FORMAT,
+                                                            _session.getSessionID(),
+                                                            _session.getAuthorizedPrincipal().getName(),
                                                             _session.getRemoteAddress())
-                                 + "] ";
+                                 + "] ");
 
                 }
             } 
             else
             {
-                    _logString = "[" + MessageFormat.format(SOCKET_FORMAT,
+                    setLogString("[" + MessageFormat.format(SOCKET_FORMAT,
                                                             _session.getSessionID(),
-                                                            _session.getRemoteAddress()) 
-                                 + "] ";
+                                                            _session.getRemoteAddress())
+                                 + "] ");
             }
         }
     }

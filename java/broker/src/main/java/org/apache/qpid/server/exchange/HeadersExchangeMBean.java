@@ -68,20 +68,20 @@ final class HeadersExchangeMBean extends AbstractExchangeMBean<HeadersExchange>
     protected void init() throws OpenDataException
     {
 
-        _bindingItemTypes = new OpenType[3];
-        _bindingItemTypes[0] = SimpleType.INTEGER;
-        _bindingItemTypes[1] = SimpleType.STRING;
-        _bindingItemTypes[2] = new ArrayType(1, SimpleType.STRING);
-        _bindingDataType = new CompositeType("Exchange Binding", "Queue name and header bindings",
-                HEADERS_COMPOSITE_ITEM_NAMES.toArray(new String[HEADERS_COMPOSITE_ITEM_NAMES.size()]), 
-                HEADERS_COMPOSITE_ITEM_DESC.toArray(new String[HEADERS_COMPOSITE_ITEM_DESC.size()]), _bindingItemTypes);
-        _bindinglistDataType = new TabularType("Exchange Bindings", "List of exchange bindings for " + getName(),
-                                               _bindingDataType, HEADERS_TABULAR_UNIQUE_INDEX.toArray(new String[HEADERS_TABULAR_UNIQUE_INDEX.size()]));
+        setBindingItemTypes(new OpenType[3]);
+        getBindingItemTypes()[0] = SimpleType.INTEGER;
+        getBindingItemTypes()[1] = SimpleType.STRING;
+        getBindingItemTypes()[2] = new ArrayType(1, SimpleType.STRING);
+        setBindingDataType(new CompositeType("Exchange Binding", "Queue name and header bindings",
+                HEADERS_COMPOSITE_ITEM_NAMES.toArray(new String[HEADERS_COMPOSITE_ITEM_NAMES.size()]),
+                HEADERS_COMPOSITE_ITEM_DESC.toArray(new String[HEADERS_COMPOSITE_ITEM_DESC.size()]), getBindingItemTypes()));
+        setBindinglistDataType(new TabularType("Exchange Bindings", "List of exchange bindings for " + getName(),
+                getBindingDataType(), HEADERS_TABULAR_UNIQUE_INDEX.toArray(new String[HEADERS_TABULAR_UNIQUE_INDEX.size()])));
     }
 
     public TabularData bindings() throws OpenDataException
     {
-        TabularDataSupport bindingList = new TabularDataSupport(_bindinglistDataType);
+        TabularDataSupport bindingList = new TabularDataSupport(getBindinglistDataType());
         int count = 1;
         for (Binding binding : getExchange().getBindings())
         {
@@ -103,7 +103,7 @@ final class HeadersExchangeMBean extends AbstractExchangeMBean<HeadersExchange>
 
 
             Object[] bindingItemValues = {count++, queueName, mappingList.toArray(new String[0])};
-            CompositeData bindingData = new CompositeDataSupport(_bindingDataType, 
+            CompositeData bindingData = new CompositeDataSupport(getBindingDataType(),
                     HEADERS_COMPOSITE_ITEM_NAMES.toArray(new String[HEADERS_COMPOSITE_ITEM_NAMES.size()]), bindingItemValues);
             bindingList.put(bindingData);
         }
@@ -121,7 +121,7 @@ final class HeadersExchangeMBean extends AbstractExchangeMBean<HeadersExchange>
             throw new JMException("Queue \"" + queueName + "\" is not registered with the virtualhost.");
         }
 
-        CurrentActor.set(new ManagementActor(_logActor.getRootMessageLogger()));
+        CurrentActor.set(new ManagementActor(getLogActor().getRootMessageLogger()));
 
         final Map<String,Object> arguments = new HashMap<String, Object>();
         final String[] bindings = binding.split(",");

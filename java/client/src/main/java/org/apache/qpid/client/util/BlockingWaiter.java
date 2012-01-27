@@ -85,7 +85,7 @@ public abstract class BlockingWaiter<T>
     private volatile Exception _error;
 
     /** Holds the incomming Object. */
-    protected Object _doneObject = null;
+    private Object _doneObject = null;
     private AtomicBoolean _waiting = new AtomicBoolean(false);
     private boolean _closed = false;
 

@@ -232,7 +232,7 @@ public class InternalBrokerBaseCase extends QpidTestCase
 
             //Set the body size
             ContentHeaderBody _headerBody = new ContentHeaderBody();
-            _headerBody.bodySize = 0;
+            _headerBody.setBodySize(0);
 
             //Set Minimum properties
             BasicContentHeaderProperties properties = new BasicContentHeaderProperties();

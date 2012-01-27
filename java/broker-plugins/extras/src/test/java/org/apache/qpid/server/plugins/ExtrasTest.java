@@ -36,7 +36,7 @@ public class ExtrasTest extends TestCase
     private static final String PLUGIN_DIRECTORY = System.getProperty("example.plugin.target");
     private static final String CACHE_DIRECTORY = System.getProperty("example.cache.target");
 
-    IApplicationRegistry _registry;
+    private IApplicationRegistry _registry;
 
     @Override
     public void setUp() throws Exception

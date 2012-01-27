@@ -87,13 +87,13 @@ public class UnprocessedMessage_0_8 extends UnprocessedMessage
     public void receiveBody(ContentBody body)
     {
 
-        if (body._payload != null)
+        if (body.getPayload() != null)
         {
-            final long payloadSize = body._payload.length;
+            final long payloadSize = body.getPayload().length;
 
             if (_bodies == null)
             {
-                if (payloadSize == getContentHeader().bodySize)
+                if (payloadSize == getContentHeader().getBodySize())
                 {
                     _bodies = Collections.singletonList(body);
                 }
@@ -124,7 +124,7 @@ public class UnprocessedMessage_0_8 extends UnprocessedMessage
 
     public boolean isAllBodyDataReceived()
     {
-        return _bytesReceived == getContentHeader().bodySize;
+        return _bytesReceived == getContentHeader().getBodySize();
     }
 
     public BasicDeliverBody getDeliverBody()

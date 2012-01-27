@@ -55,7 +55,7 @@ public class FieldTableMessageTest extends QpidBrokerTestCase implements Message
     private final ArrayList<JMSBytesMessage> received = new ArrayList<JMSBytesMessage>();
     private FieldTable _expected;
     private int _count = 10;
-    public String _connectionString = "vm://:1";
+    private String _connectionString = "vm://:1";
     private CountDownLatch _waitForCompletion;
 
     protected void setUp() throws Exception

@@ -53,11 +53,11 @@ public class ExchangeLoggingTest extends AbstractTestLogging
 
     static final String EXH_PREFIX = "EXH-";
 
-    Connection _connection;
-    Session _session;
-    Queue _queue;
-    String _name;
-    String _type;
+    private Connection _connection;
+    private Session _session;
+    private Queue _queue;
+    private String _name;
+    private String _type;
 
     @Override
     public void setUp() throws Exception

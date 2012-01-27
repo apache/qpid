@@ -44,7 +44,7 @@ public class AMQProtocolSessionTest extends QpidBrokerTestCase
 
         public TestNetworkConnection getNetworkConnection()
         {
-            return (TestNetworkConnection) _protocolHandler.getNetworkConnection();
+            return (TestNetworkConnection) getProtocolHandler().getNetworkConnection();
         }
 
         public AMQShortString genQueueName()

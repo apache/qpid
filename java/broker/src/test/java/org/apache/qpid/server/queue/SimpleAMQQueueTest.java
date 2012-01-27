@@ -70,7 +70,7 @@ public class SimpleAMQQueueTest extends InternalBrokerBaseCase
     protected MockSubscription _subscription = new MockSubscription();
     protected FieldTable _arguments = null;
 
-    MessagePublishInfo info = new MessagePublishInfo()
+    private MessagePublishInfo info = new MessagePublishInfo()
     {
 
         public AMQShortString getExchange()
@@ -198,7 +198,7 @@ public class SimpleAMQQueueTest extends InternalBrokerBaseCase
         {
         }
         assertEquals(messageA, _subscription.getQueueContext().getLastSeenEntry().getMessage());
-        assertNull(((QueueContext)_subscription.getQueueContext())._releasedEntry);
+        assertNull(((QueueContext)_subscription.getQueueContext()).getReleasedEntry());
 
         // Check removing the subscription removes it's information from the queue
         _queue.unregisterSubscription(_subscription);
@@ -220,7 +220,7 @@ public class SimpleAMQQueueTest extends InternalBrokerBaseCase
         _queue.registerSubscription(_subscription, false);
         Thread.sleep(150);
         assertEquals(messageA, _subscription.getQueueContext().getLastSeenEntry().getMessage());
-        assertNull("There should be no releasedEntry after an enqueue", ((QueueContext)_subscription.getQueueContext())._releasedEntry);
+        assertNull("There should be no releasedEntry after an enqueue", ((QueueContext)_subscription.getQueueContext()).getReleasedEntry());
     }
 
     /**
@@ -235,7 +235,7 @@ public class SimpleAMQQueueTest extends InternalBrokerBaseCase
         _queue.registerSubscription(_subscription, false);
         Thread.sleep(150);
         assertEquals(messageB, _subscription.getQueueContext().getLastSeenEntry().getMessage());
-        assertNull("There should be no releasedEntry after enqueues", ((QueueContext)_subscription.getQueueContext())._releasedEntry);
+        assertNull("There should be no releasedEntry after enqueues", ((QueueContext)_subscription.getQueueContext()).getReleasedEntry());
     }
 
     /**
@@ -282,7 +282,7 @@ public class SimpleAMQQueueTest extends InternalBrokerBaseCase
         assertTrue("Redelivery flag should now be set", queueEntries.get(0).isRedelivered());
         assertFalse("Redelivery flag should remain be unset", queueEntries.get(1).isRedelivered());
         assertFalse("Redelivery flag should remain be unset",queueEntries.get(2).isRedelivered());
-        assertNull("releasedEntry should be cleared after requeue processed", ((QueueContext)_subscription.getQueueContext())._releasedEntry);
+        assertNull("releasedEntry should be cleared after requeue processed", ((QueueContext)_subscription.getQueueContext()).getReleasedEntry());
     }
 
     /**
@@ -326,7 +326,7 @@ public class SimpleAMQQueueTest extends InternalBrokerBaseCase
         assertTrue("Expecting the queue entry to be now expired", queueEntries.get(0).expired());
         assertEquals("Total number of messages sent should not have changed", 1, _subscription.getMessages().size());
         assertFalse("Redelivery flag should not be set", queueEntries.get(0).isRedelivered());
-        assertNull("releasedEntry should be cleared after requeue processed", ((QueueContext)_subscription.getQueueContext())._releasedEntry);
+        assertNull("releasedEntry should be cleared after requeue processed", ((QueueContext)_subscription.getQueueContext()).getReleasedEntry());
 
     }
 
@@ -377,7 +377,7 @@ public class SimpleAMQQueueTest extends InternalBrokerBaseCase
         assertTrue("Redelivery flag should now be set", queueEntries.get(0).isRedelivered());
         assertFalse("Redelivery flag should remain be unset", queueEntries.get(1).isRedelivered());
         assertTrue("Redelivery flag should now be set",queueEntries.get(2).isRedelivered());
-        assertNull("releasedEntry should be cleared after requeue processed", ((QueueContext)_subscription.getQueueContext())._releasedEntry);
+        assertNull("releasedEntry should be cleared after requeue processed", ((QueueContext)_subscription.getQueueContext()).getReleasedEntry());
     }
 
 
@@ -420,8 +420,8 @@ public class SimpleAMQQueueTest extends InternalBrokerBaseCase
         Thread.sleep(150); // Work done by SubFlushRunner/QueueRunner Threads
 
         assertEquals("Unexpected total number of messages sent to both subscriptions after release", 3, subscription1.getMessages().size() + subscription2.getMessages().size());
-        assertNull("releasedEntry should be cleared after requeue processed", ((QueueContext)subscription1.getQueueContext())._releasedEntry);
-        assertNull("releasedEntry should be cleared after requeue processed", ((QueueContext)subscription2.getQueueContext())._releasedEntry);
+        assertNull("releasedEntry should be cleared after requeue processed", ((QueueContext)subscription1.getQueueContext()).getReleasedEntry());
+        assertNull("releasedEntry should be cleared after requeue processed", ((QueueContext)subscription2.getQueueContext()).getReleasedEntry());
     }
 
     public void testExclusiveConsumer() throws AMQException

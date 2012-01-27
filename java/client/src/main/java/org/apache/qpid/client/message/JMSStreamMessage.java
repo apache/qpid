@@ -54,7 +54,7 @@ public class JMSStreamMessage extends AbstractBytesTypedMessage implements Strea
 
     public void reset()
     {
-        _readableMessage = true;
+        setReadable(true);
 
         if(_typedBytesContentReader != null)
         {

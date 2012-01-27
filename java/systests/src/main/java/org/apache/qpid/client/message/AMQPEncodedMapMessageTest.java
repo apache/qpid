@@ -42,9 +42,9 @@ public class AMQPEncodedMapMessageTest extends QpidBrokerTestCase
 {
     private Connection _connection;
     private Session _session;
-    MessageConsumer _consumer;
-    MessageProducer _producer;
-    UUID myUUID = UUID.randomUUID();
+    private MessageConsumer _consumer;
+    private MessageProducer _producer;
+    private UUID myUUID = UUID.randomUUID();
     
     public void setUp() throws Exception
     {

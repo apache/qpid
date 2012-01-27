@@ -34,19 +34,19 @@ public class Publisher
 
     protected InitialContextHelper _contextHelper;
 
-    protected Connection _connection;
+    private Connection _connection;
 
-    protected Session _session;
+    private Session _session;
 
-    protected MessageProducer _producer;
+    private MessageProducer _producer;
 
-    protected String _destinationDir;
+    private String _destinationDir;
 
-    protected String _name = "Publisher";
+    private String _name = "Publisher";
 
-    protected Destination _destination;
+    private Destination _destination;
 
-    protected static final String _defaultDestinationDir = "/tmp";
+    private static final String _defaultDestinationDir = "/tmp";
 
     /**
      * Creates a Publisher instance using properties from example.properties
@@ -62,9 +62,9 @@ public class Publisher
 
             //then create a connection using the AMQConnectionFactory
             AMQConnectionFactory cf = (AMQConnectionFactory) ctx.lookup("local");
-            _connection = cf.createConnection();
+            setConnection(cf.createConnection());
 
-            _connection.setExceptionListener(new ExceptionListener()
+            getConnection().setExceptionListener(new ExceptionListener()
             {
                 public void onException(JMSException jmse)
                 {
@@ -76,25 +76,30 @@ public class Publisher
             });
 
             //create a transactional session
-            _session = _connection.createSession(true, Session.AUTO_ACKNOWLEDGE);
+            setSession(getConnection().createSession(true, Session.AUTO_ACKNOWLEDGE));
 
             //lookup the example queue and use it
             //Queue is non-exclusive and not deleted when last consumer detaches
-            _destination = (Queue) ctx.lookup("MyQueue");
+            setDestination((Queue) ctx.lookup("MyQueue"));
 
             //create a message producer
-            _producer = _session.createProducer(_destination);
+            setProducer(getSession().createProducer(getDestination()));
 
             //set destination dir for files that have been processed
-            _destinationDir = _defaultDestinationDir;
+            setDestinationDir(get_defaultDestinationDir());
 
-            _connection.start();
+            getConnection().start();
         }
         catch (Exception e)
         {
             e.printStackTrace();
             _log.error("Exception", e);
         }
+    }
+
+    public static String get_defaultDestinationDir()
+    {
+        return _defaultDestinationDir;
     }
 
     /**
@@ -104,7 +109,7 @@ public class Publisher
     {
         try
         {
-            TextMessage txtMessage = _session.createTextMessage("msg");
+            TextMessage txtMessage = getSession().createTextMessage("msg");
             for (int i=0;i<numMessages;i++)
             {
                 sendMessage(txtMessage);
@@ -128,10 +133,10 @@ public class Publisher
         try
         {
             //Send message via our producer which is not persistent
-            _producer.send(message, DeliveryMode.PERSISTENT, _producer.getPriority(), _producer.getTimeToLive());
+            getProducer().send(message, DeliveryMode.PERSISTENT, getProducer().getPriority(), getProducer().getTimeToLive());
 
             //commit the message send and close the transaction
-            _session.commit();
+            getSession().commit();
 
         }
         catch (JMSException e)
@@ -139,7 +144,7 @@ public class Publisher
             //Have to assume our commit failed and rollback here
             try
             {
-                _session.rollback();
+                getSession().rollback();
                 _log.error("JMSException", e);
                 e.printStackTrace();
                 return false;
@@ -162,13 +167,13 @@ public class Publisher
     {
         try
         {
-            if (_connection != null)
+            if (getConnection() != null)
             {
-                _connection.stop();
-                _connection.close();
+                getConnection().stop();
+                getConnection().close();
             }
-            _connection = null;
-            _producer = null;
+            setConnection(null);
+            setProducer(null);
         }
         catch(Exception e)
         {
@@ -203,6 +208,42 @@ public class Publisher
 
     public void setName(String _name) {
         this._name = _name;
+    }
+
+
+    public Connection getConnection()
+    {
+        return _connection;
+    }
+
+    public void setConnection(Connection connection)
+    {
+        _connection = connection;
+    }
+
+    public void setSession(Session session)
+    {
+        _session = session;
+    }
+
+    public MessageProducer getProducer()
+    {
+        return _producer;
+    }
+
+    public void setProducer(MessageProducer producer)
+    {
+        _producer = producer;
+    }
+
+    public Destination getDestination()
+    {
+        return _destination;
+    }
+
+    public void setDestination(Destination destination)
+    {
+        _destination = destination;
     }
 }
 

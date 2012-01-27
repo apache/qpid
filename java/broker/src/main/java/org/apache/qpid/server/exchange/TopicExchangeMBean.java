@@ -51,7 +51,7 @@ final class TopicExchangeMBean extends AbstractExchangeMBean<TopicExchange>
     /** returns exchange bindings in tabular form */
     public TabularData bindings() throws OpenDataException
     {
-        TabularDataSupport bindingList = new TabularDataSupport(_bindinglistDataType);
+        TabularDataSupport bindingList = new TabularDataSupport(getBindinglistDataType());
         Map<String, List<String>> bindingData = new HashMap<String, List<String>>();
         for (Binding binding : getExchange().getBindings())
         {
@@ -69,7 +69,7 @@ final class TopicExchangeMBean extends AbstractExchangeMBean<TopicExchange>
         {
             Object[] bindingItemValues = {entry.getKey(), entry.getValue().toArray(new String[entry.getValue().size()]) };
             CompositeData bindingCompositeData =
-                    new CompositeDataSupport(_bindingDataType,
+                    new CompositeDataSupport(getBindingDataType(),
                             COMPOSITE_ITEM_NAMES.toArray(new String[COMPOSITE_ITEM_NAMES.size()]), 
                             bindingItemValues);
             bindingList.put(bindingCompositeData);

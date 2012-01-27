@@ -41,8 +41,8 @@ import org.apache.qpid.test.utils.QpidTestCase;
 
 public class AMQQueueFactoryTest extends QpidTestCase
 {
-    QueueRegistry _queueRegistry;
-    VirtualHost _virtualHost;
+    private QueueRegistry _queueRegistry;
+    private VirtualHost _virtualHost;
 
     @Override
     public void setUp() throws Exception

@@ -47,7 +47,7 @@ public class MessageToStringTest extends QpidBrokerTestCase
     private Connection _connection;
     private Session _session;
     private Queue _queue;
-    MessageConsumer _consumer;
+    private MessageConsumer _consumer;
     private static final String BYTE_TEST = "MapByteTest";
 
     public void setUp() throws Exception

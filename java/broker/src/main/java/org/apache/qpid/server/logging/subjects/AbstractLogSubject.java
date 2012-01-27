@@ -33,10 +33,7 @@ import java.text.MessageFormat;
  */
 public abstract class AbstractLogSubject implements LogSubject
 {
-    /**
-     * The logString that will be returned via toLogString
-     */
-    protected String _logString;
+    private String _logString;
 
     /**
      * Set the toString logging of this LogSubject. Based on a format provided
@@ -60,4 +57,16 @@ public abstract class AbstractLogSubject implements LogSubject
         return _logString;
     }
 
+    /**
+     * The logString that will be returned via toLogString
+     */
+    public String getLogString()
+    {
+        return _logString;
+    }
+
+    public void setLogString(String logString)
+    {
+        _logString = logString;
+    }
 }

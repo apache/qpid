@@ -168,7 +168,7 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
      */
     public void createNewExchange(String exchangeName, String type, boolean durable) throws JMException, MBeanException
     {
-        CurrentActor.set(new ManagementActor(_logActor.getRootMessageLogger()));
+        CurrentActor.set(new ManagementActor(getLogActor().getRootMessageLogger()));
         try
         {
             synchronized (_exchangeRegistry)
@@ -215,7 +215,7 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
         // boolean inUse = false;
         // Check if there are queue-bindings with the exchange and unregister
         // when there are no bindings.
-        CurrentActor.set(new ManagementActor(_logActor.getRootMessageLogger()));
+        CurrentActor.set(new ManagementActor(getLogActor().getRootMessageLogger()));
         try
         {
             _exchangeRegistry.unregisterExchange(new AMQShortString(exchangeName), false);
@@ -255,7 +255,7 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
             throw new JMException("The queue \"" + queueName + "\" already exists.");
         }
 
-        CurrentActor.set(new ManagementActor(_logActor.getRootMessageLogger()));
+        CurrentActor.set(new ManagementActor(getLogActor().getRootMessageLogger()));
         try
         {
             AMQShortString ownerShortString = null;
@@ -311,7 +311,7 @@ public class AMQBrokerManagerMBean extends AMQManagedObject implements ManagedBr
             throw new JMException("The Queue " + queueName + " is not a registered queue.");
         }
 
-        CurrentActor.set(new ManagementActor(_logActor.getRootMessageLogger()));
+        CurrentActor.set(new ManagementActor(getLogActor().getRootMessageLogger()));
         try
         {
             queue.delete();

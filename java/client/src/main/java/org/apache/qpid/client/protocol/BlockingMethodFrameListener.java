@@ -63,7 +63,7 @@ public abstract class BlockingMethodFrameListener extends BlockingWaiter<AMQMeth
 {
 
     /** Holds the channel id for the channel upon which this listener is waiting for a response. */
-    protected int _channelId;
+    private int _channelId;
 
     /**
      * Creates a new method listener, that filters incoming method to just those that match the specified channel id.

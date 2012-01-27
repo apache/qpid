@@ -26,9 +26,9 @@ import org.apache.qpid.framing.AMQShortString;
 
 public class MessagePublishInfoImplTest extends TestCase
 {
-    MessagePublishInfoImpl _mpi;
-    final AMQShortString _exchange = new AMQShortString("exchange");
-    final AMQShortString _routingKey = new AMQShortString("routingKey");
+    private MessagePublishInfoImpl _mpi;
+    private final AMQShortString _exchange = new AMQShortString("exchange");
+    private final AMQShortString _routingKey = new AMQShortString("routingKey");
 
     public void setUp()
     {

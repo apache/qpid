@@ -25,7 +25,7 @@ import org.apache.qpid.test.utils.QpidTestCase;
 
 public class ConnectionSettingsTest extends QpidTestCase
 {
-    ConnectionSettings _conConnectionSettings;
+    private ConnectionSettings _conConnectionSettings;
 
     protected void setUp() throws Exception
     {

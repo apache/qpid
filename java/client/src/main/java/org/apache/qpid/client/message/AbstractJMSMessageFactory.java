@@ -57,25 +57,25 @@ public abstract class AbstractJMSMessageFactory implements MessageFactory
         {
             if (debug)
             {
-                _logger.debug("Non-fragmented message body (bodySize=" + contentHeader.bodySize + ")");
+                _logger.debug("Non-fragmented message body (bodySize=" + contentHeader.getBodySize() + ")");
             }
 
-            data = ByteBuffer.wrap(((ContentBody) bodies.get(0))._payload);
+            data = ByteBuffer.wrap(((ContentBody) bodies.get(0)).getPayload());
         }
         else if (bodies != null)
         {
             if (debug)
             {
                 _logger.debug("Fragmented message body (" + bodies
-                        .size() + " frames, bodySize=" + contentHeader.bodySize + ")");
+                        .size() + " frames, bodySize=" + contentHeader.getBodySize() + ")");
             }
 
-            data = ByteBuffer.allocate((int) contentHeader.bodySize); // XXX: Is cast a problem?
+            data = ByteBuffer.allocate((int) contentHeader.getBodySize()); // XXX: Is cast a problem?
             final Iterator it = bodies.iterator();
             while (it.hasNext())
             {
                 ContentBody cb = (ContentBody) it.next();
-                final ByteBuffer payload = ByteBuffer.wrap(cb._payload);
+                final ByteBuffer payload = ByteBuffer.wrap(cb.getPayload());
                 if(payload.isDirect() || payload.isReadOnly())
                 {
                     data.put(payload);

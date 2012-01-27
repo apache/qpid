@@ -34,37 +34,37 @@ public class ConnectionSettings
 {
     public static final String WILDCARD_ADDRESS = "*";
 
-    String protocol = "tcp";
-    String host = "localhost";
-    String vhost;
-    String username = "guest";
-    String password = "guest";
-    int port = 5672;
-    boolean tcpNodelay = Boolean.valueOf(System.getProperty(ClientProperties.QPID_TCP_NODELAY_PROP_NAME,
+    private String protocol = "tcp";
+    private String host = "localhost";
+    private String vhost;
+    private String username = "guest";
+    private String password = "guest";
+    private int port = 5672;
+    private boolean tcpNodelay = Boolean.valueOf(System.getProperty(ClientProperties.QPID_TCP_NODELAY_PROP_NAME,
                                          System.getProperty(ClientProperties.AMQJ_TCP_NODELAY_PROP_NAME, "true")));
-    int maxChannelCount = 32767;
-    int maxFrameSize = 65535;
-    int heartbeatInterval;
-    int readBufferSize = 65535;
-    int writeBufferSize = 65535;
-    long transportTimeout = 60000;
+    private int maxChannelCount = 32767;
+    private int maxFrameSize = 65535;
+    private int heartbeatInterval;
+    private int readBufferSize = 65535;
+    private int writeBufferSize = 65535;
+    private long transportTimeout = 60000;
     
     // SSL props
-    boolean useSSL;
-    String keyStorePath = System.getProperty("javax.net.ssl.keyStore");
-    String keyStorePassword = System.getProperty("javax.net.ssl.keyStorePassword");
-    String keyStoreCertType = System.getProperty("qpid.ssl.keyStoreCertType","SunX509");;
-    String trustStoreCertType = System.getProperty("qpid.ssl.trustStoreCertType","SunX509");;
-    String trustStorePath = System.getProperty("javax.net.ssl.trustStore");;
-    String trustStorePassword = System.getProperty("javax.net.ssl.trustStorePassword");;
-    String certAlias;
-    boolean verifyHostname;
+    private boolean useSSL;
+    private String keyStorePath = System.getProperty("javax.net.ssl.keyStore");
+    private String keyStorePassword = System.getProperty("javax.net.ssl.keyStorePassword");
+    private String keyStoreCertType = System.getProperty("qpid.ssl.keyStoreCertType","SunX509");;
+    private String trustStoreCertType = System.getProperty("qpid.ssl.trustStoreCertType","SunX509");;
+    private String trustStorePath = System.getProperty("javax.net.ssl.trustStore");;
+    private String trustStorePassword = System.getProperty("javax.net.ssl.trustStorePassword");;
+    private String certAlias;
+    private boolean verifyHostname;
     
     // SASL props
-    String saslMechs = System.getProperty("qpid.sasl_mechs", null);
-    String saslProtocol = System.getProperty("qpid.sasl_protocol", "AMQP");
-    String saslServerName = System.getProperty("qpid.sasl_server_name", "localhost");
-    boolean useSASLEncryption;
+    private String saslMechs = System.getProperty("qpid.sasl_mechs", null);
+    private String saslProtocol = System.getProperty("qpid.sasl_protocol", "AMQP");
+    private String saslServerName = System.getProperty("qpid.sasl_server_name", "localhost");
+    private boolean useSASLEncryption;
    
     private Map<String, Object> _clientProperties;
     

@@ -36,7 +36,7 @@ public abstract class AbstractJMSMessage implements org.apache.qpid.jms.Message
 
     /** If the acknowledge mode is CLIENT_ACKNOWLEDGE the session is required */
 
-    protected AMQMessageDelegate _delegate;
+    private AMQMessageDelegate _delegate;
     private boolean _redelivered;
     private boolean _receivedFromServer;
 

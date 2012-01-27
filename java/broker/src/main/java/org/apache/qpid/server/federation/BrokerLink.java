@@ -376,8 +376,8 @@ public class BrokerLink implements LinkConfig, ConnectionListener
                             }
                         };
                         final SaslClient sc = Sasl.createSaslClient(new String[] {"PLAIN"}, null,
-                                                                    _conSettings.getSaslProtocol(),
-                                                                    _conSettings.getSaslServerName(),
+                                                                    getConnectionSettings().getSaslProtocol(),
+                                                                    getConnectionSettings().getSaslServerName(),
                                                                     saslProps, cbh);
 
                         return sc;

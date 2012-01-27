@@ -220,8 +220,8 @@ public class VHNotificationsTabControl extends TabControl
     {
         _tableViewer.addDoubleClickListener(new IDoubleClickListener()
             {
-                Display display = null;
-                Shell   shell = null;
+                private Display display = null;
+                private Shell   shell = null;
                 public void doubleClick(DoubleClickEvent event)
                 {
                     display = Display.getCurrent();
@@ -344,7 +344,7 @@ public class VHNotificationsTabControl extends TabControl
      */
     protected static class LabelProviderImpl implements ITableLabelProvider
     {
-        List<ILabelProviderListener> listeners = new ArrayList<ILabelProviderListener>();       
+        private List<ILabelProviderListener> listeners = new ArrayList<ILabelProviderListener>();
         public void addListener(ILabelProviderListener listener)
         {
             listeners.add(listener);
