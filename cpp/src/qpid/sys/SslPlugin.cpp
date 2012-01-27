@@ -96,10 +96,12 @@ typedef SslProtocolFactoryTmpl<SslMuxSocket> SslMuxProtocolFactory;
 // Static instance to initialise plugin
 static struct SslPlugin : public Plugin {
     SslServerOptions options;
+    bool nssInitialized;
 
     Options* getOptions() { return &options; }
 
-    ~SslPlugin() { ssl::shutdownNSS(); }
+    SslPlugin() : nssInitialized(false) {}
+    ~SslPlugin() { if (nssInitialized) ssl::shutdownNSS(); }
 
     void earlyInitialize(Target& target) {
         broker::Broker* broker = dynamic_cast<broker::Broker*>(&target);
@@ -129,6 +131,7 @@ static struct SslPlugin : public Plugin {
             } else {
                 try {
                     ssl::initNSS(options, true);
+                    nssInitialized = true;
                     
                     const broker::Broker::Options& opts = broker->getOptions();
 
