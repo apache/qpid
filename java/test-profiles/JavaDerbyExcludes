@@ -19,3 +19,4 @@
 
 org.apache.qpid.server.store.berkeleydb.BDBMessageStoreTest#*
 org.apache.qpid.server.store.berkeleydb.BDBUpgradeTest#*
+org.apache.qpid.server.store.berkeleydb.BDBBackupTest#*
