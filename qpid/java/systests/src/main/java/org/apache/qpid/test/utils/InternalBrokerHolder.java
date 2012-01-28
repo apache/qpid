@@ -27,9 +27,11 @@ import org.apache.qpid.server.Broker;
 public class InternalBrokerHolder implements BrokerHolder
 {
     private static final Logger LOGGER = Logger.getLogger(InternalBrokerHolder.class);
-    private final Broker _broker;
 
-    public InternalBrokerHolder(final Broker broker)
+    private final Broker _broker;
+    private final String _workingDirectory;
+
+    public InternalBrokerHolder(final Broker broker, String workingDirectory)
     {
         if(broker == null)
         {
@@ -37,6 +39,13 @@ public class InternalBrokerHolder implements BrokerHolder
         }
 
         _broker = broker;
+        _workingDirectory = workingDirectory;
+    }
+
+    @Override
+    public String getWorkingDirectory()
+    {
+        return _workingDirectory;
     }
 
     public void shutdown()
@@ -47,5 +56,13 @@ public class InternalBrokerHolder implements BrokerHolder
         
         LOGGER.info("Broker instance shutdown");
     }
+
+    @Override
+    public void kill()
+    {
+        // Can't kill a internal broker as we would also kill ourselves as we share the same JVM.
+        shutdown();
+    }
+
 
 }

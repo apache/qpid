@@ -22,5 +22,7 @@ package org.apache.qpid.test.utils;
 
 public interface BrokerHolder
 {
+    String getWorkingDirectory();
     void shutdown();
+    void kill();
 }

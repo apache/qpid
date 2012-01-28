@@ -34,8 +34,6 @@ public class FailoverBaseCase extends QpidBrokerTestCase
 
     public static final long DEFAULT_FAILOVER_TIME = 10000L;
 
-    protected int failingPort;
-
     protected void setUp() throws java.lang.Exception
     {
         super.setUp();
@@ -66,15 +64,6 @@ public class FailoverBaseCase extends QpidBrokerTestCase
         return _connectionFactory;
     }
 
-    @Override
-    public void stopBroker(int port) throws Exception
-    {
-        if (isBrokerPresent(port))
-        {
-            super.stopBroker(port);
-        }
-    }
-
     public void tearDown() throws Exception
     {
         try
@@ -90,11 +79,11 @@ public class FailoverBaseCase extends QpidBrokerTestCase
         }
     }
 
-
     public void failBroker(int port)
     {
         try
         {
+            //TODO: use killBroker instead
             stopBroker(port);
         }
         catch (Exception e)
@@ -102,6 +91,4 @@ public class FailoverBaseCase extends QpidBrokerTestCase
             throw new RuntimeException(e);
         }
     }
-
-        
 }

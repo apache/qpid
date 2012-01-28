@@ -33,7 +33,7 @@ if [ -z "$QPID_HOME" ]; then
 fi
 VERSION=0.15
 
-LIBS=$QPID_HOME/lib/opt/je-4.0.117.jar:$QPID_HOME/lib/qpid-bdbstore-$VERSION.jar:$QPID_HOME/lib/qpid-all.jar
+LIBS=$QPID_HOME/lib/opt/je-5.0.34.jar:$QPID_HOME/lib/qpid-bdbstore-$VERSION.jar:$QPID_HOME/lib/qpid-all.jar
 
 
 echo "Starting Hot Backup Script"
