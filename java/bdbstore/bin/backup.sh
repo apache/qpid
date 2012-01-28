@@ -19,22 +19,26 @@
 #
 
 # Parse arguments taking all - prefixed args as JAVA_OPTS
+
+declare -a ARGS
 for arg in "$@"; do
     if [[ $arg == -java:* ]]; then
         JAVA_OPTS="${JAVA_OPTS}-`echo $arg|cut -d ':' -f 2`  "
     else
-        ARGS="${ARGS}$arg "
+        ARGS[${#ARGS[@]}]="$arg"
     fi
 done
 
-WHEREAMI=`dirname $0`
 if [ -z "$QPID_HOME" ]; then
-   export QPID_HOME=`cd $WHEREAMI/../ && pwd`
+    export QPID_HOME=$(dirname $(dirname $(readlink -f $0)))
+    export PATH=${PATH}:${QPID_HOME}/bin
 fi
+
 VERSION=0.15
 
-LIBS=$QPID_HOME/lib/opt/je-5.0.34.jar:$QPID_HOME/lib/qpid-bdbstore-$VERSION.jar:$QPID_HOME/lib/qpid-all.jar
+# BDB's je JAR expected to be found in lib/opt
+LIBS="${QPID_HOME}/lib/opt/*:${QPID_HOME}/lib/qpid-bdbstore-${VERSION}.jar:${QPID_HOME}/lib/qpid-all.jar"
 
 
 echo "Starting Hot Backup Script"
-java -Dlog4j.configuration=backup-log4j.xml ${JAVA_OPTS} -cp $LIBS org.apache.qpid.server.store.berkeleydb.BDBBackup ${ARGS}
+java -Dlog4j.configuration=backup-log4j.xml ${JAVA_OPTS} -cp "${LIBS}" org.apache.qpid.server.store.berkeleydb.BDBBackup "${ARGS[@]}"
