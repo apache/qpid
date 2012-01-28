@@ -21,6 +21,7 @@
 package org.apache.qpid.test.utils;
 
 import java.lang.reflect.Constructor;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
@@ -223,6 +224,36 @@ public class ReflectionUtils
         catch (NoSuchMethodException e)
         {
             throw new ReflectionUtilsException("NoSuchMethodException", e);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T> T getDeclaredField(final Object obj, final String fieldName)
+    {
+        try
+        {
+            final Field field = obj.getClass().getDeclaredField(fieldName);
+            if (!field.isAccessible())
+            {
+                field.setAccessible(true);
+            }
+            return (T) field.get(obj);
+        }
+        catch (NoSuchFieldException e)
+        {
+            throw new ReflectionUtilsException("Unable to read field " + fieldName + "from object " + obj, e);
+        }
+        catch (SecurityException e)
+        {
+            throw new ReflectionUtilsException("Unable to read field " + fieldName + "from object " + obj, e);
+        }
+        catch (IllegalArgumentException e)
+        {
+            throw new ReflectionUtilsException("Unable to read field " + fieldName + "from object " + obj, e);
+        }
+        catch (IllegalAccessException e)
+        {
+            throw new ReflectionUtilsException("Unable to read field " + fieldName + "from object " + obj, e);
         }
     }
 }
